@@ -406,47 +406,10 @@ mod host {
     use std::sync::{Arc, Mutex, OnceLock};
     use std::thread::{self, JoinHandle};
 
-    type WndProc = unsafe extern "system" fn(isize, u32, usize, isize) -> isize;
-
-    #[repr(C)]
-    struct WndClassW {
-        style: u32,
-        wnd_proc: Option<WndProc>,
-        cls_extra: i32,
-        wnd_extra: i32,
-        instance: isize,
-        icon: isize,
-        cursor: isize,
-        background: isize,
-        menu_name: *const u16,
-        class_name: *const u16,
-    }
-
-    #[repr(C)]
-    #[derive(Default, Clone, Copy)]
-    struct Point {
-        x: i32,
-        y: i32,
-    }
-
-    #[repr(C)]
-    #[derive(Default, Clone, Copy)]
-    struct Rect {
-        left: i32,
-        top: i32,
-        right: i32,
-        bottom: i32,
-    }
-
-    #[repr(C)]
-    struct Msg {
-        hwnd: isize,
-        message: u32,
-        wparam: usize,
-        lparam: isize,
-        time: u32,
-        pt: Point,
-    }
+    use crate::ffi::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, Msg, Point, Rect,
+        RegisterClassW, TranslateMessage, WndClassW,
+    };
 
     #[repr(C)]
     struct CopyDataStruct {
@@ -478,27 +441,8 @@ mod host {
 
     #[link(name = "user32")]
     extern "system" {
-        fn RegisterClassW(class: *const WndClassW) -> u16;
         fn UnregisterClassW(class_name: *const u16, instance: isize) -> i32;
-        fn CreateWindowExW(
-            ex_style: u32,
-            class_name: *const u16,
-            window_name: *const u16,
-            style: u32,
-            x: i32,
-            y: i32,
-            width: i32,
-            height: i32,
-            parent: isize,
-            menu: isize,
-            instance: isize,
-            param: *const c_void,
-        ) -> isize;
-        fn DefWindowProcW(hwnd: isize, msg: u32, wparam: usize, lparam: isize) -> isize;
         fn DestroyWindow(hwnd: isize) -> i32;
-        fn GetMessageW(msg: *mut Msg, hwnd: isize, min: u32, max: u32) -> i32;
-        fn TranslateMessage(msg: *const Msg) -> i32;
-        fn DispatchMessageW(msg: *const Msg) -> isize;
         fn PostQuitMessage(code: i32);
         fn PostMessageW(hwnd: isize, msg: u32, wparam: usize, lparam: isize) -> i32;
         fn SendMessageTimeoutW(
@@ -852,7 +796,7 @@ mod host {
                 0,
                 0,
                 instance,
-                null(),
+                std::ptr::null_mut(),
             );
             if hwnd == 0 {
                 eprintln!("[Lens Tray] Could not create the tray host window.");
@@ -885,14 +829,7 @@ mod host {
                 DestroyWindow(hwnd);
             }
 
-            let mut msg = Msg {
-                hwnd: 0,
-                message: 0,
-                wparam: 0,
-                lparam: 0,
-                time: 0,
-                pt: Point::default(),
-            };
+            let mut msg = Msg::default();
             while GetMessageW(&mut msg, 0, 0, 0) > 0 {
                 TranslateMessage(&msg);
                 DispatchMessageW(&msg);
@@ -1097,3 +1034,7 @@ pub fn tray_host_hwnd() -> isize {
 pub fn real_shell_tray_hwnd() -> isize {
     0
 }
+
+#[cfg(test)]
+#[path = "tests/win_tray.rs"]
+mod tests;

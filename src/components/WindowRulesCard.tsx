@@ -1,19 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { RunningWindow } from "../types/lens";
+import type * as Gen from "../types/generated";
 
 /** Mirrors `WindowRule` in src-tauri/src/win_rules.rs. */
-export interface WindowRule {
-  /** Process name without ".exe", lower-case. */
-  match: string;
-  /** 40–100, or null to follow the theme. */
-  opacity: number | null;
-  /** "default" | "none" | "#RRGGBB" */
-  frame: string;
-  /** "default" | "square" | "small" | "round" */
-  corners: string;
-  exclude: boolean;
-}
+export type WindowRule = Gen.WindowRule;
 
 const OPACITY_CHOICES: (number | null)[] = [null, 100, 90, 80, 70, 60, 50];
 const CORNER_CHOICES = [

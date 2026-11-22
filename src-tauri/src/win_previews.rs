@@ -259,38 +259,10 @@ mod sys {
         cy: i32,
     }
 
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    struct Point {
-        x: i32,
-        y: i32,
-    }
-
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    struct Msg {
-        hwnd: Hwnd,
-        message: u32,
-        wparam: usize,
-        lparam: isize,
-        time: u32,
-        pt: Point,
-        lprivate: u32,
-    }
-
-    #[repr(C)]
-    struct WndClassW {
-        style: u32,
-        lpfn_wnd_proc: Option<unsafe extern "system" fn(Hwnd, u32, usize, isize) -> isize>,
-        cb_cls_extra: i32,
-        cb_wnd_extra: i32,
-        h_instance: isize,
-        h_icon: isize,
-        h_cursor: isize,
-        hbr_background: isize,
-        lpsz_menu_name: *const u16,
-        lpsz_class_name: *const u16,
-    }
+    use crate::ffi::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, Msg, RegisterClassW,
+        TranslateMessage, WndClassW,
+    };
 
     /// DWM_THUMBNAIL_PROPERTIES
     #[repr(C)]
@@ -327,26 +299,7 @@ mod sys {
 
     #[link(name = "user32")]
     extern "system" {
-        fn RegisterClassW(wc: *const WndClassW) -> u16;
-        fn CreateWindowExW(
-            ex_style: u32,
-            class_name: *const u16,
-            window_name: *const u16,
-            style: u32,
-            x: i32,
-            y: i32,
-            w: i32,
-            h: i32,
-            parent: Hwnd,
-            menu: isize,
-            instance: isize,
-            param: *mut c_void,
-        ) -> Hwnd;
         fn DestroyWindow(hwnd: Hwnd) -> i32;
-        fn DefWindowProcW(hwnd: Hwnd, msg: u32, wparam: usize, lparam: isize) -> isize;
-        fn GetMessageW(msg: *mut Msg, hwnd: Hwnd, min: u32, max: u32) -> i32;
-        fn TranslateMessage(msg: *const Msg) -> i32;
-        fn DispatchMessageW(msg: *const Msg) -> isize;
         fn PostMessageW(hwnd: Hwnd, msg: u32, wparam: usize, lparam: isize) -> i32;
         fn ShowWindow(hwnd: Hwnd, cmd: i32) -> i32;
         fn SetWindowPos(hwnd: Hwnd, after: Hwnd, x: i32, y: i32, w: i32, h: i32, flags: u32)
@@ -456,15 +409,15 @@ mod sys {
         let class_name = wide(&format!("LensDockPreviewTile{:06X}", background));
         let wc = WndClassW {
             style: 0,
-            lpfn_wnd_proc: Some(tile_proc),
-            cb_cls_extra: 0,
-            cb_wnd_extra: 0,
-            h_instance: hinst,
-            h_icon: 0,
-            h_cursor: 0,
-            hbr_background: brush_for(background),
-            lpsz_menu_name: std::ptr::null(),
-            lpsz_class_name: class_name.as_ptr(),
+            wnd_proc: Some(tile_proc),
+            cls_extra: 0,
+            wnd_extra: 0,
+            instance: hinst,
+            icon: 0,
+            cursor: 0,
+            background: brush_for(background),
+            menu_name: std::ptr::null(),
+            class_name: class_name.as_ptr(),
         };
         RegisterClassW(&wc); // fails harmlessly when already registered
         let title = wide("");
@@ -558,15 +511,15 @@ mod sys {
                 let class_name = wide("LensDockPreviewControl");
                 let wc = WndClassW {
                     style: 0,
-                    lpfn_wnd_proc: Some(control_proc),
-                    cb_cls_extra: 0,
-                    cb_wnd_extra: 0,
-                    h_instance: hinst,
-                    h_icon: 0,
-                    h_cursor: 0,
-                    hbr_background: 0,
-                    lpsz_menu_name: std::ptr::null(),
-                    lpsz_class_name: class_name.as_ptr(),
+                    wnd_proc: Some(control_proc),
+                    cls_extra: 0,
+                    wnd_extra: 0,
+                    instance: hinst,
+                    icon: 0,
+                    cursor: 0,
+                    background: 0,
+                    menu_name: std::ptr::null(),
+                    class_name: class_name.as_ptr(),
                 };
                 RegisterClassW(&wc);
                 let title = wide("");

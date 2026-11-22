@@ -1,3 +1,4 @@
+import type * as Gen from "../types/generated";
 /** Mirrors win_wallpaper.rs (serde camelCase). */
 export interface WallpaperSettings {
   enabled: boolean;
@@ -14,20 +15,9 @@ export interface WallpaperSettings {
 
 export type WallpaperKind = "image" | "video" | "html";
 
-export interface WallpaperState {
-  settings: WallpaperSettings;
-  path: string | null;
-  kind: WallpaperKind | null;
-  attached: boolean;
-  folder: string;
-}
+export type WallpaperState = Gen.WallpaperState;
 
-export interface WallpaperFile {
-  name: string;
-  path: string;
-  kind: WallpaperKind;
-  bytes: number;
-}
+export type WallpaperFile = Gen.WallpaperFile;
 
 export const FIT_TO_OBJECT_FIT: Record<string, string> = {
   cover: "cover",

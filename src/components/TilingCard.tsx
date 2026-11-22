@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { LayoutGrid, Columns3, Rows3, PanelLeft, Square, Spline, X, Plus } from "lucide-react";
 import type { LensConfig } from "../types/lens";
 import { PillFillBar } from "./PillFillBar";
+import type * as Gen from "../types/generated";
 
 /** Mirrors win_tiler::TilingConfig (LensConfig.tiling). */
 export interface TilingConfig {
@@ -15,17 +16,7 @@ export interface TilingConfig {
   floatApps: string[];
 }
 
-export interface TilingStatus {
-  enabled: boolean;
-  layout: string;
-  layoutFromWorkspace: boolean;
-  gap: number;
-  masterRatio: number;
-  monocle: boolean;
-  tiled: number;
-  floating: number;
-  paused: boolean;
-}
+export type TilingStatus = Gen.TilingStatus;
 
 interface TilingHotkey {
   keys: string;

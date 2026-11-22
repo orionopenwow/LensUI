@@ -1,6 +1,7 @@
 # Lens UI CI
 #  * windows  — the real build: frontend type-check + bundle, Rust check / clippy / unit tests,
 #               hook DLL rebuilt from source, and a full installer build on version tags.
+#  * contract — generated IPC types are in sync with the Rust commands; frontend unit tests.
 #  * parity   — renders every surface in a headless browser with mocked Tauri APIs and fails on any
 #               crash, console error or empty surface; screenshots are uploaded as an artifact.
 name: build
@@ -61,8 +62,9 @@ jobs:
         working-directory: src-tauri
         run: cargo check --all-targets
 
-      # -D warnings, minus an explicit allow-list of lints the existing code base trips today.
-      # Shrink this list over time; correctness/suspicious lints always fail the build.
+      # -D warnings: every rustc warning (dead code, unused imports, ...) fails the build. The
+      # remaining allow-list covers clippy's style-level groups only; shrink it over time.
+      # correctness / suspicious lints always fail the build.
       - name: cargo clippy
         working-directory: src-tauri
         run: >
@@ -70,10 +72,6 @@ jobs:
           -D warnings
           -D clippy::correctness
           -D clippy::suspicious
-          -A dead_code
-          -A unused_imports
-          -A unused_variables
-          -A unused_mut
           -A clippy::style
           -A clippy::complexity
           -A clippy::perf
@@ -97,6 +95,31 @@ jobs:
             src-tauri/target/release/bundle/**/*.msi
             src-tauri/target/release/bundle/**/*.exe
           if-no-files-found: error
+
+  contract:
+    name: IPC types + frontend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # src/types/generated.ts is produced from the #[tauri::command] signatures. A stale file
+      # means the frontend and backend disagree about a payload, so fail instead of shipping it.
+      - name: Generated IPC types are up to date
+        run: python3 tools/gen-types/gen_types.py --check
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # bun's built-in runner (bun:test): no extra devDependency, so the lockfile is unchanged.
+      - name: Frontend unit tests
+        run: bun run test
 
   parity:
     name: Visual parity (headless render)

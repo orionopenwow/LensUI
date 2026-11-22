@@ -190,3 +190,7 @@ pub fn delete_lens_data() -> Result<String, String> {
     }
     Ok(format!("Deleted {}", dir.display()))
 }
+
+#[cfg(test)]
+#[path = "tests/win_uninstall.rs"]
+mod tests;

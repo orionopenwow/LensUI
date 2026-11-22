@@ -179,3 +179,7 @@ pub fn resolve_for_path(exe_path: &str) -> ResolvedRule {
         Err(_) => ResolvedRule::default(),
     }
 }
+
+#[cfg(test)]
+#[path = "tests/win_rules.rs"]
+mod tests;

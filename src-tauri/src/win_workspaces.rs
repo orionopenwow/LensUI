@@ -267,6 +267,9 @@ fn emit() {
 pub struct VdInfo {
     pub ids: Vec<[u8; 16]>,
     pub current: usize,
+    /// User-given desktop names from the registry ("" when unnamed). Not shown in the UI yet;
+    /// kept so the workspace status can label Windows desktops without another registry pass.
+    #[allow(dead_code)]
     pub names: Vec<String>,
 }
 
@@ -667,3 +670,7 @@ pub fn on_window_event(hwnd: isize, shown: bool) {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "tests/win_workspaces.rs"]
+mod tests;

@@ -507,3 +507,7 @@ pub fn remove_windows_toast(_id: u32) -> Result<(), String> {
 pub fn clear_windows_toasts() -> Result<(), String> {
     Err("Windows notifications are only available on Windows.".into())
 }
+
+#[cfg(test)]
+#[path = "tests/win_notifications.rs"]
+mod tests;
