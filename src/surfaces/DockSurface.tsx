@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { PluginSlot } from "../components/PluginSlot";
 import { McpBridge } from "../components/McpBridge";
+import { AiApplyBridge } from "../components/AiApplyBridge";
 import { toDockResults } from "../search/dockAdapter";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -1161,6 +1162,7 @@ export const DockSurface: React.FC = () => {
       }}
     >
       <McpBridge config={config} updateConfig={updateConfig} />
+      <AiApplyBridge config={config} updateConfig={updateConfig} />
       {ctxMenu && (
         <>
           <div className="dock-ctx-backdrop" onClick={closeMenu} onContextMenu={(e) => { e.preventDefault(); closeMenu(); }} />
