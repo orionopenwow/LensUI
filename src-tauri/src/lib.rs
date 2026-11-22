@@ -35,7 +35,9 @@ mod win_monitors;
 mod win_windows;
 
 mod app;
+mod bridge;
 mod commands;
+mod media;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -98,6 +100,10 @@ pub fn run() {
     if win_mcp::is_stdio_invocation() {
         std::process::exit(win_mcp::run_stdio_bridge());
     }
+    // Browser native-messaging host, lens:// links, Explorer verbs and `--ask`: forward and exit.
+    if let Some(code) = bridge::early_exit_code() {
+        std::process::exit(code);
+    }
 
     // Must be first: counts this shell boot before anything that could crash.
     let shell_startup = win_shell::shell_startup();
@@ -137,6 +143,7 @@ pub fn run() {
             topbar_search_open: topbar_search_open_state,
         })
         .setup(move |app| {
+            bridge::autostart(commands::bridge::emitter(app.handle()));
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -316,6 +323,31 @@ pub fn run() {
             commands::mcp::complete_mcp_action_cmd,
             commands::mcp::get_mcp_audit_cmd,
             commands::power::quit_lens,
+            commands::bridge::bridge_status,
+            commands::bridge::bridge_set_enabled,
+            commands::bridge::bridge_install,
+            commands::bridge::bridge_uninstall,
+            commands::bridge::url_scheme_install,
+            commands::bridge::url_scheme_uninstall,
+            commands::bridge::explorer_verbs_install,
+            commands::bridge::explorer_verbs_uninstall,
+            commands::bridge::bridge_inbox,
+            commands::bridge::bridge_confirm,
+            commands::bridge::bridge_decline,
+            commands::bridge::bridge_record_delta,
+            commands::bridge::bridge_record_done,
+            commands::bridge::mcp_install_claude_desktop,
+            commands::bridge::mcp_uninstall_claude_desktop,
+            commands::bridge::claude_code_command,
+            commands::media::transcribe_settings_get,
+            commands::media::transcribe_settings_save,
+            commands::media::transcribe_setup_plan,
+            commands::media::transcribe_setup_download,
+            commands::media::transcribe_file,
+            commands::media::transcribe_url,
+            commands::media::transcribe_cancel,
+            commands::media::transcribe_status,
+            commands::media::live_captions_start,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
