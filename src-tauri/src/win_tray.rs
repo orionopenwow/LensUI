@@ -796,7 +796,7 @@ mod host {
                 0,
                 0,
                 instance,
-                null(),
+                std::ptr::null_mut(),
             );
             if hwnd == 0 {
                 eprintln!("[Lens Tray] Could not create the tray host window.");
@@ -1034,3 +1034,7 @@ pub fn tray_host_hwnd() -> isize {
 pub fn real_shell_tray_hwnd() -> isize {
     0
 }
+
+#[cfg(test)]
+#[path = "tests/win_tray.rs"]
+mod tests;
