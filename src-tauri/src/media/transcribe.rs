@@ -125,7 +125,7 @@ pub fn ytdlp_args(url: &str, work_dir: &Path) -> Vec<String> {
 
 /// Parses whisper.cpp's `whisper_print_progress_callback: progress =  42%`.
 pub fn parse_whisper_progress(line: &str) -> Option<u8> {
-    let idx = line.find("progress")?;
+    let idx = line.rfind("progress")?;
     let rest = &line[idx + "progress".len()..];
     let rest = rest.trim_start().strip_prefix('=')?.trim_start();
     let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
@@ -173,7 +173,9 @@ pub fn stem_for_url(url: &str, title: Option<&str>) -> String {
         return t.to_string();
     }
     let no_query = url.split(['?', '#']).next().unwrap_or(url);
-    let last = no_query.trim_end_matches('/').rsplit('/').next().unwrap_or("");
+    let after_scheme = no_query.split_once("://").map(|(_, r)| r).unwrap_or(no_query);
+    let path = after_scheme.split_once('/').map(|(_, p)| p).unwrap_or("");
+    let last = path.trim_end_matches('/').rsplit('/').next().unwrap_or("");
     let stem = last.rsplit_once('.').map(|(a, _)| a).unwrap_or(last);
     if stem.is_empty() || stem.contains(':') {
         "web-video".into()

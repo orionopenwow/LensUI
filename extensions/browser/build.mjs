@@ -1,0 +1,163 @@
+#!/usr/bin/env node
+// Builds the Lens browser extension for Chrome, Edge and Firefox from one codebase.
+//
+//   node extensions/browser/build.mjs           → dist/{chrome,edge,firefox}/ + zips
+//   node extensions/browser/build.mjs --check   → validate manifests and sources only
+//
+// No dependencies: the zip writer below stores files uncompressed (browsers accept that).
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const DIST = path.join(HERE, "dist");
+export const TARGETS = ["chrome", "edge", "firefox"];
+
+const ALLOWED_PERMISSIONS = new Set(["contextMenus", "nativeMessaging", "activeTab", "scripting", "storage", "sidePanel"]);
+
+export function buildManifest(base, target) {
+  const m = structuredClone(base);
+  const chromium = m.chromium;
+  const firefox = m.firefox;
+  delete m.chromium;
+  delete m.firefox;
+  const extra = target === "firefox" ? firefox : chromium;
+  const { extraPermissions = [], ...rest } = extra;
+  Object.assign(m, rest);
+  m.permissions = [...m.permissions, ...extraPermissions];
+  return m;
+}
+
+function listFiles(dir, rel = "") {
+  const out = [];
+  for (const e of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
+    const r = path.posix.join(rel, e.name);
+    if (e.isDirectory()) out.push(...listFiles(dir, r));
+    else out.push(r);
+  }
+  return out;
+}
+
+/** Returns a list of problems (empty = OK). `files` are paths relative to the extension root. */
+export function checkManifest(m, files, sources = {}) {
+  const problems = [];
+  const has = (f) => files.includes(f);
+  if (m.manifest_version !== 3) problems.push("manifest_version must be 3");
+  for (const k of ["name", "version", "description", "icons", "permissions"]) if (!m[k]) problems.push(`missing ${k}`);
+  if (!/^\d+(\.\d+){0,3}$/.test(m.version || "")) problems.push("version must be dotted numbers");
+  for (const p of m.permissions || []) if (!ALLOWED_PERMISSIONS.has(p)) problems.push(`unexpected permission ${p}`);
+  if (m.host_permissions?.length) problems.push("host_permissions are not allowed (activeTab only)");
+  if (m.content_scripts?.length) problems.push("content_scripts are not used");
+  const refs = [
+    ...Object.values(m.icons || {}),
+    m.action?.default_popup,
+    ...Object.values(m.action?.default_icon || {}),
+    m.background?.service_worker,
+    ...(m.background?.scripts || []),
+    m.side_panel?.default_path,
+    m.sidebar_action?.default_panel,
+  ].filter(Boolean);
+  for (const r of refs) if (!has(r)) problems.push(`referenced file missing: ${r}`);
+  if (m.background?.service_worker && m.background?.scripts) problems.push("background must be service_worker OR scripts");
+  if (m.sidebar_action && !m.browser_specific_settings?.gecko?.id) problems.push("firefox build needs a gecko id");
+  const csp = m.content_security_policy?.extension_pages || "";
+  if (/unsafe-eval|unsafe-inline|https?:/.test(csp)) problems.push("CSP must not allow eval, inline or remote code");
+  for (const [file, text] of Object.entries(sources)) {
+    if (/\beval\s*\(|new Function\s*\(/.test(text)) problems.push(`${file}: eval/new Function is not allowed`);
+    if (/<script[^>]+src=["']https?:/i.test(text) || /import\s[^;]*from\s*["']https?:/.test(text) || /import\(\s*["']https?:/.test(text)) problems.push(`${file}: remote code is not allowed`);
+    if (/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/.test(text)) problems.push(`${file}: network calls are not allowed (no analytics, native messaging only)`);
+  }
+  return problems;
+}
+
+// ---- tiny zip (store) -------------------------------------------------------------------------
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+export function crc32(buf) {
+  let c = 0xffffffff;
+  for (const b of buf) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+export function zip(entries) {
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  for (const { name, data } of entries) {
+    const nameBuf = Buffer.from(name, "utf8");
+    const crc = crc32(data);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0x0800, 6); // UTF-8 names
+    local.writeUInt16LE(0, 8); // store
+    local.writeUInt32LE(0x00210000, 10); // 1980-01-01 00:00
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(nameBuf.length, 26);
+    chunks.push(local, nameBuf, data);
+    const cen = Buffer.alloc(46);
+    cen.writeUInt32LE(0x02014b50, 0);
+    cen.writeUInt16LE(20, 4);
+    cen.writeUInt16LE(20, 6);
+    cen.writeUInt16LE(0x0800, 8);
+    cen.writeUInt16LE(0, 10);
+    cen.writeUInt32LE(0x00210000, 12);
+    cen.writeUInt32LE(crc, 16);
+    cen.writeUInt32LE(data.length, 20);
+    cen.writeUInt32LE(data.length, 24);
+    cen.writeUInt16LE(nameBuf.length, 28);
+    cen.writeUInt32LE(offset, 42);
+    central.push(cen, nameBuf);
+    offset += local.length + nameBuf.length + data.length;
+  }
+  const cenBuf = Buffer.concat(central);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(cenBuf.length, 12);
+  end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...chunks, cenBuf, end]);
+}
+
+function main() {
+  const check = process.argv.includes("--check");
+  const base = JSON.parse(fs.readFileSync(path.join(HERE, "manifest.base.json"), "utf8"));
+  const files = [...listFiles(HERE, "src"), ...listFiles(HERE, "icons")];
+  const sources = Object.fromEntries(files.filter((f) => /\.(js|html)$/.test(f)).map((f) => [f, fs.readFileSync(path.join(HERE, f), "utf8")]));
+  let failed = false;
+  for (const target of TARGETS) {
+    const m = buildManifest(base, target);
+    const problems = checkManifest(m, files, sources);
+    if (problems.length) {
+      failed = true;
+      console.error(`✗ ${target}:\n  - ${problems.join("\n  - ")}`);
+      continue;
+    }
+    console.log(`✓ ${target} manifest OK`);
+    if (check) continue;
+    const out = path.join(DIST, target);
+    fs.rmSync(out, { recursive: true, force: true });
+    const entries = [{ name: "manifest.json", data: Buffer.from(JSON.stringify(m, null, 2)) }];
+    for (const f of files) entries.push({ name: f, data: fs.readFileSync(path.join(HERE, f)) });
+    for (const e of entries) {
+      fs.mkdirSync(path.dirname(path.join(out, e.name)), { recursive: true });
+      fs.writeFileSync(path.join(out, e.name), e.data);
+    }
+    const zipPath = path.join(DIST, `lens-${target}-${m.version}.zip`);
+    fs.writeFileSync(zipPath, zip(entries));
+    console.log(`  → ${path.relative(process.cwd(), out)}  ·  ${path.relative(process.cwd(), zipPath)}`);
+  }
+  if (failed) process.exit(1);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) main();

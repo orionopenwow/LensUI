@@ -156,10 +156,21 @@ pub fn lens_server_value(command: &str) -> Value {
     json!({ "command": command, "args": [STDIO_FLAG] })
 }
 
+/// The document with Lens's entry removed and an empty `mcpServers` dropped, so "added the
+/// whole mcpServers block" and "removed the last server" both compare as unchanged.
 fn without_lens(v: &Value) -> Value {
     let mut c = v.clone();
-    if let Some(s) = c.get_mut("mcpServers").and_then(Value::as_object_mut) {
-        s.remove(SERVER_NAME);
+    if let Some(obj) = c.as_object_mut() {
+        let empty = match obj.get_mut("mcpServers").and_then(Value::as_object_mut) {
+            Some(s) => {
+                s.remove(SERVER_NAME);
+                s.is_empty()
+            }
+            None => false,
+        };
+        if empty {
+            obj.remove("mcpServers");
+        }
     }
     c
 }
@@ -227,7 +238,7 @@ pub fn remove_lens_server(original: &str) -> Result<Option<String>, String> {
     let idx = srv.iter().position(|x| x.key == SERVER_NAME).ok_or("lens-ui vanished")?;
     let new_text = remove_member(trimmed, m.value_start, srv_close, &srv, idx);
     let after: Value = serde_json::from_str(&new_text).map_err(|_| "Lens's edit didn't produce valid JSON; nothing was written.".to_string())?;
-    if after != without_lens(&parsed) {
+    if without_lens(&after) != without_lens(&parsed) || after.get("mcpServers").and_then(|s| s.get(SERVER_NAME)).is_some() {
         return Err("Removing Lens's entry would have changed more; nothing was written.".into());
     }
     Ok(Some(format!("{}{}", bom, new_text)))
@@ -404,7 +415,7 @@ mod tests {
         let cut = original.find("\"git\": {\"command\":\"uvx\"}").unwrap() + "\"git\": {\"command\":\"uvx\"}".len();
         assert_eq!(&out[..cut], &original[..cut]);
         assert!(out.ends_with("    },\n    \"alpha\": true\n}\n"));
-        assert!(out.contains("\n        \"lens-ui\": {\n          \"command\""));
+        assert!(out.contains("\n        \"lens-ui\": {\n          \"args\": [\n            \"--mcp-stdio\"\n          ],\n          \"command\""));
         let v: Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["mcpServers"]["filesystem"]["args"][1], "@x/fs");
         assert_eq!(v["zeta"], 1);
