@@ -1,0 +1,130 @@
+/* Dock system area (Taskbar, Studio, Split, or systemArea: "dock").
+   4 px grid, token colours, tabular numbers. Hover = subtle glow, never a jump. */
+.dock-sys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--lens-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.dock-sys.is-vertical {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dock-sys-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: calc(var(--lens-radius) * 0.75);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 160ms ease;
+}
+
+.dock-sys-btn:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+  border-color: rgb(var(--lens-ink) / 0.1);
+  box-shadow: 0 0 12px rgb(var(--lens-ink) / 0.06);
+}
+
+.dock-sys-btn:active {
+  background: rgb(var(--lens-ink) / 0.12);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k)));
+}
+
+.dock-sys-btn:focus-visible {
+  outline: 1px solid rgb(var(--lens-ink) / 0.45);
+  outline-offset: 1px;
+}
+
+.dock-sys-icon {
+  width: 36px;
+  padding: 0;
+}
+
+.dock-sys-clock {
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  padding: 0 8px;
+  line-height: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dock-sys-time {
+  color: var(--lens-fg-strong, var(--lens-fg));
+}
+
+.dock-sys-date {
+  color: var(--lens-fg-muted, var(--lens-fg));
+}
+
+.dock-sys-bell {
+  position: relative;
+}
+
+.dock-sys-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lens-accent);
+  box-shadow: 0 0 0 2px var(--lens-surface-solid);
+}
+
+.dock-sys .tray-strip {
+  height: 36px;
+}
+
+.dock-sys .sysmod-tb-kbd {
+  height: 24px;
+}
+
+/* Vertical (left/right edge Taskbar and Studio). */
+.dock-sys.is-vertical .dock-sys-btn {
+  width: 44px;
+  padding: 0;
+}
+
+.dock-sys.is-vertical .dock-sys-quick {
+  flex-direction: column;
+  height: auto;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.dock-sys.is-vertical .dock-sys-clock {
+  align-items: center;
+  height: auto;
+  padding: 4px 0;
+  font-size: 11px;
+}
+
+/* Split: the system area is its own small pill; inline: tighter, no clock date. */
+.dock-sys-pill {
+  gap: 4px;
+}
+
+.dock-sys-inline .dock-sys-btn {
+  height: calc(var(--dock-effective-icon-size, 40px));
+}
+
+.dock-sys-inline .dock-sys-icon {
+  width: calc(var(--dock-effective-icon-size, 40px));
+}

@@ -1,0 +1,34 @@
+.dock-style-preview {
+  display: block;
+  border-radius: calc(var(--lens-radius, 8px) * 0.5);
+  overflow: hidden;
+}
+.dock-style-preview .dsp-screen {
+  fill: rgb(var(--lens-ink) / 0.04);
+  stroke: rgb(var(--lens-ink) / 0.14);
+  stroke-width: 1;
+}
+.dock-style-preview.is-selected .dsp-screen {
+  stroke: var(--lens-accent);
+}
+.dock-style-preview .dsp-topbar {
+  fill: rgb(var(--lens-ink) / 0.08);
+}
+.dock-style-preview .dsp-pill,
+.dock-style-preview .dsp-bar {
+  fill: var(--lens-pack-elevated, var(--lens-surface-solid));
+  stroke: rgb(var(--lens-ink) / 0.16);
+  stroke-width: 0.75;
+}
+.dock-style-preview .dsp-ghost {
+  fill: none;
+  stroke: rgb(var(--lens-ink) / 0.22);
+  stroke-width: 0.75;
+  stroke-dasharray: 2 2;
+}
+.dock-style-preview .dsp-icon {
+  fill: rgb(var(--lens-ink) / 0.62);
+}
+.dock-style-preview .dsp-sys {
+  fill: rgb(var(--lens-ink) / 0.38);
+}

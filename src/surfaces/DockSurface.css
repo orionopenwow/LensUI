@@ -1389,3 +1389,650 @@
   right: 100%;
   margin-right: -1px;
 }
+
+/* ======================================================================
+   Dock styles (dock.style). "floating" is the default and uses only the
+   rules above; everything below is scoped to another style class.
+   ====================================================================== */
+
+/* ---------- Slim: thinner centred Dock ---------- */
+.dock-style-slim .dock-pill {
+  gap: 4px;
+  padding: 4px 10px 6px 10px;
+}
+
+.dock-style-slim .dock-icons-row {
+  gap: 4px;
+}
+
+.dock-style-slim .dock-divider {
+  margin: 0 2px;
+}
+
+.dock-style-slim .dock-indicator {
+  bottom: -5px;
+}
+
+.dock-stage.dock-style-slim.dock-edge-top .dock-pill {
+  padding: 6px 10px 4px 10px;
+}
+
+.dock-stage.dock-style-slim.dock-edge-top .dock-indicator {
+  top: -5px;
+}
+
+.dock-stage.dock-style-slim.dock-edge-left .dock-pill,
+.dock-stage.dock-style-slim.dock-edge-right .dock-pill {
+  padding: 10px 5px;
+}
+
+.dock-stage.dock-style-slim.dock-edge-left .dock-indicator {
+  left: -5px;
+}
+
+.dock-stage.dock-style-slim.dock-edge-right .dock-indicator {
+  right: -5px;
+}
+
+/* ---------- Minimal: icons only, background appears on hover ---------- */
+.dock-style-minimal .dock-pill:not(:hover):not(.is-expanded-launcher):not(.is-fused-top):not(.is-menu-open) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.dock-style-minimal .dock-pill {
+  transition:
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+/* Bare icons over a wallpaper need a soft shadow to stay legible; full colour is kept. */
+.dock-style-minimal .dock-pill:not(:hover):not(.is-expanded-launcher) .dock-item {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / calc(0.55 * var(--lens-shade-k))));
+}
+
+.dock-style-minimal .dock-pill:not(:hover):not(.is-expanded-launcher) .dock-divider {
+  opacity: 0;
+}
+
+/* ---------- Split: separate system pill on the right ---------- */
+.dock-split-pill {
+  pointer-events: auto;
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: calc(var(--dock-full-icon-size, 40px) + 20px);
+  padding: 8px 8px 10px 8px;
+  border-radius: var(--lens-radius) var(--lens-radius) calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent) 0%,
+    color-mix(in srgb, var(--lens-surface-solid) var(--lens-glass-opacity-pct), transparent) 100%
+  );
+  border: 1px solid rgb(var(--lens-ink) / 0.11);
+  border-bottom-color: rgb(var(--lens-ink) / 0.07);
+  box-shadow: var(--lens-shadow-dock);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+
+.dock-split-pill.is-hidden {
+  transform: translateY(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dock-split-pill .dock-sys-btn {
+  height: var(--dock-full-icon-size, 40px);
+}
+
+.dock-split-pill .dock-sys-icon {
+  width: var(--dock-full-icon-size, 40px);
+}
+
+.dock-edge-top .dock-split-pill {
+  bottom: auto;
+  top: 0;
+  padding: 10px 8px 8px 8px;
+  border-radius: calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55) var(--lens-radius) var(--lens-radius);
+}
+
+.dock-edge-top .dock-split-pill.is-hidden {
+  transform: translateY(-120%);
+}
+
+.dock-edge-left .dock-split-pill,
+.dock-edge-right .dock-split-pill {
+  right: auto;
+  top: auto;
+  bottom: 12px;
+  height: auto;
+  width: calc(var(--dock-full-icon-size, 40px) + 20px);
+  padding: 8px 9px;
+  justify-content: center;
+}
+
+.dock-edge-left .dock-split-pill {
+  left: 0;
+  border-radius: calc(var(--lens-radius) * 0.55) var(--lens-radius) var(--lens-radius) calc(var(--lens-radius) * 0.55);
+}
+
+.dock-edge-right .dock-split-pill {
+  right: 0;
+  border-radius: var(--lens-radius) calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55) var(--lens-radius);
+}
+
+.dock-edge-left .dock-split-pill.is-hidden {
+  transform: translateX(-120%);
+}
+
+.dock-edge-right .dock-split-pill.is-hidden {
+  transform: translateX(120%);
+}
+
+.dock-edge-left .dock-split-pill .dock-sys-btn,
+.dock-edge-right .dock-split-pill .dock-sys-btn {
+  width: var(--dock-full-icon-size, 40px);
+}
+
+/* ---------- Taskbar & Studio: full-width bars ---------- */
+.dock-stage.is-bar .dock-pill {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100vw;
+  max-width: none;
+  height: calc(var(--dock-full-icon-size, 36px) + 12px);
+  padding: 0 8px;
+  gap: 8px;
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k)));
+}
+
+.dock-stage.is-bar .dock-icons-row {
+  width: auto;
+  grid-column: 2;
+  gap: 4px;
+}
+
+.dock-stage.is-bar .dock-bar-spacer {
+  grid-column: 1;
+}
+
+.dock-stage.is-bar .dock-sys {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Left-aligned bars (Studio, or Taskbar with alignment "left"). */
+.dock-stage.is-bar.dock-align-left .dock-pill {
+  grid-template-columns: auto 1fr;
+}
+
+.dock-stage.is-bar.dock-align-left .dock-bar-spacer {
+  display: none;
+}
+
+.dock-stage.is-bar.dock-align-left .dock-icons-row {
+  grid-column: 1;
+}
+
+.dock-stage.is-bar.dock-align-left .dock-sys {
+  grid-column: 2;
+}
+
+/* While searching, the row's left edge is pinned (inline grid columns) and the field opens to the right. */
+.dock-stage.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill.is-expanded-launcher .dock-bar-spacer {
+  display: block;
+  grid-column: 1;
+}
+
+.dock-stage.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill.is-expanded-launcher .dock-icons-row {
+  grid-column: 2;
+}
+
+.dock-stage.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill.is-expanded-launcher .dock-sys {
+  grid-column: 3;
+}
+
+.dock-stage.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-search-slot.is-open {
+  flex: 0 0 auto;
+  width: 280px;
+  min-width: 0;
+}
+
+.dock-stage.is-bar .dock-divider {
+  margin: 0 2px;
+}
+
+/* Results panel: centred above a centred Taskbar, above the icons on a left-aligned bar. */
+.dock-stage.is-bar.dock-align-left .dock-launcher-drawer {
+  left: 8px;
+  translate: 0 0;
+}
+
+.dock-stage.is-bar .dock-launcher-drawer {
+  width: min(760px, calc(100vw - 40px));
+}
+
+/* Subtle Windows-style hover: a slight lift and glow, no neighbour wave. */
+.dock-stage.is-bar .dock-item-wrap:has(+ .dock-item-wrap:hover) .dock-item,
+.dock-stage.is-bar .dock-item-wrap:hover + .dock-item-wrap .dock-item {
+  transform: none;
+}
+
+.dock-stage.is-bar .dock-item:hover {
+  transform: translateY(-1px);
+  background: rgb(var(--lens-ink) / 0.08);
+  border-color: rgb(var(--lens-ink) / 0.1);
+  box-shadow: 0 0 14px rgb(var(--lens-ink) / 0.07);
+}
+
+.dock-stage.is-bar .dock-item.is-focused {
+  background: rgb(var(--lens-ink) / 0.07);
+  border-color: rgb(var(--lens-ink) / 0.08);
+}
+
+/* Windows-style underline indicators: a short dash when running, a long accent line when focused. */
+.dock-stage.is-bar .dock-indicator {
+  bottom: -4px;
+  width: 6px;
+  height: 3px;
+  background: rgb(var(--lens-ink) / 0.5);
+}
+
+.dock-stage.is-bar .dock-indicator.focused {
+  width: 16px;
+  background: var(--lens-accent, var(--lens-fg));
+}
+
+.dock-stage.is-bar .dock-launcher-btn {
+  color: var(--lens-accent, var(--lens-fg));
+}
+
+.dock-stage.is-bar .dock-tooltip {
+  bottom: calc(100% + 12px);
+}
+
+/* Top edge bar. */
+.dock-stage.is-bar.dock-edge-top .dock-pill {
+  padding: 0 8px;
+  border-top: 0;
+  border-bottom: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: 0 8px 24px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k)));
+}
+
+.dock-stage.is-bar.dock-edge-top .dock-indicator {
+  bottom: auto;
+  top: -4px;
+}
+
+.dock-stage.is-bar.dock-edge-top .dock-tooltip {
+  bottom: auto;
+  top: calc(100% + 12px);
+}
+
+.dock-stage.is-bar.dock-edge-top.dock-align-left .dock-launcher-drawer,
+.dock-stage.is-bar.dock-edge-top .dock-launcher-drawer {
+  top: 100%;
+  bottom: auto;
+}
+
+/* Left / right edge: full-height vertical bars, apps from the top, system area at the bottom. */
+.dock-stage.is-bar.dock-edge-left .dock-pill,
+.dock-stage.is-bar.dock-edge-right .dock-pill {
+  grid-template-columns: none;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  width: calc(var(--dock-full-icon-size, 36px) + 16px);
+  height: 100vh;
+  max-height: none;
+  /* Start below the Top Bar when it is on, so the Launcher button is never covered. */
+  padding: calc(var(--dock-topbar-offset, 0px) + 8px) 0 8px 0;
+  border-top: 0;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-pill {
+  border-right: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: 8px 0 24px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k)));
+}
+
+.dock-stage.is-bar.dock-edge-right .dock-pill {
+  border-left: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: -8px 0 24px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k)));
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-bar-spacer,
+.dock-stage.is-bar.dock-edge-right .dock-bar-spacer {
+  display: none;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-icons-row,
+.dock-stage.is-bar.dock-edge-right .dock-icons-row {
+  grid-column: auto;
+  grid-row: 1;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-sys,
+.dock-stage.is-bar.dock-edge-right .dock-sys {
+  grid-column: auto;
+  grid-row: 3;
+  justify-self: center;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-indicator {
+  left: -4px;
+  bottom: auto;
+  width: 3px;
+  height: 6px;
+}
+
+.dock-stage.is-bar.dock-edge-right .dock-indicator {
+  right: -4px;
+  bottom: auto;
+  width: 3px;
+  height: 6px;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-indicator.focused,
+.dock-stage.is-bar.dock-edge-right .dock-indicator.focused {
+  width: 3px;
+  height: 16px;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-launcher-drawer,
+.dock-stage.is-bar.dock-edge-right .dock-launcher-drawer {
+  top: calc(var(--dock-topbar-offset, 0px) + var(--dock-full-icon-size, 36px) + 9px);
+}
+
+/* Split with app names: the system pill matches the taller app Dock. */
+.dock-stage.show-labels .dock-split-pill {
+  height: calc(var(--dock-full-icon-size, 40px) + 36px);
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-tooltip {
+  left: calc(100% + 12px);
+}
+
+.dock-stage.is-bar.dock-edge-right .dock-tooltip {
+  right: calc(100% + 12px);
+}
+
+/* Bars hide by sliding fully off their edge. */
+.dock-stage.is-bar.dock-edge-left .dock-pill.is-hidden {
+  transform: translateX(-100%);
+}
+
+.dock-stage.is-bar.dock-edge-right .dock-pill.is-hidden {
+  transform: translateX(100%);
+}
+
+.dock-stage.is-bar.dock-edge-top .dock-pill.is-hidden {
+  transform: translateY(-100%);
+}
+
+.dock-stage.is-bar.dock-edge-bottom .dock-pill.is-hidden {
+  transform: translateY(100%);
+}
+
+/* ======================================================================
+   Dock behaviour options. Each is scoped to a stage class that is only
+   present when the option is on, so the default Dock is unchanged.
+   ====================================================================== */
+
+/* ---------- Magnification (dock.magnification) ---------- */
+.dock-stage.mag-on .dock-icons-row > * {
+  translate: var(--mag-x, 0px) 0;
+  transition: translate 110ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock-stage.mag-on .dock-icons-row > .dock-item-wrap > .dock-item {
+  scale: var(--mag-s, 1);
+  transform-origin: bottom center;
+  transition:
+    scale 110ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 175ms ease;
+}
+
+/* Magnified icons replace the hover lift and the neighbour poise. */
+.dock-stage.mag-on .dock-item:hover,
+.dock-stage.mag-on .dock-item-wrap:has(+ .dock-item-wrap:hover) .dock-item,
+.dock-stage.mag-on .dock-item-wrap:hover + .dock-item-wrap .dock-item {
+  transform: none;
+}
+
+.dock-stage.mag-on .dock-tooltip {
+  bottom: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+}
+
+.dock-stage.mag-on.dock-edge-top .dock-icons-row > .dock-item-wrap > .dock-item {
+  transform-origin: top center;
+}
+
+.dock-stage.mag-on.dock-edge-top .dock-tooltip {
+  top: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  bottom: auto;
+}
+
+.dock-stage.mag-on.dock-edge-left .dock-icons-row > *,
+.dock-stage.mag-on.dock-edge-right .dock-icons-row > * {
+  translate: 0 var(--mag-x, 0px);
+}
+
+.dock-stage.mag-on.dock-edge-left .dock-icons-row > .dock-item-wrap > .dock-item {
+  transform-origin: left center;
+}
+
+.dock-stage.mag-on.dock-edge-right .dock-icons-row > .dock-item-wrap > .dock-item {
+  transform-origin: right center;
+}
+
+.dock-stage.mag-on.dock-edge-left .dock-tooltip {
+  left: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+}
+
+.dock-stage.mag-on.dock-edge-right .dock-tooltip {
+  right: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+}
+
+/* ---------- Launch animations (dock.launchAnimation; "lift" = the rule above) ---------- */
+.dock-stage {
+  --dock-bounce-x: 0;
+  --dock-bounce-y: -1;
+}
+
+.dock-stage.dock-edge-top {
+  --dock-bounce-y: 1;
+}
+
+.dock-stage.dock-edge-left {
+  --dock-bounce-x: 1;
+  --dock-bounce-y: 0;
+}
+
+.dock-stage.dock-edge-right {
+  --dock-bounce-x: -1;
+  --dock-bounce-y: 0;
+}
+
+.dock-stage.launch-none .dock-item.is-launching {
+  animation: none;
+}
+
+@keyframes dock-launch-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  28% {
+    translate: calc(var(--dock-bounce-x) * 14px) calc(var(--dock-bounce-y) * 14px);
+  }
+  52% {
+    translate: 0 0;
+  }
+  72% {
+    translate: calc(var(--dock-bounce-x) * 6px) calc(var(--dock-bounce-y) * 6px);
+  }
+  88% {
+    translate: 0 0;
+  }
+}
+
+.dock-stage.launch-bounce .dock-item.is-launching {
+  animation: dock-launch-bounce 720ms cubic-bezier(0.33, 0.9, 0.4, 1);
+}
+
+@keyframes dock-launch-jelly {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  22% {
+    scale: 1.16 0.84;
+  }
+  44% {
+    scale: 0.9 1.12;
+  }
+  66% {
+    scale: 1.05 0.96;
+  }
+  84% {
+    scale: 0.99 1.01;
+  }
+}
+
+.dock-stage.launch-jelly .dock-item.is-launching {
+  transform-origin: bottom center;
+  animation: dock-launch-jelly 560ms cubic-bezier(0.3, 0.8, 0.4, 1);
+}
+
+/* ---------- Minimise / restore pulse (dock.minimizeFeedback) ---------- */
+@keyframes dock-window-pulse {
+  0% {
+    scale: 1;
+    box-shadow: 0 0 0 0 rgb(var(--lens-ink) / 0.28);
+  }
+  35% {
+    scale: 0.9;
+  }
+  70% {
+    scale: 1.05;
+    box-shadow: 0 0 0 6px rgb(var(--lens-ink) / 0);
+  }
+  100% {
+    scale: 1;
+    box-shadow: 0 0 0 0 rgb(var(--lens-ink) / 0);
+  }
+}
+
+.dock-item.is-pulse {
+  animation: dock-window-pulse 440ms cubic-bezier(0.3, 0.8, 0.4, 1);
+}
+
+/* ---------- File drop target (dock.fileDropOpen) ---------- */
+.dock-item-wrap.is-file-drop .dock-item {
+  background: color-mix(in srgb, var(--lens-accent) 22%, transparent);
+  border-color: var(--lens-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lens-accent) 35%, transparent);
+}
+
+/* ---------- App names (dock.showLabels) ---------- */
+/* Centred Docks: a small name under each app icon. */
+.dock-stage.show-labels:not(.is-bar) .dock-item-wrap > .dock-label {
+  display: block;
+  max-width: calc(var(--dock-effective-icon-size, 40px) + 12px);
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: 500;
+  color: var(--lens-fg-muted, var(--lens-fg));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.dock-stage.show-labels:not(.is-bar) .dock-item-wrap .dock-indicator {
+  bottom: -6px;
+}
+
+.dock-stage.show-labels:not(.is-bar) .dock-item-wrap:has(> .dock-label) .dock-tooltip {
+  display: none;
+}
+
+/* Bars: Windows "never combine" — the icon followed by the window or app name. */
+.dock-stage.is-bar .dock-item.has-label {
+  width: auto;
+  min-width: var(--dock-effective-icon-size, 36px);
+  max-width: 184px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 12px 0 calc(var(--dock-effective-icon-size, 36px) * 0.13);
+}
+
+.dock-stage.is-bar .dock-item.has-label > img,
+.dock-stage.is-bar .dock-item.has-label > svg {
+  width: calc(var(--dock-effective-icon-size, 36px) * 0.74);
+  height: calc(var(--dock-effective-icon-size, 36px) * 0.74);
+  flex-shrink: 0;
+}
+
+.dock-stage.is-bar .dock-item.has-label > .dock-label {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-stage.is-bar.show-labels .dock-item-wrap:has(.dock-item.has-label) > .dock-tooltip {
+  display: none;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-item.has-label > .dock-label,
+.dock-stage.is-bar.dock-edge-right .dock-item.has-label > .dock-label {
+  display: none;
+}
+
+.dock-stage.is-bar.dock-edge-left .dock-item.has-label,
+.dock-stage.is-bar.dock-edge-right .dock-item.has-label {
+  width: var(--dock-effective-icon-size, 36px);
+  padding: 0;
+  justify-content: center;
+}
+
+/* ---------- Reduced motion: every Dock animation becomes instant. ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .dock-item.is-launching,
+  .dock-stage .dock-item.is-launching,
+  .dock-item.is-pulse {
+    animation: none !important;
+  }
+
+  .dock-stage.mag-on .dock-icons-row > *,
+  .dock-stage.mag-on .dock-icons-row > .dock-item-wrap > .dock-item,
+  .dock-pill,
+  .dock-split-pill,
+  .dock-sys-btn {
+    transition: none !important;
+  }
+}
