@@ -404,7 +404,6 @@ mod ffi {
             callback: Option<MonitorEnumProc>,
             lparam: isize,
         ) -> i32;
-        pub fn GetMonitorInfoW(hmon: isize, info: *mut MonitorInfoExW) -> i32;
         pub fn GetCursorPos(point: *mut Point) -> i32;
     }
 
@@ -437,7 +436,15 @@ pub fn list_monitors() -> Vec<MonitorInfo> {
             dw_flags: 0,
             sz_device: [0u16; 32],
         };
-        if ffi::GetMonitorInfoW(hmon, &mut info) == 0 {
+        // windows-crate binding (not a local `extern` block) so it can't clash with the other
+        // `GetMonitorInfoW` declarations in the crate (clippy: clashing_extern_declarations).
+        // MONITORINFOEXW starts with MONITORINFO; cbSize tells Windows which one it got.
+        let ok = windows::Win32::Graphics::Gdi::GetMonitorInfoW(
+            windows::Win32::Graphics::Gdi::HMONITOR(hmon as *mut core::ffi::c_void),
+            &mut info as *mut ffi::MonitorInfoExW
+                as *mut windows::Win32::Graphics::Gdi::MONITORINFO,
+        );
+        if !ok.as_bool() {
             return 1; // skip this one, keep enumerating
         }
         let (mut dpi_x, mut dpi_y) = (96u32, 96u32);
