@@ -68,6 +68,9 @@ pub fn spec(name: &str) -> Option<&'static ToolSpec> {
 }
 
 pub fn risk_of(name: &str) -> Risk {
+    if BLOCKED.contains(&name) {
+        return Risk::Blocked;
+    }
     spec(name).map(|t| t.risk).unwrap_or(Risk::Blocked)
 }
 

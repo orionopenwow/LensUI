@@ -195,33 +195,42 @@ impl LocalProvider {
         let mut out = Output::default();
         let mut usage: Option<Usage> = None;
         let mut err: Option<String> = None;
+        // Returns false to stop reading.
+        let mut handle = |item: StreamItem, out: &mut Output, asm: &mut ToolAssembler| -> bool {
+            match &item {
+                StreamItem::Text(t) => {
+                    out.text.push_str(t);
+                    on_text(t);
+                }
+                StreamItem::Usage { input, output } => {
+                    usage = Some(Usage { input_tokens: input.unwrap_or(0), output_tokens: output.unwrap_or(0) })
+                }
+                StreamItem::Stop(r) => out.stop = r.clone(),
+                StreamItem::Error(e) => {
+                    err = Some(e.clone());
+                    return false;
+                }
+                StreamItem::Done => return false,
+                _ => asm.push(&item),
+            }
+            true
+        };
         self.transport.post_stream(&url, &headers, &body, Duration::from_secs(600), &mut |line| {
             if cancel.load(Ordering::Relaxed) {
                 return false;
             }
-            let Some(ev) = parser.push_line(line) else {
-                return true;
-            };
-            for item in decode_openai(&ev) {
-                match &item {
-                    StreamItem::Text(t) => {
-                        out.text.push_str(t);
-                        on_text(t);
-                    }
-                    StreamItem::Usage { input, output } => {
-                        usage = Some(Usage { input_tokens: input.unwrap_or(0), output_tokens: output.unwrap_or(0) })
-                    }
-                    StreamItem::Stop(r) => out.stop = r.clone(),
-                    StreamItem::Error(e) => {
-                        err = Some(e.clone());
-                        return false;
-                    }
-                    StreamItem::Done => return false,
-                    _ => asm.push(&item),
+            match parser.push_line(line) {
+                Some(ev) => decode_openai(&ev).into_iter().all(|it| handle(it, &mut out, &mut asm)),
+                None => true,
+            }
+        })?;
+        if let Some(ev) = parser.finish() {
+            for it in decode_openai(&ev) {
+                if !handle(it, &mut out, &mut asm) {
+                    break;
                 }
             }
-            true
-        })?;
+        }
         if let Some(e) = err {
             return Err(format!("{} reported an error: {}", self.label, e));
         }

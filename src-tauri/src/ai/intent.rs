@@ -51,15 +51,10 @@ impl RawIntent {
             _ => None,
         })
     }
-    pub fn arg_bool(&self, k: &str) -> Option<bool> {
-        self.args.iter().find(|(n, _)| *n == k).and_then(|(_, v)| match v {
-            ArgV::B(b) => Some(*b),
-            _ => None,
-        })
-    }
 }
 
-/// Every action the engine can emit (the UI and docs list these).
+/// Every action the engine can emit (listed in docs/AI.md; tests check parse() stays within it).
+#[cfg_attr(not(test), allow(dead_code))]
 pub const ACTIONS: &[&str] = &[
     "open_app",
     "switch_app",

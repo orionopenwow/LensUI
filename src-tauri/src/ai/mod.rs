@@ -432,6 +432,7 @@ impl Approvals {
         self.pending.lock().unwrap_or_else(|e| e.into_inner()).retain(|_, (r, _)| r != request_id);
     }
 
+    #[cfg(test)]
     pub fn is_pending(&self, call_id: &str) -> bool {
         self.pending.lock().unwrap_or_else(|e| e.into_inner()).contains_key(call_id)
     }

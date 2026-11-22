@@ -141,7 +141,7 @@ pub(crate) fn ai_ask(app: AppHandle, req: AiRequest) -> Result<String, String> {
         return Err("Lens Intelligence is off. Turn it on in Lens settings › AI.".into());
     }
     let provider_id = req.provider.clone().filter(|p| !p.is_empty()).unwrap_or_else(|| cfg.provider.clone());
-    if !["script", "local", "claude"].contains(&provider_id.as_str()) {
+    if provider_id == "off" || !ai::PROVIDER_IDS.contains(&provider_id.as_str()) {
         return Err("Unknown AI provider.".into());
     }
     // Refuse early (no thread, no request id) when the answer is already known.

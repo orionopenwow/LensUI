@@ -132,6 +132,13 @@ impl Provider for ClaudeProvider {
                 None => true,
             }
         })?;
+        if let Some(ev) = parser.finish() {
+            for it in decode_anthropic(&ev) {
+                if !handle(it, &mut out, &mut usage, &mut asm) {
+                    break;
+                }
+            }
+        }
         if let Some(e) = stream_err {
             return Err(format!("Claude reported an error: {}", e));
         }
