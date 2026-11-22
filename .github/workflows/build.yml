@@ -62,8 +62,9 @@ jobs:
         working-directory: src-tauri
         run: cargo check --all-targets
 
-      # -D warnings, minus an explicit allow-list of lints the existing code base trips today.
-      # Shrink this list over time; correctness/suspicious lints always fail the build.
+      # -D warnings: every rustc warning (dead code, unused imports, ...) fails the build. The
+      # remaining allow-list covers clippy's style-level groups only; shrink it over time.
+      # correctness / suspicious lints always fail the build.
       - name: cargo clippy
         working-directory: src-tauri
         run: >
@@ -71,10 +72,6 @@ jobs:
           -D warnings
           -D clippy::correctness
           -D clippy::suspicious
-          -A dead_code
-          -A unused_imports
-          -A unused_variables
-          -A unused_mut
           -A clippy::style
           -A clippy::complexity
           -A clippy::perf
