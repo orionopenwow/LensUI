@@ -1,0 +1,53 @@
+/** Windows Settings pages reachable by ms-settings: URI, with the words people actually type. */
+export interface SettingsPage {
+  title: string;
+  uri: string;
+  keywords: string;
+}
+
+export const SETTINGS_PAGES: SettingsPage[] = [
+  { title: "Display", uri: "ms-settings:display", keywords: "screen resolution scale monitor brightness hdr refresh rate" },
+  { title: "Night light", uri: "ms-settings:nightlight", keywords: "blue light warm night mode" },
+  { title: "Sound", uri: "ms-settings:sound", keywords: "audio volume speakers headphones output input microphone" },
+  { title: "Notifications", uri: "ms-settings:notifications", keywords: "alerts toasts do not disturb focus" },
+  { title: "Focus", uri: "ms-settings:focus", keywords: "focus assist do not disturb dnd" },
+  { title: "Power & battery", uri: "ms-settings:powersleep", keywords: "sleep battery saver power mode energy" },
+  { title: "Storage", uri: "ms-settings:storagesense", keywords: "disk space cleanup storage sense drives" },
+  { title: "Multitasking", uri: "ms-settings:multitasking", keywords: "snap windows alt tab virtual desktops" },
+  { title: "Clipboard", uri: "ms-settings:clipboard", keywords: "copy paste history" },
+  { title: "About this PC", uri: "ms-settings:about", keywords: "system info specs device name rename pc windows version" },
+  { title: "Bluetooth & devices", uri: "ms-settings:bluetooth", keywords: "bluetooth pair headphones devices" },
+  { title: "Printers & scanners", uri: "ms-settings:printers", keywords: "printer scanner print" },
+  { title: "Mouse", uri: "ms-settings:mousetouchpad", keywords: "mouse pointer speed scroll" },
+  { title: "Touchpad", uri: "ms-settings:devices-touchpad", keywords: "touchpad trackpad gestures" },
+  { title: "Wi-Fi", uri: "ms-settings:network-wifi", keywords: "wifi wireless network internet" },
+  { title: "Ethernet", uri: "ms-settings:network-ethernet", keywords: "ethernet wired network lan" },
+  { title: "VPN", uri: "ms-settings:network-vpn", keywords: "vpn private network" },
+  { title: "Proxy", uri: "ms-settings:network-proxy", keywords: "proxy network" },
+  { title: "Airplane mode", uri: "ms-settings:network-airplanemode", keywords: "flight mode airplane" },
+  { title: "Background", uri: "ms-settings:personalization-background", keywords: "wallpaper desktop background picture" },
+  { title: "Colors", uri: "ms-settings:personalization-colors", keywords: "accent color dark mode light mode theme" },
+  { title: "Themes", uri: "ms-settings:themes", keywords: "theme cursor icons" },
+  { title: "Lock screen", uri: "ms-settings:lockscreen", keywords: "lock screen picture" },
+  { title: "Fonts", uri: "ms-settings:fonts", keywords: "fonts typeface" },
+  { title: "Taskbar", uri: "ms-settings:taskbar", keywords: "taskbar tray" },
+  { title: "Installed apps", uri: "ms-settings:appsfeatures", keywords: "uninstall programs apps features remove" },
+  { title: "Default apps", uri: "ms-settings:defaultapps", keywords: "default browser file associations open with" },
+  { title: "Startup apps", uri: "ms-settings:startupapps", keywords: "startup boot launch at login" },
+  { title: "Your account", uri: "ms-settings:yourinfo", keywords: "account profile picture microsoft account" },
+  { title: "Sign-in options", uri: "ms-settings:signinoptions", keywords: "password pin windows hello fingerprint face" },
+  { title: "Date & time", uri: "ms-settings:dateandtime", keywords: "clock time zone date" },
+  { title: "Language & region", uri: "ms-settings:regionlanguage", keywords: "language region locale" },
+  { title: "Typing & keyboard", uri: "ms-settings:typing", keywords: "keyboard autocorrect typing input" },
+  { title: "Gaming", uri: "ms-settings:gaming-gamemode", keywords: "game mode xbox game bar" },
+  { title: "Accessibility", uri: "ms-settings:easeofaccess", keywords: "accessibility narrator magnifier high contrast text size" },
+  { title: "Privacy & security", uri: "ms-settings:privacy", keywords: "privacy permissions security" },
+  { title: "Camera permissions", uri: "ms-settings:privacy-webcam", keywords: "camera webcam privacy" },
+  { title: "Microphone permissions", uri: "ms-settings:privacy-microphone", keywords: "microphone mic privacy" },
+  { title: "Location", uri: "ms-settings:privacy-location", keywords: "location gps privacy" },
+  { title: "Windows Security", uri: "windowsdefender:", keywords: "defender antivirus virus firewall security" },
+  { title: "Windows Update", uri: "ms-settings:windowsupdate", keywords: "update upgrade patches drivers" },
+  { title: "Recovery", uri: "ms-settings:recovery", keywords: "reset pc recovery restore" },
+  { title: "Troubleshoot", uri: "ms-settings:troubleshoot", keywords: "troubleshooter fix problems" },
+  { title: "For developers", uri: "ms-settings:developers", keywords: "developer mode sudo terminal" },
+];

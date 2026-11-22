@@ -1,0 +1,12 @@
+{
+  "id": "cpu-sparkline",
+  "name": "CPU & Memory",
+  "version": "1.0.0",
+  "author": "Lens UI",
+  "description": "Live CPU sparkline and memory use for the Top Bar.",
+  "slot": "topbar-right",
+  "entry": "index.html",
+  "permissions": ["telemetry"],
+  "refreshIntervalMs": 2000,
+  "width": 150
+}

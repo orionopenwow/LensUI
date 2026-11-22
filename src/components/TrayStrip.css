@@ -1,0 +1,51 @@
+/* System tray strip (Top Bar). App icons keep their full color, per DESIGN.md. */
+.tray-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.tray-strip-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--lens-fg);
+  transition:
+    background 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tray-strip-item:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  transform: scale(1.12);
+}
+
+.tray-strip-item:active {
+  background: rgb(var(--lens-ink) / 0.16);
+}
+
+.tray-strip-item:focus-visible {
+  outline: 1px solid rgb(var(--lens-ink) / 0.45);
+  outline-offset: 1px;
+}
+
+.tray-strip-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.tray-strip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.55);
+}

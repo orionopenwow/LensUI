@@ -1,0 +1,402 @@
+.pal-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.pal-root.is-top-left {
+  padding: 0;
+}
+
+.pal-root.is-bottom-dock {
+  padding: 0;
+}
+
+@keyframes pal-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scaleY(0.92);
+    transform-origin: bottom center;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    transform-origin: bottom center;
+  }
+}
+
+.pal-shell {
+  flex: 1;
+  min-height: 0;
+  background: var(--lens-bg-surface);
+  backdrop-filter: blur(var(--lens-blur)) saturate(1.3);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pal-rise-in 210ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pal-root.is-top-left .pal-shell {
+  border-radius: 0 0 0 var(--lens-radius);
+  border-top: none;
+  border-right: none;
+}
+
+.pal-root.is-bottom-dock .pal-shell {
+  border-radius: var(--lens-radius) var(--lens-radius) 0 0;
+  border-bottom: none;
+}
+
+/* Filter Pill Row */
+.pal-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px 10px 16px;
+}
+
+.pal-filter-pill {
+  flex: 1;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgb(var(--lens-ink) / 0.055);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  color: var(--lens-fg-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.pal-filter-pill:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  border-color: rgb(var(--lens-ink) / 0.16);
+  color: var(--lens-fg);
+}
+
+.pal-filter-pill.active {
+  background: var(--lens-fg);
+  border-color: var(--lens-fg);
+  color: var(--lens-on-fg);
+}
+
+.pal-filter-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.09);
+  color: var(--lens-fg-secondary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.pal-filter-pill.active .pal-filter-count {
+  background: rgb(9 9 11 / 0.14);
+  color: var(--lens-on-fg);
+}
+
+/* Launcher Home Grid (parity with concept mockup) */
+.pal-home {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 16px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pal-two-col {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 14px;
+  min-height: 0;
+}
+
+.pal-col-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lens-fg);
+  margin-bottom: 7px;
+  letter-spacing: -0.01em;
+}
+
+.pal-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pal-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.pal-recent-row:hover,
+.pal-recent-row.first {
+  background: rgb(var(--lens-ink) / 0.065);
+  border-color: rgb(var(--lens-ink) / 0.08);
+}
+
+.pal-recent-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pal-recent-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.pal-recent-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--lens-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pal-recent-age {
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* 2x2 Matte-Glassware Folder Grid */
+.pal-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.pal-folder-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 11px 8px 9px 8px;
+  border-radius: 12px;
+  background: rgb(var(--lens-ink) / 0.045);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), background 140ms ease, border-color 140ms ease;
+}
+
+.pal-folder-card:hover {
+  transform: translateY(-2px);
+  background: rgb(var(--lens-ink) / 0.09);
+  border-color: rgb(var(--lens-ink) / 0.16);
+}
+
+.pal-folder-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--lens-fg-2);
+}
+
+/* Bottom 6-Icon Apps Row */
+.pal-apps-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pal-app-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px 8px 6px;
+  border-radius: 12px;
+  background: rgb(var(--lens-ink) / 0.045);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), background 140ms ease, border-color 140ms ease;
+}
+
+.pal-app-card:hover {
+  transform: translateY(-2px);
+  background: rgb(var(--lens-ink) / 0.1);
+  border-color: rgb(var(--lens-ink) / 0.18);
+}
+
+.pal-app-icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pal-app-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.pal-app-label {
+  width: 100%;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--lens-fg-3);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fused Bottom Stretched Search Bar (0px gap!) */
+.pal-dock-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
+  background: rgb(0 0 0 / calc(0.42 * var(--lens-well-k)));
+  border-top: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / calc(0.55 * var(--lens-shade-k)));
+}
+
+.pal-dock-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--lens-fg);
+  caret-color: var(--lens-fg);
+  user-select: text;
+}
+
+.pal-dock-search-input::placeholder {
+  color: rgb(var(--lens-ink) / 0.42);
+}
+
+.pal-esc-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgb(var(--lens-ink) / 0.06);
+  border: 1px solid rgb(var(--lens-ink) / 0.12);
+  cursor: pointer;
+}
+
+.pal-esc-badge:hover {
+  background: rgb(var(--lens-ink) / 0.12);
+  color: var(--lens-fg);
+}
+
+/* Filtered Search Results List */
+.pal-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pal-result-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pal-result-row.selected {
+  background: rgb(var(--lens-ink) / 0.1);
+  border-color: rgb(var(--lens-ink) / 0.16);
+}
+
+/* ---- Unified search results (src/search) ---- */
+.pal-result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lens-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pal-result-sub {
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pal-result-badge {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgb(var(--lens-ink) / 0.06);
+  font-variant-numeric: tabular-nums;
+}
+
+.pal-result-row.kind-calc .pal-result-title {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Waiting for the confirming second Enter (shell commands, scripts) */
+.pal-result-row.armed {
+  border-color: rgb(245 158 11 / 0.55);
+  background: rgb(245 158 11 / 0.1);
+}
+
+.pal-result-row.armed .pal-result-sub,
+.pal-result-row.armed .pal-result-badge {
+  color: #b45309;
+}
+
+:root:not([data-scheme="light"]) .pal-result-row.armed .pal-result-sub,
+:root:not([data-scheme="light"]) .pal-result-row.armed .pal-result-badge {
+  color: #fbbf24;
+}

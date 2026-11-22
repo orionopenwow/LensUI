@@ -1,0 +1,134 @@
+# Lens UI CI
+#  * windows  — the real build: frontend type-check + bundle, Rust check / clippy / unit tests,
+#               hook DLL rebuilt from source, and a full installer build on version tags.
+#  * parity   — renders every surface in a headless browser with mocked Tauri APIs and fails on any
+#               crash, console error or empty surface; screenshots are uploaded as an artifact.
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    name: Windows build
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            src-tauri
+            src-tauri/lens-dwm-hook
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # tsc + vite build. Also produces dist/, which tauri::generate_context! embeds at compile time.
+      - name: Type-check and bundle frontend
+        run: bun run build
+
+      # Never ship the committed binary: rebuild the injected hook DLL from its source and embed that.
+      - name: Rebuild lens_dwm_hook.dll from source
+        shell: pwsh
+        run: |
+          cargo build --release --manifest-path src-tauri/lens-dwm-hook/Cargo.toml
+          Copy-Item src-tauri/lens-dwm-hook/target/release/lens_dwm_hook.dll src-tauri/lens_dwm_hook.dll -Force
+
+      # No --locked yet: Cargo.toml gained features this session and Cargo.lock must be refreshed by one
+      # local build first. Add --locked to these three steps once the updated Cargo.lock is committed.
+      - name: cargo check
+        working-directory: src-tauri
+        run: cargo check --all-targets
+
+      # -D warnings, minus an explicit allow-list of lints the existing code base trips today.
+      # Shrink this list over time; correctness/suspicious lints always fail the build.
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: >
+          cargo clippy --all-targets --
+          -D warnings
+          -D clippy::correctness
+          -D clippy::suspicious
+          -A dead_code
+          -A unused_imports
+          -A unused_variables
+          -A unused_mut
+          -A clippy::style
+          -A clippy::complexity
+          -A clippy::perf
+          -A clippy::too_many_arguments
+          -A clippy::missing_safety_doc
+
+      - name: cargo test (pure-logic unit tests)
+        working-directory: src-tauri
+        run: cargo test --lib
+
+      - name: Build installer (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bun run tauri build
+
+      - name: Upload installer (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: lens-ui-installer
+          path: |
+            src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.exe
+          if-no-files-found: error
+
+  parity:
+    name: Visual parity (headless render)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+
+      - name: Build harness
+        run: node tools/parity/build.mjs
+
+      - name: Render every surface
+        run: node tools/parity/shoot.mjs
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-screenshots
+          path: tools/parity/shots/
+          if-no-files-found: warn

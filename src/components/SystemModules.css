@@ -1,0 +1,480 @@
+/* System modules: Wi-Fi, Bluetooth, battery, keyboard layout, account, audio devices.
+   Shared by Quick Settings and the Top Bar indicators. Tokens only (works in light packs). */
+
+.sysmod-card {
+  border-radius: max(4px, calc(var(--lens-radius) - 3px));
+  background: rgb(var(--lens-ink) / 0.04);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sysmod-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sysmod-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sysmod-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+}
+
+.sysmod-sub {
+  font-size: 10.5px;
+  color: var(--lens-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sysmod-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sysmod-icon-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+
+.sysmod-icon-btn:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+  color: var(--lens-fg);
+}
+
+.sysmod-icon-btn.is-busy svg {
+  animation: sysmod-spin 900ms linear infinite;
+}
+
+@keyframes sysmod-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sysmod-switch {
+  width: 38px;
+  height: 21px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.14);
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.sysmod-switch.on {
+  background: var(--lens-fg);
+}
+
+.sysmod-switch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.sysmod-switch-knob {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--lens-fg);
+  transition: left 150ms cubic-bezier(0.22, 1, 0.36, 1), background 150ms ease;
+}
+
+.sysmod-switch.on .sysmod-switch-knob {
+  left: 19.5px;
+  background: var(--lens-on-fg);
+}
+
+.sysmod-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 196px;
+  overflow-y: auto;
+  margin: 0 -4px;
+}
+
+.sysmod-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 6px;
+  border-radius: 8px;
+  min-width: 0;
+  color: var(--lens-fg-secondary);
+  font-size: 12px;
+  text-align: left;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sysmod-row.is-clickable {
+  cursor: pointer;
+}
+
+.sysmod-row.is-clickable:hover,
+.sysmod-row.is-open {
+  background: rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg);
+}
+
+.sysmod-row.is-active {
+  color: var(--lens-fg);
+}
+
+.sysmod-row-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--lens-fg-secondary);
+}
+
+.sysmod-row.is-active .sysmod-row-icon {
+  color: var(--lens-fg);
+}
+
+.sysmod-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.sysmod-row-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sysmod-row-meta {
+  font-size: 10.5px;
+  color: var(--lens-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sysmod-row-trail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  color: var(--lens-fg-muted);
+}
+
+.sysmod-pill-btn {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgb(var(--lens-ink) / 0.08);
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease;
+}
+
+.sysmod-pill-btn:hover {
+  background: rgb(var(--lens-ink) / 0.14);
+}
+
+.sysmod-pill-btn.is-primary {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+  border-color: transparent;
+}
+
+.sysmod-pill-btn.is-danger {
+  background: rgb(255 95 87 / 0.16);
+  border-color: rgb(255 95 87 / 0.4);
+  color: var(--lens-danger, #fb7185);
+}
+
+.sysmod-pill-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sysmod-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+  white-space: nowrap;
+}
+
+.sysmod-badge.is-good {
+  background: rgb(52 211 153 / 0.16);
+  color: var(--lens-positive, #4ade80);
+}
+
+.sysmod-note {
+  font-size: 10.5px;
+  color: var(--lens-fg-muted);
+  line-height: 1.4;
+}
+
+.sysmod-error {
+  font-size: 10.5px;
+  color: var(--lens-danger, #fb7185);
+}
+
+.sysmod-footer {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sysmod-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lens-link, #60a5fa);
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.sysmod-link:hover {
+  color: var(--lens-link-hover, #93c5fd);
+}
+
+/* Segmented control (power mode) */
+.sysmod-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+}
+
+.sysmod-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 26px;
+  border-radius: 6.5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sysmod-seg-btn:hover {
+  color: var(--lens-fg);
+}
+
+.sysmod-seg-btn.active {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+}
+
+/* Battery meter */
+.sysmod-battery-big {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--lens-fg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.sysmod-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.1);
+  overflow: hidden;
+}
+
+.sysmod-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #34d399;
+  transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sysmod-meter-fill.is-low {
+  background: #fbbf24;
+}
+
+.sysmod-meter-fill.is-critical {
+  background: #ff5f57;
+}
+
+/* Keyboard chips */
+.sysmod-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sysmod-chip {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid rgb(var(--lens-ink) / 0.09);
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sysmod-chip:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+
+.sysmod-chip.active {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+  border-color: transparent;
+}
+
+/* Account */
+.sysmod-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lens-on-fg);
+  background: var(--lens-fg);
+  flex-shrink: 0;
+}
+
+.sysmod-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sysmod-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid rgb(var(--lens-ink) / 0.09);
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.sysmod-action:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+
+.sysmod-action.is-armed {
+  background: rgb(255 95 87 / 0.18);
+  border-color: rgb(255 95 87 / 0.45);
+  color: var(--lens-fg);
+}
+
+/* Audio device radio */
+.sysmod-radio {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(var(--lens-ink) / 0.35);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sysmod-row.is-active .sysmod-radio {
+  border-color: var(--lens-fg);
+}
+
+.sysmod-row.is-active .sysmod-radio::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--lens-fg);
+}
+
+/* ---- Top Bar indicators (also loaded inside the Top Bar window) ---- */
+.sysmod-tb-battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.sysmod-tb-battery:hover,
+.sysmod-tb-kbd:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+}
+
+.sysmod-tb-kbd {
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--lens-fg);
+  border: 1px solid rgb(var(--lens-ink) / 0.18);
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sysmod-icon-btn.is-busy svg {
+    animation: none;
+  }
+  .sysmod-meter-fill,
+  .sysmod-switch-knob {
+    transition: none;
+  }
+}

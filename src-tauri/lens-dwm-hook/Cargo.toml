@@ -1,0 +1,24 @@
+[package]
+name = "lens-dwm-hook"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "lens_dwm_hook"
+crate-type = ["cdylib"]
+
+[dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_SystemServices",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1

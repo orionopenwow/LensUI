@@ -1,0 +1,225 @@
+/* Plugin slots and manager. Uses theme tokens only, so every pack (dark or light) works. */
+
+.lens-plugin-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lens-plugin-slot--widgets {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.lens-plugin-frame {
+  display: block;
+  border: 0;
+  background: transparent;
+  color-scheme: normal;
+}
+
+.lens-plugin-bar-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  border-radius: 7px;
+  overflow: hidden;
+  transition: background 140ms ease;
+}
+
+.lens-plugin-bar-item:hover {
+  background: rgb(var(--lens-ink) / 0.06);
+}
+
+.lens-plugin-dock-tile {
+  overflow: hidden;
+  padding: 0;
+}
+
+.lens-plugin-card {
+  border-radius: 12px;
+  background: rgb(var(--lens-ink) / 0.04);
+  border: 1px solid var(--lens-border);
+  overflow: hidden;
+}
+
+.lens-plugin-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lens-fg-muted);
+}
+
+.lens-plugin-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #fbbf24;
+  box-shadow: 0 0 0 1.5px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)));
+  pointer-events: none;
+}
+
+.lens-plugin-stopped {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--lens-danger, #fb7185);
+}
+
+.lens-plugin-approval {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--lens-border);
+  font-size: 11.5px;
+  color: var(--lens-fg-secondary);
+}
+
+.lens-plugin-approval span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Manager ---- */
+
+.lens-pm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lens-pm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.03);
+  border: 1px solid var(--lens-border);
+}
+
+.lens-pm-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lens-pm-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lens-pm-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lens-pm-meta {
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lens-pm-perms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.lens-pm-perm {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.06);
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+}
+
+.lens-pm-perm.is-sensitive {
+  color: #b45309;
+  background: rgb(251 191 36 / 0.12);
+  border-color: rgb(251 191 36 / 0.35);
+}
+
+:root:not([data-scheme="light"]) .lens-pm-perm.is-sensitive {
+  color: #fbbf24;
+}
+
+.lens-pm-error {
+  font-size: 11px;
+  color: var(--lens-danger, #fb7185);
+}
+
+.lens-pm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lens-pm-status {
+  font-size: 11.5px;
+  color: var(--lens-fg-secondary);
+}
+
+.lens-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.lens-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.03);
+  border: 1px solid var(--lens-border);
+}
+
+.lens-gallery-preview {
+  height: 64px;
+  border-radius: 7px;
+  background: rgb(var(--lens-ink) / 0.06);
+  background-size: cover;
+  background-position: center;
+}
+
+.lens-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

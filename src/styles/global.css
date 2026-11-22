@@ -1,0 +1,489 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  color: var(--lens-fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--lens-ink) / 0.14);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--lens-ink) / 0.25);
+}
+
+/* Shared Machined Obsidian Glass Surface (dense, weighted, zero flimsy feel) */
+.lens-glass {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lens-pack-elevated, #101015) var(--lens-glass-opacity-pct), transparent) 0%,
+    var(--lens-bg-surface) 100%
+  );
+  backdrop-filter: blur(28px) saturate(1.15);
+  -webkit-backdrop-filter: blur(28px) saturate(1.15);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel);
+}
+
+/* Traffic Lights (Green -> Yellow -> Red default) */
+.traffic-lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.traffic-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), filter 150ms ease, opacity 150ms ease;
+  position: relative;
+}
+
+.traffic-btn:hover {
+  transform: scale(1.14);
+  filter: brightness(1.1);
+}
+
+.traffic-btn:active {
+  transform: scale(0.92);
+}
+
+.traffic-btn .glyph {
+  opacity: 0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgb(0 0 0 / 0.72);
+  transition: opacity 120ms ease;
+}
+
+.traffic-lights:hover .traffic-btn .glyph {
+  opacity: 1;
+}
+
+/* Classic Traffic Lights */
+.traffic-style-traffic-classic .tl-green {
+  background: #28c840;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2);
+}
+.traffic-style-traffic-classic .tl-yellow {
+  background: #febc2e;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2);
+}
+.traffic-style-traffic-classic .tl-red {
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2);
+}
+
+/* Muted Obsidian Traffic Lights */
+.traffic-style-traffic-muted .tl-green {
+  background: #2f7d47;
+  border: 1px solid #3ec969;
+}
+.traffic-style-traffic-muted .tl-yellow {
+  background: #8f6c1e;
+  border: 1px solid #f0be4a;
+}
+.traffic-style-traffic-muted .tl-red {
+  background: #8f2d2a;
+  border: 1px solid #f06761;
+}
+
+/* Minimal Dots */
+.traffic-style-minimal-dots .traffic-btn {
+  width: 13px;
+  height: 13px;
+  opacity: 0.9;
+}
+.traffic-style-minimal-dots .tl-green { background: #34d399; }
+.traffic-style-minimal-dots .tl-yellow { background: #fbbf24; }
+.traffic-style-minimal-dots .tl-red { background: #fb7185; }
+
+/* Accent Pills */
+.traffic-style-accent-pills .traffic-btn {
+  width: 18px;
+  height: 10px;
+  border-radius: 5px;
+}
+.traffic-style-accent-pills .tl-green { background: #22c55e; }
+.traffic-style-accent-pills .tl-yellow { background: #eab308; }
+.traffic-style-accent-pills .tl-red { background: #ef4444; }
+
+/* ==================== CALM WEIGHTED HYDRAULIC GLIDE ENGINE ==================== */
+.lens-glide-dock {
+  transform-origin: bottom center;
+  will-change: transform, opacity;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lens-glide-dock.is-pre-open {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: none !important;
+}
+
+.lens-glide-dock.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lens-glide-dock.is-closing {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    transform 190ms cubic-bezier(0.32, 0, 0.67, 0),
+    opacity 170ms ease-in;
+}
+
+.lens-glide-top {
+  transform-origin: top right;
+  will-change: transform, opacity;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lens-glide-top.is-pre-open {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: none !important;
+}
+
+.lens-glide-top.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lens-glide-top.is-closing {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition:
+    transform 180ms cubic-bezier(0.32, 0, 0.67, 0),
+    opacity 160ms ease-in;
+}
+
+.lens-glide-right {
+  transform-origin: center right;
+  will-change: transform, opacity;
+  transition:
+    transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lens-glide-right.is-pre-open {
+  opacity: 0;
+  transform: translateX(14px);
+  transition: none !important;
+}
+
+.lens-glide-right.is-open {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.lens-glide-right.is-closing {
+  opacity: 0;
+  transform: translateX(14px);
+  pointer-events: none;
+  transition:
+    transform 180ms cubic-bezier(0.32, 0, 0.67, 0),
+    opacity 160ms ease-in;
+}
+
+@keyframes lens-tab-glide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lens-tab-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: lens-tab-glide-in 210ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==================== POISED, WEIGHTED HOVER & TACTILE PRESS (ZERO AGGRESSIVE JUMPING) ==================== */
+.cc-nav-btn,
+.cc-chip,
+.cc-btn,
+.cc-btn-ghost,
+.cc-btn-primary,
+.cc-theme-card,
+.pal-filter-pill,
+.pal-recent-row,
+.pal-folder-card,
+.pal-result-row,
+.qs-tile,
+.qs-win-item,
+.qs-expand-btn,
+.qs-popout-btn,
+.qs-seg-btn,
+.qs-preset-card,
+.dock-ctx-item,
+.topbar-clock,
+.lens-pill-bar,
+.lens-rotary-knob {
+  transition:
+    transform 180ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 180ms ease,
+    color 150ms ease,
+    filter 160ms ease;
+}
+
+/* Small buttons & list rows: crisp border & depth illumination with ZERO vertical jumping */
+.cc-chip:hover,
+.cc-btn:hover,
+.cc-btn-ghost:hover,
+.cc-btn-primary:hover,
+.pal-filter-pill:hover,
+.pal-recent-row:hover,
+.pal-result-row:hover,
+.qs-win-item:hover,
+.qs-expand-btn:hover,
+.qs-popout-btn:hover,
+.qs-seg-btn:hover,
+.topbar-clock:hover {
+  border-color: rgb(var(--lens-ink) / 0.2);
+  box-shadow: 0 3px 10px rgb(0 0 0 / calc(0.38 * var(--lens-shade-k)));
+}
+
+/* Larger physical surfaces (cards, tiles, pill sliders, rotary knobs): ultra-subtle 0.5px poise */
+.cc-theme-card:hover,
+.pal-folder-card:hover,
+.qs-tile:hover,
+.qs-preset-card:hover,
+.lens-pill-bar:hover {
+  transform: translateY(-0.5px);
+  border-color: rgb(var(--lens-ink) / 0.2) !important;
+  box-shadow: 0 6px 16px rgb(0 0 0 / calc(0.48 * var(--lens-shade-k)));
+}
+
+.lens-pill-bar.is-dragging {
+  transform: translateY(0.5px);
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / calc(0.65 * var(--lens-shade-k)));
+  transition-duration: 70ms;
+}
+
+.lens-rotary-knob:hover {
+  transform: translateY(-0.5px) scale(1.015);
+  filter: drop-shadow(0 5px 12px rgb(0 0 0 / calc(0.52 * var(--lens-shade-k))));
+}
+
+.lens-rotary-knob:active {
+  transform: scale(0.985);
+  transition-duration: 70ms;
+}
+
+.cc-nav-btn:active,
+.cc-chip:active,
+.cc-btn:active,
+.cc-btn-ghost:active,
+.cc-btn-primary:active,
+.cc-theme-card:active,
+.pal-filter-pill:active,
+.pal-recent-row:active,
+.pal-folder-card:active,
+.pal-result-row:active,
+.qs-tile:active,
+.qs-win-item:active,
+.qs-expand-btn:active,
+.qs-popout-btn:active,
+.qs-seg-btn:active,
+.qs-preset-card:active,
+.dock-ctx-item:active,
+.topbar-clock:active {
+  transform: scale(0.985);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / calc(0.6 * var(--lens-shade-k)));
+  transition-duration: 65ms;
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Keyboard focus ring on every interactive element. :where() keeps specificity at zero so no surface
+   style is overridden, and :focus-visible means mouse clicks never show it — only keyboard focus does.
+   Text inputs are left out on purpose: their wells already change when focused and show a caret. */
+:where(
+    button,
+    a[href],
+    select,
+    summary,
+    [role="button"],
+    [role="tab"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="menuitem"],
+    [role="option"],
+    [role="slider"],
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+  outline: var(--lens-focus-width) solid var(--lens-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Inside containers that clip (overflow: hidden), draw the ring inside the element instead. */
+:where(.dock-search-inline, .topbar-search-well, .qs-seg-row, .pal-filter-bar) :focus-visible {
+  outline-offset: -2px;
+}
+
+/* Reduced motion: follows Windows "Animation effects" off (prefers-reduced-motion) unless the Lens
+   setting forces full motion (data-motion="full"), and is forced on by the Lens setting
+   (data-motion="reduce"). Durations collapse to 1ms instead of 0 so transitionend / animationend
+   still fire for any code waiting on them. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Lens high-contrast setting: stronger edges on every panel, no blur, no glow text. */
+:root[data-contrast="high"] :where(
+    .lens-glass,
+    .dock-pill,
+    .dock-launcher-drawer,
+    .dock-launcher-card,
+    .topbar,
+    .cc-card,
+    .qs-card,
+    .qs-tile,
+    .cc-chip,
+    .qs-seg-btn,
+    .pal-shell
+  ) {
+  border-color: var(--lens-border-strong) !important;
+}
+
+:root[data-contrast="high"] * {
+  text-shadow: none !important;
+}
+
+:root[data-contrast="high"] :where(.lens-glass, .dock-pill, .topbar, .pal-shell, .dock-launcher-drawer) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Windows contrast themes. The browser already swaps text/background/border colours for system ones;
+   these rules restore the edges and states that Lens normally draws with shadows and translucent fills. */
+@media (forced-colors: active) {
+  :where(
+      .lens-glass,
+      .dock-pill,
+      .dock-launcher-drawer,
+      .dock-launcher-card,
+      .topbar,
+      .cc-card,
+      .qs-card,
+      .qs-tile,
+      .pal-shell,
+      .dock-item,
+      .cc-chip,
+      .qs-seg-btn,
+      .topbar-search-well,
+      .dock-search-inline.is-open
+    ) {
+    border: 1px solid CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  /* Selected / on / running states must stay distinguishable without colour fills. */
+  :where(
+      .active,
+      .is-active,
+      .on,
+      .is-running,
+      [aria-pressed="true"],
+      [aria-selected="true"],
+      [aria-checked="true"]
+    ) {
+    forced-color-adjust: none;
+    background: Highlight !important;
+    color: HighlightText !important;
+    border-color: Highlight !important;
+  }
+
+  /* Window buttons keep their red / yellow / green meaning, with a system-colour edge. */
+  .traffic-btn {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+
+  /* App icons are pictures, never recoloured. */
+  img {
+    forced-color-adjust: none;
+  }
+}

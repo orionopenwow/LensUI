@@ -1,0 +1,159 @@
+:root {
+  /* "Ink" is the color every translucent highlight, hairline and hover is drawn with:
+     white on dark packs, black on light packs. Use rgb(var(--lens-ink) / <alpha>). */
+  --lens-ink: 255 255 255;
+  /* Text/icon color that sits on top of a --lens-fg filled control (active chips, switch knobs). */
+  --lens-on-fg: #09090b;
+  /* Depth multipliers for every rgb(0 0 0 / calc(a * k)): drop shadows (shade) and recessed wells /
+     dark fills (well). 1 on dark packs = the authored value; light packs scale them down. */
+  --lens-shade-k: 1;
+  --lens-well-k: 1;
+  /* Hover/active text that is brighter than --lens-fg, and two softer label tones. */
+  --lens-fg-strong: #ffffff;
+  --lens-fg-2: #e4e4e7;
+  --lens-fg-3: #d4d4d8;
+  /* Semantic text colors (must stay readable on the surface, so light packs darken them). */
+  --lens-link: #60a5fa;
+  --lens-link-hover: #93c5fd;
+  --lens-positive: #4ade80;
+  --lens-danger: #fb7185;
+  /* Dock icon tiles (icon-theme-*). */
+  --lens-tile-top: #23242a;
+  --lens-tile-bot: #101014;
+  --lens-tile-flat: #17171b;
+  --lens-tile-duo-top: #1e1f26;
+  --lens-tile-duo-bot: #0d0e12;
+  --cc-accent: #fafafa;
+  --lens-accent: #fafafa;
+  --lens-glass-opacity: 0.96;
+  --lens-glass-opacity-pct: 96%;
+  --lens-blur: 20px;
+  --lens-radius: 14px;
+  --lens-accent-tint: 0%;
+
+  /* Rich, dense machined obsidian monochrome base */
+  --lens-surface-solid: color-mix(
+    in srgb,
+    var(--lens-pack-base, #08080b),
+    var(--lens-accent) var(--lens-accent-tint)
+  );
+  --lens-bg-base: color-mix(in srgb, var(--lens-pack-base, #08080b) var(--lens-glass-opacity-pct), transparent);
+  --lens-bg-surface: color-mix(
+    in srgb,
+    var(--lens-surface-solid) var(--lens-glass-opacity-pct),
+    transparent
+  );
+  --lens-bg-elevated: color-mix(
+    in srgb,
+    var(--lens-pack-elevated, #111116) var(--lens-glass-opacity-pct),
+    transparent
+  );
+  --lens-bg-hover: rgb(var(--lens-ink) / 0.06);
+  --lens-border: rgb(var(--lens-ink) / 0.11);
+  --lens-border-strong: rgb(var(--lens-ink) / 0.2);
+
+  --lens-fg: #fafafa;
+  --lens-fg-secondary: #a1a1aa;
+  --lens-fg-muted: #71717a;
+
+  --lens-shadow-dock:
+    inset 0 1px 0 rgb(var(--lens-ink) / 0.07),
+    0 16px 42px rgb(0 0 0 / 0.78),
+    0 4px 12px rgb(0 0 0 / 0.55);
+  --lens-shadow-panel:
+    inset 0 1px 0 rgb(var(--lens-ink) / 0.08),
+    0 26px 68px rgb(0 0 0 / 0.82),
+    0 6px 18px rgb(0 0 0 / 0.55);
+
+  --dock-icon-size: 40px;
+  --dock-hover-scale: 1.2;
+  --dock-hover-lift: 7px;
+
+  --font-sans: "Arial Rounded MT Bold", "Arial Rounded MT", "SF Pro Rounded", "Segoe UI Variable", Arial, system-ui, sans-serif;
+  --font-mono: "Arial Rounded MT Bold", "Arial Rounded MT", "SF Pro Rounded", "Segoe UI Variable", Arial, sans-serif;
+}
+
+:root[data-preset="windows-mesh"] {
+  --lens-surface-solid: color-mix(in oklch, #0d1017, var(--lens-accent) 22%);
+}
+
+/* Every other pack (Graphite, Midnight, Catppuccin, Nord, ...) is driven by
+   --lens-pack-base / --lens-pack-elevated, set from src/themes/packs.ts. */
+
+/* ---------- Light scheme (Alabaster, Paper) ---------- */
+:root[data-scheme="light"] {
+  --lens-ink: 0 0 0;
+  --lens-on-fg: #fafafa;
+  --cc-accent: #18181b;
+  --lens-fg: #18181b;
+  --lens-fg-secondary: #52525b;
+  /* #63636b, not #71717a: muted text must clear 4.5:1 on the Alabaster base (5.42:1). */
+  --lens-fg-muted: #63636b;
+  --lens-fg-strong: #09090b;
+  --lens-fg-2: #27272a;
+  --lens-fg-3: #3f3f46;
+  --lens-shade-k: 0.22;
+  --lens-well-k: 0.12;
+  --lens-link: #1d4ed8;
+  --lens-link-hover: #1e40af;
+  --lens-positive: #15803d;
+  --lens-danger: #be123c;
+  --lens-tile-top: #ffffff;
+  --lens-tile-bot: #ececf0;
+  --lens-tile-flat: #f1f1f3;
+  --lens-tile-duo-top: #ffffff;
+  --lens-tile-duo-bot: #f0f0f3;
+  --lens-bg-hover: rgb(0 0 0 / 0.05);
+  --lens-border: rgb(0 0 0 / 0.12);
+  --lens-border-strong: rgb(0 0 0 / 0.22);
+  --lens-shadow-dock:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 12px 32px rgb(0 0 0 / 0.18),
+    0 3px 10px rgb(0 0 0 / 0.1);
+  --lens-shadow-panel:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 20px 52px rgb(0 0 0 / 0.2),
+    0 5px 14px rgb(0 0 0 / 0.1);
+}
+
+/* ---------- Accessibility tokens ---------- */
+:root {
+  /* Keyboard focus ring: white on dark packs, black on light packs (follows --lens-ink). */
+  --lens-focus-ring: rgb(var(--lens-ink) / 0.92);
+  --lens-focus-width: 2px;
+}
+
+/* Lens "High contrast" setting (data-contrast="high" on <html>, set from config). Works with every pack:
+   surfaces become opaque, hairlines become real borders, secondary text becomes full-strength text.
+   !important is needed because the glass/opacity variables are set inline by applyThemeToDocument. */
+:root[data-contrast="high"] {
+  --lens-glass-opacity: 1 !important;
+  --lens-glass-opacity-pct: 100% !important;
+  --lens-border: rgb(var(--lens-ink) / 0.6) !important;
+  --lens-border-strong: rgb(var(--lens-ink) / 0.85) !important;
+  --lens-bg-hover: rgb(var(--lens-ink) / 0.16) !important;
+  --lens-fg-secondary: var(--lens-fg) !important;
+  --lens-fg-muted: var(--lens-fg-2) !important;
+  --lens-focus-ring: var(--lens-fg) !important;
+  --lens-focus-width: 3px;
+}
+
+/* Windows high contrast themes (Settings > Accessibility > Contrast themes): use system colours. */
+@media (forced-colors: active) {
+  :root {
+    --lens-focus-ring: Highlight;
+    --lens-focus-width: 3px;
+  }
+}
+
+/* Light-scheme values for component colours that used to be hard-coded for dark (wave-2 polish). */
+:root[data-scheme="light"] {
+  --lens-badge-active: #047857;
+  --lens-badge-open: #1d4ed8;
+  --lens-knob-a: #f4f4f5;
+  --lens-knob-b: #ffffff;
+  --lens-knob-c: #e4e4e7;
+  --lens-knob-d: #fafafa;
+  --lens-clock-face-a: #ffffff;
+  --lens-clock-face-b: #e4e4e7;
+}

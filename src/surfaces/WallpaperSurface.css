@@ -1,0 +1,44 @@
+/* Lens wallpaper: fills its window, which Rust re-parents behind the desktop icons. */
+.wp-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--lens-pack-base, #08080b);
+  pointer-events: none;
+}
+
+.wp-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  /* Blur bleeds transparent edges inward; overscan hides them. */
+  transform: scale(var(--wp-overscan, 1));
+  transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
+}
+
+.wp-media.is-loading {
+  opacity: 0;
+}
+
+.wp-media.is-paused-html {
+  visibility: hidden;
+}
+
+.wp-dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  transition: opacity 220ms ease;
+}
+
+.wp-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 20% 10%, color-mix(in srgb, var(--lens-accent, #fafafa) 14%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 85% 90%, color-mix(in srgb, var(--lens-accent, #fafafa) 9%, transparent), transparent 65%),
+    var(--lens-pack-base, #08080b);
+}

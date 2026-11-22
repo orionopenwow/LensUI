@@ -1,0 +1,12 @@
+{
+  "id": "clock",
+  "name": "Clock",
+  "version": "1.0.0",
+  "author": "Lens UI",
+  "description": "A compact clock with seconds for the Top Bar.",
+  "slot": "topbar-right",
+  "entry": "index.html",
+  "permissions": [],
+  "refreshIntervalMs": 1000,
+  "width": 92
+}

@@ -1,0 +1,167 @@
+/* Notification Center pane — lives inside Quick Settings (376px wide). Uses qs-* building blocks
+   from QuickSettingsSurface.css plus the few pieces below. Colors come from tokens only. */
+
+.nc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nc-ghost-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.nc-ghost-btn:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+
+.nc-ghost-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.nc-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nc-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.nc-group-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--lens-fg-secondary);
+}
+
+.nc-group-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nc-count {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.nc-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 30px 9px 11px;
+  border-radius: max(4px, calc(var(--lens-radius) - 3px));
+  background: rgb(var(--lens-ink) / 0.04);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  transition: background 140ms ease;
+}
+
+.nc-item:hover {
+  background: rgb(var(--lens-ink) / 0.07);
+}
+
+.nc-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.nc-item-body {
+  font-size: 11px;
+  color: var(--lens-fg-secondary);
+  line-height: 1.35;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nc-item-time {
+  font-size: 10.5px;
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.nc-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--lens-fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.nc-item:hover .nc-dismiss,
+.nc-dismiss:focus-visible {
+  opacity: 1;
+}
+
+.nc-dismiss:hover {
+  background: rgb(var(--lens-ink) / 0.12);
+  color: var(--lens-fg);
+}
+
+.nc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 12px;
+  text-align: center;
+  color: var(--lens-fg-muted);
+  font-size: 11.5px;
+}
+
+.nc-empty strong {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+}
+
+.nc-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.nc-notice-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

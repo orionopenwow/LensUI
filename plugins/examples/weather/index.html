@@ -1,0 +1,20 @@
+<!-- Lens UI example plugin: Weather placeholder. Plugins have no network access,
+     so this widget cannot fetch a forecast. It shows the layout and explains why. -->
+<style>
+  body { padding: 12px 14px; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; gap: 6px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .t { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--lens-fg-muted); }
+  .h { font-size: 12px; font-weight: 600; }
+  .s { font-size: 11px; color: var(--lens-fg-muted); line-height: 1.4; }
+</style>
+<div class="row">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--lens-fg-muted)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+  </svg>
+  <div class="t">--°</div>
+  <div>
+    <div class="h">Forecast</div>
+    <div class="s">Not connected</div>
+  </div>
+</div>
+<div class="s">A forecast needs an API key and internet access. Lens plugins can't reach the network yet, so this one stays a placeholder.</div>

@@ -1,0 +1,28 @@
+{
+  "name": "lens-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Lens UI — Sleek, obsidian-dark Windows 11 desktop shell with live Windows theme mesh",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "parity": "node tools/parity/build.mjs && node tools/parity/shoot.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.2.0",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.2.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}

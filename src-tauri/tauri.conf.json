@@ -1,0 +1,206 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lens UI",
+  "version": "0.1.0",
+  "identifier": "com.lens.ui",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "dock",
+        "title": "Lens Dock",
+        "url": "index.html?surface=dock",
+        "width": 920,
+        "height": 96,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": true
+      },
+      {
+        "label": "topbar",
+        "title": "Lens Top Bar",
+        "url": "index.html?surface=topbar",
+        "width": 1920,
+        "height": 34,
+        "x": 0,
+        "y": 0,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": true
+      },
+      {
+        "label": "settings",
+        "title": "Lens Control Center",
+        "url": "index.html?surface=settings",
+        "width": 720,
+        "height": 530,
+        "minWidth": 540,
+        "minHeight": 380,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "palette",
+        "title": "Lens Command Palette",
+        "url": "index.html?surface=palette",
+        "width": 660,
+        "height": 460,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "widgets",
+        "title": "Lens Widgets",
+        "url": "index.html?surface=widgets",
+        "width": 360,
+        "height": 680,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "quicksettings",
+        "title": "Lens Quick Settings",
+        "url": "index.html?surface=quicksettings",
+        "width": 376,
+        "height": 540,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "notifications",
+        "title": "Lens Notifications",
+        "url": "index.html?surface=notifications",
+        "width": 364,
+        "height": 420,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "desktopfolder",
+        "title": "Lens Desktop Folder",
+        "url": "index.html?surface=desktopfolder",
+        "width": 88,
+        "height": 96,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": true
+      },
+      {
+        "label": "launcher",
+        "title": "Lens Launcher",
+        "url": "index.html?surface=launcher",
+        "width": 780,
+        "height": 640,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "center": true,
+        "create": false
+      },
+      {
+        "label": "overview",
+        "title": "Lens Overview",
+        "url": "index.html?surface=overview",
+        "width": 1120,
+        "height": 700,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "center": true,
+        "create": false
+      },
+      {
+        "label": "wallpaper",
+        "title": "Lens Wallpaper",
+        "url": "index.html?surface=wallpaper",
+        "width": 1920,
+        "height": 1080,
+        "x": 0,
+        "y": 0,
+        "decorations": false,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$DATA/LensUI/wallpapers/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
+  }
+}

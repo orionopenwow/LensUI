@@ -1,0 +1,1391 @@
+.dock-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0;
+  pointer-events: none;
+}
+
+.dock-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 10px 14px;
+  max-width: calc(100vw - 20px);
+  /* Grounded into bottom edge while keeping soft roundedness */
+  border-radius: var(--lens-radius) var(--lens-radius) calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55);
+  /* Sleek dark grounded dock — icons always retain full original color */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent) 0%,
+    color-mix(in srgb, var(--lens-surface-solid) var(--lens-glass-opacity-pct), transparent) 100%
+  );
+  border: 1px solid rgb(var(--lens-ink) / 0.11);
+  border-bottom-color: rgb(var(--lens-ink) / 0.07);
+  box-shadow: var(--lens-shadow-dock);
+  position: relative;
+  overflow: visible;
+  transition:
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    background 220ms ease,
+    border-color 220ms ease;
+}
+
+.dock-pill.is-hidden {
+  transform: translateY(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dock-pill.is-fused-top {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-top: 0 !important;
+  padding-top: 9px;
+  border-left-color: var(--lens-border) !important;
+  border-right-color: var(--lens-border) !important;
+  background: var(--lens-bg-surface) !important;
+  box-shadow: none !important;
+}
+
+.dock-icons-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+/* Searching never changes the Dock's own size or padding: the results panel floats above it. */
+.dock-pill.is-expanded-launcher .dock-icons-row {
+  justify-content: flex-start;
+}
+
+/* Original Magnifying Glass Slot that smoothly glides open IN-PLACE inside the Dock row! */
+.dock-search-slot {
+  flex: 0 0 auto;
+  transition: flex-grow 240ms cubic-bezier(0.22, 1, 0.36, 1), width 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock-search-slot.is-open {
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+.dock-search-inline {
+  height: var(--dock-effective-icon-size, var(--dock-icon-size));
+  width: var(--dock-effective-icon-size, var(--dock-icon-size));
+  border-radius: calc(var(--dock-effective-icon-size, var(--dock-icon-size)) * 0.28);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  overflow: hidden;
+  transition:
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 200ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dock-search-inline.is-open {
+  width: 100%;
+  padding: 0 8px 0 2px;
+  background: rgb(0 0 0 / calc(0.52 * var(--lens-well-k)));
+  border-color: rgb(var(--lens-ink) / 0.14);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / calc(0.78 * var(--lens-shade-k)));
+}
+
+.dock-search-mag-btn {
+  width: var(--dock-effective-icon-size, var(--dock-icon-size));
+  height: var(--dock-effective-icon-size, var(--dock-icon-size));
+  border-radius: calc(var(--dock-effective-icon-size, var(--dock-icon-size)) * 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition: transform 110ms cubic-bezier(0.2, 0.9, 0.3, 1), background 120ms ease;
+}
+
+.dock-search-inline:not(.is-open) .dock-search-mag-btn:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+  transform: translateY(-1.5px) scale(1.06);
+}
+
+.dock-search-inline:not(.is-open) .dock-search-mag-btn:active {
+  transform: translateY(1px) scale(0.93);
+}
+
+/* Search opens inside the Dock at its existing width: the text box spreads out of the search icon,
+   and every other icon slides to the right (shrinking only if the row would otherwise overflow). */
+.dock-pill.is-expanded-launcher .dock-icons-row > :not(.dock-search-slot) {
+  flex-shrink: 0;
+}
+
+.dock-pill.is-expanded-launcher .dock-item {
+  transition:
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    background 160ms ease;
+}
+
+/* The search field itself always stays full dock height. */
+.dock-search-slot {
+  --dock-effective-icon-size: var(--dock-full-icon-size, var(--dock-icon-size));
+}
+
+@keyframes dock-drawer-grow {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    max-height: 690px;
+    transform: translateY(0);
+  }
+}
+
+/* Results panel: attached flush to the top of the Dock (shared 1px edge), centred on it, and as
+   wide as it needs to be to read well, even when the Dock itself is short. */
+.dock-launcher-drawer {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  margin-bottom: -1px;
+  translate: -50% 0;
+  width: max(100%, min(760px, calc(100vw - 40px)));
+  padding: 12px 12px 10px;
+  box-sizing: border-box;
+  border-radius: var(--lens-radius);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent) 0%,
+    color-mix(in srgb, var(--lens-surface-solid) var(--lens-glass-opacity-pct), transparent) 100%
+  );
+  border: 1px solid rgb(var(--lens-ink) / 0.11);
+  box-shadow: var(--lens-shadow-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  max-height: 640px;
+  transform-origin: bottom center;
+  animation: dock-drawer-grow 250ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    max-height 210ms cubic-bezier(0.32, 0, 0.67, 0),
+    transform 190ms cubic-bezier(0.32, 0, 0.67, 0),
+    opacity 170ms ease-in;
+}
+
+.dock-launcher-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 13px;
+  border-radius: 13px;
+  background: rgb(var(--lens-ink) / 0.028);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+}
+
+.dock-launcher-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+
+.dock-launcher-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lens-fg);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-launcher-card-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-link);
+  background: rgb(96 165 250 / 0.1);
+  border: 1px solid rgb(96 165 250 / 0.22);
+  border-radius: 999px;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.dock-launcher-card-link:hover {
+  background: rgb(96 165 250 / 0.2);
+  border-color: rgb(96 165 250 / 0.42);
+  color: var(--lens-link-hover);
+}
+
+.dock-launcher-drawer .pal-filter-pill {
+  height: 36px;
+  font-size: 12.5px;
+  padding: 0 12px;
+  gap: 7px;
+}
+
+.dock-launcher-drawer.is-closing {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(14px);
+}
+
+.dock-search-glide-bar.is-closing {
+  opacity: 0;
+  transform: scaleX(0.18);
+  transform-origin: left center;
+  transition: transform 195ms cubic-bezier(0.32, 0, 0.67, 0), opacity 170ms ease-in;
+}
+
+@keyframes dock-glide-expand {
+  from {
+    opacity: 0.15;
+    transform: scaleX(0.14);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+.dock-search-glide-bar {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / calc(0.48 * var(--lens-well-k)));
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / calc(0.75 * var(--lens-shade-k)));
+  transform-origin: left center;
+  animation: dock-glide-expand 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock-search-glide-input {
+  flex: 1 1 0;
+  /* An <input> has a wide built-in minimum; without this it pushed the magnifier out of the box. */
+  min-width: 0;
+  width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--lens-fg);
+  caret-color: var(--lens-accent, var(--lens-fg));
+  user-select: text;
+}
+
+.dock-search-glide-input::placeholder {
+  color: rgb(var(--lens-ink) / 0.42);
+}
+
+.dock-search-esc {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgb(var(--lens-ink) / 0.07);
+  border: 1px solid rgb(var(--lens-ink) / 0.12);
+  cursor: pointer;
+}
+
+.dock-search-esc:hover {
+  background: rgb(var(--lens-ink) / 0.14);
+  color: var(--lens-fg);
+}
+
+/* Intuitive Carved Bottom-Left Search Pill (Zero bounce on click!) */
+.dock-search-trigger {
+  height: var(--dock-effective-icon-size, var(--dock-icon-size));
+  padding: 0 13px 0 11px;
+  border-radius: calc(var(--dock-effective-icon-size, var(--dock-icon-size)) * 0.28);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgb(0 0 0 / calc(0.46 * var(--lens-well-k)));
+  border: 1px solid rgb(var(--lens-ink) / 0.12);
+  box-shadow:
+    inset 0 2px 5px rgb(0 0 0 / calc(0.78 * var(--lens-shade-k))),
+    0 1px 0 rgb(var(--lens-ink) / 0.1);
+  color: rgb(var(--lens-ink) / 0.85);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: text;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.dock-search-trigger:hover {
+  background: rgb(0 0 0 / calc(0.62 * var(--lens-well-k)));
+  border-color: rgb(var(--lens-ink) / 0.24);
+  color: var(--lens-fg-strong);
+  box-shadow:
+    inset 0 2px 6px rgb(0 0 0 / calc(0.85 * var(--lens-shade-k))),
+    0 0 12px rgb(var(--lens-ink) / 0.08);
+}
+
+.dock-search-trigger:active {
+  background: rgb(0 0 0 / calc(0.68 * var(--lens-well-k)));
+  border-color: rgb(var(--lens-ink) / 0.28);
+}
+
+/* Subtle, weighted neighbor poise (zero aggressive jumping) */
+.dock-item-wrap:has(+ .dock-item-wrap:hover) .dock-item,
+.dock-item-wrap:hover + .dock-item-wrap .dock-item {
+  transform: translateY(-0.5px) scale(1.015);
+}
+
+.dock-divider {
+  width: 1px;
+  height: calc(var(--dock-icon-size) * 0.58);
+  background: rgb(var(--lens-ink) / 0.12);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.dock-item.dock-item-outline-folder {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dock-item.dock-item-outline-folder:hover {
+  filter: drop-shadow(0 0 8px rgb(var(--lens-ink) / 0.42));
+}
+
+.dock-item-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-tooltip {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 5px 11px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--lens-pack-base, #0b0d13) 96%, transparent);
+  border: 1px solid var(--lens-border-strong);
+  color: var(--lens-fg);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 28px rgb(0 0 0 / calc(0.65 * var(--lens-shade-k)));
+  transition: opacity 130ms ease, transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 50;
+}
+
+/* Hide hover tooltips on the active popout buttons so they never float inside the open popout! */
+.dock-item-wrap:hover .dock-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dock-pill.is-fused-top .dock-item-wrap:hover .dock-tooltip,
+.dock-pill.is-expanded-launcher .dock-item-wrap:hover .dock-tooltip {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.dock-item {
+  width: var(--dock-effective-icon-size, var(--dock-icon-size));
+  height: var(--dock-effective-icon-size, var(--dock-icon-size));
+  border-radius: calc(var(--dock-effective-icon-size, var(--dock-icon-size)) * 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  transform-origin: center center;
+  transition:
+    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 175ms ease,
+    filter 160ms ease;
+  position: relative;
+}
+
+.dock-item:hover {
+  transform: translateY(-1px) scale(1.04);
+  background: rgb(var(--lens-ink) / 0.08);
+  border-color: var(--lens-border-strong);
+  box-shadow: 0 5px 14px rgb(0 0 0 / calc(0.48 * var(--lens-shade-k)));
+  z-index: 10;
+}
+
+.dock-item:active {
+  transform: translateY(0.5px) scale(0.96) !important;
+  box-shadow:
+    inset 0 2px 5px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k))),
+    0 2px 6px rgb(0 0 0 / calc(0.4 * var(--lens-shade-k))) !important;
+  filter: brightness(0.94);
+  transition-duration: 70ms;
+}
+
+@keyframes dock-launch-into-window {
+  0% {
+    transform: translateY(0.5px) scale(0.96);
+  }
+  100% {
+    transform: translateY(-1px) scale(1.04);
+  }
+}
+
+.dock-item.is-launching {
+  animation: dock-launch-into-window 180ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 20;
+}
+
+.dock-item.is-focused {
+  background: rgb(var(--lens-ink) / 0.07);
+  border-color: rgb(var(--lens-ink) / 0.16);
+}
+
+.dock-item img {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k))));
+}
+
+.dock-indicator {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 3px;
+  width: 5px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.4);
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.dock-indicator.focused {
+  width: 16px;
+  background: var(--lens-accent, var(--lens-fg));
+}
+
+.dock-instance-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--lens-pack-elevated, #18181b);
+  border: 1px solid rgb(var(--lens-ink) / 0.22);
+  color: var(--lens-fg);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Hover X Close Program Badge on Running Dock Icons */
+.dock-close-badge {
+  position: absolute;
+  top: -5px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--lens-pack-elevated, #18181b);
+  border: 1px solid rgb(var(--lens-ink) / 0.26);
+  color: var(--lens-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.75);
+  z-index: 35;
+  box-shadow: 0 4px 10px rgb(0 0 0 / calc(0.6 * var(--lens-shade-k)));
+  transition:
+    opacity 120ms ease,
+    transform 130ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    background 110ms ease,
+    border-color 110ms ease;
+}
+
+.dock-item-wrap:hover .dock-close-badge {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.dock-close-badge:hover {
+  background: #e11d48;
+  border-color: #fb7185;
+  color: #ffffff;
+  transform: scale(1.12) !important;
+}
+
+.dock-close-badge:active {
+  transform: scale(0.92) !important;
+}
+
+/* Drag-to-Reorder Feedback */
+.dock-item-wrap.is-dragging {
+  opacity: 0.55;
+  transform: scale(0.94);
+}
+
+.dock-item-wrap.is-drag-over .dock-item {
+  border-color: rgb(var(--lens-ink) / 0.38) !important;
+}
+
+/* Sleek Slim Right-Click Dock Context Menu */
+.dock-ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: auto;
+}
+
+.dock-ctx-menu {
+  position: fixed;
+  z-index: 100;
+  width: 212px;
+  max-width: 212px;
+  padding: 5px;
+  border-radius: 12px;
+  background: var(--lens-pack-base, #0b0b0e);
+  border: 1px solid rgb(var(--lens-ink) / 0.14);
+  box-shadow: 0 14px 36px rgb(0 0 0 / calc(0.76 * var(--lens-shade-k)));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
+}
+
+.dock-ctx-header {
+  padding: 5px 8px 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--lens-fg-secondary);
+  border-bottom: 1px solid rgb(var(--lens-ink) / 0.08);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 110ms ease;
+}
+
+.dock-ctx-item:hover {
+  background: rgb(var(--lens-ink) / 0.09);
+}
+
+.dock-ctx-item.danger {
+  color: var(--lens-danger);
+}
+
+.dock-ctx-item.danger:hover {
+  background: rgb(244 63 94 / 0.16);
+}
+
+.dock-ctx-sep {
+  height: 1px;
+  background: rgb(var(--lens-ink) / 0.08);
+  margin: 3px 4px;
+}
+
+/* Lightweight Hover Popover (Spotify Media Card + Running Windows List for Any Icon / Folder) */
+@keyframes dock-hover-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 6px)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+.dock-hover-card {
+  position: fixed;
+  z-index: 95;
+  width: 248px;
+  padding: 8px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--lens-pack-base, #0b0b0e) 96%, transparent);
+  backdrop-filter: blur(22px) saturate(1.3);
+  border: 1px solid rgb(var(--lens-ink) / 0.14);
+  box-shadow: 0 16px 38px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k)));
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
+  animation: dock-hover-card-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock-spotify-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dock-spotify-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dock-spotify-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k)));
+}
+
+.dock-spotify-art-fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgb(29 185 84 / 0.16);
+  border: 1px solid rgb(29 185 84 / 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dock-spotify-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-spotify-artist {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--lens-fg-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-spotify-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(var(--lens-ink) / 0.08);
+}
+
+.dock-media-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--lens-ink) / 0.05);
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition: background 110ms ease, transform 60ms ease;
+}
+
+.dock-media-btn:hover {
+  background: rgb(var(--lens-ink) / 0.14);
+}
+
+.dock-media-btn:active {
+  transform: scale(0.9);
+}
+
+.dock-media-btn.play {
+  background: #1DB954;
+  color: var(--lens-on-fg);
+}
+
+.dock-media-btn.play:hover {
+  background: #22d362;
+}
+
+.dock-topbar-pin-btn {
+  margin-left: auto;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.dock-topbar-pin-btn:hover {
+  background: rgb(var(--lens-ink) / 0.11);
+  color: var(--lens-fg);
+}
+
+.dock-topbar-pin-btn.active {
+  background: rgb(29 185 84 / 0.18);
+  border-color: rgb(29 185 84 / 0.42);
+  color: var(--lens-positive);
+}
+
+.dock-win-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dock-win-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px 5px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--lens-fg-secondary);
+  border-bottom: 1px solid rgb(var(--lens-ink) / 0.08);
+  margin-bottom: 2px;
+}
+
+.dock-win-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.09);
+  color: var(--lens-fg);
+}
+
+.dock-win-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  padding: 2px 3px 2px 6px;
+  transition: background 110ms ease;
+}
+
+.dock-win-row:hover {
+  background: rgb(var(--lens-ink) / 0.09);
+}
+
+.dock-win-row.focused {
+  background: rgb(56 189 248 / 0.12);
+}
+
+.dock-win-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 2px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dock-win-row-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-win-row-close {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-muted);
+  opacity: 0.7;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, opacity 100ms ease;
+}
+
+.dock-win-row-close:hover {
+  background: rgb(244 63 94 / 0.24);
+  color: var(--lens-danger);
+  opacity: 1;
+}
+
+/* Folder Stack Themed Icons */
+.folder-badge {
+  width: 74%;
+  height: 74%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(var(--lens-ink) / 0.16);
+  box-shadow: 0 3px 8px rgb(0 0 0 / calc(0.4 * var(--lens-shade-k)));
+}
+.folder-theme-obsidian { background: linear-gradient(145deg, #272e3b, #12161f); color: #cbd5e1; }
+.folder-theme-accent {
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklch, var(--lens-accent) 85%, white 15%),
+    color-mix(in oklch, var(--lens-accent) 65%, black 35%)
+  );
+  color: #ffffff;
+}
+.folder-theme-cobalt { background: linear-gradient(145deg, #3b82f6, #1d4ed8); color: #fff; }
+.folder-theme-emerald { background: linear-gradient(145deg, #34d399, #059669); color: #fff; }
+.folder-theme-amber { background: linear-gradient(145deg, #fbbf24, #d97706); color: #18181b; }
+.folder-theme-rose { background: linear-gradient(145deg, #fb7185, #e11d48); color: #fff; }
+.folder-theme-violet { background: linear-gradient(145deg, #a78bfa, #6d28d9); color: #fff; }
+.folder-theme-frost { background: linear-gradient(145deg, #a5d8e6, #4c8ea3); color: #0f1b22; }
+.folder-theme-ember { background: linear-gradient(145deg, #fb923c, #c2410c); color: #fff; }
+.folder-theme-minimal { background: linear-gradient(145deg, #323742, #1b1e25); color: #d1d5db; }
+.folder-theme-neon {
+  background: linear-gradient(145deg, #0d121d, #090d16);
+  border-color: #38d2ff;
+  color: #38d2ff;
+  box-shadow: 0 0 12px rgb(56 210 255 / 0.35);
+}
+
+/* Unified Matte Glassware Linux-Inspired Icon Style Themes */
+.icon-theme-obsidian-squircle .dock-item {
+  background: linear-gradient(165deg, var(--lens-tile-top) 0%, var(--lens-tile-bot) 100%);
+  border-color: rgb(var(--lens-ink) / 0.13);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--lens-ink) / 0.14),
+    0 5px 12px rgb(0 0 0 / calc(0.45 * var(--lens-shade-k)));
+}
+
+.icon-theme-frosted-glass .dock-item {
+  background: linear-gradient(
+    145deg,
+    rgb(var(--lens-ink) / 0.16) 0%,
+    rgb(var(--lens-ink) / 0.04) 100%
+  );
+  border-color: rgb(var(--lens-ink) / 0.22);
+  box-shadow:
+    inset 0 1px 1px rgb(var(--lens-ink) / 0.22),
+    0 4px 12px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k)));
+}
+
+.icon-theme-monochrome .dock-item {
+  background: var(--lens-tile-flat);
+  border-color: rgb(var(--lens-ink) / 0.1);
+  box-shadow: inset 0 1px 0 rgb(var(--lens-ink) / 0.08);
+}
+/* Never strip color from dock icons */
+.icon-theme-monochrome .dock-item img {
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k))));
+}
+
+.icon-theme-accent-duotone .dock-item {
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklch, var(--lens-tile-duo-top), var(--lens-accent) 28%) 0%,
+    color-mix(in oklch, var(--lens-tile-duo-bot), var(--lens-accent) 18%) 100%
+  );
+  border-color: color-mix(in oklch, var(--lens-accent) 45%, rgb(var(--lens-ink) / 0.12));
+  box-shadow: inset 0 1px 0 rgb(var(--lens-ink) / 0.16);
+}
+
+.icon-theme-native .dock-item {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Icon Shapes (higher specificity than base .dock-item) */
+.icon-shape-squircle .dock-item { border-radius: calc(var(--dock-effective-icon-size, var(--dock-icon-size)) * 0.28); }
+.icon-shape-rounded .dock-item { border-radius: 8px; }
+.icon-shape-circle .dock-item { border-radius: 999px; }
+.icon-shape-borderless .dock-item {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* At rest the search icon is a plain dock icon (same tile, hover and size as the gear),
+   so nothing clips its hover lift. The text box grows out of it when opened. */
+.dock-search-inline:not(.is-open) {
+  overflow: visible;
+}
+
+
+/* =====================================================================================
+   Dock depth: badges, separators, lock, live previews, and Docks on any screen edge.
+   Bottom is the default and every rule below is scoped so the bottom Dock is unchanged.
+   ===================================================================================== */
+
+/* Unread notification count (takes the place of the instance count when present). */
+.dock-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  border: 1.5px solid var(--lens-pack-elevated, #18181b);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  z-index: 3;
+}
+
+/* User separators read a touch stronger than the built-in group dividers. */
+.dock-divider.dock-user-sep {
+  background: rgb(var(--lens-ink) / 0.2);
+}
+
+/* Locked: no drag affordance. */
+.dock-pill.is-locked .dock-item-wrap[data-dock-drag-key] {
+  cursor: default;
+}
+
+/* Context menu: section label + dock edge picker */
+.dock-ctx-label {
+  padding: 4px 9px 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lens-fg-muted);
+}
+
+.dock-ctx-edge-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  padding: 2px 0 3px;
+}
+
+.dock-ctx-edge-btn {
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.04);
+  border: 1px solid transparent;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.dock-ctx-edge-btn:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+
+.dock-ctx-edge-btn.active {
+  background: rgb(var(--lens-ink) / 0.16);
+  border-color: rgb(var(--lens-ink) / 0.22);
+  color: var(--lens-fg);
+}
+
+/* ---------- Live window previews ---------- */
+.dock-hover-card.has-previews {
+  width: auto;
+  max-width: calc(100vw - 24px);
+}
+
+.dock-preview-strip {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.dock-preview-tile {
+  width: 208px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.dock-preview-tile:hover {
+  background: rgb(var(--lens-ink) / 0.07);
+}
+
+.dock-preview-tile.focused {
+  border-color: rgb(var(--lens-ink) / 0.18);
+}
+
+.dock-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dock-preview-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+  color: var(--lens-fg-secondary);
+}
+
+.dock-preview-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-preview-close {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-secondary);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 120ms ease, background 110ms ease, color 110ms ease;
+}
+
+.dock-preview-tile:hover .dock-preview-close {
+  opacity: 1;
+}
+
+.dock-preview-close:hover {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+/* The live picture is drawn by the backend exactly over this box. */
+.dock-preview-shot {
+  height: 124px;
+  border-radius: 7px;
+  background: var(--lens-pack-base, #141418);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-muted);
+}
+
+.dock-preview-fallback-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.dock-preview-more {
+  align-self: center;
+  padding: 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg-muted);
+  white-space: nowrap;
+}
+
+/* ---------- Top edge ---------- */
+.dock-stage.dock-edge-top {
+  align-items: flex-start;
+}
+
+.dock-edge-top .dock-pill {
+  padding: 10px 14px 8px 14px;
+  border-radius: calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55) var(--lens-radius) var(--lens-radius);
+  border-bottom-color: rgb(var(--lens-ink) / 0.11);
+  border-top-color: rgb(var(--lens-ink) / 0.07);
+}
+
+.dock-edge-top .dock-pill.is-hidden {
+  transform: translateY(-120%);
+}
+
+.dock-edge-top .dock-launcher-drawer {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: -1px;
+}
+
+.dock-edge-top .dock-tooltip {
+  bottom: auto;
+  top: calc(100% + 16px);
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.dock-edge-top .dock-item-wrap:hover .dock-tooltip {
+  transform: translateX(-50%) translateY(0);
+}
+
+.dock-edge-top .dock-indicator {
+  bottom: auto;
+  top: -6px;
+}
+
+.dock-hover-card.dock-hover-edge-top,
+.dock-ctx-menu.dock-ctx-edge-top {
+  transform: translate(-50%, 0);
+  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Left / right edges ---------- */
+.dock-stage.dock-edge-left {
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.dock-stage.dock-edge-right {
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.dock-edge-left .dock-pill,
+.dock-edge-right .dock-pill {
+  flex-direction: column;
+  max-width: none;
+  max-height: calc(100vh - 20px);
+  padding: 14px 9px 14px 9px;
+}
+
+.dock-edge-left .dock-pill {
+  border-radius: calc(var(--lens-radius) * 0.55) var(--lens-radius) var(--lens-radius) calc(var(--lens-radius) * 0.55);
+  border-bottom-color: rgb(var(--lens-ink) / 0.11);
+  border-left-color: rgb(var(--lens-ink) / 0.07);
+}
+
+.dock-edge-right .dock-pill {
+  border-radius: var(--lens-radius) calc(var(--lens-radius) * 0.55) calc(var(--lens-radius) * 0.55) var(--lens-radius);
+  border-bottom-color: rgb(var(--lens-ink) / 0.11);
+  border-right-color: rgb(var(--lens-ink) / 0.07);
+}
+
+.dock-edge-left .dock-pill.is-hidden {
+  transform: translateX(-120%);
+}
+
+.dock-edge-right .dock-pill.is-hidden {
+  transform: translateX(120%);
+}
+
+.dock-edge-left .dock-icons-row,
+.dock-edge-right .dock-icons-row {
+  flex-direction: column;
+  width: auto;
+}
+
+.dock-edge-left .dock-divider,
+.dock-edge-right .dock-divider {
+  width: calc(var(--dock-icon-size) * 0.58);
+  height: 1px;
+  margin: 4px 0;
+}
+
+.dock-edge-left .dock-tooltip,
+.dock-edge-right .dock-tooltip {
+  bottom: auto;
+  top: 50%;
+}
+
+.dock-edge-left .dock-tooltip {
+  left: calc(100% + 16px);
+  transform: translate(-4px, -50%);
+}
+
+.dock-edge-right .dock-tooltip {
+  left: auto;
+  right: calc(100% + 16px);
+  transform: translate(4px, -50%);
+}
+
+.dock-edge-left .dock-item-wrap:hover .dock-tooltip,
+.dock-edge-right .dock-item-wrap:hover .dock-tooltip {
+  transform: translate(0, -50%);
+}
+
+.dock-edge-left .dock-indicator,
+.dock-edge-right .dock-indicator {
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 5px;
+  transition: height 180ms ease, background 180ms ease;
+}
+
+.dock-edge-left .dock-indicator {
+  left: -6px;
+}
+
+.dock-edge-right .dock-indicator {
+  left: auto;
+  right: -6px;
+}
+
+.dock-edge-left .dock-indicator.focused,
+.dock-edge-right .dock-indicator.focused {
+  width: 3px;
+  height: 16px;
+}
+
+.dock-hover-card.dock-hover-edge-left,
+.dock-ctx-menu.dock-ctx-edge-left {
+  transform: translate(0, -50%);
+  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock-hover-card.dock-hover-edge-right,
+.dock-ctx-menu.dock-ctx-edge-right {
+  transform: translate(-100%, -50%);
+  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes dock-side-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* Side-dock search: the text box spreads out of the search icon across the top of the
+   results panel, which attaches flush to the Dock's inner side. The Dock never resizes. */
+.dock-edge-left,
+.dock-edge-right {
+  --dock-side-panel-w: min(620px, calc(100vw - var(--dock-full-icon-size, 40px) - 60px));
+}
+
+.dock-edge-left .dock-search-slot.is-open,
+.dock-edge-right .dock-search-slot.is-open {
+  flex: 0 0 auto;
+  min-width: 0;
+  /* Keep the slot's footprint so the other icons don't jump while the field floats out. */
+  width: var(--dock-full-icon-size, 40px);
+  height: var(--dock-full-icon-size, 40px);
+  position: relative;
+  z-index: 5;
+}
+
+.dock-edge-left .dock-search-inline.is-open,
+.dock-edge-right .dock-search-inline.is-open {
+  position: absolute;
+  top: 0;
+  width: calc(var(--dock-side-panel-w) + var(--dock-full-icon-size, 40px) - 4px);
+  height: var(--dock-full-icon-size, 40px);
+}
+
+.dock-edge-left .dock-search-inline.is-open {
+  left: 0;
+}
+
+.dock-edge-right .dock-search-inline.is-open {
+  right: 0;
+  flex-direction: row-reverse;
+  padding: 0 2px 0 8px;
+}
+
+.dock-edge-left .dock-launcher-drawer,
+.dock-edge-right .dock-launcher-drawer {
+  top: 3px;
+  bottom: auto;
+  translate: none;
+  margin-bottom: 0;
+  width: var(--dock-side-panel-w);
+  max-height: min(620px, calc(100vh - 40px));
+  padding-top: calc(var(--dock-full-icon-size, 40px) + 22px);
+}
+
+.dock-edge-left .dock-launcher-drawer {
+  left: 100%;
+  margin-left: -1px;
+}
+
+.dock-edge-right .dock-launcher-drawer {
+  left: auto;
+  right: 100%;
+  margin-right: -1px;
+}

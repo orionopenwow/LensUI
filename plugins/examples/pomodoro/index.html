@@ -1,0 +1,53 @@
+<!-- Lens UI example plugin: Pomodoro. Uses "storage" to survive restarts and
+     "notifications" to tell you when a session ends. -->
+<style>
+  body { padding: 12px 14px; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; gap: 8px; }
+  .top { display: flex; align-items: baseline; justify-content: space-between; }
+  .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lens-fg-secondary); }
+  .time { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .bar { height: 5px; border-radius: 999px; background: rgb(var(--lens-ink) / 0.1); overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--lens-accent-safe); border-radius: 999px; transition: width 400ms ease; }
+  .btns { display: flex; gap: 6px; }
+  button { font: inherit; font-size: 11.5px; font-weight: 600; color: var(--lens-fg); background: rgb(var(--lens-ink) / 0.06);
+           border: 1px solid rgb(var(--lens-ink) / 0.12); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  button:hover { background: rgb(var(--lens-ink) / 0.12); }
+  button.primary { background: var(--lens-fg); color: var(--lens-on-fg); border-color: transparent; }
+</style>
+<div class="top"><span class="lbl" id="mode">Focus</span><span class="time" id="time">25:00</span></div>
+<div class="bar"><div class="fill" id="fill"></div></div>
+<div class="btns">
+  <button class="primary" id="go">Start</button>
+  <button id="reset">Reset</button>
+  <button id="skip">Skip</button>
+</div>
+<script>
+  const LEN = { focus: 25 * 60, break: 5 * 60 };
+  let st = { mode: "focus", endsAt: 0, left: LEN.focus };
+  const $ = (id) => document.getElementById(id);
+  const save = () => lens.request("storage.set", { key: "state", value: JSON.stringify(st) }).catch(() => {});
+  function remaining() { return st.endsAt ? Math.max(0, Math.round((st.endsAt - Date.now()) / 1000)) : st.left; }
+  function draw() {
+    const r = remaining();
+    $("time").textContent = String(Math.floor(r / 60)).padStart(2, "0") + ":" + String(r % 60).padStart(2, "0");
+    $("mode").textContent = st.mode === "focus" ? "Focus" : "Break";
+    $("fill").style.width = (100 * (1 - r / LEN[st.mode])).toFixed(1) + "%";
+    $("go").textContent = st.endsAt ? "Pause" : "Start";
+  }
+  function switchMode(notify) {
+    const was = st.mode;
+    st = { mode: was === "focus" ? "break" : "focus", endsAt: 0, left: 0 };
+    st.left = LEN[st.mode];
+    if (notify) lens.request("notify", { title: was === "focus" ? "Focus session done" : "Break over", body: was === "focus" ? "Take five." : "Back to it." }).catch(() => {});
+    save(); draw();
+  }
+  $("go").onclick = () => {
+    if (st.endsAt) { st.left = remaining(); st.endsAt = 0; } else { st.endsAt = Date.now() + remaining() * 1000; }
+    save(); draw();
+  };
+  $("reset").onclick = () => { st = { mode: st.mode, endsAt: 0, left: LEN[st.mode] }; save(); draw(); };
+  $("skip").onclick = () => switchMode(false);
+  lens.on("tick", () => { if (st.endsAt && remaining() === 0) switchMode(true); else draw(); });
+  lens.request("storage.get", { key: "state" })
+    .then((v) => { if (v) { try { st = Object.assign(st, JSON.parse(v)); } catch (e) {} } draw(); })
+    .catch(draw);
+</script>

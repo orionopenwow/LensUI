@@ -1,0 +1,31 @@
+<!-- Lens UI example plugin: CPU & Memory. Needs the "telemetry" permission (read-only). -->
+<style>
+  body { display: flex; align-items: center; gap: 6px; height: 100vh; padding: 0 2px; box-sizing: border-box; }
+  svg { flex: 0 0 auto; }
+  .v { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m { color: var(--lens-fg-muted); font-weight: 500; }
+</style>
+<svg id="g" width="44" height="16" viewBox="0 0 44 16" aria-hidden="true">
+  <polyline id="line" fill="none" stroke="var(--lens-accent-safe)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points=""></polyline>
+</svg>
+<span class="v"><span id="cpu">–</span><span class="m"> · </span><span id="mem" class="m">–</span></span>
+<script>
+  const hist = [];
+  async function sample() {
+    try {
+      const t = await lens.request("telemetry.get");
+      const v = Math.max(0, Math.min(100, Number(t.cpuUsage) || 0));
+      if (hist.length === 0) while (hist.length < 22) hist.push(v); // start with a full-width line
+      hist.push(v);
+      while (hist.length > 22) hist.shift();
+      const pts = hist.map((v, i) => `${(i * 2).toFixed(1)},${(15 - (v / 100) * 14).toFixed(1)}`).join(" ");
+      document.getElementById("line").setAttribute("points", pts);
+      document.getElementById("cpu").textContent = Math.round(t.cpuUsage) + "%";
+      document.getElementById("mem").textContent = "RAM " + Math.round(t.memPercent) + "%";
+    } catch (e) {
+      document.getElementById("cpu").textContent = "n/a";
+    }
+  }
+  sample();
+  lens.on("tick", sample);
+</script>
