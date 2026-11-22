@@ -943,6 +943,25 @@ export interface WallpaperSettings {
   accentHex: string;
   /** Apply `accent_hex` as the Lens accent whenever the wallpaper changes. */
   followAccent: boolean;
+  /** Playground scene id ("" = show `file` instead). See src/playground/. */
+  scene: string;
+  /** Per-scene settings, owned by the frontend (validated: a JSON object, at most 8 KB). */
+  sceneOptions: unknown;
+  /** Frame cap for Playground scenes: 30 or 60. */
+  fps: number;
+  /** "Calm": freeze the scene into a still frame and stop the input hook. Wins over everything. */
+  calm: boolean;
+  /** The chosen scene reacts to the cursor on the desktop (starts the desktop input hook). */
+  interactive: boolean;
+  /** Ripples where you click empty desktop (drawn in the wallpaper only). */
+  ripples: boolean;
+  /** Scene per Lens workspace id (used while Lens workspaces are on; missing = `scene`). */
+  workspaceScenes: Record<string, string>;
+  /** Idle mode: show a scene full screen above windows after `idle_minutes` without input. */
+  idleEnabled: boolean;
+  idleMinutes: number;
+  /** Scene for idle mode ("" = the wallpaper scene, or Aurora when there is none). */
+  idleScene: string;
 }
 
 /** Rust: `win_wallpaper::WallpaperState` */

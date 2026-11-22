@@ -1,0 +1,96 @@
+/*
+ * Flyouts attached to a Dock on the left, right or top edge.
+ * Bottom (the default) is untouched: every rule below is scoped to a non-bottom edge.
+ * Applies to: Quick Settings opened from the Dock (.qs-shell.is-bottom-right), the palette opened
+ * from the Dock (.pal-root.is-bottom-dock), and anything using the shared .lens-glide-dock:not(.ov-shell) glide.
+ */
+
+/* ---- glide direction: flyouts slide out of the Dock ---- */
+:root[data-dock-edge="left"] .lens-glide-dock:not(.ov-shell) {
+  transform-origin: center left;
+}
+:root[data-dock-edge="left"] .lens-glide-dock:not(.ov-shell).is-pre-open,
+:root[data-dock-edge="left"] .lens-glide-dock:not(.ov-shell).is-closing {
+  transform: translateX(-8px);
+}
+:root[data-dock-edge="right"] .lens-glide-dock:not(.ov-shell) {
+  transform-origin: center right;
+}
+:root[data-dock-edge="right"] .lens-glide-dock:not(.ov-shell).is-pre-open,
+:root[data-dock-edge="right"] .lens-glide-dock:not(.ov-shell).is-closing {
+  transform: translateX(8px);
+}
+:root[data-dock-edge="top"] .lens-glide-dock:not(.ov-shell) {
+  transform-origin: top center;
+}
+:root[data-dock-edge="top"] .lens-glide-dock:not(.ov-shell).is-pre-open,
+:root[data-dock-edge="top"] .lens-glide-dock:not(.ov-shell).is-closing {
+  transform: translateY(-8px);
+}
+:root[data-dock-edge="left"] .lens-glide-dock:not(.ov-shell).is-open,
+:root[data-dock-edge="right"] .lens-glide-dock:not(.ov-shell).is-open,
+:root[data-dock-edge="top"] .lens-glide-dock:not(.ov-shell).is-open {
+  transform: none;
+}
+
+/* ---- Quick Settings opened from the Dock ---- */
+:root[data-dock-edge="left"] .qs-shell.is-bottom-right,
+:root[data-dock-edge="right"] .qs-shell.is-bottom-right {
+  padding: 4px 0;
+}
+:root[data-dock-edge="left"] .qs-shell.is-bottom-right .qs-panel {
+  border: 1px solid var(--lens-border);
+  border-left: none;
+  border-radius: 0 var(--lens-radius) var(--lens-radius) 0;
+  transform-origin: bottom left;
+}
+:root[data-dock-edge="right"] .qs-shell.is-bottom-right .qs-panel {
+  border: 1px solid var(--lens-border);
+  border-right: none;
+  border-radius: var(--lens-radius) 0 0 var(--lens-radius);
+  transform-origin: bottom right;
+}
+:root[data-dock-edge="top"] .qs-shell.is-bottom-right {
+  justify-content: flex-start;
+  padding: 0 4px 6px 4px;
+}
+:root[data-dock-edge="top"] .qs-shell.is-bottom-right .qs-panel {
+  border: 1px solid var(--lens-border);
+  border-top: none;
+  border-radius: 0 0 var(--lens-radius) var(--lens-radius);
+  transform-origin: top right;
+}
+
+/* ---- Palette / Dock search opened from the Dock ---- */
+:root[data-dock-edge="left"] .pal-root.is-bottom-dock .pal-shell {
+  border: 1px solid var(--lens-border);
+  border-left: none;
+  border-radius: 0 var(--lens-radius) var(--lens-radius) 0;
+}
+:root[data-dock-edge="right"] .pal-root.is-bottom-dock .pal-shell {
+  border: 1px solid var(--lens-border);
+  border-right: none;
+  border-radius: var(--lens-radius) 0 0 var(--lens-radius);
+}
+:root[data-dock-edge="top"] .pal-root.is-bottom-dock .pal-shell {
+  border: 1px solid var(--lens-border);
+  border-top: none;
+  border-radius: 0 0 var(--lens-radius) var(--lens-radius);
+}
+
+/* ---- Control Center docked to the Dock ---- */
+:root[data-dock-edge="left"] .cc-shell {
+  border: 1px solid var(--lens-border) !important;
+  border-left: none !important;
+  border-radius: 0 var(--lens-radius) var(--lens-radius) 0;
+}
+:root[data-dock-edge="right"] .cc-shell {
+  border: 1px solid var(--lens-border) !important;
+  border-right: none !important;
+  border-radius: var(--lens-radius) 0 0 var(--lens-radius);
+}
+:root[data-dock-edge="top"] .cc-shell {
+  border: 1px solid var(--lens-border) !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--lens-radius) var(--lens-radius);
+}

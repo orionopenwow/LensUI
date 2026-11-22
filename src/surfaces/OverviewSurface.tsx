@@ -6,6 +6,7 @@ import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLe
 import type { RunningWindow } from "../types/lens";
 import type * as Gen from "../types/generated";
 import { moveTargetFor, workspaceCounts } from "../utils/overviewWorkspaces";
+import { ackKeyhook, type KeyhookMessage } from "../shell/keyhookResponder";
 import "./OverviewSurface.css";
 
 /**
@@ -13,6 +14,12 @@ import "./OverviewSurface.css";
  * Arrows / Tab move, Enter switches, Delete or middle-click closes, type to filter, Esc dismisses.
  * With Lens workspaces in groups mode a strip of workspaces sits on top: drag a window onto one
  * (or press Shift+Left/Right, Shift+1–9) to move it there; click one to show only its windows.
+ *
+ *
+ * With "Alt+Tab opens Lens Overview" on, the keyboard hook (win_keyhook.rs) drives it like Windows'
+ * own switcher: Alt+Tab opens it on the previously used window, each further Tab (Shift = back)
+ * moves along the most-recently-used order, releasing Alt switches, Esc cancels. Every hook event
+ * is acknowledged so the hook knows Lens is responsive.
  */
 
 function appLabel(w: RunningWindow): string {
@@ -75,6 +82,12 @@ export const OverviewSurface: React.FC = () => {
     [membership, wsStatus]
   );
 
+  /** True while Alt is held after Alt+Tab (hook-driven cycling). */
+  const keyCycle = useRef(false);
+  const [keyCycleActive, setKeyCycleActive] = useState(false);
+  const selectedRef = useRef<number | null>(null);
+  selectedRef.current = selectedHwnd;
+
   const hide = useCallback(() => {
     invoke("hide_surface", { label: "overview" }).catch(() => {});
   }, []);
@@ -110,6 +123,16 @@ export const OverviewSurface: React.FC = () => {
     [appHwnds, wsOf, wsStatus]
   );
 
+  /** Alt+Tab order: the window list as Windows reports it (front-most first), unfiltered. */
+  const cycleOrder = useMemo(() => {
+    return running.filter((w) => {
+      const proc = w.processName.toLowerCase();
+      return proc !== "lens-ui.exe" && proc !== "lens-ui" && !closing.has(w.hwnd);
+    });
+  }, [running, closing]);
+  const cycleOrderRef = useRef<RunningWindow[]>(cycleOrder);
+  cycleOrderRef.current = cycleOrder;
+
   // On open: clear the filter and preselect the window you'd most likely switch to (the first that isn't focused).
   useEffect(() => {
     const reset = () => {
@@ -120,7 +143,8 @@ export const OverviewSurface: React.FC = () => {
       setDragHwnd(null);
       setDropOver(null);
       loadWorkspaces();
-      armed.current = true;
+      // While Alt+Tab is cycling, the hook already chose the selection.
+      armed.current = !keyCycle.current;
       setOpenTick((t) => t + 1);
       window.setTimeout(() => inputRef.current?.focus(), 25);
     };
@@ -168,6 +192,57 @@ export const OverviewSurface: React.FC = () => {
     },
     [hide]
   );
+
+  // Alt+Tab via the keyboard hook (only fires when that option is on).
+  useEffect(() => {
+    const pick = (fromIdx: number, delta: number) => {
+      const order = cycleOrderRef.current;
+      if (order.length === 0) return;
+      const next = (((fromIdx + delta) % order.length) + order.length) % order.length;
+      setSelectedHwnd(order[next].hwnd);
+    };
+    const un = listen<KeyhookMessage>("lens://keyhook", (e) => {
+      const { seq, event } = e.payload ?? ({} as KeyhookMessage);
+      if (!event) return;
+      switch (event.kind) {
+        case "overviewOpen": {
+          ackKeyhook(seq);
+          keyCycle.current = true;
+          setKeyCycleActive(true);
+          armed.current = false;
+          setQuery("");
+          const order = cycleOrderRef.current;
+          // Forward starts on the previously used window (index 1), backwards on the oldest.
+          if (order.length > 0) setSelectedHwnd(order[event.backwards ? order.length - 1 : Math.min(1, order.length - 1)].hwnd);
+          break;
+        }
+        case "overviewStep": {
+          ackKeyhook(seq);
+          const order = cycleOrderRef.current;
+          const cur = order.findIndex((w) => w.hwnd === selectedRef.current);
+          pick(cur < 0 ? 0 : cur, event.delta);
+          break;
+        }
+        case "overviewCommit": {
+          if (keyCycle.current && selectedRef.current !== null) switchTo(selectedRef.current);
+          keyCycle.current = false;
+          setKeyCycleActive(false);
+          break;
+        }
+        case "overviewCancel": {
+          if (keyCycle.current) hide();
+          keyCycle.current = false;
+          setKeyCycleActive(false);
+          break;
+        }
+        default:
+          break;
+      }
+    });
+    return () => {
+      un.then((fn) => fn());
+    };
+  }, [hide, switchTo]);
 
   const closeWindow = useCallback((hwnd: number) => {
     setClosing((prev) => new Set(prev).add(hwnd));
@@ -440,9 +515,13 @@ export const OverviewSurface: React.FC = () => {
         </div>
 
         <div className="ov-foot">
-          <span className="ov-key">
-            <CornerDownLeft size={11} strokeWidth={2.4} /> Switch
-          </span>
+          {keyCycleActive ? (
+            <span className="ov-key">Release Alt to switch · Tab next · Shift+Tab back</span>
+          ) : (
+            <span className="ov-key">
+              <CornerDownLeft size={11} strokeWidth={2.4} /> Switch
+            </span>
+          )}
           <span className="ov-key">Tab / Arrows Move</span>
           <span className="ov-key">Del Close</span>
           {wsActive && <span className="ov-key">Shift+← → Move to workspace</span>}

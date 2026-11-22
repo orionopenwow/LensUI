@@ -5,6 +5,9 @@ import type { LensConfig, WindowsThemeInfo, RunningWindow } from "../types/lens"
 import { packById, lighten } from "../themes/packs";
 import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks";
 import { setLocale } from "../i18n";
+import { applyUiScale } from "../shell/uiScale";
+import { applyDockEdge } from "../shell/dockEdge";
+import { installKeyhookResponder } from "../shell/keyhookResponder";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
   const root = document.documentElement;
@@ -57,9 +60,11 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
   root.style.setProperty("--font-sans", chosenFont);
   document.body.style.fontFamily = chosenFont;
 
-  // Live UI & Window Content Scale (92% Compact .. 115% Large)
-  const uiScale = cfg.theme.uiScale || 100;
-  root.style.setProperty("--lens-ui-scale", `${uiScale / 100}`);
+  // UI scale: the backend grows the windows, the webview zoom grows the content (src/shell/uiScale.ts)
+  applyUiScale(cfg.theme.uiScale);
+  // Which edge the Dock is on, for flyouts that attach to it (src/shell/dockEdge.ts)
+  applyDockEdge(cfg.dock.position);
+  installKeyhookResponder();
 
   // Inject user Custom CSS override safely
   let styleEl = document.getElementById("lens-custom-css") as HTMLStyleElement | null;
