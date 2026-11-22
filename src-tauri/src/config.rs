@@ -281,6 +281,9 @@ pub struct LensConfig {
     pub config_version: u32,
     #[serde(default)]
     pub mcp: crate::win_mcp::McpConfig,
+    /// Lens Intelligence (off by default). API keys are never stored here.
+    #[serde(default)]
+    pub ai: crate::ai::AiConfig,
 }
 
 impl Default for LensConfig {
@@ -424,6 +427,7 @@ impl Default for LensConfig {
             desktop_groups: None,
             config_version: crate::win_backup::CURRENT_CONFIG_VERSION,
             mcp: Default::default(),
+            ai: Default::default(),
         }
     }
 }

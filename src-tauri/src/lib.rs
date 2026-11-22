@@ -1,3 +1,4 @@
+mod ai;
 mod config;
 #[cfg(windows)]
 mod ffi;
@@ -315,6 +316,16 @@ pub fn run() {
             commands::mcp::decline_mcp_action_cmd,
             commands::mcp::complete_mcp_action_cmd,
             commands::mcp::get_mcp_audit_cmd,
+            commands::ai::ai_status,
+            commands::ai::ai_set_config,
+            commands::ai::ai_set_secret,
+            commands::ai::ai_clear_secret,
+            commands::ai::ai_ask,
+            commands::ai::ai_cancel,
+            commands::ai::ai_confirm_tool,
+            commands::ai::ai_intent,
+            commands::ai::ai_run_intent,
+            commands::ai::ai_usage_log,
             commands::power::quit_lens,
         ])
         .build(tauri::generate_context!())
