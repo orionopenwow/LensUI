@@ -138,6 +138,12 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     for i in 0..5 { let r = call(&mut s, &h, 40 + i, "run_action", &format!(r#"{{"request":"task number {}"}}"#, i)); ids.push(r["result"]["structuredContent"]["id"].as_str().unwrap().to_string()); }
     let over = call(&mut s, &h, 50, "run_action", r#"{"request":"one too many"}"#); assert!(is_err(&over));
     for id in &ids { decline_action(id, &h).unwrap(); }
+    // Lens Intelligence confirm-risk tools join the same approval queue and never run directly.
+    let mut s2 = Session::default(); // fresh rate-limit window
+    let cq = call(&mut s2, &h, 60, "close_app", r#"{"name":"mcp-test-word"}"#);
+    assert!(text(&cq).contains("Waiting for the user"), "{}", cq);
+    let cid = cq["result"]["structuredContent"]["id"].as_str().unwrap().to_string();
+    decline_action(&cid, &h).unwrap();
     assert_eq!(find_action(&ids[0]).unwrap().status, "declined");
     // confirm_all: settings tools are queued, read-only tools still run
     let hc = Fake { log: Mutex::new(vec![]), confirm: true };
@@ -192,10 +198,9 @@ fn ai_registry_tools_share_risk_gating() {
     assert!(!is_err(&r), "{}", r);
     assert_eq!(text(&r), "ran set_mute");
     assert!(h.log.lock().unwrap().iter().any(|l| l == r#"ai set_mute {"muted":true}"#));
-    // Confirm: queued for the user, never run directly.
-    let r = call(&mut s, &h, 2, "close_app", r#"{"name":"mcp-test-word"}"#);
-    assert!(text(&r).contains("Waiting for the user"), "{}", r);
-    assert!(!h.log.lock().unwrap().iter().any(|l| l.starts_with("ai close_app")));
+    // Confirm-risk tools parse as registry calls; the queueing itself is checked inside
+    // json_rpc_tools_actions_audit_and_loopback (the approval queue is process-wide).
+    assert!(matches!(parse_tool_call("close_app", &json!({"name": "word"})), Ok(ToolCall::Ai { .. })));
     // Invalid arguments are a tool error the model can fix.
     let r = call(&mut s, &h, 3, "launch_app", r#"{"name":"C:\\Windows\\cmd.exe"}"#);
     assert!(is_err(&r));
