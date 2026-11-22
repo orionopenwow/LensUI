@@ -101,6 +101,7 @@ export interface BridgeRequest {
   preferLocal: boolean;
   useClipboard: boolean;
   stream: boolean;
+  limit: number;
   statusId: string | null;
   browser: string | null;
 }

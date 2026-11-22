@@ -2,28 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lens</title>
-  <link rel="stylesheet" href="panel.css" />
-  <style>body { width: 300px; } main { padding: 12px; }</style>
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <header>
-    <img src="../icons/icon32.png" alt="" />
-    <h1>Lens</h1>
-    <span class="dot" id="dot"></span>
-    <span id="status">Checking…</span>
-  </header>
-  <main>
-    <div class="card">
-      <div class="row"><span class="title" id="lastTitle">Last answer</span><span id="lastBadge"></span></div>
-      <pre class="answer" id="last">Nothing yet. Right-click anything and choose Lens.</pre>
-    </div>
-    <div class="row">
-      <button class="primary" id="openPanel">Open side panel</button>
-      <button id="command">Open Lens Command</button>
-    </div>
-    <p class="state" id="hint"></p>
-  </main>
+  <div id="app"></div>
+  <script src="ui/dashboard.js"></script>
+  <script src="content/selectionLogic.js"></script>
   <script type="module" src="popup.js"></script>
 </body>
 </html>

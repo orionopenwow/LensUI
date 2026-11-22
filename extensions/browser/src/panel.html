@@ -7,13 +7,9 @@
   <link rel="stylesheet" href="panel.css" />
 </head>
 <body>
-  <header>
-    <img src="../icons/icon32.png" alt="" />
-    <h1>Lens</h1>
-    <span class="dot" id="dot"></span>
-    <span id="status">Checking…</span>
-  </header>
+  <div id="dash"></div>
   <main>
+    <h2 class="sec" id="answersHead" hidden>Answers</h2>
     <section class="card" id="draft" hidden>
       <div class="row"><span class="title">Ask about this</span><span class="badge local" id="draftBadge">Local</span></div>
       <div class="chips" id="draftChips"></div>
@@ -28,6 +24,7 @@
     <div id="answers"></div>
     <p class="empty" id="empty">Right-click a page, selection, link, image or video and choose <b>Lens</b>.</p>
   </main>
+  <script src="ui/dashboard.js"></script>
   <script type="module" src="panel.js"></script>
 </body>
 </html>

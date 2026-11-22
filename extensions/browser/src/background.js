@@ -4,6 +4,7 @@
 import { HOST_NAME, MAX_PAGE_TEXT_BYTES, buildRequest, markdownWithSource, mediaUrlFor } from "./protocol.js";
 import { menuItems, findItem, toCreateProps } from "./menus.js";
 import { readablePage } from "./readable.js";
+import "./content/selectionLogic.js"; // attaches globalThis.LensSel
 
 const api = globalThis.browser ?? globalThis.chrome;
 const IS_FIREFOX = !!(api.sidebarAction && globalThis.browser);
@@ -80,23 +81,24 @@ function flash(text, ok = true) {
 }
 
 async function oneShot(action, ctx, opts = {}) {
+  const quiet = !!opts.quiet;
   let req;
   try {
     req = buildRequest(action, ctx, { ...opts, browser: BROWSER, version: VERSION });
   } catch (e) {
-    flash("!", false);
+    if (!quiet) flash("!", false);
     return { ok: false, error: String(e.message || e) };
   }
   try {
     const reply = await api.runtime.sendNativeMessage(HOST_NAME, req);
-    flash(reply?.ok ? "✓" : "!", !!reply?.ok);
-    await store.set({ lastReply: { at: Date.now(), action, reply } });
+    if (!quiet) {
+      flash(reply?.ok ? "✓" : "!", !!reply?.ok);
+      await store.set({ lastReply: { at: Date.now(), action, reply } });
+    }
     return reply;
   } catch (e) {
-    flash("!", false);
-    const reply = { ok: false, error: hostError(e) };
-    await store.set({ lastReply: { at: Date.now(), action, reply } });
-    return reply;
+    if (!quiet) flash("!", false);
+    return { ok: false, error: hostError(e) };
   }
 }
 
@@ -119,6 +121,8 @@ async function saveAnswer(rec) {
   else answers.unshift(rec);
   await store.set({ answers: answers.slice(0, MAX_ANSWERS) });
   api.runtime.sendMessage({ type: "lens-answer", record: rec }).catch(() => {});
+  // Requests from the in-page panel get their answers in that tab.
+  if (rec.tabId != null) api.tabs.sendMessage(rec.tabId, { type: "lens-answer", record: rec }).catch(() => {});
 }
 
 function contextSummary(req) {
@@ -143,11 +147,11 @@ async function runStream(action, ctx, opts = {}) {
     req = buildRequest(action, ctx, { ...opts, stream: true, browser: BROWSER, version: VERSION });
   } catch (e) {
     flash("!", false);
-    return;
+    return null;
   }
   const clientId = `c${Date.now()}${Math.random().toString(36).slice(2, 7)}`;
   const rec = {
-    clientId, action, label: LABELS[action] || action, variant: req.variant, targetLang: req.targetLang,
+    clientId, action, tabId: opts.tabId ?? null, label: LABELS[action] || action, variant: req.variant, targetLang: req.targetLang,
     title: req.title, url: req.url, chips: contextSummary(req), state: "sending", text: "", engine: null, error: null, at: Date.now(),
     source: { title: req.title, url: req.url },
   };
@@ -191,6 +195,7 @@ async function runStream(action, ctx, opts = {}) {
     }
   });
   port.postMessage({ ...req, clientId });
+  return clientId;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -277,24 +282,129 @@ api.commands?.onCommand.addListener(async (command) => {
   }
 });
 
-// Messages from the popup and side panel.
-api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  (async () => {
-    switch (msg?.type) {
-      case "ping":
-        return oneShot("ping", {});
-      case "ask":
-        await store.remove("draft");
-        await runStream("ask", msg.ctx || {}, { question: msg.question, preferLocal: !!msg.preferLocal });
-        return { ok: true };
-      case "shelf-answer":
-        return oneShot("shelf_add", { item: { kind: "answer", text: msg.text, title: msg.title, url: msg.url } });
-      case "open-command":
-        return oneShot("command_open", msg.ctx || {});
-      default:
-        return null;
+// Messages from the popup, side panel, options page and in-page panel.
+async function activeTab() {
+  const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
+/** Context for the current tab: selection (as Markdown) if any, plus the page as Markdown. */
+async function tabContext(tab) {
+  if (!tab) return {};
+  const ctx = { url: tab.url, title: tab.title };
+  if (tab.id == null || !/^https?:/.test(tab.url || "")) return ctx;
+  const sel = await inject(tab.id, "selection");
+  if (sel?.markdown) ctx.selection = sel.markdown;
+  const page = await inject(tab.id, "page");
+  if (page?.markdown) ctx.pageText = page.markdown;
+  if (page?.title) ctx.title = page.title;
+  return ctx;
+}
+
+const THEME_TTL_MS = 60_000;
+async function themeTokens() {
+  const { themeCache } = await api.storage.local.get("themeCache");
+  if (themeCache && Date.now() - themeCache.at < THEME_TTL_MS) return themeCache.theme;
+  const r = await oneShot("theme_get", {}, { quiet: true });
+  const theme = r?.ok ? r.theme : themeCache?.theme ?? null;
+  await api.storage.local.set({ themeCache: { at: Date.now(), theme } });
+  return theme;
+}
+
+async function prefs() {
+  const { lensPrefs } = await api.storage.local.get("lensPrefs");
+  return { preferLocal: lensPrefs?.preferLocal !== false };
+}
+
+async function handleMessage(msg, sender) {
+  const fromTab = sender?.tab?.id;
+  switch (msg?.type) {
+    case "ping":
+      return oneShot("ping", {}, { quiet: true });
+    case "ask": {
+      await store.remove("draft");
+      const clientId = await runStream("ask", msg.ctx || {}, { question: msg.question, preferLocal: !!msg.preferLocal, tabId: fromTab });
+      return { ok: !!clientId, clientId };
     }
-  })().then(sendResponse, (e) => sendResponse({ ok: false, error: String(e) }));
+    case "run": {
+      const clientId = await runStream(msg.action, msg.ctx || {}, {
+        variant: msg.variant, targetLang: msg.targetLang, question: msg.question, preferLocal: !!msg.preferLocal, tabId: fromTab,
+      });
+      return clientId ? { ok: true, clientId } : { ok: false, error: "Lens couldn't build that request." };
+    }
+    case "page-context":
+      return tabContext(await activeTab());
+    case "shelf":
+      return oneShot(msg.kind === "list" ? "shelf_list" : "shelf_recent", {}, { quiet: true, limit: msg.limit, shelf: msg.shelf });
+    case "add-shelf": {
+      const ctx = { ...(msg.ctx || {}) };
+      ctx.item = shelfItemFrom(ctx, {});
+      return oneShot("shelf_add", ctx, { quiet: !!fromTab });
+    }
+    case "shelf-answer":
+      return oneShot("shelf_add", { item: { kind: "answer", text: msg.text, title: msg.title, url: msg.url } }, { quiet: !!fromTab });
+    case "open-command":
+      return oneShot("command_open", msg.ctx || {}, { quiet: !!fromTab });
+    case "theme":
+      return { theme: await themeTokens() };
+    case "answers":
+      return loadAnswers();
+    case "prefs":
+      return prefs();
+    case "prefs-set":
+      await api.storage.local.set({ lensPrefs: { preferLocal: !!msg.preferLocal } });
+      return { ok: true };
+    case "sync-content-scripts":
+      return syncContentScripts();
+    default:
+      return null;
+  }
+}
+
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  handleMessage(msg, sender).then(sendResponse, (e) => sendResponse({ ok: false, error: String(e) }));
   return true;
 });
 
+// ---------------------------------------------------------------------------------------------
+// In-page selection button: registered only for sites the user opted into and granted.
+// ---------------------------------------------------------------------------------------------
+
+const SCRIPT_ID = "lens-selection";
+
+async function syncContentScripts() {
+  if (!api.scripting.registerContentScripts) return { ok: false, error: "This browser can't register scripts." };
+  const { lensSettings } = await api.storage.local.get("lensSettings");
+  const settings = globalThis.LensSel.sanitizeSettings(lensSettings);
+  const { matches, excludeMatches } = globalThis.LensSel.contentScriptMatches(settings);
+  // Only patterns the browser actually granted.
+  const granted = [];
+  for (const m of matches) {
+    if (await api.permissions.contains({ origins: [m] }).catch(() => false)) granted.push(m);
+  }
+  try {
+    await api.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
+  } catch {
+    /* not registered */
+  }
+  if (!granted.length) return { ok: true, registered: 0 };
+  await api.scripting.registerContentScripts([
+    {
+      id: SCRIPT_ID,
+      matches: granted,
+      excludeMatches: excludeMatches.length ? excludeMatches : undefined,
+      js: ["src/content/selectionLogic.js", "src/ui/dashboard.js", "src/content/selection.js"],
+      runAt: "document_idle",
+      allFrames: false,
+      persistAcrossSessions: false, // re-registered on startup (Firefox doesn't persist)
+    },
+  ]);
+  return { ok: true, registered: granted.length };
+}
+
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.lensSettings) syncContentScripts().catch(() => {});
+});
+api.permissions?.onRemoved?.addListener(() => syncContentScripts().catch(() => {}));
+api.runtime.onInstalled.addListener(() => syncContentScripts().catch(() => {}));
+api.runtime.onStartup?.addListener(() => syncContentScripts().catch(() => {}));

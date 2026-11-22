@@ -14,6 +14,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(HERE, "dist");
 export const TARGETS = ["chrome", "edge", "firefox"];
 
+export const CONTENT_SCRIPT_FILES = ["src/content/selectionLogic.js", "src/ui/dashboard.js", "src/content/selection.js"];
 const ALLOWED_PERMISSIONS = new Set(["contextMenus", "nativeMessaging", "activeTab", "scripting", "storage", "sidePanel"]);
 
 export function buildManifest(base, target) {
@@ -48,6 +49,9 @@ export function checkManifest(m, files, sources = {}) {
   if (!/^\d+(\.\d+){0,3}$/.test(m.version || "")) problems.push("version must be dotted numbers");
   for (const p of m.permissions || []) if (!ALLOWED_PERMISSIONS.has(p)) problems.push(`unexpected permission ${p}`);
   if (m.host_permissions?.length) problems.push("host_permissions are not allowed (activeTab only)");
+  for (const o of m.optional_host_permissions || []) {
+    if (!["https://*/*", "http://*/*"].includes(o)) problems.push(`unexpected optional host permission ${o}`);
+  }
   if (m.content_scripts?.length) problems.push("content_scripts are not used");
   const refs = [
     ...Object.values(m.icons || {}),
@@ -57,6 +61,9 @@ export function checkManifest(m, files, sources = {}) {
     ...(m.background?.scripts || []),
     m.side_panel?.default_path,
     m.sidebar_action?.default_panel,
+    m.options_ui?.page,
+    // Registered at runtime by background.js (opt-in selection button).
+    ...CONTENT_SCRIPT_FILES,
   ].filter(Boolean);
   for (const r of refs) if (!has(r)) problems.push(`referenced file missing: ${r}`);
   if (m.background?.service_worker && m.background?.scripts) problems.push("background must be service_worker OR scripts");

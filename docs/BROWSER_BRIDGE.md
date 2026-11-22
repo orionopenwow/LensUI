@@ -72,6 +72,57 @@ bun run ext:check      # manifest + source checks only
 - **Firefox:** open `about:debugging` › This Firefox › **Load Temporary Add-on** and pick `dist/firefox/manifest.json`. The add-on id is `lens-bridge@lensui.app`. To keep it permanently, the add-on must be signed by Mozilla (AMO).
 - **Store builds** get a different id. Paste it into *Extra extension ids* in Lens before installing the bridge.
 
+## Lens Mini in the browser (popup, side panel, in-page panel)
+
+The popup, the side panel and the in-page panel all use one component, `src/ui/dashboard.js`, so they look and behave like desktop Lens Mini:
+
+- **Input with a context pill:** *Selection*, *This page* or *No context*. Context chips show exactly what will be sent.
+- **A 2×3 tile grid:**
+  - Summarise (TL;DR / Key points / Detailed)
+  - Explain
+  - Translate
+  - Rewrite (Shorter / Friendlier / Formal)
+  - Ask
+  - Add to Shelf
+- **A streaming answer** with a Local or Claude badge, plus Copy, Add to Shelf and Open in Lens.
+- **The Shelf strip** (newest items), read through the host actions `shelf_recent` and `shelf_list`.
+- **Recent answers** (popup only).
+- **A footer** with the provider and privacy toggle (*Local only* or *Lens decides*) and **Open in Lens**.
+
+Where each one runs:
+
+| Surface | Contents |
+| --- | --- |
+| Popup | Lens Mini for the current tab, plus a per-site switch for the selection button and links to the side panel and settings |
+| Side panel | The same dashboard on top; the full answer list and the "Ask about this" draft below |
+| In-page panel | The same dashboard, opened from the selection dot |
+
+**Theme.** All three follow Lens. The new host action `theme_get` returns tokens derived from Lens's config: scheme, background, text, accent, radius and font. Lens raises an accent's contrast if it's too low. The extension caches the tokens for 60 s. When Lens is closed, the surfaces fall back to the browser's light or dark preference.
+
+### In-page selection button (opt-in, off by default)
+
+**Turning it on.** Use the popup's per-site switch, or open the extension's **Settings** page: Off, Only on sites I choose, or On all sites. The browser asks for access to those sites (`optional_host_permissions`). The background then registers `content/selectionLogic.js`, `ui/dashboard.js` and `content/selection.js` with `scripting.registerContentScripts`, only for the granted sites and excluding the "never" list. Removing a site gives the access back.
+
+**How it behaves.**
+- After you select text, a small Lens dot appears just below the end of the selection. It flips above the selection near the bottom of the window and is always kept inside the viewport.
+- Clicking the dot opens the in-page panel next to it, with the default action's tile focused (Enter runs it).
+- Esc or a click outside closes the panel. Alt+Shift+L still opens Lens Command.
+- The dot and panel live in a **closed Shadow DOM** on a custom element, with `all: initial` and every style scoped under `.lens-root`. Page CSS can't restyle them and they can't restyle the page. The screenshots use a deliberately hostile test page to show this.
+
+**Where it never appears:**
+- the built-in denylist: banks, payment sites, identity providers and password managers;
+- any host label mentioning a bank or credit union;
+- sign-in, checkout, payment, password-reset and two-factor paths;
+- your "never" list;
+- any page with a **visible password field**;
+- selections inside password inputs, one-time-code or card fields, or elements marked `data-sensitive`, `data-private` or `data-lens-ignore`, or labelled as a PIN, password or card number.
+
+All of these rules are pure functions in `selectionLogic.js` and unit-tested.
+
+**Settings page.** Selection button (off / chosen sites / all sites), the site list, the default action, the "never on this site" list, and the built-in list for reference.
+
+**Screenshots.** Light and dark versions are in `docs/screenshots/extension/`: `popup-*`, `sidepanel-*`, `inpage-dot-*` and `inpage-panel-*`. Regenerate them with `node extensions/browser/tools/shoot.mjs`, which uses mocked extension APIs, a local test page and Playwright.
+
 ## The native host
 
 `lens-ui.exe` itself is the native-messaging host. Lens detects the launch from the arguments the browser passes:
@@ -116,7 +167,7 @@ Request (camelCase JSON):
 
 | Group | Actions |
 | --- | --- |
-| Meta | `ping`, `status` (by `id`) |
+| Meta | `ping`, `status` (by `id`), `shelf_recent` (`limit`), `shelf_list` (`shelf`, `limit`), `theme_get` |
 | AI | `ask`, `summarize` (`tldr` · `key_points` · `detailed`), `explain`, `translate`, `rewrite` (`shorter` · `friendlier` · `formal`), `fix_grammar`, `extract` (`tables` · `links` · `dates` · `todos`), `compare` |
 | Local | `transcribe`, `shelf_add`, `context_add`, `command_open` |
 
@@ -241,6 +292,12 @@ struct LensShelf;
 impl crate::bridge::ports::ShelfPort for LensShelf {
     fn shelf_add(&self, item: &crate::bridge::protocol::ShelfItem, shelf: Option<&str>) -> Result<String, String> {
         crate::shelf::shelf_add(item.into(), shelf.map(str::to_string))
+    }
+    fn shelf_list(&self, shelf: Option<&str>, limit: usize) -> Result<Vec<crate::bridge::ports::ShelfSummary>, String> {
+        Ok(crate::shelf::shelf_list(shelf, limit)?.into_iter().map(Into::into).collect())
+    }
+    fn shelf_recent(&self, limit: usize) -> Result<Vec<crate::bridge::ports::ShelfSummary>, String> {
+        Ok(crate::shelf::shelf_recent(limit)?.into_iter().map(Into::into).collect())
     }
 }
 crate::bridge::ports::set_shelf(std::sync::Arc::new(LensShelf));

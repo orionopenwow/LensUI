@@ -10,21 +10,41 @@ function el(tag, cls, text) {
   return e;
 }
 
-async function ping() {
-  const r = await api.runtime.sendMessage({ type: "ping" }).catch(() => null);
-  const dot = $("dot");
-  if (r?.ok && r.state === "ready") {
-    dot.className = "dot ok";
-    $("status").textContent = "Connected";
-  } else if (r?.state === "lens-offline") {
-    dot.className = "dot off";
-    $("status").textContent = "Lens isn't running";
+// Lens Mini on top: the same tiles and Shelf strip as the popup and the in-page panel.
+const listeners = new Set();
+const dash = globalThis.LensDash.mount($("dash"), {
+  surface: "panel",
+  logo: "../icons/icon32.png",
+  showAnswer: false, // answers stream into the list below
+  showRecent: false,
+  send: (msg) => api.runtime.sendMessage(msg),
+  listen: (fn) => {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  },
+  getContext: () => api.runtime.sendMessage({ type: "page-context" }),
+});
+// Follow Lens's theme for the answer list too (falls back to the browser's light/dark).
+api.runtime.sendMessage({ type: "theme" }).then((r) => {
+  const t = r?.theme;
+  if (!t?.bg) return;
+  const st = document.documentElement.style;
+  st.setProperty("--bg", t.bg);
+  st.setProperty("--fg", t.fg);
+  st.setProperty("--accent", t.accent);
+  st.colorScheme = t.scheme;
+  if (t.scheme === "light") {
+    st.setProperty("--card", "#ffffff");
+    st.setProperty("--line", "#e4e4e7");
+    st.setProperty("--muted", "#52525b");
   } else {
-    dot.className = "dot bad";
-    $("status").textContent = r?.error ? "Bridge not installed" : "Not connected";
-    $("status").title = r?.error || "";
+    st.setProperty("--card", `color-mix(in srgb, ${t.fg} 5%, ${t.bg})`);
+    st.setProperty("--line", `color-mix(in srgb, ${t.fg} 15%, ${t.bg})`);
+    st.setProperty("--muted", "#a1a1aa");
   }
-}
+}).catch(() => {});
+api.tabs?.onActivated?.addListener(async () => dash.setContext(await api.runtime.sendMessage({ type: "page-context" })));
+
 
 const STATE_TEXT = {
   sending: "Sending…",
@@ -91,6 +111,7 @@ async function render() {
   box.replaceChildren(...answers.map(renderAnswer));
   const { draft } = await store.get("draft");
   $("empty").hidden = answers.length > 0 || !!draft;
+  $("answersHead").hidden = answers.length === 0;
   renderDraft(draft);
 }
 
@@ -136,7 +157,7 @@ $("question").addEventListener("keydown", (e) => {
 });
 
 api.runtime.onMessage.addListener((m) => {
+  for (const fn of listeners) fn(m);
   if (m?.type === "lens-answer" || m?.type === "lens-draft") render();
 });
 render();
-ping();

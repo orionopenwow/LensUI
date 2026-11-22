@@ -1,0 +1,101 @@
+// Renders the popup, side panel, in-page dot and in-page panel against mocked extension APIs,
+// in light and dark. Dev-only (not packaged).
+//   node extensions/browser/tools/shoot.mjs [outDir]
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const PW = process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.mjs";
+const { chromium } = await import(PW);
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const EXT = path.resolve(HERE, "..");
+const OUT = path.resolve(process.argv[2] || path.join(EXT, "../../docs/screenshots/extension"));
+fs.mkdirSync(OUT, { recursive: true });
+
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".json": "application/json" };
+const mock = fs.readFileSync(path.join(HERE, "mock-chrome.js"), "utf8");
+const browser = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome" });
+const errors = [];
+
+async function newPage(scheme, viewport, mockCfg = {}) {
+  const ctx = await browser.newContext({ viewport, colorScheme: scheme, deviceScaleFactor: 2 });
+  await ctx.route("https://ext.mock/**", (route) => {
+    const rel = decodeURIComponent(new URL(route.request().url()).pathname.slice(1));
+    const file = path.join(EXT, rel);
+    if (!file.startsWith(EXT) || !fs.existsSync(file)) return route.fulfill({ status: 404, body: "" });
+    route.fulfill({ status: 200, contentType: TYPES[path.extname(file)] || "application/octet-stream", body: fs.readFileSync(file) });
+  });
+  await ctx.route("https://lens-demo.example/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: fs.readFileSync(path.join(HERE, "testpage.html")) }));
+  await ctx.addInitScript(`window.__LENS_MOCK = ${JSON.stringify({ scheme, ...mockCfg })};\n${mock}`);
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push(`${scheme}: ${e.message}`));
+  page.on("console", (m) => m.type() === "error" && errors.push(`${scheme}: ${m.text()}`));
+  return page;
+}
+
+const shots = [];
+for (const scheme of ["dark", "light"]) {
+  // Popup
+  {
+    const page = await newPage(scheme, { width: 380, height: 640 });
+    await page.goto("https://ext.mock/src/popup.html");
+    await page.waitForTimeout(500);
+    const f = path.join(OUT, `popup-${scheme}.png`);
+    await page.screenshot({ path: f, fullPage: true });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Side panel
+  {
+    const page = await newPage(scheme, { width: 400, height: 900 });
+    await page.goto("https://ext.mock/src/panel.html");
+    await page.waitForTimeout(500);
+    const f = path.join(OUT, `sidepanel-${scheme}.png`);
+    await page.screenshot({ path: f, fullPage: false });
+    shots.push(f);
+    await page.context().close();
+  }
+  // In-page dot + panel
+  {
+    const page = await newPage(scheme, { width: 1280, height: 800 });
+    await page.goto("https://lens-demo.example/blog/calm");
+    for (const f of ["src/content/selectionLogic.js", "src/ui/dashboard.js", "src/content/selection.js"]) {
+      await page.addScriptTag({ path: path.join(EXT, f) });
+    }
+    await page.waitForTimeout(100);
+    const dot = await page.evaluate(() => {
+      const p = document.getElementById("target");
+      const r = document.createRange();
+      r.setStart(p.firstChild, 0);
+      r.setEnd(p.firstChild, 58);
+      const s = getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+      document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      const rects = r.getClientRects();
+      const last = rects[rects.length - 1];
+      return globalThis.LensSel.dotPosition(last, { width: document.documentElement.clientWidth, height: innerHeight, scrollX, scrollY }, 22);
+    });
+    await page.waitForTimeout(450);
+    let f = path.join(OUT, `inpage-dot-${scheme}.png`);
+    await page.screenshot({ path: f, clip: { x: 200, y: 120, width: 880, height: 360 } });
+    shots.push(f);
+    await page.mouse.click(dot.left + 11, dot.top + 11);
+    await page.waitForTimeout(500);
+    await page.keyboard.press("Enter"); // runs the default action (Explain), which streams
+    await page.waitForTimeout(1600);
+    f = path.join(OUT, `inpage-panel-${scheme}.png`);
+    await page.screenshot({ path: f });
+    shots.push(f);
+    // Esc closes it.
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    await page.context().close();
+  }
+}
+await browser.close();
+for (const s of shots) console.log(path.relative(process.cwd(), s));
+if (errors.length) {
+  console.error("Page errors:\n" + errors.join("\n"));
+  process.exit(1);
+}

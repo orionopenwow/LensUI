@@ -147,6 +147,20 @@ pub fn handle(req: BridgeRequest) -> Value {
         "ping" => {
             return reply_ok(None, "ready", json!({ "lens": env!("CARGO_PKG_VERSION") }));
         }
+        "shelf_list" | "shelf_recent" => {
+            let res = if req.action == "shelf_recent" {
+                shelf().shelf_recent(req.limit as usize)
+            } else {
+                shelf().shelf_list(req.shelf.as_deref(), req.limit as usize)
+            };
+            return match res {
+                Ok(items) => reply_ok(None, "ready", json!({ "items": items })),
+                Err(e) => reply_err(&e),
+            };
+        }
+        "theme_get" => {
+            return reply_ok(None, "ready", json!({ "theme": super::theme::current() }));
+        }
         "status" => {
             let id = req.status_id.clone().unwrap_or_default();
             return match get(&id) {
@@ -640,6 +654,32 @@ mod tests {
             assert!(ev.get(k).is_some(), "missing {}", k);
         }
         assert_eq!(ev["page_text"], "md");
+    }
+
+    #[test]
+    fn shelf_reads_and_theme_are_answered_directly() {
+        let _g = guard();
+        clear_for_tests();
+        struct FakeShelf;
+        impl super::super::ports::ShelfPort for FakeShelf {
+            fn shelf_add(&self, _: &super::super::protocol::ShelfItem, _: Option<&str>) -> Result<String, String> {
+                Ok("s1".into())
+            }
+            fn shelf_list(&self, shelf: Option<&str>, limit: usize) -> Result<Vec<super::super::ports::ShelfSummary>, String> {
+                Ok((0..limit.min(3))
+                    .map(|i| super::super::ports::ShelfSummary { id: format!("{}{}", shelf.unwrap_or("r"), i), ..Default::default() })
+                    .collect())
+            }
+        }
+        super::super::ports::set_shelf(Arc::new(FakeShelf));
+        let r = handle_envelope_line(&env("browser", json!({"action":"shelf_recent","limit":2})));
+        assert_eq!(r["items"].as_array().unwrap().len(), 2);
+        let l = handle_envelope_line(&env("browser", json!({"action":"shelf_list","shelf":"Reading"})));
+        assert_eq!(l["items"][0]["id"], "Reading0");
+        let t = handle_envelope_line(&env("browser", json!({"action":"theme_get"})));
+        assert!(t["theme"]["scheme"].is_string());
+        assert!(list_inbox().is_empty(), "reads never create inbox entries");
+        super::super::ports::set_shelf(Arc::new(super::super::ports::InboxShelf));
     }
 
     #[test]

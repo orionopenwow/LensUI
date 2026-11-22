@@ -26,6 +26,9 @@ pub const MAX_EXT_TO_HOST_BYTES: usize = 512 * 1024;
 pub const ACTIONS: &[(&str, ActionKind)] = &[
     ("ping", ActionKind::Meta),
     ("status", ActionKind::Meta),
+    ("shelf_list", ActionKind::Meta),
+    ("shelf_recent", ActionKind::Meta),
+    ("theme_get", ActionKind::Meta),
     ("ask", ActionKind::Ai),
     ("summarize", ActionKind::Ai),
     ("explain", ActionKind::Ai),
@@ -123,6 +126,8 @@ pub struct RawRequest {
     pub prefer_local: Option<bool>,
     pub use_clipboard: Option<bool>,
     pub stream: Option<bool>,
+    /// For `shelf_list` / `shelf_recent`: how many items (1–50).
+    pub limit: Option<u32>,
     /// For `status`: the request id to look up.
     pub id: Option<String>,
     pub source: Option<SourceInfo>,
@@ -152,6 +157,7 @@ pub struct BridgeRequest {
     pub prefer_local: bool,
     pub use_clipboard: bool,
     pub stream: bool,
+    pub limit: u32,
     pub status_id: Option<String>,
     pub browser: Option<String>,
 }
@@ -296,6 +302,7 @@ pub fn validate(raw: RawRequest, origin: Origin) -> Result<BridgeRequest, String
         prefer_local: raw.prefer_local.unwrap_or(false),
         use_clipboard: raw.use_clipboard.unwrap_or(false),
         stream: raw.stream.unwrap_or(false),
+        limit: raw.limit.unwrap_or(12).clamp(1, 50),
         status_id: opt_text(&raw.id, 96, "The id")?,
         browser: raw.source.and_then(|s| s.browser).map(|b| clean(&b).chars().take(24).collect()),
         action,
@@ -345,7 +352,7 @@ fn validate_shelf_item(it: ShelfItem, origin: Origin) -> Result<ShelfItem, Strin
 fn check_has_content(r: &BridgeRequest) -> Result<(), String> {
     let has_text = r.selection.is_some() || r.page_text.is_some() || r.path.is_some() || r.use_clipboard;
     let ok = match r.action.as_str() {
-        "ping" | "command_open" => true,
+        "ping" | "command_open" | "shelf_list" | "shelf_recent" | "theme_get" => true,
         "status" => r.status_id.is_some(),
         "ask" => has_text || r.question.is_some() || r.url.is_some() || r.image_url.is_some() || r.link_url.is_some(),
         "summarize" | "explain" | "translate" | "rewrite" | "fix_grammar" | "extract" => has_text || r.link_url.is_some(),
@@ -465,6 +472,10 @@ mod tests {
         assert!(b(r#"{"action":"compare","selection":"x","shelfRef":"shelf-1"}"#).is_ok());
         assert!(b(r#"{"action":"shelf_add","item":{"kind":"page","title":"T","text":"md","url":"https://x.com"}}"#).is_ok());
         assert!(b(r#"{"action":"status","id":"br-1"}"#).is_ok());
+        let l = b(r#"{"action":"shelf_recent","limit":500}"#).unwrap();
+        assert_eq!(l.limit, 50, "limit is clamped");
+        assert_eq!(b(r#"{"action":"shelf_list","shelf":"Reading"}"#).unwrap().limit, 12);
+        assert!(b(r#"{"action":"theme_get"}"#).is_ok());
     }
 
     #[test]

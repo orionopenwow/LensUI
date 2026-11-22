@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lens — Settings</title>
+  <link rel="stylesheet" href="panel.css" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header>
+    <img src="../icons/icon32.png" alt="" />
+    <h1>Lens for Browsers — Settings</h1>
+  </header>
+  <main class="opts">
+    <section class="card">
+      <h2>Selection button</h2>
+      <p class="hint">A small Lens dot next to text you select, which opens Lens Mini right on the page. It never appears on banking, payment or sign-in pages, on pages with a visible password field, or in password and sensitive fields.</p>
+      <div class="radios" role="radiogroup" aria-label="Selection button">
+        <label><input type="radio" name="mode" value="off" /> Off</label>
+        <label><input type="radio" name="mode" value="sites" /> Only on sites I choose</label>
+        <label><input type="radio" name="mode" value="all" /> On all sites</label>
+      </div>
+      <div id="sitesBox">
+        <h3>Sites with the selection button</h3>
+        <ul class="list" id="sites"></ul>
+        <form class="add" id="addSite"><input id="siteInput" placeholder="example.com" aria-label="Add a site" /><button class="primary">Add</button></form>
+      </div>
+      <p class="hint" id="permHint"></p>
+    </section>
+
+    <section class="card">
+      <h2>Default action</h2>
+      <p class="hint">Highlighted in the in-page panel; press Enter to run it.</p>
+      <select id="defaultAction" aria-label="Default action">
+        <option value="summarize">Summarise</option>
+        <option value="explain">Explain</option>
+        <option value="translate">Translate</option>
+        <option value="rewrite">Rewrite</option>
+        <option value="ask">Ask</option>
+        <option value="shelf_add">Add to Shelf</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2>Never on these sites</h2>
+      <p class="hint">Lens never shows the selection button here, even when it's on for all sites.</p>
+      <ul class="list" id="never"></ul>
+      <form class="add" id="addNever"><input id="neverInput" placeholder="example.com" aria-label="Add a site to never use" /><button class="primary">Add</button></form>
+      <details>
+        <summary>Built-in list (always off)</summary>
+        <p class="hint" id="builtin"></p>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Privacy</h2>
+      <p class="hint">This extension has no network access. It talks only to Lens on this PC through the browser's native messaging. Answers come from a local model unless you let Lens use Claude, and every cloud request waits for your OK in Lens.</p>
+    </section>
+    <p class="hint" id="saved" role="status"></p>
+  </main>
+  <script src="content/selectionLogic.js"></script>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

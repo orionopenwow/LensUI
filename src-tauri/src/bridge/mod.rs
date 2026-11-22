@@ -19,6 +19,7 @@ pub mod ports;
 pub mod prompt;
 pub mod protocol;
 pub mod reg;
+pub mod theme;
 
 pub use manifest::bridge_dir;
 

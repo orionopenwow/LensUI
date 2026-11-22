@@ -146,7 +146,7 @@ fn forward_one(msg: &Value, caller: &Caller) -> Value {
     }
     match send(Origin::Browser, &req) {
         Ok(v) => v,
-        Err(e) if action == "ping" && e == OFFLINE => reply_ok(None, "lens-offline", json!({ "host": PROTOCOL_VERSION, "error": e })),
+        Err(e) if matches!(action, "ping" | "theme_get" | "shelf_list" | "shelf_recent") && e == OFFLINE => reply_ok(None, "lens-offline", json!({ "host": PROTOCOL_VERSION, "error": e })),
         Err(e) => reply_err(&e),
     }
 }

@@ -11,7 +11,7 @@ export const MAX_TITLE_CHARS = 512;
 export const MAX_URL_LEN = 4_096;
 
 export const ACTIONS = [
-  "ping", "status", "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar",
+  "ping", "status", "shelf_list", "shelf_recent", "theme_get", "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar",
   "extract", "compare", "transcribe", "shelf_add", "context_add", "command_open",
 ];
 
@@ -106,6 +106,8 @@ export function buildRequest(action, ctx = {}, opts = {}) {
   if (opts.preferLocal) req.preferLocal = true;
   if (opts.stream) req.stream = true;
   if (opts.id) req.id = String(opts.id);
+  if (opts.limit) req.limit = Math.max(1, Math.min(50, Number(opts.limit) | 0));
+  if (opts.shelf) req.shelf = String(opts.shelf).slice(0, 80);
   req.source = { browser: opts.browser || "chromium", extensionVersion: opts.version || "0" };
   return req;
 }

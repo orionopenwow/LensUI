@@ -55,9 +55,74 @@ pub trait AiPort: Send + Sync {
     fn cancel(&self, _request_id: &str) {}
 }
 
-/// What the bridge needs from the Shelf: `shelf_add(item, shelf?) -> id`.
+/// One Shelf item as the browser strip shows it.
+#[derive(Debug, Clone, Default, Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ShelfSummary {
+    pub id: String,
+    pub kind: String,
+    pub title: String,
+    pub url: Option<String>,
+    /// First ~140 characters of the text.
+    pub snippet: String,
+    pub shelf: Option<String>,
+    pub added_ms: u64,
+}
+
+/// What the bridge needs from the Shelf (feature/shelf-command):
+/// `shelf_add(item, shelf?) -> id`, `shelf_list(shelf?, limit)`, `shelf_recent(limit)`.
 pub trait ShelfPort: Send + Sync {
     fn shelf_add(&self, item: &ShelfItem, shelf: Option<&str>) -> Result<String, String>;
+    fn shelf_list(&self, shelf: Option<&str>, limit: usize) -> Result<Vec<ShelfSummary>, String>;
+    fn shelf_recent(&self, limit: usize) -> Result<Vec<ShelfSummary>, String> {
+        self.shelf_list(None, limit)
+    }
+}
+
+pub fn summarize_item(id: &str, item: &ShelfItem, shelf: Option<&str>, added_ms: u64) -> ShelfSummary {
+    let text = item.text.as_deref().unwrap_or("");
+    let mut snippet: String = text.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(140).collect();
+    if text.chars().count() > 140 {
+        snippet.push('…');
+    }
+    let title = item
+        .title
+        .clone()
+        .or_else(|| item.url.clone())
+        .or_else(|| item.path.as_deref().and_then(|p| p.rsplit(['\\', '/']).next()).map(str::to_string))
+        .unwrap_or_else(|| snippet.chars().take(48).collect());
+    ShelfSummary {
+        id: id.to_string(),
+        kind: item.kind.clone(),
+        title,
+        url: item.url.clone(),
+        snippet,
+        shelf: shelf.map(str::to_string),
+        added_ms,
+    }
+}
+
+/// Reads the inbox file (newest first), optionally filtered by shelf name.
+pub fn read_inbox(text: &str, shelf: Option<&str>, limit: usize) -> Vec<ShelfSummary> {
+    let mut out: Vec<ShelfSummary> = text
+        .lines()
+        .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+        .filter_map(|v| {
+            let item: ShelfItem = serde_json::from_value(v.get("item")?.clone()).ok()?;
+            let s = v.get("shelf").and_then(|x| x.as_str()).map(str::to_string);
+            if let Some(want) = shelf {
+                if s.as_deref() != Some(want) {
+                    return None;
+                }
+            }
+            let id = v.get("id").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let added = v.get("addedMs").and_then(|x| x.as_u64()).unwrap_or(0);
+            Some(summarize_item(&id, &item, s.as_deref(), added))
+        })
+        .collect();
+    out.reverse();
+    out.truncate(limit);
+    out
 }
 
 pub struct StubAi;
@@ -84,6 +149,11 @@ impl ShelfPort for InboxShelf {
             .map_err(|e| e.to_string())?;
         writeln!(f, "{}", line).map_err(|e| e.to_string())?;
         Ok(id)
+    }
+
+    fn shelf_list(&self, shelf: Option<&str>, limit: usize) -> Result<Vec<ShelfSummary>, String> {
+        let text = std::fs::read_to_string(super::bridge_dir().join("shelf-inbox.jsonl")).unwrap_or_default();
+        Ok(read_inbox(&text, shelf, limit))
     }
 }
 
@@ -172,6 +242,26 @@ mod tests {
         let it = shelf_item_for(&f);
         assert_eq!(it.kind, "file");
         assert_eq!(it.source_app.as_deref(), Some("File Explorer"));
+    }
+
+    #[test]
+    fn inbox_reads_newest_first_and_filters() {
+        let lines = [
+            r#"{"id":"a","shelf":null,"item":{"kind":"page","title":"First","text":"hello   world","url":"https://x.com"},"addedMs":1}"#,
+            "not json",
+            r#"{"id":"b","shelf":"Reading","item":{"kind":"selection","text":"second item text"},"addedMs":2}"#,
+            r#"{"id":"c","shelf":null,"item":{"kind":"file","path":"C:\\docs\\plan.pdf"},"addedMs":3}"#,
+        ]
+        .join("\n");
+        let all = read_inbox(&lines, None, 10);
+        assert_eq!(all.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), vec!["c", "b", "a"]);
+        assert_eq!(all[2].snippet, "hello world");
+        assert_eq!(all[0].title, "plan.pdf");
+        assert_eq!(all[1].title, "second item text");
+        assert_eq!(read_inbox(&lines, Some("Reading"), 10).len(), 1);
+        assert_eq!(read_inbox(&lines, None, 1).len(), 1);
+        let long = ShelfItem { kind: "text".into(), text: Some("x".repeat(300)), ..Default::default() };
+        assert!(summarize_item("z", &long, None, 0).snippet.ends_with('…'));
     }
 
     #[test]

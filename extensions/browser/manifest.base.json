@@ -4,24 +4,84 @@
   "short_name": "Lens",
   "version": "0.1.0",
   "description": "Send pages, selections, links and videos to Lens UI on this PC: ask, summarise, translate, add to your Shelf.",
-  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
-  "action": { "default_title": "Lens", "default_popup": "src/popup.html", "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" } },
-  "permissions": ["contextMenus", "nativeMessaging", "activeTab", "scripting", "storage"],
-  "commands": {
-    "open-command": { "suggested_key": { "default": "Alt+Shift+L" }, "description": "Open Lens Command with the selection" },
-    "add-to-shelf": { "suggested_key": { "default": "Alt+Shift+S" }, "description": "Add the selection (or page) to the Lens Shelf" }
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
-  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'none'" },
+  "action": {
+    "default_title": "Lens",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "contextMenus",
+    "nativeMessaging",
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "commands": {
+    "open-command": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Open Lens Command with the selection"
+    },
+    "add-to-shelf": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Add the selection (or page) to the Lens Shelf"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'none'"
+  },
   "chromium": {
     "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAll+E5sFjzCnOaLwdemO0UNVFMRFO1T9mMJ0lPB6GOTT6tsoBVBw+3ShAsRbZhe4Y25vxz9lgkNfQ+5JfJJh2px9srbXZay//s4M4HY+KnIB704T6QZZxy5tQ+0Qnu8GfSG583IY2eCkCBFC7dWMqVZY3GEODRlvTHGZW/ybRXzfCHeAynAGxbwRzejtpq3o2kTXEVkHG6Q24sJrKLo19cPmKCGrrB6a0zSv1W5994z5/MnLWudeFCM21GQjVvyrb4MsTuUX6l3XonyqrXI4AbKOXjHSf7AN4yiBdbAIwmSOEu1qSZ6/jNWd3Tz6U3p65uXgiwk2/vuMGLYpkcU1wywIDAQAB",
-    "background": { "service_worker": "src/background.js", "type": "module" },
-    "side_panel": { "default_path": "src/panel.html" },
-    "extraPermissions": ["sidePanel"],
-    "minimum_chrome_version": "116"
+    "background": {
+      "service_worker": "src/background.js",
+      "type": "module"
+    },
+    "side_panel": {
+      "default_path": "src/panel.html"
+    },
+    "extraPermissions": [
+      "sidePanel"
+    ],
+    "minimum_chrome_version": "120"
   },
   "firefox": {
-    "background": { "scripts": ["src/background.js"], "type": "module" },
-    "sidebar_action": { "default_title": "Lens", "default_panel": "src/panel.html", "default_icon": "icons/icon32.png", "open_at_install": false },
-    "browser_specific_settings": { "gecko": { "id": "lens-bridge@lensui.app", "strict_min_version": "115.0" } }
+    "background": {
+      "scripts": [
+        "src/background.js"
+      ],
+      "type": "module"
+    },
+    "sidebar_action": {
+      "default_title": "Lens",
+      "default_panel": "src/panel.html",
+      "default_icon": "icons/icon32.png",
+      "open_at_install": false
+    },
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "lens-bridge@lensui.app",
+        "strict_min_version": "128.0"
+      }
+    }
   }
 }
