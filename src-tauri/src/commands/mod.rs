@@ -14,3 +14,5 @@ pub(crate) mod backup;
 pub(crate) mod notifications;
 pub(crate) mod shell;
 pub(crate) mod misc;
+pub(crate) mod clip;
+pub(crate) mod shelf;

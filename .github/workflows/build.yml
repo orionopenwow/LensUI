@@ -148,10 +148,15 @@ jobs:
       - name: Render every surface
         run: node tools/parity/shoot.mjs
 
+      - name: Render Lens Command scenes
+        run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: parity-screenshots
-          path: tools/parity/shots/
+          path: |
+            tools/parity/shots/
+            tools/parity/command/shots/
           if-no-files-found: warn

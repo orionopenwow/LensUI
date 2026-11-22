@@ -35,7 +35,9 @@ mod win_monitors;
 mod win_windows;
 
 mod app;
+mod clip;
 mod commands;
+mod shelf;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -149,6 +151,39 @@ pub fn run() {
             )
         })
         .invoke_handler(tauri::generate_handler![
+            commands::clip::clip_status,
+            commands::clip::clip_set_settings,
+            commands::clip::clip_list,
+            commands::clip::clip_get_text,
+            commands::clip::clip_pin,
+            commands::clip::clip_rename,
+            commands::clip::clip_delete,
+            commands::clip::clip_clear,
+            commands::clip::clip_wipe,
+            commands::clip::clip_pause,
+            commands::clip::clip_ignore_next,
+            commands::clip::clip_copy,
+            commands::clip::clip_paste,
+            commands::clip::clip_paste_text,
+            commands::clip::clip_merge,
+            commands::clip::clip_to_shelf,
+            commands::shelf::shelf_list,
+            commands::shelf::shelf_get,
+            commands::shelf::shelf_add,
+            commands::shelf::shelf_remove,
+            commands::shelf::shelf_update,
+            commands::shelf::shelf_reorder,
+            commands::shelf::shelf_pin,
+            commands::shelf::shelf_clear,
+            commands::shelf::shelves_list,
+            commands::shelf::shelf_create,
+            commands::shelf::shelf_rename,
+            commands::shelf::shelf_delete,
+            commands::shelf::shelf_export,
+            commands::shelf::shelf_as_context,
+            commands::shelf::command_templates,
+            commands::shelf::command_templates_save,
+            commands::shelf::command_expand,
             commands::theme::get_config,
             commands::theme::save_config_cmd,
             commands::dock::set_dock_pill_width,
