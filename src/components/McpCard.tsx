@@ -3,12 +3,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LensConfig } from "../types/lens";
 import { executeNaturalLanguagePlan, parseNaturalLanguageActions } from "../utils/nlActionRouter";
+import type * as Gen from "../types/generated";
 
 /** Mirrors win_mcp.rs (serde camelCase). */
-export interface McpConfig {
-  enabled: boolean;
-  confirmAll: boolean;
-}
+export type McpConfig = Gen.McpConfig;
 
 interface McpStatus {
   running: boolean;

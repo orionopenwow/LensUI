@@ -449,11 +449,11 @@ pub fn cycle_layout(
     work_h: i32,
 ) -> Result<String, String> {
     use std::sync::atomic::Ordering;
-    let len = LAYOUT_CYCLE.len() as i32;
-    let cur = LAYOUT_CURSOR.load(Ordering::SeqCst) as i32;
-    let next = (cur + step).rem_euclid(len) as usize;
+    let cur = LAYOUT_CURSOR.load(Ordering::SeqCst).min(LAYOUT_CYCLE.len() - 1);
+    let layout = next_layout(LAYOUT_CYCLE[cur], step);
+    let next = LAYOUT_CYCLE.iter().position(|l| *l == layout).unwrap_or(0);
     LAYOUT_CURSOR.store(next, Ordering::SeqCst);
-    tile_windows(LAYOUT_CYCLE[next], work_x, work_y, work_w, work_h)
+    tile_windows(layout, work_x, work_y, work_w, work_h)
 }
 
 #[cfg(not(windows))]
@@ -1251,34 +1251,11 @@ fn auto_tiling_action_inner(action: &str, arg: &str) -> Option<Result<String, St
 
 #[cfg(windows)]
 pub(crate) mod ffi {
-    #[repr(C)]
-    #[derive(Clone, Copy, Default, Debug)]
-    pub struct Rect {
-        pub left: i32,
-        pub top: i32,
-        pub right: i32,
-        pub bottom: i32,
-    }
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct MonitorInfo {
-        pub cb_size: u32,
-        pub rc_monitor: Rect,
-        pub rc_work: Rect,
-        pub flags: u32,
-    }
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct Msg {
-        pub hwnd: isize,
-        pub message: u32,
-        pub wparam: usize,
-        pub lparam: isize,
-        pub time: u32,
-        pub pt_x: i32,
-        pub pt_y: i32,
-        pub private: u32,
-    }
+    // Structs and the message loop are shared with other modules (see crate::ffi).
+    pub use crate::ffi::{
+        DispatchMessageW, GetMessageW, GetMonitorInfoW, MonitorInfo, Msg, Rect, TranslateMessage,
+    };
+
     pub type WinEventProc = unsafe extern "system" fn(isize, u32, isize, i32, i32, u32, u32);
     pub type EnumProc = unsafe extern "system" fn(isize, isize) -> i32;
 
@@ -1305,11 +1282,9 @@ pub(crate) mod ffi {
             cy: i32,
             flags: u32,
         ) -> i32;
-        pub fn ShowWindow(h: isize, cmd: i32) -> i32;
         pub fn ShowWindowAsync(h: isize, cmd: i32) -> i32;
         pub fn GetForegroundWindow() -> isize;
         pub fn MonitorFromWindow(h: isize, flags: u32) -> isize;
-        pub fn GetMonitorInfoW(m: isize, info: *mut MonitorInfo) -> i32;
         pub fn SetWinEventHook(
             min: u32,
             max: u32,
@@ -1319,9 +1294,6 @@ pub(crate) mod ffi {
             tid: u32,
             flags: u32,
         ) -> isize;
-        pub fn GetMessageW(msg: *mut Msg, h: isize, min: u32, max: u32) -> i32;
-        pub fn TranslateMessage(msg: *const Msg) -> i32;
-        pub fn DispatchMessageW(msg: *const Msg) -> isize;
     }
     #[link(name = "dwmapi")]
     extern "system" {
@@ -1366,7 +1338,6 @@ pub(crate) mod ffi {
     pub const HWND_TOP: isize = 0;
     pub const SW_MINIMIZE: i32 = 6;
     pub const SW_SHOWNOACTIVATE: i32 = 4;
-    pub const SW_RESTORE: i32 = 9;
     pub const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
     pub const WINEVENT_OUTOFCONTEXT: u32 = 0;
     pub const OBJID_WINDOW: i32 = 0;
@@ -1977,3 +1948,7 @@ pub const AUTO_TILING_HOTKEYS: [TilingHotkey; 15] = [
         label: "Workspace 3",
     },
 ];
+
+#[cfg(test)]
+#[path = "tests/win_tiler.rs"]
+mod tests;

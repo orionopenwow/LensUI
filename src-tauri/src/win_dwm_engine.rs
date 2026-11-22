@@ -449,7 +449,15 @@ pub fn start_dwm_hook_engine() {
                 eprintln!("[Lens DWM Engine] GetProcAddress(lens_hook_proc) failed.");
                 return;
             };
-            let hook_proc: HOOKPROC = Some(std::mem::transmute(func));
+            // `func` is lens_hook_proc's address, exported from lens_dwm_hook.dll with exactly the HOOKPROC signature.
+            let hook_proc: HOOKPROC = Some(std::mem::transmute::<
+                unsafe extern "system" fn() -> isize,
+                unsafe extern "system" fn(
+                    i32,
+                    windows::Win32::Foundation::WPARAM,
+                    windows::Win32::Foundation::LPARAM,
+                ) -> windows::Win32::Foundation::LRESULT,
+            >(func));
             match SetWindowsHookExW(WH_CALLWNDPROC, hook_proc, hmod, 0) {
                 Ok(hhook) => {
                     eprintln!("[Lens DWM Engine] Global WH_CALLWNDPROC hook active! Retroactively styling windows...");

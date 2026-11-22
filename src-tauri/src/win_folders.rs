@@ -585,3 +585,7 @@ pub fn user_core_folders() -> Vec<String> {
         .filter(|p| Path::new(p).is_dir())
         .collect()
 }
+
+#[cfg(test)]
+#[path = "tests/win_folders.rs"]
+mod tests;

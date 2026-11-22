@@ -606,7 +606,7 @@ mod sys {
     unsafe fn wlan_open() -> Result<Wlan, String> {
         let no_wifi = || "This PC has no Wi-Fi adapter, or the Wi-Fi service is off.".to_string();
         let f = |n: &str| proc_addr("wlanapi.dll", n).ok_or_else(no_wifi);
-        let open: WlanOpenHandle = std::mem::transmute(f("WlanOpenHandle")?);
+        let open = std::mem::transmute::<*const c_void, WlanOpenHandle>(f("WlanOpenHandle")?);
         let mut negotiated = 0u32;
         let mut handle: Handle = 0;
         let rc = open(2, std::ptr::null_mut(), &mut negotiated, &mut handle);
@@ -618,13 +618,13 @@ mod sys {
         }
         Ok(Wlan {
             handle,
-            close: std::mem::transmute(f("WlanCloseHandle")?),
-            enum_ifaces: std::mem::transmute(f("WlanEnumInterfaces")?),
-            list: std::mem::transmute(f("WlanGetAvailableNetworkList")?),
-            scan: std::mem::transmute(f("WlanScan")?),
-            connect: std::mem::transmute(f("WlanConnect")?),
-            disconnect: std::mem::transmute(f("WlanDisconnect")?),
-            free: std::mem::transmute(f("WlanFreeMemory")?),
+            close: std::mem::transmute::<*const c_void, WlanCloseHandle>(f("WlanCloseHandle")?),
+            enum_ifaces: std::mem::transmute::<*const c_void, WlanEnumInterfaces>(f("WlanEnumInterfaces")?),
+            list: std::mem::transmute::<*const c_void, WlanGetAvailableNetworkList>(f("WlanGetAvailableNetworkList")?),
+            scan: std::mem::transmute::<*const c_void, WlanScan>(f("WlanScan")?),
+            connect: std::mem::transmute::<*const c_void, WlanConnect>(f("WlanConnect")?),
+            disconnect: std::mem::transmute::<*const c_void, WlanDisconnect>(f("WlanDisconnect")?),
+            free: std::mem::transmute::<*const c_void, WlanFreeMemory>(f("WlanFreeMemory")?),
         })
     }
 
@@ -1346,3 +1346,7 @@ mod stubs {
 
 #[cfg(not(windows))]
 pub use stubs::*;
+
+#[cfg(test)]
+#[path = "tests/win_system_modules.rs"]
+mod tests;

@@ -16,5 +16,7 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Unit tests run under `bun test` (bun:test types), not the app type-check.
+  "exclude": ["src/__tests__"]
 }

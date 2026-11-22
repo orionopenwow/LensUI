@@ -192,8 +192,7 @@ pub fn sniff_image_ext(head: &[u8]) -> Option<&'static str> {
 // ---------------------------------------------------------------------------------------------
 
 fn lens_dir() -> PathBuf {
-    let base = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
-    PathBuf::from(base).join("LensUI")
+    crate::config::config_dir()
 }
 
 pub fn wallpapers_dir() -> PathBuf {
@@ -333,7 +332,6 @@ mod ffi {
         ) -> isize;
         pub fn EnumWindows(cb: WNDENUMPROC, lparam: isize) -> i32;
         pub fn SetParent(child: HWND, parent: HWND) -> HWND;
-        pub fn GetParent(hwnd: HWND) -> HWND;
         pub fn SetWindowPos(
             hwnd: HWND,
             after: HWND,
@@ -353,7 +351,6 @@ mod ffi {
         pub fn GetClassNameW(hwnd: HWND, buf: *mut u16, len: i32) -> i32;
         pub fn GetWindowLongPtrW(hwnd: HWND, index: i32) -> isize;
         pub fn SetWindowLongPtrW(hwnd: HWND, index: i32, value: isize) -> isize;
-        pub fn MonitorFromWindow(hwnd: HWND, flags: u32) -> isize;
         pub fn MonitorFromPoint(pt: POINT, flags: u32) -> isize;
         pub fn GetMonitorInfoW(monitor: isize, info: *mut MONITORINFO) -> i32;
         pub fn SystemParametersInfoW(
@@ -764,3 +761,7 @@ pub fn set_measured_accent(hex: &str) -> Result<(), String> {
     s.accent_hex = hex.to_uppercase();
     save_settings(s).map(|_| ())
 }
+
+#[cfg(test)]
+#[path = "tests/win_wallpaper.rs"]
+mod tests;

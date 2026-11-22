@@ -97,3 +97,7 @@ pub fn delete_theme_file(name: &str) -> Result<(), String> {
     let path = theme_path(name)?;
     fs::remove_file(&path).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+#[path = "tests/win_themes.rs"]
+mod tests;
