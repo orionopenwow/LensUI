@@ -31,6 +31,8 @@ mod win_training;
 mod win_windhawk;
 mod win_monitors;
 mod win_windows;
+mod win_crash;
+mod win_update;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -438,6 +440,7 @@ fn save_config_cmd(
 ) -> Result<(), String> {
     let prev_config = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
     save_config(&new_config)?;
+    win_crash::set_feature_flags(&new_config);
 
     // Only touch taskbar/startup/window geometry when those specific settings actually changed!
     // Never call set_size/set_position/backdrop on every Opacity/Roundness/Color dial tick (eliminates flicker!).
@@ -2935,6 +2938,50 @@ fn collect_overlap_rects() -> Vec<OverlapRect> {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[tauri::command]
+fn write_plugin_frame_cmd(id: String, html: String) -> Result<String, String> {
+    win_plugins::write_plugin_frame(&id, &html)
+}
+
+#[tauri::command]
+fn list_crash_reports_cmd() -> Vec<win_crash::CrashReportInfo> {
+    win_crash::list_crash_reports()
+}
+
+#[tauri::command]
+fn read_crash_report_cmd(name: String) -> Result<String, String> {
+    win_crash::read_crash_report(&name)
+}
+
+#[tauri::command]
+fn open_crashes_folder_cmd() -> Result<(), String> {
+    let dir = win_crash::crashes_dir();
+    let _ = std::fs::create_dir_all(&dir);
+    launch_path(&dir.to_string_lossy())
+}
+
+#[tauri::command]
+fn get_update_settings_cmd() -> win_update::UpdateSettings {
+    win_update::load_settings()
+}
+
+#[tauri::command]
+fn set_update_settings_cmd(
+    settings: win_update::UpdateSettings,
+) -> Result<win_update::UpdateSettings, String> {
+    win_update::save_settings(settings)
+}
+
+#[tauri::command]
+async fn check_for_update_cmd(app: AppHandle) -> win_update::UpdateStatus {
+    win_update::check(&app).await
+}
+
+#[tauri::command]
+async fn install_update_cmd(app: AppHandle) -> Result<String, String> {
+    win_update::install(&app).await
+}
+
 pub fn run() {
     // Crash-safe panic hook + Win32 Console Ctrl/Close handler so closing terminal or Ctrl+C ALWAYS restores taskbar
     // AI apps launch `lens-ui.exe --mcp-stdio`: act as the MCP bridge only, never start the shell.
@@ -2946,9 +2993,11 @@ pub fn run() {
     let shell_startup = win_shell::shell_startup();
     let running_as_shell = shell_startup == win_shell::ShellStartup::Shell;
 
+    win_crash::install_log_capture();
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        win_crash::write_crash_report(info);
         win_mcp::stop_server();
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
@@ -2972,6 +3021,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             config: shared_config,
             dock_pill_width,
@@ -2981,6 +3031,8 @@ pub fn run() {
         })
         .setup(move |app| {
             let handle = app.handle().clone();
+            win_crash::set_feature_flags(&initial_config);
+            win_update::start_background_check(handle.clone());
 
             // Windows marked "create": false in tauri.conf.json: build them now unless on-demand
             // windows are enabled. (No-op for any window Tauri already created.)
@@ -3710,6 +3762,14 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            write_plugin_frame_cmd,
+            list_crash_reports_cmd,
+            read_crash_report_cmd,
+            open_crashes_folder_cmd,
+            get_update_settings_cmd,
+            set_update_settings_cmd,
+            check_for_update_cmd,
+            install_update_cmd,
             get_config,
             save_config_cmd,
             set_dock_pill_width,
