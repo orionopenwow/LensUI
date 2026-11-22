@@ -121,7 +121,7 @@ export interface DockConfig {
 
 /**
  * Tiles arrive in CSS px relative to the dock window; converted here to physical screen px.
- * Rust: `crate::DockPreviewTileCss`
+ * Rust: `commands::dock::DockPreviewTileCss`
  */
 export interface DockPreviewTileCss {
   hwnd: number;
@@ -265,7 +265,7 @@ export interface LensConfig {
   mcp: McpConfig;
 }
 
-/** Rust: `crate::LocalAiStackStatus` */
+/** Rust: `commands::mcp::LocalAiStackStatus` */
 export interface LocalAiStackStatus {
   tribecodeBat: string | null;
   tribecodeWorkingBat: string | null;
