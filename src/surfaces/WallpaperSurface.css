@@ -42,3 +42,38 @@
     radial-gradient(90% 80% at 85% 90%, color-mix(in srgb, var(--lens-accent, #fafafa) 9%, transparent), transparent 65%),
     var(--lens-pack-base, #08080b);
 }
+
+/* Playground idle mode: full screen above windows, dismissed on any input. */
+.wp-root.wp-idle {
+  pointer-events: auto;
+  cursor: none;
+}
+.wp-idle-clock {
+  position: absolute;
+  left: 56px;
+  bottom: 52px;
+  color: #fafafa;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.45);
+  pointer-events: none;
+  animation: wp-idle-in 1.2s ease both;
+}
+.wp-idle-time {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.wp-idle-date {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+@keyframes wp-idle-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wp-idle-clock { animation: none; }
+}
+:root[data-motion="reduce"] .wp-idle-clock { animation: none; }
