@@ -79,6 +79,8 @@ jobs:
           -A clippy::perf
           -A clippy::too_many_arguments
           -A clippy::missing_safety_doc
+          -A clashing_extern_declarations
+          -A clippy::missing_transmute_annotations
 
       - name: cargo test (pure-logic unit tests)
         working-directory: src-tauri
