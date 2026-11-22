@@ -112,7 +112,7 @@ pub(crate) fn get_agents_md_cmd() -> String {
     if let Ok(text) = std::fs::read_to_string(&path) {
         return text;
     }
-    let default_md = include_str!("../../AGENTS.md").to_string();
+    let default_md = include_str!("../../../AGENTS.md").to_string();
     let _ = std::fs::create_dir_all(config::config_dir());
     let _ = std::fs::write(&path, &default_md);
     default_md
@@ -127,7 +127,7 @@ pub(crate) fn save_agents_md_cmd(content: String) -> Result<(), String> {
 
 #[tauri::command]
 pub(crate) fn reset_agents_md_cmd() -> Result<String, String> {
-    let default_md = include_str!("../../AGENTS.md").to_string();
+    let default_md = include_str!("../../../AGENTS.md").to_string();
     save_agents_md_cmd(default_md.clone())?;
     Ok(default_md)
 }

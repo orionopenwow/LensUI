@@ -86,9 +86,9 @@ use win_windows::{
 // Commands and app helpers call each other by bare name (as they did when they all lived in
 // this file); these glob imports keep that working after the split.
 use app::{setup::*, tray::*, watcher::*, AppState};
+// Only the areas whose items are called by bare name from elsewhere are imported here.
 use commands::{
-    backup::*, dock::*, mcp::*, misc::*, notifications::*, plugins::*, power::*, search::*,
-    shell::*, surfaces::*, system::*, theme::*, wallpaper::*, workspaces::*,
+    mcp::*, notifications::*, surfaces::*, system::*, theme::*, wallpaper::*, workspaces::*,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
