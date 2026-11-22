@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lens UI — a desktop shell for Windows 11</title>
+<meta name="description" content="Lens UI replaces the Windows 11 taskbar with a Dock, a Top Bar, real system controls, tiling and theme packs that restyle every window. Open source, reversible, built on Tauri and Rust.">
+<meta property="og:title" content="Lens UI">
+<meta property="og:description" content="A Dock, a Top Bar and theme packs for Windows 11. Open source and reversible.">
+<meta property="og:image" content="assets/desktop-obsidian.webp">
+<meta name="theme-color" content="#09090b">
+<link rel="icon" href="assets/lens.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <a class="mark" href="./" aria-label="Lens UI home"><img src="assets/lens.svg" alt="" width="16" height="16"> Lens UI</a>
+  <nav aria-label="Sections">
+    <a href="#dock">Dock</a>
+    <a href="#themes">Theme packs</a>
+    <a href="#tiling">Tiling</a>
+    <a href="#safety">Safety</a>
+    <a href="#get">Get it</a>
+    <a href="docs/">Docs</a>
+  </nav>
+  <time id="clock" datetime="">&nbsp;</time>
+</header>
+
+<main id="main">
+<section class="hero">
+  <div class="inner">
+    <h1>A calmer desktop for Windows 11.</h1>
+    <p class="lede">Lens UI replaces the taskbar with a Dock and a Top Bar, puts real Wi-Fi, Bluetooth, audio and battery controls one click away, and restyles every app window to match your theme. Quit it, and Windows is exactly as you left it.</p>
+    <div class="actions">
+      <a class="btn primary" href="#get">Build from source</a>
+      <a class="btn quiet" href="https://github.com/orionopenwow/lensui">View on GitHub</a>
+      <span class="note">Free and open source, MIT licensed. Early preview.</span>
+    </div>
+  </div>
+  <figure class="shot-hero">
+    <img src="assets/desktop-obsidian.webp" width="1920" height="1080" alt="A Windows desktop running Lens UI: a Top Bar with media controls, battery, Wi-Fi and clock across the top, three tiled app windows with green, yellow and red window buttons, and a Dock of app icons at the bottom.">
+  </figure>
+</section>
+
+<section id="dock">
+  <div class="inner">
+    <div class="row">
+      <div class="copy">
+        <h2>The Dock opens into search where you already are.</h2>
+        <p>Click the magnifier and a text box spreads out of it. The Dock keeps its size and your apps stay visible to the right; results open just above.</p>
+        <ul class="facts">
+          <li>One search for apps, open windows, files, folders and Windows settings, tolerant of typos.</li>
+          <li>It learns from what you pick, so the result you chose for a query rises to the top next time.</li>
+          <li><code>2+2*3</code>, <code>72 f to c</code> and <code>15% of 80</code> answer inline.</li>
+          <li>Pin apps, reorder by dragging, and see unread counts on their icons.</li>
+        </ul>
+      </div>
+      <div class="frame"><img src="assets/dock-search.webp" width="800" height="700" loading="lazy" alt="The Dock with its search box open and typed 'fo'; above it a results panel lists the Forge app, matching Windows settings and an open Forge window."></div>
+    </div>
+
+    <div class="row flip">
+      <div class="copy">
+        <h2>Controls that do the thing, not a link to Settings.</h2>
+        <p>Quick Settings drops from the Top Bar. Every row talks to Windows directly.</p>
+        <ul class="facts">
+          <li>Wi-Fi networks with signal and saved-profile connect, and paired Bluetooth devices.</li>
+          <li>Per-app volume, and switching output and microphone devices.</li>
+          <li>Battery time left and Windows power mode; keyboard layout switching.</li>
+          <li>Brightness and Night Light on the same pane.</li>
+        </ul>
+      </div>
+      <div class="pair">
+        <div class="frame"><img src="assets/quick-settings.webp" width="404" height="580" loading="lazy" alt="Quick Settings pane: battery at 76% with power modes, keyboard layouts, brightness, Night Light and per-app volume sliders."></div>
+        <div class="frame"><img src="assets/network.webp" width="404" height="580" loading="lazy" alt="Network pane: a Wi-Fi list with the connected network and saved networks, and Bluetooth with connected headphones and a paired mouse."></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="themes">
+  <div class="inner">
+    <h2>One click restyles the shell and every window frame.</h2>
+    <p class="lede">A theme pack sets the surface colour, accent, corner radius, icon style, folder icons and window frames together. Titlebars of your other apps change with it, because Lens sets them through the Windows compositor.</p>
+    <div class="packs" role="group" aria-label="Theme packs">
+      <button class="pack" type="button" aria-pressed="true" data-pack="obsidian" data-accent="#7cc4dc"><span class="dot" style="background:#09090b"></span>Obsidian</button>
+      <button class="pack" type="button" aria-pressed="false" data-pack="catppuccin-mocha" data-accent="#cba6f7"><span class="dot" style="background:#cba6f7"></span>Catppuccin Mocha</button>
+      <button class="pack" type="button" aria-pressed="false" data-pack="tokyo-night" data-accent="#7aa2f7"><span class="dot" style="background:#7aa2f7"></span>Tokyo Night</button>
+      <button class="pack" type="button" aria-pressed="false" data-pack="hyprland-neon" data-accent="#38bdf8"><span class="dot" style="background:#38bdf8"></span>Hyprland Neon</button>
+      <button class="pack" type="button" aria-pressed="false" data-pack="gruvbox-warm" data-accent="#fabd2f"><span class="dot" style="background:#fabd2f"></span>Gruvbox Warm</button>
+      <button class="pack" type="button" aria-pressed="false" data-pack="alabaster-daylight" data-accent="#7cc4dc"><span class="dot" style="background:#f4f4f5"></span>Alabaster Daylight</button>
+    </div>
+    <figure class="theme-shot frame">
+      <img id="pack-shot" src="assets/desktop-obsidian.webp" width="1920" height="1080" loading="lazy" alt="The Lens desktop in the Obsidian theme pack.">
+    </figure>
+    <div class="row" style="margin-top:80px">
+      <div class="copy">
+        <h3>Eighteen packs, or your own.</h3>
+        <p style="margin-top:12px">Linux favourites like Catppuccin, Nord and Rosé Pine sit next to two light packs. Save any look as a <code>.lenstheme</code> file to share it, schedule a day pack and a night pack by clock or by sunrise, and follow Windows' own contrast and reduced-motion settings.</p>
+      </div>
+      <div class="frame"><img src="assets/theme-gallery.webp" width="900" height="720" loading="lazy" alt="Control Center's Theme Gallery showing live mini-previews of the Core and Linux Suite theme packs."></div>
+    </div>
+  </div>
+</section>
+
+<section id="tiling">
+  <div class="inner">
+    <div class="row flip">
+      <div class="copy">
+        <h2>Windows that arrange themselves, when you want them to.</h2>
+        <p>Turn on automatic tiling and new windows drop into a layout: master and stack, columns, grid, dwindle or monocle. Maximised, fullscreen and game windows are left alone, and a window you drag yourself starts floating.</p>
+        <ul class="facts">
+          <li>Named workspaces with their own layout and the apps that open there.</li>
+          <li>Snap, swap, float and resize from the keyboard, if you switch the shortcuts on.</li>
+          <li>Save a set of apps as a session and bring it back, tiled, in one click.</li>
+        </ul>
+      </div>
+      <div class="frame"><img src="assets/tiling.webp" width="900" height="800" loading="lazy" alt="Control Center's tiling settings: layout choices, gap and master width sliders, and three named workspaces."></div>
+    </div>
+
+    <div class="row" style="margin-top:120px">
+      <div class="copy">
+        <h2>A launcher you can drive without the mouse.</h2>
+        <p>Every installed app in a grid, with pinned and recent rows. Start typing and it becomes the same ranked search as the Dock. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> runs as administrator; lock, sleep and restart sit at the bottom and ask twice.</p>
+        <p>Type <code>&gt;</code> to run a command or <code>?</code> to search the web. Commands and your own scripts never run without a second confirm.</p>
+      </div>
+      <div class="frame"><img src="assets/launcher.webp" width="780" height="640" loading="lazy" alt="The Lens Launcher: pinned apps, recent files and a grid of all installed apps, with power actions along the bottom."></div>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="inner">
+    <h2>It never patches Windows.</h2>
+    <p class="lede">Lens draws on top of Explorer instead of modifying it. Everything it changes, it can put back.</p>
+    <div class="split">
+      <dl>
+        <div><dt>Reversible by design</dt><dd>Quitting restores the taskbar, desktop icons and window styling. If Lens crashes, its crash handler does the same. <code>Restore-Windows-Taskbar.bat</code> works even when Lens isn't running.</dd></div>
+        <div><dt>Nothing injected by default</dt><dd>Window styling is applied from outside other apps' processes. The older in-process helper is off unless you switch it on.</dd></div>
+        <div><dt>Games are excluded</dt><dd>Anti-cheat processes and fullscreen games are skipped by window styling and tiling, with an exclusion list you can extend.</dd></div>
+      </dl>
+      <dl>
+        <div><dt>Your files stay where they are</dt><dd>Folder icons keep a backup of the original <code>desktop.ini</code>. Desktop groups are a view; files are never moved.</dd></div>
+        <div><dt>Off until you turn it on</dt><dd>Tray hosting, clipboard history, keyboard shortcuts, live wallpaper, plugins, the MCP server and shell replacement all start disabled.</dd></div>
+        <div><dt>One button to undo it all</dt><dd>"Remove all Lens changes" in Control Center, or <code>Uninstall-Lens-UI.bat</code>, reverts folder icons, startup entries, shell mode and window styling.</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="inner">
+    <h2>Where it stands today.</h2>
+    <p class="lede">Lens is an early preview. The whole app compiles on Windows and every screen renders in automated tests, but most features have not yet been tried on a wide range of real machines.</p>
+    <div class="split status">
+      <div>
+        <h3>Built and wired</h3>
+        <ul>
+          <li>Dock, Top Bar, Quick Settings, Launcher, Overview and Control Center</li>
+          <li>Theme packs with window-frame styling and folder icons</li>
+          <li>Unified search, notification centre, workspaces and tiling</li>
+          <li>Backup and restore, self-test report, uninstall</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Experimental, off by default</h3>
+        <ul>
+          <li>System tray hosting in the Top Bar</li>
+          <li>Live wallpaper behind desktop icons</li>
+          <li>Replacing Explorer as the Windows shell</li>
+          <li>Sandboxed plugins and the MCP server for AI apps</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="get">
+  <div class="inner">
+    <h2>Get it running.</h2>
+    <p class="lede">There is no signed installer yet. Building takes a few minutes on Windows 11 with Rust and Bun installed.</p>
+    <ol class="steps">
+      <li><div>Install the <a href="https://www.rust-lang.org/tools/install">Rust toolchain</a> (MSVC) and <a href="https://bun.sh">Bun</a>.</div></li>
+      <li><div>Clone the repository.<pre><code>git clone https://github.com/orionopenwow/lensui
+cd lensui</code></pre></div></li>
+      <li><div>Run it in development mode, or double-click <code>Launch-Lens-UI.bat</code>.<pre><code>bun install
+bun run tauri dev</code></pre></div></li>
+      <li><div>For a standalone build, run <code>Build-Lens-UI.bat</code>. The installer lands in <code>src-tauri\target\release\bundle</code>.</div></li>
+      <li><div>Open Control Center and press Run self-test. If something looks wrong, <a href="https://github.com/orionopenwow/lensui/issues">open an issue</a> with the report attached.</div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="inner">
+    <h2>Questions people ask.</h2>
+    <div style="margin-top:32px">
+      <details><summary>Is it safe to run?</summary><p>Lens runs as your user, doesn't need administrator rights and doesn't modify Windows system files. Its changes are listed in the safety section above and are undone when you quit. It is still early software, so keep <code>Restore-Windows-Taskbar.bat</code> handy while you try it.</p></details>
+      <details><summary>Will a Windows update break it?</summary><p>Lens uses documented Windows APIs and sits on top of Explorer rather than patching it, which is the approach least affected by updates. If an update does change something, quitting Lens returns you to the normal taskbar.</p></details>
+      <details><summary>Does it affect games or anti-cheat?</summary><p>No code is injected into other apps by default. Known anti-cheat processes and fullscreen games are excluded from window styling and tiling, and you can add your own exclusions in Control Center.</p></details>
+      <details><summary>How do I remove it completely?</summary><p>Use "Remove all Lens changes" in Control Center, then quit, or run <code>Uninstall-Lens-UI.bat</code>. Both revert folder icons, startup entries, shell mode and window styling. Lens keeps its settings in <code>%APPDATA%\LensUI</code>, which the script offers to delete.</p></details>
+      <details><summary>Does it send anything over the internet?</summary><p>Lens has no telemetry and no account. It only goes online for things you open yourself, such as a web search or a messaging web app in the Messages pane.</p></details>
+      <details><summary>Can AI assistants control it?</summary><p>If you switch on the MCP server, apps like Claude Desktop can list and focus windows, tile them and change theme packs. It listens only on your own machine, and free-form commands wait for you to approve them in Lens.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="inner">
+    <span>Lens UI is MIT licensed and not affiliated with Microsoft.</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/orionopenwow/lensui">GitHub</a>
+      <a href="docs/">Docs</a>
+      <a href="docs/roadmap.html">Roadmap</a>
+      <a href="https://github.com/orionopenwow/lensui/issues">Report a problem</a>
+    </nav>
+  </div>
+</footer>
+<script src="site.js" defer></script>
+</body>
+</html>
