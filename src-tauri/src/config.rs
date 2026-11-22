@@ -338,6 +338,14 @@ pub struct LensConfig {
     pub config_version: u32,
     #[serde(default)]
     pub mcp: crate::win_mcp::McpConfig,
+    #[serde(default)]
+    pub hot_corners: crate::win_hotcorners::HotCornersConfig,
+    #[serde(default)]
+    pub alt_drag: crate::win_altdrag::AltDragConfig,
+    #[serde(default)]
+    pub app_summon: crate::win_summon::AppSummonConfig,
+    #[serde(default)]
+    pub dnd_schedule: crate::win_notifications::DndSchedule,
 }
 
 impl Default for LensConfig {
@@ -492,6 +500,10 @@ impl Default for LensConfig {
             desktop_groups: None,
             config_version: crate::win_backup::CURRENT_CONFIG_VERSION,
             mcp: Default::default(),
+            hot_corners: Default::default(),
+            alt_drag: Default::default(),
+            app_summon: Default::default(),
+            dnd_schedule: Default::default(),
         }
     }
 }

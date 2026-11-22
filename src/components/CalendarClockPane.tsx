@@ -14,6 +14,14 @@ import {
   Download,
   Globe,
 } from "lucide-react";
+import {
+  DAY_NAMES,
+  WEEK_START_KEY,
+  leadingBlanks,
+  resolveWeekStart,
+  weekdayLabels,
+  type WeekStartPref,
+} from "../utils/productivity";
 
 interface CalEvent {
   id: string;
@@ -25,6 +33,16 @@ interface CalEvent {
 }
 
 const STORAGE_KEY = "lens_calendar_events_v1";
+const WEEK_PREFS: WeekStartPref[] = ["auto", "1", "0", "6"];
+
+function readWeekPref(): WeekStartPref {
+  try {
+    const v = localStorage.getItem(WEEK_START_KEY);
+    return v === "0" || v === "1" || v === "6" ? v : "auto";
+  } catch {
+    return "auto";
+  }
+}
 
 function toDateKey(d: Date): string {
   const y = d.getFullYear();
@@ -45,6 +63,18 @@ export const CalendarClockPane: React.FC = () => {
       return [];
     }
   });
+  const [weekPref, setWeekPref] = useState<WeekStartPref>(readWeekPref);
+  const weekStart = resolveWeekStart(weekPref, typeof navigator !== "undefined" ? navigator.language : "en-US");
+  const cycleWeekStart = () => {
+    const next = WEEK_PREFS[(WEEK_PREFS.indexOf(weekPref) + 1) % WEEK_PREFS.length];
+    setWeekPref(next);
+    try {
+      if (next === "auto") localStorage.removeItem(WEEK_START_KEY);
+      else localStorage.setItem(WEEK_START_KEY, next);
+    } catch {
+      /* storage unavailable: the choice lasts until the pane closes */
+    }
+  };
   const [draftTitle, setDraftTitle] = useState("");
   const [draftTime, setDraftTime] = useState("16:00");
   const [dnd, setDnd] = useState(() => localStorage.getItem("lens_dnd") === "1");
@@ -124,10 +154,10 @@ export const CalendarClockPane: React.FC = () => {
     const firstDow = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const cells: (Date | null)[] = [];
-    for (let i = 0; i < firstDow; i++) cells.push(null);
+    for (let i = 0; i < leadingBlanks(firstDow, weekStart); i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
     return cells;
-  }, [viewMonth]);
+  }, [viewMonth, weekStart]);
 
   const todayKey = toDateKey(now);
   const eventDates = useMemo(() => new Set(events.map((e) => e.dateKey)), [events]);
@@ -284,6 +314,16 @@ export const CalendarClockPane: React.FC = () => {
             <button
               type="button"
               className="qs-seg-btn"
+              style={{ flex: "none", padding: "3px 8px", fontSize: 10.5, whiteSpace: "nowrap" }}
+              aria-label={`Week starts on ${DAY_NAMES[weekStart]}${weekPref === "auto" ? " (from your region)" : ""}. Click to change.`}
+              onClick={cycleWeekStart}
+            >
+              {weekPref === "auto" ? "Auto · " : ""}
+              {DAY_NAMES[weekStart].slice(0, 3)}
+            </button>
+            <button
+              type="button"
+              className="qs-seg-btn"
               style={{ flex: "none", padding: "3px 8px", fontSize: 10.5 }}
               onClick={() => {
                 const t = new Date();
@@ -322,7 +362,7 @@ export const CalendarClockPane: React.FC = () => {
             textAlign: "center",
           }}
         >
-          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          {weekdayLabels(weekStart).map((d) => (
             <div key={d} style={{ fontSize: 10, fontWeight: 600, color: "var(--lens-fg-muted)", padding: "2px 0" }}>
               {d}
             </div>

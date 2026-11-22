@@ -150,6 +150,18 @@ pub(crate) fn save_config_cmd(
     if prev_config.tiling != new_config.tiling {
         win_tiler::apply_tiling_config(new_config.tiling.clone());
     }
+    if prev_config.hot_corners != new_config.hot_corners {
+        win_hotcorners::apply_hot_corners_config(new_config.hot_corners.clone());
+    }
+    if prev_config.alt_drag != new_config.alt_drag {
+        win_altdrag::apply_alt_drag_config(new_config.alt_drag.clone());
+    }
+    if prev_config.dnd_schedule != new_config.dnd_schedule {
+        win_notifications::set_dnd_schedule(new_config.dnd_schedule.clone());
+    }
+    if prev_config.app_summon != new_config.app_summon {
+        crate::commands::shell::sync_app_summon(&app, &new_config.app_summon);
+    }
     if prev_config.func.target_monitor != new_config.func.target_monitor {
         sync_wallpaper(&app);
     }

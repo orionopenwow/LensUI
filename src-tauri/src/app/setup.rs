@@ -282,6 +282,16 @@ pub(crate) fn run_setup(
         win_tiler::apply_tiling_config(initial_config.tiling.clone());
     }
 
+    // Productivity input (all off by default): hot corners, Alt+drag, quiet hours, app summon.
+    let hc = handle.clone();
+    win_hotcorners::set_action_handler(move |action| {
+        crate::commands::shell::run_corner_action(&hc, &action);
+    });
+    win_hotcorners::apply_hot_corners_config(initial_config.hot_corners.clone());
+    win_altdrag::apply_alt_drag_config(initial_config.alt_drag.clone());
+    win_notifications::set_dnd_schedule(initial_config.dnd_schedule.clone());
+    crate::commands::shell::sync_app_summon(&handle, &initial_config.app_summon);
+
     // Wallpaper (default off) + its pause monitor
     sync_wallpaper(&handle);
     let wp = handle.clone();
