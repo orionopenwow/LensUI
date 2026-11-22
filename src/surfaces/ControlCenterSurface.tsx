@@ -3,21 +3,15 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FOLDER_THEMES, FRAME_STYLES, applyThemePack } from "../themes/packs";
-import { ThemeGallery } from "../components/ThemeGallery";
-import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
 import { WindowRulesCard } from "../components/WindowRulesCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
 import { TilingCard } from "../components/TilingCard";
 import { WorkspacesCard } from "../components/WorkspacesCard";
-import { WallpaperCard } from "../components/WallpaperCard";
 import { DesktopGroupsCard } from "../components/DesktopGroupsCard";
-import { AccessibilityCard } from "../components/AccessibilityCard";
 import { BackupRestoreCard } from "../components/BackupRestoreCard";
 import { McpCard } from "../components/McpCard";
 import { PluginManagerCard } from "../components/PluginManagerCard";
-import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
-import { SavedThemesCard } from "../components/SavedThemesCard";
 import {
   Palette,
   PanelBottom,
@@ -58,9 +52,10 @@ import {
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
 import { TrafficLights } from "../components/TrafficLights";
 import { RotaryDial } from "../components/RotaryDial";
-import { ColorWheel } from "../components/ColorWheel";
 import { PillFillBar } from "../components/PillFillBar";
 import { SetupWizard } from "../components/SetupWizard";
+import { ThemeTab } from "../themeux/ThemeTab";
+import { DockTab } from "../themeux/DockTab";
 import { AgentsPane } from "../components/AgentsPane";
 import { MessagingHubPane } from "../components/MessagingHubPane";
 import "./ControlCenterSurface.css";
@@ -92,6 +87,11 @@ export const ControlCenterSurface: React.FC = () => {
   const glidePhase = useSurfaceGlide("settings");
   const [tab, setTab] = useState<TabId>("system");
   const stageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  // Each tab opens at the top instead of inheriting the previous tab's scroll position.
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0 });
+  }, [tab]);
   const lastReportedHRef = useRef<number>(0);
   const [showWizardManual, setShowWizardManual] = useState(false);
   const [topProcesses, setTopProcesses] = useState<ProcessEntry[]>([]);
@@ -339,14 +339,14 @@ export const ControlCenterSurface: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--lens-fg)", letterSpacing: "-0.01em" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--lens-fg)", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
             {navItems.find((n) => n.id === tab)?.label ?? "Lens Control Center"}
           </span>
           <span style={{ width: 1, height: 14, background: "rgb(var(--lens-ink) / 0.12)" }} />
           <button
             type="button"
             className="cc-chip"
-            style={{ padding: "3px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
+            style={{ padding: "4px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
             onClick={() => setTab("monitor")}
           >
             <Cpu size={12} color="#34D399" />
@@ -355,7 +355,7 @@ export const ControlCenterSurface: React.FC = () => {
           <button
             type="button"
             className="cc-chip"
-            style={{ padding: "3px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
+            style={{ padding: "4px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
             onClick={() => setTab("monitor")}
           >
             <HardDrive size={12} color="#38BDF8" />
@@ -363,7 +363,7 @@ export const ControlCenterSurface: React.FC = () => {
               RAM {telemetry ? `${telemetry.memUsedGb}/${telemetry.memTotalGb}G` : "--"}
             </span>
           </button>
-          <span style={{ fontSize: 11, color: "var(--lens-fg-muted)", fontVariantNumeric: "tabular-nums" }}>
+          <span className="cc-hide-narrow" style={{ fontSize: 11, color: "var(--lens-fg-secondary)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
             {runningWindows.length} windows
           </span>
         </div>
@@ -371,7 +371,7 @@ export const ControlCenterSurface: React.FC = () => {
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           <button
             type="button"
-            className="cc-chip"
+            className="cc-chip cc-hide-narrow"
             style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
             onClick={() => invoke("tile_windows_cmd", { layout: "split" }).catch(() => {})}
           >
@@ -380,7 +380,7 @@ export const ControlCenterSurface: React.FC = () => {
           </button>
           <button
             type="button"
-            className="cc-chip"
+            className="cc-chip cc-hide-narrow"
             style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
             onClick={() => invoke("tile_windows_cmd", { layout: "smart-group" }).catch(() => {})}
           >
@@ -458,7 +458,7 @@ export const ControlCenterSurface: React.FC = () => {
           </button>
         </aside>
 
-        <main className="cc-content">
+        <main className="cc-content" ref={contentRef}>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           {tab === "monitor" && (
             <>
@@ -738,580 +738,19 @@ export const ControlCenterSurface: React.FC = () => {
           )}
 
           {tab === "theme" && (
-            <>
-              {winTheme.osFeatures && !winTheme.osFeatures.frameColors && (
-                <div className="cc-card">
-                  <div className="cc-label">
-                    {winTheme.osFamily === "windows" ? "Running on Windows 10" : "Running outside Windows"}
-                  </div>
-                  <div className="cc-desc">
-                    {winTheme.osFamily === "windows"
-                      ? "Lens runs on Windows 10. App titlebars follow dark mode, but window frame colours, rounded corners and glass need Windows 11, so those options are switched off."
-                      : "The Lens interface runs here, but desktop integration (Dock windows, system controls, window styling) is Windows-only for now. Linux and macOS support are on the roadmap."}
-                  </div>
-                </div>
-              )}
-
-              <ThemeGallery config={config} onApply={applyPack} windowsAccent={winTheme.accentHex} />
-
-              <ThemeScheduleCard config={config} onUpdateConfig={updateConfig} />
-
-              <WallpaperCard config={config} onUpdateConfig={updateConfig} />
-
-              <SavedThemesCard config={config} onUpdateConfig={updateConfig} />
-
-              <ThemeSharingCard config={config} onUpdateConfig={updateConfig} />
-
-              <AccessibilityCard config={config} onUpdateConfig={updateConfig} />
-
-              {/* Unified Theme Control Array: Color Wheel + 3 Knobs + Icon Styles & Shapes with zero dead whitespace */}
-              <div
-                className="cc-card"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "212px 1fr",
-                  gap: 18,
-                  alignItems: "center",
-                  padding: "14px 16px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRight: "1px solid var(--lens-border)",
-                    paddingRight: 16,
-                  }}
-                >
-                  <ColorWheel
-                    value={activeAccentHex}
-                    windowsAccentHex={winTheme.accentHex}
-                    accentMode={config.theme.accentMode}
-                    onSelectColor={(hex) =>
-                      updateConfig({
-                        ...config,
-                        theme: { ...config.theme, accentMode: "custom", customAccent: hex },
-                      })
-                    }
-                    onSelectWindowsLive={() =>
-                      updateConfig({
-                        ...config,
-                        theme: { ...config.theme, accentMode: "windows" },
-                      })
-                    }
-                  />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                      gap: 10,
-                      alignItems: "start",
-                    }}
-                  >
-                    <RotaryDial
-                      layout="knob"
-                      label="Window Opacity"
-                      value={Math.round(config.theme.glassOpacity * 100)}
-                      min={40}
-                      max={100}
-                      step={2}
-                      unit="%"
-                      defaultValue={96}
-                      onChange={(v) =>
-                        updateConfig({
-                          ...config,
-                          theme: { ...config.theme, glassOpacity: v / 100 },
-                        })
-                      }
-                    />
-                    <RotaryDial
-                      layout="knob"
-                      label="Window Roundness"
-                      value={config.theme.borderRadius}
-                      min={0}
-                      max={20}
-                      step={1}
-                      unit="px"
-                      defaultValue={8}
-                      onChange={(v) =>
-                        updateConfig({
-                          ...config,
-                          theme: { ...config.theme, borderRadius: v },
-                        })
-                      }
-                    />
-                    <RotaryDial
-                      layout="knob"
-                      label="Color Accent Strength"
-                      value={Math.round(config.theme.accentTintStrength * 100)}
-                      min={0}
-                      max={50}
-                      step={2}
-                      unit="%"
-                      defaultValue={0}
-                      onChange={(v) =>
-                        updateConfig({
-                          ...config,
-                          theme: { ...config.theme, accentTintStrength: v / 100 },
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div style={{ height: 1, background: "var(--lens-border)" }} />
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Icon Style</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        {[
-                          { id: "obsidian-squircle", label: "Obsidian", bg: "linear-gradient(155deg,#242a38,#10131b)", border: "1px solid rgb(var(--lens-ink) / 0.2)", dot: "#38BDF8" },
-                          { id: "frosted-glass", label: "Frosted", bg: "rgb(var(--lens-ink) / 0.16)", border: "1px solid rgb(var(--lens-ink) / 0.3)", dot: "#fafafa" },
-                          { id: "monochrome", label: "Matte", bg: "#1c1f26", border: "1px solid rgb(var(--lens-ink) / 0.12)", dot: "#a1a1aa" },
-                          { id: "accent-duotone", label: "Duotone", bg: `color-mix(in oklch, #0d111a, ${activeAccentHex} 48%)`, border: `1px solid ${activeAccentHex}`, dot: activeAccentHex },
-                          { id: "native", label: "Native", bg: "transparent", border: "1px dashed rgb(var(--lens-ink) / 0.25)", dot: "#34D399" },
-                        ].map((it) => {
-                          const isAct = (config.iconStyle?.theme ?? "obsidian-squircle") === it.id;
-                          return (
-                            <button
-                              key={it.id}
-                              type="button"
-                              className={`cc-chip ${isAct ? "active" : ""}`}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                padding: "4px 9px 4px 6px",
-                                fontSize: 11.5,
-                              }}
-                              onClick={() =>
-                                updateConfig({
-                                  ...config,
-                                  iconStyle: {
-                                    theme: it.id,
-                                    shape: config.iconStyle?.shape ?? "squircle",
-                                  },
-                                })
-                              }
-                            >
-                              <span
-                                style={{
-                                  width: 15,
-                                  height: 15,
-                                  borderRadius: 4.5,
-                                  background: it.bg,
-                                  border: it.border,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <span style={{ width: 6, height: 6, borderRadius: 2, background: it.dot }} />
-                              </span>
-                              <span>{it.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Icon Shape</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        {[
-                          { id: "squircle", label: "Squircle", radius: "5px", border: "1.5px solid currentColor" },
-                          { id: "rounded", label: "Rounded", radius: "3px", border: "1.5px solid currentColor" },
-                          { id: "circle", label: "Circle", radius: "999px", border: "1.5px solid currentColor" },
-                          { id: "borderless", label: "Borderless", radius: "3px", border: "1.5px dashed currentColor" },
-                        ].map((sh) => (
-                          <button
-                            key={sh.id}
-                            type="button"
-                            className={`cc-chip ${(config.iconStyle?.shape ?? "squircle") === sh.id ? "active" : ""}`}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                              padding: "4px 9px 4px 7px",
-                              fontSize: 11.5,
-                            }}
-                            onClick={() =>
-                              updateConfig({
-                                ...config,
-                                iconStyle: {
-                                  theme: config.iconStyle?.theme ?? "obsidian-squircle",
-                                  shape: sh.id,
-                                },
-                              })
-                            }
-                          >
-                            <span
-                              style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: sh.radius,
-                                border: sh.border,
-                                opacity: 0.85,
-                                flexShrink: 0,
-                              }}
-                            />
-                            <span>{sh.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Windows</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        <button
-                          type="button"
-                          className={`cc-chip ${
-                            config.windowControls.enabled && config.windowControls.order !== "red-yellow-green"
-                              ? "active"
-                              : ""
-                          }`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "4px 9px",
-                            fontSize: 11.5,
-                          }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              windowControls: {
-                                ...config.windowControls,
-                                enabled: true,
-                                order: "green-yellow-red",
-                              },
-                            })
-                          }
-                        >
-                          <span style={{ display: "inline-flex", gap: 3 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#28C840" }} />
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FEBC2E" }} />
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FF5F57" }} />
-                          </span>
-                          <span>Traffic G·Y·R</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`cc-chip ${
-                            config.windowControls.enabled && config.windowControls.order === "red-yellow-green"
-                              ? "active"
-                              : ""
-                          }`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "4px 9px",
-                            fontSize: 11.5,
-                          }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              windowControls: {
-                                ...config.windowControls,
-                                enabled: true,
-                                order: "red-yellow-green",
-                              },
-                            })
-                          }
-                        >
-                          <span style={{ display: "inline-flex", gap: 3 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FF5F57" }} />
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FEBC2E" }} />
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#28C840" }} />
-                          </span>
-                          <span>Traffic R·Y·G</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`cc-chip ${!config.windowControls.enabled ? "active" : ""}`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "4px 9px",
-                            fontSize: 11.5,
-                          }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              windowControls: {
-                                ...config.windowControls,
-                                enabled: false,
-                              },
-                            })
-                          }
-                        >
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.08em", opacity: 0.85 }}>
-                            — ❐ ×
-                          </span>
-                          <span>Windows Default</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Immediate Big-Win Control: UI Font Family with live font specimen preview */}
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Font</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        {[
-                          { id: "rounded-arial", label: "Rounded Arial", font: '"Arial Rounded MT Bold", "Arial Rounded", sans-serif' },
-                          { id: "inter-sans", label: "Modern Sans", font: '"Segoe UI Variable Display", "Inter", system-ui, sans-serif' },
-                          { id: "tech-mono", label: "Tech Mono", font: '"Cascadia Code", Consolas, monospace' },
-                          { id: "editorial-serif", label: "Serif", font: 'Georgia, Cambria, serif' },
-                        ].map((f) => (
-                          <button
-                            key={f.id}
-                            type="button"
-                            className={`cc-chip ${(config.theme.fontFamily ?? "rounded-arial") === f.id ? "active" : ""}`}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                              padding: "4px 9px",
-                              fontSize: 11.5,
-                              fontFamily: f.font,
-                            }}
-                            onClick={() =>
-                              updateConfig({
-                                ...config,
-                                theme: { ...config.theme, fontFamily: f.id },
-                              })
-                            }
-                          >
-                            <span style={{ fontWeight: 700, opacity: 0.85 }}>Aa</span>
-                            <span>{f.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Immediate Big-Win Control: Dock & Window Scale Presets */}
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Size</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        {[
-                          { id: "compact", label: "Compact", iconSize: 34, barH: 30, scale: 94 },
-                          { id: "standard", label: "Standard", iconSize: 40, barH: 34, scale: 100 },
-                          { id: "spacious", label: "Spacious", iconSize: 46, barH: 38, scale: 106 },
-                          { id: "large", label: "Large", iconSize: 52, barH: 42, scale: 112 },
-                        ].map((sz) => {
-                          const isAct = config.dock.iconSize === sz.iconSize;
-                          return (
-                            <button
-                              key={sz.id}
-                              type="button"
-                              className={`cc-chip ${isAct ? "active" : ""}`}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                padding: "4px 9px",
-                                fontSize: 11.5,
-                              }}
-                              onClick={() =>
-                                updateConfig({
-                                  ...config,
-                                  theme: { ...config.theme, uiScale: sz.scale },
-                                  dock: { ...config.dock, iconSize: sz.iconSize },
-                                  topBar: { ...config.topBar, height: sz.barH },
-                                })
-                              }
-                            >
-                              <span>{sz.label}</span>
-                              <span style={{ fontSize: 10, opacity: 0.7 }}>{sz.iconSize}px</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Immediate Big-Win Control: Glass Blur + Quick Shell Toggles */}
-                    <div className="cc-row" style={{ gap: 10, alignItems: "flex-start" }}>
-                      <div className="cc-label" style={{ fontSize: 12, paddingTop: 5, minWidth: 66 }}>Shell</div>
-                      <div className="cc-chip-grid" style={{ gap: 6, flex: 1 }}>
-                        <button
-                          type="button"
-                          className={`cc-chip ${config.dock.groundedMarginBottom === 0 ? "active" : ""}`}
-                          style={{ padding: "4px 9px", fontSize: 11.5 }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              dock: {
-                                ...config.dock,
-                                groundedMarginBottom: config.dock.groundedMarginBottom === 0 ? 10 : 0,
-                              },
-                            })
-                          }
-                        >
-                          {config.dock.groundedMarginBottom === 0 ? "Dock: Grounded 0px" : "Dock: Floating 10px"}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`cc-chip ${config.topBar.floating ? "active" : ""}`}
-                          style={{ padding: "4px 9px", fontSize: 11.5 }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              topBar: { ...config.topBar, floating: !config.topBar.floating },
-                            })
-                          }
-                        >
-                          {config.topBar.floating ? "Top Bar: Floating" : "Top Bar: Flush"}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`cc-chip ${config.func.hideNativeTaskbar ? "active" : ""}`}
-                          style={{ padding: "4px 9px", fontSize: 11.5 }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              func: {
-                                ...config.func,
-                                hideNativeTaskbar: !config.func.hideNativeTaskbar,
-                              },
-                            })
-                          }
-                        >
-                          {config.func.hideNativeTaskbar ? "Taskbar: Hidden" : "Taskbar: Visible"}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`cc-chip ${config.theme.blurPx >= 20 ? "active" : ""}`}
-                          style={{ padding: "4px 9px", fontSize: 11.5 }}
-                          onClick={() =>
-                            updateConfig({
-                              ...config,
-                              theme: {
-                                ...config.theme,
-                                blurPx: config.theme.blurPx >= 24 ? 0 : config.theme.blurPx + 12,
-                              },
-                            })
-                          }
-                        >
-                          Blur: {config.theme.blurPx}px
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
+            <ThemeTab
+              config={config}
+              winTheme={winTheme}
+              updateConfig={updateConfig}
+              onApplyPack={(next) => {
+                updateConfig(next);
+                setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
+              }}
+              onOpenTab={(t) => setTab(t)}
+            />
           )}
 
-          {tab === "dock" && (
-            <>
-              <div>
-                <div className="cc-section-title">Grounded Bottom Dock</div>
-                <div className="cc-section-sub">
-                  Flush bottom anchoring with preserved roundedness and smooth hover icon magnification.
-                </div>
-              </div>
-
-              <div className="cc-card" style={{ gap: 4 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                  <div className="cc-label">Dock Size & Hover</div>
-                  <span className="cc-desc">Drag dial or scroll · Double-click to reset</span>
-                </div>
-                <RotaryDial
-                  label="Bottom Offset"
-                  description="Distance from bottom edge (0px anchors completely flush)."
-                  value={config.dock.groundedMarginBottom}
-                  min={0}
-                  max={14}
-                  step={1}
-                  unit="px"
-                  defaultValue={0}
-                  onChange={(v) =>
-                    updateConfig({
-                      ...config,
-                      dock: { ...config.dock, groundedMarginBottom: v },
-                    })
-                  }
-                />
-                <div style={{ height: 1, background: "var(--lens-border)" }} />
-                <RotaryDial
-                  label="Icon Size"
-                  description="Base size of dock icons before auto-fit scaling."
-                  value={config.dock.iconSize}
-                  min={32}
-                  max={54}
-                  step={2}
-                  unit="px"
-                  defaultValue={40}
-                  onChange={(v) =>
-                    updateConfig({
-                      ...config,
-                      dock: { ...config.dock, iconSize: v },
-                    })
-                  }
-                />
-                <div style={{ height: 1, background: "var(--lens-border)" }} />
-                <RotaryDial
-                  label="Hover Scale"
-                  description="How much icons enlarge when your cursor hovers over them."
-                  value={Math.round(config.dock.hoverScale * 100)}
-                  min={104}
-                  max={140}
-                  step={2}
-                  format={(v) => `${(v / 100).toFixed(2)}×`}
-                  defaultValue={120}
-                  onChange={(v) =>
-                    updateConfig({
-                      ...config,
-                      dock: { ...config.dock, hoverScale: v / 100 },
-                    })
-                  }
-                />
-                <div style={{ height: 1, background: "var(--lens-border)", margin: "4px 0" }} />
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Dock Auto-Hide</div>
-                    <div className="cc-desc">Hide automatically when a window overlaps the bottom dock</div>
-                  </div>
-                  <div className="cc-chip-grid">
-                    {[
-                      { id: "never", label: "Never" },
-                      { id: "overlap", label: "On Overlap" },
-                      { id: "always", label: "Always" },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className={`cc-chip ${config.dock.autoHide === m.id ? "active" : ""}`}
-                        onClick={() =>
-                          updateConfig({
-                            ...config,
-                            dock: { ...config.dock, autoHide: m.id },
-                          })
-                        }
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} />}
 
           {(tab === "dock" || tab === "topbar") && (
             <>
@@ -1463,203 +902,6 @@ export const ControlCenterSurface: React.FC = () => {
                     })
                   }
                 />
-              </div>
-            </>
-          )}
-
-          {(tab === "dock" || tab === "func") && (
-            <>
-              <div>
-                <div className="cc-section-title">Func Control</div>
-                <div className="cc-section-sub">
-                  System integration, startup behavior, native taskbar control, and hotkeys.
-                </div>
-              </div>
-
-              <div className="cc-card">
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Run Lens UI on Windows Startup</div>
-                    <div className="cc-desc">Enabled by default via HKCU\...\Run</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, runOnStartup: !config.func.runOnStartup },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Hide Native Windows Taskbar</div>
-                    <div className="cc-desc">OFF by default · Crash-safe automatic restore when Lens exits</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.hideNativeTaskbar ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: {
-                          ...config.func,
-                          hideNativeTaskbar: !config.func.hideNativeTaskbar,
-                        },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Auto-Pause Overlays in Fullscreen Games / Video</div>
-                    <div className="cc-desc">Keeps fullscreen apps completely uninterrupted</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.gamingPause ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, gamingPause: !config.func.gamingPause },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Legacy In-App Window Styling</div>
-                    <div className="cc-desc">
-                      Loads a helper into every app to restyle windows. Leave off unless a window keeps its
-                      old titlebar; turning it off takes effect after restarting Lens UI.
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, injectedHook: !config.func.injectedHook },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Create Rarely Used Windows on Demand</div>
-                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, lazyWindows: !config.func.lazyWindows },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">System Tray in Top Bar (experimental)</div>
-                    <div className="cc-desc">Lens collects tray icons itself and shows them in the Top Bar. Turn off if icons look wrong.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, trayHost: !config.func.trayHost },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Clipboard History</div>
-                    <div className="cc-desc">Remembers the last 50 pieces of copied text in memory only (never saved to disk). Shown in the Widget Drawer.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, clipboardHistory: !config.func.clipboardHistory },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Keyboard Tiling Shortcuts</div>
-                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, tilingHotkeys: !config.func.tilingHotkeys },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Alt+1–9 Opens Dock Apps</div>
-                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        func: { ...config.func, dockNumberHotkeys: !config.func.dockNumberHotkeys },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Live Window Previews on the Dock</div>
-                    <div className="cc-desc">Hovering a running app shows live pictures of its windows instead of a list.</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`cc-toggle ${config.dock.livePreviews ? "on" : ""}`}
-                    onClick={() =>
-                      updateConfig({
-                        ...config,
-                        dock: { ...config.dock, livePreviews: !config.dock.livePreviews },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="cc-row">
-                  <div>
-                    <div className="cc-label">Global Shortcuts</div>
-                    <div className="cc-desc">Command Palette: Alt+Space · Widget Drawer: Alt+W</div>
-                  </div>
-                  <span className="cc-chip active">Active</span>
-                </div>
               </div>
             </>
           )}
@@ -2699,6 +1941,166 @@ export const ControlCenterSurface: React.FC = () => {
               <BackupRestoreCard />
               <ShellModeCard />
             </div>
+          )}
+
+          {(tab === "system" || tab === "func") && (
+            <>
+              <div>
+                <div className="cc-section-title">Windows integration &amp; shortcuts</div>
+                <div className="cc-section-sub">
+                  Startup, hotkeys and how Lens works alongside Windows. Dock and taskbar options are in Dock &amp; Top Bar.
+                </div>
+              </div>
+
+              <div className="cc-card">
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Run Lens UI on Windows Startup</div>
+                    <div className="cc-desc">Enabled by default via HKCU\...\Run</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, runOnStartup: !config.func.runOnStartup },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Auto-Pause Overlays in Fullscreen Games / Video</div>
+                    <div className="cc-desc">Keeps fullscreen apps completely uninterrupted</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.gamingPause ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, gamingPause: !config.func.gamingPause },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Legacy In-App Window Styling</div>
+                    <div className="cc-desc">
+                      Loads a helper into every app to restyle windows. Leave off unless a window keeps its
+                      old titlebar; turning it off takes effect after restarting Lens UI.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, injectedHook: !config.func.injectedHook },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Create Rarely Used Windows on Demand</div>
+                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, lazyWindows: !config.func.lazyWindows },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">System Tray in Top Bar (experimental)</div>
+                    <div className="cc-desc">Lens collects tray icons itself and shows them in the Top Bar. Turn off if icons look wrong.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, trayHost: !config.func.trayHost },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Clipboard History</div>
+                    <div className="cc-desc">Remembers the last 50 pieces of copied text in memory only (never saved to disk). Shown in the Widget Drawer.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, clipboardHistory: !config.func.clipboardHistory },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Keyboard Tiling Shortcuts</div>
+                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, tilingHotkeys: !config.func.tilingHotkeys },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Alt+1–9 Opens Dock Apps</div>
+                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        func: { ...config.func, dockNumberHotkeys: !config.func.dockNumberHotkeys },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Global Shortcuts</div>
+                    <div className="cc-desc">Command Palette: Alt+Space · Widget Drawer: Alt+W</div>
+                  </div>
+                  <span className="cc-chip active">Active</span>
+                </div>
+              </div>
+            </>
           )}
           </div>
         </main>
