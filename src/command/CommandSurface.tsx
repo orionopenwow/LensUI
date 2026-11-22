@@ -22,6 +22,8 @@ import { newKey, threadReducer, type BridgeRequest, type ContextChip, type Threa
 import { ThreadCard, type CardHandlers } from "./cards/Cards";
 import { ShelfDrawer, useShelf, KIND_ICON } from "./ShelfDrawer";
 import { ClipList, useClips } from "./ClipList";
+import { MiniView } from "./mini/MiniView";
+import { SPECIAL_PROMPTS, categorize, tilesFor, type AppCategory } from "./contextProviders";
 import {
   clipCopy, clipDelete, clipGetText, clipPaste, clipPasteText, clipPin, clipSetSettings, clipToShelf,
   DEFAULT_CLIP_SETTINGS, sourceAppName, type ClipKind, type ClipView,
@@ -80,7 +82,14 @@ export interface CommandInitial {
   thread?: ThreadItem[];
   drawer?: boolean;
   picked?: string[];
+  layout?: "mini" | "full";
+  anchor?: "cursor" | "dock";
+  miniTab?: "actions" | "dashboard";
+  app?: { process: string; title?: string };
+  expanding?: boolean;
 }
+
+interface ForegroundContext { process: string; appName: string; title: string; category: string; fullscreen: boolean; tiles: string[] }
 
 export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   useLensState();
@@ -100,6 +109,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   const [intent, setIntent] = useState<Intent | null>(null);
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
   const [pages, setPages] = useState<Record<string, BridgeRequest>>({});
+  const [layout, setLayout] = useState<"mini" | "full">(initial?.layout ?? "full");
+  const [anchor, setAnchor] = useState<"cursor" | "dock">(initial?.anchor ?? "cursor");
+  const [miniTab, setMiniTab] = useState<"actions" | "dashboard">(initial?.miniTab ?? "actions");
+  const [expanding, setExpanding] = useState(!!initial?.expanding);
+  const [activeTile, setActiveTile] = useState(0);
+  const [fgApp, setFgApp] = useState<{ process: string; title: string } | null>(initial?.app ? { process: initial.app.process, title: initial.app.title ?? "" } : null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const lastAsk = useRef<Record<string, { text: string; chips: ContextChip[] }>>({});
@@ -108,7 +123,14 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   // ── data ────────────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     invoke<{ templates: CommandTemplate[] }>("command_templates")
-      .then((r) => setTemplates(r?.templates ?? []))
+      .then((r) => {
+        const list = r?.templates ?? [];
+        // Built-in tiles that are prompts but not user templates (/review, /explain-error).
+        const extra = Object.entries(SPECIAL_PROMPTS)
+          .filter(([id]) => !list.some((t) => t.id === id))
+          .map(([id, sp]) => ({ id, name: sp.name, description: sp.name, template: sp.template, provider: "local", input: "selection", options: [], output: "thread", builtin: true, enabled: true }));
+        setTemplates([...list, ...extra]);
+      })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
   }, []);
@@ -125,6 +147,21 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   const flash = useCallback((t: string, ok = true) => {
     setNotice({ text: t, ok });
     window.setTimeout(() => setNotice((n) => (n?.text === t ? null : n)), 2600);
+  }, []);
+
+  // ── the app you're in, and its selection (UI Automation; never the clipboard) ─────────────────
+  const loadAppContext = useCallback(async () => {
+    const ctx = await invoke<ForegroundContext>("context_foreground").catch(() => null);
+    if (ctx?.process) setFgApp({ process: ctx.process, title: ctx.title });
+    type Sel = { text?: string | null; app: string; category: string; refusal?: string | null };
+    const sel = (await invoke<Sel | null>("selection_take").catch(() => null)) ?? (await invoke<Sel>("selection_read").catch(() => null));
+    if (sel?.text) {
+      const app = sel.app ? (sel.app.split(/[\\/]/).pop() ?? "").replace(/\.exe$/i, "") : "";
+      setChips((cur) => [
+        { ...textChip("selection", "Selection", sel.text!), detail: app, key: "selection-uia" },
+        ...cur.filter((c) => c.key !== "selection-uia"),
+      ]);
+    }
   }, []);
 
   // ── auto-attached context (offered, never sent until Enter) ─────────────────────────────────
@@ -161,7 +198,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   // ── opening, bridge requests ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const subs = [
-      listen<{ mode?: Mode; text?: string } | null>("lens://command/open", (e) => {
+      listen<{ mode?: Mode; text?: string; layout?: "mini" | "full"; anchor?: string } | null>("lens://command/open", (e) => {
+        const lay = e.payload?.layout ?? "full";
+        setLayout(lay);
+        setAnchor(e.payload?.anchor?.startsWith("dock") ? "dock" : "cursor");
+        invoke("command_layout", { layout: lay, anchor: e.payload?.anchor ?? null }).catch(() => {});
+        if (lay === "mini") {
+          setMiniTab("actions");
+          setActiveTile(0);
+          loadAppContext();
+        }
         if (e.payload?.mode) setMode(e.payload.mode);
         if (typeof e.payload?.text === "string") setText(e.payload.text);
         if (!settings.keepThread) dispatch({ type: "clear" });
@@ -177,7 +223,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       }),
     ];
     return () => subs.forEach((p) => p.then((u) => u()).catch(() => {}));
-  }, [offerContext, settings.keepThread]);
+  }, [offerContext, settings.keepThread, loadAppContext]);
 
   // ── AI events ───────────────────────────────────────────────────────────────────────────────
   useAiEvents({
@@ -366,6 +412,47 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     }
   };
 
+  const knownIds = useMemo(() => new Set(templates.map((t) => t.id)), [templates]);
+  const tiles = useMemo(() => tilesFor(fgApp?.process ?? "", settings.miniTiles, knownIds.size ? knownIds : undefined), [fgApp, settings.miniTiles, knownIds]);
+  const appInfo = fgApp?.process
+    ? { name: (fgApp.process.split(/[\\/]/).pop() ?? "").replace(/\.exe$/i, ""), category: categorize(fgApp.process) as AppCategory }
+    : null;
+
+  const runTile = (id: string) => {
+    if (id === "ask") {
+      setMode("ask");
+      inputRef.current?.focus();
+      return;
+    }
+    if (id === "shelf-add") {
+      const body = text.trim() || chips.map((c) => c.value ?? "").filter(Boolean).join("\n\n");
+      if (!body) return flash("Select or type something first.", false);
+      const sel = chips.find((c) => c.source === "selection" || c.source === "clip");
+      shelfAdd({ kind: sel ? "selection" : "text", text: body, source_app: fgApp?.process }, shelf)
+        .then(() => flash("Added to Shelf"))
+        .catch((e) => flash(String(e), false));
+      setText("");
+      return;
+    }
+    setMode("ask");
+    ask(`/${id}${text.trim() ? " " + text.trim() : ""}`, chips);
+  };
+
+  const expand = () => {
+    setExpanding(true);
+    invoke("command_layout", { layout: "full", anchor: "center" }).catch(() => {});
+    window.setTimeout(() => {
+      setLayout("full");
+      setExpanding(false);
+      inputRef.current?.focus();
+    }, 180);
+  };
+
+  const sessionTokens = thread.reduce((n, i) => n + (i.kind === "answer" && i.tokens ? i.tokens.in + i.tokens.out : 0), 0);
+  const activeProvider = ai?.providers.find((p) => p.id === (provider.id ?? ai?.active)) ?? ai?.providers.find((p) => p.kind === provider.kind);
+  const providerLabel = activeProvider ? `${activeProvider.label}${activeProvider.model ? " · " + activeProvider.model : ""}` : dest;
+  const privacyLabel = ai?.privacy === "allow_cloud" ? "Cloud allowed" : ai?.privacy === "ask_each_time" ? "Asks before cloud" : "Local only";
+
   const latestAnswer = [...thread].reverse().find((i) => i.kind === "answer" && i.status === "done" && i.text) as
     | Extract<ThreadItem, { kind: "answer" }>
     | undefined;
@@ -490,6 +577,29 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         return;
       }
     }
+    if (layout === "mini" && !text && miniTab === "actions") {
+      const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 3, ArrowUp: -3 };
+      if (e.key in step) {
+        e.preventDefault();
+        setActiveTile((t) => Math.min(tiles.length - 1, Math.max(0, t + step[e.key])));
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey && !(e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const id = tiles[activeTile];
+        if (id) runTile(id);
+        return;
+      }
+    }
+    if (layout === "mini" && e.key === "Tab") {
+      e.preventDefault();
+      setMiniTab((t) => (t === "actions" ? "dashboard" : "actions"));
+      return;
+    }
+    if (layout === "mini" && (e.ctrlKey || e.metaKey) && e.key === "Enter" && !latestAnswer) {
+      e.preventDefault();
+      return expand();
+    }
     if (e.key === "Tab") {
       e.preventDefault();
       setMode((m) => cycleMode(m, e.shiftKey ? -1 : 1));
@@ -539,9 +649,104 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     el.style.height = `${Math.min(6 * 20, Math.max(20, el.scrollHeight))}px`;
   }, [text]);
 
-  const expanded = thread.length > 0 || mode !== "ask" || drawer;
   const ModeIcon = MODE_ICON[mode];
+  const bar = (
+    <div className="cmd-bar">
+      <button type="button" className="cmd-mode" onClick={() => setMode((m) => cycleMode(m))} aria-label={`Mode: ${MODE_LABEL[mode]}. Tab to change.`}>
+        <ModeIcon size={15} strokeWidth={2.2} />
+        <span>{MODE_LABEL[mode]}</span>
+      </button>
+      <textarea
+        ref={inputRef}
+        className="cmd-input"
+        rows={1}
+        value={text}
+        autoFocus
+        spellCheck={mode === "ask"}
+        placeholder={layout === "mini" && mode === "ask" ? "Ask, or pick an action" : PLACEHOLDER[mode]}
+        aria-label={PLACEHOLDER[mode]}
+        onChange={(e) => {
+          setText(e.target.value);
+          setCaret(e.target.selectionStart ?? e.target.value.length);
+        }}
+        onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
+        onKeyDown={onKeyDown}
+      />
+      {mode === "ask" || mode === "do" ? (
+        <span className={`cmd-dest is-${dest.toLowerCase()}`} title={undefined}>
+          {dest === "Claude" ? null : <Lock size={11} strokeWidth={2.4} />}
+          {dest === "Script" ? "Offline" : dest}
+        </span>
+      ) : null}
+      <button type="button" className={`cmd-icon${drawer ? " is-on" : ""}`} onClick={() => setDrawer((d) => !d)} aria-label="Shelf (Ctrl+B)" aria-pressed={drawer}>
+        <PanelRight size={15} />
+      </button>
+    </div>
+  );
+
+  const expanded = thread.length > 0 || mode !== "ask" || drawer;
   const sentChipsBlocked = chips.some((c) => c.localOnly) && dest === "Claude";
+
+  const popoverEl =
+    popover && popover.items.length && layout === "mini" ? (
+      <ul className="cmd-pop is-mini" role="listbox" aria-label={popover.kind === "slash" ? "Commands" : "Add context"}>
+        {popover.items.slice(0, 6).map((it, i) => {
+          const isSlash = popover.kind === "slash";
+          const c = it as CommandTemplate;
+          const m = it as { source: MentionSource; hint: string };
+          return (
+            <li key={isSlash ? c.id : m.source} role="option" aria-selected={i === pop} className={`cmd-pop-row${i === pop ? " is-active" : ""}`}
+              onMouseDown={(e) => { e.preventDefault(); accept(i); }} onMouseMove={() => setPop(i)}>
+              <span className="cmd-pop-key">{isSlash ? `/${c.id}` : `@${m.source}`}</span>
+              <span className="cmd-pop-desc">{isSlash ? c.description || c.name : m.hint}</span>
+            </li>
+          );
+        })}
+      </ul>
+    ) : null;
+
+  if (layout === "mini") {
+    return (
+      <div className="cmd-root is-mini">
+        <MiniView
+          input={<>{bar}{popoverEl}</>}
+          chips={chips}
+          removeChip={removeChip}
+          app={appInfo}
+          tiles={tiles}
+          templates={templates}
+          activeTile={activeTile}
+          setActiveTile={setActiveTile}
+          runTile={runTile}
+          latest={latestAnswer ?? ([...thread].reverse().find((i) => i.kind === "answer") as Extract<ThreadItem, { kind: "answer" }> | undefined) ?? null}
+          onPaste={handlers.onPaste}
+          onCopy={handlers.onCopy}
+          onToShelf={(t) => handlers.onToShelf(t)}
+          onStop={() => {
+            const s = thread.find((i) => i.kind === "answer" && i.status === "streaming");
+            if (s) handlers.onStop(s.key);
+          }}
+          shelfItems={shelfItems}
+          useShelfItem={(it) => addChip(shelfChip([it]))}
+          clips={clips}
+          clipsOn={!!clipState?.enabled}
+          pasteClip={(c) => pasteClip(c)}
+          dest={dest}
+          privacy={privacyLabel}
+          providerLabel={providerLabel}
+          onExpand={expand}
+          tab={miniTab}
+          setTab={setMiniTab}
+          cards={settings.miniCards}
+          sessionTokens={sessionTokens}
+          aiReady={!!activeProvider?.available}
+          anchor={anchor}
+          expanding={expanding}
+          onNotice={flash}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -561,38 +766,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     >
       <div className={`cmd-shell${drawer ? " has-drawer" : ""}`} style={{ ["--cmd-width" as string]: `${settings.width}px` }}>
         <main className="cmd-main">
-          <div className="cmd-bar">
-            <button type="button" className="cmd-mode" onClick={() => setMode((m) => cycleMode(m))} aria-label={`Mode: ${MODE_LABEL[mode]}. Tab to change.`}>
-              <ModeIcon size={15} strokeWidth={2.2} />
-              <span>{MODE_LABEL[mode]}</span>
-            </button>
-            <textarea
-              ref={inputRef}
-              className="cmd-input"
-              rows={1}
-              value={text}
-              autoFocus
-              spellCheck={mode === "ask"}
-              placeholder={PLACEHOLDER[mode]}
-              aria-label={PLACEHOLDER[mode]}
-              onChange={(e) => {
-                setText(e.target.value);
-                setCaret(e.target.selectionStart ?? e.target.value.length);
-              }}
-              onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart ?? 0)}
-              onKeyDown={onKeyDown}
-            />
-            {mode === "ask" || mode === "do" ? (
-              <span className={`cmd-dest is-${dest.toLowerCase()}`} title={undefined}>
-                {dest === "Claude" ? null : <Lock size={11} strokeWidth={2.4} />}
-                {dest === "Script" ? "Offline" : dest}
-              </span>
-            ) : null}
-            <button type="button" className={`cmd-icon${drawer ? " is-on" : ""}`} onClick={() => setDrawer((d) => !d)} aria-label="Shelf (Ctrl+B)" aria-pressed={drawer}>
-              <PanelRight size={15} />
-            </button>
-          </div>
-
+          {bar}
           {popover && popover.items.length ? (
             <ul className="cmd-pop" role="listbox" aria-label={popover.kind === "slash" ? "Commands" : "Add context"}>
               {popover.items.slice(0, 8).map((it, i) => {

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { Mode } from "./parse";
+import type { TileOverrides } from "./contextProviders";
+import { DEFAULT_EDGE, type EdgeSettings } from "./mini/edgeGeometry";
 
 export type CommandProvider = "default" | "script" | "local" | "claude";
 export type AutoSource = "selection" | "clipboard" | "window" | "page";
@@ -23,7 +25,24 @@ export interface CommandSettings {
   /** Keep the thread when the window closes (in memory only). */
   keepThread: boolean;
   showShelfDrawer: boolean;
+  /** Mini: a quick tap of the hotkey opens Mini at the cursor; a second tap expands. */
+  miniOnTap: boolean;
+  miniTiles: TileOverrides;
+  miniCards: MiniCard[];
+  edge: EdgeSettings;
+  /** Edge tab only appears while something is being dragged. */
+  edgeOnlyWhileDragging: boolean;
 }
+
+export type MiniCard = "shelf" | "clipboard" | "ai" | "media" | "focus" | "note";
+export const MINI_CARDS: { id: MiniCard; label: string }[] = [
+  { id: "shelf", label: "Shelf" },
+  { id: "clipboard", label: "Clipboard" },
+  { id: "ai", label: "AI status" },
+  { id: "media", label: "Now playing" },
+  { id: "focus", label: "Focus" },
+  { id: "note", label: "Quick note" },
+];
 
 export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
   enabled: false,
@@ -36,6 +55,11 @@ export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
   providers: {},
   keepThread: true,
   showShelfDrawer: false,
+  miniOnTap: true,
+  miniTiles: {},
+  miniCards: ["shelf", "clipboard", "ai", "media", "focus", "note"],
+  edge: DEFAULT_EDGE,
+  edgeOnlyWhileDragging: false,
 };
 
 export function normaliseCommandSettings(raw: unknown): CommandSettings {
@@ -55,6 +79,13 @@ export function normaliseCommandSettings(raw: unknown): CommandSettings {
     providers: r.providers && typeof r.providers === "object" ? { ...r.providers } : {},
     keepThread: typeof r.keepThread === "boolean" ? r.keepThread : d.keepThread,
     showShelfDrawer: typeof r.showShelfDrawer === "boolean" ? r.showShelfDrawer : d.showShelfDrawer,
+    miniOnTap: typeof r.miniOnTap === "boolean" ? r.miniOnTap : d.miniOnTap,
+    miniTiles: r.miniTiles && typeof r.miniTiles === "object" ? r.miniTiles : {},
+    miniCards: Array.isArray(r.miniCards)
+      ? (r.miniCards.filter((c) => ["shelf", "clipboard", "ai", "media", "focus", "note"].includes(c)) as MiniCard[])
+      : d.miniCards,
+    edge: normaliseEdge(r.edge),
+    edgeOnlyWhileDragging: !!r.edgeOnlyWhileDragging,
   };
 }
 
@@ -75,4 +106,19 @@ export function useCommandSettings(): CommandSettings {
     };
   }, []);
   return s;
+}
+
+function normaliseEdge(raw: unknown): EdgeSettings {
+  const e = (raw && typeof raw === "object" ? raw : {}) as Partial<EdgeSettings>;
+  const d = DEFAULT_EDGE;
+  const num = (v: unknown, lo: number, hi: number, def: number) => (Number.isFinite(Number(v)) ? Math.min(hi, Math.max(lo, Number(v))) : def);
+  return {
+    enabled: typeof e.enabled === "boolean" ? e.enabled : d.enabled,
+    edge: e.edge === "left" || e.edge === "top" || e.edge === "bottom" ? e.edge : "right",
+    offset: num(e.offset, 0, 1, d.offset),
+    thickness: num(e.thickness, 4, 16, d.thickness),
+    length: num(e.length, 48, 240, d.length),
+    panel: { w: num(e.panel?.w, 240, 480, d.panel.w), h: num(e.panel?.h, 280, 720, d.panel.h) },
+    hoverMs: num(e.hoverMs, 0, 1500, d.hoverMs),
+  };
 }

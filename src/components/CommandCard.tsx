@@ -4,8 +4,12 @@ import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig } from "../types/lens";
 import { MODES, MODE_LABEL, type CommandTemplate, type Mode } from "../command/parse";
 import {
-  normaliseCommandSettings, type AutoSource, type CommandProvider, type CommandSettings,
+  MINI_CARDS, normaliseCommandSettings, type AutoSource, type CommandProvider, type CommandSettings, type MiniCard,
 } from "../command/settings";
+import { DEFAULT_TILES, SPECIAL_PROMPTS } from "../command/contextProviders";
+import type { Edge } from "../command/mini/edgeGeometry";
+
+interface SelectionPolicy { bubble: boolean; readOnRequest: boolean; mode: "allow" | "deny"; apps: string[]; maxChars: number }
 
 interface Props {
   config: LensConfig;
@@ -30,6 +34,8 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
   const [templates, setTemplates] = useState<CommandTemplate[]>([]);
   const [path, setPath] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [policy, setPolicy] = useState<SelectionPolicy | null>(null);
+  const [newApp, setNewApp] = useState("");
 
   useEffect(() => {
     invoke<{ templates: CommandTemplate[]; error?: string | null; path: string }>("command_templates")
@@ -39,7 +45,14 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         setError(r?.error ?? null);
       })
       .catch(() => {});
+    invoke<SelectionPolicy>("selection_policy_get").then(setPolicy).catch(() => {});
   }, []);
+  const savePolicy = (patch: Partial<SelectionPolicy>) => {
+    if (!policy) return;
+    invoke<SelectionPolicy>("selection_policy_set", { policy: { ...policy, ...patch } }).then(setPolicy).catch((e) => setError(String(e)));
+  };
+  const baseTiles = s.miniTiles.base ?? DEFAULT_TILES.other;
+  const tileChoices = ["ask", "shelf-add", ...templates.filter((t) => t.template).map((t) => t.id), ...Object.keys(SPECIAL_PROMPTS)];
 
   const save = (patch: Partial<CommandSettings>) =>
     onUpdateConfig({ ...config, command: { ...s, ...patch } } as LensConfig);
@@ -119,7 +132,111 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           className={`cc-toggle ${s.showShelfDrawer ? "on" : ""}`} onClick={() => save({ showShelfDrawer: !s.showShelfDrawer })} />
       </div>
 
-      <div className="cc-label" style={{ marginTop: 16 }}>Which AI each command uses</div>
+
+      <div className="cc-label" style={{ marginTop: 24 }}>Lens Mini</div>
+      <div className="cc-row" style={{ marginTop: 4 }}>
+        <div>
+          <div className="cc-desc">A quick tap of {s.hotkey} opens Mini next to your pointer; tap again or press Expand for the full view.</div>
+        </div>
+        <button type="button" role="switch" aria-checked={s.miniOnTap} aria-label="Open Mini on a quick tap"
+          className={`cc-toggle ${s.miniOnTap ? "on" : ""}`} onClick={() => save({ miniOnTap: !s.miniOnTap })} />
+      </div>
+      <div className="cc-desc" style={{ marginTop: 8 }}>Quick actions (in order; apps like code editors and terminals get their own set)</div>
+      <div className="cc-chip-grid">
+        {tileChoices.filter((id, i, a) => a.indexOf(id) === i).map((id) => {
+          const idx = baseTiles.indexOf(id);
+          return (
+            <button key={id} type="button" className={`cc-chip ${idx >= 0 ? "active" : ""}`} aria-pressed={idx >= 0}
+              onClick={() => {
+                const next = idx >= 0 ? baseTiles.filter((t) => t !== id) : [...baseTiles, id].slice(-6);
+                save({ miniTiles: { ...s.miniTiles, base: next } });
+              }}>
+              {idx >= 0 ? `${idx + 1}. ` : ""}{id === "shelf-add" ? "Add to Shelf" : id === "ask" ? "Ask" : `/${id}`}
+            </button>
+          );
+        })}
+      </div>
+      <div className="cc-desc" style={{ marginTop: 8 }}>Glance cards</div>
+      <div className="cc-chip-grid">
+        {MINI_CARDS.map((c) => {
+          const on = s.miniCards.includes(c.id);
+          return (
+            <button key={c.id} type="button" className={`cc-chip ${on ? "active" : ""}`} aria-pressed={on}
+              onClick={() => save({ miniCards: on ? s.miniCards.filter((x) => x !== c.id) : ([...s.miniCards, c.id] as MiniCard[]) })}>
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="cc-row" style={{ marginTop: 24 }}>
+        <div>
+          <div className="cc-label">Edge Shelf</div>
+          <div className="cc-desc">A thin tab on the edge of the screen. Hover or drag something over it to keep it on your Shelf. Hidden during games and fullscreen video.</div>
+        </div>
+        <button type="button" role="switch" aria-checked={s.edge.enabled} aria-label="Edge Shelf"
+          className={`cc-toggle ${s.edge.enabled ? "on" : ""}`} onClick={() => save({ edge: { ...s.edge, enabled: !s.edge.enabled } })} />
+      </div>
+      {s.edge.enabled ? (
+        <div className="cc-chip-grid">
+          {(["left", "right", "top", "bottom"] as Edge[]).map((e) => (
+            <button key={e} type="button" className={`cc-chip ${s.edge.edge === e ? "active" : ""}`} onClick={() => save({ edge: { ...s.edge, edge: e } })}>
+              {e[0].toUpperCase() + e.slice(1)}
+            </button>
+          ))}
+          <span style={{ width: 8 }} />
+          <button type="button" className={`cc-chip ${s.edgeOnlyWhileDragging ? "active" : ""}`} onClick={() => save({ edgeOnlyWhileDragging: !s.edgeOnlyWhileDragging })}>
+            Only while dragging
+          </button>
+        </div>
+      ) : null}
+
+      {policy ? (
+        <>
+          <div className="cc-row" style={{ marginTop: 24 }}>
+            <div>
+              <div className="cc-label">Selection bubble</div>
+              <div className="cc-desc">After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.</div>
+            </div>
+            <button type="button" role="switch" aria-checked={policy.bubble} aria-label="Selection bubble"
+              className={`cc-toggle ${policy.bubble ? "on" : ""}`} onClick={() => savePolicy({ bubble: !policy.bubble })} />
+          </div>
+          <div className="cc-row" style={{ marginTop: 12 }}>
+            <div>
+              <div className="cc-label">Read the selection when I open Mini</div>
+              <div className="cc-desc">Also powers the “Add selection to Shelf” shortcut.</div>
+            </div>
+            <button type="button" role="switch" aria-checked={policy.readOnRequest} aria-label="Read the selection when I open Mini"
+              className={`cc-toggle ${policy.readOnRequest ? "on" : ""}`} onClick={() => savePolicy({ readOnRequest: !policy.readOnRequest })} />
+          </div>
+          {policy.bubble || policy.readOnRequest ? (
+            <>
+              <div className="cc-chip-grid" style={{ marginTop: 8 }}>
+                <button type="button" className={`cc-chip ${policy.mode === "allow" ? "active" : ""}`} onClick={() => savePolicy({ mode: "allow" })}>Only these apps</button>
+                <button type="button" className={`cc-chip ${policy.mode === "deny" ? "active" : ""}`} onClick={() => savePolicy({ mode: "deny" })}>All apps except these</button>
+              </div>
+              <div className="cc-chip-grid">
+                {policy.apps.map((a) => (
+                  <button key={a} type="button" className="cc-chip" aria-label={`Remove ${a}`} onClick={() => savePolicy({ apps: policy.apps.filter((x) => x !== a) })}>
+                    {a.replace(/\.exe$/i, "")} ×
+                  </button>
+                ))}
+                <form style={{ display: "inline-flex", gap: 4 }} onSubmit={(e) => {
+                  e.preventDefault();
+                  const v = (newApp.trim().split(/[\\/]/).pop() ?? "").toLowerCase();
+                  if (v) savePolicy({ apps: [...policy.apps, v.endsWith(".exe") ? v : `${v}.exe`] });
+                  setNewApp("");
+                }}>
+                  <input className="cc-input" value={newApp} onChange={(e) => setNewApp(e.target.value)} placeholder="app.exe" aria-label="Add app" style={{ width: 120 }} />
+                </form>
+              </div>
+              <div className="cc-desc">Browsers are left out by default: the Lens browser extension handles pages better.</div>
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      <div className="cc-label" style={{ marginTop: 24 }}>Which AI each command uses</div>
       <div className="cc-desc">Local runs on this PC. Claude sends the text you see in the chips to Anthropic.</div>
       <div role="table" aria-label="Command providers" style={{ display: "grid", gridTemplateColumns: "minmax(120px, 1fr) auto", gap: "4px 16px", marginTop: 8, alignItems: "center" }}>
         {prompts.map((t) => {

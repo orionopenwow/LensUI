@@ -1,14 +1,21 @@
 // Lens Command input logic: modes, slash commands, @ mentions, templates, request building, thread.
-import { describe, expect, test } from "bun:test";
-import {
-  MODES, chipBlocked, cycleMode, destinationOf, expandTemplate, mentionAtCaret, mentionSuggestions, parseMentions,
-  parseSlash, slashSuggestions, type CommandTemplate,
-} from "../command/parse";
-import { buildRequest, resolveProvider } from "../command/request";
-import { normaliseCommandSettings, DEFAULT_COMMAND_SETTINGS } from "../command/settings";
-import { bridgeCommand, threadReducer, type ContextChip, type ThreadItem } from "../command/thread";
-import { approxTokens, formatTokens } from "../shelf/contract";
+import { describe, expect, mock, test } from "bun:test";
+
+// Other test files mock @tauri-apps/api/core without transformCallback; stub event/window too so
+// modules that import them load in any order.
+mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null, transformCallback: () => 0 }));
+mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
+
+const { MODES, chipBlocked, cycleMode, destinationOf, expandTemplate, mentionAtCaret, mentionSuggestions, parseMentions, parseSlash, slashSuggestions } = await import("../command/parse");
+type CommandTemplate = import("../command/parse").CommandTemplate;
+const { buildRequest, resolveProvider } = await import("../command/request");
+const { normaliseCommandSettings, DEFAULT_COMMAND_SETTINGS } = await import("../command/settings");
+const { bridgeCommand, threadReducer } = await import("../command/thread");
+type ContextChip = import("../command/thread").ContextChip;
+type ThreadItem = import("../command/thread").ThreadItem;
+const { approxTokens, formatTokens } = await import("../shelf/contract");
 import type { ProviderInfo } from "../command/aiShim";
+
 
 const tpl = (id: string, o: Partial<CommandTemplate> = {}): CommandTemplate => ({
   id, name: id[0].toUpperCase() + id.slice(1), description: `${id} things`, template: `Do ${id}: {selection}`, provider: "local",

@@ -14,13 +14,17 @@
 // Some helpers are used only by tests or by one platform's capture layer.
 #![allow(dead_code)]
 
+pub mod appctx;
 pub mod dib;
 pub mod history;
 pub mod paste;
 pub mod privacy;
+pub mod selection_rules;
 pub mod seal;
 pub mod service;
 pub mod store;
+#[cfg(windows)]
+pub mod uia;
 #[cfg(windows)]
 pub mod win;
 

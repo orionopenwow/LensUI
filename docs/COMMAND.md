@@ -132,3 +132,118 @@ In `src/types/lens.ts` add `command?: Partial<import("../command/settings").Comm
 - **Paste stack.** One hotkey collects copies; another pastes them in order (Paste, Raycast). It needs its own global shortcuts, so it waits for the hotkey registry.
 - **OCR of image clips** via `Windows.Media.Ocr`, which is local. Text would then be searchable, as in Raycast.
 - **Clip groups.** Ditto/CopyQ-style tabs are covered by Shelves for now.
+
+## Lens Mini, Edge Shelf and selection bubble
+
+Everything here is **off by default**, local and reversible. It never runs in fullscreen apps or games, and follows AGENTS.md.
+
+### Lens Mini
+
+**Lens Mini** is the Command window in a compact 376×456 layout. Mini and the full view share the same state and thread, so Expand ↗ only resizes the window (`command_layout`) and swaps the layout in place.
+
+Layout, from top to bottom:
+
+- **Input.** The mode is shown as an icon only.
+- **Context.** A chip for the app you're in (category · name), plus the selection read through UI Automation.
+- **Actions | Glance tabs.** Tab switches between them.
+  - **Actions:** a 2×3 grid of tiles; the arrow keys move between them and Enter runs one. After a run, the latest answer replaces the grid, with Paste, Copy and Shelf buttons.
+  - **Glance:** Shelf, clipboard, AI status (provider, model, tokens this session), Now playing, Focus/DND, and a quick note.
+    - Now playing uses the existing `get_media_now_playing_cmd` / `media_control_cmd`.
+    - Focus uses `get_dnd_cmd` / `set_dnd_cmd`.
+    - There is no calendar card: Lens has no calendar data source yet.
+- **Shelf strip.** Its cards can be dragged out into other apps.
+- **Three recent clips.** Shown only when clipboard history is on.
+- **Footer.** Provider, privacy and Expand.
+
+**Tiles are app-aware.** `src/command/contextProviders.ts` mirrors `clip/appctx.rs`:
+
+| Category | Tiles |
+|---|---|
+| Code editors | Explain · Review · Fix · Ask · Add to Shelf · Summarise |
+| Terminals | Explain error (selection only) · … |
+| Browsers | Summarise · Ask this page · … |
+| Office and notes | Rewrite · Summarise · Fix · Translate · To-do · Add to Shelf |
+| Explorer | Summarise · Ask · Add to Shelf · Transcribe · Extract · Compare |
+
+Users choose their base set in Settings. `miniTiles.apps["code.exe"]` and `miniTiles.categories.terminal` hold per-app and per-category overrides.
+
+**Opening Mini.** Emit `lens://command/open` with `{ layout: "mini", anchor: "cursor" | "dock:<x>:<top>" }`. Command calls `command_layout`, which keeps Mini inside the monitor work area: below-right of the pointer, flipping at the edges (`place_near`), or centred above the dock (`place_above`).
+
+### Entry points the integrator wires
+
+**(a) Hotkey tap.** In the Command shortcut handler, a press shorter than 250 ms opens Mini at the cursor; a second tap while Mini is open (or holding the key) opens the full view.
+
+```rust
+crate::commands::clip::context_remember();           // the app you came from, before Lens takes focus
+let payload = if mini_open { json!({"layout":"full"}) } else { json!({"layout":"mini","anchor":"cursor"}) };
+crate::commands::surfaces::open_surface(app.clone(), state, "command".into());
+let _ = app.emit("lens://command/open", payload);
+```
+
+**(b) Right-click on the dock sparkle.** Mount snippet for `DockSurface.tsx`, or for W6-B's `src/dock/ai/AskDock.tsx`:
+
+```tsx
+onContextMenu={(e) => {
+  e.preventDefault();
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = Math.round(window.screenX + r.left + r.width / 2), top = Math.round(window.screenY + r.top);
+  invoke("open_surface", { label: "command" });
+  emit("lens://command/open", { layout: "mini", anchor: `dock:${x * devicePixelRatio}:${top * devicePixelRatio}` });
+}}
+```
+
+**(c) Edge Shelf.** The window config below goes in `tauri.conf.json`. The surface sizes itself from `edgeGeometry.ts` (6×96 tab, 300×420 panel) and hides while `context_foreground().fullscreen` is true.
+
+```json
+{ "label": "edgeshelf", "url": "index.html?surface=edgeshelf", "width": 6, "height": 96, "decorations": false,
+  "transparent": true, "alwaysOnTop": true, "skipTaskbar": true, "resizable": false, "shadow": false,
+  "visible": false, "focus": false }
+```
+
+Route it in `main.tsx`:
+
+```ts
+edgeshelf: lazy(() => import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))),
+```
+
+Create the window at startup only when `config.command.edge.enabled` is true.
+
+- **Drag in.** Files, text, links and images use WebView2's HTML5 drop (`dataTransfer.files`, `text/plain`, `text/uri-list`).
+- **Drag out.** Text and links already work through HTML5 drag. Files need an OLE drag source.
+
+**Plan for dragging files out** (it needs the `Win32_System_Ole` and `Win32_System_SystemServices` features in `Cargo.toml`, so it is left to the integrator):
+
+1. Add `commands::shelf::shelf_drag_files(paths)`, which runs on the UI thread.
+2. Build a `CF_HDROP` `DROPFILES` block, wrapped in an `IDataObject` implemented with `#[implement(IDataObject)]` that offers only `CF_HDROP` + `TYMED_HGLOBAL`.
+3. Add a minimal `IDropSource` (`QueryContinueDrag` ends on mouse-up or Esc; `GiveFeedback` returns `DRAGDROP_S_USEDEFAULTCURSORS`).
+4. Call `DoDragDrop(data, source, DROPEFFECT_COPY)`.
+5. Trigger it from the item's `onMouseDown` + 4 px movement, instead of HTML5 `dragstart`, for items of kind `file` or `image`.
+
+Paths must exist and sit outside `%APPDATA%\LensUI\clip`. Only paths the user dropped in earlier are allowed.
+
+**(d) Selection bubble.**
+
+- **Window:** `{"label":"bubble","url":"index.html?surface=bubble","width":32,"height":32,"decorations":false,"transparent":true,"alwaysOnTop":true,"skipTaskbar":true,"resizable":false,"shadow":false,"visible":false,"focus":false}`.
+- **Route:** `bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface })))`.
+- **Hook:** `commands::clip::init` starts the low-level mouse hook when `selection.json` has `bubble: true`; `selection_policy_set` starts and stops it live.
+- **What the hook sees:** button down and up only. A selection is a drag of at least 6 px held at least 80 ms, or a double or triple click.
+- **Reading:** UI Automation `TextPattern.GetSelection` on a worker thread, with a 150 ms timeout. It never uses Ctrl+C or the clipboard.
+- **What it refuses:**
+  - `IsPassword` fields;
+  - Lens's own windows;
+  - processes Lens cannot open (elevated or protected);
+  - fullscreen apps;
+  - the clipboard exclusion list;
+  - anything outside the allowlist, or on the denylist.
+- **Default allowlist:** Word, Excel, PowerPoint, Outlook, OneNote, Notepad, VS Code and Explorer. Browsers are left out; the extension covers them.
+- **Display:** the dot sits 14 px right and 10 px below the end of the selection. The text stays in the backend until Mini calls `selection_take` (one-shot, expires after 60 s).
+
+**(e) "Add selection to Shelf" hotkey** (suggested Ctrl+Alt+S). It calls `selection_to_shelf()`, which applies the same rules and returns a plain-words error when it refuses.
+
+### App-aware context details
+
+- **Explorer: the selected files.** This needs Shell COM (`IShellWindows` → match the foreground HWND → `IWebBrowserApp::Document` → `IShellFolderViewDual::SelectedItems` → `FolderItem::Path`), which requires the `Win32_System_Ole` and `Win32_System_Variant` features.
+  - Plan: add `context_explorer_selection()` next to `context_foreground`.
+  - Until then the Explorer tiles act on files dropped onto Mini or copied (clipboard file clips).
+- **Terminals:** selection only. Lens never scrapes the scrollback.
+- **Browsers:** the page arrives from the Lens extension (`lens://bridge/request`). Mini offers "Ask this page" when one is connected.
