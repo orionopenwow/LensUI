@@ -455,3 +455,7 @@ pub fn civil_from_unix(t: i64) -> (i64, u32, u32, u32, u32, u32) {
     let y = yoe + era * 400 + if m <= 2 { 1 } else { 0 };
     (y, m, d, (rem / 3600) as u32, ((rem % 3600) / 60) as u32, (rem % 60) as u32)
 }
+
+#[cfg(test)]
+#[path = "tests/win_backup.rs"]
+mod tests;

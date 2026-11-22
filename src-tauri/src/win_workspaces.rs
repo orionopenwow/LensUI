@@ -667,3 +667,7 @@ pub fn on_window_event(hwnd: isize, shown: bool) {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "tests/win_workspaces.rs"]
+mod tests;

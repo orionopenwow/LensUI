@@ -192,8 +192,7 @@ pub fn sniff_image_ext(head: &[u8]) -> Option<&'static str> {
 // ---------------------------------------------------------------------------------------------
 
 fn lens_dir() -> PathBuf {
-    let base = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
-    PathBuf::from(base).join("LensUI")
+    crate::config::config_dir()
 }
 
 pub fn wallpapers_dir() -> PathBuf {
@@ -764,3 +763,7 @@ pub fn set_measured_accent(hex: &str) -> Result<(), String> {
     s.accent_hex = hex.to_uppercase();
     save_settings(s).map(|_| ())
 }
+
+#[cfg(test)]
+#[path = "tests/win_wallpaper.rs"]
+mod tests;

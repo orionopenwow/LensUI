@@ -1346,3 +1346,7 @@ mod stubs {
 
 #[cfg(not(windows))]
 pub use stubs::*;
+
+#[cfg(test)]
+#[path = "tests/win_system_modules.rs"]
+mod tests;

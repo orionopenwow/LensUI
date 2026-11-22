@@ -876,3 +876,7 @@ pub fn run_startup_apps() -> usize {
 pub fn run_startup_apps() -> usize {
     0
 }
+
+#[cfg(test)]
+#[path = "tests/win_shell.rs"]
+mod tests;

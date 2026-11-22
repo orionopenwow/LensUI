@@ -1950,3 +1950,7 @@ pub const AUTO_TILING_HOTKEYS: [TilingHotkey; 15] = [
         label: "Workspace 3",
     },
 ];
+
+#[cfg(test)]
+#[path = "tests/win_tiler.rs"]
+mod tests;

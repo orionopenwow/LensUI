@@ -500,3 +500,7 @@ mod sys {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "tests/win_clipboard.rs"]
+mod tests;

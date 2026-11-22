@@ -372,3 +372,7 @@ pub fn target_monitor(preference: &str) -> Option<MonitorInfo> {
     let idx = pick_monitor(&monitors, preference, cursor_pos())?;
     monitors.into_iter().nth(idx)
 }
+
+#[cfg(test)]
+#[path = "tests/win_monitors.rs"]
+mod tests;
