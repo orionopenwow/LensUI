@@ -10,6 +10,10 @@ use tauri::{AppHandle, Emitter};
 pub(crate) fn emitter(app: &AppHandle) -> ipc::Emit {
     let app = app.clone();
     Arc::new(move |name: &str, payload: serde_json::Value| {
+        if name == "lens://bridge/request" {
+            // Open Lens Command first (when it is on) so its thread is there to show the request.
+            crate::app::integration::before_bridge_request(&app);
+        }
         let _ = app.emit(name, payload);
     })
 }

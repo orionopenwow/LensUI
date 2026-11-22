@@ -37,13 +37,14 @@ pub(crate) fn apply_win11_obsidian_backdrop(window: &tauri::WebviewWindow, _acry
 pub(crate) fn apply_win11_obsidian_backdrop(_window: &tauri::WebviewWindow, _acrylic: bool) {}
 
 /// Surfaces that may be marked `"create": false` in tauri.conf.json and built on first use.
-pub(crate) const LAZY_LABELS: [&str; 6] = [
+pub(crate) const LAZY_LABELS: [&str; 7] = [
     "settings",
     "palette",
     "widgets",
     "quicksettings",
     "launcher",
     "overview",
+    "command",
 ];
 
 pub(crate) fn lazy_building() -> &'static Mutex<std::collections::HashSet<String>> {
@@ -178,8 +179,10 @@ pub(crate) fn run_setup(
     // Windows marked "create": false in tauri.conf.json: build them now unless on-demand
     // windows are enabled. (No-op for any window Tauri already created.)
     for label in LAZY_LABELS {
-        let needed_now = !initial_config.func.lazy_windows
-            || (label == "settings" && !initial_config.onboarding_completed);
+        // Lens Command is always built on first use (it is off by default).
+        let needed_now = label != "command"
+            && (!initial_config.func.lazy_windows
+                || (label == "settings" && !initial_config.onboarding_completed));
         if needed_now && handle.get_webview_window(label).is_none() {
             let _ = build_window_from_config(&handle, label);
         }
@@ -297,6 +300,12 @@ pub(crate) fn run_setup(
     let wp = handle.clone();
     win_wallpaper::start_pause_monitor(move |reason| {
         let _ = wp.emit("lens://wallpaper-pause", reason);
+        // No desktop input hook while the wallpaper is paused (covered / on battery).
+        crate::app::integration::sync_desktop_input(
+            &wp,
+            &win_wallpaper::current_state(),
+            reason.is_some(),
+        );
     });
 
     // File index for search: first build after 8 s, refresh every 15 min, cancellable
@@ -465,6 +474,10 @@ pub(crate) fn run_setup(
             );
         }
     }
+
+    // Wave 4–6 features: shell keys, pointer effects, Playground idle mode, crash reports and
+    // updates, the browser bridge adapters, clipboard history v2 and Lens Command hotkeys.
+    crate::app::integration::setup(app, &initial_config);
 
     // Background thread: theme sync, Top Bar / Dock auto-hide, click-through, desktop tab.
     crate::app::watcher::spawn_watcher(

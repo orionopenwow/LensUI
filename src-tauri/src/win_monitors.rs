@@ -630,8 +630,3 @@ mod shell_keys_tests {
         assert!(extra_topbar_labels(&ms[..1], 0).is_empty());
     }
 }
-
-// Win key / Alt+Tab hook. Compiled from here until lib.rs declares `mod win_keyhook;` itself
-// (see docs/KEYHOOK.md, wiring step 1) — then delete these two lines.
-#[path = "win_keyhook.rs"]
-pub mod keyhook;

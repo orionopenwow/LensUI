@@ -271,10 +271,11 @@ fn window_corner_radius(exe_path: &str, rounded_os: bool, zoomed: bool) -> u8 {
 
 pub fn caps() -> StylingCaps {
     let build = os_build();
+    let features = crate::win_theme::features_for_build(build);
     StylingCaps {
         windows_build: build,
-        native_border: build >= 22000,
-        rounded_corners: build >= 22000,
+        native_border: features.frame_colors,
+        rounded_corners: features.rounded_corners,
         overlays: cfg!(windows),
     }
 }
@@ -423,7 +424,11 @@ mod win {
         if cached != u32::MAX {
             return cached;
         }
-        let build = unsafe { read_build_number() }.unwrap_or(0);
+        // RtlGetVersion (win_theme) is authoritative; the registry is only a fallback.
+        let build = match crate::win_theme::windows_build() {
+            0 => unsafe { read_build_number() }.unwrap_or(0),
+            b => b,
+        };
         OS_BUILD.store(build, Ordering::Relaxed);
         build
     }

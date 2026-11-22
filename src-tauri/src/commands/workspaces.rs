@@ -41,7 +41,8 @@ pub(crate) fn tile_windows_cmd(app: AppHandle, state: State<AppState>, layout: S
 // ===== Keyboard tiling =====
 /// Work area between Top Bar and Dock on the primary monitor.
 pub(crate) fn tiling_work_area(app: &AppHandle, cfg: &LensConfig) -> Option<(i32, i32, i32, i32)> {
-    let mon = app.primary_monitor().ok()??;
+    // The monitor Lens lives on (func.targetMonitor), like every other surface.
+    let mon = lens_monitor(app, &cfg.func.target_monitor).ok()??;
     let pos = mon.position();
     let size = mon.size();
     let work = mon.work_area();

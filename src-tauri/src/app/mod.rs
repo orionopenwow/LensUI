@@ -2,6 +2,7 @@
 
 pub(crate) mod setup;
 pub(crate) mod tray;
+pub(crate) mod integration;
 pub(crate) mod watcher;
 
 use crate::*;

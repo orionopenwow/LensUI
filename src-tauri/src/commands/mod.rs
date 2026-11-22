@@ -20,3 +20,7 @@ pub(crate) mod bridge;
 pub(crate) mod media;
 pub(crate) mod clip;
 pub(crate) mod shelf;
+pub(crate) mod keys;
+pub(crate) mod cursors;
+pub(crate) mod release;
+pub(crate) mod playground;

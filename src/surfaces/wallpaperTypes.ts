@@ -32,7 +32,8 @@ export interface WallpaperSettings {
 
 export type WallpaperKind = "image" | "video" | "html";
 
-export type WallpaperState = Gen.WallpaperState;
+/** The generated type has `sceneOptions: unknown` (serde_json::Value); use the precise frontend shape. */
+export type WallpaperState = Omit<Gen.WallpaperState, "settings"> & { settings: WallpaperSettings };
 
 export type WallpaperFile = Gen.WallpaperFile;
 

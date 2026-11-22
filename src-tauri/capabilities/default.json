@@ -2,7 +2,25 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for all Lens UI surfaces",
-  "windows": ["dock", "topbar", "settings", "palette", "widgets", "quicksettings", "notifications", "desktopfolder", "launcher", "overview", "wallpaper"],
+  "windows": [
+    "dock",
+    "topbar",
+    "settings",
+    "palette",
+    "widgets",
+    "quicksettings",
+    "notifications",
+    "desktopfolder",
+    "launcher",
+    "overview",
+    "wallpaper",
+    "cursorfx",
+    "playground-idle",
+    "command",
+    "edgeshelf",
+    "bubble",
+    "topbar-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-close",
@@ -18,6 +36,7 @@
     "core:window:allow-set-position",
     "core:window:allow-set-ignore-cursor-events",
     "core:event:default",
-    "global-shortcut:default"
+    "global-shortcut:default",
+    "core:webview:allow-set-webview-zoom"
   ]
 }

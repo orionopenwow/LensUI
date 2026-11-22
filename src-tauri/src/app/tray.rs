@@ -50,6 +50,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             "open_palette" => toggle_surface(app.clone(), "palette".into()),
             "open_widgets" => toggle_surface(app.clone(), "widgets".into()),
             "quit" => {
+                crate::app::integration::shutdown(Some(app));
                 win_mcp::stop_server();
                 win_previews::hide_previews();
                 win_altdrag::stop_alt_drag();

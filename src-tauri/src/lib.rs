@@ -38,6 +38,12 @@ mod win_windows;
 mod win_hotcorners;
 mod win_altdrag;
 mod win_summon;
+mod win_crash;
+mod win_cursor_fx;
+mod win_cursors;
+mod win_desktop_input;
+mod win_keyhook;
+mod win_update;
 
 mod app;
 mod bridge;
@@ -116,9 +122,12 @@ pub fn run() {
     let shell_startup = win_shell::shell_startup();
     let running_as_shell = shell_startup == win_shell::ShellStartup::Shell;
 
+    win_crash::install_log_capture();
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        win_crash::write_crash_report(info);
+        crate::app::integration::panic_shutdown();
         win_mcp::stop_server();
         win_altdrag::stop_alt_drag();
         win_workspaces::restore_all_windows();
@@ -144,6 +153,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             config: shared_config,
             dock_pill_width,
@@ -425,12 +435,36 @@ pub fn run() {
             commands::media::transcribe_cancel,
             commands::media::transcribe_status,
             commands::media::live_captions_start,
+            commands::keys::keyhook_ack_cmd,
+            commands::keys::get_keyhook_status_cmd,
+            commands::keys::get_ui_scale_support_cmd,
+            commands::cursors::cursor_suite_status_cmd,
+            commands::cursors::cursor_previews_cmd,
+            commands::cursors::cursor_apply_cmd,
+            commands::cursors::cursor_restore_cmd,
+            commands::cursors::cursor_follow_theme_cmd,
+            commands::cursors::pointer_set_cmd,
+            commands::cursors::pointer_reset_cmd,
+            commands::cursors::cursor_fx_get_cmd,
+            commands::cursors::cursor_fx_set_cmd,
+            commands::release::write_plugin_frame_cmd,
+            commands::release::list_crash_reports_cmd,
+            commands::release::read_crash_report_cmd,
+            commands::release::open_crashes_folder_cmd,
+            commands::release::get_update_settings_cmd,
+            commands::release::set_update_settings_cmd,
+            commands::release::check_for_update_cmd,
+            commands::release::install_update_cmd,
+            commands::playground::save_playground_state_cmd,
+            commands::playground::load_playground_state_cmd,
+            commands::playground::clear_playground_state_cmd,
+            commands::playground::dismiss_playground_idle_cmd,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
-                win_altdrag::stop_alt_drag();
+                crate::app::integration::shutdown(Some(_app_handle));
                 win_dwm_engine::revert_dwm_theme();
                 restore_taskbar_if_hidden();
             }

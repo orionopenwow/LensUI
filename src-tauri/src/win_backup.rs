@@ -201,8 +201,15 @@ pub fn build_backup(dir: &Path, include_training: bool) -> Result<(Value, Backup
         secrets_removed += scrub_secrets(&mut rules);
         files.insert("window-rules.json".into(), rules);
     }
+    if let Some(mut styling) = read_json(&dir.join("window-styling.json")) {
+        secrets_removed += scrub_secrets(&mut styling);
+        files.insert("window-styling.json".into(), styling);
+    }
     if let Ok(md) = fs::read_to_string(dir.join("AGENTS.md")) {
         files.insert("AGENTS.md".into(), Value::String(md));
+    }
+    for (name, text) in crate::win_cursors::backup_files() {
+        files.insert(format!("cursors/{}", name), Value::String(text));
     }
     if let Some(n) = read_json(&dir.join("notifications.json")) {
         let dnd = n.get("dnd").and_then(Value::as_bool).unwrap_or(false);
@@ -336,6 +343,22 @@ pub fn restore_backup(dir: &Path, text: &str, restore_training: bool) -> Result<
                 scrub_secrets(&mut value);
                 plan.push((dir.join("window-rules.json"), pretty(&value)?, name.clone()));
             }
+            "window-styling.json" => {
+                if !value.is_object() {
+                    skipped.push(format!("{} (not an object)", name));
+                    continue;
+                }
+                scrub_secrets(&mut value);
+                plan.push((dir.join("window-styling.json"), pretty(&value)?, name.clone()));
+            }
+            "cursors/backup.json" | "cursors/pointer-backup.json" | "cursors/state.json"
+            | "cursors/fx.json" => match value.as_str() {
+                Some(s) => {
+                    let file = name.trim_start_matches("cursors/");
+                    plan.push((dir.join("cursors").join(file), s.as_bytes().to_vec(), name.clone()));
+                }
+                None => skipped.push(format!("{} (not text)", name)),
+            },
             "AGENTS.md" => match value.as_str() {
                 Some(s) => plan.push((dir.join("AGENTS.md"), s.as_bytes().to_vec(), name.clone())),
                 None => skipped.push(format!("{} (not text)", name)),

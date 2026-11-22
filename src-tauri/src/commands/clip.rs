@@ -273,6 +273,13 @@ pub fn apply_policy(app: &AppHandle) {
     #[cfg(windows)]
     {
         if policy.bubble {
+            // The bubble window is created on first use (`"create": false` in tauri.conf.json).
+            if app.get_webview_window("bubble").is_none() {
+                let a = app.clone();
+                std::thread::spawn(move || {
+                    let _ = crate::app::setup::build_window_from_config(&a, "bubble");
+                });
+            }
             let handle = app.clone();
             crate::clip::uia::set_on_bubble(move |ev| {
                 if let Some(w) = handle.get_webview_window("bubble") {

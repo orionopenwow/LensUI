@@ -122,6 +122,9 @@ pub struct DockConfig {
     /// Mouse wheel over an app icon cycles through that app's windows.
     #[serde(default)]
     pub scroll_cycles_windows: bool,
+    /// Suggest 1-3 apps you usually open at this time (local predictor, no AI model). OFF by default.
+    #[serde(default)]
+    pub suggested_apps: bool,
 }
 
 fn default_dock_magnification() -> String {
@@ -184,6 +187,15 @@ pub struct FuncConfig {
     /// opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens UI.
     #[serde(default)]
     pub lazy_windows: bool,
+    /// Tap the Win key to open the Lens Launcher. OFF by default.
+    #[serde(default)]
+    pub win_key_launcher: bool,
+    /// Alt+Tab opens Lens Overview. OFF by default.
+    #[serde(default)]
+    pub alt_tab_overview: bool,
+    /// One Top Bar per monitor. OFF by default; applies after restart.
+    #[serde(default)]
+    pub per_monitor_bars: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -349,6 +361,10 @@ pub struct LensConfig {
     /// Lens Intelligence (off by default). API keys are never stored here.
     #[serde(default)]
     pub ai: crate::ai::AiConfig,
+    /// Lens Command / Mini / Edge Shelf settings. The frontend owns the shape
+    /// (src/command/settings.ts); the backend only reads `enabled` and `edge.enabled`.
+    #[serde(default)]
+    pub command: serde_json::Value,
 }
 
 impl Default for LensConfig {
@@ -429,6 +445,7 @@ impl Default for LensConfig {
                 show_labels: false,
                 file_drop_open: false,
                 scroll_cycles_windows: false,
+                suggested_apps: false,
             },
             top_bar: TopBarConfig::default(),
             func: FuncConfig {
@@ -445,6 +462,9 @@ impl Default for LensConfig {
                 clipboard_history: false,
                 target_monitor: "primary".into(),
                 lazy_windows: false,
+                win_key_launcher: false,
+                alt_tab_overview: false,
+                per_monitor_bars: false,
             },
             window_controls: WindowControlsConfig {
                 enabled: true,
@@ -508,6 +528,7 @@ impl Default for LensConfig {
             app_summon: Default::default(),
             dnd_schedule: Default::default(),
             ai: Default::default(),
+            command: serde_json::Value::Null,
         }
     }
 }
@@ -642,4 +663,21 @@ pub fn save_config(cfg: &LensConfig) -> Result<(), String> {
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
     crate::win_backup::write_atomic(&config_path(), json.as_bytes())
+}
+
+impl LensConfig {
+    /// Lens Command (hotkey, Mini, Edge Shelf) is off until the user turns it on.
+    pub fn command_enabled(&self) -> bool {
+        self.command.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false)
+    }
+    /// The Edge Shelf tab is a separate opt-in inside Lens Command.
+    pub fn edge_shelf_enabled(&self) -> bool {
+        self.command_enabled()
+            && self
+                .command
+                .get("edge")
+                .and_then(|e| e.get("enabled"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+    }
 }

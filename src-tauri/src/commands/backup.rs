@@ -42,6 +42,7 @@ pub(crate) fn remove_all_lens_changes_cmd(
     let mut cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
     win_workspaces::restore_all_windows();
     win_wallpaper::detach_wallpaper_window();
+    win_desktop_input::stop();
     let mut steps = win_uninstall::remove_all_lens_changes(&mut cfg);
     if delete_data {
         let res = win_uninstall::delete_lens_data();

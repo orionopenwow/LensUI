@@ -31,6 +31,7 @@ pub(crate) fn sync_wallpaper(app: &AppHandle) {
         let _ = win.hide();
     }
     let _ = app.emit("lens://wallpaper-changed", ());
+    crate::app::integration::sync_desktop_input(app, &state, false);
 }
 
 #[tauri::command]

@@ -183,6 +183,71 @@
         "shadow": false,
         "visible": false,
         "focus": false
+      },
+      {
+        "label": "cursorfx",
+        "title": "Lens Pointer Effects",
+        "url": "index.html?surface=cursorfx",
+        "width": 1920,
+        "height": 1080,
+        "x": 0,
+        "y": 0,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "command",
+        "title": "Lens Command",
+        "url": "index.html?surface=command",
+        "width": 1000,
+        "height": 640,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "edgeshelf",
+        "title": "Lens Shelf",
+        "url": "index.html?surface=edgeshelf",
+        "width": 6,
+        "height": 96,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
+      },
+      {
+        "label": "bubble",
+        "title": "Lens Selection",
+        "url": "index.html?surface=bubble",
+        "width": 32,
+        "height": 32,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
       }
     ],
     "security": {
@@ -240,8 +305,8 @@
       "icons/icon.ico"
     ],
     "publisher": "Lens UI contributors",
-    "copyright": "MIT \u00a9 2026 Lens UI contributors",
-    "shortDescription": "Obsidian-monochrome desktop shell for Windows 11",
+    "copyright": "MIT © 2026 Lens UI contributors",
+    "shortDescription": "Calm, themeable desktop shell for Windows 10 and 11",
     "homepage": "https://orionopenwow.github.io/lensui/"
   },
   "plugins": {

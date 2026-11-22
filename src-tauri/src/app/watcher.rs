@@ -219,6 +219,11 @@ pub(crate) fn position_settings_docked_with_height(
         // Strictly flush (+1px overlap eliminates any hairline seam between Control Center and the fused Dock!)
         let y = (bottom_edge - dock_pill_h - margin_bottom - target_h as i32 + 1)
             .max(pos.y + bar_h + (4.0 * scale) as i32);
+        let (x, y) = crate::app::integration::side_dock_flyout(
+            cfg, scale, bar_h, bottom_edge, target_w, target_h,
+            win_monitors::FlyoutAlign::Center,
+        )
+        .unwrap_or((x, y));
         let _ = win.set_size(PhysicalSize::new(target_w, target_h));
         let _ = win.set_position(PhysicalPosition::new(x, y));
         if win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false) {
