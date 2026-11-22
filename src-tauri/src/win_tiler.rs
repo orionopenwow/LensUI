@@ -449,11 +449,11 @@ pub fn cycle_layout(
     work_h: i32,
 ) -> Result<String, String> {
     use std::sync::atomic::Ordering;
-    let len = LAYOUT_CYCLE.len() as i32;
-    let cur = LAYOUT_CURSOR.load(Ordering::SeqCst) as i32;
-    let next = (cur + step).rem_euclid(len) as usize;
+    let cur = LAYOUT_CURSOR.load(Ordering::SeqCst).min(LAYOUT_CYCLE.len() - 1);
+    let layout = next_layout(LAYOUT_CYCLE[cur], step);
+    let next = LAYOUT_CYCLE.iter().position(|l| *l == layout).unwrap_or(0);
     LAYOUT_CURSOR.store(next, Ordering::SeqCst);
-    tile_windows(LAYOUT_CYCLE[next], work_x, work_y, work_w, work_h)
+    tile_windows(layout, work_x, work_y, work_w, work_h)
 }
 
 #[cfg(not(windows))]
@@ -1282,7 +1282,6 @@ pub(crate) mod ffi {
             cy: i32,
             flags: u32,
         ) -> i32;
-        pub fn ShowWindow(h: isize, cmd: i32) -> i32;
         pub fn ShowWindowAsync(h: isize, cmd: i32) -> i32;
         pub fn GetForegroundWindow() -> isize;
         pub fn MonitorFromWindow(h: isize, flags: u32) -> isize;
@@ -1339,7 +1338,6 @@ pub(crate) mod ffi {
     pub const HWND_TOP: isize = 0;
     pub const SW_MINIMIZE: i32 = 6;
     pub const SW_SHOWNOACTIVATE: i32 = 4;
-    pub const SW_RESTORE: i32 = 9;
     pub const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
     pub const WINEVENT_OUTOFCONTEXT: u32 = 0;
     pub const OBJID_WINDOW: i32 = 0;

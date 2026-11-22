@@ -726,20 +726,6 @@ pub fn start_explorer_as_shell(_keep_enabled: bool, _wait: bool) -> Result<(), S
     Ok(())
 }
 
-/// Starts explorer.exe unconditionally (a file window if a shell is already running).
-#[cfg(windows)]
-pub fn launch_explorer_shell() -> Result<(), String> {
-    if explorer_shell_present() {
-        return spawn_explorer();
-    }
-    start_explorer_as_shell(true, false)
-}
-
-#[cfg(not(windows))]
-pub fn launch_explorer_shell() -> Result<(), String> {
-    Ok(())
-}
-
 /// What `shell_startup` decided for this process.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShellStartup {

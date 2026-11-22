@@ -2835,7 +2835,7 @@ fn quit_lens(app: AppHandle) {
 /// (left, top, right, bottom) of one visible app window, in screen pixels.
 type OverlapRect = (i32, i32, i32, i32);
 
-/// Pure: does any rect intersect the zone? (Same strict test as `win_traffic::is_rect_overlapped`.)
+/// Pure: does any rect intersect the zone? (Strict test: touching edges do not count.)
 fn rects_overlap(rects: &[OverlapRect], zone: OverlapRect) -> bool {
     let (l, t, r, b) = zone;
     rects
@@ -2850,7 +2850,7 @@ fn pass_overlaps(cache: &mut Option<Vec<OverlapRect>>, zone: OverlapRect) -> boo
 }
 
 /// Every visible, non-minimised, non-cloaked, titled, non-tool app window that is not Lens's own,
-/// with the same filters `win_traffic::is_rect_overlapped` applies — collected in one EnumWindows pass.
+/// collected in one EnumWindows pass.
 #[cfg(windows)]
 fn collect_overlap_rects() -> Vec<OverlapRect> {
     use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};

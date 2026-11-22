@@ -332,7 +332,6 @@ mod ffi {
         ) -> isize;
         pub fn EnumWindows(cb: WNDENUMPROC, lparam: isize) -> i32;
         pub fn SetParent(child: HWND, parent: HWND) -> HWND;
-        pub fn GetParent(hwnd: HWND) -> HWND;
         pub fn SetWindowPos(
             hwnd: HWND,
             after: HWND,
@@ -352,7 +351,6 @@ mod ffi {
         pub fn GetClassNameW(hwnd: HWND, buf: *mut u16, len: i32) -> i32;
         pub fn GetWindowLongPtrW(hwnd: HWND, index: i32) -> isize;
         pub fn SetWindowLongPtrW(hwnd: HWND, index: i32, value: isize) -> isize;
-        pub fn MonitorFromWindow(hwnd: HWND, flags: u32) -> isize;
         pub fn MonitorFromPoint(pt: POINT, flags: u32) -> isize;
         pub fn GetMonitorInfoW(monitor: isize, info: *mut MONITORINFO) -> i32;
         pub fn SystemParametersInfoW(

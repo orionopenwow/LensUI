@@ -1,3 +1,4 @@
+import type * as Gen from "../types/generated";
 /** Shapes shared by the plugin host, slot and manager. Mirrors win_plugins.rs. */
 
 export type PluginSlotId = "topbar-left" | "topbar-right" | "dock" | "widgets";
@@ -33,11 +34,7 @@ export interface PluginInfo {
   path: string;
 }
 
-export interface PendingApproval {
-  pluginId: string;
-  grant: string;
-  label: string;
-}
+export type PendingApproval = Gen.PendingApproval;
 
 export const SLOT_LABELS: Record<PluginSlotId, string> = {
   "topbar-left": "Top Bar, left",
