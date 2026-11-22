@@ -1251,34 +1251,11 @@ fn auto_tiling_action_inner(action: &str, arg: &str) -> Option<Result<String, St
 
 #[cfg(windows)]
 pub(crate) mod ffi {
-    #[repr(C)]
-    #[derive(Clone, Copy, Default, Debug)]
-    pub struct Rect {
-        pub left: i32,
-        pub top: i32,
-        pub right: i32,
-        pub bottom: i32,
-    }
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct MonitorInfo {
-        pub cb_size: u32,
-        pub rc_monitor: Rect,
-        pub rc_work: Rect,
-        pub flags: u32,
-    }
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct Msg {
-        pub hwnd: isize,
-        pub message: u32,
-        pub wparam: usize,
-        pub lparam: isize,
-        pub time: u32,
-        pub pt_x: i32,
-        pub pt_y: i32,
-        pub private: u32,
-    }
+    // Structs and the message loop are shared with other modules (see crate::ffi).
+    pub use crate::ffi::{
+        DispatchMessageW, GetMessageW, GetMonitorInfoW, MonitorInfo, Msg, Rect, TranslateMessage,
+    };
+
     pub type WinEventProc = unsafe extern "system" fn(isize, u32, isize, i32, i32, u32, u32);
     pub type EnumProc = unsafe extern "system" fn(isize, isize) -> i32;
 
@@ -1309,7 +1286,6 @@ pub(crate) mod ffi {
         pub fn ShowWindowAsync(h: isize, cmd: i32) -> i32;
         pub fn GetForegroundWindow() -> isize;
         pub fn MonitorFromWindow(h: isize, flags: u32) -> isize;
-        pub fn GetMonitorInfoW(m: isize, info: *mut MonitorInfo) -> i32;
         pub fn SetWinEventHook(
             min: u32,
             max: u32,
@@ -1319,9 +1295,6 @@ pub(crate) mod ffi {
             tid: u32,
             flags: u32,
         ) -> isize;
-        pub fn GetMessageW(msg: *mut Msg, h: isize, min: u32, max: u32) -> i32;
-        pub fn TranslateMessage(msg: *const Msg) -> i32;
-        pub fn DispatchMessageW(msg: *const Msg) -> isize;
     }
     #[link(name = "dwmapi")]
     extern "system" {

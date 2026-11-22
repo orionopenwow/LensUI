@@ -1,4 +1,6 @@
 mod config;
+#[cfg(windows)]
+mod ffi;
 mod sys_telemetry;
 mod win_caption_engine;
 mod win_dwm_engine;

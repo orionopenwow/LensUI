@@ -246,59 +246,13 @@ mod sys {
     use std::sync::OnceLock;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    type WndProc = unsafe extern "system" fn(isize, u32, usize, isize) -> isize;
-
-    #[repr(C)]
-    struct WndClassW {
-        style: u32,
-        wnd_proc: Option<WndProc>,
-        cls_extra: i32,
-        wnd_extra: i32,
-        instance: isize,
-        icon: isize,
-        cursor: isize,
-        background: isize,
-        menu_name: *const u16,
-        class_name: *const u16,
-    }
-
-    #[repr(C)]
-    struct Point {
-        x: i32,
-        y: i32,
-    }
-
-    #[repr(C)]
-    struct Msg {
-        hwnd: isize,
-        message: u32,
-        w_param: usize,
-        l_param: isize,
-        time: u32,
-        pt: Point,
-    }
+    use crate::ffi::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, Msg, RegisterClassW,
+        TranslateMessage, WndClassW,
+    };
 
     #[link(name = "user32")]
     extern "system" {
-        fn RegisterClassW(class: *const WndClassW) -> u16;
-        fn CreateWindowExW(
-            ex_style: u32,
-            class_name: *const u16,
-            window_name: *const u16,
-            style: u32,
-            x: i32,
-            y: i32,
-            width: i32,
-            height: i32,
-            parent: isize,
-            menu: isize,
-            instance: isize,
-            param: *mut c_void,
-        ) -> isize;
-        fn DefWindowProcW(hwnd: isize, msg: u32, w_param: usize, l_param: isize) -> isize;
-        fn GetMessageW(msg: *mut Msg, hwnd: isize, filter_min: u32, filter_max: u32) -> i32;
-        fn TranslateMessage(msg: *const Msg) -> i32;
-        fn DispatchMessageW(msg: *const Msg) -> isize;
         fn PostMessageW(hwnd: isize, msg: u32, w_param: usize, l_param: isize) -> i32;
         fn AddClipboardFormatListener(hwnd: isize) -> i32;
         fn OpenClipboard(new_owner: isize) -> i32;
@@ -527,14 +481,7 @@ mod sys {
             LISTENER_HWND.store(hwnd, Ordering::SeqCst);
             eprintln!("[Lens Clipboard] Clipboard history active (text only, in memory only).");
 
-            let mut msg = Msg {
-                hwnd: 0,
-                message: 0,
-                w_param: 0,
-                l_param: 0,
-                time: 0,
-                pt: Point { x: 0, y: 0 },
-            };
+            let mut msg = Msg::default();
             while GetMessageW(&mut msg, 0, 0, 0) > 0 {
                 TranslateMessage(&msg);
                 DispatchMessageW(&msg);
