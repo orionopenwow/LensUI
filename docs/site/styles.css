@@ -144,3 +144,15 @@ footer a { color: var(--fg-2); }
   .bar time, .bar .bar-link { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* "Works on" table */
+.works-title { margin: 48px 0 14px; }
+.works { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+.works th, .works td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.works thead th { color: var(--fg-2); font-weight: 500; font-size: 13px; }
+.works tbody th { font-weight: 500; }
+.works td { color: var(--fg-2); }
+.note { color: var(--fg-2); font-size: 14px; margin-top: 14px; max-width: 70ch; }
+@media (max-width: 720px) {
+  .works { display: block; overflow-x: auto; }
+}

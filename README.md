@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./assets/lensui-logo.svg" alt="" width="96" />
   <h1>Lens UI</h1>
-  <p>A Dock, a Top Bar and theme packs for Windows 11. Open source and reversible.</p>
+  <p>A Dock, a Top Bar and theme packs for Windows 10 and 11. Open source and reversible.</p>
   <p>
     <a href="https://github.com/orionopenwow/lensui/actions/workflows/build.yml"><img src="https://github.com/orionopenwow/lensui/actions/workflows/build.yml/badge.svg" alt="build" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-09090b?style=flat-square" alt="MIT license" /></a>
@@ -15,7 +15,7 @@
 
 ## Why Lens
 
-Windows 11's taskbar does a lot of things adequately and few things well. Lens replaces it with a Dock and a Top Bar that are fast to read, put real system controls one click away, and keep the whole desktop in one visual language, including the frames of other apps' windows. It runs on top of Explorer instead of patching it, so quitting Lens puts Windows back the way it was.
+The Windows taskbar does a lot of things adequately and few things well. Lens replaces it with a Dock and a Top Bar that are fast to read, put real system controls one click away, and keep the whole desktop in one visual language, including the frames of other apps' windows. It runs on top of Explorer instead of patching it, so quitting Lens puts Windows back the way it was.
 
 Lens is built with [Tauri 2](https://tauri.app) (Rust and Win32) and React.
 
@@ -77,9 +77,21 @@ Lens is meant to be safe to try and easy to leave.
 
 No telemetry and no account. Lens only goes online for things you open yourself, such as a web search or a messaging web app.
 
+## Works on
+
+| Feature | Windows 11 | Windows 10 (1809+) | Linux, macOS |
+| :--- | :--- | :--- | :--- |
+| Dock, Top Bar, Launcher, Overview, Quick Settings | Yes | Yes | Planned |
+| Theme packs, search, plugins, workspaces, tiling | Yes | Yes | Planned |
+| Dark titlebars on every app | Yes | Yes | — |
+| Window frame colours and rounded corners | Yes | No (Windows 11 only) | — |
+| Glass (Mica / acrylic) | Planned (22H2 and later) | No | — |
+
+Expected support, based on the Windows features each part of Lens uses; testing on real machines is ongoing. Linux and macOS: the interface already runs there, and every Windows module has a portable stand-in that CI compile-checks on each change. Real support needs a platform layer, which is on the [roadmap](./docs/ROADMAP.md).
+
 ## Build from source
 
-Requirements: Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
+Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
 
 ```bat
 git clone https://github.com/orionopenwow/lensui

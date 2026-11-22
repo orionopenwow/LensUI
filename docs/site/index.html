@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lens UI — a desktop shell for Windows 11</title>
-<meta name="description" content="Lens UI replaces the Windows 11 taskbar with a Dock, a Top Bar, real system controls, tiling and theme packs that restyle every window. Open source, reversible, built on Tauri and Rust.">
+<title>Lens UI — a desktop shell for Windows</title>
+<meta name="description" content="Lens UI replaces the Windows taskbar with a Dock, a Top Bar, real system controls, tiling and theme packs that restyle every window. Open source, reversible, built on Tauri and Rust.">
 <meta property="og:title" content="Lens UI">
-<meta property="og:description" content="A Dock, a Top Bar and theme packs for Windows 11. Open source and reversible.">
+<meta property="og:description" content="A Dock, a Top Bar and theme packs for Windows 10 and 11. Open source and reversible.">
 <meta property="og:image" content="assets/desktop-obsidian.webp">
 <meta name="theme-color" content="#09090b">
 <link rel="icon" href="assets/lens.svg" type="image/svg+xml">
@@ -30,7 +30,7 @@
 <main id="main">
 <section class="hero">
   <div class="inner">
-    <h1>A calmer desktop for Windows 11.</h1>
+    <h1>A calmer desktop for Windows.</h1>
     <p class="lede">Lens UI replaces the taskbar with a Dock and a Top Bar, puts real Wi-Fi, Bluetooth, audio and battery controls one click away, and restyles every app window to match your theme. Quit it, and Windows is exactly as you left it.</p>
     <div class="actions">
       <a class="btn primary" href="#get">Build from source</a>
@@ -172,13 +172,25 @@
         </ul>
       </div>
     </div>
+    <h3 class="works-title">Works on</h3>
+    <table class="works">
+      <thead><tr><th scope="col">Feature</th><th scope="col">Windows 11</th><th scope="col">Windows 10 (1809+)</th><th scope="col">Linux, macOS</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Dock, Top Bar, Launcher, Overview, Quick Settings</th><td>Yes</td><td>Yes</td><td>Planned</td></tr>
+        <tr><th scope="row">Theme packs, search, plugins, workspaces, tiling</th><td>Yes</td><td>Yes</td><td>Planned</td></tr>
+        <tr><th scope="row">Dark titlebars on every app</th><td>Yes</td><td>Yes</td><td>&mdash;</td></tr>
+        <tr><th scope="row">Window frame colours and rounded corners</th><td>Yes</td><td>No (Windows 11 only)</td><td>&mdash;</td></tr>
+        <tr><th scope="row">Glass (Mica / acrylic)</th><td>Planned (22H2 and later)</td><td>No</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Expected support, based on the Windows features each part of Lens uses; testing on real machines is ongoing. Linux and macOS: the interface already runs there, and every Windows module has a portable stand-in that is compile-checked on each change. Real support needs a platform layer that is on the roadmap.</p>
   </div>
 </section>
 
 <section id="get">
   <div class="inner">
     <h2>Get it running.</h2>
-    <p class="lede">There is no signed installer yet. Building takes a few minutes on Windows 11 with Rust and Bun installed.</p>
+    <p class="lede">There is no signed installer yet. Building takes a few minutes on Windows 10 or 11 with Rust and Bun installed.</p>
     <ol class="steps">
       <li><div>Install the <a href="https://www.rust-lang.org/tools/install">Rust toolchain</a> (MSVC) and <a href="https://bun.sh">Bun</a>.</div></li>
       <li><div>Clone the repository.<pre><code>git clone https://github.com/orionopenwow/lensui
