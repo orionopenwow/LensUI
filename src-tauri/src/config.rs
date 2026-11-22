@@ -89,6 +89,63 @@ pub struct DockConfig {
     /// Live window thumbnails in the Dock hover card. Off by default.
     #[serde(default)]
     pub live_previews: bool,
+    /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
+    #[serde(default = "default_dock_style")]
+    pub style: String,
+    /// Icon alignment for the Taskbar style: "center" | "left".
+    #[serde(default = "default_dock_alignment")]
+    pub alignment: String,
+    /// Where the clock and system icons live: "auto" | "dock" | "topbar".
+    #[serde(default = "default_dock_system_area")]
+    pub system_area: String,
+    /// Hover magnification: "off" (today's gentle hover) | "subtle" | "classic".
+    #[serde(default = "default_dock_magnification")]
+    pub magnification: String,
+    /// How many neighbouring icons on each side the magnification reaches (1-4).
+    #[serde(default = "default_dock_magnification_range")]
+    pub magnification_range: u32,
+    /// Click/launch animation: "none" | "lift" (today's) | "bounce" | "jelly".
+    #[serde(default = "default_dock_launch_animation")]
+    pub launch_animation: String,
+    /// Short pulse on an app's icon when one of its windows is minimised or restored.
+    #[serde(default)]
+    pub minimize_feedback: bool,
+    /// Icon size per Dock style, e.g. {"slim": 28}. Missing = the style's own size.
+    #[serde(default)]
+    pub icon_sizes: std::collections::HashMap<String, u32>,
+    /// App names next to (Taskbar/Studio) or under (other styles) the app icons.
+    #[serde(default)]
+    pub show_labels: bool,
+    /// Dropping files on a Dock app opens them with that app.
+    #[serde(default)]
+    pub file_drop_open: bool,
+    /// Mouse wheel over an app icon cycles through that app's windows.
+    #[serde(default)]
+    pub scroll_cycles_windows: bool,
+}
+
+fn default_dock_magnification() -> String {
+    "off".into()
+}
+
+fn default_dock_magnification_range() -> u32 {
+    2
+}
+
+fn default_dock_launch_animation() -> String {
+    "lift".into()
+}
+
+fn default_dock_style() -> String {
+    "floating".into()
+}
+
+fn default_dock_alignment() -> String {
+    "center".into()
+}
+
+fn default_dock_system_area() -> String {
+    "auto".into()
 }
 
 fn default_dock_position() -> String {
@@ -350,6 +407,17 @@ impl Default for LensConfig {
                 locked: false,
                 separators_after: vec![],
                 live_previews: false,
+                style: default_dock_style(),
+                alignment: default_dock_alignment(),
+                system_area: default_dock_system_area(),
+                magnification: default_dock_magnification(),
+                magnification_range: default_dock_magnification_range(),
+                launch_animation: default_dock_launch_animation(),
+                minimize_feedback: false,
+                icon_sizes: std::collections::HashMap::new(),
+                show_labels: false,
+                file_drop_open: false,
+                scroll_cycles_windows: false,
             },
             top_bar: TopBarConfig::default(),
             func: FuncConfig {

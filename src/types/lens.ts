@@ -51,6 +51,28 @@ export interface DockConfig {
   separatorsAfter?: string[];
   /** Live window thumbnails in the Dock hover card. */
   livePreviews?: boolean;
+  /** Dock shape (see src/dock/styles.ts). Missing = "floating". */
+  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | string;
+  /** Taskbar icon alignment. Missing = "center". */
+  alignment?: "center" | "left" | string;
+  /** Where the clock and system icons live. Missing = "auto". */
+  systemArea?: "auto" | "dock" | "topbar" | string;
+  /** Hover magnification. Missing = "off" (today's gentle hover). */
+  magnification?: "off" | "subtle" | "classic" | string;
+  /** Neighbouring icons each side that magnification reaches (1-4). Missing = 2. */
+  magnificationRange?: number;
+  /** Launch animation. Missing = "lift". */
+  launchAnimation?: "none" | "lift" | "bounce" | "jelly" | string;
+  /** Pulse an app icon when its window is minimised or restored. */
+  minimizeFeedback?: boolean;
+  /** Icon size per Dock style id. */
+  iconSizes?: Record<string, number>;
+  /** App names beside (bars) or under (centred Docks) app icons. */
+  showLabels?: boolean;
+  /** Drop files on a Dock app to open them with it. */
+  fileDropOpen?: boolean;
+  /** Mouse wheel over an app icon cycles its windows. */
+  scrollCyclesWindows?: boolean;
 }
 
 export interface FuncConfig {

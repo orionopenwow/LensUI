@@ -40,6 +40,7 @@ import {
   Lock,
   Unlock,
   SeparatorVertical,
+  LayoutGrid,
 } from "lucide-react";
 import { useLensState, useRunningWindows } from "../hooks/useLensState";
 import {
@@ -51,6 +52,19 @@ import "./CommandPaletteSurface.css";
 import { useThemeSchedule } from "../themes/schedule";
 import { DockPreviewStrip } from "../components/DockPreviewStrip";
 import "./DockSurface.css";
+import {
+  DOCK_LAUNCH_ANIMATIONS,
+  DOCK_MAGNIFICATION,
+  clampMagnificationRange,
+  dockStyleInfo,
+  normalizeLaunchAnimation,
+  normalizeMagnification,
+  resolveDockIconSize,
+  normalizeDockStyle,
+  resolveDockAlignment,
+  resolveSystemArea,
+} from "../dock/styles";
+import { DockSystemArea } from "../dock/DockSystemArea";
 
 interface RecentFileItem {
   name: string;
@@ -256,7 +270,27 @@ interface DockExtras {
   locked?: boolean;
   separatorsAfter?: string[];
   livePreviews?: boolean;
+  style?: string;
+  alignment?: string;
+  systemArea?: string;
+  magnification?: string;
+  magnificationRange?: number;
+  launchAnimation?: string;
+  minimizeFeedback?: boolean;
+  iconSizes?: Record<string, number>;
+  showLabels?: boolean;
+  fileDropOpen?: boolean;
+  scrollCyclesWindows?: boolean;
 }
+
+/** Shape of Tauri's window drag-and-drop events (physical pixels). */
+interface DragDropPayload {
+  paths?: string[];
+  position?: { x: number; y: number };
+}
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 const normalizeEdge = (raw?: string): DockEdge =>
   raw === "top" || raw === "left" || raw === "right" ? raw : "bottom";
@@ -287,6 +321,19 @@ export const DockSurface: React.FC = () => {
   const [lockedDockWidth, setLockedDockWidth] = useState<number | null>(null);
   // Icon size while search is open: icons slide right and shrink only as much as needed to leave room for the text box.
   const [searchIconSize, setSearchIconSize] = useState<number | null>(null);
+  /** Full-width bar styles: the icon row's left offset while searching, so icons only slide right. */
+  const [lockedRowOffset, setLockedRowOffset] = useState<number | null>(null);
+  const splitPillRef = useRef<HTMLDivElement>(null);
+  /** How long the current launch animation runs (ms), so the class is not removed mid-animation. */
+  const launchMsRef = useRef<number>(190);
+  /** Windows that were just minimised or restored (pulse feedback), by hwnd. */
+  const [pulseHwnds, setPulseHwnds] = useState<Set<number>>(() => new Set());
+  const minimizedRef = useRef<Map<number, boolean>>(new Map());
+  /** Per-app index for wheel window cycling. */
+  const wheelIdxRef = useRef<Record<string, number>>({});
+  const wheelAtRef = useRef<number>(0);
+  /** Dock app currently under a file drag (key = data-dock-drag-key). */
+  const [dropKey, setDropKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<string>("system");
   const [launchingId, setLaunchingId] = useState<string | null>(null);
@@ -327,7 +374,15 @@ export const DockSurface: React.FC = () => {
     searchOpenedAtRef.current = performance.now();
     const searchEdge = normalizeEdge((config?.dock as DockExtras | undefined)?.position);
     const horizontalDock = searchEdge === "bottom" || searchEdge === "top";
-    if (pillRef.current && !dockSearchOpenRef.current && horizontalDock) {
+    const searchStyle = normalizeDockStyle((config?.dock as DockExtras | undefined)?.style);
+    const barDock = dockStyleInfo(searchStyle).fullWidth;
+    if (pillRef.current && !dockSearchOpenRef.current && horizontalDock && barDock) {
+      // Full-width bars already have room: pin the row's left edge so the field opens to the right.
+      const row = pillRef.current.querySelector(".dock-icons-row");
+      const pr = pillRef.current.getBoundingClientRect();
+      const padL = parseFloat(getComputedStyle(pillRef.current).paddingLeft) || 0;
+      if (row) setLockedRowOffset(Math.max(0, Math.round(row.getBoundingClientRect().left - pr.left - padL)));
+    } else if (pillRef.current && !dockSearchOpenRef.current && horizontalDock) {
       const startW = Math.round(pillRef.current.getBoundingClientRect().width);
       // Hold the Dock at exactly its current width: search opens inside it, the Dock never grows.
       setLockedDockWidth(startW);
@@ -338,12 +393,16 @@ export const DockSurface: React.FC = () => {
         : [];
       const iconCount = others.filter((el) => !el.classList.contains("dock-divider")).length;
       const dividerCount = others.length - iconCount;
-      const MIN_FIELD = 200;
-      const rowW = startW - 30; // pill padding + border while open
+      // Slim is narrower, with tighter gaps: its icons may shrink further so the field stays usable.
+      const slim = searchStyle === "slim";
+      const MIN_FIELD = slim ? 160 : 200;
+      const rowW = startW - (slim ? 22 : 30); // pill padding + border while open
+      const gap = slim ? 4 : 6;
+      const minIcon = slim ? 16 : 22;
       const fit = Math.floor(
-        (rowW - MIN_FIELD - others.length * 6 - dividerCount * 9) / Math.max(1, iconCount)
+        (rowW - MIN_FIELD - others.length * gap - dividerCount * (slim ? 5 : 9)) / Math.max(1, iconCount)
       );
-      setSearchIconSize(Math.max(22, Math.min(effectiveIconSize, fit)));
+      setSearchIconSize(Math.max(minIcon, Math.min(effectiveIconSize, fit)));
     }
     setDockSearchQuery("");
     setDockFilterTab("all");
@@ -366,6 +425,7 @@ export const DockSurface: React.FC = () => {
       setDockSearchQuery("");
       setLockedDockWidth(null);
       setSearchIconSize(null);
+      setLockedRowOffset(null);
       invoke("set_dock_search_expanded_cmd", { expanded: false }).catch(() => {});
     }, 200);
   };
@@ -411,10 +471,14 @@ export const DockSurface: React.FC = () => {
     cancelHoverClose();
     const r = el.getBoundingClientRect();
     const e = normalizeEdge((config?.dock as DockExtras | undefined)?.position);
+    // With magnification the hovered icon grows past the Dock edge: keep the card clear of it.
+    const magId = normalizeMagnification((config?.dock as DockExtras | undefined)?.magnification);
+    const grow = magId === "off" ? 0 : ((DOCK_MAGNIFICATION.find((m) => m.id === magId)?.scale ?? 1) - 1) * r.width;
+    const magHeadroom = e === "bottom" ? -grow : e === "top" ? grow : 0;
     setHoverCard({
       key,
       x: e === "left" ? r.right : e === "right" ? r.left : r.left + r.width / 2,
-      y: e === "top" ? r.bottom : e === "left" || e === "right" ? r.top + r.height / 2 : r.top,
+      y: (e === "top" ? r.bottom : e === "left" || e === "right" ? r.top + r.height / 2 : r.top) + magHeadroom,
       title,
       isSpotify,
       windows,
@@ -434,7 +498,7 @@ export const DockSurface: React.FC = () => {
       setLaunchingId(id);
       window.setTimeout(() => {
         setLaunchingId((curr) => (curr === id ? null : curr));
-      }, 190);
+      }, launchMsRef.current);
     });
   };
 
@@ -537,6 +601,58 @@ export const DockSurface: React.FC = () => {
     };
   }, []);
 
+  // Minimise/restore feedback: pulse an icon when one of its windows changes minimised state.
+  const minimizeFeedbackOn = (config?.dock as DockExtras | undefined)?.minimizeFeedback === true;
+  useEffect(() => {
+    const prev = minimizedRef.current;
+    const changed: number[] = [];
+    const next = new Map<number, boolean>();
+    for (const w of runningWindows) {
+      next.set(w.hwnd, w.isMinimized);
+      const before = prev.get(w.hwnd);
+      if (before !== undefined && before !== w.isMinimized) changed.push(w.hwnd);
+    }
+    minimizedRef.current = next;
+    if (!minimizeFeedbackOn || changed.length === 0 || prefersReducedMotion()) return;
+    setPulseHwnds((cur) => new Set([...cur, ...changed]));
+    const t = window.setTimeout(() => {
+      setPulseHwnds((cur) => {
+        const n = new Set(cur);
+        changed.forEach((h) => n.delete(h));
+        return n;
+      });
+    }, 460);
+    return () => window.clearTimeout(t);
+  }, [runningWindows, minimizeFeedbackOn]);
+
+  // Drop files on a Dock app to open them with it. Tauri delivers OS file drags as window
+  // events with physical-pixel positions; we hit-test the app under the pointer.
+  const fileDropOn = (config?.dock as DockExtras | undefined)?.fileDropOpen === true;
+  useEffect(() => {
+    if (!fileDropOn) return;
+    const target = (p?: { x: number; y: number }) => {
+      if (!p) return null;
+      const dpr = window.devicePixelRatio || 1;
+      const el = document.elementFromPoint(p.x / dpr, p.y / dpr) as HTMLElement | null;
+      return el?.closest<HTMLElement>("[data-dock-launch-path]") ?? null;
+    };
+    const offs = [
+      listen<DragDropPayload>("tauri://drag-over", (e) => {
+        setDropKey(target(e.payload?.position)?.dataset.dockDragKey ?? null);
+      }),
+      listen<DragDropPayload>("tauri://drag-leave", () => setDropKey(null)),
+      listen<DragDropPayload>("tauri://drag-drop", (e) => {
+        const t = target(e.payload?.position);
+        setDropKey(null);
+        const files = e.payload?.paths ?? [];
+        const appPath = t?.dataset.dockLaunchPath;
+        if (!appPath || files.length === 0) return;
+        invoke("open_files_with_app_cmd", { appPath, files }).catch(() => {});
+      }),
+    ];
+    return () => offs.forEach((u) => u.then((fn) => fn()));
+  }, [fileDropOn]);
+
   useEffect(() => {
     const el = pillRef.current;
     if (!el) return;
@@ -544,21 +660,59 @@ export const DockSurface: React.FC = () => {
       if (dockSearchOpenRef.current) return;
       const rect = el.getBoundingClientRect();
       if (rect.width > 0) {
-        invoke("set_dock_pill_width", { width: rect.width }).catch(() => {});
+        // Split: the backend hit-tests one rect, so report the union of both pills. On the bottom
+        // edge it uses a width centred on the screen, so report a width symmetric about the centre.
+        const extra = splitPillRef.current?.getBoundingClientRect();
+        let left = rect.left;
+        let top = rect.top;
+        let right = rect.right;
+        let bottom = rect.bottom;
+        if (extra && extra.width > 0) {
+          left = Math.min(left, extra.left);
+          top = Math.min(top, extra.top);
+          right = Math.max(right, extra.right);
+          bottom = Math.max(bottom, extra.bottom);
+        }
+        // Magnified icons grow past the Dock's edge: include that headroom in the hit-test rect.
+        const dockCfg = config?.dock as DockExtras | undefined;
+        const magId = normalizeMagnification(dockCfg?.magnification);
+        if (magId !== "off") {
+          const scale = DOCK_MAGNIFICATION.find((m) => m.id === magId)?.scale ?? 1;
+          const iconPx = el.querySelector(".dock-item")?.getBoundingClientRect().width ?? 40;
+          const head = Math.ceil((scale - 1) * iconPx);
+          const e = normalizeEdge(dockCfg?.position);
+          if (e === "bottom") top -= head;
+          else if (e === "top") bottom += head;
+          else if (e === "left") right += head;
+          else left -= head;
+        }
+        const mid = window.innerWidth / 2;
+        const symmetricW = 2 * Math.max(mid - left, right - mid);
+        invoke("set_dock_pill_width", { width: extra ? symmetricW : rect.width }).catch(() => {});
         // Full rect (CSS px within this window) lets the backend hit-test Docks on any edge.
         invoke("set_dock_pill_rect_cmd", {
-          x: rect.left,
-          y: rect.top,
-          w: rect.width,
-          h: rect.height,
+          x: left,
+          y: top,
+          w: right - left,
+          h: bottom - top,
         }).catch(() => {});
       }
     };
     report();
     const ro = new ResizeObserver(report);
     ro.observe(el);
+    if (splitPillRef.current) ro.observe(splitPillRef.current);
     return () => ro.disconnect();
-  }, [config?.dock.pinnedApps.length, config?.dock.iconSize, runningWindows.length]);
+  }, [
+    config?.dock.pinnedApps.length,
+    config?.dock.iconSize,
+    runningWindows.length,
+    (config?.dock as DockExtras | undefined)?.style,
+    (config?.dock as DockExtras | undefined)?.systemArea,
+    (config?.dock as DockExtras | undefined)?.position,
+    (config?.dock as DockExtras | undefined)?.magnification,
+    (config?.dock as DockExtras | undefined)?.showLabels,
+  ]);
 
   useEffect(() => {
     if (!config) return;
@@ -594,6 +748,69 @@ export const DockSurface: React.FC = () => {
   const locked = dockExtras.locked === true;
   const separatorsAfter = dockExtras.separatorsAfter ?? [];
   const livePreviews = dockExtras.livePreviews === true;
+  const dockStyle = normalizeDockStyle(dockExtras.style);
+  const isBar = dockStyleInfo(dockStyle).fullWidth;
+  const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
+  const systemInDock = resolveSystemArea(config.dock) === "dock";
+  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio";
+  const unreadTotal = Object.values(notifCounts).reduce((a, b) => a + b, 0);
+  const magnification = normalizeMagnification(dockExtras.magnification);
+  const magScale = DOCK_MAGNIFICATION.find((m) => m.id === magnification)?.scale ?? 1;
+  const magRange = clampMagnificationRange(dockExtras.magnificationRange);
+  const launchAnimation = normalizeLaunchAnimation(dockExtras.launchAnimation);
+  launchMsRef.current = DOCK_LAUNCH_ANIMATIONS.find((a) => a.id === launchAnimation)?.durationMs || 190;
+  const showLabels = dockExtras.showLabels === true;
+  const scrollCycles = dockExtras.scrollCyclesWindows === true;
+
+  /** Magnification: icons near the pointer grow (transform only, so the Dock's size and the
+   *  native click region never change); neighbours are pushed apart so nothing overlaps. */
+  const clearMagnification = () => {
+    const row = pillRef.current?.querySelector(".dock-icons-row");
+    if (!row) return;
+    for (const el of Array.from(row.children) as HTMLElement[]) {
+      el.style.removeProperty("--mag-s");
+      el.style.removeProperty("--mag-x");
+    }
+  };
+  const applyMagnification = (clientX: number, clientY: number) => {
+    const pill = pillRef.current;
+    const row = pill?.querySelector(".dock-icons-row");
+    if (!pill || !row || magnification === "off" || dockSearchOpen || ctxMenu) return;
+    const pr = pill.getBoundingClientRect();
+    const pos = isVertical ? clientY - pr.top : clientX - pr.left;
+    const kids = Array.from(row.children) as HTMLElement[];
+    const unit = effectiveIconSize + 6;
+    const reach = (magRange + 0.5) * unit;
+    const scales = kids.map((el) => {
+      if (!el.classList.contains("dock-item-wrap") || el.classList.contains("dock-search-slot")) return 1;
+      const c = isVertical ? el.offsetTop + el.offsetHeight / 2 : el.offsetLeft + el.offsetWidth / 2;
+      const d = Math.abs(pos - c);
+      if (d >= reach) return 1;
+      const t = Math.cos((d / reach) * (Math.PI / 2));
+      return 1 + (magScale - 1) * t * t;
+    });
+    const extras = scales.map((sc) => (sc - 1) * effectiveIconSize);
+    const total = extras.reduce((a, b) => a + b, 0);
+    let before = 0;
+    kids.forEach((el, i) => {
+      const shift = before + extras[i] / 2 - total / 2;
+      before += extras[i];
+      el.style.setProperty("--mag-s", scales[i].toFixed(3));
+      el.style.setProperty("--mag-x", `${shift.toFixed(1)}px`);
+    });
+  };
+
+  /** Mouse wheel over an app: cycle through its windows (newest focus last). */
+  const cycleWindows = (key: string, wins: RunningWindow[], deltaY: number) => {
+    if (!scrollCycles || wins.length === 0) return;
+    const now = performance.now();
+    if (now - wheelAtRef.current < 140) return;
+    wheelAtRef.current = now;
+    const cur = wheelIdxRef.current[key] ?? Math.max(0, wins.findIndex((w) => w.isFocused));
+    const next = (cur + (deltaY > 0 ? 1 : -1) + wins.length) % wins.length;
+    wheelIdxRef.current[key] = next;
+    invoke("focus_window_cmd", { hwnd: wins[next].hwnd }).catch(() => {});
+  };
   const updateDockExtras = (patch: DockExtras) =>
     updateConfig({ ...config, dock: { ...config.dock, ...patch } as typeof config.dock });
 
@@ -715,13 +932,15 @@ export const DockSurface: React.FC = () => {
   };
 
   // Infinitely adjust icon size smoothly if total icons (plus expanded search bar) exceed screen width
-  const totalItems = 2 + pinnedRows.length + extraGroups.length;
+  const totalItems = 2 + pinnedRows.length + extraGroups.length + (showLauncherButton ? 1 : 0);
   const searchBudget = 0; // the Dock keeps its width while searching
   const dockAxisLength = isVertical ? window.innerHeight : window.innerWidth;
-  const maxAvailable = Math.max(isVertical ? 320 : 480, dockAxisLength - 28 - searchBudget);
+  // Bars keep both sides of the row free for the system area so icons stay centred on the screen.
+  const systemBudget = systemInDock && dockStyle !== "split" ? (isBar ? (isVertical ? 400 : 560) : 200) : 0;
+  const maxAvailable = Math.max(isVertical ? 320 : 480, dockAxisLength - 28 - searchBudget - systemBudget);
   const gapBudget = totalItems * 6 + 34;
   const rawFit = Math.floor((maxAvailable - gapBudget) / Math.max(1, totalItems));
-  const effectiveIconSize = Math.max(22, Math.min(config.dock.iconSize, rawFit));
+  const effectiveIconSize = Math.max(22, Math.min(resolveDockIconSize(config.dock, dockStyle), rawFit));
 
   /** Unread notifications for an app, matched loosely by any of its names. */
   const notifBadgeFor = (...names: (string | undefined)[]) => {
@@ -930,12 +1149,15 @@ export const DockSurface: React.FC = () => {
 
   return (
     <div
-      className={`dock-stage dock-edge-${edge} icon-theme-${iconTheme} icon-shape-${iconShape}`}
+      className={`dock-stage dock-edge-${edge} dock-style-${dockStyle} dock-align-${alignment} ${isBar ? "is-bar" : ""} ${systemInDock ? "has-dock-system" : ""} ${magnification !== "off" ? `mag-on mag-${magnification}` : ""} ${launchAnimation !== "lift" ? `launch-${launchAnimation}` : ""} ${showLabels ? "show-labels" : ""} icon-theme-${iconTheme} icon-shape-${iconShape}`}
       style={{
         ["--dock-effective-icon-size" as string]: `${
           dockSearchOpen && searchIconSize ? searchIconSize : effectiveIconSize
         }px`,
         ["--dock-full-icon-size" as string]: `${effectiveIconSize}px`,
+        ...(isBar && isVertical && config.dock.showTopBar && config.topBar?.enabled !== false
+          ? { ["--dock-topbar-offset" as string]: `${config.topBar?.height ?? 34}px` }
+          : {}),
       }}
     >
       <McpBridge config={config} updateConfig={updateConfig} />
@@ -1501,13 +1723,19 @@ export const DockSurface: React.FC = () => {
 
       <nav
         ref={pillRef}
-        className={`dock-pill ${locked ? "is-locked" : ""} ${!dockVisible ? "is-hidden" : ""} ${settingsOpen ? "is-fused-top" : ""} ${dockSearchOpen ? "is-expanded-launcher" : ""}`}
+        className={`dock-pill ${locked ? "is-locked" : ""} ${!dockVisible ? "is-hidden" : ""} ${settingsOpen ? "is-fused-top" : ""} ${dockSearchOpen ? "is-expanded-launcher" : ""} ${ctxMenu ? "is-menu-open" : ""}`}
         style={
-          dockSearchOpen && lockedDockWidth && !isVertical
-            ? { width: lockedDockWidth, minWidth: lockedDockWidth }
-            : undefined
+          isBar
+            ? dockSearchOpen && lockedRowOffset !== null && !isVertical
+              ? { gridTemplateColumns: `${lockedRowOffset}px auto 1fr` }
+              : undefined
+            : dockSearchOpen && lockedDockWidth && !isVertical
+              ? { width: lockedDockWidth, minWidth: lockedDockWidth }
+              : undefined
         }
         aria-label="Lens Grounded Dock"
+        onMouseMove={magnification !== "off" ? (e) => applyMagnification(e.clientX, e.clientY) : undefined}
+        onMouseLeave={magnification !== "off" ? clearMagnification : undefined}
         onContextMenu={(e) => {
           const target = e.target as HTMLElement;
           if (!target.closest("[data-dock-drag-key]")) {
@@ -1768,7 +1996,24 @@ export const DockSurface: React.FC = () => {
         )}
 
         {/* TIER 2: Single Unified Grounded Dock Row — original Magnifying Glass glides open IN-PLACE into the search input! */}
+        {isBar && <div className="dock-bar-spacer" aria-hidden="true" />}
         <div className="dock-icons-row">
+          {showLauncherButton && (
+            <div className="dock-item-wrap dock-launcher-slot">
+              <span className="dock-tooltip">Launcher</span>
+              <button
+                type="button"
+                className={`dock-item dock-launcher-btn ${launchingId === "launcher" ? "is-launching" : ""}`}
+                aria-label="Open Launcher"
+                onClick={() => {
+                  triggerLaunchAnim("launcher");
+                  invoke("toggle_surface", { label: "launcher" }).catch(() => {});
+                }}
+              >
+                <LayoutGrid size={19} strokeWidth={2.15} />
+              </button>
+            </div>
+          )}
           <div className={`dock-item-wrap dock-search-slot ${dockSearchOpen ? "is-open" : ""} ${dockSearchClosing ? "is-closing" : ""}`}>
             {!dockSearchOpen && <span className="dock-tooltip">Lens Search (Alt+Space)</span>}
             <div
@@ -1855,10 +2100,12 @@ export const DockSurface: React.FC = () => {
           return (
             <React.Fragment key={app.id}>
             <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""}`}
+              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""}`}
               data-dock-drag-key={itemKey}
               data-dock-pinned="true"
               data-dock-pinned-id={app.id}
+              data-dock-launch-path={app.path}
+              onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
               onPointerDown={(e) => beginItemDrag(e, itemKey, true, app.id)}
               onMouseEnter={(e) =>
                 openHoverCardForItem(e.currentTarget, itemKey, app.name, isSpotify, wins, iconSrc)
@@ -1884,7 +2131,7 @@ export const DockSurface: React.FC = () => {
               )}
               <button
                 type="button"
-                className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""}`}
+                className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
                   setHoverCard(null);
@@ -1926,7 +2173,9 @@ export const DockSurface: React.FC = () => {
                 ) : (
                   wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
                 )}
+                {showLabels && isBar && <span className="dock-label">{primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name}</span>}
               </button>
+              {showLabels && !isBar && <span className="dock-label">{app.name}</span>}
               {wins.length > 0 && (
                 <span className={`dock-indicator ${primaryWin?.isFocused ? "focused" : ""}`} />
               )}
@@ -1945,10 +2194,12 @@ export const DockSurface: React.FC = () => {
           const unread = notifBadgeFor(cleanLabel, primaryWin.title);
           return (
             <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""}`}
+              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""}`}
               key={key}
               data-dock-drag-key={itemKey}
               data-dock-pinned="false"
+              data-dock-launch-path={primaryWin.exePath}
+              onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
               onPointerDown={(e) => beginItemDrag(e, itemKey, false)}
               onMouseEnter={(e) =>
                 openHoverCardForItem(
@@ -1978,7 +2229,7 @@ export const DockSurface: React.FC = () => {
               </button>
               <button
                 type="button"
-                className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""}`}
+                className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
                   setHoverCard(null);
@@ -1997,6 +2248,11 @@ export const DockSurface: React.FC = () => {
                     launchPath: primaryWin.exePath,
                   });
                 }}
+                onAuxClick={(e) => {
+                  if (e.button === 1 && config.func.middleClickNewInstance && primaryWin.exePath) {
+                    invoke("launch_app_cmd", { path: primaryWin.exePath });
+                  }
+                }}
               >
                 {primaryWin.iconDataUrl ? (
                   <img src={primaryWin.iconDataUrl} alt={primaryWin.processName} />
@@ -2010,7 +2266,9 @@ export const DockSurface: React.FC = () => {
                 ) : (
                   wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
                 )}
+                {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
               </button>
+              {showLabels && !isBar && <span className="dock-label">{cleanLabel}</span>}
               <span className={`dock-indicator ${primaryWin.isFocused ? "focused" : ""}`} />
             </div>
           );
@@ -2065,8 +2323,41 @@ export const DockSurface: React.FC = () => {
           </button>
           {settingsOpen && activeSettingsTab !== "monitor" && <span className="dock-indicator" />}
         </div>
+        {systemInDock && !isBar && dockStyle !== "split" && (
+          <>
+            <div className="dock-divider" />
+            <DockSystemArea
+              trayHost={config.func.trayHost ?? false}
+              unread={unreadTotal}
+              vertical={isVertical}
+              variant="inline"
+            />
+          </>
+        )}
         </div>
+        {isBar && systemInDock && (
+          <DockSystemArea
+            trayHost={config.func.trayHost ?? false}
+            unread={unreadTotal}
+            vertical={isVertical}
+            variant="bar"
+          />
+        )}
       </nav>
+      {dockStyle === "split" && systemInDock && (
+        <div
+          ref={splitPillRef}
+          className={`dock-split-pill ${!dockVisible ? "is-hidden" : ""}`}
+          aria-label="System"
+        >
+          <DockSystemArea
+            trayHost={config.func.trayHost ?? false}
+            unread={unreadTotal}
+            vertical={isVertical}
+            variant="pill"
+          />
+        </div>
+      )}
     </div>
   );
 };
