@@ -41,6 +41,25 @@ pub struct WallpaperSettings {
     pub accent_hex: String,
     /// Apply `accent_hex` as the Lens accent whenever the wallpaper changes.
     pub follow_accent: bool,
+    /// Playground scene id ("" = show `file` instead). See src/playground/.
+    pub scene: String,
+    /// Per-scene settings, owned by the frontend (validated: a JSON object, at most 8 KB).
+    pub scene_options: serde_json::Value,
+    /// Frame cap for Playground scenes: 30 or 60.
+    pub fps: u32,
+    /// "Calm": freeze the scene into a still frame and stop the input hook. Wins over everything.
+    pub calm: bool,
+    /// The chosen scene reacts to the cursor on the desktop (starts the desktop input hook).
+    pub interactive: bool,
+    /// Ripples where you click empty desktop (drawn in the wallpaper only).
+    pub ripples: bool,
+    /// Scene per Lens workspace id (used while Lens workspaces are on; missing = `scene`).
+    pub workspace_scenes: std::collections::BTreeMap<String, String>,
+    /// Idle mode: show a scene full screen above windows after `idle_minutes` without input.
+    pub idle_enabled: bool,
+    pub idle_minutes: u32,
+    /// Scene for idle mode ("" = the wallpaper scene, or Aurora when there is none).
+    pub idle_scene: String,
 }
 
 impl Default for WallpaperSettings {
@@ -56,6 +75,16 @@ impl Default for WallpaperSettings {
             pause_on_battery: true,
             accent_hex: String::new(),
             follow_accent: false,
+            scene: String::new(),
+            scene_options: serde_json::Value::Object(Default::default()),
+            fps: 30,
+            calm: false,
+            interactive: false,
+            ripples: false,
+            workspace_scenes: Default::default(),
+            idle_enabled: false,
+            idle_minutes: 10,
+            idle_scene: String::new(),
         }
     }
 }
@@ -91,7 +120,51 @@ pub fn sanitize_settings(mut s: WallpaperSettings) -> WallpaperSettings {
         s.accent_hex.clear();
     }
     s.accent_hex = s.accent_hex.to_uppercase();
+    if !s.scene.is_empty() && !is_scene_id(&s.scene) {
+        s.scene.clear();
+    }
+    s.workspace_scenes = std::mem::take(&mut s.workspace_scenes)
+        .into_iter()
+        .filter(|(k, v)| is_workspace_key(k) && is_scene_id(v))
+        .take(9)
+        .collect();
+    if s.scene.is_empty() && s.workspace_scenes.is_empty() {
+        s.interactive = false;
+        s.ripples = false;
+    }
+    s.idle_minutes = s.idle_minutes.clamp(1, 120);
+    if !s.idle_scene.is_empty() && !is_scene_id(&s.idle_scene) {
+        s.idle_scene.clear();
+    }
+    if s.fps != 60 {
+        s.fps = 30;
+    }
+    let options_ok = s.scene_options.is_object()
+        && serde_json::to_string(&s.scene_options)
+            .map(|t| t.len() <= 8 * 1024)
+            .unwrap_or(false);
+    if !options_ok {
+        s.scene_options = serde_json::Value::Object(Default::default());
+    }
     s
+}
+
+/// Workspace ids as Lens writes them ("ws-1"): ASCII letters, digits, '-' and '_', 1–32 chars.
+fn is_workspace_key(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 32
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
+/// Playground scene ids: lowercase letters, digits and '-', 1–32 characters.
+pub fn is_scene_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 32
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -633,7 +706,7 @@ fn copy_to_cache(src: &str) -> Option<String> {
 // ---------------------------------------------------------------------------------------------
 
 #[cfg(windows)]
-fn foreground_covers_primary() -> bool {
+pub fn foreground_covers_primary() -> bool {
     unsafe {
         let fg = ffi::GetForegroundWindow();
         if fg == 0 || ffi::IsWindowVisible(fg) == 0 || ffi::IsIconic(fg) != 0 {
@@ -712,7 +785,6 @@ where
     });
 }
 
-
 // ---------------------------------------------------------------------------------------------
 // State for the UI (get_wallpaper_state_cmd) — mirrors src/surfaces/wallpaperTypes.ts
 // ---------------------------------------------------------------------------------------------
@@ -744,9 +816,74 @@ pub fn current_state() -> WallpaperState {
     }
 }
 
-/// Attach only when the user turned it on AND a real wallpaper file is chosen.
+/// Attach only when the user turned it on AND a wallpaper file or Playground scene is chosen.
+/// Calm keeps the wallpaper attached (as a still frame); it only stops animation and input.
 pub fn should_attach(state: &WallpaperState) -> bool {
-    state.settings.enabled && state.path.is_some()
+    let s = &state.settings;
+    s.enabled && (state.path.is_some() || !s.scene.is_empty() || !s.workspace_scenes.is_empty())
+}
+
+/// The desktop input hook is only wanted while an interactive Playground scene is showing.
+pub fn wants_desktop_input(state: &WallpaperState) -> bool {
+    should_attach(state)
+        && !state.settings.calm
+        && (!state.settings.scene.is_empty() || !state.settings.workspace_scenes.is_empty())
+        && (state.settings.interactive || state.settings.ripples)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Playground persistence (e.g. the falling-sand canvas survives restarts)
+// ---------------------------------------------------------------------------------------------
+
+/// Largest saved scene state, in base64 characters (~6 MB of data).
+pub const MAX_PLAYGROUND_BLOB: usize = 8 * 1024 * 1024;
+
+fn playground_dir() -> PathBuf {
+    lens_dir().join("playground")
+}
+
+fn is_base64(s: &str) -> bool {
+    s.bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=')
+}
+
+/// Stores a scene's state (base64 text) as %APPDATA%\LensUI\playground\<scene>.b64.
+/// Written to a temp file and renamed, so a crash never leaves a half-written save.
+pub fn save_playground_blob(scene: &str, data_b64: &str) -> Result<(), String> {
+    if !is_scene_id(scene) {
+        return Err("Unknown scene.".into());
+    }
+    if data_b64.len() > MAX_PLAYGROUND_BLOB || !is_base64(data_b64) {
+        return Err("Scene state is too large or not base64.".into());
+    }
+    let dir = playground_dir();
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let target = dir.join(format!("{}.b64", scene));
+    let tmp = dir.join(format!("{}.b64.tmp", scene));
+    fs::write(&tmp, data_b64).map_err(|e| e.to_string())?;
+    fs::rename(&tmp, &target).map_err(|e| e.to_string())
+}
+
+pub fn load_playground_blob(scene: &str) -> Option<String> {
+    if !is_scene_id(scene) {
+        return None;
+    }
+    let text = fs::read_to_string(playground_dir().join(format!("{}.b64", scene))).ok()?;
+    if text.len() > MAX_PLAYGROUND_BLOB || !is_base64(&text) {
+        return None;
+    }
+    Some(text)
+}
+
+pub fn clear_playground_blob(scene: &str) -> Result<(), String> {
+    if !is_scene_id(scene) {
+        return Err("Unknown scene.".into());
+    }
+    let p = playground_dir().join(format!("{}.b64", scene));
+    if p.exists() {
+        fs::remove_file(p).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Remembers the dominant colour the surface measured from the displayed wallpaper.
@@ -765,3 +902,78 @@ pub fn set_measured_accent(hex: &str) -> Result<(), String> {
 #[cfg(test)]
 #[path = "tests/win_wallpaper.rs"]
 mod tests;
+
+#[cfg(test)]
+mod playground_tests {
+    use super::*;
+
+    #[test]
+    fn scene_settings_are_sanitised() {
+        let mut s = WallpaperSettings {
+            scene: "Bad Scene!".into(),
+            fps: 144,
+            interactive: true,
+            idle_minutes: 0,
+            idle_scene: "../x".into(),
+            scene_options: serde_json::json!([1, 2]),
+            ..Default::default()
+        };
+        s.workspace_scenes.insert("ws-1".into(), "sand".into());
+        s.workspace_scenes.insert("bad key".into(), "sand".into());
+        s.workspace_scenes.insert("ws-2".into(), "NOPE".into());
+        let c = sanitize_settings(s);
+        assert_eq!(c.scene, "");
+        assert_eq!(c.fps, 30);
+        assert_eq!(c.idle_minutes, 1);
+        assert_eq!(c.idle_scene, "");
+        assert!(c.scene_options.is_object());
+        assert_eq!(c.workspace_scenes.len(), 1);
+        assert!(c.interactive, "kept: a workspace scene is set");
+    }
+
+    #[test]
+    fn scene_ids() {
+        assert!(is_scene_id("sand"));
+        assert!(is_scene_id("sky-clock"));
+        assert!(!is_scene_id(""));
+        assert!(!is_scene_id("Sand"));
+        assert!(!is_scene_id("../evil"));
+        assert!(!is_scene_id(&"a".repeat(33)));
+    }
+
+    #[test]
+    fn calm_detaches_and_scene_attaches() {
+        let mut st = current_state_for_test();
+        assert!(!should_attach(&st));
+        st.settings.enabled = true;
+        st.settings.scene = "aurora".into();
+        assert!(should_attach(&st));
+        assert!(!wants_desktop_input(&st));
+        st.settings.interactive = true;
+        assert!(wants_desktop_input(&st));
+        st.settings.calm = true;
+        assert!(
+            should_attach(&st),
+            "calm keeps a still frame on the desktop"
+        );
+        assert!(!wants_desktop_input(&st));
+    }
+
+    fn current_state_for_test() -> WallpaperState {
+        WallpaperState {
+            settings: WallpaperSettings::default(),
+            path: None,
+            kind: None,
+            attached: false,
+            folder: String::new(),
+        }
+    }
+
+    #[test]
+    fn blob_validation() {
+        assert!(is_base64("U05EMQ=="));
+        assert!(!is_base64("not base64!"));
+        assert!(save_playground_blob("../x", "AAAA").is_err());
+        assert!(load_playground_blob("../x").is_none());
+    }
+}

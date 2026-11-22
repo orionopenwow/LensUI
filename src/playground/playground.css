@@ -1,0 +1,18 @@
+.pg-host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--lens-pack-base, #09090b);
+  touch-action: none;
+}
+.pg-canvas,
+.pg-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pg-overlay {
+  pointer-events: none;
+}
