@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { PLUGIN_SDK_SOURCE } from "./sdk";
 import type { PluginManifest, PluginPermission } from "./types";
 import { PLUGINS_CHANGED_EVENT } from "./types";
@@ -6,13 +6,15 @@ import { PLUGINS_CHANGED_EVENT } from "./types";
 /**
  * Host side of the plugin sandbox.
  *
- * Each plugin runs in <iframe sandbox="allow-scripts" srcdoc=...>:
+ * Each plugin runs in <iframe sandbox="allow-scripts">, loaded from its own file through the
+ * asset protocol (see materializePluginDocument). It is NOT a srcdoc frame: a srcdoc document
+ * inherits the Lens window's strict CSP (script-src 'self'), which blocks every plugin script.
  *  - no allow-same-origin: opaque origin, no cookies/storage, cannot touch the host DOM;
  *  - no allow-top-navigation / popups / forms / modals / downloads;
  *  - a CSP at the top of its document: no network (connect/img/font/media limited to data:),
  *    no frames, workers or objects;
- *  - the host window also gets `frame-src 'none'` (see lockDownFrames) so a plugin cannot
- *    navigate its own frame to a web page to smuggle data out in the URL.
+ *  - the host window also restricts frame-src to the asset protocol (see lockDownFrames) so a
+ *    plugin cannot navigate its own frame to a web page to smuggle data out in the URL.
  * The only channel out is postMessage, answered here by PluginBridge with permission checks.
  */
 
@@ -38,13 +40,16 @@ export const PLUGIN_ALLOW =
   "camera 'none'; microphone 'none'; geolocation 'none'; clipboard-read 'none'; clipboard-write 'none'; display-capture 'none'; usb 'none'; serial 'none'; hid 'none'; bluetooth 'none'; payment 'none'; fullscreen 'none'";
 
 let framesLocked = false;
-/** Adds `frame-src 'none'` to this Lens window's own policy. Only call from windows that host
- *  plugins and embed no other frames (Top Bar, Dock, Widget Drawer). srcdoc frames still render. */
+/** Frames in plugin-hosting windows may only come from the asset protocol (the plugin files).
+ *  Only call from windows that host plugins and embed no other frames (Top Bar, Dock, Widget
+ *  Drawer). Added on top of the app CSP; both policies apply. */
+export const PLUGIN_FRAME_SOURCES = "asset: http://asset.localhost";
+
 export function lockDownFrames(): void {
   if (framesLocked || typeof document === "undefined") return;
   const meta = document.createElement("meta");
   meta.httpEquiv = "Content-Security-Policy";
-  meta.content = "frame-src 'none'; child-src 'none'";
+  meta.content = `frame-src ${PLUGIN_FRAME_SOURCES}; child-src ${PLUGIN_FRAME_SOURCES}`;
   document.head.appendChild(meta);
   framesLocked = true;
 }
@@ -366,3 +371,25 @@ class BridgeFailure extends Error {
 }
 
 export { PLUGINS_CHANGED_EVENT };
+
+/** How to load a plugin frame: `src` (a file served by the asset protocol — the normal case)
+ *  or `srcDoc` (fallback when the backend can't write the file; such a frame inherits the Lens
+ *  window's CSP, so plugin scripts won't run there and the slot shows the plugin as stopped). */
+export interface PluginFrameSource {
+  src?: string;
+  srcDoc?: string;
+}
+
+/** Writes the composed document to %APPDATA%\LensUI\plugin-frames\<id>.html and returns an
+ *  asset URL for it. Each call adds a cache-busting query so a reinstall shows the new file. */
+export async function materializePluginDocument(id: string, doc: string): Promise<PluginFrameSource> {
+  try {
+    const path = await invoke<string>("write_plugin_frame_cmd", { id, html: doc });
+    if (typeof path === "string" && path.length > 0) {
+      return { src: `${convertFileSrc(path)}?v=${Date.now()}` };
+    }
+  } catch {
+    // fall through
+  }
+  return { srcDoc: doc };
+}

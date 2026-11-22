@@ -1,6 +1,6 @@
 [package]
 name = "lens-ui"
-version = "0.1.0"
+version = "0.2.0"
 description = "Lens UI — Sleek obsidian-dark Windows 11 desktop shell"
 authors = ["Lens UI"]
 edition = "2021"
@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset"] }
 tauri-plugin-global-shortcut = "2"
+tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
