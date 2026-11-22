@@ -30,6 +30,14 @@ static CURRENT_ENABLED: AtomicBool = AtomicBool::new(true);
 static CURRENT_TEXT_BGR: AtomicU32 = AtomicU32::new(0x00FA_FAFA);
 static CURRENT_DARK: AtomicBool = AtomicBool::new(true);
 
+/// The corner preference Lens applies to windows (1 square, 3 small, 2 round), or `None` while
+/// Lens window styling is off (Windows draws its own default corners).
+pub fn current_corner_pref() -> Option<u32> {
+    CURRENT_ENABLED
+        .load(Ordering::Relaxed)
+        .then(|| CURRENT_CORNER_PREF.load(Ordering::Relaxed))
+}
+
 /// Light theme packs need dark titlebar text and light-mode window chrome. Call before `update_dwm_theme`.
 pub fn set_dwm_scheme(light: bool) {
     CURRENT_DARK.store(!light, Ordering::SeqCst);
@@ -114,22 +122,7 @@ fn styleable_process_path(hwnd: windows::Win32::Foundation::HWND) -> Option<Stri
             return None;
         }
         let path = String::from_utf16_lossy(&buf[..len as usize]).to_lowercase();
-        let skip = [
-            "lens-ui.exe",
-            "searchhost.exe",
-            "shellexperiencehost.exe",
-            "startmenuexperiencehost.exe",
-            "textinputhost.exe",
-            "lockapp.exe",
-            "dwm.exe",
-            "easyanticheat",
-            "beservice",
-            "vgc.exe",
-            "valorant",
-            "cs2.exe",
-            "fortnite",
-        ];
-        if skip.iter().any(|s| path.contains(s)) {
+        if crate::win_rules::is_protected_process(&path) {
             None
         } else {
             Some(path)
@@ -241,6 +234,10 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
             let brd = rule
                 .border_bgr
                 .unwrap_or_else(|| CURRENT_BORDER_BGR.load(Ordering::Relaxed));
+            // Native active border (Windows 11): the focused window's DWM border takes the
+            // border colour; every other window keeps its theme / rule border, so losing focus
+            // restores it the next time the window is styled.
+            let brd = native_active_border(hwnd, &process_path).unwrap_or(brd);
             let txt: u32 = CURRENT_TEXT_BGR.load(Ordering::Relaxed);
             let crn = rule
                 .corner_pref
@@ -285,9 +282,14 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
             set.insert(key);
         }
 
-        let alpha = rule
-            .alpha
-            .unwrap_or_else(|| CURRENT_ALPHA.load(Ordering::Relaxed));
+        let theme_alpha = CURRENT_ALPHA.load(Ordering::Relaxed);
+        let alpha = if rule.inactive_alpha.is_some() {
+            let focused = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() == hwnd;
+            let fullscreen = !focused && crate::win_focus_dim::is_window_fullscreen(hwnd);
+            crate::win_rules::effective_alpha(&rule, theme_alpha, focused, fullscreen)
+        } else {
+            rule.alpha.unwrap_or(theme_alpha)
+        };
         let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
 
         if alpha < 252 {
@@ -310,6 +312,24 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
         }
         true
     }
+}
+
+/// The native-mode active border colour for `hwnd`, when it is the focused window and may be
+/// decorated. `None` keeps the theme / rule border.
+#[cfg(windows)]
+fn native_active_border(hwnd: windows::Win32::Foundation::HWND, process_path: &str) -> Option<u32> {
+    let styling = crate::win_rules::get_window_styling();
+    if styling.active_border.mode != "native" {
+        return None;
+    }
+    if unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() } != hwnd {
+        return None;
+    }
+    let fullscreen = crate::win_focus_dim::is_window_fullscreen(hwnd);
+    if crate::win_rules::decorate_decision_for(process_path, fullscreen).is_some() {
+        return None;
+    }
+    Some(crate::win_rules::native_border_bgr(&styling.active_border))
 }
 
 #[cfg(not(windows))]
@@ -539,6 +559,8 @@ pub fn update_dwm_theme(
 }
 
 pub fn revert_dwm_theme() {
+    // Overlays (focus dim, active border, peek) and windows Lens pinned on top go first.
+    crate::win_focus_dim::shutdown();
     CURRENT_ALPHA.store(255, Ordering::SeqCst);
     #[cfg(windows)]
     {

@@ -6,6 +6,7 @@ mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
 mod win_events;
+mod win_focus_dim;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
@@ -109,6 +110,7 @@ pub fn run() {
         win_mcp::stop_server();
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
+        win_focus_dim::shutdown();
         restore_taskbar_if_hidden();
         win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
         default_panic(info);
@@ -251,6 +253,14 @@ pub fn run() {
             commands::system::clipboard_pause_cmd,
             commands::theme::get_window_rules_cmd,
             commands::theme::set_window_rules_cmd,
+            commands::rules::get_window_styling_cmd,
+            commands::rules::set_window_styling_cmd,
+            commands::rules::peek_window_cmd,
+            commands::rules::end_peek_cmd,
+            commands::rules::set_window_pinned_cmd,
+            commands::rules::list_pinned_windows_cmd,
+            commands::rules::pick_window_cmd,
+            commands::rules::cancel_pick_window_cmd,
             commands::workspaces::tiling_action_cmd,
             commands::workspaces::get_tiling_hotkeys_cmd,
             commands::power::power_action_cmd,
