@@ -640,7 +640,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
             messages: [
               {
                 role: "system",
-                content: `You are an assistant integrated into Lens UI on Windows 11. Follow these safety rules strictly:\n${agentsMd}`,
+                content: `You are an assistant integrated into Lens UI on Windows. Follow these safety rules strictly:\n${agentsMd}`,
               },
               { role: "user", content: text },
             ],

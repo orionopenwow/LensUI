@@ -451,7 +451,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             <div>
               <div className="cc-section-title">Default Windows Experience</div>
               <div className="cc-section-sub">
-                Choose how deeply Lens UI replaces or complements your native Windows 11 shell.
+                Choose how deeply Lens UI replaces or complements your native Windows shell.
               </div>
             </div>
 

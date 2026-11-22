@@ -150,7 +150,10 @@ export interface LensConfig {
   mcp?: import("../components/McpCard").McpConfig;
 }
 
-export type WindowsThemeInfo = Gen.WindowsThemeInfo;
+/** OS fields are optional on the frontend: older backends and the initial state omit them. */
+export type WindowsThemeInfo = Omit<Gen.WindowsThemeInfo, "osFamily" | "windowsBuild" | "osFeatures"> &
+  Partial<Pick<Gen.WindowsThemeInfo, "osFamily" | "windowsBuild" | "osFeatures">>;
+export type OsFeatures = Gen.OsFeatures;
 
 export interface RunningWindow {
   hwnd: number;

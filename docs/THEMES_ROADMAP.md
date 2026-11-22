@@ -70,5 +70,5 @@ Every built-in `.lenstheme` pack is parity-tested against its reference board be
 - [ ] **Contrast & Legibility:** Primary text ≥ 7:1 contrast; muted metadata ≥ 4.5:1 across `40–100%` opacity.
 - [ ] **Full-Color Dock Icons:** Zero monochrome/grayscale filters on app icons; zero Windows `.lnk` shortcut arrow overlays.
 - [ ] **0px Flush Flow-Outs:** Control Center, Quick Settings, and Search Drawer fuse cleanly to the Dock/Top Bar with zero visible seam.
-- [ ] **Live DWM Harmony:** Third-party Windows 11 apps inherit matching dark titlebars, corner roundness, and live opacity without touching anti-cheat processes.
+- [ ] **Live DWM Harmony:** Third-party apps inherit matching dark titlebars (Windows 10 and 11), plus frame colours and corner roundness on Windows 11, and live opacity without touching anti-cheat processes.
 - [ ] **Clean Exit Restore:** Quitting LensUI restores native Windows taskbar, desktop icons, and DWM attributes cleanly.

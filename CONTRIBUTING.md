@@ -1,14 +1,14 @@
 # Contributing to LensUI
 
-Thank you for helping build **LensUI** — an open-source, obsidian-monochrome Windows 11 desktop shell with native Win32 speed and local AI desktop control.
+Thank you for helping build **LensUI** — an open-source, obsidian-monochrome desktop shell for Windows with native Win32 speed and local AI desktop control.
 
 ## Development Setup
 
 ### Prerequisites
-- **Windows 11** (x64)
+- **Windows 10 (1809 or newer) or Windows 11** (x64). Window frame colours, rounded corners and glass need Windows 11.
 - **Rust** (`rustup` stable toolchain with MSVC)
 - **Bun** (`bun.sh`) or Node.js 20+
-- **WebView2 Runtime** (pre-installed on Windows 11)
+- **WebView2 Runtime** (pre-installed on Windows 11 and current Windows 10)
 
 ### Run Locally
 ```bash
