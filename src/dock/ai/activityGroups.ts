@@ -3,7 +3,7 @@
  * that may ever be sent to an AI is the list of window titles, and only to a provider allowed by
  * `canSendTitles`.
  */
-import type { AiPrivacy, AiProviderInfo } from "../../ai/contract.shim";
+import type { AiPrivacy, AiProviderInfo } from "../../ai/surfaceApi";
 import { isCloud } from "../../ai/context";
 
 export interface WinLite {

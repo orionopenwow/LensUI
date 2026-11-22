@@ -24,3 +24,4 @@ pub(crate) mod keys;
 pub(crate) mod cursors;
 pub(crate) mod release;
 pub(crate) mod playground;
+pub(crate) mod command_ui;

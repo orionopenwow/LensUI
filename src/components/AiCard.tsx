@@ -19,7 +19,7 @@ import {
   type AiPrivacy,
   type AiProviderInfo,
   type AiStatus,
-} from "../ai/contract.shim";
+} from "../ai/surfaceApi";
 import { isCloud } from "../ai/context";
 import { openExternal } from "../ai/open";
 import { clearUsage, readUsage, usageTotals, type UsageEntry } from "../ai/usageLog";

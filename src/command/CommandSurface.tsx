@@ -11,7 +11,7 @@ import { useLensState } from "../hooks/useLensState";
 import type { RunningWindow } from "../types/lens";
 import {
   aiAsk, aiCancel, aiConfirmTool, aiIntent, aiStatus, useAiEvents, type AiStatus, type Intent,
-} from "./aiShim";
+} from "./ai";
 import {
   MODE_LABEL, MODES, cycleMode, destinationOf, mentionAtCaret, mentionSuggestions, parseMentions, parseSlash,
   slashSuggestions, type CommandTemplate, type Mode, type MentionSource,

@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Sparkles } from "lucide-react";
 import { AskPanel } from "../../ai/AskPanel";
-import type { AiContext, AiStatus } from "../../ai/contract.shim";
+import type { AiContext, AiStatus } from "../../ai/surfaceApi";
 import "./aiDock.css";
 
 export type DockFieldMode = "search" | "ask";

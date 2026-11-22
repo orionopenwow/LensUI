@@ -13,7 +13,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SearchItem } from "../search/engine";
-import { aiIntent, type AiIntent } from "./contract.shim";
+import { aiIntent, type AiIntent } from "./surfaceApi";
 import { decideIntent, routeQuery, type QueryRoute } from "./intent";
 import { clipboardActions, type QuickAction } from "./actions";
 

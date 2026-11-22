@@ -459,6 +459,7 @@ pub fn run() {
             commands::playground::load_playground_state_cmd,
             commands::playground::clear_playground_state_cmd,
             commands::playground::dismiss_playground_idle_cmd,
+            commands::command_ui::show_command_cmd,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")

@@ -74,6 +74,8 @@ export interface DockConfig {
   fileDropOpen?: boolean;
   /** Mouse wheel over an app icon cycles its windows. */
   scrollCyclesWindows?: boolean;
+  /** Suggest apps you usually open now (local predictor, no AI model). Off by default. */
+  suggestedApps?: boolean;
 }
 
 export interface FuncConfig {
@@ -97,6 +99,12 @@ export interface FuncConfig {
   targetMonitor?: string;
   /** Build rarely used windows on first open (takes effect after restart). */
   lazyWindows?: boolean;
+  /** Tap the Win key to open the Lens Launcher. Off by default. */
+  winKeyLauncher?: boolean;
+  /** Alt+Tab opens Lens Overview. Off by default. */
+  altTabOverview?: boolean;
+  /** One Top Bar per monitor (applies after restart). Off by default. */
+  perMonitorBars?: boolean;
 }
 
 export interface WindowControlsConfig {
@@ -172,6 +180,12 @@ export interface LensConfig {
   mcp?: import("../components/McpCard").McpConfig;
   /** Lens Intelligence settings (off by default). Keys are never part of the config. */
   ai?: import("../ai/contract").AiConfig;
+  hotCorners?: import("../types/generated").HotCornersConfig;
+  altDrag?: import("../types/generated").AltDragConfig;
+  appSummon?: import("../types/generated").AppSummonConfig;
+  dndSchedule?: import("../types/generated").DndSchedule;
+  /** Lens Command, Mini and the Edge Shelf (off by default; see src/command/settings.ts). */
+  command?: Partial<import("../command/settings").CommandSettings>;
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */

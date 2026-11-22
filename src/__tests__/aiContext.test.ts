@@ -13,7 +13,7 @@ const ctxMod = await import("../ai/context");
 const { parseBlocks, parseInline } = await import("../ai/MarkdownLite");
 const { clipboardActions, notificationDigest, actionsForFiles, DIGEST_MAX_ITEMS } = await import("../ai/actions");
 const { groupWindows, canSendTitles, activityOf } = await import("../dock/ai/activityGroups");
-type P = import("../ai/contract.shim").AiProviderInfo;
+type P = import("../ai/surfaceApi").AiProviderInfo;
 
 const prov = (o: Partial<P>): P => ({ id: "x", kind: "local", label: "X", available: true, model: "m", is_local: true, needs_key: false, has_key: false, ...o });
 const local = prov({ id: "ollama", label: "Ollama" });
@@ -97,8 +97,9 @@ describe("Shelf @-mentions", () => {
     expect(ctxMod.shelfTitle(items[2])).toBe("Meet at 5");
   });
   test("shelf text is folded into page_text", () => {
-    expect(ctxMod.withShelfText({}, "abc").page_text).toBe("--- From your Shelf ---\nabc");
-    expect(ctxMod.withShelfText({ page_text: "p" }, "abc").page_text).toBe("p\n\n--- From your Shelf ---\nabc");
+    expect(ctxMod.withShelfText({}, "abc").shelf_text).toBe("abc");
+    expect(ctxMod.withShelfText({ page_text: "p" }, "abc")).toEqual({ page_text: "p", shelf_text: "abc" });
+    expect(ctxMod.withShelfText({ shelf_text: "a" }, "b").shelf_text).toBe("a\n\nb");
     expect(ctxMod.withShelfText({ selection: "s" }, "  ")).toEqual({ selection: "s" });
   });
 });

@@ -200,7 +200,7 @@ export function dockSystemAreaOf(config: DockConfigLike): DockSystemAreaMode {
 /** Returns a new config with the given Dock style fields set. */
 export function withDock<T extends DockConfigLike>(
   config: T,
-  patch: { style?: DockStyleId; alignment?: DockAlignment; systemArea?: DockSystemAreaMode },
+  patch: { style?: DockStyleId | string; alignment?: DockAlignment | string; systemArea?: DockSystemAreaMode | string },
 ): T {
   return { ...config, dock: { ...config.dock, ...patch } };
 }

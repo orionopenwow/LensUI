@@ -12,6 +12,20 @@ import { DesktopGroupsCard } from "../components/DesktopGroupsCard";
 import { BackupRestoreCard } from "../components/BackupRestoreCard";
 import { McpCard } from "../components/McpCard";
 import { PluginManagerCard } from "../components/PluginManagerCard";
+import { ShellKeysCard } from "../components/ShellKeysCard";
+import { MonitorPickerCard } from "../components/MonitorPickerCard";
+import { HotCornersCard } from "../components/HotCornersCard";
+import { AltDragCard } from "../components/AltDragCard";
+import { AppSummonCard } from "../components/AppSummonCard";
+import { UpdatesCard } from "../components/UpdatesCard";
+import { CrashReportsCard } from "../components/CrashReportsCard";
+import { PlaygroundCard } from "../components/PlaygroundCard";
+import { AiCard } from "../components/AiCard";
+import { CommandCard } from "../components/CommandCard";
+import { ClipboardCard } from "../components/ClipboardCard";
+import { ConnectionsCard } from "../bridge/ConnectionsCard";
+import { BridgeInbox } from "../bridge/BridgeInbox";
+import { TranscriptionCard } from "../media/TranscriptionCard";
 import {
   Palette,
   PanelBottom,
@@ -72,6 +86,7 @@ type TabId =
   | "system"
   | "monitor"
   | "messages"
+  | "ai"
   | "agents";
 
 interface ProcessEntry {
@@ -228,7 +243,8 @@ export const ControlCenterSurface: React.FC = () => {
     { id: "dock", label: "Dock & Top Bar", icon: <PanelBottom size={15} strokeWidth={2.2} color="#60A5FA" /> },
     { id: "folders", label: "Folder Icons", icon: <FolderHeart size={15} strokeWidth={2.2} color="#FBBF24" /> },
     { id: "sessions", label: "Desktops & Widgets", icon: <Layers size={15} strokeWidth={2.2} color="#818CF8" /> },
-    { id: "agents", label: "Agents & MCP", icon: <Bot size={15} strokeWidth={2.2} color="#22D3EE" /> },
+    { id: "ai", label: "AI & Command", icon: <Sparkles size={15} strokeWidth={2.2} color="#F472B6" /> },
+    { id: "agents", label: "Agents", icon: <Bot size={15} strokeWidth={2.2} color="#22D3EE" /> },
   ];
 
   const activeAccentHex =
@@ -1150,6 +1166,15 @@ export const ControlCenterSurface: React.FC = () => {
           {tab === "sessions" && (
             <>
               <div>
+                <div className="cc-section-title">Living desktop</div>
+                <div className="cc-section-sub">
+                  Interactive and ambient scenes behind your desktop icons. Your wallpaper image is in
+                  Theme &amp; Look › Wallpaper.
+                </div>
+              </div>
+              <PlaygroundCard config={config} onUpdateConfig={updateConfig} />
+
+              <div>
                 <div className="cc-section-title">Desktop Sessions Switching</div>
                 <div className="cc-section-sub">
                   Manage named workspace sessions synced with Windows Virtual Desktops.
@@ -1392,9 +1417,27 @@ export const ControlCenterSurface: React.FC = () => {
             </>
           )}
 
+          {tab === "ai" && (
+            <>
+              <div>
+                <div className="cc-section-title">AI &amp; Command</div>
+                <div className="cc-section-sub">
+                  Everything here is off until you turn it on. Local models are used first; nothing leaves
+                  this PC unless you allow it.
+                </div>
+              </div>
+              <BridgeInbox />
+              <AiCard onTryIt={() => invoke("toggle_surface", { label: "palette" }).catch(() => {})} />
+              <CommandCard config={config} onUpdateConfig={updateConfig} />
+              <ClipboardCard />
+              <ConnectionsCard />
+              <TranscriptionCard />
+              <McpCard config={config} onUpdateConfig={updateConfig} />
+            </>
+          )}
+
           {tab === "agents" && (
             <>
-              <McpCard config={config} onUpdateConfig={updateConfig} />
               <AgentsPane config={config} onUpdateConfig={updateConfig} />
             </>
           )}
@@ -2100,6 +2143,32 @@ export const ControlCenterSurface: React.FC = () => {
                   <span className="cc-chip active">Active</span>
                 </div>
               </div>
+
+              <div>
+                <div className="cc-section-title">Keys, corners &amp; monitors</div>
+                <div className="cc-section-sub">
+                  Win key, Alt+Tab, hot corners, Alt+drag and app hotkeys. All off until you turn them on.
+                </div>
+              </div>
+              <ShellKeysCard config={config} onUpdateConfig={updateConfig} />
+              <MonitorPickerCard config={config} onUpdateConfig={updateConfig} showPerMonitorBars />
+              <HotCornersCard config={config} onUpdateConfig={updateConfig} />
+              <AltDragCard config={config} onUpdateConfig={updateConfig} />
+              <AppSummonCard config={config} onUpdateConfig={updateConfig} />
+
+              <div>
+                <div className="cc-section-title">Window styling</div>
+                <div className="cc-section-sub">
+                  Focus dimming, the active-window border, pin on top and per-app rules.
+                </div>
+              </div>
+              <WindowRulesCard />
+
+              <div>
+                <div className="cc-section-title">Updates &amp; crash reports</div>
+              </div>
+              <UpdatesCard />
+              <CrashReportsCard />
             </>
           )}
           </div>

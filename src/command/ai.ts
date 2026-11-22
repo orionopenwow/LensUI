@@ -1,82 +1,29 @@
-// Local shim for the Lens AI client (feature/ai-core: src/ai/client.ts + src/ai/contract.ts).
-// Names and shapes mirror that contract so the integrator can swap this import for the real one.
+// Lens Command's view of Lens Intelligence: the real ai-core client (src/ai/client.ts,
+// src/ai/contract.ts) plus an all-requests event hook for the Command thread.
+// (This replaced the local aiShim.ts once feature/ai-core landed.)
 import { useCallback, useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { aiAsk, aiCancel } from "../ai/client";
+import type {
+  AiDoneEvent,
+  AiDeltaEvent,
+  AiRequest,
+  AiToolProposalEvent,
+  AiToolResultEvent,
+} from "../ai/contract";
 
-export type ProviderKind = "off" | "script" | "local" | "claude";
-export type PrivacyMode = "local_only" | "ask_each_time" | "allow_cloud";
+export { aiAsk, aiCancel, aiConfirmTool, aiIntent, aiRunIntent, aiStatus } from "../ai/client";
+export type { AiContext, AiRequest, AiStatus, Intent, PrivacyMode, ProviderInfo, ProviderKind } from "../ai/contract";
 
-export interface ProviderInfo {
-  id: string;
-  kind: ProviderKind;
-  label: string;
-  available: boolean;
-  model?: string | null;
-  is_local: boolean;
-  needs_key: boolean;
-  has_key: boolean;
-}
-
-export interface AiStatus {
-  providers: ProviderInfo[];
-  active: string;
-  privacy: PrivacyMode;
-}
-
-export interface AiContext {
-  selection?: string;
-  clipboard?: string;
-  window_title?: string;
-  app_name?: string;
-  files?: string[];
-  url?: string;
-  page_text?: string;
-}
-
-export interface AiRequest {
-  prompt: string;
-  context: AiContext;
-  provider?: string;
-  allow_tools: boolean;
-}
-
-export interface Intent {
-  action: string;
-  args: Record<string, unknown>;
-  confidence: number;
-  summary: string;
-}
-
-export interface AiDelta { id: string; text: string }
-export interface AiDone {
-  id: string;
-  provider: string;
-  model: string;
-  usage?: { input_tokens: number; output_tokens: number } | null;
-  error?: string | null;
-}
-export interface ToolProposal {
-  id: string;
-  call_id: string;
-  tool: string;
-  args: Record<string, unknown>;
-  summary: string;
-  risk: "low" | "confirm" | "blocked";
-}
-export interface ToolResult { id: string; call_id: string; ok: boolean; message: string }
+export type AiDelta = AiDeltaEvent;
+export type AiDone = AiDoneEvent;
+export type ToolProposal = AiToolProposalEvent;
+export type ToolResult = AiToolResultEvent;
 
 export const EVT_AI_DELTA = "lens://ai/delta";
 export const EVT_AI_DONE = "lens://ai/done";
 export const EVT_AI_TOOL_PROPOSAL = "lens://ai/tool-proposal";
 export const EVT_AI_TOOL_RESULT = "lens://ai/tool-result";
-
-export const aiStatus = () => invoke<AiStatus>("ai_status");
-export const aiAsk = (req: AiRequest) => invoke<string>("ai_ask", { req });
-export const aiIntent = (text: string) => invoke<Intent | null>("ai_intent", { text });
-export const aiCancel = (id: string) => invoke<void>("ai_cancel", { id });
-export const aiConfirmTool = (callId: string, approve: boolean) =>
-  invoke<void>("ai_confirm_tool", { callId, approve });
 
 export interface AiStreamHandlers {
   onDelta?: (d: AiDelta) => void;

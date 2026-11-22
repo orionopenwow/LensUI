@@ -38,6 +38,20 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   desktopfolder: lazy(() =>
     import("./surfaces/DesktopFolderSurface").then((m) => ({ default: m.DesktopFolderSurface }))
   ),
+  // Pointer effects overlay (click-through; docs/CURSORS.md).
+  cursorfx: lazy(() =>
+    import("./surfaces/CursorFxSurface").then((m) => ({ default: m.CursorFxSurface }))
+  ),
+  // Lens Command and Lens Mini, the Edge Shelf tab and the selection bubble (docs/COMMAND.md).
+  command: lazy(() => import("./command/CommandSurface").then((m) => ({ default: m.CommandSurface }))),
+  edgeshelf: lazy(() =>
+    import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
+  ),
+  bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
+  focusdim: lazy(() =>
+    import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
+  ),
 };
 
 const params = new URLSearchParams(window.location.search);

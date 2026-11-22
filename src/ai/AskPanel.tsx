@@ -34,7 +34,7 @@ import {
   type AiProviderInfo,
   type AiStatus,
   type AiToolCard,
-} from "./contract.shim";
+} from "./surfaceApi";
 import { listen } from "@tauri-apps/api/event";
 import {
   SHELF_CHANGED,
@@ -44,7 +44,7 @@ import {
   shelfList,
   type CommandHandoff,
   type ShelfItem,
-} from "./shelf.shim";
+} from "./shelfLink";
 import {
   LARGE_CONTEXT_TOKENS,
   approxTokens,

@@ -14,7 +14,7 @@ const { bridgeCommand, threadReducer } = await import("../command/thread");
 type ContextChip = import("../command/thread").ContextChip;
 type ThreadItem = import("../command/thread").ThreadItem;
 const { approxTokens, formatTokens } = await import("../shelf/contract");
-import type { ProviderInfo } from "../command/aiShim";
+import type { ProviderInfo } from "../command/ai";
 
 
 const tpl = (id: string, o: Partial<CommandTemplate> = {}): CommandTemplate => ({
@@ -181,8 +181,14 @@ describe("request building", () => {
       active: "ollama",
       shelfText: "### Text — note\n\nhello",
     });
-    expect(b.req.context).toEqual({ selection: "sel", clipboard: "clip", window_title: "Report.docx - Word", app_name: "WINWORD" });
-    expect(b.req.prompt).toBe("what changed?\n\nContext from my Shelf:\n\n### Text — note\n\nhello");
+    expect(b.req.context).toEqual({
+      selection: "sel",
+      clipboard: "clip",
+      window_title: "Report.docx - Word",
+      app_name: "WINWORD",
+      shelf_text: "### Text — note\n\nhello",
+    });
+    expect(b.req.prompt).toBe("what changed?");
   });
 
   test("private items never go to Claude", () => {

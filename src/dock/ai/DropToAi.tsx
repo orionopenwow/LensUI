@@ -10,8 +10,8 @@ import React, { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { AudioLines, FileText, Layers, MessageCircleQuestion, PencilLine, Sparkles, X } from "lucide-react";
 import { actionsForFiles, fileActionPrompt, type FileActionId } from "../../ai/actions";
-import { AI_EVENTS, transcribeFile, type AiContext, type TranscribeDone, type TranscribeProgress } from "../../ai/contract.shim";
-import { shelfAdd } from "../../ai/shelf.shim";
+import { AI_EVENTS, transcribeFile, type AiContext, type TranscribeDone, type TranscribeProgress } from "../../ai/surfaceApi";
+import { shelfAdd } from "../../ai/shelfLink";
 import "../../ai/AskPanel.css";
 import "./aiDock.css";
 

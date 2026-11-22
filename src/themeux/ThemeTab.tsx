@@ -19,6 +19,7 @@ import { WallpaperCard } from "../components/WallpaperCard";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
 import { AccessibilityCard } from "../components/AccessibilityCard";
+import { CursorSuiteCard } from "../components/CursorSuiteCard";
 import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "../dock/styles";
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
 
@@ -625,6 +626,10 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
 
           <Section id="a11y" title="Accessibility" summary={`Motion: ${motionLabel} · ${contrastLabel}`} open={!!open.a11y} onToggle={() => toggle("a11y")}>
             <AccessibilityCard config={config} onUpdateConfig={updateConfig} />
+          </Section>
+
+          <Section id="pointer" title="Mouse pointer" summary="Pointer look, behaviour and effects" open={!!open.pointer} onToggle={() => toggle("pointer")}>
+            <CursorSuiteCard config={config} />
           </Section>
 
           <Section id="saved" title="Saved & shared themes" summary="Save, export and import .lenstheme files" open={!!open.saved} onToggle={() => toggle("saved")}>

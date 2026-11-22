@@ -1,5 +1,5 @@
 // Turns what the user typed + the context chips into one AI request. Pure; tested.
-import type { AiContext, AiRequest, ProviderInfo } from "./aiShim";
+import type { AiContext, AiRequest, ProviderInfo } from "./ai";
 import { chipBlocked, destinationOf, expandTemplate, type CommandTemplate, type Destination, type SlashParse } from "./parse";
 import type { CommandProvider } from "./settings";
 import type { ContextChip } from "./thread";
@@ -97,7 +97,8 @@ export function buildRequest(opts: {
     const clip = joinText(clipboard);
     if (clip) context.clipboard = clip;
     if (page?.value) context.page_text = page.value;
-    if (shelfText) prompt = `${prompt}\n\nContext from my Shelf:\n\n${shelfText}`;
+    // ai-core attaches Shelf text in its own context field, privacy-gated like the rest.
+    if (shelfText) context.shelf_text = shelfText;
   }
   return {
     req: { prompt, context, provider: prov.id, allow_tools: !!opts.allowTools },

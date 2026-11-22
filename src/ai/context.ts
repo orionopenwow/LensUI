@@ -2,7 +2,7 @@
  * Pure logic behind the context chips in the Ask panel: what is attached to a request, how it is shown,
  * whether sending it needs consent, and the "Continue in Claude" hand-off text. No React, no Tauri.
  */
-import type { AiContext, AiPrivacy, AiProviderInfo } from "./contract.shim";
+import type { AiContext, AiPrivacy, AiProviderInfo } from "./surfaceApi";
 
 export type ContextKind = "selection" | "clipboard" | "window" | "files" | "url" | "page";
 
@@ -228,6 +228,6 @@ export function filterShelf<T extends ShelfLike>(items: T[], q: string, exclude:
 /** Folds resolved Shelf text into the request (the AI contract has no shelf field yet). */
 export function withShelfText(ctx: AiContext, shelfText: string): AiContext {
   if (!shelfText.trim()) return ctx;
-  const block = `--- From your Shelf ---\n${shelfText.trim()}`;
-  return { ...ctx, page_text: ctx.page_text?.trim() ? `${ctx.page_text}\n\n${block}` : block };
+  // ai-core has its own field for Shelf text: attached, counted and privacy-gated like the rest.
+  return { ...ctx, shelf_text: ctx.shelf_text?.trim() ? `${ctx.shelf_text}\n\n${shelfText.trim()}` : shelfText.trim() };
 }

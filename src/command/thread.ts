@@ -1,5 +1,5 @@
 // The unified message thread: everything that happens in Lens Command is one card in one timeline.
-import type { AiDone, ToolProposal, ToolResult } from "./aiShim";
+import type { AiDone, ToolProposal, ToolResult } from "./ai";
 import type { Destination } from "./parse";
 
 export interface ContextChip {

@@ -7,7 +7,7 @@
  */
 import React, { useMemo, useState } from "react";
 import { Lock, Sparkles } from "lucide-react";
-import type { AiContext, AiPrivacy, AiProviderInfo } from "../../ai/contract.shim";
+import type { AiContext, AiPrivacy, AiProviderInfo } from "../../ai/surfaceApi";
 import { canSendTitles, groupWindows, summaryPrompt, type WinLite } from "./activityGroups";
 import "./aiDock.css";
 

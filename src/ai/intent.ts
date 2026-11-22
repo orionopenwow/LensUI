@@ -2,7 +2,7 @@
  * Pure routing for the palette and Dock "Ask" field: decide whether a query is a command (ask the backend's
  * ai_intent for a one-key "Do it"), a question (offer "Ask AI"), or neither (normal search only).
  */
-import type { AiIntent } from "./contract.shim";
+import type { AiIntent } from "./surfaceApi";
 
 export type QueryRoute =
   /** "ai: …", "/ask …", "@ai …": go straight to the Ask panel; hide normal results. */

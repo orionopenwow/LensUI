@@ -3,7 +3,7 @@
  * Each builds a prompt plus the exact context that will be sent, so the Ask panel can show the chips
  * before anything leaves the PC. Pure; the caller decides where to send it.
  */
-import type { AiContext } from "./contract.shim";
+import type { AiContext } from "./surfaceApi";
 
 export interface QuickAction {
   id: string;

@@ -125,7 +125,7 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
             { id: "dock", label: "In Dock" },
             { id: "topbar", label: "In Top Bar" },
           ]}
-          onChange={(id) => updateConfig(withDock(config, { systemArea: id as DockSystemArea }))}
+          onChange={(id) => updateConfig(withDock(config, { systemArea: id as DockSystemAreaMode }))}
         />
       </div>
 
