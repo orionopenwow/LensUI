@@ -1,0 +1,328 @@
+/* Cursor Suite card (Control Center). Tokens only; see DESIGN.md. */
+
+.cs-card {
+  display: grid;
+  gap: 12px;
+}
+
+.cs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cs-tabs {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 9px;
+  background: rgb(var(--lens-ink) / 0.06);
+  border: 1px solid var(--lens-border);
+  flex-shrink: 0;
+}
+
+.cs-tab {
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  transition: background 150ms cubic-bezier(0.22, 1, 0.36, 1), color 150ms ease;
+}
+
+.cs-tab:hover {
+  color: var(--lens-fg);
+}
+
+.cs-tab.active {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+}
+
+.cs-pane {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-error {
+  font-size: 12px;
+  color: var(--lens-danger);
+}
+
+.cs-group {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lens-fg-muted);
+}
+
+/* ---- Look ---- */
+
+.cs-family-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cs-family {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: left;
+  border: 1px solid var(--lens-border);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+/* Tiles sit on a neutral well that matches the tone, so light pointers stay visible. */
+.cs-family.on-dark,
+.cs-strip.on-dark {
+  background: #26262b;
+}
+
+.cs-family.on-light,
+.cs-strip.on-light {
+  background: #e4e4e7;
+}
+
+.cs-family:hover {
+  border-color: var(--lens-border-strong);
+}
+
+.cs-family.active {
+  border-color: var(--cc-accent);
+  box-shadow: 0 0 0 1px var(--cc-accent);
+}
+
+.cs-family-row {
+  display: flex;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.cs-family-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fafafa;
+}
+
+.cs-family-blurb {
+  font-size: 11px;
+  color: #a1a1aa;
+  line-height: 1.3;
+}
+
+.cs-family.on-light .cs-family-name {
+  color: #18181b;
+}
+
+.cs-family.on-light .cs-family-blurb {
+  color: #52525b;
+}
+
+.cs-cur {
+  display: block;
+  image-rendering: auto;
+}
+
+.cs-strip {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px 4px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--lens-border);
+}
+
+.cs-strip-cell {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.cs-strip-cell span {
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  color: #a1a1aa;
+}
+
+.cs-strip.on-light .cs-strip-cell span {
+  color: #52525b;
+}
+
+.cs-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cs-num {
+  min-width: 52px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lens-fg-secondary);
+}
+
+.cs-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--lens-border);
+  padding-top: 12px;
+}
+
+.cs-state {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--lens-fg-secondary);
+}
+
+.cs-btn:disabled,
+.cs-actions .cc-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- Effects ---- */
+
+.cs-fx-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cs-fx-note {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--lens-fg-muted);
+}
+
+.cs-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.3);
+}
+
+.cs-dot.live {
+  background: var(--lens-positive);
+}
+
+.cs-fx-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.cs-fx-row.muted {
+  grid-template-columns: 72px minmax(0, 1fr);
+  opacity: 0.8;
+}
+
+.cs-fx-preview {
+  width: 72px;
+  height: 44px;
+  border-radius: 8px;
+  /* A hint of desktop behind the effect, so the spotlight and trails read. */
+  background: linear-gradient(135deg, #2b3445, #1b1830 60%, #2a1b3d);
+  border: 1px solid var(--lens-border);
+}
+
+.cs-fx-mag {
+  display: grid;
+  place-items: center;
+  color: var(--lens-fg-muted);
+  font-size: 18px;
+}
+
+.cs-fx-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cs-inline-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cs-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--lens-fg-secondary);
+}
+
+.cs-check input {
+  accent-color: var(--lens-accent);
+}
+
+.cs-test-label {
+  margin-top: 4px;
+}
+
+.cs-test {
+  position: relative;
+  height: 150px;
+  border-radius: 10px;
+  border: 1px dashed var(--lens-border-strong);
+  background: #1c1c21;
+  overflow: hidden;
+}
+
+.cs-test-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.cs-test-canvas:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--cc-accent);
+}
+
+.cs-test-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.cs-test-hint.corner {
+  inset: auto 10px 8px auto;
+  display: block;
+}
+
+.cs-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--lens-ink) / 0.25);
+  vertical-align: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-tab,
+  .cs-family {
+    transition: none;
+  }
+}
