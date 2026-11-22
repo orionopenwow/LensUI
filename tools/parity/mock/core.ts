@@ -75,7 +75,23 @@ const handlers: Record<string, (a: any) => any> = {
   get_dnd_cmd: () => false,
   list_desktop_items_cmd: () => [],
   get_desktop_icons_hidden_cmd: () => true,
-  get_window_rules_cmd: () => [],
+  get_window_rules_cmd: () =>
+    params.get("styling")
+      ? [{ match: "windowsterminal", opacity: 90, inactiveOpacity: 70, frame: "default", corners: "default", exclude: false }]
+      : [],
+  // Window styling 2.0. `?styling=demo` shows the overlay border + dimming; `?styling=w10` a Windows 10 PC.
+  get_window_styling_cmd: () => {
+    const mode = params.get("styling");
+    const caps = mode === "w10"
+      ? { windowsBuild: 19045, nativeBorder: false, roundedCorners: false, overlays: true }
+      : { windowsBuild: 26100, nativeBorder: true, roundedCorners: true, overlays: true };
+    const settings = mode
+      ? { dimInactive: 25, activeBorder: { mode: "overlay", style: "gradient", colors: ["#60A5FA", "#C084FC", "#F472B6"], widthPx: 3, glowPx: 12 }, skipFullscreen: true, exclusions: ["obs64", "steam"], peekDelayMs: 600 }
+      : { dimInactive: 0, activeBorder: { mode: "off", style: "solid", colors: ["#60A5FA", "#C084FC"], widthPx: 2, glowPx: 0 }, skipFullscreen: true, exclusions: [], peekDelayMs: 600 };
+    return { settings, caps };
+  },
+  set_window_styling_cmd: (a: any) => a.settings,
+  list_pinned_windows_cmd: () => (params.get("styling") ? [{ hwnd: 102, process: "chrome", title: "Google Chrome" }] : []),
   get_shell_mode_status_cmd: () => ({ enabled: false, shellValue: "", exePath: "", explorerRunningAsShell: true, lastBootOk: true }),
   get_notification_center_cmd: () => ({ dnd: false, items: [], windows: { status: "unavailable", reason: "Test harness", items: [] } }),
   clipboard_list_cmd: () => ({ entries: [], paused: false }),
