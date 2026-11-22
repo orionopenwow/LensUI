@@ -4,7 +4,7 @@ import { Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { LensConfig, WindowsThemeInfo } from "../types/lens";
 import { allPacks, applyThemePack, packById, recommendedPacks } from "../themes/packs";
 import { PackCard } from "./ThemeGallery";
-import { DOCK_STYLES, DockStylePreview, dockStyleLabel, dockStyleOf, withDock } from "../themeux/dockStyleOptions";
+import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf, withDock } from "../dock/styles";
 
 interface SetupWizardProps {
   config: LensConfig;
@@ -164,7 +164,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
                     className={`tux-dock-card ${on ? "active" : ""}`}
                     onClick={() => onUpdateConfig(withDock({ ...config, dock: { ...config.dock, iconSize: d.recommendedIconSize } }, { style: d.id }))}
                   >
-                    <DockStylePreview styleId={d.id} accent={accent} height={72} />
+                    <DockScenePreview styleId={d.id} accent={accent} height={72} />
                     <span className="tux-pack-name">
                       <span className="tux-pack-label">
                         {d.label}

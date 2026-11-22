@@ -182,3 +182,29 @@ export const DOCK_OPTIONS: readonly {
 ];
 
 export { DockStylePreview } from "./DockStylePreview";
+
+// ---- Config helpers shared by the Theme & Look tab, the Dock tab and the setup wizard ----
+
+type DockConfigLike = { dock: { style?: string; alignment?: string; systemArea?: string } };
+
+export function dockStyleOf(config: DockConfigLike): DockStyleId {
+  return normalizeDockStyle(config.dock?.style);
+}
+export function dockAlignmentOf(config: DockConfigLike): DockAlignment {
+  return config.dock?.alignment === "left" ? "left" : "center";
+}
+export function dockSystemAreaOf(config: DockConfigLike): DockSystemAreaMode {
+  const v = config.dock?.systemArea;
+  return v === "dock" || v === "topbar" ? v : "auto";
+}
+/** Returns a new config with the given Dock style fields set. */
+export function withDock<T extends DockConfigLike>(
+  config: T,
+  patch: { style?: DockStyleId; alignment?: DockAlignment; systemArea?: DockSystemAreaMode },
+): T {
+  return { ...config, dock: { ...config.dock, ...patch } };
+}
+export function dockStyleLabel(id: string | undefined | null): string {
+  return dockStyleInfo(id).label;
+}
+export { DockScenePreview } from "./DockScenePreview";

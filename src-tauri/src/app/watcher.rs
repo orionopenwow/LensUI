@@ -556,9 +556,14 @@ pub(crate) fn spawn_watcher(
                     let cursor_in_mon_x = cursor
                         .map(|(cx, _)| cx >= mon_left && cx <= mon_right)
                         .unwrap_or(false);
-                    // Docks on the top/left/right edge use the pill rect the Dock reports.
-                    let edge_zones = if win_previews::normalize_edge(&cfg.dock.position) != "bottom"
-                        && win_previews::pill_rect_css().2 > 0
+                    // Docks on the top/left/right edge, and every bottom Dock whose shape is not the
+                    // plain floating pill (Slim, Taskbar, Studio, Minimal, Split, magnification), use
+                    // the rect the Dock reports. Plain Floating keeps the original code path.
+                    let reported_rect_needed = win_previews::normalize_edge(&cfg.dock.position)
+                        != "bottom"
+                        || cfg.dock.style != "floating"
+                        || cfg.dock.magnification != "off";
+                    let edge_zones = if reported_rect_needed && win_previews::pill_rect_css().2 > 0
                     {
                         dock_win.outer_position().ok().map(|p| {
                             win_previews::dock_zones(

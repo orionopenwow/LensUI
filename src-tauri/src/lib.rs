@@ -233,6 +233,7 @@ pub fn run() {
             commands::system::set_app_volume_cmd,
             commands::system::set_app_mute_cmd,
             commands::dock::launch_app_cmd,
+            commands::dock::open_files_with_app_cmd,
             commands::dock::launch_app_advanced_cmd,
             commands::system::get_media_now_playing_cmd,
             commands::system::media_control_cmd,

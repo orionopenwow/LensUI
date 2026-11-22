@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Search, Star, X } from "lucide-react";
 import type { LensConfig } from "../types/lens";
 import { allPacks, lighten, type ThemePack } from "../themes/packs";
-import { dockStyleLabel } from "../themeux/dockStyleOptions";
+import { dockStyleLabel } from "../dock/styles";
 
 interface Props {
   config: LensConfig;

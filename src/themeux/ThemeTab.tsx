@@ -19,7 +19,7 @@ import { WallpaperCard } from "../components/WallpaperCard";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
 import { AccessibilityCard } from "../components/AccessibilityCard";
-import { DockStylePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "./dockStyleOptions";
+import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "../dock/styles";
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
 
 interface Props {
@@ -196,7 +196,7 @@ const HeroPreview: React.FC<{ config: LensConfig; accent: string }> = ({ config,
         : `1px solid ${accent}`;
   return (
     <div className="tux-hero-preview" aria-hidden>
-      <DockStylePreview styleId={dockStyleOf(config)} accent={accent} alignment={dockAlignmentOf(config)} height={136} showWindow={false} />
+      <DockScenePreview styleId={dockStyleOf(config)} accent={accent} alignment={dockAlignmentOf(config)} height={136} showWindow={false} />
       <div
         className="tux-hero-window"
         style={{
@@ -488,7 +488,6 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             <div
               style={noFrameColours ? { opacity: 0.45, pointerEvents: "none" } : undefined}
               aria-disabled={noFrameColours || undefined}
-              title={noFrameColours ? "Needs Windows 11" : undefined}
             >
               <Chips
                 label={noFrameColours ? "Frame (needs Windows 11)" : "Frame"}

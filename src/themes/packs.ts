@@ -25,7 +25,7 @@ export interface ThemePack {
   folderTheme: string;
   frameStyle: string;
   controlStyle: string;
-  /** Dock layout this pack is designed around (see src/themeux/dockStyleOptions.ts). Only applied when the user opts in. */
+  /** Dock layout this pack is designed around (see src/dock/styles.ts). Only applied when the user opts in. */
   dockStyle?: string;
   /** One of the six packs shown first in Control Center and the Setup Wizard. */
   recommended?: boolean;

@@ -2,14 +2,14 @@ import React from "react";
 import type { LensConfig } from "../types/lens";
 import {
   DOCK_STYLES,
-  DockStylePreview,
+  DockScenePreview,
   dockAlignmentOf,
   dockStyleOf,
   dockSystemAreaOf,
   withDock,
   type DockAlignment,
-  type DockSystemArea,
-} from "./dockStyleOptions";
+  type DockSystemAreaMode,
+} from "../dock/styles";
 import { ValueSlider } from "./ThemeTab";
 
 interface Props {
@@ -82,7 +82,7 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
               className={`tux-dock-card ${style === d.id ? "active" : ""}`}
               onClick={() => updateConfig(withDock({ ...config, dock: { ...dock, iconSize: d.recommendedIconSize } }, { style: d.id }))}
             >
-              <DockStylePreview styleId={d.id} accent={accent} alignment={alignment} height={56} />
+              <DockScenePreview styleId={d.id} accent={accent} alignment={alignment} height={56} />
               <span className="tux-pack-name">
                 <span className="tux-pack-label">{d.label}</span>
                 {style === d.id && <span className="tux-pack-dot" />}

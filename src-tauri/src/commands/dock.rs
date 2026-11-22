@@ -66,6 +66,16 @@ pub(crate) fn window_action_cmd(hwnd: isize, action: String) {
     window_action(hwnd, &action);
 }
 
+/// Dock file drop: opens the dropped files with the app under the pointer.
+#[tauri::command]
+pub(crate) async fn open_files_with_app_cmd(app_path: String, files: Vec<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::win_windows::open_files_with_app(&app_path, &files)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub(crate) async fn launch_app_cmd(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || launch_path(&path))

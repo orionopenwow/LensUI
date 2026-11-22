@@ -1,58 +1,10 @@
 /**
- * Local stand-in for the dock-style contract owned by `feature/dock-styles` (src/dock/styles.ts).
- *
- * Same shape as that module: `DOCK_STYLES` ({ id, label, description, recommendedIconSize }) and a
- * `DockStylePreview` component. Once both branches are merged, every
- * `from "../themeux/dockStyleOptions"` import switches to `from "../dock/styles"` and this file is deleted.
- *
- * The config fields (`dock.style`, `dock.alignment`, `dock.systemArea`) are typed here locally so this
- * branch does not touch src/types/lens.ts, which the dock-styles branch also edits.
+ * A miniature screen with the Dock drawn in a given style, used by the Theme & Look hero, the Dock
+ * tab's style cards and the setup wizard. Pure CSS shapes, so it follows the active theme tokens.
+ * (The compact 112×64 SVG used in option lists is `DockStylePreview` in ./DockStylePreview.)
  */
 import React from "react";
-import type { LensConfig } from "../types/lens";
-
-export type DockStyleId = "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split";
-export type DockAlignment = "center" | "left";
-export type DockSystemArea = "auto" | "dock" | "topbar";
-
-export interface DockStyleOption {
-  id: DockStyleId;
-  label: string;
-  description: string;
-  recommendedIconSize: number;
-}
-
-export const DOCK_STYLES: DockStyleOption[] = [
-  { id: "floating", label: "Floating", description: "Rounded glass dock that floats just above the bottom edge.", recommendedIconSize: 44 },
-  { id: "slim", label: "Slim", description: "A thinner centred dock with smaller icons, so you get more screen.", recommendedIconSize: 34 },
-  { id: "taskbar", label: "Taskbar", description: "Full-width bar like the Windows taskbar, with the system area on the right.", recommendedIconSize: 36 },
-  { id: "studio", label: "Studio", description: "Wide dock that shows names under running apps and a status section.", recommendedIconSize: 40 },
-  { id: "minimal", label: "Minimal", description: "Icons only, with no backdrop. Stays out of the way.", recommendedIconSize: 38 },
-  { id: "split", label: "Split", description: "Apps in the centre, folders and the system area in their own pills.", recommendedIconSize: 40 },
-];
-
-type DockExtras = { style?: string; alignment?: string; systemArea?: string };
-
-export function dockStyleOf(config: LensConfig): DockStyleId {
-  const s = (config.dock as unknown as DockExtras).style;
-  return (DOCK_STYLES.some((d) => d.id === s) ? s : "floating") as DockStyleId;
-}
-export function dockAlignmentOf(config: LensConfig): DockAlignment {
-  return (config.dock as unknown as DockExtras).alignment === "left" ? "left" : "center";
-}
-export function dockSystemAreaOf(config: LensConfig): DockSystemArea {
-  const v = (config.dock as unknown as DockExtras).systemArea;
-  return v === "dock" || v === "topbar" ? v : "auto";
-}
-
-/** Returns a new config with the given dock fields set (only the three contract fields). */
-export function withDock(config: LensConfig, patch: DockExtras): LensConfig {
-  return { ...config, dock: { ...config.dock, ...patch } };
-}
-
-export function dockStyleLabel(id: string | undefined): string {
-  return DOCK_STYLES.find((d) => d.id === id)?.label ?? "Floating";
-}
+import { normalizeDockStyle, type DockAlignment, type DockStyleId } from "./styles";
 
 const h = React.createElement;
 
@@ -71,8 +23,8 @@ interface PreviewProps {
  * A miniature screen with the dock drawn in the given style. Pure CSS shapes, so it follows the active
  * theme tokens (ink, border, elevated surface) automatically.
  */
-export const DockStylePreview: React.FC<PreviewProps> = ({ styleId, accent = "var(--lens-accent, #60a5fa)", alignment = "center", height = 64, showWindow = true }) => {
-  const id = (DOCK_STYLES.some((d) => d.id === styleId) ? styleId : "floating") as DockStyleId;
+export const DockScenePreview: React.FC<PreviewProps> = ({ styleId, accent = "var(--lens-accent, #60a5fa)", alignment = "center", height = 64, showWindow = true }) => {
+  const id: DockStyleId = normalizeDockStyle(styleId);
   const ink = (a: number) => `rgb(var(--lens-ink) / ${a})`;
   const icons = [accent, "#60a5fa", "#34d399", "#fbbf24", "#f472b6"];
   const icon = (c: string, size: number, i: number, running = false) =>
