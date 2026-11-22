@@ -81,6 +81,8 @@ export function useLensState() {
     appsUseLightTheme: false,
     systemUsesLightTheme: false,
     transparencyEnabled: true,
+    osFamily: "windows",
+    windowsBuild: 0,
   });
 
   useEffect(() => {

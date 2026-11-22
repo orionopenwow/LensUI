@@ -163,6 +163,21 @@ export interface WindowsThemeInfo {
   appsUseLightTheme: boolean;
   systemUsesLightTheme: boolean;
   transparencyEnabled: boolean;
+  /** "windows" | "macos" | "linux" (older backends omit these fields) */
+  osFamily?: string;
+  /** Windows build number, e.g. 19045 = Windows 10 22H2, 22631 = Windows 11 23H2 */
+  windowsBuild?: number;
+  osFeatures?: OsFeatures;
+}
+
+/** What window styling this OS supports. Windows 10 has dark titlebars but not frame colours,
+ *  rounded corners or Mica/acrylic. */
+export interface OsFeatures {
+  isWindows11: boolean;
+  darkTitlebars: boolean;
+  frameColors: boolean;
+  roundedCorners: boolean;
+  systemBackdrop: boolean;
 }
 
 export interface RunningWindow {

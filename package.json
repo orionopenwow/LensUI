@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Lens UI — Sleek, obsidian-dark Windows 11 desktop shell with live Windows theme mesh",
+  "description": "Lens UI — a calm, themeable desktop shell for Windows 10 and 11",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

@@ -1,0 +1,52 @@
+name: portability
+
+# Lens' desktop integration is Windows-only today, but every module has a non-Windows
+# stand-in so the app can grow onto Linux and macOS. This keeps those stand-ins compiling,
+# so Windows-only code can't quietly break the other platforms.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: cargo check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux system libraries for Tauri
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # tauri::generate_context! needs the frontend output folder to exist.
+      - name: Placeholder frontend build
+        run: mkdir -p dist && echo '<!doctype html><title>Lens</title>' > dist/index.html
+
+      # The embedded hook DLL is Windows-only; an empty file satisfies include_bytes! here.
+      - name: Placeholder hook DLL
+        run: test -f src-tauri/lens_dwm_hook.dll || touch src-tauri/lens_dwm_hook.dll
+
+      - name: cargo check
+        working-directory: src-tauri
+        run: cargo check --all-targets
+
+      - name: cargo test (portable logic)
+        working-directory: src-tauri
+        run: cargo test --lib

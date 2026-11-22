@@ -739,6 +739,19 @@ export const ControlCenterSurface: React.FC = () => {
 
           {tab === "theme" && (
             <>
+              {winTheme.osFeatures && !winTheme.osFeatures.frameColors && (
+                <div className="cc-card">
+                  <div className="cc-label">
+                    {winTheme.osFamily === "windows" ? "Running on Windows 10" : "Running outside Windows"}
+                  </div>
+                  <div className="cc-desc">
+                    {winTheme.osFamily === "windows"
+                      ? "Lens runs on Windows 10. App titlebars follow dark mode, but window frame colours, rounded corners and glass need Windows 11, so those options are switched off."
+                      : "The Lens interface runs here, but desktop integration (Dock windows, system controls, window styling) is Windows-only for now. Linux and macOS support are on the roadmap."}
+                  </div>
+                </div>
+              )}
+
               <ThemeGallery config={config} onApply={applyPack} windowsAccent={winTheme.accentHex} />
 
               <ThemeScheduleCard config={config} onUpdateConfig={updateConfig} />
@@ -1763,9 +1776,21 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Window Frame</div>
-                    <div className="cc-desc">Border drawn around every app window</div>
+                    <div className="cc-desc">
+                      {winTheme.osFeatures && !winTheme.osFeatures.frameColors
+                        ? "Needs Windows 11"
+                        : "Border drawn around every app window"}
+                    </div>
                   </div>
-                  <div className="cc-chip-grid">
+                  <div
+                    className="cc-chip-grid"
+                    style={
+                      winTheme.osFeatures && !winTheme.osFeatures.frameColors
+                        ? { opacity: 0.45, pointerEvents: "none" }
+                        : undefined
+                    }
+                    aria-disabled={winTheme.osFeatures ? !winTheme.osFeatures.frameColors : undefined}
+                  >
                     {FRAME_STYLES.map((f) => (
                       <button
                         key={f.id}
