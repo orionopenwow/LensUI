@@ -1,0 +1,27 @@
+/* Selection bubble — a 24 px dot that fades out after 3 s. */
+html:has(.bubble), body:has(.bubble) { background: transparent; }
+.bubble {
+  width: 24px;
+  height: 24px;
+  margin: 4px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--lens-border-strong);
+  background: var(--lens-bg-elevated);
+  color: var(--lens-fg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.28);
+  cursor: pointer;
+  animation: bubble-life 3000ms ease-out forwards;
+}
+.bubble:hover, .bubble:focus-visible { animation-play-state: paused; opacity: 1; transform: scale(1.08); outline: none; }
+.bubble.is-still { animation: none; }
+@keyframes bubble-life {
+  0% { opacity: 0; transform: scale(0.6); }
+  8% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+:root[data-motion="reduce"] .bubble { animation: bubble-fade 3000ms steps(1, end) forwards; }
+@keyframes bubble-fade { to { opacity: 0; } }

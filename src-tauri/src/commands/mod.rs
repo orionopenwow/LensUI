@@ -18,3 +18,5 @@ pub(crate) mod rules;
 pub(crate) mod ai;
 pub(crate) mod bridge;
 pub(crate) mod media;
+pub(crate) mod clip;
+pub(crate) mod shelf;

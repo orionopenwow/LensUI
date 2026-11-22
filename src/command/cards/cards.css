@@ -1,0 +1,105 @@
+/* Thread cards — 4 px grid; type 13/12/11; one accent. */
+.ct {
+  position: relative;
+  padding: 12px 16px 12px 20px;
+  border-radius: 12px;
+  background: rgb(var(--lens-ink) / 0.035);
+  border: 1px solid rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg);
+  font-size: 13px;
+  line-height: 20px;
+  animation: ct-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ct::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 2px;
+  background: rgb(var(--lens-ink) / 0.14);
+}
+@keyframes ct-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+:root[data-motion="reduce"] .ct { animation: none; }
+@media (prefers-reduced-motion: reduce) { .ct { animation: none; } }
+
+.ct-user { background: transparent; border-color: transparent; padding-top: 4px; padding-bottom: 4px; }
+.ct-user::before { background: var(--lens-accent); opacity: 0.9; }
+.ct-user-line { display: flex; align-items: baseline; gap: 12px; }
+.ct-user-line .ct-dest { margin-left: auto; flex: none; }
+.ct-user-text { flex: 1; min-width: 0; margin: 0; color: var(--lens-fg-strong, var(--lens-fg)); font-weight: 600; white-space: pre-wrap; word-break: break-word; }
+.ct-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 20px; }
+
+.ct-answer::before { background: color-mix(in srgb, var(--lens-accent) 70%, transparent); }
+.ct-tool::before { background: #eab308; }
+.ct-tool.risk-low::before { background: var(--lens-positive); }
+.ct-tool.risk-blocked::before { background: var(--lens-danger); }
+.ct-action { padding-top: 8px; padding-bottom: 8px; background: transparent; border-color: transparent; }
+.ct-action::before { top: 8px; bottom: 8px; background: var(--lens-positive); }
+.ct-action.is-bad::before { background: var(--lens-danger); }
+.ct-bridge::before { background: var(--lens-link); }
+
+.ct-head { display: flex; align-items: center; gap: 8px; min-height: 20px; color: var(--lens-fg-secondary); font-size: 12px; }
+.ct-head svg { flex: none; }
+.ct-title { color: var(--lens-fg); font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-sub { color: var(--lens-fg-secondary); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-ext { margin-left: auto; color: var(--lens-fg-secondary); display: inline-flex; padding: 2px; border-radius: 4px; }
+.ct-ext:hover { color: var(--lens-fg); background: var(--lens-bg-hover); }
+.ct-spin { margin-left: auto; animation: ct-spin 900ms linear infinite; }
+@keyframes ct-spin { to { transform: rotate(360deg); } }
+:root[data-motion="reduce"] .ct-spin { animation: none; }
+
+.ct-line { display: flex; align-items: center; gap: 8px; margin: 0; }
+.ct-line .ct-sub { margin-left: auto; }
+.ct-wait, .ct-note { margin: 4px 0 0; color: var(--lens-fg-secondary); font-size: 12px; }
+.ct-note.is-bad, .ct-error { color: var(--lens-danger); }
+.ct-error { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 12px; }
+.ct-quote { margin: 8px 0 0; padding: 0 0 0 12px; border-left: 2px solid rgb(var(--lens-ink) / 0.16); color: var(--lens-fg-secondary); font-size: 12px; white-space: pre-wrap; max-height: 80px; overflow: hidden; }
+
+.ct-args { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 12px; }
+.ct-args dt { color: var(--lens-fg-secondary); }
+.ct-args dd { margin: 0; color: var(--lens-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ct-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ct-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 10px; background: rgb(var(--lens-ink) / 0.06); color: var(--lens-fg-secondary); font-size: 11px; }
+.ct-dest { margin-left: auto; font-size: 11px; color: var(--lens-fg-secondary); }
+.ct-dest.is-claude { color: var(--lens-link); }
+
+.ct-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+/* Older cards: actions float over the top-right corner on hover, so nothing shifts. */
+.ct-actions:not(.is-latest) {
+  position: absolute; top: 8px; right: 8px; margin: 0; padding: 2px; flex-wrap: nowrap;
+  border-radius: 10px; background: var(--lens-bg-elevated); border: 1px solid var(--lens-border);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.18); opacity: 0; pointer-events: none; transition: opacity 120ms;
+}
+.ct:hover .ct-actions:not(.is-latest), .ct:focus-within .ct-actions:not(.is-latest) { opacity: 1; pointer-events: auto; }
+.ct-btn {
+  display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px;
+  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--lens-fg-secondary);
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+.ct-btn:hover { background: var(--lens-bg-hover); color: var(--lens-fg); }
+.ct-btn:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 1px; }
+.ct-btn.is-primary { background: rgb(var(--lens-ink) / 0.08); border-color: rgb(var(--lens-ink) / 0.1); color: var(--lens-fg); }
+.ct-btn kbd { font: inherit; font-size: 10px; color: var(--lens-fg-muted); margin-left: 4px; }
+
+/* Markdown-lite */
+.md { margin-top: 4px; }
+.md p { margin: 0 0 8px; }
+.md p:last-child, .md ul:last-child, .md ol:last-child, .md pre:last-child { margin-bottom: 0; }
+.md-h { font-weight: 700; color: var(--lens-fg-strong, var(--lens-fg)); margin-top: 4px !important; }
+.md-h1, .md-h2 { font-size: 14px; }
+.md ul, .md ol { margin: 0 0 8px; padding-left: 20px; }
+.md li { margin: 2px 0; }
+.md li.md-task { list-style: none; margin-left: -20px; display: flex; gap: 8px; align-items: baseline; }
+.md-box { flex: none; width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--lens-fg-secondary); transform: translateY(1px); }
+.md-box.is-done { background: var(--lens-positive); border-color: var(--lens-positive); }
+.md code { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; padding: 1px 4px; border-radius: 4px; background: rgb(var(--lens-ink) / 0.07); }
+.md-pre { margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: rgb(var(--lens-ink) / 0.06); overflow-x: auto; }
+.md-pre code { background: none; padding: 0; }
+.md a { color: var(--lens-link); text-decoration: none; }
+.md a:hover { text-decoration: underline; color: var(--lens-link-hover); }
