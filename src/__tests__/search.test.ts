@@ -2,7 +2,11 @@
 // Ported from the launcher agent's standalone harness.
 import { describe, expect, mock, test } from "bun:test";
 
-mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null }));
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: async () => null,
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
+}));
 
 const { scoreText, acronym, editDistance } = await import("../search/fuzzy");
 const { calculate, evaluate } = await import("../search/calc");

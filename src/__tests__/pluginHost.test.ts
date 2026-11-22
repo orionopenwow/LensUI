@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const calls: { cmd: string; args?: Record<string, unknown> }[] = [];
 mock.module("@tauri-apps/api/core", () => ({
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
   invoke: async (cmd: string, args?: Record<string, unknown>) => {
     calls.push({ cmd, args });
     if (cmd === "get_telemetry_cmd") return { cpuUsage: 12, memPercent: 40, memUsedGb: 6, memTotalGb: 16, uptimeMinutes: 5, secret: "x" };

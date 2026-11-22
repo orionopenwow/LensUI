@@ -16,3 +16,5 @@ pub(crate) mod shell;
 pub(crate) mod misc;
 pub(crate) mod rules;
 pub(crate) mod ai;
+pub(crate) mod bridge;
+pub(crate) mod media;

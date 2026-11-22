@@ -2,7 +2,11 @@
 // quick actions, notification digest and "what was I doing" grouping.
 import { describe, expect, mock, test } from "bun:test";
 
-mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null }));
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: async () => null,
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
+}));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
 const ctxMod = await import("../ai/context");

@@ -4,6 +4,8 @@ import { sampleConfig } from "./fixtures";
 
 const files: Record<string, string> = {};
 mock.module("@tauri-apps/api/core", () => ({
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
   invoke: async (cmd: string, args?: { name?: string }) => {
     if (cmd === "list_theme_files_cmd") return Object.keys(files).map((name) => ({ name, path: `C:\\t\\${name}` }));
     if (cmd === "read_theme_file_cmd") return files[args?.name ?? ""];
