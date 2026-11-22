@@ -31,6 +31,15 @@ const base = {
   styledFolders: [], onboardingCompleted: true, themeSchedule: null,
 };
 let config: any = JSON.parse(JSON.stringify(base));
+const now = Date.now();
+const note = (id: string, title: string, body: string, appName: string, mins: number) => ({ id, title, body, appName, category: "system", tsMs: now - mins * 60000, source: "lens" });
+const notes = [
+  note("n1", "Build finished", "Lens UI built in 2 min 14 s.", "Terminal", 2),
+  note("n2", "Tests passed", "86 tests, 0 failures.", "Terminal", 5),
+  note("n3", "Pushed", "feature/productivity-input", "Terminal", 9),
+  note("n4", "Deploy queued", "Pages will update shortly.", "Terminal", 14),
+  note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
+];
 config.theme.preset = preset;
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
@@ -42,6 +51,18 @@ const running = [
   win(104, "Downloads - File Explorer", "explorer.exe", "C:\\Windows\\explorer.exe"),
 ];
 const apps = ["Blender 5.1", "Audacity", "Android Studio", "7-Zip File Manager", "Adobe Photoshop 2023", "Google Chrome", "Notepad", "Spotify", "Steam", "Visual Studio Code", "Discord", "OBS Studio"].map((n) => ({ name: n, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${n}.lnk`, category: "App" }));
+// ?ws=groups: Lens workspaces in groups mode, so the Overview shows its workspace strip.
+const wsGroups = params.get("ws") === "groups";
+const wsDefs = [
+  { index: 0, id: "ws-1", name: "Main", color: "#60A5FA", layout: "", windowCount: 2 },
+  { index: 1, id: "ws-2", name: "Work", color: "#34D399", layout: "", windowCount: 1 },
+  { index: 2, id: "ws-3", name: "Play", color: "#FBBF24", layout: "", windowCount: 1 },
+];
+const wsStatus = () =>
+  wsGroups
+    ? { enabled: true, mode: "groups", active: 0, workspaces: wsDefs, desktopCount: 1, appRulesActive: false, note: "" }
+    : { enabled: false, active: "1", workspaces: [] };
+config.dndSchedule = { enabled: true, ranges: [{ startMin: 1320, endMin: 420, days: [0, 1, 2, 3, 4, 5, 6] }, { startMin: 540, endMin: 720, days: [1, 2, 3, 4, 5] }], autoFullscreen: true };
 const handlers: Record<string, (a: any) => any> = {
   get_config: () => config,
   get_wallpaper_state_cmd: () => ({ settings: { enabled: false, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" }),
@@ -51,7 +72,16 @@ const handlers: Record<string, (a: any) => any> = {
   list_plugins_cmd: () => [],
   list_plugin_approvals_cmd: () => [],
   get_tiling_status_cmd: () => ({ enabled: false, layout: "master-stack", tiled: 0, floating: 0 }),
-  get_workspaces_status_cmd: () => ({ enabled: false, active: "1", workspaces: [] }),
+  get_workspaces_status_cmd: wsStatus,
+  get_window_workspaces_cmd: () => (wsGroups ? [[101, 0], [102, 1], [103, 2], [104, 0]] : []),
+  move_window_to_workspace_cmd: () => wsStatus(),
+  get_alt_drag_status_cmd: () => ({ enabled: true, hookActive: true, reinstalls: 0, lastProblem: "" }),
+  get_app_summon_status_cmd: () => {
+    const b = config.appSummon?.bindings ?? [];
+    return b.map((x: any, i: number) => ({ id: x.id, ok: i === 0, message: i === 0 ? "Ready" : "Lens already uses this shortcut." }));
+  },
+  get_dnd_status_cmd: () => ({ active: true, manual: false, scheduled: true, fullscreen: false, reason: "schedule", untilMin: 420 }),
+  set_dnd_schedule_cmd: (a) => { config = { ...config, dndSchedule: a.schedule }; return { active: false, manual: false, scheduled: false, fullscreen: false, reason: "", untilMin: null }; },
   get_search_usage_cmd: () => ({ entries: {} }),
   search_files_cmd: () => [],
   list_user_scripts_cmd: () => [],
@@ -77,7 +107,7 @@ const handlers: Record<string, (a: any) => any> = {
   get_desktop_icons_hidden_cmd: () => true,
   get_window_rules_cmd: () => [],
   get_shell_mode_status_cmd: () => ({ enabled: false, shellValue: "", exePath: "", explorerRunningAsShell: true, lastBootOk: true }),
-  get_notification_center_cmd: () => ({ dnd: false, items: [], windows: { status: "unavailable", reason: "Test harness", items: [] } }),
+  get_notification_center_cmd: () => ({ dnd: false, dndStatus: { active: true, manual: false, scheduled: true, fullscreen: false, reason: "schedule", untilMin: 420 }, items: notes, windows: { status: "unavailable", reason: "Test harness", items: [] } }),
   clipboard_list_cmd: () => ({ entries: [], paused: false }),
   get_training_stats_cmd: () => ({ pairCount: 0, filePath: "", fileSizeBytes: 0, recentPairs: [], macros: [] }),
   get_windhawk_status_cmd: () => ({ installed: false, exePath: null, modSourcePath: "", modInstalledInWindhawk: false }),

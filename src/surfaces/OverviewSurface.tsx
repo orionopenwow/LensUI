@@ -1,13 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Search, AppWindow, X, CornerDownLeft } from "lucide-react";
+import { listen } from "@tauri-apps/api/event";
+import { Search, AppWindow, X, CornerDownLeft, ArrowBigUp } from "lucide-react";
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
 import type { RunningWindow } from "../types/lens";
+import type * as Gen from "../types/generated";
+import { moveTargetFor, workspaceCounts } from "../utils/overviewWorkspaces";
 import "./OverviewSurface.css";
 
 /**
  * Lens Overview — every open window at a glance, grouped by app.
  * Arrows / Tab move, Enter switches, Delete or middle-click closes, type to filter, Esc dismisses.
+ * With Lens workspaces in groups mode a strip of workspaces sits on top: drag a window onto one
+ * (or press Shift+Left/Right, Shift+1–9) to move it there; click one to show only its windows.
  */
 
 function appLabel(w: RunningWindow): string {
@@ -34,6 +39,41 @@ export const OverviewSurface: React.FC = () => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const armed = useRef(true);
   const [openTick, setOpenTick] = useState(0);
+  const [wsStatus, setWsStatus] = useState<Gen.WorkspaceStatus | null>(null);
+  const [membership, setMembership] = useState<Map<number, number>>(new Map());
+  const [wsFilter, setWsFilter] = useState<number | null>(null);
+  const [dragHwnd, setDragHwnd] = useState<number | null>(null);
+  const [dropOver, setDropOver] = useState<number | null>(null);
+  const [wsNote, setWsNote] = useState("");
+
+  const loadWorkspaces = useCallback(() => {
+    invoke<Gen.WorkspaceStatus>("get_workspaces_status_cmd")
+      .then((st) => setWsStatus(st ?? null))
+      .catch(() => {});
+    invoke<[number, number][]>("get_window_workspaces_cmd")
+      .then((pairs) => setMembership(new Map(pairs ?? [])))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadWorkspaces();
+    const un = listen<Gen.WorkspaceStatus>("lens://workspaces-changed", (e) => {
+      setWsStatus(e.payload);
+      invoke<[number, number][]>("get_window_workspaces_cmd")
+        .then((pairs) => setMembership(new Map(pairs ?? [])))
+        .catch(() => {});
+    });
+    return () => {
+      un.then((f) => f());
+    };
+  }, [loadWorkspaces]);
+
+  // Moving windows between workspaces is something Lens can do itself only in groups mode.
+  const wsActive = !!wsStatus?.enabled && wsStatus.mode === "groups" && (wsStatus.workspaces?.length ?? 0) > 1;
+  const wsOf = useCallback(
+    (hwnd: number) => membership.get(hwnd) ?? wsStatus?.active ?? 0,
+    [membership, wsStatus]
+  );
 
   const hide = useCallback(() => {
     invoke("hide_surface", { label: "overview" }).catch(() => {});
@@ -46,6 +86,7 @@ export const OverviewSurface: React.FC = () => {
       const proc = w.processName.toLowerCase();
       if (proc === "lens-ui.exe" || proc === "lens-ui") continue;
       if (closing.has(w.hwnd)) continue;
+      if (wsActive && wsFilter !== null && wsOf(w.hwnd) !== wsFilter) continue;
       if (q && !w.title.toLowerCase().includes(q) && !proc.includes(q)) continue;
       let g = map.get(proc);
       if (!g) {
@@ -56,15 +97,29 @@ export const OverviewSurface: React.FC = () => {
       g.windows.push(w);
     }
     return [...map.values()];
-  }, [running, query, closing]);
+  }, [running, query, closing, wsActive, wsFilter, wsOf]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.windows), [groups]);
+
+  const appHwnds = useMemo(
+    () => running.filter((w) => !/^lens-ui(\.exe)?$/i.test(w.processName)).map((w) => w.hwnd),
+    [running]
+  );
+  const wsCounts = useMemo(
+    () => (wsStatus ? workspaceCounts(appHwnds, wsOf, wsStatus.workspaces.length) : []),
+    [appHwnds, wsOf, wsStatus]
+  );
 
   // On open: clear the filter and preselect the window you'd most likely switch to (the first that isn't focused).
   useEffect(() => {
     const reset = () => {
       setQuery("");
       setClosing(new Set());
+      setWsFilter(null);
+      setWsNote("");
+      setDragHwnd(null);
+      setDropOver(null);
+      loadWorkspaces();
       armed.current = true;
       setOpenTick((t) => t + 1);
       window.setTimeout(() => inputRef.current?.focus(), 25);
@@ -81,7 +136,7 @@ export const OverviewSurface: React.FC = () => {
       window.removeEventListener("focus", reset);
       window.removeEventListener("blur", onBlur);
     };
-  }, [hide]);
+  }, [hide, loadWorkspaces]);
 
   useEffect(() => {
     if (flat.length === 0) {
@@ -127,6 +182,25 @@ export const OverviewSurface: React.FC = () => {
     }, 2500);
   }, []);
 
+  const moveToWorkspace = useCallback(
+    (hwnd: number, index: number) => {
+      if (!wsStatus || index < 0 || index >= wsStatus.workspaces.length) return;
+      if (wsOf(hwnd) === index) return;
+      // Optimistic: the tile moves at once; the backend's answer (or error) settles it.
+      setMembership((prev) => new Map(prev).set(hwnd, index));
+      setWsNote(`Moved to ${wsStatus.workspaces[index].name}`);
+      invoke<Gen.WorkspaceStatus>("move_window_to_workspace_cmd", { hwnd, target: String(index + 1) })
+        .then((st) => {
+          if (st) setWsStatus(st);
+        })
+        .catch((e) => {
+          setWsNote(String(e));
+          loadWorkspaces();
+        });
+    },
+    [wsStatus, wsOf, loadWorkspaces]
+  );
+
   /** Moves the selection to the nearest tile in the given direction, using real on-screen positions. */
   const moveSpatial = (dx: number, dy: number) => {
     const body = bodyRef.current;
@@ -163,6 +237,14 @@ export const OverviewSurface: React.FC = () => {
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (wsActive && e.shiftKey && selectedHwnd !== null && wsStatus) {
+      const to = moveTargetFor(e.key, e.code, wsOf(selectedHwnd), wsStatus.workspaces.length);
+      if (to !== null) {
+        e.preventDefault();
+        moveToWorkspace(selectedHwnd, to);
+        return;
+      }
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       if (query) setQuery("");
@@ -192,7 +274,14 @@ export const OverviewSurface: React.FC = () => {
   };
 
   return (
-    <div className="ov-root" onKeyDown={onKeyDown}>
+    <div
+      className="ov-root"
+      onKeyDown={onKeyDown}
+      onClick={(e) => {
+        // A click on the empty space around the panel dismisses it.
+        if (e.target === e.currentTarget) hide();
+      }}
+    >
       <div className={`ov-shell lens-glass lens-glide-dock ${glidePhase}`}>
         <div className="ov-head">
           <div className="ov-search">
@@ -211,6 +300,59 @@ export const OverviewSurface: React.FC = () => {
             {flat.length} {flat.length === 1 ? "window" : "windows"}
           </span>
         </div>
+
+        {wsActive && wsStatus && (
+          <div className="ov-ws-strip" role="toolbar" aria-label="Workspaces">
+            <button
+              type="button"
+              className={`ov-ws ${wsFilter === null ? "active" : ""}`}
+              aria-pressed={wsFilter === null}
+              onClick={() => setWsFilter(null)}
+            >
+              <span className="ov-ws-name">All</span>
+              <span className="ov-ws-count">{appHwnds.length}</span>
+            </button>
+            {wsStatus.workspaces.map((ws, i) => {
+              return (
+                <button
+                  key={ws.id}
+                  type="button"
+                  className={`ov-ws ${wsFilter === i ? "active" : ""} ${dropOver === i ? "drop" : ""} ${
+                    wsStatus.active === i ? "current" : ""
+                  }`}
+                  aria-pressed={wsFilter === i}
+                  aria-label={`${ws.name}: ${wsCounts[i] ?? 0} windows${wsStatus.active === i ? ", current workspace" : ""}. Drop a window here to move it.`}
+                  onClick={() => setWsFilter(wsFilter === i ? null : i)}
+                  onDragOver={(e) => {
+                    if (dragHwnd === null) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dropOver !== i) setDropOver(i);
+                  }}
+                  onDragLeave={() => setDropOver((d) => (d === i ? null : d))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const h = dragHwnd ?? Number(e.dataTransfer.getData("text/lens-hwnd"));
+                    setDropOver(null);
+                    setDragHwnd(null);
+                    if (h) moveToWorkspace(h, i);
+                  }}
+                >
+                  <span className="ov-ws-dot" style={{ background: ws.color }} />
+                  <span className="ov-ws-name">{ws.name}</span>
+                  <span className="ov-ws-count">{wsCounts[i] ?? 0}</span>
+                  <span className="ov-ws-key" aria-hidden="true">
+                    <ArrowBigUp size={9} strokeWidth={2.6} />
+                    {i + 1}
+                  </span>
+                </button>
+              );
+            })}
+            <span className="ov-ws-note" aria-live="polite">
+              {dragHwnd !== null ? "Drop on a workspace to move it" : wsNote || "Drag a window onto a workspace"}
+            </span>
+          </div>
+        )}
 
         <div ref={bodyRef} className="ov-body">
           {groups.length === 0 ? (
@@ -240,7 +382,18 @@ export const OverviewSurface: React.FC = () => {
                       data-hwnd={w.hwnd}
                       className={`ov-tile ${w.hwnd === selectedHwnd ? "selected" : ""} ${
                         w.isMinimized ? "minimized" : ""
-                      }`}
+                      } ${dragHwnd === w.hwnd ? "dragging" : ""}`}
+                      draggable={wsActive}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/lens-hwnd", String(w.hwnd));
+                        e.dataTransfer.effectAllowed = "move";
+                        setDragHwnd(w.hwnd);
+                        setSelectedHwnd(w.hwnd);
+                      }}
+                      onDragEnd={() => {
+                        setDragHwnd(null);
+                        setDropOver(null);
+                      }}
                       onMouseEnter={() => setSelectedHwnd(w.hwnd)}
                       onClick={() => switchTo(w.hwnd)}
                       onAuxClick={(e) => {
@@ -258,6 +411,13 @@ export const OverviewSurface: React.FC = () => {
                         )}
                         {w.isFocused && <span className="ov-badge">Current</span>}
                         {w.isMinimized && <span className="ov-badge muted">Minimized</span>}
+                        {wsActive && wsStatus && (
+                          <span
+                            className="ov-ws-badge"
+                            style={{ background: wsStatus.workspaces[wsOf(w.hwnd)]?.color }}
+                            aria-hidden="true"
+                          />
+                        )}
                       </div>
                       <div className="ov-tile-title">{w.title || g.label}</div>
                       <button
@@ -285,6 +445,7 @@ export const OverviewSurface: React.FC = () => {
           </span>
           <span className="ov-key">Tab / Arrows Move</span>
           <span className="ov-key">Del Close</span>
+          {wsActive && <span className="ov-key">Shift+← → Move to workspace</span>}
           <span className="ov-key">Esc Dismiss</span>
         </div>
       </div>

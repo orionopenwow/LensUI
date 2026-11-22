@@ -52,6 +52,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             "quit" => {
                 win_mcp::stop_server();
                 win_previews::hide_previews();
+                win_altdrag::stop_alt_drag();
                 win_workspaces::restore_all_windows();
                 win_wallpaper::detach_wallpaper_window();
                 win_tray::stop_tray_host();

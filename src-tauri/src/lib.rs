@@ -33,6 +33,9 @@ mod win_training;
 mod win_windhawk;
 mod win_monitors;
 mod win_windows;
+mod win_hotcorners;
+mod win_altdrag;
+mod win_summon;
 
 mod app;
 mod commands;
@@ -107,6 +110,7 @@ pub fn run() {
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         win_mcp::stop_server();
+        win_altdrag::stop_alt_drag();
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
         restore_taskbar_if_hidden();
@@ -238,11 +242,19 @@ pub fn run() {
             commands::notifications::clear_notifications_cmd,
             commands::notifications::set_dnd_cmd,
             commands::notifications::get_dnd_cmd,
+            commands::notifications::get_dnd_status_cmd,
+            commands::notifications::set_dnd_schedule_cmd,
             commands::notifications::request_windows_notification_access_cmd,
             commands::shell::get_shell_mode_status_cmd,
             commands::shell::enable_shell_mode_cmd,
             commands::shell::disable_shell_mode_cmd,
             commands::shell::start_explorer_shell_cmd,
+            commands::shell::test_corner_action_cmd,
+            commands::shell::get_alt_drag_status_cmd,
+            commands::shell::get_app_summon_status_cmd,
+            commands::shell::summon_app_cmd,
+            commands::shell::get_window_workspaces_cmd,
+            commands::shell::move_window_to_workspace_cmd,
             commands::system::clipboard_list_cmd,
             commands::system::clipboard_copy_cmd,
             commands::system::clipboard_delete_cmd,
@@ -321,6 +333,7 @@ pub fn run() {
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                win_altdrag::stop_alt_drag();
                 win_dwm_engine::revert_dwm_theme();
                 restore_taskbar_if_hidden();
             }

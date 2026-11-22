@@ -1,7 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Bell, BellOff, Calendar, Monitor, Sparkles, Timer, TriangleAlert, X } from "lucide-react";
+import { Bell, BellOff, Calendar, ChevronDown, Moon, Monitor, Plus, Sparkles, Timer, TriangleAlert, X } from "lucide-react";
+import type { LensConfig } from "../types/lens";
+import {
+  DAY_LETTERS,
+  DAY_NAMES,
+  DEFAULT_DND_SCHEDULE,
+  describeDndStatus,
+  describeRange,
+  minToTime,
+  readDndSchedule,
+  timeToMin,
+  type DndRange,
+  type DndSchedule,
+  type DndStatus,
+} from "../utils/productivity";
 import "./NotificationCenterPane.css";
 
 /** Mirrors `NotificationItem` in src-tauri/src/win_notifications.rs. */
@@ -24,6 +38,7 @@ interface WindowsToastResult {
 
 interface NotificationCenterState {
   dnd: boolean;
+  dndStatus?: DndStatus;
   items: NotificationItem[];
   windows: WindowsToastResult;
 }
@@ -36,6 +51,9 @@ interface Group {
   latest: number;
   items: NotificationItem[];
 }
+
+/** A group shows this many notifications until it is expanded. */
+export const GROUP_PREVIEW = 3;
 
 const DND_STORAGE_KEY = "lens_dnd"; // also read by NotificationOverlaySurface and CalendarClockPane
 const REFRESH_MS = 4000;
@@ -115,6 +133,9 @@ export const NotificationCenterPane: React.FC = () => {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const aliveRef = useRef(true);
   const syncedDndRef = useRef(false);
+  const [schedule, setSchedule] = useState<DndSchedule>(DEFAULT_DND_SCHEDULE);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const refresh = useCallback(() => {
     if (document.hidden) return;
@@ -137,6 +158,26 @@ export const NotificationCenterPane: React.FC = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Quiet hours live in the config (LensConfig.dndSchedule) so they travel with backups.
+  useEffect(() => {
+    invoke<LensConfig>("get_config")
+      .then((c) => setSchedule(readDndSchedule(c)))
+      .catch(() => {});
+    const un = listen<LensConfig>("lens://config-updated", (e) => setSchedule(readDndSchedule(e.payload)));
+    return () => {
+      un.then((f) => f());
+    };
+  }, []);
+
+  const saveSchedule = (next: DndSchedule) => {
+    setSchedule(next);
+    invoke<DndStatus>("set_dnd_schedule_cmd", { schedule: next })
+      .then((st) => setState((prev) => (prev ? { ...prev, dndStatus: st } : prev)))
+      .catch(() => {});
+  };
+  const updateRange = (i: number, patch: Partial<DndRange>) =>
+    saveSchedule({ ...schedule, ranges: schedule.ranges.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
 
   useEffect(() => {
     aliveRef.current = true;
@@ -232,20 +273,23 @@ export const NotificationCenterPane: React.FC = () => {
       });
   };
 
+  const status = state?.dndStatus;
+  const autoQuiet = !dnd && !!status?.active;
+
   return (
     <div key="pane-notifications" className="qs-pane">
       <div className="qs-card">
         <div className="qs-row">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {dnd ? (
+            {dnd || autoQuiet ? (
               <BellOff size={15} strokeWidth={2.4} color="#FBBF24" />
             ) : (
               <Bell size={15} strokeWidth={2.4} />
             )}
             <div>
               <div className="qs-row-title">Do Not Disturb</div>
-              <div className="qs-row-sub">
-                {dnd ? "Pop-ups are paused. Timers still alert." : "Notifications pop up as they arrive."}
+              <div className="qs-row-sub" aria-live="polite">
+                {describeDndStatus(status, dnd)}
               </div>
             </div>
           </div>
@@ -259,6 +303,135 @@ export const NotificationCenterPane: React.FC = () => {
             <span className="qs-switch-knob" />
           </button>
         </div>
+
+        <button
+          type="button"
+          className="nc-schedule-toggle"
+          aria-expanded={scheduleOpen}
+          onClick={() => setScheduleOpen((o) => !o)}
+        >
+          <Moon size={13} strokeWidth={2.4} />
+          <span>
+            Quiet hours
+            <span className="nc-schedule-sum">
+              {schedule.enabled
+                ? ` · ${schedule.ranges.length === 1 ? describeRange(schedule.ranges[0]) : `${schedule.ranges.length} times`}`
+                : " · Off"}
+              {schedule.autoFullscreen ? " · Fullscreen" : ""}
+            </span>
+          </span>
+          <ChevronDown size={13} strokeWidth={2.4} className={`nc-chev ${scheduleOpen ? "open" : ""}`} />
+        </button>
+
+        {scheduleOpen && (
+          <div className="nc-schedule">
+            <div className="qs-row">
+              <div>
+                <div className="qs-row-title">On a schedule</div>
+                <div className="qs-row-sub">Pause pop-ups at the same times every week.</div>
+              </div>
+              <button
+                type="button"
+                aria-label="Quiet hours on a schedule"
+                aria-pressed={schedule.enabled}
+                className={`qs-switch amber ${schedule.enabled ? "on" : ""}`}
+                onClick={() => saveSchedule({ ...schedule, enabled: !schedule.enabled })}
+              >
+                <span className="qs-switch-knob" />
+              </button>
+            </div>
+
+            <div className={`nc-ranges ${schedule.enabled ? "" : "nc-dim"}`} aria-disabled={!schedule.enabled}>
+              {schedule.ranges.map((r, i) => (
+                <div key={i} className="nc-range">
+                  <div className="nc-range-times">
+                    <input
+                      type="time"
+                      className="nc-time"
+                      aria-label="Quiet from"
+                      value={minToTime(r.startMin)}
+                      onChange={(e) => {
+                        const m = timeToMin(e.target.value);
+                        if (m !== null) updateRange(i, { startMin: m });
+                      }}
+                    />
+                    <span className="nc-range-to">to</span>
+                    <input
+                      type="time"
+                      className="nc-time"
+                      aria-label="Quiet until"
+                      value={minToTime(r.endMin)}
+                      onChange={(e) => {
+                        const m = timeToMin(e.target.value);
+                        if (m !== null) updateRange(i, { endMin: m });
+                      }}
+                    />
+                    {r.endMin < r.startMin && <span className="nc-range-to">next day</span>}
+                    {schedule.ranges.length > 1 && (
+                      <button
+                        type="button"
+                        className="nc-range-x"
+                        aria-label="Remove these quiet hours"
+                        onClick={() => saveSchedule({ ...schedule, ranges: schedule.ranges.filter((_, j) => j !== i) })}
+                      >
+                        <X size={11} strokeWidth={2.6} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="nc-days" role="group" aria-label="Days">
+                    {DAY_LETTERS.map((d, day) => {
+                      const on = r.days.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          aria-pressed={on}
+                          aria-label={DAY_NAMES[day]}
+                          className={`nc-day ${on ? "on" : ""}`}
+                          onClick={() =>
+                            updateRange(i, { days: on ? r.days.filter((x) => x !== day) : [...r.days, day].sort() })
+                          }
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {schedule.ranges.length < 8 && (
+                <button
+                  type="button"
+                  className="nc-ghost-btn nc-add-range"
+                  onClick={() =>
+                    saveSchedule({
+                      ...schedule,
+                      ranges: [...schedule.ranges, { startMin: 9 * 60, endMin: 12 * 60, days: [1, 2, 3, 4, 5] }],
+                    })
+                  }
+                >
+                  <Plus size={11} strokeWidth={2.6} /> Add times
+                </button>
+              )}
+            </div>
+
+            <div className="qs-row">
+              <div>
+                <div className="qs-row-title">During fullscreen apps</div>
+                <div className="qs-row-sub">Games, videos and presentations stay uninterrupted.</div>
+              </div>
+              <button
+                type="button"
+                aria-label="Quiet during fullscreen apps"
+                aria-pressed={schedule.autoFullscreen}
+                className={`qs-switch amber ${schedule.autoFullscreen ? "on" : ""}`}
+                onClick={() => saveSchedule({ ...schedule, autoFullscreen: !schedule.autoFullscreen })}
+              >
+                <span className="qs-switch-knob" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {windowsInfo && !windowsOk && (
@@ -322,7 +495,7 @@ export const NotificationCenterPane: React.FC = () => {
               </button>
             )}
           </div>
-          {group.items.map((item) => (
+          {(expanded.has(group.key) ? group.items : group.items.slice(0, GROUP_PREVIEW)).map((item) => (
             <div key={item.id} className="nc-item">
               <div className="nc-item-title">{item.title}</div>
               {item.body && <div className="nc-item-body">{item.body}</div>}
@@ -337,6 +510,23 @@ export const NotificationCenterPane: React.FC = () => {
               </button>
             </div>
           ))}
+          {group.items.length > GROUP_PREVIEW && (
+            <button
+              type="button"
+              className="nc-more"
+              aria-expanded={expanded.has(group.key)}
+              onClick={() =>
+                setExpanded((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(group.key)) next.delete(group.key);
+                  else next.add(group.key);
+                  return next;
+                })
+              }
+            >
+              {expanded.has(group.key) ? "Show less" : `Show ${group.items.length - GROUP_PREVIEW} more`}
+            </button>
+          )}
         </div>
       ))}
     </div>
