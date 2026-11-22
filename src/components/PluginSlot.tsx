@@ -1,7 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { PluginBridge, buildPluginDocument, lockDownFrames, readThemeVars, PLUGIN_ALLOW, PLUGIN_SANDBOX } from "../plugins/host";
+import {
+  PluginBridge,
+  buildPluginDocument,
+  lockDownFrames,
+  materializePluginDocument,
+  readThemeVars,
+  PLUGIN_ALLOW,
+  PLUGIN_SANDBOX,
+} from "../plugins/host";
+import type { PluginFrameSource } from "../plugins/host";
 import type { PendingApproval, PluginInfo, PluginSlotId } from "../plugins/types";
 import { PLUGINS_CHANGED_EVENT } from "../plugins/types";
 import "../plugins/plugins.css";
@@ -66,13 +75,14 @@ const PluginFrame: React.FC<FrameProps> = ({ info, slot, pending, onChanged }) =
   const bridgeRef = useRef<PluginBridge | null>(null);
   const grantsRef = useRef<string[]>(info.grants);
   grantsRef.current = info.grants;
-  const [html, setHtml] = useState<string | null>(null);
+  const [html, setHtml] = useState<PluginFrameSource | null>(null);
   const [stopped, setStopped] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     invoke<string>("read_plugin_entry_cmd", { id: manifest.id })
-      .then((h) => alive && setHtml(buildPluginDocument(h ?? "", readThemeVars())))
+      .then((h) => materializePluginDocument(manifest.id, buildPluginDocument(h ?? "", readThemeVars())))
+      .then((src) => alive && setHtml(src))
       .catch((e) => alive && setStopped(String(e)));
     return () => {
       alive = false;
@@ -130,7 +140,8 @@ const PluginFrame: React.FC<FrameProps> = ({ info, slot, pending, onChanged }) =
       sandbox={PLUGIN_SANDBOX}
       allow={PLUGIN_ALLOW}
       referrerPolicy="no-referrer"
-      srcDoc={html}
+      src={html.src}
+      srcDoc={html.src ? undefined : html.srcDoc}
       style={size}
     />
   ) : null;
