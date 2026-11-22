@@ -36,6 +36,7 @@ impl McpHost for Fake {
     fn search(&self, q: &str, k: &str, n: usize) -> Result<Value, String> { Ok(json!({"apps": [{"name": "Notepad", "path": "C:\\x.lnk"}], "files": [], "q": q, "k": k, "n": n as u64})) }
     fn confirm_all(&self) -> bool { self.confirm }
     fn pending_changed(&self, a: &PendingAction) { self.log.lock().unwrap().push(format!("pending {} {}", a.id, a.status)); }
+    fn run_ai_tool(&self, t: &str, a: &Value) -> Result<String, String> { self.log.lock().unwrap().push(format!("ai {} {}", t, a)); Ok(format!("ran {}", t)) }
 }
 
 fn call(s: &mut Session, h: &dyn McpHost, id: i64, name: &str, args: &str) -> Value {
@@ -85,10 +86,11 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     // tools/list
     let tl: Value = serde_json::from_str(&handle_line(r#"{"jsonrpc":"2.0","id":6,"method":"tools/list"}"#, &mut s, &h).unwrap()).unwrap();
     let tools = tl["result"]["tools"].as_array().unwrap();
-    assert_eq!(tools.len(), 11);
+    let expected = 11 + crate::ai::tools::MCP_EXTRA.len();
+    assert_eq!(tools.len(), expected);
     let mut names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
-    for t in tools { assert_eq!(t["inputSchema"]["type"].as_str(), Some("object")); assert!(t["annotations"]["destructiveHint"] == Value::Bool(false)); }
-    names.sort(); names.dedup(); assert_eq!(names.len(), 11);
+    for t in tools { assert_eq!(t["inputSchema"]["type"].as_str(), Some("object")); assert_eq!(t["annotations"]["destructiveHint"] == Value::Bool(true), t["name"] == "close_app"); }
+    names.sort(); names.dedup(); assert_eq!(names.len(), expected);
     let um: Value = serde_json::from_str(&handle_line(r#"{"jsonrpc":"2.0","id":7,"method":"resources/read"}"#, &mut s, &h).unwrap()).unwrap();
     assert_eq!(um["error"]["code"].as_i64(), Some(-32601));
     // tools/call direct
@@ -136,6 +138,12 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     for i in 0..5 { let r = call(&mut s, &h, 40 + i, "run_action", &format!(r#"{{"request":"task number {}"}}"#, i)); ids.push(r["result"]["structuredContent"]["id"].as_str().unwrap().to_string()); }
     let over = call(&mut s, &h, 50, "run_action", r#"{"request":"one too many"}"#); assert!(is_err(&over));
     for id in &ids { decline_action(id, &h).unwrap(); }
+    // Lens Intelligence confirm-risk tools join the same approval queue and never run directly.
+    let mut s2 = Session::default(); // fresh rate-limit window
+    let cq = call(&mut s2, &h, 60, "close_app", r#"{"name":"mcp-test-word"}"#);
+    assert!(text(&cq).contains("Waiting for the user"), "{}", cq);
+    let cid = cq["result"]["structuredContent"]["id"].as_str().unwrap().to_string();
+    decline_action(&cid, &h).unwrap();
     assert_eq!(find_action(&ids[0]).unwrap().status, "declined");
     // confirm_all: settings tools are queued, read-only tools still run
     let hc = Fake { log: Mutex::new(vec![]), confirm: true };
@@ -178,4 +186,28 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     stop_server();
     assert!(!dir.join("mcp-endpoint.json").exists());
     std::thread::sleep(std::time::Duration::from_millis(300));
+}
+
+
+#[test]
+fn ai_registry_tools_share_risk_gating() {
+    let h = Fake { log: Mutex::new(Vec::new()), confirm: false };
+    let mut s = Session::default();
+    // Low risk: runs straight away with validated arguments.
+    let r = call(&mut s, &h, 1, "set_mute", r#"{"muted":true}"#);
+    assert!(!is_err(&r), "{}", r);
+    assert_eq!(text(&r), "ran set_mute");
+    assert!(h.log.lock().unwrap().iter().any(|l| l == r#"ai set_mute {"muted":true}"#));
+    // Confirm-risk tools parse as registry calls; the queueing itself is checked inside
+    // json_rpc_tools_actions_audit_and_loopback (the approval queue is process-wide).
+    assert!(matches!(parse_tool_call("close_app", &json!({"name": "word"})), Ok(ToolCall::Ai { .. })));
+    // Invalid arguments are a tool error the model can fix.
+    let r = call(&mut s, &h, 3, "launch_app", r#"{"name":"C:\\Windows\\cmd.exe"}"#);
+    assert!(is_err(&r));
+    // Blocked names don't exist at all.
+    let r = call(&mut s, &h, 4, "delete_file", r#"{"path":"x"}"#);
+    assert_eq!(r["error"]["code"].as_i64(), Some(-32602));
+    // The offline stand-in explains itself.
+    let r = call(&mut s, &OfflineHost, 5, "set_mute", r#"{"muted":false}"#);
+    assert!(is_err(&r));
 }

@@ -86,6 +86,10 @@ pub trait McpHost: Send + Sync {
     fn available(&self) -> bool {
         true
     }
+    /// Runs a Lens Intelligence registry tool (`crate::ai::tools`), already validated.
+    fn run_ai_tool(&self, _tool: &str, _args: &Value) -> Result<String, String> {
+        Err(OFFLINE.into())
+    }
 }
 
 /// Used by the stdio bridge when Lens UI is not reachable: every tool explains why.
@@ -175,7 +179,7 @@ fn ann(title: &str, read_only: bool, idempotent: bool) -> Value {
 
 /// Tool definitions, in a fixed order (stable for client caches).
 pub fn tool_defs() -> Vec<Value> {
-    vec![
+    let mut defs = vec![
         json!({
             "name": "list_windows",
             "title": "List open windows",
@@ -306,7 +310,11 @@ pub fn tool_defs() -> Vec<Value> {
             },
             "annotations": ann("Check a request", true, true)
         }),
-    ]
+    ];
+    // Lens Intelligence tools (launch/close apps, colour mode, DND, notes...) with the same
+    // risk levels the in-app assistant uses.
+    defs.extend(crate::ai::tools::mcp_tool_defs());
+    defs
 }
 
 /// Removes control characters and caps length (by chars).
@@ -348,6 +356,8 @@ pub enum ToolCall {
     Search { query: String, kind: String, limit: usize },
     RunAction(String),
     ActionStatus(String),
+    /// A Lens Intelligence registry tool (validated arguments).
+    Ai { tool: String, args: Value },
 }
 
 impl ToolCall {
@@ -364,6 +374,7 @@ impl ToolCall {
             ToolCall::Search { .. } => "search",
             ToolCall::RunAction(_) => "run_action",
             ToolCall::ActionStatus(_) => "get_action_status",
+            ToolCall::Ai { tool, .. } => crate::ai::tools::spec(tool).map(|s| s.name).unwrap_or("ai_tool"),
         }
     }
 
@@ -383,6 +394,7 @@ impl ToolCall {
             ToolCall::Search { query, .. } => format!("Search for \"{}\"", query),
             ToolCall::RunAction(t) => t.clone(),
             ToolCall::ActionStatus(id) => format!("Check request {}", id),
+            ToolCall::Ai { tool, args } => crate::ai::tools::describe(tool, args),
         }
     }
 
@@ -397,6 +409,7 @@ impl ToolCall {
             ToolCall::Search { query, kind, .. } => format!("{} [{}]", clean_text(query, 60), kind),
             ToolCall::RunAction(t) => clean_text(t, 120),
             ToolCall::ActionStatus(id) => id.clone(),
+            ToolCall::Ai { tool, args } => clean_text(&crate::ai::tools::describe(tool, args), 120),
         }
     }
 }
@@ -476,6 +489,9 @@ pub fn parse_tool_call(name: &str, args: &Value) -> Result<ToolCall, Option<Stri
             Some(id) if id.len() <= 40 && !id.is_empty() => Ok(ToolCall::ActionStatus(id.to_string())),
             _ => bad("id must be the id returned by run_action"),
         },
+        _ if crate::ai::tools::MCP_EXTRA.contains(&name) => crate::ai::tools::validate(name, &Value::Object(args.clone()))
+            .map(|a| ToolCall::Ai { tool: name.to_string(), args: a })
+            .map_err(Some),
         _ => Err(None),
     }
 }
@@ -508,6 +524,7 @@ pub fn run_direct(call: &ToolCall, host: &dyn McpHost) -> Result<(String, Option
             Ok((v.to_string(), Some(v)))
         }
         ToolCall::RunAction(_) => Err("run_action always needs the user's approval".into()),
+        ToolCall::Ai { tool, args } => host.run_ai_tool(tool, args).map(|m| (m, None)),
         ToolCall::ActionStatus(id) => match find_action(id) {
             Some(a) => Ok((
                 format!("Request {}: {}{}", a.id, a.status, if a.result.is_empty() { String::new() } else { format!(" - {}", a.result) }),
@@ -822,7 +839,9 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
             if !host.available() {
                 return Some(rpc_result(id, text_result(OFFLINE, None, true), modern));
             }
-            let needs_approval = matches!(call, ToolCall::RunAction(_)) || (!is_read_only(call.name()) && host.confirm_all());
+            let needs_approval = matches!(call, ToolCall::RunAction(_))
+                || matches!(&call, ToolCall::Ai { tool, .. } if crate::ai::tools::risk_of(tool) == crate::ai::tools::Risk::Confirm)
+                || (!is_read_only(call.name()) && host.confirm_all());
             let result = if needs_approval {
                 match enqueue(&call, &args, &client) {
                     Ok(a) => {
@@ -1326,6 +1345,11 @@ pub mod lens_host {
 
         fn confirm_all(&self) -> bool {
             self.cfg().mcp.confirm_all
+        }
+
+        fn run_ai_tool(&self, tool: &str, args: &Value) -> Result<String, String> {
+            use crate::ai::tools::ToolHost;
+            crate::ai::tools::lens::LensToolHost { app: self.app.clone() }.run(tool, args)
         }
 
         fn pending_changed(&self, action: &PendingAction) {

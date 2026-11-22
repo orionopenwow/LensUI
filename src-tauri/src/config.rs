@@ -346,6 +346,9 @@ pub struct LensConfig {
     pub app_summon: crate::win_summon::AppSummonConfig,
     #[serde(default)]
     pub dnd_schedule: crate::win_notifications::DndSchedule,
+    /// Lens Intelligence (off by default). API keys are never stored here.
+    #[serde(default)]
+    pub ai: crate::ai::AiConfig,
 }
 
 impl Default for LensConfig {
@@ -504,6 +507,7 @@ impl Default for LensConfig {
             alt_drag: Default::default(),
             app_summon: Default::default(),
             dnd_schedule: Default::default(),
+            ai: Default::default(),
         }
     }
 }

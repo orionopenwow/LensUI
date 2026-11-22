@@ -15,3 +15,4 @@ pub(crate) mod notifications;
 pub(crate) mod shell;
 pub(crate) mod misc;
 pub(crate) mod rules;
+pub(crate) mod ai;

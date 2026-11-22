@@ -170,6 +170,8 @@ export interface LensConfig {
   desktopGroups?: unknown;
   configVersion?: number;
   mcp?: import("../components/McpCard").McpConfig;
+  /** Lens Intelligence settings (off by default). Keys are never part of the config. */
+  ai?: import("../ai/contract").AiConfig;
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */
