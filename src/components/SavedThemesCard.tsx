@@ -79,11 +79,12 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
         To use someone else's theme, drop their file into the themes folder and press Refresh.
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <input
           className="cc-input"
-          style={{ flex: 1 }}
+          style={{ flex: "1 1 160px", minWidth: 0 }}
           placeholder="Name this look"
+          aria-label="Name this look"
           value={name}
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
@@ -106,6 +107,8 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
         <button type="button" className="cc-btn" onClick={save}>
           Save
         </button>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
         <button type="button" className="cc-btn-ghost" onClick={refresh}>
           Refresh
         </button>
