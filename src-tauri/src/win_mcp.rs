@@ -20,7 +20,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::VecDeque;
 use std::fs;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Write};
+#[cfg(not(windows))]
+use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -871,8 +873,7 @@ pub fn handle_line(line: &str, sess: &mut Session, host: &dyn McpHost) -> Option
 // ---------------------------------------------------------------------------------------------
 
 pub fn lens_dir() -> PathBuf {
-    let base = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
-    PathBuf::from(base).join("LensUI")
+    crate::config::config_dir()
 }
 
 fn audit_path() -> PathBuf {
@@ -1342,3 +1343,7 @@ pub mod lens_host {
     }
 }
 // LENS-HOST-END
+
+#[cfg(test)]
+#[path = "tests/win_mcp.rs"]
+mod tests;

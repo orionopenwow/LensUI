@@ -497,8 +497,19 @@ impl Default for LensConfig {
 }
 
 pub fn config_dir() -> PathBuf {
-    let base = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
-    PathBuf::from(base).join("LensUI")
+    // Unit tests never touch the real %APPDATA%\LensUI: every test build gets its own
+    // per-process scratch directory instead.
+    #[cfg(test)]
+    {
+        std::env::temp_dir()
+            .join(format!("lensui-test-{}", std::process::id()))
+            .join("LensUI")
+    }
+    #[cfg(not(test))]
+    {
+        let base = std::env::var("APPDATA").unwrap_or_else(|_| ".".into());
+        PathBuf::from(base).join("LensUI")
+    }
 }
 
 pub fn config_path() -> PathBuf {

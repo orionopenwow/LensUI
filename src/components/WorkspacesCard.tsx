@@ -4,16 +4,10 @@ import { listen } from "@tauri-apps/api/event";
 import { ChevronLeft, ChevronRight, Layers, Plus, Trash2, X } from "lucide-react";
 import type { LensConfig } from "../types/lens";
 import { TILING_LAYOUTS, useTilingStyles } from "./TilingCard";
+import type * as Gen from "../types/generated";
 
 /** Mirrors win_workspaces::WorkspaceDef / WorkspacesConfig (LensConfig.workspaces). */
-export interface WorkspaceDef {
-  id: string;
-  name: string;
-  color: string;
-  layout: string;
-  apps: string[];
-  floatApps: string[];
-}
+export type WorkspaceDef = Gen.WorkspaceDef;
 
 export interface WorkspacesConfig {
   enabled: boolean;

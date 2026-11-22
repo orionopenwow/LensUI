@@ -1,0 +1,70 @@
+//! The Lens notification-area icon and the tray-host bridge for other apps' tray icons.
+
+use crate::*;
+
+pub(crate) fn start_tray_host_with_events(app: &AppHandle) {
+    let h = app.clone();
+    win_tray::start_tray_host(move || {
+        let _ = h.emit("lens://tray-changed", win_tray::list_tray_icons());
+    });
+}
+
+/// The notification-area icon and its menu. A missing icon or tray failure is logged, never fatal.
+pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
+    let open_settings =
+        MenuItem::with_id(app, "open_settings", "Lens Control Center", true, None::<&str>)?;
+    let open_palette =
+        MenuItem::with_id(app, "open_palette", "Command Palette (Alt+Space)", true, None::<&str>)?;
+    let open_widgets =
+        MenuItem::with_id(app, "open_widgets", "Widget Drawer (Alt+W)", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit Lens UI", true, None::<&str>)?;
+    let menu = Menu::with_items(
+        app,
+        &[&open_settings, &open_palette, &open_widgets, &quit_item],
+    )?;
+
+    // No bundled icon (or a tray failure) must never take the whole shell down.
+    let mut tray_builder = TrayIconBuilder::new();
+    if let Some(icon) = app.default_window_icon().cloned() {
+        tray_builder = tray_builder.icon(icon);
+    }
+    let _tray = tray_builder
+        .tooltip("Lens UI")
+        .menu(&menu)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "open_settings" => {
+                let st = app.state::<AppState>();
+                let cfg = st.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                let dock_w = *st.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
+                position_settings_docked(app, &cfg, dock_w);
+                if let Some(win) = ensure_window(app, "settings", |a| {
+                    let st = a.state::<AppState>();
+                    open_surface(a.clone(), st, "settings".into())
+                }) {
+                    let _ = win.unminimize();
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                    let _ = app.emit("lens://settings-open", true);
+                }
+            }
+            "open_palette" => toggle_surface(app.clone(), "palette".into()),
+            "open_widgets" => toggle_surface(app.clone(), "widgets".into()),
+            "quit" => {
+                win_mcp::stop_server();
+                win_previews::hide_previews();
+                win_workspaces::restore_all_windows();
+                win_wallpaper::detach_wallpaper_window();
+                win_tray::stop_tray_host();
+                win_dwm_engine::revert_dwm_theme();
+                restore_taskbar_if_hidden();
+                win_shell::on_quit_restore_desktop();
+                app.exit(0);
+            }
+            _ => {}
+        })
+        .build(app);
+    if let Err(e) = &_tray {
+        eprintln!("[Lens UI] System tray icon unavailable: {}", e);
+    }
+    Ok(())
+}

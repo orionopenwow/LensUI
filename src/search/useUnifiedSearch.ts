@@ -7,15 +7,9 @@ import { rankItems, specialItems, type RankedItem, type SearchItem } from "./eng
 import { SETTINGS_PAGES } from "./settingsIndex";
 import { loadUsage, onUsageLoaded, recordUsage } from "./usage";
 import type { CalcResult } from "./calc";
+import type * as Gen from "../types/generated";
 
-export interface FileHit {
-  name: string;
-  path: string;
-  isDir: boolean;
-  ext: string;
-  modified: number;
-  score: number;
-}
+export type FileHit = Gen.FileHit;
 
 interface HomeData {
   recentFiles: { name: string; path: string; ext?: string; ageLabel?: string; isDir?: boolean; folderName?: string }[];

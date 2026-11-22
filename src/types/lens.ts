@@ -1,3 +1,4 @@
+import type * as Gen from "./generated";
 export interface ThemeConfig {
   preset: "obsidian" | "windows-mesh" | "graphite" | "midnight" | string;
   accentMode: "windows" | "custom" | string;
@@ -126,15 +127,9 @@ export interface SavedSession {
   layout?: string | null;
 }
 
-export interface WidgetsConfig {
-  enabledWidgets: string[];
-  notes: string;
-}
+export type WidgetsConfig = Gen.WidgetsConfig;
 
-export interface StyledFolderRecord {
-  path: string;
-  theme: string;
-}
+export type StyledFolderRecord = Gen.StyledFolderRecord;
 
 export interface TopBarConfig {
   enabled: boolean;
@@ -177,15 +172,7 @@ export interface LensConfig {
   mcp?: import("../components/McpCard").McpConfig;
 }
 
-export interface WindowsThemeInfo {
-  accentHex: string;
-  accentR: number;
-  accentG: number;
-  accentB: number;
-  appsUseLightTheme: boolean;
-  systemUsesLightTheme: boolean;
-  transparencyEnabled: boolean;
-}
+export type WindowsThemeInfo = Gen.WindowsThemeInfo;
 
 export interface RunningWindow {
   hwnd: number;
@@ -198,23 +185,8 @@ export interface RunningWindow {
   iconDataUrl?: string | null;
 }
 
-export interface FolderEntry {
-  name: string;
-  path: string;
-  isDir: boolean;
-  extension: string;
-}
+export type FolderEntry = Gen.FolderEntry;
 
-export interface SystemTelemetry {
-  cpuUsage: number;
-  memUsedGb: number;
-  memTotalGb: number;
-  memPercent: number;
-  uptimeMinutes: number;
-}
+export type SystemTelemetry = Gen.SystemTelemetry;
 
-export interface InstalledApp {
-  name: string;
-  path: string;
-  category: string;
-}
+export type InstalledApp = Gen.InstalledApp;

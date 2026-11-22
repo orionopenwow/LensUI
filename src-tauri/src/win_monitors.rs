@@ -232,32 +232,8 @@ pub fn watcher_job_due(elapsed_before_ms: u64, elapsed_after_ms: u64, every_tick
 
 #[cfg(windows)]
 mod ffi {
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct Rect {
-        pub left: i32,
-        pub top: i32,
-        pub right: i32,
-        pub bottom: i32,
-    }
-
-    #[repr(C)]
-    #[derive(Clone, Copy, Default)]
-    pub struct Point {
-        pub x: i32,
-        pub y: i32,
-    }
-
-    /// MONITORINFOEXW
-    #[repr(C)]
-    #[derive(Clone, Copy)]
-    pub struct MonitorInfoExW {
-        pub cb_size: u32,
-        pub rc_monitor: Rect,
-        pub rc_work: Rect,
-        pub dw_flags: u32,
-        pub sz_device: [u16; 32],
-    }
+    // MONITORINFOEXW and GetMonitorInfoW are shared with other modules (see crate::ffi).
+    pub use crate::ffi::{GetMonitorInfoW, MonitorInfoExW, Point, Rect};
 
     pub const MONITORINFOF_PRIMARY: u32 = 1;
     pub const MDT_EFFECTIVE_DPI: u32 = 0;
@@ -273,7 +249,6 @@ mod ffi {
             callback: Option<MonitorEnumProc>,
             lparam: isize,
         ) -> i32;
-        pub fn GetMonitorInfoW(hmon: isize, info: *mut MonitorInfoExW) -> i32;
         pub fn GetCursorPos(point: *mut Point) -> i32;
     }
 
@@ -299,14 +274,11 @@ pub fn list_monitors() -> Vec<MonitorInfo> {
         lparam: isize,
     ) -> i32 {
         let out = &mut *(lparam as *mut Vec<MonitorInfo>);
-        let mut info = ffi::MonitorInfoExW {
-            cb_size: std::mem::size_of::<ffi::MonitorInfoExW>() as u32,
-            rc_monitor: ffi::Rect::default(),
-            rc_work: ffi::Rect::default(),
-            dw_flags: 0,
-            sz_device: [0u16; 32],
-        };
-        if ffi::GetMonitorInfoW(hmon, &mut info) == 0 {
+        // cb_size = size_of::<MonitorInfoExW>() asks Windows to fill in the device name too.
+        let mut info = ffi::MonitorInfoExW::default();
+        if ffi::GetMonitorInfoW(hmon, &mut info as *mut ffi::MonitorInfoExW as *mut crate::ffi::MonitorInfo)
+            == 0
+        {
             return 1; // skip this one, keep enumerating
         }
         let (mut dpi_x, mut dpi_y) = (96u32, 96u32);
@@ -316,13 +288,13 @@ pub fn list_monitors() -> Vec<MonitorInfo> {
             dpi_x = 96;
         }
         let len = info
-            .sz_device
+            .device
             .iter()
             .position(|&c| c == 0)
-            .unwrap_or(info.sz_device.len());
-        let id = String::from_utf16_lossy(&info.sz_device[..len]);
-        let m = info.rc_monitor;
-        let w = info.rc_work;
+            .unwrap_or(info.device.len());
+        let id = String::from_utf16_lossy(&info.device[..len]);
+        let m = info.info.rc_monitor;
+        let w = info.info.rc_work;
         out.push(MonitorInfo {
             id,
             name: String::new(),
@@ -335,7 +307,7 @@ pub fn list_monitors() -> Vec<MonitorInfo> {
             work_width: (w.right - w.left).max(0) as u32,
             work_height: (w.bottom - w.top).max(0) as u32,
             scale: dpi_x as f64 / 96.0,
-            primary: (info.dw_flags & ffi::MONITORINFOF_PRIMARY) != 0,
+            primary: (info.info.flags & ffi::MONITORINFOF_PRIMARY) != 0,
         });
         1
     }
@@ -400,3 +372,7 @@ pub fn target_monitor(preference: &str) -> Option<MonitorInfo> {
     let idx = pick_monitor(&monitors, preference, cursor_pos())?;
     monitors.into_iter().nth(idx)
 }
+
+#[cfg(test)]
+#[path = "tests/win_monitors.rs"]
+mod tests;

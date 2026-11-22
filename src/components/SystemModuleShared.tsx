@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./SystemModules.css";
+import type * as Gen from "../types/generated";
 
 // ---- Types mirroring src-tauri/src/win_system_modules.rs ----
 export interface BatteryStatus {
@@ -14,23 +15,9 @@ export interface BatteryStatus {
   powerModeSupported: boolean;
 }
 
-export interface WifiNetwork {
-  ssid: string;
-  signal: number;
-  bars: number;
-  secured: boolean;
-  connected: boolean;
-  hasProfile: boolean;
-}
+export type WifiNetwork = Gen.WifiNetwork;
 
-export interface WifiState {
-  available: boolean;
-  reason: string;
-  radioOn: boolean | null;
-  adapter: string;
-  connectedSsid: string | null;
-  networks: WifiNetwork[];
-}
+export type WifiState = Gen.WifiState;
 
 export interface BluetoothDevice {
   name: string;
@@ -39,35 +26,15 @@ export interface BluetoothDevice {
   kind: "audio" | "input" | "phone" | "computer" | "other" | string;
 }
 
-export interface BluetoothState {
-  available: boolean;
-  reason: string;
-  radioOn: boolean | null;
-  devices: BluetoothDevice[];
-}
+export type BluetoothState = Gen.BluetoothState;
 
-export interface KeyboardLayout {
-  id: string;
-  short: string;
-  name: string;
-}
+export type KeyboardLayout = Gen.KeyboardLayout;
 
-export interface KeyboardState {
-  activeId: string;
-  layouts: KeyboardLayout[];
-}
+export type KeyboardState = Gen.KeyboardState;
 
-export interface AccountInfo {
-  displayName: string;
-  userName: string;
-  initials: string;
-}
+export type AccountInfo = Gen.AccountInfo;
 
-export interface AudioDevice {
-  id: string;
-  name: string;
-  isDefault: boolean;
-}
+export type AudioDevice = Gen.AudioDevice;
 
 export interface AudioDeviceList {
   flow: "render" | "capture" | string;

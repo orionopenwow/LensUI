@@ -1,18 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
+import type * as Gen from "../types/generated";
 
 /**
  * Learned ranking. Every time the user picks a result we record its key and the query they typed,
  * in %APPDATA%\LensUI\search-usage.json (via record_search_usage_cmd). Results the user picks often,
  * and recently, rise; a result picked for the same query before rises most.
  */
-export interface UsageEntry {
-  c: number;
-  t: number;
-}
-export interface SearchUsage {
-  items: Record<string, UsageEntry>;
-  queries: Record<string, Record<string, number>>;
-}
+export type UsageEntry = Gen.UsageEntry;
+export type SearchUsage = Gen.SearchUsage;
 
 let cache: SearchUsage = { items: {}, queries: {} };
 let loaded = false;

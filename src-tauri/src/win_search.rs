@@ -666,3 +666,7 @@ pub fn run_user_script(file_name: &str, confirmed: bool) -> Result<(), String> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "tests/win_search.rs"]
+mod tests;
