@@ -95,6 +95,7 @@ pub fn builtin_templates() -> Vec<CommandTemplate> {
         t("shelf", "Shelf", "Open the Shelf", "input", "", &[], "thread"),
         t("theme", "Theme", "Switch theme or accent", "input", "", &[], "thread"),
         t("focus", "Focus", "Start a focus session", "input", "", &[], "thread"),
+        t("clean", "Clean", "Free up space with Lens Cleaner", "input", "", &[], "thread"),
     ]
 }
 

@@ -186,6 +186,9 @@ jobs:
       - name: Render Lens Apps
         run: node tools/parity/apps/build.mjs && node tools/parity/apps/shoot.mjs
 
+      - name: Render Lens Cleaner
+        run: node tools/parity/cleaner/build.mjs && node tools/parity/cleaner/shoot.mjs
+
       - name: Render ambient backdrops (contact sheets + in-browser timing)
         run: node tools/parity/ambient/build.mjs && node tools/parity/ambient/shoot.mjs
         env:

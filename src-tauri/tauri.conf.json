@@ -330,6 +330,20 @@
         "visible": false,
         "decorations": false,
         "transparent": true
+      },
+      {
+        "label": "cleaner",
+        "url": "index.html?surface=cleaner",
+        "title": "Lens Cleaner",
+        "width": 1040,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 560,
+        "center": true,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "create": false
       }
     ],
     "security": {

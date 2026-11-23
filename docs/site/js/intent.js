@@ -47,6 +47,8 @@ const SETTINGS_PAGES = [
   [["ai", "lens intelligence", "intelligence", "assistant", "claude"], "ai"],
   [["agents", "mcp"], "agents"],
   [["cursor", "cursors", "pointer"], "cursor"],
+  [["cleaner", "lens cleaner", "disk cleanup", "cleanup", "clean up"], "cleaner"],
+  [["recycle bin"], "cleaner-bin"],
   [["lens", "control center", "settings"], "home"],
 ];
 
@@ -516,6 +518,17 @@ function parseWindows(t) {
   return null;
 }
 
+// Lens Cleaner phrases: open the window; anything that deletes still waits for a click.
+const CLEANER_OPEN = new Set(["free up space", "free up some space", "free some space", "make some room", "make room", "clean my pc", "clean up my pc", "clean up my computer", "my disk is full", "my drive is full"]);
+const CLEANER_SHOW = new Set(["what's taking up space", "what is taking up space", "whats taking up space", "what's using my space", "what is using my disk", "show me what's taking up space"]);
+const CLEANER_BIN = new Set(["empty the recycle bin", "empty recycle bin", "empty the trash", "empty my recycle bin"]);
+function parseCleaner(t) {
+  if (CLEANER_OPEN.has(t)) return I("open_settings_page", 0.95, "Open Lens Cleaner", { page: "cleaner" });
+  if (CLEANER_SHOW.has(t)) return I("open_settings_page", 0.95, "Show what's taking up space", { page: "cleaner" });
+  if (CLEANER_BIN.has(t)) return I("open_settings_page", 0.95, "Empty the Recycle Bin (you'll confirm in Lens Cleaner)", { page: "cleaner-bin" });
+  return null;
+}
+
 function parseSettings(t) {
   let rest = stripAny(t, ["open ", "show me ", "show ", "go to ", "take me to "]) ?? (t.endsWith(" settings") ? t : null);
   if (rest === null) return null;
@@ -553,7 +566,7 @@ export function parse(text) {
   if (new TextEncoder().encode(text).length > 400) return null;
   const t = normalize(text);
   if (!t) return null;
-  for (const f of [parseMath, parseTimer, parseColorMode, parseTheme, parseToggles, parseLevels, parseWorkspace, parseWindows, parseSettings]) {
+  for (const f of [parseMath, parseTimer, parseColorMode, parseTheme, parseToggles, parseLevels, parseWorkspace, parseWindows, parseCleaner, parseSettings]) {
     const i = f(t); if (i) return i;
   }
   let rest = stripAny(t, ["take a note ", "take note ", "make a note ", "note to self ", "note ", "jot down ", "remember to "]);

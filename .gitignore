@@ -39,6 +39,9 @@ tools/parity/approval/out/
 tools/parity/approval/shots/
 tools/parity/apps/out/
 tools/parity/apps/shots/
+tools/parity/cleaner/out/
+tools/parity/cleaner/shots/
+tools/parity/cleaner/video/
 tools/parity/presence/out/
 tools/parity/presence/shots/
 tools/parity/ambient/out/
