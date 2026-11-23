@@ -139,6 +139,11 @@ jobs:
       - name: Frontend unit tests
         run: bun run test
 
+      # docs/SMOOTHNESS.md: animations that tear (layout properties, timers standing in for an
+      # animation's end, native window resizes from a page). Counts per file may only go down.
+      - name: Motion lint (ratchet)
+        run: node tools/polish/motion-lint.mjs
+
   parity:
     name: Visual parity (headless render)
     runs-on: ubuntu-latest

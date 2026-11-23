@@ -10,11 +10,9 @@
 .qsl-night-state { margin-left: auto; font-weight: 500; color: rgb(var(--lens-ink) / 0.66); font-size: 11.5px; white-space: nowrap; }
 .qsl-chev { transition: transform var(--lens-dur-base, 220ms) var(--lens-ease-out, cubic-bezier(.22, 1, .36, 1)); opacity: 0.6; }
 .qsl-night.is-open .qsl-chev { transform: rotate(90deg); }
-/* Expands without measuring: a 0fr → 1fr grid row animates the height on the compositor-friendly path. */
-.qsl-night-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--lens-dur-base, 220ms) var(--lens-ease-out, cubic-bezier(.22, 1, .36, 1)), opacity var(--lens-dur-base, 220ms) linear; }
-.qsl-night.is-open .qsl-night-body { grid-template-rows: 1fr; opacity: 1; }
-.qsl-night-inner { overflow: hidden; display: grid; gap: 8px; padding-top: 0; }
-.qsl-night.is-open .qsl-night-inner { padding-top: 8px; }
+/* The panel mounts only while open and glides with src/ui/motion (transform + opacity). */
+.qsl-night-body { display: block; }
+.qsl-night-inner { display: grid; gap: 8px; padding-top: 8px; }
 .qsl-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; border-radius: 10px; background: rgb(var(--lens-ink) / 0.06); }
 .qsl-seg button { border: 0; border-radius: 8px; padding: 6px 8px; background: none; color: rgb(var(--lens-ink) / 0.7); font: inherit; font-size: 11.5px; cursor: pointer; }
 .qsl-seg button.is-on { background: rgb(var(--lens-ink) / 0.12); color: var(--lens-fg); font-weight: 600; }
@@ -41,4 +39,4 @@
 .qsl-thumb-title { display: flex; gap: 5px; align-items: center; font-size: 10.5px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(var(--lens-ink) / 0.75); }
 .qsl-thumb-title img { width: 12px; height: 12px; flex: none; }
 
-@media (prefers-reduced-motion: reduce) { .qsl-night-body, .qsl-chev, .qsl-tile { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .qsl-chev, .qsl-tile { transition: none; } }

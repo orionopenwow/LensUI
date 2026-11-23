@@ -143,7 +143,6 @@ export const ControlCenterSurface: React.FC = () => {
   }, [tab, section]);
   // Sticky page header gets a hairline once the page scrolls.
   const [stuck, setStuck] = useState(false);
-  const lastReportedHRef = useRef<number>(0);
   const [showWizardManual, setShowWizardManual] = useState(false);
   const [topProcesses, setTopProcesses] = useState<ProcessEntry[]>([]);
   const [cpuHistory, setCpuHistory] = useState<number[]>([18, 22, 20, 26, 24, 29, 25, 21, 24, 28, 26, 23]);
@@ -223,27 +222,8 @@ export const ControlCenterSurface: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
-    const syncHeight = () => {
-      // Page header + vertical padding so nothing ever clips
-      const contentH = Math.ceil(el.scrollHeight + 86);
-      if (Math.abs(contentH - lastReportedHRef.current) > 4) {
-        lastReportedHRef.current = contentH;
-        invoke("set_settings_content_height_cmd", { height: contentH }).catch(() => {});
-      }
-    };
-    const raf = requestAnimationFrame(syncHeight);
-    const t = window.setTimeout(syncHeight, 120);
-    const ro = new ResizeObserver(syncHeight);
-    ro.observe(el);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
-      ro.disconnect();
-    };
-  }, [tab, config?.onboardingCompleted, showWizardManual]);
+  // The Settings window keeps one size while it is open (docs/SMOOTHNESS.md, G-01): resizing the
+  // native window to fit each page tore the page mid-switch. Pages scroll inside it instead.
 
   if (!config) return null;
 
