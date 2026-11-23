@@ -21,7 +21,8 @@
     "bubble",
     "snip",
     "snip-*",
-    "topbar-*"
+    "topbar-*",
+    "testerhub"
   ],
   "permissions": [
     "core:default",

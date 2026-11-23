@@ -44,6 +44,7 @@ mod win_cursors;
 mod win_desktop_input;
 mod win_keyhook;
 mod win_update;
+mod tester;
 
 mod app;
 mod bridge;
@@ -128,6 +129,7 @@ pub fn run() {
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         win_crash::write_crash_report(info);
+        crate::tester::log("error", "panic", &info.to_string());
         crate::app::integration::panic_shutdown();
         win_mcp::stop_server();
         win_altdrag::stop_alt_drag();
@@ -493,6 +495,16 @@ pub fn run() {
             commands::snip::snip_record_trim,
             commands::snip::snip_record_mics,
             commands::snip::snip_scroll_capture,
+            commands::tester::tester_results_get,
+            commands::tester::tester_results_set,
+            commands::tester::tester_log_get,
+            commands::tester::tester_log_push,
+            commands::tester::tester_log_mark,
+            commands::tester::tester_environment,
+            commands::tester::tester_export_plan,
+            commands::tester::tester_export_report,
+            commands::tester::tester_reveal_report,
+            commands::tester::tester_open_issue,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")

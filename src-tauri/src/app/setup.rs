@@ -37,7 +37,7 @@ pub(crate) fn apply_win11_obsidian_backdrop(window: &tauri::WebviewWindow, _acry
 pub(crate) fn apply_win11_obsidian_backdrop(_window: &tauri::WebviewWindow, _acrylic: bool) {}
 
 /// Surfaces that may be marked `"create": false` in tauri.conf.json and built on first use.
-pub(crate) const LAZY_LABELS: [&str; 7] = [
+pub(crate) const LAZY_LABELS: [&str; 8] = [
     "settings",
     "palette",
     "widgets",
@@ -45,6 +45,7 @@ pub(crate) const LAZY_LABELS: [&str; 7] = [
     "launcher",
     "overview",
     "command",
+    "testerhub",
 ];
 
 pub(crate) fn lazy_building() -> &'static Mutex<std::collections::HashSet<String>> {
@@ -181,6 +182,7 @@ pub(crate) fn run_setup(
     for label in LAZY_LABELS {
         // Lens Command is always built on first use (it is off by default).
         let needed_now = label != "command"
+            && label != "testerhub"
             && (!initial_config.func.lazy_windows
                 || (label == "settings" && !initial_config.onboarding_completed));
         if needed_now && handle.get_webview_window(label).is_none() {
