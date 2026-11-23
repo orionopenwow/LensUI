@@ -159,6 +159,8 @@ jobs:
 
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
+      - name: Render Lens Guide scenes
+        run: node tools/parity/guide/build.mjs && node tools/parity/guide/shoot.mjs
 
       - name: Upload screenshots
         if: always()
@@ -171,4 +173,5 @@ jobs:
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/
+            tools/parity/guide/shots/
           if-no-files-found: warn
