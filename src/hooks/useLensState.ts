@@ -11,6 +11,8 @@ import { applyShapeStyle } from "../themes/shapes/shapes";
 import "../themes/shapes/expressive.css";
 import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
+import { syncLivingTint } from "../themes/living/tint";
+import { readSchedule } from "../themes/schedule";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
   const root = document.documentElement;
@@ -49,6 +51,8 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     "--lens-accent-tint",
     `${Math.round(cfg.theme.accentTintStrength * 100)}%`
   );
+  // Living packs follow the Sun (light by day) and, if asked, tint glass and accent with the sky.
+  syncLivingTint(pack, activeAccent, readSchedule(cfg));
   root.style.setProperty("--dock-icon-size", `${cfg.dock.iconSize}px`);
   root.style.setProperty("--dock-hover-scale", String(cfg.dock.hoverScale));
   root.style.setProperty("--dock-hover-lift", `${cfg.dock.hoverLift}px`);
