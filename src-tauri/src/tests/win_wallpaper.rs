@@ -33,6 +33,13 @@ fn settings_names_kinds_pause_geometry_and_sniffing() {
     assert_eq!(pause_reason(&p, false, false), None);
     p.pause_when_covered = false; assert_eq!(pause_reason(&p, true, false), None);
     p.pause_on_battery = false; assert_eq!(pause_reason(&p, true, true), None);
+    // battery saver always rests animated wallpapers (ambient backdrops), even with battery pause off
+    assert_eq!(pause_reason_with_saver(&p, false, false, true), Some("battery-saver"));
+    p.pause_when_covered = true;
+    assert_eq!(pause_reason_with_saver(&p, true, false, true), Some("covered"));
+    p.enabled = false;
+    assert_eq!(pause_reason_with_saver(&p, true, true, true), None);
+    p.enabled = true;
     // geometry
     let mon = Rect { left: 0, top: 0, right: 1920, bottom: 1080 };
     let maxed = Rect { left: -8, top: -8, right: 1928, bottom: 1040 + 8 };

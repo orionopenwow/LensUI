@@ -10,12 +10,14 @@ import {
   applyThemePack,
   packById,
   recommendedPacks,
+  type ThemePack,
 } from "../themes/packs";
 import { readSchedule } from "../themes/schedule";
 import { ColorWheel } from "../components/ColorWheel";
 import { ThemeGallery, PackCard } from "../components/ThemeGallery";
 import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
 import { WallpaperCard } from "../components/WallpaperCard";
+import { AmbientPreview, AmbientWallpaperOptions, AnimatedBackdropSwitch, packPalette } from "../playground/ambient/controls";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
 import { AccessibilityCard } from "../components/AccessibilityCard";
@@ -181,7 +183,7 @@ function isLightHex(hex: string): boolean {
 
 /* ---------- hero preview ---------- */
 
-const HeroPreview: React.FC<{ config: LensConfig; accent: string }> = ({ config, accent }) => {
+const HeroPreview: React.FC<{ config: LensConfig; accent: string; pack?: ThemePack }> = ({ config, accent, pack }) => {
   const wc = config.windowControls;
   const frame = wc.frameStyle ?? "obsidian-hairline";
   const radius = Math.round((config.theme.borderRadius ?? 8) * 0.7);
@@ -197,6 +199,13 @@ const HeroPreview: React.FC<{ config: LensConfig; accent: string }> = ({ config,
         : `1px solid ${accent}`;
   return (
     <div className="tux-hero-preview" aria-hidden>
+      {pack && (
+        <AmbientPreview
+          packId={pack.id}
+          palette={packPalette(pack, accent)}
+          style={{ borderRadius: 8, overflow: "hidden" }}
+        />
+      )}
       <DockScenePreview styleId={dockStyleOf(config)} accent={accent} alignment={dockAlignmentOf(config)} height={136} showWindow={false} />
       <div
         className="tux-hero-window"
@@ -335,7 +344,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
       {/* ===== a. Current theme ===== */}
       <section className="cc-card tux-hero" aria-label="Current theme">
         <div className="tux-hero-top">
-          <HeroPreview config={config} accent={accent} />
+          <HeroPreview config={config} accent={accent} pack={pack} />
           <div className="tux-hero-info">
             <div className="tux-eyebrow">Current theme</div>
             <div className="tux-hero-name">
@@ -362,6 +371,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 </div>
               )}
             </div>
+            <AnimatedBackdropSwitch />
             {modified && pack && (
               <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => onApplyPack(applyThemePack(config, pack.id))}>
                 <RotateCcw size={12} /> Reset to {pack.label}
@@ -621,6 +631,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </Section>
 
           <Section id="wallpaper" title="Wallpaper" summary={wallpaperSummary} open={!!open.wallpaper} onToggle={() => toggle("wallpaper")}>
+            <AmbientWallpaperOptions />
             <WallpaperCard config={config} onUpdateConfig={updateConfig} />
           </Section>
 

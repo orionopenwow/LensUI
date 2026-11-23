@@ -9,6 +9,7 @@ import { FIT_TO_OBJECT_FIT } from "./wallpaperTypes";
 import "./WallpaperSurface.css";
 import { PlaygroundView } from "../playground/PlaygroundView";
 import { DEFAULT_IDLE_SCENE, sceneById } from "../playground/registry";
+import { AMBIENT_SCENE_ID } from "../playground/ambient/module";
 import { setSkyLocation } from "../playground/scenes/skyclock";
 import { readSchedule } from "../themes/schedule";
 
@@ -176,7 +177,7 @@ export const WallpaperSurface: React.FC = () => {
           options={s.sceneOptions?.[sceneId]}
           fps={s.fps}
           paused={!IDLE_MODE && !!paused}
-          still={s.calm && !IDLE_MODE}
+          still={(s.calm || (sceneId === AMBIENT_SCENE_ID && s.sceneOptions?.[sceneId]?.motion === "still")) && !IDLE_MODE}
           ripples={s.ripples && !IDLE_MODE}
           desktopInput={!IDLE_MODE}
           persist={!IDLE_MODE}

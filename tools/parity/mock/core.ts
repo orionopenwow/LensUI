@@ -107,7 +107,14 @@ const handlers: Record<string, (a: any) => any> = {
     transcriptsDir: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\transcripts",
   }),
   get_config: () => config,
-  get_wallpaper_state_cmd: () => ({ settings: { enabled: false, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" }),
+  get_wallpaper_state_cmd: () => {
+    // `?ambient=subtle|lively|still` shows the theme backdrop (docs/AMBIENT.md); `&ambientScene=<id>` overrides it.
+    const q = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
+    const amb = q.get("ambient");
+    const scene = amb ? "ambient" : "";
+    const sceneOptions = amb ? { ambient: { motion: amb, variant: q.get("ambientScene") ?? "auto" } } : {};
+    return { settings: { enabled: !!amb, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false, scene, sceneOptions, fps: 30, calm: false, interactive: false, ripples: false, workspaceScenes: {}, idleEnabled: false, idleMinutes: 10, idleScene: "" }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" };
+  },
   list_wallpapers_cmd: () => [],
   get_battery_cmd: () => ({ present: true, percent: 76, charging: false, minutesRemaining: 214, powerMode: "balanced", batterySaver: false }),
   get_keyboard_layouts_cmd: () => ({ current: "00000409", layouts: [{ id: "00000409", short: "ENG", name: "English (United States)" }] }),

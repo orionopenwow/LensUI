@@ -160,6 +160,15 @@ jobs:
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
 
+      - name: Render ambient backdrops (contact sheets + in-browser timing)
+        run: node tools/parity/ambient/build.mjs && node tools/parity/ambient/shoot.mjs
+        env:
+          AMBIENT_LOOPS: "0"
+          AMBIENT_DESKTOPS: "0"
+          # Software rendering on shared CI runners is slower than a real desktop; the strict 3 ms
+          # gate is the bun test on the pure painters.
+          AMBIENT_BUDGET_MS: "8"
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,4 +180,5 @@ jobs:
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/
+            tools/parity/ambient/shots/
           if-no-files-found: warn

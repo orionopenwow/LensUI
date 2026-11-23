@@ -3,6 +3,7 @@ import { Search, Star, X } from "lucide-react";
 import type { LensConfig } from "../types/lens";
 import { allPacks, lighten, type ThemePack } from "../themes/packs";
 import { dockStyleLabel } from "../dock/styles";
+import { AmbientPreview, packPalette } from "../playground/ambient/controls";
 
 interface Props {
   config: LensConfig;
@@ -76,6 +77,8 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
         border: `1px solid rgb(${ink} / 0.12)`,
       }}
     >
+      {/* the pack's own animated backdrop (docs/AMBIENT.md), drawn under everything else */}
+      <AmbientPreview packId={pack.id} palette={packPalette(pack, accent)} fps={6} />
       {/* top bar */}
       <div
         style={{
