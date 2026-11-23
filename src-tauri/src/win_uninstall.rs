@@ -123,6 +123,9 @@ pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
         },
     );
 
+    // 3b. Windows settings changed from the Settings hub (startup apps, animation effects)
+    push(&mut steps, "Windows settings changed in Lens", crate::syssettings::restore_all());
+
     // 4. Start with Windows
     push(
         &mut steps,

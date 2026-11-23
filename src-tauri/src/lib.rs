@@ -45,6 +45,7 @@ mod win_desktop_input;
 mod win_keyhook;
 mod win_update;
 mod tester;
+mod syssettings;
 
 mod app;
 mod bridge;
@@ -462,6 +463,16 @@ pub fn run() {
             commands::playground::clear_playground_state_cmd,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::syssettings::sys_startup_list_cmd,
+            commands::syssettings::sys_startup_set_cmd,
+            commands::syssettings::sys_drives_cmd,
+            commands::syssettings::sys_display_modes_cmd,
+            commands::syssettings::sys_privacy_cmd,
+            commands::syssettings::sys_access_cmd,
+            commands::syssettings::sys_set_animations_cmd,
+            commands::syssettings::sys_time_cmd,
+            commands::syssettings::sys_gaming_cmd,
+            commands::syssettings::sys_restore_cmd,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,
