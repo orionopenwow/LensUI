@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useReducer, useRef } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ExternalLink, List, Lock, RotateCcw, ShieldAlert, Sparkles, Square } from "lucide-react";
 import { DockStylePreview } from "../dock/DockStylePreview";
 import { normalizeDockStyle } from "../dock/styles";
 import {
   HOLD_MS,
   PRINCIPLES,
+  TRUST_SPANS,
+  canApproveSimilar,
   agoLabel,
   cardReducer,
   denyLabel,
@@ -22,6 +24,7 @@ import {
   type CardState,
   type HoldPref,
   type LookState,
+  type TrustSpan,
 } from "./model";
 import "./ApprovalCard.css";
 
@@ -38,6 +41,8 @@ export interface ApprovalCardProps {
   onReview?: () => void;
   /** "Show tab ↗" on click/form requests. */
   onShowTab?: () => void;
+  /** "Approve similar actions for this task": trust the scope for `span`, then approve. */
+  onApproveSimilar?: (span: TrustSpan) => Promise<void> | void;
   holdPref?: HoldPref;
   /** Smaller layout for Mini, the Dock popover and the voice HUD. */
   compact?: boolean;
@@ -277,6 +282,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
   onUndo,
   onReview,
   onShowTab,
+  onApproveSimilar,
   holdPref = "confirm",
   compact = false,
   initial,
@@ -292,6 +298,8 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
   const busy = s.phase === "working";
   const closed = s.phase === "done" || s.phase === "denied" || s.phase === "failed";
   const tone = toneOf(p);
+  const [span, setSpan] = useState<TrustSpan>("run");
+  const similar = onApproveSimilar && canApproveSimilar(p) ? p.similar : undefined;
   const showReversible = !blocked && (p.kind === "look" || p.kind === "window" || p.kind === "settings" || p.kind === "none");
 
   const approve = useCallback(async () => {
@@ -308,6 +316,12 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
     dispatch({ type: "deny" });
     onDeny();
   }, [onDeny]);
+
+  const approveSimilar = useCallback(async () => {
+    if (!onApproveSimilar) return;
+    await onApproveSimilar(span);
+    await approve();
+  }, [onApproveSimilar, span, approve]);
 
   const allowSession = useCallback(async () => {
     if (!onAllowSession) return;
@@ -399,6 +413,24 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
             </details>
           ) : null}
         </>
+      ) : null}
+
+      {similar && !closed && !s.collapsed ? (
+        <div className="ap-similar">
+          <button type="button" className="ap-link ap-similar-btn" disabled={busy} onClick={approveSimilar}>
+            Approve similar actions for this task
+          </button>
+          <span className="ap-scope" aria-label={`Scope: ${similar.label}`}>
+            {similar.label}
+          </span>
+          <select className="ap-span" value={span} aria-label="How long" onChange={(e) => setSpan(e.target.value as TrustSpan)}>
+            {TRUST_SPANS.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
       ) : null}
 
       {s.message && closed ? <p className={`ap-message${s.phase === "failed" ? " is-bad" : ""}`}>{s.message}</p> : null}

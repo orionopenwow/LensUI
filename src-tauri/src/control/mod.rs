@@ -14,6 +14,7 @@
 //!   live windows, the Shelf). Everything above it is pure and unit-tested.
 
 pub mod audit;
+pub mod browser;
 pub mod catalogue;
 pub mod engine;
 pub mod grants;
@@ -37,6 +38,10 @@ pub enum Capability {
     UseShelf,
     TypeText,
     SendToCloud,
+    /// Read tabs, pages and transcripts in Lens Browser.
+    ReadPages,
+    /// Open pages and search in Lens Browser.
+    Browse,
     /// Bulk changes and deletions that go to a recoverable bin (never a hard delete).
     DeleteToBin,
     /// Paying with a method the site already has saved. Blocked by default; at most "Ask first".
@@ -48,7 +53,7 @@ pub enum Capability {
 }
 
 impl Capability {
-    pub const ALL: [Capability; 14] = [
+    pub const ALL: [Capability; 16] = [
         Capability::ReadSettings,
         Capability::ChangeLook,
         Capability::ChangeSettings,
@@ -59,11 +64,18 @@ impl Capability {
         Capability::UseShelf,
         Capability::TypeText,
         Capability::SendToCloud,
+        Capability::ReadPages,
+        Capability::Browse,
         Capability::DeleteToBin,
         Capability::Payments,
         Capability::SendMessages,
         Capability::Destructive,
     ];
+
+    /// May be trusted for a site or a task ("Approve similar actions"). Never for send, pay or delete.
+    pub fn trustable(self) -> bool {
+        !self.always_asks() && self != Capability::Destructive
+    }
 
     /// Never "Allowed": every use shows a card.
     pub fn always_asks(self) -> bool {
@@ -77,6 +89,7 @@ impl Capability {
             Capability::Payments => Some("Every payment waits"),
             Capability::SendMessages => Some("Nothing sent in your name"),
             Capability::TypeText => Some("Shows you where it'll click"),
+            Capability::ReadPages => Some("Banking pages and private Spaces stay private"),
             _ => None,
         }
     }
@@ -93,6 +106,8 @@ impl Capability {
             Capability::UseShelf => "Read and add to your Shelf",
             Capability::TypeText => "Fill in forms and click on sites",
             Capability::SendToCloud => "Send context to a cloud AI",
+            Capability::ReadPages => "Read your browser tabs, pages and transcripts",
+            Capability::Browse => "Open pages and search in Lens Browser",
             Capability::DeleteToBin => "Delete or clear things (to the Bin)",
             Capability::Payments => "Pay with a saved method",
             Capability::SendMessages => "Send messages in your name",
@@ -112,6 +127,8 @@ impl Capability {
             Capability::UseShelf => "use_shelf",
             Capability::TypeText => "type_text",
             Capability::SendToCloud => "send_to_cloud",
+            Capability::ReadPages => "read_pages",
+            Capability::Browse => "browse",
             Capability::DeleteToBin => "delete_to_bin",
             Capability::Payments => "payments",
             Capability::SendMessages => "send_messages",

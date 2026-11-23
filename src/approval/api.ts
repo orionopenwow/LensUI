@@ -48,6 +48,11 @@ export async function allowForSession(client: string, capabilities: string[]): P
   }
 }
 
+/** "Approve similar actions for this task": trust the request's scope for a while. */
+export function trustSimilar(client: string, similar: { capability: string; site: string; label: string }, span: "run" | "day" | "always"): Promise<unknown> {
+  return invoke("control_trust", { client, capability: similar.capability, site: similar.site, label: similar.label, span });
+}
+
 export function undoChange(id?: string): Promise<string> {
   return invoke<string>("control_undo", { id: id ?? null });
 }

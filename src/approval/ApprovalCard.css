@@ -217,3 +217,42 @@
   mix-blend-mode: normal; opacity: 0.85;
 }
 .ap-dither > * { position: relative; z-index: 1; }
+
+/* "Approve similar actions for this task" — scope is always visible. */
+.ap-similar { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding: 8px; border-radius: 8px; background: rgb(var(--lens-ink) / 0.035); border: 1px dashed rgb(var(--lens-ink) / 0.14); }
+.ap-similar-btn { height: 24px; color: var(--lens-fg); font-weight: 600; }
+.ap-scope { font-family: var(--ap-mono); font-size: 11px; color: var(--lens-fg-secondary); padding: 0 6px; height: 20px; display: inline-flex; align-items: center; border-radius: 5px; background: rgb(var(--lens-ink) / 0.06); }
+.ap-span { margin-left: auto; height: 24px; border-radius: 6px; border: 1px solid rgb(var(--lens-ink) / 0.14); background: transparent; color: var(--lens-fg); font: inherit; font-size: 12px; padding: 0 4px; }
+.ap-span:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 2px; }
+.ap-span option { color: #18181b; }
+
+/* Honest "can't access that" badge (no source). */
+.ap-nosource { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; border-radius: 5px; font: 600 10px/1 ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lens-fg-secondary); border: 1px dashed rgb(var(--lens-ink) / 0.24); }
+.ap-noaccess { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 8px; border: 1px solid rgb(var(--lens-ink) / 0.1); background: rgb(var(--lens-ink) / 0.03); font-size: 13px; color: var(--lens-fg); max-width: 440px; }
+.ap-noaccess p { margin: 0; }
+.ap-noaccess .ap-noaccess-reason { color: var(--lens-fg-secondary); }
+
+/* Permissions card (AI & Command › Permissions). */
+.ap-perms { display: flex; flex-direction: column; gap: 16px; max-width: 640px; font-size: 13px; color: var(--lens-fg); }
+.ap-perms h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.ap-perms-sub { margin: 2px 0 0; font-size: 12px; color: var(--lens-fg-secondary); }
+.ap-perms-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.ap-perms-tab { height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgb(var(--lens-ink) / 0.12); background: transparent; color: var(--lens-fg-secondary); font: inherit; font-size: 12px; cursor: pointer; }
+.ap-perms-tab[aria-selected="true"] { background: var(--lens-fg); color: var(--lens-on-fg); border-color: transparent; }
+.ap-perms-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ap-perms-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; min-height: 40px; padding: 4px 0; border-bottom: 1px solid rgb(var(--lens-ink) / 0.06); }
+.ap-perms-row:last-child { border-bottom: 0; }
+.ap-seg { display: inline-flex; border-radius: 8px; border: 1px solid rgb(var(--lens-ink) / 0.12); overflow: hidden; }
+.ap-seg button { height: 26px; padding: 0 10px; border: 0; background: transparent; color: var(--lens-fg-secondary); font: inherit; font-size: 11px; cursor: pointer; }
+.ap-seg button + button { border-left: 1px solid rgb(var(--lens-ink) / 0.1); }
+.ap-seg button[aria-pressed="true"] { background: rgb(var(--lens-ink) / 0.1); color: var(--lens-fg); font-weight: 600; }
+.ap-seg button:disabled { opacity: 0.4; cursor: default; }
+.ap-trust { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; min-height: 36px; border-bottom: 1px solid rgb(var(--lens-ink) / 0.06); }
+.ap-chip-input { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ap-chip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 4px 0 8px; border-radius: 6px; background: rgb(var(--lens-ink) / 0.06); font-family: var(--ap-mono, ui-monospace, monospace); font-size: 11px; }
+.ap-chip button { border: 0; background: transparent; color: var(--lens-fg-secondary); cursor: pointer; font: inherit; }
+.ap-input { height: 28px; min-width: 180px; border-radius: 6px; border: 1px solid rgb(var(--lens-ink) / 0.14); background: transparent; color: var(--lens-fg); font: inherit; font-size: 12px; padding: 0 8px; }
+.ap-toggle { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.ap-trust .ap-btn { padding: 0 12px; height: 28px; font-size: 12px; }
+.ap-toggle { min-height: 24px; margin: -8px 0; }
+.ap-toggle input { accent-color: var(--lens-fg); width: 16px; height: 16px; margin: 0; }

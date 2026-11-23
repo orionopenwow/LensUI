@@ -47,6 +47,8 @@ export interface ApprovalPreview {
   payment?: { amount: string; method: string; note?: string; warning?: string };
   /** A message in the user's name, shown exactly. */
   send?: { to: string; app: string; message: string };
+  /** "Approve similar actions for this task": what would be trusted. Never on send, pay or delete. */
+  similar?: { capability: string; site: string; label: string };
   /** Label for the deny button ("Deny", "Don't send"). */
   denyLabel?: string;
   /** "trusted" = known source (green dot); "danger" = irreversible or money (red dot). */
@@ -239,3 +241,50 @@ export const PRINCIPLES: Record<string, string> = {
   send_messages: "Nothing sent in your name",
   type_text: "Shows you where it'll click",
 };
+
+export type TrustSpan = "run" | "day" | "always";
+
+export const TRUST_SPANS: { id: TrustSpan; label: string }[] = [
+  { id: "run", label: "This run" },
+  { id: "day", label: "1 day" },
+  { id: "always", label: "Always" },
+];
+
+const NEVER_SIMILAR = new Set(["send_messages", "payments", "delete_to_bin", "destructive"]);
+
+/** Offer "Approve similar actions for this task"? Never for send, pay, delete or confirm-risk items. */
+export function canApproveSimilar(p: ApprovalPreview): boolean {
+  if (!p.similar || !p.similar.label) return false;
+  if (p.kind === "send" || p.kind === "payment" || p.kind === "delete") return false;
+  if (p.risk !== "low") return false;
+  return !NEVER_SIMILAR.has(p.similar.capability) && !p.capabilities.some((c) => NEVER_SIMILAR.has(c));
+}
+
+/** An honest "can't access that" result from Lens Control (no source). */
+export interface NoAccess {
+  access: "none";
+  source: null;
+  reason: string;
+}
+
+export function isNoAccess(v: unknown): v is NoAccess {
+  return !!v && typeof v === "object" && (v as NoAccess).access === "none" && (v as NoAccess).source === null;
+}
+
+export interface SiteTrust {
+  id: string;
+  client: string;
+  capability: string;
+  site: string;
+  label: string;
+  span: TrustSpan;
+  createdMs: number;
+  expiresMs: number | null;
+}
+
+export function trustExpiryLabel(t: Pick<SiteTrust, "span" | "expiresMs">, now = Date.now()): string {
+  if (t.span === "run") return "This run";
+  if (t.span === "always" || t.expiresMs == null) return "Always";
+  const h = Math.max(0, Math.round((t.expiresMs - now) / 3_600_000));
+  return h <= 0 ? "Expiring" : `${h} h left`;
+}

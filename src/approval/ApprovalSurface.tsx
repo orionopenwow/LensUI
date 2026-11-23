@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { ApprovalCard } from "./ApprovalCard";
-import { allowForSession, approveMcp, denyMcp, undoChange, usePendingApprovals } from "./api";
+import { allowForSession, approveMcp, denyMcp, trustSimilar, undoChange, usePendingApprovals } from "./api";
 import "./ApprovalCard.css";
 
 /**
@@ -35,6 +35,9 @@ export const ApprovalSurface: React.FC = () => {
           denyMcp(first.id).finally(() => window.setTimeout(refresh, 600));
         }}
         onAllowSession={(caps) => allowForSession(first.preview.source?.client ?? first.source, caps)}
+        onApproveSimilar={async (span) => {
+          if (first.preview.similar) await trustSimilar(first.preview.source?.client ?? first.source, first.preview.similar, span);
+        }}
         onUndo={() => {
           undoChange().catch(() => undefined);
         }}

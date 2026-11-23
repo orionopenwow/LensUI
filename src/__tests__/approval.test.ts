@@ -3,7 +3,10 @@ import {
   agoLabel,
   cardReducer,
   fallbackPreview,
+  canApproveSimilar,
   denyLabel,
+  isNoAccess,
+  trustExpiryLabel,
   fromPendingAction,
   primaryLabel,
   toneOf,
@@ -172,5 +175,28 @@ describe("typed variants", () => {
     expect(toneOf({ ...pay, tone: "trusted" })).toBe("trusted");
     expect(toneOf(base)).toBe("trusted");
     expect(toneOf({ ...base, kind: "none", reversible: false })).toBe("danger");
+  });
+});
+
+describe("approve similar, no access, trust expiry", () => {
+  const fill: ApprovalPreview = { ...base, kind: "element", risk: "low", capabilities: ["type_text"], similar: { capability: "type_text", site: "reserve.example", label: "fill fields on reserve.example" } };
+  test("offered with a visible scope, never for send, pay, delete or confirm", () => {
+    expect(canApproveSimilar(fill)).toBe(true);
+    expect(canApproveSimilar({ ...fill, kind: "send" })).toBe(false);
+    expect(canApproveSimilar({ ...fill, kind: "payment" })).toBe(false);
+    expect(canApproveSimilar({ ...fill, kind: "delete" })).toBe(false);
+    expect(canApproveSimilar({ ...fill, risk: "confirm" })).toBe(false);
+    expect(canApproveSimilar({ ...fill, similar: { ...fill.similar!, capability: "payments" } })).toBe(false);
+    expect(canApproveSimilar({ ...fill, similar: undefined })).toBe(false);
+  });
+  test("no-access results are recognised", () => {
+    expect(isNoAccess({ access: "none", source: null, reason: "bank" })).toBe(true);
+    expect(isNoAccess({ access: "none", source: "https://x", reason: "" })).toBe(false);
+    expect(isNoAccess(null)).toBe(false);
+  });
+  test("trust expiry labels", () => {
+    expect(trustExpiryLabel({ span: "run", expiresMs: null })).toBe("This run");
+    expect(trustExpiryLabel({ span: "always", expiresMs: null })).toBe("Always");
+    expect(trustExpiryLabel({ span: "day", expiresMs: 10 * 3_600_000 }, 0)).toBe("10 h left");
   });
 });

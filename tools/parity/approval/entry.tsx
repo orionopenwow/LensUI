@@ -5,6 +5,8 @@ import "../../../src/styles/tokens.css";
 import "../../../src/styles/global.css";
 import { ApprovalCard } from "../../../src/approval/ApprovalCard";
 import { PendingPill } from "../../../src/approval/PendingPill";
+import { NoAccessNote } from "../../../src/approval/NoSourceBadge";
+import { PermissionsCard } from "../../../src/approval/PermissionsCard";
 import type { ApprovalPreview, ApprovalRequest, TaskItem } from "../../../src/approval/model";
 import { lighten, packById } from "../../../src/themes/packs";
 
@@ -207,6 +209,7 @@ const variants: typeof previews = {
       verb: "Book",
       kind: "element",
       element: { image: formImg, label: "Complete reservation", capturedAgo: "3s ago", siteLabel: "Reservations" },
+      similar: { capability: "type_text", site: "reserve.example", label: "fill fields on reserve.example" },
       details: [
         { label: "Seating", value: "Window (requested)" },
         { label: "Cancellation", value: "Free until 24h before" },
@@ -240,9 +243,30 @@ const app = ReactDOM.createRoot(document.getElementById("root")!);
 const cardFor = (key: string, extra: Partial<React.ComponentProps<typeof ApprovalCard>> = {}) => {
   const s = previews[key];
   const req: ApprovalRequest = { id: key, origin: s.origin ?? "mcp", source: s.source ?? "Claude Desktop", site: s.site, createdMs: now - 4000, preview: s.pv };
-  return <ApprovalCard request={req} compact={s.compact} initial={s.initial} onApprove={() => true} onDeny={() => undefined} onAllowSession={() => undefined} onUndo={() => undefined} onReview={() => undefined} onShowTab={() => undefined} {...extra} />;
+  return <ApprovalCard request={req} compact={s.compact} initial={s.initial} onApprove={() => true} onDeny={() => undefined} onAllowSession={() => undefined} onUndo={() => undefined} onReview={() => undefined} onShowTab={() => undefined} onApproveSimilar={() => undefined} {...extra} />;
 };
-if (scene === "showcase") {
+if (scene === "noaccess") {
+  app.render(desk(<NoAccessNote what="that page" result={{ access: "none", source: null, reason: "Lens doesn't share banking or payment pages with AI apps." }} />));
+} else if (scene === "permissions") {
+  const caps = tasks(["change_look"]).map((t) => (t.id === "payments" ? { ...t, principle: "Every payment waits" } : t.id === "send_messages" ? { ...t, principle: "Nothing sent in your name" } : t.id === "delete_to_bin" ? { ...t, principle: "Deletions go to the Bin" } : t.id === "type_text" ? { ...t, principle: "Shows you where it'll click" } : t));
+  const clients = [["claude-desktop", "Claude Desktop"], ["claude-code", "Claude Code"], ["internal", "Lens assistant"], ["voice", "Voice"], ["other", "Other AI apps"]].map(([client, label]) => ({ client, label, capabilities: caps.map((c) => ({ ...c, used: false })) }));
+  app.render(
+    desk(
+      <div style={{ width: 640, padding: 20, borderRadius: 12, background: "var(--lens-pack-elevated, var(--lens-surface-solid))", border: "1px solid rgb(var(--lens-ink) / 0.1)" }}>
+        <PermissionsCard
+          initial={{
+            clients,
+            trusts: [
+              { id: "trust-1", client: "claude-desktop", capability: "type_text", site: "reserve.example", label: "fill fields on reserve.example", span: "run", createdMs: now, expiresMs: null },
+              { id: "trust-2", client: "claude-code", capability: "browse", site: "", label: "open pages and search", span: "day", createdMs: now, expiresMs: now + 20 * 3_600_000 },
+            ],
+            memory: { neverRemember: ["health.example", "therapy.example"], excludeBanks: true, excludePrivateSpaces: true, privateSpaces: ["Gifts"] },
+          }}
+        />
+      </div>
+    )
+  );
+} else if (scene === "showcase") {
   app.render(
     <div style={{ minHeight: "100vh", boxSizing: "border-box", padding: 24, background: "var(--lens-pack-base, #08080b)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
       {PANELS.map(([key, title, caption]) => (

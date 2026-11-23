@@ -3,7 +3,7 @@
 
 use crate::control::audit::{self, AuditEntry};
 use crate::control::engine::{self, Snapshot, UndoRecord};
-use crate::control::grants::Level;
+use crate::control::grants::{Level, MemoryPolicy, SiteTrust, TrustSpan};
 use crate::control::{catalogue, lens, Capability};
 use serde_json::{json, Value};
 use tauri::AppHandle;
@@ -51,10 +51,45 @@ pub(crate) fn control_history() -> Vec<UndoRecord> {
     lens::engine().history()
 }
 
-/// Grants for every client kind.
+/// Grants for every client kind, live site trusts and the memory policy.
 #[tauri::command]
 pub(crate) fn control_grants_get() -> Value {
-    lens::grants().lock().unwrap_or_else(|e| e.into_inner()).to_view()
+    lens::grants().lock().unwrap_or_else(|e| e.into_inner()).to_full_view(crate::win_mcp::now_ms())
+}
+
+/// "Approve similar actions for this task" / per-site trust. `span`: run | day | always.
+#[tauri::command]
+pub(crate) fn control_trust(client: String, capability: String, site: String, label: String, span: String) -> Result<SiteTrust, String> {
+    let cap = Capability::from_id(&capability).ok_or("Unknown capability.")?;
+    let span = match span.as_str() {
+        "run" => TrustSpan::Run,
+        "day" => TrustSpan::Day,
+        "always" => TrustSpan::Always,
+        _ => return Err("span must be run, day or always".into()),
+    };
+    lens::add_trust(&client, cap, &site, &label, span)
+}
+
+/// Revokes a site trust (from the Permissions card or the audit log).
+#[tauri::command]
+pub(crate) fn control_trust_revoke(id: String) -> Result<bool, String> {
+    lens::revoke_trust(&id)
+}
+
+#[tauri::command]
+pub(crate) fn control_memory_get() -> MemoryPolicy {
+    lens::grants().lock().unwrap_or_else(|e| e.into_inner()).memory.clone()
+}
+
+#[tauri::command]
+pub(crate) fn control_memory_set(policy: MemoryPolicy) -> Result<MemoryPolicy, String> {
+    lens::set_memory(policy)
+}
+
+/// For Lens Browser history, Shelf captures and AI memory: may Lens remember this page?
+#[tauri::command]
+pub(crate) fn control_may_remember(url: String, space: Option<String>) -> bool {
+    lens::grants().lock().unwrap_or_else(|e| e.into_inner()).memory.may_remember(&url, space.as_deref())
 }
 
 /// Sets one grant. `session` = until Lens restarts; otherwise saved.

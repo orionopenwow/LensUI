@@ -4,7 +4,7 @@
 use super::audit::{self, AuditEntry};
 use super::catalogue;
 use super::engine::{Engine, Stores};
-use super::grants::{Decision, Grants, Level};
+use super::grants::{Decision, Grants, Level, MemoryPolicy, SiteTrust, TrustSpan};
 use super::tools::{self, Assessment, Call, Desktop, Outcome, ShelfAction, WinAction, WinInfo};
 use super::{Capability, Risk};
 use serde_json::{json, Value};
@@ -62,6 +62,43 @@ pub fn set_grant(client: &str, cap: Capability, level: Level, session: bool) -> 
         g.save(&grants_path())?;
     }
     Ok(())
+}
+
+/// "Approve similar actions" / per-site trust. Logged so it can be revoked from the audit log.
+pub fn add_trust(client: &str, cap: Capability, site: &str, label: &str, span: TrustSpan) -> Result<SiteTrust, String> {
+    let now = crate::win_mcp::now_ms();
+    let mut g = grants().lock().unwrap_or_else(|e| e.into_inner());
+    let t = g.trust(client, cap, site, label, span, now)?;
+    if span != TrustSpan::Run {
+        g.save(&grants_path())?;
+    }
+    let how = match span {
+        TrustSpan::Run => "this run",
+        TrustSpan::Day => "1 day",
+        TrustSpan::Always => "always",
+    };
+    log(client, "trust", &format!("Trusted: {} ({})", t.label, how), "trusted", Some(t.id.clone()));
+    Ok(t)
+}
+
+pub fn revoke_trust(id: &str) -> Result<bool, String> {
+    let mut g = grants().lock().unwrap_or_else(|e| e.into_inner());
+    let gone = g.revoke_trust(id);
+    g.save(&grants_path())?;
+    if gone {
+        log("you", "trust", &format!("Revoked {}", id), "revoked", Some(id.to_string()));
+    }
+    Ok(gone)
+}
+
+pub fn set_memory(policy: MemoryPolicy) -> Result<MemoryPolicy, String> {
+    let mut clean = policy;
+    clean.never_remember = clean.never_remember.iter().map(|x| super::grants::site_of(x)).filter(|x| !x.is_empty()).take(500).collect();
+    clean.private_spaces.truncate(100);
+    let mut g = grants().lock().unwrap_or_else(|e| e.into_inner());
+    g.memory = clean.clone();
+    g.save(&grants_path())?;
+    Ok(clean)
 }
 
 pub fn revoke(client: &str) -> Result<(), String> {
@@ -356,6 +393,12 @@ impl Desktop for LensDesktop {
     fn now_ms(&self) -> u64 {
         crate::win_mcp::now_ms()
     }
+
+    fn memory_policy(&self) -> MemoryPolicy {
+        grants().lock().unwrap_or_else(|e| e.into_inner()).memory.clone()
+    }
+    // `browser` and `browser_tab` keep their "Lens Browser isn't available" defaults until
+    // feature/lens-browser lands; docs/CLAUDE_CONTROL.md ("Lens Browser") has the two methods.
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -373,7 +416,7 @@ pub fn gate(app: &AppHandle, client: &str, tool: &str, args: &Value) -> Result<G
     let call = tools::parse(tool, args)?;
     let d = LensDesktop::new(app, client);
     let a = tools::assess(engine(), &d, client, &call)?;
-    let decision = grants().lock().unwrap_or_else(|e| e.into_inner()).decide(client, &a.capabilities, a.risk);
+    let decision = grants().lock().unwrap_or_else(|e| e.into_inner()).decide_at(client, &a.capabilities, a.risk, a.site.as_deref(), crate::win_mcp::now_ms());
     Ok(match decision {
         Decision::Run => Gate::Run,
         Decision::Ask => Gate::Ask(a),

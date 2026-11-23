@@ -10,7 +10,7 @@ const out = join(here, "out");
 const shots = join(here, "shots");
 await mkdir(shots, { recursive: true });
 const { chromium } = await import(process.env.PARITY_PLAYWRIGHT ? pathToFileURL(process.env.PARITY_PLAYWRIGHT).href : "playwright");
-const SCENES = { delete: [520, 340], payment: [520, 340], send: [520, 300], click: [520, 560], look: [520, 820], window: [520, 440], settings: [520, 320], compact: [440, 480], hold: [520, 320], done: [520, 260], blocked: [520, 320], pill: [520, 200], showcase: [1600, 1180] };
+const SCENES = { delete: [520, 340], payment: [520, 340], send: [520, 300], click: [520, 560], look: [520, 820], window: [520, 440], settings: [520, 320], compact: [440, 480], hold: [520, 320], done: [520, 260], blocked: [520, 320], pill: [520, 200], noaccess: [520, 200], permissions: [720, 1500], showcase: [1600, 1180] };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
 const server = createServer(async (req, res) => {

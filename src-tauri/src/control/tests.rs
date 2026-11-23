@@ -502,7 +502,8 @@ fn mcp_tool_list_snapshot() {
         names,
         vec![
             "lens_list_settings", "lens_get", "lens_set", "lens_windows", "lens_window_action", "lens_app", "lens_shelf",
-            "lens_apply_preset", "lens_undo", "lens_snapshot_save", "lens_snapshot_restore",
+            "lens_apply_preset", "lens_undo", "lens_snapshot_save", "lens_snapshot_restore", "lens_browser_tabs",
+            "lens_browser_read", "lens_browser_transcript", "lens_browser_navigate", "lens_browser_act",
         ]
     );
     for d in tools::mcp_tool_defs() {
@@ -592,4 +593,187 @@ fn entries_are_serializable_for_the_ui() {
     assert_eq!(v["capability"], "change_look");
     assert_eq!(v["risk"], "low");
     assert_eq!(v["schema"]["enum"][0], "floating");
+}
+
+// ------------------------------------------------------------------ Lens Browser, trusts, memory
+
+use super::browser::{self as br, BrowserCall, PageAct};
+use super::grants::{is_bank_site, site_of, MemoryPolicy, TrustSpan};
+
+/// A desktop with a browser: one tab whose address and Space the test chooses.
+struct WithBrowser {
+    inner: Fake,
+    url: String,
+    space: Option<String>,
+    available: bool,
+}
+
+impl Stores for WithBrowser {
+    fn read(&self, s: &str) -> Result<Value, String> {
+        self.inner.read(s)
+    }
+    fn write(&self, s: &str, v: Value) -> Result<(), String> {
+        self.inner.write(s, v)
+    }
+}
+
+impl Desktop for WithBrowser {
+    fn as_stores(&self) -> &dyn Stores {
+        self
+    }
+    fn windows(&self) -> Vec<WinInfo> {
+        self.inner.windows()
+    }
+    fn monitors(&self) -> Value {
+        self.inner.monitors()
+    }
+    fn window_rect(&self, h: i64) -> Option<[i32; 4]> {
+        self.inner.window_rect(h)
+    }
+    fn window_workspace(&self, h: i64) -> Option<usize> {
+        self.inner.window_workspace(h)
+    }
+    fn is_pinned(&self, h: i64) -> bool {
+        self.inner.is_pinned(h)
+    }
+    fn window_do(&self, h: i64, a: &WinAction) -> Result<String, String> {
+        self.inner.window_do(h, a)
+    }
+    fn shelf(&self, a: &ShelfAction) -> Result<Value, String> {
+        self.inner.shelf(a)
+    }
+    fn app(&self, l: bool, n: &str) -> Result<String, String> {
+        self.inner.app(l, n)
+    }
+    fn snapshots_dir(&self) -> PathBuf {
+        self.inner.snapshots_dir()
+    }
+    fn now_ms(&self) -> u64 {
+        self.inner.now_ms()
+    }
+    fn browser(&self, call: &BrowserCall) -> Result<Value, String> {
+        if !self.available {
+            return Err(br::NO_BROWSER.into());
+        }
+        Ok(match call {
+            BrowserCall::Tabs => json!({ "tabs": [
+                { "id": "t1", "url": "https://news.example/story", "space": "Work" },
+                { "id": "t2", "url": "https://mybank.example/accounts", "space": "Work" },
+                { "id": "t3", "url": "https://diary.example", "space": "Private" }
+            ] }),
+            BrowserCall::Read { .. } => json!("# Story\nBody text."),
+            BrowserCall::Transcript { .. } => json!("[00:01] hello"),
+            _ => json!("done"),
+        })
+    }
+    fn browser_tab(&self, _tab: Option<&str>) -> Option<(String, Option<String>)> {
+        Some((self.url.clone(), self.space.clone()))
+    }
+}
+
+fn wb(url: &str, space: Option<&str>, available: bool) -> WithBrowser {
+    WithBrowser { inner: Fake::new("br"), url: url.into(), space: space.map(str::to_string), available }
+}
+
+fn bcall(tool: &str, args: Value) -> Call {
+    tools::parse(tool, &args).unwrap_or_else(|e| panic!("{}: {}", tool, e))
+}
+
+#[test]
+fn browser_parsing_and_needs() {
+    assert!(matches!(bcall("lens_browser_read", json!({})), Call::Browser(BrowserCall::Read { .. })));
+    assert!(tools::parse("lens_browser_read", &json!({ "mode": "raw" })).is_err());
+    assert!(tools::parse("lens_browser_navigate", &json!({ "input": "javascript:alert(1)" })).is_err());
+    assert!(tools::parse("lens_browser_navigate", &json!({ "input": "file:///c:/x" })).is_err());
+    assert!(tools::parse("lens_browser_act", &json!({ "element": 0, "action": "click" })).is_err());
+    let card = br::needs(&BrowserCall::Act { tab: None, element: 3, act: PageAct::Type("4111 1111 1111 1111".into()) }, Some("https://shop.example/form"));
+    assert_eq!(card.risk, Risk::Blocked, "card numbers are never typed");
+    let login = br::needs(&BrowserCall::Act { tab: None, element: 3, act: PageAct::Click }, Some("https://accounts.example/signin"));
+    assert_eq!(login.risk, Risk::Blocked);
+    let pay = br::needs(&BrowserCall::Act { tab: None, element: 3, act: PageAct::Click }, Some("https://shop.example/checkout/pay"));
+    assert_eq!(pay.risk, Risk::Blocked);
+    let submit = br::needs(&BrowserCall::Act { tab: None, element: 3, act: PageAct::Submit }, Some("https://reserve.example/book"));
+    assert_eq!(submit.risk, Risk::Confirm, "committing always asks");
+    assert!(submit.similar.is_none(), "no 'approve similar' for submits");
+    let fill = br::needs(&BrowserCall::Act { tab: None, element: 3, act: PageAct::Type("Sam".into()) }, Some("https://www.reserve.example/book"));
+    assert_eq!(fill.similar.unwrap()["label"], "fill fields on reserve.example");
+    assert!(br::looks_like_card("5500-0000-0000-0004"));
+    assert!(!br::looks_like_card("Table for 4 at 8"));
+}
+
+#[test]
+fn honest_no_access_for_banks_private_spaces_and_missing_browser() {
+    let e = engine();
+    let read = bcall("lens_browser_read", json!({}));
+    let bank = wb("https://www.mybank.example/accounts", None, true);
+    let o = tools::execute(&e, &bank, "Claude Desktop", &read).unwrap();
+    assert!(o.text.starts_with("I can't access that."), "{}", o.text);
+    assert_eq!(o.structured.as_ref().unwrap()["access"], "none");
+    assert!(o.structured.as_ref().unwrap()["source"].is_null(), "no source badge");
+    let private = wb("https://diary.example", Some("Private"), true);
+    assert_eq!(tools::execute(&e, &private, "claude-code", &read).unwrap().structured.unwrap()["access"], "none");
+    let internal = tools::execute(&e, &private, "internal", &read).unwrap();
+    assert_eq!(internal.structured.unwrap()["source"], "https://diary.example", "Lens's own assistant may read with a source");
+    let missing = wb("https://news.example", None, false);
+    let m = tools::execute(&e, &missing, "Claude Desktop", &read).unwrap();
+    assert!(m.text.contains("Lens Browser isn't running"));
+    let ok = wb("https://news.example/story", Some("Work"), true);
+    let r = tools::execute(&e, &ok, "Claude Desktop", &read).unwrap();
+    assert_eq!(r.structured.unwrap()["source"], "https://news.example/story");
+    let tabs = tools::execute(&e, &ok, "Claude Desktop", &bcall("lens_browser_tabs", json!({}))).unwrap();
+    let list = tabs.structured.unwrap()["result"]["tabs"].as_array().unwrap().clone();
+    assert_eq!(list.len(), 1, "bank and private tabs are left out for AI apps");
+    let blocked = bcall("lens_browser_act", json!({ "element": 2, "action": "type", "text": "4111111111111111" }));
+    assert!(tools::execute(&e, &ok, "internal", &blocked).is_err());
+}
+
+#[test]
+fn site_trusts_batch_approvals_and_expiry() {
+    let mut g = Grants::default();
+    let c = "Claude Desktop";
+    let now = 1_000_000;
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Low, Some("reserve.example"), now), Decision::Ask);
+    let t = g.trust(c, Capability::TypeText, "https://www.reserve.example/book", "fill fields on reserve.example", TrustSpan::Run, now).unwrap();
+    assert_eq!(t.site, "reserve.example");
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Low, Some("reserve.example"), now), Decision::Run);
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Low, Some("book.reserve.example"), now), Decision::Run, "subdomains match");
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Low, Some("other.example"), now), Decision::Ask, "only that site");
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Confirm, Some("reserve.example"), now), Decision::Ask, "submits still ask");
+    assert_eq!(g.decide_at("claude-code", &[Capability::TypeText], Risk::Low, Some("reserve.example"), now), Decision::Ask, "per client");
+    assert!(g.trust(c, Capability::SendMessages, "chat.example", "x", TrustSpan::Always, now).is_err());
+    assert!(g.trust(c, Capability::Payments, "shop.example", "x", TrustSpan::Run, now).is_err());
+    assert!(g.trust(c, Capability::DeleteToBin, "mail.example", "x", TrustSpan::Day, now).is_err());
+    let day = g.trust(c, Capability::Browse, "", "open pages", TrustSpan::Day, now).unwrap();
+    assert_eq!(g.decide_at(c, &[Capability::Browse], Risk::Low, None, now + 1000), Decision::Run);
+    assert_eq!(g.decide_at(c, &[Capability::Browse], Risk::Low, None, now + 25 * 3600 * 1000), Decision::Ask, "1-day trust expires");
+    assert!(g.revoke_trust(&t.id));
+    assert_eq!(g.decide_at(c, &[Capability::TypeText], Risk::Low, Some("reserve.example"), now), Decision::Ask);
+    assert!(!g.revoke_trust("nope"));
+    let dir = std::env::temp_dir().join(format!("lens-trust-{}", std::process::id()));
+    let p = dir.join("grants.json");
+    g.save(&p).unwrap();
+    let back = Grants::load(&p);
+    assert_eq!(back.trusts.len(), 1, "day trust saved, run trust not");
+    assert_eq!(back.trusts[0].id, day.id);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn memory_policy_never_remember_banks_private_spaces() {
+    let mut m = MemoryPolicy::default();
+    assert!(m.exclude_banks && m.exclude_private_spaces);
+    assert!(is_bank_site("online.examplebank.com"));
+    assert!(is_bank_site("https://www.paypal.com/x"));
+    assert!(!is_bank_site("news.example"));
+    assert!(!m.may_remember("https://mybank.example", None));
+    assert!(!m.may_remember("https://notes.example", Some("Private")));
+    assert!(m.may_remember("https://notes.example", Some("Work")));
+    m.never_remember.push("health.example".into());
+    assert!(!m.may_remember("https://portal.health.example/results", None));
+    assert!(m.may_share("https://portal.health.example/results", None).is_ok(), "never-remember is about storage");
+    m.private_spaces.push("Gifts".into());
+    assert!(m.may_share("https://x.example", Some("gifts")).is_err());
+    m.exclude_banks = false;
+    assert!(m.may_remember("https://mybank.example", None));
+    assert_eq!(site_of("HTTPS://user@WWW.Reserve.Example:8443/a?b#c"), "reserve.example");
 }
