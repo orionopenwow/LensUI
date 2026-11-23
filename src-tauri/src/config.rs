@@ -348,6 +348,10 @@ pub struct LensConfig {
     pub styled_folders: Vec<StyledFolderRecord>,
     #[serde(default)]
     pub onboarding_completed: bool,
+    /// Settings hub detail level: "simple" (core settings with visual previews) or "advanced"
+    /// (everything). Empty until chosen: new users start Simple, existing users Advanced.
+    #[serde(default)]
+    pub settings_mode: String,
     #[serde(default)]
     pub theme_schedule: Option<ThemeScheduleConfig>,
     #[serde(default)]
@@ -533,6 +537,7 @@ impl Default for LensConfig {
             },
             styled_folders: vec![],
             onboarding_completed: false,
+            settings_mode: String::new(),
             theme_schedule: None,
             tiling: Default::default(),
             workspaces: Default::default(),

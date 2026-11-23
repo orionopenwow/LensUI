@@ -52,6 +52,7 @@ pub const RULES: &[Rule] = &[
     r("folderStyle.globalExplorerOverride", "Icons & folders", C::ChangeLook, K),
     // Behaviour
     r("func", "Behaviour", C::ChangeSettings, L),
+    r("settingsMode", "Behaviour", C::ChangeSettings, L),
     r("func.hideNativeTaskbar", "Behaviour", C::ChangeSettings, K),
     r("func.runOnStartup", "Behaviour", C::ChangeSettings, K),
     r("func.clipboardHistory", "Clipboard", C::ChangeSettings, K),
@@ -119,6 +120,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("topBar.autoHide", "Top bar auto-hide", "When the top bar hides.", r#"{"enum":["overlap","never","always"]}"#),
     ("topBar.height", "Top bar height", "Height of the top bar in pixels.", r#"{"minimum":24,"maximum":64}"#),
     ("windowControls.style", "Window buttons", "The look of window buttons.", r#"{"enum":["traffic-classic","traffic-muted","minimal-dots","accent-pills"]}"#),
+    ("settingsMode", "Settings detail", "Simple shows the core settings with previews; Advanced shows every option.", r#"{"enum":["","simple","advanced"]}"#),
     ("windowControls.order", "Window button order", "Order of the window buttons.", r#"{"enum":["green-yellow-red","red-yellow-green"]}"#),
     ("windowControls.position", "Window button side", "Which corner window buttons sit in.", r#"{"enum":["top-right","top-left"]}"#),
     ("windowControls.frameStyle", "Window frame", "The frame style drawn around app windows.", r#"{"enum":["accent-glow","obsidian-hairline","neon","none"]}"#),
