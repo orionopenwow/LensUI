@@ -619,14 +619,9 @@ mod platform {
         x: i32,
         y: i32,
     }
-    #[repr(C)]
-    #[derive(Default, Clone, Copy)]
-    struct WinRect {
-        left: i32,
-        top: i32,
-        right: i32,
-        bottom: i32,
-    }
+    // The crate-wide RECT, so every `EnumDisplayMonitors` declaration in the crate agrees
+    // (clippy: clashing_extern_declarations).
+    use crate::ffi::Rect as WinRect;
     #[repr(C)]
     struct MsllHook {
         pt: Point,
