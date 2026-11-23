@@ -312,3 +312,124 @@ Add a step to `.github/workflows/build.yml` next to the Command parity step:
 - **Screenshots:**
   - `node tools/parity/rightclick/build.mjs && node tools/parity/rightclick/shoot.mjs`, covering the card, packs and toasts.
   - `node extensions/browser/tools/shoot.mjs <dir>`, covering the transcript panel and in-page toast.
+
+## Follow-up: clean copy, page archive, clipper templates, double-click define
+
+### Clean copy
+
+**The rules.** `src/context/cleanCopy.rules.json` holds the tracking parameters (`utm_*`, `fbclid`, `gclid`, `mc_*`, `igshid`, HubSpot, Matomo/Piwik, Bing, Amazon and others), per-host parameters, and the "Read more at…" markers.
+
+Some parameters are stripped only on particular hosts. For example, `si` and `feature` are removed on YouTube and Spotify but kept everywhere else.
+
+**Where the rules are used.**
+
+| Code | Function |
+|---|---|
+| Lens | `src/context/cleanCopy.ts`: `cleanUrl`, `cleanLinksInText`, `stripHijack` |
+| Extension | `extensions/browser/src/cleanUrl.js`. Same logic; the rules are copied into `catalog.gen.js`, and a test checks both produce identical results on a table of cases. |
+
+**In the browser.**
+- A new **Copy clean link** item (catalogue id `copy_link`).
+- **Copy as Markdown** now cleans every link it writes.
+- **Clip to notes** sends the cleaned URL.
+
+**Copy guard.** In the extension settings, "Stop sites changing what I copy" is off by default and covers all sites minus the "Never" list and the built-in sensitive list.
+
+`src/content/cleanCopy.js` runs at `document_start`. It adds a capture-phase `copy`/`cut` listener on `window` that calls `stopImmediatePropagation`. The page's handlers never see the event, so the browser copies exactly the selection. It never calls `preventDefault` and leaves editors alone.
+
+Copy buttons that call `navigator.clipboard.writeText` themselves are not intercepted.
+
+### Page archive ("Save page offline")
+
+The extension builds the snapshot with `src/content/snapshot.js`. This is our own approach; SingleFile (AGPL) is not used.
+
+1. Clone the live DOM.
+2. Remove scripts, frames, objects, `on*` handlers, `javascript:` URLs and meta refresh.
+3. Make all URLs absolute and add `<base>`.
+4. Inline same-origin stylesheets.
+5. Inline images that are already loaded and same-origin, smallest first, through a canvas as WebP, while the file stays under the cap. Other images keep absolute URLs.
+6. Add a script-blocking CSP and a `lens-archive` provenance meta tag.
+
+The snapshot makes no network requests.
+
+**Size caps.** `MAX_ARCHIVE_BYTES` is 420 KB, so one message carries the HTML plus up to 48 KB of readable text.
+
+**What Lens does with it.**
+1. The bridge action `archive_save` is accepted only from the browser, and only from this action.
+2. `shelf::archive::harden_html` strips scripts, frames, handlers and `javascript:` again, and puts the CSP first in `<head>`.
+3. The file is written to `%APPDATA%\LensUI\shelf\archives\YYYYMMDD-HHMMSS-slug.html`, never overwriting.
+4. A Shelf `page` item is added with the file `path`, URL, readable text and an `archive` tag.
+
+**Lens Browser (WebView2), snippet:**
+
+```rust
+// After the page has loaded, in the Lens Browser webview owner:
+webview.CallDevToolsProtocolMethod("Page.captureSnapshot", r#"{"format":"mhtml"}"#, handler);
+// handler gets {"data": "<mhtml text>"}:
+let (id, path) = crate::commands::rightclick::save_archive_to_shelf(&app, data.as_bytes(), "mhtml", &title, &url, Some(readable_text))?;
+```
+
+### Clipper templates
+
+The syntax follows Obsidian Web Clipper (MIT, © Obsidian), credited in `docs/THIRD_PARTY_NOTICES.md`. The parser is our own: `src/context/templates/parser.ts`.
+
+**Variables:** `title url domain author description published site date time selection highlights content tags keywords`
+
+**Filters:** `lower upper title trim slug safe_name date:"YYYY-MM-DD" default:"…" replace:"a","b" truncate:n join:", " split first last blockquote list wikilink link:"text" hashtags yaml_list yaml_string`
+
+`lint` reports unknown variables, unknown filters and unclosed tags.
+
+**Built-in templates** (`templates.ts`):
+- "Note with source", with YAML front matter;
+- "Highlights only";
+- "Reading list line".
+
+**Writing.** Rust `shelf::clipper` stores `clipper.json` with the approved folders and the templates.
+- `clipper_folder_approve(folder, confirm)` first returns a question. It approves only on `confirm: true`, and refuses system folders and folders that don't exist.
+- `clipper_write` writes only into approved folders, optionally one sub-folder deep. Names are made Windows-safe, and it uses `create_new` so files are never overwritten.
+
+The settings card is `ClipperCard`, with templates, a live preview, approved folders and a confirm card.
+
+**From the browser.** "Clip to notes" sends the bridge action `clip`, delivered to Lens with `meta` holding the author, description, published date, site and keywords from the page's own meta tags and JSON-LD. Lens renders it with `clipFromBridge`. The note is written if the template's folder is approved; otherwise it is shown for approval, or copied.
+
+### Double-click to define or translate
+
+The extension setting "Define or translate on double-click" is off by default. When on, it covers all sites minus "Never" and the built-in sensitive list. It has a "Show first" choice (definition or translation) and a "Translate into" language.
+
+`src/content/define.js` only triggers when:
+- the double-clicked text is a single word, 1–40 letters (`defineWordOk`);
+- it is not in a sensitive field;
+- the site is not denied.
+
+The bubble is in a closed Shadow DOM.
+
+The request is the bridge action `define` with `localOnly: true`. Lens refuses it outright when there is no local engine. It never waits for a cloud confirmation and never falls back to Claude.
+
+**No offline dictionary.** None is bundled. WordNet is redistributable but about 30 MB, so that is left as a decision. Without a local model, the bubble says so.
+
+### Snippets for the follow-up
+
+**9. LensAi** (`app/integration.rs`, `impl AiPort for LensAi`). Until this is applied, `define` is always refused (the safe default).
+
+```rust
+fn has_local_engine(&self) -> bool {
+    let cfg = self.app.state::<AppState>().config.lock().unwrap_or_else(|e| e.into_inner()).ai.clone();
+    effective_provider(&cfg, true) == "local"
+}
+```
+
+**10. Lens Command.** On `lens://bridge/request` with `action === "clip"`:
+
+```ts
+import { clipFromBridge } from "../context/templates/templates";
+const r = await clipFromBridge(req);
+if (r.written) addActionCard("Clipped", r.written);
+else if (r.pending?.mode === "approve") showConfirmCard(`Save into ${r.pending.folder}?`, () => clipperFolderApprove(r.pending!.folder!, true).then(() => clipFromBridge(req)));
+else navigator.clipboard.writeText(r.pending!.body); // no folder chosen: the note is copied
+```
+
+**11. Control Center.** Mount `<ClipperCard />` (from `src/context/templates/ClipperCard`) in AI & Command after `PackEditor`.
+
+**12. Clipboard history (optional).** Offer "Paste as clean link" using `cleanLinksInText` in `ClipboardPane`, and the same in `clip::paste::render` for a `clean` paste mode.
+
+**13. Desktop apps.** Double-click define can reuse the selection bubble: `selection_read` → `ai_ask({ provider: "local", … })` with `bridge::prompt` wording for `define`, gated on a local engine. Off by default.

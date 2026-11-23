@@ -9,6 +9,7 @@
 //! user to confirm in Lens unless the AI port says a local engine may run them directly.
 
 use super::ports::{ai, shelf, shelf_item_for, BridgeContext};
+use super::protocol::ShelfItem;
 use super::prompt::build_prompt;
 use super::protocol::{reply_err, reply_ok, validate, ActionKind, BridgeRequest, Origin, RawRequest};
 use crate::win_mcp::{random_token, token_eq};
@@ -108,6 +109,8 @@ pub fn request_event(e: &InboxEntry) -> Value {
         "media_url": r.media_url,
         "path": r.path,
         "paths": r.paths,
+        "meta": r.meta,
+        "local_only": r.local_only,
         "shelf_ref": r.shelf_ref,
         "origin": r.origin,
         "browser": r.browser,
@@ -218,6 +221,30 @@ pub fn handle(req: BridgeRequest) -> Value {
         };
     }
 
+    // "Save page offline": write the hardened snapshot, then a Shelf item that points at it.
+    if req.action == "archive_save" {
+        let html = req.archive_html.clone().unwrap_or_default();
+        let title = req.title.clone().unwrap_or_default();
+        let path = match crate::shelf::archive::write_archive(html.as_bytes(), &title, "html", now_ms()) {
+            Ok(p) => p.to_string_lossy().to_string(),
+            Err(e) => return reply_err(&format!("Couldn't save the offline copy: {e}")),
+        };
+        let item = ShelfItem {
+            kind: "page".into(),
+            title: req.title.clone(),
+            text: req.page_text.clone(),
+            html: None,
+            url: req.url.clone(),
+            path: Some(path.clone()),
+            source_app: Some("Offline copy".into()),
+            tags: Some(vec!["archive".into()]),
+        };
+        return match shelf().shelf_add(&item, req.shelf.as_deref()) {
+            Ok(id) => reply_ok(Some(&id), "saved", json!({ "archive": { "path": path, "bytes": html.len() } })),
+            Err(e) => reply_err(&e),
+        };
+    }
+
     // "Ask about these files": fold this file into the request its siblings just opened.
     if req.action == "ask_files" {
         let merged = match inbox().lock() {
@@ -246,8 +273,15 @@ pub fn handle(req: BridgeRequest) -> Value {
     };
 
     match entry.request.kind {
+        ActionKind::Ai if entry.request.local_only && !ai().has_local_engine() => {
+            // Never falls back to the cloud: say so instead.
+            entry.needs_confirmation = false;
+            entry.state = "failed".into();
+            entry.error = Some("This needs a local model (Ollama or LM Studio) in Lens › AI. Lens won't send it to the cloud.".into());
+        }
         ActionKind::Ai => {
-            let needs = entry.request.use_clipboard || ai().requires_confirmation(&ctx, entry.request.prefer_local);
+            let needs = !entry.request.local_only
+                && (entry.request.use_clipboard || ai().requires_confirmation(&ctx, entry.request.prefer_local));
             entry.needs_confirmation = needs;
         }
         ActionKind::Transcribe => entry.needs_confirmation = true,
@@ -272,7 +306,7 @@ pub fn handle(req: BridgeRequest) -> Value {
     }
 
     let id = entry.id.clone();
-    let auto_run = entry.request.kind == ActionKind::Ai && !entry.needs_confirmation;
+    let auto_run = entry.request.kind == ActionKind::Ai && !entry.needs_confirmation && entry.state == "pending";
     {
         let mut ib = match inbox().lock() {
             Ok(i) => i,
@@ -771,6 +805,56 @@ mod tests {
         later.path = Some("C:\\d\\z.txt".into());
         assert!(coalesce_files(&mut q, &later, e.created_ms + COALESCE_MS + 1).is_none());
         assert_eq!(coalesce_files(&mut q, &later, e.created_ms + 10).as_deref(), Some(e.id.as_str()));
+    }
+
+    #[test]
+    fn local_only_requests_never_reach_the_cloud() {
+        let _g = guard();
+        clear_for_tests();
+        // The stub has no local engine: refused straight away, nothing queued for a click.
+        let r = handle_envelope_line(&env("browser", json!({"action":"define","variant":"define","selection":"serendipity","pageText":"a happy serendipity","localOnly":true})));
+        assert_eq!(r["state"], "failed");
+        assert!(r["error"].as_str().unwrap().contains("local model"));
+        struct LocalAi;
+        impl super::super::ports::AiPort for LocalAi {
+            fn ask(&self, _: &str, _: &str, _: &BridgeContext, prefer_local: bool) -> Result<String, String> {
+                assert!(prefer_local, "local-only always prefers local");
+                Ok("local".into())
+            }
+            fn requires_confirmation(&self, _: &BridgeContext, _: bool) -> bool {
+                true // would ask before a cloud send — local-only skips that path entirely
+            }
+            fn has_local_engine(&self) -> bool {
+                true
+            }
+        }
+        super::super::ports::set_ai(Arc::new(LocalAi));
+        let ok = handle_envelope_line(&env("browser", json!({"action":"define","variant":"translate","targetLang":"Spanish","selection":"hello","localOnly":true})));
+        assert_eq!(ok["state"], "running");
+        assert_eq!(ok["engine"], "local");
+        super::super::ports::set_ai(Arc::new(super::super::ports::StubAi));
+    }
+
+    #[test]
+    fn archives_and_clips_are_validated() {
+        let _g = guard();
+        clear_for_tests();
+        // Only the browser's "Save page offline" may carry a snapshot.
+        let bad = handle_envelope_line(&env("explorer", json!({"action":"archive_save","archiveHtml":"<html></html>","url":"https://x.com"})));
+        assert_eq!(bad["ok"], false);
+        let bad2 = handle_envelope_line(&env("browser", json!({"action":"summarize","archiveHtml":"<html></html>","selection":"x"})));
+        assert_eq!(bad2["ok"], false);
+        let huge = "x".repeat(super::super::protocol::MAX_ARCHIVE_BYTES + 1);
+        let bad3 = handle_envelope_line(&env("browser", json!({"action":"archive_save","archiveHtml":huge,"url":"https://x.com"})));
+        assert_eq!(bad3["ok"], false);
+        // A clip is delivered to Lens (the UI renders the template and asks before writing).
+        let c = handle_envelope_line(&env("browser", json!({"action":"clip","selection":"quote","url":"https://x.com/a","title":"A","meta":{"author":"Ann","keywords":["k1",""]}})));
+        assert_eq!(c["state"], "delivered");
+        let e = get(c["id"].as_str().unwrap()).unwrap();
+        assert_eq!(e.request.meta.as_ref().unwrap().author.as_deref(), Some("Ann"));
+        assert_eq!(e.request.meta.as_ref().unwrap().keywords.as_ref().unwrap(), &vec!["k1".to_string()]);
+        let bad4 = handle_envelope_line(&env("browser", json!({"action":"clip","selection":"q","meta":{"evil":1}})));
+        assert_eq!(bad4["ok"], false, "unknown meta fields are rejected");
     }
 
     #[test]

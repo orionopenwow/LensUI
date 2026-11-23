@@ -53,6 +53,14 @@
       case "answers": return answers;
       case "page-context": return { title: "Why calm software wins", url: "https://lens-demo.example/blog/calm", pageText: "x".repeat(12_400), selection: cfg.selection };
       case "shelf": return { ok: true, state: "ready", items: shelf };
+      case "define": {
+        const clientId = "def" + ++n;
+        const text = msg.mode === "translate"
+          ? "serendipia — un hallazgo afortunado e inesperado."
+          : "noun · The happy chance of finding something good without looking for it. “Meeting her was pure serendipity.”";
+        setTimeout(() => emit({ type: "lens-answer", record: { clientId, state: "answered", text, engine: "local" } }), 60);
+        return { ok: true, clientId };
+      }
       case "run": {
         const clientId = "run" + ++n;
         const rec = { clientId, action: msg.action, label: { explain: "Explanation", summarize: "Summary" }[msg.action] || msg.action, state: "running", engine: "local", text: "", at: Date.now(), source: { title: document.title, url: location.href } };

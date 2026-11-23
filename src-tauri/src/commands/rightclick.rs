@@ -11,6 +11,7 @@ use crate::clip::service::now_ms;
 use crate::shelf::micro::{self, MicroInput, MicroSaved};
 use crate::shelf::packs::{self, store as pack_store, Pack, PackView};
 use crate::shelf::service as shelf_service;
+use crate::shelf::{archive, clipper};
 
 pub const EVT_MICRO_SAVED: &str = "lens://shelf/micro-saved";
 pub const EVT_PACKS_CHANGED: &str = "lens://packs/changed";
@@ -206,4 +207,98 @@ pub(crate) fn pack_export(id: String, format: String) -> Result<String, String> 
         "json" => packs::export_json(&pdb, &id, shelf),
         _ => packs::markdown(&pdb, &id, shelf, &HashMap::new()),
     })
+}
+
+// ---- page archives -----------------------------------------------------------------------------
+
+/// Saves an offline copy (hardened HTML, or MHTML from Lens Browser) and a Shelf item pointing at
+/// it, with the page's readable text for search. For Lens Browser's WebView2 capture (docs/RIGHTCLICK.md).
+// Called by Lens Browser once its snippet is applied (the bridge path writes through the Shelf port).
+#[allow(dead_code)]
+pub(crate) fn save_archive_to_shelf(app: &AppHandle, bytes: &[u8], ext: &str, title: &str, url: &str, text: Option<String>) -> Result<(String, String), String> {
+    let path = archive::write_archive(bytes, title, ext, now_ms())?;
+    let path_s = path.to_string_lossy().to_string();
+    let input = crate::shelf::ShelfItemInput {
+        kind: Some(crate::shelf::ShelfKind::Page),
+        title: Some(title.to_string()).filter(|t| !t.trim().is_empty()),
+        text,
+        url: Some(url.to_string()),
+        path: Some(path_s.clone()),
+        source_app: Some("Offline copy".into()),
+        tags: Some(vec!["archive".into()]),
+        ..Default::default()
+    };
+    let id = crate::commands::shelf::shelf_add(app.clone(), input, None)?;
+    Ok((id, path_s))
+}
+
+// ---- clipper -----------------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct FolderReport {
+    pub folder: String,
+    pub approved: bool,
+    pub message: String,
+}
+
+#[tauri::command]
+pub(crate) fn clipper_state_get() -> clipper::ClipperState {
+    clipper::load()
+}
+
+#[tauri::command]
+pub(crate) fn clipper_templates_set(templates: Value) -> Result<(), String> {
+    if !templates.is_array() {
+        return Err("Templates must be a list.".into());
+    }
+    if serde_json::to_vec(&templates).map(|v| v.len()).unwrap_or(usize::MAX) > clipper::MAX_TEMPLATES_BYTES {
+        return Err("Those templates are too large.".into());
+    }
+    let mut s = clipper::load();
+    s.templates = templates;
+    clipper::save(&s)
+}
+
+/// Call with `confirm: false` to get the question to show; with `confirm: true` after the user
+/// agreed. Lens then writes new `.md` notes into that folder, and nowhere else.
+#[tauri::command]
+pub(crate) fn clipper_folder_approve(folder: String, confirm: bool) -> Result<FolderReport, String> {
+    let f = clipper::normalise_folder(&folder)?;
+    if clipper::is_system_folder(&f) {
+        return Err("Lens won't write notes into a system folder. Pick a folder of your own.".into());
+    }
+    if !std::path::Path::new(&f).is_dir() {
+        return Err("That folder doesn't exist.".into());
+    }
+    let mut s = clipper::load();
+    if clipper::is_approved(&f, &s.folders) {
+        return Ok(FolderReport { folder: f, approved: true, message: "Already approved.".into() });
+    }
+    if !confirm {
+        return Ok(FolderReport {
+            message: format!("Let Lens save clipped notes as new .md files in {f}? It never changes or deletes files that are already there."),
+            folder: f,
+            approved: false,
+        });
+    }
+    if s.folders.len() >= clipper::MAX_FOLDERS {
+        return Err("Remove a folder first (20 max).".into());
+    }
+    s.folders.push(f.clone());
+    clipper::save(&s)?;
+    Ok(FolderReport { folder: f, approved: true, message: "Approved.".into() })
+}
+
+#[tauri::command]
+pub(crate) fn clipper_folder_revoke(folder: String) -> Result<(), String> {
+    let mut s = clipper::load();
+    let f = clipper::normalise_folder(&folder).unwrap_or(folder);
+    s.folders.retain(|x| !x.eq_ignore_ascii_case(&f));
+    clipper::save(&s)
+}
+
+/// Writes one rendered note into an approved folder. Returns the file path.
+#[tauri::command]
+pub(crate) fn clipper_write(folder: String, sub: Option<String>, name: String, content: String) -> Result<String, String> {
+    clipper::write_note(&folder, sub.as_deref(), &name, &content).map(|p| p.to_string_lossy().to_string())
 }

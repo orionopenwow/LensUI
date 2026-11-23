@@ -46,6 +46,9 @@ export function menuItems() {
 
     { id: "micro_save", parentId: "lens", title: label("micro_save", "Micro-save"), contexts: ["selection", "page", "link", "image"], action: "micro_save", kind: "micro" },
     { id: "shelf_add", parentId: "lens", title: label("shelf_add", "Add to Shelf"), contexts: ALL, action: "shelf_add", kind: "lens" },
+    { id: "archive_save", parentId: "lens", title: label("archive_save", "Save page offline"), contexts: ["page"], action: "archive_save", kind: "archive" },
+    { id: "clip", parentId: "lens", title: label("clip", "Clip to notes"), contexts: ["selection", "page"], action: "clip", kind: "clip" },
+    { id: "copy_link", parentId: "lens", title: label("copy_link", "Copy clean link"), contexts: ["link", "page"], kind: "copy" },
     { id: "copy_md", parentId: "lens", title: "Copy as Markdown", contexts: ["selection", "page", "link"], kind: "copy" },
     { id: "context_add", parentId: "lens", title: label("context_add", "Load into context"), contexts: ["selection", "page"], action: "context_add", kind: "lens" },
     { id: "compare", parentId: "lens", title: "Compare with Shelf item…", contexts: ["selection", "page"], action: "compare", kind: "ai" },

@@ -304,6 +304,190 @@ describe("extension stays minimal", () => {
 
   test("the bundled catalogue is in sync with Lens", () => {
     const gen = readFileSync(join(root, "extensions/browser/src/catalog.gen.js"), "utf8");
-    expect(gen).toBe(catalogModule(readFileSync(join(root, "src/context/actions.catalog.json"), "utf8")));
+    expect(gen).toBe(catalogModule(readFileSync(join(root, "src/context/actions.catalog.json"), "utf8"), readFileSync(join(root, "src/context/cleanCopy.rules.json"), "utf8")));
+  });
+});
+
+// ---- follow-up: clean copy, page archive, clipper templates, double-click define ----------------
+import { cleanUrl as cleanUrlTs, cleanLinksInText as cleanTextTs, stripHijack, isTrackingParam } from "../context/cleanCopy";
+import * as cleanJs from "../../extensions/browser/src/cleanUrl.js";
+import { render, formatDate, lint, parseExpression } from "../context/templates/parser";
+import { BUILTIN_TEMPLATES, clipVars, normaliseTemplates, planClip, renderClip } from "../context/templates/templates";
+import * as proto2 from "../../extensions/browser/src/protocol.js";
+await import("../../extensions/browser/src/content/selectionLogic.js");
+const LS = (globalThis as any).LensSel;
+
+describe("clean copy", () => {
+  const cases: [string, string][] = [
+    ["https://ex.com/a?utm_source=x&utm_medium=y&id=7", "https://ex.com/a?id=7"],
+    ["https://ex.com/a?fbclid=abc", "https://ex.com/a"],
+    ["https://shop.ex.com/p?gclid=1&color=red&mc_cid=2&_hsenc=3", "https://shop.ex.com/p?color=red"],
+    ["https://www.youtube.com/watch?v=abc&si=TRACK&t=42", "https://www.youtube.com/watch?v=abc&t=42"],
+    ["https://youtu.be/abc?si=x", "https://youtu.be/abc"],
+    ["https://www.amazon.co.uk/dp/B01?ref_=x&psc=1&th=1", "https://www.amazon.co.uk/dp/B01?th=1"],
+    ["https://example.org/search?si=keep&feature=keep", "https://example.org/search?si=keep&feature=keep"],
+    ["https://x.com/u/status/1?s=20&t=abc", "https://x.com/u/status/1"],
+    ["https://ex.com/a#utm_source=x", "https://ex.com/a"],
+    ["https://ex.com/plain", "https://ex.com/plain"],
+    ["mailto:a@b.com?utm_source=x", "mailto:a@b.com?utm_source=x"],
+    ["not a url", "not a url"],
+  ];
+  test("tracking parameters are stripped; real ones and other hosts' look-alikes stay", () => {
+    for (const [i, o] of cases) {
+      expect(cleanUrlTs(i)).toBe(o);
+      expect(cleanJs.cleanUrl(i)).toBe(o);
+    }
+    expect(isTrackingParam("UTM_Campaign", "a.com")).toBe(true);
+    expect(isTrackingParam("si", "a.com")).toBe(false);
+    expect(isTrackingParam("si", "music.youtube.com")).toBe(true);
+  });
+
+  test("links inside text, trailing punctuation kept", () => {
+    const t = "See https://ex.com/a?utm_source=x&id=1. And [b](https://ex.com/b?fbclid=z)!";
+    const want = "See https://ex.com/a?id=1. And [b](https://ex.com/b)!";
+    expect(cleanTextTs(t)).toBe(want);
+    expect(cleanJs.cleanLinksInText(t)).toBe(want);
+  });
+
+  test("copy-hijack tails are dropped, real text kept", () => {
+    expect(stripHijack("Calm matters.\n\nRead more at: https://site.com/x", "Calm matters.")).toBe("Calm matters.");
+    expect(stripHijack("Calm matters. More of my own words", "Calm matters.")).toBe("Calm matters. More of my own words");
+    expect(stripHijack("Different text", "Calm")).toBe("Different text");
+  });
+
+  test("copy guard script: capture phase, stops page listeners, leaves editors alone", () => {
+    const src = readFileSync(join(root, "extensions/browser/src/content/cleanCopy.js"), "utf8");
+    expect(src).toContain('window.addEventListener("copy", stop, true)');
+    expect(src).toContain("stopImmediatePropagation");
+    expect(src).not.toContain("preventDefault");
+    expect(src).toMatch(/isContentEditable/);
+  });
+});
+
+describe("helpers settings (copy guard, define)", () => {
+  test("off by default, all-sites when on, sensitive sites excluded", () => {
+    const s = LS.sanitizeSettings(null);
+    expect([s.copyGuard, s.define, s.defineMode, s.translateTo]).toEqual(["off", "off", "define", "English"]);
+    expect(LS.featureMatches(s, "copyGuard").matches).toEqual([]);
+    const on = LS.featureMatches({ ...s, define: "all", never: ["x.com"] }, "define");
+    expect(on.matches).toEqual(["https://*/*", "http://*/*"]);
+    expect(on.excludeMatches).toContain("https://x.com/*");
+    expect(on.excludeMatches).toContain("https://*.paypal.com/*");
+    expect(LS.sanitizeSettings({ translateTo: "Klingon", defineMode: "x" })).toMatchObject({ translateTo: "English", defineMode: "define" });
+  });
+
+  test("which double-clicked words get a bubble", () => {
+    for (const w of ["serendipity", "naïve", "don't", "self-aware", "Straße", "日本"]) expect(LS.defineWordOk(w)).toBe(true);
+    for (const w of ["", "42", "two words", "x".repeat(41), "a.b", "@user"]) expect(LS.defineWordOk(w)).toBe(false);
+  });
+
+  test("define requests are local-only and carry a variant", () => {
+    const r = proto2.buildRequest("define", { selection: "serendipity", pageText: "a happy serendipity" }, { variant: "translate", targetLang: "Spanish", localOnly: true });
+    expect(r).toMatchObject({ action: "define", variant: "translate", targetLang: "Spanish", localOnly: true, preferLocal: true });
+    expect(() => proto2.buildRequest("define", { selection: "x" }, { variant: "poem" })).toThrow();
+    expect(proto2.AI_ACTIONS.has("define")).toBe(true);
+  });
+});
+
+describe("page archive", () => {
+  test("snapshots go only with archive_save, under the cap, with trimmed text", () => {
+    const html = "<!DOCTYPE html><html><head></head><body>x</body></html>";
+    const r = proto2.buildRequest("archive_save", { url: "https://ex.com/a", title: "A", archiveHtml: html, pageText: "y".repeat(100_000) });
+    expect(r.archiveHtml).toBe(html);
+    expect(proto2.byteLength(r.pageText)).toBeLessThanOrEqual(proto2.MAX_ARCHIVE_TEXT_BYTES);
+    expect(() => proto2.buildRequest("summarize", { selection: "s", archiveHtml: html })).toThrow();
+    expect(() => proto2.buildRequest("archive_save", { url: "https://ex.com", archiveHtml: "x".repeat(proto2.MAX_ARCHIVE_BYTES + 1) })).toThrow();
+    const rust = readFileSync(join(root, "src-tauri/src/bridge/protocol.rs"), "utf8");
+    expect(rust).toContain("pub const MAX_ARCHIVE_BYTES: usize = 420 * 1024;");
+    expect(rust).toContain("pub const MAX_ARCHIVE_TEXT_BYTES: usize = 48 * 1024;");
+  });
+
+  test("the snapshot script makes no requests and blocks scripts", () => {
+    const src = readFileSync(join(root, "extensions/browser/src/content/snapshot.js"), "utf8");
+    expect(src).not.toMatch(/\bfetch\s*\(|XMLHttpRequest|sendBeacon/);
+    expect(src).toContain("script-src 'none'");
+    expect(src).toMatch(/querySelectorAll\("script, noscript, iframe/);
+    expect(readFileSync(join(root, "docs/THIRD_PARTY_NOTICES.md"), "utf8")).toContain("does not use or vendor it");
+  });
+
+  test("page metadata for clips is sanitised", () => {
+    expect(proto2.sanitizeMeta({ author: "  Ann ", keywords: ["a", "", 3, "b"], evil: 1, description: "x".repeat(900) })).toEqual({
+      author: "Ann", keywords: ["a", "b"], description: "x".repeat(600),
+    });
+  });
+});
+
+describe("clipper templates", () => {
+  const vars = { title: "Calm: Tech / 2", url: "https://calmtech.com/a", date: new Date(2026, 10, 2, 9, 5), tags: ["design", "attention"], selection: "Line one\nLine two", author: "" };
+
+  test("variables and filters", () => {
+    expect(render("# {{title}}", vars)).toBe("# Calm: Tech / 2");
+    expect(render("{{title|safe_name}}", vars)).toBe("Calm Tech 2");
+    expect(render("{{title|slug}}", vars)).toBe("calm-tech-2");
+    expect(render('{{date|date:"YYYY-MM-DD [at] HH:mm"}}', vars)).toBe("2026-11-02 at 09:05");
+    expect(render('{{date|date:"dddd D MMMM"}}', vars)).toBe("Monday 2 November");
+    expect(render("{{selection|blockquote}}", vars)).toBe("> Line one\n> Line two");
+    expect(render('{{tags|join:" · "}}', vars)).toBe("design · attention");
+    expect(render("{{tags|hashtags}}", vars)).toBe("#design #attention");
+    expect(render("{{tags|wikilink}}", vars)).toBe("[[design]], [[attention]]");
+    expect(render('{{author|default:"Unknown"}}', vars)).toBe("Unknown");
+    expect(render("{{title|upper|truncate:6}}", vars)).toBe("CALM:…");
+    expect(render('{{url|link:"Source"}}', vars)).toBe("[Source](https://calmtech.com/a)");
+    expect(render('{{title|replace:" / ","-"}}', vars)).toBe("Calm: Tech-2");
+    expect(render("{{nope}}|{{title|nofilter}}", vars)).toBe("|Calm: Tech / 2");
+    expect(render("tags:{{tags|yaml_list}}", vars)).toBe('tags:\n  - "design"\n  - "attention"');
+    expect(render("{{title|yaml_string}}", { title: 'He said "hi"' })).toBe('"He said \\"hi\\""');
+  });
+
+  test("parser details and lint", () => {
+    expect(parseExpression('date|date:"YYYY|MM"|upper')).toEqual({ name: "date", filters: [{ name: "date", args: ["YYYY|MM"] }, { name: "upper", args: [] }] });
+    expect(parseExpression('x|replace:"a,b","c"').filters[0].args).toEqual(["a,b", "c"]);
+    expect(formatDate(new Date(NaN), "YYYY")).toBe("");
+    expect(lint("{{titel}} {{title|shout}} {{url")).toEqual(["Unknown variable {{titel}}", "Unknown filter |shout", "A {{ is never closed"]);
+    for (const t of BUILTIN_TEMPLATES) expect(lint(t.body).concat(lint(t.fileName))).toEqual([]);
+  });
+
+  test("built-in note template renders front matter, quote and source", () => {
+    const r = renderClip(BUILTIN_TEMPLATES[0], {
+      title: "Designing Calm Technology", url: "https://calmtech.com/p", selection: "Smallest possible amount of attention.",
+      meta: { author: "Weiser", published: "1995-12-21", keywords: ["design"] }, now: new Date(2026, 10, 22),
+    });
+    expect(r.fileName).toBe("Designing Calm Technology");
+    expect(r.body).toBe(`---
+title: "Designing Calm Technology"
+source: https://calmtech.com/p
+author: "Weiser"
+published: 1995-12-21
+created: 2026-11-22
+tags:
+  - "design"
+---
+> Smallest possible amount of attention.
+`);
+    expect(r.problems).toEqual([]);
+    // No selection: the page text becomes the content, and tags fall back to "clipping".
+    const v = clipVars({ url: "https://www.ex.com/x", pageText: "Body" });
+    expect(v.title).toBe("ex.com");
+    expect(v.content).toBe("Body");
+    expect(v.tags).toEqual(["clipping"]);
+  });
+
+  test("where a clip goes", () => {
+    const t = { ...BUILTIN_TEMPLATES[0], folder: "C:\\Vault\\" };
+    expect(planClip(t, ["c:\\vault"])).toEqual({ mode: "write", folder: "C:\\Vault\\" });
+    expect(planClip(t, [])).toEqual({ mode: "approve", folder: "C:\\Vault\\" });
+    expect(planClip({ ...t, folder: "" }, ["c:\\vault"])).toEqual({ mode: "copy" });
+    const n = normaliseTemplates([{ id: "note", body: "x", name: "Mine" }, { bad: 1 }]);
+    expect(n[0]).toMatchObject({ id: "note", name: "Mine", fileName: "{{title|safe_name}}" });
+    expect(n.map((x) => x.id)).toEqual(["note", "highlights", "reading-list"]);
+  });
+});
+
+describe("follow-up menu items", () => {
+  test("copy clean link, save offline and clip to notes are in the browser menu", () => {
+    expect(findItem("copy_link").kind).toBe("copy");
+    expect(findItem("archive_save")).toMatchObject({ action: "archive_save", kind: "archive", contexts: ["page"] });
+    expect(findItem("clip")).toMatchObject({ action: "clip", kind: "clip" });
+    for (const id of ["copy_link", "archive_save", "clip", "define"]) expect(CATALOG.actions.some((a) => a.id === id)).toBe(true);
   });
 });

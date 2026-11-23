@@ -10,6 +10,8 @@ import { PackEditor } from "../../../src/context/PackEditor";
 import { MicroSaveToastView } from "../../../src/context/MicroSaveToast";
 import { addCustom, DEFAULT_PREFS, togglePin, toggleHidden } from "../../../src/context/actions";
 import type { PackView } from "../../../src/context/contract";
+import { ClipperCard } from "../../../src/context/templates/ClipperCard";
+import { BUILTIN_TEMPLATES } from "../../../src/context/templates/templates";
 
 const q = new URLSearchParams(location.search);
 const scene = q.get("scene") || "card";
@@ -67,6 +69,8 @@ const scenes: Record<string, React.ReactNode> = {
   "card-desktop": <div className="g-card"><ContextMenuCard initialPrefs={DEFAULT_PREFS} initialPlace="desktop" /></div>,
   pack: <div className="g-card"><PackEditor demo={{ packs, view: pack, shelf }} /></div>,
   "pack-fits": <div className="g-card"><PackEditor demo={{ packs, view: { ...pack, pack: { ...pack.pack, budget_tokens: 32000 }, over_budget: false, trim_plan: [] }, shelf }} /></div>,
+  clipper: <div className="g-card"><ClipperCard initial={{ folders: ["C:\\Users\\you\\Documents\\Obsidian Vault"], templates: BUILTIN_TEMPLATES.map((t, i) => (i === 0 ? { ...t, folder: "C:\\Users\\you\\Documents\\Obsidian Vault" } : t)) }} /></div>,
+  "clipper-approve": <div className="g-card"><ClipperCard initial={{ folders: [], templates: BUILTIN_TEMPLATES, selected: "highlights", pending: { folder: "D:\\Notes\\Research", message: "Let Lens save clipped notes as new .md files in D:\\Notes\\Research? It never changes or deletes files that are already there." } }} /></div>,
   "toast-saved": toast(base),
   "toast-merged": toast({ ...base, merged: true, quotes: 3, approx_tokens: 112 }),
   "toast-duplicate": toast({ ...base, duplicate: true }),

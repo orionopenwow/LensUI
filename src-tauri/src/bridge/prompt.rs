@@ -46,6 +46,13 @@ pub fn build_prompt(r: &BridgeRequest) -> String {
             "todos" => format!("Extract the action items and to-dos from {} as a checklist.", subject),
             _ => format!("Extract the tables in {} as Markdown tables.", subject),
         },
+        "define" => match v {
+            "translate" => format!(
+                "Translate the selected word into {}, as it is used in the surrounding text. Give the translation, then one short line on its meaning. Under 40 words.",
+                r.target_lang.as_deref().unwrap_or("English")
+            ),
+            _ => "Define the selected word as it is used in the surrounding text: part of speech, a one-line definition, and a short example. Under 50 words.".to_string(),
+        },
         "ask_files" => match &r.question {
             Some(q) => q.clone(),
             None => {

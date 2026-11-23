@@ -52,6 +52,12 @@ pub trait AiPort: Send + Sync {
         true
     }
 
+    /// Whether a local model can answer right now. Requests marked local-only (double-click
+    /// define/translate) are refused when this is false, never sent to a cloud provider.
+    fn has_local_engine(&self) -> bool {
+        false
+    }
+
     fn cancel(&self, _request_id: &str) {}
 }
 
