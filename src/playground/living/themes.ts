@@ -116,7 +116,8 @@ export const moonlightPainter: LivingPainter = {
       const pts = c.stars.map(([x, y]) => ({ x: cx + x * size, y: cy + y * size }));
       const a = (vis - 0.15) * 0.22;
       for (const [i, j] of c.lines) line(px, w, h, pts[i].x, pts[i].y, pts[j].x, pts[j].y, 170, 190, 240, a);
-      for (const p of pts) dot(px, w, h, p.x, p.y, 1.6, 235, 240, 255, Math.min(1, vis * 0.9));
+      const sr = Math.max(0.6, (1.6 * h) / 540);
+      for (const p of pts) dot(px, w, h, p.x, p.y, sr, 235, 240, 255, Math.min(1, vis * 0.9));
     }
     return res;
   },
@@ -130,7 +131,7 @@ function line(px: Uint32Array, w: number, h: number, x0: number, y0: number, x1:
   }
 }
 
-function dot(px: Uint32Array, w: number, h: number, cx: number, cy: number, r: number, cr: number, cg: number, cb: number, a: number) {
+function dot(px: Uint32Array, w: number, h: number, cx: number, cy: number, r: number, cr: number, cg: number, cb: number, a: number, paint = false) {
   const R = Math.ceil(r + 1);
   for (let y = (cy - R) | 0; y <= cy + R; y++) {
     if (y < 0 || y >= h) continue;
@@ -138,7 +139,10 @@ function dot(px: Uint32Array, w: number, h: number, cx: number, cy: number, r: n
       if (x < 0 || x >= w) continue;
       const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
       const k = clamp01(r + 0.5 - d);
-      if (k > 0) addLight(px, y * w + x, cr, cg, cb, a * k);
+      if (k > 0) {
+        if (paint) blend(px, y * w + x, cr, cg, cb, a * k);
+        else addLight(px, y * w + x, cr, cg, cb, a * k);
+      }
     }
   }
 }
@@ -225,7 +229,9 @@ export const seasonsPainter: LivingPainter = {
       const x = (((p.x + Math.sin(t * 0.4 * p.s + p.ph) * 0.01 + t * 0.002) % 1) + 1) % 1;
       const sx = ((x - f.view.x0) / span01) * w, sy = y * h;
       const flick = season === "summer" && day < 0.4 ? 0.5 + 0.5 * Math.sin(f.t * 2 * p.s + p.ph) : 1;
-      dot(px, w, h, sx, sy, season === "winter" ? 1.2 * p.s : 1.1, pc.r, pc.g, pc.b, 0.55 * vis * flick * (0.4 + 0.6 * Math.max(light, season === "summer" ? 1 : 0)));
+      const glow = season === "summer" && day < 0.4; // fireflies glow; petals, leaves and snow are painted
+      const pcol = glow ? pc : scale(pc, 0.35 + 0.65 * light);
+      dot(px, w, h, sx, sy, season === "winter" ? 1.2 * p.s : 1.1, pcol.r, pcol.g, pcol.b, (glow ? 0.55 : 0.8) * vis * flick, !glow);
     }
     return res;
   },
@@ -402,7 +408,10 @@ export const tidesPainter: LivingPainter = {
       const wave = Math.sin(y * 0.9 + t * 0.6) * 0.5;
       const sy = shore + Math.sin(t * 0.35) * h * 0.006 + wave;
       if (y < sy) fillRow(px, w, y, wc.r, wc.g, wc.b);
-      else if (y < sy + 2) fillRow(px, w, y, 232, 236, 240 * (0.4 + 0.6 * day));
+      else if (y < sy + 2) {
+        const foam = 0.3 + 0.7 * day;
+        fillRow(px, w, y, 226 * foam, 232 * foam, 238 * foam);
+      }
       else fillRow(px, w, y, sand.r * (1 - 0.1 * d), sand.g * (1 - 0.1 * d), sand.b * (1 - 0.1 * d));
     }
     // Glitter path under the Sun or the Moon.
@@ -530,8 +539,21 @@ export const northernLightsPainter: LivingPainter = {
     return { sky: initSky(seed), peaks, col: new Float32Array(w * 4) };
   },
   paint(px, w, h, f, state) {
-    const s = state as { sky: SkyState; peaks: { f: number; p: number; a: number }[]; col: Float32Array };
-    const res = paintSky(px, w, h, f, s.sky, { grade: auroraGrade, layout: { horizon: 0.84, halfSpan: 150 } });
+    const s = state as { sky: SkyState; peaks: { f: number; p: number; a: number }[]; col: Float32Array; ridge?: Float32Array };
+    // Snowy peaks' ridge first: rows below its lowest point need no sky.
+    const span0 = f.view.x1 - f.view.x0;
+    if (!s.ridge || s.ridge.length < w) s.ridge = new Float32Array(w);
+    const top = s.ridge;
+    let covered = 0;
+    for (let x = 0; x < w; x++) {
+      const vx = f.view.x0 + (x / w) * span0;
+      let y = 0;
+      // 1 − |sin| gives sharp summits and rounded valleys.
+      for (const p of s.peaks) y += p.a * (1 - Math.abs(Math.sin(vx * p.f * 0.5 + p.p)));
+      top[x] = h * 0.84 - h * 0.15 * y + h * 0.08;
+      if (top[x] > covered) covered = top[x];
+    }
+    const res = paintSky(px, w, h, f, s.sky, { grade: auroraGrade, layout: { horizon: 0.84, halfSpan: 150 }, clipBottom: covered + 1 });
     const I = auroraStrength(f);
     const hy = res.horizonY;
     const span01 = f.view.x1 - f.view.x0;
@@ -575,14 +597,6 @@ export const northernLightsPainter: LivingPainter = {
     const day = daylight(f);
     const snow = scale(mixc(rgb(232, 238, 246), res.colours.horizon, 0.25), 0.18 + 0.82 * day);
     const shade = scale(mixc(rgb(150, 170, 200), res.colours.zenith, 0.4), 0.15 + 0.85 * day);
-    const top = s.col; // reuse: columns' curtain data is no longer needed
-    for (let x = 0; x < w; x++) {
-      const vx = f.view.x0 + (x / w) * span01;
-      let y = 0;
-      // 1 − |sin| gives sharp summits and rounded valleys.
-      for (const p of s.peaks) y += p.a * (1 - Math.abs(Math.sin(vx * p.f * 0.5 + p.p)));
-      top[x] = hy - h * 0.15 * y + h * 0.08;
-    }
     // Lit faces turn towards the Sun's side of the screen (low light from the left or right).
     const facing = f.latitude >= f.sun.declination ? 180 : 0;
     const rel = ((((f.sun.azimuth - facing) % 360) + 540) % 360) - 180;
@@ -593,7 +607,7 @@ export const northernLightsPainter: LivingPainter = {
     const band = h * 0.12;
     for (let x = 0; x < w; x++) {
       const sl = (top[Math.min(w - 1, x + 2)] - top[Math.max(0, x - 2)]) * dir;
-      const cap = mixc(shade, snow, 0.5 + 0.5 * Math.tanh(sl * 0.35));
+      const cap = mixc(shade, snow, 0.5 + 0.5 * Math.tanh(sl * 0.2));
       const y0 = Math.max(0, top[x] | 0);
       for (let yy = y0; yy < h; yy++) {
         const k = (yy - top[x]) / band;
@@ -624,12 +638,32 @@ export const desertPainter: LivingPainter = {
   grade: desertGrade,
   init(w, _h, seed) {
     const layers = Array.from({ length: 4 }, (_, l) => ({ base: 0.66 + l * 0.085, amp: 0.035 + l * 0.012, f: (3.2 - l * 0.5) * 2 * Math.PI, p: hash01(seed + l * 7) * 6.28, skew: 0.55 + hash01(seed * 3 + l) * 0.25 }));
-    return { sky: initSky(seed), layers, top: new Float32Array(w) };
+    return { sky: initSky(seed), layers, tops: new Float32Array(w * 4) };
   },
   paint(px, w, h, f, state) {
-    const s = state as { sky: SkyState; layers: { base: number; amp: number; f: number; p: number; skew: number }[]; top: Float32Array; lit?: Float32Array };
-    const res = paintSky(px, w, h, f, s.sky, { grade: desertGrade, layout: { horizon: 0.66, halfSpan: 150 } });
-    if (s.top.length < w) s.top = new Float32Array(w);
+    const s = state as { sky: SkyState; layers: { base: number; amp: number; f: number; p: number; skew: number }[]; tops: Float32Array; lit?: Float32Array; cols?: Float32Array };
+    const nL = s.layers.length;
+    if (s.tops.length < w * nL) s.tops = new Float32Array(w * nL);
+    const span0 = f.view.x1 - f.view.x0;
+    // All ridge lines first, so each layer only fills down to the one in front of it.
+    s.layers.forEach((L, li) => {
+      for (let x = 0; x < w; x++) {
+        const vx = f.view.x0 + (x / w) * span0;
+        const ph = (vx * L.f + L.p) / (2 * Math.PI);
+        const fr = ph - Math.floor(ph);
+        // Asymmetric dune: long windward slope, short steep slip face.
+        const prof = fr < L.skew ? fr / L.skew : 1 - (fr - L.skew) / (1 - L.skew);
+        s.tops[li * w + x] = h * (L.base - L.amp * (prof * prof * (3 - 2 * prof)));
+      }
+    });
+    // Rows every column's dunes cover need no sky.
+    let covered = 0;
+    for (let x = 0; x < w; x++) {
+      let m = h;
+      for (let li = 0; li < nL; li++) m = Math.min(m, s.tops[li * w + x]);
+      covered = Math.max(covered, m);
+    }
+    const res = paintSky(px, w, h, f, s.sky, { grade: desertGrade, layout: { horizon: 0.66, halfSpan: 150 }, clipBottom: covered + 1 });
     const day = daylight(f);
     const alt = Math.max(0.5, f.sun.altitude);
     // Sun direction on screen: which side the light comes from, and how flat it is.
@@ -640,41 +674,61 @@ export const desertPainter: LivingPainter = {
     const sc = sunColour(f.sun.altitude);
     const litSand = mixc(rgb(238, 196, 136), sc, 0.25 * Math.max(0, 1 - f.sun.altitude / 15));
     const shadowSand = mixc(rgb(150, 104, 96), res.colours.zenith, 0.35);
-    const span01 = f.view.x1 - f.view.x0;
     const tanA = Math.tan((alt * Math.PI) / 180) * (h / w) * 3; // screen-space shadow slope
+    if (!s.cols || s.cols.length < w * nL * 3) s.cols = new Float32Array(w * nL * 3);
+    if (!s.lit || s.lit.length < w) s.lit = new Float32Array(w);
+    const bodies: RGB[] = [];
+    const bands: number[] = [];
     s.layers.forEach((L, li) => {
       const haze = (3 - li) / 3 * 0.55; // far dunes fade into the horizon haze
-      for (let x = 0; x < w; x++) {
-        const vx = f.view.x0 + (x / w) * span01;
-        const ph = (vx * L.f + L.p) / (2 * Math.PI);
-        const fr = ph - Math.floor(ph);
-        // Asymmetric dune: long windward slope, short steep slip face.
-        const prof = fr < L.skew ? fr / L.skew : 1 - (fr - L.skew) / (1 - L.skew);
-        s.top[x] = h * (L.base - L.amp * (prof * prof * (3 - 2 * prof)));
-      }
+      bands.push(h * L.amp * 1.6);
+      bodies.push(mixc(scale(mixc(shadowSand, litSand, 0.5), 0.3 + 0.7 * day), res.colours.horizon, haze * (0.5 + 0.5 * day)));
+      const top = s.tops.subarray(li * w, li * w + w);
       // Shadow sweep away from the Sun: a column is shadowed when the line from the last crest drops below it.
-      if (!s.lit || s.lit.length < w) s.lit = new Float32Array(w);
-      const lit = s.lit;
+      const lit = s.lit!;
       let line = Infinity;
       for (let i = 0; i < w; i++) {
         const x = fromRight ? w - 1 - i : i;
         // 1 = in light, 0 = deep in a crest's shadow, soft over a few pixels.
-        lit[x] = 1 - clamp01((s.top[x] - (line + tanA)) / 4);
-        line = Math.min(s.top[x], line + tanA);
+        lit[x] = 1 - clamp01((top[x] - (line + tanA)) / 4);
+        line = Math.min(top[x], line + tanA);
       }
       for (let x = 0; x < w; x++) {
         const xl = x > 0 ? x - 1 : x, xr = x < w - 1 ? x + 1 : x;
-        const slope = (s.top[xr] - s.top[xl]) / 2; // >0: surface drops to the right
+        const slope = (top[xr] - top[xl]) / 2; // >0: surface drops to the right
         const faceSun = fromRight ? -slope : slope; // facing the Sun's side
         let k = 0.55 + 0.45 * Math.tanh(faceSun * 0.8) * side;
         k = k * lit[x] + Math.min(k, 0.38) * (1 - lit[x]);
-        k = k * (0.25 + 0.75 * day);
-        const c0 = mixc(shadowSand, litSand, clamp01(k));
-        const c = mixc(scale(c0, 0.3 + 0.7 * day), res.colours.horizon, haze * (0.5 + 0.5 * day));
-        const cp = pack(c.r, c.g, c.b);
-        for (let y = Math.max(0, s.top[x] | 0); y < h; y++) px[y * w + x] = cp;
+        k = clamp01(k * (0.25 + 0.75 * day));
+        const lk = 0.3 + 0.7 * day, hz = haze * (0.5 + 0.5 * day);
+        const o = (li * w + x) * 3;
+        s.cols![o] = (shadowSand.r + (litSand.r - shadowSand.r) * k) * lk * (1 - hz) + res.colours.horizon.r * hz;
+        s.cols![o + 1] = (shadowSand.g + (litSand.g - shadowSand.g) * k) * lk * (1 - hz) + res.colours.horizon.g * hz;
+        s.cols![o + 2] = (shadowSand.b + (litSand.b - shadowSand.b) * k) * lk * (1 - hz) + res.colours.horizon.b * hz;
       }
     });
+    // Each layer fills from its ridge down to the ridge of the layer in front. The lit/shaded
+    // face fades into the layer's even body colour below the ridge, so narrow slope changes
+    // don't become vertical stripes. Colours are mixes of in-range colours: no clamping needed.
+    const cols = s.cols, tops = s.tops;
+    for (let li = 0; li < nL; li++) {
+      const B = bodies[li], bp = pack(B.r, B.g, B.b), ib = 1 / bands[li];
+      for (let x = 0; x < w; x++) {
+        const t0 = tops[li * w + x];
+        const yEnd = li + 1 < nL ? Math.min(h, Math.ceil(tops[(li + 1) * w + x])) : h;
+        const q = (li * w + x) * 3;
+        const cr = cols[q], cg = cols[q + 1], cb = cols[q + 2];
+        const dr = B.r - cr, dg = B.g - cg, db = B.b - cb;
+        const y0 = Math.max(0, t0 | 0);
+        const yb = Math.min(yEnd, (t0 + bands[li]) | 0);
+        let o = y0 * w + x;
+        for (let y = y0; y < yb; y++, o += w) {
+          const e = (y - t0) * ib, ee = e * e;
+          px[o] = (0xff000000 | (((cb + db * ee) | 0) << 16) | (((cg + dg * ee) | 0) << 8) | ((cr + dr * ee) | 0)) >>> 0;
+        }
+        for (let y = Math.max(yb, y0); y < yEnd; y++, o += w) px[o] = bp;
+      }
+    }
     return res;
   },
 };

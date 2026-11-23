@@ -9215,6 +9215,124 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
+   "id": "doc.living-themes.0",
+   "kind": "doc",
+   "title": "Living Themes",
+   "text": "Living Themes are theme packs that come with a live wallpaper driven by the real Sun and Moon where you are. The flagship is Sky : the Sun rises low and glowing, climbs into a lavender-blue day, sets bottom-right into a pink-violet dusk, and gives way to a navy night with faint stars. Lens' glass, Dock and widgets can follow it. Theme & Look → Living themes has live tiles for all nine, the location, a time-lapse scrubber, \"Tint Lens with the sky\", Motion (Still / Subtle) and the weather options. Pack id Name What moves --- --- --- living-sky Sky Real Sun and Moon, twilight stages, stars, slow high clouds living-moonlight Moonlight A large Moon in tonight's real phase; the season's constellation (Orion, Big Dipper, Cygnus, Cassiopeia; Crux in the south) living-seasons Seasons Palette, hills and particles (blossom, fireflies, leaves, snow) by date and hemisphere living-golden-hour Golden H",
+   "path": [
+    "Docs",
+    "Living Themes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Living Themes"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.1",
+   "kind": "doc",
+   "title": "Living Themes: Code",
+   "text": "LIVING PACKS is a separate list from THEME PACKS and COMMUNITY PACKS , so the community collection and the recommended six are unchanged.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Code"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.2",
+   "kind": "doc",
+   "title": "Living Themes: Algorithms",
+   "text": "Sun. The NOAA solar position algorithm (the NOAA Solar Calculator): Julian century, geometric mean longitude and anomaly, equation of centre, apparent longitude with nutation, obliquity, declination, equation of time, true solar time, hour angle, then altitude/azimuth, plus NOAA's refraction correction. Tested against published sunrise/sunset times (London and New York at the June solstice, Sydney at the December solstice) to within 2 minutes, against the Theme Schedule's own sunrise for six cities on five dates to within 3 minutes, against 90 − φ + δ at London's solar noon (within 0.15°), against the equator at the equinox ( 89.5°), and against polar night and midnight sun in Tromsø (noon −3.1°, midnight +3.1° ± 0.5°). Moon. The low-precision lunar theory used by suncalc (Meeus, truncated): longitude with the equation of centre, latitude and distance; topocentric parallax; phase from th",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Algorithms"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Algorithms"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.3",
+   "kind": "doc",
+   "title": "Living Themes: Tint and light/dark",
+   "text": "While a living pack is active, Lens is light between sunrise and sunset and dark otherwise, using the same sunTimes / isDaytime logic as the Theme Schedule. Polar day and night are handled. \"Tint Lens with the sky\" (off by default) moves the glass base and the accent towards the current sky colour of the active living theme, or of Sky when a regular pack is active (regular packs keep their own light or dark scheme). The controller: writes only CSS variables in each window ( --lens-pack-base , --lens-pack-elevated , --lens-accent , data-scheme ). It never writes config.json, and turning it off restores the pack's own values; re-applies at most once a minute, and skips changes too small to see; holds still while the desktop is covered (the wallpaper pause monitor reports covered for fullscreen apps and games) and inside fullscreen pages; always keeps the ink at ≥ 4.5:1 on the base and elev",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Tint and light/dark"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Tint and light/dark"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.4",
+   "kind": "doc",
+   "title": "Living Themes: Privacy",
+   "text": "Location is chosen in this order: a manual city or \"lat, long\" (rounded to 0.1°), the Theme Schedule location, or a guess from the time zone (a representative city for ~70 zones, else UTC offset × 15°). It is stored in this PC's localStorage ( lens.living.v1 ) and never sent anywhere. Weather is manual by default. \"Use live weather (Open-Meteo)\" is opt-in. It requests only https://api.open-meteo.com/v1/forecast?latitude=<0.1° &longitude=<0.1° &current=weather code , with no key, account or other parameters, and caches the answer for 30 minutes, so there are at most two requests an hour. Switching it off clears the cache. Open-Meteo is the only host added to the app's connect-src . No other part of Living Themes uses the network.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Privacy"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.5",
+   "kind": "doc",
+   "title": "Living Themes: Performance and motion",
+   "text": "The painters write straight into an RGBA buffer at half the CSS resolution (a third above 2560 px wide), and CSS scales it up. Frame time at 960×540, one painter per process ( bun src/playground/living/bench.ts <id ): about 1.2–2.4 ms median on a loaded 2-core sandbox. The unit test fails above 3 ms (25th percentile) or 7.5 ms (median). At most 10 fps in Subtle (scene maxFps , inside the requested 6–15). Still draws one frame and then repaints once a minute so the Sun stays where it really is. The wallpaper host already stops the loop when the desktop is covered, on battery or battery saver, with Calm, or with reduced motion. Covered and paused windows still get the once-a-minute repaint. Every painter is deterministic for a given instant, place, size and seed (tested by hashing frames).",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Performance and motion"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Performance and motion"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.6",
+   "kind": "doc",
+   "title": "Living Themes: Screenshots",
+   "text": "This produces Sky at sunrise, noon, sunset, dusk and night with the Dock and widgets dressed in the tint for that moment, each family theme, the settings row with the scrubber at 18:30, a 10-second WebP time-lapse of a full Sky day (London, 15 October), and looks.json with the exact colours applied.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Screenshots"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Screenshots"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
    "id": "doc.magic.0",
    "kind": "doc",
    "title": "Magic right-click window",
