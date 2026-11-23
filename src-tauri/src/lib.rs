@@ -62,6 +62,10 @@ mod music;
 mod shelf;
 mod guide;
 mod snip;
+// Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
+#[cfg(test)]
+#[path = "tests/robustness/mod.rs"]
+mod robustness_tests;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};

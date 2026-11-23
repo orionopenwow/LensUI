@@ -71,3 +71,7 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Property-based tests (src/tests/robustness, docs/TESTING.md). Not linked into the app.
+[dev-dependencies]
+proptest = "1"
