@@ -56,6 +56,7 @@ mod control;
 mod media;
 mod shelf;
 mod guide;
+mod snip;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -582,6 +583,38 @@ pub fn run() {
             commands::playground::clear_playground_state_cmd,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::snip::snip_status,
+            commands::snip::snip_set_settings,
+            commands::snip::snip_start,
+            commands::snip::snip_session,
+            commands::snip::snip_elements,
+            commands::snip::snip_commit,
+            commands::snip::snip_take_pending,
+            commands::snip::snip_close,
+            commands::snip::snip_analyze,
+            commands::snip::snip_export,
+            commands::snip::snip_to_claude,
+            commands::snip::snip_share,
+            commands::snip::snip_recent,
+            commands::snip::snip_recent_clear,
+            commands::snip::snip_running_apps,
+            commands::snip::snip_open_in,
+            commands::snip::snip_pin_info,
+            commands::snip::snip_pin_click_through,
+            commands::snip::snip_pin_close,
+            commands::snip::snip_pins_release,
+            commands::snip::snip_history,
+            commands::snip::snip_history_open,
+            commands::snip::snip_history_delete,
+            commands::snip::snip_history_pin,
+            commands::snip::snip_history_tags,
+            commands::snip::snip_history_clear,
+            commands::snip::snip_record_start,
+            commands::snip::snip_record_stop,
+            commands::snip::snip_record_state,
+            commands::snip::snip_record_trim,
+            commands::snip::snip_record_mics,
+            commands::snip::snip_scroll_capture,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,

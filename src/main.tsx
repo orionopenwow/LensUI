@@ -50,6 +50,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
   // Lens Browser frame UI (docs/LENS_BROWSER.md).
   browser: lazy(() => import("./browser/BrowserSurface").then((m) => ({ default: m.BrowserSurface }))),
+  // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).
+  snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).

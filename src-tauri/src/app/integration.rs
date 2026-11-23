@@ -25,6 +25,7 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     start_playground_idle(&handle);
     wire_bridge(&handle);
     crate::commands::clip::init(&handle);
+    crate::commands::snip::init(&handle);
     if cfg.edge_shelf_enabled() {
         let _ = crate::app::setup::build_window_from_config(&handle, "edgeshelf");
     }
@@ -121,6 +122,7 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
 /// Everything that must never outlive Lens: hooks, overlays, the idle window. Called from
 /// `quit_lens`, the tray's Quit and `RunEvent::Exit`.
 pub(crate) fn shutdown(app: Option<&AppHandle>) {
+    crate::commands::snip::shutdown();
     panic_shutdown();
     if let Some(app) = app {
         if let Some(w) = app.get_webview_window("playground-idle") {

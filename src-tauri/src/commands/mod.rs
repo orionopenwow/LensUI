@@ -28,6 +28,7 @@ pub(crate) mod release;
 pub(crate) mod playground;
 pub(crate) mod command_ui;
 pub(crate) mod control;
+pub(crate) mod snip;
 pub(crate) mod tester;
 pub(crate) mod voice;
 pub(crate) mod guide;
