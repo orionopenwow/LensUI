@@ -44,6 +44,7 @@ import { BatteryModule } from "../components/BatteryModule";
 import { KeyboardLayoutModule } from "../components/KeyboardLayoutModule";
 import { AccountModule } from "../components/AccountModule";
 import { AudioDeviceModule } from "../components/AudioDeviceModule";
+import { BrightnessRows, ConnectionTiles, NightLightPanel, WindowThumbs, useVolumeSender } from "../quicksettings/LiveRows";
 import "./QuickSettingsSurface.css";
 
 interface QuickState {
@@ -203,20 +204,28 @@ export const QuickSettingsSurface: React.FC = () => {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  const [audioErr, setAudioErr] = useState<string | null>(null);
+  const sendVolume = useVolumeSender(setAudioErr);
   const setVolume = (level: number) => {
-    setQs((prev) => ({ ...prev, volume: level, muted: false }));
-    invoke("set_volume_cmd", { level }).catch(() => {});
+    setAudioErr(null);
+    setQs((prev) => ({ ...prev, volume: level, muted: level > 0 ? false : prev.muted }));
+    sendVolume(level);
   };
+  // Reflect volume changes made elsewhere (keyboard keys, other apps) while this flyout is showing.
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      invoke<[number, boolean]>("get_volume_cmd")
+        .then(([volume, muted]) => setQs((prev) => (prev.volume === volume && prev.muted === muted ? prev : { ...prev, volume, muted })))
+        .catch(() => {});
+    }, 1500);
+    return () => window.clearInterval(t);
+  }, []);
 
   const toggleMute = () => {
     const next = !qs.muted;
     setQs((prev) => ({ ...prev, muted: next }));
-    invoke("set_mute_cmd", { muted: next }).catch(() => {});
-  };
-
-  const setBrightness = (level: number) => {
-    setQs((prev) => ({ ...prev, brightness: level }));
-    invoke("set_brightness_cmd", { level }).catch(() => {});
+    invoke("set_mute_cmd", { muted: next }).catch((e) => setAudioErr(String(e)));
   };
 
   const toggleNightLight = () => {
@@ -357,6 +366,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   onIconClick={toggleMute}
                   onChange={setVolume}
                 />
+                {audioErr && <div className="qsl-error">{audioErr}</div>}
 
                 {sessions.map((s) => (
                   <PillFillBar
@@ -434,40 +444,14 @@ export const QuickSettingsSurface: React.FC = () => {
               <BatteryModule />
               <KeyboardLayoutModule />
 
-              {/* 1. DISPLAY & EYE CARE */}
+              {/* 1. DISPLAY & EYE CARE: one slider per screen, Night light expands into warmth + schedule */}
               <div className="qs-card" style={{ gap: 9 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <Sun size={15} strokeWidth={2.4} color="#FBBF24" />
-                    <span className="qs-row-title" style={{ fontSize: 12 }}>Display &amp; Eye Care</span>
-                  </div>
-                  <button
-                    type="button"
-                    aria-label="Toggle Night Light"
-                    className={`qs-switch amber ${qs.nightLightEnabled ? "on" : ""}`}
-                    onClick={toggleNightLight}
-                  >
-                    <span className="qs-switch-knob" />
-                  </button>
-                </div>
-
-                <PillFillBar
-                  label="Brightness"
-                  value={qs.brightness}
-                  fillColor="#FBBF24"
-                  icon={<Sun size={15} />}
-                  onChange={setBrightness}
-                />
-
-                <PillFillBar
-                  label={qs.nightLightEnabled ? "Night Warmth" : "Night Light (Off)"}
-                  value={qs.nightLightEnabled ? qs.nightLightWarmth : 0}
-                  min={0}
-                  max={100}
-                  fillColor="#FB923C"
-                  icon={<Moon size={15} />}
-                  onIconClick={toggleNightLight}
-                  onChange={setNightWarmth}
+                <BrightnessRows />
+                <NightLightPanel
+                  enabled={qs.nightLightEnabled}
+                  warmth={qs.nightLightWarmth || 50}
+                  onToggle={toggleNightLight}
+                  onWarmth={setNightWarmth}
                 />
               </div>
 
@@ -546,67 +530,10 @@ export const QuickSettingsSurface: React.FC = () => {
                 ))}
               </div>
 
-              {/* 3. HIERARCHICAL CONNECTIONS & WINDOWS QUICK JUMP */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {[
-                  {
-                    label: "Wi-Fi",
-                    sub: "Networks",
-                    uri: "ms-settings:network-wifi",
-                    bg: "rgb(52 211 153 / 0.09)",
-                    border: "rgb(52 211 153 / 0.24)",
-                    icon: <Wifi size={16} strokeWidth={2.4} color="#34D399" />,
-                  },
-                  {
-                    label: "Bluetooth",
-                    sub: "Devices",
-                    uri: "ms-settings:bluetooth",
-                    bg: "rgb(129 140 248 / 0.09)",
-                    border: "rgb(129 140 248 / 0.24)",
-                    icon: <Bluetooth size={16} strokeWidth={2.4} color="#818CF8" />,
-                  },
-                  {
-                    label: "Display",
-                    sub: "Monitors",
-                    uri: "ms-settings:display",
-                    bg: "rgb(96 165 250 / 0.09)",
-                    border: "rgb(96 165 250 / 0.24)",
-                    icon: <Monitor size={16} strokeWidth={2.4} color="#60A5FA" />,
-                  },
-                  {
-                    label: "Sound",
-                    sub: "Output",
-                    uri: "ms-settings:sound",
-                    bg: "rgb(56 189 248 / 0.09)",
-                    border: "rgb(56 189 248 / 0.24)",
-                    icon: <Volume2 size={16} strokeWidth={2.4} color="#38BDF8" />,
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className="qs-win-item"
-                    style={{
-                      padding: "9px 10px",
-                      borderRadius: 10,
-                      background: item.bg,
-                      border: `1px solid ${item.border}`,
-                      gap: 9,
-                    }}
-                    onClick={() => openSetting(item.uri)}
-                  >
-                    {item.icon}
-                    <div style={{ textAlign: "left", minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--lens-fg)", lineHeight: 1.15 }}>
-                        {item.label}
-                      </div>
-                      <div style={{ fontSize: 10, color: "var(--lens-fg-secondary)" }}>
-                        {item.sub}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {/* 3. CONNECTIONS (real state; tap toggles, › opens Windows Settings) + OPEN WINDOWS */}
+              <ConnectionTiles volume={qs.volume} muted={qs.muted} onMute={toggleMute} />
+              <div className="qs-section-label">Windows</div>
+              <WindowThumbs />
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 5 }}>
                 {[
@@ -757,40 +684,24 @@ export const QuickSettingsSurface: React.FC = () => {
 
                 {config.windowControls.enabled && (
                   <div className="qs-seg-row">
-                    <button
-                      type="button"
-                      className={`qs-seg-btn ${
-                        config.windowControls.order !== "red-yellow-green" ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        updateConfig({
-                          ...config,
-                          windowControls: {
-                            ...config.windowControls,
-                            order: "green-yellow-red",
-                          },
-                        })
-                      }
-                    >
-                      Green · Yellow · Red
-                    </button>
-                    <button
-                      type="button"
-                      className={`qs-seg-btn ${
-                        config.windowControls.order === "red-yellow-green" ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        updateConfig({
-                          ...config,
-                          windowControls: {
-                            ...config.windowControls,
-                            order: "red-yellow-green",
-                          },
-                        })
-                      }
-                    >
-                      Red · Yellow · Green
-                    </button>
+                    {([
+                      ["yellow-green-red", "Y · G · R"],
+                      ["green-yellow-red", "G · Y · R"],
+                      ["red-yellow-green", "R · Y · G"],
+                    ] as const).map(([id, label]) => {
+                      const cur = config.windowControls.order;
+                      const active = id === "yellow-green-red" ? cur !== "green-yellow-red" && cur !== "red-yellow-green" : cur === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`qs-seg-btn ${active ? "active" : ""}`}
+                          onClick={() => updateConfig({ ...config, windowControls: { ...config.windowControls, order: id } })}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

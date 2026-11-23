@@ -43,10 +43,37 @@ pub(crate) fn surface_glide_gen(label: &str) -> &'static std::sync::atomic::Atom
     }
 }
 
+/// Windows' own show/hide animation fights the CSS glide on these see-through windows (a zoom
+/// on top of our slide reads as a snap). Turn it off per window; harmless if it fails.
+#[cfg(windows)]
+fn disable_dwm_transitions(win: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::{BOOL, HWND};
+    use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED};
+    if let Ok(raw) = win.hwnd() {
+        let on = BOOL(1);
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                HWND(raw.0 as *mut _),
+                DWMWA_TRANSITIONS_FORCEDISABLED,
+                &on as *const BOOL as *const std::ffi::c_void,
+                std::mem::size_of::<BOOL>() as u32,
+            );
+        }
+    }
+}
+
 pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
     use std::sync::atomic::Ordering;
     surface_glide_gen(label).fetch_add(1, Ordering::SeqCst);
+    // Put the page in its start pose before the window appears, so the first visible frame is
+    // never the old open (or closed) pose snapping into place.
+    let _ = app.emit(
+        "lens://surface-glide",
+        serde_json::json!({ "label": label, "state": "pre" }),
+    );
     if let Some(win) = app.get_webview_window(label) {
+        #[cfg(windows)]
+        disable_dwm_transitions(&win);
         let _ = win.unminimize();
         if focus {
             let _ = win.show();

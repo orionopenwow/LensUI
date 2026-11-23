@@ -321,6 +321,7 @@ pub(crate) fn run_setup(
 
     // File index for search: first build after 8 s, refresh every 15 min, cancellable
     win_search::start_file_index();
+    crate::win_quick_settings::start_night_light_schedule();
 
     // Plugins: copy the 4 example plugins once, all switched off
     if let Err(e) = win_plugins::install_example_plugins_if_first_run() {

@@ -12,6 +12,7 @@ mod win_focus_dim;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
+mod win_brightness;
 mod win_sessions;
 mod win_taskbar;
 mod win_theme;
@@ -457,6 +458,11 @@ pub fn run() {
             commands::system::set_mute_cmd,
             commands::system::set_brightness_cmd,
             commands::system::set_night_light_cmd,
+            commands::system::list_brightness_cmd,
+            commands::system::set_monitor_brightness_cmd,
+            commands::system::get_volume_cmd,
+            commands::system::get_night_light_schedule_cmd,
+            commands::system::set_night_light_schedule_cmd,
             commands::system::open_windows_setting_cmd,
             commands::system::list_audio_sessions_cmd,
             commands::system::set_app_volume_cmd,
