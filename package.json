@@ -6,6 +6,7 @@
   "description": "Lens UI — a calm, themeable desktop shell for Windows 10 and 11",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node tools/changelog/gen.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
@@ -14,7 +15,8 @@
     "gen:types": "python3 tools/gen-types/gen_types.py",
     "gen:catalogue": "node -e \"require('child_process').execSync('cargo test --lib export_catalogue',{cwd:'src-tauri',stdio:'inherit',env:{...process.env,LENS_WRITE_CATALOGUE:'1'}})\"",
     "ext:build": "node extensions/browser/build.mjs",
-    "ext:check": "node extensions/browser/build.mjs --check"
+    "ext:check": "node extensions/browser/build.mjs --check",
+    "parity:tester": "node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",

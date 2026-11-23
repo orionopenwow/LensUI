@@ -186,6 +186,8 @@ export interface LensConfig {
   dndSchedule?: import("../types/generated").DndSchedule;
   /** Lens Command, Mini and the Edge Shelf (off by default; see src/command/settings.ts). */
   command?: Partial<import("../command/settings").CommandSettings>;
+  /** Tester mode: TEST BUILD badge and Ctrl+Alt+M to mark a moment in the log. */
+  tester?: { enabled: boolean };
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */

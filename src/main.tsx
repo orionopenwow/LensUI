@@ -48,6 +48,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
     import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
   ),
   bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
+  testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
   focusdim: lazy(() =>
     import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
@@ -55,6 +57,14 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
 };
 
 const params = new URLSearchParams(window.location.search);
+
+// Feed frontend errors into the Tester Hub session log (redacted, in memory only).
+window.addEventListener("error", (e) => {
+  invoke("tester_log_push", { level: "error", area: "ui", message: String(e.message) }).catch(() => {});
+});
+window.addEventListener("unhandledrejection", (e) => {
+  invoke("tester_log_push", { level: "warn", area: "ui", message: String(e.reason) }).catch(() => {});
+});
 const Surface = surfaces[params.get("surface") || "dock"] ?? surfaces.dock;
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their

@@ -22,6 +22,9 @@ pub(crate) fn sync_wallpaper(app: &AppHandle) {
             if let Ok(raw) = win.hwnd() {
                 let r = win_wallpaper::attach_wallpaper_window(raw.0 as isize, rect);
                 eprintln!("[Lens Wallpaper] attach: {:?}", r);
+                if let Err(e) = &r {
+                    crate::tester::log("warn", "wallpaper", &format!("attach failed: {e}"));
+                }
             }
             #[cfg(not(windows))]
             let _ = rect;
