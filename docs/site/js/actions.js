@@ -136,7 +136,7 @@ export function approve(desk, { source = "Lens", title, why, verb = "Allow", den
 }
 
 // ---- requests → steps --------------------------------------------------------------------------------
-const NAMES = { browser: ["browser", "lens browser", "web"], files: ["files", "file explorer", "explorer", "downloads"], notes: ["notes", "note", "launch plan"], music: ["music", "player", "song", "spotify"], monitor: ["monitor", "system", "cpu"], timer: ["timer"], terminal: ["terminal", "shell"], code: ["code", "vscodium", "editor"], chat: ["discord", "chat", "messages"], store: ["apps", "lens apps", "store", "app store"], settings: ["settings", "preferences"] };
+const NAMES = { browser: ["browser", "lens browser", "web"], files: ["files", "file explorer", "explorer", "downloads"], notes: ["notes", "note", "launch plan"], music: ["music", "player", "song", "spotify"], monitor: ["monitor", "system", "cpu"], timer: ["timer"], cleaner: ["cleaner", "free up space", "disk space", "storage"], terminal: ["terminal", "shell"], code: ["code", "vscodium", "editor"], chat: ["discord", "chat", "messages"], store: ["apps", "lens apps", "store", "app store"], settings: ["settings", "preferences"] };
 const appIn = (c) => { let best = null; for (const [id, ns] of Object.entries(NAMES)) for (const n of ns) if (new RegExp(`\\b${n}\\b`).test(c) && (!best || n.length > best[1].length)) best = [id, n]; return best?.[0] ?? null; };
 const STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"];
 
@@ -167,6 +167,7 @@ export async function plan(text, desk) {
       steps.push({ say: `Asking before closing ${APPS[id].name}`, target: () => desk.byApp(id)?.el.querySelector('[data-a="close"]'), act: async () => { const ok = await approve(desk, { title: `Close ${APPS[id].name}?`, why: id === "chat" ? "It has an unsent draft. You can reopen it from the dock." : "You can reopen it from the dock.", verb: `Close ${APPS[id].name}` }); const x = desk.byApp(id); if (ok && x) desk.close(x.id); } });
       continue;
     }
+    if (/\bfree up space\b|\bwhat'?s taking (up )?space\b|\bclean (up )?(my )?(disk|drive|pc)\b/.test(c)) { steps.push({ say: "Scanning for space you can free", target: () => desk.dockIconAt("cleaner"), act: async () => { desk.open("cleaner"); await new Promise((r) => setTimeout(r, 400)); await desk.byApp("cleaner")?.cleaner?.scan(); } }); continue; }
     if (/\b(play|pause)\b.*\bmusic\b|\bplay (some )?(music|a song)\b/.test(c)) { steps.push({ say: "Playing music", target: () => null, act: () => desk.open("music") }); continue; }
     if (/\bnew note\b|\bnote\b.*\b(new|write)\b/.test(c)) { steps.push({ say: "Opening a new note", act: () => desk.open("notes") }); continue; }
     if (/\bwallpaper\b/.test(c)) { steps.push({ say: "Changing the wallpaper", target: () => null, act: () => desk.nextWallpaper() }); continue; }

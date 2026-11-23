@@ -78,7 +78,7 @@ export function shelf(desk) {
 export async function act(desk, a, ctx) {
   const sh = () => shelf(desk);
   const ic = ctx.kind === "video" ? "lens-browser" : ctx.kind === "file" ? "file-doc" : ctx.kind === "link" ? "lens-browser" : "lens-notes";
-  if (a === "summary") sh().add("lens-command", `Summary · ${ctx.label}`, ctx.kind === "video" ? "A 90-second tour: nine docks, 80 themes, Command and a helper that asks first." : ctx.kind === "file" ? "A launch checklist: two done, two to go; demo Friday 10:00." : "Lens 0.9 adds nine docks, 80 themes and an assistant that asks before it acts.");
+  if (a === "summary") sh().add("lens-command", `Summary · ${ctx.label}`, ctx.kind === "video" ? "A 90-second tour: nine docks, 89 themes, Command and a helper that asks first." : ctx.kind === "file" ? "A launch checklist: two done, two to go; demo Friday 10:00." : "Lens 0.9 adds nine docks, 89 themes and an assistant that asks before it acts.");
   else if (a === "transcript") {
     sh().add("lens-browser", "Transcript · Lens in 90 seconds", "00:00 This is Lens… 00:12 nine dock styles… 00:41 Command…");
     const w = desk.open("notes");

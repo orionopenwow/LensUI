@@ -25,6 +25,8 @@ const L = {
   messages: [["browser", 0.04, 0.06, 0.4, 0.8]],
   mini: [["notes", 0.05, 0.1, 0.34, 0.6]],
   browserai: [["browser", 0.04, 0.05, 0.62, 0.9]],
+  cleaner: [["cleaner", 0.24, 0.06, 0.48, 0.86]],
+  sky: [["music", 0.66, 0.56, 0.3, 0.38]],
   "core-apps": [["monitor", 0.03, 0.07, 0.4, 0.62], ["timer", 0.45, 0.1, 0.24, 0.56], ["notes", 0.71, 0.07, 0.26, 0.7]],
 };
 
@@ -39,6 +41,8 @@ export const SCENES = [
   { id: "backdrops", title: "Living backdrops", line: "Every theme has its own slow backdrop. Change it any time.", look: { pack: "rose-pine", dock: "minimal", shape: "classic" } },
   { id: "voice", title: "Voice dock", line: "Hold a key: “Lens, tile my windows.” Recognised on your PC.", look: { pack: "gruvbox-warm", dock: "floating", shape: "classic" } },
   { id: "settings", title: "Settings hub", line: "Lens and Windows settings in one place, with a white-bar mixer.", look: { pack: "alabaster-daylight", dock: "floating", shape: "classic" } },
+  { id: "cleaner", title: "Lens Cleaner", line: "See what's taking space. Safe items only, to the Recycle Bin, one click to undo.", look: { pack: "obsidian", dock: "floating", shape: "classic" } },
+  { id: "sky", title: "Living Sky", line: "A live wallpaper of the real sky: the Sun and Moon move with your day.", look: { pack: "living-sky", dock: "minimal", shape: "classic" } },
   { id: "core-apps", title: "Core apps", line: "Monitor, Timer, Notes and more, built in and themed like everything else.", look: { pack: "catppuccin-mocha", dock: "floating", shape: "classic" } },
   { id: "claude", title: "Bring your own agent", line: "Connect Claude over MCP. It proposes; you approve; everything undoes.", look: { pack: "obsidian", dock: "floating", shape: "classic" } },
   { id: "ade", title: "Agents at a glance", line: "Running agents, what each may do, and a context pack being built.", look: { pack: "graphite", dock: "slim", shape: "classic" } },
@@ -60,7 +64,7 @@ export function createScenes(desk, { onScene, onState } = {}) {
     const p = packs.find((x) => x.id === sc.look.pack);
     if (p && desk.pack?.id !== p.id) desk.setPack(p);
     desk.dockStyle(sc.look.dock, sc.look.shape);
-    if (sc.id !== "backdrops") desk.resetWallpaper?.();
+    if (sc.id !== "backdrops" && sc.id !== "sky") desk.resetWallpaper?.();
     // Windows morph from the last scene: keep the ones both scenes use and move them; close the rest.
     const want = L[sc.id === "magic-right-click" ? "magic" : sc.id === "backdrops" ? "wall" : sc.id === "claude" ? "agent" : sc.id === "browser-ai" ? "browserai" : sc.id === "approvals" ? "approve" : sc.id] ?? [];
     for (const w of [...desk.wins.values()]) if (!want.some(([a]) => a === w.app)) desk.close(w.id);
@@ -176,6 +180,22 @@ export function createScenes(desk, { onScene, onState } = {}) {
       if (b) { await o.click(b, t); b.click(); }
       await wait(2600);
     },
+    async cleaner() {
+      const w = desk.byApp("cleaner");
+      await wait(900);
+      const sc = w?.el.querySelector('[data-c="scan"]');
+      if (sc) { await o.click(sc, t); await w.cleaner.scan(); }
+      await wait(1400);
+      const cl = w?.el.querySelector('[data-c="clean"]');
+      if (cl) { await o.click(cl, t); w.cleaner.clean(); }
+      await wait(2400);
+    },
+    async sky() {
+      await wait(400);
+      desk.setWallpaper("living-sky");
+      desk.toast({ icon: "lens-settings", app: "Lens", title: "Living theme: Sky", body: "Follows the real Sun and Moon where you are. Light by day, dark at night." });
+      await wait(5200);
+    },
     async "core-apps"() {
       await wait(900);
       const tw = desk.byApp("timer");
@@ -221,7 +241,7 @@ export function createScenes(desk, { onScene, onState } = {}) {
     async messages() {
       const m = panel(`<div class="ph"><b>Messages</b><span>3 groups</span></div>
         <div class="g"><b>Lens Team</b><span>Maya: shipping the reel Friday</span></div><div class="g"><b>Family</b><span>Dad: dinner Sunday?</span></div><div class="g"><b>Builds</b><span>CI: all checks passed</span></div>
-        <div class="feed"><b>Feed</b><span>Lens 0.9 is out: nine docks, 80 themes.</span></div>
+        <div class="feed"><b>Feed</b><span>Lens 0.9 is out: nine docks, 89 themes.</span></div>
         <div class="draft"><b>Lens drafted a reply</b><p></p><button type="button" class="send">Send</button></div>`, "p-msg");
       await wait(900);
       const p = m.querySelector(".draft p");
@@ -244,7 +264,7 @@ export function createScenes(desk, { onScene, onState } = {}) {
       if (w) Object.assign(side.style, { transform: `translate3d(${w.x + w.w + 10}px, ${w.y}px, 0)`, height: `${w.h}px` });
       await wait(700);
       const sum = side.querySelector(".sum");
-      for (const ch of "Lens 0.9: nine dock styles, 80 themes, Command, and an assistant that asks before acting. Every change undoes.") { sum.textContent += ch; await wait(16); }
+      for (const ch of "Lens 0.9: nine dock styles, 89 themes, Command, and an assistant that asks before acting. Every change undoes.") { sum.textContent += ch; await wait(16); }
       await wait(500);
       await o.click(side.querySelector(".send"), t);
       await approve(desk, { source: "Lens Browser", title: "Send this summary to Claude?", why: "Only the summary, not the page or your tabs.", verb: "Send", auto: async (c, done) => { await wait(1000).catch(() => {}); done(true); } });

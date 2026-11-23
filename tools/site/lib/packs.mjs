@@ -33,7 +33,10 @@ export async function loadPacks() {
     shapeStyle: p.shapeStyle,
     ...(collection ? { collection, source: p.source ? { name: p.source.name, author: p.source.author, url: p.source.url } : undefined } : {}),
   });
-  const core = m.THEME_PACKS.map((p) => toSite(p));
+  // The living themes (Sky and family) come through allPacks(); they aren't exported on their own.
+  let living = [];
+  try { living = (m.allPacks?.() ?? []).filter((p) => p.tier === "Living"); } catch { /* older dock source */ }
+  const core = [...m.THEME_PACKS, ...living].map((p) => toSite(p));
   // The Claude Code community collection (feature/claude-theme-packs), when available.
   const cfile = join(tmp, "claude.mjs");
   await build({ entryPoints: [VENDORED.claudePacks], bundle: true, format: "esm", platform: "neutral", outfile: cfile, logLevel: "error" });

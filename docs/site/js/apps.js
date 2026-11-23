@@ -6,7 +6,7 @@ import { iconUrl, getPacks } from "./desk.js";
 
 const SITE = new URL("../", import.meta.url);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const shared = { note: "Launch plan\n\n☑ Record the dock reel\n☑ Ship 80 themes\n☐ Write the FAQ\n☐ Ask Maya about the icons\n\nFriday 10:00 · demo with the team", playing: true, track: 0 };
+const shared = { note: "Launch plan\n\n☑ Record the dock reel\n☑ Ship 89 themes\n☐ Write the FAQ\n☐ Ask Maya about the icons\n\nFriday 10:00 · demo with the team", playing: true, track: 0 };
 const TRACKS = [["Midnight Drive", "Neon Coast", "conic-gradient(from 200deg, #f43f5e, #a855f7, #06b6d4, #f43f5e)"], ["Paper Lanterns", "Kyoto Tapes", "conic-gradient(from 90deg, #fbbf24, #fb7185, #f97316, #fbbf24)"], ["Low Orbit", "Glass Atlas", "conic-gradient(from 10deg, #34d399, #3b82f6, #a78bfa, #34d399)"]];
 
 export function mount(id, body, desk) {
@@ -26,7 +26,7 @@ const APPS = {
   browser(b, desk) {
     const PAGES = {
       video: { tab: "Lens in 90 seconds", url: "youtube.com/watch?v=lens-tour", body: `<div class="a-video" data-magic="video" tabindex="0" aria-label="Video: Lens in 90 seconds"><span class="play">▶</span><span class="dur">1:32</span></div><b class="h">Lens in 90 seconds — the everything desktop</b><p>Orion Open · 12K views</p>` },
-      notes: { tab: "Release notes", url: "lens.dev/release-notes", body: `<b class="h">Lens 0.9: the everything desktop</b><p data-magic="text">Nine dock styles, 80 themes and a helper that asks before it acts. Every change undoes.</p><div class="a-hero"></div><ul><li>Super search lives inside the dock</li><li>Animated backdrops for every pack</li><li>Open-source apps in one click</li></ul><p>Questions? <a href="#" data-magic="link">maya.chen@example.com</a></p>` },
+      notes: { tab: "Release notes", url: "lens.dev/release-notes", body: `<b class="h">Lens 0.9: the everything desktop</b><p data-magic="text">Nine dock styles, 89 themes and a helper that asks before it acts. Every change undoes.</p><div class="a-hero"></div><ul><li>Super search lives inside the dock</li><li>Animated backdrops for every pack</li><li>Open-source apps in one click</li></ul><p>Questions? <a href="#" data-magic="link">maya.chen@example.com</a></p>` },
       docs: { tab: "Docs", url: "lens.dev/docs/command", body: `<b class="h">Lens Command</b><p data-magic="text">Press Ctrl+Space and type what you want: “dark mode”, “tile left”, “timer 5 min”. It runs offline.</p><p><a href="#" data-magic="link">Keyboard map</a> · <a href="#" data-magic="link">Undo anything</a></p>` },
     };
     let cur = "video";
@@ -133,6 +133,41 @@ const APPS = {
     b.innerHTML = `<div class="a-chat"><nav><b>Lens Team</b><span class="on"># design</span><span># builds</span><span># random</span></nav><div><div class="log"></div><form><input type="text" aria-label="Message #design" placeholder="Message #design"></form></div></div>`;
     render();
     b.querySelector("form").addEventListener("submit", (e) => { e.preventDefault(); const i = e.target.elements[0]; if (!i.value.trim()) return; msgs.push(["You", i.value.trim()]); i.value = ""; render(); });
+  },
+
+  // Lens Cleaner: a scan, then categories by safety, a preview, and a clean that goes to the Recycle Bin.
+  cleaner(b, desk) {
+    const CATS = [["Recycle Bin", 1.2, "safe"], ["Temporary files", 2.8, "safe"], ["Browser caches", 1.6, "safe"], ["Windows Update leftovers", 3.1, "admin"], ["Big downloads", 4.4, "review"], ["Old installers", 0.9, "review"]];
+    const TAG = { safe: "Safe", admin: "Asks for admin", review: "You review" };
+    let state = "home", pct = 0, freed = 0;
+    const safe = () => CATS.filter((c) => c[2] === "safe").reduce((a, c) => a + c[1], 0);
+    const render = () => {
+      if (state === "home" || state === "scanning") {
+        b.innerHTML = `<div class="a-clean"><div class="cl-ring" style="--p:${state === "scanning" ? pct : 80}"><b>${state === "scanning" ? `${Math.round(pct)}%` : "412 GB"}</b><span>${state === "scanning" ? "Scanning C:" : "used of 512 GB"}</span></div>
+          <p class="cl-line">${state === "scanning" ? "Looking for space you can free. Nothing is changed while it scans." : "Find what's taking space. You see every file before anything is removed."}</p>
+          <button type="button" class="pri" data-c="scan"${state === "scanning" ? " disabled" : ""}>${state === "scanning" ? "Scanning…" : "Scan C:"}</button></div>`;
+      } else if (state === "results") {
+        b.innerHTML = `<div class="a-clean res"><div class="cl-head"><b>${CATS.reduce((a, c) => a + c[1], 0).toFixed(1)} GB found</b><span>Safe items are ticked; the rest wait for you.</span></div>
+          <ul>${CATS.map(([n, g, t]) => `<li><span class="ck${t === "safe" ? " on" : ""}" aria-hidden="true"></span><span class="n">${n}</span><span class="tag ${t}">${TAG[t]}</span><span class="g">${g.toFixed(1)} GB</span></li>`).join("")}</ul>
+          <div class="cl-go"><button type="button" data-c="preview">Preview</button><button type="button" class="pri" data-c="clean">Clean ${safe().toFixed(1)} GB</button></div></div>`;
+      } else {
+        b.innerHTML = `<div class="a-clean"><div class="cl-ring done" style="--p:68"><b>${freed.toFixed(1)} GB</b><span>freed</span></div>
+          <p class="cl-line">Moved to the Recycle Bin, so it's one click to undo.</p><button type="button" data-c="restore">Restore</button></div>`;
+      }
+    };
+    const api = {
+      async scan() { state = "scanning"; pct = 0; render(); for (let i = 1; i <= 10; i++) { await new Promise((r) => setTimeout(r, reducedMotion() ? 20 : 160)); pct = i * 10; const r = b.querySelector(".cl-ring"); if (r) { r.style.setProperty("--p", pct); r.querySelector("b").textContent = `${pct}%`; } } state = "results"; render(); },
+      clean() { freed = safe(); state = "done"; render(); desk.toast({ icon: "lens-cleaner", app: "Lens Cleaner", title: `Freed ${freed.toFixed(1)} GB`, body: "Safe items only, to the Recycle Bin. Restore any time." }); },
+    };
+    render();
+    b.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-c]")?.dataset.c;
+      if (c === "scan") api.scan();
+      if (c === "clean") api.clean();
+      if (c === "preview") desk.toast({ icon: "lens-cleaner", app: "Lens Cleaner", title: "Preview: 412 files", body: "Every path is listed before anything is removed." });
+      if (c === "restore") { state = "results"; render(); desk.toast({ icon: "lens-cleaner", app: "Lens Cleaner", title: "Restored", body: "Everything that clean moved is back." }); }
+    });
+    const w = desk.byApp("cleaner"); if (w) w.cleaner = api;
   },
 
   async store(b, desk) {

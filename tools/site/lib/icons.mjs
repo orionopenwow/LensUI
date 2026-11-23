@@ -37,6 +37,7 @@ const ORIGINAL = {
   "lens-notes": obsidian(`<path d="M20 15h18l8 8v26H20z"/><path d="M38 15v8h8M26 32h14M26 39h10"/>`),
   "lens-music": obsidian(`<path d="M26 44V20l18-4v24"/><circle cx="22" cy="44" r="4.5"/><circle cx="40" cy="40" r="4.5"/>`),
   "lens-monitor": obsidian(`<path d="M14 38h8l5-12 6 20 6-14 3 6h8"/>`),
+  "lens-cleaner": obsidian(`<path d="M22 46h20M24 46l2-18h12l2 18"/><path d="M32 28V16M27 20l5-4 5 4"/><path d="M28 36v6M32 36v6M36 36v6"/>`),
   "lens-timer": obsidian(`<circle cx="32" cy="35" r="13"/><path d="M32 35v-7M28 16h8M32 16v6"/>`),
   // File-type icons for the Files app (originals)
   "file-doc": tile("#F8FAFC", `<path d="M22 14h14l8 8v28H22z" fill="#fff" stroke="#CBD5E1" stroke-width="2"/><path d="M27 30h12M27 36h12M27 42h8" stroke="#64748B" stroke-width="2.6" stroke-linecap="round"/>`, "rgb(0 0 0 / 0.1)"),

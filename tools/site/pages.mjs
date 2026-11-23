@@ -8,7 +8,7 @@ import { REPO } from "./lib/layout.mjs";
 const FEATURE_CHIPS = [
   ["magic-right-click", "Magic right-click"], ["claude", "Bring your own agent"], ["ade", "Agents at a glance"], ["approvals", "Asks before it acts"],
   ["browser-ai", "Lens Browser"], ["music", "Lens Music"], ["messages", "Messages and feeds"], ["mini", "Lens Mini"], ["snip", "Snip"], ["voice", "Voice dock"],
-  ["core-apps", "Core apps"], ["settings", "Settings hub"], ["backdrops", "Living backdrops"], ["tiling", "Tiling and snapping"], ["apps", "Lens Apps"], ["everyday", "Lens Command"],
+  ["cleaner", "Lens Cleaner"], ["sky", "Living Sky"], ["core-apps", "Core apps"], ["settings", "Settings hub"], ["backdrops", "Living backdrops"], ["tiling", "Tiling and snapping"], ["apps", "Lens Apps"], ["everyday", "Lens Command"],
 ];
 const FEATURED = [
   { id: "artcraft", line: "An IDE for artists: controllable AI image and video, with 2D and 3D scene tools.", suite: ["wordcraft", "deckcraft", "gridcraft"] },
@@ -63,14 +63,14 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
 </section>
 
 <section id="themes" class="sec" aria-labelledby="themes-h">
-  <div class="inner wide">
-    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>80 packs, from Obsidian to the Claude Code community palettes. Point at one to preview it, click to keep it, drag an accent onto the desk, or press <kbd>T</kbd> to shuffle.</p></div>
+  <div class="inner">
+    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} packs, from Obsidian and the living Sky to the Claude Code community palettes. Point at one to preview it, click to keep it, drag an accent onto the desk, or press <kbd>T</kbd> to shuffle.</p></div>
     <div class="lab">
       <div id="lab-desk" class="desk-host"></div>
       <aside class="lab-side" aria-label="Theme controls">
         <div class="lab-picks" role="group" aria-label="Themes"></div>
         <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
-        <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search 80 themes…"><div class="grid"></div></div>
+        <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
         <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
         <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
         <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
@@ -129,7 +129,7 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
   <div class="inner">
     <div class="head"><h2 id="more-h">Everything else, on the desk.</h2><p>Every feature plays as a short scene in the desktop at the top. Pick one.</p></div>
     <div class="feat-chips big" role="group" aria-label="Scenes">${FEATURE_CHIPS.map(([id, t]) => `<button type="button" data-scene-id="${id}">${esc(t)}</button>`).join("")}</div>
-    <p class="fine">Coming next: Lens Cleaner, Peek, Split view, Spaces, Routines and a phone companion.</p>
+    <p class="fine">Coming next: Peek, Split view, Spaces, Routines and a phone companion.</p>
   </div>
 </section>
 

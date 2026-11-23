@@ -17,6 +17,7 @@ export const APPS = [
   { id: "music", name: "Lens Music", path: "lens://music", icon: I("lens-music") },
   { id: "monitor", name: "Monitor", path: "lens://monitor", icon: I("lens-monitor") },
   { id: "timer", name: "Timer", path: "lens://timer", icon: I("lens-timer") },
+  { id: "cleaner", name: "Lens Cleaner", path: "lens://cleaner", icon: I("lens-cleaner") },
   { id: "terminal", name: "Terminal", path: "lens://terminal", icon: I("terminal") },
   { id: "code", name: "VSCodium", path: "lens://code", icon: I("vscodium") },
   { id: "chat", name: "Discord", path: "lens://chat", icon: I("discord") },
