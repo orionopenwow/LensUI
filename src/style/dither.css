@@ -1,0 +1,50 @@
+/* Lens dither material. Opt in with class="lens-dither" on a backdrop or empty state.
+ * The texture sits on a ::before layer behind the element's content; never put it behind body
+ * text. It is static; `data-drift` adds a very slow drift that stops under reduced motion. */
+:root {
+  --lens-dither: 0.4;
+  --lens-grain: 0.2;
+  --lens-dither-cell: 3px;
+  --lens-dither-img: none;
+  --lens-dither-tile: 384px;
+}
+
+.lens-dither {
+  position: relative;
+  isolation: isolate;
+}
+.lens-dither::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: var(--lens-dither-img);
+  background-size: var(--lens-dither-tile) var(--lens-dither-tile);
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+/* Fade the texture toward the edges, like a lit backdrop. */
+.lens-dither.lens-dither-vignette::before {
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
+}
+.lens-dither[data-drift]::before {
+  animation: lens-dither-drift 120s linear infinite;
+}
+@keyframes lens-dither-drift {
+  to {
+    background-position: var(--lens-dither-tile) 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lens-dither[data-drift]::before {
+    animation: none;
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .lens-dither::before {
+    background-image: none !important;
+  }
+}
