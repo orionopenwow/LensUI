@@ -79,7 +79,12 @@ mod imp {
     use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_ESCAPE};
 
     static WATCHING: AtomicBool = AtomicBool::new(false);
-    static APPROVAL: OnceLock<Mutex<Option<(Shortcut, String, AppHandle)>>> = OnceLock::new();
+    /// The registered hotkey as shown on the pill.
+    static APPROVAL: OnceLock<Mutex<Option<String>>> = OnceLock::new();
+    /// How to unregister it. Kept behind a boxed closure so `undo` (which the change registry
+    /// reaches from plain unit tests) does not link the app runtime into every test binary.
+    type Unregister = Box<dyn FnOnce() + Send>;
+    static UNREGISTER: OnceLock<Mutex<Option<Unregister>>> = OnceLock::new();
 
     fn run_active() -> bool {
         let now = crate::presence::now_ms();
@@ -131,7 +136,7 @@ mod imp {
     pub fn register_approval_hotkey(app: &AppHandle) -> Option<String> {
         let slot = APPROVAL.get_or_init(|| Mutex::new(None));
         let mut cur = slot.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, label, _)) = cur.as_ref() {
+        if let Some(label) = cur.as_ref() {
             return Some(label.clone());
         }
         for spec in APPROVAL_HOTKEYS {
@@ -147,7 +152,12 @@ mod imp {
                 .is_ok();
             if ok {
                 let label = super::hotkey_label(spec);
-                *cur = Some((sc, label.clone(), app.clone()));
+                *cur = Some(label.clone());
+                let h = app.clone();
+                let undo: Unregister = Box::new(move || {
+                    let _ = h.global_shortcut().unregister(sc);
+                });
+                *UNREGISTER.get_or_init(|| Mutex::new(None)).lock().unwrap_or_else(|e| e.into_inner()) = Some(undo);
                 return Some(label);
             }
         }
@@ -155,15 +165,19 @@ mod imp {
     }
 
     pub fn approval_hotkey() -> Option<String> {
-        APPROVAL.get().and_then(|m| m.lock().ok().and_then(|g| g.as_ref().map(|(_, l, _)| l.clone())))
+        APPROVAL.get().and_then(|m| m.lock().ok().and_then(|g| g.clone()))
     }
 
     /// Releases the Esc claim and unregisters the approval hotkey (quit, Remove all).
     pub fn undo() {
         input::release_keyboard(Feature::AgentStop);
         PRESSED.store(false, Ordering::SeqCst);
-        if let Some((sc, _, app)) = APPROVAL.get().and_then(|m| m.lock().ok().and_then(|mut g| g.take())) {
-            let _ = app.global_shortcut().unregister(sc);
+        if let Some(m) = APPROVAL.get() {
+            *m.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        }
+        let unregister = UNREGISTER.get().and_then(|m| m.lock().ok().and_then(|mut g| g.take()));
+        if let Some(f) = unregister {
+            f();
         }
     }
 }
