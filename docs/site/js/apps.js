@@ -189,7 +189,7 @@ const APPS = {
 
   async settings(b, desk) {
     const packs = await getPacks();
-    const PICK = ["obsidian", "nord-frost", "catppuccin-mocha", "tokyo-night", "gruvbox-warm", "rose-pine", "hyprland-neon", "alabaster-daylight", "lens-expressive", "lens-dot-matrix", "cc-koi-mosaic", "dracula-glass"].map((id) => packs.find((p) => p.id === id)).filter(Boolean);
+    const PICK = ["obsidian", "alabaster-daylight", "living-sky", "gruvbox-warm", "everforest-dark", "rose-pine", "lens-expressive", "lens-dot-matrix"].map((id) => packs.find((p) => p.id === id)).filter(Boolean);
     const SEC = ["Appearance", "Dock", "Sound", "About"];
     let sec = "Appearance";
     const render = () => {
@@ -200,7 +200,7 @@ const APPS = {
           ? `<b class="h">Dock style</b><div class="docks">${["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"].map((s) => `<button type="button" data-dock="${s}">${s[0].toUpperCase() + s.slice(1)}</button>`).join("")}</div>`
           : sec === "Sound"
             ? `<b class="h">Volume mixer</b>${[["Lens Music", 70], ["Lens Browser", 40], ["Discord", 85], ["System sounds", 50]].map(([n, v]) => `<div class="mix"><span>${n}</span><span class="fill"><i style="width:${v}%"></i></span><span class="v">${v}</span></div>`).join("")}`
-            : `<b class="h">About</b><p>Lens UI 0.9 beta · open source (MIT). Every change undoes, even if Lens isn't running.</p>`;
+            : `<b class="h">About</b><p>Lens 0.9 beta · open source (MIT). Every change undoes, even if Lens isn't running.</p>`;
       b.innerHTML = `<div class="a-set"><nav>${SEC.map((s) => `<button type="button" class="${s === sec ? "on" : ""}" data-sec="${s}">${s}</button>`).join("")}</nav><div class="pane">${body}</div></div>`;
     };
     render();

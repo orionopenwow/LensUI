@@ -54,7 +54,7 @@ export const SHOWCASES = [
       { cap: "And Notes to the right. Win+arrow keys do the same while the desk has focus.", target: (d) => inApp(d, "notes", ".lw-bar"), run: (d) => d.snap(d.byApp("notes")?.id, "right") },
       { cap: "Press Ctrl+Space for Lens Command, and type what you want.", target: (d) => q(d, ".lt-search"), run: (d) => d.openCmd("timer 1 min") },
       { cap: "Run it: a one-minute timer opens. Command works offline.", target: (d) => q(d, ".lx-cmd input"), run: async (d) => { d.closeCmd(); const w = d.open("timer"); await sleep(250); w?.timer?.start(1); } },
-      { cap: "That's the everyday desk. Try a theme from Quick Settings in the top bar, or pick another tour above." },
+      { cap: "That's the everyday desk. Try a theme from Quick Settings in the top bar, or pick another tour below the desk." },
     ],
   },
   {
