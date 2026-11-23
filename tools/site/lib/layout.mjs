@@ -82,7 +82,7 @@ ${body}
     <p class="fine">Windows 10 &amp; 11 today · macOS &amp; Linux on the roadmap. Not affiliated with Microsoft, Apple or Anthropic. Third-party names and logos belong to their owners; shown to illustrate apps you might pin. Brand icons from <a href="https://simpleicons.org">Simple Icons</a> (CC0).</p>
   </div>
 </footer>
-<button id="guide-orb" class="guide-orb" type="button" aria-controls="guide-window" aria-expanded="false" aria-label="Ask Lens, the guide (press /)"><span class="orb-logo" aria-hidden="true"><span class="orb-glass"><img src="${base}brand/nebula.webp" alt="" width="77" height="77"></span><img class="orb-ov" src="${base}brand/lens-logo-overlay.svg" alt="" width="60" height="60"></span><span class="orb-lbl" aria-hidden="true">Ask Lens <kbd>/</kbd></span></button>
+<button id="guide-orb" class="guide-orb" type="button" aria-controls="guide-window" aria-expanded="false" aria-label="Ask Lens, the guide (press /)"><span class="orb-logo" aria-hidden="true"><span class="orb-glass"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><img class="orb-ov" src="${base}brand/lens-logo-overlay.svg" alt="" width="60" height="60"></span><span class="orb-lbl" aria-hidden="true">Ask Lens <kbd>/</kbd></span></button>
 <script type="module" src="${base}js/site.js"></script>
 <script type="module" src="${base}js/logo.js"></script>
 ${scripts.map((s) => `<script type="module" src="${base}${s}"></script>`).join("\n")}

@@ -28,7 +28,7 @@ function build() {
   win.setAttribute("aria-modal", "true");
   win.setAttribute("aria-labelledby", "gw-title");
   win.hidden = true;
-  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
+  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
       <button type="button" data-max aria-label="Expand the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg></button>
       <button type="button" data-close aria-label="Collapse the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></header>
     <div class="gw-thread" aria-live="polite"></div>

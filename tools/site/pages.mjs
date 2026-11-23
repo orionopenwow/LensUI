@@ -41,17 +41,19 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
     <p class="os-row"><span class="os on">${OS_ICON.windows}Windows 10 &amp; 11</span><span class="os-sep" aria-hidden="true"></span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux on the roadmap</a></p>
   </div>
   <div class="stage-wrap">
+    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="Guided tours"></div>
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
-      <div class="scene-cap" id="scene-cap" aria-live="polite"></div>
-      <div class="driving" id="driving" hidden><span class="dot ok" aria-hidden="true"></span>You're driving<button type="button" class="pill">▶ Resume tour</button></div>
-      <div class="scenebar" id="scenes" role="group" aria-label="Scenes">
-        <button type="button" class="sb-btn" data-prev aria-label="Previous scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-        <button type="button" class="sb-btn sb-play" data-play aria-label="Play the scenes">▶</button>
-        <button type="button" class="sb-btn" data-next aria-label="Next scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-        <div class="sb-list" id="features" tabindex="-1"></div>
-        <button type="button" class="sb-btn sb-fs" data-fs aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg><span class="lbl">Fullscreen</span></button>
-        <span class="sb-prog" aria-hidden="true"><i></i></span>
+      <div class="sc-bar" id="sc-bar">
+        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour above and go step by step.</span></div>
+        <div class="sc-ctl">
+          <span class="sc-dots" aria-hidden="true"></span>
+          <button type="button" class="sb-btn sc-b" data-back disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Back</span></button>
+          <button type="button" class="sb-btn sc-b sc-next" data-next disabled><span>Next</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button type="button" class="sb-btn sc-b" data-reset disabled>Reset</button>
+          <button type="button" class="sb-btn sc-b" data-exit disabled>Exit</button>
+          <button type="button" class="sb-btn sb-fs" data-fs aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg><span class="lbl">Fullscreen</span></button>
+        </div>
       </div>
     </div>
     <div class="docks-row" id="docks" aria-labelledby="docks-h">
