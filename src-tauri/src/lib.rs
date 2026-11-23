@@ -53,6 +53,8 @@ mod app;
 mod apps;
 mod bridge;
 mod browser;
+mod feeds;
+mod messages;
 mod clip;
 mod magic;
 mod presence;
@@ -307,6 +309,42 @@ pub fn run() {
             commands::browser::browser_notes_get,
             commands::browser::browser_notes_set,
             commands::browser::browser_focus_page,
+            commands::feeds::feeds_get_settings,
+            commands::feeds::feeds_set_settings,
+            commands::feeds::feeds_sources_list,
+            commands::feeds::feeds_source_add,
+            commands::feeds::feeds_source_remove,
+            commands::feeds::feeds_source_toggle,
+            commands::feeds::feeds_timeline,
+            commands::feeds::feeds_refresh,
+            commands::feeds::feeds_opml_import,
+            commands::feeds::feeds_opml_export,
+            commands::feeds::feeds_connect_bluesky,
+            commands::feeds::feeds_connect_token,
+            commands::feeds::feeds_connect_mastodon,
+            commands::feeds::feeds_digest,
+            commands::feeds::feeds_compose_request,
+            commands::feeds::feeds_approve,
+            commands::feeds::feeds_deny,
+            commands::feeds::feeds_post,
+            commands::feeds::feeds_x_embed,
+            commands::feeds::feeds_probe,
+            commands::feeds::feeds_approval,
+            commands::messages::messages_catalogue,
+            commands::messages::messages_get_settings,
+            commands::messages::messages_set_settings,
+            commands::messages::messages_inbox,
+            commands::messages::messages_unread,
+            commands::messages::messages_space_title,
+            commands::messages::messages_focus,
+            commands::messages::messages_should_alert,
+            commands::messages::messages_matrix_login,
+            commands::messages::messages_matrix_logout,
+            commands::messages::messages_matrix_sync,
+            commands::messages::messages_send_request,
+            commands::messages::messages_send,
+            commands::messages::messages_catch_up,
+            commands::messages::messages_space_allows,
             commands::shelf::shelf_list,
             commands::shelf::shelf_get,
             commands::shelf::shelf_add,

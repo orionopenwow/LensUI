@@ -8556,6 +8556,174 @@
    "source": "docs/DOCK_STYLES.md"
   },
   {
+   "id": "doc.feeds.0",
+   "kind": "doc",
+   "title": "Lens Feeds",
+   "text": "A slim, unified social and news column for the Lens dashboard. Research and the integration matrix are in FEEDS RESEARCH.md; messages are in MESSAGES.md.",
+   "path": [
+    "Docs",
+    "Lens Feeds"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS.md",
+    "heading": "Lens Feeds"
+   },
+   "source": "docs/FEEDS.md"
+  },
+  {
+   "id": "doc.feeds.1",
+   "kind": "doc",
+   "title": "Lens Feeds: Surfaces",
+   "text": "Surface File Notes --- --- --- Column (320–380 px, default 352) src/feeds/FeedColumn.tsx Header (new pill, digest, compose, deck, refresh), source chips, All / People / News / Video / Dev tabs, status line, list Deck src/feeds/DeckView.tsx One 300 px lane per enabled source (max 6); cross-posts appear in each lane AI digest src/feeds/DigestCard.tsx 5 bullets, tappable source dots, \"On this PC\" badge when local Compose + approval src/feeds/Compose.tsx Target chips (Bluesky/Mastodon only), strictest character limit, \"Review\" → approval card with hold-to-post Live container src/feeds/FeedsPanel.tsx Wires the API, AI digest, Shelf and approvals Widget src/messages/Widgets.tsx → FeedsWidget Newest four posts Settings src/components/FeedsCard.tsx Sources, connect flows, mutes, quiet hours, refresh, digest, OPML Parity gallery: node tools/parity/feeds/build.mjs && node tools/parity/feeds/shoot.",
+   "path": [
+    "Docs",
+    "Lens Feeds",
+    "Surfaces"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS.md",
+    "heading": "Surfaces"
+   },
+   "source": "docs/FEEDS.md"
+  },
+  {
+   "id": "doc.feeds.2",
+   "kind": "doc",
+   "title": "Lens Feeds: Backend (`src-tauri/src/feeds/`)",
+   "text": "Module Role --- --- model.rs FeedItem , Source , Kind , URL safety, HTML→text, RFC 3339/822 dates xml.rs Tolerant XML reader: no DTD/entities, depth 64, 200k nodes, 5 MB rss.rs RSS 2.0 / RDF / Atom (YouTube → Video), OPML import/export with folders api.rs Request builders + parsers: JSON Feed, Bluesky, Mastodon, Reddit, GitHub, YouTube, X (+ official embed) merge.rs Canonical URL, text fingerprint, merge/dedup, mutes, quiet hours, filters, timeline digest.rs Digest and catch-up prompts (fenced, untrusted-labelled) ratelimit.rs Token buckets per network, Retry-After , X-Poll-Interval , backoff approval.rs One-time approvals: request → approve → take once, 2-minute TTL vault.rs DPAPI-sealed secrets per connection ( conn- .bin ) oauth.rs PKCE S256, authorize/token helpers, one-shot loopback on 127.0.0.1 with state check redact.rs Masks tokens/passwords in any string that might be logged or ",
+   "path": [
+    "Docs",
+    "Lens Feeds",
+    "Backend (`src-tauri/src/feeds/`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS.md",
+    "heading": "Backend (`src-tauri/src/feeds/`)"
+   },
+   "source": "docs/FEEDS.md"
+  },
+  {
+   "id": "doc.feeds.4",
+   "kind": "doc",
+   "title": "Lens Feeds: Commands",
+   "text": "feeds get settings , feeds set settings , feeds sources list , feeds source add remove toggle , feeds timeline , feeds refresh (emits lens://feeds/updated ), feeds opml import export , feeds connect bluesky , feeds connect token (GitHub / X), feeds connect mastodon (emits lens://feeds/oauth-url ), feeds digest , feeds compose request , feeds approve , feeds deny , feeds post , feeds x embed .",
+   "path": [
+    "Docs",
+    "Lens Feeds",
+    "Commands"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS.md",
+    "heading": "Commands"
+   },
+   "source": "docs/FEEDS.md"
+  },
+  {
+   "id": "doc.feeds.5",
+   "kind": "doc",
+   "title": "Lens Feeds: Behaviour",
+   "text": "- Merge. Same canonical link (tracking params stripped) or same text fingerprint within 6 h across networks → one row with \"also on\" dots. Reposts collapse into \"Reposted by A, B +n\". - Mutes. word (whole word, case-insensitive), @handle , source:reddit . Muted counts show in the status line; muted posts never reach the digest. - Quiet hours. No refresh and no \"new\" pill inside the window (wraps midnight). - Digest. feeds digest builds the prompt; the UI sends it via ai ask , so the AI privacy mode decides local vs cloud. - Read later / Save. shelf add with tags read-later or context . - Posting. feeds compose request → approval card → hold → feeds approve → feeds post (rejects anything not approved, expired, already used, or not a post). - X. Without a key: feeds x embed(profile list) returns the official embed markup for a sandboxed web view. With the user's own key: reverse-chronologi",
+   "path": [
+    "Docs",
+    "Lens Feeds",
+    "Behaviour"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS.md",
+    "heading": "Behaviour"
+   },
+   "source": "docs/FEEDS.md"
+  },
+  {
+   "id": "doc.feeds-research.0",
+   "kind": "doc",
+   "title": "Lens Feeds & Messages — research",
+   "text": "Wave 1 of W9. This covers what similar products do, which networks Lens can legitimately reach and how, the legal and safety lines, and where Lens can do better. The designs that follow from it are in FEEDS.md and MESSAGES.md. Network terms and API prices change often. Every row below was checked against each provider's own developer documentation while this wave was built (November 2026). Re-check before shipping a connector, and treat the provider's terms as the source of truth over this file.",
+   "path": [
+    "Docs",
+    "Lens Feeds & Messages — research"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS_RESEARCH.md",
+    "heading": "Lens Feeds & Messages — research"
+   },
+   "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.feeds-research.1",
+   "kind": "doc",
+   "title": "Lens Feeds & Messages — research: 1. Products we learned from",
+   "text": "Product Licence What it does well What we took (ideas unless stated) --- --- --- --- Phanpy (Mastodon web client) MIT Calm, dense timeline; \"boosts carousel\" folds reposts; grouped notifications Repost collapse ( reposted by ), quiet density, grouped GitHub notifications Elk (Mastodon web client) MIT Fast column, good compose with per-account switching Compose with target chips; character limit from the strictest target Ivory / Ice Cubes Proprietary / AGPL Filters, mute words with scopes, timeline sync Mute rules ( word , @handle , source:x ) — idea only TweetDeck / X Pro, Deck.blue Proprietary Multi-column deck Deck view, one lane per source Tapestry (Iconfactory) Connectors MIT One chronological timeline across RSS, Mastodon, Bluesky, Reddit, YouTube Unified chronological timeline as the default; plug-in connector shape Feedly / Inoreader / NetNewsWire Proprietary / MIT (NNW) RSS power",
+   "path": [
+    "Docs",
+    "Lens Feeds & Messages — research",
+    "1. Products we learned from"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS_RESEARCH.md",
+    "heading": "1. Products we learned from"
+   },
+   "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.feeds-research.2",
+   "kind": "doc",
+   "title": "Lens Feeds & Messages — research: 2. Ranked feature table",
+   "text": "Ranked by value to a Lens user ÷ build cost, with legitimacy as a hard gate. # Feature Value Cost Status --- --- --- --- --- 1 Unified chronological column (320–380 px), source chips, All/People/News/Video/Dev High Low Built 2 RSS / Atom / JSON Feed + OPML (any site, YouTube channels, Substack, blogs) High Low Built 3 Cross-post merge (same link or same text within 6 h) + repost collapse High Low Built 4 Mute words / handles / sources; quiet hours High Low Built 5 AI digest: 5 bullets with source refs, local model by default, prompt-injection fenced High Low Built 6 Bluesky (read + post with approval) High Low Built 7 Mastodon (OAuth PKCE, read + post with approval) High Med Built 8 Messages inbox over web-app spaces with title badges High Med Built (backend + UI); browser hook is a snippet 9 Focus notch (All / VIP & mentions / Snooze) + top-bar pill High Low Built 10 GitHub notification",
+   "path": [
+    "Docs",
+    "Lens Feeds & Messages — research",
+    "2. Ranked feature table"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS_RESEARCH.md",
+    "heading": "2. Ranked feature table"
+   },
+   "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.feeds-research.4",
+   "kind": "doc",
+   "title": "Lens Feeds & Messages — research: 4. Legal and safety notes",
+   "text": "- Terms first. Lens only uses official APIs, official embeds, open feed formats, or the service's own web app with the user signed in themselves. It never scrapes (X, Instagram, LinkedIn, TikTok), never automates a user account outside an API (Discord self-bots, WhatsApp Web automation), and never reads message content from web-app spaces — only the unread count the page already shows in its title. - Your keys, your bill. X API access is paid and billed to whoever owns the key. Lens shows the estimated cost per refresh, enforces a daily read cap the user sets, and makes the free official embed the default. - Nothing sent in your name without you. Every post or message is a two-step flow: the backend registers the exact draft and returns an approval id; only the approval card's press-and-hold approves it; the draft is consumed exactly once and expires after two minutes. Voice \"new post\" o",
+   "path": [
+    "Docs",
+    "Lens Feeds & Messages — research",
+    "4. Legal and safety notes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS_RESEARCH.md",
+    "heading": "4. Legal and safety notes"
+   },
+   "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.feeds-research.5",
+   "kind": "doc",
+   "title": "Lens Feeds & Messages — research: 5. What Lens does better",
+   "text": "1. It lives in the shell. A 352 px column that docks beside your work, a widget, a top-bar pill and voice — not another app window. 2. One honest inbox. Every row says exactly what Lens can do for it (\"badge only\", \"quick reply via Matrix\"). No grey-area automation that gets accounts banned. 3. Calm by default. Chronological, merged cross-posts, collapsed reposts, mute rules, quiet hours, and a Focus notch that keeps badges updating silently. 4. A digest you can trust. Five bullets with tappable source refs, generated on your PC by default. 5. Feeds feed your work. Read later goes to Shelf; Save adds to a context pack the AI and Command can use. 6. Approval everywhere. The same hold-to-confirm card as Lens Browser and the AI agent.",
+   "path": [
+    "Docs",
+    "Lens Feeds & Messages — research",
+    "5. What Lens does better"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FEEDS_RESEARCH.md",
+    "heading": "5. What Lens does better"
+   },
+   "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
    "id": "doc.lens-apps.0",
    "kind": "doc",
    "title": "Lens Apps",
@@ -9298,6 +9466,141 @@
     "heading": "Known limits"
    },
    "source": "docs/MCP.md"
+  },
+  {
+   "id": "doc.messages.0",
+   "kind": "doc",
+   "title": "Lens Messages",
+   "text": "One slim inbox over the messengers you already use, done the legitimate way. See FEEDS RESEARCH.md for the per-network matrix.",
+   "path": [
+    "Docs",
+    "Lens Messages"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Lens Messages"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.1",
+   "kind": "doc",
+   "title": "Lens Messages: How each messenger is reached",
+   "text": "Route Who What Lens sees What Lens can do --- --- --- --- Web-app space Discord, Slack, Telegram Web, WhatsApp Web, Messenger, Instagram DMs, Teams, Gmail, Outlook, Google Chat, LinkedIn Unread count from the page title only ( (3) Slack , Slack , • Discord ) Badge, mention alerts from toasts, Open Desktop only Signal Badges from Windows notifications Open Signal Desktop ( sgnl:// ) Matrix Your own homeserver, and any bridges you run Rooms, unread/highlight counts, last message (unless E2EE) Read, catch-up, quick reply with approval Notification mirror Any catalogue app with toasts Toast title/body (optional previews) Mentions, VIP alerts, previews Each web-app space is the service's own site in a Lens Browser space with its own profile and sign-in. Navigation off the app's hosts ( catalogue::allowed in space ) opens outside. Lens never reads DOM content, never automates sending, and neve",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "How each messenger is reached"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "How each messenger is reached"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.2",
+   "kind": "doc",
+   "title": "Lens Messages: Surfaces",
+   "text": "Surface File --- --- Inbox (search, All / Unread / Mentions / VIP) src/messages/Inbox.tsx Conversation (Matrix lines, catch-up, reply → approval) src/messages/ConversationView.tsx Focus notch (All / VIP & mentions / Snooze 30m–4h) src/messages/FocusNotch.tsx Widget, top-bar pill src/messages/Widgets.tsx Live container src/messages/MessagesPanel.tsx Settings src/components/MessagesCard.tsx Inbox order: mentions or VIP first, then unread, then most recent.",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Surfaces"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Surfaces"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.3",
+   "kind": "doc",
+   "title": "Lens Messages: Backend (`src-tauri/src/messages/`)",
+   "text": "catalogue.rs (apps, routes, hosts, toast names), badges.rs (title → unread, keyword mentions, badge label), focus.rs (modes, snooze 5–1440 min, alerts() ), matrix.rs (login, light sync with timeline.limit=1 , PUT send , sync parsing, room merge), mod.rs ( Conversation , settings, state, inbox() ). Commands: messages catalogue , messages get settings , messages set settings , messages inbox , messages unread , messages space title , messages focus , messages should alert , messages matrix login logout sync , messages send request , messages send , messages catch up . Badge changes emit lens://messages/unread with { total, mentions, label, focus } . Approvals are shared with Feeds ( feeds approve / feeds deny ); messages send only accepts drafts whose action is message .",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Backend (`src-tauri/src/messages/`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Backend (`src-tauri/src/messages/`)"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.4",
+   "kind": "doc",
+   "title": "Lens Messages: Focus",
+   "text": "- All — any message can alert. - VIP & mentions — only conversations named in VIPs, Matrix highlights, or messages containing an alert keyword. - Snooze — nothing alerts until the time is up; badges still update silently.",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Focus"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Focus"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.5",
+   "kind": "doc",
+   "title": "Lens Messages: Notification mirror",
+   "text": "Uses the existing win notifications::fetch windows toasts() ( UserNotificationListener ). Windows only grants that listener to apps with package identity, so in an unpackaged dev build the call reports a status/reason and returns no items; the inbox still works from title badges. To ship it: register Lens with a sparse MSIX package (signed, Windows 10 2004 / build 19041+), declare the userNotificationListener capability, and request access once from Settings. Only toasts whose app name matches a catalogue entry the user turned on are used.",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Notification mirror"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Notification mirror"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.6",
+   "kind": "doc",
+   "title": "Lens Messages: Matrix",
+   "text": "Password login ( m.login.password , device \"Lens\") stores only the access token in the vault — never the password. Sync uses a light filter (one timeline event per room) with timeout=0 . End-to-end-encrypted rooms show \"Encrypted message — open in your Matrix app\": Lens doesn't hold room keys. Bridges (mautrix-telegram, -whatsapp, -signal, -discord…) are AGPL and run by the user on their own homeserver; Lens neither ships nor hosts them, and the user is responsible for each network's terms.",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Matrix"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Matrix"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
+   "id": "doc.messages.7",
+   "kind": "doc",
+   "title": "Lens Messages: Telegram (TDLib) — documented, stubbed",
+   "text": "Telegram allows third-party clients built on TDLib with the developer's own api id / api hash from my.telegram.org, under Telegram's API terms (no flooding, no spam, show the official client is not being impersonated). A native client means building TDLib for Windows (C++, OpenSSL, zlib), linking it via tdjson , and keeping its encrypted database under %APPDATA%\\LensUI\\feeds\\tdlib\\ . Until that build exists, Telegram is a web-app space ( catalogue.rs note says so). Plan: messages/telegram.rs with td json client FFI behind a feature flag, auth-state machine (phone → code → 2FA in the approval card), chats list → Conversation , send through the same approval flow.",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Telegram (TDLib) — documented, stubbed"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Telegram (TDLib) — documented, stubbed"
+   },
+   "source": "docs/MESSAGES.md"
   },
   {
    "id": "doc.music.0",

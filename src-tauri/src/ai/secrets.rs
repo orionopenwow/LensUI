@@ -131,7 +131,7 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
     })
 }
 
-fn default_protector() -> Box<dyn Protector> {
+pub(crate) fn default_protector() -> Box<dyn Protector> {
     #[cfg(windows)]
     {
         Box::new(dpapi::Dpapi)
