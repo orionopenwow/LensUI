@@ -151,6 +151,9 @@ jobs:
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
 
+      - name: Render Lens Browser scenes and smoke-test the page agent
+        run: node tools/parity/browser/build.mjs && node tools/parity/browser/shoot.mjs
+
       - name: Render AI surfaces
         run: node tools/parity/ai/build.mjs && node tools/parity/ai/shoot.mjs
 
@@ -170,6 +173,7 @@ jobs:
           path: |
             tools/parity/shots/
             tools/parity/command/shots/
+            tools/parity/browser/shots/
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/

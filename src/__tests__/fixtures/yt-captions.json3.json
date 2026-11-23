@@ -1,0 +1,10 @@
+{"wireMagic":"pb3","pens":[{}],"wsWinStyles":[{}],"wpWinPositions":[{}],"events":[
+{"tStartMs":0,"dDurationMs":152000,"id":1,"wpWinPosId":0,"wsWinStyleId":0},
+{"tStartMs":120,"dDurationMs":3200,"wWinId":1,"segs":[{"utf8":"Welcome"},{"utf8":" back to the","tOffsetMs":400},{"utf8":" kitchen.","tOffsetMs":900}]},
+{"tStartMs":3320,"dDurationMs":40,"aAppend":1,"wWinId":1,"segs":[{"utf8":"\n"}]},
+{"tStartMs":3360,"dDurationMs":2600,"wWinId":1,"segs":[{"utf8":"Today we&#39;re making"},{"utf8":" fish &amp; chips.","tOffsetMs":700}]},
+{"tStartMs":5000,"dDurationMs":2000,"wWinId":1,"segs":[{"utf8":"Today we&#39;re making fish &amp; chips."}]},
+{"tStartMs":9000,"dDurationMs":2500,"wWinId":1,"segs":[{"utf8":"First, the batter."}]},
+{"tStartMs":61000,"dDurationMs":3000,"wWinId":1,"segs":[{"utf8":"Now fry for four minutes."}]},
+{"tStartMs":3725000,"wWinId":1,"segs":[{"utf8":"That's it — enjoy."}]}
+]}
