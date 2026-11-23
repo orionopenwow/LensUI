@@ -401,56 +401,25 @@ pub struct KeyhookStatus {
 #[cfg(windows)]
 mod rt {
     use super::*;
-    use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+    use crate::input::{self, Feature, KeyEvent};
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::{Mutex, OnceLock};
     use std::time::{Duration, Instant};
-    use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM, LRESULT, RECT, WPARAM};
-    use windows::Win32::Graphics::Gdi::{
-        GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
-    };
-    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-    use windows::Win32::System::Threading::{
-        GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
-        PROCESS_QUERY_LIMITED_INFORMATION,
-    };
     use windows::Win32::UI::Input::KeyboardAndMouse::{
         GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
         VIRTUAL_KEY,
     };
-    use windows::Win32::UI::Shell::{
-        SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE,
-        QUNS_RUNNING_D3D_FULL_SCREEN,
-    };
-    use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, DispatchMessageW, GetClassNameW, GetForegroundWindow, GetMessageW,
-        GetWindowRect, GetWindowThreadProcessId, PostThreadMessageW, SetWindowsHookExW,
-        TranslateMessage, UnhookWindowsHookEx, HHOOK, MSG, WH_KEYBOARD_LL, WM_QUIT,
-    };
 
     /// Marks keys Lens sends itself (also ignored because they are flagged as injected).
     const LENS_EXTRA_INFO: usize = 0x4C45_4E53;
-    const LLKHF_INJECTED: u32 = 0x10;
-    const LLKHF_UP: u32 = 0x80;
-
-    #[repr(C)]
-    struct RawKbd {
-        vk_code: u32,
-        scan_code: u32,
-        flags: u32,
-        time: u32,
-        extra: usize,
-    }
 
     type Callback = Box<dyn Fn(u64, HookEvent) + Send + Sync + 'static>;
     type PingCallback = Box<dyn Fn(u64) + Send + Sync + 'static>;
 
     static WANT_WIN: AtomicBool = AtomicBool::new(false);
     static WANT_ALT_TAB: AtomicBool = AtomicBool::new(false);
-    static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
-    static ACTIVE: AtomicBool = AtomicBool::new(false);
     static SUSPENDED: AtomicBool = AtomicBool::new(false);
-    static PAUSED: AtomicBool = AtomicBool::new(false);
     static SEQ: AtomicU64 = AtomicU64::new(0);
     static SERVICES_STARTED: AtomicBool = AtomicBool::new(false);
 
@@ -510,145 +479,50 @@ mod rt {
         }
     }
 
-    unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-        if code >= 0 && lparam.0 != 0 {
-            let k = &*(lparam.0 as *const RawKbd);
-            let injected = (k.flags & LLKHF_INJECTED) != 0 || k.extra == LENS_EXTRA_INFO;
-            let down = (k.flags & LLKHF_UP) == 0;
-            let paused = PAUSED.load(Ordering::Relaxed);
-            // try_lock: the machine is only ever touched from this thread; never block here.
-            let decision = match machine().try_lock() {
-                Ok(mut m) => m.on_key(k.vk_code, down, injected, paused),
-                Err(_) => Decision::default(),
-            };
-            let _ = wparam;
-            if decision.mask_before {
-                send_keys(&[(VK_MASK, false), (VK_MASK, true)]);
-            }
-            if let Some(ev) = decision.emit {
-                let seq = SEQ.fetch_add(1, Ordering::Relaxed) + 1;
-                if let Some(tx) = SENDER
-                    .get()
-                    .and_then(|s| s.try_lock().ok())
-                    .and_then(|g| g.clone())
-                {
-                    let _ = tx.send((seq, ev));
-                }
-            }
-            if decision.swallow {
-                return LRESULT(1);
+    /// The input service calls this for every key while the gestures are on (also while it is
+    /// paused for a fullscreen app, so the machine keeps tracking which keys are held; the
+    /// service ignores the answer then). Runs the pure [`KeyMachine`], optionally sends one mask
+    /// key, pushes an event onto a channel and returns.
+    pub fn on_key(ev: &KeyEvent) -> bool {
+        let injected = ev.injected() || ev.extra == LENS_EXTRA_INFO;
+        // try_lock: never block on the input thread.
+        let decision = match machine().try_lock() {
+            Ok(mut m) => m.on_key(ev.vk, ev.down(), injected, ev.paused),
+            Err(_) => Decision::default(),
+        };
+        if decision.mask_before {
+            send_keys(&[(VK_MASK, false), (VK_MASK, true)]);
+        }
+        if let Some(event) = decision.emit {
+            let seq = SEQ.fetch_add(1, Ordering::Relaxed) + 1;
+            if let Some(tx) = SENDER
+                .get()
+                .and_then(|s| s.try_lock().ok())
+                .and_then(|g| g.clone())
+            {
+                let _ = tx.send((seq, event));
             }
         }
-        CallNextHookEx(HHOOK::default(), code, wparam, lparam)
+        decision.swallow
     }
 
+    /// Claims the keyboard from the input service (which owns the one low-level hook).
     fn install_hook() {
-        if ACTIVE.load(Ordering::SeqCst) {
+        if input::keyboard_claimed(Feature::Keyhook) {
             return;
         }
-        std::thread::Builder::new()
-            .name("lens-keyhook".into())
-            .spawn(|| unsafe {
-                if let Ok(mut m) = machine().lock() {
-                    m.win_launcher = WANT_WIN.load(Ordering::SeqCst);
-                    m.alt_tab = WANT_ALT_TAB.load(Ordering::SeqCst);
-                    m.reset_gestures();
-                }
-                let hmod = GetModuleHandleW(windows::core::PCWSTR::null()).unwrap_or_default();
-                let hook = match SetWindowsHookExW(WH_KEYBOARD_LL, Some(hook_proc), hmod, 0) {
-                    Ok(h) => h,
-                    Err(e) => {
-                        set_problem(&format!("SetWindowsHookExW failed: {:?}", e));
-                        return;
-                    }
-                };
-                HOOK_THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
-                ACTIVE.store(true, Ordering::SeqCst);
-                let mut msg = MSG::default();
-                while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
-                    let _ = TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
-                }
-                let _ = UnhookWindowsHookEx(hook);
-                ACTIVE.store(false, Ordering::SeqCst);
-                HOOK_THREAD.store(0, Ordering::SeqCst);
-            })
-            .ok();
+        if let Ok(mut m) = machine().lock() {
+            m.win_launcher = WANT_WIN.load(Ordering::SeqCst);
+            m.alt_tab = WANT_ALT_TAB.load(Ordering::SeqCst);
+            m.reset_gestures();
+        }
+        input::claim_keyboard(Feature::Keyhook);
     }
 
     fn remove_hook() {
-        let tid = HOOK_THREAD.load(Ordering::SeqCst);
-        if tid != 0 {
-            unsafe {
-                let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
-            }
-        }
+        input::release_keyboard(Feature::Keyhook);
         if let Ok(mut w) = watchdog().lock() {
             *w = Watchdog::default();
-        }
-    }
-
-    /// Foreground is a fullscreen game / presentation / excluded process → pass everything through.
-    fn foreground_blocks_hook() -> bool {
-        unsafe {
-            if let Ok(state) = SHQueryUserNotificationState() {
-                if state == QUNS_RUNNING_D3D_FULL_SCREEN
-                    || state == QUNS_PRESENTATION_MODE
-                    || state == QUNS_BUSY
-                {
-                    return true;
-                }
-            }
-            let fg = GetForegroundWindow();
-            if fg.0.is_null() {
-                return false;
-            }
-            let mut pid = 0u32;
-            GetWindowThreadProcessId(fg, Some(&mut pid));
-            if pid == std::process::id() || pid == 0 {
-                return false;
-            }
-            let mut cls = [0u16; 64];
-            let n = GetClassNameW(fg, &mut cls);
-            let class = String::from_utf16_lossy(&cls[..n.max(0) as usize]);
-            if matches!(
-                class.as_str(),
-                "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"
-            ) {
-                return false;
-            }
-            if let Ok(h) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
-                let mut buf = [0u16; 512];
-                let mut len = buf.len() as u32;
-                let ok = QueryFullProcessImageNameW(
-                    h,
-                    PROCESS_NAME_WIN32,
-                    windows::core::PWSTR(buf.as_mut_ptr()),
-                    &mut len,
-                )
-                .is_ok();
-                let _ = CloseHandle(h);
-                if ok && is_excluded_process(&String::from_utf16_lossy(&buf[..len as usize])) {
-                    return true;
-                }
-            }
-            let mut wr = RECT::default();
-            if GetWindowRect(fg, &mut wr).is_err() {
-                return false;
-            }
-            let hmon = MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST);
-            let mut mi = MONITORINFO {
-                cbSize: std::mem::size_of::<MONITORINFO>() as u32,
-                ..Default::default()
-            };
-            if !GetMonitorInfoW(hmon, &mut mi).as_bool() {
-                return false;
-            }
-            let m = mi.rcMonitor;
-            covers_monitor(
-                (wr.left, wr.top, wr.right, wr.bottom),
-                (m.left, m.top, m.right, m.bottom),
-            )
         }
     }
 
@@ -706,17 +580,11 @@ mod rt {
         std::thread::Builder::new()
             .name("lens-keyhook-watchdog".into())
             .spawn(|| {
-                let mut last_fs_check = Instant::now() - Duration::from_secs(1);
                 let mut last_ping = Instant::now();
                 loop {
                     std::thread::sleep(Duration::from_millis(40));
                     let wanted =
                         WANT_WIN.load(Ordering::SeqCst) || WANT_ALT_TAB.load(Ordering::SeqCst);
-
-                    if last_fs_check.elapsed() >= Duration::from_millis(250) {
-                        last_fs_check = Instant::now();
-                        PAUSED.store(wanted && foreground_blocks_hook(), Ordering::Relaxed);
-                    }
 
                     let expired = watchdog().lock().ok().and_then(|mut w| w.poll(now_ms()));
                     if let Some(fb) = expired {
@@ -738,7 +606,7 @@ mod rt {
                                 cb(seq);
                             }
                         }
-                    } else if !ACTIVE.load(Ordering::SeqCst) {
+                    } else if !input::keyboard_claimed(Feature::Keyhook) {
                         install_hook();
                     }
                 }
@@ -805,9 +673,9 @@ mod rt {
         KeyhookStatus {
             win_launcher: WANT_WIN.load(Ordering::SeqCst),
             alt_tab: WANT_ALT_TAB.load(Ordering::SeqCst),
-            active: ACTIVE.load(Ordering::SeqCst),
+            active: input::keyboard_live(Feature::Keyhook),
             suspended: SUSPENDED.load(Ordering::SeqCst),
-            paused_for_fullscreen: PAUSED.load(Ordering::Relaxed),
+            paused_for_fullscreen: input::paused(),
             last_problem: problem().lock().map(|p| p.clone()).unwrap_or_default(),
         }
     }
@@ -816,6 +684,12 @@ mod rt {
 // ---------------------------------------------------------------------------------------------
 // Public API (Windows) and stubs elsewhere
 // ---------------------------------------------------------------------------------------------
+
+/// The keyboard handler the input service dispatches to (`input.rs`, `KEY_TABLE`).
+#[cfg(windows)]
+pub(crate) fn input_key(ev: &crate::input::KeyEvent) -> bool {
+    rt::on_key(ev)
+}
 
 /// Starts the hook services once. `on_event(seq, event)` runs on a worker thread; the UI must
 /// call [`ack`] with `seq` for events where `needs_ack()` is true. `on_ping(seq)` asks the UI to

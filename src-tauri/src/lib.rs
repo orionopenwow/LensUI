@@ -45,6 +45,7 @@ mod win_cursor_fx;
 mod win_cursors;
 mod win_desktop_input;
 mod win_keyhook;
+mod input;
 mod win_update;
 mod tester;
 mod agentsafe;

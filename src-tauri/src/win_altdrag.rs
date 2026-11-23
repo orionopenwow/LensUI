@@ -276,26 +276,38 @@ pub fn alt_drag_status() -> AltDragStatus {
     rt::status()
 }
 
-/// Removes the hook (on exit and on panic).
+/// Gives up the mouse claim (on exit and on panic).
 pub fn stop_alt_drag() {
     rt::set_enabled(false);
+}
+
+/// The mouse handler the input service dispatches to (`input.rs`, `MOUSE_TABLE`).
+#[cfg(windows)]
+pub(crate) fn input_mouse(ev: &crate::input::MouseEvent) -> bool {
+    rt::on_mouse(ev)
+}
+
+/// Called by the input service when a fullscreen app comes to the front.
+#[cfg(windows)]
+pub(crate) fn input_paused() {
+    rt::on_paused()
 }
 
 #[cfg(windows)]
 mod rt {
     use super::*;
     use std::collections::HashMap;
-    use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+    use crate::input::{self, Feature, MouseEvent};
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Mutex;
     use std::time::{Duration, Instant};
-    use windows::Win32::Foundation::{CloseHandle, HANDLE, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+    use windows::Win32::Foundation::{CloseHandle, HANDLE, HWND, POINT, RECT};
     use windows::Win32::Graphics::Gdi::{
         GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
     };
     use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
-    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::System::Threading::{
-        GetCurrentProcess, GetCurrentThreadId, OpenProcess, OpenProcessToken,
+        GetCurrentProcess, OpenProcess, OpenProcessToken,
         QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
     };
     use windows::Win32::UI::Input::KeyboardAndMouse::{
@@ -303,16 +315,13 @@ mod rt {
         VIRTUAL_KEY, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, DispatchMessageW, GetAncestor, GetClassNameW, GetCursorPos, GetMessageW,
-        GetWindowLongW, GetWindowRect, GetWindowThreadProcessId, IsWindowVisible, IsZoomed,
-        PostThreadMessageW, SetForegroundWindow, SetWindowPos, SetWindowsHookExW, ShowWindow,
-        TranslateMessage, UnhookWindowsHookEx, WindowFromPoint, GA_ROOT, GWL_EXSTYLE, GWL_STYLE,
-        HHOOK, MSG, MSLLHOOKSTRUCT, SWP_ASYNCWINDOWPOS, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER,
-        SW_RESTORE, WH_MOUSE_LL, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_QUIT,
-        WM_RBUTTONDOWN, WM_RBUTTONUP, WS_CHILD, WS_EX_NOACTIVATE, WS_THICKFRAME,
+        GetAncestor, GetClassNameW, GetWindowLongW, GetWindowRect, GetWindowThreadProcessId,
+        IsWindowVisible, IsZoomed, SetForegroundWindow, SetWindowPos, ShowWindow, WindowFromPoint,
+        GA_ROOT, GWL_EXSTYLE, GWL_STYLE, SWP_ASYNCWINDOWPOS, SWP_NOACTIVATE, SWP_NOSIZE,
+        SWP_NOZORDER, SW_RESTORE, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WM_RBUTTONDOWN,
+        WM_RBUTTONUP, WS_CHILD, WS_EX_NOACTIVATE, WS_THICKFRAME,
     };
 
-    const LLMHF_INJECTED: u32 = 0x01;
     /// Unassigned virtual key Lens taps after a drag so releasing Alt does not open the app's menu.
     const VK_MASK: u16 = 0xE8;
     const LENS_EXTRA_INFO: usize = 0x4C45_4E53;
@@ -338,25 +347,12 @@ mod rt {
     }
 
     static WANT: AtomicBool = AtomicBool::new(false);
-    static ACTIVE: AtomicBool = AtomicBool::new(false);
-    static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
-    static EVENTS: AtomicU64 = AtomicU64::new(0);
-    static REINSTALLS: AtomicU32 = AtomicU32::new(0);
-    static WATCHDOG_STARTED: AtomicBool = AtomicBool::new(false);
     static STATE: OnceLock<Mutex<State>> = OnceLock::new();
-    static PROBLEM: OnceLock<Mutex<String>> = OnceLock::new();
     static SELF_ELEVATED: OnceLock<bool> = OnceLock::new();
 
     fn state() -> &'static Mutex<State> {
         STATE.get_or_init(|| Mutex::new(State::default()))
     }
-    fn set_problem(s: &str) {
-        if let Ok(mut p) = PROBLEM.get_or_init(|| Mutex::new(String::new())).lock() {
-            *p = s.to_string();
-        }
-        eprintln!("[Lens AltDrag] {}", s);
-    }
-
     fn key_down(vk: VIRTUAL_KEY) -> bool {
         unsafe { (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0 }
     }
@@ -558,173 +554,85 @@ mod rt {
         }
     }
 
-    unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-        if code >= 0 && lparam.0 != 0 {
-            EVENTS.fetch_add(1, Ordering::Relaxed);
-            let info = &*(lparam.0 as *const MSLLHOOKSTRUCT);
-            let injected = info.flags & LLMHF_INJECTED != 0;
-            let ev = match wparam.0 as u32 {
-                WM_LBUTTONDOWN => MouseEv::Down(Button::Left),
-                WM_LBUTTONUP => MouseEv::Up(Button::Left),
-                WM_RBUTTONDOWN => MouseEv::Down(Button::Right),
-                WM_RBUTTONUP => MouseEv::Up(Button::Right),
-                WM_MOUSEMOVE => MouseEv::Move,
-                _ => MouseEv::Other,
-            };
-            if let Ok(mut st) = state().try_lock() {
-                let active = st.drag.map(|d| d.button);
-                // Only read modifiers when a button goes down with no drag running: the cheap path
-                // for every ordinary mouse move is a single branch.
-                let need_mods = active.is_none() && matches!(ev, MouseEv::Down(_));
-                let (enabled, resize, required) = if need_mods {
-                    config_slot()
-                        .try_lock()
-                        .map(|c| (c.enabled, c.resize, c.modifier.clone()))
-                        .unwrap_or((false, false, String::new()))
-                } else {
-                    (true, true, String::new())
-                };
-                let held = need_mods && modifier_matches(&required, mods());
-                match decide(enabled, resize, active, ev, held, injected) {
-                    Decision::Pass => {}
-                    Decision::Swallow => return LRESULT(1),
-                    Decision::BeginMove => {
-                        if begin(&mut st, info.pt, Button::Left, false) {
-                            return LRESULT(1);
-                        }
-                    }
-                    Decision::BeginResize => {
-                        if begin(&mut st, info.pt, Button::Right, true) {
-                            return LRESULT(1);
-                        }
-                    }
-                    Decision::Track => {
-                        if let Some(d) = st.drag.as_mut() {
-                            track(d, info.pt);
-                        }
-                    }
-                    Decision::End => {
-                        st.drag = None;
-                        if key_down(VK_MENU) {
-                            tap_mask_key();
-                        }
-                        return LRESULT(1);
-                    }
+    /// The input service calls this for every mouse event while Alt+drag is on (never while it
+    /// is paused for a fullscreen app). Returns true to swallow the event.
+    pub fn on_mouse(m: &MouseEvent) -> bool {
+        let pt = POINT { x: m.x, y: m.y };
+        let ev = match m.msg {
+            WM_LBUTTONDOWN => MouseEv::Down(Button::Left),
+            WM_LBUTTONUP => MouseEv::Up(Button::Left),
+            WM_RBUTTONDOWN => MouseEv::Down(Button::Right),
+            WM_RBUTTONUP => MouseEv::Up(Button::Right),
+            WM_MOUSEMOVE => MouseEv::Move,
+            _ => MouseEv::Other,
+        };
+        let Ok(mut st) = state().try_lock() else {
+            return false;
+        };
+        // A drag with no events for 8 s lost its button-up (the app froze, the session locked):
+        // end it instead of resuming a move the person stopped long ago.
+        if st.drag.is_some_and(|d| d.last_event.elapsed() > Duration::from_secs(8)) {
+            st.drag = None;
+        }
+        let active = st.drag.map(|d| d.button);
+        // Only read modifiers when a button goes down with no drag running: the cheap path
+        // for every ordinary mouse move is a single branch.
+        let need_mods = active.is_none() && matches!(ev, MouseEv::Down(_));
+        let (enabled, resize, required) = if need_mods {
+            config_slot()
+                .try_lock()
+                .map(|c| (c.enabled, c.resize, c.modifier.clone()))
+                .unwrap_or((false, false, String::new()))
+        } else {
+            (true, true, String::new())
+        };
+        let held = need_mods && modifier_matches(&required, mods());
+        match decide(enabled, resize, active, ev, held, m.injected()) {
+            Decision::Pass => false,
+            Decision::Swallow => true,
+            Decision::BeginMove => unsafe { begin(&mut st, pt, Button::Left, false) },
+            Decision::BeginResize => unsafe { begin(&mut st, pt, Button::Right, true) },
+            Decision::Track => {
+                if let Some(d) = st.drag.as_mut() {
+                    unsafe { track(d, pt) };
                 }
+                false
             }
-        }
-        CallNextHookEx(HHOOK::default(), code, wparam, lparam)
-    }
-
-    fn install_hook() {
-        if ACTIVE.load(Ordering::SeqCst) {
-            return;
-        }
-        let _ = std::thread::Builder::new()
-            .name("lens-altdrag".into())
-            .spawn(|| unsafe {
-                let hmod = GetModuleHandleW(windows::core::PCWSTR::null()).unwrap_or_default();
-                let hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(hook_proc), hmod, 0) {
-                    Ok(h) => h,
-                    Err(e) => {
-                        set_problem(&format!("Could not watch the mouse: {:?}", e));
-                        return;
-                    }
-                };
-                HOOK_THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
-                ACTIVE.store(true, Ordering::SeqCst);
-                let mut msg = MSG::default();
-                while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
-                    let _ = TranslateMessage(&msg);
-                    DispatchMessageW(&msg);
+            Decision::End => {
+                st.drag = None;
+                if key_down(VK_MENU) {
+                    tap_mask_key();
                 }
-                let _ = UnhookWindowsHookEx(hook);
-                if let Ok(mut st) = state().lock() {
-                    st.drag = None;
-                }
-                ACTIVE.store(false, Ordering::SeqCst);
-                HOOK_THREAD.store(0, Ordering::SeqCst);
-            });
-    }
-
-    fn remove_hook() {
-        let tid = HOOK_THREAD.load(Ordering::SeqCst);
-        if tid != 0 {
-            unsafe {
-                let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
+                true
             }
         }
     }
 
-    /// Watchdog: Windows silently unhooks a low-level hook that ever answers too slowly. If the
-    /// pointer keeps moving but the hook has seen nothing for two checks, install it again. It
-    /// also ends any drag that has had no events for 8 s (e.g. the button-up was lost).
-    fn start_watchdog() {
-        if WATCHDOG_STARTED.swap(true, Ordering::SeqCst) {
-            return;
+    /// The pause signal turned on (a fullscreen app came to the front): drop any drag.
+    pub fn on_paused() {
+        if let Ok(mut st) = state().try_lock() {
+            st.drag = None;
         }
-        let _ = std::thread::Builder::new()
-            .name("lens-altdrag-watchdog".into())
-            .spawn(|| {
-                let mut last_pt = POINT::default();
-                let mut last_events = 0u64;
-                let mut silent_moves = 0u32;
-                loop {
-                    std::thread::sleep(Duration::from_secs(2));
-                    if !WANT.load(Ordering::SeqCst) {
-                        silent_moves = 0;
-                        continue;
-                    }
-                    if !ACTIVE.load(Ordering::SeqCst) {
-                        install_hook();
-                        continue;
-                    }
-                    if let Ok(mut st) = state().lock() {
-                        if st.drag.is_some_and(|d| d.last_event.elapsed() > Duration::from_secs(8)) {
-                            st.drag = None;
-                        }
-                    }
-                    let mut pt = POINT::default();
-                    let moved_now = unsafe { GetCursorPos(&mut pt) }.is_ok() && (pt.x != last_pt.x || pt.y != last_pt.y);
-                    last_pt = pt;
-                    let events = EVENTS.load(Ordering::Relaxed);
-                    if moved_now && events == last_events {
-                        silent_moves += 1;
-                    } else {
-                        silent_moves = 0;
-                    }
-                    last_events = events;
-                    if silent_moves >= 2 {
-                        silent_moves = 0;
-                        REINSTALLS.fetch_add(1, Ordering::Relaxed);
-                        set_problem("Windows dropped the mouse hook; Lens installed it again.");
-                        remove_hook();
-                        std::thread::sleep(Duration::from_millis(100));
-                        install_hook();
-                    }
-                }
-            });
     }
 
     pub fn set_enabled(on: bool) {
         WANT.store(on, Ordering::SeqCst);
         if on {
-            install_hook();
-            start_watchdog();
+            input::claim_mouse(Feature::AltDrag);
         } else {
-            remove_hook();
+            input::release_mouse(Feature::AltDrag);
+            if let Ok(mut st) = state().try_lock() {
+                st.drag = None;
+            }
         }
     }
 
     pub fn status() -> AltDragStatus {
         AltDragStatus {
             enabled: WANT.load(Ordering::SeqCst),
-            hook_active: ACTIVE.load(Ordering::SeqCst),
-            reinstalls: REINSTALLS.load(Ordering::Relaxed),
-            last_problem: PROBLEM
-                .get()
-                .and_then(|p| p.lock().ok().map(|s| s.clone()))
-                .unwrap_or_default(),
+            hook_active: input::mouse_live(Feature::AltDrag),
+            reinstalls: input::status().reinstalls,
+            last_problem: input::status().last_problem,
         }
     }
 }
