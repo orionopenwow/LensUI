@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { Mic, Plus, Trash2 } from "lucide-react";
 import {
   DEFAULT_VOICE_CONFIG,
+  SINGLE_HOLD_KEYS,
   VOICE_EVENTS,
   VOICE_GROUPS,
   prettyKeys,
@@ -181,20 +182,37 @@ export function VoiceCard({ initialStatus }: VoiceCardProps) {
           </div>
         )}
 
-        <Row label="Push-to-talk key" desc={pttValid ? `Hold ${prettyKeys(cfg.ptt_hotkey)} while you speak.` : "Use modifiers plus one key, like Ctrl+Alt+V."}>
+        <Row
+          label="Hold to talk"
+          desc={pttValid ? `Hold ${prettyKeys(cfg.ptt_hotkey)} while you speak, or hold the mic at the end of the Dock. Double-tap for hands-free.` : "Use modifiers plus one key, like Ctrl+Alt+V."}
+        >
           <div className="lvc-inline">
-            <input className={`cc-input lvc-key ${pttValid ? "" : "invalid"}`} aria-label="Push-to-talk key" value={cfg.ptt_hotkey} onChange={(e) => save({ ptt_hotkey: e.target.value })} />
-            <div className="cc-chip-grid">
-              {[
-                ["hold", "Hold"],
-                ["toggle", "Press twice"],
-              ].map(([id, label]) => (
-                <button key={id} type="button" className={`cc-chip ${cfg.ptt_style === id ? "active" : ""}`} onClick={() => save({ ptt_style: id })}>
+            <div className="cc-chip-grid" role="radiogroup" aria-label="Hold-to-talk key">
+              {Object.entries(SINGLE_HOLD_KEYS).map(([id, label]) => (
+                <button key={id} type="button" role="radio" aria-checked={cfg.ptt_hotkey === id} className={`cc-chip ${cfg.ptt_hotkey === id ? "active" : ""}`} onClick={() => save({ ptt_hotkey: id })}>
                   {label}
                 </button>
               ))}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!SINGLE_HOLD_KEYS[cfg.ptt_hotkey]}
+                className={`cc-chip ${!SINGLE_HOLD_KEYS[cfg.ptt_hotkey] ? "active" : ""}`}
+                onClick={() => !SINGLE_HOLD_KEYS[cfg.ptt_hotkey] || save({ ptt_hotkey: "Ctrl+Alt+V" })}
+              >
+                Shortcut
+              </button>
             </div>
+            {!SINGLE_HOLD_KEYS[cfg.ptt_hotkey] && (
+              <input className={`cc-input lvc-key ${pttValid ? "" : "invalid"}`} aria-label="Hold-to-talk shortcut" value={cfg.ptt_hotkey} onChange={(e) => save({ ptt_hotkey: e.target.value })} />
+            )}
           </div>
+        </Row>
+        <Row label="Press twice instead of holding" desc="First press starts listening, second press sends.">
+          <Toggle on={cfg.ptt_style === "toggle"} label="Press twice instead of holding" onChange={(v) => save({ ptt_style: v ? "toggle" : "hold" })} />
+        </Row>
+        <Row label="Require “Lens” first" desc={cfg.activation === "ptt" ? "Only act on commands that start with “Lens…”, even while holding the key." : "Always on with a wake phrase: speech that doesn't start with “Lens” is ignored."}>
+          <Toggle on={cfg.activation !== "ptt" || cfg.require_prefix} label="Require Lens first" onChange={(v) => cfg.activation === "ptt" && save({ require_prefix: v })} />
         </Row>
         <Row label="Mute key" desc="Turns voice off and on from anywhere.">
           <input className={`cc-input lvc-key ${muteValid ? "" : "invalid"}`} aria-label="Mute key" value={cfg.mute_hotkey} onChange={(e) => save({ mute_hotkey: e.target.value })} />

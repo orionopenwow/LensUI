@@ -36,6 +36,11 @@ const SCENES = [
   ["conv-full-speaking", 1280, 800],
   ["conv-full-done", 1280, 800],
   ["conv-full-speaking-reduced", 1280, 800],
+  ...["floating", "slim", "taskbar", "split"].flatMap((st) =>
+    ["idle", "listening", "partial", "recognised", "confirm", "error"].map((stage) => [`dock-${st}-${stage}`, 1280, 240])
+  ),
+  ["dock-floating-partial-left", 760, 640],
+  ["dock-slim-confirm-left", 760, 640],
 ];
 let failed = 0;
 for (const preset of PRESETS) {
@@ -47,8 +52,10 @@ for (const preset of PRESETS) {
     await page.goto(`${base}/index.html?scene=${scene}&preset=${preset}`);
     await page.waitForTimeout(500);
     const empty = await page.evaluate(() => (document.getElementById("root")?.innerText || "").trim().length === 0);
-    await page.screenshot({ path: join(shots, `${preset}-${scene}.png`), fullPage: !scene.startsWith("conv-") });
-    if (errors.length || empty) {
+    const dir = scene.startsWith("dock-") ? join(shots, "dock") : shots;
+    await mkdir(dir, { recursive: true });
+    await page.screenshot({ path: join(dir, `${preset}-${scene}.png`), fullPage: !scene.startsWith("conv-") && !scene.startsWith("dock-") });
+    if (errors.length || (empty && !scene.endsWith("-idle"))) {
       failed++;
       console.log(`FAIL ${preset} ${scene}: ${empty ? "empty " : ""}${errors.join(" | ")}`);
     } else console.log(`ok   ${preset} ${scene}`);

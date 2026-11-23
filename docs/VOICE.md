@@ -29,6 +29,55 @@ New intents in `ai/intent.rs` are used by voice, the palette's "Do it" and `ai_r
 
 `close_app` and `create_note` stay **confirm**. Dictation and paste are **voice-only**. They are not AI tools, because the registry still blocks `type_text` and `press_keys` for AI, and every use goes through `safety::dictation_allowed`.
 
+## The Dock is the voice UI
+
+When voice is active, the **Dock itself becomes the voice capture module**. The floating HUD is only the fallback when no Dock shows it (auto-hidden Dock, Dock off). The Dock reports itself with `voice_set_dock_ui(true)`, and the state event's `dock_ui` hides the HUD.
+
+- **Morph** (`src/dock/voice/VoiceDock.tsx`, `dockMorph.ts`):
+  - **Triggers:** pressing the hold key, tapping the Dock mic, or hearing "Lens…" in the partials (wake mode).
+  - **Width:** the pill keeps its exact width (the same rule as search). App icons compress to a strip at the end (fewer and smaller when narrow).
+  - **Freed space:** an accent waveform plus a **live transcript**. Bright words are confirmed (seen in two partials in a row); monospace words are still changing. The newest words stay visible.
+  - **Recognised:** a chip ("Minimise · Google Chrome") with a 1.5 s **Undo** key chip (a countdown underline), then the Dock morphs back.
+  - **Confirm-risk:** an approval card above the Dock (below for a top Dock, beside for side Docks). Yes/No can be clicked or spoken.
+  - **Errors:** a short red chip.
+  - **All six styles and every edge:** `voiceDockLayout(style, edge, w, h, apps)` fits the voice UI inside the pill; tests check the width lock for all six styles on all four edges. Vertical Docks show a vertical waveform and put the transcript in a flyout.
+  - **Reduced motion:** crossfade only.
+  - **Wake mode:** speech that never says "Lens" never morphs the Dock (`armed` is false until the wake word appears in a partial).
+- **Hold-to-talk:**
+  - **Default key: hold Right Ctrl.** A keyboard hook watches only that key, Esc while listening, and "another key went down", so Right Ctrl+C never opens the mic. It never swallows a key, ignores injected keys, and is installed only while voice is on.
+  - Listening starts after 180 ms of holding. Release sends, Esc or a chord cancels, and a double-tap latches hands-free until the next tap.
+  - Right Alt or any modifier shortcut can be chosen instead. Ctrl+Win was not used because Win-key combinations belong to Windows and Lens's launcher (#2).
+  - The **Dock mic button** (`DockMicButton`, at the end of every style): hold to talk, release to send, slide off (more than 24 px) or Esc to cancel, double-tap to latch. It fills while held.
+- **Very quick actions** (`voice/early.rs`):
+  - While you talk, Lens re-recognises the utterance so far every ~350 ms (at most the last 6 s, only when whisper is free) and runs the grammar on every partial.
+  - When speech stops for **280 ms** (energy VAD) and the latest partial already covers everything said, it fires **without waiting for a final pass**, provided:
+    - it is **low-risk** (every step for chains);
+    - confidence is at least 0.85;
+    - it is **complete** (the same meaning in two partials in a row, or confidence of at least 0.95);
+    - the wake word was heard.
+  - Confirm-risk, dictation, questions and yes/no never fire early.
+  - On key release, a partial that already covers everything said is used instead of a final pass.
+  - Results report `latency_ms` (end of speech → action done) and `early`.
+- **"Lens…" structure:**
+  - Wake mode always needs "Lens" / "Hey Lens" first. Anything else is dropped silently, as soon as three words go by without it.
+  - Push-to-talk can require it too: Settings › Voice › Require "Lens" first.
+  - **Chaining:** "Lens, dark mode and mute" or "snap left then open Spotify" runs two to four intents in order with **one undo**. Every part must parse; otherwise the phrase is read as one command. A chain asks first if any step is confirm-risk.
+- **Mount snippet** (`DockSurface.tsx`, not edited here):
+  ```tsx
+  import { VoiceDockView, DockMicButton, useVoiceDock } from "../dock/voice/VoiceDock";
+  const vd = useVoiceDock(dockVisible);            // tells Lens the Dock shows voice; listens to voice events
+  // inside the pill (position: relative), after the icons:
+  <VoiceDockView style={dockStyle} edge={config.dock.position} width={lockedDockWidth} height={pillHeight}
+    morph={vd.morph} levels={vd.levels} icons={pinnedApps.map(renderSmallIcon)}
+    reducedMotion={reducedMotion} onUndo={vd.undo} onAnswer={vd.answer} />
+  // while vd.morph.stage !== "idle": fade the normal icons out (opacity 0 + scale .6, 160 ms; opacity only when reduced motion)
+  // at the end of the pill, every style:
+  <DockMicButton size={Math.min(40, pillHeight - 16)} live={vd.live} />
+  ```
+  - **Room above the pill:** the approval card sits above it, so give the Dock window room there while `vd.morph.stage === "confirm"` (the same way the search drawer does) and include it in the click-through region (the `lib.rs` click-through patch in DOCK_STYLES.md).
+  - **Split style:** mount the voice UI in the app pill; the system pill stays as it is.
+- **Bench:** `voice::bench::partial_to_action` (ignored; Windows plus whisper.cpp) streams each fixture in 350 ms steps and prints early-fire p50/p95 after end of speech next to the final-pass path (700 ms silence plus one pass). It asserts early p95 < 700 ms. **Not run on hardware yet.** On this sandbox, deciding on a partial (grammar plus rules) takes well under 1 ms (`early::tests::deciding_is_cheap` asserts < 5 ms).
+
 ## Conversation mode
 
 An optional large panel or full-screen view for spoken Q&A (Settings › Voice › Conversation view: Off / Panel / Full screen; default Panel).
@@ -61,6 +110,7 @@ Commands (camelCase arguments on the JS side):
 | `voice_status` | — | `VoiceStatus { config, phase, muted, paused_reason, engine_ready, engine_error, hotkey_error, mic_error }` |
 | `voice_set_config` | `config: VoiceConfig` | `VoiceStatus` (saves, re-registers hotkeys, warms the engine) |
 | `voice_ptt` | `down: bool` | Mic button press/release |
+| `voice_set_dock_ui` | `active: bool` | The Dock shows the voice UI (HUD steps aside) |
 | `voice_mute` | `muted: bool` | |
 | `voice_cancel` | — | |
 | `voice_answer` | `yes: bool` | Yes/No on a confirmation |

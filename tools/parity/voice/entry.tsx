@@ -14,6 +14,8 @@ import { INITIAL_HUD, reduceHud, type HudAction, type HudState } from "../../../
 import type { VoiceResultEvent, VoiceStateEvent } from "../../../src/voice/contract";
 import { COMMANDS } from "./mockCore";
 import { Conversation } from "../../../src/voice/Conversation";
+import { VoiceDockView, DockMicButton } from "../../../src/dock/voice/VoiceDock";
+import { IDLE as MORPH_IDLE, type MorphState, type DockStyleId, type Edge } from "../../../src/dock/voice/dockMorph";
 import { INITIAL_CONV, type ConvState } from "../../../src/voice/convoState";
 import { invoke } from "./mockCore";
 
@@ -154,7 +156,57 @@ function ConvScene({ name }: { name: string }) {
   );
 }
 
+const MORPHS: Record<string, MorphState> = {
+  idle: MORPH_IDLE,
+  listening: { ...MORPH_IDLE, stage: "listening" },
+  partial: { ...MORPH_IDLE, stage: "partial", confirmed: "Lens, minimise", partial: "this window" },
+  recognised: { ...MORPH_IDLE, stage: "recognised", chip: "Minimise · Google Chrome", undo: "Restore the window", until: Date.now() + 999999, latencyMs: 290, early: true },
+  confirm: { ...MORPH_IDLE, stage: "confirm", confirm: { label: "Close Notepad?", heard: "close notepad" } },
+  error: { ...MORPH_IDLE, stage: "error", error: "Didn't catch that. Say “Lens, help”." },
+};
+const APP_COLORS = ["#4f8cff", "#ff5f57", "#28c840", "#febc2e", "#a855f7", "#14b8a6", "#f97316", "#ec4899", "#64748b"];
+const appIcon = (c: string, i: number) => <span key={i} style={{ display: "block", width: "100%", height: "100%", borderRadius: "28%", background: c }} />;
+const dockLevels = Array.from({ length: 32 }, (_, i) => 0.25 + 0.7 * Math.abs(Math.sin(i * 0.7) * Math.cos(i * 0.23)));
+
+function DockScene({ name }: { name: string }) {
+  // dock-<style>-<stage>[-left]
+  const [, style, stage, edgeArg] = name.split("-") as [string, DockStyleId, string, Edge | undefined];
+  const edge: Edge = edgeArg ?? "bottom";
+  const vertical = edge === "left" || edge === "right";
+  const dims: Record<string, [number, number, number]> = { floating: [640, 64, 20], slim: [420, 44, 14], taskbar: [1280, 48, 0], studio: [1280, 48, 0], minimal: [520, 56, 18], split: [520, 60, 20] };
+  const [w0, h0, r] = dims[style] ?? dims.floating;
+  const [w, h] = vertical ? [h0, 520] : [w0, h0];
+  const morph = MORPHS[stage] ?? MORPHS.listening;
+  const icons = APP_COLORS.map(appIcon);
+  const mic = Math.max(20, Math.min(40, (vertical ? w : h) - 16));
+  const pillStyle: React.CSSProperties = vertical
+    ? { position: "absolute", left: 12, top: "50%", translate: "0 -50%", width: w, height: h, borderRadius: r }
+    : { position: "absolute", left: style === "taskbar" || style === "studio" ? 0 : "50%", translate: style === "taskbar" || style === "studio" ? "none" : "-50% 0", bottom: style === "taskbar" || style === "studio" ? 0 : 12, width: w, height: h, borderRadius: r };
+  return (
+    <div className="vg-dockscene">
+      <div className="vg-desk" />
+      <div className={`vg-pill vg-pill-${style}`} style={pillStyle}>
+        {morph.stage === "idle" && (
+          <div className="vg-icons" style={{ flexDirection: vertical ? "column" : "row" }}>
+            {icons.map((ic, i) => (
+              <span key={i} style={{ width: h0 - 20, height: h0 - 20 }}>
+                {ic}
+              </span>
+            ))}
+          </div>
+        )}
+        <VoiceDockView style={style} edge={edge} width={w} height={h} morph={morph} levels={dockLevels} icons={icons} />
+        <span className="vg-mic" style={vertical ? { bottom: 8, left: "50%", translate: "-50% 0" } : { right: 8, top: "50%", translate: "0 -50%" }}>
+          <DockMicButton size={mic} live={morph.stage === "listening" || morph.stage === "partial"} />
+        </span>
+      </div>
+      {style === "split" && !vertical && <div className="vg-pill vg-pill-split2" style={{ position: "absolute", right: 24, bottom: 12, width: 150, height: h0, borderRadius: r }}><span className="vg-clock">9:41 · Wi-Fi · 🔔</span></div>}
+    </div>
+  );
+}
+
 function App() {
+  if (scene.startsWith("dock-")) return <DockScene name={scene} />;
   if (scene.startsWith("conv-")) return <ConvScene name={scene} />;
   if (scene === "sheet") return <Sheet />;
   if (scene === "card")

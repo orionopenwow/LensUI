@@ -22,6 +22,8 @@ export interface HudState {
   result: VoiceResultEvent | null;
   /** The help sheet is open. */
   help: boolean;
+  /** The Dock is showing the voice UI, so this HUD stays hidden (except help). */
+  dockUi: boolean;
 }
 
 export const INITIAL_HUD: HudState = {
@@ -38,6 +40,7 @@ export const INITIAL_HUD: HudState = {
   partial: false,
   result: null,
   help: false,
+  dockUi: false,
 };
 
 export type HudAction =
@@ -62,6 +65,7 @@ export function reduceHud(s: HudState, a: HudAction): HudState {
         pausedReason: p.paused_reason,
         position: p.hud_position === "top" ? "top" : "dock",
         sounds: p.sounds,
+        dockUi: !!p.dock_ui,
       };
       // A new utterance starts clean.
       if (p.phase === "listening" && s.phase !== "listening") {
@@ -113,6 +117,8 @@ export function hudView(s: HudState): HudView {
   const hidden: HudView = { visible: false, tone: "quiet", title: "", detail: "", chip: null, buttons: [], showWave: false, hint: null };
   const r = s.result;
   if (!s.enabled && !r) return hidden;
+  // The Dock is the primary voice UI; this HUD is the fallback when no Dock shows it.
+  if (s.dockUi && s.phase !== "muted") return hidden;
 
   if (s.phase === "listening") {
     const answering = r?.status === "confirm" || r?.status === "suggest";

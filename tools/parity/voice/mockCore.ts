@@ -6,10 +6,11 @@ const status = {
   config: {
     enabled: true,
     activation: "both",
-    ptt_hotkey: "Ctrl+Alt+V",
+    ptt_hotkey: "RightCtrl",
     ptt_style: "hold",
     mute_hotkey: "Ctrl+Alt+Shift+V",
     wake_phrase: "Hey Lens",
+    require_prefix: false,
     sensitivity: 0.55,
     mic_id: "",
     language: "en",

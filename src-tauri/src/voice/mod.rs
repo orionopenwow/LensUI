@@ -1594,4 +1594,77 @@ mod bench {
         }
         assert!(p(0.95) < 400.0, "p95 {:.0} ms is over the 400 ms budget", p(0.95));
     }
+
+    /// Streaming: partials every 350 ms of audio; how long after the end of speech does a safe
+    /// command fire from a partial (early fire), versus waiting for a final pass?
+    #[test]
+    #[ignore]
+    fn partial_to_action() {
+        let (Ok(server), Ok(model), Ok(dir)) =
+            (std::env::var("LENS_WHISPER_SERVER"), std::env::var("LENS_WHISPER_MODEL"), std::env::var("LENS_VOICE_FIXTURES"))
+        else {
+            eprintln!("set LENS_WHISPER_SERVER, LENS_WHISPER_MODEL and LENS_VOICE_FIXTURES");
+            return;
+        };
+        let srv = whisper::Server::start(&server, &model, 4, "en").expect("whisper-server");
+        let opts = grammar::Options { wake_phrases: vec!["hey lens".into(), "lens".into()], ..Default::default() };
+        let risk = |r: &crate::ai::intent::RawIntent| match tools::tool_for_intent(r).map(|(t, _)| tools::risk_of(t)) {
+            Some(Risk::Low) => early::Risk3::Low,
+            Some(Risk::Confirm) => early::Risk3::Confirm,
+            _ => early::Risk3::Blocked,
+        };
+        let (mut early_ms, mut final_ms, mut fired, mut total) = (Vec::new(), Vec::new(), 0, 0);
+        for entry in std::fs::read_dir(&dir).expect("fixtures dir").flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("wav") {
+                continue;
+            }
+            let (_, mut samples) = audio::read_wav(&std::fs::read(&path).unwrap()).expect("16-bit mono WAV");
+            samples.extend(std::iter::repeat(0).take(16_000 / 2)); // 500 ms of silence after speech
+            // Where speech ends (energy VAD, as at runtime).
+            let mut vad = audio::Vad::new(0.5);
+            let mut last_loud = 0;
+            for (i, f) in samples.chunks(audio::FRAME).enumerate() {
+                let db = audio::dbfs(f);
+                if vad.loud(db) {
+                    last_loud = (i + 1) * audio::FRAME;
+                }
+                vad.push(db);
+            }
+            total += 1;
+            let mut prev: Option<String> = None;
+            let mut done = false;
+            let mut end = 16_000 / 2;
+            while end <= samples.len() && !done {
+                let t0 = Instant::now();
+                let text = srv.transcribe(&audio::wav(&samples[..end], audio::SAMPLE_RATE), whisper::BIAS).unwrap_or_default();
+                let infer_ms = t0.elapsed().as_secs_f64() * 1000.0;
+                let interp = grammar::interpret(&text, &opts);
+                let key = interp.command.as_ref().and_then(early::intent_key);
+                let silence_ms = (end.saturating_sub(last_loud) as u64 * 1000) / 16_000;
+                let cand = early::Candidate { interp, key: key.clone(), covered: end };
+                if early::can_fire(&cand, prev.as_deref(), last_loud, silence_ms, &risk) {
+                    // Audio time from end of speech to this partial, plus recognising it.
+                    early_ms.push(((end - last_loud) as f64 * 1000.0 / 16_000.0) + infer_ms);
+                    fired += 1;
+                    done = true;
+                }
+                prev = key;
+                end += 16_000 * 35 / 100;
+            }
+            // The non-streaming path: wait for 700 ms of silence, then one final pass.
+            let t0 = Instant::now();
+            let _ = srv.transcribe(&audio::wav(&samples[..last_loud.min(samples.len())], audio::SAMPLE_RATE), whisper::BIAS);
+            final_ms.push(700.0 + t0.elapsed().as_secs_f64() * 1000.0);
+        }
+        let pct = |v: &mut Vec<f64>, q: f64| {
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            if v.is_empty() { f64::NAN } else { v[((v.len() as f64 - 1.0) * q).round() as usize] }
+        };
+        eprintln!(
+            "early fire: {}/{} fixtures · p50 {:.0} ms · p95 {:.0} ms after end of speech  |  final-pass path: p50 {:.0} ms · p95 {:.0} ms",
+            fired, total, pct(&mut early_ms, 0.5), pct(&mut early_ms, 0.95), pct(&mut final_ms, 0.5), pct(&mut final_ms, 0.95)
+        );
+        assert!(early_ms.is_empty() || pct(&mut early_ms, 0.95) < 700.0);
+    }
 }

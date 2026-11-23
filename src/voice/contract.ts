@@ -27,6 +27,10 @@ export interface VoiceStateEvent {
   conversation_view?: string;
   /** Lens is speaking an answer. */
   speaking?: boolean;
+  /** The utterance is for Lens (key held, wake word heard, conversation): the Dock morphs. */
+  armed?: boolean;
+  /** A Dock is showing the voice UI, so the floating HUD stays hidden. */
+  dock_ui?: boolean;
 }
 
 /** Word progress of a spoken answer. `word` indexes whitespace-separated words. */
@@ -48,6 +52,10 @@ export interface VoiceResultEvent {
   confidence: number;
   undo: string | null;
   suggestion: string | null;
+  /** End of speech → action done (ms), when measured. */
+  latency_ms?: number | null;
+  /** Ran from the partial transcript, before the final pass. */
+  early?: boolean;
 }
 
 export interface VoiceHeardEvent {
@@ -86,10 +94,11 @@ export const VOICE_GROUPS = ["Windows", "Apps", "Desktop", "Look", "System", "Sh
 export const DEFAULT_VOICE_CONFIG: VoiceConfig = {
   enabled: false,
   activation: "ptt",
-  ptt_hotkey: "Ctrl+Alt+V",
+  ptt_hotkey: "RightCtrl",
   ptt_style: "hold",
   mute_hotkey: "Ctrl+Alt+Shift+V",
   wake_phrase: "Hey Lens",
+  require_prefix: false,
   sensitivity: 0.5,
   mic_id: "",
   language: "en",
@@ -132,9 +141,15 @@ export const voiceConverse = (on: boolean) => invoke<void>("voice_converse", { o
 /** Speaks an answer with word progress (lens://voice/speech); resolves with the utterance id. */
 export const voiceSay = (text: string) => invoke<number>("voice_say", { text });
 export const voiceStopSpeaking = () => invoke<void>("voice_stop_speaking");
+/** Tell Lens the Dock is (or isn't) showing the voice UI. */
+export const voiceSetDockUi = (active: boolean) => invoke<void>("voice_set_dock_ui", { active });
+
+/** Single keys you can hold to talk (a keyboard hook; global shortcuts need a key). */
+export const SINGLE_HOLD_KEYS: Record<string, string> = { RightCtrl: "Right Ctrl", RightAlt: "Right Alt" };
 
 /** "Ctrl+Alt+V" → "Ctrl + Alt + V" for display. */
 export const prettyKeys = (k: string) =>
+  SINGLE_HOLD_KEYS[k] ??
   k
     .split("+")
     .map((p) => p.trim())
@@ -143,6 +158,7 @@ export const prettyKeys = (k: string) =>
 
 /** Accepts what the backend's shortcut parser accepts: modifiers plus one key. */
 export function validHotkey(k: string): boolean {
+  if (SINGLE_HOLD_KEYS[k.replace(/\s+/g, "")]) return true;
   const parts = k.split("+").map((p) => p.trim().toLowerCase()).filter(Boolean);
   if (parts.length < 2 || parts.length > 4) return false;
   const mods = new Set(["ctrl", "control", "alt", "shift", "super", "win", "cmd", "meta", "option"]);

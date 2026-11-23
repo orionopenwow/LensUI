@@ -208,3 +208,124 @@ describe("conversation mode", () => {
     expect(mid[4]).toBeGreaterThan(mid[0]);
   });
 });
+
+import { IDLE, reduceMorph, splitStable, usedLength, voiceDockLayout, type DockStyleId, type Edge, type MorphAction } from "../dock/voice/dockMorph";
+import { HOLD0, holdCancel, holdPress, holdRelease } from "../dock/voice/holdButton";
+
+const vstate = (phase: VoiceStateEvent["phase"], armed = true): MorphAction => ({
+  kind: "state",
+  now: 0,
+  payload: { phase, enabled: true, muted: false, listening: phase === "listening", by_ptt: true, activation: "ptt", paused_reason: null, hud_position: "dock", sounds: true, armed },
+});
+const vres = (status: VoiceResultEvent["status"], extra: Partial<VoiceResultEvent> = {}, now = 0): MorphAction => ({
+  kind: "result",
+  now,
+  payload: { status, heard: "", command: null, label: "", message: "", confidence: 1, undo: null, suggestion: null, ...extra },
+});
+const morph = (a: MorphAction[]) => a.reduce(reduceMorph, IDLE);
+
+describe("dock morph", () => {
+  test("idle → listening → partial → recognised → undo window → idle", () => {
+    let s = morph([vstate("listening")]);
+    expect(s.stage).toBe("listening");
+    s = reduceMorph(s, { kind: "heard", payload: { text: "Lens minimise", partial: true } });
+    expect(s.stage).toBe("partial");
+    expect(s.partial).toBe("Lens minimise");
+    s = reduceMorph(s, { kind: "heard", payload: { text: "Lens minimise this", partial: true } });
+    expect(s.confirmed).toBe("Lens minimise");
+    expect(s.partial).toBe("this");
+    s = reduceMorph(s, vres("done", { label: "Minimise · Chrome", undo: "Restore the window", latency_ms: 310, early: true }, 1000));
+    expect(s.stage).toBe("recognised");
+    expect(s.chip).toBe("Minimise · Chrome");
+    expect(s.until).toBe(2500);
+    expect(s.early).toBe(true);
+    expect(reduceMorph(s, { kind: "tick", now: 2400 }).stage).toBe("recognised");
+    expect(reduceMorph(s, { kind: "tick", now: 2500 }).stage).toBe("idle");
+  });
+
+  test("confirm and error paths", () => {
+    const c = morph([vstate("listening"), vstate("thinking"), vres("confirm", { label: "Close Notepad?", heard: "close notepad" })]);
+    expect(c.stage).toBe("confirm");
+    expect(c.confirm?.label).toBe("Close Notepad?");
+    const e = morph([vstate("listening"), vres("failed", { message: "Didn't catch that" }, 100)]);
+    expect(e.stage).toBe("error");
+    expect(reduceMorph(e, { kind: "tick", now: 100 + 2200 }).stage).toBe("idle");
+  });
+
+  test("cancel paths: release-to-cancel, mute, and unarmed wake speech", () => {
+    expect(morph([vstate("listening"), vstate("idle")]).stage).toBe("idle");
+    expect(morph([vstate("listening"), vstate("muted")]).stage).toBe("idle");
+    // Wake mode heard speech without "Lens": no morph at all.
+    expect(morph([vstate("listening", false)]).stage).toBe("idle");
+    // It morphs the moment the wake word is heard (armed flips).
+    expect(morph([vstate("listening", false), vstate("listening", true)]).stage).toBe("listening");
+    // Partials arriving before arming are ignored.
+    expect(morph([vstate("listening", false), { kind: "heard", payload: { text: "what's for dinner", partial: true } }]).stage).toBe("idle");
+  });
+
+  test("stable words", () => {
+    expect(splitStable("", "Lens dark")).toEqual({ confirmed: "", partial: "Lens dark" });
+    expect(splitStable("Lens dark", "Lens, dark mode")).toEqual({ confirmed: "Lens, dark", partial: "mode" }); // punctuation-insensitive
+    expect(splitStable("lens dark", "Lens dark mode and")).toEqual({ confirmed: "Lens dark", partial: "mode and" });
+  });
+});
+
+describe("dock voice layout (width lock)", () => {
+  const styles: [DockStyleId, number, number][] = [
+    ["floating", 640, 64],
+    ["slim", 420, 44],
+    ["taskbar", 1920, 48],
+    ["studio", 1366, 48],
+    ["minimal", 520, 56],
+    ["split", 560, 60],
+  ];
+  for (const [style, w, h] of styles) {
+    test(`${style} fits its pill on every edge`, () => {
+      for (const edge of ["bottom", "top"] as Edge[]) {
+        const l = voiceDockLayout(style, edge, w, h, 9);
+        expect(usedLength(l)).toBeLessThanOrEqual(w);
+        expect(l.transcript).toBeGreaterThanOrEqual(96);
+        expect(l.flyout).toBe(false);
+        expect(l.mic).toBeLessThanOrEqual(h);
+      }
+      for (const edge of ["left", "right"] as Edge[]) {
+        const l = voiceDockLayout(style, edge, h, Math.min(w, 900), 9);
+        expect(usedLength(l)).toBeLessThanOrEqual(Math.min(w, 900));
+        expect(l.flyout).toBe(true);
+        expect(l.mic).toBeLessThanOrEqual(h);
+      }
+    });
+  }
+  test("narrow docks drop to a thin strip but still fit", () => {
+    for (const w of [120, 200, 300, 360]) {
+      const l = voiceDockLayout("slim", "bottom", w, 40, 12);
+      expect(usedLength(l)).toBeLessThanOrEqual(w);
+    }
+  });
+});
+
+describe("hold-to-talk button", () => {
+  test("hold, release, slide off, double-tap latch", () => {
+    let [s, fx] = holdPress(HOLD0, 0);
+    expect(fx).toEqual(["start"]);
+    [s, fx] = holdRelease(s, 900);
+    expect(fx).toEqual(["send"]);
+    [s, fx] = holdPress(s, 2000);
+    [s, fx] = holdCancel(s);
+    expect(fx).toEqual(["cancel"]);
+    // Double tap → latch; next tap sends.
+    [s, fx] = holdPress(HOLD0, 0);
+    [s, fx] = holdRelease(s, 80);
+    expect(fx).toEqual(["cancel"]);
+    [s, fx] = holdPress(s, 250);
+    expect(fx).toEqual(["start"]);
+    [s, fx] = holdRelease(s, 320);
+    expect(fx).toEqual(["latch"]);
+    expect(s.latched).toBe(true);
+    [s, fx] = holdPress(s, 4000);
+    expect(fx).toEqual([]);
+    [s, fx] = holdRelease(s, 4100);
+    expect(fx).toEqual(["send"]);
+    expect(s.latched).toBe(false);
+  });
+});
