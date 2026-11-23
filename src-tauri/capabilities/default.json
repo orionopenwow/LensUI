@@ -19,6 +19,8 @@
     "command",
     "edgeshelf",
     "bubble",
+    "snip",
+    "snip-*",
     "topbar-*"
   ],
   "permissions": [

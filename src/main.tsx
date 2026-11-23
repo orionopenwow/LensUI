@@ -48,6 +48,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
     import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
   ),
   bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).
+  snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
   focusdim: lazy(() =>
     import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
