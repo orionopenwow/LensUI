@@ -43,3 +43,4 @@ pub(crate) mod cleaner;
 pub(crate) mod syssettings;
 pub(crate) mod presence;
 pub(crate) mod coreapps;
+pub(crate) mod failsafe;

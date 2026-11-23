@@ -42,6 +42,19 @@ unsafe extern "system" fn window_event_cb(
     _thread: u32,
     _time: u32,
 ) {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("events.window_event_cb", (), || window_event_cb_guarded(_hook, event, hwnd, id_object, _id_child, _thread, _time))
+}
+
+unsafe fn window_event_cb_guarded(
+    _hook: HWINEVENTHOOK,
+    event: u32,
+    hwnd: HWND,
+    id_object: i32,
+    _id_child: i32,
+    _thread: u32,
+    _time: u32,
+) {
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }

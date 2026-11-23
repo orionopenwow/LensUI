@@ -738,6 +738,16 @@ mod host {
         wparam: usize,
         lparam: isize,
     ) -> isize {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard_else("tray.tray_wnd_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || tray_wnd_proc_guarded(hwnd, msg, wparam, lparam))
+    }
+
+    unsafe fn tray_wnd_proc_guarded(
+        hwnd: isize,
+        msg: u32,
+        wparam: usize,
+        lparam: isize,
+    ) -> isize {
         match msg {
             WM_COPYDATA => handle_copy_data(wparam, lparam),
             WM_TIMER => {

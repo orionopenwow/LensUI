@@ -1503,6 +1503,11 @@ pub(crate) unsafe fn describe_window(h: isize) -> Option<DesktopWindow> {
 #[cfg(windows)]
 pub(crate) fn desktop_windows() -> Vec<DesktopWindow> {
     unsafe extern "system" fn cb(h: isize, lp: isize) -> i32 {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("tiler.cb", 1, || cb_guarded(h, lp))
+    }
+
+    unsafe fn cb_guarded(h: isize, lp: isize) -> i32 {
         let out = &mut *(lp as *mut Vec<DesktopWindow>);
         if let Some(w) = describe_window(h) {
             out.push(w);
@@ -1716,6 +1721,19 @@ fn on_user_move_end(h: isize) {
 
 #[cfg(windows)]
 unsafe extern "system" fn tiler_event_cb(
+    _hook: isize,
+    event: u32,
+    h: isize,
+    id_object: i32,
+    _child: i32,
+    _thread: u32,
+    _time: u32,
+) {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("tiler.tiler_event_cb", (), || tiler_event_cb_guarded(_hook, event, h, id_object, _child, _thread, _time))
+}
+
+unsafe fn tiler_event_cb_guarded(
     _hook: isize,
     event: u32,
     h: isize,

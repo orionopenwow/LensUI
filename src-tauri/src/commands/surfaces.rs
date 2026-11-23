@@ -23,26 +23,6 @@ pub(crate) fn get_desktop_icons_hidden_cmd() -> bool {
     is_desktop_icons_hidden()
 }
 
-pub(crate) fn surface_glide_gen(label: &str) -> &'static std::sync::atomic::AtomicU64 {
-    use std::sync::atomic::AtomicU64;
-    static G_SETTINGS: AtomicU64 = AtomicU64::new(0);
-    static G_QS: AtomicU64 = AtomicU64::new(0);
-    static G_PALETTE: AtomicU64 = AtomicU64::new(0);
-    static G_WIDGETS: AtomicU64 = AtomicU64::new(0);
-    static G_OTHER: AtomicU64 = AtomicU64::new(0);
-    static G_LAUNCHER: AtomicU64 = AtomicU64::new(0);
-    static G_OVERVIEW: AtomicU64 = AtomicU64::new(0);
-    match label {
-        "launcher" => &G_LAUNCHER,
-        "overview" => &G_OVERVIEW,
-        "settings" => &G_SETTINGS,
-        "quicksettings" => &G_QS,
-        "palette" => &G_PALETTE,
-        "widgets" => &G_WIDGETS,
-        _ => &G_OTHER,
-    }
-}
-
 /// Windows' own show/hide animation fights the CSS glide on these see-through windows (a zoom
 /// on top of our slide reads as a snap). Turn it off per window; harmless if it fails.
 #[cfg(windows)]
@@ -63,8 +43,12 @@ fn disable_dwm_transitions(win: &tauri::WebviewWindow) {
 }
 
 pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
-    use std::sync::atomic::Ordering;
-    surface_glide_gen(label).fetch_add(1, Ordering::SeqCst);
+    use crate::app::surface_state::{self, Step};
+    // A show always wins: it takes a new generation, so a hide still in flight (the page's late
+    // "exit done", or the fallback timer) can no longer hide this window.
+    let Step::Show(generation) = surface_state::request_show(label) else {
+        return;
+    };
     // Put the page in its start pose before the window appears, so the first visible frame is
     // never the old open (or closed) pose snapping into place.
     let _ = app.emit(
@@ -101,17 +85,19 @@ pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
         "lens://surface-glide",
         serde_json::json!({ "label": label, "state": "open" }),
     );
+    surface_state::mark_shown(label, generation);
 }
 
 pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
-    use std::sync::atomic::Ordering;
+    use crate::app::surface_state::{self, Step};
     let Some(win) = app.get_webview_window(label) else {
         return;
     };
-    if !win.is_visible().unwrap_or(false) {
+    let visible = win.is_visible().unwrap_or(false);
+    let Step::BeginHide(gen) = surface_state::request_hide(label, visible) else {
+        // Not visible, or already closing: one exit is enough.
         return;
-    }
-    let gen = surface_glide_gen(label).fetch_add(1, Ordering::SeqCst) + 1;
+    };
     // The page plays its exit and answers with surface_exit_done_cmd; the window is hidden then,
     // on a finished, see-through frame. The timer below only covers a page that never answers.
     let _ = app.emit(
@@ -123,12 +109,19 @@ pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
     let fallback_ms = exit_fallback_ms(label);
     thread::spawn(move || {
         thread::sleep(Duration::from_millis(fallback_ms));
-        if surface_glide_gen(&label_owned).load(Ordering::SeqCst) == gen {
-            if let Some(w) = app_clone.get_webview_window(&label_owned) {
-                let _ = w.hide();
-            }
-        }
+        finish_hide(&app_clone, &label_owned, gen);
     });
+}
+
+/// Hides the window if `generation` is still the hide in progress (the page's acknowledgement
+/// and the fallback timer both end here; whichever comes second finds nothing to do).
+fn finish_hide(app: &AppHandle, label: &str, generation: u64) {
+    use crate::app::surface_state::{self, Step};
+    if surface_state::acknowledge_hidden(label, generation) == Step::HideNow {
+        if let Some(w) = app.get_webview_window(label) {
+            let _ = w.hide();
+        }
+    }
 }
 
 /// Surfaces whose page plays the shared glide and reports when its exit is done.
@@ -150,15 +143,10 @@ pub(crate) fn exit_fallback_ms(label: &str) -> u64 {
 /// (`generation` no longer matches).
 #[tauri::command]
 pub(crate) fn surface_exit_done_cmd(app: AppHandle, label: String, generation: u64) {
-    use std::sync::atomic::Ordering;
     if !has_glide_page(&label) {
         return;
     }
-    if surface_glide_gen(&label).load(Ordering::SeqCst) == generation {
-        if let Some(w) = app.get_webview_window(&label) {
-            let _ = w.hide();
-        }
-    }
+    finish_hide(&app, &label, generation);
 }
 
 pub(crate) fn dismiss_other_surfaces(app: &AppHandle, keep: &str) {

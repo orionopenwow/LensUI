@@ -517,6 +517,11 @@ fn find_wallpaper_host() -> Option<(isize, &'static str)> {
             found: isize,
         }
         unsafe extern "system" fn cb(hwnd: isize, lparam: isize) -> i32 {
+            // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+            crate::failsafe::guard::ffi_guard("wallpaper.cb", 1, || cb_guarded(hwnd, lparam))
+        }
+
+        unsafe fn cb_guarded(hwnd: isize, lparam: isize) -> i32 {
             let ctx = &mut *(lparam as *mut Ctx);
             let dv = ffi::FindWindowExW(hwnd, 0, ctx.defview.as_ptr(), std::ptr::null());
             if dv != 0 {

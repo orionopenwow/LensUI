@@ -828,6 +828,11 @@ mod platform {
 
     fn monitors() -> Vec<Rect> {
         unsafe extern "system" fn cb(_m: isize, _dc: isize, r: *mut WinRect, data: isize) -> i32 {
+            // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+            crate::failsafe::guard::ffi_guard("cursor_fx.cb", 1, || cb_guarded(_m, _dc, r, data))
+        }
+
+        unsafe fn cb_guarded(_m: isize, _dc: isize, r: *mut WinRect, data: isize) -> i32 {
             let v = &mut *(data as *mut Vec<Rect>);
             let r = &*r;
             v.push(Rect {

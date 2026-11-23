@@ -564,7 +564,19 @@ fn release_prepare_blocking(handle: &AppHandle, app_id: &str) -> Result<Prepared
     Ok(prep)
 }
 
+/// Asks PowerShell for the file's Authenticode signature. PowerShell can hang; after 30 s the
+/// signature counts as unknown, which the install flow already treats as "not verified".
 fn signature_of(path: &std::path::Path) -> github::SignatureInfo {
+    let owned = path.to_path_buf();
+    crate::failsafe::call::os_read(
+        "The signature check",
+        std::time::Duration::from_secs(30),
+        github::SignatureInfo { status: "UnknownError".into(), subject: String::new() },
+        move || signature_of_now(&owned),
+    )
+}
+
+fn signature_of_now(path: &std::path::Path) -> github::SignatureInfo {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
