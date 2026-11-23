@@ -1,0 +1,248 @@
+# Lens UI robustness and fluidity (docs/TESTING.md)
+#  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
+#                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
+#  * windows-e2e  — every PR: builds the real app and drives it on Windows through tauri-driver,
+#                   then checks Windows was put back the way it was (tools/e2e/probe.ps1).
+#  * nightly      — the long versions: full soak, longer Playground runs, a 10× start/quit loop and
+#                   property tests with many more cases.
+# Rust property tests (src-tauri/src/tests/robustness) also run in build.yml's `cargo test --lib`.
+name: robustness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 9 * * *" # nightly, 02:17 Phoenix
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: "Upload fresh perf numbers and goldens as artifacts (never commits)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Goldens and budgets are recorded with this exact Chromium; bump them together.
+  PLAYWRIGHT_VERSION: "1.63.0"
+
+jobs:
+  robustness:
+    name: Fluidity, visuals, a11y, soak (headless)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install test tools (not in the lockfile)
+        run: |
+          npm install --no-save --no-package-lock playwright@${PLAYWRIGHT_VERSION} axe-core@4
+          npx playwright install --with-deps chromium
+
+      - name: Build harness
+        run: node tools/robust/build.mjs
+
+      - name: Perf budgets (4× CPU throttle)
+        run: node tools/perf/run.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.update_baselines) && '--update' || '' }}
+
+      - name: Reduced motion means no motion
+        if: always()
+        run: node tools/perf/reduced-motion.mjs
+
+      - name: Visual regression
+        if: always()
+        # Fails on any changed image; missing goldens are recorded to the visual-new artifact.
+        env:
+          VISUAL_REQUIRE_GOLDENS: ${{ hashFiles('tools/parity/golden/*.png') != '' && '1' || '0' }}
+        run: node tools/visual/run.mjs
+
+      - name: Accessibility (axe-core)
+        if: always()
+        run: node tools/a11y/run.mjs
+
+      - name: Soak + chaos (short)
+        if: always() && github.event_name != 'schedule'
+        env:
+          SOAK_SCALE: "0.3"
+        run: node tools/soak/run.mjs
+
+      - name: Soak + chaos (full)
+        if: always() && github.event_name == 'schedule'
+        run: node tools/soak/run.mjs
+
+      - name: Longer Playground runs (nightly)
+        if: always() && github.event_name == 'schedule'
+        env:
+          PERF_SCENE_MS: "15000"
+          PERF_ONLY: playground-sand,playground-fluid,playground-flow,playground-constellation,playground-aurora,playground-rain,playground-starfield,playground-skyclock
+        run: node tools/perf/run.mjs
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robustness-reports
+          path: |
+            tools/perf/out/
+            tools/perf/budgets.json
+            tools/soak/out/
+            tools/a11y/out/
+            tools/visual/out/report.json
+            tools/visual/out/diff/
+          if-no-files-found: warn
+
+      - name: Upload new goldens
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-new
+          path: tools/visual/out/new/
+          if-no-files-found: ignore
+
+      - name: Upload current renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-actual
+          path: tools/visual/out/actual/
+          if-no-files-found: ignore
+
+  windows-e2e:
+    name: End-to-end on Windows (tauri-driver)
+    runs-on: windows-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: e2e
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # A debug build of the real app with the frontend embedded (custom protocol, no dev server).
+      - name: Build Lens UI (debug, no installer)
+        run: bun run tauri build --debug --no-bundle
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      # msedgedriver must match the WebView2 runtime exactly.
+      - name: msedgedriver for this WebView2
+        shell: pwsh
+        run: |
+          $key = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+          $ver = (Get-ItemProperty $key -ErrorAction SilentlyContinue).pv
+          if (-not $ver) { $ver = (Get-Item "C:\Program Files (x86)\Microsoft\EdgeWebView\Application\*\msedgewebview2.exe" | Select-Object -First 1).VersionInfo.ProductVersion }
+          Write-Host "WebView2 runtime $ver"
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\edgedriver" | Out-Null
+          $zip = "$env:RUNNER_TEMP\edgedriver.zip"
+          try {
+            Invoke-WebRequest "https://msedgedriver.microsoft.com/$ver/edgedriver_win64.zip" -OutFile $zip
+            Expand-Archive $zip -DestinationPath "$env:RUNNER_TEMP\edgedriver" -Force
+            $drv = "$env:RUNNER_TEMP\edgedriver\msedgedriver.exe"
+          } catch {
+            Write-Host "No driver download for $ver ($_); using the runner's EdgeDriver"
+            $drv = Join-Path $env:EDGEWEBDRIVER "msedgedriver.exe"
+          }
+          "MSEDGEDRIVER=$drv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Install selenium-webdriver
+        run: npm install --no-save --no-package-lock selenium-webdriver@4
+
+      - name: Snapshot Windows state
+        shell: pwsh
+        run: pwsh tools/e2e/probe.ps1 snapshot tests/e2e/out/before.json
+
+      - name: End-to-end scenarios
+        shell: pwsh
+        env:
+          E2E_RESTARTS: ${{ github.event_name == 'schedule' && '10' || '0' }}
+        run: |
+          $driver = Start-Process -PassThru -NoNewWindow -FilePath "$env:USERPROFILE\.cargo\bin\tauri-driver.exe" -ArgumentList "--native-driver", "$env:MSEDGEDRIVER" -RedirectStandardOutput tests/e2e/out/tauri-driver.log -RedirectStandardError tests/e2e/out/tauri-driver.err.log
+          Start-Sleep -Seconds 3
+          node tests/e2e/run.mjs
+          $code = $LASTEXITCODE
+          Stop-Process -Id $driver.Id -Force -ErrorAction SilentlyContinue
+          exit $code
+
+      - name: Windows put back after quit
+        if: always()
+        shell: pwsh
+        run: pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
+
+      - name: Collect Lens logs
+        if: always()
+        shell: pwsh
+        run: |
+          $d = Join-Path $env:APPDATA "LensUI"
+          if (Test-Path $d) {
+            New-Item -ItemType Directory -Force -Path tests/e2e/out/appdata | Out-Null
+            Get-ChildItem $d -Recurse -Include *.log, *.txt, *.json -ErrorAction SilentlyContinue |
+              Where-Object { $_.Length -lt 2MB -and $_.FullName -notmatch "secret|clip|shelf" } |
+              Copy-Item -Destination tests/e2e/out/appdata -Force
+          }
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-windows
+          path: tests/e2e/out/
+          if-no-files-found: warn
+
+  nightly-properties:
+    name: Property tests, many cases (nightly)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux system libraries for Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Placeholders for the Windows-only build inputs
+        run: |
+          mkdir -p dist && echo '<!doctype html><title>Lens</title>' > dist/index.html
+          test -f src-tauri/lens_dwm_hook.dll || touch src-tauri/lens_dwm_hook.dll
+
+      - name: cargo test robustness (4096 cases each)
+        working-directory: src-tauri
+        env:
+          PROPTEST_CASES: "4096"
+        run: cargo test --lib robustness_tests -- --test-threads 4

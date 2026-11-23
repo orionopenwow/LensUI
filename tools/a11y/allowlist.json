@@ -1,0 +1,4 @@
+{
+  "_note": "Known accessibility exceptions for tools/a11y/run.mjs. Every entry needs a reason and, for a real defect, the docs/TESTING.md finding it is tracked under. Matching: rule id exactly, surface exactly (or \"*\"), and `target` as a substring of the failing node's CSS selector (or \"*\").",
+  "entries": []
+}

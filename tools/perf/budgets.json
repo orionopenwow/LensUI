@@ -1,0 +1,104 @@
+{
+  "_note": "Baseline per scenario from `node tools/perf/run.mjs --update`. A run fails when a metric exceeds baseline × 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, on the CI runner's numbers (perf-report artifact).",
+  "throttle": 4,
+  "baseline": {
+    "dock-hover-sweep": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0.0081,
+      "fcp": 540
+    },
+    "dock-magnification": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 0,
+      "cls": 0.0146,
+      "fcp": 524
+    },
+    "dock-search-glide": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 2,
+      "cls": 0,
+      "fcp": 504
+    },
+    "command-mini-expand": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    },
+    "theme-switch": {
+      "p50": 16.7,
+      "p95": 50.1,
+      "longTasks": 5,
+      "cls": 0,
+      "fcp": 644
+    },
+    "settings-tab-switch": {
+      "p50": 16.7,
+      "p95": 49.9,
+      "longTasks": 9,
+      "cls": 0,
+      "fcp": 724
+    },
+    "playground-sand": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 600
+    },
+    "playground-fluid": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    },
+    "playground-flow": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 568
+    },
+    "playground-constellation": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 532
+    },
+    "playground-aurora": {
+      "p50": 33.3,
+      "p95": 50,
+      "longTasks": 4,
+      "cls": 0,
+      "fcp": 560
+    },
+    "playground-rain": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 644
+    },
+    "playground-starfield": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 612
+    },
+    "playground-skyclock": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    }
+  }
+}
