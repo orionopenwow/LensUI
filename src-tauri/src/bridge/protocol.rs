@@ -51,6 +51,8 @@ pub const ACTIONS: &[(&str, ActionKind)] = &[
     ("pack_add", ActionKind::Ui),
     ("context_add", ActionKind::Ui),
     ("command_open", ActionKind::Ui),
+    // lens://settings/<page>#<section>; the page id travels in `selection` (docs/SETTINGS_HUB.md).
+    ("settings_open", ActionKind::Ui),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -427,6 +429,7 @@ fn check_has_content(r: &BridgeRequest) -> Result<(), String> {
         "clip" => has_text || r.url.is_some(),
         "pack_add" => r.item.is_some() || has_text || r.url.is_some(),
         "context_add" => has_text || r.url.is_some(),
+        "settings_open" => r.selection.as_deref().is_some_and(|s| !s.is_empty() && s.len() <= 64),
         _ => false,
     };
     if ok {
