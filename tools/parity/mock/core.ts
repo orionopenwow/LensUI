@@ -30,6 +30,8 @@ const base = {
   activeSessionId: "main",
   widgets: { enabledWidgets: ["clock", "telemetry", "notes", "quick-actions"], notes: "Welcome" },
   styledFolders: [], onboardingCompleted: true, themeSchedule: null,
+  // `?settingsMode=simple|advanced` shows Settings in that mode (docs/SETTINGS_SIMPLE.md).
+  settingsMode: params.get("settingsMode") ?? "advanced",
 };
 let config: any = JSON.parse(JSON.stringify(base));
 const now = Date.now();

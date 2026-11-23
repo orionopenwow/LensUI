@@ -1538,6 +1538,11 @@ export interface LensConfig {
   widgets: WidgetsConfig;
   styledFolders: StyledFolderRecord[];
   onboardingCompleted: boolean;
+  /**
+   * Settings hub detail level: "simple" (core settings with visual previews) or "advanced"
+   * (everything). Empty until chosen: new users start Simple, existing users Advanced.
+   */
+  settingsMode: string;
   themeSchedule: ThemeScheduleConfig | null;
   tiling: TilingConfig;
   workspaces: WorkspacesConfig;

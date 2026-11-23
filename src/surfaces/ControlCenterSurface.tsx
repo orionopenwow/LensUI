@@ -83,6 +83,10 @@ import { PAGE_COMPONENTS } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
 import { SettingsNav, PageIcon } from "../settings/SettingsNav";
+import { SimpleView } from "../settings/simple/SimpleView";
+import { MoreOptions } from "../settings/simple/MoreOptions";
+import { ModeHint } from "../settings/simple/ModePill";
+import { effectiveMode, hasSimpleCards, modeUnchosen, moreStartsOpen, moreSummary, SIMPLE_RESETS, type SettingsMode } from "../settings/simple/mode";
 import { WinLink } from "../settings/ui/primitives";
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
 
@@ -119,6 +123,12 @@ export const ControlCenterSurface: React.FC = () => {
     const t = resolveTarget(target);
     if (t) navigate(t.page, t.section);
   };
+  // Simple mode: "More options" opens on a deep link to a section, or when the person asks.
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => {
+    if (config) setMoreOpen(moreStartsOpen(effectiveMode(config), tab, section));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, section]);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
@@ -244,6 +254,13 @@ export const ControlCenterSurface: React.FC = () => {
 
   const pageDef = getPage(tab);
   const PageComponent = PAGE_COMPONENTS[tab];
+  const mode = effectiveMode(config);
+  const setMode = (m: SettingsMode) => {
+    if (m === config.settingsMode) return;
+    updateConfig({ ...config, settingsMode: m });
+    if (m === "advanced") setMoreOpen(true);
+  };
+  const simpleCards = mode === "simple" && hasSimpleCards(tab);
 
   const activeAccentHex =
     config.theme.accentMode === "custom"
@@ -339,7 +356,13 @@ export const ControlCenterSurface: React.FC = () => {
         />
       )}
       <div className="cc-body">
-        <SettingsNav page={navTab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
+        <SettingsNav
+          page={navTab}
+          mode={mode}
+          onMode={setMode}
+          onNavigate={navigate}
+          onWizard={() => setShowWizardManual(true)}
+        />
 
         <main className="cc-content" ref={contentRef} onScroll={(e) => setStuck(e.currentTarget.scrollTop > 4)}>
           <header className={`sh-pagehead ${stuck ? "stuck" : ""}`}>
@@ -356,6 +379,31 @@ export const ControlCenterSurface: React.FC = () => {
             </button>
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
+          {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
+          {simpleCards && (
+            <SimpleView
+              page={tab}
+              config={config}
+              winTheme={winTheme}
+              accent={activeAccentHex}
+              updateConfig={updateConfig}
+              onApplyConfig={(next) => {
+                updateConfig(next);
+                setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
+              }}
+              onMore={(sec) => {
+                setMoreOpen(true);
+                if (sec) setSection(sec);
+              }}
+            />
+          )}
+          <MoreOptions
+            enabled={simpleCards}
+            open={moreOpen}
+            onToggle={setMoreOpen}
+            summary={moreSummary(tab).text}
+            onReset={SIMPLE_RESETS[tab] ? () => updateConfig(SIMPLE_RESETS[tab]!(config)) : undefined}
+          >
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
           {PageComponent && (
             <Suspense fallback={<Skeleton label={`Loading ${pageDef.label}`} shape="page" rows={4} className="sh-page-loading" />}>
@@ -1278,6 +1326,7 @@ export const ControlCenterSurface: React.FC = () => {
             </>
           )}
           </PageErrorBoundary>
+          </MoreOptions>
           </div>
         </main>
       </div>
