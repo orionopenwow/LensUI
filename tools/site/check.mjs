@@ -320,6 +320,10 @@ async function waitDesk(page, sel = "#desk-host") {
   // Let the drop's settle animation finish (it tilts the window a little), then grab the corner.
   await page.waitForTimeout(700);
   await D((i) => window.lensSite.desk.focus(i), w0.id);
+  // Give the corner room: on a shorter desk the drag above can leave it under the dock's frame.
+  await D((i) => { const d = window.lensSite.desk, w = d.wins.get(i); d.setRect(w, { x: w.x, y: 60, w: 600, h: 300 }, { animate: false }); }, w0.id);
+  await page.waitForTimeout(200);
+  w0 = await win();
   const se = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
   const dragCorner = async () => {
     const c = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
@@ -446,7 +450,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.click("[data-shuffle]"); await page.waitForTimeout(600);
   expect((await D(() => window.lensSite.lab.committed?.p.id)) !== "rose-pine", "Shuffle changes the theme");
   // Icons: every icon on the page comes from the shared set (or the brand folder, or the apps' own repos).
-  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|brand\//.test(s)));
+  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|brand\//.test(s)));
   expect(!odd.length, "icons come from the shared icon set", odd.slice(0, 5).join(", "));
   // Bring your own agent tabs, by keyboard.
   await page.focus("#byo-t1"); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(100);

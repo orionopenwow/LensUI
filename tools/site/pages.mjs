@@ -4,12 +4,6 @@ import { esc } from "./lib/markdown.mjs";
 import { WORKS_ON } from "./content/features.mjs";
 import { REPO } from "./lib/layout.mjs";
 
-// The scenes the hero desk plays (ids from docs/site/js/scenes.js), as the feature index under it.
-const FEATURE_CHIPS = [
-  ["magic-right-click", "Magic right-click"], ["claude", "Bring your own agent"], ["ade", "Agents at a glance"], ["approvals", "Asks before it acts"],
-  ["browser-ai", "Lens Browser"], ["music", "Lens Music"], ["messages", "Messages and feeds"], ["mini", "Lens Mini"], ["snip", "Snip"], ["voice", "Voice dock"],
-  ["cleaner", "Lens Cleaner"], ["sky", "Living Sky"], ["core-apps", "Core apps"], ["settings", "Settings hub"], ["backdrops", "Backdrop Lab"], ["tiling", "Tiling and snapping"], ["apps", "Lens Apps"], ["everyday", "Lens Command"],
-];
 const FEATURED = [
   { id: "artcraft", line: "An IDE for artists: controllable AI image and video, with 2D and 3D scene tools.", suite: ["wordcraft", "deckcraft", "gridcraft"] },
   { id: "concat", line: "A free, local-first video editor: a CapCut alternative with AI captions." },
@@ -64,34 +58,17 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
   </div>
 </section>
 
-<section id="themes" class="sec" aria-labelledby="themes-h">
-  <div class="inner">
-    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} packs, from Obsidian and the living Sky to the Claude Code community palettes. Point at one to preview it, click to keep it, drag an accent onto the desk, or press <kbd>T</kbd> to shuffle.</p></div>
-    <div class="lab">
-      <div id="lab-desk" class="desk-host"></div>
-      <aside class="lab-side" aria-label="Theme controls">
-        <div class="lab-picks" role="group" aria-label="Themes"></div>
-        <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
-        <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
-        <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
-        <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
-        <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
-        <p class="lab-now" aria-live="polite"></p>
-      </aside>
-    </div>
-  </div>
-</section>
+${feat({ id: "f-magic", kicker: "Magic right-click", title: "Right-click anything.", body: "A video, a file, a paragraph or a link: the Lens menu knows what it is and offers the right actions. Summarise it, pull a YouTube transcript, save it to the Shelf, or send it to Claude as context, after your OK.", points: ["Works in Lens Browser, File Explorer, the Shelf, the dock and Lens Mini", "Local models first; anything sent away asks you", "Pin the actions you use; the rest stay under More"], tour: "magic", media: [clip("right-click", "The Lens right-click menu"), clip("youtube-transcript", "Getting a YouTube transcript")] })}
 
-<section id="byo" class="sec" aria-labelledby="byo-h">
-  <div class="inner">
-    <div class="byo">
-      <div class="byo-copy">
-        <h2 id="byo-h">Bring your own agent.</h2>
-        <p>Claude, a model on your PC, or any MCP client can see your desktop and change it through Lens. Each risky step shows a card first, Esc stops it, and every change undoes.</p>
-        <p class="byo-try"><button type="button" class="btn primary" data-play-scene="claude">▶ Watch Claude tidy the desk</button></p>
-        <div class="feat-chips" role="group" aria-label="See it on the desk">${["ade", "approvals", "browser-ai", "messages"].map((id) => FEATURE_CHIPS.find(([x]) => x === id)).map(([id, t]) => `<button type="button" data-scene-id="${id}">${esc(t)} ↑</button>`).join("")}</div>
-      </div>
-      <div class="byo-card">
+<section id="byo" class="sec feat flip" aria-labelledby="byo-h">
+  <div class="inner feat-grid">
+    <div class="feat-copy">
+      <p class="kicker">The agentic desktop</p>
+      <h2 id="byo-h">Bring your own agent. Stay in charge.</h2>
+      <p>Claude, a model on your PC, or any MCP client can see your desktop and change it through Lens. It shows its plan, anything risky waits for your OK on a “Needs your OK” card, Esc stops it, and every change undoes.</p>
+      <p class="feat-try"><button type="button" class="btn primary" data-play-scene="agent">▶ Try it on the desk</button></p>
+    </div>
+    <div class="byo-card">
         <div class="byo-tabs" id="byo-tabs" role="tablist" aria-label="Agent">
           <button type="button" role="tab" id="byo-t1" aria-selected="true" aria-controls="byo-p1">Claude</button>
           <button type="button" role="tab" id="byo-t2" aria-selected="false" aria-controls="byo-p2" tabindex="-1">Local model</button>
@@ -113,25 +90,81 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
           ${CAN}
         </div>
         <p class="byo-note">In beta: the approval cards and the audit log are in. Automatic checks of pages and screenshots for hidden instructions are still being connected to every agent path.</p>
-      </div>
+      
+  </div>
+</section>
+
+${feat({ id: "f-browser", kicker: "Lens Browser", title: "A browser that fits your desktop.", body: "Lens Browser wears your theme like everything else and has an AI side panel built in: summarise the page, get a video's transcript, or hand the page to Claude, only when you say so.", points: ["Side panel that summarises on your PC", "Transcripts and context packs from any page", "Browser agent runs only with approvals, Esc to stop"], tour: "browser", media: [clip("browser-agent", "Lens Browser with its AI side panel")] })}
+
+<section id="overlays" class="sec" aria-labelledby="ov-h">
+  <div class="inner">
+    <div class="head"><p class="kicker">Overlays for the apps you already use</p><h2 id="ov-h">Your apps, in your look.</h2><p>Lens doesn't replace your apps. It sits on top of them: a themed Now Playing for Spotify and every media app, window frames that match your theme, and small built-in tools for the jobs Windows makes awkward.</p></div>
+    <div class="ov-grid">
+      <article class="ov"><div class="ov-media">${clip("music", "Lens Music Now Playing")}</div><div class="ov-body"><h3>Lens Music</h3><p>Now Playing for any app, coloured by the album art. Optionally reskins Spotify to match your theme (via Spicetify).</p><button type="button" class="link-btn" data-play-scene="music">Try it on the desk ↑</button></div></article>
+      <article class="ov"><div class="ov-media"><img src="media/shot-cleaner.webp" alt="Lens Cleaner home screen: 9.6 GB free of 238 GB, Scan my PC" loading="lazy" width="1100" height="619"></div><div class="ov-body"><h3>Lens Cleaner</h3><p>See what's taking space, preview every file, and clean safe items to the Recycle Bin with one-click undo.</p><button type="button" class="link-btn" data-play-scene="cleaner">Try it on the desk ↑</button></div></article>
+      <article class="ov"><div class="ov-media">${clip("focus-borders", "Themed window frames and focus borders")}</div><div class="ov-body"><h3>Window styling</h3><p>Other apps' frames get your theme's border, corners and window buttons, with focus dimming you can turn up or off.</p></div></article>
+      <article class="ov"><div class="ov-media"><img src="media/shot-monitor.webp" alt="Lens Monitor: CPU, memory, GPU, disk and network with what's slowing the PC" loading="lazy" width="1100" height="619"></div><div class="ov-body"><h3>Core apps</h3><p>Monitor, Timer, Calculator, Color, Notes, Power, Network and Clipboard: quick, themed, and built in.</p></div></article>
     </div>
   </div>
 </section>
 
 <section id="apps" class="sec" aria-labelledby="apps-h">
   <div class="inner">
-    <div class="head"><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so.</p></div>
+    <div class="head"><p class="kicker">Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so. Start with ArtCraft.</p><p class="feat-try"><button type="button" class="btn" data-play-scene="apps">▶ Install ArtCraft on the desk</button></p></div>
     <div class="featured">${FEATURED.map((f) => appCard(f, apps)).join("")}</div>
     <div class="rail" role="list" aria-label="More picks">${RAIL.map((id) => railItem(id, apps)).join("")}</div>
     <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
   </div>
 </section>
 
+<section id="market" class="sec" aria-labelledby="mk-h">
+  <div class="inner market">
+    <div class="mk-copy">
+      <p class="kicker">Coming: the Overlay Marketplace</p>
+      <h2 id="mk-h">Share your whole setup as one file.</h2>
+      <p>A Lens pack will carry everything that makes your desktop yours: the theme, the dock, overlays for other apps, your backdrop, and the computer-control settings your agent is allowed to use. Share it for free; others preview it and install it with one approval, and it undoes like everything else.</p>
+      <p class="mk-now"><b>Today</b> Themes export as <code>.lenstheme</code> files (try “Download .lenstheme” in the theme lab below), Backdrop Lab saves <code>.lensbg</code> files, and widgets are simple folder plugins. <b>Coming</b> the one-file pack and the free marketplace to share it.</p>
+    </div>
+    <figure class="mk-file" aria-label="What a Lens pack holds">
+      <div class="mk-name"><span class="mk-ic" aria-hidden="true"></span><b>midnight-desk.lenspack</b><span class="meta">coming</span></div>
+      <ul>${[["Theme", "colours, glass, corners, fonts"], ["Dock and bar", "style, size, pinned layout"], ["App overlays", "Spotify skin, window frames, cursors"], ["Backdrop", "a Backdrop Lab or living wallpaper"], ["Agent settings", "what an agent may control, with approvals"]].map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join("")}</ul>
+      <figcaption class="meta">Preview before installing · one approval · one-click undo</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="themes" class="sec extras-start" aria-labelledby="themes-h">
+  <div class="inner">
+    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} packs, from Obsidian and the living Sky to the Claude Code community palettes. Point at one to preview it, click to keep it, drag an accent onto the desk, or press <kbd>T</kbd> to shuffle.</p></div>
+    <div class="lab">
+      <div id="lab-desk" class="desk-host"></div>
+      <aside class="lab-side" aria-label="Theme controls">
+        <div class="lab-picks" role="group" aria-label="Themes"></div>
+        <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
+        <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
+        <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
+        <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
+        <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
+        <p class="lab-now" aria-live="polite"></p>
+      </aside>
+    </div>
+  </div>
+</section>
+
 <section id="more" class="sec" aria-labelledby="more-h">
   <div class="inner">
-    <div class="head"><h2 id="more-h">Everything else, on the desk.</h2><p>Every feature plays as a short scene in the desktop at the top. Pick one.</p></div>
-    <div class="feat-chips big" role="group" aria-label="Scenes">${FEATURE_CHIPS.map(([id, t]) => `<button type="button" data-scene-id="${id}">${esc(t)}</button>`).join("")}</div>
-    <p class="fine">Coming next: Peek, Split view, Spaces, Routines and a phone companion.</p>
+    <div class="head"><h2 id="more-h">And the extras.</h2><p>Small things that add up. Press play on any of them.</p></div>
+    <div class="ex-grid">
+      ${extra("Backdrop Lab", "Make animated gradient wallpapers and set them live, or turn one into a theme.", { img: "shot-backdrop-lab.webp", alt: "Backdrop Lab with a gradient preview and its controls" })}
+      ${extra("Snip", "Capture, blur what's private, mark it up, then send it to Claude or a friend.", { clip: "snip" })}
+      ${extra("The Shelf", "A standing clipboard for everything you collect; send it as one context pack.", { clip: "shelf-packs" })}
+      ${extra("Lens Command", "Ctrl+Space, then type what you want: “dark mode”, “tile left”, “timer 5 min”.", { clip: "command-mini" })}
+      ${extra("Voice", "Hold a key and say “Lens, tile my windows”. Recognised on your PC.", { clip: "voice" })}
+      ${extra("The AI dock", "Ask from the dock; it answers in place and asks before acting.", { clip: "ai-dock" })}
+      ${extra("Themes and docks", "89 theme packs and nine dock styles, all live in the theme lab above.", { clip: "themes" })}
+      ${extra("Tester Hub", "What's new, a checklist, and a one-click report for testers.", { clip: "tester-hub" })}
+    </div>
+    <p class="fine">Also in Lens: Living Sky wallpaper, a Settings hub for Lens and Windows, Lens Mini, Messages and feeds. Coming next: Peek, Split view, Spaces, Routines and a phone companion.</p>
   </div>
 </section>
 
@@ -148,6 +181,24 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
   </div>
 </section>`;
 }
+/** A short clip that plays only when asked (click, or hover with a mouse). */
+const clip = (id, label) => `<figure class="clip" data-clip><video preload="none" muted playsinline loop poster="media/poster-${id}.webp" aria-label="${esc(label)}"><source src="media/${id}.mp4" type="video/mp4"></video><button type="button" class="clip-play" aria-label="Play: ${esc(label)}"><span aria-hidden="true">▶</span></button></figure>`;
+/** One main feature: copy on one side, real visuals on the other, and a way to try it on the desk. */
+function feat({ id, kicker, title, body, points = [], tour, media = [], flip = false }) {
+  return `<section id="${id}" class="sec feat${flip ? " flip" : ""}" aria-labelledby="${id}-h">
+  <div class="inner feat-grid">
+    <div class="feat-copy">
+      <p class="kicker">${esc(kicker)}</p>
+      <h2 id="${id}-h">${esc(title)}</h2>
+      <p>${esc(body)}</p>
+      ${points.length ? `<ul class="feat-pts">${points.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      ${tour ? `<p class="feat-try"><button type="button" class="btn primary" data-play-scene="${tour}">▶ Try it on the desk</button></p>` : ""}
+    </div>
+    <div class="feat-media${media.length > 1 ? " two" : ""}">${media.join("")}</div>
+  </div>
+</section>`;
+}
+const extra = (t, line, { clip: c, img, alt } = {}) => `<article class="ex">${c ? clip(c, t) : img ? `<figure class="clip still"><img src="media/${img}" alt="${esc(alt ?? t)}" loading="lazy" width="1100" height="619"></figure>` : ""}<h3>${esc(t)}</h3><p>${esc(line)}</p></article>`;
 const CAN = `<ul class="can">${[["Windows", "move, snap, arrange"], ["Look", "themes, docks, backdrops"], ["Apps", "open, switch, install"], ["Browser", "read, summarise"], ["Files", "with approval"]].map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join("")}</ul><p class="promise">Every risky action asks you first. Esc stops it. Everything undoes.</p>`;
 
 function appCard(f, apps) {

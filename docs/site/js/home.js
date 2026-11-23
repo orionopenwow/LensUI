@@ -123,6 +123,24 @@ window.lensSite = { desk, scenes, shows, playScene, detectOS };
 addEventListener("lens-play-scene", (e) => playScene(e.detail));
 document.querySelectorAll("[data-play-scene]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); playScene(b.dataset.playScene); }));
 
+// ---- clips below the hero: they play only when asked (click, or hover with a mouse) ------------
+{
+  const fine = matchMedia("(hover: hover) and (pointer: fine)");
+  const playing = new Set();
+  const stop = (f) => { const v = f.querySelector("video"); v.pause(); f.classList.remove("is-playing"); playing.delete(f); f.querySelector(".clip-play").setAttribute("aria-label", f.querySelector(".clip-play").getAttribute("aria-label").replace(/^Pause/, "Play")); };
+  const play = (f) => { const v = f.querySelector("video"); v.play().then(() => { f.classList.add("is-playing"); playing.add(f); f.querySelector(".clip-play").setAttribute("aria-label", f.querySelector(".clip-play").getAttribute("aria-label").replace(/^Play/, "Pause")); }).catch(() => {}); };
+  document.querySelectorAll("[data-clip]").forEach((f) => {
+    let pinned = false;
+    f.querySelector(".clip-play").addEventListener("click", () => { if (playing.has(f)) { pinned = false; stop(f); } else { pinned = true; play(f); } });
+    f.querySelector("video").addEventListener("click", () => { if (playing.has(f)) { pinned = false; stop(f); } else { pinned = true; play(f); } });
+    f.addEventListener("pointerenter", () => { if (fine.matches && !reducedMotion() && !playing.has(f)) play(f); });
+    f.addEventListener("pointerleave", () => { if (!pinned && playing.has(f)) stop(f); });
+  });
+  // Clips that scroll away stop, so nothing keeps running unseen.
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting && playing.has(e.target)) stop(e.target); }), { threshold: 0.1 });
+  document.querySelectorAll("[data-clip]").forEach((f) => io.observe(f));
+}
+
 // ---- fullscreen ---------------------------------------------------------------------------------
 const fsBtn = $("[data-fs]");
 const stage = $("#stage");

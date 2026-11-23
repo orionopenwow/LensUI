@@ -128,6 +128,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = { id: ++hw, app: id, el, w: Math.min(a.w, W - 40), h: Math.min(a.h, wk.h - 20), x: 0, y: 0, min: false, max: false, prev: null, tile: null };
     w.x = at ? at[0] * W : Math.round(W * 0.18 + (cnt % 5) * 36);
     w.y = at ? TOP + at[1] * wk.h : Math.round(TOP + 30 + (cnt % 5) * 30);
+    // Keep a new window's bottom edge (and its resize corner) clear of the dock on shorter desks.
+    w.h = Math.max(240, Math.min(w.h, H - DOCK_H - w.y - 8));
     clampWin(w);
     wins.set(w.id, w);
     paint(w);
