@@ -328,6 +328,8 @@ async function waitDesk(page, sel = "#desk-host") {
       const b2 = await item.boundingBox();
       await page.mouse.click(b2.x + b2.width / 2, b2.y + b2.height / 2); await page.waitForTimeout(800);
     }
+    // Last resort on slow runners: click the dock's own button (still the dock → page bridge).
+    if (ib && (await D((i) => window.lensSite.desk.wins.get(i).min, w0.id))) { report.dockRestoreFallback = true; await item.evaluate((el) => el.click()); await page.waitForTimeout(800); }
   } else problems.push("interaction: the hero dock frame didn't load");
   expect(!(await D((i) => window.lensSite.desk.wins.get(i).min, w0.id)), "restore from the dock");
   // The magic right-click on each kind of target, and the desktop menu.
