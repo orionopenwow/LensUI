@@ -80,6 +80,27 @@ export function requestForEntry(e: Gen.InboxEntry): ApprovalRequest {
   };
 }
 
+/** One waiting request, drawn by the shared approval card. The request is also in the shared
+ *  queue (the pill and the approval window show it); the card prefers that record. Mounted only
+ *  while something waits, so an empty inbox costs the settings page nothing. */
+const WaitingRequest: React.FC<{ entry: Gen.InboxEntry; onApprove: () => Promise<void>; onDeny: () => Promise<void> }> = ({ entry, onApprove, onDeny }) => {
+  const { requests } = usePendingApprovals();
+  const request = requests.find((q) => q.origin === "bridge" && q.reference === entry.id) ?? requestForEntry(entry);
+  return (
+    <ApprovalCard
+      request={request}
+      compact
+      onApprove={async () => {
+        await onApprove();
+        return true;
+      }}
+      onDeny={() => {
+        void onDeny();
+      }}
+    />
+  );
+};
+
 export const BridgeInbox: React.FC = () => {
   const [items, setItems] = useState<Gen.InboxEntry[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -127,9 +148,6 @@ export const BridgeInbox: React.FC = () => {
     }
   };
 
-  // One approval card: each waiting request is also in the shared queue (the pill and the
-  // approval window show it); this list draws the same card from that record.
-  const { requests } = usePendingApprovals();
   const pending = items.filter((i) => i.state === "pending");
   const recent = items.filter((i) => i.state !== "pending").slice(0, 6);
   if (items.length === 0) return null;
@@ -137,24 +155,11 @@ export const BridgeInbox: React.FC = () => {
   return (
     <div className="cc-card">
       <div className="cc-label">From your browser and files</div>
-      {pending.map((e) => {
-        const request = requests.find((q) => q.origin === "bridge" && q.reference === e.id) ?? requestForEntry(e);
-        return (
-          <div key={e.id} aria-busy={busy === e.id}>
-          <ApprovalCard
-            request={request}
-            compact
-            onApprove={async () => {
-              await confirm(e);
-              return true;
-            }}
-            onDeny={() => {
-              void decline(e);
-            }}
-          />
-          </div>
-        );
-      })}
+      {pending.map((e) => (
+        <div key={e.id} aria-busy={busy === e.id}>
+          <WaitingRequest entry={e} onApprove={() => confirm(e)} onDeny={() => decline(e)} />
+        </div>
+      ))}
       {recent.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {recent.map((e) => (
