@@ -684,6 +684,8 @@ pub fn run() {
             commands::syssettings::sys_time_cmd,
             commands::syssettings::sys_gaming_cmd,
             commands::syssettings::sys_restore_cmd,
+            commands::syssettings::sys_audio_levels_cmd,
+            commands::syssettings::sys_set_mic_cmd,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,

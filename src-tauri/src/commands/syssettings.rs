@@ -57,3 +57,13 @@ pub(crate) async fn sys_gaming_cmd() -> Result<syssettings::GamingState, String>
 pub(crate) async fn sys_restore_cmd() -> Result<String, String> {
     blocking(syssettings::restore_all).await?
 }
+
+#[tauri::command]
+pub(crate) async fn sys_audio_levels_cmd() -> Result<syssettings::AudioLevels, String> {
+    blocking(syssettings::audio_levels).await
+}
+
+#[tauri::command]
+pub(crate) async fn sys_set_mic_cmd(volume: Option<u32>, muted: Option<bool>) -> Result<syssettings::AudioLevels, String> {
+    blocking(move || syssettings::set_mic(volume, muted)).await?
+}

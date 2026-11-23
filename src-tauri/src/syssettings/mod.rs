@@ -98,6 +98,44 @@ pub struct Backup {
     pub animations: Option<bool>,
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionLevel {
+    pub pid: u32,
+    /// Windows reports the session as playing right now.
+    pub active: bool,
+    /// Current peak, 0–100.
+    pub peak: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct MicState {
+    pub available: bool,
+    pub volume: u32,
+    pub muted: bool,
+    /// Current input level, 0–100.
+    pub peak: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioLevels {
+    /// Output peak, 0–100.
+    pub master_peak: u32,
+    pub sessions: Vec<SessionLevel>,
+    pub mic: MicState,
+}
+
+/// Windows peak meters are 0.0–1.0 linear; shown as 0–100 with a gentle curve so quiet audio still moves.
+pub fn peak_to_level(p: f32) -> u32 {
+    if !p.is_finite() || p <= 0.0 {
+        return 0;
+    }
+    (p.min(1.0).sqrt() * 100.0).round() as u32
+}
+
 // ---------------------------------------------------------------- pure helpers (tested)
 
 /// `StartupApproved` data: the first byte's low bit set means "disabled" (0x03, 0x07),
@@ -295,6 +333,18 @@ pub fn time_state() -> TimeState {
 
 pub fn gaming_state() -> GamingState {
     GamingState { game_mode: Some(game_mode_from(imp::read_dword(r"Software\Microsoft\GameBar", "AutoGameModeEnabled"))) }
+}
+
+/// Live levels for the Sound page: which apps are playing, output and mic peaks, mic volume/mute.
+pub fn audio_levels() -> AudioLevels {
+    imp::audio_levels()
+}
+
+/// Default microphone volume and/or mute. Nothing is saved: these are the same switches as
+/// Windows' own Sound settings and Windows keeps them.
+pub fn set_mic(volume: Option<u32>, muted: Option<bool>) -> Result<AudioLevels, String> {
+    imp::set_mic(volume.map(|v| v.min(100)), muted)?;
+    Ok(audio_levels())
 }
 
 /// Puts back everything this module changed. Used by "Remove all Lens changes".
@@ -667,6 +717,85 @@ mod imp {
         let ok = unsafe { SystemParametersInfoW(SPI_GETHIGHCONTRAST, hc.cb_size, &mut hc as *mut HighContrastW as *mut _, 0) };
         (ok != 0).then_some(hc.dw_flags & HCF_HIGHCONTRASTON != 0)
     }
+
+    pub fn audio_levels() -> super::AudioLevels {
+        use super::{peak_to_level, AudioLevels, MicState, SessionLevel};
+        use windows::core::Interface;
+        use windows::Win32::Media::Audio::Endpoints::{IAudioEndpointVolume, IAudioMeterInformation};
+        use windows::Win32::Media::Audio::{
+            eCapture, eConsole, eMultimedia, eRender, AudioSessionStateActive, IAudioSessionControl2,
+            IAudioSessionManager2, IMMDeviceEnumerator, MMDeviceEnumerator,
+        };
+        use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+
+        let mut out = AudioLevels::default();
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+            let Ok(en): Result<IMMDeviceEnumerator, _> = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL) else {
+                return out;
+            };
+            if let Ok(dev) = en.GetDefaultAudioEndpoint(eRender, eMultimedia) {
+                if let Ok(meter) = dev.Activate::<IAudioMeterInformation>(CLSCTX_ALL, None) {
+                    out.master_peak = peak_to_level(meter.GetPeakValue().unwrap_or(0.0));
+                }
+                if let Ok(mgr) = dev.Activate::<IAudioSessionManager2>(CLSCTX_ALL, None) {
+                    if let Ok(list) = mgr.GetSessionEnumerator() {
+                        for i in 0..list.GetCount().unwrap_or(0) {
+                            let Ok(ctrl) = list.GetSession(i) else { continue };
+                            let Ok(ctrl2) = ctrl.cast::<IAudioSessionControl2>() else { continue };
+                            let pid = ctrl2.GetProcessId().unwrap_or(0);
+                            let active = ctrl.GetState().map(|st| st == AudioSessionStateActive).unwrap_or(false);
+                            let peak = ctrl
+                                .cast::<IAudioMeterInformation>()
+                                .ok()
+                                .and_then(|m| m.GetPeakValue().ok())
+                                .map(peak_to_level)
+                                .unwrap_or(0);
+                            // One app can own several sessions: keep the loudest/most active.
+                            match out.sessions.iter_mut().find(|x| x.pid == pid) {
+                                Some(x) => {
+                                    x.active |= active;
+                                    x.peak = x.peak.max(peak);
+                                }
+                                None => out.sessions.push(SessionLevel { pid, active, peak }),
+                            }
+                        }
+                    }
+                }
+            }
+            if let Ok(mic) = en.GetDefaultAudioEndpoint(eCapture, eConsole) {
+                let mut m = MicState { available: true, ..Default::default() };
+                if let Ok(ep) = mic.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None) {
+                    m.volume = (ep.GetMasterVolumeLevelScalar().unwrap_or(0.0) * 100.0).round().clamp(0.0, 100.0) as u32;
+                    m.muted = ep.GetMute().map(|b| b.as_bool()).unwrap_or(false);
+                }
+                if let Ok(meter) = mic.Activate::<IAudioMeterInformation>(CLSCTX_ALL, None) {
+                    m.peak = peak_to_level(meter.GetPeakValue().unwrap_or(0.0));
+                }
+                out.mic = m;
+            }
+        }
+        out
+    }
+
+    pub fn set_mic(volume: Option<u32>, muted: Option<bool>) -> Result<(), String> {
+        use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
+        use windows::Win32::Media::Audio::{eCapture, eConsole, IMMDeviceEnumerator, MMDeviceEnumerator};
+        use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+            let en: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).map_err(|e| e.to_string())?;
+            let mic = en.GetDefaultAudioEndpoint(eCapture, eConsole).map_err(|_| "No microphone is set up.".to_string())?;
+            let ep: IAudioEndpointVolume = mic.Activate(CLSCTX_ALL, None).map_err(|e| e.to_string())?;
+            if let Some(v) = volume {
+                ep.SetMasterVolumeLevelScalar(v as f32 / 100.0, std::ptr::null()).map_err(|e| e.to_string())?;
+            }
+            if let Some(m) = muted {
+                ep.SetMute(m, std::ptr::null()).map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(not(windows))]
@@ -716,6 +845,12 @@ mod imp {
     }
     pub fn get_high_contrast() -> Option<bool> {
         None
+    }
+    pub fn audio_levels() -> super::AudioLevels {
+        super::AudioLevels::default()
+    }
+    pub fn set_mic(_: Option<u32>, _: Option<bool>) -> Result<(), String> {
+        Err("Only available on Windows.".into())
     }
 }
 
@@ -776,6 +911,16 @@ mod tests {
         assert_eq!(text_scale_from(None), Some(100));
         assert_eq!(text_scale_from(Some(150)), Some(150));
         assert_eq!(text_scale_from(Some(9)), None);
+    }
+
+    #[test]
+    fn peaks_scale_gently() {
+        assert_eq!(peak_to_level(0.0), 0);
+        assert_eq!(peak_to_level(-1.0), 0);
+        assert_eq!(peak_to_level(f32::NAN), 0);
+        assert_eq!(peak_to_level(1.0), 100);
+        assert_eq!(peak_to_level(4.0), 100);
+        assert_eq!(peak_to_level(0.25), 50);
     }
 
     #[test]

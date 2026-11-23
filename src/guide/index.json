@@ -10567,7 +10567,7 @@
    "id": "doc.settings-hub.2",
    "kind": "doc",
    "title": "Settings hub: Native vs deep link",
-   "text": "Lens only changes what it can change safely and reversibly; everything else shows the current value plus a precise ms-settings: link. Control How --- --- Brightness, night light, warmth existing native commands ( set brightness cmd , set night light cmd ) Volume, mute, per-app volume Core Audio (existing commands) Default output/input device existing set default audio device cmd (disabled with a note when Windows doesn't allow it) Wi-Fi on/off, Bluetooth on/off Windows.Devices.Radios (existing set radio cmd ) Connect to a saved or open Wi-Fi network WlanAPI with the saved profile (existing wifi connect cmd ). Passwords are only typed into Windows' own page Power mode existing set power mode cmd (PowerSetActiveOverlayScheme) Startup apps on/off new : HKCU Explorer\\StartupApproved\\Run (the Task Manager switch). Originals saved; restored by \"Remove all Lens changes\" Animation effects new : ",
+   "text": "Lens only changes what it can change safely and reversibly; everything else shows the current value plus a precise ms-settings: link. Control How --- --- Brightness, night light, warmth existing native commands ( set brightness cmd , set night light cmd ) Volume, mute, per-app volume and mute Core Audio (existing commands), as white fill bars Which apps are playing, live output/app/mic levels new sys audio levels cmd (session state + IAudioMeterInformation), polled every 1.5 s only while the page is visible Microphone volume and mute new sys set mic cmd (default capture endpoint). Same switch as Windows' own; nothing to restore Switch output between the last two output devices you used (remembered on this PC) Per-app output routing no public API → link to App volume & device preferences Default output/input device existing set default audio device cmd (disabled with a note when Windows d",
    "path": [
     "Docs",
     "Settings hub",
@@ -10582,6 +10582,23 @@
   },
   {
    "id": "doc.settings-hub.3",
+   "kind": "doc",
+   "title": "Settings hub: Sound mixer",
+   "text": "One connected card, most-used first: master volume (40 px bar, mute, level) → Playing now (34 px bars with app icon, mute and a live level) → Other apps (N) collapsed → Output devices with a \"Switch to …\" quick toggle → Microphone (device, level, volume bar, mute) → \"More sound settings\" links. Rows only move when an app starts or stops playing ( src/settings/audioOrder.ts ). Everything the old Windows & Quick mixer had (master + mute, per-app bars with icon-click mute) is here. FillSlider ( src/settings/ui/FillSlider.tsx , logic in fillModel.ts ) is the shared bar: theme ink fill (near-white on dark, near-black on light), icon/label left and value right that flip colour where the fill passes, drag anywhere, wheel (2%/notch), arrows 1 / PageUp-Down 10 / Home-End; the bar moves live and commits on release (keys/wheel after a short pause). Display uses it for brightness and night-light war",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Sound mixer"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Sound mixer"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.4",
    "kind": "doc",
    "title": "Settings hub: Layout",
    "text": "Every page is: sticky header (icon, title, one line, \"Windows Settings ↗\") → hero row (the 2–4 things people do most) → collapsible sections with a one-line summary → rows (label column, right-aligned value/control). Primitives live in src/settings/ui/primitives.tsx ; states (loading, error with a Windows Settings way out, unavailable with the reason) in StateNote . Each page renders inside PageErrorBoundary (Retry instead of a blank window). Sliders commit after the hand stops (debounced); toggles are optimistic with rollback and a readable error. Search (top of the sidebar, Ctrl+F or / ) indexes every page, section and 53 Windows Settings pages; results show the breadcrumb and Windows entries open the exact ms-settings: page. Arrow keys move through the sidebar.",
@@ -10598,7 +10615,7 @@
    "source": "docs/SETTINGS_HUB.md"
   },
   {
-   "id": "doc.settings-hub.4",
+   "id": "doc.settings-hub.5",
    "kind": "doc",
    "title": "Settings hub: Deep links",
    "text": "page , page#section , legacy ids and lens://settings/page#section all resolve. From the frontend: emit(\"lens://settings-tab\", \"sound#mixer\") . From Rust: open dock popout tab cmd { tab: \"network#bluetooth\" } . Snippet for the bridge owner ( src-tauri/src/bridge/cli.rs::parse lens url ) so external lens://settings/... links work: Voice / Command / Guide: emit lens://settings-tab with any page id from PAGES (e.g. \"Lens, open sound settings\" → sound ).",
@@ -10615,7 +10632,7 @@
    "source": "docs/SETTINGS_HUB.md"
   },
   {
-   "id": "doc.settings-hub.5",
+   "id": "doc.settings-hub.6",
    "kind": "doc",
    "title": "Settings hub: Duplicates removed",
    "text": "1. Top stats strip (CPU/RAM/windows + quick actions): removed earlier; all of it lives in System & Tasks, Quick Settings or the palette. 2. Windows & Keys' CPU/Memory/Uptime row: removed earlier. 3. Display & Eye Care and Sound & App Mixer cards in Windows & Keys → Windows › Display and Windows › Sound. 4. The 4 big Windows tiles + 8 pills (Wi-Fi, Bluetooth, Display, Sound, Power, Apps, Storage, Updates, Gaming, Input, Security, System deep links) → replaced by the Windows pages. 5. Hidden \"Window Style & Controls\" tab (traffic lights, button order, control theme, window frame) duplicated Appearance › Window frames & buttons → removed. 6. WindowRulesCard was mounted twice → once, in Windows & Keys › Window styling. 7. Quick-action \"Taskbar Hidden\" and \"Traffic Lights\" toggles duplicated Dock & Bar / Appearance → removed (virtual desktops, Task Manager and File Explorer remain). 8. Self-t",
@@ -10632,7 +10649,7 @@
    "source": "docs/SETTINGS_HUB.md"
   },
   {
-   "id": "doc.settings-hub.6",
+   "id": "doc.settings-hub.7",
    "kind": "doc",
    "title": "Settings hub: Not split yet",
    "text": "Appearance, Dock & Bar, Desktop, Windows & Keys, System & Tasks and Notifications are still rendered by ControlCenterSurface.tsx (now ~1,250 lines, down from ~1,980) inside the new page shell; the next step is moving each into src/settings/pages/ the same way.",
@@ -10649,7 +10666,7 @@
    "source": "docs/SETTINGS_HUB.md"
   },
   {
-   "id": "doc.settings-hub.7",
+   "id": "doc.settings-hub.8",
    "kind": "doc",
    "title": "Settings hub: Live updates",
    "text": "No background polling while Settings is hidden. Each page reloads when the popout is shown or focused, listens to the events Lens already emits ( lens://dnd-changed , lens://windows-changed ), and polls only what changes on its own while visible (Wi-Fi/Bluetooth 15 s, battery 30 s, app audio 5 s, privacy use 10 s). Device add/remove and power-source broadcasts from Windows would replace those polls; that needs a message-only window in the backend (planned).",
