@@ -52,6 +52,7 @@ mod bridge;
 mod browser;
 mod clip;
 mod commands;
+mod control;
 mod media;
 mod shelf;
 mod guide;
@@ -182,6 +183,23 @@ pub fn run() {
             )
         })
         .invoke_handler(tauri::generate_handler![
+            commands::control::control_catalogue,
+            commands::control::control_get,
+            commands::control::control_preview,
+            commands::control::control_apply,
+            commands::control::control_undo,
+            commands::control::control_history,
+            commands::control::control_grants_get,
+            commands::control::control_grants_set,
+            commands::control::control_grants_revoke,
+            commands::control::control_audit,
+            commands::control::control_snapshots,
+            commands::control::control_presets,
+            commands::control::control_trust,
+            commands::control::control_trust_revoke,
+            commands::control::control_memory_get,
+            commands::control::control_memory_set,
+            commands::control::control_may_remember,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,

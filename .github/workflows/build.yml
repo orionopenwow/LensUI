@@ -150,6 +150,8 @@ jobs:
 
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
+      - name: Approval card gallery (Needs your OK)
+        run: node tools/parity/approval/build.mjs && node tools/parity/approval/shoot.mjs
 
       - name: Render Lens Browser scenes and smoke-test the page agent
         run: node tools/parity/browser/build.mjs && node tools/parity/browser/shoot.mjs
@@ -178,4 +180,5 @@ jobs:
             tools/parity/productivity/
             tools/parity/tester/shots/
             tools/parity/guide/shots/
+            tools/parity/approval/shots/
           if-no-files-found: warn
