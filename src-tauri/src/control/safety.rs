@@ -105,7 +105,7 @@ pub fn check_legacy(client: &str, tool: &str, granted: bool) -> GateDecision {
 }
 
 /// Risk-class defaults the card already says with its own layout ("Send", "Delete", undo line).
-const QUIET: &[&str] = &["risk.settings", "risk.submit", "risk.delete", "risk.download", "risk.send"];
+pub const QUIET: &[&str] = &["risk.settings", "risk.submit", "risk.delete", "risk.download", "risk.send", "risk.launch"];
 
 /// The reasons worth a chip on the approval card: `[{ code, severity, detail }]`.
 pub fn reasons_json(d: &GateDecision) -> Vec<Value> {

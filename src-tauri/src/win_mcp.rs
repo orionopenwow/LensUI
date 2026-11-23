@@ -656,7 +656,8 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
     if let Some(dup) = q.iter().find(|a| a.status == "pending" && a.text == text) {
         return Ok(dup.clone());
     }
-    if q.iter().filter(|a| a.status == "pending").count() >= MAX_PENDING {
+    // Requests raised inside Lens have their own limit; they never crowd an AI app out.
+    if q.iter().filter(|a| a.status == "pending" && !is_local_kind(&a.kind)).count() >= MAX_PENDING {
         return Err(format!("{} requests are already waiting for the user; try again after they answer.", MAX_PENDING));
     }
     let a = PendingAction {

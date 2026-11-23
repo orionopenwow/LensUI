@@ -639,6 +639,10 @@ fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunD
             let verdict = step_gate(name, &args, safety);
             let summary = tools::describe(name, &args);
             let mut notes = SafetyNote::from_reasons(verdict.reasons());
+            if !verdict.is_block() {
+                // Risk-class defaults are what the card already says ("Allow", the undo line).
+                notes.retain(|n| !crate::control::safety::QUIET.contains(&n.code.as_str()));
+            }
             if verdict.is_ask() && safety.untrusted && !notes.iter().any(|n| n.code.starts_with("inject.")) {
                 notes.insert(
                     0,

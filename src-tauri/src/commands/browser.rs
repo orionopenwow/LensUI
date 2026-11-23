@@ -534,6 +534,8 @@ pub fn browser_untrusted(app: AppHandle, url: String, text: String) -> String {
     let text: String = text.chars().take(200_000).collect();
     let label = tauri::Url::parse(&url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_else(|| "a web page".into());
     let scanned = crate::agentsafe::gate::scan_text(&text, "page", &label);
+    // The agent's taint is the page it last read: a clean page lifts what an earlier one left.
+    crate::agentsafe::gate::taint_clear(AGENT_TAINT);
     crate::agentsafe::gate::taint_note(AGENT_TAINT, &label, scanned.injection);
     if !scanned.reasons.is_empty() {
         use tauri::Emitter;

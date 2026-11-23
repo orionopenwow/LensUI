@@ -35,12 +35,15 @@ more than 150 ms.
   Lens never injects into another process.
 - **Reduced motion.** When Windows animations are off (`SPI_GETCLIENTAREAANIMATION`) or
   `prefers-reduced-motion` is set, the orb fades in place instead of travelling.
-- **Stopping.** Click the orb, press **Stop** on the banner, press **Esc** inside any Lens window
-  (twin, banner, approval card), or press the **Pause Lens** hotkey (default `Ctrl+Alt+Pause`,
-  configurable, checked against Lens's own shortcuts and against registration failure). Stop
-  cancels the running actor(s); further steps from them are refused for 10 s.
-  *Limitation:* Esc is not captured globally — the overlay never takes focus, by design — so outside
-  Lens windows use the orb, the banner or the hotkey.
+- **Stopping.** Click the orb, press **Stop** on the banner, press **Esc** anywhere, or press the
+  **Pause Lens** hotkey (default `Ctrl+Alt+Pause`, configurable, checked against Lens's own
+  shortcuts and against registration failure). Stop cancels the running actor(s) and, for Lens's
+  own assistant, the requests behind the run; further steps from them are refused for 10 s.
+  *How Esc works (`presence/esc.rs`):* while a run is active, and only then, one small thread reads
+  the Esc key state every 30 ms. There is no keyboard hook, the key is never swallowed (the app in
+  front still gets it), and the thread ends with the run. An Esc that was already down when the
+  run began is ignored until it is released. This check moves into the single input service in
+  wave 3.
 - **Timing.** Steps are queued in order. The overlay gets each step ≈150 ms before the action
   (`LEAD_MS`), never more; if the overlay falls behind, it jumps to the newest step (`catch_up`).
 - **In-app twin.** Inside Lens windows a small orb glides to the real control (Guide

@@ -73,9 +73,57 @@ The collector is checked in real Chromium against `tools/parity/agentsafe/hostil
 
 All 13 measurements pass in CI (`Render agent safety + hostile-page collector check`).
 
+## Where the check sits (Fable wave 1)
+
+Every agent path goes through one adapter, `agentsafe::gate`:
+
+| Call | What it answers |
+|---|---|
+| `gate::decide(&GateInput)` | May this client do this action now? Allow, ask (with reasons) or block (with reasons). |
+| `gate::scan_text(text, source, label)` | Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). |
+| `gate::taint_note` / `taint_for` | Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. |
+
+It is called from the two places every path already passes, so callers inherit it without doing
+anything:
+
+1. **Lens Control** — `control::lens::gate`, `preview` and `legacy_decision`, through
+   `control::safety` (which maps a `Call` to the pipeline's action word). That covers every MCP
+   client (Claude Desktop, Claude Code, others), every `lens_*` tool and the older tools. Reading
+   Shelf items, a page or a transcript taints the client; window titles count only when they
+   actually carry instructions.
+2. **The AI tool runner** — `ai::run_tool_call` (every step) and `ai::run_request` (scans attached
+   selection, clipboard, page text, Shelf text, window title and file names). That covers Lens
+   Command, voice, the AI dock, the bridge inbox (its requests run through `ai_ask`) and Snip → Ask.
+   A command the person typed or spoke that the offline engine parses is theirs: no extra ask.
+   With clean content attached, a step the model plans that changes settings or opens an app waits
+   for the person; with content that hides instructions it is refused; reads and window moves are
+   never held up.
+
+Two callers add their own knowledge on top:
+
+- **The browser agent** — `browser::gating::classify` stays the browser's own rule set and becomes
+  the input to the gate (`gate_question`, `with_gate` in `browser/gating.rs`; `checked` in
+  `commands/browser.rs`). The stricter answer wins; the gate can never loosen a browser decision.
+  `browser_untrusted` scans page text before wrapping it, and the agent's taint is the page it
+  last read.
+- **Snip** — `snip_to_claude` scans the OCR text at hand-off. Into Lens Command the flagged spans are
+  set aside; for Claude Desktop only the image is copied, which can't be cleaned, so Lens says what
+  it saw.
+
+When the gate finds something or stops a step it emits `lens://agentsafe/flag`
+(`ai::SafetyFlagEvent`), and the surface that started the work shows `SafetyBanner`
+(`src/agentsafe/SafetyFlags.tsx`: Command, the AI dock, the browser agent, Snip). Reasons also ride
+on the approval card as chips (`preview.safetyReasons`, `ToolProposalEvent.safety`).
+
+This layer is defensive: it only makes an action wait for the person or refuses it, never performs
+one, and everything it decides is shown with its reasons. Known limit: on a page that merely
+quotes injection text (an article about prompt injection), the browser agent is refused clicks
+and typing on that page; the person can do the step themselves.
+
 ## Integration snippets
 
-These packages own the files below; apply the snippets when they merge. Every agent action calls `agentsafe_check` first. The approval card shows the returned reasons. Page, OCR and file text goes through `agentsafe_scan`, and only `wrapped` reaches a model.
+The snippets below predate the gate and are kept for the lower-level commands
+(`agentsafe_check`, `agentsafe_scan`), which the UI still uses directly. Every agent action calls `agentsafe_check` first. The approval card shows the returned reasons. Page, OCR and file text goes through `agentsafe_scan`, and only `wrapped` reaches a model.
 
 ### Lens Browser (feature/lens-browser)
 

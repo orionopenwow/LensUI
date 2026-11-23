@@ -109,3 +109,54 @@ fn decorate_precedence() {
     assert!(is_protected_process("C:\\EasyAntiCheat\\x.exe"));
     assert_eq!(parse_hex_rgb("#60A5FA"), Some((0x60, 0xA5, 0xFA)));
 }
+
+
+// --- the deny list behind the hook guard (B-05, B-06) -------------------------------------------
+
+#[test]
+fn protected_processes_cover_shell_hosts_and_anti_cheat() {
+    for p in [
+        "C:\\Program Files\\Lens UI\\lens-ui.exe",
+        "C:\\Windows\\SystemApps\\Microsoft.Windows.Search_cw5n1h2txyewy\\SearchHost.exe",
+        "C:\\Program Files\\EasyAntiCheat\\EasyAntiCheat.exe",
+        "C:\\Program Files\\Riot Vanguard\\vgc.exe",
+        "C:\\Riot Games\\VALORANT\\live\\VALORANT.exe",
+        "C:\\Program Files\\FACEIT AC\\faceit.exe",
+        "D:\\Steam\\steamapps\\common\\Apex Legends\\r5apex.exe",
+        "D:\\Games\\PUBG\\TslGame.exe",
+        "C:\\Program Files (x86)\\Common Files\\BattlEye\\BEService.exe",
+    ] {
+        assert!(is_protected_process(p), "{p}");
+    }
+    // Anti-cheat is the narrower list: Lens and the shell hosts are protected but are not it.
+    assert!(is_anti_cheat_process("vgc.exe"));
+    assert!(is_anti_cheat_process("D:\\Games\\Fortnite\\FortniteClient-Win64-Shipping.exe"));
+    assert!(!is_anti_cheat_process("C:\\Program Files\\Lens UI\\lens-ui.exe"));
+    assert!(!is_anti_cheat_process("C:\\Windows\\SystemApps\\SearchHost.exe"));
+    // Ordinary apps are untouched: a broad fragment here would switch styling off for them.
+    for p in [
+        "C:\\Program Files\\Microsoft VS Code\\Code.exe",
+        "C:\\Windows\\explorer.exe",
+        "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+        "C:\\Users\\me\\research\\notes.exe",
+        "C:\\Users\\me\\.cargo\\bin\\rustc.exe",
+        "C:\\Program Files\\Spotify\\Spotify.exe",
+        "C:\\Program Files\\Steam\\steam.exe",
+        "C:\\Program Files\\Discord\\Discord.exe",
+        "C:\\Program Files\\OBS\\obs64.exe",
+    ] {
+        assert!(!is_protected_process(p), "{p}");
+    }
+}
+
+#[test]
+fn the_hook_dll_source_refuses_every_process_the_app_protects() {
+    // The DLL is its own crate; its lists must not drift from the app's. Lens itself is the one
+    // exception: it has to load the DLL to install the hook, so the DLL idles there instead.
+    let dll = include_str!("../../lens-dwm-hook/src/lib.rs");
+    for frag in ANTI_CHEAT_FRAGMENTS.iter().chain(SHELL_PROCESS_FRAGMENTS.iter()) {
+        assert!(dll.contains(&format!("\"{}\"", frag)), "lens-dwm-hook is missing \"{}\"", frag);
+    }
+    assert!(dll.contains("return BOOL(0);"), "DllMain must refuse to load in excluded processes");
+    assert!(dll.contains("const HOST: &[&str] = &[\"lens-ui.exe\"];"));
+}

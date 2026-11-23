@@ -37,7 +37,8 @@ Everything here is **off by default**. With the defaults, windows look exactly a
   `HWND_NOTOPMOST` back on quit. Windows that were already topmost are not recorded, so the app's own
   choice is never undone.
 - **Never decorated:**
-  - protected processes (`win_rules::PROTECTED_PROCESS_FRAGMENTS`: anti-cheat games, shell hosts, Lens);
+  - protected processes (`win_rules::SHELL_PROCESS_FRAGMENTS` — Lens and the Windows shell hosts —
+    and `win_rules::ANTI_CHEAT_FRAGMENTS` — anti-cheat services, their launchers and protected games);
   - the never-decorate list;
   - apps with a "Leave alone" rule;
   - fullscreen windows. A window counts as fullscreen when it covers its monitor and has no caption,
@@ -145,3 +146,28 @@ here only exists so this branch does not depend on #5.
   - the card in its default, styled, light and Windows 10 states;
   - the rules card with the new **Inactive** row;
   - the dim and border preview.
+
+
+## The legacy in-app hook (experimental, off by default)
+
+Lens styles windows from outside their process. One optional extra, **Legacy In-App Window Styling**
+(`func.injectedHook`), installs a global `WH_CALLWNDPROC` hook so a small DLL can restyle a window
+that keeps its old titlebar. Because Windows loads a global hook's DLL into every app with a window,
+this stays an explicit experimental switch and is fenced in (`win_hook_guard.rs`, docs/brain/BUGS.md
+B-05, B-06):
+
+- **Kept out when it could do harm.** While the switch is on, the engine re-checks every 1.5 s. If
+  an anti-cheat service or a protected game is running, or a fullscreen app is in front, the hook is
+  removed at once; it returns only after about six clear seconds.
+- **Removed, not abandoned.** Switching it off, quitting, the tray's Exit and Remove all Lens changes
+  all call `stop_dwm_hook_engine()`: the hook is removed, apps are nudged to unload the DLL, and the
+  thread ends. No restart needed.
+- **The DLL on disk is the one built into this Lens.** It is named by its content hash and compared
+  byte for byte before each load; a different, partial or altered copy is replaced, and nothing is
+  loaded if a matching copy can't be guaranteed.
+- **The DLL refuses excluded processes.** Its `DllMain` returns FALSE in shell hosts, anti-cheat
+  services and protected games, so nothing of Lens stays in them. Lens's own process loads it (to
+  install the hook) and does nothing with it. The committed `lens_dwm_hook.dll` predates this change;
+  release installers are rebuilt from source by CI.
+
+Settings shows whether the helper is in use right now or paused.

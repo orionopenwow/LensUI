@@ -49,7 +49,7 @@ pub(crate) fn approval_preview(e: &ipc::InboxEntry) -> (String, String, serde_js
         row("Page text", format!("{} KB", (p.len() / 1024).max(1)));
     }
     if let Some(p) = &r.path {
-        row("File", p.rsplit(['\\', '/']).next().unwrap_or(p).chars().take(80).collect());
+        row("File", p.rsplit(['\\', '/']).next().unwrap_or(p.as_str()).chars().take(80).collect());
     }
     if r.media_url.is_some() {
         row("Video", "link".into());

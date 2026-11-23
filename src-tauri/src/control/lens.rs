@@ -430,6 +430,13 @@ pub fn gate(app: &AppHandle, client: &str, tool: &str, args: &Value) -> Result<G
         return Ok(Gate::Block(format!("Lens stopped this for safety: {}", safety.text())));
     }
     super::safety::attach(&mut a.preview, &safety);
+    if safety.is_ask() {
+        // Say what the app read just before asking, so the card explains itself.
+        if let Some(t) = crate::agentsafe::gate::taint_for(client) {
+            let why = a.preview.get("reason").and_then(Value::as_str).unwrap_or("").trim().to_string();
+            a.preview["reason"] = json!(format!("{}{}It asked after reading {}.", why, if why.is_empty() { "" } else { " " }, t.label));
+        }
+    }
     Ok(match decision {
         Decision::Run if !safety.is_ask() => Gate::Run,
         _ => Gate::Ask(a),
