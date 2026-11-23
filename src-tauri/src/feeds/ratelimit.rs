@@ -81,6 +81,7 @@ impl Limiter {
         wait
     }
 
+    #[allow(dead_code)] // Read by tests.
     pub fn failures(&self) -> u32 {
         self.failures
     }

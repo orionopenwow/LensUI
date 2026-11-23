@@ -37,6 +37,7 @@ impl Source {
         })
     }
     /// The default filter bucket for the column's All / People / News / Video / Dev chips.
+    #[allow(dead_code)] // Used by connectors that don't set a kind themselves.
     pub fn default_kind(self) -> Kind {
         match self {
             Source::Bluesky | Source::Mastodon | Source::X => Kind::People,

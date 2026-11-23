@@ -1,8 +1,8 @@
 // Typed wrappers over the feeds_* commands (src-tauri/src/commands/feeds.rs).
 import { invoke } from "@tauri-apps/api/core";
-import type { ApprovalDto, DigestDto, FeedsSettings, PostResult, SourceCfg, SourceView, TimelineDto } from "../types/generated";
+import type { ApprovalDto, DigestDto, FeedsSettings, PostResult, ProbeDto, SourceCfg, SourceView, TimelineDto } from "../types/generated";
 
-export type { ApprovalDto, DigestDto, FeedsSettings, PostResult, SourceCfg, SourceView, TimelineDto };
+export type { ProbeDto, ApprovalDto, DigestDto, FeedsSettings, PostResult, SourceCfg, SourceView, TimelineDto };
 
 export const feedsApi = {
   settings: () => invoke<FeedsSettings>("feeds_get_settings"),
@@ -24,6 +24,8 @@ export const feedsApi = {
   approve: (approvalId: string) => invoke<null>("feeds_approve", { approvalId }),
   deny: (approvalId: string) => invoke<null>("feeds_deny", { approvalId }),
   post: (approvalId: string) => invoke<PostResult[]>("feeds_post", { approvalId }),
+  probe: (input: string) => invoke<ProbeDto>("feeds_probe", { input }),
+  approval: (approvalId: string) => invoke<ApprovalDto>("feeds_approval", { approvalId }),
   xEmbed: (kind: "profile" | "list", target: string, dark: boolean) => invoke<string>("feeds_x_embed", { kind, target, dark }),
 };
 

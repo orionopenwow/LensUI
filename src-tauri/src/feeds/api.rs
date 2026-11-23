@@ -175,6 +175,7 @@ pub fn masto_home(instance: &str, max_id: Option<&str>, vault_key: &str) -> Req 
     get(url, Auth::Bearer(vault_key.into()))
 }
 
+#[allow(dead_code)] // Wired in the next connector wave (docs/FEEDS.md › Ranked features).
 pub fn masto_notifications(instance: &str, vault_key: &str) -> Req {
     get(format!("https://{}/api/v1/notifications?limit=30", instance), Auth::Bearer(vault_key.into()))
 }
@@ -265,6 +266,7 @@ pub fn reddit_best(after: Option<&str>, vault_key: &str) -> Req {
     get(url, Auth::Bearer(vault_key.into()))
 }
 
+#[allow(dead_code)] // Wired in the next connector wave (docs/FEEDS.md › Ranked features).
 pub fn reddit_saved(username: &str, vault_key: &str) -> Req {
     get(format!("https://oauth.reddit.com/user/{}/saved?limit=50&raw_json=1", urlenc(username)), Auth::Bearer(vault_key.into()))
 }
@@ -357,6 +359,7 @@ pub fn parse_github_notifications(v: &Value, feed: &str) -> Vec<FeedItem> {
 
 /// With OAuth (youtube.readonly): the user's subscriptions (1 quota unit per call). Lens then
 /// reads each channel's public RSS feed for new uploads, which costs no quota at all.
+#[allow(dead_code)] // Wired in the next connector wave (docs/FEEDS.md › Ranked features).
 pub fn youtube_subscriptions(page: Option<&str>, vault_key: &str) -> Req {
     let mut url = "https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true&maxResults=50".to_string();
     if let Some(p) = page {
@@ -366,6 +369,7 @@ pub fn youtube_subscriptions(page: Option<&str>, vault_key: &str) -> Req {
 }
 
 /// Returns (channel id, title) pairs and the next page token.
+#[allow(dead_code)] // Wired in the next connector wave (docs/FEEDS.md › Ranked features).
 pub fn parse_youtube_subscriptions(v: &Value) -> (Vec<(String, String)>, Option<String>) {
     let list = v
         .get("items")

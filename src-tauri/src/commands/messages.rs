@@ -105,6 +105,13 @@ pub fn messages_space_title(app: AppHandle, app_id: String, title: String) -> Re
     Ok(dto)
 }
 
+/// Whether a navigation inside a messenger's web-app space stays in the space (its own hosts,
+/// https only). Anything else opens outside, in the user's normal browser.
+#[tauri::command]
+pub fn messages_space_allows(app_id: String, url: String) -> bool {
+    catalogue::get(&app_id).map(|a| catalogue::allowed_in_space(a, &url)).unwrap_or(false)
+}
+
 /// Focus notch: "all", "vip", or "snooze" with minutes.
 #[tauri::command]
 pub fn messages_focus(app: AppHandle, mode: String, minutes: Option<u32>) -> Result<UnreadDto, String> {

@@ -42,6 +42,7 @@ pub fn pkce() -> Pkce {
 pub enum Provider {
     Mastodon,
     Reddit,
+    #[allow(dead_code)] // YouTube Data API sign-in, next connector wave.
     Google,
 }
 

@@ -79,10 +79,11 @@ fn inbox_orders_mentions_vip_unread() {
     st.space_unread.insert("slack".into(), (2, 10));
     let toasts = vec![("Discord".to_string(), "Ana".to_string(), "hey @pat".to_string(), 20i64)];
     let rows = inbox(&st, &toasts);
-    assert_eq!(rows[0].app, "gmail", "VIP first");
-    assert_eq!(rows[1].app, "discord", "mention next");
-    assert_eq!(rows[1].mentions, 1);
-    assert_eq!(rows[1].last_preview.as_deref(), Some("Ana: hey @pat"));
+    // Mentions and VIPs share the top tier; within it the fresher conversation leads.
+    assert_eq!(rows[0].app, "discord", "fresh mention first");
+    assert_eq!(rows[0].mentions, 1);
+    assert_eq!(rows[0].last_preview.as_deref(), Some("Ana: hey @pat"));
+    assert_eq!(rows[1].app, "gmail", "idle VIP still above plain unread");
     assert_eq!(rows[2].app, "slack");
     let bad = MessagesSettings { matrix_homeserver: Some("http://insecure.test".into()), ..Default::default() }.sanitize();
     assert!(bad.matrix_homeserver.is_none());

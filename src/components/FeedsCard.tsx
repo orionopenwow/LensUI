@@ -95,9 +95,19 @@ export function FeedsCard() {
 
       {connect === "rss" ? (
         <div className="cc-row" style={{ marginTop: 8, gap: 6 }}>
-          {field("a", "Feed URL (https://…)")}
+          {field("a", "Feed URL or YouTube channel id (UC…)")}
           {field("b", "Name (optional)")}
-          <button className="cc-btn" onClick={() => void run(feedsApi.addSource(rssSource(f.a.trim(), f.b.trim(), f.a.includes("youtube.com/feeds") ? "youtube" : "rss")), "Feed added.")}>Add</button>
+          <button
+            className="cc-btn"
+            onClick={() =>
+              void run(
+                feedsApi.probe(f.a).then((p) => feedsApi.addSource(rssSource(p.url, f.b.trim() || p.title, p.kind === "youtube" ? "youtube" : "rss"))),
+                "Feed added."
+              )
+            }
+          >
+            Add
+          </button>
         </div>
       ) : null}
       {connect === "bluesky" ? (

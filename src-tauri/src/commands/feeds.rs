@@ -173,6 +173,47 @@ pub fn feeds_opml_export() -> Result<String, String> {
     Ok(rss::to_opml(&list))
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProbeDto {
+    pub url: String,
+    pub title: String,
+    pub site: Option<String>,
+    pub items: usize,
+    pub kind: String,
+}
+
+/// Checks a pasted feed address (or a YouTube channel id like `UC…`) before adding it, and
+/// suggests its title.
+#[tauri::command]
+pub async fn feeds_probe(input: String) -> Result<ProbeDto, String> {
+    blocking(move || {
+        let t = input.trim();
+        let (url, kind) = if t.starts_with("UC") && t.len() == 24 {
+            (rss::youtube_channel_feed_url(t).ok_or("That doesn't look like a YouTube channel id.")?, "youtube")
+        } else {
+            let u = feeds::model::safe_url(t).ok_or("Paste a full https:// feed address.")?;
+            let k = if u.contains("youtube.com/feeds/") { "youtube" } else { "rss" };
+            (u, k)
+        };
+        let req = api::Req { method: "GET", url: url.clone(), body: None, form: None, auth: api::Auth::None, accept: "application/rss+xml, application/atom+xml, application/feed+json, application/json, text/xml;q=0.9, */*;q=0.5" };
+        let r = feeds::execute(&req, feeds::UA, None)?;
+        if !(200..300).contains(&r.status) {
+            return Err(format!("That address answered {}.", r.status));
+        }
+        let now = feeds::now_ms();
+        if r.body.trim_start().starts_with('{') {
+            let v: serde_json::Value = serde_json::from_str(&r.body).map_err(|_| "That isn't a feed.".to_string())?;
+            let (title, items) = api::parse_json_feed(&v, "probe", now)?;
+            let site = v.get("home_page_url").and_then(|x| x.as_str()).map(|s| s.to_string());
+            return Ok(ProbeDto { url, title, site, items: items.len(), kind: kind.into() });
+        }
+        let p = rss::parse_feed(&r.body, "probe", now)?;
+        Ok(ProbeDto { url, title: p.title, site: p.site, items: p.items.len(), kind: kind.into() })
+    })
+    .await
+}
+
 /// Bluesky with an app password (Settings → Privacy → App passwords on Bluesky). Lens creates a
 /// session, keeps the access token in the vault and the app password (also sealed) to renew it.
 #[tauri::command]
@@ -335,6 +376,15 @@ pub fn feeds_compose_request(req: ComposeReq) -> Result<ApprovalDto, String> {
     let draft = Draft { action: "post".into(), targets: req.targets.clone(), text: req.text.clone(), conversation: None };
     let id = st.approvals.request(draft, feeds::now_ms())?;
     Ok(ApprovalDto { approval_id: id, action: "post".into(), targets: req.targets, text: req.text })
+}
+
+/// The exact pending draft, so any surface that shows the approval card (voice, Command) renders
+/// the same text the backend will send.
+#[tauri::command]
+pub fn feeds_approval(approval_id: String) -> Result<ApprovalDto, String> {
+    let st = lock()?;
+    let d = st.approvals.draft(&approval_id).ok_or("That request expired. Try again.")?;
+    Ok(ApprovalDto { approval_id, action: d.action.clone(), targets: d.targets.clone(), text: d.text.clone() })
 }
 
 /// Called only by the approval card's approve (hold-to-confirm) action.
