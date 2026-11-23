@@ -30,7 +30,9 @@ export function buildBrand(root, site) {
   writeFileSync(join(out, "lens-logo-overlay.svg"), overlay);
 
   const neb = join(out, "nebula.webp");
-  try {
+  // Prefer the committed 384 px WebP (CI runners don't have ffmpeg); regenerate it with ffmpeg if missing.
+  if (existsSync(join(src, "nebula.webp"))) copyFileSync(join(src, "nebula.webp"), neb);
+  else try {
     execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-i", join(src, "nebula.png"), "-vf", "scale=384:384", "-c:v", "libwebp", "-quality", "88", neb]);
   } catch {
     copyFileSync(join(src, "nebula.png"), join(out, "nebula.png"));

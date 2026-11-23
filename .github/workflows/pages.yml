@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Pillow (resizes the app icons and screenshots the site shows)
-        run: python3 -m pip install --user --quiet pillow
+        run: sudo python3 -m pip install --quiet --break-system-packages pillow
       - name: Command-engine port matches the app
         run: node tools/site/test/intent.test.mjs
       - name: User docs from the Guide index

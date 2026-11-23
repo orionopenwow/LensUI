@@ -213,7 +213,7 @@ button.pill { padding-right: 14px; }
 .app strong { display: block; font-size: 0.88rem; }
 .app span:not(.mono-ic) { display: block; font-size: 0.76rem; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30ch; }
 .app span.meta { color: var(--fg-3); }
-.mono-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; color: #fff; background: hsl(var(--h) 55% 42%); }
+.mono-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; color: #fff; background: hsl(var(--h) 55% 36%); }
 
 .best { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 28px; }
 .best li { display: flex; gap: 10px; align-items: baseline; color: var(--fg-2); font-size: 0.98rem; }
