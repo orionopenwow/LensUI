@@ -223,10 +223,24 @@ pub(crate) fn sync_desktop_input(app: &AppHandle, state: &win_wallpaper::Wallpap
 
 fn start_playground_idle(handle: &AppHandle) {
     let ih = handle.clone();
+    // The monitor ticks every second; read the wallpaper settings file at most every 10 s,
+    // not on every tick (it used to hit the disk once a second even with idle mode off).
+    let cache: std::sync::Mutex<Option<(std::time::Instant, Option<u64>)>> = std::sync::Mutex::new(None);
     win_desktop_input::start_idle_monitor(
-        || {
+        move || {
+            let mut c = match cache.lock() {
+                Ok(c) => c,
+                Err(_) => return None,
+            };
+            if let Some((at, v)) = *c {
+                if at.elapsed() < std::time::Duration::from_secs(10) {
+                    return v;
+                }
+            }
             let s = win_wallpaper::load_settings();
-            (s.idle_enabled && !s.calm).then(|| s.idle_minutes as u64 * 60_000)
+            let v = (s.idle_enabled && !s.calm).then(|| s.idle_minutes as u64 * 60_000);
+            *c = Some((std::time::Instant::now(), v));
+            v
         },
         move |show| {
             let h = ih.clone();
