@@ -101,6 +101,7 @@ impl Queue {
     }
 
     /// Lets an actor run again before the hold expires (the user started something new).
+    #[allow(dead_code)] // lets a new user-started run skip the stop hold
     pub fn clear_stop(&mut self, kind: &str) {
         self.stopped_until.remove(kind);
     }

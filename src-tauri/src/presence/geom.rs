@@ -78,6 +78,7 @@ pub fn to_local(r: PRect, m: &Monitor) -> LRect {
 }
 
 /// Overlay-local logical px on `m` → screen (physical). Inverse of `to_local` (±1 px rounding).
+#[allow(dead_code)] // inverse of to_local; used by tests and proptests
 pub fn to_screen(l: LRect, m: &Monitor) -> PRect {
     let s = safe_scale(m.scale);
     PRect {
@@ -120,6 +121,7 @@ pub fn snap_rect(m: &Monitor, side: &str) -> Option<PRect> {
 }
 
 /// Orb travel time for a distance in logical px: 250 ms (near) … 450 ms (≥ 1600 px).
+#[allow(dead_code)] // mirrored by src/presence/model.ts travelMs (overlay animation)
 pub fn travel_ms(dist: f64) -> u32 {
     let d = if dist.is_finite() { dist.abs() } else { 0.0 };
     (250.0 + (d / 1600.0).min(1.0) * 200.0).round() as u32

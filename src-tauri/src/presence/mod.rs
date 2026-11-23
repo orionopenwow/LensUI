@@ -192,10 +192,12 @@ impl Step {
     pub fn new(kind: StepKind, label: impl Into<String>) -> Self {
         Self { kind: Some(kind), label: label.into(), ..Default::default() }
     }
+    #[allow(dead_code)] // builder API for callers and tests
     pub fn at(mut self, r: PRect) -> Self {
         self.target = Some(r);
         self
     }
+    #[allow(dead_code)] // builder API for callers and tests
     pub fn to(mut self, r: PRect) -> Self {
         self.dest = Some(r);
         self
@@ -353,6 +355,7 @@ pub(crate) fn state() -> &'static Mutex<queue::Queue> {
 
 /// Actors register how to stop themselves (e.g. `ai::cancel_all`, the browser agent's stop). Called
 /// with the actor kind on Stop.
+#[allow(dead_code)] // for actors with their own cancel path (docs/PRESENCE.md)
 pub fn register_canceller(kind: &str, f: impl Fn() + Send + Sync + 'static) {
     CANCELLERS.get_or_init(|| Mutex::new(Vec::new())).lock().unwrap_or_else(|e| e.into_inner()).push((kind.to_string(), Box::new(f)));
 }
