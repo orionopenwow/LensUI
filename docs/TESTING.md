@@ -94,6 +94,17 @@ and fresh renders as artifacts. It never commits anything.
 Case counts default to a few hundred per property, so the suite takes seconds. `PROPTEST_CASES`
 scales them all.
 
+### Remove all (Windows)
+
+`tests/e2e/remove-all.mjs` runs after the end-to-end scenarios in the same CI job. It reads the
+change registry from the running app (`changes_manifest_cmd`, `src-tauri/src/changes.rs`),
+snapshots every HKCU key, value and file the registry lists, turns features on through the same
+commands the UI calls, runs "Remove all Lens changes" and compares. The job fails on any leftover,
+on any failed step in the report, when a registry row has no step, or when fewer than six features
+actually changed Windows (a check that proves nothing must not pass). It then quits Lens and
+compares once more. `node tools/changes/check.mjs` (build.yml, and `bun test src`) fails when a
+source file calls a registry, settings or hook API without being named in the registry.
+
 ### End-to-end (Windows)
 
 `tests/e2e/run.mjs` starts the built app and attaches Playwright to its WebView2 windows over the
@@ -283,6 +294,8 @@ marker together with the fix.
 * **Marker:** `KNOWN` entry `F1` in `tools/soak/run.mjs`.
 
 ### F2: `dock.iconSize` is never clamped
+
+**Status: fixed.** The frontend clamps to 16–96, and the backend no longer builds geometry from the raw value: `win_previews::clamp_icon_size` at every site, hit-testing from the measured pill rect (B-15).
 
 * **Found by:** frontend property test, Dock config normalisers.
 * **What happens:** `dockStyleIconSize` passes the configured size straight through, and the backend sizes the Dock window from `icon_size` too (`commands/surfaces.rs`). Per-style sizes (`iconSizes`) are checked to 16–96 px, but the main `iconSize` is not. A hand-edited, synced or restored config with `0` gives an invisible Dock, and one with `5000` gives a screen-sized Dock window that covers the desktop.

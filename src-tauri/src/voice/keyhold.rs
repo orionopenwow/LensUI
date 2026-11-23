@@ -1,6 +1,7 @@
 //! Hold-to-talk on a single key (Right Ctrl / Right Alt), which global shortcuts can't do.
 //!
-//! A low-level keyboard hook, installed only while voice is on with a single-key hold, that:
+//! A keyboard claim on the input service (`input.rs`), held only while voice is on with a
+//! single-key hold, that:
 //! * looks only at the chosen key, Esc (while listening) and "some other key went down while
 //!   the hold key is held" (to tell chords like Right Ctrl+C apart). It never records or
 //!   forwards which other key it was;
@@ -28,7 +29,6 @@ pub fn single_key(name: &str) -> Option<u32> {
 }
 
 static TARGET: AtomicU32 = AtomicU32::new(0);
-static THREAD: AtomicU32 = AtomicU32::new(0);
 
 fn hold() -> &'static Mutex<Hold> {
     static H: OnceLock<Mutex<Hold>> = OnceLock::new();
@@ -91,28 +91,21 @@ pub fn on_key(vk: u32, down: bool) {
     send(outs);
 }
 
+/// The keyboard handler the input service dispatches to (`input.rs`, `KEY_TABLE`). It only
+/// watches; it never swallows a key.
 #[cfg(windows)]
-unsafe extern "system" fn hook_proc(
-    code: i32,
-    wparam: windows::Win32::Foundation::WPARAM,
-    lparam: windows::Win32::Foundation::LPARAM,
-) -> windows::Win32::Foundation::LRESULT {
-    use windows::Win32::UI::WindowsAndMessaging::{CallNextHookEx, HHOOK, KBDLLHOOKSTRUCT};
-    if code >= 0 && lparam.0 != 0 {
-        let k = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
-        const LLKHF_INJECTED: u32 = 0x10;
-        if k.flags.0 & LLKHF_INJECTED == 0 {
-            match wparam.0 as u32 {
-                0x100 | 0x104 => on_key(k.vkCode, true),  // WM_KEYDOWN, WM_SYSKEYDOWN
-                0x101 | 0x105 => on_key(k.vkCode, false), // WM_KEYUP, WM_SYSKEYUP
-                _ => {}
-            }
+pub(crate) fn input_key(ev: &crate::input::KeyEvent) -> bool {
+    if !ev.injected() {
+        match ev.msg {
+            0x100 | 0x104 => on_key(ev.vk, true),  // WM_KEYDOWN, WM_SYSKEYDOWN
+            0x101 | 0x105 => on_key(ev.vk, false), // WM_KEYUP, WM_SYSKEYUP
+            _ => {}
         }
     }
-    CallNextHookEx(HHOOK::default(), code, wparam, lparam)
+    false
 }
 
-/// Installs the hook for `vk` (replacing any previous one). `on_out` runs on a worker thread.
+/// Starts watching `vk` (replacing any previous key). `on_out` runs on a worker thread.
 pub fn start(vk: u32, on_out: fn(HoldOut)) {
     stop();
     TARGET.store(vk, Ordering::Relaxed);
@@ -128,38 +121,16 @@ pub fn start(vk: u32, on_out: fn(HoldOut)) {
             on_out(o);
         }
     });
-    #[cfg(windows)]
-    std::thread::spawn(|| unsafe {
-        use windows::Win32::Foundation::{HINSTANCE, HWND};
-        use windows::Win32::System::Threading::GetCurrentThreadId;
-        use windows::Win32::UI::WindowsAndMessaging::{GetMessageW, SetWindowsHookExW, UnhookWindowsHookEx, MSG, WH_KEYBOARD_LL};
-        let Ok(hook) = SetWindowsHookExW(WH_KEYBOARD_LL, Some(hook_proc), HINSTANCE::default(), 0) else {
-            return;
-        };
-        THREAD.store(GetCurrentThreadId(), Ordering::Relaxed);
-        let mut msg = MSG::default();
-        while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {}
-        let _ = UnhookWindowsHookEx(hook);
-    });
+    crate::input::claim_keyboard(crate::input::Feature::VoiceHold);
 }
 
-/// Removes the hook (voice off, another hotkey chosen, exit).
+/// Stops watching (voice off, another hotkey chosen, exit).
 pub fn stop() {
+    crate::input::release_keyboard(crate::input::Feature::VoiceHold);
     TARGET.store(0, Ordering::Relaxed);
     if let Ok(mut s) = sink().lock() {
         *s = None; // ends the worker thread
     }
-    let tid = THREAD.swap(0, Ordering::Relaxed);
-    #[cfg(windows)]
-    if tid != 0 {
-        use windows::Win32::Foundation::{LPARAM, WPARAM};
-        use windows::Win32::UI::WindowsAndMessaging::{PostThreadMessageW, WM_QUIT};
-        unsafe {
-            let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
-        }
-    }
-    #[cfg(not(windows))]
-    let _ = tid;
 }
 
 #[cfg(test)]

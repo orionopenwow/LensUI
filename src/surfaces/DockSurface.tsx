@@ -778,6 +778,9 @@ export const DockSurface: React.FC = () => {
     if (!el) return;
     const report = () => {
       if (dockSearchOpenRef.current) return;
+      // A hidden Dock is slid off its edge: keep the last resting rect. The backend hit-tests
+      // every style against this rect, so it must never be the off-screen one.
+      if (el.classList.contains("is-hidden")) return;
       const rect = el.getBoundingClientRect();
       if (rect.width > 0) {
         // Split: the backend hit-tests one rect, so report the union of both pills. On the bottom
@@ -822,8 +825,21 @@ export const DockSurface: React.FC = () => {
     const ro = new ResizeObserver(report);
     ro.observe(el);
     if (splitPillRef.current) ro.observe(splitPillRef.current);
-    return () => ro.disconnect();
+    // The backend sizes this window from the reported pill (plus flyout room) once the Dock is
+    // idle. The pill keeps its place on screen but moves inside the window, so report again.
+    window.addEventListener("resize", report);
+    // After the Dock has slid back in, report where it came to rest.
+    const onSettled = (e: TransitionEvent) => {
+      if (e.target === el) report();
+    };
+    el.addEventListener("transitionend", onSettled);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", report);
+      el.removeEventListener("transitionend", onSettled);
+    };
   }, [
+    dockVisible,
     config?.dock.pinnedApps.length,
     config?.dock.iconSize,
     runningWindows.length,

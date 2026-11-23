@@ -125,7 +125,7 @@ wrong format versions, invalid JSON), atomic write, date formatting.
   Explorer Shell Icons override, shell mode, Run key, tray host, taskbar + desktop icons, window styling,
   Lens's Windhawk mod file. Clears the matching config flags so a restart doesn't re-apply them.
   `delete_lens_data()` is separate and refuses any folder not named `LensUI`.
-  Leaves the Windows accent colour and "accent colour on title bars" alone (originals were never recorded).
+  Puts the Windows accent colour and "accent colour on title bars" back from the record taken before Lens first changed them. Apps installed through Lens Apps stay installed.
 * `Uninstall-Lens-UI.bat`: works with Lens not running. Same steps in PowerShell, including the folder-backup
   lookup (same FNV-1a hash as `win_folders.rs`; test vector `C:\x` → `7f89e591ebb8e85c`), turns taskbar
   auto-hide back off, offers to restart Explorer and to delete `%APPDATA%\LensUI`. Only removes a Shell value
