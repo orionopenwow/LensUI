@@ -104,7 +104,7 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
           <span className="qs-switch-knob" />
         </button>
       </div>
-      <div className="qsl-night-body" aria-hidden={!open}>
+      <div className="qsl-night-body" inert={!open}>
         <div className="qsl-night-inner">
           <PillFillBar label="Warmth" value={warmth} fillColor="#FB923C" icon={<Moon size={15} />} onChange={onWarmth} />
           <div className="qsl-seg" role="radiogroup" aria-label="Night light schedule">

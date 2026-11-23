@@ -1,5 +1,5 @@
 /* Live Quick Settings rows. Motion: transform/opacity/grid-rows only, from the AAA tokens. */
-.qsl-note { font-size: 11.5px; color: rgb(var(--lens-ink) / 0.55); padding: 4px 2px; }
+.qsl-note { font-size: 11.5px; color: rgb(var(--lens-ink) / 0.66); padding: 4px 2px; }
 .qsl-error { font-size: 11.5px; color: var(--lens-danger, #fb7185); padding: 2px 2px 0; }
 .qsl-unsupported { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 12px; background: rgb(var(--lens-ink) / 0.05); color: rgb(var(--lens-ink) / 0.6); font-size: 12px; }
 .qsl-unsupported-name { font-weight: 600; color: rgb(var(--lens-ink) / 0.8); }
@@ -7,7 +7,7 @@
 
 .qsl-night-head { display: flex; align-items: center; gap: 8px; }
 .qsl-night-toggle { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; background: none; border: 0; color: var(--lens-fg); font: inherit; font-size: 12px; font-weight: 600; padding: 4px 2px; cursor: pointer; text-align: left; }
-.qsl-night-state { margin-left: auto; font-weight: 500; color: rgb(var(--lens-ink) / 0.55); font-size: 11.5px; white-space: nowrap; }
+.qsl-night-state { margin-left: auto; font-weight: 500; color: rgb(var(--lens-ink) / 0.66); font-size: 11.5px; white-space: nowrap; }
 .qsl-chev { transition: transform var(--lens-dur-base, 220ms) var(--lens-ease-out, cubic-bezier(.22, 1, .36, 1)); opacity: 0.6; }
 .qsl-night.is-open .qsl-chev { transform: rotate(90deg); }
 /* Expands without measuring: a 0fr → 1fr grid row animates the height on the compositor-friendly path. */
