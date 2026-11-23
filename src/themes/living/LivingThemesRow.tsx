@@ -128,18 +128,19 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
         <span className="tux-help">Wallpaper and colours that follow the real Sun and Moon where you are.</span>
       </div>
 
-      <div className="lv-tiles" role="list">
+      <div className="lv-tiles" role="radiogroup" aria-label="Living theme">
         {LIVING_PACKS.map((p) => (
           <button
             key={p.id}
             type="button"
-            role="listitem"
+            role="radio"
             className={`lv-tile ${config.theme.preset === p.id ? "active" : ""}`}
-            aria-pressed={config.theme.preset === p.id}
+            aria-checked={config.theme.preset === p.id}
             aria-label={`${p.label}: ${p.description ?? ""}`}
             onClick={() => choose(p.id)}
           >
-            <span className="lv-tile-canvas" aria-hidden="true">
+            {/* data-live: the tiles show the live sky, so visual tests mask them. */}
+            <span className="lv-tile-canvas" aria-hidden="true" data-live="">
               <PlaygroundView sceneId={p.id} preview fps={15} dprCap={1} paused={!visible} seed={7} />
             </span>
             <span className="lv-tile-label">{p.label}</span>
