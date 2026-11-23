@@ -168,6 +168,27 @@ pub(crate) fn dismiss_other_surfaces(app: &AppHandle, keep: &str) {
     }
 }
 
+/// Sizes and places a window that positions itself from its page (the Command edge shelf) in one
+/// native step (docs/SMOOTHNESS.md, G-12). The page used to call `setSize` and then
+/// `setPosition`: two operations, with a torn frame between them on a see-through window.
+/// Logical pixels, as the page measures them.
+#[tauri::command]
+pub(crate) fn place_surface_cmd(app: AppHandle, label: String, x: f64, y: f64, w: f64, h: f64) {
+    // Only windows whose page owns their placement may use this.
+    if label != "edgeshelf" {
+        return;
+    }
+    if ![x, y, w, h].iter().all(|v| v.is_finite()) || w < 1.0 || h < 1.0 {
+        return;
+    }
+    let Some(win) = app.get_webview_window(&label) else {
+        return;
+    };
+    let scale = win.scale_factor().unwrap_or(1.0);
+    let px = |v: f64| (v * scale).round();
+    crate::app::place::place_window(&win, px(x) as i32, px(y) as i32, px(w).max(1.0) as u32, px(h).max(1.0) as u32);
+}
+
 #[tauri::command]
 pub(crate) fn set_desktop_folder_expanded_cmd(app: AppHandle, expanded: bool) {
     let Some(win) = app.get_webview_window("desktopfolder") else {

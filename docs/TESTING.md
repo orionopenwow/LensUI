@@ -217,7 +217,8 @@ Entries that no longer match anything are reported, so the list can only shrink.
 
 ### Soak and chaos
 
-`tools/soak/run.mjs` runs two passes.
+`tools/soak/run.mjs` runs three passes (the third, `failsafe`, is described in docs/FAILSAFE.md §8:
+a surface made to throw, and half of all backend calls failing).
 
 **Soak:**
 * 500 settings steps: real toggle clicks on each tab, plus config changes broadcast the way the backend does.

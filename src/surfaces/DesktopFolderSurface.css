@@ -202,3 +202,21 @@
     transform: translateY(-4px) scale(0.98);
   }
 }
+
+/* The collapsed "Desktop" tab (docs/SMOOTHNESS.md, G-10). It is laid out 4px wider than it shows
+   and tucked under the screen edge; hovering slides it out by transform. Its width never changes. */
+.df-tab {
+  width: 82px;
+  margin-left: -4px;
+  padding: 0 6px 0 14px;
+  border: 1px solid var(--df-tab-border, var(--lens-border));
+  border-left: none;
+  transition:
+    transform var(--lens-dur-base) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.df-tab:hover,
+.df-tab:focus-visible {
+  transform: translateX(4px);
+  border-color: rgb(var(--lens-ink) / 0.28);
+}

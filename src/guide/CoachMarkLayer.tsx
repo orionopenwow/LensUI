@@ -137,6 +137,8 @@ export const CoachMarkLayer: React.FC<CoachMarkLayerProps> = ({ initial, sticky 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const ring = { top: box.top - PAD, left: box.left - PAD, width: box.width + PAD * 2, height: box.height + PAD * 2 };
+  // Moved by transform, sized directly (docs/SMOOTHNESS.md, G-13).
+  const ringStyle = { width: ring.width, height: ring.height, transform: `translate3d(${ring.left}px, ${ring.top}px, 0)` };
   const tipW = Math.min(300, vw - 24);
   const below = ring.top + ring.height + 10 + 84 < vh;
   const tipTop = below ? ring.top + ring.height + 10 : Math.max(12, ring.top - 10 - 84);
@@ -144,7 +146,7 @@ export const CoachMarkLayer: React.FC<CoachMarkLayerProps> = ({ initial, sticky 
 
   return (
     <div className="guide-coach" aria-live="polite">
-      <div className="guide-coach-ring" style={ring} aria-hidden="true" />
+      <div className="guide-coach-ring" style={ringStyle} aria-hidden="true" />
       <div className="guide-coach-tip" role="dialog" aria-label="Lens Guide" style={{ top: tipTop, left: tipLeft, width: tipW }}>
         {req.title && <div className="guide-coach-title">{req.title}</div>}
         {req.note && <div className="guide-coach-note">{req.note}</div>}
