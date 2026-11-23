@@ -27,12 +27,14 @@ import {
   Power,
   ExternalLink,
   X,
+  SlidersHorizontal,
 } from "lucide-react";
 import { GROUPS, PAGES, pagesInGroup, type PageId } from "./registry";
 import { buildIndex, search, type SearchEntry } from "./search";
 import { preloadSettingsPage } from "./pages";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
+  quick: SlidersHorizontal,
   palette: Palette,
   music: Music,
   grid: LayoutGrid,

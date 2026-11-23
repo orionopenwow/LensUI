@@ -1,6 +1,7 @@
 import React, { lazy } from "react";
 import type { PageId } from "../registry";
 import type { PageProps } from "./common";
+import { QuickPage } from "./QuickPage";
 
 // Pages load on first visit, so opening Settings doesn't parse every page (and the AI, Apps and
 // Music cards behind them) up front. ControlCenterSurface wraps them in <Suspense>.
@@ -21,6 +22,8 @@ export function preloadSettingsPage(id: PageId) {
 /** Pages that live in their own file. The rest (Appearance, Dock & Bar, Desktop, Windows & Keys,
  *  System & Tasks, Notifications) are still rendered by ControlCenterSurface. */
 export const PAGE_COMPONENTS: Partial<Record<PageId, React.FC<PageProps>>> = {
+  // Settings opens on Quick: loaded with the hub so the first view never shows a loading skeleton.
+  quick: QuickPage,
   display: page(() => import("./DisplayPage"), "DisplayPage") as unknown as React.FC<PageProps>,
   sound: page(() => import("./SoundPage"), "SoundPage") as unknown as React.FC<PageProps>,
   network: page(() => import("./NetworkPage"), "NetworkPage") as unknown as React.FC<PageProps>,

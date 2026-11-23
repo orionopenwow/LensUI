@@ -369,6 +369,11 @@ pub(crate) fn spawn_watcher(
         let mut dock_leave_since: Option<Instant> = None;
         let mut dock_ignoring_cursor = false;
         let mut last_settings_vis = false;
+        // Auto-hide watchdog: a menu, hover card or search can report "open" and then never report
+        // "closed" (the pointer left through click-through glass, an app launch took focus, the
+        // webview reloaded). Each blocker only counts while it is plausibly in use.
+        let mut menu_idle_since: Option<Instant> = None;
+        let mut settings_unfocused_since: Option<Instant> = None;
 
         loop {
             thread::sleep(Duration::from_millis(65));
@@ -630,9 +635,45 @@ pub(crate) fn spawn_watcher(
                         let _ = watcher_handle.emit("lens://settings-open", settings_now_vis);
                     }
 
-                    // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is open!
-                    let menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
-                    let dock_flyout_open = menu_open || settings_now_vis || palette_vis_now;
+                    // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is
+                    // in use. "In use" is checked here rather than trusted: see DockGuard below.
+                    let mut menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
+                    let dock_focused = dock_win.is_focused().unwrap_or(false);
+                    // The Dock window is a tall see-through strip, so "over the Dock" means over the
+                    // pill or over the open flyout (both reported by the Dock in CSS px).
+                    let cursor_over_dock_window = match (dock_win.outer_position(), cursor) {
+                        (Ok(p), Some((cx, cy))) => {
+                            let (fx, fy, fw, fh) = win_previews::flyout_rect_css();
+                            let pad = (6.0 * scale) as i32;
+                            fw > 0 && {
+                                let l = p.x + (fx as f64 * scale) as i32 - pad;
+                                let t = p.y + (fy as f64 * scale) as i32 - pad;
+                                let r = l + (fw as f64 * scale) as i32 + 2 * pad;
+                                let b = t + (fh as f64 * scale) as i32 + 2 * pad;
+                                cx >= l && cx < r && cy >= t && cy < b
+                            }
+                        }
+                        _ => false,
+                    };
+                    let guard = dock_guard(DockGuardInput {
+                        menu_open,
+                        dock_focused,
+                        cursor_over_pill,
+                        cursor_over_dock_window,
+                        settings_visible: settings_now_vis,
+                        settings_focused: watcher_handle
+                            .get_webview_window("settings")
+                            .and_then(|w| w.is_focused().ok())
+                            .unwrap_or(false),
+                        palette_visible: palette_vis_now,
+                        click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
+                    }, &mut menu_idle_since, &mut settings_unfocused_since);
+                    if guard.clear_stale_menu {
+                        *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
+                        menu_open = false;
+                        let _ = watcher_handle.emit("lens://dock-dismiss-menus", ());
+                    }
+                    let dock_flyout_open = guard.blocks_hide;
 
                     let should_hide_dock = if dock_flyout_open {
                         false
@@ -685,6 +726,10 @@ pub(crate) fn spawn_watcher(
 
                     if next_dock_vis != dock_visible {
                         dock_visible = next_dock_vis;
+                        let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
+                    } else if tick % 30 == 0 && cfg.dock.auto_hide != "never" {
+                        // Re-send the state every ~2 s so a Dock page that missed an event (reload,
+                        // load-guard retry, sleep/resume) can't stay out of sync with the watcher.
                         let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
                     }
                     if dock_visible
@@ -756,4 +801,155 @@ pub(crate) fn spawn_watcher(
         }
     });
 
+}
+
+/// How long a Dock "menu open" report may stand with the pointer away and the Dock unfocused.
+pub(crate) const STALE_MENU_MS: u128 = 1200;
+/// How long a visible but unfocused Control Center may keep the Dock up.
+pub(crate) const SETTINGS_UNFOCUSED_MS: u128 = 1500;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct DockGuardInput {
+    pub menu_open: bool,
+    pub dock_focused: bool,
+    pub cursor_over_pill: bool,
+    pub cursor_over_dock_window: bool,
+    pub settings_visible: bool,
+    pub settings_focused: bool,
+    pub palette_visible: bool,
+    /// A mouse button is down somewhere outside the Dock window (a click elsewhere).
+    pub click_outside: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct DockGuard {
+    /// Something genuinely in use: don't auto-hide.
+    pub blocks_hide: bool,
+    /// The menu flag has been stale long enough: clear it and dismiss the Dock's flyouts.
+    pub clear_stale_menu: bool,
+}
+
+/// Decides whether open flyouts should keep the Dock up. A menu flag only counts while the Dock
+/// window has focus or the pointer is over it; once neither has been true for STALE_MENU_MS it is
+/// treated as stale. A visible Control Center only counts while focused (plus a short grace).
+pub(crate) fn dock_guard(
+    i: DockGuardInput,
+    menu_idle_since: &mut Option<std::time::Instant>,
+    settings_unfocused_since: &mut Option<std::time::Instant>,
+) -> DockGuard {
+    dock_guard_at(i, menu_idle_since, settings_unfocused_since, std::time::Instant::now())
+}
+
+pub(crate) fn dock_guard_at(
+    i: DockGuardInput,
+    menu_idle_since: &mut Option<std::time::Instant>,
+    settings_unfocused_since: &mut Option<std::time::Instant>,
+    now: std::time::Instant,
+) -> DockGuard {
+    let menu_in_use = i.dock_focused || i.cursor_over_pill || i.cursor_over_dock_window;
+    let mut clear_stale_menu = false;
+    let menu_blocks = if i.menu_open && i.click_outside {
+        // Clicking anywhere outside the Dock closes its menus at once, focused or not.
+        *menu_idle_since = None;
+        clear_stale_menu = true;
+        false
+    } else if i.menu_open {
+        if menu_in_use {
+            *menu_idle_since = None;
+            true
+        } else {
+            let since = *menu_idle_since.get_or_insert(now);
+            if now.duration_since(since).as_millis() >= STALE_MENU_MS {
+                *menu_idle_since = None;
+                clear_stale_menu = true;
+                false
+            } else {
+                true
+            }
+        }
+    } else {
+        *menu_idle_since = None;
+        false
+    };
+    let settings_blocks = if i.settings_visible {
+        if i.settings_focused || menu_in_use {
+            *settings_unfocused_since = None;
+            true
+        } else {
+            let since = *settings_unfocused_since.get_or_insert(now);
+            now.duration_since(since).as_millis() < SETTINGS_UNFOCUSED_MS
+        }
+    } else {
+        *settings_unfocused_since = None;
+        false
+    };
+    DockGuard { blocks_hide: menu_blocks || settings_blocks || i.palette_visible, clear_stale_menu }
+}
+
+#[cfg(test)]
+mod dock_guard_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn run(i: DockGuardInput, steps: &[u64]) -> Vec<DockGuard> {
+        let t0 = Instant::now();
+        let (mut a, mut b) = (None, None);
+        steps.iter().map(|ms| dock_guard_at(i, &mut a, &mut b, t0 + Duration::from_millis(*ms))).collect()
+    }
+
+    #[test]
+    fn menu_in_use_keeps_dock_up() {
+        let i = DockGuardInput { menu_open: true, cursor_over_pill: true, ..Default::default() };
+        assert!(run(i, &[0, 5000]).iter().all(|g| g.blocks_hide && !g.clear_stale_menu));
+    }
+
+    #[test]
+    fn stale_menu_is_cleared_after_grace() {
+        let i = DockGuardInput { menu_open: true, ..Default::default() };
+        let r = run(i, &[0, 600, 1300]);
+        assert!(r[0].blocks_hide && r[1].blocks_hide);
+        assert_eq!(r[2], DockGuard { blocks_hide: false, clear_stale_menu: true });
+    }
+
+    #[test]
+    fn unfocused_settings_stops_blocking() {
+        let i = DockGuardInput { settings_visible: true, ..Default::default() };
+        let r = run(i, &[0, 1000, 1600]);
+        assert!(r[0].blocks_hide && r[1].blocks_hide && !r[2].blocks_hide);
+    }
+
+    #[test]
+    fn focused_settings_and_palette_block() {
+        let s = DockGuardInput { settings_visible: true, settings_focused: true, ..Default::default() };
+        assert!(run(s, &[0, 9000]).iter().all(|g| g.blocks_hide));
+        let p = DockGuardInput { palette_visible: true, ..Default::default() };
+        assert!(run(p, &[0]).iter().all(|g| g.blocks_hide));
+    }
+
+    #[test]
+    fn click_outside_closes_menu_immediately() {
+        let i = DockGuardInput { menu_open: true, dock_focused: true, click_outside: true, ..Default::default() };
+        assert_eq!(run(i, &[0])[0], DockGuard { blocks_hide: false, clear_stale_menu: true });
+    }
+
+    #[test]
+    fn nothing_open_never_blocks() {
+        assert!(run(DockGuardInput::default(), &[0, 2000]).iter().all(|g| !g.blocks_hide && !g.clear_stale_menu));
+    }
+}
+
+/// True while the left, right or middle mouse button is held (any window).
+#[cfg(windows)]
+pub(crate) fn mouse_button_down() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON};
+    unsafe {
+        [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON]
+            .iter()
+            .any(|vk| (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0)
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn mouse_button_down() -> bool {
+    false
 }
