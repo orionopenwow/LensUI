@@ -2,6 +2,10 @@
  "version": 1,
  "tabs": [
   {
+   "id": "quick",
+   "label": "Quick settings"
+  },
+  {
    "id": "theme",
    "label": "Appearance"
   },
@@ -4900,6 +4904,21 @@
     "surface": "settings",
     "tab": "system",
     "label": "Global Shortcuts"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.quick",
+   "kind": "tab",
+   "title": "Quick settings",
+   "text": "The Quick settings tab in Settings.",
+   "path": [
+    "Settings",
+    "Quick settings"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "quick"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },

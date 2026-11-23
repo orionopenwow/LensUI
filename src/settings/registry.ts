@@ -1,9 +1,11 @@
 // The Settings hub's map: every page, its sections, and the Windows Settings pages Lens can open.
 // Pure data + helpers (no React), so search and deep links are unit-testable.
 
-export type GroupId = "lens" | "windows" | "status";
+export type GroupId = "quick" | "lens" | "windows" | "status";
 
 export type PageId =
+  // Quick
+  | "quick"
   // Lens
   | "appearance"
   | "dock"
@@ -55,12 +57,29 @@ export interface PageDef {
 }
 
 export const GROUPS: { id: GroupId; label: string }[] = [
+  { id: "quick", label: "Quick" },
   { id: "lens", label: "Lens" },
   { id: "windows", label: "Windows" },
   { id: "status", label: "Status" },
 ];
 
 export const PAGES: PageDef[] = [
+  // ---------------- Quick
+  {
+    id: "quick",
+    group: "quick",
+    label: "Quick settings",
+    description: "The settings you change most, and quick window layouts.",
+    icon: "quick",
+    color: "#FAFAFA",
+    controls: ["Wi-Fi and Bluetooth", "Volume and brightness", "Window layouts"],
+    keywords: ["quick", "quick settings", "most used", "favourites", "shortcuts page", "minimise all", "always on top", "window layouts"],
+    sections: [
+      { id: "quick", label: "Quick settings", keywords: ["most used", "favourites"] },
+      { id: "look", label: "Quick theme", keywords: ["quick theme"] },
+      { id: "window", label: "Quick window", keywords: ["minimise all", "always on top", "window layouts"] },
+    ],
+  },
   // ---------------- Lens
   {
     id: "appearance",

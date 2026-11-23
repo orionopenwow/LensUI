@@ -10,6 +10,7 @@ const page = (load: () => Promise<Record<string, unknown>>, name: string) =>
 /** Pages that live in their own file. The rest (Appearance, Dock & Bar, Desktop, Windows & Keys,
  *  System & Tasks, Notifications) are still rendered by ControlCenterSurface. */
 export const PAGE_COMPONENTS: Partial<Record<PageId, React.FC<PageProps>>> = {
+  quick: page(() => import("./QuickPage"), "QuickPage") as unknown as React.FC<PageProps>,
   display: page(() => import("./DisplayPage"), "DisplayPage") as unknown as React.FC<PageProps>,
   sound: page(() => import("./SoundPage"), "SoundPage") as unknown as React.FC<PageProps>,
   network: page(() => import("./NetworkPage"), "NetworkPage") as unknown as React.FC<PageProps>,
