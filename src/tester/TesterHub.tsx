@@ -1,7 +1,7 @@
 // Tester Hub: what's new in this build, the test checklist, the session log and the report export.
 // Mounted as a card in Settings › About & Testing (see docs/TESTER_HUB.md) and as the
 // standalone `testerhub` surface. Nothing here captures the screen or uploads anything.
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   buildInfo as defaultBuildInfo,
@@ -39,11 +39,15 @@ import {
 } from "./model";
 import "./TesterHub.css";
 
-export type TesterTab = "new" | "checklist" | "log" | "report";
+// Loaded only when its tab is opened (docs/SMOOTHNESS.md).
+const SmoothnessPanel = lazy(() => import("../smooth/SmoothnessPanel").then((m) => ({ default: m.SmoothnessPanel })));
+
+export type TesterTab = "new" | "checklist" | "smooth" | "log" | "report";
 
 const TABS: { id: TesterTab; label: string }[] = [
   { id: "new", label: "What's new" },
   { id: "checklist", label: "Test checklist" },
+  { id: "smooth", label: "Smoothness" },
   { id: "log", label: "Session log" },
   { id: "report", label: "Report" },
 ];
@@ -159,6 +163,11 @@ export function TesterHub({ info = defaultBuildInfo, initialTab = "new" }: { inf
       <div className="th-panel" role="tabpanel">
         {tab === "new" && <WhatsNew groups={groups} notes={notes} problems={problems} />}
         {tab === "checklist" && <Checklist steps={steps} results={results} loaded={loaded} onUpdate={update} />}
+        {tab === "smooth" && (
+          <Suspense fallback={null}>
+            <SmoothnessPanel />
+          </Suspense>
+        )}
         {tab === "log" && <SessionLog />}
         {tab === "report" && <Report info={info} notes={notes} results={results} steps={steps} />}
       </div>

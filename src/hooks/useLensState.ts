@@ -12,6 +12,7 @@ import "../themes/shapes/expressive.css";
 import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
 import { syncLivingTint } from "../themes/living/tint";
+import { useSurfaceExitAck } from "../ui/motion/useSurfaceTransition";
 import { readSchedule } from "../themes/schedule";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
@@ -304,6 +305,8 @@ export function useRunningWindows(intervalMs = 900) {
 
 export function useSurfaceGlide(label: string) {
   const [phase, setPhase] = useState<"is-open" | "is-pre-open" | "is-closing">("is-open");
+  // Tell the backend when the exit has finished, so the window is hidden on a finished frame.
+  useSurfaceExitAck(label);
 
   useEffect(() => {
     const triggerOpenGlide = () => {

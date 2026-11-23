@@ -1,6 +1,7 @@
 // Live Quick Settings rows: real per-screen brightness, an expanding Night light with a schedule,
 // connection tiles that show real state, and thumbnails of open windows. Styles: live.css.
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { usePresence } from "../ui/motion";
 import { invoke } from "@tauri-apps/api/core";
 import { Bluetooth, ChevronRight, Monitor, Moon, Sun, Volume2, VolumeX, Wifi } from "lucide-react";
 import { PillFillBar } from "../components/PillFillBar";
@@ -86,6 +87,12 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
   useEffect(() => {
     invoke<NightLightSchedule>("get_night_light_schedule_cmd").then(setSched).catch(() => {});
   }, []);
+  // Glides in under the row and out before it is removed (transform + opacity only; see src/ui/motion).
+  const { mounted, ref: bodyRef } = usePresence<HTMLDivElement>(open, {
+    initial: false,
+    enter: { y: -6, opacity: 0 },
+    exit: { y: -4, opacity: 0 },
+  });
   const save = (next: NightLightSchedule) => {
     setSched(next);
     setErr(null);
@@ -104,7 +111,8 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
           <span className="qs-switch-knob" />
         </button>
       </div>
-      <div className="qsl-night-body" inert={!open}>
+      {mounted && (
+      <div className="qsl-night-body" ref={bodyRef}>
         <div className="qsl-night-inner">
           <PillFillBar label="Warmth" value={warmth} fillColor="#FB923C" icon={<Moon size={15} />} onChange={onWarmth} />
           <div className="qsl-seg" role="radiogroup" aria-label="Night light schedule">
@@ -134,6 +142,7 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
           {err && <div className="qsl-error">{err}</div>}
         </div>
       </div>
+      )}
     </div>
   );
 };

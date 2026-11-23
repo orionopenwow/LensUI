@@ -29,8 +29,6 @@
   position: relative;
   overflow: visible;
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    min-width var(--lens-dur-slow) var(--lens-ease-out),
     transform var(--lens-dur-slow) var(--lens-ease-out),
     opacity var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-slow) var(--lens-ease-out),
@@ -70,7 +68,7 @@
 /* Original Magnifying Glass Slot that smoothly glides open IN-PLACE inside the Dock row! */
 .dock-search-slot {
   flex: 0 0 auto;
-  transition: flex-grow var(--lens-dur-slow) var(--lens-ease-out), width var(--lens-dur-slow) var(--lens-ease-out);
+  /* Opens by FLIP (DockSurface.tsx): layout changes at once, the motion is a clip + transform. */
 }
 
 .dock-search-slot.is-open {
@@ -90,8 +88,6 @@
   border: 1px solid transparent;
   overflow: hidden;
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    padding var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-fast) var(--lens-ease-out),
     border-color var(--lens-dur-fast) var(--lens-ease-out),
     box-shadow var(--lens-dur-fast) var(--lens-ease-out);
@@ -135,8 +131,6 @@
 
 .dock-pill.is-expanded-launcher .dock-item {
   transition:
-    width var(--lens-dur-base) var(--lens-ease-out),
-    height var(--lens-dur-base) var(--lens-ease-out),
     transform var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-fast) var(--lens-ease-out);
 }
@@ -149,13 +143,11 @@
 @keyframes dock-drawer-grow {
   from {
     opacity: 0;
-    max-height: 0;
-    transform: translateY(14px);
+    transform: translateY(14px) scale(var(--lens-enter-scale));
   }
   to {
     opacity: 1;
-    max-height: 690px;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
@@ -184,11 +176,7 @@
   overflow: hidden;
   max-height: 640px;
   transform-origin: bottom center;
-  animation: dock-drawer-grow 250ms cubic-bezier(0.22, 1, 0.36, 1);
-  transition:
-    max-height var(--lens-dur-slow) var(--lens-ease-exit),
-    transform var(--lens-dur-base) var(--lens-ease-exit),
-    opacity var(--lens-dur-base) var(--lens-ease-exit);
+  animation: dock-drawer-grow var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .dock-launcher-card {
@@ -252,9 +240,8 @@
 }
 
 .dock-launcher-drawer.is-closing {
-  opacity: 0;
-  max-height: 0;
-  transform: translateY(14px);
+  /* The exit itself is a glide from DockSurface.tsx (glideOut); this only stops clicks meanwhile. */
+  pointer-events: none;
 }
 
 .dock-search-glide-bar.is-closing {
@@ -676,7 +663,7 @@
   box-shadow: 0 16px 38px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k)));
   pointer-events: auto;
   transform: translate(-50%, -100%);
-  animation: dock-hover-card-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-hover-card-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-spotify-card {
@@ -1207,7 +1194,7 @@
 .dock-hover-card.dock-hover-edge-top,
 .dock-ctx-menu.dock-ctx-edge-top {
   transform: translate(-50%, 0);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 /* ---------- Left / right edges ---------- */
@@ -1312,13 +1299,13 @@
 .dock-hover-card.dock-hover-edge-left,
 .dock-ctx-menu.dock-ctx-edge-left {
   transform: translate(0, -50%);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-hover-card.dock-hover-edge-right,
 .dock-ctx-menu.dock-ctx-edge-right {
   transform: translate(-100%, -50%);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 @keyframes dock-side-pop-in {
@@ -1443,8 +1430,6 @@
 
 .dock-style-minimal .dock-pill {
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    min-width var(--lens-dur-slow) var(--lens-ease-out),
     transform var(--lens-dur-slow) var(--lens-ease-out),
     opacity var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-slow) var(--lens-ease-out),
