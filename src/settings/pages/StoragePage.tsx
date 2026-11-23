@@ -1,5 +1,7 @@
 import React from "react";
 import { HardDrive, Sparkles } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { CleanerCard } from "../../components/CleanerCard";
 import { Hero, HeroTile, LinkRow, Meter, Row, Section, StateNote, WinLink } from "../ui/primitives";
 import { fmtBytes, useResource } from "../useResource";
 import type { PageProps } from "./common";
@@ -29,8 +31,10 @@ export const StoragePage: React.FC<PageProps> = ({ section }) => {
         >
           {system && <Meter label="System drive used" value={system.totalBytes - system.freeBytes} max={system.totalBytes} />}
         </HeroTile>
-        <HeroTile icon={<Sparkles size={15} aria-hidden />} label="Cleanup" sub="Temporary files and big items">
-          <WinLink uri="ms-settings:storagerecommendations" label="Open" compact />
+        <HeroTile icon={<Sparkles size={15} aria-hidden />} label="Lens Cleaner" sub="Free up space safely">
+          <button type="button" className="cc-chip sh-winlink compact" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(() => {})}>
+            <span>Open Lens Cleaner</span>
+          </button>
         </HeroTile>
         <HeroTile icon={<Sparkles size={15} aria-hidden />} label="Storage Sense" sub="Free space automatically">
           <WinLink uri="ms-settings:storagesense" label="Open" compact />
@@ -38,7 +42,14 @@ export const StoragePage: React.FC<PageProps> = ({ section }) => {
       </Hero>
       {drives.loading && !drives.data && <StateNote kind="loading">Measuring drives…</StateNote>}
       {drives.error && <StateNote kind="error">Couldn't read drives: {drives.error}</StateNote>}
-      {low.length > 0 && <StateNote kind="error">{low.map((d) => d.root).join(", ")} is almost full. Cleanup recommendations can help.</StateNote>}
+      {low.length > 0 && <StateNote kind="error">{low.map((d) => d.root).join(", ")} is almost full. Lens Cleaner can help.</StateNote>}
+
+      <Section id="cleaner" title="Lens Cleaner" summary="Free up space safely" forceOpen={section === "cleaner"}>
+        <CleanerCard />
+        <LinkRow>
+          <WinLink uri="ms-settings:storagerecommendations" label="Windows cleanup recommendations" />
+        </LinkRow>
+      </Section>
 
       <Section id="drives" title="Drives" summary={`${list.length} drive(s)`} forceOpen={section === "drives"}>
         {list.map((d) => (

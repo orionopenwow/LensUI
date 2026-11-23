@@ -359,6 +359,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         case "clip":
           setMode("clipboard");
           return setText(arg);
+        case "clean":
+          // Lens Cleaner opens on demand; nothing is deleted until you click (docs/CLEANER.md).
+          await invoke("open_surface", { label: "cleaner" }).catch(() => {});
+          hide();
+          return setText("");
         case "shelf":
           setDrawer(true);
           setMode("shelf");

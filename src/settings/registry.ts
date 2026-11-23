@@ -262,9 +262,12 @@ export const PAGES: PageDef[] = [
     description: "How full your drives are, and cleanup.",
     icon: "harddrive",
     color: "#A3A3A3",
-    controls: ["Drive space", "Storage Sense", "Cleanup"],
-    keywords: ["storage", "disk", "drive", "space", "free space", "cleanup", "storage sense", "temp files"],
-    sections: [{ id: "drives", label: "Drives" }],
+    controls: ["Drive space", "Lens Cleaner", "Storage Sense", "Cleanup"],
+    keywords: ["storage", "disk", "drive", "space", "free space", "cleanup", "storage sense", "temp files", "lens cleaner", "recycle bin", "space map"],
+    sections: [
+      { id: "cleaner", label: "Lens Cleaner", keywords: ["free up space", "clean", "cache", "recycle bin", "space map", "weekly", "low space"] },
+      { id: "drives", label: "Drives" },
+    ],
     winUri: "ms-settings:storagesense",
   },
   {
