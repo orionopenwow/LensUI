@@ -43,6 +43,42 @@ pub(crate) async fn set_night_light_cmd(enabled: bool, warmth: u32) -> Result<()
         .map_err(|e| e.to_string())?
 }
 
+/// Every screen with its brightness, or why it can't be changed (DDC/CI off, no WMI panel).
+#[tauri::command]
+pub(crate) async fn list_brightness_cmd() -> Vec<crate::win_brightness::MonitorBrightness> {
+    tauri::async_runtime::spawn_blocking(crate::win_brightness::list).await.unwrap_or_default()
+}
+
+/// Sets one screen's brightness by its id from `list_brightness_cmd`.
+#[tauri::command]
+pub(crate) async fn set_monitor_brightness_cmd(id: String, level: u32) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || crate::win_brightness::set(&id, level))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Master volume and mute only (fast; no brightness probe), for live slider sync.
+#[tauri::command]
+pub(crate) async fn get_volume_cmd() -> (u32, bool) {
+    tauri::async_runtime::spawn_blocking(crate::win_quick_settings::get_volume_and_mute)
+        .await
+        .unwrap_or((0, false))
+}
+
+#[tauri::command]
+pub(crate) async fn get_night_light_schedule_cmd() -> crate::win_quick_settings::NightLightSchedule {
+    tauri::async_runtime::spawn_blocking(crate::win_quick_settings::get_night_light_schedule)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+pub(crate) async fn set_night_light_schedule_cmd(schedule: crate::win_quick_settings::NightLightSchedule) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || crate::win_quick_settings::set_night_light_schedule(schedule))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub(crate) async fn open_windows_setting_cmd(uri: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || open_windows_setting(&uri))
