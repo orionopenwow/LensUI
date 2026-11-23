@@ -12,7 +12,8 @@
 //   layout-keyframes   @keyframes that change those properties
 //   timer-animation    setTimeout/setInterval standing in for an animation clock or its end
 //   native-resize      the page asks for its native window to be resized or moved (tears mid-animation)
-//   backdrop-filter    CSS backdrop blur (expensive on see-through WebView2 windows; budgeted, not banned)
+//   backdrop-filter    CSS backdrop blur (costly on see-through WebView2 windows). Counted and reported,
+//                      not held to the baseline: a blur is a design choice, the others are defects.
 //   inline-animation   animation/transition written as an inline style string (escapes tokens and this lint)
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -151,11 +152,15 @@ export function totals(counts) {
   return t;
 }
 
+/** Reported but never failed on. */
+export const ADVISORY = new Set(["backdrop-filter"]);
+
 /** Files and rules whose count is above the baseline. */
 export function grown(counts, baseline) {
   const out = [];
   for (const [file, rules] of Object.entries(counts)) {
     for (const [rule, n] of Object.entries(rules)) {
+      if (ADVISORY.has(rule)) continue;
       const allowed = baseline[file]?.[rule] ?? 0;
       if (n > allowed) out.push(`${file}: ${rule} ${n} > ${allowed}`);
     }
