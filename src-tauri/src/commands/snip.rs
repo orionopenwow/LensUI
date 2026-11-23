@@ -177,6 +177,11 @@ pub(crate) fn init(app: &AppHandle) {
 }
 
 /// Exit and "Remove all Lens changes": hands Print Screen back to Windows.
+/// Puts the Print Screen key back exactly as it was (used by "Remove all Lens changes").
+pub(crate) fn restore_print_screen() {
+    apply_print_screen(false);
+}
+
 pub(crate) fn shutdown() {
     apply_print_screen(false);
     let _ = stop_recording();

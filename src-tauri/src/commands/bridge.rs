@@ -98,7 +98,7 @@ pub(crate) struct RegistryReport {
     plan: manifest::RegPlan,
     files: Vec<String>,
     removed: Vec<String>,
-    message: String,
+    pub(crate) message: String,
 }
 
 #[tauri::command]
