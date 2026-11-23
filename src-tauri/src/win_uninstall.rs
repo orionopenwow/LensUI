@@ -1,13 +1,9 @@
 //! "Remove all Lens changes": puts Windows back the way it was before Lens UI touched it.
 //!
 //! Every step is independent and reported separately, so one failure never stops the rest.
-//! It only undoes things Lens itself did:
-//!   folder icons (desktop.ini, with the original restored from backup), the Explorer
-//!   "Shell Icons" override, shell-replacement mode, the HKCU Run entry, the hidden taskbar and
-//!   desktop icons, the titlebar/border/corner/opacity styling on open windows, the tray host,
-//!   and Lens' Windhawk mod file.
-//! It does NOT change the Windows accent colour or the "Show accent colour on title bars" switch:
-//! Lens never recorded what they were before, so changing them could make things worse.
+//! It only undoes things Lens itself did. What those are, and how each is undone, is one table:
+//! the change registry in `crate::changes`. This module keeps the helpers and the data wipe.
+//! Apps the person installed through Lens Apps are theirs and are left installed.
 //!
 //! `config` is updated in place so a later restart of Lens does not re-apply anything; the caller
 //! saves it. Deleting %APPDATA%\LensUI is a separate, explicit step (`delete_lens_data`).
@@ -24,20 +20,8 @@ pub struct UninstallStep {
     pub detail: String,
 }
 
-fn push(steps: &mut Vec<UninstallStep>, step: &str, res: Result<String, String>) {
-    let (ok, detail) = match res {
-        Ok(d) => (true, d),
-        Err(e) => (false, e),
-    };
-    steps.push(UninstallStep {
-        step: step.to_string(),
-        ok,
-        detail,
-    });
-}
-
 /// A desktop.ini written by Lens always points at one of its generated icons.
-fn folder_has_lens_icon(folder: &str) -> bool {
+pub(crate) fn folder_has_lens_icon(folder: &str) -> bool {
     let ini = Path::new(folder).join("desktop.ini");
     match std::fs::read(&ini) {
         Ok(bytes) => {
@@ -74,156 +58,10 @@ pub fn folders_to_check(recorded: &[String], core: &[String]) -> Vec<String> {
     out
 }
 
+/// Walks the change registry (`crate::changes`): every kind of change Lens makes is one row
+/// there, with its undo. Nothing is undone from anywhere else.
 pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
-    let mut steps = Vec::new();
-
-    // 1. Folder icons
-    let recorded: Vec<String> = config.styled_folders.iter().map(|r| r.path.clone()).collect();
-    let mut reverted = 0usize;
-    let mut failed: Vec<String> = Vec::new();
-    for folder in folders_to_check(&recorded, &crate::win_folders::user_core_folders()) {
-        let was_recorded = recorded.iter().any(|r| r.eq_ignore_ascii_case(&folder));
-        if was_recorded || folder_has_lens_icon(&folder) {
-            match crate::win_folders::revert_folder_theme(&folder) {
-                Ok(()) => reverted += 1,
-                Err(e) => failed.push(format!("{}: {}", folder, e)),
-            }
-        }
-    }
-    config.styled_folders.clear();
-    push(
-        &mut steps,
-        "Folder icons",
-        if failed.is_empty() {
-            Ok(format!("{} folder(s) restored.", reverted))
-        } else {
-            Err(format!("{} restored; failed: {}", reverted, failed.join("; ")))
-        },
-    );
-
-    // 2. Explorer-wide folder icon override (HKCU Shell Icons 3/4)
-    push(
-        &mut steps,
-        "Explorer folder icons",
-        crate::win_folders::revert_global_explorer_folder_theme()
-            .map(|_| "Windows default folder icons restored.".to_string()),
-    );
-    config.folder_style.global_explorer_override = false;
-
-    // 3. Shell replacement mode
-    let shell = crate::win_shell::get_shell_mode_status();
-    push(
-        &mut steps,
-        "Shell mode",
-        if shell.enabled {
-            crate::win_shell::disable_shell_mode()
-                .map(|_| "Windows Explorer is the shell again from the next sign-in.".to_string())
-        } else {
-            Ok("Was not enabled.".to_string())
-        },
-    );
-
-    // 3b. Windows settings changed from the Settings hub (startup apps, animation effects)
-    push(&mut steps, "Windows settings changed in Lens", crate::syssettings::restore_all());
-
-    // 4. Start with Windows
-    push(
-        &mut steps,
-        "Start with Windows",
-        crate::win_taskbar::set_run_on_startup(false).map(|_| "Removed from startup.".to_string()),
-    );
-    config.func.run_on_startup = false;
-
-    // 5. Tray host (must stop before the taskbar is restored: it shares the taskbar's class name)
-    crate::win_tray::stop_tray_host();
-    config.func.tray_host = false;
-    push(&mut steps, "System tray host", Ok("Stopped.".to_string()));
-
-    // 6. Taskbar and desktop icons
-    crate::win_taskbar::set_native_taskbar_hidden(false);
-    crate::win_taskbar::set_desktop_icons_hidden(false);
-    config.func.hide_native_taskbar = false;
-    push(
-        &mut steps,
-        "Taskbar and desktop icons",
-        Ok("Windows taskbar and desktop icons shown.".to_string()),
-    );
-
-    // 7. Window styling on open windows (titlebar colour, border, corners, opacity)
-    crate::win_dwm_engine::revert_dwm_theme();
-    config.func.injected_hook = false;
-    push(
-        &mut steps,
-        "Window styling",
-        Ok("Open windows reset to Windows defaults.".to_string()),
-    );
-
-    // 8. Lens' Windhawk mod (only the file Lens itself placed there)
-    let wh = Path::new(r"C:\ProgramData\Windhawk\ModsSource\lens-window-style.wh.cpp");
-    push(
-        &mut steps,
-        "Windhawk mod",
-        if wh.exists() {
-            std::fs::remove_file(wh)
-                .map(|_| "Removed lens-window-style from Windhawk's mod folder.".to_string())
-                .map_err(|e| format!("Could not remove {}: {}", wh.display(), e))
-        } else {
-            Ok("Not installed.".to_string())
-        },
-    );
-
-    // 9. Mouse pointers and pointer settings (restored from the backup Lens took first)
-    crate::win_cursor_fx::stop();
-    for (step, res) in crate::win_cursors::uninstall_restore() {
-        push(&mut steps, step, res);
-    }
-
-    // 10. Windows pinned on top by Lens, focus dimming and the active-window border
-    crate::win_focus_dim::shutdown();
-    push(
-        &mut steps,
-        "Pinned windows and focus overlays",
-        Ok("Unpinned windows Lens pinned and removed the dimming and border overlays.".to_string()),
-    );
-
-    // 11. Hooks: Win key / Alt+Tab, Alt+drag, desktop input for Playground
-    crate::win_keyhook::stop_keyhook();
-    crate::win_altdrag::stop_alt_drag();
-    crate::win_desktop_input::stop();
-    config.func.win_key_launcher = false;
-    config.func.alt_tab_overview = false;
-    push(
-        &mut steps,
-        "Keyboard and mouse hooks",
-        Ok("Win key, Alt+Tab, Alt+drag and desktop input hooks removed.".to_string()),
-    );
-
-    // Integrations that write under HKCU and stay installed between runs (docs/BROWSER_BRIDGE.md,
-    // docs/SNIP.md). Each removes only keys Lens marked as its own.
-    let report = |r: Result<crate::commands::bridge::RegistryReport, String>| r.map(|x| x.message);
-    push(&mut steps, "Browser extension bridge", report(crate::commands::bridge::bridge_uninstall()));
-    push(&mut steps, "lens:// links", report(crate::commands::bridge::url_scheme_uninstall()));
-    push(&mut steps, "File Explorer right-click", report(crate::commands::bridge::explorer_verbs_uninstall()));
-    push(&mut steps, "Lens Cleaner drive menu", crate::commands::cleaner::uninstall_verb());
-    push(&mut steps, "Claude Desktop connection", crate::bridge::claude_config::remove_for_uninstall());
-    push(
-        &mut steps,
-        "Spotify theme (Spicetify)",
-        match crate::music::spicetify::detect().1 {
-            Some(themes) => crate::music::spicetify::remove_installed_theme(&themes),
-            None => Ok("Not exported to Spicetify.".to_string()),
-        },
-    );
-    crate::commands::snip::restore_print_screen();
-    push(&mut steps, "Print Screen key", Ok("Restored to how it was before Lens Snip.".to_string()));
-
-    push(
-        &mut steps,
-        "Not changed",
-        Ok("Windows accent colour and \"Show accent colour on title bars\" were left as they are."
-            .to_string()),
-    );
-    steps
+    crate::changes::remove_all(config)
 }
 
 /// Deletes %APPDATA%\LensUI (settings, themes, backups of folder icons, training data).

@@ -130,6 +130,10 @@ jobs:
       - name: Generated IPC types are up to date
         run: python3 tools/gen-types/gen_types.py --check
 
+      # Every registry, settings and hook writer has an undo in src-tauri/src/changes.rs.
+      - name: Change registry covers every OS writer
+        run: node tools/changes/check.mjs
+
       - uses: oven-sh/setup-bun@v2
 
       - name: Install frontend dependencies
