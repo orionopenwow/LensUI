@@ -434,6 +434,52 @@ async function waitDesk(page, sel = "#desk-host") {
   if (cls > 0.1) problems.push(`interaction: layout shift ${cls.toFixed(3)} (> 0.1)`);
   problems.push(...[...new Set(errs)].map((e) => `interaction: ${e}`));
   await ctx.close();
+
+// ---- live-site polish checks (from the first real-PC recording) ---------------------------------
+{
+  const lp = (m) => problems.push(`polish: ${m}`);
+  const rect = (r) => r && r.width > 0 && r.height > 0;
+  const hit = (a, b) => rect(a) && rect(b) && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  for (const [w, h] of [[1440, 900], [1920, 1080]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await ctx.newPage();
+    // A deep link plays its scene in tour mode: no "You're driving" without real input.
+    await page.goto(base + "index.html#scene/sky");
+    await page.waitForTimeout(3500);
+    if (await page.$eval("#driving", (d) => !d.hidden)) lp(`${w}px: "You're driving" shows after a #scene link with no input`);
+    // No "★ 0" / "0" star counts.
+    const zero = await page.evaluate(() => [...document.querySelectorAll(".stars")].map((e) => e.textContent.replace(/[★\s]/g, "")).filter((t) => t === "0" || t === ""));
+    if (zero.length) lp(`${w}px: a GitHub star count of 0 (or empty) is shown`);
+    // The desk fills wide screens.
+    const dw = await page.$eval("#desk-host", (d) => d.getBoundingClientRect().width);
+    if (w >= 1920 && dw < 1500) lp(`${w}px: the hero desk is only ${Math.round(dw)} px wide`);
+    if (w >= 1440 && dw < 1300) lp(`${w}px: the hero desk is only ${Math.round(dw)} px wide`);
+    // The driving chip and the scene caption stay clear of the desk's toasts and dock.
+    await page.evaluate(() => { const d = document.getElementById("driving"); d.hidden = false; });
+    await page.waitForTimeout(100);
+    const r = await page.evaluate(() => {
+      const R = (e) => { if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, top: b.top, right: b.right, bottom: b.bottom, width: b.width, height: b.height }; };
+      const toasts = [...document.querySelectorAll("#desk-host .lx-toasts > *")].map(R);
+      return { chip: R(document.getElementById("driving")), cap: R(document.getElementById("scene-cap")), dock: R(document.querySelector("#desk-host iframe")), toasts };
+    });
+    if (r.toasts.some((t) => hit(r.chip, t))) lp(`${w}px: the "You're driving" chip overlaps a desk notification`);
+    // The rainbow word uses the full spectrum (not the accent colour).
+    const rb = await page.$eval(".hero .lens-rainbow", (e) => getComputedStyle(e).backgroundImage);
+    if (!/255, 95, 143|ff5f8f/i.test(rb) || !/95, 227, 166|5fe3a6/i.test(rb)) lp(`${w}px: "everything" doesn't use the nebula spectrum`);
+    // The Guide orb and its label never sit on footer text when scrolled to the end.
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(400);
+    await page.hover("#guide-orb").catch(() => {});
+    await page.waitForTimeout(400);
+    const over = await page.evaluate(() => {
+      const o = document.getElementById("guide-orb").getBoundingClientRect();
+      const texts = [...document.querySelectorAll("footer.site p, footer.site a, footer.site span, footer.site small")].filter((e) => e.textContent.trim() && !e.querySelector("p, a")).map((e) => e.getBoundingClientRect());
+      return texts.some((b) => b.width && o.left < b.right && b.left < o.right && o.top < b.bottom && b.top < o.bottom);
+    });
+    if (over) lp(`${w}px: the Guide orb covers footer text at the end of the page`);
+    await ctx.close();
+  }
+}
   // OS detection: the hero's Download adapts, honestly.
   for (const [ua, want, href] of [["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", "Download for Windows", "download.html"], ["Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", "Get Lens for Windows", "#platforms"]]) {
     const c = await browser.newContext({ viewport: { width: 1280, height: 800 }, userAgent: ua });
