@@ -33,7 +33,12 @@ const Tile: React.FC<{ svc: ThumbnailService | null; state: BackdropState; name:
 export const CreatorCard: React.FC<{ config: LensConfig | null; updateConfig: (c: LensConfig) => void }> = ({ config, updateConfig }) => {
   const [s, setS] = useState<BackdropState>(() => loadCurrent() ?? presetById(HERO_PRESET_ID)!.state);
   const [note, setNote] = useState<{ text: string; undo?: () => void } | null>(null);
-  const svc = useMemo(() => new ThumbnailService(128, 72), []);
+  // Settings is a busy window: tiles stay still unless hovered, and the preview only plays on hover.
+  const svc = useMemo(() => {
+    const t = new ThumbnailService(128, 72);
+    t.idleRefresh = false;
+    return t;
+  }, []);
   useEffect(() => () => svc.dispose(), [svc]);
   const pick = (st: BackdropState) => {
     setS(st);
@@ -43,7 +48,7 @@ export const CreatorCard: React.FC<{ config: LensConfig | null; updateConfig: (c
     <div className="cc-card bd-creator">
       <div className="bd-creator-grid">
         <div className="bd-creator-preview">
-          <LiveCanvas state={s} dprCap={1} label="Backdrop preview" />
+          <LiveCanvas state={s} dprCap={1} label="Backdrop preview" playOnHover />
         </div>
         <div className="bd-creator-side">
           <div className="cc-label">Backdrop Lab</div>

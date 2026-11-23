@@ -813,25 +813,6 @@
    "source": "src/plugins/ThemeSharingCard.tsx"
   },
   {
-   "id": "card.theme.creatorcard",
-   "kind": "card",
-   "title": "Backdrop Lab",
-   "text": "Animated gradients, light and glass for your desktop. Make one, play it as a live wallpaper, or turn it into a theme. Backdrop Lab. Creator. Settings › Appearance › Creator: a compact Backdrop Lab. Live preview, a few presets, Inspire, \"Set as live wallpaper\", \"Make a theme\" and the way into the full Lab window",
-   "path": [
-    "Settings",
-    "Appearance",
-    "Creator",
-    "Backdrop Lab"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "theme",
-    "card": "CreatorCard",
-    "label": "Backdrop Lab"
-   },
-   "source": "src/studio/backdrop/ui/CreatorCard.tsx"
-  },
-  {
    "id": "setting.dock.docktab.dock-style",
    "kind": "setting",
    "title": "Dock style",

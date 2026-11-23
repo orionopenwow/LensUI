@@ -23,6 +23,8 @@ export class ThumbnailService {
   private timer = 0;
   private start = performance.now();
   reduced = false;
+  /** False in embeds: tiles stay still unless hovered (no slow background refresh). */
+  idleRefresh = true;
 
   constructor(private w = 160, private h = 96) {
     try {
@@ -99,7 +101,7 @@ export class ThumbnailService {
     for (const t of list) {
       if (budget <= 0) break;
       const age = now - t.drawnAt;
-      const due = t.drawnAt === 0 || (t.hot && !this.reduced) || (!this.reduced && age > 2500);
+      const due = t.drawnAt === 0 || (t.hot && !this.reduced) || (!this.reduced && this.idleRefresh && age > 2500);
       if (!due) continue;
       this.drawInto(t.canvas, t.state, t.hot ? secs : 3 + t.phase + (this.reduced ? 0 : secs * 0.15));
       t.drawnAt = now;

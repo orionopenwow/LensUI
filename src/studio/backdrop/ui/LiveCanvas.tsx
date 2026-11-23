@@ -31,6 +31,11 @@ interface Props {
   dprCap?: number;
   label?: string;
   onFailed?: () => void;
+  /**
+   * Embeds (Settings › Creator): show a still frame and only animate while the pointer or focus is
+   * on the preview. Either way nothing is drawn while the preview is scrolled out of view.
+   */
+  playOnHover?: boolean;
 }
 
 const HINT_KEY = "lens.backdrop.handleHint";
@@ -51,6 +56,7 @@ export const LiveCanvas: React.FC<Props> = ({
   dprCap = 1.25,
   label = "Backdrop preview",
   onFailed,
+  playOnHover = false,
 }) => {
   const host = useRef<HTMLDivElement>(null);
   const cA = useRef<HTMLCanvasElement>(null);
@@ -72,6 +78,21 @@ export const LiveCanvas: React.FC<Props> = ({
     }
   });
   const prevMode = useRef(state.mode);
+  // Draw gating: on screen, and (for playOnHover) hovered/focused or a short burst after a change.
+  const visible = useRef(true);
+  const active = useRef(!playOnHover);
+  const dirtyUntil = useRef(0);
+  const wake = (ms = 500) => (dirtyUntil.current = performance.now() + ms);
+  useEffect(() => {
+    const el = host.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((es) => {
+      visible.current = es.some((e) => e.isIntersecting);
+      if (visible.current) wake();
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   // Renderers live as long as the canvas.
   useEffect(() => {
@@ -107,6 +128,7 @@ export const LiveCanvas: React.FC<Props> = ({
   useEffect(() => {
     stateRef.current = state;
     clock.current.loop = state.loop;
+    wake(700);
     const r = rA.current;
     if (!r) return;
     try {
@@ -119,6 +141,7 @@ export const LiveCanvas: React.FC<Props> = ({
   }, [state]);
 
   useEffect(() => {
+    wake();
     rA.current?.setImage(image ?? null);
     rB.current?.setImage(image ?? null);
   }, [image]);
@@ -139,6 +162,7 @@ export const LiveCanvas: React.FC<Props> = ({
       c.width = Math.round(size.w * dpr);
       c.height = Math.round(size.h * dpr);
     }
+    wake();
   }, [size, dprCap, compare]);
 
   useEffect(() => {
@@ -155,9 +179,13 @@ export const LiveCanvas: React.FC<Props> = ({
     probe.height = 18;
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
-      if (document.hidden || now - last < 15) return;
+      if (document.hidden || now - last < 15 || !visible.current) return;
+      if (!active.current && now > dirtyUntil.current) {
+        last = now;
+        return;
+      }
       last = now;
-      const t = clock.current.tick();
+      const t = active.current ? clock.current.tick() : clock.current.time;
       rA.current?.render(t);
       rB.current?.render(t);
       if (readRef.current && now - lastRead > 900 && cA.current) {
@@ -246,8 +274,16 @@ export const LiveCanvas: React.FC<Props> = ({
     <div
       ref={host}
       className={`bd-canvas ${className ?? ""}`}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
+      onPointerEnter={() => {
+        setHover(true);
+        if (playOnHover) active.current = true;
+      }}
+      onPointerLeave={() => {
+        setHover(false);
+        if (playOnHover) active.current = false;
+      }}
+      onFocus={() => playOnHover && (active.current = true)}
+      onBlur={() => playOnHover && (active.current = false)}
       onPointerMove={onMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}

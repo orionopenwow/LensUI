@@ -78,6 +78,9 @@ function parseKeyframes(text: unknown): Keyframes | null {
   }
 }
 
+/** Lowest wallpaper resolution scale the adaptive step goes to (a weak GPU or software GL). */
+const MIN_QUALITY = 0.25;
+
 export const backdropScene: SceneModule = {
   id: BACKDROP_SCENE_ID,
   name: "Backdrop Lab",
@@ -121,8 +124,8 @@ export const backdropScene: SceneModule = {
     let width = ctx.width;
     let height = ctx.height;
     let dpr = ctx.dpr;
-    // Adaptive resolution: 0.5 … 1 of the device pixels (ambient gradients hide it well).
-    let quality = ctx.preview ? 1 : 0.75;
+    // Adaptive resolution: 0.25 … 1 of the device pixels (soft gradients hide it well; see step()).
+    let quality = ctx.preview ? 1 : 0.5;
     const clock = new LoopClock(20);
     clock.time = ctx.preview ? 3 : 0;
     const startedAt = Date.now();
@@ -138,6 +141,8 @@ export const backdropScene: SceneModule = {
     let slow = 0;
     let fast = 0;
     let lastStep = 0;
+    let halfRate = false;
+    let frameNo = 0;
     const react = { cpu: 0, focus: false, album: null as string[] | null };
 
     // The last good frame, kept small, shown if the GPU context is lost (driver reset, sleep, RDP).
@@ -273,17 +278,26 @@ export const backdropScene: SceneModule = {
       step(_dt, input) {
         const now = performance.now();
         if (lastStep && !ctx.preview) {
+          // Adaptive resolution and rate from the cadence the runner actually achieves. A weak GPU
+          // (or software rendering) steps down fast: 6 very slow frames drop a quarter of the
+          // resolution, down to 0.25; still slow at the floor, it draws every other frame (≈15 fps).
           const gap = now - lastStep;
-          if (gap > 50 && gap < 400) slow++;
+          if (gap > 50 && gap < 2000) slow += gap > 90 ? 8 : 1;
           else if (gap < 38) fast++;
-          if (slow > 45 && quality > 0.5) {
-            quality = Math.max(0.5, quality - 0.125);
+          if (slow > 45 && quality > MIN_QUALITY) {
+            quality = Math.max(MIN_QUALITY, quality - 0.25);
             slow = fast = 0;
             sizeCanvas();
-          } else if (fast > 600 && quality < 1) {
-            quality = Math.min(1, quality + 0.125);
+          } else if (slow > 45 && !halfRate) {
+            halfRate = true;
             slow = fast = 0;
-            sizeCanvas();
+          } else if (fast > 90) {
+            if (halfRate) halfRate = false;
+            else if (quality < 1) {
+              quality = Math.min(1, quality + 0.125);
+              sizeCanvas();
+            }
+            slow = fast = 0;
           }
         }
         lastStep = now;
@@ -302,6 +316,7 @@ export const backdropScene: SceneModule = {
       render() {
         if (disposed) return;
         if (!renderer) return drawFallback();
+        if (halfRate && frameNo++ % 2 === 1) return;
         if (renderer.render(clock.time) && !ctx.preview && Math.floor(clock.time) % 3 === 0) snapshot();
       },
       resize(w, h, d) {
