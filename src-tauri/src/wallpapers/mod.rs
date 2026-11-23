@@ -822,8 +822,12 @@ pub fn recycle(id: &str) -> Result<(), String> {
 pub fn undo() -> Result<String, String> {
     let mut lib = load();
     let was_auto = lib.settings.auto.enabled;
+    if !was_auto && !lib.before.recorded {
+        // Never used: leave the data folder exactly as it is.
+        return Ok("The Wallpaper Switcher had not changed anything.".to_string());
+    }
     lib.settings.auto.enabled = false;
-    let mut said = if was_auto { "Automatic wallpaper changes are off." } else { "Nothing was changing wallpapers." }.to_string();
+    let mut said = if was_auto { "Automatic wallpaper changes are off." } else { "Wallpapers were not changing on their own." }.to_string();
     if lib.before.recorded {
         let mut settings = win_wallpaper::load_settings();
         settings.enabled = lib.before.enabled;

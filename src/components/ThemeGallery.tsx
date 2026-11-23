@@ -163,14 +163,16 @@ export const PackCard: React.FC<{
   meta?: boolean;
   /** "Like <featured look>": the family a pack under More themes is filed under. */
   family?: string;
+  /** Small cards only: show the one-line description under the name (Simple mode's featured looks). */
+  describe?: boolean;
   onApply: (id: string) => void;
-}> = ({ pack, active, accent, size = "large", meta = true, family, onApply }) => {
+}> = ({ pack, active, accent, size = "large", meta = true, family, describe, onApply }) => {
   const small = size === "small";
   const look = featuredLook(pack.id);
   const card = (
     <button
       type="button"
-      className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""}`}
+      className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""} ${small && describe && pack.description ? "has-desc" : ""}`}
       aria-pressed={active}
       aria-label={`${pack.label} theme${pack.description ? `. ${pack.description}` : ""}`}
       onClick={() => onApply(pack.id)}
@@ -180,7 +182,7 @@ export const PackCard: React.FC<{
         <span className="tux-pack-label">{pack.label}</span>
         {active && <span className="tux-pack-dot" />}
       </span>
-      {!small && pack.description && <span className="tux-pack-desc">{pack.description}</span>}
+      {(!small || describe) && pack.description && <span className="tux-pack-desc">{pack.description}</span>}
       {!small && meta && (
         <span className="tux-pack-meta">
           {look ? (

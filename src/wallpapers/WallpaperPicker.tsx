@@ -162,6 +162,8 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
   const groups = useMemo(() => duplicateGroups(cards.filter((c) => !isLive(c)).map((c) => ({ id: c.id, phash: c.meta.phash }))), [cards, hashRev]);
   const sources = useMemo(() => sourceOptions(settings, cards, groups), [settings, cards, groups, rev]);
   const shown = useMemo(() => visibleCards(cards, source, query, groups), [cards, source, query, groups, rev]);
+  // Automatic changes rotate your own files, so their "Choose from" counts leave Lens' own ones out.
+  const fileSources = useMemo(() => sourceOptions(settings, cards.filter((c) => !!c.item)), [settings, cards, rev]);
   const at = Math.min(index, Math.max(0, shown.length - 1));
   const focus: Card | undefined = shown[at];
   const fileCount = view?.items.length ?? 0;
@@ -659,7 +661,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                   <X size={13} aria-hidden />
                 </button>
               </div>
-              <AutoChangeControls settings={view.settings} sources={sources} onChange={saveSettings} />
+              <AutoChangeControls settings={view.settings} sources={fileSources} onChange={saveSettings} />
               <p>{autoSummary(view.settings.auto)}</p>
             </>
           )}

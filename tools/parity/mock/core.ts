@@ -130,9 +130,10 @@ const handlers: Record<string, (a: any) => any> = {
     // `?ambient=subtle|lively|still` shows the theme backdrop (docs/AMBIENT.md); `&ambientScene=<id>` overrides it.
     const q = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
     const amb = q.get("ambient");
-    const scene = amb ? "ambient" : "";
+    // `&scene=<id>` shows a Playground scene instead (a living theme's own wallpaper).
+    const scene = q.get("scene") || (amb ? "ambient" : "");
     const sceneOptions = amb ? { ambient: { motion: amb, variant: q.get("ambientScene") ?? "auto" } } : {};
-    return { settings: { enabled: !!amb, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false, scene, sceneOptions, fps: 30, calm: false, interactive: false, ripples: false, workspaceScenes: {}, idleEnabled: false, idleMinutes: 10, idleScene: "" }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" };
+    return { settings: { enabled: !!amb || !!scene, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false, scene, sceneOptions, fps: 30, calm: false, interactive: false, ripples: false, workspaceScenes: {}, idleEnabled: false, idleMinutes: 10, idleScene: "" }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" };
   },
   list_wallpapers_cmd: () => [],
   get_battery_cmd: () => ({ hasBattery: true, percent: 76, charging: false, pluggedIn: false, secondsLeft: 12840, batterySaver: false, powerMode: "balanced", powerModeSupported: true, present: true, minutesRemaining: 214 }),

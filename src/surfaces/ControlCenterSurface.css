@@ -1341,3 +1341,18 @@
 .tux-gallery-sec-head { display: flex; align-items: baseline; gap: var(--lens-space-2, 8px); flex-wrap: wrap; }
 .tux-h3 { font-size: 13px; font-weight: 650; color: rgb(var(--lens-ink)); }
 .tux-undo { display: flex; align-items: center; gap: var(--lens-space-2, 8px); font-size: 12px; color: rgb(var(--lens-ink) / 0.72); }
+
+/* Simple mode's featured looks: the one-line character under the name. */
+.tux-pack.small.has-desc .tux-pack-name {
+  min-height: 0;
+}
+.tux-pack.small .tux-pack-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 0 4px;
+  font-size: 10.5px;
+  line-height: 14px;
+  min-height: 28px;
+}

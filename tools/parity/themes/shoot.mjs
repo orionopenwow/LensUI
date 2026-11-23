@@ -27,7 +27,7 @@ iframe{position:absolute;border:0;background:transparent}
 #win{left:50%;top:44px;width:760px;height:560px;margin-left:-380px;border-radius:12px;box-shadow:0 40px 90px -30px rgb(0 0 0 / .7)}
 #dock{left:0;bottom:0;width:100%;height:760px}
 </style></head><body>
-<iframe id="wp" src="/harness.html?surface=wallpaper&preset=${id}&look=1&ambient=lively"></iframe>
+<iframe id="wp" src="/harness.html?surface=wallpaper&preset=${id}&look=1&${id.startsWith("living-") ? `scene=${id}` : "ambient=lively"}"></iframe>
 <iframe id="win" src="/harness.html?surface=settings&tab=theme&preset=${id}&look=1&settingsMode=simple"></iframe>
 <iframe id="dock" src="/harness.html?surface=dock&preset=${id}&look=1"></iframe>
 </body></html>`;

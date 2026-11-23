@@ -87,6 +87,7 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
               pack={p}
               size="small"
               meta={false}
+              describe
               active={config.theme.preset === p.id}
               accent={p.accentMode === "windows" ? winTheme.accentHex : p.accent}
               onApply={(id) => {
