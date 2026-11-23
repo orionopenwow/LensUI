@@ -3,7 +3,7 @@
 // in the video.
 import React, { useEffect, useState } from "react";
 import { Scissors, Square } from "lucide-react";
-import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import * as tauriWindow from "@tauri-apps/api/window";
 import type { RecordState } from "./api";
 import { EVT, on, snipRecordState, snipRecordStop, snipRecordTrim } from "./api";
 
@@ -42,8 +42,8 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
     try {
       const s = await snipRecordStop();
       setSt(s);
-      void getCurrentWindow().setSize(new LogicalSize(360, 40)).catch(() => {});
-      void getCurrentWindow().show().catch(() => {});
+      void tauriWindow.getCurrentWindow().setSize(new tauriWindow.LogicalSize(360, 40)).catch(() => {});
+      void tauriWindow.getCurrentWindow().show().catch(() => {});
     } catch (e) {
       setMsg(String(e));
     }
@@ -96,7 +96,7 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
               <Scissors size={13} /> Trim
             </button>
           ) : null}
-          <button type="button" className="snip-btn" onClick={() => void getCurrentWindow().hide()}>
+          <button type="button" className="snip-btn" onClick={() => void tauriWindow.getCurrentWindow().hide()}>
             Done
           </button>
         </>

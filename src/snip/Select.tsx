@@ -102,22 +102,24 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
     const ctx = c.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, 128, 128);
-    const sx = pointer.x - origin.x - 8;
-    const sy = pointer.y - origin.y - 8;
-    ctx.drawImage(frameImg, sx, sy, 16, 16, 0, 0, 128, 128);
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    for (let i = 8; i < 128; i += 8) {
+    ctx.fillRect(0, 0, 144, 144);
+    const sx = pointer.x - origin.x - 9;
+    const sy = pointer.y - origin.y - 9;
+    ctx.drawImage(frameImg, sx, sy, 18, 18, 0, 0, 144, 144);
+    ctx.strokeStyle = "rgba(127,127,127,0.25)";
+    for (let i = 8; i < 144; i += 8) {
       ctx.beginPath();
       ctx.moveTo(i + 0.5, 0);
-      ctx.lineTo(i + 0.5, 128);
+      ctx.lineTo(i + 0.5, 144);
       ctx.moveTo(0, i + 0.5);
-      ctx.lineTo(128, i + 0.5);
+      ctx.lineTo(144, i + 0.5);
       ctx.stroke();
     }
-    ctx.strokeStyle = "#fff";
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(64.5, 64.5, 8, 8);
+    ctx.strokeStyle = "#000";
+    ctx.strokeRect(71.5, 71.5, 9, 9);
+    ctx.strokeStyle = "#fff";
+    ctx.strokeRect(72.5, 72.5, 7, 7);
   }, [pointer, frameImg, origin.x, origin.y]);
 
   const colour = useMemo(() => {
@@ -228,8 +230,8 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
   const vh = session.origin.h / dpr;
   const lassoCss = lasso.map((p) => `${(p.x - origin.x) / dpr},${(p.y - origin.y) / dpr}`).join(" ");
   const pCss = pointer ? physicalToCss({ x: pointer.x, y: pointer.y, w: 0, h: 0 }, origin, dpr) : null;
-  const loupeLeft = pCss ? (pCss.x + 152 > vw ? pCss.x - 152 : pCss.x + 24) : 0;
-  const loupeTop = pCss ? (pCss.y + 176 > vh ? pCss.y - 176 : pCss.y + 24) : 0;
+  const loupeLeft = pCss ? (pCss.x + 168 > vw ? pCss.x - 168 : pCss.x + 24) : 0;
+  const loupeTop = pCss ? (pCss.y + 192 > vh ? pCss.y - 192 : pCss.y + 24) : 0;
   const label = selection ? `${selection.w} × ${selection.h}` : "";
   const scale = selection ? session.monitors.find((m) => contains(m.rect, selection.x + 1, selection.y + 1))?.scale ?? 1 : 1;
 
@@ -271,7 +273,7 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
       ) : null}
       {pCss && mode !== "all" ? (
         <div className="snip-loupe" style={{ left: loupeLeft, top: loupeTop }}>
-          <canvas ref={loupeRef} width={128} height={128} />
+          <canvas ref={loupeRef} width={144} height={144} />
           <div className="snip-loupe-meta">
             <span className="snip-swatch" style={{ background: colour }} />
             <span>{colour}</span>

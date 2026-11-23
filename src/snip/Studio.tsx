@@ -591,8 +591,8 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
               </Tip>
             );
           })}
-          {recent.length && studioW >= 1096 ? <span className="sep" /> : null}
-          {recent.slice(0, Math.max(0, Math.floor((studioW - 1000) / 96))).map((t) => (
+          {recent.length && studioW >= 1056 ? <span className="sep" /> : null}
+          {recent.slice(0, Math.max(0, Math.floor((studioW - 960) / 96))).map((t) => (
             <Tip key={t.id} text={t.kind === "share" ? "Open the share sheet" : `Copy and bring ${t.label} forward — you press Send`}>
               <button type="button" className="snip-recent" onClick={recentChip(t)}>
                 {t.label}
@@ -707,11 +707,15 @@ const PopoverCard: React.FC<PopoverProps> = (p) => {
       <div className="snip-card" role="dialog" aria-label="Paste to Claude">
         <div className="q">Paste to Claude</div>
         <div className="snip-muted">Pick where it goes. Nothing is sent until you press Send there.</div>
-        <button type="button" className="snip-btn" style={{ justifyContent: "flex-start" }} onClick={() => p.onClaude("desktop")}>
-          Claude Desktop — copy and bring it forward (you press Ctrl+V)
+        <button type="button" className="snip-option" onClick={() => p.onClaude("desktop")}>
+          <b>Claude Desktop</b>
+          <span>Copies the image and brings Claude forward. You press Ctrl+V.</span>
+          <span className="snip-badge local">Lens sends nothing</span>
         </button>
-        <button type="button" className="snip-btn" style={{ justifyContent: "flex-start" }} onClick={() => p.onClaude("command")}>
-          Lens Command — attach the image and its text
+        <button type="button" className="snip-option" onClick={() => p.onClaude("command")}>
+          <b>Lens Command</b>
+          <span>Attaches the image and its text. Answered by {p.providerLabel}.</span>
+          {dest}
         </button>
         <table>
           <tbody>

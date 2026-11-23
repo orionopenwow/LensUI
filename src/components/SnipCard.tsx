@@ -31,7 +31,7 @@ const BEAUTIFY = [
 const KEEP_DAYS = [7, 30, 90, 365];
 
 const Chips: React.FC<{ value: string | number; options: readonly (readonly [string | number, string])[]; onPick: (v: string) => void; label: string }> = ({ value, options, onPick, label }) => (
-  <div role="radiogroup" aria-label={label} style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+  <div role="radiogroup" aria-label={label} style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
     {options.map(([v, l]) => (
       <button key={String(v)} type="button" role="radio" aria-checked={value === v} className={`snip-btn ${value === v ? "on" : ""}`} onClick={() => onPick(String(v))}>
         {l}
@@ -137,7 +137,7 @@ export const SnipCard: React.FC<{ demo?: SnipStatus }> = ({ demo }) => {
           </Row>
           <Row label="Pins" desc="Pinned snips float above your windows.">
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input type="range" min={0.2} max={1} step={0.05} value={s.pinOpacity} aria-label="Pin opacity" onChange={(e) => save({ pinOpacity: Number(e.target.value) })} />
+              <input type="range" min={0.2} max={1} step={0.05} value={s.pinOpacity} aria-label="Pin opacity" style={{ accentColor: "var(--lens-fg)" }} onChange={(e) => save({ pinOpacity: Number(e.target.value) })} />
               <button type="button" className="snip-btn" onClick={() => void snipPinsRelease()}>Make pins clickable</button>
             </div>
           </Row>
