@@ -192,6 +192,7 @@ const HeroPreview: React.FC<{ config: LensConfig; accent: string; pack?: ThemePa
   const opacity = Math.round((config.theme.glassOpacity ?? 0.96) * 100);
   let dots = TRAFFIC[wc.style] ?? TRAFFIC["traffic-classic"];
   if (wc.order === "red-yellow-green") dots = [dots[2], dots[1], dots[0]];
+  else if (wc.order !== "green-yellow-red") dots = [dots[1], dots[0], dots[2]]; // yellow · green · red (default)
   const pill = wc.style === "accent-pills";
   const border =
     frame === "none"
@@ -311,7 +312,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
 
   const wc = config.windowControls;
-  const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : "G·Y·R";
+  const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : wc.order === "green-yellow-red" ? "G·Y·R" : "Y·G·R";
   const frameLabel = FRAME_STYLES.find((f) => f.id === wc.frameStyle)?.label ?? "Hairline";
   const folderLabel = FOLDER_THEMES.find((f) => f.id === (config.folderStyle?.theme ?? "accent"))?.label ?? "Accent";
   const shapeStyle = normalizeShapeStyle(config.theme.shapeStyle);
@@ -532,8 +533,9 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             />
             <Chips
               label="Button order"
-              value={!wc.enabled ? "native" : wc.order === "red-yellow-green" ? "ryg" : "gyr"}
+              value={!wc.enabled ? "native" : wc.order === "red-yellow-green" ? "ryg" : wc.order === "green-yellow-red" ? "gyr" : "ygr"}
               options={[
+                { id: "ygr", label: "Yellow · Green · Red" },
                 { id: "gyr", label: "Green · Yellow · Red" },
                 { id: "ryg", label: "Red · Yellow · Green" },
                 { id: "native", label: "Windows default" },
@@ -542,7 +544,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 updateConfig({
                   ...config,
                   windowControls:
-                    id === "native" ? { ...wc, enabled: false } : { ...wc, enabled: true, order: id === "ryg" ? "red-yellow-green" : "green-yellow-red" },
+                    id === "native" ? { ...wc, enabled: false } : { ...wc, enabled: true, order: id === "ryg" ? "red-yellow-green" : id === "gyr" ? "green-yellow-red" : "yellow-green-red" },
                 })
               }
             />

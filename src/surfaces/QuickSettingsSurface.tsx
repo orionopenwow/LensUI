@@ -684,40 +684,24 @@ export const QuickSettingsSurface: React.FC = () => {
 
                 {config.windowControls.enabled && (
                   <div className="qs-seg-row">
-                    <button
-                      type="button"
-                      className={`qs-seg-btn ${
-                        config.windowControls.order !== "red-yellow-green" ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        updateConfig({
-                          ...config,
-                          windowControls: {
-                            ...config.windowControls,
-                            order: "green-yellow-red",
-                          },
-                        })
-                      }
-                    >
-                      Green · Yellow · Red
-                    </button>
-                    <button
-                      type="button"
-                      className={`qs-seg-btn ${
-                        config.windowControls.order === "red-yellow-green" ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        updateConfig({
-                          ...config,
-                          windowControls: {
-                            ...config.windowControls,
-                            order: "red-yellow-green",
-                          },
-                        })
-                      }
-                    >
-                      Red · Yellow · Green
-                    </button>
+                    {([
+                      ["yellow-green-red", "Y · G · R"],
+                      ["green-yellow-red", "G · Y · R"],
+                      ["red-yellow-green", "R · Y · G"],
+                    ] as const).map(([id, label]) => {
+                      const cur = config.windowControls.order;
+                      const active = id === "yellow-green-red" ? cur !== "green-yellow-red" && cur !== "red-yellow-green" : cur === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`qs-seg-btn ${active ? "active" : ""}`}
+                          onClick={() => updateConfig({ ...config, windowControls: { ...config.windowControls, order: id } })}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

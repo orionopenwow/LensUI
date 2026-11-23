@@ -2,7 +2,7 @@ import React from "react";
 
 interface TrafficLightsProps {
   styleVariant?: string;
-  order?: string; // "green-yellow-red" | "red-yellow-green"
+  order?: string; // "yellow-green-red" (default, Windows order) | "green-yellow-red" | "red-yellow-green"
   onMaximize: () => void;
   onMinimize: () => void;
   onClose: () => void;
@@ -10,23 +10,16 @@ interface TrafficLightsProps {
 
 export const TrafficLights: React.FC<TrafficLightsProps> = ({
   styleVariant = "traffic-classic",
-  order = "green-yellow-red",
+  order = "yellow-green-red",
   onMaximize,
   onMinimize,
   onClose,
 }) => {
+  const close = { id: "red", label: "Close", glyph: "×", onClick: onClose };
+  const min = { id: "yellow", label: "Minimize", glyph: "−", onClick: onMinimize };
+  const max = { id: "green", label: "Maximize", glyph: "+", onClick: onMaximize };
   const buttons =
-    order === "red-yellow-green"
-      ? [
-          { id: "red", label: "Close", glyph: "×", onClick: onClose },
-          { id: "yellow", label: "Minimize", glyph: "−", onClick: onMinimize },
-          { id: "green", label: "Maximize", glyph: "+", onClick: onMaximize },
-        ]
-      : [
-          { id: "green", label: "Maximize", glyph: "+", onClick: onMaximize },
-          { id: "yellow", label: "Minimize", glyph: "−", onClick: onMinimize },
-          { id: "red", label: "Close", glyph: "×", onClick: onClose },
-        ];
+    order === "red-yellow-green" ? [close, min, max] : order === "green-yellow-red" ? [max, min, close] : [min, max, close];
 
   return (
     <div
