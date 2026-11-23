@@ -418,7 +418,8 @@ impl BrowserState {
         Ok(())
     }
 
-    /// Tabs (in space order) for the sidebar.
+    /// Tabs (in space order), pinned first — the order the sidebar draws.
+    #[cfg(test)]
     pub fn tabs_in(&self, space: &str) -> Vec<&Tab> {
         let mut v: Vec<&Tab> = self.tabs.iter().filter(|t| t.space_id == space).collect();
         v.sort_by(|a, b| b.pinned.cmp(&a.pinned).then(a.order.cmp(&b.order)));
@@ -559,13 +560,6 @@ impl History {
         if self.entries.len() > HISTORY_CAP {
             self.entries.sort_by_key(|e| std::cmp::Reverse(e.last_visit_ms));
             self.entries.truncate(HISTORY_CAP);
-        }
-    }
-
-    pub fn set_title(&mut self, url: &str, title: &str) {
-        let key = url.split('#').next().unwrap_or(url);
-        if let Some(e) = self.entries.iter_mut().find(|e| e.url == key) {
-            e.title = clip(title, MAX_TITLE);
         }
     }
 
