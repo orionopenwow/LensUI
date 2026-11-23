@@ -302,12 +302,16 @@ marker together with the fix.
 
 ### F4: Control Center switches and icon-only buttons have no name (axe `button-name`, critical)
 
+**Status: fixed on polish/aaa-wave-1.** Every switch carries `role="switch"`, `aria-checked` and a name; icon-only buttons are named; `src/ui` `Toggle`/`IconButton` require a name by type; `src/__tests__/polishGuardrails.test.ts` scans for regressions. Allowlist entries removed.
+
 * **Found by:** accessibility suite. 34 nodes across the Windows & Quick, Stats & Tasks, Desktops & Widgets, AI & Command and Agents tabs, plus the widget drawer.
 * **What happens:** `.cc-toggle` switches carry `role="switch"` but no `aria-label`/`aria-labelledby`. Their visible label sits in a sibling `.cc-label`, which isn't linked. Icon-only `.cc-chip` buttons (accent swatches, small icon actions) have no text either.
 * **Suggested fix:** give the shared toggle component an `aria-labelledby` pointing at its row's `.cc-label` id, and give swatches `aria-label={"Accent " + name}`.
 * **Marker:** allowlist entries with reason F4.
 
 ### F5: interactive controls nested inside interactive controls (axe `nested-interactive`, serious)
+
+**Status: fixed on polish/aaa-wave-1.** `PillFillBar` is a plain container with the slider role on its track layer and the icon button beside it (it also gained keyboard support); Overview tiles are `role="group"` with the close button inside. Allowlist entries removed.
 
 * **Found by:** accessibility suite: Quick Settings, Control Center sliders, Overview window cards.
 * **What happens:** slider pills (`role="slider"`) and app volume rows contain their own buttons, and Overview window cards are buttons that contain close buttons. Screen readers skip or merge the inner controls, and keyboard focus order is ambiguous.

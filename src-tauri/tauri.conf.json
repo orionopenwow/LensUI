@@ -347,6 +347,20 @@
         "visible": false,
         "decorations": false,
         "transparent": true
+      },
+      {
+        "label": "cleaner",
+        "url": "index.html?surface=cleaner",
+        "title": "Lens Cleaner",
+        "width": 1040,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 560,
+        "center": true,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "create": false
       }
     ],
     "security": {
@@ -357,7 +371,7 @@
         "img-src": "'self' asset: http://asset.localhost data: blob:",
         "media-src": "'self' asset: http://asset.localhost blob:",
         "font-src": "'self' data:",
-        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* https://api.open-meteo.com",
         "frame-src": "'self' asset: http://asset.localhost https://discord.com https://web.telegram.org https://www.messenger.com https://messages.google.com https://web.whatsapp.com https://app.slack.com http://localhost:* http://127.0.0.1:*",
         "worker-src": "'none'",
         "object-src": "'none'",
@@ -379,7 +393,7 @@
         "img-src": "'self' asset: http://asset.localhost data: blob:",
         "media-src": "'self' asset: http://asset.localhost blob:",
         "font-src": "'self' data:",
-        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* ws://localhost:1420 ws://127.0.0.1:1420",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* ws://localhost:1420 ws://127.0.0.1:1420 https://api.open-meteo.com",
         "frame-src": "'self' asset: http://asset.localhost https://discord.com https://web.telegram.org https://www.messenger.com https://messages.google.com https://web.whatsapp.com https://app.slack.com http://localhost:* http://127.0.0.1:*",
         "worker-src": "'none'",
         "object-src": "'none'",

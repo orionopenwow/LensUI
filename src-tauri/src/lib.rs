@@ -51,6 +51,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod cleaner;
 mod bridge;
 mod browser;
 mod feeds;
@@ -136,6 +137,10 @@ pub fn run() {
     }
     // Browser native-messaging host, lens:// links, Explorer verbs and `--ask`: forward and exit.
     if let Some(code) = bridge::early_exit_code() {
+        std::process::exit(code);
+    }
+    // Lens Cleaner's one elevated helper (`--cleaner-elevated <task>`, docs/CLEANER.md): run and exit.
+    if let Some(code) = cleaner::elevated::early_exit_code() {
         std::process::exit(code);
     }
 
@@ -739,6 +744,27 @@ pub fn run() {
             commands::music::music_lastfm_begin,
             commands::music::music_lastfm_finish,
             commands::music::music_lastfm_disconnect,
+            commands::cleaner::cleaner_overview,
+            commands::cleaner::cleaner_scan,
+            commands::cleaner::cleaner_cancel,
+            commands::cleaner::cleaner_preview,
+            commands::cleaner::cleaner_preview_paths,
+            commands::cleaner::cleaner_full_list,
+            commands::cleaner::cleaner_run,
+            commands::cleaner::cleaner_undo,
+            commands::cleaner::cleaner_space_scan,
+            commands::cleaner::cleaner_space_children,
+            commands::cleaner::cleaner_biggest,
+            commands::cleaner::cleaner_reveal,
+            commands::cleaner::cleaner_open,
+            commands::cleaner::cleaner_apps,
+            commands::cleaner::cleaner_app_uninstall,
+            commands::cleaner::cleaner_downloads_review,
+            commands::cleaner::cleaner_move,
+            commands::cleaner::cleaner_history,
+            commands::cleaner::cleaner_settings_get,
+            commands::cleaner::cleaner_settings_set,
+            commands::cleaner::cleaner_share,
             commands::apps::apps_catalog,
             commands::apps::apps_catalog_refresh,
             commands::apps::apps_settings_get,

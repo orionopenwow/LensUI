@@ -120,7 +120,7 @@
 
 .lc-w {
   color: color-mix(in srgb, var(--lens-fg) 32%, transparent);
-  transition: color 180ms ease;
+  transition: color var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .lc-w.said {
@@ -212,7 +212,7 @@
   border-radius: 4px 4px 0 0;
   background: linear-gradient(to top, transparent, color-mix(in srgb, var(--c2) calc((1 - var(--i)) * 100%), var(--c4)), color-mix(in srgb, var(--c1) calc((1 - var(--i)) * 100%), var(--c3)), color-mix(in srgb, var(--c3) 60%, #fff));
   opacity: 0.9;
-  transition: height 80ms linear;
+  transition: height var(--lens-dur-instant) linear;
 }
 
 .lc-aurora.still .lc-aurora-bars i {
@@ -248,7 +248,7 @@
   backdrop-filter: blur(12px);
   color: var(--lens-fg);
   cursor: pointer;
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .lc-btn:hover:not(:disabled) {

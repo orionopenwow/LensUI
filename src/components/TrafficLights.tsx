@@ -37,7 +37,6 @@ export const TrafficLights: React.FC<TrafficLightsProps> = ({
         <button
           key={b.id}
           type="button"
-          title={b.label}
           aria-label={b.label}
           className={`traffic-btn tl-${b.id}`}
           onClick={(e) => {

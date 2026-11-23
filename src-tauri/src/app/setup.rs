@@ -37,7 +37,8 @@ pub(crate) fn apply_win11_obsidian_backdrop(window: &tauri::WebviewWindow, _acry
 pub(crate) fn apply_win11_obsidian_backdrop(_window: &tauri::WebviewWindow, _acrylic: bool) {}
 
 /// Surfaces that may be marked `"create": false` in tauri.conf.json and built on first use.
-pub(crate) const LAZY_LABELS: [&str; 9] = [
+pub(crate) const LAZY_LABELS: [&str; 10] = [
+    "cleaner",
     "settings",
     "palette",
     "widgets",
@@ -182,8 +183,9 @@ pub(crate) fn run_setup(
     // Windows marked "create": false in tauri.conf.json: build them now unless on-demand
     // windows are enabled. (No-op for any window Tauri already created.)
     for label in LAZY_LABELS {
-        // Lens Command is always built on first use (it is off by default).
+        // Lens Command and Lens Cleaner are always built on first use.
         let needed_now = label != "command"
+            && label != "cleaner"
             && label != "testerhub"
             && label != "studio"
             && (!initial_config.func.lazy_windows
@@ -270,6 +272,8 @@ pub(crate) fn run_setup(
         thread::sleep(Duration::from_secs(win_shell::BOOT_OK_AFTER_SECS));
         win_shell::mark_shell_boot_ok();
     });
+    // Lens Cleaner: snapshot / low-space alert / weekly SAFE clean, each off until turned on.
+    crate::commands::cleaner::start_background(handle.clone());
 
     // Auto-tiling + workspaces (both default off; inert until enabled)
     {

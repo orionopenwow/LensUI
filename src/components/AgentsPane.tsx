@@ -765,7 +765,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                     Launch App
                   </button>
                 )}
-                <button
+                <button aria-label="Refresh AI tools"
                   type="button"
                   className="cc-chip"
                   style={{ padding: "5px 8px" }}
@@ -1141,7 +1141,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                       <Play size={11} fill="currentColor" />
                       <span>Run</span>
                     </button>
-                    <button
+                    <button aria-label="Delete macro"
                       type="button"
                       className="cc-chip"
                       style={{ padding: "4px 7px", color: "#FB7185" }}
@@ -1208,7 +1208,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button
+                      <button aria-label="Good answer"
                         type="button"
                         className="cc-chip"
                         style={{ padding: "3px 7px", color: "#34D399" }}
@@ -1225,7 +1225,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                       >
                         <ThumbsUp size={11} />
                       </button>
-                      <button
+                      <button aria-label="Bad answer"
                         type="button"
                         className="cc-chip"
                         style={{ padding: "3px 7px", color: "#FB7185" }}
@@ -1405,7 +1405,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <button
                       type="button"
-                      className={`cc-toggle ${item.enabled ? "on" : ""}`}
+                      role="switch" aria-checked={!!(item.enabled)} aria-label={`Enable ${item.name}`} className={`cc-toggle ${item.enabled ? "on" : ""}`}
                       onClick={() =>
                         persistIntegrations(
                           integrations.map((x) =>
@@ -1414,7 +1414,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                         )
                       }
                     />
-                    <button
+                    <button aria-label={`Edit ${item.name}`}
                       type="button"
                       className="cc-btn-ghost"
                       style={{ padding: "5px 7px" }}
@@ -1429,7 +1429,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
                       <Pencil size={12} />
                     </button>
                     {item.id !== "lens-local" && (
-                      <button
+                      <button aria-label={`Remove ${item.name}`}
                         type="button"
                         className="cc-btn-ghost"
                         style={{ padding: "5px 7px", color: "#fb7185" }}

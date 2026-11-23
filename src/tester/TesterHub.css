@@ -54,7 +54,7 @@
 }
 .th-progress-bar span {
   height: 100%;
-  transition: width 200ms ease;
+  transition: width var(--lens-dur-base) var(--lens-ease-out);
 }
 .th-progress-pass {
   background: #22c55e;
@@ -82,7 +82,7 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--lens-fg-secondary);
-  transition: background 140ms ease, color 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .th-tab:hover {
   color: var(--lens-fg);
@@ -223,7 +223,7 @@
   color: var(--lens-fg-secondary);
   background: rgb(var(--lens-ink) / 0.04);
   border: 1px solid var(--lens-border);
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .th-chip:hover {
   color: var(--lens-fg);
@@ -245,7 +245,7 @@
   background: rgb(var(--lens-ink) / 0.035);
   border: 1px solid var(--lens-border);
   border-left: 4px solid rgb(var(--lens-ink) / 0.15);
-  transition: border-color 140ms ease, background 140ms ease;
+  transition: border-color var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .th-step-pass {
   border-left-color: #22c55e;
@@ -432,7 +432,7 @@
   border: 1px solid var(--lens-border);
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .th-filters .th-btn {
   height: 24px;

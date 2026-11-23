@@ -192,6 +192,9 @@ pub const SETTINGS_PAGES: &[(&[&str], &str)] = &[
     (&["ai", "lens intelligence", "intelligence", "assistant", "claude"], "ai"),
     (&["agents", "mcp"], "agents"),
     (&["cursor", "cursors", "pointer"], "cursor"),
+    // Lens Cleaner (docs/CLEANER.md): opens the Lens Cleaner window, never cleans by itself.
+    (&["cleaner", "lens cleaner", "disk cleanup", "cleanup", "clean up"], "cleaner"),
+    (&["recycle bin"], "cleaner-bin"),
     (&["lens", "control center", "settings"], "home"),
 ];
 
@@ -393,6 +396,22 @@ pub fn parse(text: &str) -> Option<RawIntent> {
     // --- window arrangement
     if let Some(i) = parse_windows(t) {
         return Some(i);
+    }
+
+    // --- Lens Cleaner: opens the window; anything that deletes still waits for your click
+    match t {
+        "free up space" | "free up some space" | "free some space" | "make some room" | "make room" | "clean my pc" | "clean up my pc"
+        | "clean up my computer" | "my disk is full" | "my drive is full" => {
+            return Some(RawIntent::new("open_settings_page", 0.95, "Open Lens Cleaner").s("page", "cleaner"));
+        }
+        "what's taking up space" | "what is taking up space" | "whats taking up space" | "what's using my space" | "what is using my disk"
+        | "show me what's taking up space" => {
+            return Some(RawIntent::new("open_settings_page", 0.95, "Show what's taking up space").s("page", "cleaner"));
+        }
+        "empty the recycle bin" | "empty recycle bin" | "empty the trash" | "empty my recycle bin" => {
+            return Some(RawIntent::new("open_settings_page", 0.95, "Empty the Recycle Bin (you'll confirm in Lens Cleaner)").s("page", "cleaner-bin"));
+        }
+        _ => {}
     }
 
     // --- settings pages
@@ -1090,6 +1109,9 @@ mod tests {
         ("open dock settings", "open_settings_page", "page=dock"),
         ("show me the theme settings", "open_settings_page", "page=theme"),
         ("open settings", "open_settings_page", "page=home"),
+        ("free up space", "open_settings_page", "page=cleaner"),
+        ("what's taking up space", "open_settings_page", "page=cleaner"),
+        ("empty the recycle bin", "open_settings_page", "page=cleaner-bin"),
         // notes
         ("take a note: buy milk", "create_note", "text=buy milk"),
         ("note call the dentist", "create_note", "text=call the dentist"),

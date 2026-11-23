@@ -18,15 +18,16 @@ interface Props {
   onClose?: () => void;
 }
 
-const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Community", "Custom"];
+const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Living", "Community", "Custom"];
 
-type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "claude" | "custom";
+type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "living" | "claude" | "custom";
 const FILTERS: { id: FilterId; label: string; test: (p: ThemePack) => boolean }[] = [
   { id: "all", label: "All", test: () => true },
   { id: "dark", label: "Dark", test: (p) => p.scheme !== "light" },
   { id: "light", label: "Light", test: (p) => p.scheme === "light" },
   { id: "linux", label: "Linux classics", test: (p) => p.tier === "Linux Suite" },
   { id: "studio", label: "Studio", test: (p) => p.tier === "Studio" },
+  { id: "living", label: "Living", test: (p) => p.tier === "Living" },
   { id: "claude", label: "Claude Code", test: (p) => p.collection === CLAUDE_COLLECTION },
   { id: "custom", label: "Custom", test: (p) => p.tier === "Custom" },
 ];

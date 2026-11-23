@@ -8,6 +8,10 @@ let location = { latitude: 0, longitude: 0 };
 export function setSkyLocation(latitude: number, longitude: number) {
   location = { latitude, longitude };
 }
+/** The Theme Schedule location last handed to the Sky Clock (0,0 = unknown). Living Themes reuse it. */
+export function getSkyLocation(): { latitude: number; longitude: number } {
+  return location;
+}
 
 const PREVIEW_HOURS: Record<string, number> = { dawn: 6.6, morning: 9.5, noon: 13, dusk: 18.4, night: 23 };
 

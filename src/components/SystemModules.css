@@ -59,7 +59,7 @@
   justify-content: center;
   color: var(--lens-fg-secondary);
   cursor: pointer;
-  transition: background 130ms ease, color 130ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-icon-btn:hover {
@@ -85,7 +85,7 @@
   position: relative;
   flex-shrink: 0;
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-switch.on {
@@ -105,7 +105,7 @@
   height: 16px;
   border-radius: 50%;
   background: var(--lens-fg);
-  transition: left 150ms cubic-bezier(0.22, 1, 0.36, 1), background 150ms ease;
+  transition: left var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-switch.on .sysmod-switch-knob {
@@ -132,7 +132,7 @@
   color: var(--lens-fg-secondary);
   font-size: 12px;
   text-align: left;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-row.is-clickable {
@@ -200,7 +200,7 @@
   color: var(--lens-fg);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-pill-btn:hover {
@@ -291,7 +291,7 @@
   font-weight: 600;
   color: var(--lens-fg-secondary);
   cursor: pointer;
-  transition: background 150ms ease, color 150ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-seg-btn:hover {
@@ -323,7 +323,7 @@
   height: 100%;
   border-radius: 999px;
   background: #34d399;
-  transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width var(--lens-dur-slower) var(--lens-ease-out);
 }
 
 .sysmod-meter-fill.is-low {
@@ -352,7 +352,7 @@
   border: 1px solid rgb(var(--lens-ink) / 0.09);
   color: var(--lens-fg-secondary);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-chip:hover {
@@ -400,7 +400,7 @@
   border: 1px solid rgb(var(--lens-ink) / 0.09);
   color: var(--lens-fg-secondary);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-action:hover {
@@ -449,7 +449,7 @@
   color: var(--lens-fg);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .sysmod-tb-battery:hover,
@@ -467,7 +467,7 @@
   color: var(--lens-fg);
   border: 1px solid rgb(var(--lens-ink) / 0.18);
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -13,7 +13,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   color: var(--lens-fg-secondary);
-  transition: background 140ms ease, color 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ai-dock-mode:hover {
   background: rgb(var(--lens-ink) / 0.08);
@@ -100,7 +100,7 @@
   color: var(--lens-fg-secondary);
   background: rgb(var(--lens-ink) / 0.05);
   border: 1px solid transparent;
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ai-sparkle:hover {
   color: var(--lens-fg);
@@ -210,7 +210,7 @@
   height: 100%;
   border-radius: inherit;
   background: var(--cc-accent, var(--lens-fg));
-  transition: width 300ms ease;
+  transition: width var(--lens-dur-slower) var(--lens-ease-out);
 }
 .ai-drop-note {
   font-size: 11px;
@@ -243,7 +243,7 @@
   border-radius: 12px;
   color: var(--lens-fg-secondary);
   opacity: 0.72;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ai-suggested-app::after {
   /* dashed ring marks "suggested, not pinned" */
@@ -284,7 +284,7 @@
   box-shadow: var(--lens-shadow-panel);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 140ms ease;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ai-suggested-tip strong {
   color: var(--lens-fg);

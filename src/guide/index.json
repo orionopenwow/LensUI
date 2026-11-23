@@ -1808,6 +1808,26 @@
    "source": "src/components/ShellModeCard.tsx"
   },
   {
+   "id": "card.storage.cleanercard",
+   "kind": "card",
+   "title": "Cleaner",
+   "text": "Cleaner",
+   "path": [
+    "Settings",
+    "Storage",
+    "Lens Cleaner",
+    "Cleaner"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "storage",
+    "card": "CleanerCard",
+    "label": "Cleaner",
+    "section": "cleaner"
+   },
+   "source": "src/components/CleanerCard.tsx"
+  },
+  {
    "id": "card.ai.bridgeinbox",
    "kind": "card",
    "title": "From your browser and files",
@@ -4743,7 +4763,7 @@
    "id": "setting.system.inline.run-lens-ui-on-windows-startup",
    "kind": "setting",
    "title": "Run Lens UI on Windows Startup",
-   "text": "Enabled by default via HKCU\\...\\Run",
+   "text": "Starts Lens when you sign in to Windows",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -6569,6 +6589,51 @@
    "source": "docs/CLAUDE_CONTROL.md"
   },
   {
+   "id": "hotkey.ctrl-enter",
+   "kind": "hotkey",
+   "title": "Ctrl+Enter",
+   "text": "Smart Clean (Ctrl+Enter) runs the SAFE, pre-ticked categories and nothing else.",
+   "path": [
+    "Keyboard",
+    "Ctrl+Enter"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "hotkey.ctrl-a",
+   "kind": "hotkey",
+   "title": "Ctrl+A",
+   "text": "Keyboard Space toggles, Ctrl+A all safe, Enter cleans, Ctrl+Enter Smart Clean, Ctrl+R rescan, ↑/↓ rows, →/← expand, Esc back, Backspace up (map) ✓ (keyAction tested)",
+   "path": [
+    "Keyboard",
+    "Ctrl+A"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "hotkey.ctrl-r",
+   "kind": "hotkey",
+   "title": "Ctrl+R",
+   "text": "Keyboard Space toggles, Ctrl+A all safe, Enter cleans, Ctrl+Enter Smart Clean, Ctrl+R rescan, ↑/↓ rows, →/← expand, Esc back, Backspace up (map) ✓ (keyAction tested)",
+   "path": [
+    "Keyboard",
+    "Ctrl+R"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
    "id": "hotkey.shift-tab",
    "kind": "hotkey",
    "title": "Shift+Tab",
@@ -6576,21 +6641,6 @@
    "path": [
     "Keyboard",
     "Shift+Tab"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/COMMAND.md"
-   },
-   "source": "docs/COMMAND.md"
-  },
-  {
-   "id": "hotkey.ctrl-enter",
-   "kind": "hotkey",
-   "title": "Ctrl+Enter",
-   "text": "Every answer can be pasted (Ctrl+Enter), copied, sent to the Shelf or retried.",
-   "path": [
-    "Keyboard",
-    "Ctrl+Enter"
    ],
    "target": {
     "surface": "doc",
@@ -8317,6 +8367,259 @@
    "source": "docs/CLAUDE_CONTROL.md"
   },
   {
+   "id": "doc.cleaner.0",
+   "kind": "doc",
+   "title": "Lens Cleaner",
+   "text": "A drive-space manager in the Lens design language, modelled on the Roomy flow (Home → Scan → Cleanup / Space map → Done) and taken further: a dry-run preview of every clean, the Recycle Bin by default for anything that is yours, undo, a sunburst, a timeline, per-app storage and a Downloads review. The research behind it is in CLEANER RESEARCH.md. The rule: Lens Cleaner opens on demand and nothing is deleted without your explicit click. A scan is read-only. Every clean first shows a dry run built in Rust, and the clean then runs that same plan by id. The UI never hands a list of paths to the delete step.",
+   "path": [
+    "Docs",
+    "Lens Cleaner"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Lens Cleaner"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.1",
+   "kind": "doc",
+   "title": "Lens Cleaner: Opening it",
+   "text": "From How --- --- Settings › Storage \"Open Lens Cleaner\" (hero tile and the Lens Cleaner section) Lens Command /clean Voice / intents \"free up space\", \"make some room\", \"what's taking up space\", \"empty the recycle bin\" (opens the bin preview; you confirm) Top Bar the low-space pill \"C: · 9.6 GB left\" (only with the alert on) File Explorer right-click a drive › \"Free up space with Lens\" (HKCU verb, off by default) lens://settings/cleaner any Lens link Dock / Launcher search \"Lens Cleaner\", \"free up space\" or \"disk space\" (the Settings registry entry), or pin the Settings › Storage page The window ( label: \"cleaner\" , ?surface=cleaner ) is created on first use ( LAZY LABELS ) and is never built at startup.",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Opening it"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Opening it"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.2",
+   "kind": "doc",
+   "title": "Lens Cleaner: Categories",
+   "text": "Category Level Ticked Method Where --- --- --- --- --- Recycle Bin SAFE ✓ SHEmptyRecycleBinW shell API (size via SHQueryRecycleBinW ) Temporary files ( 24 h) SAFE ✓ delete per file %TEMP% , %WINDIR%\\Temp Browser cache SAFE ✓ delete per file Chromium Cache , Code Cache , GPUCache per profile (Chrome, Edge, Brave, Vivaldi, Opera, Opera GX); Firefox cache2 . Cookies, history, logins, Local Storage and IndexedDB are refused by the guard. App caches SAFE ✓ delete per file Discord, VS Code, Slack, Teams (classic), Spotify Data , npm cacache , pip, Yarn, NuGet v3-cache, Steam htmlcache Crash reports SAFE ✓ delete per file CrashDumps , WER ReportArchive/ReportQueue (user and machine) Thumbnail cache SAFE ✓ delete per file thumbcache .db (locked ones are skipped) Shader cache SAFE ✗ delete per file NVIDIA DXCache/GLCache (+ LocalLow), AMD DxCache/DxcCache/VkCache, Intel ShaderCache, D3DSCache Win",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Categories"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Categories"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.3",
+   "kind": "doc",
+   "title": "Lens Cleaner: Safety model (`src-tauri/src/cleaner/guard.rs`)",
+   "text": "- Detector mode: a path must sit strictly inside one of the detector's own roots. It must also be outside every protected tree (Windows, Program Files ×2, ProgramData, System Volume Information, $Recycle.Bin , Windows.old and cloud folders), unless that detector's root was declared inside the tree on purpose (Windows\\Temp, the WER folders). - User mode (Space map, Biggest files, Downloads review): it refuses the protected trees, plus Documents and AppData. It refuses the folders themselves (profile, Downloads, Desktop, Pictures, Videos, Music, drive roots) and system files (pagefile, hiberfil, swapfile). Your picks go to the Recycle Bin. - Always refused: - any .. component; - any browser-private component (Cookies, History, Login Data, Web Data, Local Storage, IndexedDB, Sessions, Extensions, places.sqlite , key4.db , …); - reparse points (never followed, never deleted through); - cloud",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Safety model (`src-tauri/src/cleaner/guard.rs`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Safety model (`src-tauri/src/cleaner/guard.rs`)"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.4",
+   "kind": "doc",
+   "title": "Lens Cleaner: Automatic features (all off by default)",
+   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. Explorer drive verb HKCU\\Software\\Classes\\Drive\\shell\\LensUI.Clean , removed when you turn it off or remove all Lens changes.",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Automatic features (all off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Automatic features (all off by default)"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.5",
+   "kind": "doc",
+   "title": "Lens Cleaner: Standout features",
+   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" asks first, then opens the app's own uninstaller (quoted exe or MsiExec /X{GUID} only, no shell). - Downloads review (\"What's safe to delete in Downloads?\")",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Standout features"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Standout features"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.6",
+   "kind": "doc",
+   "title": "Lens Cleaner: Polish checklist (AAA) — status",
+   "text": "Item Target Status / how it's checked --- --- --- Motion tokens --cl-t-fast 120ms , --cl-t-base 220ms , --cl-t-slow 420ms , --cl-t-count 900ms ; --cl-ease-in cubic-bezier(0,0,0,1) (Fluent \"fast out, slow in\"), --cl-ease-out cubic-bezier(.3,0,1,1) , --cl-ease-move cubic-bezier(.2,0,0,1) ✓ cleaner.css ; exits are shorter than entrances Reduced motion count-ups jump, animations off ✓ prefersReducedMotion() + CSS for prefers-reduced-motion and data-motion 4 px grid all spacing from --cl-1…--cl-10 ✓ Tabular numerals every changing number ✓ font-variant-numeric: tabular-nums on .cl-app Contrast ≥ 4.5:1 text on its real background ✓ measured (composited): obsidian min 6.0 (ADMIN badge), alabaster min 5.4; meta text uses --lens-fg-secondary , never --lens-fg-muted Focus rings visible on every control ✓ :focus-visible with --lens-focus-ring / --lens-focus-width (High Contrast aware) Hit targets ≥",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Polish checklist (AAA) — status"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Polish checklist (AAA) — status"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner.8",
+   "kind": "doc",
+   "title": "Lens Cleaner: Needs real hardware",
+   "text": "- Timing of the first C: scan, and the elevated helper's UAC flow. - Restoring from the Recycle Bin through $I / $R , including bins on several drives. - SHFileOperationW with OneDrive-backed Downloads. - Steam LastPlayed across client versions. - Icon extraction for MSIX apps, which have no DisplayIcon . MFT fast mode ( FSCTL ENUM USN DATA , admin) is documented in the research doc and not shipped. The scanner uses std's FindFirstFileExW -based read dir in parallel.",
+   "path": [
+    "Docs",
+    "Lens Cleaner",
+    "Needs real hardware"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER.md",
+    "heading": "Needs real hardware"
+   },
+   "source": "docs/CLEANER.md"
+  },
+  {
+   "id": "doc.cleaner-research.0",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes",
+   "text": "Research done before building Lens Cleaner (docs/CLEANER.md). It has three parts: what the reference (\"Roomy\") and the established tools do, which Windows APIs and paths each category uses, and the design details that make the best utility apps feel premium. Quotes are short; everything else is paraphrased. Sources are listed at the end.",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "Lens Cleaner — research notes"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.1",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: 1. Reference and landscape",
+   "text": "Tool What we take What we avoid --- --- --- Roomy (krezio/roomy, MIT, C#/.NET 10 WPF) The whole flow (Home → Scan → Cleanup / Space map → Done). Three tiers: Safe (ticked), GPU shader caches (safe but unticked), and Your call (unticked, confirm before a permanent delete). Its protected-folder guard (Documents, Desktop, Pictures, Videos, Music, the Downloads folder itself, the profile, Windows, Program Files). Never follows junctions or symlinks, and skips in-use files. Steam games unplayed for 2+ months are removed through Steam. Windows.old opens Windows' own cleanup. Nothing structural. We add a dry run, the Recycle Bin by default, an audit log, and Lens presence. Disk Cleanup ( cleanmgr ) Handlers live under HKLM\\…\\Explorer\\VolumeCaches\\<handler . /sageset:n writes a StateFlagsNNNN DWORD per handler, and /sagerun:n runs the ticked ones. \"Windows Update Cleanup\" is the supported way to",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "1. Reference and landscape"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "1. Reference and landscape"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.2",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: 2. Categories: safety and cost",
+   "text": "Category Lens level Pre-ticked Cost of cleaning --- --- --- --- Recycle Bin SAFE yes Gone for good. That's why the card says so in its line. Temporary files older than 24 h SAFE yes None. Files in use are skipped. Browser caches (Chrome, Edge, Brave, Vivaldi, Opera, Firefox) SAFE yes Pages load a little slower once. Cookies, history, passwords, sessions and extensions are never touched: only Cache , Code Cache , GPUCache and the Firefox cache2 folders. App caches (Discord, VS Code, Slack, Teams, Spotify, npm, pip, Yarn, NuGet) SAFE yes The app re-downloads what it needs. Crash dumps and error reports ( CrashDumps , WER\\ReportArchive/Queue ) SAFE yes Lost diagnostic history. Thumbnail cache ( thumbcache .db ) SAFE yes Explorer rebuilds thumbnails. Locked files are skipped. Shader caches (NVIDIA DXCache / GLCache , AMD DxCache / DxcCache / VkCache , Intel ShaderCache , DirectX D3DSCache ) ",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "2. Categories: safety and cost"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "2. Categories: safety and cost"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.3",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: Never-delete list (enforced in `cleaner/guard.rs`)",
+   "text": "- C:\\Windows (and the Windows dir wherever it lives), Program Files , Program Files (x86) , ProgramData (except the WER report folders), System Volume Information , $Recycle.Bin (emptied only via the shell API), and the paging, hibernation and swap files. - The user's profile root, Documents, Desktop, Pictures, Videos, Music and the Downloads folder itself (items inside Downloads are REVIEW-only), plus OneDrive, Dropbox and Google Drive roots. - Browser profile data outside the cache folders: Cookies , History , Login Data , Web Data , Local Storage , IndexedDB , Sessions , Extensions , Bookmarks , places.sqlite , key4.db , logins.json . - Reparse points (junctions, symlinks, mount points, OneDrive placeholders): never followed and never deleted through. - Cloud-only files ( FILE ATTRIBUTE RECALL ON DATA ACCESS 0x400000 , RECALL ON OPEN 0x40000 , OFFLINE 0x1000 ): skipped entirely. Touch",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "Never-delete list (enforced in `cleaner/guard.rs`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "Never-delete list (enforced in `cleaner/guard.rs`)"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.4",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: 3. Windows APIs and paths",
+   "text": "- Send to the Recycle Bin. SHFileOperationW with FO DELETE FOF ALLOWUNDO FOF NOCONFIRMATION FOF SILENT FOF NOERRORUI (double-NUL list). IFileOperation with FOFX RECYCLEONDELETE is the COM equivalent. Lens uses SHFileOperation because it has no COM apartment requirement on a worker thread. - Recycle Bin size and empty. SHQueryRecycleBinW(NULL, &info) → i64Size and i64NumItems . SHEmptyRecycleBinW(NULL, NULL, SHERB NOCONFIRMATION SHERB NOPROGRESSUI SHERB NOSOUND) . - Undo from the Recycle Bin. Each binned item is a pair in <drive \\$Recycle.Bin\\<SID \\ : $I…… holds the metadata (v2 layout: version 2 , original size, deletion FILETIME, path length, UTF-16 path), and $R…… holds the content. Renaming $R back to the original path and removing $I is what Explorer's \"Restore\" does. Lens restores only the items it binned in the last 30 seconds. - Delete a file. std::fs::remove file (DeleteFileW). A",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "3. Windows APIs and paths"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "3. Windows APIs and paths"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.5",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: 4. Design details (premium-utility study)",
+   "text": "Motion. Fluent's tokens are 83 / 167 / 250 ms . Entrances use cubic-bezier(0,0,0,1) (\"fast out, slow in\") and exits use cubic-bezier(1,0,1,1) . Lens Cleaner's tokens are --cl-t-fast 120ms , --cl-t-base 220ms , --cl-t-slow 420ms and --cl-t-count 900ms , with --cl-ease-in (entrance) cubic-bezier(0,0,0,1) , --cl-ease-out (exit) cubic-bezier(.3,0,1,1) and --cl-ease-move cubic-bezier(.2,0,0,1) . Exits are faster than entrances. Under reduced motion everything is instant and count-ups jump to the final value. Numbers. font-variant-numeric: tabular-nums everywhere a number changes, so the digits don't jitter while counting. Count-ups ease out (fast at first, settling at the end) over about 900 ms, and only animate between real values (never from 0 on re-render). Sizes use one decimal place up to 100 and none above that (\"32.5 GB\", \"238 GB\"). Scanning. Following CleanMyMac and Roomy, show progre",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "4. Design details (premium-utility study)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "4. Design details (premium-utility study)"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
+   "id": "doc.cleaner-research.6",
+   "kind": "doc",
+   "title": "Lens Cleaner — research notes: Sources",
+   "text": "- krezio/roomy - Automating Disk Cleanup (Microsoft) - Clean Up the WinSxS Folder (Microsoft) - IFileOperation::SetOperationFlags - SHEmptyRecycleBinW - Monitor Delivery Optimization - Clearing GPU shader cache (rtech.support) - FindFirstFileExW and When to use FIND FIRST EX LARGE FETCH (The Old New Thing) - Handling placeholders (Microsoft) - Steam ACF parsing (game-detector crate) - BleachBit (Wikipedia, licence) and bleachbit/cleanerml - CleanMyMac Smart Care - DaisyDisk: Understanding the disk map - Timing and easing (Windows apps) and Fluent 2 motion - Raycast: a fresh look and feel - Change storage settings on Mac (Apple) - WizTree vs MFT (WizTree)",
+   "path": [
+    "Docs",
+    "Lens Cleaner — research notes",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLEANER_RESEARCH.md",
+    "heading": "Sources"
+   },
+   "source": "docs/CLEANER_RESEARCH.md"
+  },
+  {
    "id": "doc.command.0",
    "kind": "doc",
    "title": "Lens Command",
@@ -9564,6 +9867,124 @@
     "heading": "Delta items (docs/research/BROWSER_DELTA.md)"
    },
    "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "doc.living-themes.0",
+   "kind": "doc",
+   "title": "Living Themes",
+   "text": "Living Themes are theme packs that come with a live wallpaper driven by the real Sun and Moon where you are. The flagship is Sky : the Sun rises low and glowing, climbs into a lavender-blue day, sets bottom-right into a pink-violet dusk, and gives way to a navy night with faint stars. Lens' glass, Dock and widgets can follow it. Theme & Look → Living themes has live tiles for all nine, the location, a time-lapse scrubber, \"Tint Lens with the sky\", Motion (Still / Subtle) and the weather options. Pack id Name What moves --- --- --- living-sky Sky Real Sun and Moon, twilight stages, stars, slow high clouds living-moonlight Moonlight A large Moon in tonight's real phase; the season's constellation (Orion, Big Dipper, Cygnus, Cassiopeia; Crux in the south) living-seasons Seasons Palette, hills and particles (blossom, fireflies, leaves, snow) by date and hemisphere living-golden-hour Golden H",
+   "path": [
+    "Docs",
+    "Living Themes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Living Themes"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.1",
+   "kind": "doc",
+   "title": "Living Themes: Code",
+   "text": "LIVING PACKS is a separate list from THEME PACKS and COMMUNITY PACKS , so the community collection and the recommended six are unchanged.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Code"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.2",
+   "kind": "doc",
+   "title": "Living Themes: Algorithms",
+   "text": "Sun. The NOAA solar position algorithm (the NOAA Solar Calculator): Julian century, geometric mean longitude and anomaly, equation of centre, apparent longitude with nutation, obliquity, declination, equation of time, true solar time, hour angle, then altitude/azimuth, plus NOAA's refraction correction. Tested against published sunrise/sunset times (London and New York at the June solstice, Sydney at the December solstice) to within 2 minutes, against the Theme Schedule's own sunrise for six cities on five dates to within 3 minutes, against 90 − φ + δ at London's solar noon (within 0.15°), against the equator at the equinox ( 89.5°), and against polar night and midnight sun in Tromsø (noon −3.1°, midnight +3.1° ± 0.5°). Moon. The low-precision lunar theory used by suncalc (Meeus, truncated): longitude with the equation of centre, latitude and distance; topocentric parallax; phase from th",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Algorithms"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Algorithms"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.3",
+   "kind": "doc",
+   "title": "Living Themes: Tint and light/dark",
+   "text": "While a living pack is active, Lens is light between sunrise and sunset and dark otherwise, using the same sunTimes / isDaytime logic as the Theme Schedule. Polar day and night are handled. \"Tint Lens with the sky\" (off by default) moves the glass base and the accent towards the current sky colour of the active living theme, or of Sky when a regular pack is active (regular packs keep their own light or dark scheme). The controller: writes only CSS variables in each window ( --lens-pack-base , --lens-pack-elevated , --lens-accent , data-scheme ). It never writes config.json, and turning it off restores the pack's own values; re-applies at most once a minute, and skips changes too small to see; holds still while the desktop is covered (the wallpaper pause monitor reports covered for fullscreen apps and games) and inside fullscreen pages; always keeps the ink at ≥ 4.5:1 on the base and elev",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Tint and light/dark"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Tint and light/dark"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.4",
+   "kind": "doc",
+   "title": "Living Themes: Privacy",
+   "text": "Location is chosen in this order: a manual city or \"lat, long\" (rounded to 0.1°), the Theme Schedule location, or a guess from the time zone (a representative city for ~70 zones, else UTC offset × 15°). It is stored in this PC's localStorage ( lens.living.v1 ) and never sent anywhere. Weather is manual by default. \"Use live weather (Open-Meteo)\" is opt-in. It requests only https://api.open-meteo.com/v1/forecast?latitude=<0.1° &longitude=<0.1° &current=weather code , with no key, account or other parameters, and caches the answer for 30 minutes, so there are at most two requests an hour. Switching it off clears the cache. Open-Meteo is the only host added to the app's connect-src . No other part of Living Themes uses the network.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Privacy"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.5",
+   "kind": "doc",
+   "title": "Living Themes: Performance and motion",
+   "text": "The painters write straight into an RGBA buffer at half the CSS resolution (a third above 2560 px wide), and CSS scales it up. Frame time at 960×540, one painter per process ( bun src/playground/living/bench.ts <id ): about 1.2–2.4 ms median on a loaded 2-core sandbox. The unit test fails above 3 ms (25th percentile) or 7.5 ms (median). At most 10 fps in Subtle (scene maxFps , inside the requested 6–15). Still draws one frame and then repaints once a minute so the Sun stays where it really is. The wallpaper host already stops the loop when the desktop is covered, on battery or battery saver, with Calm, or with reduced motion. Covered and paused windows still get the once-a-minute repaint. Every painter is deterministic for a given instant, place, size and seed (tested by hashing frames).",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Performance and motion"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Performance and motion"
+   },
+   "source": "docs/LIVING_THEMES.md"
+  },
+  {
+   "id": "doc.living-themes.6",
+   "kind": "doc",
+   "title": "Living Themes: Screenshots",
+   "text": "This produces Sky at sunrise, noon, sunset, dusk and night with the Dock and widgets dressed in the tint for that moment, each family theme, the settings row with the scrubber at 18:30, a 10-second WebP time-lapse of a full Sky day (London, 15 October), and looks.json with the exact colours applied.",
+   "path": [
+    "Docs",
+    "Living Themes",
+    "Screenshots"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LIVING_THEMES.md",
+    "heading": "Screenshots"
+   },
+   "source": "docs/LIVING_THEMES.md"
   },
   {
    "id": "doc.magic.0",
@@ -12811,6 +13232,22 @@
     "lesson": "keyboard-map"
    },
    "source": "guide/11-keyboard-map.md"
+  },
+  {
+   "id": "lesson.free-up-space",
+   "kind": "lesson",
+   "title": "Free up space safely",
+   "text": "Find what's taking up room on your drive and clean it without losing anything you care about. Open Lens Cleaner. Scan, then read the list. Check the preview. Changed your mind?. See where the space went",
+   "path": [
+    "Guide",
+    "Lessons",
+    "Free up space safely"
+   ],
+   "target": {
+    "surface": "lesson",
+    "lesson": "free-up-space"
+   },
+   "source": "guide/12-free-up-space.md"
   }
  ],
  "lessons": [
@@ -13383,6 +13820,68 @@
     }
    ],
    "source": "guide/11-keyboard-map.md"
+  },
+  {
+   "id": "free-up-space",
+   "title": "Free up space safely",
+   "summary": "Find what's taking up room on your drive and clean it without losing anything you care about.",
+   "minutes": 3,
+   "order": 12,
+   "requires": null,
+   "requiresNote": null,
+   "steps": [
+    {
+     "n": 1,
+     "title": "Open Lens Cleaner",
+     "text": "Settings › Storage has Lens Cleaner at the top. You can also type /clean in Lens Command or say \"Lens, free up space\". It only looks until you say otherwise: nothing is deleted until you click.",
+     "show": "settings:storage",
+     "target": {
+      "surface": "settings",
+      "tab": "storage"
+     }
+    },
+    {
+     "n": 2,
+     "title": "Scan, then read the list",
+     "text": "Scan my PC takes a few seconds. Caches and temporary files are marked SAFE and ticked for you. Your own files (big downloads, old installers, duplicates, games) say YOUR CALL and are never ticked.",
+     "show": "settings:storage",
+     "target": {
+      "surface": "settings",
+      "tab": "storage"
+     }
+    },
+    {
+     "n": 3,
+     "title": "Check the preview",
+     "text": "Clean up shows a dry run first: every file that would be deleted, everything that goes to the Recycle Bin, and anything Windows will ask permission for. Smart Clean does the same with SAFE items only.",
+     "show": "settings:storage",
+     "target": {
+      "surface": "settings",
+      "tab": "storage"
+     }
+    },
+    {
+     "n": 4,
+     "title": "Changed your mind?",
+     "text": "Anything that went to the Recycle Bin can come back: press Restore in the toast right after cleaning, or open the Recycle Bin later. Every clean is written to the cleaner log.",
+     "show": "settings:storage",
+     "target": {
+      "surface": "settings",
+      "tab": "storage"
+     }
+    },
+    {
+     "n": 5,
+     "title": "See where the space went",
+     "text": "The Space map shows every folder as a list, a treemap or a sunburst, with the biggest files on the side. Turn on daily snapshots to see which folders grew this week.",
+     "show": "settings:storage",
+     "target": {
+      "surface": "settings",
+      "tab": "storage"
+     }
+    }
+   ],
+   "source": "guide/12-free-up-space.md"
   }
  ]
 }

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { BookmarkPlus, Columns3, MessageCircle, PenLine, Repeat2, RefreshCw, Heart, Sparkles, Clock3, Layers } from "lucide-react";
+import { BookmarkPlus, Columns3, MessageCircle, PenLine, Repeat2, RefreshCw, Heart, Sparkles, Clock3, Layers, Rss } from "lucide-react";
+import { EmptyState, Skeleton } from "../ui";
 import { FILTERS, ago, bySourceChips, count, newSince, sourceMeta, statusLine, type FilterId, type ItemDto, type SourceView, type TimelineDto } from "./model";
 
 export function SourceDot({ source, size = 16 }: { source: string; size?: number }) {
@@ -125,10 +126,16 @@ export function FeedColumn(p: FeedColumnProps) {
       <div className="lf-list">
         {items.length ? (
           items.map((it) => <FeedRow key={it.key} it={it} now={now} actions={p.actions} />)
+        ) : p.busy && p.sources.length ? (
+          <Skeleton label="Loading feeds" shape="lines" rows={6} className="lf-skeleton" />
         ) : (
-          <div className="lf-empty">
-            {p.sources.length ? "Nothing new here. Lens checks again on your refresh schedule." : "Add a feed in Settings › Feeds — paste any site, or connect Bluesky, Mastodon, Reddit or GitHub."}
-          </div>
+          <EmptyState
+            compact
+            className="lf-empty"
+            icon={<Rss size={15} />}
+            title={p.sources.length ? "You're all caught up" : "No feeds yet"}
+            body={p.sources.length ? "Lens checks again on your refresh schedule." : "Add a feed in Settings › Feeds — paste any site, or connect Bluesky, Mastodon, Reddit or GitHub."}
+          />
         )}
       </div>
     </section>

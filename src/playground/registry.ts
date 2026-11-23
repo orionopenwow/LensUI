@@ -9,6 +9,7 @@ import { starfieldScene } from "./scenes/starfield";
 import { skyClockScene } from "./scenes/skyclock";
 import { ambientModule } from "./ambient/module";
 import { backdropScene } from "../studio/backdrop/scene";
+import { LIVING_SCENES } from "./living/module";
 
 /** Gallery order: playful first, calm after. */
 export const SCENES: SceneModule[] = [
@@ -24,6 +25,8 @@ export const SCENES: SceneModule[] = [
   ambientModule,
   // Backdrop Lab looks as a live wallpaper (docs/BACKDROP_LAB.md).
   backdropScene,
+  // Living Themes: the real sky, Sun and Moon (docs/LIVING_THEMES.md).
+  ...LIVING_SCENES,
 ];
 
 export function sceneById(id: string | null | undefined): SceneModule | null {
