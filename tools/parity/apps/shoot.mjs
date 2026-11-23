@@ -21,7 +21,8 @@ const server = createServer(async (req, res) => {
     return res.writeHead(403).end();
   }
   try {
-    res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(await readFile(file));
+    const body = await readFile(file);
+    res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(body);
   } catch {
     res.writeHead(404).end();
   }

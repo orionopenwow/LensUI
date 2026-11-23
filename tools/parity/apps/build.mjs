@@ -8,6 +8,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, "out");
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
+// Official media fetched by tools/apps/fetch_media.py (gitignored cache). When present, the gallery
+// shows the real icons and screenshots; without it (e.g. CI) it shows the icon/tint fallbacks.
+const media = join(here, "../../apps/.media-cache");
+const hasMedia = existsSync(media);
+if (hasMedia) cpSync(media, join(out, "media"), { recursive: true });
+console.log(`[parity:apps] media cache ${existsSync(media) ? "found" : "missing (fallbacks only)"}`);
 await build({
   entryPoints: [join(here, "entry.tsx")],
   bundle: true,
@@ -20,14 +26,9 @@ await build({
     "@tauri-apps/api/event": join(here, "../mock/event.ts"),
     "@tauri-apps/api/window": join(here, "../mock/window.ts"),
   },
-  define: { "process.env.NODE_ENV": '"production"' },
+  define: { "process.env.NODE_ENV": '"production"', __LENS_MEDIA_CACHE__: String(hasMedia) },
   logLevel: "warning",
 });
-// Official media fetched by tools/apps/fetch_media.py (gitignored cache). When present, the gallery
-// shows the real icons and screenshots; without it (e.g. CI) it shows the icon/tint fallbacks.
-const media = join(here, "../../apps/.media-cache");
-if (existsSync(media)) cpSync(media, join(out, "media"), { recursive: true });
-console.log(`[parity:apps] media cache ${existsSync(media) ? "found" : "missing (fallbacks only)"}`);
 const css = readdirSync(out).filter((f) => f.endsWith(".css"));
 writeFileSync(
   join(out, "harness.html"),

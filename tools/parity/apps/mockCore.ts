@@ -2,6 +2,8 @@
 // Live thumbnails are off so screenshots never touch the network (placeholders are local).
 import { invoke as baseInvoke } from "../mock/core";
 import catalog from "../../../catalog/apps/catalog.json";
+
+declare const __LENS_MEDIA_CACHE__: boolean;
 export { convertFileSrc, isTauri } from "../mock/core";
 
 const t0 = Date.UTC(2026, 10, 23, 16, 4, 0);
@@ -9,7 +11,11 @@ const handlers: Record<string, (a: any) => any> = {
   apps_catalog: () => catalog,
   apps_settings_get: () => ({ autoUpdate: false, checkUpdates: "weekly", showNonOpenSource: true, liveThumbnails: true }),
   // Serve official media from the local cache copied into out/media by build.mjs.
-  apps_media: (a) => `media/${a.appId}/${encodeURIComponent(String(a.url).split("/").pop() || "")}`,
+  apps_media: (a) => {
+    // Without the local cache (CI), behave like a refused download so the fallbacks render offline.
+    if (!__LENS_MEDIA_CACHE__) throw "that media isn't part of this app's entry (no local cache)";
+    return `media/${a.appId}/${encodeURIComponent(String(a.url).split("/").pop() || "")}`;
+  },
   apps_installed_icon: () => null,
   apps_settings_set: () => null,
   apps_installed: () => ({ ollama: { version: "0.40.10", available: "0.40.16" }, krita: { version: "5.3.4.1", available: null }, "obs-studio": { version: "33.0.0", available: null } }),
