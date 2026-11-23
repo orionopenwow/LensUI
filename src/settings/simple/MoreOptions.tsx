@@ -2,8 +2,9 @@
 // The expanding content fades and slides in from just under the row (transform + opacity only);
 // nothing above it moves, so there is no layout jump. A page in Advanced mode renders its content
 // without the row.
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
+import { reducedMotion, usePresence } from "../../ui/motion";
 import "./simple.css";
 
 export const MoreOptions: React.FC<{
@@ -16,25 +17,20 @@ export const MoreOptions: React.FC<{
   onReset?: () => void;
   children: React.ReactNode;
 }> = ({ enabled, open, onToggle, summary, onReset, children }) => {
-  const bodyRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const [entering, setEntering] = useState(false);
-  const firstRender = useRef(true);
-
-  // Play the reveal only when the person opens it, not when a page loads already open.
-  useLayoutEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    if (open) setEntering(true);
-  }, [open]);
+  // Glides in from just under the row when opened and out before it is removed; a page that loads
+  // already open shows it without playing the reveal.
+  const { mounted, ref: bodyRef } = usePresence<HTMLDivElement>(open && enabled, {
+    initial: false,
+    enter: { y: -8, opacity: 0 },
+    exit: { y: -6, opacity: 0 },
+    enterOptions: { duration: "slow" },
+  });
+  const wasOpen = useRef(open);
   useEffect(() => {
-    if (!entering) return;
-    const t = window.setTimeout(() => setEntering(false), 420);
-    rowRef.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    return () => window.clearTimeout(t);
-  }, [entering]);
+    if (open && !wasOpen.current) rowRef.current?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+    wasOpen.current = open;
+  }, [open]);
 
   if (!enabled) return <>{children}</>;
   return (
@@ -53,8 +49,8 @@ export const MoreOptions: React.FC<{
           {open ? "Hide" : "Show"} <ChevronDown size={14} aria-hidden className="ss-more-chev" />
         </button>
       </div>
-      {open && (
-        <div id="ss-more-body" ref={bodyRef} className={`ss-more-body ${entering ? "entering" : ""}`}>
+      {mounted && (
+        <div id="ss-more-body" ref={bodyRef} className="ss-more-body" inert={!open}>
           {children}
         </div>
       )}

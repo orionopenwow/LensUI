@@ -60,9 +60,6 @@
   "src/presence/presence.css": {
     "layout-transition": 1
   },
-  "src/settings/simple/MoreOptions.tsx": {
-    "timer-animation": 1
-  },
   "src/snip/Record.tsx": {
     "native-resize": 1
   },
@@ -84,8 +81,7 @@
   },
   "src/surfaces/ControlCenterSurface.tsx": {
     "inline-animation": 2,
-    "layout-transition": 2,
-    "native-resize": 1
+    "layout-transition": 2
   },
   "src/surfaces/DesktopFolderSurface.tsx": {
     "backdrop-filter": 2,
@@ -108,9 +104,8 @@
   "src/surfaces/LauncherSurface.css": {
     "backdrop-filter": 1
   },
-  "src/surfaces/NotificationOverlaySurface.tsx": {
-    "backdrop-filter": 1,
-    "inline-animation": 1
+  "src/surfaces/NotificationOverlaySurface.css": {
+    "backdrop-filter": 1
   },
   "src/surfaces/OverviewSurface.tsx": {
     "timer-animation": 1

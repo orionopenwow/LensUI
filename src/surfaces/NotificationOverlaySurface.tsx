@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Bell, Calendar, Timer, Monitor, Sparkles, X } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
+import { PresenceList, duration } from "../ui/motion";
+import "./NotificationOverlaySurface.css";
 
 interface LensNotification {
   id: string;
@@ -37,9 +39,10 @@ export const NotificationOverlaySurface: React.FC = () => {
     setItems((prev) => {
       const next = prev.filter((x) => x.id !== id);
       if (next.length === 0) {
+        // The last toast glides out first (exit duration), then the window is hidden.
         window.setTimeout(() => {
           invoke("hide_surface", { label: "notifications" }).catch(() => {});
-        }, 160);
+        }, duration("exit") + 80);
       }
       return next;
     });
@@ -89,26 +92,17 @@ export const NotificationOverlaySurface: React.FC = () => {
   }, []);
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        gap: 10,
-        padding: 4,
-      }}
+    <PresenceList
+      className="nt-stack"
+      itemClassName="nt-slot"
+      items={items}
+      getKey={(n) => n.id}
+      enter={{ x: 26, scale: 0.97, opacity: 0 }}
+      exit={{ x: 18, scale: 0.98, opacity: 0 }}
     >
-      <style>{`
-        @keyframes lens-toast-in {
-          from { opacity: 0; transform: translateX(26px) scale(0.97); }
-          to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-      `}</style>
-      {items.map((n) => (
+      {(n) => (
         <div
-          key={n.id}
+          className="nt-toast"
           onMouseEnter={() => hoveredRef.current.add(n.id)}
           onMouseLeave={() => hoveredRef.current.delete(n.id)}
           onClick={() => {
@@ -119,70 +113,31 @@ export const NotificationOverlaySurface: React.FC = () => {
             }
             dismiss(n.id);
           }}
-          style={{
-            borderRadius: "var(--lens-radius, 14px)",
-            background: "var(--lens-bg-surface)",
-            backdropFilter: "blur(var(--lens-blur, 20px)) saturate(1.3)",
-            border: "1px solid rgb(var(--lens-ink) / 0.14)",
-            boxShadow: "0 14px 36px rgb(0 0 0 / calc(0.65 * var(--lens-shade-k, 1)))",
-            padding: "12px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            cursor: "pointer",
-            animation: "lens-toast-in 200ms cubic-bezier(0.22, 1, 0.36, 1)",
-          }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 7,
-                  background: "rgb(var(--lens-ink) / 0.06)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+          <div className="nt-head">
+            <div className="nt-source">
+              <span className="nt-icon">
                 <CategoryIcon category={n.category} />
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--lens-fg-secondary)", letterSpacing: "0.02em" }}>
-                {n.appName}
-              </span>
-              <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)", fontVariantNumeric: "tabular-nums" }}>
-                · {n.timeStr}
-              </span>
+              <span className="nt-app">{n.appName}</span>
+              <span className="nt-time lens-num">· {n.timeStr}</span>
             </div>
             <button
               type="button"
+              className="nt-close"
               aria-label="Dismiss notification"
               onClick={(e) => {
                 e.stopPropagation();
                 dismiss(n.id);
               }}
-              style={{
-                color: "var(--lens-fg-muted)",
-                padding: 3,
-                borderRadius: 6,
-                cursor: "pointer",
-              }}
             >
               <X size={13} strokeWidth={2.4} />
             </button>
           </div>
-
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--lens-fg)", lineHeight: 1.25 }}>
-            {n.title}
-          </div>
-          {n.body && (
-            <div style={{ fontSize: 11.5, color: "var(--lens-fg-secondary)", lineHeight: 1.35 }}>
-              {n.body}
-            </div>
-          )}
+          <div className="nt-title">{n.title}</div>
+          {n.body && <div className="nt-body">{n.body}</div>}
         </div>
-      ))}
-    </div>
+      )}
+    </PresenceList>
   );
 };
