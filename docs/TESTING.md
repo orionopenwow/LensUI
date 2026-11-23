@@ -270,6 +270,8 @@ marker together with the fix.
 
 ### F1: a failed `get_windows_theme` at startup leaves the whole surface blank
 
+**Status: fixed on integration/waves-7-8** (`useLensState` loads config and theme independently; the `KNOWN` marker can go once the chaos suite confirms).
+
 * **Found by:** chaos (`tools/soak/run.mjs`), on the dock, topbar, settings and widgets surfaces.
 * **What happens:** `useLensState` loads `get_config` and `get_windows_theme` with `Promise.all`. If the theme call rejects (an IPC hiccup at startup, a registry read failing), `.catch(console.error)` swallows it and `config` stays `null`. Every surface built on `useLensState` returns `null` and stays empty. Nothing retries; the surface only recovers if another window saves the config and broadcasts it.
 * **Repro:** `node tools/robust/build.mjs`, then open `tools/robust/out/harness.html?surface=dock&chaos=0.05&seed=1` through any static server, for example `SOAK_ONLY=chaos node tools/soak/run.mjs`. The Dock never appears, and the console shows `chaos: get_windows_theme failed`.
@@ -289,6 +291,8 @@ marker together with the fix.
 * **Marker:** `test.todo("F2: …")` in `src/__tests__/robustness.prop.test.ts`.
 
 ### F3: Dock app buttons have no accessible name (axe `button-name`, critical)
+
+**Status: fixed on integration/waves-7-8** for pinned apps, running windows, Launcher, System and Settings (`aria-label` with running/focused state); drop the F3 allowlist entries after the next a11y run.
 
 * **Found by:** accessibility suite, on the dock and dock-search states, light and dark.
 * **What happens:** `.dock-item` buttons show only an icon. The app name lives in a sibling tooltip that isn't linked, so Narrator and other screen readers announce every Dock icon as just "button". The same applies to voice access ("click Spotify" can't find it).

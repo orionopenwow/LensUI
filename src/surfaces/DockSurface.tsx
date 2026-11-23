@@ -2035,6 +2035,7 @@ export const DockSurface: React.FC = () => {
               <span className="dock-tooltip">Launcher</span>
               <button
                 type="button"
+                aria-label="Launcher"
                 className={`dock-item dock-launcher-btn ${launchingId === "launcher" ? "is-launching" : ""}`}
                 aria-label="Open Launcher"
                 onClick={() => {
@@ -2238,6 +2239,7 @@ export const DockSurface: React.FC = () => {
               )}
               <button
                 type="button"
+                aria-label={`${app.name}${primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : ""}`}
                 className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2338,6 +2340,7 @@ export const DockSurface: React.FC = () => {
               </button>
               <button
                 type="button"
+                aria-label={`${primaryWin.title || "Window"}${primaryWin.isFocused ? " (focused)" : " (running)"}`}
                 className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2392,6 +2395,7 @@ export const DockSurface: React.FC = () => {
           <span className="dock-tooltip">System Stats &amp; Task Manager</span>
           <button
             type="button"
+            aria-label="System and tasks"
             className={`dock-item ${settingsOpen && activeSettingsTab === "monitor" ? "is-running" : ""} ${launchingId === "monitor" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("monitor");
@@ -2415,6 +2419,7 @@ export const DockSurface: React.FC = () => {
           <span className="dock-tooltip">Settings &amp; Control Center</span>
           <button
             type="button"
+            aria-label="Settings"
             className={`dock-item ${settingsOpen && activeSettingsTab !== "monitor" ? "is-running" : ""} ${launchingId === "settings" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("settings");
