@@ -118,7 +118,7 @@ for (const scheme of ["dark", "light"]) {
         try {
           const body = await r.body();
           bytes += /\.(js|mjs|css|html?|json|svg|txt)(\?|$)|\/$/.test(url) ? gzipSync(body).length : body.length;
-        } catch { bytes += Number((await r.allHeaders())["content-length"] || 0); }
+        } catch { try { bytes += Number((await r.allHeaders())["content-length"] || 0); } catch { /* page closed */ } }
       });
       await page.goto(base + p, { waitUntil: "load" });
       await page.waitForTimeout(600);
