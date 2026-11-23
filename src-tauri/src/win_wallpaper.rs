@@ -198,7 +198,9 @@ pub struct WallpaperFile {
     pub bytes: u64,
 }
 
-/// Why the wallpaper should be paused right now, if at all. Pure.
+/// Why the wallpaper should be paused right now, if at all (without battery saver). Pure; tests only,
+/// the monitor uses `pause_reason_with_saver`.
+#[cfg(test)]
 pub fn pause_reason(
     s: &WallpaperSettings,
     covered: bool,
