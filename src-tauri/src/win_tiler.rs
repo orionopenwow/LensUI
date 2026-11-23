@@ -1733,6 +1733,7 @@ unsafe extern "system" fn tiler_event_cb(
     crate::failsafe::guard::ffi_guard("tiler.tiler_event_cb", (), || tiler_event_cb_guarded(_hook, event, h, id_object, _child, _thread, _time))
 }
 
+#[cfg(windows)]
 unsafe fn tiler_event_cb_guarded(
     _hook: isize,
     event: u32,

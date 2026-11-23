@@ -80,7 +80,7 @@ mod studio;
 #[path = "tests/robustness/mod.rs"]
 mod robustness_tests;
 
-use config::{load_config, save_config, LensConfig};
+use config::{save_config, LensConfig};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
