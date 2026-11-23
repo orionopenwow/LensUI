@@ -116,6 +116,11 @@ export function MusicAccentBridge(props: {
     };
   }, [now?.trackKey, now?.status, now?.artwork, enabled, intensity, restoreDelayS, suppressed]);
   // Leaving the page (window closed, option toggled off) drops the override.
-  useEffect(() => () => document.documentElement.style.removeProperty("--lens-accent"), []);
+  useEffect(
+    () => () => {
+      document.documentElement.style.removeProperty("--lens-accent");
+    },
+    [],
+  );
   return null;
 }
