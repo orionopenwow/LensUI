@@ -89,6 +89,8 @@ window.addEventListener("unhandledrejection", (e) => {
   invoke("tester_log_push", { level: "warn", area: "ui", message: String(e.reason) }).catch(() => {});
 });
 const Surface = surfaces[params.get("surface") || "dock"] ?? surfaces.dock;
+// Smoothness probe (docs/SMOOTHNESS.md): idle until Tester Hub starts a check.
+import("./smooth/probe").then((m) => m.installSmoothProbe(params.get("surface") || "dock")).catch(() => {});
 // "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
 const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
 const withTwin = !["presence", "presencebar"].includes(params.get("surface") || "dock");
