@@ -24,6 +24,8 @@
   --lens-dur-base: 180ms;
   --lens-dur-slow: 240ms;
   --lens-dur-slower: 360ms;
+  /* Leaving is quicker than arriving. */
+  --lens-dur-exit: 120ms;
   --lens-stagger: 30ms;
 
   --lens-press-scale: 0.98;
@@ -40,6 +42,7 @@
     --lens-dur-base: 1ms;
     --lens-dur-slow: 1ms;
     --lens-dur-slower: 1ms;
+    --lens-dur-exit: 1ms;
     --lens-stagger: 0ms;
     --lens-press-scale: 1;
     --lens-enter-scale: 1;
@@ -51,6 +54,7 @@
   --lens-dur-base: 1ms;
   --lens-dur-slow: 1ms;
   --lens-dur-slower: 1ms;
+  --lens-dur-exit: 1ms;
   --lens-stagger: 0ms;
   --lens-press-scale: 1;
   --lens-enter-scale: 1;
@@ -90,7 +94,7 @@
   animation: lens-window-in var(--lens-dur-base) var(--lens-ease-out) both;
 }
 .lens-exit {
-  animation: lens-window-out 120ms var(--lens-ease-exit) both;
+  animation: lens-window-out var(--lens-dur-exit) var(--lens-ease-exit) both;
 }
 @keyframes lens-fade-in {
   from {
@@ -108,27 +112,87 @@
    document.startViewTransition snapshots the old theme; the new one fades in over it. No white frame. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: var(--lens-dur-slow);
+  animation-duration: var(--lens-dur-base);
   animation-timing-function: var(--lens-ease-out);
 }
 
 /* ── Numbers ─────────────────────────────────────────────────────────────────────────────────────
-   Anything that changes value uses tabular numerals so it doesn't jitter (AAA audit #10). */
+   Anything that changes value uses tabular numerals so it doesn't jitter (AAA audit #10). Explicit
+   class names, not [class*=...] substring selectors: those are matched against every element on
+   every restyle (theme switch). New numeric UI: add .lens-num. */
 :where(
     .tabular,
     .lens-num,
-    [class*="-pct"],
-    [class*="-percent"],
-    [class*="-value"],
-    [class*="-count"],
-    [class*="-time"],
-    [class*="-clock"],
-    [class*="-size"],
-    [class*="-age"],
-    [class*="-badge"],
-    [class*="-stat"],
+    .ai-badge,
+    .ai-drop-pct,
+    .ai-size,
+    .cs-num,
+    .df-group-count,
+    .dock-close-badge,
+    .dock-instance-badge,
+    .dock-notif-badge,
+    .dock-sys-clock,
+    .dock-sys-time,
+    .dock-win-count,
+    .edge-count,
+    .folder-badge,
+    .guide-badge,
+    .guide-count,
+    .lb-sleep-stat,
+    .lc-time,
+    .ldm-batt-badge,
+    .ldm-date-num,
+    .ldm-stat,
+    .ldm-stats,
+    .lens-plugin-badge,
+    .lf-badge,
+    .lf-count,
+    .lm-count,
+    .lm-q-count,
+    .lm-time,
+    .ln-count,
+    .ln-result-badge,
+    .lv-badge,
+    .lw-count,
+    .lx-clock,
+    .lx-week-badge,
+    .nc-count,
+    .nc-item-time,
+    .nc-time,
+    .ov-badge,
+    .ov-count,
+    .ov-group-count,
+    .ov-ws-badge,
+    .ov-ws-count,
+    .pal-esc-badge,
+    .pal-filter-count,
+    .pal-recent-age,
+    .pal-result-badge,
+    .qs-stat,
+    .rc-badge,
+    .rc-menu-count,
+    .sh-fill-value,
+    .sh-hero-value,
+    .sh-mix-count,
+    .sh-value,
+    .snip-badge,
+    .snip-size,
+    .sysmod-badge,
+    .th-badge,
+    .th-count,
+    .th-log-time,
+    .th-progress-num,
+    .topbar-clock,
+    .tux-badge,
+    .tux-num,
+    .tux-value,
+    .vdk-undo-timer,
+    .wiz-step-num,
+    .wp-idle-clock,
+    .wp-idle-time,
     [role="slider"],
     [role="progressbar"],
+    [role="meter"],
     [role="timer"],
     time,
     output,

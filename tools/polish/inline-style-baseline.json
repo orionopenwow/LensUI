@@ -109,7 +109,7 @@
  "src/tester/TesterHubSurface.tsx": 1,
  "src/themes/shapes/Expressive.tsx": 3,
  "src/themeux/ThemeTab.tsx": 18,
- "src/ui/Skeleton.tsx": 3,
+ "src/ui/Skeleton.tsx": 2,
  "src/voice/Conversation.tsx": 1,
  "src/voice/VoiceHud.tsx": 2
 }

@@ -100,9 +100,10 @@ describe("accessible names (a11y F4)", () => {
 describe("motion tokens", () => {
   const css = readFileSync(join(SRC, "styles", "motion.css"), "utf8");
   const DUR = ["instant", "fast", "base", "slow", "slower"];
+  const ALL_DUR = [...DUR, "exit"];
 
   test("all tokens are defined", () => {
-    for (const d of DUR) expect(css).toMatch(new RegExp(`--lens-dur-${d}:\\s*\\d+ms`));
+    for (const d of ALL_DUR) expect(css).toMatch(new RegExp(`--lens-dur-${d}:\\s*\\d+ms`));
     for (const e of ["out", "in-out", "exit", "drawer", "spring"]) expect(css).toContain(`--lens-ease-${e}:`);
     expect(css).toMatch(/--lens-press-scale:\s*0\.98/);
   });
@@ -121,7 +122,7 @@ describe("motion tokens", () => {
     ];
     for (const b of blocks) {
       const body = b.slice(0, b.indexOf("}") + 1);
-      for (const d of DUR) expect(body).toMatch(new RegExp(`--lens-dur-${d}:\\s*1ms`));
+      for (const d of ALL_DUR) expect(body).toMatch(new RegExp(`--lens-dur-${d}:\\s*1ms`));
       expect(body).toMatch(/--lens-press-scale:\s*1;/);
       expect(body).toMatch(/--lens-enter-scale:\s*1;/);
     }

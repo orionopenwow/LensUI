@@ -40,7 +40,7 @@ export const Skeleton: React.FC<{
         </>
       )}
       {shown && shape === "grid" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }} aria-hidden>
+        <div className="lens-skeleton-grid" aria-hidden>
           {Array.from({ length: n * 2 }, (_, i) => (
             <div key={i} className="lens-skeleton-block" />
           ))}

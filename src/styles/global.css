@@ -156,88 +156,45 @@ button {
 .traffic-style-accent-pills .tl-red { background: #ef4444; }
 
 /* ==================== CALM WEIGHTED HYDRAULIC GLIDE ENGINE ==================== */
+/* Window enter/exit, one motion for every surface (AAA_WAVE_PLAN C1/C5): enter grows from the
+   anchor edge (6px + --lens-enter-scale → rest) over --lens-dur-base; exit is quicker (120ms,
+   --lens-ease-exit) and shrinks to the press scale. Only the direction differs per anchor. */
+.lens-glide-dock,
+.lens-glide-top,
+.lens-glide-right {
+  will-change: transform, opacity;
+  transition:
+    transform var(--lens-dur-base) var(--lens-ease-out),
+    opacity var(--lens-dur-base) var(--lens-ease-out);
+}
 .lens-glide-dock {
   transform-origin: bottom center;
-  will-change: transform, opacity;
-  transition:
-    transform var(--lens-dur-slow) var(--lens-ease-out),
-    opacity var(--lens-dur-slow) var(--lens-ease-out);
+  --lens-glide-from: translateY(6px) scale(var(--lens-enter-scale));
 }
-
-.lens-glide-dock.is-pre-open {
-  opacity: 0;
-  transform: translateY(8px);
-  transition: none !important;
-}
-
-.lens-glide-dock.is-open {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.lens-glide-dock.is-closing {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  transition:
-    transform var(--lens-dur-base) var(--lens-ease-exit),
-    opacity var(--lens-dur-base) var(--lens-ease-exit);
-}
-
 .lens-glide-top {
   transform-origin: top right;
-  will-change: transform, opacity;
-  transition:
-    transform var(--lens-dur-slow) var(--lens-ease-out),
-    opacity var(--lens-dur-base) var(--lens-ease-out);
+  --lens-glide-from: translateY(-6px) scale(var(--lens-enter-scale));
 }
-
-.lens-glide-top.is-pre-open {
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: none !important;
-}
-
-.lens-glide-top.is-open {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.lens-glide-top.is-closing {
-  opacity: 0;
-  transform: translateY(-8px);
-  pointer-events: none;
-  transition:
-    transform var(--lens-dur-base) var(--lens-ease-exit),
-    opacity var(--lens-dur-fast) var(--lens-ease-exit);
-}
-
 .lens-glide-right {
   transform-origin: center right;
-  will-change: transform, opacity;
-  transition:
-    transform var(--lens-dur-slow) var(--lens-ease-out),
-    opacity var(--lens-dur-base) var(--lens-ease-out);
+  --lens-glide-from: translateX(10px) scale(var(--lens-enter-scale));
 }
-
-.lens-glide-right.is-pre-open {
+:is(.lens-glide-dock, .lens-glide-top, .lens-glide-right).is-pre-open {
   opacity: 0;
-  transform: translateX(14px);
+  transform: var(--lens-glide-from);
   transition: none !important;
 }
-
-.lens-glide-right.is-open {
+:is(.lens-glide-dock, .lens-glide-top, .lens-glide-right).is-open {
   opacity: 1;
-  transform: translateX(0);
+  transform: none;
 }
-
-.lens-glide-right.is-closing {
+:is(.lens-glide-dock, .lens-glide-top, .lens-glide-right).is-closing {
   opacity: 0;
-  transform: translateX(14px);
+  transform: var(--lens-glide-from);
   pointer-events: none;
   transition:
-    transform var(--lens-dur-base) var(--lens-ease-exit),
-    opacity var(--lens-dur-fast) var(--lens-ease-exit);
+    transform var(--lens-dur-exit) var(--lens-ease-exit),
+    opacity var(--lens-dur-exit) var(--lens-ease-exit);
 }
 
 @keyframes lens-tab-glide-in {

@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
 import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -98,11 +98,17 @@ export const ControlCenterSurface: React.FC = () => {
   // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
   const initial = resolveTarget(new URLSearchParams(window.location.search).get("tab"));
   const [tab, setPage] = useState<PageId>(() => initial?.page ?? "appearance");
+  // The nav highlight moves at once; the page body renders as a transition (time-sliced, so a heavy
+  // page never blocks the click or the highlight; AAA_WAVE_PLAN C3 / perf settings-tab-switch).
+  const [navTab, setNavTab] = useState<PageId>(tab);
   // Section a deep link asked for (`lens://settings/<page>#<section>`); cleared on manual navigation.
   const [section, setSection] = useState<string | undefined>(() => initial?.section);
   const navigate = (page: PageId, sec?: string) => {
-    setPage(page);
-    setSection(sec);
+    setNavTab(page);
+    startTransition(() => {
+      setPage(page);
+      setSection(sec);
+    });
   };
   /** Accepts page ids, legacy tab ids and `page#section`. */
   const setTab = (target: string) => {
@@ -329,7 +335,7 @@ export const ControlCenterSurface: React.FC = () => {
         />
       )}
       <div className="cc-body">
-        <SettingsNav page={tab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
+        <SettingsNav page={navTab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
 
         <main className="cc-content" ref={contentRef} onScroll={(e) => setStuck(e.currentTarget.scrollTop > 4)}>
           <header className={`sh-pagehead ${stuck ? "stuck" : ""}`}>

@@ -251,6 +251,11 @@ button.lens-chip:hover {
   height: 16px;
   width: 38%;
 }
+.lens-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
 .lens-skeleton-block {
   height: 64px;
   border-radius: 10px;
@@ -369,7 +374,7 @@ button.lens-chip:hover {
   animation: lens-toast-in var(--lens-dur-slower) var(--lens-ease-drawer) both;
 }
 .lens-toast.is-leaving {
-  animation: lens-window-out 120ms var(--lens-ease-exit) both;
+  animation: lens-window-out var(--lens-dur-exit) var(--lens-ease-exit) both;
 }
 .lens-toast-icon {
   display: grid;
