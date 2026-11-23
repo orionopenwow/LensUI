@@ -71,6 +71,9 @@ pub fn risk_of(name: &str) -> Risk {
     if BLOCKED.contains(&name) {
         return Risk::Blocked;
     }
+    if let Some(r) = crate::control::tools::internal_risk(name) {
+        return r;
+    }
     spec(name).map(|t| t.risk).unwrap_or(Risk::Blocked)
 }
 
@@ -84,6 +87,9 @@ fn page_ids() -> Vec<&'static str> {
 
 /// JSON schema for a tool's input.
 pub fn schema(name: &str) -> Value {
+    if crate::control::tools::is_control_tool(name) {
+        return crate::control::tools::schema(name);
+    }
     let obj = |props: Value, required: &[&str]| {
         json!({ "type": "object", "properties": props, "required": required, "additionalProperties": false })
     };
@@ -134,7 +140,9 @@ pub fn schema(name: &str) -> Value {
 pub fn anthropic_tools() -> Vec<Value> {
     REGISTRY
         .iter()
-        .map(|t| json!({ "name": t.name, "description": t.description, "input_schema": schema(t.name) }))
+        .map(|t| (t.name, t.description))
+        .chain(crate::control::tools::TOOLS.iter().map(|t| (t.name, t.description)))
+        .map(|(name, description)| json!({ "name": name, "description": description, "input_schema": schema(name) }))
         .collect()
 }
 
@@ -142,7 +150,9 @@ pub fn anthropic_tools() -> Vec<Value> {
 pub fn openai_tools() -> Vec<Value> {
     REGISTRY
         .iter()
-        .map(|t| json!({ "type": "function", "function": { "name": t.name, "description": t.description, "parameters": schema(t.name) } }))
+        .map(|t| (t.name, t.description))
+        .chain(crate::control::tools::TOOLS.iter().map(|t| (t.name, t.description)))
+        .map(|(name, description)| json!({ "type": "function", "function": { "name": name, "description": description, "parameters": schema(name) } }))
         .collect()
 }
 
@@ -225,6 +235,10 @@ pub fn validate(name: &str, args: &Value) -> Result<Value, String> {
             "Lens doesn't allow AI to run \"{}\". It can't delete files, send messages, spend money, read passwords or control the mouse and keyboard.",
             clean(name, 40)
         ));
+    }
+    if crate::control::tools::is_control_tool(name) {
+        crate::control::tools::parse(name, args)?;
+        return Ok(Value::Object(m.clone()));
     }
     let app_name = |m: &Map<String, Value>| -> Result<String, String> {
         let n = get_str(m, "name").map(|s| clean(s, 60)).unwrap_or_default();
@@ -328,6 +342,9 @@ pub fn validate(name: &str, args: &Value) -> Result<Value, String> {
 
 /// One-line, human description of a validated call (shown in approval prompts).
 pub fn describe(name: &str, args: &Value) -> String {
+    if crate::control::tools::is_control_tool(name) {
+        return crate::control::tools::describe(name, args);
+    }
     let s = |k: &str| args.get(k).and_then(Value::as_str).unwrap_or("").to_string();
     let n = |k: &str| args.get(k).and_then(Value::as_i64);
     let b = |k: &str| args.get(k).and_then(Value::as_bool);
@@ -497,6 +514,9 @@ pub mod lens {
             let s = |k: &str| args.get(k).and_then(Value::as_str).unwrap_or("").to_string();
             let n = |k: &str| args.get(k).and_then(Value::as_i64);
             let b = |k: &str| args.get(k).and_then(Value::as_bool);
+            if crate::control::tools::is_control_tool(tool) {
+                return crate::control::lens::run_internal(&self.app, "internal", tool, args);
+            }
             match tool {
                 "launch_app" => {
                     let apps: Vec<(String, String)> =
@@ -662,7 +682,13 @@ mod tests {
             assert!(!t.description.is_empty());
             assert_ne!(t.risk, Risk::Blocked, "registered tools are runnable");
         }
-        assert_eq!(anthropic_tools().len(), REGISTRY.len());
+        assert_eq!(anthropic_tools().len(), REGISTRY.len() + crate::control::tools::TOOLS.len());
+        for t in crate::control::tools::TOOLS {
+            assert_ne!(risk_of(t.name), Risk::Blocked, "{}", t.name);
+            assert_eq!(schema(t.name)["type"], "object");
+        }
+        assert_eq!(risk_of("lens_set"), Risk::Confirm);
+        assert_eq!(risk_of("lens_get"), Risk::Low);
         assert_eq!(openai_tools()[0]["type"], "function");
     }
 

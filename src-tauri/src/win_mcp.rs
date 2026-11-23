@@ -45,11 +45,13 @@ const PENDING_TTL_MS: u64 = 10 * 60 * 1000;
 const MAX_CONNECTIONS: usize = 4;
 const AUDIT_MAX_BYTES: u64 = 512 * 1024;
 
-const INSTRUCTIONS: &str = "Lens UI is the user's Windows desktop shell. Use list_windows before focusing or \
-tiling. Settings tools (volume, brightness, theme, tiling) apply immediately unless the user asked to approve \
-every action. run_action takes a plain-language request (e.g. 'mute chrome, 40% brightness') and always waits \
-for the user to approve it inside Lens UI; poll get_action_status with the returned id. Lens never runs shell \
-commands, opens files or closes apps for you.";
+const INSTRUCTIONS: &str = "Lens UI is the user's Windows desktop shell. Lens Control tools (lens_*) reach every \
+Lens setting and desktop detail: find settings with lens_list_settings, read them with lens_get, change several at \
+once with lens_set (one approval, one undo), act on windows from lens_windows with lens_window_action, apply looks \
+with lens_apply_preset, and reverse anything with lens_undo. The user decides per app what you may do without \
+asking (\"This task can\" grants); when a call needs their OK it is queued and you get a request id to poll with \
+get_action_status. Resources: lens://settings/catalogue, lens://theme/current, lens://shelf/items. Lens never \
+deletes files, uses passwords, pays, sends messages or runs shell commands.";
 
 // ---------------------------------------------------------------------------------------------
 // Config (LensConfig.mcp)
@@ -68,7 +70,33 @@ pub struct McpConfig {
 // Host: what the running Lens UI provides (implemented in `lens_host` below)
 // ---------------------------------------------------------------------------------------------
 
+/// What Lens Control decided for a `lens_*` call (see `crate::control::grants`).
+pub enum ControlGate {
+    Run,
+    /// Needs the user's OK; the string is the plain-language summary.
+    Ask(String),
+    Block(String),
+}
+
 pub trait McpHost: Send + Sync {
+    /// Grants decision for a pre-existing tool; `None` keeps the legacy rules (tests, offline).
+    fn grant_decision(&self, _client: &str, _tool: &str) -> Option<crate::control::grants::Decision> {
+        None
+    }
+    /// Gate for a `lens_*` call: parse, assess and check the client's grants.
+    fn control_gate(&self, _client: &str, _tool: &str, _args: &Value) -> ControlGate {
+        ControlGate::Block(OFFLINE.into())
+    }
+    /// Runs an allowed or approved `lens_*` call.
+    fn run_control(&self, _client: &str, _tool: &str, _args: &Value) -> Result<(String, Option<Value>), String> {
+        Err(OFFLINE.into())
+    }
+    fn resources(&self) -> Vec<Value> {
+        Vec::new()
+    }
+    fn read_resource(&self, _client: &str, _uri: &str) -> Result<Value, String> {
+        Err(OFFLINE.into())
+    }
     fn list_windows(&self) -> Result<Value, String>;
     fn focus_window(&self, hwnd: i64) -> Result<String, String>;
     fn tile_windows(&self, layout: &str) -> Result<String, String>;
@@ -165,6 +193,7 @@ pub const BUILTIN_PACKS: [&str; 18] = [
 
 fn is_read_only(tool: &str) -> bool {
     matches!(tool, "list_windows" | "search" | "get_action_status")
+        || crate::control::tools::spec(tool).map(|t| t.read_only).unwrap_or(false)
 }
 
 fn ann(title: &str, read_only: bool, idempotent: bool) -> Value {
@@ -314,6 +343,8 @@ pub fn tool_defs() -> Vec<Value> {
     // Lens Intelligence tools (launch/close apps, colour mode, DND, notes...) with the same
     // risk levels the in-app assistant uses.
     defs.extend(crate::ai::tools::mcp_tool_defs());
+    // Lens Control: every setting and desktop detail, gated by the client's grants.
+    defs.extend(crate::control::tools::mcp_tool_defs());
     defs
 }
 
@@ -358,6 +389,8 @@ pub enum ToolCall {
     ActionStatus(String),
     /// A Lens Intelligence registry tool (validated arguments).
     Ai { tool: String, args: Value },
+    /// A Lens Control tool (`lens_*`); `client` is filled in by the session or the queue.
+    Control { tool: String, args: Value, client: String },
 }
 
 impl ToolCall {
@@ -375,6 +408,7 @@ impl ToolCall {
             ToolCall::RunAction(_) => "run_action",
             ToolCall::ActionStatus(_) => "get_action_status",
             ToolCall::Ai { tool, .. } => crate::ai::tools::spec(tool).map(|s| s.name).unwrap_or("ai_tool"),
+            ToolCall::Control { tool, .. } => crate::control::tools::spec(tool).map(|s| s.name).unwrap_or("lens_control"),
         }
     }
 
@@ -395,6 +429,7 @@ impl ToolCall {
             ToolCall::RunAction(t) => t.clone(),
             ToolCall::ActionStatus(id) => format!("Check request {}", id),
             ToolCall::Ai { tool, args } => crate::ai::tools::describe(tool, args),
+            ToolCall::Control { tool, args, .. } => crate::control::tools::describe(tool, args),
         }
     }
 
@@ -410,6 +445,7 @@ impl ToolCall {
             ToolCall::RunAction(t) => clean_text(t, 120),
             ToolCall::ActionStatus(id) => id.clone(),
             ToolCall::Ai { tool, args } => clean_text(&crate::ai::tools::describe(tool, args), 120),
+            ToolCall::Control { tool, args, .. } => clean_text(&crate::control::tools::describe(tool, args), 120),
         }
     }
 }
@@ -489,6 +525,9 @@ pub fn parse_tool_call(name: &str, args: &Value) -> Result<ToolCall, Option<Stri
             Some(id) if id.len() <= 40 && !id.is_empty() => Ok(ToolCall::ActionStatus(id.to_string())),
             _ => bad("id must be the id returned by run_action"),
         },
+        _ if crate::control::tools::is_control_tool(name) => crate::control::tools::parse(name, &Value::Object(args.clone()))
+            .map(|_| ToolCall::Control { tool: name.to_string(), args: Value::Object(args.clone()), client: String::new() })
+            .map_err(Some),
         _ if crate::ai::tools::MCP_EXTRA.contains(&name) => crate::ai::tools::validate(name, &Value::Object(args.clone()))
             .map(|a| ToolCall::Ai { tool: name.to_string(), args: a })
             .map_err(Some),
@@ -525,6 +564,7 @@ pub fn run_direct(call: &ToolCall, host: &dyn McpHost) -> Result<(String, Option
         }
         ToolCall::RunAction(_) => Err("run_action always needs the user's approval".into()),
         ToolCall::Ai { tool, args } => host.run_ai_tool(tool, args).map(|m| (m, None)),
+        ToolCall::Control { tool, args, client } => host.run_control(client, tool, args),
         ToolCall::ActionStatus(id) => match find_action(id) {
             Some(a) => Ok((
                 format!("Request {}: {}{}", a.id, a.status, if a.result.is_empty() { String::new() } else { format!(" - {}", a.result) }),
@@ -646,7 +686,12 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
         return Ok(a);
     }
     let out = match parse_tool_call(&a.tool, &a.args) {
-        Ok(call) => run_direct(&call, host),
+        Ok(mut call) => {
+            if let ToolCall::Control { client, .. } = &mut call {
+                *client = a.client.clone();
+            }
+            run_direct(&call, host)
+        }
         Err(_) => Err("The request is no longer valid.".into()),
     };
     let done = match out {
@@ -724,7 +769,7 @@ fn supported_versions() -> Vec<&'static str> {
 }
 
 fn capabilities() -> Value {
-    json!({ "tools": { "listChanged": false } })
+    json!({ "tools": { "listChanged": false }, "resources": { "listChanged": false } })
 }
 
 fn server_info() -> Value {
@@ -826,7 +871,7 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                     modern,
                 ));
             }
-            let call = match parse_tool_call(name, &args) {
+            let mut call = match parse_tool_call(name, &args) {
                 Ok(c) => c,
                 Err(None) => {
                     return Some(rpc_error(id, -32602, &format!("Unknown tool: {}", clean_text(name, 60)), None))
@@ -839,9 +884,35 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
             if !host.available() {
                 return Some(rpc_result(id, text_result(OFFLINE, None, true), modern));
             }
-            let needs_approval = matches!(call, ToolCall::RunAction(_))
+            let mut needs_approval = matches!(call, ToolCall::RunAction(_))
                 || matches!(&call, ToolCall::Ai { tool, .. } if crate::ai::tools::risk_of(tool) == crate::ai::tools::Risk::Confirm)
                 || (!is_read_only(call.name()) && host.confirm_all());
+            // "This task can" grants: per client, per capability (Allowed / Ask first / Blocked).
+            let blocked = match &mut call {
+                ToolCall::Control { tool, args, client: c } => {
+                    *c = client.clone();
+                    match host.control_gate(&client, tool, args) {
+                        ControlGate::Run => None,
+                        ControlGate::Ask(_) => {
+                            needs_approval = true;
+                            None
+                        }
+                        ControlGate::Block(m) => Some(m),
+                    }
+                }
+                other => match host.grant_decision(&client, other.name()) {
+                    Some(crate::control::grants::Decision::Ask) => {
+                        needs_approval = true;
+                        None
+                    }
+                    Some(crate::control::grants::Decision::Block(m)) => Some(m),
+                    _ => None,
+                },
+            };
+            if let Some(m) = blocked {
+                append_audit(&audit_line(&client, call.name(), "blocked", false, &call.audit_args(), 0));
+                return Some(rpc_result(id, text_result(&m, None, true), modern));
+            }
             let result = if needs_approval {
                 match enqueue(&call, &args, &client) {
                     Ok(a) => {
@@ -869,7 +940,22 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
             };
             Some(rpc_result(id, result, modern))
         }
-        "resources/list" | "prompts/list" => Some(rpc_error(id, -32601, "Method not found", None)),
+        "resources/list" => Some(rpc_result(id, json!({ "resources": host.resources() }), modern)),
+        "resources/read" => {
+            let uri = params.get("uri").and_then(Value::as_str).unwrap_or("");
+            if uri.is_empty() || uri.len() > 200 {
+                return Some(rpc_error(id, -32602, "uri is required", None));
+            }
+            let client = if sess.client.is_empty() { "unknown client".to_string() } else { sess.client.clone() };
+            if !sess.allow_call(Instant::now()) {
+                return Some(rpc_error(id, -32000, "Too many requests; wait a minute.", None));
+            }
+            match host.read_resource(&client, uri) {
+                Ok(v) => Some(rpc_result(id, v, modern)),
+                Err(m) => Some(rpc_error(id, -32002, &clean_text(&m, 200), None)),
+            }
+        }
+        "prompts/list" => Some(rpc_error(id, -32601, "Method not found", None)),
         _ => Some(rpc_error(id, -32601, &format!("Method not found: {}", clean_text(method, 60)), None)),
     }
 }
@@ -1352,8 +1438,39 @@ pub mod lens_host {
             crate::ai::tools::lens::LensToolHost { app: self.app.clone() }.run(tool, args)
         }
 
+        fn grant_decision(&self, client: &str, tool: &str) -> Option<crate::control::grants::Decision> {
+            Some(crate::control::lens::legacy_decision(client, tool))
+        }
+
+        fn control_gate(&self, client: &str, tool: &str, args: &Value) -> ControlGate {
+            match crate::control::lens::gate(&self.app, client, tool, args) {
+                Ok(crate::control::lens::Gate::Run) => ControlGate::Run,
+                Ok(crate::control::lens::Gate::Ask(a)) => ControlGate::Ask(a.summary),
+                Ok(crate::control::lens::Gate::Block(m)) => ControlGate::Block(m),
+                Err(m) => ControlGate::Block(m),
+            }
+        }
+
+        fn run_control(&self, client: &str, tool: &str, args: &Value) -> Result<(String, Option<Value>), String> {
+            crate::control::lens::run(&self.app, client, tool, args, "ran").map(|o| (o.text, o.structured))
+        }
+
+        fn resources(&self) -> Vec<Value> {
+            crate::control::lens::resources()
+        }
+
+        fn read_resource(&self, client: &str, uri: &str) -> Result<Value, String> {
+            crate::control::lens::read_resource(&self.app, client, uri)
+        }
+
         fn pending_changed(&self, action: &PendingAction) {
             let _ = self.app.emit("lens://mcp-changed", ());
+            if action.status == "pending" {
+                // The standalone "Needs your OK" window (docs/CLAUDE_CONTROL.md), when configured.
+                if let Some(w) = self.app.get_webview_window("approval") {
+                    let _ = w.show();
+                }
+            }
             if action.status == "pending" {
                 crate::push_notification_cmd(
                     self.app.clone(),

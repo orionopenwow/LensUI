@@ -12,6 +12,7 @@
     "parity": "node tools/parity/build.mjs && node tools/parity/shoot.mjs",
     "test": "bun test src/__tests__",
     "gen:types": "python3 tools/gen-types/gen_types.py",
+    "gen:catalogue": "node -e \"require('child_process').execSync('cargo test --lib export_catalogue',{cwd:'src-tauri',stdio:'inherit',env:{...process.env,LENS_WRITE_CATALOGUE:'1'}})\"",
     "ext:build": "node extensions/browser/build.mjs",
     "ext:check": "node extensions/browser/build.mjs --check"
   },
