@@ -49,7 +49,9 @@ export const TopBarSurface: React.FC = () => {
   const searchOpenRef = React.useRef(false);
   searchOpenRef.current = searchOpen;
 
-  const showTopMedia = config?.topBar?.showMediaControls ?? true;
+  // With Lens Music on, its mini player replaces the older media controls (docs/MUSIC.md §3),
+  // and the 2-second media poll stops.
+  const showTopMedia = (config?.topBar?.showMediaControls ?? true) && musicMini === "hidden";
 
   useEffect(() => {
     if (!showTopMedia) {
@@ -58,6 +60,7 @@ export const TopBarSurface: React.FC = () => {
     }
     let alive = true;
     const pollMedia = () => {
+      if (document.hidden) return;
       invoke<MediaNowPlaying>("get_media_now_playing_cmd")
         .then((m) => {
           if (alive) setMedia(m.hasSession ? m : null);
