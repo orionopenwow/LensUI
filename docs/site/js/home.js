@@ -267,12 +267,14 @@ document.querySelectorAll("[data-slides]").forEach((box) => {
 // ---- the mini Lens Browser: tabs switch, the Lens button opens the AI side panel -----------------
 document.querySelectorAll("[data-minibr]").forEach((br) => {
   const url = br.querySelector("[data-mb-url]"), page = br.querySelector("[data-mb-page]"), side = br.querySelector("[data-mb-side]"), lens = br.querySelector("[data-mb-lens]");
-  const PAGES = [["lens.dev/release-notes", "Lens 0.9", "Nine dock styles, 89 themes and a desktop where look, apps and AI work as one."], ["youtube.com/watch?v=lens-tour", "Lens in 90 seconds", "A short tour of the dock, themes, the magic right-click and Claude on the desktop."]];
+  const PAGES = [["lens.dev/release-notes", "Lens 0.9", "Nine dock styles, 89 themes and a desktop where look, apps and AI work as one.", ["Lens 0.9 ships nine dock styles.", "89 themes, including living ones.", "Every change undoes."]], ["youtube.com/watch?v=lens-tour", "Lens in 90 seconds", "A short tour of the dock, themes, the magic right-click and Claude on the desktop.", ["0:00 The dock and its nine styles", "0:25 Themes and living wallpapers", "0:50 Magic right-click", "1:10 Claude on the desktop, with approvals"]]];
+  const list = br.querySelector("[data-mb-list]"), hero = br.querySelector("[data-mb-hero]"), hint = br.querySelector("[data-mb-hint]");
   br.querySelectorAll("[data-mb-tab]").forEach((t) => t.addEventListener("click", () => {
     br.querySelectorAll("[data-mb-tab]").forEach((x) => x.classList.toggle("on", x === t));
-    const [u, h, p] = PAGES[+t.dataset.mbTab];
+    const [u, h, p, pts] = PAGES[+t.dataset.mbTab];
+    list.innerHTML = pts.map((x) => `<li>${x}</li>`).join(""); hero.classList.toggle("is-video", +t.dataset.mbTab === 1);
     url.textContent = u; page.querySelector(".mb-h").textContent = h; page.querySelector("p").textContent = p;
     side.querySelector(".mb-q").textContent = +t.dataset.mbTab ? "Get the transcript" : "Summarise this page";
   }));
-  lens.addEventListener("click", () => { const on = side.hidden; side.hidden = !on; lens.setAttribute("aria-pressed", String(on)); });
+  lens.addEventListener("click", () => { const on = side.hidden; side.hidden = !on; lens.setAttribute("aria-pressed", String(on)); hint?.remove(); });
 });

@@ -378,7 +378,26 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
 
   // ---- desktop: icons, drag-select, right-click menu ---------------------------------------------------
   const iconsEl = cv.querySelector(".lx-icons");
-  iconsEl.addEventListener("click", (e) => { const b = e.target.closest(".lx-ic"); if (!b) return; iconsEl.querySelectorAll(".lx-ic").forEach((x) => x.classList.toggle("sel", x === b)); });
+  iconsEl.addEventListener("click", (e) => { const b = e.target.closest(".lx-ic"); if (!b) return; if (b._dragged) { b._dragged = false; return; } iconsEl.querySelectorAll(".lx-ic").forEach((x) => x.classList.toggle("sel", x === b)); });
+  // Desktop icons move like real ones: drag one anywhere on the desk; it stays inside it.
+  let icDrag = null;
+  iconsEl.addEventListener("pointerdown", (e) => {
+    const b = e.target.closest(".lx-ic"); if (!b || e.button !== 0) return;
+    icDrag = { b, id: e.pointerId, p: toDesk(e), ox: b._dx || 0, oy: b._dy || 0, moved: false };
+  });
+  iconsEl.addEventListener("pointermove", (e) => {
+    if (!icDrag || icDrag.id !== e.pointerId) return;
+    const q = toDesk(e), dx = q.x - icDrag.p.x, dy = q.y - icDrag.p.y;
+    if (!icDrag.moved && Math.hypot(dx, dy) < 5) return;
+    if (!icDrag.moved) { icDrag.moved = true; icDrag.b.setPointerCapture(e.pointerId); icDrag.b.classList.add("is-moving"); emit("user", "icon"); }
+    const b = icDrag.b, home = { x: b.offsetLeft + iconsEl.offsetLeft, y: b.offsetTop + iconsEl.offsetTop };
+    const nx = Math.max(-home.x + 4, Math.min(W - home.x - b.offsetWidth - 4, icDrag.ox + dx));
+    const ny = Math.max(-home.y + TOP + 2, Math.min(H - home.y - b.offsetHeight - 70, icDrag.oy + dy));
+    b._dx = nx; b._dy = ny;
+    b.style.transform = `translate3d(${nx}px, ${ny}px, 0)`;
+  });
+  const endIc = (e) => { if (!icDrag || icDrag.id !== e.pointerId) return; if (icDrag.moved) { icDrag.b._dragged = true; icDrag.b.classList.remove("is-moving"); } icDrag = null; };
+  iconsEl.addEventListener("pointerup", endIc); iconsEl.addEventListener("pointercancel", endIc);
   iconsEl.addEventListener("dblclick", (e) => { const b = e.target.closest(".lx-ic"); if (b) open(b.dataset.open); });
   iconsEl.addEventListener("keydown", (e) => { const b = e.target.closest(".lx-ic"); if (b && e.key === "Enter") open(b.dataset.open); });
   const marq = cv.querySelector(".lx-marquee");
