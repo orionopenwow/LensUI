@@ -40,3 +40,4 @@ pub(crate) mod music;
 pub(crate) mod apps;
 pub(crate) mod syssettings;
 pub(crate) mod presence;
+pub(crate) mod coreapps;

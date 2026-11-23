@@ -609,6 +609,11 @@ pub mod lens {
             crate::presence::before_tool(&self.app, tool, args, &super::describe(tool, args))?;
             match tool {
                 "launch_app" => {
+                    // "Lens, open timer": Lens' own core apps first (docs/CORE_APPS.md).
+                    if let Some(id) = crate::coreapps::voice_target(&s("name")) {
+                        crate::commands::coreapps::open_core_app(&self.app, id, None)?;
+                        return Ok(format!("Opened {}.", crate::coreapps::by_id(id).map(|a| a.title).unwrap_or("Lens")));
+                    }
                     let apps: Vec<(String, String)> =
                         crate::sys_telemetry::scan_start_menu_apps().into_iter().map(|a| (a.name, a.path)).collect();
                     let (name, path) = best_match(&s("name"), &apps).ok_or_else(|| format!("No installed app called \"{}\".", s("name")))?;
