@@ -1,12 +1,12 @@
-use super::geom::{self, LRect, Monitor, PRect};
+use super::geom::{self, LRect, ScreenArea, PRect};
 use super::queue::{Queue, CATCH_UP_MS, LEAD_MS, RUN_IDLE_MS, STOP_HOLD_MS};
 use super::*;
 
-fn mons() -> Vec<Monitor> {
+fn mons() -> Vec<ScreenArea> {
     vec![
-        Monitor { rect: PRect { x: 0, y: 0, w: 3840, h: 2160 }, work: PRect { x: 0, y: 0, w: 3840, h: 2100 }, scale: 2.0 },
-        Monitor { rect: PRect { x: 3840, y: 300, w: 1920, h: 1080 }, work: PRect { x: 3840, y: 300, w: 1920, h: 1040 }, scale: 1.0 },
-        Monitor { rect: PRect { x: -1440, y: 0, w: 1440, h: 900 }, work: PRect { x: -1440, y: 0, w: 1440, h: 860 }, scale: 1.25 },
+        ScreenArea { rect: PRect { x: 0, y: 0, w: 3840, h: 2160 }, work: PRect { x: 0, y: 0, w: 3840, h: 2100 }, scale: 2.0 },
+        ScreenArea { rect: PRect { x: 3840, y: 300, w: 1920, h: 1080 }, work: PRect { x: 3840, y: 300, w: 1920, h: 1040 }, scale: 1.0 },
+        ScreenArea { rect: PRect { x: -1440, y: 0, w: 1440, h: 900 }, work: PRect { x: -1440, y: 0, w: 1440, h: 860 }, scale: 1.25 },
     ]
 }
 
@@ -234,8 +234,8 @@ mod props {
     use super::*;
     use proptest::prelude::*;
 
-    fn monitor() -> impl Strategy<Value = Monitor> {
-        (-8000i32..8000, -4000i32..4000, 640i32..7680, 480i32..4320, prop::sample::select(vec![1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0])).prop_map(|(x, y, w, h, s)| Monitor {
+    fn monitor() -> impl Strategy<Value = ScreenArea> {
+        (-8000i32..8000, -4000i32..4000, 640i32..7680, 480i32..4320, prop::sample::select(vec![1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0])).prop_map(|(x, y, w, h, s)| ScreenArea {
             rect: PRect { x, y, w, h },
             work: PRect { x, y, w, h: h - 40 },
             scale: s,

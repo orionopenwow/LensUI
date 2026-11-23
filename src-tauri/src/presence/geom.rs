@@ -24,7 +24,7 @@ pub struct LRect {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct Monitor {
+pub struct ScreenArea {
     /// Full monitor, physical px.
     pub rect: PRect,
     /// Work area, physical px.
@@ -57,7 +57,7 @@ pub fn center(r: PRect) -> (i32, i32) {
 }
 
 /// The monitor holding the rect's centre, else the nearest one.
-pub fn monitor_for(monitors: &[Monitor], r: PRect) -> Option<Monitor> {
+pub fn monitor_for(monitors: &[ScreenArea], r: PRect) -> Option<ScreenArea> {
     let (cx, cy) = center(r);
     monitors
         .iter()
@@ -67,7 +67,7 @@ pub fn monitor_for(monitors: &[Monitor], r: PRect) -> Option<Monitor> {
 }
 
 /// Screen (physical) → overlay-local logical px on `m`.
-pub fn to_local(r: PRect, m: &Monitor) -> LRect {
+pub fn to_local(r: PRect, m: &ScreenArea) -> LRect {
     let s = safe_scale(m.scale);
     LRect {
         x: (r.x as f64 - m.rect.x as f64) / s,
@@ -79,7 +79,7 @@ pub fn to_local(r: PRect, m: &Monitor) -> LRect {
 
 /// Overlay-local logical px on `m` → screen (physical). Inverse of `to_local` (±1 px rounding).
 #[allow(dead_code)] // inverse of to_local; used by tests and proptests
-pub fn to_screen(l: LRect, m: &Monitor) -> PRect {
+pub fn to_screen(l: LRect, m: &ScreenArea) -> PRect {
     let s = safe_scale(m.scale);
     PRect {
         x: m.rect.x + (l.x * s).round() as i32,
@@ -103,7 +103,7 @@ pub fn page_to_screen(page: LRect, origin: (i32, i32), scale: f64, scroll: (f64,
 }
 
 /// Where a snap puts a window on `m` (work area halves/quarters).
-pub fn snap_rect(m: &Monitor, side: &str) -> Option<PRect> {
+pub fn snap_rect(m: &ScreenArea, side: &str) -> Option<PRect> {
     let w = m.work;
     let (hw, hh) = (w.w / 2, w.h / 2);
     Some(match side.to_lowercase().replace(['-', '_', ' '], "").as_str() {

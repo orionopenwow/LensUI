@@ -29,7 +29,7 @@ use std::sync::{Mutex, OnceLock};
 
 use serde::{Deserialize, Serialize};
 
-pub use geom::{LRect, Monitor, PRect};
+pub use geom::{LRect, ScreenArea, PRect};
 
 // ---------------------------------------------------------------------------------------- config
 
@@ -259,7 +259,7 @@ pub struct PresenceEvent {
     pub kind: StepKind,
     pub target: Option<LRect>,
     pub dest: Option<LRect>,
-    pub monitor: Option<Monitor>,
+    pub monitor: Option<ScreenArea>,
     pub caption: String,
     pub text: Option<String>,
     pub index: u32,
@@ -289,7 +289,7 @@ pub fn build_event(
     actor: &Actor,
     step: &Step,
     env: Env,
-    monitors: &[Monitor],
+    monitors: &[ScreenArea],
     run: u64,
     seq: u64,
     index: u32,
@@ -451,7 +451,7 @@ pub fn done(app: &tauri::AppHandle, actor: &Actor, label: &str) {
 
 /// Builds the step for a control-gate call (`control::lens::run`). Reads, lists and browser calls
 /// (the browser agent announces its own element rects) return None.
-pub fn step_for_control(call: &crate::control::tools::Call, summary: &str, window_rect: impl Fn(i64) -> Option<[i32; 4]>, monitors: &[Monitor]) -> Option<Step> {
+pub fn step_for_control(call: &crate::control::tools::Call, summary: &str, window_rect: impl Fn(i64) -> Option<[i32; 4]>, monitors: &[ScreenArea]) -> Option<Step> {
     use crate::control::tools::{Call, WinAction};
     match call {
         Call::List { .. } | Call::Get { .. } | Call::Windows | Call::Browser(_) => None,
@@ -485,7 +485,7 @@ pub fn before_control(app: &tauri::AppHandle, client: &str, call: &crate::contro
     #[cfg(windows)]
     let monitors = win::monitors();
     #[cfg(not(windows))]
-    let monitors: Vec<Monitor> = Vec::new();
+    let monitors: Vec<ScreenArea> = Vec::new();
     let actor = Actor::from_client(client);
     let Some(mut step) = step_for_control(call, summary, window_rect, &monitors) else {
         // Reads still respect Stop for outside apps.

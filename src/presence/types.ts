@@ -26,7 +26,7 @@ export interface PRect {
   h: number;
 }
 
-export interface Monitor {
+export interface ScreenArea {
   rect: PRect;
   work: PRect;
   scale: number;
@@ -44,7 +44,7 @@ export interface PresenceEvent {
   kind: StepKind;
   target: LRect | null;
   dest: LRect | null;
-  monitor: Monitor | null;
+  monitor: ScreenArea | null;
   caption: string;
   /** Already masked by the backend. */
   text: string | null;

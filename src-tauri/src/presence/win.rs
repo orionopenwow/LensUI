@@ -16,7 +16,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS, WINDOW_DISPLAY_AFFINITY, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
 };
 
-use super::{Env, Monitor, PRect, PresenceEvent, Visual, EVT_BANNER, EVT_STEP};
+use super::{Env, ScreenArea, PRect, PresenceEvent, Visual, EVT_BANNER, EVT_STEP};
 
 pub const OVERLAY: &str = "presence";
 pub const BANNER: &str = "presencebar";
@@ -38,10 +38,10 @@ pub fn last() -> Option<PresenceEvent> {
     LAST.get_or_init(|| Mutex::new(None)).lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
-pub fn monitors() -> Vec<Monitor> {
+pub fn monitors() -> Vec<ScreenArea> {
     crate::magic::monitors()
         .into_iter()
-        .map(|m| Monitor {
+        .map(|m| ScreenArea {
             rect: PRect { x: m.rect.x, y: m.rect.y, w: m.rect.w, h: m.rect.h },
             work: PRect { x: m.work.x, y: m.work.y, w: m.work.w, h: m.work.h },
             scale: m.scale,
@@ -154,7 +154,7 @@ fn hide(w: &tauri::WebviewWindow) {
     }
 }
 
-fn place_on(w: &tauri::WebviewWindow, m: &Monitor) {
+fn place_on(w: &tauri::WebviewWindow, m: &ScreenArea) {
     let _ = w.set_position(PhysicalPosition::new(m.rect.x, m.rect.y));
     let _ = w.set_size(PhysicalSize::new(m.rect.w.max(1) as u32, m.rect.h.max(1) as u32));
 }
