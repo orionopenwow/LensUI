@@ -303,7 +303,8 @@ pub fn execute(req: &api::Req, ua: &str, if_modified_since: Option<&str>) -> Res
         rb = rb.header("If-Modified-Since", ims);
     }
     if let Some(b) = &req.body {
-        rb = rb.json(b);
+        // reqwest's `json` feature isn't enabled in this crate; serialize by hand.
+        rb = rb.header("Content-Type", "application/json").body(serde_json::to_vec(b).map_err(|e| e.to_string())?);
     }
     if let Some(f) = &req.form {
         rb = rb.form(f);
