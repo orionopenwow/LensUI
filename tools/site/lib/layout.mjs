@@ -3,6 +3,7 @@
 import { esc } from "./markdown.mjs";
 
 export const REPO = "https://github.com/orionopenwow/LensUI";
+export const SITE_URL = "https://orionopenwow.github.io/lensui/";
 const NAV = [["", "Home"], ["docs/", "Docs"], ["download.html", "Download"], ["test.html", "Testers"]];
 const MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 
@@ -35,9 +36,19 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <meta name="description" content="${esc(desc)}">
 <meta property="og:title" content="${esc(title || "Lens UI")}">
 <meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="${base}media/dock-magnify.webp">
-<meta name="theme-color" content="#0b0b0d">
-<link rel="icon" href="${base}assets/lens.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${SITE_URL}${path.replace(/index\.html$/, "")}">
+<meta property="og:image" content="${SITE_URL}brand/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Lens logo, a silver lens holding a rainbow nebula, beside the words: Lens, a calmer desktop for Windows">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${SITE_URL}brand/og.png">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fafaf7" media="(prefers-color-scheme: light)">
+<link rel="icon" href="${base}brand/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="${base}brand/lens-logo-small.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${base}brand/apple-touch-icon.png">
 <script>${PREPAINT}</script>
 <link rel="stylesheet" href="${base}css/site.css">
 </head>
@@ -45,7 +56,7 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar">
   <div class="inner">
-    <a class="mark" href="${base}" aria-label="Lens UI home"><i aria-hidden="true"></i>Lens UI</a>
+    <a class="mark" href="${base}" aria-label="Lens UI home"><img src="${base}brand/lens-logo-small.svg" alt="" width="22" height="22">Lens UI</a>
     <nav id="site-nav" aria-label="Site">${nav}</nav>
     <div class="end">
       <a class="btn small gh" href="${REPO}">GitHub</a>

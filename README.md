@@ -1,7 +1,7 @@
 <!-- The feature tour below is generated from tools/site/content/features.mjs by
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
-  <img src="./assets/lensui-logo.svg" alt="" width="88" />
+  <img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" />
   <h1>Lens UI</h1>
   <p>A calm, themeable desktop for Windows 10 and 11: dock, themes, window styling, a living wallpaper and a local-first AI helper, in one app that undoes everything it changes.</p>
   <p>
