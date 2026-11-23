@@ -108,6 +108,16 @@ pub(crate) fn save_config_cmd(
     if startup_blocked.is_some() {
         new_config.func.run_on_startup = false;
     }
+    // A reorder of the same pins in Lens is the person's choice: from now on Lens keeps its own
+    // order instead of following the Windows taskbar's (B-22).
+    if !new_config.dock.pins_user_ordered
+        && crate::win_pin_order::is_reorder(
+            &prev_config.dock.pinned_apps.iter().map(|a| a.id.clone()).collect::<Vec<_>>(),
+            &new_config.dock.pinned_apps.iter().map(|a| a.id.clone()).collect::<Vec<_>>(),
+        )
+    {
+        new_config.dock.pins_user_ordered = true;
+    }
     save_config(&new_config)?;
     crate::app::integration::on_config_saved(&app, &prev_config, &new_config);
 

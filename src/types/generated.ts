@@ -1037,6 +1037,11 @@ export interface DockConfig {
   scrollCyclesWindows: boolean;
   /** Suggest 1-3 apps you usually open at this time (local predictor, no AI model). OFF by default. */
   suggestedApps: boolean;
+  /**
+   * Set once the person reorders Dock pins in Lens. Until then, pins mirrored from the
+   * Windows taskbar follow Windows' own pin order (B-22).
+   */
+  pinsUserOrdered: boolean;
 }
 
 /**

@@ -132,6 +132,10 @@ pub struct DockConfig {
     /// Suggest 1-3 apps you usually open at this time (local predictor, no AI model). OFF by default.
     #[serde(default)]
     pub suggested_apps: bool,
+    /// Set once the person reorders Dock pins in Lens. Until then, pins mirrored from the
+    /// Windows taskbar follow Windows' own pin order (B-22).
+    #[serde(default)]
+    pub pins_user_ordered: bool,
 }
 
 fn default_dock_magnification() -> String {
@@ -457,6 +461,7 @@ impl Default for LensConfig {
                 file_drop_open: false,
                 scroll_cycles_windows: false,
                 suggested_apps: false,
+                pins_user_ordered: false,
             },
             top_bar: TopBarConfig::default(),
             func: FuncConfig {
@@ -575,8 +580,32 @@ pub fn scan_windows_taskbar_pins() -> Vec<PinnedApp> {
     let Ok(entries) = fs::read_dir(&taskbar_dir) else {
         return pins;
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
+    // read_dir is alphabetical on NTFS, not the taskbar's order (B-22): start from pin time
+    // (oldest first), then apply Explorer's own order from Taskband\Favorites.
+    let mut paths: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .flatten()
+        .map(|e| {
+            let t = e
+                .metadata()
+                .and_then(|m| m.created().or_else(|_| m.modified()))
+                .unwrap_or(std::time::UNIX_EPOCH);
+            (t, e.path())
+        })
+        .collect();
+    paths.sort_by(|a, b| a.0.cmp(&b.0));
+    let stems: Vec<String> = paths
+        .iter()
+        .filter_map(|(_, p)| p.file_stem().and_then(|s| s.to_str()).map(str::to_string))
+        .collect();
+    let order = match crate::win_pin_order::read_favorites_blob() {
+        Some(blob) => crate::win_pin_order::order_by_favorites(&stems, &blob),
+        None => stems,
+    };
+    paths.sort_by_key(|(_, p)| {
+        let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        order.iter().position(|o| o == stem).unwrap_or(usize::MAX)
+    });
+    for (_, path) in paths {
         if !path.is_file() {
             continue;
         }
@@ -611,6 +640,7 @@ pub fn scan_windows_taskbar_pins() -> Vec<PinnedApp> {
 
 pub fn merge_windows_taskbar_pins(cfg: &mut LensConfig) -> bool {
     let tb_pins = scan_windows_taskbar_pins();
+    let order: Vec<String> = tb_pins.iter().map(|p| p.name.clone()).collect();
     let mut changed = false;
     for tp in tb_pins {
         let tp_lower = tp.name.to_lowercase();
@@ -628,6 +658,18 @@ pub fn merge_windows_taskbar_pins(cfg: &mut LensConfig) -> bool {
         });
         if !already {
             cfg.dock.pinned_apps.push(tp);
+            changed = true;
+        }
+    }
+    // Until the person reorders pins in Lens, mirrored Windows pins follow Windows' order.
+    // Lens never writes Windows' own pin data (B-22).
+    if !cfg.dock.pins_user_ordered {
+        if crate::win_pin_order::apply_order(
+            &mut cfg.dock.pinned_apps,
+            |a| a.id.starts_with("tb-"),
+            |a| a.name.clone(),
+            &order,
+        ) {
             changed = true;
         }
     }

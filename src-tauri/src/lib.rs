@@ -20,6 +20,7 @@ mod win_notifications;
 mod win_previews;
 mod win_rules;
 mod win_shell;
+mod win_pin_order;
 mod win_themes;
 mod win_backup;
 mod win_plugins;

@@ -284,7 +284,7 @@ extern "system" {
 
 /// Raw bytes of an HKCU value (any type), or None when the key or value is missing.
 #[cfg(windows)]
-fn read_hkcu_bytes(subkey: &str, value_name: &str) -> Option<Vec<u8>> {
+pub(crate) fn read_hkcu_bytes(subkey: &str, value_name: &str) -> Option<Vec<u8>> {
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
         RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
