@@ -456,26 +456,35 @@ pub(crate) fn before_bridge_request(app: &AppHandle) {
 
 // ============================================================================== Lens Command
 
-/// Sequence number for `lens://command/open`, so the frontend can tell a replay from a new open.
-static OPEN_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// The ready handshake with the Command page (`app::command_link`, docs/brain/BUGS.md B-12).
+pub(crate) fn command_link() -> &'static Mutex<crate::app::command_link::Link> {
+    static LINK: OnceLock<Mutex<crate::app::command_link::Link>> = OnceLock::new();
+    LINK.get_or_init(|| Mutex::new(crate::app::command_link::Link::default()))
+}
 
 /// Shows the Command window (building it on first use) and tells it how to open.
 ///
-/// Each open is stamped with a `seq`. When the window is built on first use, this function runs
-/// again as the build's retry with the *same* payload (and seq): the frontend applies it once, so a
-/// late replay can no longer reset what the user typed in the meantime (cold-start race).
-pub(crate) fn show_command(app: &AppHandle, mut payload: serde_json::Value) {
-    if payload.get("seq").is_none() {
-        if let Some(obj) = payload.as_object_mut() {
-            let seq = OPEN_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-            obj.insert("seq".into(), serde_json::json!(seq));
+/// Each open is stamped with a `seq` and kept as the pending open until the page confirms it
+/// applied it. The event below is the fast path for a page that is already listening; a page
+/// that is still loading asks for the pending open when it is ready (`command_ready_cmd`), so
+/// nothing depends on timing. When the window is built on first use this function runs again as
+/// the build's retry with the same payload (and seq): an open the page already applied is not
+/// sent again, so a late replay cannot reset what the person typed in the meantime.
+pub(crate) fn show_command(app: &AppHandle, payload: serde_json::Value) {
+    let opened = {
+        let mut link = command_link().lock().unwrap_or_else(|e| e.into_inner());
+        if app.get_webview_window("command").is_none() {
+            link.page_loading();
         }
-    }
-    let retry_payload = payload.clone();
+        link.opened(payload)
+    };
+    let retry_payload = opened.payload.clone();
     if let Some(win) = crate::app::setup::ensure_window(app, "command", move |a| show_command(&a, retry_payload)) {
         let _ = win.show();
         let _ = win.set_focus();
-        let _ = app.emit("lens://command/open", payload);
+        if opened.send {
+            let _ = app.emit("lens://command/open", opened.payload);
+        }
     }
 }
 

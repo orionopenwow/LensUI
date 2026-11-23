@@ -30,7 +30,7 @@ import {
 } from "../clip/contract";
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
 import { answersInText, runDo } from "./doMode";
-import { isNewOpen } from "./openSeq";
+import { isNewOpen, pendingOpen } from "./openSeq";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
@@ -210,10 +210,21 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   type OpenPayload = { mode?: Mode; text?: string; layout?: "mini" | "full"; anchor?: string; seq?: number } | null;
   const onOpenRef = useRef<(p: OpenPayload) => void>(() => {});
   const lastOpenSeq = useRef<number | null>(null);
+  // Ready handshake with the backend (docs/brain/BUGS.md B-12). `linked` turns true once this
+  // page's listeners are registered and it has applied the open the backend was holding for it.
+  // An Enter pressed before that is kept and run then, so the first query is never lost.
+  const [appliedSeq, setAppliedSeq] = useState<number | null>(null);
+  const [linked, setLinked] = useState(false);
+  const linkedRef = useRef(false);
+  const queuedEnter = useRef<{ shift: boolean; ctrl: boolean } | null>(null);
+  const runActiveRef = useRef<(shift: boolean, ctrl: boolean) => void>(() => {});
   onOpenRef.current = (payload: OpenPayload) => {
     const seq = typeof payload?.seq === "number" ? payload.seq : null;
     if (seq !== null && !isNewOpen(lastOpenSeq.current, seq)) return; // replay of an open we already applied
-    if (seq !== null) lastOpenSeq.current = seq;
+    if (seq !== null) {
+      lastOpenSeq.current = seq;
+      setAppliedSeq(seq);
+    }
     const lay = payload?.layout ?? "full";
     setLayout(lay);
     setAnchor(payload?.anchor?.startsWith("dock") ? "dock" : "cursor");
@@ -230,6 +241,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     window.setTimeout(() => inputRef.current?.focus(), 30);
   };
   useEffect(() => {
+    let alive = true;
     const subs = [
       listen<OpenPayload>("lens://command/open", (e) => onOpenRef.current(e.payload)),
       listen<BridgeRequest>("lens://bridge/request", (e) => {
@@ -240,8 +252,37 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         dispatch({ type: "push", item: { kind: "bridge", key: `bridge-${r.id}`, request: r, state: "new", ts: Date.now() } });
       }),
     ];
-    return () => subs.forEach((p) => p.then((u) => u()).catch(() => {}));
+    // Listeners first, then ask: the backend hands over the open this page still has to apply
+    // (an event sent while the page was loading went nowhere). Nothing here is timed.
+    Promise.all(subs)
+      .then(() => invoke<OpenPayload>("command_ready_cmd"))
+      .then((pending) => {
+        if (alive && pendingOpen(pending)) onOpenRef.current(pending);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setLinked(true);
+      });
+    return () => {
+      alive = false;
+      subs.forEach((p) => p.then((u) => u()).catch(() => {}));
+    };
   }, []);
+  // Tell the backend once an open is applied and committed: from here the submit handler sees it,
+  // and the backend never sends that open again.
+  useEffect(() => {
+    if (appliedSeq === null) return;
+    document.documentElement.dataset.commandOpen = String(appliedSeq);
+    invoke("command_open_applied_cmd", { seq: appliedSeq }).catch(() => {});
+  }, [appliedSeq]);
+  useEffect(() => {
+    linkedRef.current = linked;
+    if (!linked) return;
+    document.documentElement.dataset.commandReady = "1";
+    const queued = queuedEnter.current;
+    queuedEnter.current = null;
+    if (queued) runActiveRef.current(queued.shift, queued.ctrl);
+  }, [linked]);
 
   // ── AI events ───────────────────────────────────────────────────────────────────────────────
   useAiEvents({
@@ -623,6 +664,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     if (text.trim()) ask(text, chips);
   };
 
+  runActiveRef.current = runActive;
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const ctrl = e.ctrlKey || e.metaKey;
     if (popover && popover.items.length) {
@@ -688,6 +731,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     }
     if (e.key === "Enter" && !(e.shiftKey && mode === "ask")) {
       e.preventDefault();
+      if (!linkedRef.current) {
+        // Still wiring up after a cold start: run this Enter the moment the handshake completes.
+        queuedEnter.current = { shift: e.shiftKey, ctrl };
+        return;
+      }
       runActive(e.shiftKey, ctrl);
       return;
     }
