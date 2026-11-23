@@ -13,7 +13,7 @@ export type ToggleProps = ToggleName & {
    * Called with the new value. If it returns a promise, the switch flips immediately (optimistic)
    * and springs back if the promise rejects; `onError` gets the reason so the caller can toast it.
    */
-  onChange: (next: boolean) => void | Promise<unknown>;
+  onChange: (next: boolean) => unknown;
   onError?: (err: unknown) => void;
 };
 

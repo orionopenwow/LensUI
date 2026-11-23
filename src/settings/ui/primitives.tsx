@@ -144,7 +144,7 @@ export const Toggle: React.FC<{
   checked: boolean;
   label: string;
   disabled?: boolean;
-  onChange: (v: boolean) => void | Promise<unknown>;
+  onChange: (v: boolean) => unknown;
   onError?: (e: unknown) => void;
 }> = ({ checked, label, disabled, onChange, onError }) => (
   <UIToggle checked={checked} label={label} disabled={disabled} className="cc-toggle" onChange={onChange} onError={onError} />

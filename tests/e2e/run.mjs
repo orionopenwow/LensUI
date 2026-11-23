@@ -281,27 +281,16 @@ const SCENARIOS = [
       const cmd = await waitForSurface(s, "command");
       const take = watchErrors(cmd);
       const box = cmd.locator("textarea").first();
-      // A window built on first use replays its opening event once it is ready; wait for the
-      // text to land before pressing Enter, and re-open once if the first event was missed.
-      try {
-        await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 5000 });
-      } catch {
-        await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dark mode" } });
-        await sleep(1500);
-        if ((await box.inputValue()) !== "dark mode") await box.fill("dark mode");
-      }
-      // On a cold start the window's replayed "open" event can land after our Enter and reset the
-      // input, swallowing the run. Re-submit up to three times; "dark mode" is idempotent.
-      const answered = () =>
-        cmd
-          .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 4000 })
-          .then(() => true, () => false);
-      let ok = false;
-      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
-        if ((await box.inputValue()) !== "dark mode") await box.fill("dark mode");
-        await box.press("Enter");
-        ok = await answered();
-      }
+      // A window built on first use replays its opening event once it is ready. The open carries
+      // a seq, so the replay is applied exactly once and can't reset the input after Enter
+      // (src/command/openSeq.ts). No re-open and no re-submit: one open, one Enter.
+      await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 8000 }).catch(async () => {
+        throw new Error(`the opening text never reached Command; input is "${await box.inputValue()}"`);
+      });
+      await box.press("Enter");
+      const ok = await cmd
+        .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 8000 })
+        .then(() => true, () => false);
       if (!ok) {
         throw new Error(`no answer or action card for "dark mode"; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 600)}`);
       }
