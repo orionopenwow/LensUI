@@ -4,7 +4,7 @@
 import { esc } from "./markdown.mjs";
 
 export const REPO = "https://github.com/orionopenwow/LensUI";
-export const SITE_URL = "https://orionopenwow.github.io/lensui/";
+export const SITE_URL = "https://orionopenwow.github.io/LensUI/";
 const NAV = [["", "Home"], ["#features", "Features"], ["docs/", "Docs"], ["download.html", "Download"], ["test.html", "Testers"]];
 let STARS = null;
 /** GitHub stars, read at build time (null when offline: the header shows the icon alone). */

@@ -9,7 +9,7 @@ import { FEATURES, TRUST, WORKS_ON, REPO, HERO_CLIP } from "./content/features.m
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const clips = existsSync(join(root, "docs/media/clips.json")) ? JSON.parse(readFileSync(join(root, "docs/media/clips.json"), "utf8")) : [];
 const clip = (id) => clips.find((c) => c.id === id && c.gif);
-const SITE = "https://orionopenwow.github.io/lensui/";
+const SITE = "https://orionopenwow.github.io/LensUI/";
 
 const gif = (id, alt) => (clip(id) ? `<img src="./docs/media/${id}.gif" alt="${alt.replace(/"/g, "&quot;")}" width="720">` : "");
 const statusLine = (f) => (f.status === "dev" ? `> **In development** — in [pull request #${f.pr}](${REPO}/pull/${f.pr}), not in a build yet.\n\n` : "");
