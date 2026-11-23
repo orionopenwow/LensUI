@@ -1,0 +1,77 @@
+html,
+body {
+  margin: 0;
+  background: var(--lens-pack-base, #09090b) !important;
+  color: var(--lens-fg);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+.vg-sheet {
+  padding: 24px;
+}
+.vg-sheet h1 {
+  color: var(--lens-fg);
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.vg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 480px);
+  gap: 16px;
+}
+.vg-tile {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vg-tile figcaption {
+  font-size: 12px;
+  color: var(--lens-fg-secondary);
+}
+.vg-stage {
+  position: relative;
+  height: 112px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--lens-border);
+}
+.vg-stage.tall {
+  height: 600px;
+}
+.vg-desk {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 20% 10%, color-mix(in srgb, var(--lens-accent) 28%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 90% 100%, color-mix(in srgb, var(--lens-fg) 10%, transparent), transparent 60%),
+    var(--lens-pack-base, #09090b);
+}
+.vg-stage .lv-hud {
+  position: absolute;
+}
+.vg-idle,
+.vg-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--lens-fg-secondary);
+}
+.vg-row {
+  position: relative;
+  background: var(--lens-pack-base);
+}
+.vg-card-page {
+  padding: 24px;
+  width: 712px;
+  background: var(--lens-pack-elevated, var(--lens-pack-base));
+  font-size: 13px;
+}
+.vg-single {
+  padding: 16px;
+  width: 480px;
+}

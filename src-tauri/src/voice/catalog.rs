@@ -12,6 +12,7 @@ pub struct CommandInfo {
     pub risk: &'static str,
 }
 
+#[cfg(test)]
 pub const GROUPS: &[&str] = &["Windows", "Apps", "Desktop", "Look", "System", "Shelf & clipboard", "Ask & Command", "Voice"];
 
 pub const COMMANDS: &[CommandInfo] = &[
@@ -65,10 +66,6 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo { id: "confirm", group: "Voice", title: "Answer a question", examples: &["yes", "no", "cancel"], risk: "low" },
     CommandInfo { id: "stop_listening", group: "Voice", title: "Stop listening", examples: &["stop listening", "mute the mic"], risk: "low" },
 ];
-
-pub fn find(id: &str) -> Option<&'static CommandInfo> {
-    COMMANDS.iter().find(|c| c.id == id)
-}
 
 /// The catalog id a parsed intent action belongs to (volume up/down share "set_volume", …).
 pub fn id_for_action(action: &str) -> &str {

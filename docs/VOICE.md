@@ -1,0 +1,205 @@
+# Lens voice control
+
+"Lens, minimise this." Voice is **off by default** and local only: speech is recognised on the PC by whisper.cpp, audio is never written to disk or sent anywhere, and Lens has no cloud speech option. Research and the architecture choice are in [VOICE_RESEARCH.md](VOICE_RESEARCH.md).
+
+## How it works
+
+| Piece | Where | Tested |
+|---|---|---|
+| State machine: push-to-talk hold/toggle, wake phrase, debounce, barge-in, confirm timeout, mute/pause, typed commands | `src-tauri/src/voice/state.rs` | 10 tests |
+| Grammar: wake phrase, filler/hallucination cleanup, aliases, voice-only commands, spoken numbers, fuzzy app names, ask fallback, did-you-mean | `voice/grammar.rs`, `numbers.rs`, `fuzzy.rs`, `catalog.rs` | 158-phrase table; 13 tests across the four files |
+| Safety: never types into password fields, elevated or credential windows, or Lens itself; always-listening auto-pause | `voice/safety.rs` | 3 tests |
+| Undo: inverse of window actions, volume, mute, brightness, DND, theme, accent, dock style and workspace | `voice/undo.rs` | 1 test |
+| Move window to next/previous monitor | `voice/geometry.rs` | 3 tests |
+| Audio: level meter, energy VAD with calibration, WAV encoding, pre-roll ring | `voice/audio.rs` | 5 tests |
+| Mic capture (WASAPI shared, Windows converts to 16 kHz mono) | `voice/capture.rs` | CI compile |
+| whisper-server process, multipart request, response parsing | `voice/whisper.rs` | 3 tests |
+| Windows glue: window actions, monitor move, lock, UIA focus/IsPassword (150 ms worker), token elevation, SendInput Unicode typing, Ctrl+V, mic-in-use (CapabilityAccessManager), mics/TTS via PowerShell | `voice/winops.rs` | 1 test plus CI compile |
+| Runtime: hotkeys, capture lifecycle, watchdog, live words, executing commands, undo stack | `voice/mod.rs` | (pure parts above) |
+| Settings (`%APPDATA%\LensUI\voice.json`) | `voice/config.rs` | 3 tests |
+| Commands | `commands/voice.rs` | generated types |
+| HUD, mic indicator, mic button, earcons | `src/voice/*` | `src/__tests__/voice.test.ts` (13 tests) |
+| Settings card | `src/components/VoiceCard.tsx` | parity gallery |
+
+### Shared grammar and gating with AI
+New intents in `ai/intent.rs` are used by voice, the palette's "Do it" and `ai_run_intent` alike: `window_action`, `move_window`, `open_overview`, `set_accent`, `set_dock_style`, `next_wallpaper`, `set_wallpaper_scene`, `set_calm_mode`, `lock_screen`. They are registered in `ai/tools.rs` with these risks:
+
+- **low:** `window_action`, `move_window`, `open_overview`, `set_dock_style`, `next_wallpaper`, `set_wallpaper_scene`, `set_calm_mode`
+- **confirm:** `lock_screen`
+
+`close_app` and `create_note` stay **confirm**. Dictation and paste are **voice-only**. They are not AI tools, because the registry still blocks `type_text` and `press_keys` for AI, and every use goes through `safety::dictation_allowed`.
+
+## Contract
+
+Commands (camelCase arguments on the JS side):
+
+| Command | Args | Returns |
+|---|---|---|
+| `voice_status` | — | `VoiceStatus { config, phase, muted, paused_reason, engine_ready, engine_error, hotkey_error, mic_error }` |
+| `voice_set_config` | `config: VoiceConfig` | `VoiceStatus` (saves, re-registers hotkeys, warms the engine) |
+| `voice_ptt` | `down: bool` | Mic button press/release |
+| `voice_mute` | `muted: bool` | |
+| `voice_cancel` | — | |
+| `voice_answer` | `yes: bool` | Yes/No on a confirmation |
+| `voice_undo` | — | `string` (what was undone) |
+| `voice_run_text` | `text` | Typed command through the same grammar and gating; works even with voice off |
+| `voice_commands` | — | Catalog `[{ id, group, title, examples, risk }]` |
+| `voice_test_mic` | `on: bool` | Opens the mic for 8 s and emits levels |
+| `voice_list_mics` | — | `[{ id, name }]` |
+| `voice_list_tts_voices` | — | `string[]` |
+| `voice_speak` | `text` | Reads aloud with a Windows voice |
+
+Events:
+
+| Event | Payload |
+|---|---|
+| `lens://voice/state` | `{ phase, enabled, muted, listening, by_ptt, activation, paused_reason, hud_position, sounds }` |
+| `lens://voice/level` | `{ level }` (0..1, at most 20 per second, only while capturing an utterance or testing) |
+| `lens://voice/heard` | `{ text, partial, ms? }` |
+| `lens://voice/result` | `{ status: done/failed/confirm/suggest/refused/info/hint, heard, command, label, message, confidence, undo, suggestion }` |
+| `lens://voice/apply` | `{ action: help/shelf_open/shelf_add_selection/shelf_clear/summarize/ask/read_back, args }` |
+
+UI-layer registry tools also emit the existing `lens://ai/apply`: `open_overview`, `set_dock_style`, `next_wallpaper`, `set_wallpaper_scene` and `set_calm_mode` were added to `AiApplyTool`.
+
+## Voice commands
+
+Say "Lens, …" (wake mode) or hold the key (push-to-talk). Fillers ("um", "please", "can you"), recogniser punctuation and spoken numbers are fine.
+
+- **Windows:**
+  - minimise / maximise / restore this or *app*
+  - pin this on top, unpin
+  - close this window, close *app* (asks first)
+  - snap left/right/top-left…, centre this
+  - move this to the next / other / main monitor
+  - move this window to workspace N
+  - arrange windows, grid layout, side by side
+  - show desktop, minimise everything
+- **Apps:** open / launch *app*, switch to / go to / bring up *app*, find *file*, where is *file*.
+- **Desktop:**
+  - workspace N, next / previous workspace
+  - overview, show all windows, task view
+  - next wallpaper, show the aurora scene, falling sand
+  - calm mode on/off, freeze the wallpaper
+- **Look:**
+  - dark / light mode
+  - theme *pack* (all 18 packs)
+  - accent *colour* (26 named colours or #hex)
+  - make the dock slim / taskbar / studio / minimal / split / floating
+- **System:**
+  - volume N percent, louder, turn it down, mute, unmute
+  - brightness N, dim the screen
+  - do not disturb (for N minutes), focus mode, night light
+  - timer for N minutes, pomodoro
+  - open *page* settings
+  - lock the screen (asks first)
+  - take a note … (asks first)
+  - what's 12 times 7, 5 km in miles
+- **Shelf and clipboard:**
+  - add this to the shelf, open the shelf
+  - clear the shelf (asks first)
+  - paste the last clip (guarded)
+  - type … (guarded)
+- **Ask and Command:** summarise this page / the selection, ask …, any question ("why is…", "how do I…"), read that back.
+- **Voice:** help, what can I say, undo, yes / no / cancel, stop listening, mute the mic.
+- **Your own phrases:** "lights out" → "dark mode" (Settings › Voice › Your phrases).
+
+## Latency
+
+- **Interpretation:** 0.067 ms per phrase with 302 installed-app names to fuzzy-match (optimised build on this sandbox; the `interpretation_is_fast` test asserts under 5 ms per phrase in debug builds). The script-intent path adds effectively nothing to recognition time.
+- **End of speech to action:** depends on whisper.cpp. `voice::bench::end_of_speech_to_action` is an ignored test that:
+  - starts whisper-server;
+  - recognises and interprets every fixture WAV;
+  - prints p50/p95/max and misrecognitions;
+  - asserts p95 < 400 ms.
+
+  Generate fixtures with Windows' voices (`scripts/voice/make-fixtures.ps1`), then run:
+
+  ```
+  set LENS_WHISPER_SERVER=C:\Tools\whisper.cpp\whisper-server.exe
+  set LENS_WHISPER_MODEL=C:\Tools\whisper.cpp\models\ggml-base.en.bin
+  set LENS_VOICE_FIXTURES=%TEMP%\lens-voice-fixtures
+  cd src-tauri && cargo test --lib voice::bench -- --ignored --nocapture
+  ```
+- **Not measured yet:** there's no Windows audio or whisper.cpp in CI or this sandbox. Expect `ggml-tiny.en` or `ggml-base.en` to fit the 400 ms budget on a mid-range 8-thread CPU for 1–3 s commands. If base.en misses it, use tiny.en, or `q5` quantised models.
+
+## Robustness rules (all tested in `state.rs`, `grammar.rs`, `safety.rs`)
+
+- **Short presses and key bounce:** a press under 220 ms is a slip (with a "hold the key" hint). A second press within 120 ms of a release is bounce. Key auto-repeat is ignored.
+- **Double triggers:** the same transcript within 1.5 s is dropped.
+- **Barge-in:** speech heard while Lens is thinking is ignored (TV, its own voice). A push-to-talk press always takes over.
+- **Limits:**
+  - utterances: 15 s push-to-talk, 6 s wake
+  - thinking: 10 s
+  - unanswered confirmations: denied after 8 s
+- **Low confidence:** below 0.6 confidence (recogniser times grammar), Lens asks "Did you mean …?", and yes runs it.
+- **Silence and noise:** Whisper's silence hallucinations ("Thank you.", "[BLANK_AUDIO]") never become commands.
+- **Watchdog:** a mic that stops delivering frames for 2 s is restarted, up to 3 times. After an error, Lens waits 5 s before retrying (no tight retry loop).
+- **Threads:** mic, recognition and commands each run on their own threads. UI Automation has a 150 ms limit. No lock is held across recognition or command execution.
+
+## Wiring left for the integrator
+
+**Edits already made** (minimal, needed to compile and start):
+- `src-tauri/src/lib.rs`:
+  - `mod voice;`
+  - `voice::init(app.handle())` at the top of `.setup`, which registers the voice hotkeys only when voice is enabled
+  - `voice::shutdown()` in the panic hook and on `RunEvent::Exit`, which stops the mic and kills whisper-server
+  - 13 `commands::voice::*` registrations
+- `src-tauri/src/commands/mod.rs`: `pub(crate) mod voice;`
+- `src/main.tsx`: the `voicehud` route.
+- `src/types/generated.ts`: regenerated.
+- `src/ai/contract.ts`: the new tools in `AI_TOOLS` and `AiApplyTool`.
+- `src-tauri/src/ai/intent.rs` and `ai/tools.rs`: additive (new intents, tools, tests). Also fixed "do not disturb for N minutes", which used to return nothing.
+
+**Snippets to apply:**
+
+1. **HUD window** (`tauri.conf.json` › `app.windows`, or build it lazily like the other surfaces):
+   ```json
+   { "label": "voicehud", "url": "index.html?surface=voicehud", "transparent": true, "decorations": false,
+     "alwaysOnTop": true, "skipTaskbar": true, "focus": false, "resizable": false, "visible": false,
+     "shadow": false, "width": 480, "height": 560 }
+   ```
+   Add `"voicehud"` to `capabilities/default.json` › `windows`. Position it centred above the Dock (or under the Top Bar when `hud_position == "top"`) on the Lens monitor, using `win_monitors::dock_rect` / `topbar_rect`. Show and hide it from `voice::emit_state`: visible unless `phase` is `off` or `idle` and no result is pending. Simplest: in `app/setup.rs`, listen to `lens://voice/state` and `lens://voice/result` and call the same show/hide helper the other surfaces use. Keep it click-through-free (it has buttons) but never focus-stealing (`focus: false`, `WS_EX_NOACTIVATE` as for the Dock).
+2. **Mic indicator** (`TopBarSurface.tsx`, system icons; or `DockSystemArea` for taskbar styles):
+   ```tsx
+   import { MicIndicator } from "../voice/VoiceHud";
+   import { useVoiceHud } from "../voice/useVoiceHud";
+   const voice = useVoiceHud();
+   <MicIndicator state={voice.state} onClick={() => invoke("open_settings_page_cmd", { page: "voice" }).catch(() => {})} />
+   ```
+   It renders nothing while voice is off. The red dot means the mic is open, matching Windows' own indicator.
+3. **Dock mic button** (`DockSurface.tsx`, optional, next to the sparkle) and **Lens Mini mic** (`src/command/mini/*`):
+   ```tsx
+   import { MicButton } from "../voice/VoiceHud";
+   import { voicePtt } from "../voice/contract";
+   <MicButton size={32} live={voice.state.listening} onPress={() => voicePtt(true)} onRelease={() => voicePtt(false)} />
+   ```
+4. **Settings:** mount `<VoiceCard />` (from `src/components/VoiceCard.tsx`) in the **AI & Command** tab, above `AiCard`. Add the `voice` settings page id to `SETTINGS_PAGES` in `ai/intent.rs` if you want "open voice settings".
+5. **`lens://voice/apply`** handlers (Lens Command / Shelf owner):
+   - `help`: the HUD already opens its help sheet; nothing needed.
+   - `shelf_open` → open the Shelf drawer.
+   - `shelf_add_selection` → `selection_to_shelf` (feature/shelf-command).
+   - `shelf_clear` → `shelf_clear(active shelf)`. Voice has already confirmed.
+   - `summarize {target}` → open Lens Command with `/summarise` and the page (browser bridge) or selection context.
+   - `ask {text}` → open Lens Command in Ask mode with the text. AI privacy rules apply as usual.
+   - `read_back` → `voiceSpeak(lastAnswerText)`.
+6. **`lens://ai/apply`** handlers for the new UI-layer tools (where the existing apply bridge lives):
+   - `open_overview` → `show_overview_cmd`
+   - `set_dock_style {style}` → `updateConfig({ dock: { ...dock, style } })`
+   - `next_wallpaper` → the wallpaper rotation's next
+   - `set_wallpaper_scene {scene}` → Playground `playground.scene = scene`
+   - `set_calm_mode {enabled?}` → Playground calm toggle
+7. **Backup / remove-all-changes:** add `voice.json` to `win_backup`'s file list. Voice changes nothing in Windows, so there is nothing to restore.
+8. **CI (optional):** add the voice gallery to the parity job:
+   `node tools/parity/voice/build.mjs && node tools/parity/voice/shoot.mjs` (fails on any page or console error).
+
+## Needs real hardware
+
+- WASAPI capture with AUTOCONVERTPCM on real mics, including USB, Bluetooth headsets (16 kHz HFP), and device unplug/replug (watchdog).
+- The `GetDevice(id)` round trip with ids from `voice_list_mics` (PnP `SWD\MMDEVAPI\{0.0.1…}` → MMDevice id).
+- whisper-server start-up time, warm latency, and the bench p95 on a mid-range CPU (tiny.en / base.en).
+- Global shortcut press/release for hold-to-talk while other apps have focus, and conflicts with other apps' hotkeys.
+- UIA `IsPassword` in Chrome/Edge (accessibility tree on demand), Electron apps, Office and UWP. The 150 ms limit holds on busy apps.
+- SendInput Unicode typing into common apps, and refusal for elevated windows (UIPI).
+- Mic-in-use detection via the CapabilityAccessManager consent store during Teams/Zoom/Discord calls.
+- Wake mode false accepts over an hour of normal room audio, and CPU use (one Whisper run per speech segment).
+- PowerShell TTS and voice listing on Windows 10 and 11, and read-aloud not being captured as speech (barge-in guard).

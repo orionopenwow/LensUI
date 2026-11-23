@@ -47,6 +47,7 @@ pub fn wav(samples: &[i16], rate: u32) -> Vec<u8> {
 }
 
 /// Reads the samples of a 16-bit mono WAV (for bench fixtures). Returns (rate, samples).
+#[cfg(test)]
 pub fn read_wav(bytes: &[u8]) -> Option<(u32, Vec<i16>)> {
     if bytes.len() < 12 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
         return None;
@@ -114,10 +115,6 @@ impl Vad {
             run: 0,
             calibrating: 15, // 300 ms
         }
-    }
-
-    pub fn speaking(&self) -> bool {
-        self.speaking
     }
 
     /// Feeds one frame's level; returns an event when speech starts or ends.

@@ -38,6 +38,7 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   desktopfolder: lazy(() =>
     import("./surfaces/DesktopFolderSurface").then((m) => ({ default: m.DesktopFolderSurface }))
   ),
+  voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
 };
 
 const params = new URLSearchParams(window.location.search);

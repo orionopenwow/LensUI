@@ -1192,3 +1192,54 @@ pub fn catalog_json() -> Value {
             .collect(),
     )
 }
+
+#[cfg(test)]
+mod bench {
+    //! End-to-end latency on real hardware (Windows, whisper.cpp installed). Run with:
+    //!   set LENS_WHISPER_SERVER=C:\\…\\whisper-server.exe
+    //!   set LENS_WHISPER_MODEL=C:\\…\\ggml-base.en.bin
+    //!   set LENS_VOICE_FIXTURES=C:\\…\\fixtures   (WAVs from scripts/voice/make-fixtures.ps1)
+    //!   cargo test --lib voice::bench -- --ignored --nocapture
+    //! Each fixture is named after its expected command id, e.g. "window_action--minimise-this.wav".
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn end_of_speech_to_action() {
+        let (Ok(server), Ok(model), Ok(dir)) =
+            (std::env::var("LENS_WHISPER_SERVER"), std::env::var("LENS_WHISPER_MODEL"), std::env::var("LENS_VOICE_FIXTURES"))
+        else {
+            eprintln!("set LENS_WHISPER_SERVER, LENS_WHISPER_MODEL and LENS_VOICE_FIXTURES");
+            return;
+        };
+        let srv = whisper::Server::start(&server, &model, 4, "en").expect("whisper-server");
+        let mut times = Vec::new();
+        let mut wrong = Vec::new();
+        let opts = grammar::Options { wake_phrases: vec!["hey lens".into(), "lens".into()], ..Default::default() };
+        for entry in std::fs::read_dir(&dir).expect("fixtures dir").flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("wav") {
+                continue;
+            }
+            let want = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").split("--").next().unwrap_or("").to_string();
+            let (_, samples) = audio::read_wav(&std::fs::read(&path).unwrap()).expect("16-bit mono WAV");
+            let t0 = Instant::now();
+            let text = srv.transcribe(&audio::wav(&samples, audio::SAMPLE_RATE), whisper::BIAS).unwrap_or_default();
+            let i = grammar::interpret(&text, &opts);
+            let ms = t0.elapsed().as_secs_f64() * 1000.0;
+            times.push(ms);
+            let got = i.command.as_ref().map(|c| c.id().to_string()).unwrap_or_default();
+            if got != want {
+                wrong.push(format!("{:?}: heard {:?} → {:?}", path.file_name().unwrap_or_default(), text, got));
+            }
+        }
+        assert!(!times.is_empty(), "no fixtures found");
+        times.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let p = |q: f64| times[((times.len() as f64 - 1.0) * q).round() as usize];
+        eprintln!("fixtures: {}  p50: {:.0} ms  p95: {:.0} ms  max: {:.0} ms  misrecognised: {}", times.len(), p(0.5), p(0.95), p(1.0), wrong.len());
+        for w in &wrong {
+            eprintln!("  {}", w);
+        }
+        assert!(p(0.95) < 400.0, "p95 {:.0} ms is over the 400 ms budget", p(0.95));
+    }
+}
