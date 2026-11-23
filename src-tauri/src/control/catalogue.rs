@@ -170,6 +170,9 @@ pub struct Entry {
     pub default: Value,
 }
 
+/// Settings whose defaults are read from this PC.
+pub const MACHINE_DEFAULTS: [&str; 2] = ["dock.pinnedApps", "dock.pinnedFolders"];
+
 pub fn rule_for(path: &str) -> Option<&'static Rule> {
     RULES
         .iter()
@@ -298,6 +301,9 @@ pub fn build(defaults: &[(&str, Value)]) -> Vec<Entry> {
             }
             let path = join_store(store, &inner);
             let Some(rule) = rule_for(&path) else { continue };
+            // Defaults that come from this PC (user folders, taskbar pins) are not part of the
+            // catalogue: they differ per machine and would leak user paths into the export.
+            let default = if MACHINE_DEFAULTS.contains(&path.as_str()) && default.is_array() { Value::Array(vec![]) } else { default };
             let mut schema = infer_schema(&default);
             let (label, description) = match field(&path) {
                 Some((_, label, desc, extra)) => {

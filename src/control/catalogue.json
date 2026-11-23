@@ -1074,28 +1074,9 @@
     {
       "capability": "change_settings",
       "category": "Dock",
-      "default": [
-        {
-          "iconHint": "folder",
-          "id": "explorer",
-          "name": "File Explorer",
-          "path": "C:\\Windows\\explorer.exe"
-        },
-        {
-          "iconHint": "terminal",
-          "id": "terminal",
-          "name": "Terminal",
-          "path": "wt.exe"
-        },
-        {
-          "iconHint": "file-text",
-          "id": "notepad",
-          "name": "Notepad",
-          "path": "notepad.exe"
-        }
-      ],
+      "default": [],
       "description": "The apps pinned to the Dock (names and paths).",
-      "example": "{\"args\":{\"changes\":{\"dock.pinnedApps\":[{\"iconHint\":\"folder\",\"id\":\"explorer\",\"name\":\"File Explorer\",\"path\":\"C:\\\\Windows\\\\explorer.exe\"},{\"iconHint\":\"terminal\",\"id\":\"terminal\",\"name\":\"Terminal\",\"path\":\"wt.exe\"},{\"iconHint\":\"file-text\",\"id\":\"notepad\",\"name\":\"Notepad\",\"path\":\"notepad.exe\"}]}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"dock.pinnedApps\":[]}},\"tool\":\"lens_set\"}",
       "label": "Pinned apps",
       "path": "dock.pinnedApps",
       "reversible": true,
@@ -1109,24 +1090,9 @@
     {
       "capability": "change_settings",
       "category": "Dock",
-      "default": [
-        {
-          "id": "downloads",
-          "name": "Downloads",
-          "path": "C:\\Users\\Public\\Downloads",
-          "theme": "accent",
-          "viewMode": "grid"
-        },
-        {
-          "id": "desktop",
-          "name": "Desktop",
-          "path": "C:\\Users\\Public\\Desktop",
-          "theme": "obsidian",
-          "viewMode": "grid"
-        }
-      ],
+      "default": [],
       "description": "Sets the pinned folders option under Dock.",
-      "example": "{\"args\":{\"changes\":{\"dock.pinnedFolders\":[{\"id\":\"downloads\",\"name\":\"Downloads\",\"path\":\"C:\\\\Users\\\\Public\\\\Downloads\",\"theme\":\"accent\",\"viewMode\":\"grid\"},{\"id\":\"desktop\",\"name\":\"Desktop\",\"path\":\"C:\\\\Users\\\\Public\\\\Desktop\",\"theme\":\"obsidian\",\"viewMode\":\"grid\"}]}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"dock.pinnedFolders\":[]}},\"tool\":\"lens_set\"}",
       "label": "Pinned folders",
       "path": "dock.pinnedFolders",
       "reversible": true,
