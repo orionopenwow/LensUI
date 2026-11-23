@@ -69,7 +69,7 @@ export function MiniView(p: MiniProps) {
     <div className={`mini${p.anchor === "dock" ? " is-dock" : ""}${p.expanding ? " is-expanding" : ""}`} role="dialog" aria-label="Lens Mini">
       <div className="mini-top">{p.input}</div>
 
-      <div className="mini-ctx" aria-label="Context">
+      <div className="mini-ctx" role="group" aria-label="Context">
         {p.app ? (
           <span className="mini-app">
             <span className="mini-app-dot" aria-hidden />

@@ -121,6 +121,8 @@ export function resolveSystemArea(dock?: DockLike | null): "dock" | "topbar" {
 
 /** Icon size actually used: Slim caps at 32 px, the full-width bars at 36 px. */
 export function dockStyleIconSize(style: DockStyleId, configured: number): number {
+  // F2 (docs/TESTING.md): a hand-edited or restored config can hold 0, 5000 or NaN.
+  configured = Number.isFinite(configured) ? Math.round(Math.min(96, Math.max(16, configured))) : 44;
   if (style === "slim") return Math.min(configured, 32);
   if (style === "taskbar" || style === "studio") return Math.min(configured, 36);
   if (style === "islands") return Math.min(configured, 34);

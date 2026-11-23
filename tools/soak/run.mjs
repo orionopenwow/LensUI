@@ -121,11 +121,7 @@ const SOAKS = {
  * matcher is removed with the fix.
  */
 const KNOWN = [
-  {
-    id: "F1",
-    title: "a failed get_windows_theme at startup leaves the surface blank",
-    match: (r) => r.blank && r.broken.includes("get_windows_theme"),
-  },
+  // F1 fixed on integration/waves-7-8 (useLensState loads config and theme independently).
 ];
 
 const CHAOS_SURFACES = ["dock", "topbar", "settings", "palette", "launcher", "quicksettings", "widgets", "notifications", "overview", "command", "desktopfolder"];

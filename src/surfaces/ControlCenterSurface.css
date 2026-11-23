@@ -1309,3 +1309,13 @@
   margin: 6px 8px;
   background: rgb(var(--lens-ink) / 0.08);
 }
+
+/* F8 (docs/TESTING.md): the theme hero reserves two description lines so switching packs never shifts the card. */
+.tux-hero-desc {
+  min-height: calc(2 * 1.45em);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

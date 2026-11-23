@@ -5,16 +5,20 @@ Sources: code review of the high-risk areas, the robustness suites' findings (do
 | Sev | Area | Where | Problem | Reasoning / repro | Status |
 |---|---|---|---|---|---|
 | Critical | Dock | `src/surfaces/DockSurface.tsx` (voice hook) | Dock crashed on every render (React #310) after the voice mount: a hook ran after an early return | Parity: "Minified React error #310" on the dock in all packs | **Fixed** |
-| High | Startup | `src/hooks/useLensState.ts` | A failed `get_windows_theme` at startup left every surface blank (F1) | Chaos suite, 5 % IPC failure | **Fixed**: config and theme load independently, config retried |
+| High | Startup | `src/hooks/useLensState.ts` | A failed `get_windows_theme` at startup left every surface blank (F1, W7-B) | Chaos suite, 5 % IPC failure | **Fixed**: config and theme load independently, config retried; KNOWN marker removed |
 | High | Uninstall | `src-tauri/src/win_uninstall.rs` | "Remove all Lens changes" left the browser native-messaging host, the `lens://` URL handler and the Explorer right-click verbs in HKCU | Cross-check of every OS-changing feature against the restore list | **Fixed**: three uninstall steps added |
 | High | Uninstall | same | Print Screen takeover (Snip) was restored on exit but not by Remove-all | same | **Fixed**: `snip::restore_print_screen()` step |
-| High | a11y | Dock buttons | No accessible names (F3, axe critical) | axe on the dock | **Fixed** |
+| High | a11y | Dock buttons | No accessible names (F3, axe critical, W7-B) | axe on the dock | **Fixed**; allowlist entries removed |
 | High | Settings | `MusicCard.tsx` | Null config from the backend crashed the Music page | Parity render | **Fixed** |
 | Med | Perf | `app/integration.rs` idle monitor | Read the wallpaper settings file from disk every second | Code review | **Fixed** (10 s cache) |
 | Med | Perf | `dock/voice/VoiceDock.tsx` | 10 Hz timer ran forever in the Dock | Code review | **Fixed** |
 | Med | Tests | `src/__tests__/guide.test.ts` | Partial Tauri mock leaked into later files in CI order | CI "Export named 'convertFileSrc' not found" | **Fixed** |
-| Med | Config | `dockStyleIconSize` / backend window sizing | `dock.iconSize` never clamped (F2): a hand-edited 5000 sizes the Dock window off-screen | Property test | Open: clamp 16–96 in `migrate_config_value` and the TS normaliser |
-| Med | a11y | Control Center toggles | Switches and icon-only chips unnamed (F4) | axe | Open: `aria-labelledby` on the shared toggle |
+| Med | Config | `src/dock/styles.ts` | `dock.iconSize` never clamped (F2, found by the W7-B suite) | Property test | **Fixed** in the frontend (16–96, NaN → 44); property test now enforced. Backend window sizing still reads the raw value: clamp in `migrate_config_value` too |
+| Med | a11y | Control Center toggles | Switches and icon-only chips unnamed (F4, W7-B) | axe | Open: `aria-labelledby` on the shared toggle; allowlist kept |
+| Med | a11y | Quick Settings sliders, Overview cards | Buttons nested in sliders/cards (F5, W7-B) | axe `nested-interactive` | Open: restructure; allowlist kept |
+| Med | a11y | palette, launcher | Metadata text below 4.5:1 (F6, W7-B) | axe | **Fixed** (secondary token); allowlist entries removed |
+| Med | a11y | Top Bar clock, AI Detect, Mini context row | Accessible names don't match visible text (F7, W7-B) | axe | **Fixed**; allowlist entries removed |
+| Low | Fluidity | Theme & Look hero | Layout shift when the pack description wraps (F8, W7-B) | perf CLS 0.053 | **Fixed** (two-line reserve and clamp); lower the `theme-switch` CLS baseline after the next runner measurement |
 | Med | Agent safety | browser, control, snip, bridge, AI tool runner | `agentsafe_check` / `agentsafe_scan` are built and tested but not yet called from those packages | docs/AGENT_SAFETY.md › Integration | Open: the snippets reference fields that need adapting per package; do with a Windows compile |
 | Med | Approvals | browser, magic, snip, voice | Each still uses its local approval card instead of `src/approval` | docs/CLAUDE_CONTROL.md §4 | Open |
 | Low | Voice | `useVoiceHud` | Mounting it in more than one surface would double earcons | Code review | Avoided: the mic indicator was not added to the Top Bar |

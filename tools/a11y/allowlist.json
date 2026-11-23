@@ -1,21 +1,11 @@
 {
   "_note": "Known accessibility exceptions for tools/a11y/run.mjs. Every entry needs a reason and, for a real defect, the docs/TESTING.md finding it is tracked under. Matching: rule id exactly, surface exactly (or \"*\"), and `target` as a substring of the failing node's CSS selector (or \"*\"). Remove an entry together with its fix; unused entries are reported.",
   "entries": [
-    { "rule": "button-name", "surface": "dock", "target": ".dock-item", "reason": "F3: Dock app buttons have no accessible name (screen readers say only \"button\")." },
-    { "rule": "button-name", "surface": "dock", "target": ".is-focused", "reason": "F3: same, for the focused app's button." },
-    { "rule": "button-name", "surface": "dock-search", "target": ".dock-item", "reason": "F3: Dock app buttons have no accessible name." },
-    { "rule": "button-name", "surface": "dock-search", "target": ".is-focused", "reason": "F3: same, for the focused app's button." },
     { "rule": "button-name", "surface": "settings", "target": ".cc-toggle", "reason": "F4: Control Center switches without aria-label (their text label is a sibling, not linked)." },
     { "rule": "button-name", "surface": "settings", "target": ".cc-chip", "reason": "F4: icon-only chips (colour swatches, small icon buttons) without a name." },
     { "rule": "button-name", "surface": "widgets", "target": "button", "reason": "F4: icon-only widget buttons without a name." },
     { "rule": "nested-interactive", "surface": "quicksettings", "target": "*", "reason": "F5: slider pills and app volume rows (role=slider/button) contain focusable buttons." },
     { "rule": "nested-interactive", "surface": "settings", "target": "*", "reason": "F5: the same slider pills and range rows inside Control Center cards." },
-    { "rule": "nested-interactive", "surface": "overview", "target": "*", "reason": "F5: Overview window cards are buttons that contain close/move buttons." },
-    { "rule": "color-contrast", "surface": "palette", "target": ".pal-recent-age", "reason": "F6: the \"12 min ago\" age text in Recents is below 4.5:1." },
-    { "rule": "color-contrast", "surface": "launcher", "target": ".ln-count", "reason": "F6: folder item counts are below 4.5:1." },
-    { "rule": "color-contrast", "surface": "launcher", "target": ".ln-hint", "reason": "F6: the keyboard hint line is below 4.5:1." },
-    { "rule": "label-content-name-mismatch", "surface": "topbar", "target": ".topbar-clock", "reason": "F7: the clock's aria-label doesn't contain its visible text, so voice control can't target it by what it shows." },
-    { "rule": "label-content-name-mismatch", "surface": "settings", "target": "Look for local models again", "reason": "F7: the Detect button's aria-label doesn't contain its visible text." },
-    { "rule": "aria-prohibited-attr", "surface": "command-mini", "target": ".mini-ctx", "reason": "F7: aria-label on a plain div (no role) in Lens Mini's context row is ignored by screen readers." }
+    { "rule": "nested-interactive", "surface": "overview", "target": "*", "reason": "F5: Overview window cards are buttons that contain close/move buttons." }
   ]
 }

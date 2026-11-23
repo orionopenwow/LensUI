@@ -354,7 +354,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
               {pack?.label ?? "Custom"}
               {modified && <span className="tux-badge muted">Edited</span>}
             </div>
-            <div className="cc-desc">{pack?.description ?? "Your own mix of colours and styles."}</div>
+            <div className="cc-desc tux-hero-desc">{pack?.description ?? "Your own mix of colours and styles."}</div>
             <div className="tux-hero-facts">
               <span>{light ? "Light" : "Dark"}</span>
               <span>{dockStyleLabel(dockStyleOf(config))} dock</span>

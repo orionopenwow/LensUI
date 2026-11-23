@@ -402,7 +402,7 @@ export const TopBarSurface: React.FC = () => {
             onClick={() =>
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })
             }
-            aria-label="Open Calendar and Clock"
+            aria-label={`${dateStr} · ${timeStr}, open calendar and clock`}
           >
             {dateStr} · {timeStr}
           </button>

@@ -136,7 +136,7 @@ describe("Dock config normalisers (fuzz)", () => {
 
   // Finding F2 (docs/TESTING.md › Findings): dock.iconSize is never clamped, so a hand-edited or
   // restored config with 0 or 5000 gives an invisible or screen-sized Dock. Runs with `bun test --todo`.
-  test.todo("F2: any configured icon size, however wrong, gives a usable icon (12–128 px)", () => {
+  test("F2: any configured icon size, however wrong, gives a usable icon (12–128 px)", () => {
     const r = rng(8);
     for (let i = 0; i < RUNS; i++) {
       const style = pick(r, DOCK_STYLES).id;
