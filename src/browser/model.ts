@@ -17,7 +17,7 @@ export interface SidebarModel {
 
 /** Tabs of the active space, grouped the way the sidebar draws them. */
 export function sidebarModel(s: BrowserState): SidebarModel {
-  const tabs = s.tabs.filter((t) => t.spaceId === s.activeSpace).sort((a, b) => a.order - b.order);
+  const tabs = s.tabs.filter((t) => t.spaceId === s.activeSpace && !t.archivedMs).sort((a, b) => a.order - b.order);
   const pinned = tabs.filter((t) => t.pinned);
   const rest = tabs.filter((t) => !t.pinned);
   const folders = s.folders

@@ -53,6 +53,10 @@ pub struct Runtime {
     pub overlay: bool,
     pub downloads: Vec<Download>,
     pub extra_block: Vec<String>,
+    /// The Glance preview (a link opened over the page), if one is showing.
+    pub glance: Option<(String, Webview)>,
+    /// Locked spaces unlocked for this session.
+    pub unlocked: std::collections::HashSet<String>,
     next_nonce: u64,
     next_download: u64,
 }
@@ -71,6 +75,8 @@ pub fn rt() -> MutexGuard<'static, Runtime> {
             overlay: false,
             downloads: vec![],
             extra_block: vec![],
+            glance: None,
+            unlocked: Default::default(),
             next_nonce: 1,
             next_download: 1,
         })
@@ -91,6 +97,10 @@ pub struct BrowserView {
     pub bookmarked: bool,
     pub live: Vec<String>,
     pub downloads: Vec<Download>,
+    /// Locked spaces unlocked for this session.
+    pub unlocked: Vec<String>,
+    /// URL of the Glance preview, when one is open.
+    pub glance: Option<String>,
 }
 
 pub fn view_of(r: &Runtime) -> BrowserView {
@@ -99,6 +109,8 @@ pub fn view_of(r: &Runtime) -> BrowserView {
         bookmarked: r.state.is_bookmarked(&active_url),
         live: r.views.keys().cloned().collect(),
         downloads: r.downloads.clone(),
+        unlocked: r.unlocked.iter().cloned().collect(),
+        glance: r.glance.as_ref().map(|(u, _)| u.clone()),
         state: r.state.clone(),
     }
 }
@@ -192,8 +204,16 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
                 std::thread::spawn(move || after_load(&app, &tab, &url, view));
             }
         })
-        .on_download(move |_view, event| {
-            if let DownloadEvent::Requested { url, destination } = &event {
+        .on_download(move |_view, mut event| {
+            if let DownloadEvent::Requested { url, destination } = &mut event {
+                let rules = rt().state.settings.download_rules.clone();
+                let file = destination.file_name().map(|f| f.to_os_string());
+                if let (Some(rule), Some(file)) = (file.as_ref().and_then(|f| super::model::rule_for(&rules, &f.to_string_lossy())), file.as_ref()) {
+                    let dir = std::path::PathBuf::from(&rule.folder);
+                    if dir.is_dir() {
+                        **destination = dir.join(file);
+                    }
+                }
                 let mut r = rt();
                 let id = r.next_download;
                 r.next_download += 1;
@@ -224,8 +244,7 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
 }
 
 fn after_load(app: &AppHandle, tab_id: &str, url: &str, view: Webview) {
-    let menu_on = rt().state.settings.lens_context_menu;
-    let _ = eval_op(&view, json!({ "op": "menu", "on": menu_on }), Duration::from_secs(2));
+    let _ = eval_op(&view, menu_op(), Duration::from_secs(2));
     let status = eval_op(&view, json!({ "op": "status" }), Duration::from_secs(2)).unwrap_or(Value::Null);
     let title = status.get("title").and_then(Value::as_str).unwrap_or("").to_string();
     let favicon = status.get("favicon").and_then(Value::as_str).filter(|f| f.starts_with("https://") || f.starts_with("http://")).map(str::to_string);
@@ -254,6 +273,13 @@ fn after_load(app: &AppHandle, tab_id: &str, url: &str, view: Webview) {
     emit_state(app);
 }
 
+/// The page agent's menu settings: Lens menu on/off, and whether AI and transcript items show.
+pub fn menu_op() -> Value {
+    let r = rt();
+    let s = &r.state.settings;
+    json!({ "op": "menu", "on": s.lens_context_menu, "ai": s.ai.enabled, "transcripts": s.ai.enabled && s.ai.transcripts })
+}
+
 /// Shows the active tab in the content area and parks the others off-screen.
 pub fn layout(app: &AppHandle) -> Result<(), String> {
     let (window, active, vp, overlay, views, need_spawn) = {
@@ -275,8 +301,22 @@ pub fn layout(app: &AppHandle) -> Result<(), String> {
         }
     }
     let views = if views.len() == rt().views.len() { views } else { rt().views.clone() };
+    let (glance, locked) = {
+        let r = rt();
+        let locked = r.state.spaces.iter().any(|s| s.id == r.state.active_space && s.locked && !r.unlocked.contains(&s.id));
+        (r.glance.as_ref().map(|(_, v)| v.clone()), locked)
+    };
+    if let Some(g) = &glance {
+        if overlay || locked {
+            let _ = g.hide();
+        } else {
+            let _ = g.set_position(LogicalPosition::new(vp.x, vp.y));
+            let _ = g.set_size(LogicalSize::new(vp.w.max(1.0), vp.h.max(1.0)));
+            let _ = g.show();
+        }
+    }
     for (id, view) in views {
-        if Some(&id) == active.as_ref() && !overlay {
+        if Some(&id) == active.as_ref() && !overlay && glance.is_none() && !locked {
             let _ = view.set_position(LogicalPosition::new(vp.x, vp.y));
             let _ = view.set_size(LogicalSize::new(vp.w.max(1.0), vp.h.max(1.0)));
             let _ = view.show();
@@ -297,7 +337,15 @@ pub fn sleep_tabs(app: &AppHandle, ids: &[String]) {
         return;
     }
     for (id, view) in views {
-        let scroll = eval_op(&view, json!({ "op": "status" }), Duration::from_millis(800)).ok().and_then(|s| s.get("scrollY").and_then(Value::as_f64));
+        let status = eval_op(&view, json!({ "op": "status" }), Duration::from_millis(800)).ok();
+        if status.as_ref().and_then(|s| s.get("busy")).and_then(Value::as_bool) == Some(true) {
+            // Unsaved form input or a chosen upload: keep it awake and remember why.
+            if let Some(t) = rt().state.tab_mut(&id) {
+                t.busy = true;
+            }
+            continue;
+        }
+        let scroll = status.and_then(|s| s.get("scrollY").and_then(Value::as_f64));
         let _ = view.close();
         let mut r = rt();
         r.views.remove(&id);
@@ -322,8 +370,14 @@ pub fn start_maintenance(app: AppHandle) {
                 if r.window.is_none() {
                     (vec![], None)
                 } else {
+                    let archive = r.state.archive_candidates(now());
+                    if !archive.is_empty() {
+                        r.state.archive(&archive, now());
+                        save(&r);
+                    }
                     let live: Vec<String> = r.views.keys().cloned().collect();
-                    let ids: Vec<String> = r.state.sleep_candidates(now()).into_iter().filter(|i| live.contains(i)).collect();
+                    let mut ids: Vec<String> = r.state.sleep_candidates(now()).into_iter().filter(|i| live.contains(i)).collect();
+                    ids.extend(archive.into_iter().filter(|i| live.contains(i)));
                     let h = if r.history_dirty {
                         r.history_dirty = false;
                         Some(r.history.clone())
@@ -341,6 +395,46 @@ pub fn start_maintenance(app: AppHandle) {
             }
         })
         .ok();
+}
+
+/// Opens a link as a Glance preview over the page (same space profile, no tab yet).
+pub fn open_glance(app: &AppHandle, url: &str) -> Result<(), String> {
+    close_glance();
+    let (window, vp, profile) = {
+        let r = rt();
+        let w = r.window.clone().ok_or("Lens Browser isn't open.")?;
+        let p = r.state.spaces.iter().find(|s| s.id == r.state.active_space).map(|s| s.profile.clone()).unwrap_or_else(|| "default".into());
+        (w, r.viewport, p)
+    };
+    let tab = Tab {
+        id: "glance".into(),
+        space_id: String::new(),
+        folder_id: None,
+        url: url.into(),
+        title: String::new(),
+        favicon: None,
+        pinned: false,
+        muted: false,
+        audible: false,
+        life: TabLife::Live,
+        last_active_ms: 0,
+        order: 0,
+        zoom: 1.0,
+        scroll_y: 0.0,
+        badge: None,
+        archived_ms: None,
+        busy: false,
+    };
+    let view = spawn_view(app, &window, &tab, &profile, vp, false)?;
+    rt().glance = Some((url.to_string(), view));
+    layout(app)
+}
+
+pub fn close_glance() {
+    let g = rt().glance.take();
+    if let Some((_, v)) = g {
+        let _ = v.close();
+    }
 }
 
 pub fn close_view(tab_id: &str) {

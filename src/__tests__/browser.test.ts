@@ -214,3 +214,136 @@ describe("approval helpers", () => {
     expect(stepToAction({ do: "navigate", url: "https://a.test" }).element).toBeUndefined();
   });
 });
+
+import { bayer, coverage, ditherMask, rng } from "../style/dither";
+import { cardModel, findAmount, findCardHint, toApprovalRequest, variantOf } from "../browser/approvalShape";
+import { parseResult } from "../browser/guard";
+import { defaultGroupTitle, directionsUrl, icsFor, plainError, summariseVerbs } from "../browser/agent";
+import { bookmarkTree } from "../browser/BookmarksPanel";
+import { fieldColor, hexHueLight, hslHex } from "../browser/CustomisePanel";
+
+describe("dither material", () => {
+  test("Bayer matrix is a permutation of evenly spaced thresholds", () => {
+    const m = bayer(8).flat();
+    expect(m).toHaveLength(64);
+    expect(new Set(m.map((v) => Math.round(v * 64 - 0.5))).size).toBe(64);
+    expect(Math.min(...m)).toBeGreaterThan(0);
+    expect(Math.max(...m)).toBeLessThan(1);
+  });
+  test("deterministic, off at 0, denser with more dither, grain adds speckle", () => {
+    const a = ditherMask({ dither: 50, grain: 0, tile: 64, seed: 3 });
+    expect(ditherMask({ dither: 50, grain: 0, tile: 64, seed: 3 })).toEqual(a);
+    expect(coverage(ditherMask({ dither: 0, grain: 80, tile: 64 }))).toBe(0);
+    const lo = coverage(ditherMask({ dither: 20, grain: 0, tile: 128 }));
+    const hi = coverage(ditherMask({ dither: 90, grain: 0, tile: 128 }));
+    expect(hi).toBeGreaterThan(lo);
+    expect(hi).toBeLessThan(0.75); // stays low-contrast: never a solid fill
+    const g = ditherMask({ dither: 50, grain: 100, tile: 64, seed: 3 });
+    expect(g).not.toEqual(a);
+    expect(rng(1)()).toBe(rng(1)());
+  });
+  test("tiles wrap seamlessly (edges continue across the seam)", () => {
+    const t = 64;
+    const m = ditherMask({ dither: 60, grain: 0, tile: t, seed: 9 });
+    let diff = 0;
+    for (let y = 0; y < t; y++) diff += Math.abs(m[y * t] - m[y * t + t - 1]);
+    expect(diff / t).toBeLessThan(0.6);
+  });
+});
+
+const desc = (o: Record<string, unknown> = {}) => ({
+  ok: true,
+  target: { tag: "button", role: "", inputType: "", name: "", label: "", text: "Pay $84.00", autocomplete: "", href: "", inForm: true, formHasPassword: false, formHasCard: true, isCaptcha: false },
+  rect: [0, 0, 1, 1] as [number, number, number, number],
+  dpr: 1,
+  look: { bg: "", fg: "", radius: "", font: "", weight: "" },
+  context: "TP 1357 was cancelled. Pay with Amex ending 1007.",
+  fields: [{ label: "Card number", value: "••••" }, { label: "Passenger", value: "Hannah W." }],
+  notes: ["Non-refundable once ticketed"],
+  host: "www.flytap.example",
+  title: "Change flight",
+  at: 0,
+  ...o,
+});
+
+describe("approval cards in the shared shape", () => {
+  test("variants follow the category", () => {
+    expect(variantOf("purchase")).toBe("payment");
+    expect(variantOf("delete")).toBe("delete");
+    expect(variantOf("send")).toBe("send");
+    expect(variantOf("booking")).toBe("click");
+  });
+  test("payment: amount, last four only, hold, no card fields in details", () => {
+    const m = cardModel({ step: { do: "click", ref: 1 }, element: 1, decision: { risk: "ask_first", category: "purchase", reason: "r" }, desc: desc(), capturedAt: 0 }, 3000);
+    expect(m.variant).toBe("payment");
+    expect(m.amount).toBe("$84.00");
+    expect(m.cardHint).toBe("Amex ··1007");
+    expect(m.hold).toBe(true);
+    expect(m.reversible).toBe(false);
+    expect(m.details.map((d) => d.label)).toEqual(["Passenger"]);
+    expect(m.warnings).toEqual(["Non-refundable once ticketed"]);
+    expect(m.capturedAgo).toBe("3s ago");
+    expect(findCardHint(["Visa 4242 4242 4242 4242"])).toBe("Visa ··4242");
+    expect(findAmount(["€12"])).toBe("€12.00");
+  });
+  test("send: recipient and message", () => {
+    const d = desc({ target: { ...desc().target, text: "Send", formHasCard: false }, fields: [{ label: "To", value: "Maya" }, { label: "Message", value: "Saturday 2:00 at Lisboeta is still on." }], notes: [], context: "" });
+    const m = cardModel({ step: { do: "click", ref: 2 }, element: 2, decision: { risk: "ask_first", category: "send", reason: "r" }, desc: d, capturedAt: 0 }, 0);
+    expect([m.question, m.recipient, m.message, m.deny]).toEqual(["Send this to Maya?", "Maya", "Saturday 2:00 at Lisboeta is still on.", "Don't send"]);
+  });
+  test("delete: review link, Bin means undo and no hold", () => {
+    const d = desc({ target: { ...desc().target, text: "Delete 2,315 emails", formHasCard: false }, notes: ["Goes to Bin · restorable for 30 days"], context: "", fields: [] });
+    const m = cardModel({ step: { do: "click", ref: 3 }, element: 3, decision: { risk: "ask_first", category: "delete", reason: "r" }, desc: d, capturedAt: 0 }, 0);
+    expect([m.review, m.reversible, m.hold]).toEqual(["Review all 2,315", true, false]);
+  });
+  test("toApprovalRequest matches the shared ApprovalRequest fields", () => {
+    const r = toApprovalRequest({ step: { do: "click", ref: 1 }, element: 1, decision: { risk: "ask_first", category: "purchase", reason: "r" }, desc: desc(), capturedAt: 5 }, "a1", [], 10);
+    expect(r.origin).toBe("browser");
+    expect(r.site).toBe("flytap.example");
+    expect(r.preview.kind).toBe("element");
+    expect(r.preview.holdToConfirm).toBe(true);
+    expect(r.preview.details[0]).toEqual({ label: "Amount", value: "$84.00 · Amex ··1007" });
+  });
+});
+
+describe("timeline and results", () => {
+  test("verbs collapse repeats", () => {
+    expect(summariseVerbs(["search", "click", "open", "open", "open", "open", "open", "open"], ["kept 3"])).toBe("search · click · open ×6 · kept 3");
+    expect(defaultGroupTitle([{ do: "navigate", url: "https://www.amazon.com/s?k=x" }], "x")).toBe("Opened amazon.com");
+    expect(plainError("Error: The page didn't answer in time.")).toBe("The page took too long to respond.");
+  });
+  test("results are validated strictly", () => {
+    expect(parseResult({ type: "table", columns: ["Place", "Fee"], rows: [["A", "$25"], ["B"]], pick: 0 })).toEqual({ type: "table", title: undefined, columns: ["Place", "Fee"], rows: [["A", "$25"], ["B", ""]], pick: 0, note: undefined });
+    expect(parseResult({ type: "table", columns: [], rows: [] })).toBeUndefined();
+    expect((parseResult({ type: "place", name: "Lisboeta", url: "javascript:x", when: "not a date" }) as any).url).toBeUndefined();
+    expect(parseResult({ type: "script", code: "x" })).toBeUndefined();
+    expect(parseResult({ type: "map", pins: [{ label: "A", pick: true }, { nope: 1 }] })).toEqual({ type: "map", title: undefined, pins: [{ label: "A", pick: true }] });
+  });
+  test("calendar file and directions link", () => {
+    const ics = icsFor({ name: "Lisboeta, table 12", when: "2026-11-28T14:00:00Z", address: "Rua 1" }, Date.UTC(2026, 10, 22));
+    expect(ics).toContain("DTSTART:20261128T140000Z");
+    expect(ics).toContain("DTEND:20261128T160000Z");
+    expect(ics).toContain("SUMMARY:Lisboeta\\, table 12");
+    expect(ics.split("\r\n")[0]).toBe("BEGIN:VCALENDAR");
+    expect(directionsUrl({ name: "Lisboeta", address: "Rua 1, Lisbon" })).toBe("https://www.openstreetmap.org/search?query=Rua%201%2C%20Lisbon");
+  });
+});
+
+describe("bookmarks and colours", () => {
+  test("folder paths nest", () => {
+    const t = bookmarkTree([
+      { id: "1", url: "https://a.test", title: "A", createdMs: 0, folder: "Recipes / Pasta" },
+      { id: "2", url: "https://b.test", title: "B", createdMs: 0, folder: "Recipes" },
+      { id: "3", url: "https://c.test", title: "C", createdMs: 0 },
+    ]);
+    expect(t.marks.map((b) => b.id)).toEqual(["3"]);
+    expect(t.children[0].name).toBe("Recipes");
+    expect(t.children[0].marks.map((b) => b.id)).toEqual(["2"]);
+    expect(t.children[0].children[0].path).toBe("Recipes / Pasta");
+  });
+  test("accent field round-trips hue", () => {
+    expect(hslHex(0, 1, 0.5)).toBe("#ff0000");
+    const c = fieldColor(0.6, 0.3);
+    expect(Math.abs(hexHueLight(c)[0] - 216)).toBeLessThanOrEqual(2);
+  });
+});

@@ -84,11 +84,14 @@ pub struct Capabilities {
     pub fill_forms: bool,
     /// Submitting, booking, sending, deleting — always asks first when on; blocked when off.
     pub submit: bool,
+    /// Paying or buying. Off (blocked) by default; the user can switch it to "ask first" for one
+    /// task, with hold-to-confirm in the UI. Card numbers are never typed either way.
+    pub payments: bool,
 }
 
 impl Default for Capabilities {
     fn default() -> Self {
-        Self { read_page: true, search: true, navigate: true, fill_forms: true, submit: true }
+        Self { read_page: true, search: true, navigate: true, fill_forms: true, submit: true, payments: false }
     }
 }
 
@@ -176,7 +179,7 @@ pub fn looks_like_card_number(s: &str) -> bool {
 fn commit_category(t: &Target) -> Option<(Category, &'static str)> {
     let w = words(t);
     if t.form_has_card || any(&w, PURCHASE) {
-        return Some((Category::Purchase, "Payments and purchases are never made by the agent. You can finish this yourself."));
+        return Some((Category::Purchase, "This pays or buys something."));
     }
     if t.form_has_password || any(&w, LOGIN) {
         return Some((Category::Login, "Signing in or creating accounts is left to you; the agent never handles credentials."));
@@ -234,7 +237,14 @@ pub fn classify(action: &PageAction, caps: &Capabilities) -> Decision {
             }
             let forced = matches!(action, PageAction::Submit { .. });
             match commit_category(target).or(if forced { Some((Category::Submit, "This submits a form.")) } else { None }) {
-                Some((c @ (Category::Purchase | Category::Login), why)) => d(Risk::Blocked, c, why),
+                Some((Category::Login, why)) => d(Risk::Blocked, Category::Login, why),
+                Some((Category::Purchase, _)) => {
+                    if caps.payments && caps.submit {
+                        d(Risk::AskFirst, Category::Purchase, "This pays or buys something. Check the amount and the card before you hold to pay.")
+                    } else {
+                        d(Risk::Blocked, Category::Purchase, "Payments are off for this task, so the agent stopped. Switch \"Pay or buy\" to Ask first, or finish it yourself.")
+                    }
+                }
                 Some((c, why)) => {
                     if caps.submit { d(Risk::AskFirst, c, why) } else { d(Risk::Blocked, c, "Submitting is switched off for this task.") }
                 }
@@ -336,13 +346,28 @@ mod tests {
 
     #[test]
     fn capabilities_only_make_things_stricter() {
-        let off = Capabilities { read_page: false, search: false, navigate: false, fill_forms: false, submit: false };
+        let off = Capabilities { read_page: false, search: false, navigate: false, fill_forms: false, submit: false, payments: false };
         assert_eq!(classify(&PageAction::ReadPage, &off).risk, Risk::Blocked);
         assert_eq!(classify(&PageAction::Click { target: btn("Book table") }, &off).risk, Risk::Blocked);
         let field = Target { tag: "input".into(), label: "Party size".into(), ..Default::default() };
         assert_eq!(classify(&PageAction::Type { target: field, text: "4".into() }, &off).risk, Risk::Blocked);
         // Payments stay blocked with everything on.
         assert_eq!(classify(&PageAction::Click { target: btn("Pay") }, &Capabilities::default()).risk, Risk::Blocked);
+    }
+
+    #[test]
+    fn payments_can_be_switched_to_ask_first_per_task_but_cards_are_never_typed() {
+        let pay = Capabilities { payments: true, ..Capabilities::default() };
+        let r = classify(&PageAction::Click { target: btn("Pay $84.00") }, &pay);
+        assert_eq!((r.risk, r.category), (Risk::AskFirst, Category::Purchase));
+        let card = Target { tag: "input".into(), autocomplete: "cc-number".into(), ..Default::default() };
+        assert_eq!(classify(&PageAction::Type { target: card, text: "4242424242424242".into() }, &pay).risk, Risk::Blocked);
+        let name = Target { tag: "input".into(), label: "Name".into(), ..Default::default() };
+        assert_eq!(classify(&PageAction::Type { target: name, text: "4242 4242 4242 4242".into() }, &pay).risk, Risk::Blocked);
+        // Payments still need submit to be on, and sign-ins stay blocked.
+        let no_submit = Capabilities { payments: true, submit: false, ..Capabilities::default() };
+        assert_eq!(classify(&PageAction::Click { target: btn("Pay now") }, &no_submit).risk, Risk::Blocked);
+        assert_eq!(classify(&PageAction::Click { target: btn("Sign in") }, &pay).risk, Risk::Blocked);
     }
 
     #[test]

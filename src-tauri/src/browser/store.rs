@@ -116,3 +116,24 @@ mod tests {
         assert!(!p.to_string_lossy().contains(".."));
     }
 }
+
+#[cfg(test)]
+mod compat_tests {
+    use super::*;
+
+    #[test]
+    fn old_state_files_load_with_new_defaults() {
+        let d = std::env::temp_dir().join(format!("lens-browser-compat-{}", std::process::id()));
+        let _ = fs::create_dir_all(&d);
+        let p = d.join("state.json");
+        // A v1 file written before appearance/AI settings and bookmark folders existed.
+        fs::write(&p, br#"{"version":1,"spaces":[{"id":"s1","name":"Personal","profile":"space-s1"}],"folders":[],"tabs":[],
+            "activeSpace":"s1","bookmarks":[{"id":"b2","url":"https://a.test","title":"A","createdMs":1}],
+            "settings":{"sleepAfterMin":15,"maxLiveTabs":6,"searchUrl":"https://duckduckgo.com/?q={q}","blockTrackers":true,"lensContextMenu":true,"defaultZoom":1.0},"nextId":3}"#).unwrap();
+        let s = load_state_from(&p);
+        assert!(s.settings.ai.enabled);
+        assert_eq!(s.settings.appearance.dither, 40);
+        assert_eq!(s.bookmarks[0].folder, None);
+        let _ = fs::remove_dir_all(d);
+    }
+}

@@ -231,3 +231,99 @@ version Tauri uses:
   the page; Lens does the same in the side panel, with the Lens Shelf as shared context.
   These product notes are from general coverage and could not be checked against primary docs
   here.
+
+
+## Style direction (v2)
+
+Near-black canvas; the dither material (docs/DITHER.md) on backdrops and empty states only;
+cards with 1 px borders and 12–16 px radius; monospace for domains, timings, counts and captions
+("captured 3s ago", "Working · 1m 12s · 5 actions"); small coloured status dots; a key chip on
+every button (⏎, Esc, hold ⏎); one light primary button per card.
+
+## Make it yours
+
+Settings › (gear in the sidebar) › Make it yours: a 2D accent field (x = hue, y = vivid → deep;
+arrow keys move it), Auto / Light / Dark, six two-tone presets, Dither and Grain (0–100), tabs
+vertical / horizontal, density compact / comfortable, typeface Lens / System / Mono / Serif,
+Reset, and Customise (opens Lens Theme & Look). Stored in `settings.appearance`.
+
+## Bring everything with you (import)
+
+Chrome, Edge, Brave, Vivaldi, Opera / Opera GX, Firefox and Arc. `detect()` only checks folders.
+After you click **Look inside** and **Allow and count**, Lens reads one profile and shows counts;
+**Import** then runs step by step with a progress checklist.
+
+| What | Chromium browsers | Firefox | Arc |
+|---|---|---|---|
+| Bookmarks (with folders) | `Bookmarks` JSON | `places.sqlite` (moz_bookmarks) | its Chromium profile |
+| History | `History` (SQLite) | `places.sqlite` (moz_places) | its Chromium profile |
+| Open + pinned tabs | newest `Sessions/Session_*` (SNSS) | `sessionstore-backups/recovery.jsonlz4` | — |
+| Spaces, pinned tabs, folders | — | — | `StorableSidebar.json` |
+
+* SQLite is read by a small built-in reader (`import/sqlite.rs`: b-tree pages, overflow, record
+  types, row-id aliases); `-wal` files are not read, so a browser that's still open may lose the
+  last few minutes of history. A file the browser holds locked gets "Close X and try again".
+* `mozLz4` is decoded by `import/lz4.rs`. SNSS is replayed best-effort (navigation, selected
+  entry, pinned, closed tabs/windows).
+* **Never read**: `Login Data`, `Cookies`, `Web Data`, `logins.json`, `key4.db`,
+  `cookies.sqlite`, `formhistory.sqlite`, … `import::readable()` only allows a fixed list of
+  file names, and a test asserts the never-list is refused. The UI says to use your password
+  manager for logins.
+* Imported tabs arrive asleep in a "From <browser>" space; Arc spaces become "Arc · <name>"
+  spaces with their folders. Bookmarks dedupe by URL; history merges counts and keeps the latest
+  visit time.
+
+## AI only if you want it / Free, bring your own model
+
+`settings.ai`: a master switch plus Agent in new tabs, Page summaries, Ask in address bar and
+Transcripts. With the master off: the Ask and Transcript panels, approve pill, reader view,
+Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; "ask …"
+in the address bar becomes a web search; and `browser_agent_act` refuses to run. The provider
+row lists what `ai_status` reports (offline commands, local models, Claude, OpenAI-compatible
+endpoints) with no tiers, and links to Settings › AI & Command.
+
+## Agent run timeline
+
+"Working · 1m 12s ▾ · N actions" (collapses the steps), Pause / Take over while running, grouped
+steps with an icon, a monospace sub-caption ("search · sort · open ×6 · kept 3") and a one-line
+why, a jump-to-tab chip, plain errors with Retry, an "Acting in 1 tab" card ("+N kept, idle"),
+"Waiting for your OK to … · now", then the approval card. Typing while a run is going steers it
+(the note joins the next turn's goal). Results render as cards: a comparison table with
+"My pick", a dithered map with numbered pins (no map tiles), and a place card with **Add to
+calendar** (downloads an `.ics`) and **Directions** (an OpenStreetMap link).
+
+## Approval cards
+
+`src/browser/approvalShape.ts` builds a card model in the same shape as the shared approval
+model on `feature/claude-control` (`ApprovalRequest` / `ApprovalPreview`, origin `browser`, kind
+`element`), with four layouts: **click/booking** (element replica, details, "I'll click this ·
+captured 3s ago"), **delete** (counts, "Review all N", Bin = undo, no hold), **payment**
+(amount in mono, card shown as last four only, warnings, always hold), **send** (TO recipient
+and the exact words, "Don't send"). When both branches merge, import the types from
+`src/approval/model` and delete the local copies.
+
+**Payments** are blocked by default. In "This task can", *Pay or buy* can be switched to "Ask
+first" for the current task by holding its chip; the agent then stops at the payment card and
+needs a hold to pay. Card numbers are never typed (field checks plus a Luhn check), with or
+without that switch, and sign-ins stay blocked.
+
+## Delta items (docs/research/BROWSER_DELTA.md)
+
+| Item | Status |
+|---|---|
+| Steer, pause, take over | Done (pause stops before the next step; take over focuses the page; steer adds a note). |
+| Glance link previews | Done: Alt+click (or long-press) a link → a preview fills the content area with "Open as tab ⏎ / Close Esc"; optional ≤5 s local summary (provider `local`). |
+| Tidy and auto-archive | Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for `archiveAfterDays` (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. |
+| Space lock with Windows Hello | Done: `UserConsentVerifier`; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. |
+| Ask-on-Find | Done: no matches → "Ask about this page". |
+| PDF annotation + Ask this PDF | Partial: page notes (any page, PDFs included) saved locally. Highlights inside WebView2's PDF viewer and "Ask this PDF" need native access to the viewer (or bundling pdf.js); not done. |
+| Timeline polish | Done: repeated batches collapse, ×N, why line, jump to tab, plain errors + Retry. |
+| Tab sleep | Done: "N awake · N asleep · ~X GB saved" (estimate, 80 MB per sleeping tab); tabs with edited fields or a chosen upload never sleep (amber dot). |
+| Sessions | Done: state is saved atomically on every change (crash-safe); Ctrl+Shift+T reopens the last 25 closed tabs. Reopening a closed window is the same as reopening Lens Browser; a removed space can't be reopened yet. |
+| Split controls | Skipped (no split view yet). |
+| Media mini-player | Done: the sidebar shows a background tab that's playing, with play/pause and mute. |
+| Bookmarks editing | Done: Bookmarks panel with nested folders ("A / B"), rename, move, remove. |
+| Background opens, crashed tab | Done: Ctrl/middle-click on bookmarks and pinned sites opens asleep in the background; a tab that stops answering shows "This tab stopped responding · Reload". |
+| Downloads | Partial: rules by file type (`downloadRules`: ext → existing folder). "Ask where to save" needs a native save dialog in the download callback; not done. |
+| Shortcuts while a page has focus | Done via an injected key bridge for Lens's own combos only (Ctrl+L/T/W/F/J/D, Ctrl+Shift+T/K); the page agent queues them and the UI polls every 300 ms. The native `AcceleratorKeyPressed` handler remains the better fix (native extras). |
+| AI off means off | Done (see above). |

@@ -9,6 +9,7 @@ export interface Space {
   icon?: string | null;
   color?: string | null;
   profile: string;
+  locked?: boolean;
 }
 
 export interface Folder {
@@ -34,6 +35,8 @@ export interface Tab {
   zoom: number;
   scrollY: number;
   badge?: string | null;
+  archivedMs?: number | null;
+  busy?: boolean;
 }
 
 export interface Bookmark {
@@ -41,9 +44,35 @@ export interface Bookmark {
   url: string;
   title: string;
   createdMs: number;
+  folder?: string | null;
 }
 
+export interface Appearance {
+  scheme: "auto" | "light" | "dark";
+  accent: string | null;
+  dither: number;
+  grain: number;
+  tabsLayout: "vertical" | "horizontal";
+  density: "compact" | "comfortable";
+  typeface: "lens" | "system" | "mono" | "serif";
+}
+
+export interface BrowserAi {
+  enabled: boolean;
+  agentInNewTabs: boolean;
+  pageSummaries: boolean;
+  askInAddressBar: boolean;
+  transcripts: boolean;
+}
+
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens" };
+export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
+
 export interface BrowserSettings {
+  appearance?: Appearance;
+  ai?: BrowserAi;
+  archiveAfterDays?: number;
+  downloadRules?: { ext: string; folder: string }[];
   sleepAfterMin: number;
   maxLiveTabs: number;
   searchUrl: string;
@@ -77,6 +106,8 @@ export interface BrowserView {
   bookmarked: boolean;
   live: string[];
   downloads: Download[];
+  unlocked?: string[];
+  glance?: string | null;
 }
 
 export interface HistoryEntry {
@@ -161,9 +192,11 @@ export interface Capabilities {
   navigate: boolean;
   fillForms: boolean;
   submit: boolean;
+  /** Off (blocked) by default; switching on needs a hold, and the agent still asks first. */
+  payments: boolean;
 }
 
-export const DEFAULT_CAPS: Capabilities = { readPage: true, search: true, navigate: true, fillForms: true, submit: true };
+export const DEFAULT_CAPS: Capabilities = { readPage: true, search: true, navigate: true, fillForms: true, submit: true, payments: false };
 
 export interface ActResult {
   decision: Decision;
@@ -233,3 +266,36 @@ export interface CaptionReply {
   tracks?: { lang: string; name: string; auto: boolean }[];
   body?: string;
 }
+
+// ---- Import ("Bring everything with you") ----
+export type Engine = "chromium" | "firefox" | "arc";
+export interface ImportProfile { id: string; label: string }
+export interface ImportSource { browser: string; label: string; engine: Engine; profiles: ImportProfile[] }
+export interface ImportKinds { bookmarks: boolean; history: boolean; tabs: boolean; spaces: boolean }
+export interface ImportCounts { bookmarks: number; history: number; openTabs: number; pinnedTabs: number; spaces: number; notes: string[] }
+export interface ImportApplied { bookmarks: number; history: number; tabs: number; spaces: number }
+export interface ImportProgress { browser: string; step: "bookmarks" | "history" | "tabs" | "spaces" | "done"; state: "running" | "done" | "skipped" | "failed"; count: number; note?: string | null }
+export const EVT_BROWSER_IMPORT = "lens://browser/import";
+export const importDetect = () => invoke<ImportSource[]>("browser_import_detect");
+export const importPreview = (browser: string, profile: string, kinds: ImportKinds) => invoke<ImportCounts>("browser_import_preview", { browser, profile, kinds });
+export const importRun = (browser: string, profile: string, kinds: ImportKinds) => invoke<ImportApplied>("browser_import_run", { browser, profile, kinds });
+
+// ---- Sessions, tidy, archive, bookmarks, glance, media, locks, notes ----
+export interface ArchivedTab { id: string; url: string; title: string; archivedMs: number; space: string }
+export const reopenClosed = () => invoke<BrowserView>("browser_reopen_closed");
+export const tidy = () => invoke<{ duplicatesClosed: number; archived: number }>("browser_tidy");
+export const archived = (query?: string) => invoke<ArchivedTab[]>("browser_archived", { query: query ?? null });
+export const unarchive = (id: string) => invoke<BrowserView>("browser_unarchive", { id });
+export const openBackground = (url: string) => invoke<BrowserView>("browser_open_background", { url });
+export const bookmarkUpdate = (id: string, title?: string, folder?: string) => invoke<BrowserView>("browser_bookmark_update", { id, title: title ?? null, folder: folder ?? null });
+export const bookmarkRemove = (id: string) => invoke<BrowserView>("browser_bookmark_remove", { id });
+export const glance = (action: "open" | "close" | "promote" | "read", url?: string) => invoke<string | null>("browser_glance", { action, url: url ?? null });
+export const media = (tab: string, action: "status" | "toggle") => invoke<{ ok: boolean; playing?: boolean; title?: string }>("browser_media", { tab, action });
+export const spaceLock = (id: string, lock: boolean) => invoke<string>("browser_space_lock", { id, lock });
+export const spaceUnlockForever = (id: string) => invoke<void>("browser_space_unlock_forever", { id });
+export const notesGet = (url: string) => invoke<string>("browser_notes_get", { url });
+export const notesSet = (url: string, text: string) => invoke<void>("browser_notes_set", { url, text });
+export const focusPage = () => invoke<void>("browser_focus_page");
+
+/** Rough memory saved by sleeping tabs (a WebView2 renderer for a typical page is ~60–120 MB). */
+export const SLEEP_SAVING_MB = 80;

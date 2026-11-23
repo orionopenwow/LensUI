@@ -23,6 +23,9 @@ pub struct Space {
     /// Folder name under %APPDATA%\LensUI\browser\profiles\ — one WebView2 data folder per space,
     /// so cookies and logins never leak between spaces (or into the user's main browser).
     pub profile: String,
+    /// Locked spaces hide their tabs until unlocked (Windows Hello when available).
+    #[serde(default)]
+    pub locked: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -76,6 +79,12 @@ pub struct Tab {
     /// Small sidebar pill, e.g. "approve" while an agent action waits for the user.
     #[serde(default)]
     pub badge: Option<String>,
+    /// Set when the tab was auto-archived or tidied away; archived tabs are hidden but searchable.
+    #[serde(default)]
+    pub archived_ms: Option<u64>,
+    /// The page has unsaved form input or a file chosen for upload: never put it to sleep.
+    #[serde(default)]
+    pub busy: bool,
 }
 
 fn one() -> f64 {
@@ -98,6 +107,87 @@ pub struct Bookmark {
     pub url: String,
     pub title: String,
     pub created_ms: u64,
+    /// Folder path from an import, e.g. "Bookmarks bar / Recipes".
+    #[serde(default)]
+    pub folder: Option<String>,
+}
+
+/// How Lens Browser looks ("Make it yours"). Separate from the Lens theme so the browser can be
+/// tuned on its own; `accent: None` follows the Lens accent.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Appearance {
+    /// "auto" | "light" | "dark"
+    pub scheme: String,
+    pub accent: Option<String>,
+    /// 0–100. 0 turns the dither texture off.
+    pub dither: u8,
+    /// 0–100.
+    pub grain: u8,
+    /// "vertical" | "horizontal"
+    pub tabs_layout: String,
+    /// "compact" | "comfortable"
+    pub density: String,
+    /// "lens" | "system" | "mono" | "serif"
+    pub typeface: String,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Self { scheme: "auto".into(), accent: None, dither: 40, grain: 20, tabs_layout: "vertical".into(), density: "comfortable".into(), typeface: "lens".into() }
+    }
+}
+
+/// "AI only if you want it": one master switch plus per-feature switches. With `enabled` off
+/// every AI affordance in Lens Browser is hidden.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct BrowserAi {
+    pub enabled: bool,
+    pub agent_in_new_tabs: bool,
+    pub page_summaries: bool,
+    pub ask_in_address_bar: bool,
+    pub transcripts: bool,
+}
+
+impl Default for BrowserAi {
+    fn default() -> Self {
+        Self { enabled: true, agent_in_new_tabs: false, page_summaries: true, ask_in_address_bar: true, transcripts: true }
+    }
+}
+
+/// Save downloads with this extension into `folder` (an existing folder) instead of Downloads.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadRule {
+    pub ext: String,
+    pub folder: String,
+}
+
+/// Picks the rule for a file name (case-insensitive extension match).
+pub fn rule_for<'a>(rules: &'a [DownloadRule], file: &str) -> Option<&'a DownloadRule> {
+    let ext = file.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase())?;
+    rules.iter().find(|r| r.ext.trim_start_matches('.').eq_ignore_ascii_case(&ext))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ClosedTab {
+    pub tab: Tab,
+    pub closed_ms: u64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TidyReport {
+    pub duplicates_closed: usize,
+    pub archived: usize,
+}
+
+pub const CLOSED_CAP: usize = 25;
+
+pub fn valid_hex(s: &str) -> bool {
+    s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -113,6 +203,19 @@ pub struct BrowserSettings {
     /// Right-click shows Lens's menu; Shift+right-click always shows the page's own.
     pub lens_context_menu: bool,
     pub default_zoom: f64,
+    #[serde(default)]
+    pub appearance: Appearance,
+    #[serde(default)]
+    pub ai: BrowserAi,
+    /// Archive unpinned tabs not opened for this many days (0 = never).
+    #[serde(default = "fourteen")]
+    pub archive_after_days: u32,
+    #[serde(default)]
+    pub download_rules: Vec<DownloadRule>,
+}
+
+fn fourteen() -> u32 {
+    14
 }
 
 impl Default for BrowserSettings {
@@ -124,6 +227,10 @@ impl Default for BrowserSettings {
             block_trackers: true,
             lens_context_menu: true,
             default_zoom: 1.0,
+            appearance: Appearance::default(),
+            ai: BrowserAi::default(),
+            archive_after_days: 14,
+            download_rules: vec![],
         }
     }
 }
@@ -144,6 +251,9 @@ pub struct BrowserState {
     pub settings: BrowserSettings,
     #[serde(default)]
     pub next_id: u64,
+    /// Recently closed tabs, newest last (Ctrl+Shift+T).
+    #[serde(default)]
+    pub closed: Vec<ClosedTab>,
 }
 
 impl Default for BrowserState {
@@ -158,6 +268,7 @@ impl Default for BrowserState {
             bookmarks: vec![],
             settings: BrowserSettings::default(),
             next_id: 1,
+            closed: vec![],
         };
         let id = s.add_space("Personal");
         s.active_space = id;
@@ -270,7 +381,7 @@ impl BrowserState {
     pub fn add_space(&mut self, name: &str) -> String {
         let id = self.fresh_id("s");
         let profile = format!("space-{id}");
-        self.spaces.push(Space { id: id.clone(), name: clip(name.trim(), 40), icon: None, color: None, profile });
+        self.spaces.push(Space { id: id.clone(), name: clip(name.trim(), 40), icon: None, color: None, profile, locked: false });
         id
     }
 
@@ -352,6 +463,8 @@ impl BrowserState {
             zoom: self.settings.default_zoom,
             scroll_y: 0.0,
             badge: None,
+            archived_ms: None,
+            busy: false,
         });
         self.active_space = space;
         self.active_tab = Some(id.clone());
@@ -362,6 +475,7 @@ impl BrowserState {
     pub fn close_tab(&mut self, id: &str) -> Option<String> {
         let Some(tab) = self.tab(id).cloned() else { return self.active_tab.clone() };
         self.tabs.retain(|t| t.id != id);
+        self.remember_closed(tab.clone(), 0);
         if self.active_tab.as_deref() == Some(id) {
             self.active_tab = self.most_recent_in(&tab.space_id);
         }
@@ -369,7 +483,135 @@ impl BrowserState {
     }
 
     fn most_recent_in(&self, space: &str) -> Option<String> {
-        self.tabs.iter().filter(|t| t.space_id == space).max_by_key(|t| t.last_active_ms).map(|t| t.id.clone())
+        self.tabs.iter().filter(|t| t.space_id == space && t.archived_ms.is_none()).max_by_key(|t| t.last_active_ms).map(|t| t.id.clone())
+    }
+
+    fn remember_closed(&mut self, mut tab: Tab, now: u64) {
+        tab.life = TabLife::Sleeping;
+        tab.badge = None;
+        self.closed.push(ClosedTab { tab, closed_ms: now });
+        if self.closed.len() > CLOSED_CAP {
+            let extra = self.closed.len() - CLOSED_CAP;
+            self.closed.drain(..extra);
+        }
+    }
+
+    /// Reopens the most recently closed tab (into its space if it still exists, else the
+    /// active one) and makes it active. Returns its id.
+    pub fn reopen_closed(&mut self, now: u64) -> Option<String> {
+        let c = self.closed.pop()?;
+        let mut t = c.tab;
+        if !self.spaces.iter().any(|s| s.id == t.space_id) {
+            t.space_id = self.active_space.clone();
+        }
+        if t.folder_id.as_ref().is_some_and(|f| !self.folders.iter().any(|x| &x.id == f)) {
+            t.folder_id = None;
+        }
+        if self.tab(&t.id).is_some() {
+            t.id = self.fresh_id("t");
+        }
+        t.last_active_ms = now;
+        t.life = TabLife::Live;
+        t.archived_ms = None;
+        let id = t.id.clone();
+        self.active_space = t.space_id.clone();
+        self.tabs.push(t);
+        self.active_tab = Some(id.clone());
+        Some(id)
+    }
+
+    /// Unpinned, non-active tabs not opened for `archive_after_days`.
+    pub fn archive_candidates(&self, now: u64) -> Vec<String> {
+        let days = u64::from(self.settings.archive_after_days);
+        if days == 0 {
+            return vec![];
+        }
+        self.tabs
+            .iter()
+            .filter(|t| !t.pinned && t.archived_ms.is_none() && !t.busy && Some(&t.id) != self.active_tab.as_ref() && now.saturating_sub(t.last_active_ms) >= days * 86_400_000)
+            .map(|t| t.id.clone())
+            .collect()
+    }
+
+    pub fn archive(&mut self, ids: &[String], now: u64) -> usize {
+        let mut n = 0;
+        for t in self.tabs.iter_mut().filter(|t| ids.contains(&t.id) && t.archived_ms.is_none()) {
+            t.archived_ms = Some(now);
+            t.life = TabLife::Sleeping;
+            n += 1;
+        }
+        n
+    }
+
+    /// Brings an archived tab back and opens it.
+    pub fn unarchive(&mut self, id: &str, now: u64) -> Result<(), String> {
+        let t = self.tab_mut(id).ok_or("Unknown tab.")?;
+        t.archived_ms = None;
+        let _ = self.activate(id, now)?;
+        Ok(())
+    }
+
+    /// One-click Tidy for a space: closes duplicate pages (keeps the most recently used) and
+    /// archives unpinned tabs not opened in the last day. Never the active, pinned or busy tab.
+    pub fn tidy(&mut self, space: &str, now: u64) -> TidyReport {
+        let mut report = TidyReport::default();
+        let active = self.active_tab.clone();
+        let mut seen: Vec<String> = vec![];
+        let mut tabs: Vec<Tab> = self.tabs.iter().filter(|t| t.space_id == space && t.archived_ms.is_none()).cloned().collect();
+        tabs.sort_by_key(|t| std::cmp::Reverse(t.last_active_ms));
+        let mut dupes = vec![];
+        for t in &tabs {
+            let key = t.url.split('#').next().unwrap_or(&t.url).trim_end_matches('/').to_string();
+            if seen.contains(&key) {
+                if !t.pinned && !t.busy && Some(&t.id) != active.as_ref() {
+                    dupes.push(t.id.clone());
+                }
+            } else {
+                seen.push(key);
+            }
+        }
+        for id in &dupes {
+            if let Some(t) = self.tab(id).cloned() {
+                self.tabs.retain(|x| &x.id != id);
+                self.remember_closed(t, now);
+                report.duplicates_closed += 1;
+            }
+        }
+        let old: Vec<String> = self
+            .tabs
+            .iter()
+            .filter(|t| t.space_id == space && !t.pinned && !t.busy && t.archived_ms.is_none() && Some(&t.id) != active.as_ref() && now.saturating_sub(t.last_active_ms) >= 86_400_000)
+            .map(|t| t.id.clone())
+            .collect();
+        report.archived = self.archive(&old, now);
+        report
+    }
+
+    /// Opens a page in the background (Ctrl/middle-click on a bookmark): asleep, not active.
+    pub fn open_background(&mut self, url: &str, now: u64) -> Option<String> {
+        let space = self.active_space.clone();
+        let id = self.add_sleeping_tab(&space, None, url, "", false)?;
+        if let Some(t) = self.tab_mut(&id) {
+            t.last_active_ms = now;
+        }
+        Some(id)
+    }
+
+    pub fn bookmark_update(&mut self, id: &str, title: Option<&str>, folder: Option<&str>) -> Result<(), String> {
+        let b = self.bookmarks.iter_mut().find(|b| b.id == id).ok_or("Unknown bookmark.")?;
+        if let Some(t) = title {
+            b.title = clip(t.trim(), MAX_TITLE);
+        }
+        if let Some(f) = folder {
+            // Folder paths nest with " / ", e.g. "Recipes / Pasta".
+            let clean: Vec<String> = f.split('/').map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect();
+            b.folder = if clean.is_empty() { None } else { Some(clip(&clean.join(" / "), 200)) };
+        }
+        Ok(())
+    }
+
+    pub fn bookmark_remove(&mut self, id: &str) {
+        self.bookmarks.retain(|b| b.id != id);
     }
 
     /// Makes a tab active. Returns true if it was sleeping (the host must wake it).
@@ -421,7 +663,7 @@ impl BrowserState {
     /// Tabs (in space order), pinned first — the order the sidebar draws.
     #[cfg(test)]
     pub fn tabs_in(&self, space: &str) -> Vec<&Tab> {
-        let mut v: Vec<&Tab> = self.tabs.iter().filter(|t| t.space_id == space).collect();
+        let mut v: Vec<&Tab> = self.tabs.iter().filter(|t| t.space_id == space && t.archived_ms.is_none()).collect();
         v.sort_by(|a, b| b.pinned.cmp(&a.pinned).then(a.order.cmp(&b.order)));
         v
     }
@@ -436,7 +678,7 @@ impl BrowserState {
         let mut live: Vec<&Tab> = self
             .tabs
             .iter()
-            .filter(|t| t.life == TabLife::Live && Some(t.id.as_str()) != active && !(t.audible && !t.muted))
+            .filter(|t| t.life == TabLife::Live && Some(t.id.as_str()) != active && !(t.audible && !t.muted) && !t.busy)
             .collect();
         live.sort_by_key(|t| std::cmp::Reverse(t.last_active_ms));
         let mut out: Vec<String> = vec![];
@@ -466,13 +708,52 @@ impl BrowserState {
         }
     }
 
+    /// Adds a tab without opening it (imports): asleep, at the end of the space or folder.
+    pub fn add_sleeping_tab(&mut self, space: &str, folder: Option<&str>, url: &str, title: &str, pinned: bool) -> Option<String> {
+        if !is_web_url(url) || !self.spaces.iter().any(|s| s.id == space) {
+            return None;
+        }
+        let id = self.fresh_id("t");
+        let order = self.tabs.iter().filter(|t| t.space_id == space).map(|t| t.order).max().unwrap_or(-1) + 1;
+        self.tabs.push(Tab {
+            id: id.clone(),
+            space_id: space.into(),
+            folder_id: folder.map(str::to_string),
+            url: url.into(),
+            title: clip(title, MAX_TITLE),
+            favicon: None,
+            pinned,
+            muted: false,
+            audible: false,
+            life: TabLife::Sleeping,
+            last_active_ms: 0,
+            order,
+            zoom: 1.0,
+            scroll_y: 0.0,
+            badge: None,
+            archived_ms: None,
+            busy: false,
+        });
+        Some(id)
+    }
+
+    /// Adds a bookmark unless the URL is already bookmarked. Returns true if added.
+    pub fn add_bookmark(&mut self, url: &str, title: &str, folder: Option<&str>, now: u64) -> bool {
+        if !is_web_url(url) || self.is_bookmarked(url) {
+            return false;
+        }
+        let id = self.fresh_id("b");
+        self.bookmarks.push(Bookmark { id, url: clip(url, MAX_URL), title: clip(title, MAX_TITLE), created_ms: now, folder: folder.filter(|f| !f.is_empty()).map(|f| clip(f, 200)) });
+        true
+    }
+
     pub fn toggle_bookmark(&mut self, url: &str, title: &str, now: u64) -> bool {
         if let Some(i) = self.bookmarks.iter().position(|b| b.url == url) {
             self.bookmarks.remove(i);
             return false;
         }
         let id = self.fresh_id("b");
-        self.bookmarks.push(Bookmark { id, url: clip(url, MAX_URL), title: clip(title, MAX_TITLE), created_ms: now });
+        self.bookmarks.push(Bookmark { id, url: clip(url, MAX_URL), title: clip(title, MAX_TITLE), created_ms: now, folder: None });
         true
     }
 
@@ -517,6 +798,9 @@ impl BrowserState {
         let max_f = self.folders.iter().filter_map(|f| num(&f.id)).max().unwrap_or(0);
         let max_b = self.bookmarks.iter().filter_map(|b| num(&b.id)).max().unwrap_or(0);
         self.next_id = self.next_id.max(max.max(max_s).max(max_f).max(max_b) + 1);
+        self.closed.retain(|c| is_web_url(&c.tab.url));
+        let cap = self.closed.len().saturating_sub(CLOSED_CAP);
+        self.closed.drain(..cap);
         self.repair_settings();
     }
 
@@ -530,6 +814,28 @@ impl BrowserState {
         }
         if !(0.25..=5.0).contains(&s.default_zoom) {
             s.default_zoom = 1.0;
+        }
+        s.archive_after_days = s.archive_after_days.min(365);
+        s.download_rules.retain(|r| !r.ext.trim().is_empty() && !r.folder.trim().is_empty() && r.ext.len() <= 16);
+        s.download_rules.truncate(40);
+        let a = &mut s.appearance;
+        let d = Appearance::default();
+        if !["auto", "light", "dark"].contains(&a.scheme.as_str()) {
+            a.scheme = d.scheme;
+        }
+        if a.accent.as_deref().is_some_and(|x| !valid_hex(x)) {
+            a.accent = None;
+        }
+        a.dither = a.dither.min(100);
+        a.grain = a.grain.min(100);
+        if !["vertical", "horizontal"].contains(&a.tabs_layout.as_str()) {
+            a.tabs_layout = d.tabs_layout;
+        }
+        if !["compact", "comfortable"].contains(&a.density.as_str()) {
+            a.density = d.density;
+        }
+        if !["lens", "system", "mono", "serif"].contains(&a.typeface.as_str()) {
+            a.typeface = d.typeface;
         }
     }
 }
@@ -577,6 +883,33 @@ impl History {
             .collect();
         hits.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
         hits.into_iter().take(limit).map(|(_, e)| e.clone()).collect()
+    }
+
+    /// Merges an imported visit: keeps the higher visit count and the later time.
+    pub fn merge(&mut self, url: &str, title: &str, visits: u32, last_ms: u64) {
+        if !is_web_url(url) {
+            return;
+        }
+        let key = url.split('#').next().unwrap_or(url).to_string();
+        if let Some(e) = self.entries.iter_mut().find(|e| e.url == key) {
+            e.visits = e.visits.max(visits);
+            if last_ms > e.last_visit_ms {
+                e.last_visit_ms = last_ms;
+                if !title.is_empty() {
+                    e.title = clip(title, MAX_TITLE);
+                }
+            }
+            return;
+        }
+        self.entries.push(HistoryEntry { url: key, title: clip(title, MAX_TITLE), last_visit_ms: last_ms, visits: visits.max(1) });
+    }
+
+    /// Keeps the newest `HISTORY_CAP` entries.
+    pub fn trim(&mut self) {
+        if self.entries.len() > HISTORY_CAP {
+            self.entries.sort_by_key(|e| std::cmp::Reverse(e.last_visit_ms));
+            self.entries.truncate(HISTORY_CAP);
+        }
     }
 
     pub fn clear_since(&mut self, since_ms: u64) {

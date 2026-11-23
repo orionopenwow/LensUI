@@ -91,7 +91,14 @@ pub async fn browser_navigate(app: AppHandle, input: String, new_tab: bool) -> R
         let search = rt().state.settings.search_url.clone();
         let url = match classify_address(&input, &search) {
             None => return Ok(NavigateResult { view: None, ask: None }),
-            Some(Address::Ask(q)) => return Ok(NavigateResult { view: None, ask: Some(q) }),
+            Some(Address::Ask(q)) => {
+                let ai = rt().state.settings.ai.clone();
+                if ai.enabled && ai.ask_in_address_bar {
+                    return Ok(NavigateResult { view: None, ask: Some(q) });
+                }
+                // AI is off: "ask …" is just a web search.
+                search.replace("{q}", &crate::browser::model::urlencode(input.trim()))
+            }
             Some(Address::Url(u)) | Some(Address::Search(u)) => u,
         };
         let current = host::active_view();
@@ -320,10 +327,10 @@ pub async fn browser_settings_set(app: AppHandle, settings: BrowserSettings) -> 
             r.state.settings = settings;
             r.state.repair_settings();
         }
-        let menu = rt().state.settings.lens_context_menu;
+        let op = host::menu_op();
         let views: Vec<_> = rt().views.values().cloned().collect();
         for v in views {
-            let _ = host::eval_op(&v, json!({ "op": "menu", "on": menu }), Duration::from_secs(1));
+            let _ = host::eval_op(&v, op.clone(), Duration::from_secs(1));
         }
         changed(&app)
     })
@@ -398,6 +405,9 @@ pub struct ActResult {
 #[tauri::command]
 pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActResult, String> {
     blocking(move || {
+        if !rt().state.settings.ai.enabled {
+            return Err("AI is turned off in Lens Browser.".into());
+        }
         let caps = req.caps.unwrap_or_default();
         let (tab_id, view) = host::view_for(req.tab.as_deref())?;
         let mut action = req.action;
@@ -514,4 +524,352 @@ pub fn browser_download_reveal(id: u64) -> Result<(), String> {
         std::process::Command::new("explorer.exe").arg(format!("/select,{path}")).spawn().map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+// ---------------------------------------------------------------------------------------------
+// Import ("Bring everything with you")
+
+pub const EVT_IMPORT: &str = "lens://browser/import";
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportProgress {
+    pub browser: String,
+    /// bookmarks | history | tabs | spaces | done
+    pub step: String,
+    /// running | done | skipped | failed
+    pub state: String,
+    pub count: usize,
+    pub note: Option<String>,
+}
+
+/// Lists installed browsers and profiles. Only checks that folders exist; reads no files.
+#[tauri::command]
+pub fn browser_import_detect() -> Vec<crate::browser::import::Source> {
+    crate::browser::import::detect()
+}
+
+/// Reads one profile after the user agreed, and returns counts only (nothing is imported).
+#[tauri::command]
+pub async fn browser_import_preview(browser: String, profile: String, kinds: crate::browser::import::Kinds) -> Result<crate::browser::import::Counts, String> {
+    blocking(move || {
+        let (src, prof) = crate::browser::import::find(&browser, &profile)?;
+        Ok(crate::browser::import::read_profile(&src, &prof, &kinds).counts())
+    })
+    .await
+}
+
+/// Imports the chosen kinds, one step at a time, reporting progress on `lens://browser/import`.
+#[tauri::command]
+pub async fn browser_import_run(app: AppHandle, browser: String, profile: String, kinds: crate::browser::import::Kinds) -> Result<crate::browser::import::Applied, String> {
+    use crate::browser::import::{apply, find, read_profile, Applied, Kinds};
+    use tauri::Emitter;
+    blocking(move || {
+        let (src, prof) = find(&browser, &profile)?;
+        let emit = |step: &str, state: &str, count: usize, note: Option<String>| {
+            let _ = app.emit(EVT_IMPORT, ImportProgress { browser: browser.clone(), step: step.into(), state: state.into(), count, note });
+        };
+        let mut total = Applied::default();
+        let steps: [(&str, bool, Kinds); 4] = [
+            ("bookmarks", kinds.bookmarks, Kinds { bookmarks: true, ..Kinds::default() }),
+            ("history", kinds.history, Kinds { history: true, ..Kinds::default() }),
+            ("tabs", kinds.tabs, Kinds { tabs: true, ..Kinds::default() }),
+            ("spaces", kinds.spaces, Kinds { spaces: true, ..Kinds::default() }),
+        ];
+        for (step, on, only) in steps {
+            if !on {
+                emit(step, "skipped", 0, None);
+                continue;
+            }
+            emit(step, "running", 0, None);
+            let data = read_profile(&src, &prof, &only);
+            let a = {
+                let mut r = rt();
+                let r = &mut *r;
+                apply(&mut r.state, &mut r.history, &data, &src.label, host::now())
+            };
+            total.bookmarks += a.bookmarks;
+            total.history += a.history;
+            total.tabs += a.tabs;
+            total.spaces += a.spaces;
+            let count = a.bookmarks + a.history + a.tabs;
+            let note = data.notes.first().cloned();
+            emit(step, if note.is_some() && count == 0 { "failed" } else { "done" }, count, note);
+        }
+        {
+            let r = rt();
+            host::save(&r);
+            let _ = crate::browser::store::save_history_to(&crate::browser::store::history_path(), &r.history);
+        }
+        emit("done", "done", 0, None);
+        host::emit_state(&app);
+        Ok(total)
+    })
+    .await
+}
+
+// ---------------------------------------------------------------------------------------------
+// Sessions, tidy, archive, bookmarks, glance, media, space lock, notes
+
+/// Reopens the most recently closed tab (Ctrl+Shift+T).
+#[tauri::command]
+pub async fn browser_reopen_closed(app: AppHandle) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.reopen_closed(host::now()).ok_or("Nothing to reopen.")?;
+        changed(&app)
+    })
+    .await
+}
+
+/// One-click Tidy for the active space: closes duplicates, archives tabs not opened today.
+#[tauri::command]
+pub async fn browser_tidy(app: AppHandle) -> Result<crate::browser::model::TidyReport, String> {
+    blocking(move || {
+        let (report, gone) = {
+            let mut r = rt();
+            let space = r.state.active_space.clone();
+            let before: Vec<String> = r.state.tabs.iter().filter(|t| t.archived_ms.is_none()).map(|t| t.id.clone()).collect();
+            let report = r.state.tidy(&space, host::now());
+            let gone: Vec<String> = before.into_iter().filter(|id| r.state.tab(id).is_none_or(|t| t.archived_ms.is_some())).collect();
+            (report, gone)
+        };
+        for id in gone {
+            host::close_view(&id);
+        }
+        changed(&app)?;
+        Ok(report)
+    })
+    .await
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchivedTab {
+    pub id: String,
+    pub url: String,
+    pub title: String,
+    pub archived_ms: u64,
+    pub space: String,
+}
+
+/// Archived tabs, newest first, optionally filtered by text.
+#[tauri::command]
+pub fn browser_archived(query: Option<String>) -> Vec<ArchivedTab> {
+    let r = rt();
+    let q = query.unwrap_or_default().to_lowercase();
+    let mut v: Vec<ArchivedTab> = r
+        .state
+        .tabs
+        .iter()
+        .filter_map(|t| {
+            let at = t.archived_ms?;
+            (q.is_empty() || t.url.to_lowercase().contains(&q) || t.title.to_lowercase().contains(&q)).then(|| ArchivedTab {
+                id: t.id.clone(),
+                url: t.url.clone(),
+                title: t.title.clone(),
+                archived_ms: at,
+                space: r.state.spaces.iter().find(|s| s.id == t.space_id).map(|s| s.name.clone()).unwrap_or_default(),
+            })
+        })
+        .collect();
+    v.sort_by_key(|a| std::cmp::Reverse(a.archived_ms));
+    v.truncate(500);
+    v
+}
+
+#[tauri::command]
+pub async fn browser_unarchive(app: AppHandle, id: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.unarchive(&id, host::now())?;
+        changed(&app)
+    })
+    .await
+}
+
+/// Ctrl/middle-click on a bookmark: opens it asleep, in the background.
+#[tauri::command]
+pub async fn browser_open_background(app: AppHandle, url: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.open_background(&url, host::now()).ok_or("Only web pages can be opened.")?;
+        changed(&app)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn browser_bookmark_update(app: AppHandle, id: String, title: Option<String>, folder: Option<String>) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.bookmark_update(&id, title.as_deref(), folder.as_deref())?;
+        changed(&app)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn browser_bookmark_remove(app: AppHandle, id: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.bookmark_remove(&id);
+        changed(&app)
+    })
+    .await
+}
+
+/// Glance: open | close | promote (turn the preview into a tab).
+#[tauri::command]
+pub async fn browser_glance(app: AppHandle, action: String, url: Option<String>) -> Result<Option<String>, String> {
+    blocking(move || match action.as_str() {
+        "open" => {
+            let u = url.filter(|u| crate::browser::model::is_web_url(u)).ok_or("Only web pages can be previewed.")?;
+            host::open_glance(&app, &u)?;
+            Ok(Some(u))
+        }
+        "close" => {
+            host::close_glance();
+            host::layout(&app)?;
+            Ok(None)
+        }
+        "promote" => {
+            let u = rt().glance.as_ref().map(|(u, _)| u.clone()).ok_or("Nothing to open.")?;
+            host::close_glance();
+            let active = rt().state.active_tab.clone();
+            rt().state.open_tab(&u, None, active.as_deref(), host::now())?;
+            changed(&app)?;
+            Ok(Some(u))
+        }
+        "read" => {
+            let v = rt().glance.as_ref().map(|(_, v)| v.clone()).ok_or("Nothing to read.")?;
+            let page = host::eval_op(&v, json!({ "op": "readable" }), Duration::from_secs(5))?;
+            Ok(page.get("text").and_then(Value::as_str).map(|t| t.chars().take(30_000).collect()))
+        }
+        _ => Err("Unknown action.".into()),
+    })
+    .await
+}
+
+/// Media in a tab (for the sidebar mini-player): `status` or `toggle`.
+#[tauri::command]
+pub async fn browser_media(tab: String, action: String) -> Result<Value, String> {
+    blocking(move || {
+        let (_, view) = host::view_for(Some(&tab))?;
+        host::eval_op(&view, json!({ "op": "media", "action": action }), Duration::from_secs(2))
+    })
+    .await
+}
+
+/// Locks or unlocks a space. Unlocking asks Windows Hello when it's set up; without Hello a
+/// locked space simply stays hidden until you unlock it here.
+#[tauri::command]
+pub async fn browser_space_lock(app: AppHandle, id: String, lock: bool) -> Result<String, String> {
+    blocking(move || {
+        if lock {
+            {
+                let mut r = rt();
+                let s = r.state.spaces.iter_mut().find(|s| s.id == id).ok_or("Unknown space.")?;
+                s.locked = true;
+                r.unlocked.remove(&id);
+            }
+            let ids: Vec<String> = rt().state.tabs.iter().filter(|t| t.space_id == id).map(|t| t.id.clone()).collect();
+            for t in &ids {
+                host::close_view(t);
+                rt().state.mark_sleeping(t, None);
+            }
+            changed(&app)?;
+            return Ok("locked".into());
+        }
+        let name = rt().state.spaces.iter().find(|s| s.id == id).map(|s| s.name.clone()).ok_or("Unknown space.")?;
+        let how = hello::verify(&format!("Unlock the {name} space in Lens Browser"))?;
+        rt().unlocked.insert(id.clone());
+        changed(&app)?;
+        Ok(how)
+    })
+    .await
+}
+
+/// Turns the lock off for a space (needs the same check as unlocking).
+#[tauri::command]
+pub async fn browser_space_unlock_forever(app: AppHandle, id: String) -> Result<(), String> {
+    blocking(move || {
+        hello::verify("Remove the lock from this space")?;
+        {
+            let mut r = rt();
+            if let Some(s) = r.state.spaces.iter_mut().find(|s| s.id == id) {
+                s.locked = false;
+            }
+        }
+        changed(&app).map(|_| ())
+    })
+    .await
+}
+
+mod hello {
+    /// Windows Hello via UserConsentVerifier. Returns "hello" when verified, "unavailable" when
+    /// Hello isn't set up (the caller then unlocks on an explicit click only), or an error when
+    /// the person cancels or verification fails.
+    #[cfg(windows)]
+    pub fn verify(message: &str) -> Result<String, String> {
+        use windows::core::HSTRING;
+        use windows::Security::Credentials::UI::{UserConsentVerificationResult, UserConsentVerifier, UserConsentVerifierAvailability};
+        use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        let available = UserConsentVerifier::CheckAvailabilityAsync().and_then(|op| op.get()).map_err(|e| e.to_string())?;
+        if available != UserConsentVerifierAvailability::Available {
+            return Ok("unavailable".into());
+        }
+        let result = UserConsentVerifier::RequestVerificationAsync(&HSTRING::from(message)).and_then(|op| op.get()).map_err(|e| e.to_string())?;
+        if result == UserConsentVerificationResult::Verified {
+            Ok("hello".into())
+        } else {
+            Err("Windows Hello didn't verify you, so the space stays locked.".into())
+        }
+    }
+
+    #[cfg(not(windows))]
+    pub fn verify(_message: &str) -> Result<String, String> {
+        Ok("unavailable".into())
+    }
+}
+
+/// Local notes for a page (any page, including PDFs), kept in %APPDATA%\LensUI\browser\notes.json.
+#[tauri::command]
+pub fn browser_notes_get(url: String) -> String {
+    notes_load().get(&notes_key(&url)).cloned().unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn browser_notes_set(url: String, text: String) -> Result<(), String> {
+    let mut all = notes_load();
+    let key = notes_key(&url);
+    if text.trim().is_empty() {
+        all.remove(&key);
+    } else {
+        all.insert(key, text.chars().take(20_000).collect());
+    }
+    if all.len() > 2000 {
+        return Err("Too many page notes; remove some first.".into());
+    }
+    let path = crate::browser::store::dir().join("notes.json");
+    let _ = std::fs::create_dir_all(crate::browser::store::dir());
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, serde_json::to_vec(&all).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+}
+
+fn notes_key(url: &str) -> String {
+    url.split('#').next().unwrap_or(url).chars().take(2048).collect()
+}
+
+fn notes_load() -> std::collections::BTreeMap<String, String> {
+    std::fs::read(crate::browser::store::dir().join("notes.json")).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+}
+
+/// Moves keyboard focus into the page (Take over).
+#[tauri::command]
+pub async fn browser_focus_page() -> Result<(), String> {
+    blocking(move || {
+        let (_, view) = host::view_for(None)?;
+        view.set_focus().map_err(|e| e.to_string())
+    })
+    .await
 }

@@ -221,6 +221,41 @@
       .catch((e) => jobs.set(job, { done: true, error: String(e && e.message || e) }));
   }
 
+  // ---- Unsaved work: edited fields or chosen files keep the tab awake ----
+  let dirty = false;
+  addEventListener("input", (e) => { const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || (t && t.isContentEditable)) dirty = true; }, true);
+  addEventListener("submit", () => { dirty = false; }, true);
+  const busy = () => dirty || [...D.querySelectorAll('input[type="file"]')].some((f) => f.files && f.files.length > 0);
+
+  // ---- Lens shortcuts while the page has focus (only Lens's own combos) ----
+  const LENS_KEYS = { "ctrl+l": 1, "ctrl+t": 1, "ctrl+w": 1, "ctrl+f": 1, "ctrl+j": 1, "ctrl+shift+t": 1, "ctrl+shift+k": 1, "ctrl+d": 1 };
+  addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const combo = `ctrl+${e.shiftKey ? "shift+" : ""}${(e.key || "").toLowerCase()}`;
+    if (!LENS_KEYS[combo]) return;
+    e.preventDefault();
+    e.stopPropagation();
+    events.push({ action: "key", key: combo, selection: "", linkUrl: "", imageUrl: "", hasVideo: false, isYouTube: false, url: location.href, title: D.title, videoTime: null, at: Date.now() });
+  }, true);
+
+  // ---- Glance: Alt+click (or a long press) on a link opens a floating preview in Lens ----
+  let pressTimer = 0;
+  const glance = (a) => events.push({ action: "glance", linkUrl: a.href, selection: "", imageUrl: "", hasVideo: false, isYouTube: false, url: location.href, title: D.title, videoTime: null, at: Date.now() });
+  addEventListener("click", (e) => {
+    if (!e.altKey) return;
+    const a = e.target.closest && e.target.closest("a[href]");
+    if (!a || !/^https?:/.test(a.href)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    glance(a);
+  }, true);
+  addEventListener("pointerdown", (e) => {
+    const a = e.target.closest && e.target.closest("a[href]");
+    if (!a || e.pointerType === "mouse" || !/^https?:/.test(a.href)) return;
+    pressTimer = setTimeout(() => glance(a), 550);
+  }, true);
+  addEventListener("pointerup", () => clearTimeout(pressTimer), true);
+
   // ---- Media ----
   const media = () => [...D.querySelectorAll("video,audio")];
   function applyMute() { for (const m of media()) m.muted = muted || m.muted; }
@@ -235,11 +270,17 @@
       hasVideo: !!D.querySelector("video"),
       scrollY: W.scrollY,
       isYouTube: /(^|\.)youtube\.com$/.test(location.hostname) && location.pathname === "/watch",
+      busy: busy(),
+      playing: media().some((m) => !m.paused),
+      isPdf: D.contentType === "application/pdf",
     };
   }
 
   // ---- Lens context menu (Shift+right-click always shows the page's own menu) ----
   let menuEnabled = true;
+  let aiItems = true;
+  let transcriptItems = true;
+  const AI_IDS = ["ask", "summarise", "explain", "translate", "rewrite", "extract", "transcribe", "context_add"];
   const ITEMS = [
     ["ask", "Ask about this"], ["summarise", "Summarise"], ["explain", "Explain simply"], ["translate", "Translate"],
     ["rewrite", "Rewrite"], ["extract", "Extract…"], ["-"], ["shelf_add", "Add to Shelf"], ["copy_markdown", "Copy as Markdown"],
@@ -256,7 +297,9 @@
     const ctx = { selection, linkUrl: link ? link.href : "", imageUrl: img ? img.src : "", hasVideo: !!vid, isYouTube: status().isYouTube };
     menuHost = D.createElement("lens-menu");
     const root = menuHost.attachShadow({ mode: "closed" });
-    const items = ITEMS.filter(([id]) => (id === "pip" || id === "transcribe" ? ctx.hasVideo : id === "yt_transcript" ? ctx.isYouTube : true));
+    const items = ITEMS.filter(([id]) => (id === "pip" || id === "transcribe" ? ctx.hasVideo : id === "yt_transcript" ? ctx.isYouTube && transcriptItems : true))
+      .filter(([id]) => aiItems || !AI_IDS.includes(id))
+      .filter((it, i, all) => it[0] !== "-" || (i > 0 && all[i - 1][0] !== "-" && i < all.length - 1));
     root.innerHTML = `<style>
       :host{all:initial}
       .m{position:fixed;z-index:2147483647;min-width:208px;padding:4px;border-radius:10px;background:var(--b,#141416);color:var(--f,#ededed);
@@ -312,9 +355,15 @@
     job: (c) => { const r = jobs.get(String(c.job)); if (r && r.done) jobs.delete(String(c.job)); return r || { done: false }; },
     seek: (c) => { const v = D.querySelector("video"); if (v) v.currentTime = Math.max(0, Number(c.t) || 0); return { ok: !!v }; },
     mute: (c) => { muted = !!c.on; for (const m of media()) m.muted = muted; return { ok: true }; },
+    media: (c) => {
+      const m = media().find((x) => !x.paused) || media()[0];
+      if (!m) return { ok: false };
+      if (c.action === "toggle") { if (m.paused) m.play().catch(() => {}); else m.pause(); }
+      return { ok: true, playing: !m.paused, title: D.title };
+    },
     pip: () => { const v = D.querySelector("video"); if (!v || !v.requestPictureInPicture) return { ok: false }; v.requestPictureInPicture().catch(() => {}); return { ok: true }; },
     find: (c) => find(c.text, c.back),
-    menu: (c) => { menuEnabled = !!c.on; if (!menuEnabled) closeMenu(); return { ok: true }; },
+    menu: (c) => { menuEnabled = !!c.on; aiItems = c.ai !== false; transcriptItems = c.transcripts !== false; if (!menuEnabled) closeMenu(); return { ok: true }; },
     scrollTo: (c) => { W.scrollTo(0, Number(c.y) || 0); return { ok: true }; },
     back: () => { history.back(); return { ok: true }; },
     forward: () => { history.forward(); return { ok: true }; },
