@@ -47,6 +47,7 @@ mod win_update;
 mod tester;
 
 mod app;
+mod apps;
 mod bridge;
 mod clip;
 mod commands;
@@ -462,6 +463,25 @@ pub fn run() {
             commands::playground::clear_playground_state_cmd,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::apps::apps_catalog,
+            commands::apps::apps_catalog_refresh,
+            commands::apps::apps_settings_get,
+            commands::apps::apps_settings_set,
+            commands::apps::apps_lens_installed,
+            commands::apps::apps_audit,
+            commands::apps::apps_show,
+            commands::apps::apps_installed,
+            commands::apps::apps_run,
+            commands::apps::apps_cancel,
+            commands::apps::apps_release_prepare,
+            commands::apps::apps_release_run,
+            commands::apps::apps_release_discard,
+            commands::apps::apps_open,
+            commands::apps::apps_open_link,
+            commands::apps::apps_recipe_preview,
+            commands::apps::apps_integrations,
+            commands::apps::apps_recipe_apply,
+            commands::apps::apps_recipe_revert,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,
