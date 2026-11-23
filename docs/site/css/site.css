@@ -103,7 +103,17 @@ input[type="range"] { accent-color: var(--hue); width: 100%; }
 .bar .inner { display: flex; align-items: center; gap: 20px; height: 60px; }
 .bar .spectrum-line { opacity: 0.85; }
 .mark { display: inline-flex; align-items: center; gap: 9px; color: var(--fg); font-weight: 650; }
-.mark i { width: 16px; height: 16px; border-radius: 50%; background: var(--spectrum-c); -webkit-mask: radial-gradient(circle, transparent 3.5px, #000 4px); mask: radial-gradient(circle, transparent 3.5px, #000 4px); }
+.mark img { width: 22px; height: 22px; transition: transform 0.4s ease; }
+.mark:hover img { transform: rotate(-14deg) scale(1.06); animation: lens-hue 6s linear infinite; }
+@keyframes lens-hue { to { filter: hue-rotate(360deg); } }
+
+/* the hero logo: a static poster first, then js/logo.js adds the moving nebula and the still layer */
+.hero-logo { position: relative; width: clamp(132px, 18vw, 196px); aspect-ratio: 1; margin: 0 auto 30px; }
+.hero-logo .poster, .hero-logo .logo-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-logo .logo-nebula { position: absolute; left: 10.9375%; top: 10.9375%; width: 78.125%; height: 78.125%; border-radius: 50%; }
+.hero-logo.is-live .poster { visibility: hidden; }
+.logo-overlay .tw { animation: lens-twinkle var(--d, 3s) ease-in-out infinite alternate; }
+@keyframes lens-twinkle { from { opacity: var(--o, 0.6); } to { opacity: 0.08; } }
 .bar nav { display: flex; gap: 2px; }
 .bar nav a { color: var(--fg-2); font-size: 0.9rem; padding: 6px 10px; border-radius: 8px; }
 .bar nav a:hover, .bar nav a[aria-current="page"] { color: var(--fg); background: rgb(var(--ink) / 0.06); }
@@ -145,7 +155,7 @@ input[type="range"] { accent-color: var(--hue); width: 100%; }
 section { padding-top: var(--gap); }
 .eyebrow { font: 0.74rem/1.4 var(--mono); color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px; display: flex; gap: 8px; align-items: center; }
 .lede { font-size: 1.12rem; color: var(--fg-2); max-width: 56ch; }
-.hero { padding-top: 96px; text-align: center; }
+.hero { padding-top: 64px; text-align: center; }
 .hero h1 { max-width: 16ch; margin: 0 auto 18px; }
 .hero .lede { margin: 0 auto; }
 .hero .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }

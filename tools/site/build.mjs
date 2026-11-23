@@ -16,6 +16,7 @@ import { render, setLinkResolver, slugify, esc } from "./lib/markdown.mjs";
 import { page, REPO } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
 import { home, download } from "./pages.mjs";
+import { buildBrand } from "./lib/logo.mjs";
 import { FEATURES } from "./content/features.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,9 @@ if (!args.has("--no-live")) {
   const g = await live.buildGuide();
   console.log(`[site] live widgets built (guide search from ${g.source})`);
 }
+
+// ---- brand: favicon, OG card, logos and the animated logo's layers ---------------------------
+const brandOut = buildBrand(root, site);
 
 // ---- media: copy docs/media into the site (Pages only serves docs/site) --------------------
 rmSync(join(site, "media"), { recursive: true, force: true });
@@ -144,7 +148,7 @@ linkPrefix = "docs/"; // pages below live at the site root
 // ---- pages -----------------------------------------------------------------------------------
 const log = (git("log", "--first-parent", "-n", "20", "--date=short", "--pretty=format:%h%x09%ad%x09%s") ?? "").split("\n").filter(Boolean).map((l) => l.split("\t"));
 const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` : `${REPO}/pull/25`;
-write("index.html", page({ title: "", desc: "Lens UI: a calm, themeable desktop for Windows 10 and 11. A dock, themes that restyle everything and an AI helper that asks first. Open source and reversible.", path: "index.html", body: home({ clips, visionHref }), scripts: ["js/demos.js"] }));
+write("index.html", page({ title: "", desc: "Lens UI: a calm, themeable desktop for Windows 10 and 11. A dock, themes that restyle everything and an AI helper that asks first. Open source and reversible.", path: "index.html", body: home({ clips, visionHref, nebula: brandOut.nebula }), scripts: ["js/logo.js", "js/demos.js"] }));
 write("download.html", page({ title: "Download", desc: "How to get Lens UI: build from source, releases, and which Windows versions it works on.", path: "download.html", body: download({ log }) }));
 
 // Testers: today's checklist from the daily notes.

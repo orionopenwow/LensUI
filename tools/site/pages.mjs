@@ -22,7 +22,7 @@ const TILES = [
   { id: "guide", title: "Guide", line: "Ask “how do I…” and Lens shows you the exact setting.", clip: "guide", link: ["docs/first-five-minutes.html", "First lesson"], pr: 18 },
 ];
 
-export function home({ clips, visionHref }) {
+export function home({ clips, visionHref, nebula = "brand/nebula.webp" }) {
   const has = (id) => clips.some((c) => c.id === id);
   const tiles = TILES.map((t, i) => `<article class="tile" id="${t.id}"${has(t.clip) ? ` data-clip="${t.clip}"` : ""}>
   ${has(t.clip) ? `<div class="peek"><img src="media/${t.clip}.webp" alt="" loading="lazy" width="480" height="210"></div>` : ""}
@@ -33,6 +33,7 @@ export function home({ clips, visionHref }) {
   return `
 <section class="hero">
   <div class="inner">
+    <div class="hero-logo" data-logo data-nebula="${nebula}"><img class="poster" src="brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="196" height="196" fetchpriority="high"></div>
     <h1>A <span class="spectrum-text">calmer</span> desktop for Windows.</h1>
     <p class="lede">A dock, themes that restyle everything, and an AI helper that asks first. Quit Lens and Windows is exactly as you left it.</p>
     <div class="actions"><a class="btn primary" href="download.html">Download</a><a class="btn" href="${REPO}">View on GitHub</a></div>

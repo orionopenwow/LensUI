@@ -42,7 +42,8 @@ const VARIANTS = [
   ["pack-paper", null, "paper-minimal"],
   ["pack-cyberpunk", null, "cyberpunk-amber"],
 ];
-const browser = await chromium.launch(process.env.PARITY_CHROME ? { executablePath: process.env.PARITY_CHROME } : {});
+// Software WebGL so the animated logo runs in headless CI too.
+const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"], ...(process.env.PARITY_CHROME ? { executablePath: process.env.PARITY_CHROME } : {}) });
 const problems = [];
 const report = { pages: {}, links: 0, axe: !!axe };
 const seen = new Set();
@@ -135,6 +136,30 @@ for (const scheme of ["dark", "light"]) {
     }
   }
 }
+// Animated logo: main-thread cost per frame (budget 4 ms), poster first, and it stays still with
+// reduced motion.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await page.goto(base + "index.html", { waitUntil: "domcontentloaded" });
+  const posterFirst = await page.$eval("[data-logo] .poster", (i) => !!i && !document.querySelector("[data-logo] canvas"));
+  await page.waitForTimeout(5000);
+  const st = await page.$eval("[data-logo]", (e) => e.logoStats?.() ?? null);
+  report.logo = { posterFirst, ...(st ?? { skipped: "no WebGL" }) };
+  if (!posterFirst) problems.push("logo: the animation started before the static poster was shown");
+  if (st && st.avgMs > 4) problems.push(`logo: ${st.avgMs.toFixed(2)} ms per frame > 4 ms`);
+  if (st && !st.running) problems.push("logo: not animating on screen");
+  await ctx.close();
+  const rm = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
+  const p2 = await rm.newPage();
+  await p2.goto(base + "index.html");
+  await p2.waitForTimeout(3500);
+  const moving = await p2.$eval("[data-logo]", (e) => e.logoStats?.().running ?? false);
+  report.logo.reducedMotionStill = !moving;
+  if (moving) problems.push("logo: animates with reduced motion");
+  await rm.close();
+}
+
 // Notch variants: set the preference, reload, audit contrast and screenshot.
 for (const [label, pref, packId] of VARIANTS) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -172,6 +197,7 @@ server.close();
 report.problems = problems;
 await writeFile(join(shots, "report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report.pages, null, 0));
+console.log("logo", JSON.stringify(report.logo));
 console.log(`${seen.size} internal links checked · axe ${axe ? "on" : "not installed (built-in checks only)"}`);
 if (problems.length) { console.log(problems.slice(0, 80).join("\n")); console.log(`${problems.length} problem(s)`); process.exit(1); }
 console.log("no problems");
