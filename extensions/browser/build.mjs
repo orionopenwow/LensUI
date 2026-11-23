@@ -16,7 +16,7 @@ export const TARGETS = ["chrome", "edge", "firefox"];
 
 export const CONTENT_SCRIPT_FILES = ["src/content/selectionLogic.js", "src/ui/dashboard.js", "src/content/selection.js"];
 /** Opt-in helpers registered by background.js (copy guard, double-click define). */
-export const FEATURE_SCRIPT_FILES = ["src/content/cleanCopy.js", "src/content/define.js"];
+export const FEATURE_SCRIPT_FILES = ["src/content/cleanCopy.js", "src/content/define.js", "src/content/marksLogic.js", "src/content/marks.js"];
 const ALLOWED_PERMISSIONS = new Set(["contextMenus", "nativeMessaging", "activeTab", "scripting", "storage", "sidePanel"]);
 
 /**
