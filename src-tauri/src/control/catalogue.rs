@@ -121,7 +121,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("topBar.height", "Top bar height", "Height of the top bar in pixels.", r#"{"minimum":24,"maximum":64}"#),
     ("windowControls.style", "Window buttons", "The look of window buttons.", r#"{"enum":["traffic-classic","traffic-muted","minimal-dots","accent-pills"]}"#),
     ("settingsMode", "Settings detail", "Simple shows the core settings with previews; Advanced shows every option.", r#"{"enum":["","simple","advanced"]}"#),
-    ("windowControls.order", "Window button order", "Order of the window buttons.", r#"{"enum":["green-yellow-red","red-yellow-green"]}"#),
+    ("windowControls.order", "Window button order", "Order of the window buttons.", r#"{"enum":["yellow-green-red","green-yellow-red","red-yellow-green"]}"#),
     ("windowControls.position", "Window button side", "Which corner window buttons sit in.", r#"{"enum":["top-right","top-left"]}"#),
     ("windowControls.frameStyle", "Window frame", "The frame style drawn around app windows.", r#"{"enum":["accent-glow","obsidian-hairline","neon","none"]}"#),
     ("iconStyle.theme", "Icon style", "How app icons are styled.", r#"{"enum":["obsidian-squircle","frosted-glass","monochrome","accent-duotone","native"]}"#),

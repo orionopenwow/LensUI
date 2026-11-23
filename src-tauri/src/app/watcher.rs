@@ -419,6 +419,7 @@ pub(crate) fn spawn_watcher(
         // webview reloaded). Each blocker only counts while it is plausibly in use.
         let mut menu_idle_since: Option<Instant> = None;
         let mut settings_unfocused_since: Option<Instant> = None;
+        let mut search_idle_since: Option<Instant> = None;
 
         loop {
             thread::sleep(Duration::from_millis(65));
@@ -538,6 +539,40 @@ pub(crate) fn spawn_watcher(
                                     && !w.is_minimized().unwrap_or(false)
                             })
                             .unwrap_or(false);
+                        // Top Bar search: a palette left showing while neither it nor the bar has focus
+                        // (focus moved to an app, a missed close event) used to pin the bar open forever.
+                        // Close it after a short grace, or at once on a click outside both.
+                        let mut palette_vis = palette_vis;
+                        if palette_vis {
+                            let in_rect = |w: &tauri::WebviewWindow| match (w.outer_position(), w.outer_size(), cursor) {
+                                (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                    cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                }
+                                _ => false,
+                            };
+                            let pal = watcher_handle.get_webview_window("palette");
+                            let pal_focused = pal.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
+                            let bar_focused = topbar_win.is_focused().unwrap_or(false);
+                            let pointer_in = pal.as_ref().map(in_rect).unwrap_or(false) || in_rect(&topbar_win);
+                            let close = search_should_close(
+                                SearchGuardInput {
+                                    palette_focused: pal_focused,
+                                    bar_focused,
+                                    pointer_inside: pointer_in,
+                                    click_outside: !pointer_in && mouse_button_down(),
+                                },
+                                &mut search_idle_since,
+                                Instant::now(),
+                            );
+                            if close {
+                                bg_topbar_search_open.store(false, std::sync::atomic::Ordering::Relaxed);
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "palette");
+                                let _ = watcher_handle.emit("lens://topbar-search-open", false);
+                                palette_vis = false;
+                            }
+                        } else {
+                            search_idle_since = None;
+                        }
                         let flyout_open = palette_vis || qs_vis;
 
                         let should_hide_when_idle = if flyout_open {
@@ -1022,4 +1057,66 @@ pub(crate) fn mouse_button_down() -> bool {
 #[cfg(not(windows))]
 pub(crate) fn mouse_button_down() -> bool {
     false
+}
+
+/// How long a Top Bar search palette may stay open with neither it nor the bar focused.
+pub(crate) const SEARCH_IDLE_MS: u128 = 1200;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct SearchGuardInput {
+    pub palette_focused: bool,
+    pub bar_focused: bool,
+    pub pointer_inside: bool,
+    pub click_outside: bool,
+}
+
+/// True when the open Top Bar search should close: a click outside the bar and palette, or
+/// SEARCH_IDLE_MS with neither focused and the pointer elsewhere.
+pub(crate) fn search_should_close(
+    i: SearchGuardInput,
+    idle_since: &mut Option<std::time::Instant>,
+    now: std::time::Instant,
+) -> bool {
+    if i.click_outside {
+        *idle_since = None;
+        return true;
+    }
+    if i.palette_focused || i.bar_focused || i.pointer_inside {
+        *idle_since = None;
+        return false;
+    }
+    let since = *idle_since.get_or_insert(now);
+    if now.duration_since(since).as_millis() >= SEARCH_IDLE_MS {
+        *idle_since = None;
+        true
+    } else {
+        false
+    }
+}
+
+#[cfg(test)]
+mod search_guard_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn focused_or_hovered_search_stays_open() {
+        let t0 = Instant::now();
+        let mut s = None;
+        for i in [SearchGuardInput { palette_focused: true, ..Default::default() }, SearchGuardInput { bar_focused: true, ..Default::default() }, SearchGuardInput { pointer_inside: true, ..Default::default() }] {
+            assert!(!search_should_close(i, &mut s, t0 + Duration::from_secs(9)));
+        }
+    }
+
+    #[test]
+    fn unfocused_search_closes_after_grace_and_click_outside_closes_at_once() {
+        let t0 = Instant::now();
+        let mut s = None;
+        let idle = SearchGuardInput::default();
+        assert!(!search_should_close(idle, &mut s, t0));
+        assert!(!search_should_close(idle, &mut s, t0 + Duration::from_millis(600)));
+        assert!(search_should_close(idle, &mut s, t0 + Duration::from_millis(1300)));
+        let mut s2 = None;
+        assert!(search_should_close(SearchGuardInput { bar_focused: true, click_outside: true, ..Default::default() }, &mut s2, t0));
+    }
 }

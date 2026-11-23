@@ -395,6 +395,32 @@ mod ffi {
     }
 }
 
+/// Raw monitor handles with their device names (`\\.\DISPLAY1`), in enumeration order. Used by the
+/// per-monitor brightness code, which needs the HMONITOR to reach each screen's physical monitors.
+#[cfg(windows)]
+pub fn monitor_handles() -> Vec<(isize, String)> {
+    unsafe extern "system" fn collect(hmon: isize, _hdc: isize, _rect: *mut ffi::Rect, lparam: isize) -> i32 {
+        let out = &mut *(lparam as *mut Vec<(isize, String)>);
+        let mut info = ffi::MonitorInfoExW::default();
+        if ffi::GetMonitorInfoW(hmon, &mut info as *mut ffi::MonitorInfoExW as *mut crate::ffi::MonitorInfo) == 0 {
+            return 1;
+        }
+        let len = info.device.iter().position(|&c| c == 0).unwrap_or(info.device.len());
+        out.push((hmon, String::from_utf16_lossy(&info.device[..len])));
+        1
+    }
+    let mut out: Vec<(isize, String)> = Vec::new();
+    unsafe {
+        let _ = ffi::EnumDisplayMonitors(0, std::ptr::null(), Some(collect), &mut out as *mut Vec<(isize, String)> as isize);
+    }
+    out
+}
+
+#[cfg(not(windows))]
+pub fn monitor_handles() -> Vec<(isize, String)> {
+    Vec::new()
+}
+
 /// Every connected monitor, primary first, then left-to-right / top-to-bottom.
 #[cfg(windows)]
 pub fn list_monitors() -> Vec<MonitorInfo> {

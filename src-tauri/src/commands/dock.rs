@@ -139,7 +139,8 @@ pub(crate) fn set_dock_flyout_rect_cmd(x: f64, y: f64, w: f64, h: f64) {
     win_previews::set_flyout_rect(x, y, w, h);
 }
 
-/// Tiles arrive in CSS px relative to the dock window; converted here to physical screen px.
+/// Tiles arrive in CSS px relative to the asking window (the dock unless `surface` says otherwise);
+/// converted here to physical screen px.
 #[derive(serde::Deserialize)]
 pub(crate) struct DockPreviewTileCss {
     hwnd: isize,
@@ -154,8 +155,11 @@ pub(crate) async fn dock_preview_show_cmd(
     app: AppHandle,
     tiles: Vec<DockPreviewTileCss>,
     background: String,
+    surface: Option<String>,
 ) -> Vec<isize> {
-    let Some(dock) = app.get_webview_window("dock") else {
+    // Tiles are relative to the window that asked: the Dock by default, or e.g. Quick Settings.
+    let label = surface.as_deref().filter(|l| ["dock", "quicksettings"].contains(l)).unwrap_or("dock");
+    let Some(dock) = app.get_webview_window(label) else {
         return tiles.iter().map(|t| t.hwnd).collect();
     };
     let origin = dock.inner_position().unwrap_or(PhysicalPosition::new(0, 0));
