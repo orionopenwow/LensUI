@@ -22,6 +22,38 @@ interface GlideEvent {
   gen?: number;
 }
 
+/** After the exit has had its time, wait for one more painted frame, then tell the backend. */
+function acknowledgeExit(label: string, generation: number, timer: { current: number }) {
+  window.clearTimeout(timer.current);
+  // The exit runs for --lens-dur-exit; the extra frame lets the last, see-through frame paint.
+  timer.current = window.setTimeout(() => {
+    requestAnimationFrame(() => {
+      invoke("surface_exit_done_cmd", { label, generation }).catch(() => {});
+    });
+  }, duration("exit") + 8);
+}
+
+/**
+ * The reporting half on its own, for pages that already take their phase from `useSurfaceGlide`:
+ * when the backend says "closing", answer once the exit has finished so the window is hidden on a
+ * finished frame instead of after a fixed delay.
+ */
+export function useSurfaceExitAck(label: string) {
+  useEffect(() => {
+    const timer = { current: 0 };
+    const unlisten = listen<GlideEvent>("lens://surface-glide", (e) => {
+      const p = e.payload;
+      if (!p || p.label !== label) return;
+      if (p.state === "closing" && typeof p.gen === "number") acknowledgeExit(label, p.gen, timer);
+      else window.clearTimeout(timer.current);
+    });
+    return () => {
+      window.clearTimeout(timer.current);
+      unlisten.then((fn) => fn());
+    };
+  }, [label]);
+}
+
 export function useSurfaceTransition(label: string): SurfacePhase {
   const [phase, setPhase] = useState<SurfacePhase>("is-open");
   const exitTimer = useRef(0);
@@ -44,14 +76,9 @@ export function useSurfaceTransition(label: string): SurfacePhase {
         cancelAnimationFrame(raf1);
         cancelAnimationFrame(raf2);
         setPhase("is-closing");
-        window.clearTimeout(exitTimer.current);
-        // The exit transition runs for --lens-dur-exit; one extra frame lets the last frame paint.
-        exitTimer.current = window.setTimeout(() => {
-          requestAnimationFrame(() => {
-            invoke("surface_exit_done_cmd", { label, gen: p.gen ?? 0 }).catch(() => {});
-          });
-        }, duration("exit") + 8);
+        if (typeof p.gen === "number") acknowledgeExit(label, p.gen, exitTimer);
       } else if (p.state === "pre") {
+        window.clearTimeout(exitTimer.current);
         setPhase("is-pre-open");
       } else {
         open();

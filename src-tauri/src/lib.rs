@@ -814,6 +814,7 @@ pub fn run() {
             commands::apps::apps_media,
             commands::apps::apps_installed_icon,
             commands::apps::apps_reveal,
+            commands::surfaces::surface_exit_done_cmd,
             commands::smooth::smooth_start_cmd,
             commands::smooth::smooth_active_cmd,
             commands::smooth::smooth_submit_cmd,

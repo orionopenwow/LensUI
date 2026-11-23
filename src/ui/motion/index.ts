@@ -10,7 +10,7 @@ export { captureFlip, flipDelta } from "./flip";
 export type { Box, FlipCapture, FlipDelta, FlipMode, FlipOptions } from "./flip";
 export { usePresence, useLingering, PresenceList } from "./Presence";
 export type { PresenceOptions, PresenceListProps } from "./Presence";
-export { useSurfaceTransition } from "./useSurfaceTransition";
+export { useSurfaceTransition, useSurfaceExitAck } from "./useSurfaceTransition";
 export type { SurfacePhase } from "./useSurfaceTransition";
 export { springAt, springDuration, springEasing } from "./spring";
 export type { SpringOptions } from "./spring";

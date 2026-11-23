@@ -85,20 +85,53 @@ pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
         return;
     }
     let gen = surface_glide_gen(label).fetch_add(1, Ordering::SeqCst) + 1;
+    // The page plays its exit and answers with surface_exit_done_cmd; the window is hidden then,
+    // on a finished, see-through frame. The timer below only covers a page that never answers.
     let _ = app.emit(
         "lens://surface-glide",
-        serde_json::json!({ "label": label, "state": "closing" }),
+        serde_json::json!({ "label": label, "state": "closing", "gen": gen }),
     );
     let app_clone = app.clone();
     let label_owned = label.to_string();
+    let fallback_ms = exit_fallback_ms(label);
     thread::spawn(move || {
-        thread::sleep(Duration::from_millis(185));
+        thread::sleep(Duration::from_millis(fallback_ms));
         if surface_glide_gen(&label_owned).load(Ordering::SeqCst) == gen {
             if let Some(w) = app_clone.get_webview_window(&label_owned) {
                 let _ = w.hide();
             }
         }
     });
+}
+
+/// Surfaces whose page plays the shared glide and reports when its exit is done.
+pub(crate) fn has_glide_page(label: &str) -> bool {
+    matches!(label, "settings" | "quicksettings" | "palette" | "widgets" | "launcher" | "overview")
+}
+
+/// How long to wait for a closing surface before hiding it anyway. A glide page normally answers
+/// in about 130 ms; other windows have no exit to wait for and keep the old fixed delay.
+pub(crate) fn exit_fallback_ms(label: &str) -> u64 {
+    if has_glide_page(label) {
+        400
+    } else {
+        185
+    }
+}
+
+/// The page finished its exit: hide the window now, unless it was reopened in the meantime
+/// (`generation` no longer matches).
+#[tauri::command]
+pub(crate) fn surface_exit_done_cmd(app: AppHandle, label: String, generation: u64) {
+    use std::sync::atomic::Ordering;
+    if !has_glide_page(&label) {
+        return;
+    }
+    if surface_glide_gen(&label).load(Ordering::SeqCst) == generation {
+        if let Some(w) = app.get_webview_window(&label) {
+            let _ = w.hide();
+        }
+    }
 }
 
 pub(crate) fn dismiss_other_surfaces(app: &AppHandle, keep: &str) {
@@ -139,8 +172,7 @@ pub(crate) fn set_desktop_folder_expanded_cmd(app: AppHandle, expanded: bool) {
         };
         let x = pos.x;
         let y = pos.y + ((size.height as i32 - h as i32) / 2);
-        let _ = win.set_size(PhysicalSize::new(w, h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, w, h);
         let _ = win.set_always_on_top(expanded);
         if expanded {
             let _ = win.set_focus();
@@ -213,8 +245,7 @@ pub(crate) fn sync_topbar_search_cmd(app: AppHandle, state: State<AppState>, que
                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
             let x = pos.x + size.width as i32 - pal_w as i32;
             let y = pos.y + bar_h;
-            let _ = win.set_size(PhysicalSize::new(pal_w, pal_h));
-            let _ = win.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&win, x, y, pal_w, pal_h);
         }
         glide_show_surface(&app, "palette", false);
         let _ = app.emit("lens://topbar-search-open", true);
@@ -292,8 +323,7 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
         } else {
             (x, y)
         };
-        let _ = win.set_size(PhysicalSize::new(pal_w, pal_h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, pal_w, pal_h);
     }
 
     let _ = win.unminimize();
@@ -386,8 +416,7 @@ pub(crate) fn open_quicksettings_tab_cmd(
             } else {
                 (x, y)
             };
-            let _ = qs.set_size(PhysicalSize::new(qs_w, qs_h));
-            let _ = qs.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&qs, x, y, qs_w, qs_h);
         }
 
         glide_show_surface(&app, "quicksettings", true);
@@ -553,4 +582,25 @@ pub(crate) fn peek_native_taskbar_cmd(state: State<AppState>, seconds: u64) {
             set_native_taskbar_hidden(true);
         }
     });
+}
+
+#[cfg(test)]
+mod glide_tests {
+    use super::*;
+
+    #[test]
+    fn glide_pages_get_time_to_finish_their_exit() {
+        for label in ["settings", "quicksettings", "palette", "widgets", "launcher", "overview"] {
+            assert!(has_glide_page(label));
+            assert!(exit_fallback_ms(label) >= 300, "{label} must outlast a slow exit");
+        }
+    }
+
+    #[test]
+    fn windows_without_an_exit_keep_the_short_delay() {
+        for label in ["testerhub", "clipboard", "dock", ""] {
+            assert!(!has_glide_page(label));
+            assert_eq!(exit_fallback_ms(label), 185);
+        }
+    }
 }
