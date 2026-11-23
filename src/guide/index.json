@@ -4763,7 +4763,7 @@
    "id": "setting.system.inline.run-lens-ui-on-windows-startup",
    "kind": "setting",
    "title": "Run Lens UI on Windows Startup",
-   "text": "Starts Lens when you sign in to Windows",
+   "text": "",
    "path": [
     "Settings",
     "Windows & Keys",

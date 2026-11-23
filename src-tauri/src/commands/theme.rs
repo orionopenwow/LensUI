@@ -97,7 +97,17 @@ pub(crate) fn save_config_cmd(
     state: State<AppState>,
     new_config: LensConfig,
 ) -> Result<(), String> {
+    let mut new_config = new_config;
     let prev_config = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    // Development builds can't start with Windows (B-21): keep the switch off and say why.
+    let startup_blocked = if new_config.func.run_on_startup && !prev_config.func.run_on_startup {
+        crate::app::autostart_guard::startup_block_reason()
+    } else {
+        None
+    };
+    if startup_blocked.is_some() {
+        new_config.func.run_on_startup = false;
+    }
     save_config(&new_config)?;
     crate::app::integration::on_config_saved(&app, &prev_config, &new_config);
 

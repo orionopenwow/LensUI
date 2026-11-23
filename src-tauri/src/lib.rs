@@ -148,6 +148,17 @@ pub fn run() {
     let shell_startup = win_shell::shell_startup();
     let running_as_shell = shell_startup == win_shell::ShellStartup::Shell;
 
+    // B-21: a start-with-Windows entry that points at a development build is removed, a
+    // development build started at sign-in cleans up and exits, and a development build with no
+    // dev server explains itself instead of opening windows full of WebView2 error pages.
+    app::autostart_guard::heal_stale_run_entry();
+    if let Some(code) = app::autostart_guard::dev_signin_exit_code(running_as_shell) {
+        std::process::exit(code);
+    }
+    if let Some(code) = app::autostart_guard::dev_server_exit_code() {
+        std::process::exit(code);
+    }
+
     win_crash::install_log_capture();
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
@@ -598,6 +609,7 @@ pub fn run() {
             commands::plugins::open_plugins_folder_cmd,
             commands::theme::save_lenstheme_dialog_cmd,
             commands::surfaces::surface_ready_cmd,
+            app::autostart_guard::startup_block_reason_cmd,
             commands::misc::run_self_test_cmd,
             commands::mcp::get_mcp_status_cmd,
             commands::mcp::list_mcp_actions_cmd,

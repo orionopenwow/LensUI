@@ -75,7 +75,10 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let _ = dock.set_size(PhysicalSize::new(dock_w, dock_h));
             let _ = dock.set_position(PhysicalPosition::new(x, y));
             let _ = dock.set_always_on_top(true);
-            let _ = dock.show();
+            // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
+            if crate::app::loadguard::may_show("dock") {
+                let _ = dock.show();
+            }
             eprintln!(
                 "[Lens UI] Dock positioned at ({}, {}) size {}x{} (bottom_edge={}, scale={})",
                 x, y, dock_w, dock_h, bottom_edge, scale
@@ -90,7 +93,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let _ = topbar.set_position(PhysicalPosition::new(pos.x, pos.y));
             let _ = topbar.set_always_on_top(true);
             let _ = topbar.set_ignore_cursor_events(false);
-            if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+            if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
                 let _ = topbar.unminimize();
                 let _ = topbar.show();
                 let _ = app.emit("lens://topbar-visible", true);
@@ -158,7 +161,9 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let y = pos.y + ((size.height as i32 - h as i32) / 2);
             let _ = df.set_size(PhysicalSize::new(w, h));
             let _ = df.set_position(PhysicalPosition::new(x, y));
-            let _ = df.show();
+            if crate::app::loadguard::may_show("desktopfolder") {
+                let _ = df.show();
+            }
             #[cfg(windows)]
             if let Ok(raw) = df.hwnd() {
                 use windows::Win32::Foundation::HWND;
@@ -449,7 +454,10 @@ pub(crate) fn spawn_watcher(
                     .unwrap_or(false);
 
                 // --- TOP BAR AUTO-HIDE ON OVERLAP ---
-                if let Some(topbar_win) = watcher_handle.get_webview_window("topbar") {
+                if let Some(topbar_win) = watcher_handle
+                    .get_webview_window("topbar")
+                    .filter(|_| crate::app::loadguard::may_show("topbar"))
+                {
                     if cfg.top_bar.enabled && cfg.dock.show_top_bar {
                         let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
@@ -548,7 +556,10 @@ pub(crate) fn spawn_watcher(
                 }
 
                 // --- GROUNDED BOTTOM DOCK AUTO-HIDE & DYNAMIC CLICK-THROUGH ---
-                if let Some(dock_win) = watcher_handle.get_webview_window("dock") {
+                if let Some(dock_win) = watcher_handle
+                    .get_webview_window("dock")
+                    .filter(|_| crate::app::loadguard::may_show("dock"))
+                {
                     let live_pill_w = *bg_dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
                     let pill_half_w = (((live_pill_w * scale) / 2.0) as i32 + 18)
                         .min(msize.width as i32 / 2);
@@ -694,7 +705,10 @@ pub(crate) fn spawn_watcher(
                 }
 
                 // --- LEFT-EDGE DESKTOP CONDENSER TAB: ONLY VISIBLE WHEN DESKTOP WALLPAPER IS EXPOSED AT THAT AREA ---
-                if let Some(df_win) = watcher_handle.get_webview_window("desktopfolder") {
+                if let Some(df_win) = watcher_handle
+                    .get_webview_window("desktopfolder")
+                    .filter(|_| crate::app::loadguard::may_show("desktopfolder"))
+                {
                     let tab_w = (88.0 * scale) as i32;
                     let tab_h = (72.0 * scale) as i32;
                     let tab_top = mon_top + ((msize.height as i32 - tab_h) / 2);
