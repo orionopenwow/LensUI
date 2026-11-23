@@ -296,7 +296,8 @@ fn plan_rejects_unknown_blocked_invalid_and_noop() {
     let cur = m.read("config").unwrap()["dock"]["style"].clone();
     assert!(e.plan(&m, &changes(json!({ "dock.style": cur }))).unwrap_err().contains("already"));
     assert!(e.plan(&m, &Map::new()).is_err());
-    let p = e.plan(&m, &changes(json!({ "func.hideNativeTaskbar": true }))).unwrap();
+    let hidden = m.read("config").unwrap()["func"]["hideNativeTaskbar"].as_bool().unwrap_or(false);
+    let p = e.plan(&m, &changes(json!({ "func.hideNativeTaskbar": !hidden }))).unwrap();
     assert_eq!(p.risk, Risk::Confirm);
 }
 
@@ -411,6 +412,13 @@ fn grant_defaults_and_precedence() {
         assert_eq!(g.level(c, cap), Level::Ask, "{:?}", cap);
     }
     assert_eq!(g.level(c, Capability::Destructive), Level::Blocked);
+    assert_eq!(g.level(c, Capability::Payments), Level::Blocked, "payments are blocked until the user allows asking");
+    assert_eq!(g.level(c, Capability::SendMessages), Level::Ask);
+    assert_eq!(g.level(c, Capability::DeleteToBin), Level::Ask);
+    assert!(g.set(c, Capability::Payments, Level::Allowed, false).is_err(), "payments never run without a card");
+    assert!(g.set(c, Capability::SendMessages, Level::Allowed, true).is_err());
+    g.set(c, Capability::Payments, Level::Ask, true).unwrap();
+    assert_eq!(g.decide(c, &[Capability::Payments], Risk::Confirm), Decision::Ask);
     assert_eq!(g.level("internal", Capability::UseShelf), Level::Allowed);
     assert_eq!(g.level(c, Capability::UseShelf), Level::Ask);
 
@@ -457,6 +465,8 @@ fn task_list_marks_used_capabilities() {
     assert_eq!(look["used"], true);
     assert_eq!(look["level"], "ask");
     assert_eq!(a.iter().find(|x| x["id"] == "destructive").unwrap()["level"], "blocked");
+    assert_eq!(a.iter().find(|x| x["id"] == "payments").unwrap()["principle"], "Every payment waits");
+    assert_eq!(a.iter().find(|x| x["id"] == "delete_to_bin").unwrap()["principle"], "Deletions go to the Bin");
 }
 
 // ------------------------------------------------------------------ audit

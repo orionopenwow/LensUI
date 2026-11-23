@@ -266,6 +266,9 @@ export type Capability =
   | "use_shelf"
   | "type_text"
   | "send_to_cloud"
+  | "delete_to_bin"
+  | "payments"
+  | "send_messages"
   | "destructive";
 
 /** Rust: `control::engine::Change` */

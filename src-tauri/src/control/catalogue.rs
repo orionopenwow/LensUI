@@ -13,7 +13,7 @@ use serde_json::{json, Map, Value};
 
 /// The settings stores. `config` paths have no prefix (e.g. `dock.style`); the others are
 /// prefixed with the store id (e.g. `wallpaper.scene`).
-pub const STORES: [&str; 5] = ["config", "wallpaper", "windowStyling", "cursorFx", "clipboard"];
+pub const STORES: [&str; 6] = ["config", "wallpaper", "windowStyling", "cursorFx", "clipboard", "live"];
 
 pub struct Rule {
     pub prefix: &'static str,
@@ -82,6 +82,8 @@ pub const RULES: &[Rule] = &[
     r("cursorFx.keystrokes", "Pointer effects", C::ChangeSettings, K),
     r("cursorFx.keystrokesAll", "Pointer effects", C::ChangeSettings, K),
     r("clipboard", "Clipboard", C::ChangeSettings, K),
+    r("live", "Quick settings", C::QuickSettings, L),
+    r("tester", "Testing", C::ChangeSettings, L),
 ];
 
 /// (path, label, description, extra schema). Schema keys are merged into the inferred schema.
@@ -141,6 +143,11 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("cursorFx.color", "Effect colour", "Colour of pointer effects: accent or #rrggbb.", r#"{"format":"accent-or-hex"}"#),
     ("cursorFx.keystrokes", "Show shortcuts on screen", "Shows pressed shortcuts on screen (never saved).", "{}"),
     ("cursorFx.keystrokesAll", "Show every key", "Shows every key including letters; off by default for privacy.", "{}"),
+    ("live.volume", "Volume", "Master volume, 0–100 %.", r#"{"minimum":0,"maximum":100}"#),
+    ("live.brightness", "Brightness", "Built-in display brightness, 10–100 %.", r#"{"minimum":10,"maximum":100}"#),
+    ("live.muted", "Mute", "Mutes or unmutes the sound.", "{}"),
+    ("live.nightLight", "Night light", "Warm night light on or off.", "{}"),
+    ("live.dnd", "Do Not Disturb", "Pauses notification pop-ups.", "{}"),
     ("clipboard.enabled", "Clipboard history", "Keeps an encrypted clipboard history on this PC.", "{}"),
     ("clipboard.maxItems", "Clipboard size", "How many clips to keep.", r#"{"minimum":10,"maximum":10000}"#),
     ("clipboard.maxDays", "Clipboard retention", "Days to keep clips (0 = until the size limit).", r#"{"minimum":0,"maximum":3650}"#),

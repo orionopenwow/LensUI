@@ -61,7 +61,7 @@ pub fn client_label(kind: &str) -> &'static str {
 /// are blocked. Lens's own assistant and voice may read and add to the Shelf without asking.
 pub fn default_level(client: &str, cap: Capability) -> Level {
     match cap {
-        Capability::Destructive => Level::Blocked,
+        Capability::Destructive | Capability::Payments => Level::Blocked,
         Capability::ReadSettings => Level::Allowed,
         Capability::QuickSettings => Level::Allowed,
         Capability::UseShelf if matches!(client, "internal" | "voice") => Level::Allowed,
@@ -92,18 +92,27 @@ impl Grants {
             return Level::Blocked;
         }
         let kind = client_kind(client);
-        self.session
+        let l = self
+            .session
             .get(kind)
             .and_then(|m| m.get(cap.id()))
             .or_else(|| self.saved.get(kind).and_then(|m| m.get(cap.id())))
             .copied()
-            .unwrap_or_else(|| default_level(kind, cap))
+            .unwrap_or_else(|| default_level(kind, cap));
+        if cap.always_asks() && l == Level::Allowed {
+            Level::Ask
+        } else {
+            l
+        }
     }
 
     /// Sets a grant. `session` = until Lens restarts; otherwise saved ("Always").
     pub fn set(&mut self, client: &str, cap: Capability, level: Level, session: bool) -> Result<(), String> {
         if cap == Capability::Destructive && level != Level::Blocked {
-            return Err("Deleting, passwords and payments are never allowed.".into());
+            return Err("Permanent deletes, passwords and card numbers are never allowed.".into());
+        }
+        if cap.always_asks() && level == Level::Allowed {
+            return Err(format!("\"{}\" always asks first.", cap.label()));
         }
         let kind = client_kind(client).to_string();
         let map = if session { &mut self.session } else { &mut self.saved };
@@ -144,6 +153,7 @@ impl Grants {
                         "label": c.label(),
                         "level": self.level(client, *c),
                         "used": used.contains(c),
+                        "principle": c.principle(),
                     })
                 })
                 .collect(),

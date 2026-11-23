@@ -3,7 +3,10 @@ import {
   agoLabel,
   cardReducer,
   fallbackPreview,
+  denyLabel,
   fromPendingAction,
+  primaryLabel,
+  toneOf,
   initialCard,
   lookDiff,
   lookTokens,
@@ -143,5 +146,31 @@ describe("requests and previews", () => {
     expect(d.some((x) => x.startsWith("Theme: Obsidian → "))).toBe(true);
     expect(d).toContain("Dock: floating → slim");
     expect(d).toContain("Dim inactive windows: 0 → 20 %");
+  });
+});
+
+describe("typed variants", () => {
+  const pay: ApprovalPreview = { ...base, kind: "payment", verb: "Pay", risk: "confirm", reversible: false, payment: { amount: "$84.00", method: "Amex ··1007" } };
+  const del: ApprovalPreview = { ...base, kind: "delete", verb: "Delete", risk: "confirm", bulk: { count: 2315 } };
+  const send: ApprovalPreview = { ...base, kind: "send", verb: "Send", risk: "confirm", reversible: false, send: { to: "Maya", app: "Messages", message: "hi" } };
+  test("primary carries the exact verb and number", () => {
+    expect(primaryLabel(del)).toBe("Delete 2,315");
+    expect(primaryLabel(pay)).toBe("Pay $84.00");
+    expect(primaryLabel(send)).toBe("Send");
+    expect(denyLabel(send)).toBe("Don't send");
+    expect(denyLabel(pay)).toBe("Deny");
+  });
+  test("payments always hold; messages and bin deletes are one press", () => {
+    expect(needsHold(pay)).toBe(true);
+    expect(needsHold(pay, "never")).toBe(true);
+    expect(needsHold(send)).toBe(false);
+    expect(needsHold(del)).toBe(false);
+    expect(needsHold(del, "always")).toBe(true);
+  });
+  test("status dot", () => {
+    expect(toneOf(pay)).toBe("danger");
+    expect(toneOf({ ...pay, tone: "trusted" })).toBe("trusted");
+    expect(toneOf(base)).toBe("trusted");
+    expect(toneOf({ ...base, kind: "none", reversible: false })).toBe("danger");
   });
 });

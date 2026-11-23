@@ -37,12 +37,18 @@ pub enum Capability {
     UseShelf,
     TypeText,
     SendToCloud,
-    /// Deleting, credentials, payments, sending messages: never available.
+    /// Bulk changes and deletions that go to a recoverable bin (never a hard delete).
+    DeleteToBin,
+    /// Paying with a method the site already has saved. Blocked by default; at most "Ask first".
+    Payments,
+    /// Messages or posts in the user's name. Always shows the exact message first.
+    SendMessages,
+    /// Hard deletes, credentials, card numbers: never available.
     Destructive,
 }
 
 impl Capability {
-    pub const ALL: [Capability; 11] = [
+    pub const ALL: [Capability; 14] = [
         Capability::ReadSettings,
         Capability::ChangeLook,
         Capability::ChangeSettings,
@@ -53,8 +59,27 @@ impl Capability {
         Capability::UseShelf,
         Capability::TypeText,
         Capability::SendToCloud,
+        Capability::DeleteToBin,
+        Capability::Payments,
+        Capability::SendMessages,
         Capability::Destructive,
     ];
+
+    /// Never "Allowed": every use shows a card.
+    pub fn always_asks(self) -> bool {
+        matches!(self, Capability::DeleteToBin | Capability::Payments | Capability::SendMessages)
+    }
+
+    /// One-line principle shown under the capability in "This task can".
+    pub fn principle(self) -> Option<&'static str> {
+        match self {
+            Capability::DeleteToBin => Some("Deletions go to the Bin"),
+            Capability::Payments => Some("Every payment waits"),
+            Capability::SendMessages => Some("Nothing sent in your name"),
+            Capability::TypeText => Some("Shows you where it'll click"),
+            _ => None,
+        }
+    }
 
     pub fn label(self) -> &'static str {
         match self {
@@ -66,9 +91,12 @@ impl Capability {
             Capability::LaunchApps => "Open and switch apps",
             Capability::CloseApps => "Close apps",
             Capability::UseShelf => "Read and add to your Shelf",
-            Capability::TypeText => "Type text into apps",
+            Capability::TypeText => "Fill in forms and click on sites",
             Capability::SendToCloud => "Send context to a cloud AI",
-            Capability::Destructive => "Delete files, use passwords or pay",
+            Capability::DeleteToBin => "Delete or clear things (to the Bin)",
+            Capability::Payments => "Pay with a saved method",
+            Capability::SendMessages => "Send messages in your name",
+            Capability::Destructive => "Delete permanently, use passwords or card numbers",
         }
     }
 
@@ -84,6 +112,9 @@ impl Capability {
             Capability::UseShelf => "use_shelf",
             Capability::TypeText => "type_text",
             Capability::SendToCloud => "send_to_cloud",
+            Capability::DeleteToBin => "delete_to_bin",
+            Capability::Payments => "payments",
+            Capability::SendMessages => "send_messages",
             Capability::Destructive => "destructive",
         }
     }

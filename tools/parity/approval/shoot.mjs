@@ -10,7 +10,7 @@ const out = join(here, "out");
 const shots = join(here, "shots");
 await mkdir(shots, { recursive: true });
 const { chromium } = await import(process.env.PARITY_PLAYWRIGHT ? pathToFileURL(process.env.PARITY_PLAYWRIGHT).href : "playwright");
-const SCENES = { look: [560, 760], window: [560, 640], settings: [560, 600], element: [560, 860], compact: [440, 520], hold: [560, 600], done: [560, 340], blocked: [560, 600], pill: [560, 200] };
+const SCENES = { delete: [520, 340], payment: [520, 340], send: [520, 300], click: [520, 560], look: [520, 820], window: [520, 440], settings: [520, 320], compact: [440, 480], hold: [520, 320], done: [520, 260], blocked: [520, 320], pill: [520, 200], showcase: [1600, 1180] };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
 const server = createServer(async (req, res) => {
@@ -56,8 +56,8 @@ for (const preset of PRESETS) {
     console.log(`${errors.length ? "FAIL" : "ok  "} ${preset} ${scene}${errors.length ? "\n      " + errors.join("\n      ") : ""}`);
     await page.close();
   }
-  const cells = Object.keys(SCENES).map((s) => `<figure><img src="../shots/${preset}-${s}.png"><figcaption>${s}</figcaption></figure>`).join("");
-  await writeFile(join(out, `sheet-${preset}.html`), `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#111;color:#bbb;font:12px system-ui"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:8px;align-items:start">${cells}</div><style>figure{margin:0}img{width:100%;display:block;border-radius:6px}figcaption{padding:4px 2px}</style></body></html>`);
+  const cells = Object.keys(SCENES).filter((x) => x !== "showcase").map((s) => `<figure><img src="../shots/${preset}-${s}.png"><figcaption>${s}</figcaption></figure>`).join("");
+  await writeFile(join(out, `sheet-${preset}.html`), `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#111;color:#bbb;font:12px system-ui"><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:8px;align-items:start">${cells}</div><style>figure{margin:0}img{width:100%;display:block;border-radius:6px}figcaption{padding:4px 2px}</style></body></html>`);
   const sheet = await browser.newPage({ viewport: { width: 2400, height: 900 } });
   await sheet.goto(`${base}/out/sheet-${preset}.html`);
   await sheet.waitForTimeout(400);

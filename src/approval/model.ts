@@ -10,6 +10,8 @@ export interface TaskItem {
   label: string;
   level: Level;
   used: boolean;
+  /** One-line principle ("Every payment waits"). */
+  principle?: string | null;
 }
 
 /** The look values the mini preview understands (see control::tools LOOK_KEYS). */
@@ -29,7 +31,7 @@ export interface ApprovalPreview {
   question: string;
   reason?: string;
   verb: string;
-  kind: "look" | "window" | "settings" | "element" | "none";
+  kind: "look" | "window" | "settings" | "element" | "delete" | "payment" | "send" | "none";
   details: { label: string; value: string }[];
   reversible: boolean;
   risk: Risk;
@@ -38,7 +40,17 @@ export interface ApprovalPreview {
   look?: { before: LookState; after: LookState };
   window?: { hwnd: number; title: string; app: string; thumbnail?: string | null };
   /** A capture of the page element the browser agent will act on. */
-  element?: { image: string; label?: string; capturedAgo?: string };
+  element?: { image: string; label?: string; capturedAgo?: string; siteLabel?: string };
+  /** Bulk delete / change: always to a recoverable bin. Details hold Includes/Keeping/Account/Recovery. */
+  bulk?: { count: number; reviewLabel?: string };
+  /** Money: shown big, monospace; method is masked (never a card number). */
+  payment?: { amount: string; method: string; note?: string; warning?: string };
+  /** A message in the user's name, shown exactly. */
+  send?: { to: string; app: string; message: string };
+  /** Label for the deny button ("Deny", "Don't send"). */
+  denyLabel?: string;
+  /** "trusted" = known source (green dot); "danger" = irreversible or money (red dot). */
+  tone?: "trusted" | "danger" | "neutral";
   taskList?: TaskItem[];
   source?: { client: string; kind: string; label: string };
 }
@@ -102,7 +114,11 @@ export type HoldPref = "confirm" | "always" | "never";
 
 export function needsHold(p: ApprovalPreview, pref: HoldPref = "confirm"): boolean {
   if (p.risk === "blocked") return false;
+  // Money always needs a hold, whatever the preference.
+  if (p.kind === "payment") return true;
   if (pref === "always") return true;
+  // The card itself is the check for messages and recoverable deletes: one press, shown exactly.
+  if ((p.kind === "send" || p.kind === "delete") && pref === "confirm") return false;
   if (pref === "never") return false;
   return p.risk === "confirm" || p.holdToConfirm === true || !p.reversible;
 }
@@ -196,3 +212,30 @@ export function lookDiff(before: LookState, after: LookState): string[] {
   if (before.dim !== after.dim) out.push(`Dim inactive windows: ${before.dim ?? 0} → ${after.dim ?? 0} %`);
   return out;
 }
+
+/** Status dot colour: red for irreversible or money, green for a known source, else neutral. */
+export function toneOf(p: ApprovalPreview): "trusted" | "danger" | "neutral" {
+  if (p.tone) return p.tone;
+  if (p.kind === "payment" || !p.reversible || p.risk === "blocked") return "danger";
+  if (p.source || p.kind === "look" || p.kind === "settings") return "trusted";
+  return "neutral";
+}
+
+/** Exact verb with its number for the primary button ("Delete 2,315", "Pay $84.00"). */
+export function primaryLabel(p: ApprovalPreview): string {
+  if (p.kind === "delete" && p.bulk) return `${p.verb} ${p.bulk.count.toLocaleString("en-US")}`;
+  if (p.kind === "payment" && p.payment) return `${p.verb} ${p.payment.amount}`;
+  return p.verb;
+}
+
+export function denyLabel(p: ApprovalPreview): string {
+  return p.denyLabel ?? (p.kind === "send" ? "Don't send" : "Deny");
+}
+
+/** Principles shown in "This task can" when the server didn't send them. */
+export const PRINCIPLES: Record<string, string> = {
+  delete_to_bin: "Deletions go to the Bin",
+  payments: "Every payment waits",
+  send_messages: "Nothing sent in your name",
+  type_text: "Shows you where it'll click",
+};

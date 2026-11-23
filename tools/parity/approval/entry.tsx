@@ -24,7 +24,7 @@ if (pack?.base) {
 root.style.setProperty("--lens-accent", pack?.accent ?? "#fafafa");
 root.style.setProperty("--lens-radius", `${pack?.radius ?? 8}px`);
 
-const tasks = (used: string[], asks: string[] = ["change_look", "arrange_windows", "launch_apps", "close_apps", "use_shelf", "change_settings"]): TaskItem[] =>
+const tasks = (used: string[], asks: string[] = ["change_look", "arrange_windows", "launch_apps", "close_apps", "use_shelf", "change_settings", "delete_to_bin", "send_messages", "type_text"]): TaskItem[] =>
   [
     ["read_settings", "Read your Lens settings and open windows", "allowed"],
     ["change_look", "Change the look (theme, dock, borders, wallpaper)", "ask"],
@@ -33,8 +33,13 @@ const tasks = (used: string[], asks: string[] = ["change_look", "arrange_windows
     ["close_apps", "Close apps", "ask"],
     ["use_shelf", "Read and add to your Shelf", "ask"],
     ["change_settings", "Change Lens settings and behaviour", "ask"],
-    ["destructive", "Delete files, use passwords or pay", "blocked"],
+    ["delete_to_bin", "Delete or clear things (to the Bin)", "ask"],
+    ["payments", "Pay with a saved method", "blocked"],
+    ["send_messages", "Send messages in your name", "ask"],
+    ["type_text", "Fill in forms and click on sites", "ask"],
+    ["destructive", "Delete permanently, use passwords or card numbers", "blocked"],
   ].map(([id, label, level]) => ({ id, label, level: (asks.includes(id) || level !== "ask" ? level : "allowed") as TaskItem["level"], used: used.includes(id) }));
+const ask = (list: TaskItem[], id: string): TaskItem[] => list.map((t) => (t.id === id ? { ...t, level: "ask" } : t));
 
 const now = Date.now();
 const look: ApprovalPreview = {
@@ -133,6 +138,98 @@ const previews: Record<string, { pv: ApprovalPreview; origin?: ApprovalRequest["
   blocked: { pv: { ...look, risk: "blocked", question: "Turn on AI access for every app?", reason: "An AI app tried to change its own permissions.", kind: "settings", look: undefined, details: [{ label: "MCP server", value: "Lens never lets an AI change this" }], capabilities: ["destructive"], taskList: tasks([], []) } },
 };
 
+
+const formSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='520' height='150'><rect width='520' height='150' fill='#fafafa'/><text x='16' y='28' font-family='Arial' font-size='14' font-weight='700' fill='#111'>Complete your reservation</text><text x='16' y='46' font-family='Arial' font-size='11' fill='#666'>Harbour Kitchen · Fri 3 Oct · 20:00 · 4 people</text><rect x='16' y='58' width='152' height='26' rx='3' fill='#fff' stroke='#d4d4d8'/><text x='24' y='75' font-family='Arial' font-size='11' fill='#333'>Sam W.</text><rect x='176' y='58' width='152' height='26' rx='3' fill='#fff' stroke='#d4d4d8'/><text x='184' y='75' font-family='Arial' font-size='11' fill='#333'>sam@…</text><rect x='336' y='58' width='168' height='26' rx='3' fill='#fff' stroke='#d4d4d8'/><text x='344' y='75' font-family='Arial' font-size='11' fill='#333'>••• ••4821</text><rect x='13' y='95' width='158' height='38' rx='7' fill='none' stroke='#e8b04b' stroke-width='3'/><rect x='17' y='99' width='150' height='30' rx='5' fill='#d6404b'/><text x='32' y='119' font-family='Arial' font-size='11' font-weight='700' fill='#fff'>Complete reservation</text></svg>`;
+const formImg = `data:image/svg+xml;utf8,${encodeURIComponent(formSvg)}`;
+
+const variants: typeof previews = {
+  delete: {
+    pv: {
+      question: "Delete 2,315 emails older than 30 days?",
+      verb: "Delete",
+      kind: "delete",
+      bulk: { count: 2315, reviewLabel: "Review all 2,318" },
+      details: [
+        { label: "Includes", value: "1,904 newsletters & promotions · 411 alerts" },
+        { label: "Keeping", value: "3 threads · flight, lease, tax receipt" },
+        { label: "Account", value: "Sam W. · sam@…" },
+        { label: "Recovery", value: "Goes to Bin · restorable for 30 days" },
+      ],
+      reversible: true,
+      risk: "confirm",
+      tone: "danger",
+      capabilities: ["delete_to_bin"],
+      taskList: tasks(["delete_to_bin"]),
+    },
+    origin: "browser",
+    source: "Lens browser",
+    site: "mail.example.com",
+  },
+  payment: {
+    pv: {
+      question: "Pay the $84 fare difference?",
+      reason: "Flight 1357 was cancelled. Flight 1359 leaves tomorrow at 10:40 and still fits your trip.",
+      verb: "Pay",
+      kind: "payment",
+      payment: { amount: "$84.00", method: "Amex ··1007", note: "charged now", warning: "Non-refundable once ticketed" },
+      details: [],
+      reversible: false,
+      risk: "confirm",
+      tone: "trusted",
+      capabilities: ["payments"],
+      taskList: ask(tasks(["payments"]), "payments"),
+    },
+    origin: "browser",
+    source: "Lens browser",
+    site: "flights.example",
+  },
+  send: {
+    pv: {
+      question: "Send this to Maya?",
+      verb: "Send",
+      kind: "send",
+      send: { to: "Maya", app: "Messages", message: "We're inside now, rain's coming. Saturday 2:00 at Harbour Kitchen is still on." },
+      details: [],
+      reversible: false,
+      risk: "confirm",
+      tone: "trusted",
+      holdToConfirm: false,
+      capabilities: ["send_messages"],
+      taskList: tasks(["send_messages"]),
+    },
+    origin: "browser",
+    source: "Lens browser",
+    site: "chat.example",
+  },
+  click: {
+    pv: {
+      question: "Book a table for 4 at Harbour Kitchen?",
+      verb: "Book",
+      kind: "element",
+      element: { image: formImg, label: "Complete reservation", capturedAgo: "3s ago", siteLabel: "Reservations" },
+      details: [
+        { label: "Seating", value: "Window (requested)" },
+        { label: "Cancellation", value: "Free until 24h before" },
+      ],
+      reversible: true,
+      risk: "low",
+      tone: "danger",
+      capabilities: ["type_text"],
+      taskList: tasks(["type_text"]),
+    },
+    origin: "browser",
+    source: "Lens browser",
+    site: "reserve.example",
+  },
+};
+Object.assign(previews, variants);
+const PANELS: [string, string, string][] = [
+  ["delete", "Deletions go to the Bin", "Before anything is removed, Lens counts it, sets aside what matters and keeps a 30-day undo."],
+  ["payment", "Every payment waits", "Lens stops at the amount and the saved card, and pays only when you hold to confirm."],
+  ["send", "Nothing sent in your name", "You see the exact words and who gets them before anything is sent."],
+  ["click", "Shows you where it'll click", "The form, the button it will press and what it agrees to, captured seconds ago."],
+];
+
 const desk = (children: React.ReactNode) => (
   <div style={{ minHeight: "100vh", boxSizing: "border-box", padding: 24, display: "flex", justifyContent: "center", alignItems: "flex-start", background: "linear-gradient(150deg, color-mix(in srgb, var(--lens-pack-base, #08080b) 70%, #3b4252), var(--lens-pack-base, #08080b))" }}>
     {children}
@@ -140,7 +237,26 @@ const desk = (children: React.ReactNode) => (
 );
 
 const app = ReactDOM.createRoot(document.getElementById("root")!);
-if (scene === "pill") {
+const cardFor = (key: string, extra: Partial<React.ComponentProps<typeof ApprovalCard>> = {}) => {
+  const s = previews[key];
+  const req: ApprovalRequest = { id: key, origin: s.origin ?? "mcp", source: s.source ?? "Claude Desktop", site: s.site, createdMs: now - 4000, preview: s.pv };
+  return <ApprovalCard request={req} compact={s.compact} initial={s.initial} onApprove={() => true} onDeny={() => undefined} onAllowSession={() => undefined} onUndo={() => undefined} onReview={() => undefined} onShowTab={() => undefined} {...extra} />;
+};
+if (scene === "showcase") {
+  app.render(
+    <div style={{ minHeight: "100vh", boxSizing: "border-box", padding: 24, background: "var(--lens-pack-base, #08080b)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      {PANELS.map(([key, title, caption]) => (
+        <section key={key} style={{ border: "1px solid rgb(var(--lens-ink) / 0.08)", borderRadius: 16, padding: 8, display: "flex", flexDirection: "column", gap: 12, background: "rgb(var(--lens-ink) / 0.02)" }}>
+          <div className="ap-dither" style={{ minHeight: 420, display: "grid", placeItems: "center", padding: 24 }}>{cardFor(key)}</div>
+          <div style={{ padding: "4px 16px 12px", fontFamily: "var(--font-sans)" }}>
+            <h3 style={{ margin: 0, fontSize: 17, lineHeight: "24px", color: "var(--lens-fg-strong, var(--lens-fg))" }}>{title}</h3>
+            <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: "20px", color: "var(--lens-fg-secondary)" }}>{caption}</p>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+} else if (scene === "pill") {
   app.render(
     desk(
       <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
@@ -158,7 +274,6 @@ if (scene === "pill") {
     )
   );
 } else {
-  const s = previews[scene] ?? previews.look;
-  const req: ApprovalRequest = { id: scene, origin: s.origin ?? "mcp", source: s.source ?? "Claude Desktop", site: s.site, createdMs: now - 4000, preview: s.pv };
-  app.render(desk(<ApprovalCard request={req} compact={s.compact} initial={s.initial} onApprove={() => true} onDeny={() => undefined} onAllowSession={() => undefined} onUndo={() => undefined} />));
+  const key = previews[scene] ? scene : "look";
+  app.render(desk(cardFor(key, { tasksOpen: p.get("tasks") === "1" || key === "look" })));
 }
