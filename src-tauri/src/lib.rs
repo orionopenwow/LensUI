@@ -50,6 +50,7 @@ mod input;
 mod changes;
 mod win_update;
 mod tester;
+mod smooth;
 mod agentsafe;
 mod syssettings;
 
@@ -826,6 +827,14 @@ pub fn run() {
             commands::apps::apps_media,
             commands::apps::apps_installed_icon,
             commands::apps::apps_reveal,
+            commands::surfaces::surface_exit_done_cmd,
+            commands::smooth::smooth_start_cmd,
+            commands::smooth::smooth_active_cmd,
+            commands::smooth::smooth_submit_cmd,
+            commands::smooth::smooth_mark_cmd,
+            commands::smooth::smooth_stop_cmd,
+            commands::smooth::smooth_save_cmd,
+            commands::smooth::smooth_open_folder_cmd,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,

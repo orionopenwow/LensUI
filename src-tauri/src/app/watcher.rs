@@ -58,8 +58,8 @@ fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), botto
     (rx, ry, rw.max(1) as u32, rh.max(1) as u32)
 }
 
-/// Gives the Dock window its current target rect in one step (position and size together, so
-/// the pill never jumps for a frame). Called by the watcher when the measured pill asks for a
+/// Gives the Dock window its current target rect in one step (`place_window`: position and size
+/// in a single native call, so the pill never jumps for a frame). Called by the watcher when the measured pill asks for a
 /// different depth and the Dock has been idle long enough (`win_previews::DockSizer`); never
 /// during an animation.
 pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
@@ -76,19 +76,7 @@ pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
         work.position.y + work.size.height as i32
     };
     let (x, y, w, h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
-    #[cfg(windows)]
-    {
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_NOACTIVATE, SWP_NOZORDER};
-        if let Ok(raw) = dock.hwnd() {
-            let moved = unsafe { SetWindowPos(HWND(raw.0 as *mut _), HWND::default(), x, y, w as i32, h as i32, SWP_NOZORDER | SWP_NOACTIVATE) };
-            if moved.is_ok() {
-                return;
-            }
-        }
-    }
-    let _ = dock.set_size(PhysicalSize::new(w, h));
-    let _ = dock.set_position(PhysicalPosition::new(x, y));
+    crate::app::place::place_window(&dock, x, y, w, h);
 }
 
 pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
@@ -111,8 +99,8 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
         // measured pill plus flyout room (`win_previews::dock_depth_css`, 760 px by default).
         if let Some(dock) = app.get_webview_window("dock") {
             let (x, y, dock_w, dock_h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
-            let _ = dock.set_size(PhysicalSize::new(dock_w, dock_h));
-            let _ = dock.set_position(PhysicalPosition::new(x, y));
+            // One native call, and none at all when the Dock is already there (G-02, G-03).
+            crate::app::place::place_window(&dock, x, y, dock_w, dock_h);
             let _ = dock.set_always_on_top(true);
             // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
             if crate::app::loadguard::may_show("dock") {
@@ -128,8 +116,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
         if let Some(topbar) = app.get_webview_window("topbar") {
             let bar_h = ((cfg.top_bar.height as f64) * scale) as u32;
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
-            let _ = topbar.set_size(PhysicalSize::new(size.width, bar_h + extra_h));
-            let _ = topbar.set_position(PhysicalPosition::new(pos.x, pos.y));
+            crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
             let _ = topbar.set_ignore_cursor_events(false);
             if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
@@ -151,8 +138,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let w_h = ((bottom_edge - pos.y) as f64 - (52.0 * scale)).max(420.0) as u32;
             let x = pos.x + size.width as i32 - w_w as i32 - (12.0 * scale) as i32;
             let y = pos.y + (42.0 * scale) as i32;
-            let _ = widgets.set_size(PhysicalSize::new(w_w, w_h));
-            let _ = widgets.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&widgets, x, y, w_w, w_h);
             apply_win11_obsidian_backdrop(&widgets, true);
         }
 
@@ -172,12 +158,12 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
         if let Some(qs) = app.get_webview_window("quicksettings") {
             let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
-            let qs_w = (396.0 * scale) as u32;
-            let qs_h = (600.0 * scale) as u32;
+            // Same size as open_quicksettings uses, so opening never has to resize it (G-08).
+            let qs_w = (404.0 * scale) as u32;
+            let qs_h = (580.0 * scale) as u32;
             let x = pos.x + size.width as i32 - qs_w as i32;
             let y = pos.y + bar_h;
-            let _ = qs.set_size(PhysicalSize::new(qs_w, qs_h));
-            let _ = qs.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&qs, x, y, qs_w, qs_h);
             apply_win11_obsidian_backdrop(&qs, true);
         }
 
@@ -187,8 +173,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let n_h = (420.0 * scale) as u32;
             let x = pos.x + size.width as i32 - n_w as i32 - (14.0 * scale) as i32;
             let y = bottom_edge - n_h as i32 - (14.0 * scale) as i32;
-            let _ = notif.set_size(PhysicalSize::new(n_w, n_h));
-            let _ = notif.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&notif, x, y, n_w, n_h);
             let _ = notif.set_always_on_top(true);
         }
 
@@ -198,8 +183,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let h = (68.0 * scale) as u32;
             let x = pos.x;
             let y = pos.y + ((size.height as i32 - h as i32) / 2);
-            let _ = df.set_size(PhysicalSize::new(w, h));
-            let _ = df.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&df, x, y, w, h);
             if crate::app::loadguard::may_show("desktopfolder") {
                 let _ = df.show();
             }
@@ -257,7 +241,7 @@ pub(crate) fn position_settings_docked_with_height(
         // Fluid content-driven height so the user NEVER has to scroll when space is available on screen!
         let max_h = ((bottom_edge - dock_pill_h - margin_bottom) - (pos.y + bar_h + (8.0 * scale) as i32))
             .max((420.0 * scale) as i32) as u32;
-        let desired_h = ((desired_logical_h.unwrap_or(640.0) + 28.0).max(400.0) * scale).round() as u32;
+        let desired_h = ((desired_logical_h.unwrap_or(SETTINGS_LOGICAL_H) + 28.0).max(400.0) * scale).round() as u32;
         let target_h = desired_h.min(max_h);
         let x = pos.x + ((size.width as i32 - target_w as i32) / 2);
         // Strictly flush (+1px overlap eliminates any hairline seam between Control Center and the fused Dock!)
@@ -268,13 +252,16 @@ pub(crate) fn position_settings_docked_with_height(
             win_monitors::FlyoutAlign::Center,
         )
         .unwrap_or((x, y));
-        let _ = win.set_size(PhysicalSize::new(target_w, target_h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, target_w, target_h);
         if win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false) {
             let _ = app.emit("lens://settings-open", true);
         }
     }
 }
+
+/// Settings keeps one height while it is open (docs/SMOOTHNESS.md, G-01): resizing the native
+/// window to fit each page tore the page as it switched. Pages scroll inside this height.
+pub(crate) const SETTINGS_LOGICAL_H: f64 = 720.0;
 
 pub(crate) fn position_settings_docked(app: &AppHandle, cfg: &LensConfig, dock_pill_w: f64) {
     position_settings_docked_with_height(app, cfg, dock_pill_w, None);
