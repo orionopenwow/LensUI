@@ -28,7 +28,9 @@
     "conversation",
     "approval",
     "nowplaying",
-    "apps"
+    "apps",
+    "presence",
+    "presencebar"
   ],
   "permissions": [
     "core:default",
