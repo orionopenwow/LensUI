@@ -70,6 +70,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   presence: lazy(() => import("./presence/PresenceSurface").then((m) => ({ default: m.PresenceSurface }))),
   presencebar: lazy(() => import("./presence/PresenceBar").then((m) => ({ default: m.PresenceBarSurface }))),
   voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
+  // Lens Studio: Backdrop Lab (docs/BACKDROP_LAB.md).
+  studio: lazy(() => import("./studio/StudioSurface").then((m) => ({ default: m.StudioSurface }))),
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),

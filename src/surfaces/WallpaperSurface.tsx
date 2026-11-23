@@ -164,14 +164,45 @@ export const WallpaperSurface: React.FC = () => {
     return () => evs.forEach(([n, h]) => window.removeEventListener(n, h));
   }, []);
 
-  if (!state) return <div className="wp-root" />;
+  const s = state?.settings;
+  const sceneId = s ? effectiveScene(s, workspaceId, IDLE_MODE) : "";
+  // Crossfade between scenes: the outgoing scene keeps drawing underneath for ~650 ms while the
+  // new one fades in, so switching never flashes the bare background (docs/BACKDROP_LAB.md).
+  // Decided during render (not in an effect), so the outgoing scene is never unmounted even for
+  // one frame: React keeps its instance by key and the new scene mounts above it.
+  const shownRef = useRef<string>(sceneId);
+  const outRef = useRef<string>("");
+  if (sceneId && shownRef.current && shownRef.current !== sceneId) outRef.current = shownRef.current;
+  shownRef.current = sceneId;
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!outRef.current) return;
+    const t = window.setTimeout(() => {
+      outRef.current = "";
+      bump((n) => n + 1);
+    }, 700);
+    return () => clearTimeout(t);
+  }, [sceneId]);
+  const outgoing = outRef.current;
 
-  const s = state.settings;
-  const sceneId = effectiveScene(s, workspaceId, IDLE_MODE);
+  if (!state || !s) return <div className="wp-root" />;
+
   if (sceneId) {
     return (
       <div className={`wp-root ${IDLE_MODE ? "wp-idle" : ""}`} aria-hidden="true">
+        {/* The outgoing scene keeps its own instance (same key), so nothing is rebuilt mid-switch. */}
+        {outgoing && outgoing !== sceneId && (
+          <PlaygroundView
+            key={outgoing}
+            sceneId={outgoing}
+            options={s.sceneOptions?.[outgoing]}
+            fps={s.fps}
+            desktopInput={!IDLE_MODE}
+            persist={!IDLE_MODE}
+          />
+        )}
         <PlaygroundView
+          className={outgoing ? "wp-scene-in" : undefined}
           key={sceneId}
           sceneId={sceneId}
           options={s.sceneOptions?.[sceneId]}

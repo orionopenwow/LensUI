@@ -99,6 +99,13 @@
       "longTasks": 0,
       "cls": 0,
       "fcp": 0
+    },
+    "playground-backdrop": {
+      "p50": 33.4,
+      "p95": 50,
+      "longTasks": 4,
+      "cls": 0,
+      "fcp": 0
     }
   },
   "_findings": {

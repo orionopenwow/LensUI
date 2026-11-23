@@ -25,7 +25,9 @@ export type SceneOptions = Record<string, SettingValue>;
 export type SettingField =
   | { key: string; label: string; type: "range"; min: number; max: number; step: number; default: number; unit?: string }
   | { key: string; label: string; type: "choice"; options: { id: string; label: string }[]; default: string }
-  | { key: string; label: string; type: "toggle"; default: boolean; hint?: string };
+  | { key: string; label: string; type: "toggle"; default: boolean; hint?: string }
+  /** Free text kept with the scene's settings (e.g. a Backdrop Lab share code). Not shown in the card. */
+  | { key: string; label: string; type: "text"; default: string; maxLength: number };
 
 /** A pointer event in canvas CSS pixels. */
 export interface PointerSample {
@@ -130,6 +132,8 @@ export function normaliseOptions(module: SceneModule, raw: unknown): SceneOption
       out[f.key] = Math.max(f.min, Math.min(f.max, n));
     } else if (f.type === "choice") {
       out[f.key] = typeof v === "string" && f.options.some((o) => o.id === v) ? v : f.default;
+    } else if (f.type === "text") {
+      out[f.key] = typeof v === "string" && v.length <= f.maxLength ? v : f.default;
     } else {
       out[f.key] = typeof v === "boolean" ? v : f.default;
     }

@@ -265,6 +265,23 @@
         "create": false
       },
       {
+        "label": "studio",
+        "title": "Lens Studio",
+        "url": "index.html?surface=studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "skipTaskbar": false,
+        "resizable": true,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
         "label": "voicehud",
         "url": "index.html?surface=voicehud",
         "transparent": true,

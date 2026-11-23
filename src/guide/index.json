@@ -813,6 +813,25 @@
    "source": "src/plugins/ThemeSharingCard.tsx"
   },
   {
+   "id": "card.theme.creatorcard",
+   "kind": "card",
+   "title": "Backdrop Lab",
+   "text": "Animated gradients, light and glass for your desktop. Make one, play it as a live wallpaper, or turn it into a theme. Backdrop Lab. Creator. Settings › Appearance › Creator: a compact Backdrop Lab. Live preview, a few presets, Inspire, \"Set as live wallpaper\", \"Make a theme\" and the way into the full Lab window",
+   "path": [
+    "Settings",
+    "Appearance",
+    "Creator",
+    "Backdrop Lab"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "theme",
+    "card": "CreatorCard",
+    "label": "Backdrop Lab"
+   },
+   "source": "src/studio/backdrop/ui/CreatorCard.tsx"
+  },
+  {
    "id": "setting.dock.docktab.dock-style",
    "kind": "setting",
    "title": "Dock style",
@@ -6475,6 +6494,36 @@
    "source": "src-tauri/src/ai/intent.rs"
   },
   {
+   "id": "hotkey.ctrl-z",
+   "kind": "hotkey",
+   "title": "Ctrl+Z",
+   "text": "cool↔warm, minimal↔rich) and locks, Undo/Redo (Ctrl+Z / Ctrl+Shift+Z), Save S (to Mine),",
+   "path": [
+    "Keyboard",
+    "Ctrl+Z"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "hotkey.ctrl-shift-z",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+Z",
+   "text": "cool↔warm, minimal↔rich) and locks, Undo/Redo (Ctrl+Z / Ctrl+Shift+Z), Save S (to Mine),",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+Z"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
    "id": "hotkey.alt-shift-l",
    "kind": "hotkey",
    "title": "Alt+Shift+L",
@@ -7540,6 +7589,192 @@
     "heading": "4. Suggestions for next polish"
    },
    "source": "docs/APPS_RESEARCH.md"
+  },
+  {
+   "id": "doc.backdrop-lab.0",
+   "kind": "doc",
+   "title": "Backdrop Lab",
+   "text": "Lens Studio's background maker: animated gradients, light, glass and pattern looks that you can play as a live wallpaper , turn into a theme , or export as a still or seamless video loop . It is Lens's own take on in-browser gradient generators. The engine, shaders, looks, presets and names are written for Lens from scratch; no code, shaders, presets or assets were taken from any other product. - Open it: Settings › Appearance › Creator (compact), then Open Backdrop Lab , which opens the full Lens Studio window ( ?surface=studio , built on first open). - Code: src/studio/backdrop/ (engine in engine/ , UI in ui/ ), the wallpaper scene in src/studio/backdrop/scene.ts , and exports in src-tauri/src/studio/ . - Tests: src/ tests /backdrop.test.ts (bun) and tools/parity/backdrop/ (headless WebGL: compile, NaN, loop seam, blank frames, switch flash, screenshots).",
+   "path": [
+    "Docs",
+    "Backdrop Lab"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "Backdrop Lab"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.1",
+   "kind": "doc",
+   "title": "Backdrop Lab: 1. Engine (framework-free)",
+   "text": "engine/ has no React and no Tauri. The Lab, the wallpaper, thumbnails, exports and (later) the website all run the same code on the same state object , so what you see in the Lab is exactly what plays on the desktop. File What it does --- --- state.ts The single serialisable BackdropState (look, palette, shape, motion, grade, effects, handles, optional layer); normaliseState never trusts input; share codes ( LBG1.… ), lens://studio/backdrop?s=… links, .lensbg files, a CSS fallback. color.ts sRGB ↔ linear ↔ OKLab ↔ OKLCH, gamut mapping, the 256-entry gradient LUT (blend space, bias, sharpness), WCAG contrast, harmonies, hex-list parsing, k-means palette extraction, layer blend reference. modes.ts 29 looks, each an original GLSL look(p, uv) returning (t, glow, shade) , with its own controls and on-canvas handles. glsl.ts Shared shader library (integer hash, quintic gradient noise with opti",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "1. Engine (framework-free)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "1. Engine (framework-free)"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.2",
+   "kind": "doc",
+   "title": "Backdrop Lab: Colour",
+   "text": "Every look outputs a scalar t ; colour comes from one LUT baked on the CPU in the chosen space (sRGB, Linear, OKLab, OKLCH with shortest-arc hue and chroma-reducing gamut mapping). Bias is a gamma on t , sharpness narrows each blend zone. Glow adds the brightest stop's colour. The LUT is tested without a GPU.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "Colour"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "Colour"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.3",
+   "kind": "doc",
+   "title": "Backdrop Lab: Seamless motion",
+   "text": "- The scene phase is 2π · frac(t / loop) . Looks only use whole multiples of the phase, circular paths through noise space ( orbit(k, φ) , radius from Flow speed), or x-periodic noise shifted by exactly its period. So frame loop equals frame 0 for every look and preset (checked in CI: worst seam 0.000/255). - Grain and dither patterns are indexed by loop time too, so exported loops repeat bit-for-bit. - Time follows the wall clock (a dropped frame never slows motion) and any gap longer than 0.25 s is capped, so pause/resume, sleep and hidden windows continue from the same moment instead of snapping.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "Seamless motion"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "Seamless motion"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.4",
+   "kind": "doc",
+   "title": "Backdrop Lab: 2. The looks",
+   "text": "Family Looks --- --- Soft Mesh (orbiting blobs + domain warp), Bands, Plasma, Smoke Light Rays, Bokeh, Eclipse, Horizon glow, Prism band, Edge glow, Light beam (centre + direction handles, softness ring), Light tunnel Nature Curtains (vertical luminous folds), Caustics, Window light (procedural frame + leaf shadows), Sea horizon (sun/moon + glitter path), Pixel landscape (8-bit clouds and islands), Planet arc, Lens nebula (signature, first-run default) Pattern Marble, Cells, Kaleido, Halftone (dot-screen falloff), Bevelled tiles (movable spotlight) Glass Ribbed glass, Crystal (bevelled shards lit from a handle), Motion streaks (with Chromatic edge) Photo Glass over photo, Gradient-map photo (your picture stays on this PC) Every look has generic, descriptive names and its own controls ( a – d ), plus the shared Shape (scale, softness), Motion (warp, speed, loop length), Grade (brightness,",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "2. The looks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "2. The looks"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.5",
+   "kind": "doc",
+   "title": "Backdrop Lab: 3. The Lab",
+   "text": "- Top bar: prompt box (new look or adjustment), Inspire I with a mood popover (calm↔energetic, cool↔warm, minimal↔rich) and locks, Undo/Redo ( Ctrl+Z / Ctrl+Shift+Z ), Save S (to Mine ), Fit F (fill / 16:9 frame), Export E (primary). - Left: Looks / Presets / Mine with live thumbnails (hover plays), search, and filters for family, motion and colour temperature. - Centre: the live canvas with handles (hover / always / off; Shift snaps; arrow keys nudge), A/B Compare C with a draggable divider, In context (Top Bar, a window and the Dock over the gradient, with a readability warning), pause Space , and a history strip of the last 30 looks. - Right: Basic (look, colours, speed, warp, grain) or Advanced (everything) controls. Sliders: drag, arrows (Shift ×10), scroll to fine-tune, double-click to reset, click the value to type. Colours: swatch grid, Randomize, From image, From theme, harmony ",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "3. The Lab"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "3. The Lab"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.6",
+   "kind": "doc",
+   "title": "Backdrop Lab: 4. Live wallpaper",
+   "text": "Set as live wallpaper stores the state's code in the wallpaper settings ( sceneOptions.backdrop ) and selects the backdrop Playground scene. The wallpaper window decodes the same code with the same engine, so nothing is re-encoded. - Courtesy: 30 fps cap; adaptive resolution (0.5–1× device pixels, adjusted from the frame cadence the runner achieves); the runner's existing pause rules (covered desktop, fullscreen and games, battery); reduced motion → one still frame; Do Not Disturb calms motion (on by default). - No flicker: changes crossfade inside the renderer (600 ms; shaders compiled before the swap) and switching to or from another scene crossfades in WallpaperSurface (the outgoing scene keeps its instance underneath). The parity check samples every frame across three kinds of switch and fails on a blank or a flash. - GPU resets (driver reset, sleep, RDP, display change): the last fr",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "4. Live wallpaper"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "4. Live wallpaper"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.7",
+   "kind": "doc",
+   "title": "Backdrop Lab: 5. Make a theme",
+   "text": "backdropToPack takes the darkest stop (lightest for light backdrops) as the base and nudges its lightness until the pack's text reads at ≥ 7:1 (≥ 4.5:1 guaranteed), picks the most colourful stop that stands out by ≥ 3:1 as the accent, and registers a custom pack. The .lenstheme file gets an extra backdrop field with the code, and the backdrop becomes the live wallpaper. Every preset passes this in tests.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "5. Make a theme"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "5. Make a theme"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.8",
+   "kind": "doc",
+   "title": "Backdrop Lab: 6. Export and share",
+   "text": "- PNG up to 4K, plus square, phone (9:19.5), two-monitor span and ultrawide. - Video loop: WebM (VP9/VP8) or MP4 where the WebView supports it, 1–3 whole loops (≤ 30 s), with progress, time remaining and Cancel. Frames are rendered at exact loop times, so files repeat seamlessly. - Share: Lens link, .lensbg file, share card PNG, copy CSS fallback. All settings-only (< 1 KB), nothing uploaded. - Files go to Pictures\\Lens\\Backdrops with never-overwriting names ( studio save export , which also checks the bytes match the extension). Still wallpapers go to Lens's own wallpapers folder.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "6. Export and share"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "6. Export and share"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.9",
+   "kind": "doc",
+   "title": "Backdrop Lab: 7. Performance",
+   "text": "- Preview: up to 60 fps at ≤ 1.25× DPR; thumbnails share one GPU context and redraw a few tiles per tick. - Wallpaper: 30 fps cap, adaptive resolution, paused whenever the Playground runner pauses. - Measured in the harness ( tools/parity/backdrop/shots/perf.json ): software WebGL (SwiftShader) only, so the absolute numbers are CPU-rendered and far above a real GPU. The GPU/CPU share on real hardware (target: < 2 % GPU, < 1 % CPU at 1080p on mid hardware) still has to be measured on Windows with the Tester Hub; tools/perf has a playground-backdrop fluidity budget for the main thread.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "7. Performance"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "7. Performance"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.10",
+   "kind": "doc",
+   "title": "Backdrop Lab: 8. Next",
+   "text": "Cut for this pass (listed so nothing is lost): 1. Per-monitor and span on real multi-monitor setups. The engine already supports span ( setSpan(origin, world) : one continuous field across windows), but the wallpaper host attaches one window to the primary monitor. Needs a window per monitor in win wallpaper.rs with mixed-DPI tests. 2. Real-Windows E2E for apply / switch / resume / multi-monitor with pixel checks around the swap (the browser-side flash check exists; tests/e2e needs a wallpaper step). 3. Video-loop fallback when WebGL2 is missing (today: still gradient). 4. Weather input to “follow the time of day” (the weather source is not exposed to the wallpaper yet). 5. Cursor parallax on the desktop: the shader supports it ( setCursor ), the scene keeps it at 0 until the desktop input hook is opt-in per scene with a game guard. 6. Use the gradient in Snip “beautify”, Lens Browser ne",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "8. Next"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "8. Next"
+   },
+   "source": "docs/BACKDROP_LAB.md"
   },
   {
    "id": "doc.browser-bridge.0",

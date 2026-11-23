@@ -65,6 +65,8 @@ mod music;
 mod shelf;
 mod guide;
 mod snip;
+// Lens Studio › Backdrop Lab exports (docs/BACKDROP_LAB.md).
+mod studio;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]
@@ -645,6 +647,9 @@ pub fn run() {
             commands::playground::save_playground_state_cmd,
             commands::playground::load_playground_state_cmd,
             commands::playground::clear_playground_state_cmd,
+            studio::studio_save_export,
+            studio::studio_save_still_wallpaper,
+            studio::studio_open_exports_folder,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
             commands::snip::snip_status,

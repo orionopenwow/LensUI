@@ -8,6 +8,7 @@ import { auroraScene } from "./scenes/aurora";
 import { starfieldScene } from "./scenes/starfield";
 import { skyClockScene } from "./scenes/skyclock";
 import { ambientModule } from "./ambient/module";
+import { backdropScene } from "../studio/backdrop/scene";
 
 /** Gallery order: playful first, calm after. */
 export const SCENES: SceneModule[] = [
@@ -21,6 +22,8 @@ export const SCENES: SceneModule[] = [
   skyClockScene,
   // Theme backdrop: the slow ambient scene matching the active theme pack (docs/AMBIENT.md).
   ambientModule,
+  // Backdrop Lab looks as a live wallpaper (docs/BACKDROP_LAB.md).
+  backdropScene,
 ];
 
 export function sceneById(id: string | null | undefined): SceneModule | null {

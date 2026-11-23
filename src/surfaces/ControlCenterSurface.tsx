@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -70,6 +70,8 @@ import { RotaryDial } from "../components/RotaryDial";
 import { PillFillBar } from "../components/PillFillBar";
 import { SetupWizard } from "../components/SetupWizard";
 import { ThemeTab } from "../themeux/ThemeTab";
+// Backdrop Lab embed (src/studio/backdrop): loaded on first visit to Appearance.
+const CreatorCard = lazy(() => import("../studio/backdrop/ui/CreatorCard").then((m) => ({ default: m.CreatorCard })));
 import { DockTab } from "../themeux/DockTab";
 import { AgentsPane } from "../components/AgentsPane";
 import { MessagingHubPane } from "../components/MessagingHubPane";
@@ -639,6 +641,17 @@ export const ControlCenterSurface: React.FC = () => {
               }}
               onOpenTab={(t) => setTab(t)}
             />
+          )}
+          {tab === "appearance" && (
+            <>
+              <div id="sec-creator" className="sh-anchor">
+                <div className="cc-section-title">Creator</div>
+                <div className="cc-section-sub">Make your own animated backgrounds and themes with Backdrop Lab.</div>
+              </div>
+              <Suspense fallback={null}>
+                <CreatorCard config={config} updateConfig={updateConfig} />
+              </Suspense>
+            </>
           )}
 
           {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} />}

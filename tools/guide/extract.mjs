@@ -120,7 +120,7 @@ function componentFile(root, name, fromFile = null) {
       for (const f of [`${base}.tsx`, `${base}/index.tsx`, `${base}.ts`]) if (exists(root, f)) return f;
     }
   }
-  const dirs = ["src/components", "src/themeux", "src/bridge", "src/media", "src/command", "src/cursors", "src/dock", "src/plugins", "src/guide"];
+  const dirs = ["src/components", "src/themeux", "src/bridge", "src/media", "src/command", "src/cursors", "src/dock", "src/plugins", "src/guide", "src/studio/backdrop/ui"];
   for (const d of dirs) {
     if (exists(root, `${d}/${name}.tsx`)) return `${d}/${name}.tsx`;
   }
