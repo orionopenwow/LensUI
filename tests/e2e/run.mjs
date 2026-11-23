@@ -175,15 +175,32 @@ const SCENARIOS = [
       const n = await tabs.count();
       if (n < 5) throw new Error(`only ${n} Control Center tabs found`);
       const problems = [];
+      const reloads = [];
       for (let i = 0; i < n; i++) {
-        const name = (await tabs.nth(i).innerText()).trim();
-        await domClick(tabs.nth(i));
-        await sleep(600);
-        const len = await cc.evaluate(() => document.querySelector(".cc-content")?.innerText.trim().length || 0);
-        if (!len) problems.push(`tab "${name}" rendered nothing`);
+        let page = surfaces(s).settings;
+        let name = "";
+        // A tab may reload its window (e.g. applying UI scale); finish the check on the reloaded
+        // page and report which tab did it.
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const tab = page.locator(".cc-nav-btn").filter({ hasNotText: /Setup Wizard|Quit Lens/ }).nth(i);
+            name = (await tab.innerText()).trim();
+            await domClick(tab);
+            await sleep(600);
+            const len = await page.evaluate(() => document.querySelector(".cc-content")?.innerText.trim().length || 0);
+            if (!len) problems.push(`tab "${name}" rendered nothing`);
+            break;
+          } catch (e) {
+            if (!/context was destroyed|navigation|Target closed/i.test(String(e))) throw e;
+            reloads.push(name || `#${i}`);
+            await sleep(1500);
+            page = await waitForSurface(s, "settings");
+          }
+        }
         for (const e of take()) problems.push(`tab "${name}": ${e}`);
-        await shot(cc, `cc-${name.replace(/[^A-Za-z]+/g, "-").toLowerCase()}`);
+        await shot(page, `cc-${name.replace(/[^A-Za-z]+/g, "-").toLowerCase()}`);
       }
+      if (reloads.length) console.log(`note  Control Center reloaded while opening: ${reloads.join(", ")}`);
       if (problems.length) throw new Error(problems.join("\n"));
     },
   },
@@ -256,11 +273,19 @@ const SCENARIOS = [
         c.ai = { ...(c.ai || {}), enabled: true, provider: "script", allowTools: true };
       });
       await sleep(800);
-      await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do" } });
+      await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dark mode" } });
       const cmd = await waitForSurface(s, "command");
       const take = watchErrors(cmd);
       const box = cmd.locator("textarea").first();
-      await box.fill("dark mode");
+      // A window built on first use replays its opening event once it is ready; wait for the
+      // text to land before pressing Enter, and re-open once if the first event was missed.
+      try {
+        await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 5000 });
+      } catch {
+        await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dark mode" } });
+        await sleep(1500);
+        if ((await box.inputValue()) !== "dark mode") await box.fill("dark mode");
+      }
       await box.press("Enter");
       await cmd
         .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 10000 })
