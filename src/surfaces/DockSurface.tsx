@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import "../dock/islands/islands.css";
 import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { PluginSlot } from "../components/PluginSlot";
 import { McpBridge } from "../components/McpBridge";
@@ -769,7 +770,7 @@ export const DockSurface: React.FC = () => {
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock) === "dock";
-  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio";
+  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio" || dockStyle === "islands";
   const unreadTotal = Object.values(notifCounts).reduce((a, b) => a + b, 0);
   const magnification = normalizeMagnification(dockExtras.magnification);
   const magScale = DOCK_MAGNIFICATION.find((m) => m.id === magnification)?.scale ?? 1;

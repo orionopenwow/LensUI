@@ -7,6 +7,9 @@ import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks
 import { setLocale } from "../i18n";
 import { applyUiScale } from "../shell/uiScale";
 import { applyDockEdge } from "../shell/dockEdge";
+import { applyShapeStyle } from "../themes/shapes/shapes";
+import "../themes/shapes/expressive.css";
+import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
@@ -36,6 +39,7 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     root.style.removeProperty("--lens-pack-elevated");
   }
   root.style.setProperty("--lens-accent", activeAccent);
+  applyShapeStyle(root, cfg.theme.shapeStyle, activeAccent, packById(cfg.theme.preset)?.base ?? "#09090B");
   root.style.setProperty("--lens-windows-accent", winTheme.accentHex);
   root.style.setProperty("--lens-glass-opacity", String(cfg.theme.glassOpacity));
   root.style.setProperty("--lens-glass-opacity-pct", `${Math.round(cfg.theme.glassOpacity * 100)}%`);

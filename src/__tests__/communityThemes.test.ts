@@ -17,7 +17,7 @@ const DOCKS = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
 describe("Claude Code community packs", () => {
   test("there is a real collection and the built-in count is unchanged", () => {
     expect(CLAUDE_PACKS.length).toBeGreaterThanOrEqual(40);
-    expect(packs.THEME_PACKS.length).toBe(18);
+    expect(packs.THEME_PACKS.length).toBe(21);
     expect(packs.THEME_PACKS.some((p) => p.tier === "Community")).toBe(false);
     expect(packs.COMMUNITY_PACKS.length).toBe(CLAUDE_PACKS.length);
   });

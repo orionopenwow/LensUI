@@ -2405,6 +2405,8 @@ export interface ThemeConfig {
   contrast: string;
   /** "auto" | "en" | "es" | "de" */
   locale: string;
+  /** "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack. */
+  shapeStyle: string;
 }
 
 /** Rust: `win_themes::ThemeFileInfo` */

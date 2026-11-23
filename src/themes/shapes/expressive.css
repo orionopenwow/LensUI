@@ -1,0 +1,252 @@
+/*
+ * Lens "Expressive" shape style. A STYLE layer, not a palette: every colour below comes from the
+ * active pack's tokens (surfaces, ink, accent, --lens-on-accent, danger), so Expressive works on all
+ * packs. Everything is scoped to :root[data-shape="expressive"] — with Classic (the default) this file
+ * matches nothing and every surface renders exactly as before.
+ */
+
+:root[data-shape="expressive"] {
+  --lens-x-card-radius: 26px;
+  --lens-x-chip-radius: 14px;
+  --lens-x-pill: 999px;
+  --lens-x-elev-1: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 3%);
+  --lens-x-elev-2: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 7%);
+  --lens-x-elev-3: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 12%);
+  --lens-x-active: var(--lens-x-accent, var(--lens-accent));
+  --lens-x-on-active: var(--lens-on-accent, var(--lens-on-fg));
+  --lens-x-danger: var(--lens-danger);
+  --lens-x-shadow: 0 10px 30px rgb(0 0 0 / calc(0.45 * var(--lens-shade-k)));
+}
+
+/* ---------- Cards ---------- */
+:root[data-shape="expressive"] :is(.qs-card, .sysmod-card, .cc-card:not(.tux-section-body > .cc-card)) {
+  border-radius: var(--lens-x-card-radius);
+  border-color: transparent;
+  background: var(--lens-x-elev-1);
+}
+
+/* ---------- Quick Settings: big pill tiles with a subtitle line ---------- */
+:root[data-shape="expressive"] .qs-tile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+:root[data-shape="expressive"] .qs-tile {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 16px 8px 10px;
+  border-radius: var(--lens-x-pill);
+  border-color: transparent;
+  background: var(--lens-x-elev-2);
+  color: var(--lens-fg);
+}
+:root[data-shape="expressive"] .qs-tile:hover {
+  background: var(--lens-x-elev-3);
+}
+:root[data-shape="expressive"] .qs-tile.active {
+  background: var(--lens-x-active);
+  color: var(--lens-x-on-active);
+}
+:root[data-shape="expressive"] .qs-tile.active * {
+  color: inherit;
+}
+
+/* Thick pill sliders and segmented controls */
+:root[data-shape="expressive"] .qs-flick-track,
+:root[data-shape="expressive"] .sysmod-seg {
+  border-radius: var(--lens-x-pill);
+  padding: 4px;
+  background: var(--lens-x-elev-2);
+}
+:root[data-shape="expressive"] :is(.qs-flick-thumb, .qs-seg-btn, .sysmod-seg-btn, .sysmod-pill-btn) {
+  border-radius: var(--lens-x-pill);
+}
+:root[data-shape="expressive"] :is(.qs-seg-btn, .sysmod-seg-btn).active {
+  background: var(--lens-x-active);
+  color: var(--lens-x-on-active);
+}
+:root[data-shape="expressive"] .sysmod-meter {
+  height: 14px;
+  border-radius: var(--lens-x-pill);
+}
+:root[data-shape="expressive"] .sysmod-meter-fill {
+  border-radius: var(--lens-x-pill);
+  background: var(--lens-x-active);
+}
+
+/* Switches become wide pills; the knob takes the on-accent colour when on */
+:root[data-shape="expressive"] :is(.qs-switch, .sysmod-switch) {
+  border-radius: var(--lens-x-pill);
+}
+
+/* ---------- Notifications: grouped app cards ---------- */
+:root[data-shape="expressive"] .nc-group {
+  padding: 8px;
+  gap: 6px;
+  border-radius: var(--lens-x-card-radius);
+  background: var(--lens-x-elev-1);
+}
+:root[data-shape="expressive"] .nc-group-head {
+  padding: 4px 6px 2px 8px;
+}
+:root[data-shape="expressive"] .nc-group-name {
+  font-size: 12.5px;
+  color: var(--lens-fg);
+}
+:root[data-shape="expressive"] .nc-count {
+  padding: 1px 8px;
+  border-radius: var(--lens-x-pill);
+  background: var(--lens-x-elev-3);
+  color: var(--lens-fg-secondary);
+}
+:root[data-shape="expressive"] .nc-item {
+  border-radius: 18px;
+  background: var(--lens-x-elev-2);
+  border-color: transparent;
+}
+:root[data-shape="expressive"] .nc-dismiss {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lens-x-danger) 22%, transparent);
+  color: var(--lens-x-danger);
+  opacity: 1;
+}
+:root[data-shape="expressive"] .nc-ghost-btn {
+  border-radius: var(--lens-x-pill);
+  background: var(--lens-x-elev-3);
+}
+
+/* ---------- Settings: pill chips with icons ---------- */
+:root[data-shape="expressive"] :is(.cc-chip, .tux-chip, .sysmod-chip) {
+  border-radius: var(--lens-x-chip-radius);
+  border-color: transparent;
+  background: var(--lens-x-elev-2);
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+:root[data-shape="expressive"] :is(.cc-chip, .tux-chip, .sysmod-chip):is(.active, [aria-pressed="true"], [aria-checked="true"]) {
+  background: var(--lens-x-active);
+  color: var(--lens-x-on-active);
+}
+:root[data-shape="expressive"] :is(.cc-btn, .tux-small-btn) {
+  border-radius: var(--lens-x-pill);
+}
+
+/* ---------- Shared Expressive components (src/themes/shapes/Expressive.tsx) ---------- */
+.lx-shape {
+  display: inline-block;
+  background: currentColor;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.lx-fab {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 18px;
+  background: var(--lens-x-active, var(--lens-accent));
+  color: var(--lens-x-on-active, var(--lens-on-fg));
+  box-shadow: var(--lens-x-shadow, none);
+  cursor: pointer;
+  font-size: 22px;
+}
+.lx-fab:focus-visible {
+  outline: var(--lens-focus-width) solid var(--lens-focus-ring);
+  outline-offset: 3px;
+}
+
+.lx-week-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--lens-x-active, var(--lens-accent));
+  color: var(--lens-x-on-active, var(--lens-on-fg));
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lx-clock {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--lens-x-active, var(--lens-accent));
+}
+.lx-clock > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.lx-weather {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--lens-x-active, var(--lens-accent));
+}
+.lx-weather-temp {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--lens-x-on-active, var(--lens-on-fg));
+  font-variant-numeric: tabular-nums;
+}
+.lx-weather-cond {
+  position: absolute;
+  left: 18%;
+  bottom: 14%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--lens-x-on-active, var(--lens-on-fg));
+}
+
+.lx-check {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 50%;
+  border: 2px solid var(--lens-fg-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.lx-check[aria-checked="true"] {
+  border-color: var(--lens-x-active, var(--lens-accent));
+  background: var(--lens-x-active, var(--lens-accent));
+}
+
+/* Optional hover morph (cookie breathes). Never with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-shape="expressive"]:not([data-motion="reduce"]) .lx-morph {
+    transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
+  }
+  :root[data-shape="expressive"]:not([data-motion="reduce"]) .lx-morph:hover {
+    transform: rotate(18deg) scale(1.04);
+  }
+}
+
+/* Quick Settings shortcut tiles (Wi-Fi, Bluetooth, …) set their colours inline; Expressive turns them
+   into neutral pills so they follow the pack instead of four unrelated tints. */
+:root[data-shape="expressive"] .qs-win-item {
+  border-radius: 999px !important;
+  border-color: transparent !important;
+  background: var(--lens-x-elev-2) !important;
+  min-height: 48px;
+  padding-left: 14px !important;
+}
+:root[data-shape="expressive"] .qs-win-item:hover {
+  background: var(--lens-x-elev-3) !important;
+}

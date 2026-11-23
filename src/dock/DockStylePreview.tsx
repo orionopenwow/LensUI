@@ -77,6 +77,21 @@ export const DockStylePreview: React.FC<{ style: DockStyleId; selected?: boolean
       );
       break;
     }
+    case "islands": {
+      const rw = rowW(5, 5, 2);
+      const ax = (W - rw - 8) / 2;
+      return frame(
+        <>
+          <rect className="dsp-pill" x={3} y={H - 11} width={24} height={9} rx={4.5} />
+          <rect className="dsp-sys" x={7} y={H - 7.5} width={4} height={2} rx={1} />
+          <rect className="dsp-sys" x={14} y={H - 7.5} width={9} height={2} rx={1} />
+          <rect className="dsp-pill" x={ax} y={H - 11} width={rw + 8} height={9} rx={4.5} />
+          {icons(ax + 4, H - 9, 5, 5, 2, "i")}
+          <rect className="dsp-pill" x={W - 29} y={H - 11} width={26} height={9} rx={4.5} />
+          <rect className="dsp-sys" x={W - 24} y={H - 7.5} width={16} height={2} rx={1} />
+        </>
+      );
+    }
     default: {
       const rw = rowW(6, 6, 2);
       const x = (W - rw - 8) / 2;

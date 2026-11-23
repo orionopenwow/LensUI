@@ -70,7 +70,7 @@ describe("index", () => {
   test("covers every theme pack, dock style, Playground scene and lesson", () => {
     const kinds = (k: string) => fresh.entries.filter((e) => e.kind === k).length;
     expect(kinds("pack")).toBeGreaterThanOrEqual(18);
-    expect(kinds("dock-style")).toBe(6);
+    expect(kinds("dock-style")).toBe(7);
     expect(kinds("scene")).toBeGreaterThanOrEqual(8);
     expect(kinds("command")).toBeGreaterThanOrEqual(20);
     expect(kinds("lesson")).toBe(fresh.lessons.length);

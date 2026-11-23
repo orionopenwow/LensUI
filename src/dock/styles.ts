@@ -4,7 +4,7 @@
  * `DOCK_STYLES` and draws a `DockStylePreview` for each entry.
  */
 
-export type DockStyleId = "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split";
+export type DockStyleId = "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands";
 export type DockAlignment = "center" | "left";
 export type DockSystemAreaMode = "auto" | "dock" | "topbar";
 
@@ -69,6 +69,14 @@ export const DOCK_STYLES: readonly DockStyleInfo[] = [
     fullWidth: false,
     systemInDockByDefault: true,
   },
+  {
+    id: "islands",
+    label: "Islands",
+    description: "Full-width row of separate rounded islands: launcher and workspaces, apps, then tray and clock.",
+    recommendedIconSize: 34,
+    fullWidth: true,
+    systemInDockByDefault: true,
+  },
 ] as const;
 
 const STYLE_IDS = new Set<string>(DOCK_STYLES.map((s) => s.id));
@@ -115,6 +123,7 @@ export function resolveSystemArea(dock?: DockLike | null): "dock" | "topbar" {
 export function dockStyleIconSize(style: DockStyleId, configured: number): number {
   if (style === "slim") return Math.min(configured, 32);
   if (style === "taskbar" || style === "studio") return Math.min(configured, 36);
+  if (style === "islands") return Math.min(configured, 34);
   return configured;
 }
 
