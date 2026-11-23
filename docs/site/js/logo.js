@@ -88,7 +88,8 @@ export async function animateLogo(host) {
   size();
 
   // Time runs only while visible; hover eases the speed up to 1.6×.
-  let t = 0, speed = 1, target = 1, last = 0, raf = 0, visible = true, cost = 0, frames = 0;
+  const base = Number(host.dataset.speed || 1);
+  let t = 0, speed = base, target = base, last = 0, raf = 0, visible = true, cost = 0, frames = 0;
   const ease = (x) => 0.5 - 0.5 * Math.cos(x);
   const draw = (now) => {
     const t0 = performance.now();
@@ -114,8 +115,8 @@ export async function animateLogo(host) {
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }).observe(host);
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
   addEventListener("site-theme", () => (reducedMotion() ? stop() : start()));
-  host.addEventListener("pointerenter", () => { target = 1.6; });
-  host.addEventListener("pointerleave", () => { target = 1; glare?.setAttribute("cx", "0.3"); glare?.setAttribute("cy", "0.22"); });
+  host.addEventListener("pointerenter", () => { target = base * 1.6; });
+  host.addEventListener("pointerleave", () => { target = base; glare?.setAttribute("cx", "0.3"); glare?.setAttribute("cy", "0.22"); });
   host.addEventListener("pointermove", (e) => {
     if (!glare || reducedMotion()) return;
     const r = host.getBoundingClientRect();
@@ -128,8 +129,7 @@ export async function animateLogo(host) {
   start();
 }
 
-const host = document.querySelector("[data-logo]");
-if (host) {
+for (const host of document.querySelectorAll("[data-logo]")) {
   // With reduced motion the static logo stays; switching motion on in the notch starts it.
   const go = () => {
     if (reducedMotion()) { addEventListener("site-theme", function on() { if (!reducedMotion()) { removeEventListener("site-theme", on); animateLogo(host).catch(() => {}); } }); return; }
@@ -138,3 +138,4 @@ if (host) {
   const later = () => ("requestIdleCallback" in window ? requestIdleCallback(go, { timeout: 2500 }) : setTimeout(go, 1200));
   if (document.readyState === "complete") later(); else addEventListener("load", later, { once: true });
 }
+// (The nav logo is the only one on most pages; the hero has none, so one WebGL context per page.)

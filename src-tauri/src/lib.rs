@@ -51,6 +51,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod cleaner;
 mod bridge;
 mod browser;
 mod feeds;
@@ -58,6 +59,7 @@ mod messages;
 mod clip;
 mod magic;
 mod presence;
+mod coreapps;
 mod commands;
 mod control;
 mod media;
@@ -135,6 +137,10 @@ pub fn run() {
     if let Some(code) = bridge::early_exit_code() {
         std::process::exit(code);
     }
+    // Lens Cleaner's one elevated helper (`--cleaner-elevated <task>`, docs/CLEANER.md): run and exit.
+    if let Some(code) = cleaner::elevated::early_exit_code() {
+        std::process::exit(code);
+    }
 
     // Must be first: counts this shell boot before anything that could crash.
     let shell_startup = win_shell::shell_startup();
@@ -184,6 +190,7 @@ pub fn run() {
         .setup(move |app| {
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
+            commands::coreapps::init_timers(app.handle());
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -222,6 +229,33 @@ pub fn run() {
             commands::magic::magic_hide,
             commands::magic::magic_window_action,
             commands::magic::magic_report_open,
+            commands::coreapps::coreapp_list,
+            commands::coreapps::coreapp_open,
+            commands::coreapps::coreapp_sticky_open,
+            commands::coreapps::coreapp_sticky_click_through,
+            commands::coreapps::coreapp_stickies_release,
+            commands::coreapps::coreapp_sticky_close,
+            commands::coreapps::coreapp_audit,
+            commands::coreapps::coreapp_monitor_sample,
+            commands::coreapps::coreapp_end_task,
+            commands::coreapps::coreapp_programs,
+            commands::coreapps::coreapp_uninstall,
+            commands::coreapps::coreapp_leftovers,
+            commands::coreapps::coreapp_leftover_recycle,
+            commands::coreapps::coreapp_timers,
+            commands::coreapps::coreapp_timer_add,
+            commands::coreapps::coreapp_alarm_add,
+            commands::coreapps::coreapp_pomodoro_start,
+            commands::coreapps::coreapp_timer_action,
+            commands::coreapps::coreapp_calc,
+            commands::coreapps::coreapp_convert,
+            commands::coreapps::coreapp_currency_rates,
+            commands::coreapps::coreapp_color_sample,
+            commands::coreapps::coreapp_contrast,
+            commands::coreapps::coreapp_battery_report,
+            commands::coreapps::coreapp_net_snapshot,
+            commands::coreapps::coreapp_speed_endpoints,
+            commands::coreapps::coreapp_speed_test,
             commands::presence::presence_announce,
             commands::presence::presence_done,
             commands::presence::presence_stop,
@@ -705,6 +739,27 @@ pub fn run() {
             commands::music::music_lastfm_begin,
             commands::music::music_lastfm_finish,
             commands::music::music_lastfm_disconnect,
+            commands::cleaner::cleaner_overview,
+            commands::cleaner::cleaner_scan,
+            commands::cleaner::cleaner_cancel,
+            commands::cleaner::cleaner_preview,
+            commands::cleaner::cleaner_preview_paths,
+            commands::cleaner::cleaner_full_list,
+            commands::cleaner::cleaner_run,
+            commands::cleaner::cleaner_undo,
+            commands::cleaner::cleaner_space_scan,
+            commands::cleaner::cleaner_space_children,
+            commands::cleaner::cleaner_biggest,
+            commands::cleaner::cleaner_reveal,
+            commands::cleaner::cleaner_open,
+            commands::cleaner::cleaner_apps,
+            commands::cleaner::cleaner_app_uninstall,
+            commands::cleaner::cleaner_downloads_review,
+            commands::cleaner::cleaner_move,
+            commands::cleaner::cleaner_history,
+            commands::cleaner::cleaner_settings_get,
+            commands::cleaner::cleaner_settings_set,
+            commands::cleaner::cleaner_share,
             commands::apps::apps_catalog,
             commands::apps::apps_catalog_refresh,
             commands::apps::apps_settings_get,

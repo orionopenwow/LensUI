@@ -32,6 +32,7 @@ import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, ty
 import { answersInText, runDo } from "./doMode";
 import { isNewOpen } from "./openSeq";
 import "./Command.css";
+import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -131,7 +132,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         const extra = Object.entries(SPECIAL_PROMPTS)
           .filter(([id]) => !list.some((t) => t.id === id))
           .map(([id, sp]) => ({ id, name: sp.name, description: sp.name, template: sp.template, provider: "local", input: "selection", options: [], output: "thread", builtin: true, enabled: true }));
-        setTemplates([...list, ...extra]);
+        // Lens core apps as `/timer`, `/monitor`… (docs/CORE_APPS.md); ids Command already uses win.
+        setTemplates([...list, ...extra, ...coreAppTemplates([...list, ...extra])]);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -362,6 +364,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     // Commands that are actions, not prompts.
     if (template && !template.template) {
       const arg = parsed?.args ?? "";
+      if (isCoreAppStub(template) && runCoreAppSlash(template.id)) {
+        hide();
+        return setText("");
+      }
       switch (template.id) {
         case "note": {
           if (!arg.trim()) return flash("Type the note after /note.", false);
@@ -372,6 +378,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         case "clip":
           setMode("clipboard");
           return setText(arg);
+        case "clean":
+          // Lens Cleaner opens on demand; nothing is deleted until you click (docs/CLEANER.md).
+          await invoke("open_surface", { label: "cleaner" }).catch(() => {});
+          hide();
+          return setText("");
         case "shelf":
           setDrawer(true);
           setMode("shelf");

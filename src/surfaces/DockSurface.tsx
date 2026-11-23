@@ -377,6 +377,21 @@ export const DockSurface: React.FC = () => {
   const [mediaInfo, setMediaInfo] = useState<MediaNowPlaying | null>(null);
   // Unread notification counts per app (normalised name -> count), shown as dock badges.
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
+  // Text badges for pinned Lens core apps ("12:04" on Lens Timer), keyed by pin path.
+  const [coreBadges, setCoreBadges] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const un = listen<{ path: string; text: string | null }>("lens://coreapp-badge", (e) =>
+      setCoreBadges((b) => {
+        const next = { ...b };
+        if (e.payload.text) next[e.payload.path] = e.payload.text;
+        else delete next[e.payload.path];
+        return next;
+      })
+    );
+    return () => {
+      un.then((f) => f()).catch(() => {});
+    };
+  }, []);
   // Alt+1..9 activation (the backend emits the index; the latest render's rows handle it).
   const activateRef = useRef<(n: number) => void>(() => {});
   const hoverTimerRef = useRef<number | null>(null);
@@ -2283,7 +2298,11 @@ export const DockSurface: React.FC = () => {
                 ) : (
                   <FallbackAppIcon hint={app.iconHint} />
                 )}
-                {unread > 0 ? (
+                {coreBadges[app.path] ? (
+                  <span className="dock-notif-badge dock-text-badge" aria-hidden="true">
+                    {coreBadges[app.path]}
+                  </span>
+                ) : unread > 0 ? (
                   <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>

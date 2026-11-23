@@ -49,13 +49,15 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fetch the branches the site reads (tester notes, vision)
-        run: git fetch origin research/daily docs/vision-unified || true
+        run: git fetch origin research/daily docs/vision-unified feature/pack-rosewood || true
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Pillow (resizes the app icons and screenshots the site shows)
+        run: sudo python3 -m pip install --quiet --break-system-packages pillow
       - name: Command-engine port matches the app
         run: node tools/site/test/intent.test.mjs
       - name: User docs from the Guide index

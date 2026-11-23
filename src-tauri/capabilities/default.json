@@ -29,7 +29,9 @@
     "approval",
     "nowplaying",
     "apps",
+    "cleaner",
     "presence",
+    "coreapp-*",
     "presencebar"
   ],
   "permissions": [

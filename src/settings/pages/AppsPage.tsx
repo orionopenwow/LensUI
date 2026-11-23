@@ -4,6 +4,7 @@ import { Rocket, AppWindow, Package } from "lucide-react";
 import { Hero, HeroTile, LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import { optimistic, useResource } from "../useResource";
 import type { PageProps } from "./common";
+import { CoreAppLink } from "../../coreapps/CoreAppLink";
 
 interface StartupEntry {
   name: string;
@@ -55,6 +56,7 @@ export const AppsPage: React.FC<PageProps> = ({ section }) => {
         ))}
         <LinkRow>
           <WinLink uri="ms-settings:startupapps" label="All startup apps" />
+          <CoreAppLink id="startup" label="Startup impact in Lens" />
         </LinkRow>
       </Section>
 
@@ -62,6 +64,7 @@ export const AppsPage: React.FC<PageProps> = ({ section }) => {
         <LinkRow>
           <WinLink uri="ms-settings:defaultapps" label="Default apps" />
           <WinLink uri="ms-settings:appsfeatures" label="Installed apps" />
+          <CoreAppLink id="startup" view="uninstall" label="Uninstall with Lens" />
           <WinLink uri="ms-settings:optionalfeatures" label="Optional features" />
         </LinkRow>
       </Section>

@@ -2036,3 +2036,11 @@
     transition: none !important;
   }
 }
+
+/* Countdown on a pinned Lens core app (Lens Timer), docs/CORE_APPS.md. */
+.dock-notif-badge.dock-text-badge {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+  font-variant-numeric: tabular-nums;
+  right: -8px;
+}

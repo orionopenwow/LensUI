@@ -204,6 +204,16 @@ pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
     push(&mut steps, "Browser extension bridge", report(crate::commands::bridge::bridge_uninstall()));
     push(&mut steps, "lens:// links", report(crate::commands::bridge::url_scheme_uninstall()));
     push(&mut steps, "File Explorer right-click", report(crate::commands::bridge::explorer_verbs_uninstall()));
+    push(&mut steps, "Lens Cleaner drive menu", crate::commands::cleaner::uninstall_verb());
+    push(&mut steps, "Claude Desktop connection", crate::bridge::claude_config::remove_for_uninstall());
+    push(
+        &mut steps,
+        "Spotify theme (Spicetify)",
+        match crate::music::spicetify::detect().1 {
+            Some(themes) => crate::music::spicetify::remove_installed_theme(&themes),
+            None => Ok("Not exported to Spicetify.".to_string()),
+        },
+    );
     crate::commands::snip::restore_print_screen();
     push(&mut steps, "Print Screen key", Ok("Restored to how it was before Lens Snip.".to_string()));
 

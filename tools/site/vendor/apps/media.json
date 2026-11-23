@@ -1,0 +1,165 @@
+{
+ "artcraft": {
+  "name": "ArtCraft",
+  "license": "MIT OR Apache-2.0",
+  "repo": "https://github.com/storytold/artcraft",
+  "homepage": "https://getartcraft.com",
+  "pitch": "An IDE for artists: controllable AI image and video with 2D and 3D scene tools.",
+  "replaces": [
+   "Midjourney",
+   "Runway"
+  ],
+  "icon": "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/crates/desktop/artcraft/icons/ios/AppIcon-512%402x.png",
+  "shots": [
+   "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp",
+   "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp"
+  ]
+ },
+ "concat": {
+  "name": "Concat",
+  "license": "AGPL-3.0-or-later",
+  "repo": "https://github.com/jub0t/Concat",
+  "homepage": "https://concatenate.pages.dev",
+  "pitch": "Free, local-first video editor that replaces CapCut, with AI captions and an MCP/JSON-RPC API.",
+  "replaces": [
+   "CapCut"
+  ],
+  "icon": "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/concat_logo_512.png",
+  "shots": [
+   "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png"
+  ]
+ },
+ "degenview": {
+  "name": "degenview",
+  "license": "GPL-3.0-only",
+  "repo": "https://github.com/degenview/degenview",
+  "homepage": "https://github.com/degenview/degenview",
+  "pitch": "Open-source TradingView-style charting app in Rust with a local Pine Script v6 engine.",
+  "replaces": [
+   "TradingView"
+  ],
+  "icon": "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/brand/app_icon.png",
+  "shots": [
+   "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png"
+  ]
+ },
+ "wordcraft": {
+  "name": "WordCraft",
+  "license": "Permissive (see repo)",
+  "repo": "https://getartcraft.com/apps/wordcraft",
+  "homepage": "https://getartcraft.com/apps/wordcraft",
+  "pitch": "Word processing. Part of the open-source ArtCraft suite, native and in Rust.",
+  "replaces": [
+   "Google Docs",
+   "Word"
+  ],
+  "icon": "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/assets/app-icon/wordcraft-macos-512.png",
+  "shots": [
+   "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png"
+  ]
+ },
+ "deckcraft": {
+  "name": "DeckCraft",
+  "license": "Permissive (see repo)",
+  "repo": "https://getartcraft.com/apps/deckcraft",
+  "homepage": "https://getartcraft.com/apps/deckcraft",
+  "pitch": "Presentations. Part of the open-source ArtCraft suite, native and in Rust.",
+  "replaces": [
+   "Google Slides",
+   "PowerPoint"
+  ],
+  "icon": "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png",
+  "shots": [
+   "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png"
+  ]
+ },
+ "gridcraft": {
+  "name": "GridCraft",
+  "license": "Permissive (see repo)",
+  "repo": "https://getartcraft.com/apps/gridcraft",
+  "homepage": "https://getartcraft.com/apps/gridcraft",
+  "pitch": "Spreadsheets and data analysis. Part of the open-source ArtCraft suite, native and in Rust.",
+  "replaces": [
+   "Google Sheets",
+   "Excel"
+  ],
+  "icon": "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/assets/app-icon/gridcraft-macos-512.png",
+  "shots": [
+   "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png"
+  ]
+ },
+ "ollama": {
+  "name": "Ollama",
+  "license": "MIT",
+  "repo": "https://github.com/ollama/ollama",
+  "homepage": "https://ollama.com",
+  "pitch": "Run open models (Llama, Qwen, Gemma and more) locally.",
+  "replaces": [
+   "Cloud chatbots"
+  ],
+  "icon": "https://raw.githubusercontent.com/ollama/ollama/318ee284aa3b5558de57efefff730ea33c4a9bef/app/darwin/Ollama.app/Contents/Resources/ollama%402x.png",
+  "shots": []
+ },
+ "obs-studio": {
+  "name": "OBS Studio",
+  "license": "GPL-2.0",
+  "repo": "https://github.com/obsproject/obs-studio",
+  "homepage": "https://obsproject.com",
+  "pitch": "Screen recording and live streaming.",
+  "replaces": [
+   "Streamlabs"
+  ],
+  "icon": "https://raw.githubusercontent.com/obsproject/obs-studio/0c790bd0151fb9f574867e025ecf57e6eedc58e2/frontend/cmake/linux/icons/obs-logo-512.png",
+  "shots": []
+ },
+ "krita": {
+  "name": "Krita",
+  "license": "GPL-3.0",
+  "repo": "https://invent.kde.org/graphics/krita",
+  "homepage": "https://krita.org",
+  "pitch": "Professional painting and illustration.",
+  "replaces": [
+   "Photoshop (painting)"
+  ],
+  "icon": "https://raw.githubusercontent.com/KDE/krita/97e66843f3b4742ddddd020c8824be980f03f6d6/krita/pics/branding/default/512-apps-krita.png",
+  "shots": []
+ },
+ "blender": {
+  "name": "Blender",
+  "license": "GPL",
+  "repo": "https://projects.blender.org/blender/blender",
+  "homepage": "https://www.blender.org",
+  "pitch": "3D modelling, animation, rendering and video editing.",
+  "replaces": [
+   "Maya",
+   "Cinema 4D"
+  ],
+  "icon": "https://raw.githubusercontent.com/blender/blender/20a0565aa86c7ba6ab1e9537675a0cd8529337ef/release/freedesktop/icons/scalable/apps/blender.svg",
+  "shots": []
+ },
+ "affine": {
+  "name": "AFFiNE",
+  "license": "MIT (Community Edition)",
+  "repo": "https://github.com/toeverything/AFFiNE",
+  "homepage": "https://affine.pro",
+  "pitch": "Docs, whiteboards and databases in one local-first workspace.",
+  "replaces": [
+   "Notion",
+   "Miro"
+  ],
+  "icon": "https://raw.githubusercontent.com/toeverything/AFFiNE/577ae12b51a9d617c7e82b7265baf7eaf67dd21c/packages/frontend/apps/electron/resources/icons/icon_beta_512x512.png",
+  "shots": []
+ },
+ "excalidraw": {
+  "name": "Excalidraw",
+  "license": "MIT",
+  "repo": "https://github.com/excalidraw/excalidraw",
+  "homepage": "https://excalidraw.com",
+  "pitch": "Hand-drawn style whiteboard and diagrams.",
+  "replaces": [
+   "Miro"
+  ],
+  "icon": "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png",
+  "shots": []
+ }
+}

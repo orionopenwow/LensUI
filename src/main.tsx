@@ -67,6 +67,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
   // Lens Apps window (docs/LENS_APPS.md §2).
   apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
+  cleaner: lazy(() => import("./cleaner/CleanerSurface").then((m) => ({ default: m.CleanerSurface }))),
+  coreapp: lazy(() => import("./coreapps/CoreAppSurface").then((m) => ({ default: m.CoreAppSurface }))),
   presence: lazy(() => import("./presence/PresenceSurface").then((m) => ({ default: m.PresenceSurface }))),
   presencebar: lazy(() => import("./presence/PresenceBar").then((m) => ({ default: m.PresenceBarSurface }))),
   voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),

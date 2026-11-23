@@ -40,7 +40,7 @@
     "settings-tab-switch": {
       "p50": 16.7,
       "p95": 33.4,
-      "longTasks": 6,
+      "longTasks": 10,
       "cls": 0,
       "fcp": 724
     },

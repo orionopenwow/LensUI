@@ -28,6 +28,20 @@ const SETTINGS_TABS: Record<string, string> = {
   agents: "agents",
 };
 
+/** "cleaner" / "cleaner-bin" open the Lens Cleaner window (docs/CLEANER.md); nothing is cleaned. */
+function openCleanerFor(target: string): boolean {
+  if (target !== "cleaner" && target !== "cleaner-bin") return false;
+  invoke("open_surface", { label: "cleaner" })
+    .then(() => {
+      // Sent again once the window has had time to build (it is created on first use).
+      const focus = target === "cleaner-bin" ? "recycle-bin" : "home";
+      emit("lens://cleaner/focus", focus).catch(() => {});
+      window.setTimeout(() => emit("lens://cleaner/focus", focus).catch(() => {}), 1500);
+    })
+    .catch(() => {});
+  return true;
+}
+
 /**
  * Invisible helper mounted once (in the Dock, which is always running), next to McpBridge.
  * Lens Intelligence's UI-layer actions arrive as `lens://ai/apply` (docs/AI.md "Apply bridge"):
@@ -45,6 +59,8 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
     const un = listen<{ action?: string; selection?: string }>("lens://bridge/request", (e) => {
       if (e.payload?.action !== "settings_open") return;
       const target = String(e.payload.selection ?? "");
+      // lens://settings/cleaner (Explorer's "Free up space with Lens") opens Lens Cleaner.
+      if (openCleanerFor(target)) return;
       if (!resolveTarget(target)) return;
       invoke("open_surface", { label: "settings" })
         .then(() => emit("lens://settings-tab", target))
@@ -86,6 +102,7 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
         }
         case "open_settings_page": {
           const asked = String(args.page ?? "home");
+          if (openCleanerFor(asked)) return;
           // Any Settings hub page id or alias works; older names map through SETTINGS_TABS.
           const tab = resolveTarget(asked) ? asked : SETTINGS_TABS[asked] ?? "keys";
           invoke("open_surface", { label: "settings" })
@@ -97,8 +114,14 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
           const seconds = Math.max(1, Math.min(24 * 3600, Number(args.seconds) || 0));
           const label = typeof args.label === "string" && args.label.trim() ? args.label.trim() : "Timer";
           if (!seconds) return;
-          timers.push(window.setTimeout(() => notify(label, "Time's up."), seconds * 1000));
-          notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min`);
+          // Lens Timer owns timers (they survive this window and show on the Dock pin); the
+          // in-window fallback only runs if that backend isn't there.
+          invoke("coreapp_timer_add", { label, seconds, duration: null })
+            .then(() => notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min · open Lens Timer to see it`))
+            .catch(() => {
+              timers.push(window.setTimeout(() => notify(label, "Time's up."), seconds * 1000));
+              notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min`);
+            });
           return;
         }
         case "show_desktop":
