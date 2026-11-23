@@ -8,6 +8,7 @@ import { SETTINGS_PAGES } from "./settingsIndex";
 import { loadUsage, onUsageLoaded, recordUsage } from "./usage";
 import type { CalcResult } from "./calc";
 import type * as Gen from "../types/generated";
+import { coreAppSearchItems } from "../coreapps/registry";
 
 export type FileHit = Gen.FileHit;
 
@@ -122,6 +123,8 @@ function lensActions(cfg: LensConfig | null | undefined, update: UnifiedSearchOp
     a("scripts", "Open scripts folder", "Put .bat, .cmd, .ps1 or .py files here to run them from search", "scripts folder automation", () => invoke("open_scripts_folder_cmd")),
     a("reindex", "Rebuild file search index", "Rescans Desktop, Documents, Downloads, Pictures, Music, Videos", "index files rebuild rescan", () => invoke("rebuild_file_index_cmd")),
   ];
+  // Lens core apps (Monitor, Timer, Calculator…), docs/CORE_APPS.md.
+  out.push(...coreAppSearchItems());
   if (cfg && update) {
     for (const pack of allPacks()) {
       out.push({

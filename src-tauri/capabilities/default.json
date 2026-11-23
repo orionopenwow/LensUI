@@ -30,6 +30,7 @@
     "nowplaying",
     "apps",
     "presence",
+    "coreapp-*",
     "presencebar"
   ],
   "permissions": [

@@ -58,6 +58,7 @@ mod messages;
 mod clip;
 mod magic;
 mod presence;
+mod coreapps;
 mod commands;
 mod control;
 mod media;
@@ -184,6 +185,7 @@ pub fn run() {
         .setup(move |app| {
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
+            commands::coreapps::init_timers(app.handle());
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -222,6 +224,33 @@ pub fn run() {
             commands::magic::magic_hide,
             commands::magic::magic_window_action,
             commands::magic::magic_report_open,
+            commands::coreapps::coreapp_list,
+            commands::coreapps::coreapp_open,
+            commands::coreapps::coreapp_sticky_open,
+            commands::coreapps::coreapp_sticky_click_through,
+            commands::coreapps::coreapp_stickies_release,
+            commands::coreapps::coreapp_sticky_close,
+            commands::coreapps::coreapp_audit,
+            commands::coreapps::coreapp_monitor_sample,
+            commands::coreapps::coreapp_end_task,
+            commands::coreapps::coreapp_programs,
+            commands::coreapps::coreapp_uninstall,
+            commands::coreapps::coreapp_leftovers,
+            commands::coreapps::coreapp_leftover_recycle,
+            commands::coreapps::coreapp_timers,
+            commands::coreapps::coreapp_timer_add,
+            commands::coreapps::coreapp_alarm_add,
+            commands::coreapps::coreapp_pomodoro_start,
+            commands::coreapps::coreapp_timer_action,
+            commands::coreapps::coreapp_calc,
+            commands::coreapps::coreapp_convert,
+            commands::coreapps::coreapp_currency_rates,
+            commands::coreapps::coreapp_color_sample,
+            commands::coreapps::coreapp_contrast,
+            commands::coreapps::coreapp_battery_report,
+            commands::coreapps::coreapp_net_snapshot,
+            commands::coreapps::coreapp_speed_endpoints,
+            commands::coreapps::coreapp_speed_test,
             commands::presence::presence_announce,
             commands::presence::presence_done,
             commands::presence::presence_stop,
