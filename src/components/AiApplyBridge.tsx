@@ -97,8 +97,14 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
           const seconds = Math.max(1, Math.min(24 * 3600, Number(args.seconds) || 0));
           const label = typeof args.label === "string" && args.label.trim() ? args.label.trim() : "Timer";
           if (!seconds) return;
-          timers.push(window.setTimeout(() => notify(label, "Time's up."), seconds * 1000));
-          notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min`);
+          // Lens Timer owns timers (they survive this window and show on the Dock pin); the
+          // in-window fallback only runs if that backend isn't there.
+          invoke("coreapp_timer_add", { label, seconds, duration: null })
+            .then(() => notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min · open Lens Timer to see it`))
+            .catch(() => {
+              timers.push(window.setTimeout(() => notify(label, "Time's up."), seconds * 1000));
+              notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min`);
+            });
           return;
         }
         case "show_desktop":
