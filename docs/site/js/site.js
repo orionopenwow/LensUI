@@ -192,10 +192,12 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && nav?.classList.co
 
 // ---- highlight a section reached by #hash (the Guide's "Show me") ------------------------------
 export function flash(id) {
-  if (id.startsWith("scene/")) return true; // js/home.js plays the scene
-  if (id === "features" && document.getElementById("stage")) {
-    document.getElementById("stage").scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-    document.getElementById("features").focus({ preventScroll: true });
+  if (id.startsWith("scene/") || id.startsWith("tour/")) return true; // js/home.js opens the tour
+  if (id === "features" && document.getElementById("sc-tabs")) {
+    // The tours above the hero desk are the feature index.
+    const tabs = document.getElementById("sc-tabs"), head = document.getElementById("bar")?.offsetHeight ?? 60;
+    scrollTo({ top: scrollY + tabs.getBoundingClientRect().top - head - 8, behavior: reducedMotion() ? "auto" : "smooth" });
+    tabs.querySelector("[role=tab]")?.focus({ preventScroll: true });
     return true;
   }
   const el = document.getElementById(id);

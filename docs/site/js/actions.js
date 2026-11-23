@@ -18,7 +18,7 @@ export function orbFor(desk) {
   const layer = document.createElement("div");
   layer.className = "lx-agent";
   layer.setAttribute("aria-hidden", "true");
-  layer.innerHTML = `<div class="lx-orb"><span></span></div><div class="lx-typing"></div>`;
+  layer.innerHTML = `<div class="lx-orb"><span><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span></div><div class="lx-typing"></div>`;
   cv.append(layer);
   const orb = layer.querySelector(".lx-orb"), typing = layer.querySelector(".lx-typing");
   let pos = null, token = 0, paused = false;

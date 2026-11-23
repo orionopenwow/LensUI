@@ -91,3 +91,7 @@ Rust: `win_clipboard.rs` becomes dead after dup #1; `win_sessions.rs`, `win_trai
 8. **Errors are visible**: no silent `.catch(() => {})` on user-initiated actions (425 today); a toast or inline state instead.
 9. **Signed, reproducible release** with real download checksums, updater, crash reports, and the brain refreshed by CI.
 10. **Docs match the product**: FEATURES.md has no "not wired" rows; site demos cover every Command phrase.
+
+## 7. Planned after 1.0: the Overlay Marketplace
+
+Shown on the website as "coming". One portable file (working name `.lenspack`) carries a whole setup: theme pack, dock and bar layout, overlays for other apps (Spotify skin, window frames, cursors), a backdrop (`.lensbg` or a living wallpaper) and the computer-control grants an agent may use. Installing shows a preview and needs one approval; everything it changes registers with Remove all. A free marketplace lists shared packs. Builds on what exists today: `.lenstheme` export/import (SavedThemesCard, ThemeSharingCard), Backdrop Lab `.lensbg`, folder plugins with signed grants, and the control catalogue for the agent settings. Needs: a pack schema with versioning, a sandboxed preview, signature checks, and moderation for the listing.

@@ -21,7 +21,7 @@
   cursor: pointer;
   filter: drop-shadow(0 4px 12px rgb(0 0 0 / 0.45)) drop-shadow(0 0 10px color-mix(in srgb, var(--pr-accent) 55%, transparent));
 }
-.pr-orb img { display: block; width: 100%; height: 100%; }
+.pr-orb .lens-cloud { --lc-bezel: 2px; }
 .pr-orb:focus-visible { outline: 2px solid var(--lens-focus-ring, #fff); outline-offset: 2px; }
 
 .pr-ring {
@@ -151,7 +151,7 @@
   transition: left var(--lens-dur-slower) var(--lens-ease-in-out), top var(--lens-dur-slower) var(--lens-ease-in-out), opacity var(--lens-dur-base) var(--lens-ease-out);
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--lens-accent, #8b9cff) 60%, transparent));
 }
-.pr-twin-orb img { width: 100%; height: 100%; display: block; }
+.pr-twin-orb .lens-cloud { --lc-bezel: 1.5px; --lc-blur: 0.6px; }
 .pr-twin-ring {
   position: absolute;
   box-sizing: border-box;

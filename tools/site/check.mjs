@@ -189,7 +189,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.goto(base + "index.html");
   await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await waitDesk(page);
-  await page.evaluate(() => window.lensSite.scenes.pause());
+  await page.evaluate(() => window.lensSite.shows.exit());
   const cdp = await ctx.newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   const bar = await page.evaluate(() => { const w = [...window.lensSite.desk.wins.values()].find((x) => !x.min); const r = w.el.querySelector(".lw-bar").getBoundingClientRect(); return { x: r.left + 80, y: r.top + 15 }; });
@@ -237,7 +237,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await p2.waitForTimeout(1500);
   const still = a === (await grab());
   report.stage.reducedMotionStill = still;
-  report.stage.reducedMotionAutoplay = await p2.evaluate(() => window.lensSite.scenes.playing);
+  report.stage.reducedMotionAutoplay = await p2.evaluate(() => !!window.lensSite.shows.current);
   if (!still) problems.push("desk: the backdrop moves with reduced motion");
   if (report.stage.reducedMotionAutoplay) problems.push("desk: the scene reel autoplays with reduced motion");
   await rm.close();
@@ -251,7 +251,7 @@ async function waitDesk(page, sel = "#desk-host") {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await ctx.addInitScript(() => {
     window.__cls = 0;
-    const demo = (n) => n?.closest?.(".desk-host, .dock-rail, .lab, .gw, .scene-cap, .driving, .scenebar");
+    const demo = (n) => n?.closest?.(".desk-host, .dock-rail, .lab, .gw, .sc-bar, .sc-tabs");
     new PerformanceObserver((l) => l.getEntries().forEach((e) => { if (!e.hadRecentInput && e.sources.some((x) => !demo(x.node))) window.__cls += e.value; })).observe({ type: "layout-shift", buffered: true });
   });
   const page = await ctx.newPage();
@@ -276,13 +276,37 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await waitDesk(page);
   await page.waitForTimeout(2500);
-  expect(await D(() => window.lensSite.scenes.playing), "scene reel autoplays");
-  const box = await deskBox(page);
-  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height - 160);
+  // Nothing moves on its own: no tour starts, no window moves without input.
+  const before = await D(() => [...window.lensSite.desk.wins.values()].map((w) => `${w.app}:${Math.round(w.x)},${Math.round(w.y)}`).join("|"));
+  await page.waitForTimeout(2500);
+  expect(!(await D(() => window.lensSite.shows.current)), "no tour starts by itself");
+  expect(before === (await D(() => [...window.lensSite.desk.wins.values()].map((w) => `${w.app}:${Math.round(w.x)},${Math.round(w.y)}`).join("|"))), "the desk doesn't move without input");
+  // Tours: a tab starts one; Next and Back step it; each step's target exists; Exit leaves free play.
+  const tourIds = await D(() => window.lensSite.shows.list.map((s) => s.id));
+  expect(tourIds.length >= 6, "there are showcase tabs", tourIds.join(","));
+  await page.click('#sc-tabs [data-sc="desktop"]');
+  await page.waitForFunction(() => window.lensSite.shows.current?.id === "desktop" && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.index)) === 0, "a tab starts its tour at step 1");
+  await page.waitForTimeout(1500);
+  expect((await D(() => window.lensSite.shows.index)) === 0, "a tour waits for Next");
+  await page.click("#sc-bar [data-next]");
+  await page.waitForFunction(() => window.lensSite.shows.index === 1 && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.index)) === 1, "Next moves one step");
+  await page.click("#sc-bar [data-back]");
+  await page.waitForFunction(() => window.lensSite.shows.index === 0 && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.index)) === 0, "Back moves one step back");
+  for (const id of tourIds) {
+    await D((i) => window.lensSite.shows.start(i), id);
+    await page.waitForFunction(() => !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
+    const first = await D(() => { const st = window.lensSite.shows.state().step; return !st?.target || !!st.target(window.lensSite.desk); });
+    expect(first, `tour “${id}” first step has its target`);
+  }
+  await page.click("#sc-bar [data-exit]"); await page.waitForTimeout(300);
+  expect(!(await D(() => window.lensSite.shows.current)), "Exit returns to free play");
+  await D(() => window.lensSite.desk.reset());
+  await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await page.waitForTimeout(300);
-  expect(!(await D(() => window.lensSite.scenes.playing)), "a click pauses the reel");
-  expect(await page.$eval("#driving", (d) => !d.hidden), "“You're driving” shows after a click");
-  await D(() => { window.lensSite.scenes.stop(); window.lensSite.desk.reset(); });
+  const box = await deskBox(page);
   await page.waitForTimeout(600);
   // Drag, resize, snap.
   const win = () => D(() => { const w = [...window.lensSite.desk.wins.values()].find((x) => !x.min); return w && { id: w.id, x: w.x, y: w.y, w: w.w, h: w.h, tile: w.tile, min: w.min }; });
@@ -296,6 +320,10 @@ async function waitDesk(page, sel = "#desk-host") {
   // Let the drop's settle animation finish (it tilts the window a little), then grab the corner.
   await page.waitForTimeout(700);
   await D((i) => window.lensSite.desk.focus(i), w0.id);
+  // Give the corner room: on a shorter desk the drag above can leave it under the dock's frame.
+  await D((i) => { const d = window.lensSite.desk, w = d.wins.get(i); d.setRect(w, { x: w.x, y: 60, w: 600, h: 300 }, { animate: false }); }, w0.id);
+  await page.waitForTimeout(200);
+  w0 = await win();
   const se = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
   const dragCorner = async () => {
     const c = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
@@ -359,9 +387,19 @@ async function waitDesk(page, sel = "#desk-host") {
   await D(() => { for (const w of window.lensSite.desk.wins.values()) window.lensSite.desk.minimize(w.id); });
   await page.waitForTimeout(600);
   // Rest the pointer on the desktop first (the dock frame lets go of the pointer once it's away from the dock).
-  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.4, { steps: 4 }); await page.waitForTimeout(700);
-  await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.45, { button: "right" });
+  // Pick a point that really is bare wallpaper (no window, toast, icon or dock frame on top), then right-click it.
+  const bare = await D(() => {
+    const h = document.getElementById("desk-host").getBoundingClientRect();
+    for (const fy of [0.45, 0.35, 0.55, 0.25]) for (const fx of [0.6, 0.5, 0.7, 0.4, 0.8]) {
+      const x = h.left + h.width * fx, y = h.top + h.height * fy, e = document.elementFromPoint(x, y);
+      if (e && h.top + 40 < y && !e.closest(".lw, .lx-toasts, .lx-dock, iframe, .lt, .dk-ic, .lx-ic, button, a")) return { x, y };
+    }
+    return { x: h.left + h.width * 0.6, y: h.top + h.height * 0.45 };
+  });
+  await page.mouse.move(bare.x, bare.y - 20, { steps: 4 }); await page.waitForTimeout(700);
+  await page.mouse.click(bare.x, bare.y, { button: "right" });
   await page.waitForTimeout(250);
+  if (!(await page.$eval("#desk-host .lx-menu", (m) => !m.hidden))) { await page.waitForTimeout(500); await page.mouse.click(bare.x, bare.y, { button: "right" }); await page.waitForTimeout(300); }
   expect(await page.$eval("#desk-host .lx-menu", (m) => !m.hidden && /New note/.test(m.textContent)), "desktop right-click menu");
   await page.keyboard.press("Escape");
   // Lens Command: Ctrl+Space, type, Enter.
@@ -370,11 +408,14 @@ async function waitDesk(page, sel = "#desk-host") {
   expect(!(await page.$eval("#desk-host .lx-cmd", (c) => c.hidden)), "Ctrl+Space opens Lens Command");
   await page.keyboard.type("light mode", { delay: 30 }); await page.waitForTimeout(400); await page.keyboard.press("Enter"); await page.waitForTimeout(1800);
   expect((await D(() => window.lensSite.desk.pack?.id)) === "alabaster-daylight", "Command runs “light mode”");
-  // Deep link to a scene.
-  await page.evaluate(() => { location.hash = "#scene/magic-right-click"; });
+  // Deep link to a tour (old #scene/… links map to the nearest tour).
+  await page.evaluate(() => { location.hash = "#tour/magic"; });
   await page.waitForTimeout(1500);
-  expect((await D(() => window.lensSite.scenes.current?.id)) === "magic-right-click", "#scene/… deep link plays the scene");
-  await D(() => window.lensSite.scenes.stop());
+  expect((await D(() => window.lensSite.shows.current?.id)) === "magic", "#tour/… deep link opens the tour");
+  await page.evaluate(() => { location.hash = "#scene/claude"; });
+  await page.waitForTimeout(1500);
+  expect((await D(() => window.lensSite.shows.current?.id)) === "agent", "old #scene/… links open the nearest tour");
+  await D(() => window.lensSite.shows.exit());
   // Fullscreen.
   await page.click("[data-fs]"); await page.waitForTimeout(600);
   const fs = await D(() => { const s = document.querySelector("#desk-host").getBoundingClientRect(); return { w: Math.round(s.width), h: Math.round(s.height), full: document.querySelector("#stage").classList.contains("is-full") }; });
@@ -419,7 +460,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.click("[data-shuffle]"); await page.waitForTimeout(600);
   expect((await D(() => window.lensSite.lab.committed?.p.id)) !== "rose-pine", "Shuffle changes the theme");
   // Icons: every icon on the page comes from the shared set (or the brand folder, or the apps' own repos).
-  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|brand\//.test(s)));
+  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|brand\//.test(s)));
   expect(!odd.length, "icons come from the shared icon set", odd.slice(0, 5).join(", "));
   // Bring your own agent tabs, by keyboard.
   await page.focus("#byo-t1"); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(100);
@@ -453,10 +494,8 @@ async function waitDesk(page, sel = "#desk-host") {
   for (const [w, h] of [[1440, 900], [1920, 1080]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const page = await ctx.newPage();
-    // A deep link plays its scene in tour mode: no "You're driving" without real input.
-    await page.goto(base + "index.html#scene/sky");
-    await page.waitForTimeout(3500);
-    if (await page.$eval("#driving", (d) => !d.hidden)) lp(`${w}px: "You're driving" shows after a #scene link with no input`);
+    await page.goto(base + "index.html");
+    await page.waitForTimeout(2500);
     // No "★ 0" / "0" star counts.
     const zero = await page.evaluate(() => [...document.querySelectorAll(".stars")].map((e) => e.textContent.replace(/[★\s]/g, "")).filter((t) => t === "0" || t === ""));
     if (zero.length) lp(`${w}px: a GitHub star count of 0 (or empty) is shown`);
@@ -464,15 +503,12 @@ async function waitDesk(page, sel = "#desk-host") {
     const dw = await page.$eval("#desk-host", (d) => d.getBoundingClientRect().width);
     if (w >= 1920 && dw < 1500) lp(`${w}px: the hero desk is only ${Math.round(dw)} px wide`);
     if (w >= 1440 && dw < 1300) lp(`${w}px: the hero desk is only ${Math.round(dw)} px wide`);
-    // The driving chip and the scene caption stay clear of the desk's toasts and dock.
-    await page.evaluate(() => { const d = document.getElementById("driving"); d.hidden = false; });
-    await page.waitForTimeout(100);
+    // The tour bar sits below the desk, never on top of the desk's toasts or dock.
     const r = await page.evaluate(() => {
       const R = (e) => { if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, top: b.top, right: b.right, bottom: b.bottom, width: b.width, height: b.height }; };
-      const toasts = [...document.querySelectorAll("#desk-host .lx-toasts > *")].map(R);
-      return { chip: R(document.getElementById("driving")), cap: R(document.getElementById("scene-cap")), dock: R(document.querySelector("#desk-host iframe")), toasts };
+      return { bar: R(document.getElementById("sc-bar")), dock: R(document.querySelector("#desk-host iframe")), toasts: [...document.querySelectorAll("#desk-host .lx-toasts > *")].map(R) };
     });
-    if (r.toasts.some((t) => hit(r.chip, t))) lp(`${w}px: the "You're driving" chip overlaps a desk notification`);
+    if (r.toasts.some((t) => hit(r.bar, t)) || hit(r.bar, r.dock)) lp(`${w}px: the tour bar overlaps the desk`);
     // The rainbow word uses the full spectrum (not the accent colour).
     const rb = await page.$eval(".hero .lens-rainbow", (e) => getComputedStyle(e).backgroundImage);
     if (!/255, 95, 143|ff5f8f/i.test(rb) || !/95, 227, 166|5fe3a6/i.test(rb)) lp(`${w}px: "everything" doesn't use the nebula spectrum`);

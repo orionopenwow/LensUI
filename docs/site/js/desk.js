@@ -92,7 +92,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
     else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
-    else { W = cw; H = Math.round(cw * 10 / 16); if (fitViewport) H = Math.max(560, Math.min(H, innerHeight - 150)); k = 1; }
+    else { W = cw; H = Math.round(cw * 10 / 16); /* tabs above + step bar below stay on screen */ if (fitViewport) H = Math.max(520, Math.min(H, innerHeight - 300)); k = 1; }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
     cv.style.transform = k === 1 ? "" : `scale(${k})`;
     host.style.height = full ? "" : `${Math.round(H * k)}px`;
@@ -128,6 +128,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = { id: ++hw, app: id, el, w: Math.min(a.w, W - 40), h: Math.min(a.h, wk.h - 20), x: 0, y: 0, min: false, max: false, prev: null, tile: null };
     w.x = at ? at[0] * W : Math.round(W * 0.18 + (cnt % 5) * 36);
     w.y = at ? TOP + at[1] * wk.h : Math.round(TOP + 30 + (cnt % 5) * 30);
+    // Keep a new window's bottom edge (and its resize corner) clear of the dock on shorter desks.
+    w.h = Math.max(240, Math.min(w.h, H - DOCK_H - w.y - 8));
     clampWin(w);
     wins.set(w.id, w);
     paint(w);
