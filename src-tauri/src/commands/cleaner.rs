@@ -4,7 +4,7 @@
 //! presence and written to %APPDATA%\LensUI\cleaner\log.
 
 use crate::cleaner::{self, bin, detectors, dupes, history, plan, review, settings::CleanerSettings, steam, tree, walk};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -391,6 +391,8 @@ pub(crate) struct SpaceSummary {
     files: u64,
     elapsed_ms: u64,
     cloud_only: u64,
+    /// Junctions / symlinks seen (never followed, counted as 0 bytes).
+    links: u64,
     cancelled: bool,
 }
 
@@ -412,7 +414,7 @@ pub(crate) async fn cleaner_space_scan(app: AppHandle, root: String) -> Result<S
     }))
     .await
     .map_err(|e| e.to_string())?;
-    let sum = SpaceSummary { root: root.clone(), size: t.nodes.first().map(|n| n.size).unwrap_or(0), files: t.nodes.first().map(|n| n.files).unwrap_or(0), elapsed_ms: t.elapsed_ms, cloud_only: t.cloud_only, cancelled: t.cancelled };
+    let sum = SpaceSummary { root: root.clone(), size: t.nodes.first().map(|n| n.size).unwrap_or(0), files: t.nodes.first().map(|n| n.files).unwrap_or(0), elapsed_ms: t.elapsed_ms, cloud_only: t.cloud_only, links: t.links, cancelled: t.cancelled };
     record_folders(&t);
     crate::tester::log("info", "cleaner", &format!("space map {}: {} files in {} ms", root, sum.files, sum.elapsed_ms));
     lock().trees.insert(cleaner::guard::norm(Path::new(&root)), Arc::new(t));

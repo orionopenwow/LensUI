@@ -50,6 +50,8 @@ mod ffi {
         pub h_process: *mut c_void,
     }
 
+    // Other Lens modules declare some of these with their own handle types.
+    #[allow(clashing_extern_declarations)]
     #[link(name = "shell32")]
     extern "system" {
         pub fn SHFileOperationW(op: *mut ShFileOpStructW) -> i32;
@@ -58,6 +60,7 @@ mod ffi {
         pub fn ShellExecuteExW(info: *mut ShellExecuteInfoW) -> i32;
     }
 
+    #[allow(clashing_extern_declarations)]
     #[link(name = "kernel32")]
     extern "system" {
         pub fn GetLogicalDrives() -> u32;

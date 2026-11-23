@@ -138,6 +138,7 @@ export interface SpaceSummary {
   files: number;
   elapsedMs: number;
   cloudOnly: number;
+  links?: number;
   cancelled: boolean;
 }
 

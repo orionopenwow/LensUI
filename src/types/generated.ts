@@ -2930,6 +2930,8 @@ export interface SpaceSummary {
   files: number;
   elapsedMs: number;
   cloudOnly: number;
+  /** Junctions / symlinks seen (never followed, counted as 0 bytes). */
+  links: number;
   cancelled: boolean;
 }
 
