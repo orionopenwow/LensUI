@@ -3,7 +3,7 @@
 // when it appears and out before it is removed. PresenceList does the same for keyed lists and
 // moves the survivors into place (FLIP) when one leaves.
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { glideIn, glideOut, type GlideOptions, type Pose } from "./glide";
+import { clearPose, glideIn, glideOut, type GlideHandle, type GlideOptions, type Pose } from "./glide";
 import { captureFlip } from "./flip";
 
 export interface PresenceOptions {
@@ -13,6 +13,8 @@ export interface PresenceOptions {
   exitOptions?: GlideOptions;
   /** Skip the entry animation on the first render (already-open content on page load). */
   initial?: boolean;
+  /** False when CSS already animates the entry (an existing keyframe): only the exit is added. */
+  animateEnter?: boolean;
 }
 
 export function usePresence<T extends HTMLElement = HTMLDivElement>(show: boolean, opts: PresenceOptions = {}) {
@@ -20,6 +22,7 @@ export function usePresence<T extends HTMLElement = HTMLDivElement>(show: boolea
   const [mounted, setMounted] = useState(show);
   const first = useRef(true);
   const run = useRef(0);
+  const leaving = useRef<GlideHandle | null>(null);
 
   if (show && !mounted) setMounted(true);
 
@@ -28,17 +31,39 @@ export function usePresence<T extends HTMLElement = HTMLDivElement>(show: boolea
     const skip = first.current && opts.initial === false;
     first.current = false;
     if (show) {
-      if (!skip) glideIn(ref.current, opts.enter, opts.enterOptions);
+      // Shown again while it was still gliding out: drop the exit and glide back in from there.
+      const interrupted = !!leaving.current;
+      if (interrupted) {
+        leaving.current?.cancel();
+        leaving.current = null;
+        clearPose(ref.current);
+      }
+      if (interrupted || (!skip && opts.animateEnter !== false)) glideIn(ref.current, opts.enter, opts.enterOptions);
       return;
     }
     if (!mounted) return;
-    glideOut(ref.current, opts.exit, opts.exitOptions).finished.then(() => {
-      if (run.current === id) setMounted(false);
+    const exit = glideOut(ref.current, opts.exit, opts.exitOptions);
+    leaving.current = exit;
+    exit.finished.then(() => {
+      if (run.current !== id) return;
+      leaving.current = null;
+      setMounted(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [show, mounted]);
 
   return { mounted, ref };
+}
+
+/**
+ * For `{value && <Popover value={value} />}` patterns: keeps the last value on screen while the
+ * popover glides out. Render while `mounted`, read from `value`, and mark it inert when `leaving`.
+ */
+export function useLingering<T, E extends HTMLElement = HTMLDivElement>(value: T | null | undefined | false, opts: PresenceOptions = {}) {
+  const last = useRef<T | null>(null);
+  if (value) last.current = value;
+  const { mounted, ref } = usePresence<E>(!!value, opts);
+  return { value: (value || last.current) as T | null, mounted, ref, leaving: !value && mounted };
 }
 
 export interface PresenceListProps<T> {

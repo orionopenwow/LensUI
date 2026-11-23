@@ -24,6 +24,11 @@ export interface GlideOptions {
   /** Keep the end pose applied after finishing (default: the element returns to its CSS). */
   hold?: boolean;
   origin?: string;
+  /**
+   * Keep the element's own CSS `transform` (an anchoring `translate(-50%, -100%)`, say) and move it
+   * with the separate `translate` / `scale` properties instead. Same compositor path.
+   */
+  additive?: boolean;
 }
 
 export function poseTransform(p: Pose): string {
@@ -35,8 +40,14 @@ export function poseTransform(p: Pose): string {
   return parts.length ? parts.join(" ") : "none";
 }
 
-export function poseKeyframe(p: Pose, origin?: string): Keyframe {
-  const k: Keyframe = { transform: poseTransform(p) };
+export function poseKeyframe(p: Pose, origin?: string, additive = false): Keyframe {
+  const k: Keyframe = {};
+  if (additive) {
+    k.translate = `${p.x ?? 0}px ${p.y ?? 0}px`;
+    k.scale = `${p.scaleX ?? p.scale ?? 1} ${p.scaleY ?? p.scale ?? 1}`;
+  } else {
+    k.transform = poseTransform(p);
+  }
   if (p.opacity !== undefined) k.opacity = p.opacity;
   if (p.clip) k.clipPath = `inset(${p.clip[0]}px ${p.clip[1]}px ${p.clip[2]}px ${p.clip[3]}px${p.clip[4] ? ` round ${p.clip[4]}px` : ""})`;
   if (origin) k.transformOrigin = origin;
@@ -55,7 +66,7 @@ export function glide(el: Element | null | undefined, from: Pose, to: Pose, opts
   if (!el || typeof (el as HTMLElement).animate !== "function") return DONE;
   const html = el as HTMLElement;
   if (reducedMotion()) {
-    if (opts.hold) applyPose(html, to);
+    if (opts.hold) applyPose(html, to, opts.additive);
     return DONE;
   }
   let timing: KeyframeAnimationOptions;
@@ -67,10 +78,10 @@ export function glide(el: Element | null | undefined, from: Pose, to: Pose, opts
   }
   let anim: Animation;
   try {
-    anim = html.animate([poseKeyframe(from, opts.origin), poseKeyframe(to, opts.origin)], { ...timing, delay: opts.delay ?? 0, fill: opts.hold ? "both" : "backwards" });
+    anim = html.animate([poseKeyframe(from, opts.origin, opts.additive), poseKeyframe(to, opts.origin, opts.additive)], { ...timing, delay: opts.delay ?? 0, fill: opts.hold ? "both" : "backwards" });
   } catch {
     // An easing this engine build doesn't know (old WebView2 without linear()): fall back to ease-out.
-    anim = html.animate([poseKeyframe(from, opts.origin), poseKeyframe(to, opts.origin)], { duration: duration("base"), easing: "cubic-bezier(0.22, 1, 0.36, 1)", delay: opts.delay ?? 0, fill: opts.hold ? "both" : "backwards" });
+    anim = html.animate([poseKeyframe(from, opts.origin, opts.additive), poseKeyframe(to, opts.origin, opts.additive)], { duration: duration("base"), easing: "cubic-bezier(0.22, 1, 0.36, 1)", delay: opts.delay ?? 0, fill: opts.hold ? "both" : "backwards" });
   }
   const finished = anim.finished.then(
     () => {
@@ -88,11 +99,23 @@ export function glide(el: Element | null | undefined, from: Pose, to: Pose, opts
   return { finished, cancel: () => anim.cancel() };
 }
 
-function applyPose(el: HTMLElement, p: Pose) {
-  const k = poseKeyframe(p);
-  el.style.transform = String(k.transform ?? "");
+function applyPose(el: HTMLElement, p: Pose, additive = false) {
+  const k = poseKeyframe(p, undefined, additive);
+  if (additive) {
+    el.style.setProperty("translate", String(k.translate));
+    el.style.setProperty("scale", String(k.scale));
+  } else {
+    el.style.transform = String(k.transform ?? "");
+  }
   if (k.opacity !== undefined) el.style.opacity = String(k.opacity);
   if (k.clipPath) el.style.clipPath = String(k.clipPath);
+}
+
+/** Remove a pose the engine left on an element (a held exit), so it returns to its CSS. */
+export function clearPose(el: Element | null | undefined) {
+  const style = (el as HTMLElement | null | undefined)?.style;
+  if (!style) return;
+  for (const prop of ["transform", "translate", "scale", "opacity", "clip-path"]) style.removeProperty(prop);
 }
 
 /** Enter: from slightly offset and transparent to rest. `from` defaults to the standard entry pose. */

@@ -54,6 +54,14 @@ describe("poses and FLIP", () => {
     expect(Object.keys(k).sort()).toEqual(["clipPath", "opacity", "transform", "transformOrigin"]);
     expect(k.clipPath).toBe("inset(0px 120px 0px 0px round 8px)");
   });
+
+  test("additive poses leave the element's own transform alone", () => {
+    const k = poseKeyframe({ y: 4, scale: 0.98, opacity: 0 }, undefined, true);
+    expect(k.transform).toBeUndefined();
+    expect(k.translate).toBe("0px 4px");
+    expect(k.scale).toBe("0.98 0.98");
+    expect(k.opacity).toBe(0);
+  });
   test("flip delta maps the new box back onto the old one", () => {
     const d = flipDelta({ left: 100, top: 50, width: 40, height: 40 }, { left: 300, top: 50, width: 20, height: 20 });
     expect(d).toMatchObject({ x: -200, y: 0, scaleX: 2, scaleY: 2, still: false });

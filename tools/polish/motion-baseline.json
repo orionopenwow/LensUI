@@ -91,11 +91,7 @@
   },
   "src/surfaces/DockSurface.css": {
     "backdrop-filter": 1,
-    "layout-keyframes": 1,
-    "layout-transition": 8
-  },
-  "src/surfaces/DockSurface.tsx": {
-    "timer-animation": 1
+    "layout-transition": 2
   },
   "src/surfaces/FocusDimSurface.tsx": {
     "inline-animation": 2,
