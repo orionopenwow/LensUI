@@ -1,0 +1,586 @@
+{
+  "version": 1,
+  "contexts": [
+    "selection",
+    "page",
+    "link",
+    "image",
+    "video",
+    "youtube",
+    "file",
+    "folder",
+    "window",
+    "app",
+    "clipboard",
+    "shelf",
+    "notification",
+    "desktop"
+  ],
+  "fileTypes": {
+    "media": [
+      ".mp3",
+      ".wav",
+      ".m4a",
+      ".flac",
+      ".ogg",
+      ".opus",
+      ".aac",
+      ".wma",
+      ".mp4",
+      ".mkv",
+      ".mov",
+      ".webm",
+      ".avi",
+      ".wmv",
+      ".m4v"
+    ],
+    "video": [
+      ".mp4",
+      ".mkv",
+      ".mov",
+      ".webm",
+      ".avi",
+      ".wmv",
+      ".m4v"
+    ],
+    "text": [
+      ".txt",
+      ".md",
+      ".csv",
+      ".json",
+      ".log",
+      ".xml",
+      ".yaml",
+      ".yml",
+      ".ini",
+      ".rs",
+      ".ts",
+      ".tsx",
+      ".js",
+      ".py",
+      ".html",
+      ".css"
+    ],
+    "document": [
+      ".pdf",
+      ".docx",
+      ".doc",
+      ".rtf",
+      ".odt",
+      ".pptx",
+      ".xlsx"
+    ],
+    "image": [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+      ".bmp",
+      ".svg",
+      ".heic"
+    ]
+  },
+  "actions": [
+    {
+      "id": "ask",
+      "label": "Ask about this",
+      "icon": "message-circle",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "image",
+        "youtube",
+        "file",
+        "folder",
+        "window",
+        "app",
+        "clipboard",
+        "shelf",
+        "notification"
+      ],
+      "provider": "local",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer",
+        "shelf",
+        "dock",
+        "mini",
+        "clipboard",
+        "notification"
+      ]
+    },
+    {
+      "id": "summarize",
+      "label": "Summarise",
+      "icon": "list",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "youtube",
+        "file:text",
+        "file:document",
+        "clipboard",
+        "shelf",
+        "notification"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "variants": [
+        "tldr",
+        "key_points",
+        "detailed"
+      ],
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer",
+        "shelf",
+        "mini",
+        "clipboard",
+        "notification"
+      ]
+    },
+    {
+      "id": "explain",
+      "label": "Explain simply",
+      "icon": "lightbulb",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "link",
+        "clipboard",
+        "shelf",
+        "notification"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "mini",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "define",
+      "label": "Define",
+      "icon": "book-open",
+      "group": "ai",
+      "contexts": [
+        "selection"
+      ],
+      "provider": "local",
+      "risk": "low",
+      "variants": [
+        "define",
+        "translate"
+      ],
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "mini"
+      ]
+    },
+    {
+      "id": "translate",
+      "label": "Translate",
+      "icon": "languages",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "page",
+        "clipboard",
+        "shelf"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "mini",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "rewrite",
+      "label": "Rewrite",
+      "icon": "pen-line",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "clipboard"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "variants": [
+        "shorter",
+        "friendlier",
+        "formal"
+      ],
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "mini",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "fix_grammar",
+      "label": "Fix grammar",
+      "icon": "spell-check",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "clipboard"
+      ],
+      "provider": "local",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "mini",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "extract",
+      "label": "Extract",
+      "icon": "table",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "page",
+        "clipboard",
+        "shelf"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "variants": [
+        "tables",
+        "links",
+        "dates",
+        "todos"
+      ],
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "compare",
+      "label": "Compare with Shelf item\u2026",
+      "icon": "columns",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "page",
+        "shelf"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf"
+      ]
+    },
+    {
+      "id": "micro_save",
+      "label": "Micro-save",
+      "icon": "bookmark-plus",
+      "group": "save",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "image",
+        "youtube",
+        "file",
+        "folder",
+        "clipboard",
+        "notification"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer",
+        "dock",
+        "mini",
+        "clipboard",
+        "notification"
+      ]
+    },
+    {
+      "id": "shelf_add",
+      "label": "Add to Shelf",
+      "icon": "inbox",
+      "group": "save",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "image",
+        "video",
+        "youtube",
+        "file",
+        "folder",
+        "clipboard",
+        "notification"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer",
+        "clipboard",
+        "notification"
+      ]
+    },
+    {
+      "id": "archive_save",
+      "label": "Save page offline",
+      "icon": "archive",
+      "group": "save",
+      "contexts": [
+        "page",
+        "youtube"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser"
+      ]
+    },
+    {
+      "id": "clip",
+      "label": "Clip to notes",
+      "icon": "notebook-pen",
+      "group": "save",
+      "contexts": [
+        "selection",
+        "page",
+        "youtube",
+        "shelf"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "mini"
+      ]
+    },
+    {
+      "id": "pack_add",
+      "label": "Add to pack\u2026",
+      "icon": "package-plus",
+      "group": "save",
+      "contexts": [
+        "shelf",
+        "file",
+        "folder",
+        "selection",
+        "page"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "explorer",
+        "shelf",
+        "lensBrowser",
+        "mini"
+      ]
+    },
+    {
+      "id": "yt_transcript",
+      "label": "Get transcript",
+      "icon": "captions",
+      "group": "media",
+      "contexts": [
+        "youtube"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser"
+      ]
+    },
+    {
+      "id": "transcribe",
+      "label": "Get transcript",
+      "icon": "audio-lines",
+      "group": "media",
+      "contexts": [
+        "video",
+        "file:media",
+        "link"
+      ],
+      "provider": "local",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer"
+      ]
+    },
+    {
+      "id": "context_add",
+      "label": "Load into context",
+      "icon": "layers",
+      "group": "save",
+      "contexts": [
+        "selection",
+        "page",
+        "file",
+        "folder",
+        "clipboard",
+        "shelf",
+        "window"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "explorer",
+        "shelf",
+        "clipboard",
+        "mini"
+      ]
+    },
+    {
+      "id": "copy_md",
+      "label": "Copy as Markdown",
+      "icon": "clipboard-copy",
+      "group": "copy",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "youtube",
+        "shelf"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf"
+      ]
+    },
+    {
+      "id": "copy_link",
+      "label": "Copy clean link",
+      "icon": "link",
+      "group": "copy",
+      "contexts": [
+        "link",
+        "page",
+        "youtube"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "clipboard"
+      ]
+    },
+    {
+      "id": "ask_files",
+      "label": "Ask about these files",
+      "icon": "files",
+      "group": "ai",
+      "contexts": [
+        "file",
+        "folder"
+      ],
+      "provider": "local",
+      "risk": "low",
+      "surfaces": [
+        "explorer"
+      ]
+    },
+    {
+      "id": "send_claude",
+      "label": "Send to Claude",
+      "icon": "send",
+      "group": "ai",
+      "contexts": [
+        "shelf",
+        "selection",
+        "page"
+      ],
+      "provider": "claude",
+      "risk": "confirm",
+      "surfaces": [
+        "shelf",
+        "mini",
+        "lensBrowser"
+      ]
+    },
+    {
+      "id": "command_open",
+      "label": "Open in Lens Command",
+      "icon": "command",
+      "group": "lens",
+      "contexts": [
+        "selection",
+        "page",
+        "link",
+        "image",
+        "video",
+        "youtube",
+        "file",
+        "folder",
+        "window",
+        "app",
+        "clipboard",
+        "shelf",
+        "notification"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "browser",
+        "lensBrowser",
+        "shelf",
+        "dock",
+        "clipboard",
+        "notification"
+      ]
+    },
+    {
+      "id": "command_here",
+      "label": "Lens Command here",
+      "icon": "command",
+      "group": "lens",
+      "contexts": [
+        "desktop"
+      ],
+      "provider": "none",
+      "risk": "low",
+      "surfaces": [
+        "explorer"
+      ]
+    }
+  ]
+}

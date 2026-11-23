@@ -44,7 +44,7 @@
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "Add the selection (or page) to the Lens Shelf"
+      "description": "Micro-save the selection (or page link) to the Lens Shelf"
     }
   },
   "content_security_policy": {

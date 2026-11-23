@@ -9,6 +9,7 @@
 //! user to confirm in Lens unless the AI port says a local engine may run them directly.
 
 use super::ports::{ai, shelf, shelf_item_for, BridgeContext};
+use super::protocol::ShelfItem;
 use super::prompt::build_prompt;
 use super::protocol::{reply_err, reply_ok, validate, ActionKind, BridgeRequest, Origin, RawRequest};
 use crate::win_mcp::{random_token, token_eq};
@@ -29,6 +30,9 @@ const MAX_LINE: usize = 640 * 1024;
 const MAX_INBOX: usize = 50;
 const MAX_PER_MINUTE: usize = 30;
 const MAX_ANSWER_BYTES: usize = 2 * 1024 * 1024;
+/// Explorer starts one process per selected file; requests this close together become one.
+pub const COALESCE_MS: u64 = 1_500;
+pub const MAX_COALESCED_FILES: usize = 100;
 
 pub type Emit = Arc<dyn Fn(&str, Value) + Send + Sync>;
 
@@ -104,6 +108,9 @@ pub fn request_event(e: &InboxEntry) -> Value {
         "image_url": r.image_url,
         "media_url": r.media_url,
         "path": r.path,
+        "paths": r.paths,
+        "meta": r.meta,
+        "local_only": r.local_only,
         "shelf_ref": r.shelf_ref,
         "origin": r.origin,
         "browser": r.browser,
@@ -139,6 +146,25 @@ fn status_reply(e: &InboxEntry) -> Value {
         &e.state,
         json!({ "text": e.text, "engine": e.engine, "error": e.error, "action": e.request.action, "needsConfirmation": e.needs_confirmation }),
     )
+}
+
+/// Adds `req.path` to a pending `ask_files` request from the same origin made in the last
+/// `COALESCE_MS`. Returns that request's id, or None when this file starts a new request.
+pub fn coalesce_files(entries: &mut VecDeque<InboxEntry>, req: &BridgeRequest, now: u64) -> Option<String> {
+    let path = req.path.clone()?;
+    let e = entries.iter_mut().rev().find(|e| {
+        e.request.action == "ask_files"
+            && e.request.origin == req.origin
+            && e.state == "pending"
+            && now.saturating_sub(e.created_ms) <= COALESCE_MS
+    })?;
+    let already = e.request.path.as_deref() == Some(path.as_str()) || e.request.paths.contains(&path);
+    if !already && 1 + e.request.paths.len() < MAX_COALESCED_FILES {
+        e.request.paths.push(path);
+    }
+    // Keep the window open while files keep arriving.
+    e.created_ms = now;
+    Some(e.id.clone())
 }
 
 /// Handles one validated request. Pure apart from the inbox, the ports and the emitter.
@@ -187,6 +213,52 @@ pub fn handle(req: BridgeRequest) -> Value {
         ib.recent.push_back(now);
     }
 
+    // Micro-saves are instant and tiny: saved straight away, no inbox entry, no window.
+    if req.action == "micro_save" {
+        return match shelf().micro_save(&shelf_item_for(&req), req.shelf.as_deref()) {
+            Ok(o) => reply_ok(Some(&o.id.clone()), "saved", json!({ "micro": o })),
+            Err(e) => reply_err(&e),
+        };
+    }
+
+    // "Save page offline": write the hardened snapshot, then a Shelf item that points at it.
+    if req.action == "archive_save" {
+        let html = req.archive_html.clone().unwrap_or_default();
+        let title = req.title.clone().unwrap_or_default();
+        let path = match crate::shelf::archive::write_archive(html.as_bytes(), &title, "html", now_ms()) {
+            Ok(p) => p.to_string_lossy().to_string(),
+            Err(e) => return reply_err(&format!("Couldn't save the offline copy: {e}")),
+        };
+        let item = ShelfItem {
+            kind: "page".into(),
+            title: req.title.clone(),
+            text: req.page_text.clone(),
+            html: None,
+            url: req.url.clone(),
+            path: Some(path.clone()),
+            source_app: Some("Offline copy".into()),
+            tags: Some(vec!["archive".into()]),
+        };
+        return match shelf().shelf_add(&item, req.shelf.as_deref()) {
+            Ok(id) => reply_ok(Some(&id), "saved", json!({ "archive": { "path": path, "bytes": html.len() } })),
+            Err(e) => reply_err(&e),
+        };
+    }
+
+    // "Ask about these files": fold this file into the request its siblings just opened.
+    if req.action == "ask_files" {
+        let merged = match inbox().lock() {
+            Ok(mut ib) => coalesce_files(&mut ib.entries, &req, now_ms()),
+            Err(_) => None,
+        };
+        if let Some(id) = merged {
+            if let Some(e) = get(&id) {
+                emit(EVT_UPDATE, request_event(&e));
+                return status_reply(&e);
+            }
+        }
+    }
+
     let ctx = BridgeContext::from_request(&req, None);
     let mut entry = InboxEntry {
         id: new_id(),
@@ -201,8 +273,15 @@ pub fn handle(req: BridgeRequest) -> Value {
     };
 
     match entry.request.kind {
+        ActionKind::Ai if entry.request.local_only && !ai().has_local_engine() => {
+            // Never falls back to the cloud: say so instead.
+            entry.needs_confirmation = false;
+            entry.state = "failed".into();
+            entry.error = Some("This needs a local model (Ollama or LM Studio) in Lens › AI. Lens won't send it to the cloud.".into());
+        }
         ActionKind::Ai => {
-            let needs = entry.request.use_clipboard || ai().requires_confirmation(&ctx, entry.request.prefer_local);
+            let needs = !entry.request.local_only
+                && (entry.request.use_clipboard || ai().requires_confirmation(&ctx, entry.request.prefer_local));
             entry.needs_confirmation = needs;
         }
         ActionKind::Transcribe => entry.needs_confirmation = true,
@@ -227,7 +306,7 @@ pub fn handle(req: BridgeRequest) -> Value {
     }
 
     let id = entry.id.clone();
-    let auto_run = entry.request.kind == ActionKind::Ai && !entry.needs_confirmation;
+    let auto_run = entry.request.kind == ActionKind::Ai && !entry.needs_confirmation && entry.state == "pending";
     {
         let mut ib = match inbox().lock() {
             Ok(i) => i,
@@ -680,6 +759,102 @@ mod tests {
         assert!(t["theme"]["scheme"].is_string());
         assert!(list_inbox().is_empty(), "reads never create inbox entries");
         super::super::ports::set_shelf(Arc::new(super::super::ports::InboxShelf));
+    }
+
+    #[test]
+    fn micro_save_is_saved_directly() {
+        let _g = guard();
+        clear_for_tests();
+        struct MicroShelf;
+        impl super::super::ports::ShelfPort for MicroShelf {
+            fn shelf_add(&self, _: &super::super::protocol::ShelfItem, _: Option<&str>) -> Result<String, String> {
+                Ok("s9".into())
+            }
+            fn shelf_list(&self, _: Option<&str>, _: usize) -> Result<Vec<super::super::ports::ShelfSummary>, String> {
+                Ok(Vec::new())
+            }
+        }
+        super::super::ports::set_shelf(Arc::new(MicroShelf));
+        let r = handle_envelope_line(&env("browser", json!({"action":"micro_save","selection":"x","url":"https://x.com"})));
+        assert_eq!(r["state"], "saved");
+        assert_eq!(r["id"], "s9");
+        assert_eq!(r["micro"]["id"], "s9");
+        assert!(list_inbox().is_empty(), "micro-saves never queue");
+        assert_eq!(handle_envelope_line(&env("browser", json!({"action":"micro_save"})))["ok"], false);
+        super::super::ports::set_shelf(Arc::new(super::super::ports::InboxShelf));
+    }
+
+    #[test]
+    fn ask_files_from_explorer_are_merged() {
+        let _g = guard();
+        clear_for_tests();
+        let a = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\a.txt"})));
+        let b = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\b.txt"})));
+        let c = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\b.txt"})));
+        assert_eq!(a["id"], b["id"]);
+        assert_eq!(b["id"], c["id"]);
+        let e = get(a["id"].as_str().unwrap()).unwrap();
+        assert_eq!(e.request.paths, vec!["C:\\d\\b.txt".to_string()]);
+        assert_eq!(BridgeContext::from_request(&e.request, None).files.len(), 2);
+        // A browser can't name files at all.
+        assert_eq!(handle_envelope_line(&env("browser", json!({"action":"ask_files","path":"C:\\x"})))["ok"], false);
+        // After the window, a new request starts.
+        let mut q: VecDeque<InboxEntry> = VecDeque::new();
+        q.push_back(e.clone());
+        let mut later = e.request.clone();
+        later.path = Some("C:\\d\\z.txt".into());
+        assert!(coalesce_files(&mut q, &later, e.created_ms + COALESCE_MS + 1).is_none());
+        assert_eq!(coalesce_files(&mut q, &later, e.created_ms + 10).as_deref(), Some(e.id.as_str()));
+    }
+
+    #[test]
+    fn local_only_requests_never_reach_the_cloud() {
+        let _g = guard();
+        clear_for_tests();
+        // The stub has no local engine: refused straight away, nothing queued for a click.
+        let r = handle_envelope_line(&env("browser", json!({"action":"define","variant":"define","selection":"serendipity","pageText":"a happy serendipity","localOnly":true})));
+        assert_eq!(r["state"], "failed");
+        assert!(r["error"].as_str().unwrap().contains("local model"));
+        struct LocalAi;
+        impl super::super::ports::AiPort for LocalAi {
+            fn ask(&self, _: &str, _: &str, _: &BridgeContext, prefer_local: bool) -> Result<String, String> {
+                assert!(prefer_local, "local-only always prefers local");
+                Ok("local".into())
+            }
+            fn requires_confirmation(&self, _: &BridgeContext, _: bool) -> bool {
+                true // would ask before a cloud send — local-only skips that path entirely
+            }
+            fn has_local_engine(&self) -> bool {
+                true
+            }
+        }
+        super::super::ports::set_ai(Arc::new(LocalAi));
+        let ok = handle_envelope_line(&env("browser", json!({"action":"define","variant":"translate","targetLang":"Spanish","selection":"hello","localOnly":true})));
+        assert_eq!(ok["state"], "running");
+        assert_eq!(ok["engine"], "local");
+        super::super::ports::set_ai(Arc::new(super::super::ports::StubAi));
+    }
+
+    #[test]
+    fn archives_and_clips_are_validated() {
+        let _g = guard();
+        clear_for_tests();
+        // Only the browser's "Save page offline" may carry a snapshot.
+        let bad = handle_envelope_line(&env("explorer", json!({"action":"archive_save","archiveHtml":"<html></html>","url":"https://x.com"})));
+        assert_eq!(bad["ok"], false);
+        let bad2 = handle_envelope_line(&env("browser", json!({"action":"summarize","archiveHtml":"<html></html>","selection":"x"})));
+        assert_eq!(bad2["ok"], false);
+        let huge = "x".repeat(super::super::protocol::MAX_ARCHIVE_BYTES + 1);
+        let bad3 = handle_envelope_line(&env("browser", json!({"action":"archive_save","archiveHtml":huge,"url":"https://x.com"})));
+        assert_eq!(bad3["ok"], false);
+        // A clip is delivered to Lens (the UI renders the template and asks before writing).
+        let c = handle_envelope_line(&env("browser", json!({"action":"clip","selection":"quote","url":"https://x.com/a","title":"A","meta":{"author":"Ann","keywords":["k1",""]}})));
+        assert_eq!(c["state"], "delivered");
+        let e = get(c["id"].as_str().unwrap()).unwrap();
+        assert_eq!(e.request.meta.as_ref().unwrap().author.as_deref(), Some("Ann"));
+        assert_eq!(e.request.meta.as_ref().unwrap().keywords.as_ref().unwrap(), &vec!["k1".to_string()]);
+        let bad4 = handle_envelope_line(&env("browser", json!({"action":"clip","selection":"q","meta":{"evil":1}})));
+        assert_eq!(bad4["ok"], false, "unknown meta fields are rejected");
     }
 
     #[test]

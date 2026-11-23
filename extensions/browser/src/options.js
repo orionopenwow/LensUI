@@ -44,6 +44,13 @@ function render() {
     await save({ ...settings, sites: settings.sites.filter((x) => x !== h) }, `Removed ${h}.`);
   });
   listItems($("never"), settings.never, (h) => save({ ...settings, never: settings.never.filter((x) => x !== h) }, `Removed ${h}.`));
+  $("copyGuard").checked = settings.copyGuard === "all";
+  $("define").checked = settings.define === "all";
+  $("defineMode").value = settings.defineMode;
+  if (!$("translateTo").options.length) {
+    for (const l of L.TRANSLATE_LANGS) $("translateTo").append(new Option(l, l));
+  }
+  $("translateTo").value = settings.translateTo;
   $("builtin").textContent = L.BUILTIN_DENY.join(", ") + ", and any sign-in, checkout or payment page.";
   $("permHint").textContent =
     settings.selectionButton === "all"
@@ -87,6 +94,22 @@ $("addNever").addEventListener("submit", async (e) => {
   $("neverInput").value = "";
   await save({ ...settings, never: [...settings.never, h], sites: settings.sites.filter((x) => x !== h) }, `Lens won't show up on ${h}.`);
 });
+
+/** Turning a helper on asks the browser for access to sites (it runs before pages load). */
+async function toggleFeature(feature, on, label) {
+  if (on) {
+    const ok = await api.permissions.request({ origins: ["https://*/*", "http://*/*"] }).catch(() => false);
+    if (!ok) {
+      $("saved").textContent = "The browser didn't grant access, so this stays off.";
+      return render();
+    }
+  }
+  await save({ ...settings, [feature]: on ? "all" : "off" }, on ? `${label} is on.` : `${label} is off.`);
+}
+$("copyGuard").addEventListener("change", (e) => toggleFeature("copyGuard", e.target.checked, "Copy guard"));
+$("define").addEventListener("change", (e) => toggleFeature("define", e.target.checked, "Double-click define"));
+$("defineMode").addEventListener("change", (e) => save({ ...settings, defineMode: e.target.value }));
+$("translateTo").addEventListener("change", (e) => save({ ...settings, translateTo: e.target.value }));
 
 $("defaultAction").addEventListener("change", (e) => save({ ...settings, defaultAction: e.target.value }));
 

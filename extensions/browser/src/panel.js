@@ -1,4 +1,5 @@
 // Side panel: streams answers from Lens. Everything is rendered with textContent (no HTML).
+import { renderTranscript } from "./ui/transcript.js";
 const api = globalThis.browser ?? globalThis.chrome;
 const store = api.storage.session ?? api.storage.local;
 const $ = (id) => document.getElementById(id);
@@ -106,11 +107,13 @@ function renderAnswer(rec) {
 }
 
 async function render() {
+  const { transcript } = await store.get("transcript");
+  renderTranscript($("transcript"), transcript, (msg) => api.runtime.sendMessage(msg));
   const { answers = [] } = await store.get("answers");
   const box = $("answers");
   box.replaceChildren(...answers.map(renderAnswer));
   const { draft } = await store.get("draft");
-  $("empty").hidden = answers.length > 0 || !!draft;
+  $("empty").hidden = answers.length > 0 || !!draft || !!transcript;
   $("answersHead").hidden = answers.length === 0;
   renderDraft(draft);
 }
@@ -158,6 +161,6 @@ $("question").addEventListener("keydown", (e) => {
 
 api.runtime.onMessage.addListener((m) => {
   for (const fn of listeners) fn(m);
-  if (m?.type === "lens-answer" || m?.type === "lens-draft") render();
+  if (m?.type === "lens-answer" || m?.type === "lens-draft" || m?.type === "lens-transcript") render();
 });
 render();

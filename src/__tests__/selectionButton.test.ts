@@ -124,7 +124,10 @@ describe("where the button may appear", () => {
 describe("settings", () => {
   test("sanitizing normalises hosts and drops junk", () => {
     const s = L.sanitizeSettings({ selectionButton: "everywhere", sites: ["https://WWW.Example.com/a", "example.com", "not a host", 5], never: ["bank.test"], defaultAction: "rm", extra: 1 });
-    expect(s).toEqual({ selectionButton: "off", sites: ["example.com"], never: ["bank.test"], defaultAction: "summarize" });
+    expect(s).toEqual({
+      selectionButton: "off", sites: ["example.com"], never: ["bank.test"], defaultAction: "summarize",
+      copyGuard: "off", define: "off", defineMode: "define", translateTo: "English",
+    });
   });
 
   test("match patterns and permissions follow the mode", () => {
