@@ -1,0 +1,251 @@
+{
+  "date": "2026-11-23",
+  "build_ref": "main@3090fe5",
+  "changes": [
+    {
+      "area": "Dock",
+      "title": "Six dock styles and Dock options",
+      "detail": "Floating, Slim, Taskbar, Studio, Minimal and Split, with magnification, bounce launches and labels.",
+      "pr": 8
+    },
+    {
+      "area": "Dock",
+      "title": "Islands dock and new style layers",
+      "detail": "An Islands dock plus the Lens Expressive and Dot Matrix looks.",
+      "pr": 32
+    },
+    {
+      "area": "Dock",
+      "title": "Win key Launcher and Alt+Tab Overview",
+      "detail": "The Win key opens the Launcher, Alt+Tab opens Overview, plus side-dock flyouts and a monitor picker.",
+      "pr": 2
+    },
+    {
+      "area": "Themes",
+      "title": "Living themes",
+      "detail": "Nine theme packs with a live sky wallpaper that follows the real Sun and Moon where you are; optional sky tint.",
+      "pr": 44
+    },
+    {
+      "area": "Themes",
+      "title": "Backdrop Lab",
+      "detail": "Make an animated background in Lens Studio, play it as a live wallpaper or turn it into a theme.",
+      "pr": 45
+    },
+    {
+      "area": "Themes",
+      "title": "59 community theme packs",
+      "detail": "Claude Code community themes with links to the originals.",
+      "pr": 31
+    },
+    {
+      "area": "Themes",
+      "title": "Pointer sets and effects",
+      "detail": "Cursor sets, pointer behaviour and pointer effects.",
+      "pr": 9
+    },
+    {
+      "area": "Themes",
+      "title": "Tidier Theme & Look and setup wizard",
+      "detail": "Clearer theme flow and a better first-run wizard.",
+      "pr": 6
+    },
+    {
+      "area": "Windows",
+      "title": "Window styling 2.0",
+      "detail": "Dim inactive windows, a styled border on the active one, peek and pin on top.",
+      "pr": 10
+    },
+    {
+      "area": "Windows",
+      "title": "Hot corners, Alt+drag and app hotkeys",
+      "detail": "Move and resize any window with Alt, hot corners, quiet hours and workspace drag in Overview.",
+      "pr": 11
+    },
+    {
+      "area": "Windows",
+      "title": "Windows 10 support",
+      "detail": "Lens now runs on Windows 10 as well as 11.",
+      "pr": 5
+    },
+    {
+      "area": "Desktop",
+      "title": "Lens Cleaner",
+      "detail": "A safe drive-space tool with a Space map. Nothing is deleted until you click; your files go to the Recycle Bin with undo.",
+      "pr": 43
+    },
+    {
+      "area": "Desktop",
+      "title": "Lens core apps",
+      "detail": "Small companion apps such as Monitor, Timer, Calculator, Colour picker and Notes, each in its own window.",
+      "pr": 41
+    },
+    {
+      "area": "Desktop",
+      "title": "Playground scenes",
+      "detail": "Interactive and ambient scenes as your wallpaper.",
+      "pr": 13
+    },
+    {
+      "area": "AI and Command",
+      "title": "Lens at work",
+      "detail": "An orb shows what Lens or an outside AI app is doing, with a banner when Claude Desktop is in control. Ctrl+Alt+Pause stops it.",
+      "pr": 39
+    },
+    {
+      "area": "AI and Command",
+      "title": "Feeds and Messages",
+      "detail": "One feed column and one inbox for chat web apps. Nothing is sent without hold-to-confirm.",
+      "pr": 38
+    },
+    {
+      "area": "AI and Command",
+      "title": "Command, Shelf and clipboard history v2",
+      "detail": "Lens Command (Ctrl+Alt+Space), the Shelf and a new clipboard history.",
+      "pr": 16
+    },
+    {
+      "area": "AI and Command",
+      "title": "Lens Intelligence and Lens Control",
+      "detail": "Local and Claude AI with privacy modes; Claude can change desktop settings after a Needs-your-OK card.",
+      "pr": 21
+    },
+    {
+      "area": "AI and Command",
+      "title": "Magic right-click",
+      "detail": "Ctrl+Alt+right-click shows what's under the pointer, actions and Ask in one place.",
+      "pr": 27
+    },
+    {
+      "area": "Voice",
+      "title": "Voice control",
+      "detail": "Hold Right Ctrl and speak: \"Lens, minimise this\". Local whisper.cpp, dictation with undo.",
+      "pr": 23
+    },
+    {
+      "area": "Browser",
+      "title": "Lens Browser",
+      "detail": "Spaces, vertical tabs and a page agent that asks first.",
+      "pr": 20
+    },
+    {
+      "area": "Snip",
+      "title": "Lens Snip",
+      "detail": "Capture, edit before saving, auto-redact, Paste to Claude, pins, recording and history.",
+      "pr": 24
+    },
+    {
+      "area": "Settings",
+      "title": "Settings hub and Tester Hub",
+      "detail": "Lens and Windows settings in one place; Tester Hub in Settings › About & Testing.",
+      "pr": 35
+    },
+    {
+      "area": "Under the hood",
+      "title": "Remove all cleans up more",
+      "detail": "Remove all now also removes Lens from Claude Desktop's config and the exported Spicetify theme; a folder-icon revert bug was fixed.",
+      "pr": 42
+    },
+    {
+      "area": "Under the hood",
+      "title": "Polish wave 1",
+      "detail": "Shared controls, consistent motion, faster theme switching, accessibility fixes; the first Command after launch no longer gets lost.",
+      "pr": 40
+    }
+  ],
+  "test_steps": [
+    {
+      "id": "cleaner-undo",
+      "area": "Desktop",
+      "steps": "Settings › Storage › Open Lens Cleaner (or /clean in Command). Scan, open Cleanup, leave one small item ticked, clean it, then press Undo within 30 seconds.",
+      "expected": "Nothing is removed before you click; your files go to the Recycle Bin; Undo puts the item back where it was.",
+      "risk": "high"
+    },
+    {
+      "id": "remove-all-v2",
+      "area": "Settings",
+      "steps": "Connect Claude Desktop in Settings › AI & Command and change a folder icon. Then Settings › About › Back up & restore › Remove all Lens changes, and quit Lens.",
+      "expected": "Taskbar, pointers, window colours and folder icons are restored; Lens's entry is gone from Claude Desktop's config with a backup next to it; your own desktop.ini files survive.",
+      "risk": "high"
+    },
+    {
+      "id": "presence-fullscreen",
+      "area": "AI and Command",
+      "steps": "Ask Lens to \"tile my windows\", then start a full-screen game or video while it runs. Press Ctrl+Alt+Pause.",
+      "expected": "The orb and banner never draw over the full-screen app; Ctrl+Alt+Pause stops the run from anywhere.",
+      "risk": "high"
+    },
+    {
+      "id": "living-sky",
+      "area": "Themes",
+      "steps": "Settings › Theme & Look › Living themes: apply Sky, set your city, drag the time-lapse scrubber, then press Play a day. Toggle Tint Lens with the sky on and off.",
+      "expected": "The sky matches the time of day for your city; dock and bar text stay readable; turning the tint off restores the pack colours.",
+      "risk": "med"
+    },
+    {
+      "id": "backdrop-live",
+      "area": "Themes",
+      "steps": "Settings › Appearance › Creator › Open Backdrop Lab. Set a preset as the live wallpaper, switch between two others, then sleep and wake the PC.",
+      "expected": "No black or white flash when switching; motion resumes smoothly after sleep; low CPU/GPU while a window covers the desktop.",
+      "risk": "med"
+    },
+    {
+      "id": "feeds-confirm",
+      "area": "AI and Command",
+      "steps": "Add a Mastodon or Bluesky account in Feeds, write a post, and let go of the confirm button early.",
+      "expected": "Nothing is posted unless confirm is held all the way; the approval expires after about 2 minutes.",
+      "risk": "med"
+    },
+    {
+      "id": "dock-style-switch",
+      "area": "Dock",
+      "steps": "Settings › Dock › Style: switch through all six styles; in each, hover and click an app.",
+      "expected": "Instant change with no flicker; apps open; note any invisible strip above the dock that blocks clicks.",
+      "risk": "med"
+    },
+    {
+      "id": "voice-minimise",
+      "area": "Voice",
+      "steps": "Hold Right Ctrl and say \"minimise this\", then \"undo\".",
+      "expected": "The focused window minimises and comes back; nothing is typed into other apps.",
+      "risk": "med"
+    },
+    {
+      "id": "command-cold-start",
+      "area": "AI and Command",
+      "steps": "Restart Lens, press Ctrl+Alt+Space at once and type \"dock style floating\".",
+      "expected": "The very first command works.",
+      "risk": "low"
+    },
+    {
+      "id": "coreapp-timer",
+      "area": "Desktop",
+      "steps": "Open Timer with /timer in Command, start 1 minute and pin it with the pin button in its title bar.",
+      "expected": "The dock shows the countdown on the Timer icon and the alert fires once.",
+      "risk": "low"
+    },
+    {
+      "id": "snip-record",
+      "area": "Snip",
+      "steps": "Start a short screen recording in Lens Snip, trim it and save.",
+      "expected": "The file plays; the Lens at work orb and the Snip toolbar are not in the recording.",
+      "risk": "low"
+    },
+    {
+      "id": "win10-setup",
+      "area": "Windows",
+      "steps": "On a Windows 10 PC, run the setup wizard and turn on the dock.",
+      "expected": "Setup finishes with no error messages and the dock works.",
+      "risk": "low"
+    }
+  ],
+  "known_issues": [
+    "Agent safety is not yet wired into every agent path (B-04); don't point the agent at untrusted pages.",
+    "The opt-in injected window-style hook loads a DLL into every app and isn't fully stopped by Remove all until restart (B-05, B-06). Leave it off unless testing it.",
+    "Some dock styles clip or leave dead click space above the icons (B-15).",
+    "Esc stops Lens at work only when a Lens window has focus; use Ctrl+Alt+Pause (B-13).",
+    "Magic menu isn't reachable from the dock, Shelf or notifications yet (B-11).",
+    "Remove all doesn't undo Lens Apps recipes (B-08).",
+    "The November Windows update (KB5132061) reportedly broke some Windhawk mods; update Windhawk first. Not verified."
+  ]
+}
