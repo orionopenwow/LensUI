@@ -51,6 +51,7 @@ mod app;
 mod bridge;
 mod browser;
 mod clip;
+mod magic;
 mod commands;
 mod control;
 mod media;
@@ -201,6 +202,15 @@ pub fn run() {
             commands::control::control_memory_get,
             commands::control::control_memory_set,
             commands::control::control_may_remember,
+            commands::magic::magic_get_config,
+            commands::magic::magic_set_config,
+            commands::magic::magic_status,
+            commands::magic::magic_check,
+            commands::magic::magic_open,
+            commands::magic::magic_last,
+            commands::magic::magic_hide,
+            commands::magic::magic_window_action,
+            commands::magic::magic_report_open,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,

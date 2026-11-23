@@ -52,6 +52,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   browser: lazy(() => import("./browser/BrowserSurface").then((m) => ({ default: m.BrowserSurface }))),
   // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).
   snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
+  // Magic right-click window at the pointer (docs/MAGIC.md).
+  magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).

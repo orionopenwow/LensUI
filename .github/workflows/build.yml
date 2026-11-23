@@ -169,6 +169,8 @@ jobs:
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
       - name: Render Lens Guide scenes
         run: node tools/parity/guide/build.mjs && node tools/parity/guide/shoot.mjs
+      - name: Magic right-click window gallery
+        run: node tools/parity/magic/build.mjs && node tools/parity/magic/shoot.mjs
 
       - name: Upload screenshots
         if: always()
@@ -185,4 +187,5 @@ jobs:
             tools/parity/tester/shots/
             tools/parity/guide/shots/
             tools/parity/approval/shots/
+            tools/parity/magic/shots/
           if-no-files-found: warn
