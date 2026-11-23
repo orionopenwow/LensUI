@@ -43,7 +43,7 @@ const STATES = [
   { id: "settings-dock", surface: "settings", tab: 4, sizes: [[760, 560], [1024, 700]] },
   { id: "settings-ai", surface: "settings", tab: 7, sizes: [[760, 560], [1024, 700]] },
   { id: "palette", surface: "palette", sizes: [[660, 460], [760, 560]] },
-  { id: "palette-query", surface: "palette", type: "spo", sizes: [[660, 460], [760, 560]] },
+  { id: "palette-query", surface: "palette", query: "spo", sizes: [[660, 460], [760, 560]] },
   { id: "launcher", surface: "launcher", sizes: [[780, 640], [1024, 720]] },
   { id: "widgets", surface: "widgets", sizes: [[360, 680], [400, 760]] },
   { id: "quicksettings", surface: "quicksettings", sizes: [[404, 580], [440, 640]] },
@@ -108,7 +108,8 @@ for (const preset of PRESET_LIST) {
       if (st.tab != null) await settingsTabs(page).nth(st.tab).click();
       if (st.hover) await page.locator(st.hover).hover();
       if (st.click) await page.locator(st.click).first().click();
-      if (st.type) await page.keyboard.type(st.type, { delay: 20 });
+      // The palette's search field lives in the Top Bar / Dock, which send lens://palette-query.
+      if (st.query) await page.evaluate((q) => window.__lensEmit("lens://palette-query", q), st.query);
       await page.waitForTimeout(500);
       const masks = MASK.map((m) => page.locator(m));
       const png = await page.screenshot({ animations: "disabled", caret: "hide", mask: masks, maskColor: "#7F7F7F" });

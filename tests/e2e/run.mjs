@@ -232,10 +232,12 @@ const SCENARIOS = [
     title: "the palette opens and finds results",
     async run(s) {
       const pal = await showSurface(s, "palette");
-      // The palette has no input of its own: the query is typed with the palette focused (its
-      // search field lives in the Dock / Top Bar).
-      await pal.bringToFront().catch(() => {});
-      await pal.keyboard.type("notepad", { delay: 30 });
+      // The palette has no input of its own: its search field lives in the Top Bar / Dock, which
+      // send each keystroke as a lens://palette-query event. Send it the same way.
+      for (const q of ["n", "no", "note", "notepad"]) {
+        await surfaces(s).dock.evaluate((q) => window.__TAURI_INTERNALS__.invoke("plugin:event|emit", { event: "lens://palette-query", payload: q }), q);
+        await sleep(120);
+      }
       await pal.waitForSelector(".pal-result-row", { timeout: 8000 }).catch(async () => {
         throw new Error(`no palette results for "notepad"; palette shows: ${(await pal.evaluate(() => document.getElementById("root").innerText)).slice(0, 400)}`);
       });
