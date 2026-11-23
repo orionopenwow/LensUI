@@ -7691,39 +7691,6 @@
    "source": "docs/BROWSER_BRIDGE.md"
   },
   {
-   "id": "doc.bug-report.0",
-   "kind": "doc",
-   "title": "Bug report — integration/waves-7-8",
-   "text": "Sources: code review of the high-risk areas, the robustness suites' findings (docs/TESTING.md F1–F4), parity renders, and CI. cargo clippy -W clippy::pedantic , cargo audit and bun audit could not run here (no crates registry or network in this sandbox); CI runs clippy with -D warnings on Windows. Sev Area Where Problem Reasoning / repro Status --- --- --- --- --- --- Critical Dock src/surfaces/DockSurface.tsx (voice hook) Dock crashed on every render (React #310) after the voice mount: a hook ran after an early return Parity: \"Minified React error #310\" on the dock in all packs Fixed High Startup src/hooks/useLensState.ts A failed get windows theme at startup left every surface blank (F1) Chaos suite, 5 % IPC failure Fixed : config and theme load independently, config retried High Uninstall src-tauri/src/win uninstall.rs \"Remove all Lens changes\" left the browser native-messaging host, ",
-   "path": [
-    "Docs",
-    "Bug report — integration/waves-7-8"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/BUG_REPORT.md",
-    "heading": "Bug report — integration/waves-7-8"
-   },
-   "source": "docs/BUG_REPORT.md"
-  },
-  {
-   "id": "doc.bug-report.1",
-   "kind": "doc",
-   "title": "Bug report — integration/waves-7-8: Reviewed and fine",
-   "text": "- FFI callbacks: no unwrap , expect or panic! inside any extern \"system\" hook or window procedure (scanned all of src-tauri/src ). - Hooks off by default: cursor FX installs its hooks only when an effect is on; Alt+drag, magic, desktop input, voice push-to-talk and Win-key hooks install only when their feature is on. Panic and exit paths go through app::integration::shutdown / panic shutdown . - Bridge: lens://settings targets are sanitised to [A-Za-z0-9-# ] , at most 64 chars; the action is validated in protocol.rs and mirrored in the extension (test enforced). - Secrets: API keys, Spotify and Last.fm tokens and clipboard history are DPAPI-sealed; the tester export redacts them (tests).",
-   "path": [
-    "Docs",
-    "Bug report — integration/waves-7-8",
-    "Reviewed and fine"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/BUG_REPORT.md",
-    "heading": "Reviewed and fine"
-   },
-   "source": "docs/BUG_REPORT.md"
-  },
-  {
    "id": "doc.claude-control.0",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail",
@@ -8433,56 +8400,6 @@
     "heading": "Testing"
    },
    "source": "docs/CURSORS.md"
-  },
-  {
-   "id": "doc.design-audit.0",
-   "kind": "doc",
-   "title": "Design audit — integration/waves-7-8",
-   "text": "Rendered every surface (main harness, 11 surfaces) and all 22 Settings hub pages in Obsidian, Alabaster Daylight, Catppuccin Mocha and Claude Dark ( cc-claude-dark ) at 1024×640. Contact sheets: /mnt/user-data/outputs/final/design/contact-settings-<pack .png ; per-page shots cc-<pack -<page .png . Method: screenshots plus an automatic check for text clipped without an ellipsis.",
-   "path": [
-    "Docs",
-    "Design audit — integration/waves-7-8"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DESIGN_AUDIT.md",
-    "heading": "Design audit — integration/waves-7-8"
-   },
-   "source": "docs/DESIGN_AUDIT.md"
-  },
-  {
-   "id": "doc.design-audit.1",
-   "kind": "doc",
-   "title": "Design audit — integration/waves-7-8: Fixed in this pass (before → after)",
-   "text": "# Before After --- --- --- 1 Dock crashed on every render after the voice mount (React #310: hook after an early return) Hook moved with the other top-level hooks; Dock renders in all packs 2 Music page showed \"Music couldn't load\" (settings card crashed on a null config) Card merges defaults with whatever the backend returns 3 Mini player showed in the Top Bar even when set to Dock or Hidden, and while Music was off Follows the Dock / Top Bar / Hidden setting; hidden while Music is off 4 Old Top Bar media controls and the Music mini player could both show Old controls hide while Lens Music is on 5 Voice mic button would sit in every Dock Shown only while voice is on 6 New cards (Voice, Magic, Right-click, Packs, Snip, Browser, Permissions, Agent safety, Guide) were not reachable from Settings Sections in AI & Command; new Music and Apps pages in the Lens group with nav icons 7 No way to",
-   "path": [
-    "Docs",
-    "Design audit — integration/waves-7-8",
-    "Fixed in this pass (before → after)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DESIGN_AUDIT.md",
-    "heading": "Fixed in this pass (before → after)"
-   },
-   "source": "docs/DESIGN_AUDIT.md"
-  },
-  {
-   "id": "doc.design-audit.2",
-   "kind": "doc",
-   "title": "Design audit — integration/waves-7-8: Still open (not fixed here)",
-   "text": "- Clipped slider labels on Display and Sound (\"Brightness\", \"Night warmth\", \"Volume\", per-app volume): the settings-hub branch is reworking FillSlider ; re-check after its final merge. - Apps page thumbnails are still letter placeholders until the Lens Apps v2 update (real icons and screenshots) lands. - Two clipboard histories (old toggle in Windows & Keys, new card in AI & Command) remain on purpose until hardware testing. - Token audit: hard-coded hex colours remain in older inline styles ( ControlCenterSurface.tsx page bodies, DockSurface.tsx menus, CommandPaletteSurface.tsx quick actions). The Settings hub's src/settings/ui primitives are token-clean; moving the remaining six inline pages into src/settings/pages/ is the way to retire them. - a11y F4 (Control Center switches without names) is still allow-listed; the fix is aria-labelledby on the shared toggle.",
-   "path": [
-    "Docs",
-    "Design audit — integration/waves-7-8",
-    "Still open (not fixed here)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DESIGN_AUDIT.md",
-    "heading": "Still open (not fixed here)"
-   },
-   "source": "docs/DESIGN_AUDIT.md"
   },
   {
    "id": "doc.dither.0",
@@ -9701,57 +9618,6 @@
    "source": "docs/MUSIC_RESEARCH.md"
   },
   {
-   "id": "doc.next-steps.1",
-   "kind": "doc",
-   "title": "Next steps: Now (this week)",
-   "text": "1. Merge PR #28 (waves 4–6) into main , then this PR (waves 7–8). 2. Real-hardware pass with the Tester Hub on Windows 10 22H2 and Windows 11 24H2, at 100/150/200 % scaling and two monitors. Highest risk first: hooks (Win key, Alt+drag, magic, voice push-to-talk, desktop input), Dock click-through, Remove-all on a clean VM, voice latency, Snip capture across mixed DPI. 3. Wire agent safety into the browser agent, control gate, Snip OCR sends, bridge adapter and AI tool runner (docs/AGENT SAFETY.md), with a Windows compile loop. 4. One approval card everywhere : swap the local cards in browser, magic, snip and voice for src/approval . 5. Fix F2 and F4 , and re-check the Display/Sound slider labels with the final FillSlider. 6. Release plumbing : create the signing key ( bun run tauri signer generate ), add the three secrets, enable Pages ( gh api -X POST repos/orionopenwow/LensUI/pages -f",
-   "path": [
-    "Docs",
-    "Next steps",
-    "Now (this week)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/NEXT_STEPS.md",
-    "heading": "Now (this week)"
-   },
-   "source": "docs/NEXT_STEPS.md"
-  },
-  {
-   "id": "doc.next-steps.2",
-   "kind": "doc",
-   "title": "Next steps: Next (1–2 months)",
-   "text": "7. W8 packages from docs/research/BROWSER DELTA.md and docs/vision/roadmap.md, each in its own new directory: - Peek (link previews, Lens as default browser) - Split view - Boosts (Lens theme on any site) - Keys (keymap editor, link hints, OS-wide snippets) - Desktop-wide Spaces - Routines 8. Performance : theme switch p95 (83 ms) and Settings tab long tasks; finish moving the six inline Settings pages into src/settings/pages/ . 9. Lens Apps v2 (real thumbnails, one-click pill, de-duplicated home) and verify the remaining winget ids. 10. Distribution : code signing, Microsoft Store, winget and Scoop manifests; real Windows screen recordings to replace the site's UI-preview clips.",
-   "path": [
-    "Docs",
-    "Next steps",
-    "Next (1–2 months)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/NEXT_STEPS.md",
-    "heading": "Next (1–2 months)"
-   },
-   "source": "docs/NEXT_STEPS.md"
-  },
-  {
-   "id": "doc.next-steps.3",
-   "kind": "doc",
-   "title": "Next steps: Later",
-   "text": "- Phone companion (approvals signed on the phone, voice remote, run status). - Theme gallery with creator credit; \"rice in 60 seconds\" from a wallpaper. - Plugin marketplace with sandbox review; sync between PCs. - Linux (layer-shell) and macOS feasibility.",
-   "path": [
-    "Docs",
-    "Next steps",
-    "Later"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/NEXT_STEPS.md",
-    "heading": "Later"
-   },
-   "source": "docs/NEXT_STEPS.md"
-  },
-  {
    "id": "doc.pack-expressive.0",
    "kind": "doc",
    "title": "Lens Expressive and Lens Dot Matrix",
@@ -9902,56 +9768,6 @@
     "heading": "Notes"
    },
    "source": "docs/PACK_EXPRESSIVE.md"
-  },
-  {
-   "id": "doc.perf-report.0",
-   "kind": "doc",
-   "title": "Performance report — integration/waves-7-8",
-   "text": "Measured in the headless harness (no GPU, software rendering) and by reading the setup code. Real-hardware numbers still need the Tester Hub run.",
-   "path": [
-    "Docs",
-    "Performance report — integration/waves-7-8"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/PERF_REPORT.md",
-    "heading": "Performance report — integration/waves-7-8"
-   },
-   "source": "docs/PERF_REPORT.md"
-  },
-  {
-   "id": "doc.perf-report.3",
-   "kind": "doc",
-   "title": "Performance report — integration/waves-7-8: Idle work with everything at its defaults",
-   "text": "What Before After --- --- --- Playground idle monitor read the wallpaper settings file from disk every second, forever cached; re-read at most every 10 s Voice Dock tick 10 Hz timer in the Dock forever ticks only while the Dock is morphed Top Bar media poll every 2 s, even with Lens Music on or the bar hidden stops while Music is on or the window is hidden Cursor FX worker 2 Hz bookkeeping loop, no hooks while off unchanged (cheap); could park on a condvar Running-windows polls Dock 0.9 s, palette/launcher 1.5 s, overview 1 s, Settings 1.4 s — skipped when windows-changed pushes arrive within 5 s unchanged Approvals pill 15 s poll + mcp-changed event unchanged Settings pages polls only while visible (Wi-Fi/Bluetooth 15 s, battery 30 s, audio 5 s, privacy 10 s) unchanged Threads spawned in Rust (all modules) 71 thread::spawn sites; hooks install only when their feature is on — Not measure",
-   "path": [
-    "Docs",
-    "Performance report — integration/waves-7-8",
-    "Idle work with everything at its defaults"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/PERF_REPORT.md",
-    "heading": "Idle work with everything at its defaults"
-   },
-   "source": "docs/PERF_REPORT.md"
-  },
-  {
-   "id": "doc.perf-report.4",
-   "kind": "doc",
-   "title": "Performance report — integration/waves-7-8: Top 10 fixes",
-   "text": "1. Settings pages code-split ( done ). 2. Idle-monitor disk read every second ( done ). 3. Voice Dock 10 Hz timer at idle ( done ). 4. Top Bar media poll when Music is on ( done ). 5. Theme switch p95 83 ms: batch the CSS variable writes in one requestAnimationFrame and avoid re-rendering every surface's React tree on a token change. 6. Settings tab switch long tasks: keep the six still-inline pages lazy too (move them into src/settings/pages/ ). 7. Aurora scene: lower internal resolution or cap at 30 fps on the software path; measure on a GPU first. 8. main.js 643 KB: lucide icons are imported by name across surfaces; check tree-shaking in the Vite build and split rarely used surfaces' deps. 9. Replace the running-windows polls with the push event only (keep one slow safety poll). 10. Park the cursor-FX worker on a condition variable while every effect is off.",
-   "path": [
-    "Docs",
-    "Performance report — integration/waves-7-8",
-    "Top 10 fixes"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/PERF_REPORT.md",
-    "heading": "Top 10 fixes"
-   },
-   "source": "docs/PERF_REPORT.md"
   },
   {
    "id": "doc.playground.0",
