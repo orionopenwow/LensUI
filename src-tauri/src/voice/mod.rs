@@ -972,7 +972,7 @@ fn done(heard: String, cmd: &VoiceCommand, confidence: f32, message: String, und
         message,
         confidence,
         undo,
-        suggestion: None,
+        ..Default::default()
     });
     feed(Input::ActionDone);
 }
