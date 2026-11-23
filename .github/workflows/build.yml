@@ -9,8 +9,26 @@ name: build
 on:
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
     tags: ["v*"]
   pull_request:
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
