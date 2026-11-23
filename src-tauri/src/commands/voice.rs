@@ -113,3 +113,10 @@ pub async fn voice_say(app: AppHandle, text: String) -> Result<u64, String> {
 pub fn voice_stop_speaking() {
     voice::stop_speaking();
 }
+
+/// The Dock shows (or stops showing) the voice UI; the floating HUD steps aside for it.
+#[tauri::command]
+pub fn voice_set_dock_ui(app: AppHandle, active: bool) {
+    voice::init(&app);
+    voice::set_dock_ui(active);
+}

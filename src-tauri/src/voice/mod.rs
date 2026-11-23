@@ -14,9 +14,12 @@ pub mod capture;
 pub mod catalog;
 pub mod config;
 pub mod converse;
+pub mod early;
 pub mod fuzzy;
 pub mod geometry;
 pub mod grammar;
+pub mod hold;
+pub mod keyhold;
 pub mod numbers;
 pub mod safety;
 pub mod state;
@@ -63,6 +66,11 @@ pub struct StateEvent {
     pub conversation_view: String,
     /// Lens is speaking an answer aloud.
     pub speaking: bool,
+    /// The utterance is for Lens (push-to-talk, wake word heard, conversation, an answer):
+    /// the Dock morphs only when this is true, so ignored speech never shows.
+    pub armed: bool,
+    /// A Dock is showing the voice UI (the floating HUD then stays out of the way).
+    pub dock_ui: bool,
 }
 
 /// Progress of a spoken answer (conversation mode reveals words in sync).
@@ -88,6 +96,10 @@ pub struct ResultEvent {
     /// Label of the undo step, if the action can be undone.
     pub undo: Option<String>,
     pub suggestion: Option<String>,
+    /// End of speech → action done, when measured (ms).
+    pub latency_ms: Option<u64>,
+    /// The command ran from the partial transcript, before the final pass.
+    pub early: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -106,6 +118,7 @@ enum Pending {
     Tool { name: &'static str, args: Value, label: String },
     Command(Box<VoiceCommand>),
     ShelfClear,
+    Chain(Vec<(&'static str, Value)>, String),
 }
 
 struct Inner {
@@ -120,7 +133,23 @@ struct Inner {
     last_level_ms: u64,
     last_partial_ms: u64,
     pending: Option<Pending>,
-    undo: Vec<(undo::Step, String)>,
+    undo: Vec<(Vec<undo::Step>, String)>,
+    /// Latest partial reading of the current utterance, and the one before it.
+    partial: Option<early::Candidate>,
+    prev_key: Option<String>,
+    partial_busy: bool,
+    /// Sample index where speech was last heard in this utterance.
+    last_loud: usize,
+    heard_speech: bool,
+    silence_ms: u64,
+    /// When the current silence began (end of speech), for latency.
+    speech_end_at: u64,
+    early_fired: bool,
+    /// The wake word was recognised in this utterance's partials.
+    utt_woke: bool,
+    dock_ui: bool,
+    /// The current command was typed (no wake word or prefix needed).
+    typed: bool,
     /// Bumped to drop stale recognitions and commands.
     generation: u64,
     paused_reason: Option<safety::PauseReason>,
@@ -179,6 +208,17 @@ fn voice() -> MutexGuard<'static, Inner> {
                 last_partial_ms: 0,
                 pending: None,
                 undo: Vec::new(),
+                partial: None,
+                prev_key: None,
+                partial_busy: false,
+                last_loud: 0,
+                heard_speech: false,
+                silence_ms: 0,
+                speech_end_at: 0,
+                early_fired: false,
+                utt_woke: false,
+                dock_ui: false,
+                typed: false,
                 generation: 0,
                 paused_reason: None,
                 hotkeys: Vec::new(),
@@ -229,6 +269,8 @@ fn state_event(v: &Inner) -> StateEvent {
         conversation: v.machine.in_conversation(),
         conversation_view: v.cfg.conversation.clone(),
         speaking: converse::is_speaking(),
+        armed: v.machine.by_ptt() || v.utt_woke || v.machine.in_conversation() || v.machine.expects_answer(),
+        dock_ui: v.dock_ui,
     }
 }
 
@@ -242,9 +284,14 @@ fn app() -> Option<AppHandle> {
     voice().app.clone()
 }
 
-fn result(ev: ResultEvent) {
+fn result(mut ev: ResultEvent) {
     let (app, speak, tts_voice) = {
-        let v = voice();
+        let mut v = voice();
+        if matches!(ev.status, "done" | "confirm") && v.speech_end_at > 0 {
+            ev.latency_ms = Some(now().saturating_sub(v.speech_end_at));
+            ev.early = v.early_fired;
+            v.speech_end_at = 0;
+        }
         (v.app.clone(), v.cfg.tts_enabled, v.cfg.tts_voice.clone())
     };
     // Read aloud only what the user needs to hear (questions, answers, refusals).
@@ -328,8 +375,12 @@ fn register_hotkeys(app: &AppHandle, cfg: &VoiceConfig) {
     }
     let mut registered = Vec::new();
     let mut errors = Vec::new();
+    keyhold::stop();
     if cfg.enabled {
-        if cfg.wants_ptt() || cfg.activation == "wake" {
+        if let Some(vk) = keyhold::single_key(&cfg.ptt_hotkey) {
+            // Hold Right Ctrl / Right Alt: a keyboard hook (global shortcuts need a key).
+            keyhold::start(vk, on_hold);
+        } else if cfg.wants_ptt() || cfg.activation == "wake" {
             // Even in wake mode the key works, so there's always an explicit way in.
             match cfg.ptt_hotkey.parse::<Shortcut>() {
                 Ok(sc) => match gs.on_shortcut(sc, |_app, _s, ev| {
@@ -363,6 +414,24 @@ fn register_hotkeys(app: &AppHandle, cfg: &VoiceConfig) {
     let mut v = voice();
     v.hotkeys = registered;
     v.hotkey_error = if errors.is_empty() { None } else { Some(errors.join(" ")) };
+}
+
+/// Hold-to-talk decisions from the single-key hook (and the Dock button via `hold_button`).
+fn on_hold(o: hold::HoldOut) {
+    match o {
+        hold::HoldOut::Start => feed(Input::PttDown),
+        hold::HoldOut::Send => feed(Input::PttUp),
+        hold::HoldOut::Cancel => feed(Input::Cancel),
+        hold::HoldOut::Latched => {
+            result(ResultEvent { status: "hint", label: "Hands-free".into(), message: "Listening hands-free. Tap again to send.".into(), ..Default::default() });
+        }
+    }
+}
+
+/// The Dock / Mini shows the voice UI (`true`) or not; the floating HUD steps aside for it.
+pub fn set_dock_ui(active: bool) {
+    voice().dock_ui = active;
+    emit_state();
 }
 
 pub fn status() -> VoiceStatus {
@@ -422,14 +491,40 @@ fn perform(fx: Effect) {
             let pre = v.preroll.take();
             v.utterance = Some(pre);
             v.last_partial_ms = now();
+            v.partial = None;
+            v.prev_key = None;
+            v.last_loud = 0;
+            v.heard_speech = false;
+            v.silence_ms = 0;
+            v.speech_end_at = 0;
+            v.early_fired = false;
+            v.utt_woke = false;
+            v.typed = false;
         }
         Effect::StopAndRecognise => {
-            let (samples, generation) = {
+            let (samples, generation, ready) = {
                 let mut v = voice();
                 v.generation += 1;
-                (v.utterance.take().unwrap_or_default(), v.generation)
+                if v.speech_end_at == 0 {
+                    v.speech_end_at = now();
+                }
+                // A partial that already covers everything said is as good as a final pass.
+                let ready = v
+                    .partial
+                    .as_ref()
+                    .filter(|c| v.heard_speech && c.covered >= v.last_loud && !c.interp.heard.is_empty())
+                    .map(|c| c.interp.heard.clone());
+                (v.utterance.take().unwrap_or_default(), v.generation, ready)
             };
-            std::thread::spawn(move || recognise(samples, generation));
+            match ready {
+                Some(text) => {
+                    emit(&app(), EV_HEARD, json!({ "text": text, "partial": false }));
+                    feed(Input::Transcript(text));
+                }
+                None => {
+                    std::thread::spawn(move || recognise(samples, generation));
+                }
+            }
         }
         Effect::StopAndDiscard => {
             voice().utterance = None;
@@ -530,6 +625,18 @@ fn on_frame(frame: &[i16]) {
             if u.len() < MAX_SAMPLES {
                 u.extend_from_slice(frame);
             }
+            let len = u.len();
+            if v.vad.loud(db) {
+                v.heard_speech = true;
+                v.last_loud = len;
+                v.silence_ms = 0;
+                v.speech_end_at = 0;
+            } else if v.heard_speech {
+                if v.silence_ms == 0 {
+                    v.speech_end_at = t;
+                }
+                v.silence_ms += 20;
+            }
         } else {
             v.preroll.push(frame);
         }
@@ -558,6 +665,7 @@ fn on_frame(frame: &[i16]) {
     if let Some((app, level)) = level {
         emit(&app, EV_LEVEL, json!({ "level": level }));
     }
+    maybe_fire_early();
     if barge_in {
         // Barge-in: the user talks over the answer, so stop speaking and listen.
         stop_speaking();
@@ -634,23 +742,85 @@ fn recognise(samples: Vec<i16>, generation: u64) {
 }
 
 /// Live words while a push-to-talk utterance is still going (only when the recogniser is free).
-fn partial_transcript(samples: Vec<i16>, generation: u64) {
-    let wav = audio::wav(&samples, audio::SAMPLE_RATE);
+/// Streaming: re-recognises the utterance so far (at most the last 6 s) every ~350 ms while
+/// the user talks, shows the live words, wakes the Dock when "Lens" is heard, and lets safe
+/// commands fire the moment speech ends. Runs only when the recogniser is free.
+fn partial_transcript(samples: Vec<i16>, covered: usize, generation: u64) {
+    let window = &samples[samples.len().saturating_sub(16_000 * 6)..];
+    let wav = audio::wav(window, audio::SAMPLE_RATE);
     let text = {
-        let Some(Ok(guard)) = ENGINE.get().map(|m| m.try_lock()) else { return };
-        let Some(s) = guard.as_ref() else { return };
-        match s.transcribe(&wav, whisper::BIAS) {
-            Ok(t) => t,
-            Err(_) => return,
+        let Some(Ok(guard)) = ENGINE.get().map(|m| m.try_lock()) else {
+            voice().partial_busy = false;
+            return;
+        };
+        let r = guard.as_ref().map(|s| s.transcribe(&wav, whisper::BIAS));
+        drop(guard);
+        match r {
+            Some(Ok(t)) => t,
+            _ => {
+                voice().partial_busy = false;
+                return;
+            }
         }
     };
-    let (app, still) = {
-        let v = voice();
-        (v.app.clone(), v.generation == generation && v.utterance.is_some())
+    let opts = options_for_next();
+    let interp = grammar::interpret(&text, &opts);
+    let key = interp.command.as_ref().and_then(early::intent_key);
+    let (app, armed_now, show, ignore) = {
+        let mut v = voice();
+        v.partial_busy = false;
+        if v.generation != generation || v.utterance.is_none() {
+            return;
+        }
+        let was = v.utt_woke;
+        if interp.woke && opts.require_wake && !interp.heard.is_empty() {
+            v.utt_woke = true;
+        }
+        // Wake mode: three words in and no "Lens" → not for us; drop it silently.
+        let ignore = opts.require_wake && !interp.woke && text.split_whitespace().count() >= 3;
+        let armed = v.machine.by_ptt() || v.utt_woke || v.machine.in_conversation() || v.machine.expects_answer();
+        v.prev_key = v.partial.as_ref().and_then(|c| c.key.clone());
+        v.partial = Some(early::Candidate { interp, key, covered });
+        (v.app.clone(), !was && v.utt_woke, armed && !text.trim().is_empty(), ignore)
     };
-    if still && !text.is_empty() {
+    if ignore {
+        feed(Input::Cancel);
+        return;
+    }
+    if armed_now {
+        emit_state();
+    }
+    if show {
         emit(&app, EV_HEARD, json!({ "text": text, "partial": true }));
     }
+    maybe_fire_early();
+}
+
+fn risk3(r: &crate::ai::intent::RawIntent) -> early::Risk3 {
+    match tools::tool_for_intent(r).map(|(t, _)| tools::risk_of(t)) {
+        Some(Risk::Low) => early::Risk3::Low,
+        Some(Risk::Confirm) => early::Risk3::Confirm,
+        _ => early::Risk3::Blocked,
+    }
+}
+
+/// Fires a safe, complete command from the partial transcript once speech has ended.
+fn maybe_fire_early() {
+    let text = {
+        let mut v = voice();
+        if v.early_fired || v.machine.phase != Phase::Listening || v.machine.expects_answer() {
+            return;
+        }
+        let decision = v.partial.as_ref().and_then(|c| {
+            let ok = early::can_fire(c, v.prev_key.as_deref(), v.last_loud, v.silence_ms, &risk3)
+                && c.interp.command.as_ref().map(|cmd| !v.cfg.disabled_commands.iter().any(|d| d == cmd.id())).unwrap_or(false);
+            ok.then(|| c.interp.heard.clone())
+        });
+        let Some(text) = decision else { return };
+        v.early_fired = true;
+        text
+    };
+    feed(Input::EarlyFire(text));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -676,12 +846,12 @@ fn app_names() -> Vec<String> {
 }
 
 fn options_for_next() -> grammar::Options {
-    let (cfg, by_ptt, expecting, woke_until) = {
+    let (cfg, by_ptt, expecting, woke_until, typed) = {
         let v = voice();
-        (v.cfg.clone(), v.machine.by_ptt(), v.machine.expects_answer(), v.woke_until)
+        (v.cfg.clone(), v.machine.by_ptt(), v.machine.expects_answer(), v.woke_until, v.typed)
     };
     let conversation = voice().machine.in_conversation();
-    let require_wake = cfg.wants_wake() && !by_ptt && !expecting && !conversation && now() > woke_until;
+    let require_wake = (cfg.wants_wake() && !by_ptt || by_ptt && cfg.require_prefix) && !expecting && !conversation && !typed && now() > woke_until;
     grammar::Options {
         wake_phrases: cfg.wake_phrases(),
         require_wake,
@@ -767,7 +937,11 @@ fn decide(i: Interpretation, generation: u64) {
         return;
     }
 
-    if voice().cfg.disabled_commands.iter().any(|d| d == cmd.id()) {
+    let ids: Vec<String> = match &cmd {
+        VoiceCommand::Chain(list) => list.iter().map(|r| catalog::id_for_action(r.action).to_string()).collect(),
+        other => vec![other.id().to_string()],
+    };
+    if voice().cfg.disabled_commands.iter().any(|d| ids.contains(d)) {
         result(ResultEvent {
             status: "refused",
             heard,
@@ -904,6 +1078,45 @@ fn execute(cmd: VoiceCommand, heard: String, confidence: f32) {
                 Err(e) => failed(heard, &cmd, e),
             }
         }
+        VoiceCommand::Chain(list) => {
+            let mut calls: Vec<(&'static str, Value)> = Vec::new();
+            for raw in list {
+                let Some((tool, args)) = tools::tool_for_intent(raw) else {
+                    failed(heard, &cmd, format!("\"{}\" can't be part of a chain.", raw.summary));
+                    return;
+                };
+                match tools::validate(tool, &args) {
+                    Ok(a) => calls.push((tool, a)),
+                    Err(e) => {
+                        failed(heard, &cmd, e);
+                        return;
+                    }
+                }
+            }
+            if calls.iter().any(|(t, _)| tools::risk_of(t) == Risk::Blocked) {
+                refused(heard, &cmd, "Lens doesn't allow one of those.".into());
+                return;
+            }
+            let label = cmd.label();
+            if calls.iter().any(|(t, _)| tools::risk_of(t) == Risk::Confirm) {
+                voice().pending = Some(Pending::Chain(calls, label.clone()));
+                result(ResultEvent {
+                    status: "confirm",
+                    heard,
+                    command: Some("chain".into()),
+                    label: format!("{}?", label),
+                    message: format!("{}? Say yes or no.", label),
+                    confidence,
+                    ..Default::default()
+                });
+                feed(Input::NeedsConfirm);
+                return;
+            }
+            match run_chain(&calls) {
+                Ok((msg, undo)) => done(heard, &cmd, confidence, msg, undo),
+                Err(e) => failed(heard, &cmd, e),
+            }
+        }
         VoiceCommand::Intent(raw) => {
             let Some((tool, args)) = tools::tool_for_intent(raw) else {
                 // Maths and conversions answer in words.
@@ -969,6 +1182,16 @@ fn run_pending(p: Pending) {
             feed(Input::ActionDone);
         }
         Pending::Command(cmd) => execute(*cmd, String::new(), 1.0),
+        Pending::Chain(calls, label) => match run_chain(&calls) {
+            Ok((msg, undo)) => {
+                result(ResultEvent { status: "done", command: Some("chain".into()), label, message: msg, undo, ..Default::default() });
+                feed(Input::ActionDone);
+            }
+            Err(e) => {
+                result(ResultEvent { status: "failed", command: Some("chain".into()), label, message: e, ..Default::default() });
+                feed(Input::ActionFailed);
+            }
+        },
     }
 }
 
@@ -1033,26 +1256,62 @@ fn snapshot(tool: &str, args: &Value) -> undo::Snapshot {
     s
 }
 
-/// Runs a validated registry tool (same host the AI and MCP use) and records its undo step.
-fn run_tool(tool: &'static str, args: &Value) -> Result<(String, Option<String>), String> {
+/// Runs a validated registry tool (same host the AI and MCP use); returns its undo step.
+fn run_tool_raw(tool: &'static str, args: &Value) -> Result<(String, Option<undo::Step>), String> {
     let app = app().ok_or("Lens isn't ready yet.")?;
     let snap = snapshot(tool, args);
     let host = tools::lens::LensToolHost { app };
     let msg = host.run(tool, args)?;
-    let undo_label = undo::inverse(tool, &argv(args), &snap).map(|step| {
-        let label = step.label();
-        let mut v = voice();
-        v.undo.push((step, label.clone()));
-        if v.undo.len() > 5 {
-            v.undo.remove(0);
+    Ok((msg, undo::inverse(tool, &argv(args), &snap)))
+}
+
+fn push_undo(steps: Vec<undo::Step>, label: String) {
+    if steps.is_empty() {
+        return;
+    }
+    let mut v = voice();
+    v.undo.push((steps, label));
+    if v.undo.len() > 5 {
+        v.undo.remove(0);
+    }
+}
+
+fn run_tool(tool: &'static str, args: &Value) -> Result<(String, Option<String>), String> {
+    let (msg, step) = run_tool_raw(tool, args)?;
+    let label = step.as_ref().map(|s| s.label());
+    if let (Some(step), Some(l)) = (step, label.clone()) {
+        push_undo(vec![step], l);
+    }
+    Ok((msg, label))
+}
+
+/// Runs a chain in order; one undo puts all of it back. Stops at the first failure.
+fn run_chain(calls: &[(&'static str, Value)]) -> Result<(String, Option<String>), String> {
+    let mut steps = Vec::new();
+    let mut msgs = Vec::new();
+    for (tool, args) in calls {
+        let (msg, step) = run_tool_raw(tool, args)?;
+        msgs.push(msg);
+        if let Some(s) = step {
+            steps.push(s);
         }
-        label
-    });
-    Ok((msg, undo_label))
+    }
+    let label = if steps.is_empty() { None } else { Some(if steps.len() == 1 { steps[0].label() } else { format!("Undo all {} changes", steps.len()) }) };
+    if let Some(l) = label.clone() {
+        push_undo(steps, l);
+    }
+    Ok((msgs.join(" "), label))
 }
 
 fn run_undo() -> Result<String, String> {
-    let (step, label) = voice().undo.pop().ok_or("Nothing to undo.")?;
+    let (steps, label) = voice().undo.pop().ok_or("Nothing to undo.")?;
+    for step in steps.into_iter().rev() {
+        run_undo_step(step)?;
+    }
+    Ok(format!("Undone: {}.", label.to_lowercase()))
+}
+
+fn run_undo_step(step: undo::Step) -> Result<(), String> {
     match step {
         undo::Step::Window(hwnd, action) => winops::window_action(hwnd, action)?,
         undo::Step::Tool(tool, args) => {
@@ -1072,7 +1331,7 @@ fn run_undo() -> Result<String, String> {
             tools::lens::LensToolHost { app }.run(tool, &args)?;
         }
     }
-    Ok(format!("Undone: {}.", label.to_lowercase()))
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1102,6 +1361,7 @@ pub fn run_typed(text: &str) -> Result<(), String> {
         }
         return Err(i.suggestion.map(|s| format!("Did you mean \"{}\"?", s)).unwrap_or_else(|| "Lens didn't understand that.".into()));
     }
+    voice().typed = true;
     feed(Input::Typed);
     feed(Input::Transcript(text));
     Ok(())
@@ -1172,6 +1432,7 @@ pub fn shutdown() {
             stop.store(true, Ordering::Relaxed);
         }
     }
+    keyhold::stop();
     if let Ok(mut e) = ENGINE.get_or_init(|| Mutex::new(None)).try_lock() {
         *e = None;
     }
@@ -1235,19 +1496,23 @@ fn tick_loop() {
             }
         }
 
-        // Live words during long push-to-talk utterances.
+        // Streaming partials (live words, wake detection, early fire).
         let partial = {
             let mut v = voice();
-            let long = v.utterance.as_ref().map(|u| u.len() > 16_000).unwrap_or(false);
-            if long && v.machine.phase == Phase::Listening && v.machine.by_ptt() && t.saturating_sub(v.last_partial_ms) >= 1_200 {
+            let enough = v.utterance.as_ref().map(|u| u.len() >= 16_000 / 2).unwrap_or(false);
+            if enough && !v.partial_busy && v.machine.phase == Phase::Listening && t.saturating_sub(v.last_partial_ms) >= 350 {
                 v.last_partial_ms = t;
-                v.utterance.clone().map(|u| (u, v.generation))
+                v.partial_busy = true;
+                v.utterance.clone().map(|u| {
+                    let covered = u.len();
+                    (u, covered, v.generation)
+                })
             } else {
                 None
             }
         };
-        if let Some((samples, generation)) = partial {
-            std::thread::spawn(move || partial_transcript(samples, generation));
+        if let Some((samples, covered, generation)) = partial {
+            std::thread::spawn(move || partial_transcript(samples, covered, generation));
         }
 
         // Re-sync the microphone (retries after an error back-off).

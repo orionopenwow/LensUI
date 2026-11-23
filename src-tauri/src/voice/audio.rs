@@ -117,6 +117,12 @@ impl Vad {
         }
     }
 
+    /// Whether a frame this loud counts as speech right now (doesn't change any state).
+    pub fn loud(&self, db: f32) -> bool {
+        self.calibrating == 0 && db > self.floor + self.margin && db > self.min_db
+            || self.calibrating > 0 && db > self.min_db + 12.0
+    }
+
     /// Feeds one frame's level; returns an event when speech starts or ends.
     pub fn push(&mut self, db: f32) -> Option<VadEvent> {
         let db = db.max(-90.0);

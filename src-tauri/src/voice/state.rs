@@ -65,6 +65,9 @@ pub enum Input {
     Typed,
     /// Conversation mode on/off: while on, speech needs no wake phrase or key.
     Converse(bool),
+    /// A safe, complete command was recognised from the partial transcript and speech has
+    /// ended: act on it now instead of waiting for the final recognition pass.
+    EarlyFire(String),
     Tick,
 }
 
@@ -402,6 +405,15 @@ impl Machine {
                 self.ptt_down_at = None;
                 self.go(self.rest_phase(), now);
             }
+            Input::EarlyFire(text) => {
+                if self.phase == Phase::Listening && !self.confirm_pending {
+                    self.ptt_down_at = None;
+                    self.last_transcript = Some((text.trim().to_lowercase(), now));
+                    fx.push(StopAndDiscard);
+                    fx.push(Interpret(text));
+                    self.go(Phase::Thinking, now);
+                }
+            }
             Input::Converse(on) => {
                 self.conversation = on;
                 if !on && self.phase == Phase::Listening && !self.by_ptt {
@@ -618,6 +630,27 @@ mod tests {
         m.step(Input::Converse(true), 1800);
         m.step(Input::Mute, 1900);
         assert_eq!(m.step(Input::SpeechStart, 2000), vec![]);
+    }
+
+    #[test]
+    fn early_fire_skips_the_final_pass() {
+        let mut m = on(Activation::PushToTalk, PttStyle::Hold);
+        m.step(Input::PttDown, 0);
+        assert_eq!(m.step(Input::EarlyFire("Lens minimise this".into()), 900), vec![StopAndDiscard, Interpret("Lens minimise this".into())]);
+        assert_eq!(m.phase, Phase::Thinking);
+        // Releasing the key afterwards does nothing more.
+        assert_eq!(m.step(Input::PttUp, 1000), vec![]);
+        m.step(Input::ActionDone, 1100);
+        assert_eq!(m.phase, Phase::Done);
+        // Never while a confirmation is open, never outside Listening.
+        assert_eq!(m.step(Input::EarlyFire("x".into()), 1200), vec![]);
+        let mut c = on(Activation::Wake, PttStyle::Hold);
+        c.step(Input::SpeechStart, 0);
+        c.step(Input::SpeechEnd, 100);
+        c.step(Input::Transcript("close notepad".into()), 200);
+        c.step(Input::NeedsConfirm, 210);
+        c.step(Input::SpeechStart, 300);
+        assert_eq!(c.step(Input::EarlyFire("yes".into()), 600), vec![]);
     }
 
     #[test]

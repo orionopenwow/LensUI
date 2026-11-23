@@ -17,6 +17,8 @@ pub enum Target {
 pub enum VoiceCommand {
     /// A script intent; runs through the AI tool registry and its risk gating.
     Intent(RawIntent),
+    /// Several intents in one breath ("dark mode and mute"); one undo for all of them.
+    Chain(Vec<RawIntent>),
     /// "type …": types the words into the focused field (guarded).
     Dictate(String),
     PasteLastClip,
@@ -39,6 +41,7 @@ impl VoiceCommand {
     pub fn id(&self) -> &str {
         match self {
             VoiceCommand::Intent(i) => catalog::id_for_action(i.action),
+            VoiceCommand::Chain(_) => "chain",
             VoiceCommand::Dictate(_) => "dictate",
             VoiceCommand::PasteLastClip => "paste_last_clip",
             VoiceCommand::ShelfAddSelection => "shelf_add",
@@ -59,6 +62,7 @@ impl VoiceCommand {
     pub fn label(&self) -> String {
         match self {
             VoiceCommand::Intent(i) => i.summary.clone(),
+            VoiceCommand::Chain(list) => list.iter().map(|i| i.summary.as_str()).collect::<Vec<_>>().join(" · "),
             VoiceCommand::Dictate(t) => {
                 let shown: String = t.chars().take(32).collect();
                 format!("Type · \"{}{}\"", shown, if t.chars().count() > 32 { "…" } else { "" })
@@ -296,6 +300,28 @@ fn voice_only(t: &str, cased: &str) -> Option<(VoiceCommand, f32)> {
     None
 }
 
+/// "dark mode and mute", "snap left then open spotify": two to four intents. Every part must
+/// parse on its own, otherwise the whole phrase is read as one command.
+fn parse_chain(t: &str, apps: &[String]) -> Option<(Vec<RawIntent>, f32)> {
+    let mut parts: Vec<String> = vec![t.to_string()];
+    for sep in [" and then ", ", then ", " then ", " and also ", " and ", ", "] {
+        parts = parts.iter().flat_map(|p| p.split(sep).map(|x| x.trim().to_string()).collect::<Vec<_>>()).collect();
+    }
+    parts.retain(|p| !p.is_empty());
+    if parts.len() < 2 || parts.len() > 4 {
+        return None;
+    }
+    let mut out = Vec::new();
+    let mut conf: f32 = 1.0;
+    for p in &parts {
+        let raw = intent::parse(&intent::normalize(p))?;
+        let (fixed, c) = fix_app_name(raw, apps);
+        conf = conf.min(fixed.confidence * c);
+        out.push(fixed);
+    }
+    Some((out, conf))
+}
+
 fn looks_like_question(t: &str) -> bool {
     let words = t.split_whitespace().count();
     let starts = [
@@ -368,6 +394,11 @@ pub fn interpret(transcript: &str, opts: &Options) -> Interpretation {
     }
 
     let with_digits = numbers::convert(&t);
+    // Chains split on commas too, so read them from the text before commas were dropped.
+    let chain_src = numbers::convert(&intent::normalize(&cased));
+    if let Some((list, conf)) = parse_chain(&chain_src, &opts.app_names) {
+        return Interpretation { command: Some(VoiceCommand::Chain(list)), confidence: conf * asr, heard: cleaned, woke, suggestion: None };
+    }
     if let Some(raw) = intent::parse(&with_digits) {
         let (fixed, name_conf) = fix_app_name(raw, &opts.app_names);
         let conf = fixed.confidence * name_conf * asr;
@@ -655,6 +686,28 @@ mod tests {
         let o = Options { asr_confidence: 0.4, ..opts() };
         let i = interpret("open spotify", &o);
         assert!(i.confidence < MIN_CONFIDENCE);
+    }
+
+    #[test]
+    fn chains() {
+        let o = opts();
+        let ids = |t: &str| match interpret(t, &o).command {
+            Some(VoiceCommand::Chain(list)) => list.iter().map(|i| i.action.to_string()).collect::<Vec<_>>(),
+            other => vec![format!("{:?}", other.map(|c| c.id().to_string()))],
+        };
+        assert_eq!(ids("Lens, dark mode and mute"), vec!["set_color_mode", "set_mute"]);
+        assert_eq!(ids("snap left then open spotify"), vec!["snap_window", "open_app"]);
+        assert_eq!(ids("dark mode, volume thirty percent and do not disturb"), vec!["set_color_mode", "set_volume", "set_dnd"]);
+        assert_eq!(ids("minimise chrome and show desktop"), vec!["window_action", "show_desktop"]);
+        // Not every part is a command → one command (an app called "spotify and chrome" is
+        // fuzzy-matched later) or nothing.
+        assert!(!matches!(interpret("open spotify and chrome", &o).command, Some(VoiceCommand::Chain(_))));
+        assert!(!matches!(interpret("rock and roll", &o).command, Some(VoiceCommand::Chain(_))));
+        // Dictation keeps its "and".
+        assert_eq!(interpret("type salt and pepper", &o).command, Some(VoiceCommand::Dictate("salt and pepper".into())));
+        let c = interpret("dark mode and mute", &o);
+        assert_eq!(c.command.as_ref().unwrap().label(), "Switch to dark mode · Mute sound");
+        assert!(c.confidence >= MIN_CONFIDENCE);
     }
 
     #[test]

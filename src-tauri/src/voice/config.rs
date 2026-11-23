@@ -22,6 +22,8 @@ pub struct VoiceConfig {
     pub ptt_style: String,
     pub mute_hotkey: String,
     pub wake_phrase: String,
+    /// Push-to-talk also needs "Lens…" first (wake mode always does).
+    pub require_prefix: bool,
     /// 0..1, higher picks up quieter speech.
     pub sensitivity: f32,
     /// Capture endpoint id ("" = Windows default microphone).
@@ -58,10 +60,11 @@ impl Default for VoiceConfig {
         VoiceConfig {
             enabled: false,
             activation: "ptt".into(),
-            ptt_hotkey: "Ctrl+Alt+V".into(),
+            ptt_hotkey: "RightCtrl".into(),
             ptt_style: "hold".into(),
             mute_hotkey: "Ctrl+Alt+Shift+V".into(),
             wake_phrase: "Hey Lens".into(),
+            require_prefix: false,
             sensitivity: 0.5,
             mic_id: String::new(),
             language: "en".into(),
@@ -216,6 +219,6 @@ mod tests {
     fn old_files_load_with_defaults() {
         let c: VoiceConfig = serde_json::from_str(r#"{"enabled":true}"#).unwrap();
         assert!(c.enabled);
-        assert_eq!(c.ptt_hotkey, "Ctrl+Alt+V");
+        assert_eq!(c.ptt_hotkey, "RightCtrl");
     }
 }
