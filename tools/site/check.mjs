@@ -293,7 +293,10 @@ async function waitDesk(page, sel = "#desk-host") {
   let w1 = await D((i) => { const w = window.lensSite.desk.wins.get(i); return { x: w.x, y: w.y }; }, w0.id);
   expect(Math.abs(w1.x - w0.x - 160 / (await D(() => window.lensSite.desk.k))) < 6 && w1.y > w0.y, "drag a window by its title bar", JSON.stringify([w0, w1]));
   expect(!(await page.$(".lx.is-dragging")), "no stuck drag after release");
-  const se = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + 6, y: r.top + 6 }; }, w0.id);
+  // Let the drop's settle animation finish (it tilts the window a little), then grab the corner.
+  await page.waitForTimeout(700);
+  await D((i) => window.lensSite.desk.focus(i), w0.id);
+  const se = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
   await page.mouse.move(se.x, se.y); await page.mouse.down(); await page.mouse.move(se.x + 90, se.y + 50, { steps: 8 }); await page.mouse.up();
   const w2 = await D((i) => { const w = window.lensSite.desk.wins.get(i); return { w: w.w, h: w.h }; }, w0.id);
   expect(w2.w > w0.w + 40 && w2.h > w0.h + 20, "resize from the corner", JSON.stringify([w0, w2]));
@@ -338,6 +341,8 @@ async function waitDesk(page, sel = "#desk-host") {
   }
   await D(() => { for (const w of window.lensSite.desk.wins.values()) window.lensSite.desk.minimize(w.id); });
   await page.waitForTimeout(600);
+  // Rest the pointer on the desktop first (the dock frame lets go of the pointer once it's away from the dock).
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.4, { steps: 4 }); await page.waitForTimeout(700);
   await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.45, { button: "right" });
   await page.waitForTimeout(250);
   expect(await page.$eval("#desk-host .lx-menu", (m) => !m.hidden && /New note/.test(m.textContent)), "desktop right-click menu");

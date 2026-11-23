@@ -279,10 +279,13 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function move(p) {
     pending = p;
     if (raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = 0;
-      const d = dragging, q = pending;
-      if (!d) return;
+    raf = requestAnimationFrame(() => { raf = 0; apply(pending); });
+  }
+  /** Applies the latest pointer position to the window being moved or resized. */
+  function apply(q) {
+    {
+      const d = dragging;
+      if (!d || !q) return;
       const w = d.w, dx = q.x - d.start.x, dy = q.y - d.start.y;
       if (d.mode === "move") {
         if (w.tile && Math.hypot(dx, dy) > 6) {
@@ -309,13 +312,15 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
         w.tile = null;
         paint(w);
       }
-    });
+    }
   }
   function drop() {
     const d = dragging;
     if (!d) return;
+    // A fast flick can end before the next frame: apply its last position first.
+    if (raf) { cancelAnimationFrame(raf); raf = 0; apply(pending); }
+    pending = null;
     dragging = null;
-    cancelAnimationFrame(raf); raf = 0;
     root.classList.remove("is-dragging");
     play?.setStill(still());
     showSnap(null);
@@ -470,7 +475,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     nc.innerHTML = `<div class="nh"><b>Notifications</b><button type="button" data-clear>Clear all</button></div>${state.notes.length ? state.notes.map((x) => `<div class="ni"><img src="${iconUrl(x.icon)}" alt="" width="28" height="28"><div><span class="nm">${esc(x.app)}</span><strong>${esc(x.title)}</strong><span>${esc(x.body)}</span></div></div>`).join("") : `<p class="ne">You're all caught up.</p>`}`;
   }
   nc.addEventListener("click", (e) => { if (e.target.closest("[data-clear]")) { state.notes = []; state.unread = 0; renderNC(); badge(); } });
-  const badge = () => { const b = cv.querySelector(".lt-badge"); b.textContent = String(state.unread); b.hidden = !state.unread; };
+  const badge = () => { const b = cv.querySelector(".lt-badge"); b.textContent = String(state.unread); b.hidden = !state.unread; b.parentElement.setAttribute("aria-label", state.unread ? `${state.unread} Notifications` : "Notifications"); };
   function openFly(which) {
     const el = which === "qs" ? qs : nc, other = which === "qs" ? nc : qs;
     other.hidden = true;
