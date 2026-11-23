@@ -4,6 +4,7 @@
  * Dock with a readability check.
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { vars } from "./vars";
 import { BackdropRenderer, LoopClock, modeById, relLuminance, rgbToHex, type BackdropState, type Handle } from "../engine";
 
 export type HandlesMode = "hover" | "always" | "off";
@@ -291,7 +292,7 @@ export const LiveCanvas: React.FC<Props> = ({
       aria-label={`${label}: ${mode?.name ?? ""}`}
     >
       <canvas ref={cA} className="bd-canvas-gl" />
-      {compare && <canvas ref={cB} className="bd-canvas-gl" style={{ clipPath: `inset(0 0 0 ${divider * 100}%)` }} />}
+      {compare && <canvas ref={vars({ "--bd-clip": `inset(0 0 0 ${divider * 100}%)` }, cB)} className="bd-canvas-gl bd-v-clip" />}
       {context && (
         <div className="bd-context" aria-hidden="true">
           <div className="bd-ctx-bar">
@@ -322,8 +323,8 @@ export const LiveCanvas: React.FC<Props> = ({
       {compare && (
         <>
           <div
-            className="bd-divider"
-            style={{ left: `${divider * 100}%` }}
+            className="bd-divider bd-v-left"
+            ref={vars({ "--bd-left": `${divider * 100}%` })}
             role="slider"
             tabIndex={0}
             aria-label="Compare divider"
@@ -349,7 +350,7 @@ export const LiveCanvas: React.FC<Props> = ({
         </>
       )}
       {failed && (
-        <div className="bd-canvas-fallback" style={{ background: `linear-gradient(160deg, ${state.stops.map((s) => s.color).join(", ")})` }}>
+        <div className="bd-canvas-fallback bd-v-bg" ref={vars({ "--bd-bg": `linear-gradient(160deg, ${state.stops.map((s) => s.color).join(", ")})` })}>
           <span>Live preview needs WebGL 2. Exports and the wallpaper fall back to a still gradient.</span>
         </div>
       )}

@@ -5,13 +5,14 @@
  */
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { LensConfig } from "../../../types/lens";
+import "./lab.css";
 
 const CreatorCard = lazy(() => import("./CreatorCard").then((m) => ({ default: m.CreatorCard })));
 
 type Props = { config: LensConfig | null; updateConfig: (c: LensConfig) => void };
 
 const Placeholder = React.forwardRef<HTMLDivElement>((_, ref) => (
-  <div ref={ref} className="cc-card" aria-busy="true" style={{ minHeight: 248 }}>
+  <div ref={ref} className="cc-card bd-creator-wait" aria-busy="true">
     <div className="cc-label">Backdrop Lab</div>
     <div className="cc-desc">Animated gradients, light and glass for your desktop.</div>
   </div>

@@ -3,6 +3,7 @@
  * "Set as live wallpaper", "Make a theme" and the way into the full Lab window.
  */
 import React, { useEffect, useMemo, useState } from "react";
+import { Button } from "../../../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { ExternalLink, Monitor, Sparkles } from "lucide-react";
 import type { LensConfig } from "../../../types/lens";
@@ -54,12 +55,12 @@ export const CreatorCard: React.FC<{ config: LensConfig | null; updateConfig: (c
           <div className="cc-label">Backdrop Lab</div>
           <div className="cc-desc">Animated gradients, light and glass for your desktop. Make one, play it as a live wallpaper, or turn it into a theme.</div>
           <div className="bd-row wrap">
-            <button type="button" className="bd-btn" onClick={() => pick(inspire(s, DEFAULT_MOOD, new Set(), Date.now()))}>
+            <Button size="sm" className="bd-b" onClick={() => pick(inspire(s, DEFAULT_MOOD, new Set(), Date.now()))}>
               <Sparkles size={13} aria-hidden /> Inspire
-            </button>
-            <button
-              type="button"
-              className="bd-btn primary"
+            </Button>
+            <Button size="sm" variant="primary"
+             
+              className="bd-b"
               onClick={() =>
                 setLiveWallpaper(s)
                   .then((prev) => setNote({ text: "Playing on your desktop", undo: () => restoreWallpaper(prev).catch(() => {}) }))
@@ -67,10 +68,10 @@ export const CreatorCard: React.FC<{ config: LensConfig | null; updateConfig: (c
               }
             >
               <Monitor size={13} aria-hidden /> Set as live wallpaper
-            </button>
-            <button
-              type="button"
-              className="bd-btn"
+            </Button>
+            <Button size="sm"
+             
+              className="bd-b"
               disabled={!config}
               onClick={() =>
                 config &&
@@ -80,25 +81,25 @@ export const CreatorCard: React.FC<{ config: LensConfig | null; updateConfig: (c
               }
             >
               Make a theme
-            </button>
-            <button type="button" className="bd-btn ghost" onClick={() => invoke("toggle_surface", { label: "studio" }).catch(() => {})}>
+            </Button>
+            <Button size="sm" variant="ghost" className="bd-b" onClick={() => invoke("toggle_surface", { label: "studio" }).catch(() => {})}>
               <ExternalLink size={13} aria-hidden /> Open Backdrop Lab
-            </button>
+            </Button>
           </div>
           {note && (
             <div className="bd-inline-note" role="status">
               {note.text}
               {note.undo && (
-                <button
-                  type="button"
-                  className="bd-btn"
+                <Button size="sm"
+                 
+                  className="bd-b"
                   onClick={() => {
                     note.undo?.();
                     setNote(null);
                   }}
                 >
                   Undo
-                </button>
+                </Button>
               )}
             </div>
           )}

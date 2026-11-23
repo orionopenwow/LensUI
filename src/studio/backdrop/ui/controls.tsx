@@ -6,6 +6,8 @@
  * typeable value. All have screen-reader labels and a visible focus ring.
  */
 import React, { useEffect, useId, useRef, useState } from "react";
+import { vars } from "./vars";
+import { Segmented as UiSegmented, Toggle as UiToggle } from "../../../ui";
 import { ChevronDown, RotateCcw } from "lucide-react";
 
 const decimals = (step: number) => (step >= 1 ? 0 : Math.min(3, Math.ceil(-Math.log10(step))));
@@ -103,8 +105,8 @@ export const LabSlider: React.FC<{
           }
         }}
       >
-        <div className="bd-track-fill" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
-        <div className="bd-track-knob" style={{ left: `${Math.max(0, Math.min(100, pct))}%` }} />
+        <div className="bd-track-fill bd-v-w" ref={vars({ "--bd-w": `${Math.max(0, Math.min(100, pct))}%` })} />
+        <div className="bd-track-knob bd-v-left" ref={vars({ "--bd-left": `${Math.max(0, Math.min(100, pct))}%` })} />
       </div>
       {editing ? (
         <input
@@ -144,6 +146,7 @@ export const LabSlider: React.FC<{
   );
 };
 
+/** Lab segmented control: the shared src/ui Segmented (radiogroup with arrow keys), Lab sizing. */
 export function Segmented<T extends string>({
   label,
   value,
@@ -157,39 +160,22 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
   small?: boolean;
 }) {
-  return (
-    <div className={`bd-seg ${small ? "small" : ""}`} role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="radio"
-          aria-checked={value === o.id}
-          className={value === o.id ? "on" : ""}
-          onClick={() => onChange(o.id)}
-          onKeyDown={(e) => {
-            const i = options.findIndex((x) => x.id === value);
-            if (e.key === "ArrowRight") onChange(options[(i + 1) % options.length].id);
-            if (e.key === "ArrowLeft") onChange(options[(i - 1 + options.length) % options.length].id);
-          }}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
+  return <UiSegmented label={label} value={value} options={options} onChange={onChange} className={`bd-seg ${small ? "small" : ""}`} />;
 }
 
-export const Toggle: React.FC<{ label: string; checked: boolean; hint?: string; onChange: (v: boolean) => void }> = ({ label, checked, hint, onChange }) => (
-  <label className="bd-toggle">
-    <span>
-      {label}
-      {hint && <span className="bd-hint block">{hint}</span>}
-    </span>
-    <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-    <span className="bd-switch" aria-hidden="true" />
-  </label>
-);
+/** Lab toggle row: visible label (and hint) naming the shared src/ui Toggle. */
+export const Toggle: React.FC<{ label: string; checked: boolean; hint?: string; onChange: (v: boolean) => void }> = ({ label, checked, hint, onChange }) => {
+  const id = React.useId();
+  return (
+    <div className="bd-toggle">
+      <span id={id}>
+        {label}
+        {hint && <span className="bd-hint block">{hint}</span>}
+      </span>
+      <UiToggle labelledBy={id} checked={checked} onChange={onChange} />
+    </div>
+  );
+};
 
 export const Section: React.FC<{
   id: string;

@@ -9,6 +9,9 @@
  * same moment, crossfades on every change, and a kept frame while the GPU context is restored.
  */
 import { invoke } from "@tauri-apps/api/core";
+import { sunPosition } from "../../playground/living/astro";
+import { previewTime, readLiving, resolveLocation } from "../../playground/living/settings";
+import { currentWeather } from "../../playground/living/weather";
 import { listen } from "@tauri-apps/api/event";
 import type { Palette, SceneInstance, SceneModule, SceneOptions } from "../../playground/types";
 import { normaliseOptions } from "../../playground/types";
@@ -29,6 +32,7 @@ import {
   HERO_PRESET_ID,
   type BackdropState,
   type Keyframes,
+  type Reactions,
 } from "./engine";
 
 export const BACKDROP_SCENE_ID = "backdrop";
@@ -112,7 +116,7 @@ export const backdropScene: SceneModule = {
       ],
       default: "off",
     },
-    { key: "timeOfDay", label: "Follow the time of day", type: "toggle", default: false, hint: "A little brighter by day, warmer at golden hour, dimmer at night." },
+    { key: "timeOfDay", label: "Follow the time of day", type: "toggle", default: false, hint: "Follows the real Sun where you are (the Living themes location): brighter by day, warmer at golden hour, dimmer at night." },
     { key: "focusCalm", label: "Calm during Do Not Disturb", type: "toggle", default: true },
     { key: "warmWhenBusy", label: "Warm slightly when the PC is busy", type: "toggle", default: false },
     { key: "pulse", label: "Soft pulse on notifications", type: "toggle", default: false },
@@ -201,15 +205,25 @@ export const backdropScene: SceneModule = {
       }
       if (opts.evolve) s = evolve(s, (now - startedAt) / 60000, 0.5, s.seed);
       let sun: number | null = null;
+      let weather: Reactions["weather"] = null;
       if (opts.timeOfDay) {
-        const d = new Date();
-        const h = d.getHours() + d.getMinutes() / 60;
-        sun = Math.cos(((h - 13) / 24) * Math.PI * 2);
+        // The real Sun where you are, through Living Themes' public helpers (docs/LIVING_THEMES.md):
+        // the same location setting and time-lapse preview as Sky. sin(altitude) is −1…1.
+        const d = previewTime() ?? new Date();
+        const { latitude, longitude } = resolveLocation(readLiving(), d);
+        sun = Math.sin((sunPosition(d, latitude, longitude).altitude * Math.PI) / 180);
+        // Live weather only when the person turned it on for Living themes (Open-Meteo, cached).
+        const living = readLiving();
+        if (living.weather.online) {
+          const w = currentWeather(living);
+          weather = (["clear", "cloudy", "rain", "snow", "storm"] as const).find((k) => k === w) ?? null;
+        }
       }
       return applyReactions(s, {
         cpu: opts.warmWhenBusy ? react.cpu : 0,
         focus: !!opts.focusCalm && react.focus,
         sun,
+        weather,
         album: opts.albumColours ? react.album : null,
       });
     };

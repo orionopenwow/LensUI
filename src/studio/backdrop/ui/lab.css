@@ -106,7 +106,6 @@
 }
 
 /* ── buttons ── */
-.bd-btn,
 .bd-icon-btn,
 .bd-chip {
   display: inline-flex;
@@ -125,42 +124,25 @@
   white-space: nowrap;
   transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
-.bd-btn:hover,
 .bd-icon-btn:hover,
 .bd-chip:hover {
   background: rgb(var(--lens-ink) / 0.1);
 }
-.bd-btn:active,
 .bd-icon-btn:active {
   transform: scale(0.97);
 }
-.bd-btn:disabled,
 .bd-icon-btn:disabled {
   opacity: 0.4;
   cursor: default;
   transform: none;
 }
-.bd-btn.primary {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg, #09090b);
-  border-color: transparent;
-}
-.bd-btn.primary:hover {
-  background: var(--lens-fg-strong, var(--lens-fg));
-  filter: brightness(1.06);
-}
-.bd-btn.ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--lens-fg-muted);
-}
-.bd-btn.on,
+.bd-b.on,
 .bd-chip.on,
 .bd-icon-btn.on {
   background: rgb(var(--lens-ink) / 0.16);
   border-color: var(--lens-border-strong);
 }
-.bd-btn.icon,
+.bd-b.lens-icon-btn,
 .bd-icon-btn {
   padding: 0;
   width: 28px;
@@ -175,7 +157,7 @@
   height: 22px;
   border-radius: 6px;
 }
-.bd-btn kbd,
+.bd-b kbd,
 .bd-empty kbd {
   font: 600 10px/1 inherit;
   padding: 2px 4px;
@@ -183,7 +165,7 @@
   border: 1px solid var(--lens-border);
   color: var(--lens-fg-muted);
 }
-.bd-btn.primary kbd {
+.bd-b.is-primary kbd {
   border-color: rgb(0 0 0 / 0.2);
   color: inherit;
 }
@@ -197,14 +179,14 @@
   display: inline-flex;
   gap: 2px;
 }
-.bd-split > .bd-btn:not(:only-child):first-child {
+.bd-split > .bd-b:not(:only-child):first-child {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
 }
-.bd-split > .bd-btn + .bd-btn {
+.bd-split > .bd-b + .bd-b {
   border-radius: 4px;
 }
-.bd-split > .bd-btn:last-of-type {
+.bd-split > .bd-b:last-of-type {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
@@ -924,38 +906,20 @@ input.bd-num {
   color: var(--lens-fg);
 }
 
-/* segmented */
-.bd-seg {
+/* segmented: the shared src/ui control (.lens-seg), stretched to the panel width */
+.bd-seg.lens-seg {
   display: flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: rgb(var(--lens-ink) / 0.06);
-  border: 1px solid var(--lens-border);
 }
-.bd-seg button {
+.bd-seg .lens-seg-btn {
   flex: 1;
-  height: 24px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--lens-fg-muted);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
   padding: 0 6px;
+  white-space: nowrap;
 }
-.bd-seg button.on {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg, #09090b);
-}
-.bd-seg.small button {
-  height: 22px;
+.bd-seg.small .lens-seg-btn {
   font-size: 10.5px;
 }
 
-/* toggle */
+/* toggle row: label left, shared src/ui switch (.lens-toggle) right */
 .bd-toggle {
   display: flex;
   align-items: center;
@@ -963,45 +927,9 @@ input.bd-num {
   gap: 10px;
   font-weight: 600;
   font-size: 11.5px;
-  cursor: pointer;
-  position: relative;
 }
-.bd-toggle input {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-}
-.bd-switch {
+.bd-toggle .lens-toggle {
   flex-shrink: 0;
-  width: 30px;
-  height: 18px;
-  border-radius: 9px;
-  background: rgb(var(--lens-ink) / 0.18);
-  position: relative;
-  transition: background 160ms ease;
-}
-.bd-switch::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fafafa;
-  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.bd-toggle input:checked + .bd-switch {
-  background: var(--lens-fg);
-}
-.bd-toggle input:checked + .bd-switch::after {
-  transform: translateX(12px);
-  background: var(--lens-on-fg, #09090b);
-}
-.bd-toggle input:focus-visible + .bd-switch {
-  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, #fafafa);
-  outline-offset: 2px;
 }
 
 /* colours */
@@ -1234,7 +1162,7 @@ input.bd-num {
   background: rgb(var(--lens-ink) / 0.12);
   transition: width 200ms linear;
 }
-.bd-progress .bd-btn {
+.bd-progress .bd-b {
   position: relative;
 }
 .bd-err {
@@ -1259,7 +1187,7 @@ input.bd-num {
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
   animation: bd-toast 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.bd-toast .bd-btn {
+.bd-toast .bd-b {
   height: 24px;
   background: rgb(0 0 0 / 0.08);
   color: inherit;
@@ -1292,11 +1220,11 @@ input.bd-num {
   margin: 0 0 4px;
   line-height: 1.45;
 }
-.bd-coach .bd-btn.ghost {
+.bd-coach .bd-b.is-ghost {
   color: inherit;
   opacity: 0.7;
 }
-.bd-coach .bd-btn.primary {
+.bd-coach .bd-b.is-primary {
   background: var(--lens-on-fg, #09090b);
   color: var(--lens-fg);
 }
@@ -1392,3 +1320,11 @@ input.bd-num {
   animation-duration: 1ms !important;
   transition-duration: 1ms !important;
 }
+
+/* Dynamic values set as custom properties by ui/vars.ts (no inline style objects). */
+.bd-v-bg { background: var(--bd-bg); }
+.bd-v-w { width: var(--bd-w); }
+.bd-v-left { left: var(--bd-left); }
+.bd-v-clip { clip-path: var(--bd-clip); }
+/* Placeholder while the Creator card waits to be scrolled into view (same height, no layout shift). */
+.bd-creator-wait { min-height: 248px; }

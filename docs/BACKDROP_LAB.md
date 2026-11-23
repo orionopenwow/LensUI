@@ -85,8 +85,11 @@ dither, on by default to remove banding).
 - **Accessibility:** everything is reachable by keyboard, has a screen-reader label and a visible focus
   ring; reduced motion stills thumbnails and UI animation. No native `title` tooltips (AGENTS.md §1).
 
-The Lab's controls are local to `ui/controls.tsx` and match Lens tokens. When the AAA wave's `src/ui`
-primitives land on main they should replace them (see Next).
+Buttons, segmented controls and switches are the shared `src/ui` primitives (`Button`, `Segmented`,
+`Toggle`); `ui/controls.tsx` keeps only what `src/ui` doesn't have yet (the Lab slider, sections, tips).
+No inline style objects: dynamic values (stop positions, gradients, progress) are CSS custom properties set
+by `ui/vars.ts` and read by `.bd-v-*` classes. Settings › Appearance loads none of the Lab until the
+Creator card is scrolled into view (`ui/CreatorSlot.tsx`), and its preview only plays on hover.
 
 ## 4. Live wallpaper
 
@@ -104,7 +107,9 @@ so nothing is re-encoded.
 - **GPU resets** (driver reset, sleep, RDP, display change): the last frame is kept (a quarter-size copy is
   shown) until the context is restored and the backdrop rebuilds itself.
 - **No WebGL2:** a still gradient from the same stops.
-- **Living options** (all opt-in except DND calm): evolve slowly, follow the time of day, follow theme
+- **Living options** (all opt-in except DND calm): evolve slowly, follow the time of day (the real Sun
+  where you are and, if turned on for Living themes, the live weather: both through Living Themes' public
+  helpers `astro.sunPosition`, `settings.resolveLocation` and `weather.currentWeather`), follow theme
   colours (switching packs crossfades), soft pulse on notifications, warm slightly when the PC is busy,
   colours from what's playing, rotate looks every 15/60 minutes, and morning / noon / evening / night
   keyframes that ease into each other.
@@ -158,12 +163,10 @@ Cut for this pass (listed so nothing is lost):
 2. **Real-Windows E2E** for apply / switch / resume / multi-monitor with pixel checks around the swap
    (the browser-side flash check exists; tests/e2e needs a wallpaper step).
 3. Video-loop fallback when WebGL2 is missing (today: still gradient).
-4. Weather input to “follow the time of day” (the weather source is not exposed to the wallpaper yet).
 5. Cursor parallax on the desktop: the shader supports it (`setCursor`), the scene keeps it at 0 until the
    desktop input hook is opt-in per scene with a game guard.
 6. Use the gradient in Snip “beautify”, Lens Browser new-tab, Top Bar / Dock tint and the Lens Music
    visualiser.
 7. QR code on the share card; WebCodecs encoding (faster than real time) with a small WebM muxer.
-8. Migrate `ui/controls.tsx` to the `src/ui` primitives once the AAA wave is on main.
 9. Add the Lab's presets to the ambient-backdrop scene list (that list is CPU painters; today they appear
    in the Playground card instead).

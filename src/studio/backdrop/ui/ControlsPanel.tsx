@@ -3,6 +3,8 @@
  * warp, grain); Advanced shows everything. Each section has its own reset.
  */
 import React, { useRef, useState } from "react";
+import { vars } from "./vars";
+import { Button } from "../../../ui";
 import { Clipboard, Dices, ImagePlus, Lock, Palette as PaletteIcon, Plus, Unlock, X } from "lucide-react";
 import {
   BLEND_SPACES,
@@ -43,9 +45,8 @@ const StopsBar: React.FC<{ stops: Stop[]; onChange: (s: Stop[], commit?: boolean
   };
   return (
     <div
-      ref={bar}
-      className="bd-stops"
-      style={{ background: grad }}
+      ref={vars({ "--bd-bg": grad }, bar)}
+      className="bd-stops bd-v-bg"
       onPointerDown={(e) => {
         if (e.target !== bar.current || stops.length >= 8) return;
         const pos = posAt(e.clientX);
@@ -60,8 +61,8 @@ const StopsBar: React.FC<{ stops: Stop[]; onChange: (s: Stop[], commit?: boolean
         <button
           key={i}
           type="button"
-          className={`bd-stop ${selected === i ? "on" : ""}`}
-          style={{ left: `${s.pos * 100}%`, background: s.color }}
+          className={`bd-stop bd-v-bg bd-v-left ${selected === i ? "on" : ""}`}
+          ref={vars({ "--bd-left": `${s.pos * 100}%`, "--bd-bg": s.color })}
           aria-label={`Stop ${i + 1}, ${s.color}, at ${Math.round(s.pos * 100)}%`}
           onPointerDown={(e) => {
             e.stopPropagation();
@@ -162,9 +163,9 @@ export const ControlsPanel: React.FC<{
         ))}
         {mode.image && (
           <div className="bd-row">
-            <button type="button" className="bd-btn" onClick={() => file.current?.click()}>
+            <Button size="sm" className="bd-b" onClick={() => file.current?.click()}>
               <ImagePlus size={13} aria-hidden /> {imageName ? "Change picture" : "Choose a picture"}
-            </button>
+            </Button>
             {imageName && (
               <button type="button" className="bd-icon-btn small" aria-label="Remove picture" onClick={onClearImage}>
                 <X size={12} aria-hidden />
@@ -178,7 +179,7 @@ export const ControlsPanel: React.FC<{
       <Section id="colors" title="Colours" open={open.colors} onToggle={() => toggle("colors")} extra={lockBtn("palette", "colours")} onReset={() => set({ stops: d.stops, space: "oklab", bias: 0, sharpness: 0 }, true)}>
         <div className="bd-swatches" role="list" aria-label="Palette">
           {s.stops.map((st, i) => (
-            <label key={i} className={`bd-swatch ${sel === i ? "on" : ""}`} style={{ background: st.color }} role="listitem">
+            <label key={i} className={`bd-swatch bd-v-bg ${sel === i ? "on" : ""}`} ref={vars({ "--bd-bg": st.color })} role="listitem">
               <input
                 type="color"
                 value={st.color.toLowerCase()}
@@ -196,15 +197,15 @@ export const ControlsPanel: React.FC<{
           )}
         </div>
         <div className="bd-row wrap">
-          <button type="button" className="bd-btn" onClick={onRandomPalette}>
+          <Button size="sm" className="bd-b" onClick={onRandomPalette}>
             <Dices size={13} aria-hidden /> Randomize
-          </button>
-          <button type="button" className="bd-btn" onClick={() => file.current?.click()}>
+          </Button>
+          <Button size="sm" className="bd-b" onClick={() => file.current?.click()}>
             <ImagePlus size={13} aria-hidden /> From image
-          </button>
-          <button type="button" className="bd-btn" onClick={onPaletteFromTheme}>
+          </Button>
+          <Button size="sm" className="bd-b" onClick={onPaletteFromTheme}>
             <PaletteIcon size={13} aria-hidden /> From theme
-          </button>
+          </Button>
         </div>
         <StopsBar stops={s.stops} selected={sel} onSelect={setSel} onChange={(stops, commit) => set({ stops }, commit)} />
         {selStop && <div className="bd-hint">Stop {sel + 1}: {selStop.color} at {Math.round(selStop.pos * 100)}% · click the bar to add, Delete removes</div>}
@@ -221,9 +222,9 @@ export const ControlsPanel: React.FC<{
                   </option>
                 ))}
               </select>
-              <button type="button" className="bd-btn" onClick={() => set({ stops: evenStops(harmony(s.stops[Math.floor(s.stops.length / 2)].color, harm, Math.max(3, s.stops.length))) }, true)}>
+              <Button size="sm" className="bd-b" onClick={() => set({ stops: evenStops(harmony(s.stops[Math.floor(s.stops.length / 2)].color, harm, Math.max(3, s.stops.length))) }, true)}>
                 Harmony from middle colour
-              </button>
+              </Button>
             </div>
             <div className="bd-row">
               <input className="bd-input" value={paste} placeholder="Paste hex colours: #0b0a1a, #7c3aed…" aria-label="Paste hex colours" onChange={(e) => setPaste(e.target.value)} />

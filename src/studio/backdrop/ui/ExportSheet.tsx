@@ -1,5 +1,7 @@
 /** Export sheet: image, seamless video loop and share. Progress shows time remaining and can be cancelled. */
 import React, { useRef, useState } from "react";
+import { vars } from "./vars";
+import { Button } from "../../../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { Download, FolderOpen, X } from "lucide-react";
 import { cssGradient, shareLink, toLensBg, type BackdropState } from "../engine";
@@ -104,18 +106,18 @@ export const ExportSheet: React.FC<{ state: BackdropState; onClose: () => void; 
         )}
         {kind === "share" && (
           <div className="bd-share">
-            <button type="button" className="bd-btn" onClick={() => copy(shareLink(state), "Link")}>
+            <Button size="sm" className="bd-b" onClick={() => copy(shareLink(state), "Link")}>
               Copy Lens link
-            </button>
-            <button type="button" className="bd-btn" onClick={() => save("lensbg", btoa(unescape(encodeURIComponent(toLensBg(state))))).catch((e) => setErr(String(e)))}>
+            </Button>
+            <Button size="sm" className="bd-b" onClick={() => save("lensbg", btoa(unescape(encodeURIComponent(toLensBg(state))))).catch((e) => setErr(String(e)))}>
               Save .lensbg file
-            </button>
-            <button type="button" className="bd-btn" onClick={() => shareCard(state).then((png) => save("png", png)).catch((e) => setErr(String(e)))}>
+            </Button>
+            <Button size="sm" className="bd-b" onClick={() => shareCard(state).then((png) => save("png", png)).catch((e) => setErr(String(e)))}>
               Save share card
-            </button>
-            <button type="button" className="bd-btn" onClick={() => copy(`background: ${cssGradient(state)};`, "CSS")}>
+            </Button>
+            <Button size="sm" className="bd-b" onClick={() => copy(`background: ${cssGradient(state)};`, "CSS")}>
               Copy CSS fallback
-            </button>
+            </Button>
             <p className="bd-hint">Links and files hold only the settings (well under 1 KB). Nothing is uploaded.</p>
           </div>
         )}
@@ -126,25 +128,25 @@ export const ExportSheet: React.FC<{ state: BackdropState; onClose: () => void; 
         )}
         {busy ? (
           <div className="bd-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(busy.p * 100)}>
-            <div className="bd-progress-bar" style={{ width: `${Math.round(busy.p * 100)}%` }} />
+            <div className="bd-progress-bar bd-v-w" ref={vars({ "--bd-w": `${Math.round(busy.p * 100)}%` })} />
             <span>
               {Math.round(busy.p * 100)}% · about {busy.eta}s left
             </span>
             {kind === "video" && (
-              <button type="button" className="bd-btn" onClick={() => abort.current?.abort()}>
+              <Button size="sm" className="bd-b" onClick={() => abort.current?.abort()}>
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         ) : (
           kind !== "share" && (
             <div className="bd-row end">
-              <button type="button" className="bd-btn ghost" onClick={() => invoke("studio_open_exports_folder").catch(() => {})}>
+              <Button size="sm" variant="ghost" className="bd-b" onClick={() => invoke("studio_open_exports_folder").catch(() => {})}>
                 <FolderOpen size={13} aria-hidden /> Open folder
-              </button>
-              <button type="button" className="bd-btn primary" onClick={run}>
+              </Button>
+              <Button size="sm" variant="primary" className="bd-b" onClick={run}>
                 <Download size={13} aria-hidden /> Export {kind === "image" ? "PNG" : format.toUpperCase()}
-              </button>
+              </Button>
             </div>
           )
         )}

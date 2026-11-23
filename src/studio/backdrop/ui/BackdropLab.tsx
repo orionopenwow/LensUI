@@ -3,6 +3,8 @@
  * right; Inspire / Save / Fit / Export on top. See docs/BACKDROP_LAB.md.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { vars } from "./vars";
+import { Button } from "../../../ui";
 import {
   ArrowLeftRight,
   Check,
@@ -333,19 +335,19 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
       <div className="bd-keys">
         {DAY_PARTS.map((p) => (
           <button key={p.id} type="button" className={`bd-key ${keys[p.id as DayPart] ? "on" : ""}`} onClick={() => setKeys((k) => ({ ...k, [p.id]: s }))} aria-label={`Use this look for ${p.label.toLowerCase()}`}>
-            <span className="bd-key-sw" style={{ background: keys[p.id as DayPart] ? `linear-gradient(135deg, ${keys[p.id as DayPart]!.stops.map((x) => x.color).join(",")})` : undefined }} />
+            <span className={`bd-key-sw ${keys[p.id as DayPart] ? "bd-v-bg" : ""}`} ref={vars({ "--bd-bg": keys[p.id as DayPart] ? `linear-gradient(135deg, ${keys[p.id as DayPart]!.stops.map((x) => x.color).join(",")})` : undefined })} />
             {p.label}
           </button>
         ))}
       </div>
       <div className="bd-row">
-        <button type="button" className="bd-btn" disabled={!Object.keys(keys).length} onClick={() => setKeyframes(keys).then(() => say("Time-of-day looks are on")).catch((e) => say(String(e)))}>
+        <Button size="sm" className="bd-b" disabled={!Object.keys(keys).length} onClick={() => setKeyframes(keys).then(() => say("Time-of-day looks are on")).catch((e) => say(String(e)))}>
           Play time-of-day looks
-        </button>
+        </Button>
         {Object.keys(keys).length > 0 && (
-          <button type="button" className="bd-btn ghost" onClick={() => setKeys({})}>
+          <Button size="sm" variant="ghost" className="bd-b" onClick={() => setKeys({})}>
             Clear
-          </button>
+          </Button>
         )}
       </div>
       <p className="bd-hint">The wallpaper pauses behind full-screen apps and games, on battery saver and when covered, and shows a still frame with reduced motion.</p>
@@ -358,15 +360,15 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
         {encodeState(s)}
       </code>
       <div className="bd-row wrap">
-        <button type="button" className="bd-btn" onClick={() => navigator.clipboard.writeText(shareLink(s)).then(() => say("Link copied"))}>
+        <Button size="sm" className="bd-b" onClick={() => navigator.clipboard.writeText(shareLink(s)).then(() => say("Link copied"))}>
           Copy link
-        </button>
-        <button type="button" className="bd-btn" onClick={() => navigator.clipboard.writeText(encodeState(s)).then(() => say("Code copied"))}>
+        </Button>
+        <Button size="sm" className="bd-b" onClick={() => navigator.clipboard.writeText(encodeState(s)).then(() => say("Code copied"))}>
           Copy code
-        </button>
-        <button
-          type="button"
-          className="bd-btn"
+        </Button>
+        <Button size="sm"
+         
+          className="bd-b"
           onClick={async () => {
             const t = await navigator.clipboard.readText().catch(() => "");
             const st = decodeState(t);
@@ -375,11 +377,11 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           }}
         >
           Paste code
-        </button>
+        </Button>
       </div>
       <div className="bd-pack-preview">
-        <span style={{ background: packPreview.pack.base }} />
-        <span style={{ background: packPreview.pack.accent }} />
+        <span className="bd-v-bg" ref={vars({ "--bd-bg": packPreview.pack.base })} />
+        <span className="bd-v-bg" ref={vars({ "--bd-bg": packPreview.pack.accent })} />
         <small>
           Theme from this: text {packPreview.report.text.toFixed(1)}:1, accent {packPreview.report.accent.toFixed(1)}:1 {packPreview.report.ok ? "✓" : ""}
         </small>
@@ -410,12 +412,12 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
         </form>
         <div className="bd-actions">
           <div className="bd-split">
-            <button type="button" className="bd-btn" onClick={doInspire} aria-keyshortcuts="I">
+            <Button size="sm" className="bd-b" onClick={doInspire} aria-keyshortcuts="I">
               <Sparkles size={13} aria-hidden /> Inspire <kbd>I</kbd>
-            </button>
-            <button type="button" className="bd-btn icon" aria-label="Mood and locks" aria-expanded={moodOpen} onClick={() => setMoodOpen((o) => !o)}>
+            </Button>
+            <Button size="sm" className="bd-b lens-icon-btn" aria-label="Mood and locks" aria-expanded={moodOpen} onClick={() => setMoodOpen((o) => !o)}>
               <SlidersHorizontal size={13} aria-hidden />
-            </button>
+            </Button>
             {moodOpen && (
               <div className="bd-pop" role="dialog" aria-label="Inspire mood">
                 <LabSlider label="Calm ↔ Energetic" value={mood.energy} min={0} max={1} step={0.01} defaultValue={DEFAULT_MOOD.energy} onChange={(v) => setMood((m) => ({ ...m, energy: v }))} />
@@ -451,15 +453,15 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           <button type="button" className="bd-icon-btn" aria-label="Redo" disabled={!hist.current.canRedo} onClick={redo}>
             <Redo2 size={14} aria-hidden />
           </button>
-          <button type="button" className="bd-btn" onClick={save} aria-keyshortcuts="S">
+          <Button size="sm" className="bd-b" onClick={save} aria-keyshortcuts="S">
             <Save size={13} aria-hidden /> Save
-          </button>
-          <button type="button" className="bd-btn" onClick={() => setFrame((f) => (f === "fill" ? "wide" : "fill"))} aria-pressed={frame === "wide"} aria-keyshortcuts="F">
+          </Button>
+          <Button size="sm" className="bd-b" onClick={() => setFrame((f) => (f === "fill" ? "wide" : "fill"))} aria-pressed={frame === "wide"} aria-keyshortcuts="F">
             <Maximize2 size={13} aria-hidden /> Fit
-          </button>
-          <button type="button" className="bd-btn primary" onClick={() => setExportOpen(true)} aria-keyshortcuts="E">
+          </Button>
+          <Button size="sm" variant="primary" className="bd-b" onClick={() => setExportOpen(true)} aria-keyshortcuts="E">
             <Download size={13} aria-hidden /> Export
-          </button>
+          </Button>
           {windowControls}
         </div>
       </header>
@@ -494,12 +496,12 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           {trialLeft > 0 && (
             <div className="bd-trial" role="status">
               On your desktop for {trialLeft}s
-              <button type="button" className="bd-btn primary" onClick={() => trial.current?.keep()}>
+              <Button size="sm" variant="primary" className="bd-b" onClick={() => trial.current?.keep()}>
                 <Check size={13} aria-hidden /> Keep it
-              </button>
-              <button type="button" className="bd-btn" onClick={() => trial.current?.cancel()}>
+              </Button>
+              <Button size="sm" className="bd-b" onClick={() => trial.current?.cancel()}>
                 Revert now
-              </button>
+              </Button>
             </div>
           )}
           {lowContrast && (
@@ -515,34 +517,34 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           <span className="bd-mode-name">{mode?.name}</span>
           <Segmented label="Handles" small value={handles} options={[{ id: "hover", label: "Handles on hover" }, { id: "always", label: "Always" }, { id: "off", label: "Off" }]} onChange={setHandles} />
           <Tip text="Compare with your last saved step (C)">
-            <button type="button" className={`bd-btn icon ${compare ? "on" : ""}`} aria-label="Compare" aria-pressed={!!compare} onClick={() => setCompare((c) => (c ? null : committed.current))} aria-keyshortcuts="C">
+            <Button size="sm" className={`bd-b lens-icon-btn ${compare ? "on" : ""}`} aria-label="Compare" aria-pressed={!!compare} onClick={() => setCompare((c) => (c ? null : committed.current))} aria-keyshortcuts="C">
               <ArrowLeftRight size={13} aria-hidden />
-            </button>
+            </Button>
           </Tip>
           <Tip text="Preview with the Top Bar, a window and the Dock">
-            <button type="button" className={`bd-btn icon ${context ? "on" : ""}`} aria-label="In context" aria-pressed={context} onClick={() => setContext((c) => !c)}>
+            <Button size="sm" className={`bd-b lens-icon-btn ${context ? "on" : ""}`} aria-label="In context" aria-pressed={context} onClick={() => setContext((c) => !c)}>
               <Eye size={13} aria-hidden />
-            </button>
+            </Button>
           </Tip>
           <div className="bd-stage-actions">
           <div className="bd-split">
-            <button type="button" className="bd-btn primary" onClick={live}>
+            <Button size="sm" variant="primary" className="bd-b" onClick={live}>
               <Monitor size={13} aria-hidden /> Set as live wallpaper
-            </button>
-            <button type="button" className="bd-btn" onClick={tryIt} disabled={trialLeft > 0}>
+            </Button>
+            <Button size="sm" className="bd-b" onClick={tryIt} disabled={trialLeft > 0}>
               Try 10 s
-            </button>
-            <button type="button" className="bd-btn" onClick={still}>
+            </Button>
+            <Button size="sm" className="bd-b" onClick={still}>
               Still
-            </button>
+            </Button>
           </div>
-          <button type="button" className="bd-btn" onClick={theme}>
+          <Button size="sm" className="bd-b" onClick={theme}>
             Make a theme
-          </button>
+          </Button>
           </div>
-          <button type="button" className="bd-btn icon bd-panel-toggle" aria-label="Controls" aria-expanded={panelOpen} onClick={() => setPanelOpen((o) => !o)}>
+          <Button size="sm" className="bd-b lens-icon-btn bd-panel-toggle" aria-label="Controls" aria-expanded={panelOpen} onClick={() => setPanelOpen((o) => !o)}>
             <SlidersHorizontal size={13} aria-hidden />
-          </button>
+          </Button>
         </div>
         {history.length > 1 && (
           <div className="bd-history" role="list" aria-label="Recent looks">
@@ -554,9 +556,9 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
                   key={code.slice(-24) + i}
                   type="button"
                   role="listitem"
-                  className="bd-hist"
+                  className="bd-hist bd-v-bg"
                   aria-label={`Go back to look ${i + 1}: ${modeById(st.mode)?.name}`}
-                  style={{ background: `linear-gradient(135deg, ${st.stops.map((x) => x.color).join(",")})` }}
+                  ref={vars({ "--bd-bg": `linear-gradient(135deg, ${st.stops.map((x) => x.color).join(",")})` })}
                   onClick={() => replaceAll(st)}
                 />
               );
@@ -601,19 +603,19 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           <b>{COACH[coach].title}</b>
           <p>{COACH[coach].body}</p>
           <div className="bd-row end">
-            <button
-              type="button"
-              className="bd-btn ghost"
+            <Button size="sm" variant="ghost"
+             
+              className="bd-b"
               onClick={() => {
                 setCoach(-1);
                 setCoachSeen();
               }}
             >
               Skip
-            </button>
-            <button
-              type="button"
-              className="bd-btn primary"
+            </Button>
+            <Button size="sm" variant="primary"
+             
+              className="bd-b"
               onClick={() => {
                 if (coach >= COACH.length - 1) {
                   setCoach(-1);
@@ -622,7 +624,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
               }}
             >
               {coach >= COACH.length - 1 ? "Start" : "Next"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -631,16 +633,16 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
         <div className="bd-toast" role="status" key={toast.id}>
           {toast.text}
           {toast.undo && (
-            <button
-              type="button"
-              className="bd-btn"
+            <Button size="sm"
+             
+              className="bd-b"
               onClick={() => {
                 toast.undo?.();
                 setToast(null);
               }}
             >
               Undo
-            </button>
+            </Button>
           )}
         </div>
       )}
