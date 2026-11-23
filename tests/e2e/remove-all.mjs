@@ -162,7 +162,7 @@ function lensProcessCount() {
 const APPLY = [
   ["url-scheme", (p) => invoke(p, "url_scheme_install", { confirm: true })],
   ["explorer-verbs", (p) => invoke(p, "explorer_verbs_install", { confirm: true })],
-  ["browser-bridge", (p) => invoke(p, "bridge_install", { browsers: ["chrome", "edge", "firefox"], extraExtensionIds: [], confirm: true })],
+  ["browser-bridge", (p) => invoke(p, "bridge_install", { browsers: ["chrome", "edge", "brave", "chromium", "firefox"], extraExtensionIds: [], confirm: true })],
   ["cleaner-verb", async (p) => invoke(p, "cleaner_settings_set", { next: { ...(await invoke(p, "cleaner_settings_get")), explorerVerb: true } })],
   ["windows-accent", async (p) => {
     const cur = regQuery(["HKCU\\Software\\Microsoft\\Windows\\DWM", "/v", "ColorPrevalence"]).join(" ");
