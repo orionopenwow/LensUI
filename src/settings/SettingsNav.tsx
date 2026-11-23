@@ -28,10 +28,14 @@ import {
   ExternalLink,
   X,
   SlidersHorizontal,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { GROUPS, PAGES, pagesInGroup, type PageId } from "./registry";
 import { buildIndex, search, type SearchEntry } from "./search";
 import { preloadSettingsPage } from "./pages";
+import { ModePill } from "./simple/ModePill";
+import { inSimpleNav, isAdvancedHit, morePages, type SettingsMode } from "./simple/mode";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   quick: SlidersHorizontal,
@@ -67,9 +71,17 @@ export const PageIcon: React.FC<{ id: PageId; size?: number }> = ({ id, size = 1
 
 export const SettingsNav: React.FC<{
   page: PageId;
+  /** Simple or Advanced (docs/SETTINGS_SIMPLE.md). Advanced when omitted. */
+  mode?: SettingsMode;
+  onMode?: (m: SettingsMode) => void;
   onNavigate: (page: PageId, section?: string) => void;
   onWizard: () => void;
-}> = ({ page, onNavigate, onWizard }) => {
+}> = ({ page, mode = "advanced", onMode, onNavigate, onWizard }) => {
+  const [showMore, setShowMore] = useState(false);
+  const simple = mode === "simple";
+  const folded = simple ? morePages().length : 0;
+  // A folded page that is open (from search or a deep link) shows in the list too.
+  const visible = (id: PageId) => !simple || inSimpleNav(id) || showMore || id === page;
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,6 +130,7 @@ export const SettingsNav: React.FC<{
 
   return (
     <aside className="cc-sidebar sh-sidebar" aria-label="Settings">
+      {onMode && <ModePill mode={mode} onChange={onMode} place="top" />}
       <div className="sh-search" role="search">
         <Search size={13} aria-hidden />
         <input
@@ -171,21 +184,22 @@ export const SettingsNav: React.FC<{
                 <span className="sh-result-label">{r.label}</span>
                 <span className="sh-result-crumb">{r.breadcrumb}</span>
               </span>
+              {r.kind !== "windows" && isAdvancedHit(mode, r.page, r.section) && <span className="ss-adv-tag">Advanced</span>}
               {r.kind === "windows" && <ExternalLink size={11} aria-label="Opens Windows Settings" />}
             </button>
           ))}
         </div>
       ) : (
         <nav ref={navRef} className="sh-nav" onKeyDown={onNavKey}>
-          {GROUPS.map((g) => (
+          {GROUPS.filter((g) => pagesInGroup(g.id).some((p) => visible(p.id))).map((g) => (
             <div key={g.id} className="cc-nav-group" role="group" aria-label={g.label}>
               <div className="cc-nav-group-label">{g.label}</div>
-              {pagesInGroup(g.id).map((p) => (
+              {pagesInGroup(g.id).filter((p) => visible(p.id)).map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   data-page={p.id}
-                  className={`cc-nav-btn ${page === p.id ? "active" : ""}`}
+                  className={`cc-nav-btn ${page === p.id ? "active" : ""} ${simple && !inSimpleNav(p.id) ? "ss-nav-extra" : ""}`}
                   aria-current={page === p.id ? "page" : undefined}
                   onClick={() => onNavigate(p.id)}
                   onPointerEnter={() => preloadSettingsPage(p.id)}
@@ -197,10 +211,18 @@ export const SettingsNav: React.FC<{
               ))}
             </div>
           ))}
+          {simple && folded > 0 && (
+            <button type="button" className="ss-nav-more" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
+              <MoreHorizontal size={15} aria-hidden />
+              <span>{showMore ? "Fewer pages" : `More (${folded} pages)`}</span>
+              <ChevronDown size={13} className="chev" aria-hidden />
+            </button>
+          )}
         </nav>
       )}
 
       <div className="sh-nav-foot">
+        {onMode && <ModePill mode={mode} onChange={onMode} place="bottom" />}
         <button type="button" className="cc-nav-btn" onClick={onWizard}>
           <Sparkles size={15} strokeWidth={2.1} color="#F472B6" aria-hidden />
           <span>Setup Wizard</span>

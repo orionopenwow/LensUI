@@ -176,6 +176,8 @@ export interface LensConfig {
   widgets: WidgetsConfig;
   styledFolders: StyledFolderRecord[];
   onboardingCompleted?: boolean;
+  /** Settings hub detail level; "" until chosen (new users start Simple, existing users Advanced). */
+  settingsMode?: "simple" | "advanced" | "";
   themeSchedule?: Partial<import("../themes/schedule").ThemeSchedule> | null;
   tiling?: import("../components/TilingCard").TilingConfig;
   workspaces?: import("../components/WorkspacesCard").WorkspacesConfig;
