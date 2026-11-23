@@ -321,8 +321,13 @@ async function waitDesk(page, sel = "#desk-host") {
     const ib = (await item.count()) ? await item.boundingBox() : null;
     // The dock frame takes the pointer only while it's over the dock (so windows under its empty band stay
     // clickable): move there first, like a person does, then click.
-    if (ib) { await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2 - 30); await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2, { steps: 3 }); await page.waitForTimeout(150); await page.mouse.click(ib.x + ib.width / 2, ib.y + ib.height / 2); await page.waitForTimeout(700); }
-    else problems.push(`interaction: no dock item for ${name}`);
+    if (!ib) problems.push(`interaction: no dock item for ${name}`);
+    // Hovering magnifies the dock, so the icon moves: settle, measure again, then click (up to 3 tries).
+    for (let tries = 0; ib && tries < 3 && (await D((i) => window.lensSite.desk.wins.get(i).min, w0.id)); tries++) {
+      await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2 - 30); await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2, { steps: 3 }); await page.waitForTimeout(400);
+      const b2 = await item.boundingBox();
+      await page.mouse.click(b2.x + b2.width / 2, b2.y + b2.height / 2); await page.waitForTimeout(800);
+    }
   } else problems.push("interaction: the hero dock frame didn't load");
   expect(!(await D((i) => window.lensSite.desk.wins.get(i).min, w0.id)), "restore from the dock");
   // The magic right-click on each kind of target, and the desktop menu.
