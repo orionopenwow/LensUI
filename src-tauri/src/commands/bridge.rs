@@ -63,7 +63,7 @@ fn status() -> BridgeStatus {
             })
             .collect(),
         url_scheme_installed: reg::is_installed(&manifest::url_scheme_plan(&exe)),
-        explorer_verbs_installed: reg::is_installed(&manifest::explorer_plan(&exe)),
+        explorer_verbs_installed: reg::is_installed(&manifest::explorer_plan_with(&exe, &bridge::actions::load_state().hidden())),
         chromium_extension_id: manifest::DEFAULT_CHROMIUM_ID.into(),
         firefox_extension_id: manifest::DEFAULT_FIREFOX_ID.into(),
         extra_extension_ids: s.extra_extension_ids,
@@ -98,7 +98,7 @@ pub(crate) struct RegistryReport {
     plan: manifest::RegPlan,
     files: Vec<String>,
     removed: Vec<String>,
-    message: String,
+    pub(crate) message: String,
 }
 
 #[tauri::command]
@@ -161,7 +161,9 @@ pub(crate) fn url_scheme_uninstall() -> Result<RegistryReport, String> {
 
 #[tauri::command]
 pub(crate) fn explorer_verbs_install(confirm: bool) -> Result<RegistryReport, String> {
-    registry_toggle(manifest::explorer_plan(&bridge::exe_path()), true, confirm, "the Lens right-click menu in File Explorer")
+    // Actions hidden in Settings → Right-click menu are left out of Explorer too.
+    let hidden = bridge::actions::load_state().hidden();
+    registry_toggle(manifest::explorer_plan_with(&bridge::exe_path(), &hidden), true, confirm, "the Lens right-click menu in File Explorer")
 }
 
 #[tauri::command]

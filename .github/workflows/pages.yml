@@ -1,40 +1,96 @@
 name: Pages
 
+# Builds the website from the repository (tools/site/build.mjs) and deploys it to GitHub Pages on
+# pushes to main. On pull requests it builds and checks the site (links, accessibility, page
+# weight, the command-engine port) without deploying.
+# One-time setup by the repo owner: Settings › Pages › Source = "GitHub Actions"
+# (or: gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow).
+
 on:
   push:
     branches: [main]
     paths:
       - "docs/**"
-      - "DESIGN.md"
+      - "src/**"
+      - "src-tauri/src/ai/**"
       - "tools/site/**"
+      - "tools/parity/mock/**"
+      - "README.md"
+      - "DESIGN.md"
       - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/guide-for-users/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "src/themes/**"
+      - "src/playground/**"
+      - "src/surfaces/DockSurface*"
+      - "src-tauri/src/ai/intent.rs"
+      - ".github/workflows/pages.yml"
+  schedule:
+    - cron: "41 13 * * *" # daily, after the research task updates the tester notes
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch the branches the site reads (tester notes, vision)
+        run: git fetch origin research/daily docs/vision-unified || true
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Command-engine port matches the app
+        run: node tools/site/test/intent.test.mjs
+      - name: User docs from the Guide index
+        run: node tools/site/gen-user-docs.mjs
+      - name: Build the site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/site/build.mjs
+      - name: Check the site (links, accessibility, weight, screenshots)
+        run: |
+          npm install --no-save --no-package-lock playwright@1 axe-core@4
+          npx playwright install --with-deps chromium
+          node tools/site/check.mjs --shots site-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-screenshots
+          path: site-shots/
+          if-no-files-found: ignore
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Render docs pages
-        run: node tools/site/build-docs.mjs
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/site
       - id: deployment
         uses: actions/deploy-pages@v4

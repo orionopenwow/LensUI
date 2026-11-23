@@ -1,0 +1,107 @@
+{
+  "_note": "Baseline per scenario: the larger of the GitHub ubuntu-latest runner's numbers and a reference dev machine, at 4x CPU throttle. A run fails when a metric exceeds baseline x 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, from the runner (workflow_dispatch 'update baselines', robustness-reports artifact).",
+  "throttle": 4,
+  "baseline": {
+    "dock-hover-sweep": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0.0081,
+      "fcp": 540
+    },
+    "dock-magnification": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 0,
+      "cls": 0.0147,
+      "fcp": 524
+    },
+    "dock-search-glide": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 2,
+      "cls": 0,
+      "fcp": 520
+    },
+    "command-mini-expand": {
+      "p50": 16.7,
+      "p95": 50,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    },
+    "theme-switch": {
+      "p50": 16.7,
+      "p95": 83.4,
+      "longTasks": 6,
+      "cls": 0.055,
+      "fcp": 644
+    },
+    "settings-tab-switch": {
+      "p50": 16.7,
+      "p95": 50,
+      "longTasks": 10,
+      "cls": 0,
+      "fcp": 724
+    },
+    "playground-sand": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 600
+    },
+    "playground-fluid": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    },
+    "playground-flow": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 568
+    },
+    "playground-constellation": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 532
+    },
+    "playground-aurora": {
+      "p50": 66.6,
+      "p95": 66.7,
+      "longTasks": 81,
+      "cls": 0,
+      "fcp": 588
+    },
+    "playground-rain": {
+      "p50": 16.7,
+      "p95": 33.3,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 652
+    },
+    "playground-starfield": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 612
+    },
+    "playground-skyclock": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 0
+    }
+  },
+  "_findings": {
+    "theme-switch.cls": "F8 (docs/TESTING.md): the Theme & Look hero jumps ~29 px when a pack's description wraps to a second line. Baseline CLS raised to today's 0.055 so a worse shift still fails; lower it with the fix."
+  }
+}

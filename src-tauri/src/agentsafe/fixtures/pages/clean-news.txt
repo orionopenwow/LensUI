@@ -1,0 +1,3 @@
+# expect: clean
+dom||The new model will launch next week, the company said. Analysts expect strong demand.
+dom||Click the Subscribe button to get our newsletter.

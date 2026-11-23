@@ -1,4 +1,5 @@
 // Popup = Lens Mini for the current tab.
+import { isYoutubeVideoUrl } from "./youtube.js";
 const api = globalThis.browser ?? globalThis.chrome;
 const D = globalThis.LensDash;
 const L = globalThis.LensSel;
@@ -72,6 +73,15 @@ api.runtime.sendMessage({ type: "theme" }).then((r) => {
   const links = el(
     "div",
     { className: "l-links" },
+    ...(isYoutubeVideoUrl(tab?.url || "")
+      ? [el("button", {
+          textContent: "Get transcript",
+          onclick: () => {
+            api.runtime.sendMessage({ type: "transcript-load" }).catch(() => {});
+            openPanel();
+          },
+        })]
+      : []),
     el("button", { textContent: "Side panel", onclick: openPanel }),
     el("button", { textContent: "Settings", onclick: () => api.runtime.openOptionsPage() }),
   );

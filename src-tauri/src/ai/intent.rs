@@ -79,6 +79,68 @@ pub const ACTIONS: &[&str] = &[
     "convert",
     "open_settings_page",
     "create_note",
+    // Added with voice control (also used by the palette and ai_run_intent).
+    "window_action",
+    "move_window",
+    "open_overview",
+    "set_accent",
+    "set_dock_style",
+    "next_wallpaper",
+    "set_wallpaper_scene",
+    "set_calm_mode",
+    "lock_screen",
+];
+
+/// Dock styles the engine recognises: (spoken names, style id). Must match src/dock/styles.ts.
+pub const DOCK_STYLES: &[(&[&str], &str)] = &[
+    (&["floating", "float", "default"], "floating"),
+    (&["slim", "thin", "small"], "slim"),
+    (&["taskbar", "windows taskbar", "windows 11", "windows eleven", "bar"], "taskbar"),
+    (&["studio"], "studio"),
+    (&["minimal", "minimalist", "icons only"], "minimal"),
+    (&["split"], "split"),
+];
+
+/// Playground scenes: (spoken names, scene id). Must match src/playground scene ids.
+pub const SCENES: &[(&[&str], &str)] = &[
+    (&["falling sand", "sand"], "sand"),
+    (&["ink"], "ink"),
+    (&["flow field", "flow"], "flow"),
+    (&["constellation", "constellations", "stars"], "constellation"),
+    (&["aurora", "northern lights"], "aurora"),
+    (&["rain on glass", "rain"], "rain"),
+    (&["starfield", "star field", "space"], "starfield"),
+    (&["sky clock", "sky"], "sky-clock"),
+];
+
+/// Accent colours by name (Tailwind 500 shades, readable on dark and light packs).
+pub const ACCENT_COLOURS: &[(&str, &str)] = &[
+    ("red", "#ef4444"),
+    ("orange", "#f97316"),
+    ("amber", "#f59e0b"),
+    ("gold", "#f59e0b"),
+    ("yellow", "#eab308"),
+    ("lime", "#84cc16"),
+    ("green", "#22c55e"),
+    ("emerald", "#10b981"),
+    ("mint", "#10b981"),
+    ("teal", "#14b8a6"),
+    ("cyan", "#06b6d4"),
+    ("sky blue", "#0ea5e9"),
+    ("sky", "#0ea5e9"),
+    ("light blue", "#0ea5e9"),
+    ("blue", "#3b82f6"),
+    ("indigo", "#6366f1"),
+    ("violet", "#8b5cf6"),
+    ("lavender", "#8b5cf6"),
+    ("purple", "#a855f7"),
+    ("magenta", "#d946ef"),
+    ("fuchsia", "#d946ef"),
+    ("pink", "#ec4899"),
+    ("rose", "#f43f5e"),
+    ("grey", "#6b7280"),
+    ("gray", "#6b7280"),
+    ("slate", "#64748b"),
 ];
 
 /// (spoken names, pack id). Must stay in step with src/themes/packs.ts and
@@ -312,6 +374,11 @@ pub fn parse(text: &str) -> Option<RawIntent> {
         return Some(i);
     }
 
+    // --- window actions, monitors, overview, look extras, lock (voice-era additions)
+    if let Some(i) = parse_extras(t) {
+        return Some(i);
+    }
+
     // --- workspaces
     if let Some(i) = parse_workspace(t) {
         return Some(i);
@@ -487,7 +554,7 @@ fn parse_toggles(t: &str) -> Option<RawIntent> {
             } else {
                 return None; // "open notifications" etc. is not DND
             }
-        } else if rest.is_empty() || rest == "mode" || rest == "go" || rest == "enter" || rest == "i need" {
+        } else if rest.is_empty() || rest == "mode" || rest == "go" || rest == "enter" || rest == "i need" || rest.starts_with("for ") {
             enabled = enabled.or(Some(true));
         }
         let enabled = enabled?;
@@ -654,6 +721,200 @@ fn parse_windows(t: &str) -> Option<RawIntent> {
     None
 }
 
+fn word_number(w: &str) -> Option<u32> {
+    let words = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+    w.parse::<u32>().ok().or_else(|| words.iter().position(|x| *x == w).map(|i| i as u32 + 1))
+}
+
+/// Strips "this", "the window", "it", "my window"… and returns the app name if one was given.
+/// `None` = the focused window.
+fn window_target(rest: &str) -> Option<Option<String>> {
+    let r = rest.trim();
+    let focused = [
+        "", "this", "it", "that", "window", "this window", "the window", "that window", "my window", "the current window",
+        "current window", "this app", "the app", "everything here",
+    ];
+    if focused.contains(&r) {
+        return Some(None);
+    }
+    clean_app_name(r).map(Some)
+}
+
+fn with_target(mut i: RawIntent, target: Option<String>, verb: &str) -> RawIntent {
+    match target {
+        Some(name) => {
+            i.summary = format!("{} {}", verb, title_case(&name));
+            i.s("name", name)
+        }
+        None => i.s("name", "focused"),
+    }
+}
+
+fn parse_extras(t: &str) -> Option<RawIntent> {
+    // Minimise / restore / pin
+    if let Some(rest) = strip_any(t, &["minimize ", "minimise ", "hide "]).or(if matches!(t, "minimize" | "minimise") { Some("") } else { None }) {
+        if rest == "all" || rest == "everything" || rest == "all windows" {
+            return None; // "minimise all" = show desktop (parse_windows)
+        }
+        let target = window_target(rest)?;
+        return Some(with_target(RawIntent::new("window_action", 0.93, "Minimise the window").s("action", "minimize"), target, "Minimise"));
+    }
+    if let Some(rest) = strip_any(t, &["restore ", "unminimize ", "unminimise ", "un-minimize ", "un-minimise "])
+        .or(if matches!(t, "restore" | "unminimize" | "unminimise" | "bring it back" | "bring that back") { Some("") } else { None })
+    {
+        let target = window_target(rest)?;
+        return Some(with_target(RawIntent::new("window_action", 0.9, "Restore the window").s("action", "restore"), target, "Restore"));
+    }
+    if let Some(rest) = t.strip_prefix("maximize ").or_else(|| t.strip_prefix("maximise ")) {
+        if let Some(Some(name)) = window_target(rest) {
+            return Some(with_target(RawIntent::new("window_action", 0.9, "Maximise").s("action", "maximize"), Some(name), "Maximise"));
+        }
+    }
+    let pin = [
+        "pin this", "pin this window", "pin the window", "pin window", "pin on top", "pin it on top", "pin this on top",
+        "keep this on top", "keep it on top", "keep on top", "keep this window on top", "always on top", "make this always on top",
+        "stay on top",
+    ];
+    if pin.contains(&t) {
+        return Some(RawIntent::new("window_action", 0.93, "Pin the window on top").s("action", "pin").s("name", "focused"));
+    }
+    let unpin = ["unpin", "unpin this", "unpin this window", "unpin the window", "stop pinning", "don't keep on top", "not on top"];
+    if unpin.contains(&t) {
+        return Some(RawIntent::new("window_action", 0.93, "Unpin the window").s("action", "unpin").s("name", "focused"));
+    }
+
+    // Move the window to another monitor or workspace
+    if let Some(raw) = strip_any(t, &["move ", "send ", "throw ", "put "]) {
+        let had_object = !raw.starts_with("to ") && !raw.starts_with("over to ") && !raw.starts_with("onto ");
+        let rest = raw
+            .trim_start_matches("this window ")
+            .trim_start_matches("the window ")
+            .trim_start_matches("this app ")
+            .trim_start_matches("window ")
+            .trim_start_matches("this ")
+            .trim_start_matches("it ")
+            .trim();
+        if let Some(dest) = rest.strip_prefix("to ").or_else(|| rest.strip_prefix("over to ")).or_else(|| rest.strip_prefix("onto ")) {
+            let dest = dest.trim_start_matches("the ").trim();
+            let next = ["next monitor", "next screen", "next display", "other monitor", "other screen", "other display", "second monitor", "second screen", "monitor two", "screen two"];
+            let prev = ["previous monitor", "previous screen", "previous display", "last monitor", "first monitor", "main monitor", "main screen", "primary monitor", "monitor one", "screen one"];
+            if next.contains(&dest) {
+                return Some(RawIntent::new("move_window", 0.93, "Move the window to the next monitor").s("to", "next_monitor"));
+            }
+            if prev.contains(&dest) {
+                return Some(RawIntent::new("move_window", 0.9, "Move the window to the previous monitor").s("to", "prev_monitor"));
+            }
+            // Only "move THIS/the window … to workspace N" moves the window; "move to workspace N"
+            // keeps its older meaning (switch), handled by parse_workspace.
+            if had_object {
+                let num = dest.strip_prefix("workspace ").or_else(|| dest.strip_prefix("desktop ")).map(str::trim);
+                if let Some(n) = num.and_then(word_number).filter(|n| (1..=9).contains(n)) {
+                    return Some(
+                        RawIntent::new("move_window", 0.93, format!("Move the window to workspace {}", n))
+                            .s("to", "workspace")
+                            .s("target", n.to_string()),
+                    );
+                }
+            }
+        }
+    }
+
+    // Overview
+    if matches!(
+        t,
+        "overview" | "show overview" | "open overview" | "show all windows" | "show me all windows" | "show my windows" | "all windows"
+            | "task view" | "mission control" | "expose" | "exposé" | "window overview"
+    ) {
+        return Some(RawIntent::new("open_overview", 0.95, "Open Overview"));
+    }
+
+    // Lock
+    if matches!(t, "lock" | "lock the screen" | "lock screen" | "lock my screen" | "lock the computer" | "lock my computer" | "lock my pc" | "lock the pc" | "lock windows") {
+        return Some(RawIntent::new("lock_screen", 0.95, "Lock the PC"));
+    }
+
+    // Calm mode (freezes the living wallpaper)
+    if t.contains("calm mode") || matches!(t, "freeze the wallpaper" | "pause the wallpaper" | "stop the wallpaper" | "unfreeze the wallpaper" | "resume the wallpaper") {
+        let rest = t.replace("calm mode", "");
+        let rest = rest.trim();
+        let enabled = if t.contains("unfreeze") || t.contains("resume") {
+            Some(false)
+        } else if t.contains("freeze") || t.contains("pause") || t.contains("stop the") {
+            Some(true)
+        } else if rest.is_empty() {
+            Some(true)
+        } else {
+            on_off(rest)
+        };
+        return Some(match enabled {
+            Some(e) => RawIntent::new("set_calm_mode", 0.93, if e { "Turn on calm mode" } else { "Turn off calm mode" }).b("enabled", e),
+            None => RawIntent::new("set_calm_mode", 0.85, "Toggle calm mode"),
+        });
+    }
+
+    // Wallpaper and Playground scenes
+    if matches!(
+        t,
+        "next wallpaper" | "change wallpaper" | "change the wallpaper" | "new wallpaper" | "shuffle wallpaper" | "different wallpaper"
+            | "another wallpaper" | "next background" | "change background" | "change the background"
+    ) {
+        return Some(RawIntent::new("next_wallpaper", 0.95, "Next wallpaper"));
+    }
+    {
+        let rest = strip_any(t, &["show the ", "show ", "play the ", "play ", "use the ", "use ", "switch to the ", "switch to ", "set the scene to ", "scene ", "wallpaper ", "start the ", "start "]);
+        let name = rest.unwrap_or(t);
+        let scened = t.contains("scene") || t.contains("wallpaper") || t.contains("background");
+        let name = name
+            .trim_end_matches(" scene")
+            .trim_end_matches(" wallpaper")
+            .trim_end_matches(" background")
+            .trim_start_matches("the ")
+            .trim();
+        if let Some((aliases, id)) = SCENES.iter().find(|(a, _)| a.contains(&name)) {
+            // Bare words like "rain", "sky" or "stars" need the word scene/wallpaper, or a
+            // multi-word alias, so "play rain sounds" etc. don't trigger.
+            let multiword = name.contains(' ') || *id == "sand" && name == "falling sand";
+            if scened || multiword {
+                let shown = title_case(aliases[0]);
+                return Some(RawIntent::new("set_wallpaper_scene", if scened { 0.93 } else { 0.85 }, format!("Show the {} scene", shown)).s("scene", *id));
+            }
+        }
+    }
+
+    // Accent colour
+    if t.contains("accent") || t.contains("highlight colo") {
+        let stop = [
+            "change", "set", "make", "the", "my", "accent", "accents", "colour", "color", "highlight", "to", "use", "a", "an", "please",
+            "switch", "it",
+        ];
+        let rest = t.split_whitespace().filter(|w| !stop.contains(w)).collect::<Vec<_>>().join(" ");
+        let name = rest;
+        if let Some((n, hex)) = ACCENT_COLOURS.iter().find(|(n, _)| *n == name) {
+            return Some(RawIntent::new("set_accent", 0.93, format!("Set the accent to {}", n)).s("color", *hex));
+        }
+        if name.len() == 7 && name.starts_with('#') && name[1..].bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Some(RawIntent::new("set_accent", 0.95, format!("Set the accent to {}", name)).s("color", name));
+        }
+    }
+
+    // Dock style
+    if t.contains("dock") {
+        let mut rest = t.to_string();
+        for w in [
+            "change the dock style to", "change dock style to", "set the dock style to", "set dock style to", "switch the dock to",
+            "switch dock to", "change the dock to", "change dock to", "make the dock", "make dock", "use the", "use a", "use",
+            "switch to the", "switch to a", "switch to", "dock style", "style", "dock", "the", "a", "an", "look", "please",
+        ] {
+            rest = format!(" {} ", rest).replace(&format!(" {} ", w), " ");
+        }
+        let name = rest.split_whitespace().collect::<Vec<_>>().join(" ");
+        if let Some((_, id)) = DOCK_STYLES.iter().find(|(a, id)| a.contains(&name.as_str()) || *id == name) {
+            return Some(RawIntent::new("set_dock_style", 0.93, format!("Switch the Dock to {}", title_case(id))).s("style", *id));
+        }
+    }
+    None
+}
+
 fn parse_settings(t: &str) -> Option<RawIntent> {
     let rest = strip_any(t, &["open ", "show me ", "show ", "go to ", "take me to "])
         .or(if t.ends_with(" settings") { Some(t) } else { None })?;
@@ -751,6 +1012,7 @@ mod tests {
         ("do not disturb", "set_dnd", "enabled=true"),
         ("turn off do not disturb", "set_dnd", "enabled=false"),
         ("dnd on for 30 minutes", "set_dnd", "minutes=30"),
+        ("do not disturb for 45 minutes", "set_dnd", "minutes=45"),
         ("mute notifications", "set_dnd", "enabled=true"),
         ("resume notifications", "set_dnd", "enabled=false"),
         ("night light on", "set_night_light", "enabled=true"),
@@ -800,6 +1062,29 @@ mod tests {
         // notes
         ("take a note: buy milk", "create_note", "text=buy milk"),
         ("note call the dentist", "create_note", "text=call the dentist"),
+        // voice-era additions
+        ("minimize this", "window_action", "action=minimize"),
+        ("minimise chrome", "window_action", "name=chrome"),
+        ("restore", "window_action", "action=restore"),
+        ("pin this on top", "window_action", "action=pin"),
+        ("unpin this window", "window_action", "action=unpin"),
+        ("maximise spotify", "window_action", "action=maximize"),
+        ("move this to the next monitor", "move_window", "to=next_monitor"),
+        ("send this window to the other screen", "move_window", "to=next_monitor"),
+        ("move this window to workspace 2", "move_window", "target=2"),
+        ("move it to desktop three", "move_window", "target=3"),
+        ("show all windows", "open_overview", ""),
+        ("lock the screen", "lock_screen", ""),
+        ("calm mode", "set_calm_mode", "enabled=true"),
+        ("calm mode off", "set_calm_mode", "enabled=false"),
+        ("next wallpaper", "next_wallpaper", ""),
+        ("show the aurora scene", "set_wallpaper_scene", "scene=aurora"),
+        ("falling sand", "set_wallpaper_scene", "scene=sand"),
+        ("accent purple", "set_accent", "color=#a855f7"),
+        ("change the accent colour to teal", "set_accent", "color=#14b8a6"),
+        ("make the dock slim", "set_dock_style", "style=slim"),
+        ("switch the dock to taskbar", "set_dock_style", "style=taskbar"),
+        ("use the minimal dock", "set_dock_style", "style=minimal"),
     ];
 
     fn arg_matches(i: &RawIntent, spec: &str) -> bool {
@@ -844,6 +1129,7 @@ mod tests {
             "explain quantum computing simply",
             "open a new tab",
             "open notifications",
+            "play rain sounds",
             &"x".repeat(500),
         ] {
             assert_eq!(parse(p).map(|i| i.action), None, "{:?} should not be a command", p);
@@ -856,6 +1142,10 @@ mod tests {
         assert_eq!(parse("switch to windows").map(|i| i.action), Some("switch_app"));
         assert_eq!(parse("use the windows theme").map(|i| i.action), Some("set_theme_pack"));
         assert_eq!(parse("open paper").map(|i| i.action), Some("open_app"));
+        // "move to workspace N" keeps meaning "switch"; moving the window needs an object.
+        assert_eq!(parse("move to workspace 3").map(|i| i.action), Some("switch_workspace"));
+        // "minimise all" is show desktop, not a window called "all".
+        assert_eq!(parse("minimize all").map(|i| i.action), Some("show_desktop"));
     }
 
     #[test]

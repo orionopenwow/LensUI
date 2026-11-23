@@ -1,0 +1,3840 @@
+{
+  "$schema": "./schema.json",
+  "version": 1,
+  "updated": "2026-11-23",
+  "collections": [
+    {
+      "id": "rewrites",
+      "title": "Open-source rewrites",
+      "subtitle": "New open alternatives to the big paid apps"
+    },
+    {
+      "id": "artcraft-suite",
+      "title": "The ArtCraft suite",
+      "subtitle": "17 native creative and office apps, one launcher"
+    },
+    {
+      "id": "ai",
+      "title": "AI on your PC",
+      "subtitle": "Local models, generation and transcription"
+    },
+    {
+      "id": "essentials",
+      "title": "Essentials",
+      "subtitle": "Free tools almost everyone wants"
+    }
+  ],
+  "categories": [
+    {
+      "id": "create",
+      "title": "Create"
+    },
+    {
+      "id": "docs",
+      "title": "Write & docs"
+    },
+    {
+      "id": "slides",
+      "title": "Slides"
+    },
+    {
+      "id": "sheets",
+      "title": "Sheets & data"
+    },
+    {
+      "id": "design",
+      "title": "Design"
+    },
+    {
+      "id": "notes",
+      "title": "Notes"
+    },
+    {
+      "id": "dev",
+      "title": "Dev"
+    },
+    {
+      "id": "markets",
+      "title": "Markets (charts only)"
+    },
+    {
+      "id": "media",
+      "title": "Media"
+    },
+    {
+      "id": "utilities",
+      "title": "Utilities"
+    },
+    {
+      "id": "ai",
+      "title": "AI & local models"
+    }
+  ],
+  "apps": [
+    {
+      "id": "artcraft",
+      "name": "ArtCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "ai"
+      ],
+      "status": "beta",
+      "pitch": "An IDE for artists: controllable AI image and video with 2D and 3D scene tools.",
+      "why": "The flagship of the ArtCraft project; local-first, permissive licence, native Rust app.",
+      "replaces": [
+        "Midjourney",
+        "Runway"
+      ],
+      "openSource": true,
+      "license": "MIT OR Apache-2.0",
+      "licenseVerified": true,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com",
+      "repo": "https://github.com/storytold/artcraft",
+      "install": {
+        "method": "githubRelease",
+        "repo": "storytold/artcraft",
+        "hints": [],
+        "fallbackUrl": "https://getartcraft.com"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/crates/desktop/artcraft/icons/ios/AppIcon-512%402x.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp",
+          "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/artcraft",
+        "sourceUrl": "https://github.com/storytold/artcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".png",
+          ".jpg",
+          ".webp",
+          ".mp4"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open artcraft",
+          "make an image in artcraft"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://raw.githubusercontent.com/storytold/artcraft/HEAD/README.md"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".png",
+            ".jpg",
+            ".webp"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open artcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "craft-launcher",
+      "name": "Craft Launcher",
+      "category": "create",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "alpha",
+      "pitch": "Installs and updates the whole ArtCraft suite (PhotoCraft, WordCraft, DeckCraft, GridCraft and more).",
+      "why": "One launcher for 17 open-source creative and office rewrites; Lens installs the launcher, the launcher manages the apps.",
+      "replaces": [
+        "Adobe Creative Cloud app"
+      ],
+      "openSource": true,
+      "license": "Permissive (per app; see each repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps",
+      "repo": "https://github.com/storytold/craft-launcher",
+      "install": {
+        "method": "githubRelease",
+        "repo": "storytold/craft-launcher",
+        "hints": [],
+        "fallbackUrl": "https://getartcraft.com/apps"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/assets/app-icon/hicolor/256x256/apps/ai.storyteller.artcraft-launcher.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-grid.png",
+          "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-table.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/craft-launcher",
+        "sourceUrl": "https://github.com/storytold/craft-launcher",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open the craft launcher"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Some coverage mentions 'fair source' terms in parts of the wider ArtCraft project; check each app's repo licence before commercial redistribution.",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open the craft launcher"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "photocraft",
+      "name": "PhotoCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Image editor. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Photoshop; installs through the Craft Launcher.",
+      "replaces": [
+        "Photoshop"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/photocraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/photocraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-demo.jpg",
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-adjustments.jpg",
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-layer-styles.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/photocraft",
+        "sourceUrl": "https://github.com/storytold/photocraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".png",
+          ".jpg",
+          ".psd",
+          ".webp"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open photocraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".png",
+            ".jpg",
+            ".psd",
+            ".webp"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open photocraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vectorcraft",
+      "name": "VectorCraft",
+      "category": "design",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Vector illustration. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Illustrator; installs through the Craft Launcher.",
+      "replaces": [
+        "Illustrator"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/vectorcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/vectorcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/assets/app-icon/vectorcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-1-neon.png",
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-2-ribbons.png",
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-4-bezier.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/vectorcraft",
+        "sourceUrl": "https://github.com/storytold/vectorcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".svg"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open vectorcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".svg"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open vectorcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filmcraft",
+      "name": "FilmCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Video editing. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Premiere Pro; installs through the Craft Launcher.",
+      "replaces": [
+        "Premiere Pro"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/filmcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/filmcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/assets/app-icon/filmcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-hero.png",
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-assembly.png",
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-timeline.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/filmcraft",
+        "sourceUrl": "https://github.com/storytold/filmcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mov"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open filmcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mov"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open filmcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lightcraft",
+      "name": "LightCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Photo library and RAW developer. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Lightroom; installs through the Craft Launcher.",
+      "replaces": [
+        "Lightroom"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/lightcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/lightcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/assets/app-icon/lightcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/hero-tetons.jpg",
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/curve-tetons.jpg",
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/grading-migrant-mother.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/lightcraft",
+        "sourceUrl": "https://github.com/storytold/lightcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".jpg",
+          ".dng"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open lightcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".jpg",
+            ".dng"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open lightcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pdfcraft",
+      "name": "PdfCraft",
+      "category": "docs",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "PDF workbench. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Acrobat; installs through the Craft Launcher.",
+      "replaces": [
+        "Acrobat"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/pdfcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/pdfcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/assets/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-viewer.png",
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-scripts.png",
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-twoup.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/pdfcraft",
+        "sourceUrl": "https://github.com/storytold/pdfcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".pdf"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open pdfcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".pdf"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open pdfcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "effectcraft",
+      "name": "EffectCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Motion graphics and VFX. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on After Effects; installs through the Craft Launcher.",
+      "replaces": [
+        "After Effects"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/effectcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/effectcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/assets/app-icon/effectcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-hero.png",
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-graph-editor.png",
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-3d.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/effectcraft",
+        "sourceUrl": "https://github.com/storytold/effectcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open effectcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open effectcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "designcraft",
+      "name": "DesignCraft",
+      "category": "design",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Page layout and publishing. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on InDesign; installs through the Craft Launcher.",
+      "replaces": [
+        "InDesign"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/designcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/designcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/assets/app-icon/designcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/ui-spread.png",
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-cover.png",
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-2.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/designcraft",
+        "sourceUrl": "https://github.com/storytold/designcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open designcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open designcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "figcraft",
+      "name": "FigCraft",
+      "category": "design",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Interface design and prototyping. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Figma; installs through the Craft Launcher.",
+      "replaces": [
+        "Figma"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/figcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/figcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/assets/app-icon/figcraft-256.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-1-hero.png",
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-2-components.png",
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-3-prototype.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/figcraft",
+        "sourceUrl": "https://github.com/storytold/figcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open figcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open figcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wordcraft",
+      "name": "WordCraft",
+      "category": "docs",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Word processing. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Google Docs; installs through the Craft Launcher.",
+      "replaces": [
+        "Google Docs",
+        "Word"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/wordcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/wordcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/assets/app-icon/wordcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png",
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/review.png",
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/references.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/wordcraft",
+        "sourceUrl": "https://github.com/storytold/wordcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".docx",
+          ".odt",
+          ".md"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open wordcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".docx",
+            ".odt",
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open wordcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deckcraft",
+      "name": "DeckCraft",
+      "category": "slides",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Presentations. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Google Slides; installs through the Craft Launcher.",
+      "replaces": [
+        "Google Slides",
+        "PowerPoint"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/deckcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/deckcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png",
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/shape-format.png",
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/format-pane.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/deckcraft",
+        "sourceUrl": "https://github.com/storytold/deckcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".pptx",
+          ".odp"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open deckcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".pptx",
+            ".odp"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open deckcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gridcraft",
+      "name": "GridCraft",
+      "category": "sheets",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Spreadsheets and data analysis. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Google Sheets; installs through the Craft Launcher.",
+      "replaces": [
+        "Google Sheets",
+        "Excel"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/gridcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/gridcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/assets/app-icon/gridcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png",
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/budget.png",
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/grades-formulas.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/gridcraft",
+        "sourceUrl": "https://github.com/storytold/gridcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".xlsx",
+          ".csv",
+          ".ods"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open gridcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".xlsx",
+            ".csv",
+            ".ods"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open gridcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "soundcraft",
+      "name": "SoundCraft",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "artcraft-suite"
+      ],
+      "status": "alpha",
+      "pitch": "Digital audio workstation. Part of the open-source ArtCraft suite, native and in Rust.",
+      "why": "A new open-source take on Audition; installs through the Craft Launcher.",
+      "replaces": [
+        "Audition",
+        "Logic"
+      ],
+      "openSource": true,
+      "license": "Permissive (see repo)",
+      "licenseVerified": false,
+      "publisher": "ArtCraft (storytold)",
+      "homepage": "https://getartcraft.com/apps/soundcraft",
+      "repo": null,
+      "install": {
+        "method": "via",
+        "via": "craft-launcher",
+        "fallbackUrl": "https://getartcraft.com/apps/soundcraft"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/assets/app-icon/soundcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/edit.png",
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/mix.png",
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/midi.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/soundcraft",
+        "sourceUrl": "https://github.com/storytold/soundcraft",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".wav",
+          ".mp3"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open soundcraft"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Early alpha / in development per getartcraft.com (November 2026).",
+      "sources": [
+        "https://getartcraft.com/apps",
+        "https://techaeris.com/2026/10/07/artcraft-launches-7-open-source-creative/"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".wav",
+            ".mp3"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open soundcraft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "concat",
+      "name": "Concat",
+      "category": "create",
+      "collections": [
+        "rewrites",
+        "ai"
+      ],
+      "status": "beta",
+      "pitch": "Free, local-first video editor that replaces CapCut, with AI captions and an MCP/JSON-RPC API.",
+      "why": "11.9k stars, fully local (Whisper captions on your PC), scriptable over MCP, so Lens AI can drive edits.",
+      "replaces": [
+        "CapCut"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0-or-later",
+      "licenseVerified": true,
+      "publisher": "jub0t",
+      "homepage": "https://concatenate.pages.dev",
+      "repo": "https://github.com/jub0t/Concat",
+      "stars": "11.9k",
+      "install": {
+        "method": "githubRelease",
+        "repo": "jub0t/Concat",
+        "hints": [],
+        "fallbackUrl": "https://github.com/jub0t/Concat/releases"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/concat_logo_512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png"
+        ],
+        "loop": null,
+        "credit": "github.com/jub0t/Concat",
+        "sourceUrl": "https://github.com/jub0t/Concat",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mov",
+          ".mkv",
+          ".webm"
+        ],
+        "mcp": true,
+        "cli": null,
+        "voice": [
+          "open concat",
+          "edit this video in concat"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://github.com/jub0t/Concat",
+        "https://justuse.tech/concat/"
+      ],
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mov",
+            ".mkv",
+            ".webm"
+          ]
+        },
+        {
+          "kind": "rightClick",
+          "actions": [
+            "open_in_app"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open concat",
+            "edit this video in concat"
+          ]
+        },
+        {
+          "kind": "guideLesson",
+          "lesson": "Edit a video with Concat"
+        }
+      ]
+    },
+    {
+      "id": "degenview",
+      "name": "degenview",
+      "category": "markets",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "beta",
+      "pitch": "Open-source TradingView-style charting app in Rust with a local Pine Script v6 engine.",
+      "why": "A native desktop rewrite (no Electron) with Pine scripts, many data sources and a paper-trading simulator that never routes orders.",
+      "replaces": [
+        "TradingView"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0-only",
+      "licenseVerified": true,
+      "publisher": "degenview",
+      "homepage": "https://github.com/degenview/degenview",
+      "repo": "https://github.com/degenview/degenview",
+      "stars": null,
+      "install": {
+        "method": "githubRelease",
+        "repo": "degenview/degenview",
+        "hints": [],
+        "fallbackUrl": "https://github.com/degenview/degenview/releases"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/brand/app_icon.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png",
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-debugger.png",
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-profiler.png"
+        ],
+        "loop": null,
+        "credit": "github.com/degenview/degenview",
+        "sourceUrl": "https://github.com/degenview/degenview",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".pine"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open the charting app",
+          "open degenview"
+        ],
+        "urlScheme": null
+      },
+      "notes": "Windows builds are not code-signed yet, so SmartScreen may warn on first launch. Charting and paper trading only; Lens never connects it to a broker.",
+      "sources": [
+        "https://github.com/degenview/degenview"
+      ],
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open the charting app"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "opencharts",
+      "name": "OpenCharts",
+      "category": "markets",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "beta",
+      "pitch": "Self-hosted TradingView alternative in the browser, built on Lightweight Charts.",
+      "why": "Runs entirely in the browser with drawing tools, indicators and a paper-trading engine; MIT licence.",
+      "replaces": [
+        "TradingView"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": true,
+      "publisher": "dylanpersonguy",
+      "homepage": "https://dylanpersonguy.github.io/OpenCharts/",
+      "repo": "https://github.com/dylanpersonguy/OpenCharts",
+      "stars": "315",
+      "install": {
+        "method": "web",
+        "url": "https://dylanpersonguy.github.io/OpenCharts/"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/public/icons/icon-512x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/docs/screenshot.png"
+        ],
+        "loop": null,
+        "credit": "github.com/dylanpersonguy/OpenCharts",
+        "sourceUrl": "https://github.com/dylanpersonguy/OpenCharts",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open opencharts"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://github.com/dylanpersonguy/OpenCharts",
+        "https://trendshift.io/repositories/243036"
+      ],
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "web"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open opencharts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "openstock",
+      "name": "OpenStock",
+      "category": "markets",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "stable",
+      "pitch": "Open-source market dashboard: prices, alerts and company insights.",
+      "why": "16.3k stars; a free alternative to paid market platforms. Web app you can self-host.",
+      "replaces": [
+        "Paid market platforms"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0",
+      "licenseVerified": true,
+      "publisher": "Open Dev Society",
+      "homepage": "https://openstock-ods.vercel.app",
+      "repo": "https://github.com/Open-Dev-Society/OpenStock",
+      "stars": "16.3k",
+      "install": {
+        "method": "web",
+        "url": "https://openstock-ods.vercel.app"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/logo.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/dashboard.png"
+        ],
+        "loop": null,
+        "credit": "github.com/Open-Dev-Society/OpenStock",
+        "sourceUrl": "https://github.com/Open-Dev-Society/OpenStock",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open openstock"
+        ],
+        "urlScheme": null
+      },
+      "notes": "The public demo asks you to sign up; self-hosting keeps your watchlists on your own server.",
+      "sources": [
+        "https://github.com/Open-Dev-Society/OpenStock"
+      ],
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "web"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open openstock"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "affine",
+      "name": "AFFiNE",
+      "category": "notes",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "stable",
+      "pitch": "Docs, whiteboards and databases in one local-first workspace.",
+      "why": "A Notion and Miro rewrite that works offline and keeps data on your PC.",
+      "replaces": [
+        "Notion",
+        "Miro"
+      ],
+      "openSource": true,
+      "license": "MIT (Community Edition)",
+      "licenseVerified": false,
+      "publisher": "AFFiNE",
+      "homepage": "https://affine.pro",
+      "repo": "https://github.com/toeverything/AFFiNE",
+      "install": {
+        "method": "winget",
+        "wingetId": "ToEverything.AFFiNE",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/toeverything/AFFiNE/577ae12b51a9d617c7e82b7265baf7eaf67dd21c/packages/frontend/apps/electron/resources/icons/icon_beta_512x512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/toeverything/AFFiNE",
+        "sourceUrl": "https://github.com/toeverything/AFFiNE",
+        "noMedia": "Screenshots live on affine.pro, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open affine"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/ToEverything.AFFiNE"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open affine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "appflowy",
+      "name": "AppFlowy",
+      "category": "notes",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "stable",
+      "pitch": "Open-source Notion alternative with docs, databases and local AI.",
+      "why": "Notion-style workspace with your data on your device.",
+      "replaces": [
+        "Notion"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0",
+      "licenseVerified": false,
+      "publisher": "AppFlowy-IO",
+      "homepage": "https://appflowy.com",
+      "repo": "https://github.com/AppFlowy-IO/AppFlowy",
+      "install": {
+        "method": "winget",
+        "wingetId": "AppFlowy.AppFlowy",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy/8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93/frontend/appflowy_flutter/android/app/src/main/ic_launcher-playstore.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/AppFlowy-IO/AppFlowy",
+        "sourceUrl": "https://github.com/AppFlowy-IO/AppFlowy",
+        "noMedia": "Screenshots live on appflowy.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md",
+          ".csv"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open appflowy"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/AppFlowy.AppFlowy"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md",
+            ".csv"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open appflowy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "onlyoffice",
+      "name": "ONLYOFFICE Desktop Editors",
+      "category": "docs",
+      "collections": [
+        "rewrites",
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Documents, spreadsheets, slides and PDFs with strong Microsoft Office compatibility.",
+      "why": "The closest open-source match to Word, Excel and PowerPoint layouts.",
+      "replaces": [
+        "Microsoft Office",
+        "Google Docs"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Ascensio System SIA",
+      "homepage": "https://www.onlyoffice.com",
+      "repo": "https://github.com/ONLYOFFICE/DesktopEditors",
+      "install": {
+        "method": "winget",
+        "wingetId": "ONLYOFFICE.DesktopEditors",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/ONLYOFFICE/desktop-apps/332c1905a5361dd4139481827b7ad4f4a9facd85/macos/ONLYOFFICE/Images.xcassets/AppIcon.appiconset/512x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/ONLYOFFICE/DesktopEditors/f05b333402617733e8ed226c00fbfd53cfb1a1fe/screenshots/ONLYOFFICE%20Desktop%20Editors.png"
+        ],
+        "loop": null,
+        "credit": "github.com/ONLYOFFICE/DesktopEditors",
+        "sourceUrl": "https://github.com/ONLYOFFICE/DesktopEditors",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".docx",
+          ".xlsx",
+          ".pptx",
+          ".pdf",
+          ".odt"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open onlyoffice"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/ONLYOFFICE.DesktopEditors"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".docx",
+            ".xlsx",
+            ".pptx",
+            ".pdf",
+            ".odt"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open onlyoffice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "libreoffice",
+      "name": "LibreOffice",
+      "category": "docs",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "The full open-source office suite: Writer, Calc, Impress, Draw.",
+      "why": "Mature, free forever, opens nearly everything.",
+      "replaces": [
+        "Microsoft Office"
+      ],
+      "openSource": true,
+      "license": "MPL-2.0",
+      "licenseVerified": false,
+      "publisher": "The Document Foundation",
+      "homepage": "https://www.libreoffice.org",
+      "repo": "https://git.libreoffice.org/core",
+      "install": {
+        "method": "winget",
+        "wingetId": "TheDocumentFoundation.LibreOffice",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/LibreOffice/core/1e7013b89993be78a2e853b6247ea365a4d150b0/sysui/desktop/icons/hicolor/512x512/apps/main.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/LibreOffice/core",
+        "sourceUrl": "https://github.com/LibreOffice/core",
+        "noMedia": "Screenshots live on www.libreoffice.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".docx",
+          ".xlsx",
+          ".pptx",
+          ".odt",
+          ".ods",
+          ".odp"
+        ],
+        "mcp": false,
+        "cli": "soffice",
+        "voice": [
+          "open libreoffice"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/TheDocumentFoundation.LibreOffice"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".docx",
+            ".xlsx",
+            ".pptx",
+            ".odt",
+            ".ods",
+            ".odp"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open libreoffice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "penpot",
+      "name": "Penpot",
+      "category": "design",
+      "collections": [
+        "rewrites"
+      ],
+      "status": "stable",
+      "pitch": "Open-source design and prototyping, built on open web standards.",
+      "why": "Figma-style collaborative design that you can self-host.",
+      "replaces": [
+        "Figma"
+      ],
+      "openSource": true,
+      "license": "MPL-2.0",
+      "licenseVerified": false,
+      "publisher": "Kaleidos",
+      "homepage": "https://penpot.app",
+      "repo": "https://github.com/penpot/penpot",
+      "install": {
+        "method": "web",
+        "url": "https://design.penpot.app"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/frontend/resources/images/assets/penpot-logo-icon.svg",
+        "screenshots": [
+          "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/docs/img/codemode-code.png"
+        ],
+        "loop": null,
+        "credit": "github.com/penpot/penpot",
+        "sourceUrl": "https://github.com/penpot/penpot",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".svg"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open penpot"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://penpot.app"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "web"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open penpot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "krita",
+      "name": "Krita",
+      "category": "create",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Professional painting and illustration.",
+      "why": "The best free painting app on Windows.",
+      "replaces": [
+        "Photoshop (painting)"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Krita Foundation",
+      "homepage": "https://krita.org",
+      "repo": "https://invent.kde.org/graphics/krita",
+      "install": {
+        "method": "winget",
+        "wingetId": "KDE.Krita",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/KDE/krita/97e66843f3b4742ddddd020c8824be980f03f6d6/krita/pics/branding/default/512-apps-krita.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/KDE/krita",
+        "sourceUrl": "https://github.com/KDE/krita",
+        "noMedia": "Screenshots live on krita.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".kra",
+          ".psd",
+          ".png"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open krita"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/KDE.Krita"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".kra",
+            ".psd",
+            ".png"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open krita"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inkscape",
+      "name": "Inkscape",
+      "category": "design",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Vector graphics editor for SVG.",
+      "why": "Mature, free Illustrator alternative.",
+      "replaces": [
+        "Illustrator"
+      ],
+      "openSource": true,
+      "license": "GPL-2.0-or-later",
+      "licenseVerified": false,
+      "publisher": "Inkscape",
+      "homepage": "https://inkscape.org",
+      "repo": "https://gitlab.com/inkscape/inkscape",
+      "install": {
+        "method": "winget",
+        "wingetId": "Inkscape.Inkscape",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/inkscape/inkscape",
+        "sourceUrl": "https://github.com/inkscape/inkscape",
+        "noMedia": "The GitHub mirror holds only a README and GitLab isn't reachable from the build; icon comes from the installed app.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".svg",
+          ".pdf"
+        ],
+        "mcp": false,
+        "cli": "inkscape",
+        "voice": [
+          "open inkscape"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/Inkscape.Inkscape"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".svg",
+            ".pdf"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open inkscape"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blender",
+      "name": "Blender",
+      "category": "create",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "3D modelling, animation, rendering and video editing.",
+      "why": "The standard free 3D suite.",
+      "replaces": [
+        "Maya",
+        "Cinema 4D"
+      ],
+      "openSource": true,
+      "license": "GPL",
+      "licenseVerified": false,
+      "publisher": "Blender Foundation",
+      "homepage": "https://www.blender.org",
+      "repo": "https://projects.blender.org/blender/blender",
+      "install": {
+        "method": "winget",
+        "wingetId": "BlenderFoundation.Blender",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/blender/blender/20a0565aa86c7ba6ab1e9537675a0cd8529337ef/release/freedesktop/icons/scalable/apps/blender.svg",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/blender/blender",
+        "sourceUrl": "https://github.com/blender/blender",
+        "noMedia": "Screenshots live on www.blender.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".blend",
+          ".fbx",
+          ".obj",
+          ".glb"
+        ],
+        "mcp": false,
+        "cli": "blender",
+        "voice": [
+          "open blender"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/BlenderFoundation.Blender"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".blend",
+            ".fbx",
+            ".obj",
+            ".glb"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open blender"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kdenlive",
+      "name": "Kdenlive",
+      "category": "create",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Multi-track video editor.",
+      "why": "Long-standing, capable open-source editor.",
+      "replaces": [
+        "Premiere Pro"
+      ],
+      "openSource": true,
+      "license": "GPL",
+      "licenseVerified": false,
+      "publisher": "KDE e.V.",
+      "homepage": "https://kdenlive.org",
+      "repo": "https://invent.kde.org/multimedia/kdenlive",
+      "install": {
+        "method": "winget",
+        "wingetId": "KDE.Kdenlive",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/KDE/kdenlive/05d605f56175a86109c59a4d390d060d863bdcfe/data/icons/512-apps-kdenlive.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/KDE/kdenlive",
+        "sourceUrl": "https://github.com/KDE/kdenlive",
+        "noMedia": "Screenshots live on kdenlive.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mov",
+          ".kdenlive"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open kdenlive"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/KDE.Kdenlive"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mov",
+            ".kdenlive"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open kdenlive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shotcut",
+      "name": "Shotcut",
+      "category": "create",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Simple, fast video editor.",
+      "why": "Lightweight alternative for quick edits.",
+      "replaces": [
+        "Clipchamp"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Meltytech",
+      "homepage": "https://shotcut.org",
+      "repo": "https://github.com/mltframework/shotcut",
+      "install": {
+        "method": "winget",
+        "wingetId": "Meltytech.Shotcut",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/mltframework/shotcut/2eba56a72af3b7806876f2a2956cfff789db1468/icons/shotcut-logo-320x320.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/mltframework/shotcut",
+        "sourceUrl": "https://github.com/mltframework/shotcut",
+        "noMedia": "Screenshots live on shotcut.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mlt"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open shotcut"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://shotcut.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mlt"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open shotcut"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obs-studio",
+      "name": "OBS Studio",
+      "category": "create",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Screen recording and live streaming.",
+      "why": "The standard for recording and streaming.",
+      "replaces": [
+        "Streamlabs"
+      ],
+      "openSource": true,
+      "license": "GPL-2.0",
+      "licenseVerified": false,
+      "publisher": "OBS Project",
+      "homepage": "https://obsproject.com",
+      "repo": "https://github.com/obsproject/obs-studio",
+      "install": {
+        "method": "winget",
+        "wingetId": "OBSProject.OBSStudio",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/obsproject/obs-studio/0c790bd0151fb9f574867e025ecf57e6eedc58e2/frontend/cmake/linux/icons/obs-logo-512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/obsproject/obs-studio",
+        "sourceUrl": "https://github.com/obsproject/obs-studio",
+        "noMedia": "Screenshots live on obsproject.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open obs",
+          "start recording in obs"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/OBSProject.OBSStudio"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open obs",
+            "start recording in obs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audacity",
+      "name": "Audacity",
+      "category": "create",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Record and edit audio.",
+      "why": "Fast, familiar audio editing.",
+      "replaces": [
+        "Audition"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Audacity",
+      "homepage": "https://www.audacityteam.org",
+      "repo": "https://github.com/audacity/audacity",
+      "install": {
+        "method": "winget",
+        "wingetId": "Audacity.Audacity",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/audacity/audacity/90ca9ed02aaab7a75edaf56cb6457ea03530b930/share/icons/AppIcon/AU4_AppIcon_512x512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/audacity/audacity",
+        "sourceUrl": "https://github.com/audacity/audacity",
+        "noMedia": "Screenshots live on www.audacityteam.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".wav",
+          ".mp3",
+          ".flac",
+          ".aup3"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open audacity"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/Audacity.Audacity"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".wav",
+            ".mp3",
+            ".flac",
+            ".aup3"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open audacity"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "darktable",
+      "name": "darktable",
+      "category": "create",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Photo workflow and RAW developer.",
+      "why": "A mature Lightroom alternative.",
+      "replaces": [
+        "Lightroom"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "darktable",
+      "homepage": "https://www.darktable.org",
+      "repo": "https://github.com/darktable-org/darktable",
+      "install": {
+        "method": "winget",
+        "wingetId": "darktable.darktable",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/darktable-org/darktable/679d594f5d93cde043703ba8ff26873d0e475905/data/pixmaps/dt_logo_128x128.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/darktable-org/darktable",
+        "sourceUrl": "https://github.com/darktable-org/darktable",
+        "noMedia": "Screenshots live on www.darktable.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".dng",
+          ".cr3",
+          ".nef",
+          ".arw"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open darktable"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://www.darktable.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".dng",
+            ".cr3",
+            ".nef",
+            ".arw"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open darktable"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "typst",
+      "name": "Typst",
+      "category": "docs",
+      "collections": [],
+      "status": "stable",
+      "pitch": "A fast, modern typesetting system: LaTeX-quality documents from simple markup.",
+      "why": "Great for reports and papers; compiles instantly. CLI install; editor optional.",
+      "replaces": [
+        "LaTeX"
+      ],
+      "openSource": true,
+      "license": "Apache-2.0",
+      "licenseVerified": false,
+      "publisher": "Typst GmbH",
+      "homepage": "https://typst.app",
+      "repo": "https://github.com/typst/typst",
+      "install": {
+        "method": "winget",
+        "wingetId": "Typst.Typst",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/typst/typst",
+        "sourceUrl": "https://github.com/typst/typst",
+        "noMedia": "The repo ships no app icon or screenshots; the logo lives on typst.app.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".typ"
+        ],
+        "mcp": false,
+        "cli": "typst",
+        "voice": [
+          "compile this with typst"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/Typst.Typst"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".typ"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "compile this with typst"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slidev",
+      "name": "Slidev",
+      "category": "slides",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Presentation slides from Markdown, for developers.",
+      "why": "Write slides as text, present in the browser.",
+      "replaces": [
+        "PowerPoint"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Slidev",
+      "homepage": "https://sli.dev",
+      "repo": "https://github.com/slidevjs/slidev",
+      "install": {
+        "method": "officialSite",
+        "url": "https://sli.dev/guide/"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/logo-circle.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/cover.png",
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/covers.png",
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/integrated-editor.png"
+        ],
+        "loop": null,
+        "credit": "github.com/slidevjs/slidev",
+        "sourceUrl": "https://github.com/slidevjs/slidev",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md"
+        ],
+        "mcp": false,
+        "cli": "slidev",
+        "voice": [],
+        "urlScheme": null
+      },
+      "notes": "Needs Node.js; the guide shows the one-line setup.",
+      "sources": [
+        "https://sli.dev"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marp",
+      "name": "Marp",
+      "category": "slides",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Markdown presentations with a live preview in VS Code or a CLI.",
+      "why": "The simplest way to turn notes into slides.",
+      "replaces": [
+        "PowerPoint"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Marp team",
+      "homepage": "https://marp.app",
+      "repo": "https://github.com/marp-team/marp",
+      "install": {
+        "method": "officialSite",
+        "url": "https://marp.app"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/marp-logo.svg",
+        "screenshots": [
+          "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/202205-ecosystem-update/transition-showcase-poster.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/marp-team/marp",
+        "sourceUrl": "https://github.com/marp-team/marp",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md"
+        ],
+        "mcp": false,
+        "cli": "marp",
+        "voice": [],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://marp.app"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "excalidraw",
+      "name": "Excalidraw",
+      "category": "design",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Hand-drawn style whiteboard and diagrams.",
+      "why": "Instant sketches and diagrams, nothing to install.",
+      "replaces": [
+        "Miro"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Excalidraw",
+      "homepage": "https://excalidraw.com",
+      "repo": "https://github.com/excalidraw/excalidraw",
+      "install": {
+        "method": "web",
+        "url": "https://excalidraw.com"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/collaboration.png",
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/export.png",
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/illustration.png"
+        ],
+        "loop": null,
+        "credit": "github.com/excalidraw/excalidraw",
+        "sourceUrl": "https://github.com/excalidraw/excalidraw",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".excalidraw"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open excalidraw",
+          "open a whiteboard"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://excalidraw.com"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "web"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open excalidraw",
+            "open a whiteboard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "category": "notes",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Private, local Markdown notes with links and plugins.",
+      "why": "Your notes stay plain files; Lens clipper templates save straight into a vault.",
+      "replaces": [
+        "Evernote"
+      ],
+      "openSource": false,
+      "license": "Proprietary (free for personal use)",
+      "licenseVerified": false,
+      "publisher": "Obsidian",
+      "homepage": "https://obsidian.md",
+      "repo": null,
+      "install": {
+        "method": "winget",
+        "wingetId": "Obsidian.Obsidian",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [
+          "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/dark.png",
+          "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/light.png"
+        ],
+        "loop": null,
+        "credit": "github.com/obsidianmd/obsidian-releases",
+        "sourceUrl": "https://github.com/obsidianmd/obsidian-releases",
+        "noMedia": "Closed source; the public releases repo has screenshots but no app icon. Lens uses the installed app's icon.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md"
+        ],
+        "mcp": false,
+        "cli": null,
+        "urlScheme": "obsidian://",
+        "voice": [
+          "open obsidian"
+        ]
+      },
+      "sources": [
+        "https://winstall.app/apps/Obsidian.Obsidian"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open obsidian"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "logseq",
+      "name": "Logseq",
+      "category": "notes",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Outliner and knowledge graph, local-first.",
+      "why": "Daily notes and linked thinking, open source.",
+      "replaces": [
+        "Roam"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Logseq",
+      "homepage": "https://logseq.com",
+      "repo": "https://github.com/logseq/logseq",
+      "install": {
+        "method": "winget",
+        "wingetId": "Logseq.Logseq",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/assets/icon.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/resources/img/screenshot.png"
+        ],
+        "loop": null,
+        "credit": "github.com/logseq/logseq",
+        "sourceUrl": "https://github.com/logseq/logseq",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open logseq"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://logseq.com"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open logseq"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "joplin",
+      "name": "Joplin",
+      "category": "notes",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Notes and to-dos with end-to-end encrypted sync.",
+      "why": "Evernote-style, open source, encrypted.",
+      "replaces": [
+        "Evernote"
+      ],
+      "openSource": true,
+      "license": "AGPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Joplin",
+      "homepage": "https://joplinapp.org",
+      "repo": "https://github.com/laurent22/joplin",
+      "install": {
+        "method": "winget",
+        "wingetId": "Joplin.Joplin",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/SquareIcon512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/WebsiteAssets/images/home-top-img.png",
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501238944.png",
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501239078.png"
+        ],
+        "loop": null,
+        "credit": "github.com/laurent22/joplin",
+        "sourceUrl": "https://github.com/laurent22/joplin",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".md",
+          ".jex"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open joplin"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://joplinapp.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".md",
+            ".jex"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open joplin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "category": "dev",
+      "collections": [],
+      "status": "stable",
+      "pitch": "A very fast code editor, written in Rust, with built-in AI.",
+      "why": "Snappy, collaborative, open source.",
+      "replaces": [
+        "VS Code"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Zed Industries",
+      "homepage": "https://zed.dev",
+      "repo": "https://github.com/zed-industries/zed",
+      "install": {
+        "method": "winget",
+        "wingetId": "ZedIndustries.Zed",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/zed-industries/zed/f126950f9d3b62666f97437ae5d4ccac2272c4db/crates/zed/resources/app-icon.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/zed-industries/zed",
+        "sourceUrl": "https://github.com/zed-industries/zed",
+        "noMedia": "Screenshots live on zed.dev, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".rs",
+          ".ts",
+          ".py",
+          ".md"
+        ],
+        "mcp": true,
+        "cli": "zed",
+        "voice": [
+          "open zed"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/ZedIndustries.Zed"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".rs",
+            ".ts",
+            ".py",
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open zed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vscodium",
+      "name": "VSCodium",
+      "category": "dev",
+      "collections": [],
+      "status": "stable",
+      "pitch": "VS Code built from source without Microsoft telemetry.",
+      "why": "The familiar editor, fully open.",
+      "replaces": [
+        "VS Code"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "VSCodium",
+      "homepage": "https://vscodium.com",
+      "repo": "https://github.com/VSCodium/vscodium",
+      "install": {
+        "method": "winget",
+        "wingetId": "VSCodium.VSCodium",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/VSCodium/vscodium/ca7f7b44b5e5c3faa663f6cdc043998f71936653/src/stable/resources/server/code-512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/VSCodium/vscodium",
+        "sourceUrl": "https://github.com/VSCodium/vscodium",
+        "noMedia": "Screenshots live on vscodium.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".ts",
+          ".js",
+          ".json",
+          ".md"
+        ],
+        "mcp": false,
+        "cli": "codium",
+        "voice": [
+          "open vscodium"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://vscodium.com"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".ts",
+            ".js",
+            ".json",
+            ".md"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open vscodium"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vlc",
+      "name": "VLC",
+      "category": "media",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Plays nearly every audio and video format.",
+      "why": "The player that just works.",
+      "replaces": [
+        "Windows Media Player"
+      ],
+      "openSource": true,
+      "license": "GPL-2.0",
+      "licenseVerified": false,
+      "publisher": "VideoLAN",
+      "homepage": "https://www.videolan.org",
+      "repo": "https://code.videolan.org/videolan/vlc",
+      "install": {
+        "method": "winget",
+        "wingetId": "VideoLAN.VLC",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/videolan/vlc/391a3bf87302769a3e45143b8a2f9961be45db0e/share/icons/256x256/vlc.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/videolan/vlc",
+        "sourceUrl": "https://github.com/videolan/vlc",
+        "noMedia": "Screenshots live on www.videolan.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mkv",
+          ".mp3",
+          ".flac"
+        ],
+        "mcp": false,
+        "cli": "vlc",
+        "voice": [
+          "open vlc",
+          "play this in vlc"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://www.videolan.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mkv",
+            ".mp3",
+            ".flac"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open vlc",
+            "play this in vlc"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "handbrake",
+      "name": "HandBrake",
+      "category": "media",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Convert and compress video.",
+      "why": "Shrink big recordings without losing quality.",
+      "replaces": [
+        "Paid converters"
+      ],
+      "openSource": true,
+      "license": "GPL-2.0",
+      "licenseVerified": false,
+      "publisher": "HandBrake Team",
+      "homepage": "https://handbrake.fr",
+      "repo": "https://github.com/HandBrake/HandBrake",
+      "install": {
+        "method": "winget",
+        "wingetId": "HandBrake.HandBrake",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/HandBrake/HandBrake/bf63cdcf3b23dd3958bece421607ae6673f39add/gtk/icons/256x256/apps/fr.handbrake.ghb.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/HandBrake/HandBrake",
+        "sourceUrl": "https://github.com/HandBrake/HandBrake",
+        "noMedia": "Screenshots live on handbrake.fr, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".mp4",
+          ".mkv",
+          ".mov"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "compress this video"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://handbrake.fr"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".mp4",
+            ".mkv",
+            ".mov"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "compress this video"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "powertoys",
+      "name": "PowerToys",
+      "category": "utilities",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Microsoft's power-user utilities: FancyZones, Text Extractor, Color Picker and more.",
+      "why": "Free, official and open source; pairs well with Lens.",
+      "replaces": [],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Microsoft Corporation",
+      "homepage": "https://learn.microsoft.com/windows/powertoys/",
+      "repo": "https://github.com/microsoft/PowerToys",
+      "install": {
+        "method": "winget",
+        "wingetId": "Microsoft.PowerToys",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/installer/PowerToysSetupVNext/Images/logo.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/doc/images/readme/pt-hero.dark.png"
+        ],
+        "loop": null,
+        "credit": "github.com/microsoft/PowerToys",
+        "sourceUrl": "https://github.com/microsoft/PowerToys",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open powertoys"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/Microsoft.PowerToys"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open powertoys"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "everything",
+      "name": "Everything",
+      "category": "utilities",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Finds any file by name instantly.",
+      "why": "The fastest file-name search on Windows.",
+      "replaces": [
+        "Windows Search"
+      ],
+      "openSource": false,
+      "license": "Freeware",
+      "licenseVerified": false,
+      "publisher": "voidtools",
+      "homepage": "https://www.voidtools.com",
+      "repo": null,
+      "install": {
+        "method": "winget",
+        "wingetId": "voidtools.Everything",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "voidtools",
+        "sourceUrl": "https://www.voidtools.com",
+        "noMedia": "Closed source with no public media repo; Lens uses the installed app's own icon once it's installed.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": "es",
+        "voice": [
+          "open everything"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/voidtools.Everything"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open everything"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sharex",
+      "name": "ShareX",
+      "category": "utilities",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Screenshots, screen recording and upload workflows.",
+      "why": "Deep capture automation; Lens Snip covers the everyday cases.",
+      "replaces": [
+        "Snagit"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "ShareX Team",
+      "homepage": "https://getsharex.com",
+      "repo": "https://github.com/ShareX/ShareX",
+      "install": {
+        "method": "winget",
+        "wingetId": "ShareX.ShareX",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/ShareX/ShareX/099bcb60a1c4af514f8b8b936a870492744e98fd/ShareX.HelpersLib/Resources/ShareX_Logo.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ShareX/ShareX",
+        "sourceUrl": "https://github.com/ShareX/ShareX",
+        "noMedia": "Screenshots live on getsharex.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open sharex"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/ShareX.ShareX"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open sharex"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flow-launcher",
+      "name": "Flow Launcher",
+      "category": "utilities",
+      "collections": [],
+      "status": "stable",
+      "pitch": "Keyboard launcher with a big plugin store.",
+      "why": "If you want an extra launcher beside Lens Command.",
+      "replaces": [
+        "Alfred"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Flow Launcher",
+      "homepage": "https://www.flowlauncher.com",
+      "repo": "https://github.com/Flow-Launcher/Flow.Launcher",
+      "install": {
+        "method": "winget",
+        "wingetId": "Flow-Launcher.Flow-Launcher",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/Flow-Launcher/Flow.Launcher/58b799721a343811d8c42046cb2b4d63de1b3da6/Artworks/Logo/logo512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/Flow-Launcher/Flow.Launcher",
+        "sourceUrl": "https://github.com/Flow-Launcher/Flow.Launcher",
+        "noMedia": "Screenshots live on www.flowlauncher.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open flow launcher"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://www.flowlauncher.com"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open flow launcher"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7zip",
+      "name": "7-Zip",
+      "category": "utilities",
+      "collections": [
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Open and make zip, 7z, rar and more.",
+      "why": "Small, fast, free.",
+      "replaces": [
+        "WinRAR"
+      ],
+      "openSource": true,
+      "license": "LGPL-2.1 (+ unRAR restriction)",
+      "licenseVerified": false,
+      "publisher": "Igor Pavlov",
+      "homepage": "https://www.7-zip.org",
+      "repo": null,
+      "install": {
+        "method": "winget",
+        "wingetId": "7zip.7zip",
+        "wingetVerified": false
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/ip7z/7zip/d3296e39e1f1f92c7b41c0c3848e65640428d42d/C/Util/7zipInstall/7zip.ico",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ip7z/7zip",
+        "sourceUrl": "https://github.com/ip7z/7zip",
+        "noMedia": "Screenshots live on www.7-zip.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".7z",
+          ".zip",
+          ".rar",
+          ".tar"
+        ],
+        "mcp": false,
+        "cli": "7z",
+        "voice": [
+          "extract this"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://www.7-zip.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".7z",
+            ".zip",
+            ".rar",
+            ".tar"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "extract this"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama",
+      "category": "ai",
+      "collections": [
+        "ai",
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Run open models (Llama, Qwen, Gemma and more) locally.",
+      "why": "Lens AI's recommended local model engine.",
+      "replaces": [
+        "Cloud chatbots"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "Ollama",
+      "homepage": "https://ollama.com",
+      "repo": "https://github.com/ollama/ollama",
+      "install": {
+        "method": "winget",
+        "wingetId": "Ollama.Ollama",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/ollama/ollama/318ee284aa3b5558de57efefff730ea33c4a9bef/app/darwin/Ollama.app/Contents/Resources/ollama%402x.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ollama/ollama",
+        "sourceUrl": "https://github.com/ollama/ollama",
+        "noMedia": "Screenshots live on ollama.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": true
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": "ollama",
+        "voice": [
+          "open ollama"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/Ollama.Ollama"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "localModelProvider",
+          "provider": "ollama"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open ollama"
+          ]
+        },
+        {
+          "kind": "guideLesson",
+          "lesson": "Use a local model with Lens"
+        }
+      ]
+    },
+    {
+      "id": "lm-studio",
+      "name": "LM Studio",
+      "category": "ai",
+      "collections": [
+        "ai"
+      ],
+      "status": "stable",
+      "pitch": "Download and chat with local models in a friendly app.",
+      "why": "Easy model browsing; Lens can use its local server.",
+      "replaces": [
+        "Cloud chatbots"
+      ],
+      "openSource": false,
+      "license": "Proprietary (free)",
+      "licenseVerified": false,
+      "publisher": "LM Studio (Element Labs)",
+      "homepage": "https://lmstudio.ai",
+      "repo": null,
+      "install": {
+        "method": "winget",
+        "wingetId": "ElementLabs.LMStudio",
+        "wingetVerified": true
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/lmstudio-ai/lms",
+        "sourceUrl": "https://github.com/lmstudio-ai/lms",
+        "noMedia": "Closed-source app; its public repos hold SDKs without the app icon. Lens uses the installed app's icon.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".gguf"
+        ],
+        "mcp": true,
+        "cli": "lms",
+        "voice": [
+          "open lm studio"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://winstall.app/apps/ElementLabs.LMStudio"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "localModelProvider",
+          "provider": "lmstudio"
+        },
+        {
+          "kind": "guideLesson",
+          "lesson": "Use a local model with Lens"
+        }
+      ]
+    },
+    {
+      "id": "comfyui",
+      "name": "ComfyUI",
+      "category": "ai",
+      "collections": [
+        "ai"
+      ],
+      "status": "stable",
+      "pitch": "Node-based local image and video generation.",
+      "why": "The most flexible local generative pipeline; desktop app available.",
+      "replaces": [
+        "Midjourney"
+      ],
+      "openSource": true,
+      "license": "GPL-3.0",
+      "licenseVerified": false,
+      "publisher": "Comfy Org",
+      "homepage": "https://www.comfy.org",
+      "repo": "https://github.com/comfyanonymous/ComfyUI",
+      "install": {
+        "method": "officialSite",
+        "url": "https://www.comfy.org/download"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/Comfy-Org/desktop/e2d964b7456cea8423c7b9d3371c612313c06baa/assets/UI/Comfy_Logo_x256.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/comfyanonymous/ComfyUI",
+        "sourceUrl": "https://github.com/comfyanonymous/ComfyUI",
+        "noMedia": "Screenshots live on www.comfy.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".json"
+        ],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open comfyui"
+        ],
+        "urlScheme": null
+      },
+      "sources": [
+        "https://www.comfy.org"
+      ],
+      "stars": null,
+      "notes": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".json"
+          ]
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open comfyui"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "whisper-cpp",
+      "name": "whisper.cpp",
+      "category": "ai",
+      "collections": [
+        "ai"
+      ],
+      "status": "stable",
+      "pitch": "Fast local speech-to-text.",
+      "why": "Powers Lens voice and transcription; Lens's Transcription setup handles it for you.",
+      "replaces": [
+        "Cloud transcription"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": false,
+      "publisher": "ggml-org",
+      "homepage": "https://github.com/ggml-org/whisper.cpp",
+      "repo": "https://github.com/ggml-org/whisper.cpp",
+      "install": {
+        "method": "officialSite",
+        "url": "https://github.com/ggml-org/whisper.cpp/releases"
+      },
+      "media": {
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ggml-org/whisper.cpp",
+        "sourceUrl": "https://github.com/ggml-org/whisper.cpp",
+        "noMedia": "A library and command-line tool with no app icon or screenshots.",
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [
+          ".wav",
+          ".mp3",
+          ".mp4"
+        ],
+        "mcp": false,
+        "cli": "whisper-cli",
+        "voice": [],
+        "urlScheme": null
+      },
+      "notes": "Lens Settings › AI & Command › Transcription sets it up with a pinned, checksum-verified download.",
+      "sources": [
+        "https://github.com/ggml-org/whisper.cpp"
+      ],
+      "stars": null,
+      "lastRelease": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "openWith",
+          "extensions": [
+            ".wav",
+            ".mp3",
+            ".mp4"
+          ]
+        }
+      ]
+    }
+  ]
+}

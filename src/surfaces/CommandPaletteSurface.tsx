@@ -314,6 +314,7 @@ export const CommandPaletteSurface: React.FC = () => {
 
   return (
     <div
+      data-guide-id="palette"
       className={`pal-root ${anchor === "bottom-dock" ? "is-bottom-dock" : "is-top-left"}`}
       onKeyDown={onKeyDown}
     >

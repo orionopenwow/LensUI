@@ -347,6 +347,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   return (
     <div
       ref={rootRef}
+      data-guide-id="browser"
       className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${panel ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}`}
       style={rootStyle}
       data-lb-scheme={appearance.scheme}

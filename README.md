@@ -1,95 +1,203 @@
+<!-- The feature tour below is generated from tools/site/content/features.mjs by
+     tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
-  <img src="./assets/lensui-logo.svg" alt="" width="96" />
+  <img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" />
   <h1>Lens UI</h1>
-  <p>A Dock, a Top Bar and theme packs for Windows 10 and 11. Open source and reversible.</p>
+  <p>A calm, themeable desktop for Windows 10 and 11: dock, themes, window styling, a living wallpaper and a local-first AI helper, in one app that undoes everything it changes.</p>
   <p>
-    <a href="https://github.com/orionopenwow/lensui/actions/workflows/build.yml"><img src="https://github.com/orionopenwow/lensui/actions/workflows/build.yml/badge.svg" alt="build" /></a>
+    <a href="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml"><img src="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-09090b?style=flat-square" alt="MIT license" /></a>
   </p>
-  <p><a href="https://orionopenwow.github.io/lensui/">Website</a> · <a href="https://orionopenwow.github.io/lensui/docs/">Docs</a> · <a href="./docs/ROADMAP.md">Roadmap</a></p>
+  <p><a href="https://orionopenwow.github.io/lensui/">Website</a> · <a href="https://orionopenwow.github.io/lensui/#demos">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
 </div>
 
-> **Status: early preview.** The whole app compiles on Windows in CI and every surface renders in automated tests, but most features have not yet been tried on a wide range of real machines. There is no signed installer yet. Experimental features (tray hosting, live wallpaper, shell replacement, plugins, the MCP server) are off by default. Keep [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat) handy while you try it.
+<p align="center"><img src="./docs/media/dock-magnify.gif" alt="The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches" width="720"></p>
 
-![The Lens desktop: a Top Bar with media controls, battery, Wi-Fi and the clock, three tiled app windows, and the Dock](./docs/screenshots/desktop.webp)
+> **Status: beta, not yet tested on many real machines.** Everything compiles and runs its tests on Windows in CI, and every surface renders in automated screenshot tests, but most features have only been tried on a few PCs. There is no signed installer yet. New features are off by default. Keep [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat) handy while you try it.
+>
+> The clips in this README are rendered from the real Lens interface in a headless browser; the Windows side (other apps, the real desktop) is simulated in them. Recordings from real Windows machines will replace them.
 
-## Why Lens
+## What Lens is
 
-The Windows taskbar does a lot of things adequately and few things well. Lens replaces it with a Dock and a Top Bar that are fast to read, put real system controls one click away, and keep the whole desktop in one visual language, including the frames of other apps' windows. It runs on top of Explorer instead of patching it, so quitting Lens puts Windows back the way it was.
+Lens sits on top of Windows Explorer instead of patching it. It gives you a dock and a top bar that are quick to read, themes that restyle every surface (including other apps' window frames) in one design language, and a command layer that works offline. An optional AI helper can use a model on your own PC or Claude, and it asks before anything risky. Quit Lens and Windows is as you left it.
 
-Lens is built with [Tauri 2](https://tauri.app) (Rust and Win32) and React.
+Built with [Tauri 2](https://tauri.app) (Rust and Win32) and React.
 
-## What it does
+## Feature tour
 
-### Dock and search
+### Dock
 
-Click the magnifier and a text box spreads out of it; the Dock keeps its size and your apps stay visible. One ranked search covers apps, open windows, files, folders and Windows settings, tolerates typos, learns from what you pick, and answers `2+2*3`, `72 f to c` or `15% of 80` inline. Apps can be pinned and reordered by dragging, and show unread-notification badges.
+Six dock styles with the same physics, and search that opens inside the dock.
 
-![The Dock with its search box open and results above it](./docs/screenshots/dock-search.webp)
+<p align="center"><img src="./docs/media/dock-magnify.gif" alt="Dock: hover magnification and a bounce launch" width="720"></p>
 
-### Quick Settings
+- Floating, Slim, Taskbar (a Windows 11-style bar), Studio, Minimal and Split, on any screen edge.
+- Optional macOS-style magnification, bounce or jelly launch animations, app labels and a minimise pulse.
+- Search spreads out of the magnifier inside the dock. The dock never gets wider and your icons stay visible.
 
-Quick Settings drops from the Top Bar and talks to Windows directly: Wi-Fi networks and saved-profile connect, paired Bluetooth devices, per-app volume, output and microphone switching, battery and power mode, keyboard layouts, brightness and Night Light.
+More: [DOCK_STYLES.md](./docs/DOCK_STYLES.md)
 
-![Quick Settings, Network and Audio panes side by side](./docs/screenshots/quick-settings.webp)
+### Themes & look
 
-### Theme packs
+Eighteen theme packs that restyle the dock, bar, panels and app window frames together.
 
-A theme pack sets surface colour, accent, corner radius, icon style, folder icons and window frames together. There are 18 built in, including Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine and two light packs. Looks can be saved as `.lenstheme` files, scheduled for day and night, and follow Windows' contrast and reduced-motion settings.
+<p align="center"><img src="./docs/media/themes.gif" alt="Theme packs restyle every surface at once" width="720"></p>
 
-![The same desktop in four theme packs: Obsidian, Catppuccin Mocha, Hyprland Neon and Alabaster Daylight](./docs/screenshots/theme-packs.webp)
+- Catppuccin, Tokyo Night, Nord, Dracula, Gruvbox, Solarized, Rosé Pine and more, using their real palettes.
+- Every pack passes a 4.5:1 contrast check for body text. Day and night schedules switch packs for you.
+- Export your look as a .lenstheme file and share it. Importing checks every value first.
 
-![Control Center's Theme Gallery with live previews of each pack](./docs/screenshots/theme-gallery.webp)
+More: [THEMES_ROADMAP.md](./docs/THEMES_ROADMAP.md)
 
-### Tiling and workspaces
+### Windows
 
-Optional automatic tiling with master-stack, columns, grid, dwindle and monocle layouts. Maximised, fullscreen and game windows are left alone. Named workspaces carry their own layout and apps, and a set of apps can be saved as a session and restored, tiled, in one click.
+Window frames, focus dimming, hot corners and Alt+drag, all off until you turn them on.
 
-![Control Center's tiling and workspace settings](./docs/screenshots/tiling.webp)
+<p align="center"><img src="./docs/media/focus-borders.gif" alt="Dim inactive windows and a gradient border on the active one" width="720"></p>
 
-### Launcher
+- Dim inactive windows and put a solid or gradient border on the active one. Pin any window on top.
+- Hot corners, Alt+drag to move and Alt+right-drag to resize any window, and summon-an-app hotkeys.
+- Workspaces with an Overview you can drag windows between. Full-screen apps and games are left alone.
 
-Every installed app in a grid with pinned and recent rows; typing turns it into the same ranked search as the Dock. `Ctrl+Shift+Enter` runs an app as administrator, `>` runs a command and `?` searches the web. Power actions and commands always ask before they run.
+More: [WINDOW_STYLING.md](./docs/WINDOW_STYLING.md) · [PRODUCTIVITY.md](./docs/PRODUCTIVITY.md)
 
-![The Launcher searching for an app](./docs/screenshots/launcher.webp)
+### Living desktop
 
-### Also included
+Playground scenes run as your wallpaper. Some are calm, some you can play with.
 
-- Overview of open windows grouped by app, and a command palette.
-- Notification centre with Windows toasts mirrored into Lens.
-- Desktop widgets, clipboard history (off by default) and folder icon styling.
-- Sandboxed plugins ([docs/PLUGINS.md](./docs/PLUGINS.md)) and an MCP server so AI apps on your machine can manage windows and themes ([docs/MCP.md](./docs/MCP.md)). Both off by default.
-- Optional shell mode that runs Lens instead of Explorer ([docs/SHELL_MODE.md](./docs/SHELL_MODE.md)).
+<p align="center"><img src="./docs/media/playground-sand.gif" alt="Falling Sand: paint sand, water, fire and vines on your wallpaper" width="720"></p>
 
-## Safety model
+- Falling Sand, Ink, Flow Field, Constellation, Aurora, Rain on Glass, Starfield and Sky Clock, coloured by your theme.
+- Click ripples on empty desktop, an idle-mode screensaver and a different scene per workspace.
+- Scenes pause when a game or full-screen app is in front, and Calm freezes them into a still picture.
 
-Lens is meant to be safe to try and easy to leave.
+More: [PLAYGROUND.md](./docs/PLAYGROUND.md)
 
-- **Reversible.** Quitting restores the taskbar, desktop icons and window styling, and a crash handler does the same if Lens fails. Lens keeps its own data in `%APPDATA%\LensUI`.
-- **No injection by default.** Window frames are styled from outside other apps' processes. The older in-process helper DLL is off unless you enable it.
-- **Games and anti-cheat are excluded.** Known anti-cheat processes and fullscreen games are skipped by window styling and tiling; you can add your own exclusions.
-- **Your files stay put.** Folder icon changes back up the original `desktop.ini`. Desktop groups are a view and never move files.
-- **Restore scripts that work without Lens running:**
-  - [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat) brings back the Windows taskbar.
-  - [`Restore-Windows-Shell.bat`](./Restore-Windows-Shell.bat) puts Explorer back as the shell if you used shell mode.
-  - [`Uninstall-Lens-UI.bat`](./Uninstall-Lens-UI.bat) reverts folder icons, startup entries, shell mode and window styling, and asks before deleting Lens's settings.
-- **One button in the app.** Control Center → "Remove all Lens changes" does the same as the uninstall script.
+### Pointer suite
 
-No telemetry and no account. Lens only goes online for things you open yourself, such as a web search or a messaging web app.
+Six pointer families drawn in your accent colour, every Windows mouse setting, and pointer effects.
+
+<p align="center"><img src="./docs/media/cursor-effects.gif" alt="Pointer effects: glow trail and click ripples in your accent" width="720"></p>
+
+- Obsidian, Accent, Glass, Minimal dot, Outline and Retro pixel, sharp from 32 to 128 px.
+- Click ripples, glow and comet trails, a spotlight, shake to find and an on-screen shortcut display.
+- Your original pointers and mouse settings are saved first, and one button puts them back.
+
+More: [CURSORS.md](./docs/CURSORS.md)
+
+### Lens Command, Shelf & right-click
+
+One place for context: a standing clipboard, a pocket command bar and the same right-click menu everywhere.
+
+<p align="center"><img src="./docs/media/command-mini.gif" alt="Lens Mini opens at your pointer and expands into Lens Command" width="720"></p>
+
+- Lens Mini opens at your pointer and expands into Lens Command: one thread for answers, actions and approvals.
+- The Shelf keeps selections, pages, files and transcripts. Clipboard history is encrypted and skips password managers.
+- Right-click in the browser and File Explorer: summarise, translate, add to Shelf or pack it as context for Claude.
+
+_Context packs, micro-saves and the shared action catalogue are in pull request #19._
+
+More: [COMMAND.md](./docs/COMMAND.md) · [SHELF.md](./docs/SHELF.md) · [BROWSER_BRIDGE.md](./docs/BROWSER_BRIDGE.md)
+
+### Voice
+
+> **In development** — in [pull request #23](https://github.com/orionopenwow/LensUI/pull/23), not in a build yet.
+
+"Lens, minimise this." Push-to-talk by default, recognised on your PC.
+
+<p align="center"><img src="./docs/media/voice.gif" alt="Voice: &quot;Lens, minimise this&quot; with live transcript, confirm and undo" width="720"></p>
+
+- Windows, apps, workspaces, themes, volume, timers, the Shelf and questions, with confirm and undo.
+- Speech is recognised locally with whisper.cpp. Audio is never saved or sent anywhere.
+- "Hey Lens" is opt-in and pauses in calls, games, full-screen apps and on the lock screen.
+
+### Lens Browser
+
+> **In development** — in [pull request #20](https://github.com/orionopenwow/LensUI/pull/20), not in a build yet.
+
+A light WebView2 browser with spaces, vertical tabs and an agent that stops for your OK.
+
+<p align="center"><img src="./docs/media/browser-agent.gif" alt="Lens Browser: vertical tabs, spaces and an agent that asks first" width="720"></p>
+
+- Spaces with their own profiles, vertical tabs that sleep when idle, reader view and picture-in-picture.
+- YouTube transcripts with timestamps you can click, summarise or add to the Shelf.
+- Submit, book, send and delete always ask first. Passwords, payments and CAPTCHAs are never touched.
+
+### AI helper & approvals
+
+Off until you turn it on. Local first, Claude when you choose, and nothing happens without your OK.
+
+<p align="center"><img src="./docs/media/ai-dock.gif" alt="Ask from the dock: local model first, nothing sent without consent" width="720"></p>
+
+- An instant offline command engine (no model), your own local model through Ollama or LM Studio, or Claude with your key.
+- Every cloud request shows exactly what it would send. The usage log never stores your text.
+- Risky steps show a Needs your OK card: what it will click, the details, Deny or hold to approve.
+
+_The unified approval card and Claude control over every setting are in pull request #21._
+
+More: [AI.md](./docs/AI.md) · [AI_SURFACES.md](./docs/AI_SURFACES.md) · [MCP.md](./docs/MCP.md)
+
+### Lens Snip
+
+> **In development** — in [pull request #24](https://github.com/orionopenwow/LensUI/pull/24), not in a build yet.
+
+Capture, then do the useful part before anything is saved.
+
+<p align="center"><img src="./docs/media/snip.gif" alt="Lens Snip: annotate, redact and send before anything is saved" width="720"></p>
+
+- Region, window or screen, with a loupe. Annotate, blur and number steps before you save.
+- Auto-redaction suggests blurring e-mails, API keys and card-like numbers it finds in the image.
+- One key to copy, copy text, pin to screen, add to the Shelf or paste to Claude with what is sent shown first.
+
+### Lens Guide
+
+> **In development** — in [pull request #18](https://github.com/orionopenwow/LensUI/pull/18), not in a build yet.
+
+"How do I…?" answered from Lens's own settings, with Show me.
+
+<p align="center"><img src="./docs/media/guide.gif" alt="Lens Guide answers &quot;how do I…&quot; and shows you where" width="720"></p>
+
+- An offline index of every setting, theme, dock style, command and shortcut. It only knows things that exist.
+- Show me opens the right Settings tab and highlights the setting.
+- Eleven short lessons that notice when you have done each step.
+
+### Tester Hub
+
+For people testing Lens builds: what changed, what to test today and a report you can send.
+
+<p align="center"><img src="./docs/media/tester-hub.gif" alt="Tester Hub: what's new, today's checklist and a redacted report" width="720"></p>
+
+- What's new in this build, grouped by area, and today's checklist with Pass, Fail and Skip.
+- A session log with personal details hidden, and Mark moment (Ctrl+Alt+M) while you test.
+- Export one zip with results and PC details. API keys, paths and clipboard contents are stripped.
+
+More: [TESTER_HUB.md](./docs/TESTER_HUB.md)
+
+## Trust model
+
+- **Off until you turn it on.** New features ship disabled. Your desktop only changes when you ask it to.
+- **Every change can be undone.** Lens records what it changes and puts it back. Remove all Lens changes is one button.
+- **Games are left alone.** No injection into other processes. Overlays and hooks pause for full-screen apps and anti-cheat games.
+- **Local first.** The command engine and Guide work offline. Cloud AI is opt-in and shows what it would send.
+- **Open source.** MIT licensed. Releases are signed, and you can build every part yourself.
+
+Restore scripts work even when Lens isn't running: [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat), [`Restore-Windows-Shell.bat`](./Restore-Windows-Shell.bat) and [`Uninstall-Lens-UI.bat`](./Uninstall-Lens-UI.bat). No telemetry and no account.
 
 ## Works on
 
-| Feature | Windows 11 | Windows 10 (1809+) | Linux, macOS |
-| :--- | :--- | :--- | :--- |
-| Dock, Top Bar, Launcher, Overview, Quick Settings | Yes | Yes | Planned |
-| Theme packs, search, plugins, workspaces, tiling | Yes | Yes | Planned |
-| Dark titlebars on every app | Yes | Yes | — |
-| Window frame colours and rounded corners | Yes | No (Windows 11 only) | — |
-| Glass (Mica / acrylic) | Planned (22H2 and later) | No | — |
+| Feature | Windows 10 | Windows 11 |
+| :--- | :--- | :--- |
+| Dock, Top Bar, themes, Playground, Command, Shelf | Windows 10 (1809+) and 11 | Windows 10 (1809+) and 11 |
+| Dark title bars on other apps | Yes (1809+) | Yes |
+| Window frame colours and rounded corners | No | Yes |
+| Glass backdrops (Mica / acrylic) | No | 22H2 and later |
+| Pointer size (CursorBaseSize) | 1903+ | Yes |
 
-Expected support, based on the Windows features each part of Lens uses; testing on real machines is ongoing. Linux and macOS: the interface already runs there, and every Windows module has a portable stand-in that CI compile-checks on each change. Real support needs a platform layer, which is on the [roadmap](./docs/ROADMAP.md).
+Expected support, based on the Windows features each part uses; real-machine testing is ongoing. Linux and macOS: the interface runs and CI compile-checks the Rust on both, but real support needs a platform layer (see the [plan](./docs/MASTERPLAN.md)).
 
-## Build from source
+## Install
+
+There is no signed release yet. Until there is, build from source.
 
 Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
 
@@ -100,36 +208,27 @@ bun install
 bun run tauri dev
 ```
 
-Or double-click `Launch-Lens-UI.bat` for development mode, and `Build-Lens-UI.bat` for a standalone build. The installer is written to `src-tauri\target\release\bundle`.
+Or double-click `Launch-Lens-UI.bat` for development mode and `Build-Lens-UI.bat` for a standalone build (written to `src-tauri\target\release\bundle`).
 
-After first launch, open Control Center and press **Run self-test**. If anything looks wrong, attach the report to an [issue](https://github.com/orionopenwow/lensui/issues).
+After the first launch, open Settings and press **Run self-test**. If anything looks wrong, attach the report to an [issue](https://github.com/orionopenwow/LensUI/issues). Testers: Settings › About & Testing has today's checklist and a one-click report.
 
-## Shortcuts
+## Documentation
 
-| Keys | Action | Default |
-| --- | --- | --- |
-| `Alt+Space` | Command palette | On |
-| `Alt+W` | Widgets | On |
-| `Ctrl+Shift+Enter` (in the Launcher) | Run as administrator | On |
-| `Alt+1` … `Alt+9` | Open the Nth Dock app | Off |
-| `Ctrl+Alt+Arrows`, `U` `I` `J` `K` | Snap to halves and quarters | Off |
-| `Alt+Shift+Arrows` | Move focus between tiled windows | Off |
-| `Ctrl+Alt+Space` | Next tiling layout | Off |
-
-Global shortcuts that take keys away from other apps stay off until you enable them in Control Center.
-
-## Roadmap
-
-See [docs/ROADMAP.md](./docs/ROADMAP.md). The design rules every surface follows are in [DESIGN.md](./DESIGN.md).
+- [User guide](./docs/guide-for-users/README.md): short how-tos for every area, generated from Lens's own settings.
+- [Website](https://orionopenwow.github.io/lensui/): live demos of the dock, themes, Lens Command, approvals and Falling Sand.
+- Reference: [Dock styles](./docs/DOCK_STYLES.md) · [Window styling](./docs/WINDOW_STYLING.md) · [Productivity](./docs/PRODUCTIVITY.md) · [Playground](./docs/PLAYGROUND.md) · [Pointers](./docs/CURSORS.md) · [AI](./docs/AI.md) · [Command](./docs/COMMAND.md) · [Shelf](./docs/SHELF.md) · [Browser bridge](./docs/BROWSER_BRIDGE.md) · [Transcription](./docs/TRANSCRIPTION.md) · [MCP](./docs/MCP.md) · [Plugins](./docs/PLUGINS.md) · [Shell mode](./docs/SHELL_MODE.md)
+- Project: [Master plan](./docs/MASTERPLAN.md) · [Roadmap](./docs/ROADMAP.md) · [Design system](./DESIGN.md) · [Releasing](./docs/RELEASING.md) · [Tester Hub](./docs/TESTER_HUB.md) · [Media](./docs/media/README.md)
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a PR:
+Issues and pull requests are welcome. Before opening a pull request:
 
-- Read [AGENTS.md](./AGENTS.md) for the guardrails: never touch user files outside `%APPDATA%\LensUI\` without confirmation, and keep every OS change reversible.
-- Run `bun run build` and, on Windows, `cargo clippy` in `src-tauri`.
-- CI renders every surface in a headless browser and fails on crashes or console errors; check its screenshots for visual changes.
+- Read [AGENTS.md](./AGENTS.md): never touch user files outside `%APPDATA%\LensUI\` without confirmation, and keep every OS change reversible.
+- Run `bun run build` and `bun run test`, and on Windows `cargo clippy` and `cargo test` in `src-tauri`.
+- CI renders every surface in a headless browser and fails on crashes or console errors; look at its screenshots for visual changes.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[MIT](./LICENSE). Lens UI is not affiliated with Microsoft.
+[MIT](./LICENSE). Lens UI is not affiliated with Microsoft or Anthropic.

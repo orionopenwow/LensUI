@@ -55,6 +55,88 @@ for (const scheme of ["dark", "light"]) {
     shots.push(f);
     await page.context().close();
   }
+  // Side panel with a YouTube transcript
+  {
+    const page = await newPage(scheme, { width: 400, height: 1000 }, { transcript: true });
+    await page.goto("https://ext.mock/src/panel.html");
+    await page.waitForTimeout(500);
+    const f = path.join(OUT, `transcript-${scheme}.png`);
+    await page.screenshot({ path: f, fullPage: false });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Micro-save toast in the page
+  {
+    const page = await newPage(scheme, { width: 1280, height: 520 });
+    await page.goto("https://lens-demo.example/blog/calm");
+    const src = fs.readFileSync(path.join(EXT, "src/content/toast.js"), "utf8").replace("export function", "function");
+    await page.addScriptTag({ content: `${src}\nshowLensToast("Added to the same note", "~1,240 tokens", "ok");` });
+    await page.waitForTimeout(300);
+    const f = path.join(OUT, `micro-toast-${scheme}.png`);
+    await page.screenshot({ path: f, clip: { x: 340, y: 300, width: 600, height: 220 } });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Settings page: clean copy and double-click sections
+  {
+    const page = await newPage(scheme, { width: 760, height: 1400 }, { settings: { selectionButton: "sites", sites: ["lens-demo.example"], never: [], defaultAction: "explain", copyGuard: "all", define: "all", defineMode: "define", translateTo: "Spanish" } });
+    await page.goto("https://ext.mock/src/options.html");
+    await page.waitForTimeout(400);
+    const f = path.join(OUT, `options-${scheme}.png`);
+    await page.screenshot({ path: f, fullPage: true });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Double-click define bubble
+  {
+    const page = await newPage(scheme, { width: 1280, height: 640 }, { settings: { selectionButton: "off", sites: [], never: [], defaultAction: "explain", copyGuard: "off", define: "all", defineMode: "define", translateTo: "Spanish" } });
+    await page.goto("https://lens-demo.example/blog/calm");
+    await page.evaluate(() => {
+      const p = document.getElementById("target");
+      p.insertAdjacentHTML("afterbegin", "By pure <b id='w'>serendipity</b>, ");
+    });
+    for (const f of ["src/content/selectionLogic.js", "src/content/define.js"]) await page.addScriptTag({ path: path.join(EXT, f) });
+    await page.dblclick("#w");
+    await page.waitForTimeout(500);
+    const f = path.join(OUT, `define-${scheme}.png`);
+    await page.screenshot({ path: f, clip: { x: 160, y: 100, width: 960, height: 420 } });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Save page offline: the snapshot, opened on its own (scripts blocked by its CSP)
+  {
+    const page = await newPage(scheme, { width: 1100, height: 760 });
+    await page.route("https://lens-demo.example/img/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: fs.readFileSync(path.join(EXT, "icons/icon128.png")) }));
+    await page.route("https://lens-demo.example/css/**", (r) => r.fulfill({ status: 200, contentType: "text/css", body: "article{border-left:4px solid #8b5cf6;padding-left:16px} .figure{display:flex;gap:12px;align-items:center}" }));
+    await page.goto("https://lens-demo.example/blog/calm");
+    await page.evaluate(() => new Promise((done) => {
+      const l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = "/css/site.css";
+      document.head.append(l);
+      const art = document.querySelector("article") || document.body;
+      art.insertAdjacentHTML("afterbegin", '<div class="figure"><img src="/img/logo.png" width="64" height="64" alt="Logo"><a href="/about" onclick="steal()">About this blog</a><script>window.evil=1<\/script></div>');
+      let n = 0;
+      const tick = () => (++n > 40 || (l.sheet && document.images[0]?.complete) ? done() : setTimeout(tick, 50));
+      tick();
+    }));
+    const src = fs.readFileSync(path.join(EXT, "src/content/snapshot.js"), "utf8").replace("export function", "function");
+    const snap = await page.evaluate(`(() => { ${src}; return snapshotPage(420 * 1024); })()`);
+    if (!snap.ok) errors.push(`${scheme}: snapshot failed ${snap.reason}`);
+    if (/<script/i.test(snap.html)) errors.push(`${scheme}: snapshot still has a script`);
+    if (/onclick/i.test(snap.html)) errors.push(`${scheme}: snapshot still has a handler`);
+    if (!snap.inlinedImages || !snap.inlinedCss) errors.push(`${scheme}: expected the same-origin image and stylesheet inlined`);
+    fs.writeFileSync(path.join(OUT, `archive-sample-${scheme}.html`), snap.html);
+    const view = await newPage(scheme, { width: 1100, height: 760 });
+    await view.setContent(snap.html, { waitUntil: "load" });
+    await view.waitForTimeout(200);
+    const f = path.join(OUT, `archive-${scheme}.png`);
+    await view.screenshot({ path: f });
+    shots.push(f);
+    console.log(`archive ${scheme}: ${snap.bytes} bytes, ${snap.inlinedImages} images inlined, ${snap.inlinedCss} stylesheets inlined`);
+    await view.context().close();
+    await page.context().close();
+  }
   // In-page dot + panel
   {
     const page = await newPage(scheme, { width: 1280, height: 800 });

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Playground (media)</title>
+<style>html,body{margin:0;height:100%;background:#08080b;overflow:hidden}#host{position:fixed;inset:0}</style></head>
+<body><div id="host"></div>
+<script type="module">
+// Media page for tools/media/record.mjs: one real Playground scene, full window, theme from ?preset=.
+const q = new URLSearchParams(location.search);
+const packs = await (await fetch("/data/packs.json")).json();
+const p = packs.find((x) => x.id === (q.get("preset") || "obsidian")) || packs[0];
+const r = document.documentElement;
+r.dataset.scheme = p.scheme;
+r.style.setProperty("--lens-accent", p.accent);
+if (p.base) { r.style.setProperty("--lens-pack-base", p.base); r.style.setProperty("--lens-pack-elevated", p.elevated); }
+r.style.setProperty("--lens-fg", p.scheme === "light" ? "#18181b" : "#fafafa");
+document.body.style.background = p.base || "#08080b";
+const { mount } = await import("/live/playground/playground.js");
+const m = mount(document.getElementById("host"), { scene: q.get("scene") || "sand", fps: 60 });
+const MATS = ["sand", "water", "stone", "fire", "smoke", "plant", "eraser"];
+addEventListener("keydown", (e) => { if (/^[1-7]$/.test(e.key)) m.setOption("material", MATS[+e.key - 1]); });
+window.__pg = m;
+</script></body></html>

@@ -150,9 +150,14 @@ jobs:
 
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
+      - name: Approval card gallery (Needs your OK)
+        run: node tools/parity/approval/build.mjs && node tools/parity/approval/shoot.mjs
 
       - name: Render Lens Browser scenes and smoke-test the page agent
         run: node tools/parity/browser/build.mjs && node tools/parity/browser/shoot.mjs
+
+      - name: Render Lens Snip scenes
+        run: node tools/parity/snip/build.mjs && node tools/parity/snip/shoot.mjs
 
       - name: Render AI surfaces
         run: node tools/parity/ai/build.mjs && node tools/parity/ai/shoot.mjs
@@ -162,6 +167,31 @@ jobs:
 
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
+      - name: Render Lens Guide scenes
+        run: node tools/parity/guide/build.mjs && node tools/parity/guide/shoot.mjs
+      - name: Magic right-click window gallery
+        run: node tools/parity/magic/build.mjs && node tools/parity/magic/shoot.mjs
+
+      - name: Render agent safety + hostile-page collector check
+        run: node tools/parity/agentsafe/build.mjs && node tools/parity/agentsafe/shoot.mjs
+
+      - name: Render Expressive and Dot Matrix style layers
+        run: node tools/parity/styles/build.mjs && node tools/parity/styles/shoot.mjs
+
+      - name: Render Lens Music
+        run: node tools/parity/music/build.mjs && node tools/parity/music/shoot.mjs
+
+      - name: Render Lens Apps
+        run: node tools/parity/apps/build.mjs && node tools/parity/apps/shoot.mjs
+
+      - name: Render ambient backdrops (contact sheets + in-browser timing)
+        run: node tools/parity/ambient/build.mjs && node tools/parity/ambient/shoot.mjs
+        env:
+          AMBIENT_LOOPS: "0"
+          AMBIENT_DESKTOPS: "0"
+          # Software rendering on shared CI runners is slower than a real desktop; the strict 3 ms
+          # gate is the bun test on the pure painters.
+          AMBIENT_BUDGET_MS: "8"
 
       - name: Upload screenshots
         if: always()
@@ -172,7 +202,16 @@ jobs:
             tools/parity/shots/
             tools/parity/command/shots/
             tools/parity/browser/shots/
+            tools/parity/snip/shots/
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/
+            tools/parity/guide/shots/
+            tools/parity/approval/shots/
+            tools/parity/magic/shots/
+            tools/parity/agentsafe/shots/
+            tools/parity/styles/shots/
+            tools/parity/music/shots/
+            tools/parity/apps/shots/
+            tools/parity/ambient/shots/
           if-no-files-found: warn

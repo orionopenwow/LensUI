@@ -7,6 +7,7 @@ import { rainScene } from "./scenes/rain";
 import { auroraScene } from "./scenes/aurora";
 import { starfieldScene } from "./scenes/starfield";
 import { skyClockScene } from "./scenes/skyclock";
+import { ambientModule } from "./ambient/module";
 
 /** Gallery order: playful first, calm after. */
 export const SCENES: SceneModule[] = [
@@ -18,6 +19,8 @@ export const SCENES: SceneModule[] = [
   rainScene,
   starfieldScene,
   skyClockScene,
+  // Theme backdrop: the slow ambient scene matching the active theme pack (docs/AMBIENT.md).
+  ambientModule,
 ];
 
 export function sceneById(id: string | null | undefined): SceneModule | null {

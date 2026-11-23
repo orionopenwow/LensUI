@@ -86,13 +86,15 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     // tools/list
     let tl: Value = serde_json::from_str(&handle_line(r#"{"jsonrpc":"2.0","id":6,"method":"tools/list"}"#, &mut s, &h).unwrap()).unwrap();
     let tools = tl["result"]["tools"].as_array().unwrap();
-    let expected = 11 + crate::ai::tools::MCP_EXTRA.len();
+    let expected = 11 + crate::ai::tools::MCP_EXTRA.len() + crate::control::tools::TOOLS.len();
     assert_eq!(tools.len(), expected);
     let mut names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
     for t in tools { assert_eq!(t["inputSchema"]["type"].as_str(), Some("object")); assert_eq!(t["annotations"]["destructiveHint"] == Value::Bool(true), t["name"] == "close_app"); }
     names.sort(); names.dedup(); assert_eq!(names.len(), expected);
     let um: Value = serde_json::from_str(&handle_line(r#"{"jsonrpc":"2.0","id":7,"method":"resources/read"}"#, &mut s, &h).unwrap()).unwrap();
-    assert_eq!(um["error"]["code"].as_i64(), Some(-32601));
+    assert_eq!(um["error"]["code"].as_i64(), Some(-32602));
+    let pl: Value = serde_json::from_str(&handle_line(r#"{"jsonrpc":"2.0","id":8,"method":"prompts/list"}"#, &mut s, &h).unwrap()).unwrap();
+    assert_eq!(pl["error"]["code"].as_i64(), Some(-32601));
     // tools/call direct
     let lw = call(&mut s, &h, 10, "list_windows", "{}");
     assert!(!is_err(&lw)); assert!(lw["result"]["structuredContent"]["windows"].as_array().is_some());

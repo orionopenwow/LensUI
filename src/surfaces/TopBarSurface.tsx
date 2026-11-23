@@ -1,3 +1,7 @@
+import { openGuide } from "../guide/coach";
+import { MiniPlayer } from "../music/MiniPlayer";
+import { useMiniPlacement } from "../music/useMiniPlacement";
+import { PendingPill, usePendingApprovals } from "../approval";
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -35,6 +39,8 @@ export const TopBarSurface: React.FC = () => {
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
   const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
   const [now, setNow] = useState(() => new Date());
+  const approvals = usePendingApprovals();
+  const musicMini = useMiniPlacement();
   const [visible, setVisible] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +49,9 @@ export const TopBarSurface: React.FC = () => {
   const searchOpenRef = React.useRef(false);
   searchOpenRef.current = searchOpen;
 
-  const showTopMedia = config?.topBar?.showMediaControls ?? true;
+  // With Lens Music on, its mini player replaces the older media controls (docs/MUSIC.md §3),
+  // and the 2-second media poll stops.
+  const showTopMedia = (config?.topBar?.showMediaControls ?? true) && musicMini === "hidden";
 
   useEffect(() => {
     if (!showTopMedia) {
@@ -52,6 +60,7 @@ export const TopBarSurface: React.FC = () => {
     }
     let alive = true;
     const pollMedia = () => {
+      if (document.hidden) return;
       invoke<MediaNowPlaying>("get_media_now_playing_cmd")
         .then((m) => {
           if (alive) setMedia(m.hasSession ? m : null);
@@ -107,7 +116,7 @@ export const TopBarSurface: React.FC = () => {
 
   return (
     <div className={`topbar-wrapper ${!visible ? "is-hidden" : ""} ${isFloating ? "is-floating" : ""}`}>
-      <header className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
+      <header data-guide-id="topbar" className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
       <div className="topbar-left">
         <button
           type="button"
@@ -242,6 +251,15 @@ export const TopBarSurface: React.FC = () => {
       </div>
 
       <div className="topbar-right">
+        {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
+        {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
+        {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
+        {approvals.requests.length > 0 && (
+          <PendingPill count={approvals.requests.length} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
+        )}
+        <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+          ?
+        </button>
         <div
           className={`topbar-search-well ${searchOpen ? "is-open" : ""}`}
           onClick={() => {
@@ -384,7 +402,7 @@ export const TopBarSurface: React.FC = () => {
             onClick={() =>
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })
             }
-            aria-label="Open Calendar and Clock"
+            aria-label={`${dateStr} · ${timeStr}, open calendar and clock`}
           >
             {dateStr} · {timeStr}
           </button>

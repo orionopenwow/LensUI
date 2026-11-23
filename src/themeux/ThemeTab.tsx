@@ -10,12 +10,15 @@ import {
   applyThemePack,
   packById,
   recommendedPacks,
+  type ThemePack,
 } from "../themes/packs";
 import { readSchedule } from "../themes/schedule";
+import { SHAPE_STYLES, normalizeShapeStyle } from "../themes/shapes/shapes";
 import { ColorWheel } from "../components/ColorWheel";
 import { ThemeGallery, PackCard } from "../components/ThemeGallery";
 import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
 import { WallpaperCard } from "../components/WallpaperCard";
+import { AmbientPreview, AmbientWallpaperOptions, AnimatedBackdropSwitch, packPalette } from "../playground/ambient/controls";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
 import { AccessibilityCard } from "../components/AccessibilityCard";
@@ -181,7 +184,7 @@ function isLightHex(hex: string): boolean {
 
 /* ---------- hero preview ---------- */
 
-const HeroPreview: React.FC<{ config: LensConfig; accent: string }> = ({ config, accent }) => {
+const HeroPreview: React.FC<{ config: LensConfig; accent: string; pack?: ThemePack }> = ({ config, accent, pack }) => {
   const wc = config.windowControls;
   const frame = wc.frameStyle ?? "obsidian-hairline";
   const radius = Math.round((config.theme.borderRadius ?? 8) * 0.7);
@@ -197,6 +200,13 @@ const HeroPreview: React.FC<{ config: LensConfig; accent: string }> = ({ config,
         : `1px solid ${accent}`;
   return (
     <div className="tux-hero-preview" aria-hidden>
+      {pack && (
+        <AmbientPreview
+          packId={pack.id}
+          palette={packPalette(pack, accent)}
+          style={{ borderRadius: 8, overflow: "hidden" }}
+        />
+      )}
       <DockScenePreview styleId={dockStyleOf(config)} accent={accent} alignment={dockAlignmentOf(config)} height={136} showWindow={false} />
       <div
         className="tux-hero-window"
@@ -303,6 +313,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : "G·Y·R";
   const frameLabel = FRAME_STYLES.find((f) => f.id === wc.frameStyle)?.label ?? "Hairline";
   const folderLabel = FOLDER_THEMES.find((f) => f.id === (config.folderStyle?.theme ?? "accent"))?.label ?? "Accent";
+  const shapeStyle = normalizeShapeStyle(config.theme.shapeStyle);
+  const shapeLabel = SHAPE_STYLES.find((st) => st.id === shapeStyle)?.label ?? "Classic";
   const fontLabel = FONTS.find((f) => f.id === (config.theme.fontFamily ?? "rounded-arial"))?.label ?? "Rounded Arial";
   const sizeLabel = SIZES.find((s) => s.scale === (config.theme.uiScale ?? 100))?.label;
   const t = config.theme as LensConfig["theme"] & { motion?: string; contrast?: string; locale?: string };
@@ -335,14 +347,14 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
       {/* ===== a. Current theme ===== */}
       <section className="cc-card tux-hero" aria-label="Current theme">
         <div className="tux-hero-top">
-          <HeroPreview config={config} accent={accent} />
+          <HeroPreview config={config} accent={accent} pack={pack} />
           <div className="tux-hero-info">
             <div className="tux-eyebrow">Current theme</div>
             <div className="tux-hero-name">
               {pack?.label ?? "Custom"}
               {modified && <span className="tux-badge muted">Edited</span>}
             </div>
-            <div className="cc-desc">{pack?.description ?? "Your own mix of colours and styles."}</div>
+            <div className="cc-desc tux-hero-desc">{pack?.description ?? "Your own mix of colours and styles."}</div>
             <div className="tux-hero-facts">
               <span>{light ? "Light" : "Dark"}</span>
               <span>{dockStyleLabel(dockStyleOf(config))} dock</span>
@@ -362,6 +374,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 </div>
               )}
             </div>
+            <AnimatedBackdropSwitch />
             {modified && pack && (
               <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => onApplyPack(applyThemePack(config, pack.id))}>
                 <RotateCcw size={12} /> Reset to {pack.label}
@@ -581,6 +594,22 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </Section>
 
           <Section
+            id="shapes"
+            title="Shape style"
+            summary={`${shapeLabel} · ${SHAPE_STYLES.find((st) => st.id === shapeStyle)?.description ?? ""}`}
+            open={!!open.shapes}
+            onToggle={() => toggle("shapes")}
+          >
+            <Chips
+              label="Shape style"
+              value={shapeStyle}
+              options={SHAPE_STYLES.map((st) => ({ id: st.id, label: st.label }))}
+              onChange={(id) => setTheme({ shapeStyle: id })}
+            />
+            <div className="tux-help">Works with every theme: colours always come from the theme you picked above.</div>
+          </Section>
+
+          <Section
             id="fonts"
             title="Fonts & scale"
             summary={`${fontLabel} · ${config.theme.uiScale ?? 100}%${sizeLabel ? ` (${sizeLabel})` : ""}`}
@@ -602,7 +631,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 updateConfig({ ...config, theme: { ...config.theme, uiScale: s.scale }, dock: { ...config.dock, iconSize: s.iconSize }, topBar: { ...config.topBar, height: s.barH } });
               }}
             />
-            <div className="tux-help">Overall size also sets Dock icon size and Top Bar height. Fine-tune them in Dock &amp; Top Bar.</div>
+            <div className="tux-help">Overall size also sets Dock icon size and Top Bar height. Fine-tune them in Dock &amp; Bar.</div>
             <ValueSlider label="Text and panel scale" value={config.theme.uiScale ?? 100} min={90} max={125} unit="%" onChange={(v) => setTheme({ uiScale: v })} />
           </Section>
 
@@ -621,6 +650,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </Section>
 
           <Section id="wallpaper" title="Wallpaper" summary={wallpaperSummary} open={!!open.wallpaper} onToggle={() => toggle("wallpaper")}>
+            <AmbientWallpaperOptions />
             <WallpaperCard config={config} onUpdateConfig={updateConfig} />
           </Section>
 

@@ -1,0 +1,2 @@
+# expect: clean
+dom||const user = { name: "Maya", role: "admin" }; console.log(user.name);

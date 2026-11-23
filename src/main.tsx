@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from "react";
+import { CoachMarkLayer } from "./guide/CoachMarkLayer";
 import ReactDOM from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./styles/tokens.css";
@@ -50,11 +51,25 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
   // Lens Browser frame UI (docs/LENS_BROWSER.md).
   browser: lazy(() => import("./browser/BrowserSurface").then((m) => ({ default: m.BrowserSurface }))),
+  // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).
+  snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
+  // Magic right-click window at the pointer (docs/MAGIC.md).
+  magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
   focusdim: lazy(() =>
     import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
+  ),
+  // Standalone "Needs your OK" window for AI-app requests (docs/CLAUDE_CONTROL.md §1–2).
+  approval: lazy(() => import("./approval/ApprovalSurface").then((m) => ({ default: m.ApprovalSurface }))),
+  // Now Playing (docs/MUSIC.md §2).
+  nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
+  // Lens Apps window (docs/LENS_APPS.md §2).
+  apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
+  voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
+  conversation: lazy(() =>
+    import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),
 };
 
@@ -85,6 +100,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Suspense fallback={null}>
       <Surface />
+      {/* Guide "Show me" highlights work on every surface (docs/GUIDE.md §3). */}
+      <CoachMarkLayer />
       <ReadySignal />
     </Suspense>
   </React.StrictMode>
