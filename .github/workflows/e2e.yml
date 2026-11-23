@@ -1,8 +1,8 @@
 # Lens UI robustness and fluidity (docs/TESTING.md)
 #  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
 #                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
-#  * windows-e2e  — every PR: builds the real app and drives it on Windows through tauri-driver,
-#                   then checks Windows was put back the way it was (tools/e2e/probe.ps1).
+#  * windows-e2e  — every PR: builds the real app and drives its WebView2 windows on Windows over
+#                   CDP, then checks Windows was put back the way it was (tools/e2e/probe.ps1).
 #  * nightly      — the long versions: full soak, longer Playground runs, a 10× start/quit loop and
 #                   property tests with many more cases.
 # Rust property tests (src-tauri/src/tests/robustness) also run in build.yml's `cargo test --lib`.
@@ -128,7 +128,7 @@ jobs:
           if-no-files-found: ignore
 
   windows-e2e:
-    name: End-to-end on Windows (tauri-driver)
+    name: End-to-end on Windows (real app over CDP)
     runs-on: windows-latest
     timeout-minutes: 75
     steps:
@@ -150,53 +150,17 @@ jobs:
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
-      # A debug build of the real app with the frontend embedded (custom protocol, no dev server).
-      - name: Build Lens UI (debug, no installer)
-        run: bun run tauri build --debug --no-bundle
-
-      - name: Install tauri-driver
-        run: cargo install tauri-driver --locked
-
-      # msedgedriver must match the WebView2 runtime exactly.
-      - name: msedgedriver for this WebView2
-        shell: pwsh
+      # A debug build of the real app with the frontend embedded (custom protocol, no dev server),
+      # plus a config overlay that opens a DevTools port on every webview (tests/e2e/tauri-config.mjs).
+      - name: Build Lens UI (debug, no installer, DevTools port)
         run: |
-          $key = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
-          $ver = (Get-ItemProperty $key -ErrorAction SilentlyContinue).pv
-          if (-not $ver) { $ver = (Get-Item "C:\Program Files (x86)\Microsoft\EdgeWebView\Application\*\msedgewebview2.exe" | Select-Object -First 1).VersionInfo.ProductVersion }
-          Write-Host "WebView2 runtime $ver"
-          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\edgedriver" | Out-Null
-          $zip = "$env:RUNNER_TEMP\edgedriver.zip"
-          try {
-            Invoke-WebRequest "https://msedgedriver.microsoft.com/$ver/edgedriver_win64.zip" -OutFile $zip
-            Expand-Archive $zip -DestinationPath "$env:RUNNER_TEMP\edgedriver" -Force
-            $drv = "$env:RUNNER_TEMP\edgedriver\msedgedriver.exe"
-          } catch {
-            Write-Host "No driver download for $ver ($_); using the runner's EdgeDriver"
-            $drv = Join-Path $env:EDGEWEBDRIVER "msedgedriver.exe"
-          }
-          "MSEDGEDRIVER=$drv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          node tests/e2e/tauri-config.mjs
+          bun run tauri build --debug --no-bundle --config tests/e2e/out/tauri.e2e.json
 
-      - name: Install selenium-webdriver
-        run: npm install --no-save --no-package-lock selenium-webdriver@4
-
-      # Shows whether the app opens a DevTools endpoint when asked the way msedgedriver asks
-      # (WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS). If it doesn't, WebDriver can't attach.
-      - name: Diagnose WebView2 debugging
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9333"
-          $p = Start-Process -PassThru -FilePath src-tauri/target/debug/lens-ui.exe
-          Start-Sleep -Seconds 20
-          Write-Host "lens-ui running: $(-not $p.HasExited) (exit code $($p.ExitCode))"
-          try { (Invoke-WebRequest http://127.0.0.1:9333/json/list -UseBasicParsing -TimeoutSec 5).Content } catch { Write-Host "no DevTools endpoint on 9333: $_" }
-          Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter DevToolsActivePort -ErrorAction SilentlyContinue | ForEach-Object { "$($_.FullName): $(Get-Content $_.FullName -Raw)" }
-          Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Select-Object -First 3 | ForEach-Object { (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine.Substring(0, 400) }
-          Stop-Process -Name lens-ui -Force -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 2
-          cmd /c Restore-Windows-Taskbar.bat
-          Remove-Item -Recurse -Force (Join-Path $env:APPDATA "LensUI") -ErrorAction SilentlyContinue
+      - name: Install Playwright (attaches over CDP; no browser download)
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: npm install --no-save --no-package-lock playwright@${{ env.PLAYWRIGHT_VERSION }}
 
       - name: Snapshot Windows state
         shell: pwsh
@@ -206,17 +170,7 @@ jobs:
         shell: pwsh
         env:
           E2E_RESTARTS: ${{ github.event_name == 'schedule' && '10' || '0' }}
-        run: |
-          $driver = Start-Process -PassThru -NoNewWindow -FilePath "$env:USERPROFILE\.cargo\bin\tauri-driver.exe" -ArgumentList "--native-driver", "$env:MSEDGEDRIVER" -RedirectStandardOutput tests/e2e/out/tauri-driver.log -RedirectStandardError tests/e2e/out/tauri-driver.err.log
-          Start-Sleep -Seconds 3
-          node tests/e2e/run.mjs
-          $code = $LASTEXITCODE
-          Stop-Process -Id $driver.Id -Force -ErrorAction SilentlyContinue
-          if ($code -ne 0) {
-            Write-Host "---- tauri-driver output ----"
-            Get-Content tests/e2e/out/tauri-driver.log, tests/e2e/out/tauri-driver.err.log -ErrorAction SilentlyContinue | Select-Object -Last 80
-          }
-          exit $code
+        run: node tests/e2e/run.mjs
 
       - name: Windows put back after quit
         if: always() && hashFiles('tests/e2e/out/before.json') != ''

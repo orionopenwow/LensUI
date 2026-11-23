@@ -273,3 +273,44 @@ marker together with the fix.
 * **Repro:** set `"iconSize": 5000` in `%APPDATA%\LensUI\config.json` and start Lens. Or run `bun test --todo src/__tests__/robustness.prop.test.ts`.
 * **Suggested fix:** clamp to 16–96 in `migrate_config_value` (a v2→v3 step) and in `dockStyleIconSize` / `resolveDockIconSize`.
 * **Marker:** `test.todo("F2: …")` in `src/__tests__/robustness.prop.test.ts`.
+
+### F3: Dock app buttons have no accessible name (axe `button-name`, critical)
+
+* **Found by:** accessibility suite, on the dock and dock-search states, light and dark.
+* **What happens:** `.dock-item` buttons show only an icon. The app name lives in a sibling tooltip that isn't linked, so Narrator and other screen readers announce every Dock icon as just "button". The same applies to voice access ("click Spotify" can't find it).
+* **Repro:** `node tools/a11y/run.mjs` with the F3 allowlist entries removed.
+* **Suggested fix** (`src/surfaces/DockSurface.tsx`): `aria-label={app.name}` on each `.dock-item`. Add "(running)" or "(focused)" when that applies.
+* **Marker:** allowlist entries with reason F3.
+
+### F4: Control Center switches and icon-only buttons have no name (axe `button-name`, critical)
+
+* **Found by:** accessibility suite. 34 nodes across the Windows & Quick, Stats & Tasks, Desktops & Widgets, AI & Command and Agents tabs, plus the widget drawer.
+* **What happens:** `.cc-toggle` switches carry `role="switch"` but no `aria-label`/`aria-labelledby`. Their visible label sits in a sibling `.cc-label`, which isn't linked. Icon-only `.cc-chip` buttons (accent swatches, small icon actions) have no text either.
+* **Suggested fix:** give the shared toggle component an `aria-labelledby` pointing at its row's `.cc-label` id, and give swatches `aria-label={"Accent " + name}`.
+* **Marker:** allowlist entries with reason F4.
+
+### F5: interactive controls nested inside interactive controls (axe `nested-interactive`, serious)
+
+* **Found by:** accessibility suite: Quick Settings, Control Center sliders, Overview window cards.
+* **What happens:** slider pills (`role="slider"`) and app volume rows contain their own buttons, and Overview window cards are buttons that contain close buttons. Screen readers skip or merge the inner controls, and keyboard focus order is ambiguous.
+* **Suggested fix:** make the outer element a plain container with the slider/button role on one inner element, or move the inner buttons beside it.
+* **Marker:** allowlist entries with reason F5.
+
+### F6: low-contrast secondary text in the palette and launcher (axe `color-contrast`, serious)
+
+* **Found by:** accessibility suite, in Obsidian and Alabaster Daylight.
+* **What happens:** the palette's "12 min ago" recents age (`.pal-recent-age`), and the launcher's folder counts (`.ln-count`) and keyboard hint (`.ln-hint`), fall below 4.5:1.
+* **Suggested fix:** use the secondary text token instead of the tertiary one for these three. The theme-ux pass did the same for Control Center descriptions.
+* **Marker:** allowlist entries with reason F6.
+
+### F7: ARIA labels that don't match what's on screen
+
+* **Found by:** accessibility suite (`label-content-name-mismatch`, `aria-prohibited-attr`, serious).
+* **What happens:**
+  * The Top Bar clock's `aria-label` doesn't contain the time it shows.
+  * The AI card's Detect button is labelled "Look for local models again" while it reads "Detect".
+  * Lens Mini's context row (`.mini-ctx`) puts `aria-label` on a div with no role, so it is ignored.
+
+  Voice-control users say what they see, so a mismatched name can't be targeted.
+* **Suggested fix:** start each `aria-label` with the visible text (for example "Detect: look for local models again"), and give `.mini-ctx` `role="group"`.
+* **Marker:** allowlist entries with reason F7.
