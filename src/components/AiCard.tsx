@@ -164,7 +164,7 @@ export const AiCard: React.FC<{ onTryIt?: () => void }> = ({ onTryIt }) => {
   const saveKey = async () => {
     if (!claude || !key.trim()) return;
     try {
-      await aiSetSecret(claude.id, key.trim());
+      await aiSetSecret("claude", key.trim());
       setKey("");
       setKeyNote("Key saved");
       refresh();
@@ -175,7 +175,7 @@ export const AiCard: React.FC<{ onTryIt?: () => void }> = ({ onTryIt }) => {
 
   const removeKey = async () => {
     if (!claude) return;
-    await aiClearSecret(claude.id).catch(() => {});
+    await aiClearSecret("claude").catch(() => {});
     setKeyNote("Key removed");
     refresh();
   };

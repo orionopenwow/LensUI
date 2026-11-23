@@ -204,9 +204,9 @@ export interface ShelfLike {
   title?: string;
   text?: string;
   kind: string;
-  source_app?: string;
-  url?: string;
-  path?: string;
+  source_app?: string | null;
+  url?: string | null;
+  path?: string | null;
 }
 
 export function shelfTitle(i: ShelfLike): string {

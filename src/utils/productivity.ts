@@ -75,15 +75,15 @@ export function readHotCorners(config: LensConfig): HotCornersConfig {
   return { ...DEFAULT_HOT_CORNERS, ...((config as WithProductivity | null)?.hotCorners ?? {}) };
 }
 export function readAltDrag(config: LensConfig): AltDragConfig {
-  const raw = (config as WithProductivity | null)?.altDrag ?? {};
+  const raw: Partial2<AltDragConfig> = (config as WithProductivity | null)?.altDrag ?? {};
   return { ...DEFAULT_ALT_DRAG, ...raw, exclude: raw.exclude ?? [] };
 }
 export function readAppSummon(config: LensConfig): AppSummonConfig {
-  const raw = (config as WithProductivity | null)?.appSummon ?? {};
+  const raw: Partial2<AppSummonConfig> = (config as WithProductivity | null)?.appSummon ?? {};
   return { ...DEFAULT_APP_SUMMON, ...raw, bindings: raw.bindings ?? [] };
 }
 export function readDndSchedule(config: Partial<LensConfig> | null | undefined): DndSchedule {
-  const raw = ((config ?? {}) as WithProductivity).dndSchedule ?? {};
+  const raw: Partial2<DndSchedule> = ((config ?? {}) as WithProductivity).dndSchedule ?? {};
   return { ...DEFAULT_DND_SCHEDULE, ...raw, ranges: raw.ranges ?? DEFAULT_DND_SCHEDULE.ranges };
 }
 
