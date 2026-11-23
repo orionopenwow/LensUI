@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import { ApprovalCard } from "./ApprovalCard";
-import { allowForSession, approveMcp, denyMcp, trustSimilar, undoChange, usePendingApprovals } from "./api";
+import { allowForSession, approveRequest, denyMcp, trustSimilar, undoChange, usePendingApprovals } from "./api";
 import "./ApprovalCard.css";
 import { useLensState } from "../hooks/useLensState";
 
 /**
- * The standalone topmost "Needs your OK" window for MCP requests that arrive while Lens is in the
- * background (window label `approval`, see docs/CLAUDE_CONTROL.md). Shows the oldest pending
+ * The standalone topmost "Needs your OK" window: MCP requests that arrive while Lens is in the
+ * background, and anything Lens's own assistant, the bridge inbox or Lens Apps is waiting on (window label `approval`, see docs/CLAUDE_CONTROL.md). Shows the oldest pending
  * request; hides itself when the queue is empty.
  */
 export const ApprovalSurface: React.FC = () => {
@@ -30,7 +30,7 @@ export const ApprovalSurface: React.FC = () => {
         key={first.id}
         request={first}
         onApprove={async () => {
-          const ok = await approveMcp(first.id);
+          const ok = await approveRequest(first);
           window.setTimeout(refresh, 900);
           return ok;
         }}

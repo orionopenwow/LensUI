@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { HookStatus } from "../components/HookStatus";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
@@ -1192,11 +1193,14 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Legacy In-App Window Styling</div>
+                    <div className="cc-label">Legacy In-App Window Styling (experimental)</div>
                     <div className="cc-desc">
-                      Loads a helper into every app to restyle windows. Leave off unless a window keeps its
-                      old titlebar; turning it off takes effect after restarting Lens UI.
+                      Off by default: Lens already styles windows from outside each app. This loads a small helper
+                      into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a
+                      fullscreen app or an anti-cheat protected game is running, and removes it the moment you
+                      switch this off, quit, or use Remove all.
                     </div>
+                    <HookStatus enabled={!!config.func.injectedHook} />
                   </div>
                   <button
                     type="button"

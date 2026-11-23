@@ -888,6 +888,14 @@ impl Runtime {
     }
 }
 
+impl Runtime {
+    /// Cancels every request in flight (Stop / Esc while Lens is at work). Returns how many.
+    pub fn cancel_all(&self) -> usize {
+        let ids: Vec<String> = self.cancels.lock().unwrap_or_else(|e| e.into_inner()).keys().cloned().collect();
+        ids.iter().filter(|id| self.cancel(id)).count()
+    }
+}
+
 pub fn runtime() -> &'static Runtime {
     static R: OnceLock<Runtime> = OnceLock::new();
     R.get_or_init(Runtime::default)

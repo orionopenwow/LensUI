@@ -227,3 +227,11 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Banners for safety flags (src/agentsafe/SafetyFlags.tsx): a small stack above the content. */
+.as-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 12px;
+}

@@ -42,27 +42,97 @@ fn applied_map() -> &'static Mutex<HashMap<isize, u32>> {
     APPLIED_VERSIONS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn check_excluded_process() -> bool {
+/// What this DLL does in the process it was just loaded into.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Stance {
+    /// Style this app's windows.
+    Style,
+    /// Stay loaded but do nothing. Only Lens itself: it has to load the DLL to install the hook.
+    Idle,
+    /// Refuse to load at all (`DllMain` returns FALSE), so nothing of Lens stays in the process.
+    Refuse,
+}
+
+/// Lens's own process: must be able to load the DLL (it installs the hook), never styles itself.
+const HOST: &[&str] = &["lens-ui.exe"];
+
+/// Processes this DLL never stays in: Windows shell hosts, anti-cheat services, the launchers
+/// that ship one, and games known to act on code loaded into them. Keep in step with
+/// `SHELL_PROCESS_FRAGMENTS` and `ANTI_CHEAT_FRAGMENTS` in src-tauri/src/win_rules.rs.
+const REFUSE: &[&str] = &[
+    // Windows shell hosts
+    "searchhost.exe",
+    "shellexperiencehost.exe",
+    "startmenuexperiencehost.exe",
+    "textinputhost.exe",
+    "lockapp.exe",
+    "logonui.exe",
+    "consent.exe",
+    "dwm.exe",
+    // Anti-cheat systems
+    "easyanticheat",
+    "eac_launcher",
+    "eaanticheat",
+    "beservice",
+    "battleye",
+    "bedaisy",
+    "vgc.exe",
+    "vgtray.exe",
+    "vanguard",
+    "faceit",
+    "eseaclient",
+    "punkbuster",
+    "pnkbstr",
+    "xigncode",
+    "gameguard",
+    "gamemon",
+    "mhyprot",
+    "hoyokprotect",
+    "anticheatexpert",
+    "ricochet",
+    // Games and launchers that ship one
+    "valorant",
+    "riotclientservices",
+    "leagueclient",
+    "league of legends.exe",
+    "cs2.exe",
+    "csgo.exe",
+    "fortnite",
+    "cod.exe",
+    "modernwarfare",
+    "r5apex",
+    "tslgame",
+    "rainbowsix",
+    "destiny2.exe",
+    "overwatch.exe",
+    "eldenring.exe",
+    "rustclient.exe",
+    "escapefromtarkov",
+    "dayz",
+    "deadbydaylight",
+    "rocketleague.exe",
+    "genshinimpact.exe",
+    "starrail.exe",
+];
+
+fn stance_for(path_lower: &str) -> Stance {
+    if HOST.iter().any(|s| path_lower.contains(s)) {
+        Stance::Idle
+    } else if REFUSE.iter().any(|s| path_lower.contains(s)) {
+        Stance::Refuse
+    } else {
+        Stance::Style
+    }
+}
+
+fn process_stance() -> Stance {
     let mut buf = [0u16; 512];
     let len = unsafe { GetModuleFileNameW(HMODULE::default(), &mut buf) } as usize;
     if len == 0 {
-        return false;
+        // Can't tell which process this is: stay out of it.
+        return Stance::Refuse;
     }
-    let path = String::from_utf16_lossy(&buf[..len]).to_lowercase();
-    let skip = [
-        "lens-ui.exe",
-        "easyanticheat",
-        "beservice",
-        "vgc.exe",
-        "vgtray.exe",
-        "valorant",
-        "cs2.exe",
-        "fortnite",
-        "searchhost.exe",
-        "shellexperiencehost.exe",
-        "startmenuexperiencehost.exe",
-    ];
-    skip.iter().any(|s| path.contains(s))
+    stance_for(&String::from_utf16_lossy(&buf[..len]).to_lowercase())
 }
 
 unsafe fn read_shared_theme() -> Option<SharedDwmTheme> {
@@ -173,6 +243,9 @@ unsafe fn apply_to_all_process_windows(theme: &SharedDwmTheme) {
     let _ = EnumWindows(Some(cb), LPARAM(&ctx as *const Ctx as isize));
 }
 
+/// Returns FALSE on attach for excluded processes, so Windows unloads the DLL straight away and
+/// nothing of Lens stays in an anti-cheat protected game or a shell host (docs/brain/BUGS.md
+/// B-05). Lens's own process loads it (to install the hook) but never styles itself.
 #[no_mangle]
 pub unsafe extern "system" fn DllMain(
     _hinst: HMODULE,
@@ -180,9 +253,22 @@ pub unsafe extern "system" fn DllMain(
     _reserved: *mut core::ffi::c_void,
 ) -> BOOL {
     if reason == DLL_PROCESS_ATTACH {
-        PROCESS_EXCLUDED.store(check_excluded_process(), Ordering::SeqCst);
+        match process_stance() {
+            Stance::Refuse => {
+                PROCESS_EXCLUDED.store(true, Ordering::SeqCst);
+                return BOOL(0);
+            }
+            Stance::Idle => PROCESS_EXCLUDED.store(true, Ordering::SeqCst),
+            Stance::Style => PROCESS_EXCLUDED.store(false, Ordering::SeqCst),
+        }
     }
     BOOL(1)
+}
+
+/// Build marker: 2 = refuses to load in excluded processes. The first builds had no such export.
+#[no_mangle]
+pub extern "system" fn lens_hook_abi() -> u32 {
+    2
 }
 
 #[no_mangle]

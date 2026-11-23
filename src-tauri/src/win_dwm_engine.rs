@@ -73,17 +73,39 @@ fn parse_hex_bgr(hex: &str, fallback: u32) -> u32 {
 
 static EMBEDDED_HOOK_DLL: &[u8] = include_bytes!("../lens_dwm_hook.dll");
 
+/// Puts the DLL built into this version of Lens on disk and returns its path, or `None` when
+/// a copy that matches it byte for byte can't be guaranteed (then the hook is not installed).
+///
+/// The file is named after its content (`win_hook_guard::dll_file_name`), so a newer Lens never
+/// keeps loading an older copy, and an older copy that an app still has open never blocks the
+/// update. A copy whose bytes differ (older build, partial write, tampering) is rewritten.
 fn find_hook_dll() -> Option<PathBuf> {
+    use crate::win_hook_guard as guard;
     let dest_dir = crate::config::config_dir();
     let _ = std::fs::create_dir_all(&dest_dir);
-    let dest = dest_dir.join("lens_dwm_hook_v1.dll");
-    if !dest.exists() {
-        let _ = std::fs::write(&dest, EMBEDDED_HOOK_DLL);
+    let name = guard::dll_file_name(EMBEDDED_HOOK_DLL);
+    let dest = dest_dir.join(&name);
+    if guard::needs_write(std::fs::read(&dest).ok().as_deref(), EMBEDDED_HOOK_DLL) {
+        let tmp = dest_dir.join(format!("{}.tmp", name));
+        let wrote = std::fs::write(&tmp, EMBEDDED_HOOK_DLL).and_then(|_| std::fs::rename(&tmp, &dest));
+        if wrote.is_err() {
+            let _ = std::fs::remove_file(&tmp);
+            // In use by another app right now: fall back to writing in place.
+            let _ = std::fs::write(&dest, EMBEDDED_HOOK_DLL);
+        }
     }
-    if dest.exists() {
-        return Some(dest);
+    if guard::needs_write(std::fs::read(&dest).ok().as_deref(), EMBEDDED_HOOK_DLL) {
+        eprintln!("[Lens DWM Engine] The hook DLL on disk doesn't match this build; not loading it.");
+        return None;
     }
-    None
+    // Older copies (including the fixed-name one earlier versions wrote): delete what isn't in use.
+    if let Ok(dir) = std::fs::read_dir(&dest_dir) {
+        let names: Vec<String> = dir.flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
+        for old in guard::stale_copies(&names, &name) {
+            let _ = std::fs::remove_file(dest_dir.join(old));
+        }
+    }
+    Some(dest)
 }
 
 /// Lower-cased full exe path of the window's process, or `None` for windows Lens never styles
@@ -449,27 +471,80 @@ fn broadcast_refresh() {
     }
 }
 
+/// The hook thread's id while it runs (0 otherwise); `stop_dwm_hook_engine` posts WM_QUIT to it.
+static HOOK_THREAD_ID: AtomicU32 = AtomicU32::new(0);
+/// The experimental switch as the engine sees it. Cleared by `stop_dwm_hook_engine`.
+static HOOK_WANTED: AtomicBool = AtomicBool::new(false);
+/// Whether the global hook is installed right now (it is paused around games and fullscreen apps).
+static HOOK_INSTALLED: AtomicBool = AtomicBool::new(false);
+
+/// True while the legacy in-app hook is actually installed (for Settings and tests).
+pub fn hook_installed() -> bool {
+    HOOK_INSTALLED.load(Ordering::SeqCst)
+}
+
+/// What the hook guard checks about the PC right now.
+#[cfg(windows)]
+fn hook_facts(sys: &mut sysinfo::System) -> crate::win_hook_guard::Facts {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    let wanted = HOOK_WANTED.load(Ordering::SeqCst);
+    if !wanted {
+        return crate::win_hook_guard::Facts::default();
+    }
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    let protected_running = sys.processes().values().any(|p| {
+        let name = p.name().to_string_lossy().to_lowercase();
+        let path = p.exe().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+        crate::win_rules::is_anti_cheat_process(&name) || crate::win_rules::is_anti_cheat_process(&path)
+    });
+    let fullscreen_front = crate::win_focus_dim::is_window_fullscreen(unsafe { GetForegroundWindow() });
+    crate::win_hook_guard::Facts { wanted, protected_running, fullscreen_front }
+}
+
+/// After the hook is removed Windows unloads the DLL from each app the next time that app
+/// handles a message; a harmless WM_NULL to every top-level window makes that happen now.
+#[cfg(windows)]
+fn nudge_unload() {
+    use windows::Win32::Foundation::{BOOL, HWND, LPARAM, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, SendMessageTimeoutW, SMTO_ABORTIFHUNG, WM_NULL};
+    unsafe extern "system" fn cb(hwnd: HWND, _l: LPARAM) -> BOOL {
+        let _ = SendMessageTimeoutW(hwnd, WM_NULL, WPARAM(0), LPARAM(0), SMTO_ABORTIFHUNG, 25, None);
+        BOOL(1)
+    }
+    unsafe {
+        let _ = EnumWindows(Some(cb), LPARAM(0));
+    }
+}
+
+/// Starts the legacy in-app styling engine (experimental; `func.injected_hook`, off by default).
+///
+/// The global hook is only installed while `win_hook_guard` says it is safe: not while an
+/// anti-cheat service or protected game is running, not while a fullscreen app is in front.
+/// It is removed the moment that changes, when the switch goes off, on "Remove all" and on quit
+/// (`stop_dwm_hook_engine`). Windows are styled from outside their process either way.
 #[cfg(windows)]
 pub fn start_dwm_hook_engine() {
+    HOOK_WANTED.store(true, Ordering::SeqCst);
     if ENGINE_STARTED.swap(true, Ordering::SeqCst) {
         return;
     }
 
     let Some(dll_path) = find_hook_dll() else {
-        eprintln!("[Lens DWM Engine] lens_dwm_hook.dll not found — skipping in-process DWM hook.");
+        eprintln!("[Lens DWM Engine] lens_dwm_hook.dll not available — skipping in-process DWM hook.");
+        ENGINE_STARTED.store(false, Ordering::SeqCst);
         return;
     };
-    eprintln!(
-        "[Lens DWM Engine] Loading innate hook DLL: {}",
-        dll_path.display()
-    );
+    eprintln!("[Lens DWM Engine] Hook DLL ready: {}", dll_path.display());
 
     thread::spawn(move || {
+        use crate::win_hook_guard::{Action, Guard, POLL_MS};
         use windows::core::{PCSTR, PCWSTR};
+        use windows::Win32::Foundation::FreeLibrary;
         use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryW};
+        use windows::Win32::System::Threading::GetCurrentThreadId;
         use windows::Win32::UI::WindowsAndMessaging::{
-            DispatchMessageW, GetMessageW, SetWindowsHookExW, TranslateMessage,
-            UnhookWindowsHookEx, HOOKPROC, MSG, WH_CALLWNDPROC,
+            DispatchMessageW, GetMessageW, KillTimer, PeekMessageW, SetTimer, SetWindowsHookExW, TranslateMessage,
+            UnhookWindowsHookEx, HHOOK, HOOKPROC, MSG, PM_NOREMOVE, WH_CALLWNDPROC, WM_TIMER, WM_USER,
         };
 
         let wide: Vec<u16> = dll_path
@@ -479,45 +554,129 @@ pub fn start_dwm_hook_engine() {
             .collect();
 
         unsafe {
-            let Ok(hmod) = LoadLibraryW(PCWSTR(wide.as_ptr())) else {
-                eprintln!("[Lens DWM Engine] LoadLibraryW failed.");
-                return;
-            };
-            let proc_addr = GetProcAddress(hmod, PCSTR(b"lens_hook_proc\0".as_ptr()));
-            let Some(func) = proc_addr else {
-                eprintln!("[Lens DWM Engine] GetProcAddress(lens_hook_proc) failed.");
-                return;
-            };
-            // `func` is lens_hook_proc's address, exported from lens_dwm_hook.dll with exactly the HOOKPROC signature.
-            let hook_proc: HOOKPROC = Some(std::mem::transmute::<
-                unsafe extern "system" fn() -> isize,
-                unsafe extern "system" fn(
-                    i32,
-                    windows::Win32::Foundation::WPARAM,
-                    windows::Win32::Foundation::LPARAM,
-                ) -> windows::Win32::Foundation::LRESULT,
-            >(func));
-            match SetWindowsHookExW(WH_CALLWNDPROC, hook_proc, hmod, 0) {
-                Ok(hhook) => {
-                    eprintln!("[Lens DWM Engine] Global WH_CALLWNDPROC hook active! Retroactively styling windows...");
-                    broadcast_refresh();
-                    let mut msg = MSG::default();
-                    while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+            // Give this thread a message queue before its id is published, so a stop request
+            // posted right away is not lost.
+            let mut msg = MSG::default();
+            let _ = PeekMessageW(&mut msg, None, WM_USER, WM_USER, PM_NOREMOVE);
+            HOOK_THREAD_ID.store(GetCurrentThreadId(), Ordering::SeqCst);
+
+            'engine: {
+                let Ok(hmod) = LoadLibraryW(PCWSTR(wide.as_ptr())) else {
+                    eprintln!("[Lens DWM Engine] LoadLibraryW failed.");
+                    break 'engine;
+                };
+                let Some(func) = GetProcAddress(hmod, PCSTR(b"lens_hook_proc\0".as_ptr())) else {
+                    eprintln!("[Lens DWM Engine] GetProcAddress(lens_hook_proc) failed.");
+                    let _ = FreeLibrary(hmod);
+                    break 'engine;
+                };
+                // `func` is lens_hook_proc's address, exported from lens_dwm_hook.dll with exactly the HOOKPROC signature.
+                let hook_proc: HOOKPROC = Some(std::mem::transmute::<
+                    unsafe extern "system" fn() -> isize,
+                    unsafe extern "system" fn(
+                        i32,
+                        windows::Win32::Foundation::WPARAM,
+                        windows::Win32::Foundation::LPARAM,
+                    ) -> windows::Win32::Foundation::LRESULT,
+                >(func));
+
+                let mut sys = sysinfo::System::new();
+                let mut guard = Guard::default();
+                let mut hhook: Option<HHOOK> = None;
+                let timer = SetTimer(None, 0, POLL_MS, None);
+                let mut check = true;
+                loop {
+                    if check {
+                        match guard.step(&hook_facts(&mut sys)) {
+                            Action::Install => match SetWindowsHookExW(WH_CALLWNDPROC, hook_proc, hmod, 0) {
+                                Ok(h) => {
+                                    hhook = Some(h);
+                                    HOOK_INSTALLED.store(true, Ordering::SeqCst);
+                                    eprintln!("[Lens DWM Engine] In-app styling hook installed.");
+                                    broadcast_refresh();
+                                }
+                                Err(e) => eprintln!("[Lens DWM Engine] SetWindowsHookExW failed: {:?}", e),
+                            },
+                            Action::Remove => {
+                                if let Some(h) = hhook.take() {
+                                    let _ = UnhookWindowsHookEx(h);
+                                    HOOK_INSTALLED.store(false, Ordering::SeqCst);
+                                    nudge_unload();
+                                    eprintln!("[Lens DWM Engine] In-app styling hook removed (paused or switched off).");
+                                }
+                            }
+                            Action::Keep => {}
+                        }
+                        HOOK_INSTALLED.store(guard.installed() && hhook.is_some(), Ordering::SeqCst);
+                    }
+                    if !HOOK_WANTED.load(Ordering::SeqCst) {
+                        break;
+                    }
+                    // > 0: a message; 0: WM_QUIT; -1: error. Stop on anything but a message.
+                    if GetMessageW(&mut msg, None, 0, 0).0 <= 0 {
+                        break;
+                    }
+                    check = msg.message == WM_TIMER;
+                    if !check {
                         let _ = TranslateMessage(&msg);
                         DispatchMessageW(&msg);
                     }
-                    let _ = UnhookWindowsHookEx(hhook);
                 }
-                Err(e) => {
-                    eprintln!("[Lens DWM Engine] SetWindowsHookExW failed: {:?}", e);
+                if let Some(h) = hhook.take() {
+                    let _ = UnhookWindowsHookEx(h);
+                    nudge_unload();
                 }
+                HOOK_INSTALLED.store(false, Ordering::SeqCst);
+                if timer != 0 {
+                    let _ = KillTimer(None, timer);
+                }
+                let _ = FreeLibrary(hmod);
             }
+        }
+        HOOK_THREAD_ID.store(0, Ordering::SeqCst);
+        ENGINE_STARTED.store(false, Ordering::SeqCst);
+        // Switched back on while this thread was winding down: start a fresh one.
+        if HOOK_WANTED.load(Ordering::SeqCst) {
+            start_dwm_hook_engine();
         }
     });
 }
 
 #[cfg(not(windows))]
 pub fn start_dwm_hook_engine() {}
+
+/// Removes the hook and ends its thread: the switch went off, "Remove all", or Lens is quitting.
+/// Safe to call when the engine never started. Returns once the hook is gone (or after 2 s).
+#[cfg(windows)]
+pub fn stop_dwm_hook_engine() {
+    use windows::Win32::Foundation::{LPARAM, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{PostThreadMessageW, WM_QUIT};
+    HOOK_WANTED.store(false, Ordering::SeqCst);
+    let tid = HOOK_THREAD_ID.load(Ordering::SeqCst);
+    if tid != 0 {
+        unsafe {
+            let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
+        }
+    }
+    for _ in 0..100 {
+        if !ENGINE_STARTED.load(Ordering::SeqCst) {
+            break;
+        }
+        // The thread may not have published its id when we first looked.
+        let tid = HOOK_THREAD_ID.load(Ordering::SeqCst);
+        if tid != 0 {
+            unsafe {
+                let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
+            }
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+}
+
+#[cfg(not(windows))]
+pub fn stop_dwm_hook_engine() {
+    HOOK_WANTED.store(false, Ordering::SeqCst);
+}
 
 pub fn update_dwm_theme(
     enabled: bool,
@@ -608,4 +767,7 @@ pub fn revert_dwm_theme() {
         REFRESH_PENDING.store(false, Ordering::SeqCst);
         broadcast_refresh();
     }
+    // Remove all, quit and tray exit all come through here: take the in-app hook out too, so
+    // no app is left with Lens code loaded after Lens is gone (B-05).
+    stop_dwm_hook_engine();
 }

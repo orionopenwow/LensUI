@@ -256,3 +256,7 @@
 .ap-trust .ap-btn { padding: 0 12px; height: 28px; font-size: 12px; }
 .ap-toggle { min-height: 24px; margin: -8px 0; }
 .ap-toggle input { accent-color: var(--lens-fg); width: 16px; height: 16px; margin: 0; }
+
+/* Why the agent-safety gate is asking (chips from src/agentsafe). */
+.ap-safety { margin: 2px 0 8px; }
+.ap-card.is-compact .ap-safety { margin: 0 0 6px; }

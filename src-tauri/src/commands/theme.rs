@@ -194,9 +194,12 @@ pub(crate) fn save_config_cmd(
     if dwm_changed {
         apply_theme_to_system(&new_config, accent_changed);
     }
-    // Turning the legacy in-process hook on takes effect immediately; turning it off needs a restart.
+    // The experimental in-app hook follows its switch at once, both ways: on installs it (when
+    // the guard says it is safe), off removes it from every app without a restart.
     if new_config.func.injected_hook && !prev_config.func.injected_hook {
         win_dwm_engine::start_dwm_hook_engine();
+    } else if !new_config.func.injected_hook && prev_config.func.injected_hook {
+        win_dwm_engine::stop_dwm_hook_engine();
     }
     if prev_config.workspaces != new_config.workspaces {
         win_workspaces::apply_workspaces_config(new_config.workspaces.clone());
@@ -252,6 +255,14 @@ pub(crate) fn save_config_cmd(
     }
     let _ = app.emit("lens://config-updated", &new_config);
     Ok(())
+}
+
+/// The experimental in-app styling hook: whether its switch is on and whether it is installed
+/// right now (it is kept out while a protected game or a fullscreen app is running).
+#[tauri::command]
+pub(crate) fn legacy_hook_status(state: State<AppState>) -> serde_json::Value {
+    let wanted = state.config.lock().unwrap_or_else(|e| e.into_inner()).func.injected_hook;
+    serde_json::json!({ "wanted": wanted, "installed": win_dwm_engine::hook_installed() })
 }
 
 #[tauri::command]

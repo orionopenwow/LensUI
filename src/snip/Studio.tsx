@@ -13,6 +13,7 @@ import { empty, isRedacted, newId, nextStep, redactedLines, redactionCount, redu
 import type { Rect } from "./geom";
 import { renderDoc, type TranslatedLine } from "./render";
 import { Tip } from "./Tip";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import { useAiRequest } from "../ai/client";
 import type { AiStatus } from "../ai/contract";
 
@@ -407,6 +408,8 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
           </Tip>
         </div>
 
+        {/* Text in the screenshot that reads as instructions to an AI (set aside before any model sees it). */}
+        <SafetyFlagBanners sources={["snip"]} />
         <div className="snip-stage">
           <div className="snip-canvas-wrap" style={{ width: editable ? stageCss.w : undefined }}>
             <img src={preview} alt="Snip preview" draggable={false} style={editable ? { width: stageCss.w, height: stageCss.h } : { maxWidth: stageCss.w, maxHeight: stageCss.h, objectFit: "contain" }} />

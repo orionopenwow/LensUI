@@ -129,13 +129,19 @@ pub fn startup(app: &AppHandle) {
         let c = presence::config();
         presence::win::sync_hotkey(app, &c.pause_hotkey);
     }
-    #[cfg(not(windows))]
-    let _ = app;
+    // The approval window's hotkey (shown on the "Approve N actions" pill once registered).
+    let _ = presence::esc::register_approval_hotkey(app);
+}
+
+/// The hotkey that opens the approval window, as shown on the pill ("Ctrl Alt Y"), or `None`
+/// when Windows wouldn't let Lens register one.
+#[tauri::command]
+pub fn approval_hotkey() -> Option<String> {
+    presence::esc::approval_hotkey()
 }
 
 pub fn shutdown(app: &AppHandle) {
     #[cfg(windows)]
     presence::win::shutdown(app);
-    #[cfg(not(windows))]
-    let _ = app;
+    presence::esc::shutdown(app);
 }

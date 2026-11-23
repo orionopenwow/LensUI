@@ -5,6 +5,8 @@
  * says so. Tool proposals from the backend appear as Approve / Deny cards; nothing runs without a click.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ProposalApproval } from "../approval/LocalApproval";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import {
   AppWindow,
   ArrowUp,
@@ -181,6 +183,10 @@ const ToolCard: React.FC<{ card: AiToolCard; onDecide: (approve: boolean) => voi
         <div className="ai-tool-result" role="status">
           {card.decision === "approved" ? "Approved · running…" : "Denied · nothing was changed"}
         </div>
+      ) : tone === "medium" ? (
+        // A step that waits for the person: the one shared approval card (also on the pill and
+        // in the approval window through the shared queue).
+        <ProposalApproval proposal={{ ...card, risk: "confirm" }} onDecide={onDecide} />
       ) : (
         <div className="ai-tool-actions">
           <button type="button" className="ai-btn ai-btn-primary" onClick={() => onDecide(true)} autoFocus>
@@ -564,6 +570,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
                 {state.phase === "cancelled" && <div className="ai-note">Stopped.</div>}
               </div>
             )}
+            <SafetyFlagBanners sources={["context", "step"]} />
             {state.tools.map((t) => (
               <ToolCard key={t.call_id} card={t} onDecide={(ok) => decide(t.call_id, ok)} />
             ))}

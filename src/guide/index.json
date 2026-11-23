@@ -4802,20 +4802,20 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.legacy-in-app-window-styling",
+   "id": "setting.system.inline.legacy-in-app-window-styling-experimental",
    "kind": "setting",
-   "title": "Legacy In-App Window Styling",
-   "text": "Loads a helper into every app to restyle windows. Leave off unless a window keeps its old titlebar; turning it off takes effect after restarting Lens UI.",
+   "title": "Legacy In-App Window Styling (experimental)",
+   "text": "Off by default: Lens already styles windows from outside each app. This loads a small helper into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a fullscreen app or an anti-cheat protected game is running, and removes it the moment you switch this off, quit, or use Remove all.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Legacy In-App Window Styling"
+    "Legacy In-App Window Styling (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Legacy In-App Window Styling"
+    "label": "Legacy In-App Window Styling (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },

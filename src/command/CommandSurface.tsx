@@ -20,6 +20,7 @@ import { buildRequest, resolveProvider } from "./request";
 import { useCommandSettings } from "./settings";
 import { newKey, threadReducer, type BridgeRequest, type ContextChip, type ThreadItem } from "./thread";
 import { ThreadCard, type CardHandlers } from "./cards/Cards";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import { ShelfDrawer, useShelf, KIND_ICON } from "./ShelfDrawer";
 import { ClipList, useClips } from "./ClipList";
 import { MiniView } from "./mini/MiniView";
@@ -887,6 +888,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
             </div>
           ) : null}
 
+          <SafetyFlagBanners sources={["context", "step", "snip", "control"]} />
           {expanded ? (
             <div className="cmd-body" ref={bodyRef}>
               {mode === "ask" ? (

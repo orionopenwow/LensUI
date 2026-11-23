@@ -204,6 +204,8 @@ export interface ActResult {
   ran: boolean;
   needsOk: boolean;
   message: string;
+  /** Why the agent-safety gate made the step wait or refused it. */
+  safety?: { code: string; severity: string; detail: string }[];
 }
 
 export interface MenuEvent {
@@ -249,7 +251,8 @@ export const historyClear = (sinceMs: number) => invoke<void>("browser_history_c
 export const settingsSet = (settings: BrowserSettings) => invoke<BrowserView>("browser_settings_set", { settings });
 export const pageRead = <T = PageSnapshot>(op: "snapshot" | "readable" | "status", tab?: string) => invoke<T>("browser_page", { op, tab: tab ?? null });
 export const pageEvents = () => invoke<MenuEvent[]>("browser_events");
-export const agentCheck = (action: PageAction, caps?: Capabilities) => invoke<Decision>("browser_agent_check", { action, caps: caps ?? null });
+export const agentCheck = (action: PageAction, caps?: Capabilities, url?: string) =>
+  invoke<Decision>("browser_agent_check", { action, caps: caps ?? null, url: url ?? null });
 export const agentDescribe = (element: number, tab?: string) => invoke<ElementDescription>("browser_agent_describe", { element, tab: tab ?? null });
 export const agentAct = (req: { tab?: string; element?: number; action: PageAction; caps?: Capabilities; approved?: boolean }) =>
   invoke<ActResult>("browser_agent_act", { req: { tab: req.tab ?? null, element: req.element ?? null, action: req.action, caps: req.caps ?? null, approved: !!req.approved } });

@@ -9,6 +9,7 @@ mod win_dwm_engine;
 #[cfg(windows)]
 mod win_events;
 mod win_focus_dim;
+mod win_hook_guard;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
@@ -277,6 +278,7 @@ pub fn run() {
             commands::presence::presence_set_config,
             commands::presence::presence_last,
             commands::presence::presence_status,
+            commands::presence::approval_hotkey,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,
@@ -444,6 +446,7 @@ pub fn run() {
             commands::dock::set_dock_search_expanded_cmd,
             commands::dock::set_dock_menu_open,
             commands::theme::get_windows_theme,
+            commands::theme::legacy_hook_status,
             commands::dock::get_running_windows,
             commands::dock::get_icon_for_path,
             commands::dock::focus_window_cmd,
@@ -618,6 +621,8 @@ pub fn run() {
             commands::mcp::approve_mcp_action_cmd,
             commands::mcp::decline_mcp_action_cmd,
             commands::mcp::complete_mcp_action_cmd,
+            commands::mcp::approval_local_open,
+            commands::mcp::approval_local_close,
             commands::mcp::get_mcp_audit_cmd,
             commands::ai::ai_status,
             commands::ai::ai_set_config,

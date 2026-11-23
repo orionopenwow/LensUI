@@ -194,6 +194,35 @@ pub(crate) fn complete_mcp_action_cmd(
     win_mcp::complete_action(&id, ok, &message, &mcp_host(&app))
 }
 
+/// A Lens surface is showing its own confirmation (Lens Apps: get, update, run, uninstall).
+/// Registering it here puts the same request on the shared approval card, the pill and the
+/// approval window. Only kind "app" can be opened from the UI; the assistant's and the bridge's
+/// requests are queued by the backend itself.
+#[tauri::command]
+pub(crate) fn approval_local_open(
+    app: AppHandle,
+    reference: String,
+    tool: String,
+    text: String,
+    source: String,
+    preview: serde_json::Value,
+) -> Result<win_mcp::PendingAction, String> {
+    let preview = if preview.is_object() { preview } else { serde_json::Value::Null };
+    let a = win_mcp::enqueue_local("app", &reference, &tool, &serde_json::Value::Null, &text, &source, preview)?;
+    let _ = app.emit("lens://mcp-changed", ());
+    Ok(a)
+}
+
+/// The surface that opened a local request settled it (confirmed, cancelled or closed).
+#[tauri::command]
+pub(crate) fn approval_local_close(app: AppHandle, reference: String, ok: bool, message: Option<String>) -> bool {
+    let done = win_mcp::finish_local("app", &reference, ok, message.as_deref().unwrap_or(if ok { "Done." } else { "Cancelled." })).is_some();
+    if done {
+        let _ = app.emit("lens://mcp-changed", ());
+    }
+    done
+}
+
 #[tauri::command]
 pub(crate) fn get_mcp_audit_cmd(limit: Option<usize>) -> Vec<serde_json::Value> {
     win_mcp::recent_audit(limit.unwrap_or(20))
