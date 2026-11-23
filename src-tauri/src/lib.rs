@@ -51,6 +51,7 @@ mod bridge;
 mod clip;
 mod commands;
 mod media;
+mod music;
 mod shelf;
 
 use config::{load_config, save_config, LensConfig};
@@ -462,6 +463,32 @@ pub fn run() {
             commands::playground::clear_playground_state_cmd,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::music::music_config_get,
+            commands::music::music_config_set,
+            commands::music::music_now,
+            commands::music::music_control,
+            commands::music::music_select_session,
+            commands::music::music_sleep,
+            commands::music::music_lyrics,
+            commands::music::music_lyrics_clear_cache,
+            commands::music::music_history,
+            commands::music::music_history_clear,
+            commands::music::music_level,
+            commands::music::music_spicetify_preview,
+            commands::music::music_spicetify_export,
+            commands::music::music_spotify_status,
+            commands::music::music_spotify_begin,
+            commands::music::music_spotify_finish,
+            commands::music::music_spotify_disconnect,
+            commands::music::music_spotify_queue,
+            commands::music::music_spotify_add,
+            commands::music::music_spotify_playlists,
+            commands::music::music_spotify_save,
+            commands::music::music_spotify_more,
+            commands::music::music_lastfm_status,
+            commands::music::music_lastfm_begin,
+            commands::music::music_lastfm_finish,
+            commands::music::music_lastfm_disconnect,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,
