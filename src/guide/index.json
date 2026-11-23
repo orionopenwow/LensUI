@@ -7779,6 +7779,23 @@
   {
    "id": "doc.backdrop-lab.9",
    "kind": "doc",
+   "title": "Backdrop Lab: 6b. Ask for one",
+   "text": "- Lens Command: /backdrop calm blue aurora opens the Lab on that look ( /backdrop alone just opens it). - Voice and the assistant: “Lens, make me a calm blue aurora backdrop” or “create a pink gradient” map to the low-risk make backdrop tool, which opens the Lab on the look. Nothing is applied until the person picks Set as live wallpaper . - Theme files: applying a .lenstheme that carries a backdrop (from Make a theme ) also plays that backdrop as the live wallpaper.",
+   "path": [
+    "Docs",
+    "Backdrop Lab",
+    "6b. Ask for one"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BACKDROP_LAB.md",
+    "heading": "6b. Ask for one"
+   },
+   "source": "docs/BACKDROP_LAB.md"
+  },
+  {
+   "id": "doc.backdrop-lab.10",
+   "kind": "doc",
    "title": "Backdrop Lab: 7. Performance",
    "text": "- Preview: up to 60 fps at ≤ 1.25× DPR; thumbnails share one GPU context and redraw a few tiles per tick. - Wallpaper: 30 fps cap, adaptive resolution, paused whenever the Playground runner pauses. - Measured in the harness ( tools/parity/backdrop/shots/perf.json ): software WebGL (SwiftShader) only, so the absolute numbers are CPU-rendered and far above a real GPU. The GPU/CPU share on real hardware (target: < 2 % GPU, < 1 % CPU at 1080p on mid hardware) still has to be measured on Windows with the Tester Hub; tools/perf has a playground-backdrop fluidity budget for the main thread.",
    "path": [
@@ -7794,7 +7811,7 @@
    "source": "docs/BACKDROP_LAB.md"
   },
   {
-   "id": "doc.backdrop-lab.10",
+   "id": "doc.backdrop-lab.11",
    "kind": "doc",
    "title": "Backdrop Lab: 8. Next",
    "text": "Cut for this pass (listed so nothing is lost): 1. Per-monitor and span on real multi-monitor setups. The engine already supports span ( setSpan(origin, world) : one continuous field across windows), but the wallpaper host attaches one window to the primary monitor. Needs a window per monitor in win wallpaper.rs with mixed-DPI tests. 2. Real-Windows E2E for apply / switch / resume / multi-monitor with pixel checks around the swap (the browser-side flash check exists; tests/e2e needs a wallpaper step). 3. Video-loop fallback when WebGL2 is missing (today: still gradient). 4. Weather input to “follow the time of day” (the weather source is not exposed to the wallpaper yet). 5. Cursor parallax on the desktop: the shader supports it ( setCursor ), the scene keeps it at 0 until the desktop input hook is opt-in per scene with a game guard. 6. Use the gradient in Snip “beautify”, Lens Browser ne",
