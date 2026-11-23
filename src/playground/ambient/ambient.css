@@ -1,0 +1,135 @@
+/* Ambient backdrop controls and previews (see docs/AMBIENT.md). */
+.amb-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.amb-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.amb-switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.amb-switch-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+}
+.amb-switch-hint {
+  font-size: 11px;
+  color: var(--lens-fg-secondary);
+}
+.amb-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.18);
+  transition: background 160ms ease;
+}
+.amb-switch.on {
+  background: var(--lens-accent, #60a5fa);
+}
+.amb-switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.amb-switch input:focus-visible + .amb-knob {
+  outline: 2px solid var(--lens-accent, #60a5fa);
+  outline-offset: 2px;
+}
+.amb-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lens-fg);
+  transition: transform 160ms ease;
+  pointer-events: none;
+}
+.amb-switch.on .amb-knob {
+  transform: translateX(14px);
+  background: var(--lens-on-fg, #09090b);
+}
+.amb-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.amb-row {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.amb-row > :last-child {
+  justify-self: start;
+}
+.amb-row-label {
+  font-size: 12.5px;
+  color: var(--lens-fg);
+}
+.amb-select {
+  min-width: 200px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid rgb(var(--lens-ink) / 0.16);
+  background: rgb(var(--lens-ink) / 0.04);
+  color: var(--lens-fg);
+  font: inherit;
+  font-size: 12.5px;
+}
+.amb-select:disabled,
+.amb-options .tux-seg button:disabled {
+  opacity: 0.5;
+}
+.amb-error {
+  font-size: 11.5px;
+  color: #fb7185;
+}
+.amb-note {
+  font-size: 11px;
+  color: var(--lens-fg-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .amb-switch,
+  .amb-knob {
+    transition: none;
+  }
+}
+/* Setup Wizard: "Animated backdrop (subtle)" on the Pick a look step. */
+.wiz-ambient {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+}
+.wiz-ambient input {
+  margin-top: 2px;
+  accent-color: var(--lens-accent, #60a5fa);
+}
+.wiz-ambient strong {
+  display: block;
+  font-weight: 600;
+  color: var(--lens-fg);
+}

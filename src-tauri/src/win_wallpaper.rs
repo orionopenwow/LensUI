@@ -198,17 +198,33 @@ pub struct WallpaperFile {
     pub bytes: u64,
 }
 
-/// Why the wallpaper should be paused right now, if at all. Pure.
+/// Why the wallpaper should be paused right now, if at all (without battery saver). Pure; tests only,
+/// the monitor uses `pause_reason_with_saver`.
+#[cfg(test)]
 pub fn pause_reason(
     s: &WallpaperSettings,
     covered: bool,
     on_battery: bool,
+) -> Option<&'static str> {
+    pause_reason_with_saver(s, covered, on_battery, false)
+}
+
+/// Like `pause_reason`, plus Windows battery saver: animated wallpapers and ambient backdrops
+/// always rest while battery saver is on (see docs/AMBIENT.md). Pure.
+pub fn pause_reason_with_saver(
+    s: &WallpaperSettings,
+    covered: bool,
+    on_battery: bool,
+    battery_saver: bool,
 ) -> Option<&'static str> {
     if !s.enabled {
         return None;
     }
     if s.pause_when_covered && covered {
         return Some("covered");
+    }
+    if battery_saver {
+        return Some("battery-saver");
     }
     if s.pause_on_battery && on_battery {
         return Some("battery");
@@ -747,6 +763,13 @@ fn on_battery() -> bool {
     unsafe { ffi::GetSystemPowerStatus(&mut st) != 0 && st.ACLineStatus == 0 }
 }
 
+/// Windows battery saver is on (SYSTEM_POWER_STATUS.SystemStatusFlag bit 0).
+#[cfg(windows)]
+fn battery_saver_on() -> bool {
+    let mut st = ffi::SYSTEM_POWER_STATUS::default();
+    unsafe { ffi::GetSystemPowerStatus(&mut st) != 0 && st.SystemStatusFlag & 1 != 0 }
+}
+
 static MONITOR_STARTED: AtomicBool = AtomicBool::new(false);
 
 /// Polls once a second and calls `on_change(reason)` when the pause state changes
@@ -765,17 +788,18 @@ where
             std::thread::sleep(std::time::Duration::from_millis(1000));
             let s = load_settings();
             #[cfg(windows)]
-            let (covered, battery) = if s.enabled && is_attached() {
+            let (covered, battery, saver) = if s.enabled && is_attached() {
                 (
                     s.pause_when_covered && foreground_covers_primary(),
                     s.pause_on_battery && on_battery(),
+                    battery_saver_on(),
                 )
             } else {
-                (false, false)
+                (false, false, false)
             };
             #[cfg(not(windows))]
-            let (covered, battery) = (false, false);
-            let now = pause_reason(&s, covered, battery);
+            let (covered, battery, saver) = (false, false, false);
+            let now = pause_reason_with_saver(&s, covered, battery, saver);
             if first || now != last {
                 first = false;
                 last = now;

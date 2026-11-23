@@ -45,6 +45,11 @@ export interface ThemePack {
   /** Shape style this pack is designed around ("expressive", "dotmatrix"); applied with the pack.
    *  Packs without it leave the user's own Shape style setting alone. */
   shapeStyle?: "classic" | "expressive" | "dotmatrix";
+  /**
+   * Optional ambient backdrop override: scene id from src/playground/ambient/scenes plus gentle
+   * params. Most packs are mapped in src/playground/ambient/packMap.ts instead (docs/AMBIENT.md).
+   */
+  ambient?: { scene: string; params?: { speed?: number; amount?: number; hueShift?: number; saturation?: number; density?: number } };
 }
 
 export const THEME_PACKS: ThemePack[] = [
