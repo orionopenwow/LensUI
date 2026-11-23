@@ -25,6 +25,7 @@ const L = {
   messages: [["browser", 0.04, 0.06, 0.4, 0.8]],
   mini: [["notes", 0.05, 0.1, 0.34, 0.6]],
   browserai: [["browser", 0.04, 0.05, 0.62, 0.9]],
+  "core-apps": [["monitor", 0.03, 0.07, 0.4, 0.62], ["timer", 0.45, 0.1, 0.24, 0.56], ["notes", 0.71, 0.07, 0.26, 0.7]],
 };
 
 export const SCENES = [
@@ -38,6 +39,7 @@ export const SCENES = [
   { id: "backdrops", title: "Living backdrops", line: "Every theme has its own slow backdrop. Change it any time.", look: { pack: "rose-pine", dock: "minimal", shape: "classic" } },
   { id: "voice", title: "Voice dock", line: "Hold a key: “Lens, tile my windows.” Recognised on your PC.", look: { pack: "gruvbox-warm", dock: "floating", shape: "classic" } },
   { id: "settings", title: "Settings hub", line: "Lens and Windows settings in one place, with a white-bar mixer.", look: { pack: "alabaster-daylight", dock: "floating", shape: "classic" } },
+  { id: "core-apps", title: "Core apps", line: "Monitor, Timer, Notes and more, built in and themed like everything else.", look: { pack: "catppuccin-mocha", dock: "floating", shape: "classic" } },
   { id: "claude", title: "Bring your own agent", line: "Connect Claude over MCP. It proposes; you approve; everything undoes.", look: { pack: "obsidian", dock: "floating", shape: "classic" } },
   { id: "ade", title: "Agents at a glance", line: "Running agents, what each may do, and a context pack being built.", look: { pack: "graphite", dock: "slim", shape: "classic" } },
   { id: "messages", title: "Messages and feeds", line: "One slim inbox. Lens drafts a reply; sending waits for you.", look: { pack: "everforest-dark", dock: "floating", shape: "classic" } },
@@ -61,7 +63,7 @@ export function createScenes(desk, { onScene, onState } = {}) {
     // Windows morph from the last scene: keep the ones both scenes use and move them; close the rest.
     const want = L[sc.id === "magic-right-click" ? "magic" : sc.id === "backdrops" ? "wall" : sc.id === "claude" ? "agent" : sc.id === "browser-ai" ? "browserai" : sc.id === "approvals" ? "approve" : sc.id] ?? [];
     for (const w of [...desk.wins.values()]) if (!want.some(([a]) => a === w.app)) desk.close(w.id);
-    const wk = { x: 0, y: desk.TOP, w: desk.W, h: desk.H - desk.TOP - 96 };
+    const wk = { x: 112, y: desk.TOP, w: desk.W - 124, h: desk.H - desk.TOP - 96 }; // right of the desktop icons
     for (const [app, x, y, ww, hh] of want) {
       const r = { x: wk.x + x * wk.w, y: wk.y + y * wk.h, w: ww * wk.w, h: hh * wk.h };
       const ex = desk.byApp(app);
@@ -172,6 +174,18 @@ export function createScenes(desk, { onScene, onState } = {}) {
       const b = s?.el.querySelector('[data-sec="Sound"]');
       if (b) { await o.click(b, t); b.click(); }
       await wait(2600);
+    },
+    async "core-apps"() {
+      await wait(900);
+      const tw = desk.byApp("timer");
+      const five = tw?.el.querySelector('[data-min="5"]');
+      if (five) { await o.click(five, t); five.click(); }
+      const go = tw?.el.querySelector("[data-t=go]");
+      if (go) { await o.click(go, t); go.click(); }
+      await wait(1200);
+      const n = desk.byApp("notes");
+      if (n) await o.click(n.el.querySelector(".a-notes"), t);
+      await wait(2200);
     },
     async claude() {
       const log = panel(`<div class="ph"><img src="${iconUrl("lens-command")}" alt="" width="16" height="16"><b>Claude</b><span class="ok">connected · MCP</span></div><ol class="lg"></ol>`, "p-agent");

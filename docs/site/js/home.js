@@ -18,7 +18,7 @@ export function detectOS(ua = navigator.userAgent, platform = navigator.userAgen
 }
 const os = detectOS();
 document.documentElement.dataset.os = os;
-document.querySelectorAll("[data-dl]").forEach((a) => {
+document.querySelectorAll(".hero [data-dl]").forEach((a) => {
   const lbl = a.querySelector(".lbl") ?? a;
   if (os === "windows") lbl.textContent = "Download for Windows";
   else if (os === "mac" || os === "linux") { lbl.textContent = "Get Lens for Windows"; a.querySelector(".hint")?.replaceChildren(`${os === "mac" ? "macOS" : "Linux"} is on the roadmap`); a.href = a.href.replace(/download\.html.*$/, "download.html#platforms"); }
@@ -26,7 +26,7 @@ document.querySelectorAll("[data-dl]").forEach((a) => {
 
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
-const desk = createDesk(host, { label: "Lens desktop demo", layout: [["browser", 0.03, 0.06], ["notes", 0.56, 0.08]] });
+const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.1, 0.06], ["notes", 0.6, 0.08]] });
 const bar = $("#scenes");
 const cap = $("#scene-cap");
 const chip = $("#driving");
@@ -39,7 +39,7 @@ const scenes = createScenes(desk, {
     if (prog) { prog.style.animation = "none"; void prog.offsetWidth; prog.style.animation = scenes.playing && !reducedMotion() ? "sb-prog 11s linear" : "none"; }
     history.replaceState(null, "", `#scene/${sc.id}`);
   },
-  onState(p) { bar.querySelector("[data-play]").textContent = p ? "❚❚" : "▶"; bar.querySelector("[data-play]").setAttribute("aria-label", p ? "Pause the scenes" : "Play the scenes"); bar.classList.toggle("is-playing", p); },
+  onState(p) { desk.setQuiet(p); bar.querySelector("[data-play]").textContent = p ? "❚❚" : "▶"; bar.querySelector("[data-play]").setAttribute("aria-label", p ? "Pause the scenes" : "Play the scenes"); bar.classList.toggle("is-playing", p); },
 });
 bar.querySelector(".sb-list").innerHTML = SCENES.map((s, i) => `<button type="button" data-scene="${i}" aria-current="false"><i aria-hidden="true"></i>${esc(s.title)}</button>`).join("");
 bar.addEventListener("click", (e) => {
@@ -54,9 +54,8 @@ bar.addEventListener("keydown", (e) => {
 });
 /** The visitor took over: stop the reel and show "You're driving". Autoplay resumes only on request. */
 function handover(show = true) {
-  if (!scenes.playing && interacted) return;
   interacted = true;
-  scenes.pause();
+  if (scenes.playing) scenes.pause();
   chip.hidden = !show;
 }
 desk.on("user", () => handover(true));
@@ -75,7 +74,7 @@ new IntersectionObserver(([e]) => {
   if (deep) { scenes.goId(deep[1]); return; }
   if (!reducedMotion()) setTimeout(() => { if (!interacted) scenes.play(); }, 1500);
   else scenes.go(0);
-}, { threshold: 0.35 }).observe(host);
+}, { threshold: 0.2 }).observe(host);
 addEventListener("hashchange", () => { const m = decodeURIComponent(location.hash).match(/^#scene\/(.+)$/); if (m && scenes.current?.id !== m[1]) { handover(false); scenes.goId(m[1]); host.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); } });
 export function playScene(id) { handover(false); host.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); return scenes.goId(id); }
 window.lensSite = { desk, scenes, playScene, detectOS };

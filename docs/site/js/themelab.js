@@ -14,7 +14,7 @@ export const swatch = (p) => `<span class="tsw" style="--b:${base(p)};--a:${p.ac
 export async function init(section) {
   const packs = await getPacks();
   const host = section.querySelector("#lab-desk");
-  const desk = createDesk(host, { label: "Theme lab desktop", layout: [["browser", 0.04, 0.06], ["music", 0.62, 0.5], ["files", 0.5, 0.1]], notify: false });
+  const desk = createDesk(host, { label: "Theme lab desktop", layout: [["browser", 0.1, 0.07], ["files", 0.56, 0.06], ["music", 0.6, 0.6]], notify: false });
   const picker = section.querySelector(".lab-picks");
   const picks = PICKS.map((id) => packs.find((p) => p.id === id)).filter(Boolean);
   picker.innerHTML = picks.map((p) => `<button type="button" class="tp" data-pack="${p.id}" aria-pressed="false">${swatch(p)}<span>${esc(p.label)}</span></button>`).join("");

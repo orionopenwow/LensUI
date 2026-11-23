@@ -43,7 +43,7 @@ let uid = 0;
  * createDesk(host, { label, layout, notify, quiet })
  * host: an element the desk fills (it sets its height from the 16:10 design size).
  */
-export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.04, 0.1], ["code", 0.33, 0.17], ["music", 0.72, 0.52]], notify = true } = {}) {
+export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.04, 0.1], ["code", 0.33, 0.17], ["music", 0.72, 0.52]], notify = true, fitViewport = false } = {}) {
   const n = ++uid;
   host.classList.add("lx-host");
   host.innerHTML = `<div class="lx" tabindex="0" role="application" aria-roledescription="desktop" aria-label="${esc(label)}" aria-describedby="lx-help-${n}">
@@ -91,7 +91,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
     else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
-    else { W = cw; H = Math.round(cw * 10 / 16); k = 1; }
+    else { W = cw; H = Math.round(cw * 10 / 16); if (fitViewport) H = Math.max(560, Math.min(H, innerHeight - 150)); k = 1; }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
     cv.style.transform = k === 1 ? "" : `scale(${k})`;
     host.style.height = full ? "" : `${Math.round(H * k)}px`;
@@ -611,6 +611,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   }, { rootMargin: "200px" }).observe(root);
   document.addEventListener("visibilitychange", () => play?.setStill(still()));
   new ResizeObserver(() => fit()).observe(host);
+  if (fitViewport) addEventListener("resize", () => fit());
 
   const api = {
     root, canvas: cv, frame, wins, light: isLight(), get W() { return W; }, get H() { return H; }, get k() { return k; }, TOP,
