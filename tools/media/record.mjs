@@ -126,6 +126,20 @@ export const CLIPS = [
     },
   },
   {
+    id: "music", posterAt: 1.8, title: "Music: now playing in the dock, with controls on hover", gallery: "main", kind: "live",
+    url: "?surface=dock&preset=obsidian", size: [1000, 320], bg: true,
+    async play(page) {
+      await patchConfig(page, { topBar: { enabled: false } });
+      await sleep(400);
+      const a = await center(page, ".dock-item-wrap", 3), m = await center(page, ".dock-item-wrap", 6);
+      await page.mouse.move(a[0], a[1]);
+      await sweep(page, a, m, 30, 20);
+      await sleep(2200);
+      await sweep(page, m, [m[0], m[1] - 120], 20, 20);
+      await sleep(600);
+    },
+  },
+  {
     id: "themes", title: "Theme packs restyle every surface at once", gallery: "main", kind: "live",
     url: "?surface=settings&preset=obsidian", size: [1000, 620],
     async setup(page) {

@@ -1,115 +1,193 @@
-// Shared behaviour for every page: theme switch, mobile menu, the dither material, clips that
-// play only while visible (and never on their own with reduced motion), and the Guide button.
+// Shared behaviour for every page: the notch (theme mode, accent, density, text size, motion),
+// the mobile menu, feature tiles that preview a clip on hover or tap, #hash highlighting and the
+// Guide button. Preferences live in localStorage under "lens-site" (read before first paint by the
+// inline script in each page's <head>, see tools/site/lib/layout.mjs).
 const root = document.documentElement;
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
-};
-export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const KEY = "lens-site";
+const SITE = new URL("../", import.meta.url);
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch { return {}; } };
+const save = (p) => { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} };
+let prefs = load();
 
-// ---- theme: system → light → dark --------------------------------------------------------------
-const THEMES = ["system", "light", "dark"];
-function applyTheme(t) {
-  if (t === "light" || t === "dark") root.dataset.theme = t;
-  else delete root.dataset.theme;
-  const b = document.getElementById("theme-btn");
-  if (b) {
-    b.setAttribute("aria-label", `Colour theme: ${t}. Change`);
-    b.dataset.mode = t;
-  }
-  window.dispatchEvent(new CustomEvent("site-theme"));
+export const isLight = () => root.dataset.scheme === "light";
+export const reducedMotion = () => root.dataset.motion === "reduce" || (root.dataset.motion !== "full" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+// ---- colour maths for "Match a Lens pack" -----------------------------------------------------
+const hex = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const toHex = (c) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+/** Moves `c` towards white (dark schemes) or black (light) until it reads at `min`:1 on every background. */
+function readable(c, bgs, light, min = 4.5) {
+  const end = light ? [0, 0, 0] : [255, 255, 255];
+  for (let t = 0; t <= 1.0001; t += 0.05) { const x = mix(c, end, t); if (bgs.every((b) => ratio(x, b) >= min)) return toHex(x); }
+  return toHex(end);
 }
-applyTheme(store.get("lens-site-theme") || "system");
-document.getElementById("theme-btn")?.addEventListener("click", () => {
-  const cur = store.get("lens-site-theme") || "system";
-  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
-  store.set("lens-site-theme", next === "system" ? null : next);
-  applyTheme(next);
-});
-matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => window.dispatchEvent(new CustomEvent("site-theme")));
-export const isLight = () => root.dataset.theme === "light" || (!root.dataset.theme && matchMedia("(prefers-color-scheme: light)").matches);
-
-// ---- mobile menu -----------------------------------------------------------------------------
-const menuBtn = document.getElementById("menu-btn");
-const nav = document.getElementById("site-nav");
-menuBtn?.addEventListener("click", () => {
-  const open = nav.classList.toggle("open");
-  menuBtn.setAttribute("aria-expanded", String(open));
-});
-
-// ---- dither: ordered (Bayer 4x4) dots over a soft value field, drawn once per size -----------
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
-function field(seed) {
-  // A few slow waves make the soft, cloudy shapes of the reference halftones.
-  const r = (n) => { const x = Math.sin(seed * 9301 + n * 49297) * 233280; return x - Math.floor(x); };
-  const w = Array.from({ length: 5 }, (_, i) => ({ fx: 0.6 + r(i) * 2.2, fy: 0.6 + r(i + 7) * 2.2, p: r(i + 13) * 6.28, a: 0.5 + r(i + 21) }));
-  return (u, v) => {
-    let s = 0, n = 0;
-    for (const k of w) { s += k.a * Math.sin((u * k.fx + v * k.fy) * 3.1 + k.p); n += k.a; }
-    return 0.5 + 0.5 * (s / n);
+export function packVars(p) {
+  const light = p.scheme === "light";
+  const bg = hex(p.base ?? "#09090b");
+  const card = hex(p.elevated ?? "#141417");
+  const sunk = mix(bg, [0, 0, 0], light ? 0.03 : 0.25);
+  const bgs = [bg, card, sunk];
+  return {
+    "--pack-bg": toHex(bg),
+    "--pack-card": toHex(card),
+    "--pack-sunk": toHex(sunk),
+    "--pack-hue": p.accent,
+    "--pack-link": readable(hex(p.accent), bgs, light),
+    "--fg-2": readable(hex(light ? "#45454d" : "#b6b6bf"), bgs, light, 6),
+    "--fg-3": readable(hex(light ? "#5f5f68" : "#8e8e98"), bgs, light, 4.6),
   };
 }
-function drawDither(el) {
-  let c = el.querySelector(":scope > canvas.dither-canvas");
-  if (!c) { c = document.createElement("canvas"); c.className = "dither-canvas"; c.setAttribute("aria-hidden", "true"); el.prepend(c); }
-  const cell = Number(el.dataset.cell || 3);
-  const w = Math.max(1, Math.ceil(el.clientWidth / cell)), h = Math.max(1, Math.ceil(el.clientHeight / cell));
-  if (c.width === w && c.height === h && c.dataset.ink === getComputedStyle(root).getPropertyValue("--dither-ink")) return;
-  c.width = w; c.height = h; c.dataset.ink = getComputedStyle(root).getPropertyValue("--dither-ink");
-  const ctx = c.getContext("2d");
-  const img = ctx.createImageData(w, h);
-  const f = field(Number(el.dataset.seed || 3));
-  const density = Number(el.dataset.density || 0.55);
-  const probe = document.createElement("span"); probe.style.color = "var(--dither-ink)"; el.append(probe);
-  const m = getComputedStyle(probe).color.match(/[\d.]+/g).map(Number); probe.remove();
-  const [cr, cg, cb] = m, ca = Math.round((m[3] ?? 1) * 255);
-  const fade = el.dataset.fade || "edges";
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    // Push the soft field towards clouds and gaps, like a halftone.
-    const span = Math.max(w, h) / 1.6;
-    let v = Math.min(1, Math.max(0, (f(x / span, y / span) - 0.5) * 2.4 + 0.5)) * density * 1.25;
-    if (fade === "edges") v *= Math.min(1, 0.25 + Math.abs(x / w - 0.5) * 1.6 + Math.abs(y / h - 0.5) * 0.9);
-    if (fade === "bottom") v *= 1 - y / h;
-    if (v > BAYER[(y & 3) * 4 + (x & 3)]) { const i = (y * w + x) * 4; img.data[i] = cr; img.data[i + 1] = cg; img.data[i + 2] = cb; img.data[i + 3] = ca; }
-  }
-  ctx.putImageData(img, 0, 0);
-}
-export function ditherAll() { document.querySelectorAll(".dither").forEach(drawDither); }
-let rt;
-addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(ditherAll, 150); });
-addEventListener("site-theme", () => requestAnimationFrame(ditherAll));
-ditherAll();
 
-// ---- clips: lazy video, only while visible, a play/pause control, reduced motion = poster -------
-function wireClip(fig) {
-  const v = fig.querySelector("video");
-  if (!v) return;
-  const btn = fig.querySelector(".play");
-  let userPaused = reducedMotion();
-  const label = () => btn && (btn.setAttribute("aria-label", v.paused ? "Play clip" : "Pause clip"), (btn.textContent = v.paused ? "Play" : "Pause"));
-  const load = () => { if (!v.src && v.dataset.src) { v.src = v.dataset.src; v.load(); } };
-  btn?.addEventListener("click", () => {
-    load();
-    if (v.paused) { userPaused = false; v.play().catch(() => {}); } else { userPaused = true; v.pause(); }
-  });
-  v.addEventListener("play", label); v.addEventListener("pause", label); label();
-  new IntersectionObserver((es) => es.forEach((e) => {
-    if (e.isIntersecting) { load(); if (!userPaused) v.play().catch(() => {}); }
-    else if (!v.paused) v.pause();
-  }), { rootMargin: "120px" }).observe(fig);
+// ---- apply preferences -----------------------------------------------------------------------
+const PACK_KEYS = ["--pack-bg", "--pack-card", "--pack-sunk", "--pack-hue", "--pack-link", "--fg-2", "--fg-3"];
+function apply() {
+  const sys = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  const mode = prefs.mode || "auto";
+  PACK_KEYS.forEach((k) => root.style.removeProperty(k));
+  let scheme = mode === "auto" ? sys : mode;
+  if (prefs.accent === "pack" && prefs.pack) {
+    scheme = prefs.pack.scheme;
+    for (const [k, v] of Object.entries(prefs.pack.vars)) root.style.setProperty(k, v);
+  }
+  root.dataset.scheme = scheme;
+  root.dataset.accent = prefs.accent || "rainbow";
+  root.dataset.density = prefs.density || "comfortable";
+  root.style.setProperty("--text-scale", String(prefs.size || 1));
+  if (prefs.motion && prefs.motion !== "auto") root.dataset.motion = prefs.motion; else delete root.dataset.motion;
+  renderNotch();
+  window.dispatchEvent(new CustomEvent("site-theme"));
 }
-document.querySelectorAll("figure.clip").forEach(wireClip);
-document.querySelectorAll("[data-clip-tabs]").forEach((tabs) => {
-  tabs.addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-show]");
-    if (!b) return;
-    tabs.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    const scope = tabs.parentElement;
-    scope.querySelectorAll("figure.clip").forEach((f) => { const on = f.dataset.id === b.dataset.show; f.hidden = !on; const v = f.querySelector("video"); if (!on) v?.pause(); });
+function set(patch) { prefs = { ...prefs, ...patch }; save(prefs); apply(); }
+matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => { if ((prefs.mode || "auto") === "auto") apply(); });
+
+// ---- the notch ---------------------------------------------------------------------------------
+const ICON = {
+  light: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
+  dark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>`,
+  auto: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>`,
+};
+const HUES = [["rainbow", "Rainbow", "conic-gradient(#ff5f6d,#ff9f43,#ffd43b,#3ddc97,#38bdf8,#818cf8,#c084fc,#ff5f6d)"], ["iris", "Iris", "#818cf8"], ["sky", "Sky", "#38bdf8"], ["mint", "Mint", "#34d399"], ["sun", "Sun", "#fbbf24"], ["coral", "Coral", "#fb923c"], ["rose", "Rose", "#fb7185"]];
+let notch, pill, panel, packs = null, pinned = false, lastFocus = null;
+
+function buildNotch() {
+  notch = document.createElement("div");
+  notch.className = "notch";
+  notch.innerHTML = `
+  <button class="notch-pill" type="button" aria-expanded="false" aria-controls="notch-panel"><span class="mi"></span><span class="adot" aria-hidden="true"></span><span class="lbl"></span></button>
+  <div class="notch-panel" id="notch-panel" role="dialog" aria-label="Site appearance">
+    <div class="row"><span class="meta" id="n-mode">Mode</span><div class="seg" role="group" aria-labelledby="n-mode" data-k="mode">${["light", "dark", "auto"].map((m) => `<button type="button" data-v="${m}">${m === "auto" ? "Auto" : m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div></div>
+    <div class="row"><span class="meta" id="n-acc">Accent</span><div class="hues" role="group" aria-labelledby="n-acc">${HUES.map(([id, label, bg]) => `<button type="button" data-hue="${id}" aria-label="${label}" style="background:${bg}"></button>`).join("")}</div>
+      <label class="sr" for="n-pack">Match a Lens pack</label><select id="n-pack"><option value="">Match a Lens pack…</option></select></div>
+    <div class="row"><span class="meta">Display</span>
+      <div class="two"><div class="seg" role="group" aria-label="Density" data-k="density"><button type="button" data-v="comfortable">Comfortable</button><button type="button" data-v="compact">Compact</button></div>
+      <div class="stepper" role="group" aria-label="Text size"><button type="button" data-size="-1" aria-label="Smaller text">−</button><span class="meta" data-size-out>100%</span><button type="button" data-size="1" aria-label="Larger text">+</button></div></div>
+      <div class="seg" role="group" aria-label="Motion" data-k="motion"><button type="button" data-v="auto">Motion: system</button><button type="button" data-v="full">On</button><button type="button" data-v="reduce">Reduced</button></div>
+    </div>
+    <div class="foot"><span class="meta">Saved in this browser</span><button type="button" data-reset>Reset</button></div>
+  </div>`;
+  document.body.append(notch);
+  pill = notch.querySelector(".notch-pill");
+  panel = notch.querySelector(".notch-panel");
+  pill.addEventListener("click", () => (notch.classList.contains("open") && pinned ? close() : open(true)));
+  notch.addEventListener("mouseenter", () => { if (!pinned && matchMedia("(hover: hover)").matches) open(false); });
+  notch.addEventListener("mouseleave", () => { if (!pinned) close(false); });
+  panel.addEventListener("click", (e) => {
+    const s = e.target.closest("[data-k] button[data-v]");
+    if (s) {
+      const k = s.parentElement.dataset.k;
+      set(k === "mode" && prefs.accent === "pack" ? { mode: s.dataset.v, accent: "rainbow", pack: null } : { [k]: s.dataset.v });
+    }
+    const h = e.target.closest("button[data-hue]");
+    if (h) set({ accent: h.dataset.hue, pack: null });
+    const z = e.target.closest("button[data-size]");
+    if (z) { const steps = [0.875, 0.9375, 1, 1.0625, 1.125, 1.25]; const i = Math.max(0, Math.min(steps.length - 1, steps.indexOf(prefs.size || 1) + Number(z.dataset.size))); set({ size: steps[i] }); }
+    if (e.target.closest("[data-reset]")) { prefs = {}; save(prefs); apply(); }
   });
+  panel.querySelector("#n-pack").addEventListener("change", async (e) => {
+    const id = e.target.value;
+    if (!id) return;
+    const p = (await getPacks()).find((x) => x.id === id);
+    if (p) set({ accent: "pack", pack: { id: p.id, label: p.label, scheme: p.scheme, vars: packVars(p) } });
+  });
+  notch.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && notch.classList.contains("open")) { e.preventDefault(); close(); pill.focus(); }
+    if (e.key === "Tab" && notch.classList.contains("open")) {
+      const f = [...notch.querySelectorAll("button, select")].filter((x) => x.offsetParent !== null);
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+      else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  document.addEventListener("pointerdown", (e) => { if (pinned && !notch.contains(e.target)) close(false); });
+}
+async function getPacks() {
+  packs ??= await fetch(new URL("data/packs.json", SITE)).then((r) => r.json()).catch(() => []);
+  return packs;
+}
+async function open(pin) {
+  pinned = pin;
+  if (pin) lastFocus = document.activeElement;
+  notch.classList.add("open");
+  pill.setAttribute("aria-expanded", "true");
+  const sel = panel.querySelector("#n-pack");
+  if (sel.options.length < 2) {
+    const ps = await getPacks();
+    sel.insertAdjacentHTML("beforeend", ps.map((p) => `<option value="${p.id}">${p.label}${p.scheme === "light" ? " (light)" : ""}</option>`).join(""));
+    renderNotch();
+  }
+  if (pin) panel.querySelector('[data-k="mode"] [aria-pressed="true"]')?.focus();
+}
+function close(restore = true) {
+  notch.classList.remove("open");
+  pill.setAttribute("aria-expanded", "false");
+  pinned = false;
+  if (restore && lastFocus && notch.contains(document.activeElement)) lastFocus.focus?.();
+}
+function renderNotch() {
+  if (!notch) return;
+  const mode = prefs.mode || "auto";
+  const shown = prefs.accent === "pack" ? root.dataset.scheme : mode;
+  const acc = prefs.accent === "pack" ? prefs.pack?.label ?? "pack" : prefs.accent || "rainbow";
+  pill.querySelector(".mi").innerHTML = ICON[shown] ?? ICON.auto;
+  pill.querySelector(".lbl").textContent = prefs.accent === "pack" ? acc : `${mode} · ${acc}`;
+  pill.setAttribute("aria-label", `Site appearance: ${mode} mode, ${acc}. Change`);
+  panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || (g.dataset.k === "density" ? "comfortable" : "auto"))))));
+  panel.querySelectorAll("button[data-hue]").forEach((b) => b.setAttribute("aria-pressed", String(prefs.accent !== "pack" && b.dataset.hue === (prefs.accent || "rainbow"))));
+  panel.querySelector("#n-pack").value = prefs.accent === "pack" ? prefs.pack?.id ?? "" : "";
+  panel.querySelector("[data-size-out]").textContent = `${Math.round((prefs.size || 1) * 100)}%`;
+}
+buildNotch();
+apply();
+
+// ---- mobile menu -------------------------------------------------------------------------------
+const menuBtn = document.getElementById("menu-btn");
+const nav = document.getElementById("site-nav");
+menuBtn?.addEventListener("click", () => { const o = nav.classList.toggle("open"); menuBtn.setAttribute("aria-expanded", String(o)); });
+
+// ---- feature tiles: a short clip on hover or tap (never on its own) ----------------------------
+document.querySelectorAll(".tile[data-clip]").forEach((tile) => {
+  const peek = tile.querySelector(".peek");
+  const btn = tile.querySelector(".peek-btn");
+  let v = null;
+  const play = () => {
+    if (!v) {
+      v = Object.assign(document.createElement("video"), { muted: true, loop: true, playsInline: true, src: new URL(`media/${tile.dataset.clip}.mp4`, SITE).href });
+      v.setAttribute("aria-hidden", "true");
+      v.poster = peek.querySelector("img").src;
+      peek.replaceChildren(v);
+    }
+    v.play().catch(() => {});
+    btn?.setAttribute("aria-pressed", "true");
+  };
+  const stop = () => { v?.pause(); btn?.setAttribute("aria-pressed", "false"); };
+  tile.addEventListener("mouseenter", () => { if (!reducedMotion()) play(); });
+  tile.addEventListener("mouseleave", stop);
+  btn?.addEventListener("click", () => (v && !v.paused ? stop() : play()));
 });
 
-// ---- highlight a section reached by #hash (used by the Guide's "Show me") --------------------
+// ---- highlight a section reached by #hash (the Guide's "Show me") ------------------------------
 export function flash(id) {
   const el = document.getElementById(id);
   if (!el) return false;
@@ -117,22 +195,13 @@ export function flash(id) {
   el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   return true;
 }
-if (location.hash) setTimeout(() => flash(decodeURIComponent(location.hash.slice(1))), 250);
+if (location.hash) setTimeout(() => flash(decodeURIComponent(location.hash.slice(1))), 300);
 
-// ---- Guide: loaded on first use --------------------------------------------------------------
-const fab = document.getElementById("guide-fab");
+// ---- Guide, loaded on first use ----------------------------------------------------------------
 let guide;
-async function openGuide(q) {
-  guide ??= await import(new URL("./guide.js", import.meta.url).href);
-  guide.open(q);
-}
-fab?.addEventListener("click", () => openGuide());
-document.addEventListener("click", (e) => {
-  const a = e.target.closest("[data-ask]");
-  if (a) { e.preventDefault(); openGuide(a.dataset.ask); }
-});
+async function openGuide(q) { guide ??= await import(new URL("./guide.js", import.meta.url).href); guide.open(q); }
+document.getElementById("guide-fab")?.addEventListener("click", () => openGuide());
+document.addEventListener("click", (e) => { const a = e.target.closest("[data-ask]"); if (a) { e.preventDefault(); openGuide(a.dataset.ask); } });
 addEventListener("keydown", (e) => {
-  if (e.key === "/" && !/input|textarea|select/i.test(document.activeElement?.tagName ?? "") && !e.metaKey && !e.ctrlKey) {
-    e.preventDefault(); openGuide();
-  }
+  if (e.key === "/" && !/input|textarea|select/i.test(document.activeElement?.tagName ?? "") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); openGuide(); }
 });

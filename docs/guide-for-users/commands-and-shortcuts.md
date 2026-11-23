@@ -4,7 +4,7 @@
 
 ## Things you can type
 
-Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. They work offline, with no AI model, and run straight away (risky ones ask first). Try them on the website's [command demo](https://orionopenwow.github.io/lensui/try.html#command).
+Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. They work offline, with no AI model, and run straight away (risky ones ask first). Try them on the website's [command demo](https://orionopenwow.github.io/lensui/#command).
 
 | What | Try typing |
 | :--- | :--- |

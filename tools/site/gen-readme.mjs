@@ -36,7 +36,7 @@ const readme = `<!-- The feature tour below is generated from tools/site/content
     <a href="${REPO}/actions/workflows/build.yml"><img src="${REPO}/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-09090b?style=flat-square" alt="MIT license" /></a>
   </p>
-  <p><a href="${SITE}">Website</a> · <a href="${SITE}try.html">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
+  <p><a href="${SITE}">Website</a> · <a href="${SITE}#demos">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
 </div>
 
 <p align="center">${gif(HERO_CLIP, "The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches")}</p>
@@ -88,7 +88,7 @@ After the first launch, open Settings and press **Run self-test**. If anything l
 ## Documentation
 
 - [User guide](./docs/guide-for-users/README.md): short how-tos for every area, generated from Lens's own settings.
-- [Website](${SITE}): live demos of the dock, themes, sand, approvals and the command engine.
+- [Website](${SITE}): live demos of the dock, themes, Lens Command, approvals and Falling Sand.
 - Reference: [Dock styles](./docs/DOCK_STYLES.md) · [Window styling](./docs/WINDOW_STYLING.md) · [Productivity](./docs/PRODUCTIVITY.md) · [Playground](./docs/PLAYGROUND.md) · [Pointers](./docs/CURSORS.md) · [AI](./docs/AI.md) · [Command](./docs/COMMAND.md) · [Shelf](./docs/SHELF.md) · [Browser bridge](./docs/BROWSER_BRIDGE.md) · [Transcription](./docs/TRANSCRIPTION.md) · [MCP](./docs/MCP.md) · [Plugins](./docs/PLUGINS.md) · [Shell mode](./docs/SHELL_MODE.md)
 - Project: [Master plan](./docs/MASTERPLAN.md) · [Roadmap](./docs/ROADMAP.md) · [Design system](./DESIGN.md) · [Releasing](./docs/RELEASING.md) · [Tester Hub](./docs/TESTER_HUB.md) · [Media](./docs/media/README.md)
 

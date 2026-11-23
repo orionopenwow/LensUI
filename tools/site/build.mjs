@@ -1,13 +1,13 @@
-// Builds the GitHub Pages site into docs/site/.
+// Builds the GitHub Pages site into docs/site/: Home (live demo windows), Docs (with search),
+// Download and Testers, plus redirects from the old Features/Try/Vision/Changelog URLs.
 //
 //   node tools/site/build.mjs              full build
 //   node tools/site/build.mjs --data-only  just docs/site/data/packs.json (for tools/media/record.mjs)
 //   node tools/site/build.mjs --no-live    skip re-bundling the live widgets (faster while editing)
 //
-// Inputs: tools/site/content/features.mjs, docs/media/ (clips), docs/guide-for-users/*.md, the
-// repository docs, src/themes/packs.ts, the Lens Guide index, docs/tester/LATEST.json (or the
-// research/daily branch's copy), docs/VISION.md (or the docs/vision-unified branch's copy) and
-// GitHub Releases. Outputs are git-ignored (see docs/site/.gitignore); Pages builds them in CI.
+// Inputs: tools/site/pages.mjs, docs/media/ (clips), docs/guide-for-users/*.md, the repository
+// docs, src/themes/packs.ts, the Lens Guide index and docs/tester/LATEST.json (or the
+// research/daily branch's copy). Outputs are git-ignored (docs/site/.gitignore); Pages builds them.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, copyFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,7 @@ import { execFileSync } from "node:child_process";
 import { render, setLinkResolver, slugify, esc } from "./lib/markdown.mjs";
 import { page, REPO } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
-import { home, features, tryPage } from "./pages.mjs";
+import { home, download } from "./pages.mjs";
 import { FEATURES } from "./content/features.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -128,45 +128,24 @@ const siteEntries = gi.entries.map((e) => {
   let href = null, clip = null, doc = null;
   if (t.tab) { href = `docs/settings-reference.html#${slugify(tabLabel[t.tab] ?? t.tab)}`; clip = CLIP_BY_TAB[t.tab] ?? null; }
   if (e.kind === "lesson") href = `docs/${t.lesson}.html`;
-  if (e.kind === "command") { href = "try.html#command"; }
+  if (e.kind === "command") { href = "#command"; }
   if (e.kind === "hotkey") href = "docs/commands-and-shortcuts.html#keyboard-shortcuts";
-  if (e.kind === "pack") { href = "try.html#themes"; clip = "themes"; }
-  if (e.kind === "dock-style") { href = "try.html#dock"; clip = "dock-styles"; }
-  if (e.kind === "scene") { href = "try.html#sand"; clip = "playground-sand"; }
+  if (e.kind === "pack") { href = "#themes"; clip = "themes"; }
+  if (e.kind === "dock-style") { href = "#dock"; clip = "dock-styles"; }
+  if (e.kind === "scene") { href = "#sand"; clip = "playground-sand"; }
   if (e.kind === "doc" && t.doc) { const r = refFor(t.doc); doc = r ? `docs/${r.slug}.html` : null; }
   return { id: e.id, kind: e.kind, title: e.title, text: (e.text ?? "").slice(0, 480), path: e.path, examples: e.examples, href, doc, clip: clips.some((c) => c.id === clip) ? clip : null };
 });
-const featureEntries = FEATURES.map((f) => ({ id: `site.feature.${f.id}`, kind: "card", title: f.title, text: `${f.lede} ${f.bullets.join(" ")}`, path: ["Website", "Features", f.title], href: `features.html#${f.id}`, clip: f.clips.find((id) => clips.some((c) => c.id === id)) ?? null }));
+const ANCHOR = { dock: "dock", themes: "themes", windows: "trust", "living-desktop": "sand", pointers: "more", command: "command", voice: "voice", browser: "browser", ai: "approvals", snip: "snip", guide: "guide", tester: "more" };
+const featureEntries = FEATURES.map((f) => ({ id: `site.feature.${f.id}`, kind: "card", title: f.title, text: `${f.lede} ${f.bullets.join(" ")}`, path: ["Lens", f.title], href: `#${ANCHOR[f.id] ?? "more"}`, clip: f.clips.find((id) => clips.some((c) => c.id === id)) ?? null }));
 write("data/guide-index.json", JSON.stringify({ version: 1, source: guideFile, entries: [...featureEntries, ...siteEntries, ...searchDocs.map((d) => ({ ...d, text: d.text.slice(0, 300) }))] }));
 
-// ---- pages -----------------------------------------------------------------------------------
-write("index.html", page({ title: "", desc: "Lens UI: a calm, themeable desktop for Windows 10 and 11. Dock, themes, window styling, a living wallpaper and a local-first AI helper. Open source and reversible.", path: "index.html", body: home({ clips }), scripts: ["js/home.js"] }));
-write("features.html", page({ title: "Features", desc: "Every Lens UI feature with a short clip rendered from the real interface.", path: "features.html", body: features({ clips }) }));
-write("try.html", page({ title: "Try it", desc: "Live demos of the Lens dock, theme packs, Falling Sand, approval cards, the command engine and voice, running Lens's own code in your browser.", path: "try.html", body: tryPage(), scripts: ["js/try.js"] }));
-
 linkPrefix = "docs/"; // pages below live at the site root
-// Vision: docs/VISION.md, or the copy on the docs/vision-unified branch until it's merged.
-const vision = read("docs/VISION.md") ?? git("show", "origin/docs/vision-unified:docs/VISION.md");
-write("vision.html", page({
-  title: "Vision", desc: "Where Lens is going: one desktop, one helper, every workflow.", path: "vision.html",
-  body: `<div class="inner" style="padding-top:48px"><article class="prose" style="max-width:78ch">${vision ? render(stripComments(vision)) + `<p class="src">Source: <a href="${REPO}/blob/main/docs/VISION.md">docs/VISION.md</a>${read("docs/VISION.md") ? "" : ` (from <a href="${REPO}/pull/25">pull request #25</a>, not merged yet)`}.</p>` : `<h1>Vision</h1><p>The vision document is being written in <a href="${REPO}/pull/25">pull request #25</a>.</p>`}</article></div>`,
-}));
-
-// Changelog: GitHub Releases, else the integration history from git.
-let releases = [];
-try {
-  const r = await fetch(`https://api.github.com/repos/orionopenwow/LensUI/releases?per_page=20`, { headers: { accept: "application/vnd.github+json", ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) }, signal: AbortSignal.timeout(8000) });
-  if (r.ok) releases = await r.json();
-} catch {}
-const log = (git("log", "--first-parent", "-n", "60", "--date=short", "--pretty=format:%h%x09%ad%x09%s") ?? "").split("\n").filter(Boolean).map((l) => l.split("\t"));
-write("changelog.html", page({
-  title: "Changelog", desc: "Lens UI releases and recent changes.", path: "changelog.html",
-  body: `<div class="inner" style="padding-top:48px"><article class="prose" style="max-width:80ch"><h1>Changelog</h1>
-${releases.length ? releases.map((r) => `<h2 id="${esc(r.tag_name)}">${esc(r.name || r.tag_name)} <span class="meta">${esc((r.published_at || "").slice(0, 10))}${r.prerelease ? " · pre-release" : ""}</span></h2>${render(r.body || "")}<p><a href="${esc(r.html_url)}">Release page ↗</a></p>`).join("") : `<p class="note">No releases yet: Lens is in beta and there is no signed installer. Below is the recent history of the main line instead.</p>`}
-<h2 id="history">Recent changes</h2>
-<div class="table"><table><thead><tr><th>Date</th><th>Change</th><th>Commit</th></tr></thead><tbody>${log.map(([h, d, s]) => `<tr><td class="meta">${esc(d)}</td><td>${esc(s.replace(/\s*\(#?\d+\)$/, ""))}</td><td><a class="mono" href="${REPO}/commit/${h}">${h}</a></td></tr>`).join("")}</tbody></table></div>
-<p class="src">Built ${new Date().toISOString().slice(0, 10)} from ${esc((git("rev-parse", "--short", "HEAD") ?? "").trim())}.</p></article></div>`,
-}));
+// ---- pages -----------------------------------------------------------------------------------
+const log = (git("log", "--first-parent", "-n", "20", "--date=short", "--pretty=format:%h%x09%ad%x09%s") ?? "").split("\n").filter(Boolean).map((l) => l.split("\t"));
+const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` : `${REPO}/pull/25`;
+write("index.html", page({ title: "", desc: "Lens UI: a calm, themeable desktop for Windows 10 and 11. A dock, themes that restyle everything and an AI helper that asks first. Open source and reversible.", path: "index.html", body: home({ clips, visionHref }), scripts: ["js/demos.js"] }));
+write("download.html", page({ title: "Download", desc: "How to get Lens UI: build from source, releases, and which Windows versions it works on.", path: "download.html", body: download({ log }) }));
 
 // Testers: today's checklist from the daily notes.
 let latestSrc = "research/daily";
@@ -200,4 +179,7 @@ ${L?.known_issues?.length ? `<h2 id="known" style="margin-top:40px">Known issues
 write("404.html", page({ title: "Not found", desc: "Page not found.", path: "404.html", body: `<div class="inner" style="padding:96px 24px"><h1>Not here.</h1><p class="lede">That page doesn't exist. Try the <a href="./">home page</a>, the <a href="docs/">docs</a>, or press <kbd>/</kbd> to ask the Guide.</p></div>` }));
 writeFileSync(join(site, ".nojekyll"), "");
 
-console.log(`[site] ${userPages.length + REF.length + 7} pages · ${clips.length} clips · ${packs.length} packs · guide index ${siteEntries.length + featureEntries.length + searchDocs.length} entries · vision ${vision ? "yes" : "link"} · releases ${releases.length} · tester notes: ${latestSrc}`);
+// Old URLs from the first version of the site point somewhere useful.
+const moved = (to) => `<!DOCTYPE html><meta charset="utf-8"><title>Moved</title><meta http-equiv="refresh" content="0; url=${to}"><link rel="canonical" href="${to}"><p><a href="${to}">This page moved.</a></p>`;
+for (const [from, to] of [["features.html", "./#more"], ["try.html", "./#demos"], ["vision.html", "./#vision"], ["changelog.html", "download.html#releases"]]) write(from, moved(to));
+console.log(`[site] ${userPages.length + REF.length + 4} pages · ${clips.length} clips · ${packs.length} packs · guide index ${siteEntries.length + featureEntries.length + searchDocs.length} entries · tester notes: ${latestSrc}`);

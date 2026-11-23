@@ -30,6 +30,16 @@
     "poster": 3058
   },
   {
+    "id": "music",
+    "title": "Music: now playing in the dock, with controls on hover",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 4.8,
+    "mp4": 25920,
+    "gif": 150813,
+    "poster": 4892
+  },
+  {
     "id": "themes",
     "title": "Theme packs restyle every surface at once",
     "gallery": "main",

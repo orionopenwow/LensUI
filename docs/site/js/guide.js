@@ -28,7 +28,7 @@ function build() {
   panel.setAttribute("aria-labelledby", "guide-title");
   panel.innerHTML = `
     <header><strong id="guide-title">Ask the Guide</strong><span class="meta">offline · BM25</span>
-      <button class="icon-btn" type="button" data-close aria-label="Close the Guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
+      <button class="x" type="button" data-close aria-label="Close the Guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
     <form role="search"><label class="sr" for="guide-q">Question</label><input id="guide-q" type="search" placeholder="How do I…" autocomplete="off"><button class="btn small" type="submit">Ask <kbd>⏎</kbd></button></form>
     <div class="body" aria-live="polite"></div>
     <div class="foot">This guide runs in your browser. In Lens it can also use your local model or Claude if you turn AI on.</div>`;

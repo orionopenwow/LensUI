@@ -33,12 +33,28 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const base = `http://127.0.0.1:${server.address().port}/`;
 
-const PAGES = ["index.html", "features.html", "try.html", "docs/", "docs/first-five-minutes.html", "docs/settings-reference.html", "vision.html", "changelog.html", "test.html"];
+const PAGES = ["index.html", "docs/", "docs/first-five-minutes.html", "docs/settings-reference.html", "download.html", "test.html"];
+// Extra notch variants checked on the home page: [label, localStorage "lens-site" value]
+const VARIANTS = [
+  ["accent-mint", { mode: "light", accent: "mint" }],
+  ["accent-coral-compact", { mode: "dark", accent: "coral", density: "compact", size: 1.125 }],
+  ["pack-nord", null, "nord-frost"],
+  ["pack-paper", null, "paper-minimal"],
+  ["pack-cyberpunk", null, "cyberpunk-amber"],
+];
 const browser = await chromium.launch(process.env.PARITY_CHROME ? { executablePath: process.env.PARITY_CHROME } : {});
 const problems = [];
 const report = { pages: {}, links: 0, axe: !!axe };
 const seen = new Set();
 const links = new Set();
+
+// Scroll the whole page so lazy demos start, then return to the top.
+async function scrollThrough(page) {
+  const h = await page.evaluate(() => document.body.scrollHeight);
+  for (let y = 0; y < h; y += 600) { await page.evaluate((v) => scrollTo(0, v), y); await page.waitForTimeout(150); }
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForTimeout(1200);
+}
 
 // In-page audit (no dependencies). Returns a list of problem strings.
 const audit = () => {
@@ -93,7 +109,8 @@ for (const scheme of ["dark", "light"]) {
         bytes += len;
       });
       await page.goto(base + p, { waitUntil: "load" });
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(600);
+      await scrollThrough(page);
       const key = `${p}`;
       if (w === 1440) {
         const found = await page.evaluate(audit);
@@ -118,6 +135,30 @@ for (const scheme of ["dark", "light"]) {
     }
   }
 }
+// Notch variants: set the preference, reload, audit contrast and screenshot.
+for (const [label, pref, packId] of VARIANTS) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("pageerror", (e) => errs.push(e.message));
+  await page.goto(base + "index.html");
+  if (packId) {
+    // Choose the pack through the notch itself, like a visitor would.
+    await page.click(".notch-pill");
+    await page.selectOption("#n-pack", packId);
+    await page.keyboard.press("Escape");
+  } else {
+    await page.evaluate((p) => localStorage.setItem("lens-site", JSON.stringify(p)), pref);
+    await page.reload();
+  }
+  await scrollThrough(page);
+  const found = await page.evaluate(audit);
+  problems.push(...found.filter((x) => x.startsWith("contrast")).map((x) => `${label}: ${x}`), ...errs.map((e) => `${label}: ${e}`));
+  await page.screenshot({ path: join(shots, `variant-${label}.png`), fullPage: true });
+  if (label === "accent-mint") { await page.click(".notch-pill"); await page.waitForTimeout(300); await page.screenshot({ path: join(shots, "variant-notch-open.png") }); }
+  await ctx.close();
+}
+
 // Link check: every internal URL found must load.
 for (const u of links) {
   if (seen.has(u)) continue;
