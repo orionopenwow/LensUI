@@ -30,6 +30,7 @@ mod win_search;
 mod win_system_modules;
 mod win_uninstall;
 mod win_wallpaper;
+mod wallpapers;
 mod win_workspaces;
 mod win_tray;
 mod win_tiler;
@@ -601,6 +602,16 @@ pub fn run() {
             commands::wallpaper::open_wallpapers_folder_cmd,
             commands::wallpaper::set_wallpaper_accent_cmd,
             commands::wallpaper::snapshot_windows_wallpaper_cmd,
+            commands::wallpapers::wallpapers_library_cmd,
+            commands::wallpapers::wallpapers_save_settings_cmd,
+            commands::wallpapers::wallpapers_set_meta_cmd,
+            commands::wallpapers::wallpapers_read_cmd,
+            commands::wallpapers::wallpapers_save_thumb_cmd,
+            commands::wallpapers::wallpapers_set_cmd,
+            commands::wallpapers::wallpapers_step_cmd,
+            commands::wallpapers::wallpapers_tick_cmd,
+            commands::wallpapers::wallpapers_recycle_cmd,
+            commands::wallpapers::wallpapers_reveal_cmd,
             commands::backup::export_backup_cmd,
             commands::backup::import_backup_cmd,
             commands::backup::remove_all_lens_changes_cmd,
