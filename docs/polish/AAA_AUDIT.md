@@ -101,7 +101,7 @@ Motion and Feedback are the weakest axes and the cheapest to lift, because they 
 6. **12 toast implementations** with different positions, durations and enter motion. Fix: one `Toast` plus a `toast()` bus.
 7. **No skeletons anywhere.** Settings pages, Apps and Feeds pop in after loading.
 8. **No empty-state component.** Focus, Gaming, Widgets notes and Feeds with no channels are just blank space.
-9. **No press feedback.** Buttons don't respond on `:active` (no scale), so clicks feel dead next to Command.
+9. **Patchy press feedback.** Only the `cc-*`/`qs-*`/`pal-*` classes press (at 0.985). Generic buttons, Feeds, Snip, Browser and the primitives in newer surfaces don't respond on `:active`.
 10. **Numbers jitter.** Only 67 `tabular-nums` usages; Quick Settings %, Storage sizes and Stats CPU/RAM shift width as they update.
 11. **1,002 inline style objects and 459 hex colours in TSX** bypass tokens, so packs can't reach them. Fix: lint baseline + ratchet.
 12. **Theme switch** costs 83 ms p95 of main-thread work with 6 long tasks and shows a hard cut, with a white frame on dark→light in WebView2.

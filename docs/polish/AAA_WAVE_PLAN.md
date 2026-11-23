@@ -203,14 +203,36 @@ Ranked by distinctiveness × fit with Lens × effort.
 
 ## What shipped in Wave A (this branch)
 
-See the PR description for the authoritative list and perf deltas. In short:
+| Item | Where |
+|---|---|
+| Motion tokens (5 durations + exit, 5 curves incl. spring, press/enter scale, stagger), window enter/exit, theme cross-fade, tabular numerals | `src/styles/motion.css` |
+| Elevation scale (5 levels on `--lens-shade-k`, edge light) and hit-target sizes | `src/styles/elevation.css` |
+| 149 transition declarations in the 21 worst files moved to tokens (`tools/polish/migrated.txt`) | `tools/polish/tokenize-motion.mjs` |
+| Primitives: Button, IconButton (label required by type), Toggle (optimistic + rollback), Segmented (arrow keys), Chip, KeyChip, Card, Skeleton (200 ms grace), EmptyState, ErrorState, Toast + `toast()` bus | `src/ui/` |
+| Settings hub on the primitives (Toggle, Segmented, StateNote → Skeleton), page skeleton, ToastHost, tab body in a React transition | `src/settings/ui/primitives.tsx`, `ControlCenterSurface.tsx` |
+| **F4 fixed:** every switch named; icon-only buttons named; swatches named and `aria-pressed` | allowlist emptied |
+| **F5 fixed:** `PillFillBar` un-nested (slider role on its track, keyboard support added); Overview tiles are groups | allowlist emptied |
+| Overview close badge: neutral 24 px, red only when aimed at | `OverviewSurface.css` |
+| One enter/exit motion for every glide surface | `global.css` |
+| Theme: layout-effect apply (no stale frame), cross-fade in the initiating window, no needless stylesheet rewrites | `useLensState.ts` |
+| Command cold-start race fixed (single listener + backend `seq`), e2e retry removed | `CommandSurface.tsx`, `openSeq.ts`, `integration.rs`, `tests/e2e/run.mjs` |
+| Skeletons: Settings, Apps catalogue, Feeds. Empty states: Feeds, Focus | — |
+| No native `title=` left (TrafficLights, ColorWheel) | — |
+| Guardrails | `src/__tests__/polishGuardrails.test.ts`, `commandOpen.test.ts` |
 
-- motion and elevation tokens;
-- the `src/ui` primitives;
-- token replacement in the 20 worst files;
-- F4/F5 fixes, with their allowlist entries removed;
-- press scale, tabular numerals, skeletons, empty states and the unified toast bus;
-- theme cross-fade;
-- consistent window motion;
-- the Command cold-start fix, with the e2e retry removed;
-- three guardrail tests.
+**Perf (CI runner, 4× throttle, p95 ms / long tasks):**
+
+| Scenario | Before (budget baseline) | After (CI run) |
+|---|---|---|
+| Theme switch | 83.4 / 6 | 33.4 / 0 |
+| Settings tab switch | 50 / 10 | 33.4 / 6 |
+
+The budgets were lowered to 50/2 and 33.4/6.
+
+**Not done in Wave A (moved to B):**
+
+- the remaining 126 transitions in other files;
+- migrating Snip, Browser, Mini and Feeds toasts to the bus;
+- Gaming and widget-notes empty states.
+
+The inline-style ratchet starts at 1,006. It is 4 above main, because the un-nested `PillFillBar` needs separate layers. It can only go down from here.
