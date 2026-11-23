@@ -1,0 +1,5 @@
+flowchart LR
+  Faces["Dock · Top bar · Command · Mini · Browser · Voice · Snip · Right-click · Guide · MCP"] --> Model["Objects + Verbs + Context + Space"]
+  Model --> Router{"Script → Local → Claude"}
+  Router --> Gate["Grants + Needs your OK"]
+  Gate --> Action["Action"] --> Undo["Audit + Undo + Bin"]
