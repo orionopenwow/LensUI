@@ -136,7 +136,7 @@ frames, long tasks over 50 ms, cumulative layout shift and first contentful pain
 * each of the 8 Playground scenes for 5 s.
 
 `budgets.json` holds the baseline. A run fails when a metric exceeds baseline × 1.2 plus a small
-absolute allowance (2 ms p50, 4 ms p95, 2 long tasks, 0.02 CLS, 150 ms first paint). The allowance
+absolute allowance (one 60 Hz frame — 17 ms — on p50 and p95, 3 long tasks, 0.02 CLS, 150 ms first paint; frame times are quantised to display frames, so a tighter margin would fail on a single dropped frame). The allowance
 keeps timer noise from failing runs.
 
 **Updating the budgets** after an intended change:

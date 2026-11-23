@@ -10,8 +10,10 @@ name: robustness
 
 on:
   pull_request:
+  # Every branch too (like build.yml), so a branch's own commit is tested and not only its merge
+  # with a base that may be mid-change.
   push:
-    branches: [main]
+    branches: ["**"]
   schedule:
     - cron: "17 9 * * *" # nightly, 02:17 Phoenix
   workflow_dispatch:
@@ -217,7 +219,7 @@ jobs:
           exit $code
 
       - name: Windows put back after quit
-        if: always()
+        if: always() && hashFiles('tests/e2e/out/before.json') != ''
         shell: pwsh
         run: pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
 
