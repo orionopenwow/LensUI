@@ -26,6 +26,9 @@ pub struct ToolSpec {
     pub risk: Risk,
 }
 
+pub const WINDOW_ACTIONS: [&str; 5] = ["minimize", "maximize", "restore", "pin", "unpin"];
+pub const DOCK_STYLE_IDS: [&str; 6] = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
+
 pub const TILE_LAYOUTS: [&str; 5] = ["focus-stack", "split", "thirds", "grid", "smart-group"];
 pub const SNAP_SLOTS: [&str; 10] = [
     "left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "maximize", "center",
@@ -52,6 +55,14 @@ pub const REGISTRY: &[ToolSpec] = &[
     ToolSpec { name: "start_timer", risk: Risk::Low, description: "Starts a countdown timer with an optional label." },
     ToolSpec { name: "open_settings_page", risk: Risk::Low, description: "Opens a Lens settings page or a Windows Settings page." },
     ToolSpec { name: "create_note", risk: Risk::Confirm, description: "Saves a text note in Lens's notes folder. Needs the user's approval." },
+    ToolSpec { name: "window_action", risk: Risk::Low, description: "Minimises, maximises, restores, pins on top or unpins a window. Use name \"focused\" for the current window." },
+    ToolSpec { name: "move_window", risk: Risk::Low, description: "Moves the focused window to the next or previous monitor, or to a workspace (1-9)." },
+    ToolSpec { name: "open_overview", risk: Risk::Low, description: "Opens the Lens Overview of all windows." },
+    ToolSpec { name: "set_dock_style", risk: Risk::Low, description: "Switches the Dock style: floating, slim, taskbar, studio, minimal or split." },
+    ToolSpec { name: "next_wallpaper", risk: Risk::Low, description: "Moves to the next wallpaper in the user's rotation." },
+    ToolSpec { name: "set_wallpaper_scene", risk: Risk::Low, description: "Shows a Playground living-wallpaper scene by id." },
+    ToolSpec { name: "set_calm_mode", risk: Risk::Low, description: "Freezes or resumes the living wallpaper (omit enabled to toggle)." },
+    ToolSpec { name: "lock_screen", risk: Risk::Confirm, description: "Locks the PC. Needs the user's approval." },
 ];
 
 /// Names an AI might try that Lens will never run (documented, tested; any unknown name is
@@ -126,6 +137,17 @@ pub fn schema(name: &str) -> Value {
             json!({ "text": { "type": "string", "minLength": 1, "maxLength": 4000 }, "title": { "type": "string", "maxLength": 80 } }),
             &["text"],
         ),
+        "window_action" => obj(
+            json!({ "action": { "type": "string", "enum": WINDOW_ACTIONS }, "name": { "type": "string", "minLength": 1, "maxLength": 60 } }),
+            &["action"],
+        ),
+        "move_window" => obj(
+            json!({ "to": { "type": "string", "enum": ["next_monitor", "prev_monitor", "workspace"] }, "target": { "type": "string", "pattern": "^[1-9]$" } }),
+            &["to"],
+        ),
+        "set_dock_style" => obj(json!({ "style": { "type": "string", "enum": DOCK_STYLE_IDS } }), &["style"]),
+        "set_wallpaper_scene" => obj(json!({ "scene": { "type": "string", "pattern": "^[a-z0-9-]{1,32}$" } }), &["scene"]),
+        "set_calm_mode" => obj(json!({ "enabled": { "type": "boolean" } }), &[]),
         _ => obj(json!({}), &[]),
     }
 }
@@ -322,6 +344,38 @@ pub fn validate(name: &str, args: &Value) -> Result<Value, String> {
             let title = get_str(m, "title").map(|s| clean(s, 80)).unwrap_or_default();
             json!({ "text": text, "title": title })
         }
+        "window_action" => {
+            let action = match get_str(m, "action") {
+                Some(a) if WINDOW_ACTIONS.contains(&a) => a,
+                _ => return Err(format!("action must be one of: {}", WINDOW_ACTIONS.join(", "))),
+            };
+            let name = match get_str(m, "name") {
+                None => "focused".to_string(),
+                Some(_) => app_name(m)?,
+            };
+            json!({ "action": action, "name": name })
+        }
+        "move_window" => match (get_str(m, "to"), get_str(m, "target")) {
+            (Some(to @ ("next_monitor" | "prev_monitor")), _) => json!({ "to": to }),
+            (Some("workspace"), Some(n)) if n.len() == 1 && (b'1'..=b'9').contains(&n.as_bytes()[0]) => json!({ "to": "workspace", "target": n }),
+            (Some("workspace"), _) => return Err("target must be a workspace number 1-9".into()),
+            _ => return Err("to must be next_monitor, prev_monitor or workspace".into()),
+        },
+        "open_overview" | "next_wallpaper" | "lock_screen" => json!({}),
+        "set_dock_style" => match get_str(m, "style") {
+            Some(st) if DOCK_STYLE_IDS.contains(&st) => json!({ "style": st }),
+            _ => return Err(format!("style must be one of: {}", DOCK_STYLE_IDS.join(", "))),
+        },
+        "set_wallpaper_scene" => match get_str(m, "scene") {
+            Some(sc) if !sc.is_empty() && sc.len() <= 32 && sc.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') => {
+                json!({ "scene": sc })
+            }
+            _ => return Err("scene must be a scene id such as 'aurora'".into()),
+        },
+        "set_calm_mode" => match get_bool(m, "enabled")? {
+            Some(b) => json!({ "enabled": b }),
+            None => json!({}),
+        },
         _ => return Err("unknown tool".into()),
     })
 }
@@ -380,6 +434,31 @@ pub fn describe(name: &str, args: &Value) -> String {
             let t: String = s("text").chars().take(60).collect();
             format!("Save a note: \"{}\"", t)
         }
+        "window_action" => {
+            let verb = match s("action").as_str() {
+                "minimize" => "Minimise",
+                "maximize" => "Maximise",
+                "restore" => "Restore",
+                "pin" => "Pin on top",
+                _ => "Unpin",
+            };
+            if s("name") == "focused" || s("name").is_empty() { format!("{} the window", verb) } else { format!("{} {}", verb, s("name")) }
+        }
+        "move_window" => match s("to").as_str() {
+            "next_monitor" => "Move the window to the next monitor".into(),
+            "prev_monitor" => "Move the window to the previous monitor".into(),
+            _ => format!("Move the window to workspace {}", s("target")),
+        },
+        "open_overview" => "Open Overview".into(),
+        "set_dock_style" => format!("Switch the Dock to {}", s("style")),
+        "next_wallpaper" => "Next wallpaper".into(),
+        "set_wallpaper_scene" => format!("Show the {} scene", s("scene")),
+        "set_calm_mode" => match b("enabled") {
+            Some(true) => "Turn on calm mode".into(),
+            Some(false) => "Turn off calm mode".into(),
+            None => "Toggle calm mode".into(),
+        },
+        "lock_screen" => "Lock the PC".into(),
         other => format!("Run {}", other),
     }
 }
@@ -427,6 +506,15 @@ pub fn tool_for_action(action: &str) -> Option<(&'static str, &'static [&'static
         "start_timer" => ("start_timer", &["seconds", "label"]),
         "open_settings_page" => ("open_settings_page", &["page"]),
         "create_note" => ("create_note", &["text"]),
+        "window_action" => ("window_action", &["action", "name"]),
+        "move_window" => ("move_window", &["to", "target"]),
+        "open_overview" => ("open_overview", &[]),
+        "set_accent" => ("set_accent", &["color"]),
+        "set_dock_style" => ("set_dock_style", &["style"]),
+        "next_wallpaper" => ("next_wallpaper", &[]),
+        "set_wallpaper_scene" => ("set_wallpaper_scene", &["scene"]),
+        "set_calm_mode" => ("set_calm_mode", &["enabled"]),
+        "lock_screen" => ("lock_screen", &[]),
         _ => return None,
     })
 }
@@ -596,6 +684,31 @@ pub mod lens {
                 "set_focus_mode" => self.emit_apply(tool, args, "Focus mode updated."),
                 "show_desktop" => self.emit_apply(tool, args, "Showing the desktop."),
                 "start_timer" => self.emit_apply(tool, args, &describe(tool, args).replace("Start", "Started")),
+                "window_action" => {
+                    let hwnd = crate::voice::winops::resolve_window(&s("name"))?;
+                    crate::voice::winops::window_action(hwnd, &s("action"))?;
+                    Ok(format!("{}.", describe(tool, args)))
+                }
+                "move_window" => match s("to").as_str() {
+                    "workspace" => {
+                        crate::win_workspaces::send_focused_to_workspace(&s("target"))?;
+                        Ok(format!("Moved the window to workspace {}.", s("target")))
+                    }
+                    dir => {
+                        let hwnd = crate::voice::winops::resolve_window("focused")?;
+                        crate::voice::winops::move_to_monitor(hwnd, dir == "next_monitor")?;
+                        Ok("Moved the window.".into())
+                    }
+                },
+                "lock_screen" => {
+                    crate::voice::winops::lock_workstation()?;
+                    Ok("Locked.".into())
+                }
+                "open_overview" => self.emit_apply(tool, args, "Opened Overview."),
+                "set_dock_style" => self.emit_apply(tool, args, &format!("Dock style: {}.", s("style"))),
+                "next_wallpaper" => self.emit_apply(tool, args, "Next wallpaper."),
+                "set_wallpaper_scene" => self.emit_apply(tool, args, &format!("Scene: {}.", s("scene"))),
+                "set_calm_mode" => self.emit_apply(tool, args, "Calm mode updated."),
                 other => Err(format!("Lens can't run \"{}\".", other)),
             }
         }
@@ -672,6 +785,8 @@ mod tests {
         assert_eq!(risk_of("set_volume"), Risk::Low);
         assert_eq!(risk_of("close_app"), Risk::Confirm);
         assert_eq!(risk_of("create_note"), Risk::Confirm);
+        assert_eq!(risk_of("lock_screen"), Risk::Confirm);
+        assert_eq!(risk_of("window_action"), Risk::Low);
         for b in BLOCKED {
             assert_eq!(risk_of(b), Risk::Blocked, "{}", b);
             assert!(spec(b).is_none(), "{} must not be registered", b);
@@ -703,6 +818,13 @@ mod tests {
         assert!(validate("set_theme_pack", &json!({"id": "../../x"})).is_err());
         assert!(validate("create_note", &json!({"text": "  "})).is_err());
         assert!(validate("set_mute", &json!({"muted": "yes"})).is_err());
+        assert_eq!(validate("window_action", &json!({"action": "minimize"})).unwrap(), json!({"action": "minimize", "name": "focused"}));
+        assert!(validate("window_action", &json!({"action": "delete"})).is_err());
+        assert!(validate("window_action", &json!({"action": "pin", "name": "C:\\x.exe"})).is_err());
+        assert!(validate("move_window", &json!({"to": "workspace", "target": "12"})).is_err());
+        assert_eq!(validate("move_window", &json!({"to": "workspace", "target": "4"})).unwrap(), json!({"to": "workspace", "target": "4"}));
+        assert!(validate("set_dock_style", &json!({"style": "huge"})).is_err());
+        assert!(validate("set_wallpaper_scene", &json!({"scene": "../x"})).is_err());
     }
 
     #[test]
@@ -711,6 +833,8 @@ mod tests {
             "open spotify", "switch to chrome", "close notepad", "dark mode", "apply tokyo night", "snap left", "tile windows",
             "show desktop", "focus mode on", "dnd on for 30 minutes", "volume 40", "louder", "mute", "brightness 60",
             "night light on", "workspace 3", "find budget", "timer 5 minutes", "open dock settings", "take a note: buy milk",
+            "minimize this", "pin this on top", "move this to the next monitor", "move this window to workspace 2", "overview",
+            "accent purple", "make the dock slim", "next wallpaper", "show the aurora scene", "calm mode", "lock the screen",
         ] {
             let i = super::super::intent::parse(phrase).unwrap_or_else(|| panic!("no intent for {}", phrase));
             let (tool, args) = tool_for_intent(&i).unwrap_or_else(|| panic!("no tool for {}", phrase));

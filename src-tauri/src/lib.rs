@@ -1,5 +1,6 @@
 mod ai;
 mod config;
+mod voice;
 #[cfg(windows)]
 mod ffi;
 mod sys_telemetry;
@@ -107,6 +108,7 @@ pub fn run() {
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        voice::shutdown();
         win_mcp::stop_server();
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
@@ -138,6 +140,7 @@ pub fn run() {
             topbar_search_open: topbar_search_open_state,
         })
         .setup(move |app| {
+            voice::init(app.handle());
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -326,12 +329,26 @@ pub fn run() {
             commands::ai::ai_intent,
             commands::ai::ai_run_intent,
             commands::ai::ai_usage_log,
+            commands::voice::voice_status,
+            commands::voice::voice_set_config,
+            commands::voice::voice_ptt,
+            commands::voice::voice_mute,
+            commands::voice::voice_cancel,
+            commands::voice::voice_answer,
+            commands::voice::voice_undo,
+            commands::voice::voice_run_text,
+            commands::voice::voice_commands,
+            commands::voice::voice_test_mic,
+            commands::voice::voice_list_mics,
+            commands::voice::voice_list_tts_voices,
+            commands::voice::voice_speak,
             commands::power::quit_lens,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                voice::shutdown();
                 win_dwm_engine::revert_dwm_theme();
                 restore_taskbar_if_hidden();
             }

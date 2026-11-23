@@ -172,6 +172,14 @@ export const AI_TOOLS: Record<string, Risk> = {
   start_timer: "low",
   open_settings_page: "low",
   create_note: "confirm",
+  window_action: "low",
+  move_window: "low",
+  open_overview: "low",
+  set_dock_style: "low",
+  next_wallpaper: "low",
+  set_wallpaper_scene: "low",
+  set_calm_mode: "low",
+  lock_screen: "confirm",
 };
 
 /** UI-layer actions the backend asks the frontend to perform via `lens://ai/apply`. */
@@ -182,7 +190,12 @@ export type AiApplyTool =
   | "show_desktop"
   | "start_timer"
   | "open_settings_page"
-  | "note_saved";
+  | "note_saved"
+  | "open_overview"
+  | "set_dock_style"
+  | "next_wallpaper"
+  | "set_wallpaper_scene"
+  | "set_calm_mode";
 
 export interface AiApplyPayload {
   tool: AiApplyTool;
