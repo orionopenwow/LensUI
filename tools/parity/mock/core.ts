@@ -115,8 +115,46 @@ const handlers: Record<string, (a: any) => any> = {
   get_config: () => config,
   get_wallpaper_state_cmd: () => ({ settings: { enabled: false, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" }),
   list_wallpapers_cmd: () => [],
-  get_battery_cmd: () => ({ present: true, percent: 76, charging: false, minutesRemaining: 214, powerMode: "balanced", batterySaver: false }),
-  get_keyboard_layouts_cmd: () => ({ current: "00000409", layouts: [{ id: "00000409", short: "ENG", name: "English (United States)" }] }),
+  get_battery_cmd: () => ({ hasBattery: true, percent: 76, charging: false, pluggedIn: false, secondsLeft: 12840, batterySaver: false, powerMode: "balanced", powerModeSupported: true, present: true, minutesRemaining: 214 }),
+  get_keyboard_layouts_cmd: () => ({ activeId: "04090409", current: "04090409", layouts: [{ id: "04090409", short: "ENG", name: "English (United States)" }, { id: "08090809", short: "ENG", name: "English (United Kingdom)" }] }),
+  // Settings hub (Windows pages)
+  get_wifi_cmd: () => ({ available: true, reason: "", radioOn: true, adapter: "Intel Wi-Fi 6E AX211", connectedSsid: "Home 5G", networks: [
+    { ssid: "Home 5G", signal: 92, bars: 4, secured: true, connected: true, hasProfile: true },
+    { ssid: "Home", signal: 80, bars: 3, secured: true, connected: false, hasProfile: true },
+    { ssid: "Cafe Guest", signal: 55, bars: 2, secured: false, connected: false, hasProfile: false },
+    { ssid: "NETGEAR-7F", signal: 30, bars: 1, secured: true, connected: false, hasProfile: false },
+  ] }),
+  get_bluetooth_cmd: () => ({ available: true, reason: "", radioOn: true, devices: [
+    { name: "WH-1000XM5", address: "AA:BB:CC:00:11:22", connected: true, kind: "audio" },
+    { name: "MX Master 3S", address: "AA:BB:CC:00:11:33", connected: true, kind: "input" },
+    { name: "Pixel 9", address: "AA:BB:CC:00:11:44", connected: false, kind: "phone" },
+  ] }),
+  list_audio_devices_cmd: (a: any) => a.flow === "capture"
+    ? { flow: "capture", canSwitch: true, devices: [{ id: "in1", name: "Microphone (Yeti)", isDefault: true }, { id: "in2", name: "Headset mic (WH-1000XM5)", isDefault: false }] }
+    : { flow: "render", canSwitch: true, devices: [{ id: "out1", name: "Speakers (Realtek)", isDefault: true }, { id: "out2", name: "Headphones (WH-1000XM5)", isDefault: false }] },
+  sys_display_modes_cmd: () => [
+    { device: "\\\\.\\DISPLAY1", width: 2560, height: 1440, refreshHz: 144, bitsPerPixel: 32 },
+    { device: "\\\\.\\DISPLAY2", width: 2560, height: 1440, refreshHz: 60, bitsPerPixel: 32 },
+  ],
+  sys_startup_list_cmd: () => [
+    { name: "Discord", command: "\"C:\\Users\\u\\AppData\\Local\\Discord\\Update.exe\" --processStart Discord.exe", enabled: true },
+    { name: "Spotify", command: "C:\\Users\\u\\AppData\\Roaming\\Spotify\\Spotify.exe /minimized", enabled: false },
+    { name: "OneDrive", command: "\"C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe\" /background", enabled: true },
+  ],
+  sys_startup_set_cmd: () => null,
+  sys_drives_cmd: () => [
+    { root: "C:\\", label: "Windows", kind: "fixed", totalBytes: 1_000_204_886_016, freeBytes: 212_000_000_000 },
+    { root: "D:\\", label: "Games", kind: "fixed", totalBytes: 2_000_398_934_016, freeBytes: 120_000_000_000 },
+    { root: "E:\\", label: "USB", kind: "removable", totalBytes: 64_000_000_000, freeBytes: 41_000_000_000 },
+  ],
+  sys_privacy_cmd: () => [
+    { capability: "microphone", app: "Discord", inUse: true },
+    { capability: "webcam", app: "Zoom", inUse: false },
+    { capability: "location", app: "Weather", inUse: false },
+  ],
+  sys_access_cmd: () => ({ animations: true, highContrast: false, textScale: 100 }),
+  sys_time_cmd: () => ({ timeZone: "US Mountain Standard Time", shortTime: "h:mm tt", clock24: false }),
+  sys_gaming_cmd: () => ({ gameMode: true }),
   list_plugins_cmd: () => [],
   list_plugin_approvals_cmd: () => [],
   get_tiling_status_cmd: () => ({ enabled: false, layout: "master-stack", tiled: 0, floating: 0 }),

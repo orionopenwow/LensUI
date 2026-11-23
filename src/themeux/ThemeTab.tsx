@@ -621,7 +621,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 updateConfig({ ...config, theme: { ...config.theme, uiScale: s.scale }, dock: { ...config.dock, iconSize: s.iconSize }, topBar: { ...config.topBar, height: s.barH } });
               }}
             />
-            <div className="tux-help">Overall size also sets Dock icon size and Top Bar height. Fine-tune them in Dock &amp; Top Bar.</div>
+            <div className="tux-help">Overall size also sets Dock icon size and Top Bar height. Fine-tune them in Dock &amp; Bar.</div>
             <ValueSlider label="Text and panel scale" value={config.theme.uiScale ?? 100} min={90} max={125} unit="%" onChange={(v) => setTheme({ uiScale: v })} />
           </Section>
 

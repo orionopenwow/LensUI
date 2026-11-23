@@ -36,3 +36,4 @@ pub(crate) mod guide;
 pub(crate) mod agentsafe;
 pub(crate) mod music;
 pub(crate) mod apps;
+pub(crate) mod syssettings;
