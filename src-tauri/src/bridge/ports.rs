@@ -32,7 +32,7 @@ impl BridgeContext {
             clipboard,
             window_title: r.title.clone(),
             app_name,
-            files: r.path.iter().cloned().collect(),
+            files: r.path.iter().chain(r.paths.iter()).cloned().collect(),
             url: r.url.clone().or_else(|| r.link_url.clone()).or_else(|| r.image_url.clone()),
             page_text: r.page_text.clone(),
         }
@@ -53,6 +53,16 @@ pub trait AiPort: Send + Sync {
     }
 
     fn cancel(&self, _request_id: &str) {}
+}
+
+/// What a micro-save did, for the toast ("Saved", "Added to the same note", "Already saved").
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MicroOutcome {
+    pub id: String,
+    pub merged: bool,
+    pub duplicate: bool,
+    pub approx_tokens: usize,
 }
 
 /// One Shelf item as the browser strip shows it.
@@ -76,6 +86,11 @@ pub trait ShelfPort: Send + Sync {
     fn shelf_list(&self, shelf: Option<&str>, limit: usize) -> Result<Vec<ShelfSummary>, String>;
     fn shelf_recent(&self, limit: usize) -> Result<Vec<ShelfSummary>, String> {
         self.shelf_list(None, limit)
+    }
+    /// Micro-save: dedups identical saves and merges consecutive saves from one page
+    /// (`crate::shelf::micro`). The default just adds, so a stub Shelf still keeps the item.
+    fn micro_save(&self, item: &ShelfItem, shelf: Option<&str>) -> Result<MicroOutcome, String> {
+        self.shelf_add(item, shelf).map(|id| MicroOutcome { id, ..Default::default() })
     }
 }
 

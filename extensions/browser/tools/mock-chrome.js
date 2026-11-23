@@ -21,7 +21,21 @@
     { id: "s3", kind: "answer", title: "Summary: Q3 planning doc", snippet: "Three goals: ship Lens Mini, Shelf sync, …", addedMs: now - 86400e3 },
     { id: "s4", kind: "image", title: "Dock mockup v4", url: "https://lens-demo.example/img/dock.png", snippet: "", addedMs: now - 2 * 86400e3 },
   ];
-  const mem = { answers, lensSettings: cfg.settings || { selectionButton: "all", defaultAction: "explain", sites: [], never: [] } };
+  const seg = (start, dur, text) => ({ start, dur, text });
+  const transcript = {
+    state: "ready", url: "https://www.youtube.com/watch?v=abcDEF12345", language: "English", auto: false, at: now,
+    meta: { title: "Designing Calm Technology", channel: "Amber Case", lengthSeconds: 1834, videoId: "abcDEF12345" },
+    segments: [
+      seg(0, 4, "Thanks for having me. Today I want to talk about calm technology."), seg(4, 5, "The idea is old: Weiser and Brown wrote about it in 1995."),
+      seg(9, 6, "Technology should require the smallest possible amount of attention."), seg(15, 6, "It should inform and create calm, not anxiety."),
+      seg(21, 6, "It should make use of the periphery, the edges of our attention."), seg(27, 6, "A tea kettle is a great example: it tells you when it's ready."),
+      seg(48, 6, "Now let's look at notifications on a modern phone."), seg(54, 7, "Most of them want the centre of your attention, all the time."),
+      seg(61, 6, "That's the opposite of calm. So what can designers do?"), seg(90, 6, "First, pick the right amount of technology for the problem."),
+      seg(96, 6, "Often the right amount is less than you think."),
+    ],
+  };
+  transcript.summary = { words: 140, approxTokens: 190, segments: transcript.segments.length };
+  const mem = { answers, transcript: cfg.transcript ? transcript : undefined, lensSettings: cfg.settings || { selectionButton: "all", defaultAction: "explain", sites: [], never: [] } };
   const area = {
     get: async (k) => (typeof k === "string" ? { [k]: mem[k] } : { ...mem }),
     set: async (o) => Object.assign(mem, o),

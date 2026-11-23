@@ -4,6 +4,10 @@
 import { HOST_NAME, MAX_PAGE_TEXT_BYTES, buildRequest, markdownWithSource, mediaUrlFor } from "./protocol.js";
 import { menuItems, findItem, toCreateProps } from "./menus.js";
 import { readablePage } from "./readable.js";
+import { ytPageTranscript } from "./content/ytPage.js";
+import { showLensToast } from "./content/toast.js";
+import { microItem, microToast } from "./micro.js";
+import { isYoutubeVideoUrl, parseCaptions, toPlainText, transcriptShelfItem, transcriptSummary } from "./youtube.js";
 import "./content/selectionLogic.js"; // attaches globalThis.LensSel
 
 const api = globalThis.browser ?? globalThis.chrome;
@@ -248,13 +252,83 @@ async function copyMarkdown(tab, info, ctx) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Micro-save: the selection (or the page's title + link) onto the Shelf, with a one-line toast
+// in the page. Lens merges consecutive saves from one page into one item and skips repeats.
+// ---------------------------------------------------------------------------------------------
+
+async function microSave(tab, ctx) {
+  const reply = await oneShot("micro_save", { item: microItem(ctx) }, { quiet: true });
+  flash(reply?.ok ? "✓" : "!", !!reply?.ok);
+  if (tab?.id != null && /^https?:/.test(tab.url || "")) {
+    const [title, detail, tone] = microToast(reply);
+    api.scripting.executeScript({ target: { tabId: tab.id }, func: showLensToast, args: [title, detail, tone] }).catch(() => {});
+  }
+  return reply;
+}
+
+// ---------------------------------------------------------------------------------------------
+// YouTube transcripts: read the captions the page already loaded (activeTab, after a click).
+// ---------------------------------------------------------------------------------------------
+
+async function getTranscript(tab) {
+  if (!tab?.id || !isYoutubeVideoUrl(tab.url || "")) {
+    await store.set({ transcript: { state: "failed", error: "Open a YouTube video first.", at: Date.now() } });
+    return null;
+  }
+  await store.set({ transcript: { state: "loading", url: tab.url, at: Date.now() } });
+  api.runtime.sendMessage({ type: "lens-transcript" }).catch(() => {});
+  let res = null;
+  try {
+    const [r] = await api.scripting.executeScript({ target: { tabId: tab.id }, world: "MAIN", func: ytPageTranscript, args: [navigator.language || "en"] });
+    res = r?.result ?? null;
+  } catch (e) {
+    res = { ok: false, reason: "no-access", message: String(e?.message || e) };
+  }
+  let rec;
+  const segments = res?.ok ? parseCaptions(res.body) : [];
+  if (res?.ok && segments.length) {
+    rec = { state: "ready", url: tab.url, meta: res.meta, language: res.language, auto: !!res.auto, segments, at: Date.now() };
+    rec.summary = transcriptSummary(rec);
+  } else if (res?.reason === "no-captions" || (res?.ok && !segments.length)) {
+    // No captions: offer Lens's own transcription (needs yt-dlp, set up in Lens; Lens shows the terms notice).
+    rec = { state: "no-captions", url: tab.url, meta: res?.meta, at: Date.now() };
+  } else {
+    rec = { state: "failed", url: tab.url, meta: res?.meta, error: res?.message || "Couldn't read this video's captions.", at: Date.now() };
+  }
+  await store.set({ transcript: rec });
+  api.runtime.sendMessage({ type: "lens-transcript" }).catch(() => {});
+  return rec;
+}
+
+async function transcriptAction(kind, opts = {}) {
+  const { transcript: t } = await store.get("transcript");
+  if (kind === "transcribe") return oneShot("transcribe", { mediaUrl: t?.url, title: t?.meta?.title, url: t?.url });
+  if (t?.state !== "ready") return { ok: false, error: "No transcript yet." };
+  if (kind === "shelf") return oneShot("shelf_add", { item: transcriptShelfItem(t) }, { quiet: true });
+  const ctx = { pageText: toPlainText(t.segments), title: `${t.meta?.title || "YouTube video"} (transcript)`, url: t.url };
+  if (kind === "summarize") return { ok: !!(await runStream("summarize", ctx, { variant: opts.variant || "key_points" })) };
+  if (kind === "ask") return { ok: !!(await runStream("ask", ctx, { question: opts.question, preferLocal: opts.preferLocal !== false })) };
+  return { ok: false, error: "Unknown transcript action." };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------------------------
 
 api.contextMenus.onClicked.addListener(async (info, tab) => {
   const item = findItem(String(info.menuItemId));
   if (!item || !item.kind) return;
-  if (item.kind === "ai" || item.kind === "panel") openPanel(tab);
+  if (item.kind === "ai" || item.kind === "panel" || item.kind === "transcript") openPanel(tab);
+  if (item.kind === "transcript") return getTranscript(tab);
+  if (item.kind === "micro") {
+    const ctx = { url: tab?.url, title: tab?.title, linkUrl: info.linkUrl, linkText: info.linkText };
+    if (info.mediaType === "image" && info.srcUrl) ctx.imageUrl = info.srcUrl;
+    if (info.selectionText) {
+      const sel = tab?.id != null ? await inject(tab.id, "selection") : null;
+      ctx.selection = sel?.markdown || info.selectionText;
+    }
+    return microSave(tab, ctx);
+  }
   const ctx = await gatherContext(tab, info, item);
   if (item.kind === "copy") return copyMarkdown(tab, info, ctx);
   if (item.kind === "panel") {
@@ -272,14 +346,9 @@ api.commands?.onCommand.addListener(async (command) => {
   const sel = tab.id != null ? await inject(tab.id, "selection") : null;
   const ctx = { url: tab.url, title: tab.title, selection: sel?.markdown || undefined };
   if (command === "open-command") return oneShot("command_open", ctx);
-  if (command === "add-to-shelf") {
-    if (!ctx.selection) {
-      const page = tab.id != null ? await inject(tab.id, "page") : null;
-      if (page?.markdown) ctx.pageText = page.markdown;
-    }
-    ctx.item = shelfItemFrom(ctx, {});
-    return oneShot("shelf_add", ctx);
-  }
+  // Alt+Shift+S: micro-save the selection (or the page's title and link). Lens's own Ctrl+Alt+S
+  // does the same in desktop apps; browsers don't allow Ctrl+Alt shortcuts for extensions.
+  if (command === "add-to-shelf") return microSave(tab, ctx);
 });
 
 // Messages from the popup, side panel, options page and in-page panel.
@@ -356,6 +425,18 @@ async function handleMessage(msg, sender) {
       return { ok: true };
     case "sync-content-scripts":
       return syncContentScripts();
+    case "micro-save":
+      return microSave(sender?.tab ?? (await activeTab()), msg.ctx || {});
+    case "transcript-get":
+      return (await store.get("transcript")).transcript ?? null;
+    case "transcript-load":
+      return getTranscript(await activeTab());
+    case "transcript-shelf":
+      return transcriptAction("shelf");
+    case "transcript-run":
+      return transcriptAction(msg.kind, msg);
+    case "transcript-transcribe":
+      return transcriptAction("transcribe");
     default:
       return null;
   }
