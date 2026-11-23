@@ -93,16 +93,23 @@ asks once a minute; the rules are in Rust (`wallpapers::due`, `pick_next`) and a
 
 ## Deferred
 
-- **Wallpaper of the day.** The opt-in setting exists and is off; no source is wired, so there is no
-  toggle in the UI yet. It needs a source whose terms allow it and an approval the first time.
+From the plan (the spec this replaced, 23 Nov 2026), not built yet:
+
+- **Wallpaper of the day** (Bing, NASA APOD, Unsplash with a key). The opt-in setting exists and is
+  off; no source is wired, so there is no toggle in the UI yet and nothing is ever fetched. It needs a
+  source whose terms allow it and an approval the first time.
 - **Per-monitor wallpapers and span.** The host attaches to one monitor (the Lens monitor). Different
-  pictures per monitor need one host window per monitor.
+  pictures per monitor, and a "span" fit, need one host window per monitor.
 - **Thumbnails for video loops.** Loops are listed and play as wallpapers; their cards show a
   placeholder, not a frame.
 - **A folder picker dialog.** Folders are added from the suggestions or by pasting a path.
 - **Auto-change through Lens' own living wallpapers.** They are in the picker and can be set by hand;
   the timer rotates your files only.
-- **Top Bar menu entry.** The tray menu has it; the Top Bar does not yet.
+- **More quick controls.** The tray menu has Next wallpaper. Previous, Current, Collection and the
+  on/off ticks, and a Top Bar or Dock context-menu entry, are not there yet.
+- **Sorting** by recent, colour or name (the library is in path order), **dragging** the fan, and
+  **clicking a palette chip** to copy its hex.
+- **A Wallpapers add-on card** in Lens Apps, and **theme packs that carry a wallpaper collection**.
 
 ## Code
 

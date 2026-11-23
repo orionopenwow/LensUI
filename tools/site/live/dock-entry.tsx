@@ -10,6 +10,14 @@ import "@lens-src/styles/tokens.css";
 import "@lens-src/styles/global.css";
 import { DockSurface } from "@lens-src/surfaces/DockSurface";
 import { packById, registerCustomPack } from "@lens-src/themes/packs";
+import { DOCK_STYLES } from "@lens-src/dock/styles";
+
+// Picking a dock style in Lens also sets that style's recommended icon size (Settings, the setup
+// wizard). The site does the same, so every style here is the size it is in the app.
+const withRec = (patch: any) => {
+  const st = patch?.dock?.style, rec = st && DOCK_STYLES.find((d) => d.id === st)?.recommendedIconSize;
+  return rec && patch.dock.iconSize == null ? { ...patch, dock: { ...patch.dock, iconSize: rec } } : patch;
+};
 import { APPS, MINI, ICON_BY_NAME, setRunning } from "@tauri-apps/api/core";
 
 const W = globalThis as any;
@@ -26,7 +34,7 @@ window.addEventListener("message", (e) => {
   const m = e.data;
   if (!m || typeof m !== "object") return;
   if (m.lens === "config" && m.patch && typeof m.patch === "object") {
-    const next = merge(W.__lensConfig(), m.patch);
+    const next = merge(W.__lensConfig(), withRec(m.patch));
     W.__lensSetConfig(next);
     W.__lensEmit("lens://config-updated", next);
   } else if (m.lens === "pack" && m.pack && typeof m.pack === "object") {
@@ -35,7 +43,7 @@ window.addEventListener("message", (e) => {
     const p = m.pack;
     const id = packById(p.id) ? p.id : registerCustomPack({ id: p.id, label: p.label, base: p.base, accent: p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle })?.id;
     if (!id) return;
-    const next = merge(W.__lensConfig(), { theme: { preset: id, customAccent: p.accent, accentMode: "custom", borderRadius: p.radius }, ...(m.dockStyle ? { dock: { style: m.dockStyle } } : {}) });
+    const next = merge(W.__lensConfig(), { theme: { preset: id, customAccent: p.accent, accentMode: "custom", borderRadius: p.radius }, ...(m.dockStyle ? withRec({ dock: { style: m.dockStyle } }) : {}) });
     W.__lensSetConfig(next);
     W.__lensEmit("lens://config-updated", next);
   } else if (m.lens === "windows" && Array.isArray(m.list)) {
@@ -109,7 +117,7 @@ const start = W.__lensConfig();
 const pack0 = q.get("pack") && packById(q.get("pack"));
 W.__lensSetConfig(
   merge(start, {
-    dock: { autoHide: "never", magnification: q.get("mag") || "subtle", launchAnimation: "bounce", style: q.get("style") || "floating", showLabels: false, pinnedApps: (APPS as any[]).filter((a) => !q.get("mini") || (MINI as string[]).includes(a.id)).map(({ id, name, path }) => ({ id, name, path, iconHint: null })), ...(q.get("mini") ? { pinnedFolders: [] } : {}) },
+    dock: { autoHide: "never", magnification: q.get("mag") || "subtle", launchAnimation: "bounce", style: q.get("style") || "floating", iconSize: DOCK_STYLES.find((d) => d.id === (q.get("style") || "floating"))?.recommendedIconSize ?? 40, showLabels: false, pinnedApps: (APPS as any[]).filter((a) => !q.get("mini") || (MINI as string[]).includes(a.id)).map(({ id, name, path }) => ({ id, name, path, iconHint: null })), ...(q.get("mini") ? { pinnedFolders: [] } : {}) },
     topBar: { enabled: false },
     theme: { ...(q.get("shape") ? { shapeStyle: q.get("shape") } : {}), ...(pack0 ? { preset: pack0.id, customAccent: pack0.accent, accentMode: "custom", borderRadius: pack0.radius } : {}) },
   })

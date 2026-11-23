@@ -154,7 +154,7 @@ export const FEATURES = [
   },
   {
     id: "guide",
-    title: "Lens Guide",
+    title: "Ask Lens",
     lede: "\"How do I…?\" answered from Lens's own settings, with Show me.",
     status: "dev",
     pr: 18,

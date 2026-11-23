@@ -262,11 +262,31 @@ async function waitDesk(page, sel = "#desk-host") {
   const expect = (ok, label, detail = "") => { if (!ok) problems.push(`interaction: ${label}${detail ? ` ${detail}` : ""}`); done.push(label); };
   const D = (f, arg) => page.evaluate(f, arg);
   await page.goto(base + "index.html");
+  // Light and dark: with no saved choice the site follows the system; the header switch flips it and
+  // light really renders light.
+  const lum = () => D(() => { const m = getComputedStyle(document.body).backgroundColor.match(/[\d.]+/g).map(Number); return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; });
+  await page.emulateMedia({ colorScheme: "light" }); await page.reload(); await page.waitForSelector(".mode-switch");
+  expect((await D(() => document.documentElement.dataset.scheme)) === "light" && (await lum()) > 0.8, "a light system gets the light site", String(await lum()));
+  await page.emulateMedia({ colorScheme: "dark" }); await page.reload(); await page.waitForSelector(".mode-switch");
+  expect((await D(() => document.documentElement.dataset.scheme)) === "dark" && (await lum()) < 0.2, "a dark system gets the dark site");
+  await page.click(".mode-switch"); await page.waitForTimeout(250);
+  expect((await D(() => document.documentElement.dataset.scheme)) === "light" && (await lum()) > 0.8 && (await page.$eval(".mode-switch", (b) => b.getAttribute("aria-checked"))) === "true", "the header switch turns light mode on");
+  await page.screenshot({ path: join(shots, "hero-light-switch.png") });
+  await page.click(".mode-switch"); await page.waitForTimeout(250);
+  expect((await D(() => document.documentElement.dataset.scheme)) === "dark", "the header switch turns it back to dark");
+  await D(() => localStorage.removeItem("lens-site")); await page.reload(); await page.waitForSelector(".mode-switch");
+  // Hero: no beta pill; a slim Download with the Windows mark; the other installers listed under it.
+  expect(!(await page.$(".hero-pill")), "the beta pill is gone");
+  expect(!!(await page.$(".hero .hero-dl svg")) && (await page.$eval(".hero .hero-dl", (b) => b.offsetHeight)) <= 48, "Download is slim and carries the Windows mark");
+  expect((await page.locator(".hero .dl-more > *").count()) >= 4, "other ways to install are listed under Download");
+  // The tour tabs sit under the demo, each with an icon.
+  expect(await D(() => document.getElementById("sc-tabs").getBoundingClientRect().top >= document.getElementById("desk-host").getBoundingClientRect().bottom - 1), "the tour tabs sit under the demo");
+  expect(await D(() => [...document.querySelectorAll("#sc-tabs [role=tab]")].every((t) => t.querySelector(".sc-ic img, .sc-ic svg"))), "every tour tab has an icon");
   // Header: no shift on scroll, Download appears once the hero's scrolls away.
   const h0 = await page.$eval("#bar", (b) => b.offsetHeight);
   await page.evaluate(() => scrollTo(0, 1400)); await page.waitForTimeout(400);
   expect((await page.$eval("#bar", (b) => b.offsetHeight)) === h0, "header keeps its height when scrolled");
-  expect(await page.$eval(".bar-dl", (b) => getComputedStyle(b).opacity === "1"), "header Download appears on scroll");
+  expect(await page.waitForFunction(() => getComputedStyle(document.querySelector(".bar-dl")).opacity === "1", null, { timeout: 4000 }).then(() => true, () => false), "header Download appears on scroll");
   // Appearance popover by keyboard.
   await page.focus(".appear-btn"); await page.keyboard.press("Enter"); await page.waitForTimeout(200);
   expect(!(await page.$eval("#appear-panel", (p) => p.hidden)), "appearance popover opens with Enter");
@@ -308,6 +328,14 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.waitForTimeout(300);
   const box = await deskBox(page);
   await page.waitForTimeout(600);
+  // Desktop icons move, and stay on the desk.
+  {
+    const ic = page.locator("#desk-host .lx-ic").first(), b0 = await ic.boundingBox();
+    await page.mouse.move(b0.x + b0.width / 2, b0.y + 20); await page.mouse.down(); await page.mouse.move(b0.x + b0.width / 2 + 140, b0.y + 70, { steps: 8 }); await page.mouse.up();
+    const b1 = await ic.boundingBox(), dk = await page.locator("#desk-host .lx-canvas, #desk-host .lx").first().boundingBox();
+    expect(b1.x - b0.x > 80 && b1.y - b0.y > 20 && b1.x >= dk.x && b1.x + b1.width <= dk.x + dk.width + 1, "a desktop icon can be dragged and stays on the desk", JSON.stringify([b0, b1]));
+    await D(() => document.querySelectorAll("#desk-host .lx-ic").forEach((b) => { b.style.transform = ""; b._dx = b._dy = 0; b._dragged = false; }));
+  }
   // Drag, resize, snap.
   const win = () => D(() => { const w = [...window.lensSite.desk.wins.values()].find((x) => !x.min); return w && { id: w.id, x: w.x, y: w.y, w: w.w, h: w.h, tile: w.tile, min: w.min }; });
   const barAt = (id) => D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".lw-bar").getBoundingClientRect(); return { x: r.left + 90, y: r.top + 15 }; }, id);
@@ -435,6 +463,7 @@ async function waitDesk(page, sel = "#desk-host") {
     return r.l < fr.left - 1 || r.r > fr.right + 1 || r.t < fr.top - 1 || r.b > fr.bottom + 1;
   }).map((t) => t.textContent.trim()));
   expect(!clipped.length, "no dock clipped in the rail", clipped.join(", "));
+  expect(await D(() => [...document.querySelectorAll("#dock-rail .dr-frame iframe")].every((f) => getComputedStyle(f).colorScheme === "normal")), "dock previews never paint a white backdrop");
   await page.focus('#dock-rail .dr[aria-checked="true"]'); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(200);
   expect((await page.$eval('#dock-rail .dr[aria-checked="true"]', (b) => b.dataset.i)) === "1", "arrow keys pick the next dock");
   await page.screenshot({ path: join(shots, "docks.png"), clip: await page.locator("#docks").boundingBox() });
@@ -443,8 +472,8 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.waitForSelector("#lab-desk .lw", { timeout: 20000 });
   await page.waitForTimeout(800);
   const kept = await D(() => window.lensSite.lab.committed?.p.id);
-  await page.hover('.lab-picks [data-pack="nord-frost"]'); await page.waitForTimeout(300);
-  expect((await D(() => window.lensSite.lab.pack?.id)) === "nord-frost", "hovering a theme previews it");
+  await page.hover('.lab-picks [data-pack="everforest-dark"]'); await page.waitForTimeout(300);
+  expect((await D(() => window.lensSite.lab.pack?.id)) === "everforest-dark", "hovering a theme previews it");
   await page.mouse.move(5, 5); await page.waitForTimeout(300);
   expect((await D(() => window.lensSite.lab.pack?.id)) === kept, "leaving the picker restores the kept theme");
   await page.click('.lab-picks [data-pack="rose-pine"]'); await page.waitForTimeout(1600);
@@ -460,13 +489,18 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.click("[data-shuffle]"); await page.waitForTimeout(600);
   expect((await D(() => window.lensSite.lab.committed?.p.id)) !== "rose-pine", "Shuffle changes the theme");
   // Icons: every icon on the page comes from the shared set (or the brand folder, or the apps' own repos).
-  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|brand\//.test(s)));
+  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|media\/core-|brand\//.test(s)));
   expect(!odd.length, "icons come from the shared icon set", odd.slice(0, 5).join(", "));
   // Bring your own agent tabs, by keyboard.
   await page.focus("#byo-t1"); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(100);
   expect(!(await page.$eval("#byo-p2", (x) => x.hidden)), "agent tabs switch with the arrow keys");
   // The Guide: the orb opens it, / too; a chip acts on the desk; Esc collapses it.
-  await page.click("#guide-orb"); await page.waitForTimeout(600);
+  await page.click("#guide-orb");
+  // It opens out of the orb where it sits: a growing circle, never a flip or a fly-in.
+  await page.waitForSelector("#guide-window:not([hidden])", { timeout: 8000 }).catch(() => {});
+  const grow = await D(() => { const w = document.getElementById("guide-window"); return w ? `${w.dataset.opened}|${w.getAnimations().map((a) => a.effect.getKeyframes().map((k) => Object.keys(k).join("+")).join(">")).join("|")}` : "missing"; });
+  expect(/^grow/.test(grow) && !/transform/.test(grow), "Lens opens out of its orb without flipping", grow);
+  await page.waitForTimeout(600);
   expect(await page.$eval("#guide-window", (w) => !w.hidden), "the Lens orb opens the Guide");
   await page.click('.gw-chips [data-chip="Tile two windows"]');
   await page.waitForTimeout(500);
@@ -474,10 +508,13 @@ async function waitDesk(page, sel = "#desk-host") {
   const tiles = await D(() => [...window.lensSite.desk.wins.values()].filter((w) => !w.min && w.tile).length);
   expect(tiles >= 1, "the Guide's “Tile two windows” tiles the desk");
   await page.screenshot({ path: join(shots, "guide-acting.png") });
-  await page.keyboard.press("Escape"); await page.waitForTimeout(500);
-  expect(await page.$eval("#guide-window", (w) => w.hidden), "Esc collapses the Guide");
-  await page.locator("body").press("/"); await page.waitForTimeout(500);
-  expect(await page.$eval("#guide-window", (w) => !w.hidden), "/ opens the Guide");
+  // Waits for the state itself: fixed sleeps here flaked on slow CI runners.
+  await page.locator("#guide-window textarea, #guide-window input").first().focus().catch(() => {});
+  await page.keyboard.press("Escape");
+  expect(await page.waitForFunction(() => document.getElementById("guide-window").hidden, null, { timeout: 5000 }).then(() => true, () => false), "Esc collapses the Guide");
+  await page.locator("body").press("/");
+  expect(await page.waitForFunction(() => !document.getElementById("guide-window").hidden, null, { timeout: 5000 }).then(() => true, () => false), "/ opens the Guide");
+  await page.waitForTimeout(500);
   await page.keyboard.press("Escape");
   if ((await D(() => document.documentElement.scrollWidth)) > 1441) problems.push("interaction: the page is wider than the window");
   const cls = await D(() => window.__cls);
@@ -511,7 +548,8 @@ async function waitDesk(page, sel = "#desk-host") {
     if (r.toasts.some((t) => hit(r.bar, t)) || hit(r.bar, r.dock)) lp(`${w}px: the tour bar overlaps the desk`);
     // The rainbow word uses the full spectrum (not the accent colour).
     const rb = await page.$eval(".hero .lens-rainbow", (e) => getComputedStyle(e).backgroundImage);
-    if (!/255, 95, 143|ff5f8f/i.test(rb) || !/95, 227, 166|5fe3a6/i.test(rb)) lp(`${w}px: "everything" doesn't use the nebula spectrum`);
+    const dark = /255, 95, 143|ff5f8f/i.test(rb) && /95, 227, 166|5fe3a6/i.test(rb), light = /217, 36, 92|d9245c/i.test(rb) && /15, 138, 95|0f8a5f/i.test(rb);
+    if (!dark && !light) lp(`${w}px: "everything" doesn't use the nebula spectrum`);
     // The Guide orb and its label never sit on footer text when scrolled to the end.
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(400);

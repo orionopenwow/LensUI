@@ -79,4 +79,6 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 
 ## Planned (not started)
 
+- **Wallpaper Switcher, the rest** — the picker, library, auto-change and live wallpapers shipped (see the table above). Still planned: wallpaper of the day, per-monitor and span, video thumbnails, more tray and Top Bar controls, sorting, an add-on card, and packs that carry a wallpaper collection. `docs/WALLPAPER_SWITCHER.md` › Deferred.
+
 From `docs/MASTERPLAN.md` and `docs/vision/*`: Shelf file drag-out and Explorer selection, Feeds cards in the top bar, magic menu on every surface, shared approval card everywhere, agentsafe on every agent path, UI-scale for native windows, Windows agent workspace interop, signed plugin catalogue.
