@@ -365,6 +365,9 @@ pub struct LensConfig {
     /// (src/command/settings.ts); the backend only reads `enabled` and `edge.enabled`.
     #[serde(default)]
     pub command: serde_json::Value,
+    /// Tester mode: TEST BUILD badge and the Ctrl+Alt+M mark-moment hotkey. Off by default.
+    #[serde(default)]
+    pub tester: TesterConfig,
 }
 
 impl Default for LensConfig {
@@ -529,6 +532,7 @@ impl Default for LensConfig {
             dnd_schedule: Default::default(),
             ai: Default::default(),
             command: serde_json::Value::Null,
+            tester: TesterConfig::default(),
         }
     }
 }
@@ -680,4 +684,11 @@ impl LensConfig {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false)
     }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TesterConfig {
+    /// Shows the "TEST BUILD <sha>" badge and enables the Mark-moment hotkey.
+    pub enabled: bool,
 }

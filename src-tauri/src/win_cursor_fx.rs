@@ -159,10 +159,13 @@ pub fn save_settings(root: &Path, s: &FxSettings) -> Result<(), String> {
 
 pub const WM_MOUSEMOVE: u32 = 0x0200;
 pub const WM_LBUTTONDOWN: u32 = 0x0201;
+#[allow(dead_code)] // part of the message table; only button-down messages start effects
 pub const WM_LBUTTONUP: u32 = 0x0202;
 pub const WM_RBUTTONDOWN: u32 = 0x0204;
+#[allow(dead_code)] // see WM_LBUTTONUP
 pub const WM_RBUTTONUP: u32 = 0x0205;
 pub const WM_MBUTTONDOWN: u32 = 0x0207;
+#[allow(dead_code)] // see WM_LBUTTONUP
 pub const WM_MBUTTONUP: u32 = 0x0208;
 pub const WM_MOUSEWHEEL: u32 = 0x020A;
 pub const WM_XBUTTONDOWN: u32 = 0x020B;
@@ -616,14 +619,9 @@ mod platform {
         x: i32,
         y: i32,
     }
-    #[repr(C)]
-    #[derive(Default, Clone, Copy)]
-    struct WinRect {
-        left: i32,
-        top: i32,
-        right: i32,
-        bottom: i32,
-    }
+    // The crate-wide RECT, so every `EnumDisplayMonitors` declaration in the crate agrees
+    // (clippy: clashing_extern_declarations).
+    use crate::ffi::Rect as WinRect;
     #[repr(C)]
     struct MsllHook {
         pt: Point,
@@ -709,7 +707,7 @@ mod platform {
         fn EnumDisplayMonitors(
             hdc: isize,
             clip: *const WinRect,
-            cb: MonitorEnumProc,
+            cb: Option<MonitorEnumProc>,
             data: isize,
         ) -> i32;
         fn GetCursorPos(p: *mut Point) -> i32;
@@ -909,7 +907,7 @@ mod platform {
         }
         let mut v: Vec<Rect> = Vec::new();
         unsafe {
-            EnumDisplayMonitors(0, std::ptr::null(), cb, &mut v as *mut Vec<Rect> as isize);
+            EnumDisplayMonitors(0, std::ptr::null(), Some(cb), &mut v as *mut Vec<Rect> as isize);
         }
         v
     }

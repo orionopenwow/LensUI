@@ -26,6 +26,7 @@ import { ClipboardCard } from "../components/ClipboardCard";
 import { ConnectionsCard } from "../bridge/ConnectionsCard";
 import { BridgeInbox } from "../bridge/BridgeInbox";
 import { TranscriptionCard } from "../media/TranscriptionCard";
+import { TesterHubCard } from "../tester/TesterHubCard";
 import {
   Palette,
   PanelBottom,
@@ -62,6 +63,7 @@ import {
   Columns2,
   Minus,
   MessageSquare,
+  FlaskConical,
 } from "lucide-react";
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
 import { TrafficLights } from "../components/TrafficLights";
@@ -87,7 +89,8 @@ type TabId =
   | "monitor"
   | "messages"
   | "ai"
-  | "agents";
+  | "agents"
+  | "about";
 
 interface ProcessEntry {
   pid: number;
@@ -248,6 +251,7 @@ export const ControlCenterSurface: React.FC = () => {
     { id: "sessions", label: "Desktops & Widgets", icon: <Layers size={15} strokeWidth={2.2} color="#818CF8" /> },
     { id: "ai", label: "AI & Command", icon: <Sparkles size={15} strokeWidth={2.2} color="#F472B6" /> },
     { id: "agents", label: "Agents", icon: <Bot size={15} strokeWidth={2.2} color="#22D3EE" /> },
+    { id: "about", label: "About & Testing", icon: <FlaskConical size={15} strokeWidth={2.2} color="#FBBF24" /> },
   ];
 
   const activeAccentHex =
@@ -1437,6 +1441,30 @@ export const ControlCenterSurface: React.FC = () => {
               <TranscriptionCard />
               <McpCard config={config} onUpdateConfig={updateConfig} />
             </>
+          )}
+
+          {tab === "about" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="cc-card">
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Tester mode</div>
+                    <div className="cc-desc">
+                      Shows a TEST BUILD badge in the top bar and turns on Ctrl+Alt+M to mark a moment in the log.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-label="Tester mode"
+                    aria-checked={!!config.tester?.enabled}
+                    className={`cc-toggle ${config.tester?.enabled ? "on" : ""}`}
+                    onClick={() => updateConfig({ ...config, tester: { enabled: !config.tester?.enabled } })}
+                  />
+                </div>
+              </div>
+              <TesterHubCard />
+            </div>
           )}
 
           {tab === "agents" && (

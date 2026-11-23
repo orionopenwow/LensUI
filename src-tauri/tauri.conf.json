@@ -248,6 +248,21 @@
         "visible": false,
         "focus": false,
         "create": false
+      },
+      {
+        "label": "testerhub",
+        "title": "Lens Tester Hub",
+        "url": "index.html?surface=testerhub",
+        "width": 760,
+        "height": 860,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "skipTaskbar": false,
+        "resizable": true,
+        "shadow": false,
+        "visible": false,
+        "create": false
       }
     ],
     "security": {

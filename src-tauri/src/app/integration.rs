@@ -29,6 +29,12 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
         let _ = crate::app::setup::build_window_from_config(&handle, "edgeshelf");
     }
     sync_command_hotkeys(&handle, cfg);
+    sync_tester_hotkey(&handle, cfg);
+    crate::tester::log(
+        "info",
+        "app",
+        &format!("Lens {} started (Windows build {})", env!("CARGO_PKG_VERSION"), win_theme::windows_build()),
+    );
     if cfg.func.per_monitor_bars {
         build_extra_topbars(&handle, cfg);
     }
@@ -92,6 +98,9 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
     if prev.command != next.command {
         sync_command_hotkeys(app, next);
     }
+    if prev.tester != next.tester {
+        sync_tester_hotkey(app, next);
+    }
 
     // Edge Shelf: create on enable; the surface hides itself when turned off.
     if next.edge_shelf_enabled() && !prev.edge_shelf_enabled() && app.get_webview_window("edgeshelf").is_none() {
@@ -137,7 +146,7 @@ fn start_shell_keys(handle: &AppHandle, cfg: &LensConfig) {
         cfg.func.win_key_launcher,
         cfg.func.alt_tab_overview,
         move |seq, event| {
-            #[derive(serde::Serialize)]
+            #[derive(serde::Serialize, Clone)]
             struct Msg<'a> {
                 seq: u64,
                 event: &'a win_keyhook::HookEvent,
@@ -555,4 +564,33 @@ pub(crate) fn side_dock_flyout(
     };
     let r = win_monitors::flyout_beside_dock(&m, &strip, w, h, align);
     Some((r.x, r.y))
+}
+
+// ================================================================================ Tester Hub
+
+fn tester_hotkey_registry() -> &'static Mutex<Option<Shortcut>> {
+    static REG: OnceLock<Mutex<Option<Shortcut>>> = OnceLock::new();
+    REG.get_or_init(|| Mutex::new(None))
+}
+
+/// Ctrl+Alt+M marks a moment in the tester log, only while tester mode is on.
+pub(crate) fn sync_tester_hotkey(app: &AppHandle, cfg: &LensConfig) {
+    let mut reg = tester_hotkey_registry().lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(s) = reg.take() {
+        let _ = app.global_shortcut().unregister(s);
+    }
+    if !cfg.tester.enabled {
+        return;
+    }
+    let mark = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyM);
+    let h = app.clone();
+    let res = app.global_shortcut().on_shortcut(mark, move |_app, _s, ev| {
+        if ev.state == ShortcutState::Pressed {
+            let line = crate::tester::log("mark", "tester", "Marked moment (Ctrl+Alt+M)");
+            let _ = h.emit("lens://tester/marked", line.seq);
+        }
+    });
+    if res.is_ok() {
+        *reg = Some(mark);
+    }
 }
