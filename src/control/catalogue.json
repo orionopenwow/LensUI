@@ -82,7 +82,7 @@
     "Sessions": 2,
     "Summon keys": 2,
     "Testing": 1,
-    "Theme": 13,
+    "Theme": 14,
     "Theme schedule": 1,
     "Top bar": 7,
     "Wallpaper & Playground": 19,
@@ -91,7 +91,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 179,
+  "count": 180,
   "entries": [
     {
       "capability": "change_settings",
@@ -2105,6 +2105,22 @@
       "schema": {
         "maxLength": 400,
         "pattern": "pack",
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Theme",
+      "default": "classic",
+      "description": "Sets the shape style option under Theme.",
+      "example": "{\"args\":{\"changes\":{\"theme.shapeStyle\":\"classic\"}},\"tool\":\"lens_set\"}",
+      "label": "Shape style",
+      "path": "theme.shapeStyle",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maxLength": 400,
         "type": "string"
       },
       "store": "config"

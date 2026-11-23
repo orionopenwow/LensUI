@@ -181,7 +181,8 @@ mod tests {
         }
         // Every bridge action that is a user-facing verb exists in the catalogue.
         for (a, _) in ACTIONS {
-            if !["ping", "status", "shelf_list", "shelf_recent", "theme_get"].contains(a) {
+            // settings_open is navigation (lens://settings links), not a right-click verb.
+            if !["ping", "status", "shelf_list", "shelf_recent", "theme_get", "settings_open"].contains(a) {
                 assert!(find(a).is_some(), "bridge action {a} not catalogued");
             }
         }
