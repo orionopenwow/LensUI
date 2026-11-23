@@ -6,7 +6,7 @@ import { TrafficLights } from "../components/TrafficLights";
 export const TrafficOverlaySurface: React.FC = () => {
   const { config } = useLensState();
   const styleVariant = config?.windowControls.style ?? "traffic-classic";
-  const order = config?.windowControls.order ?? "green-yellow-red";
+  const order = config?.windowControls.order ?? "yellow-green-red";
   const isTopLeft = config?.windowControls.position === "top-left";
 
   return (

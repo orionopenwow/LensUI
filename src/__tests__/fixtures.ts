@@ -17,7 +17,7 @@ export function sampleConfig(): LensConfig {
       middleClickNewInstance: true,
     },
     windowControls: {
-      enabled: true, style: "traffic-classic", order: "green-yellow-red", position: "top-right",
+      enabled: true, style: "traffic-classic", order: "yellow-green-red", position: "top-right",
       frameBorderEnabled: true, frameStyle: "obsidian-hairline", excludedProcesses: [],
     },
     iconStyle: { theme: "obsidian-squircle", shape: "squircle" },

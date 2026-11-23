@@ -570,6 +570,13 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
       });
       return "Switched window traffic lights to Red · Yellow · Green.";
     }
+    if (p.includes("yellow green red")) {
+      onUpdateConfig({
+        ...config,
+        windowControls: { ...config.windowControls, enabled: true, order: "yellow-green-red" },
+      });
+      return "Switched window traffic lights to Yellow · Green · Red.";
+    }
     if (p.includes("green yellow red")) {
       onUpdateConfig({
         ...config,

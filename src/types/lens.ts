@@ -114,7 +114,7 @@ export interface FuncConfig {
 export interface WindowControlsConfig {
   enabled: boolean;
   style: "traffic-classic" | "traffic-muted" | "minimal-dots" | "accent-pills" | string;
-  order: "green-yellow-red" | "red-yellow-green" | string;
+  order: "yellow-green-red" | "green-yellow-red" | "red-yellow-green" | string;
   position: "top-right" | "top-left" | string;
   frameBorderEnabled?: boolean;
   frameStyle?: "accent-glow" | "obsidian-hairline" | "neon" | "none" | string;
