@@ -31,7 +31,7 @@
 .cc-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 162px 1fr;
+  grid-template-columns: 178px 1fr;
   min-height: 0;
 }
 
@@ -70,7 +70,7 @@
 }
 
 .cc-content {
-  padding: 12px 16px 16px 16px;
+  padding: 10px 16px 16px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1268,4 +1268,48 @@
 /* A single embedded card repeats the section name as its own heading: hide that duplicate. */
 .tux-section-body > .cc-card:only-child > .cc-label:first-child {
   display: none;
+}
+
+/* Page title replaces the old top info/quick-tools strip; right padding clears the window controls */
+.cc-page-title {
+  margin: 0;
+  min-height: 28px;
+  padding-right: 96px;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar groups: Look / Work / Status */
+.cc-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cc-nav-group + .cc-nav-group {
+  margin-top: 10px;
+}
+.cc-nav-group-label {
+  padding: 0 8px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lens-fg-tertiary, var(--lens-fg-secondary));
+}
+.cc-nav-btn > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-nav-divider {
+  height: 1px;
+  margin: 6px 8px;
+  background: rgb(var(--lens-ink) / 0.08);
 }

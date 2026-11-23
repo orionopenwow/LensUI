@@ -108,7 +108,7 @@ import { FlaskConical } from "lucide-react";
 )}
 ```
 
-The existing **Self-Test** card in *Windows & Quick* can stay; the hub's Report tab calls the same `run_self_test_cmd`.
+The existing **Self-Test** card in *Windows & Keys* can stay; the hub's Report tab calls the same `run_self_test_cmd`.
 
 ### 3. Build notes in release builds (`package.json`)
 
