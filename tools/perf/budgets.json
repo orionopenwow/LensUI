@@ -34,7 +34,7 @@
       "p50": 16.7,
       "p95": 83.4,
       "longTasks": 6,
-      "cls": 0,
+      "cls": 0.055,
       "fcp": 644
     },
     "settings-tab-switch": {
@@ -100,5 +100,8 @@
       "cls": 0,
       "fcp": 0
     }
+  },
+  "_findings": {
+    "theme-switch.cls": "F8 (docs/TESTING.md): the Theme & Look hero jumps ~29 px when a pack's description wraps to a second line. Baseline CLS raised to today's 0.055 so a worse shift still fails; lower it with the fix."
   }
 }

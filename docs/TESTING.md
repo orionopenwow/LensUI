@@ -328,3 +328,11 @@ marker together with the fix.
   Voice-control users say what they see, so a mismatched name can't be targeted.
 * **Suggested fix:** start each `aria-label` with the visible text (for example "Detect: look for local models again"), and give `.mini-ctx` `role="group"`.
 * **Marker:** allowlist entries with reason F7.
+
+### F8: the Theme & Look hero jumps when switching packs (layout shift)
+
+* **Found by:** the fluidity budgets (`theme-switch`, CLS 0.053 on the runner) once Theme & Look became the first Control Center tab.
+* **What happens:** each pack's one-line description has a different length. When it wraps to a second line, the preview window, the Dark/Light/Auto switch and the sliders below jump down about 29 px. Clicking through themes makes the whole card bounce, right under the pointer.
+* **Repro:** `PERF_ONLY=theme-switch node tools/perf/run.mjs`. Or open Theme & Look and click through the recommended packs.
+* **Suggested fix:** reserve two lines for the description (`min-height: calc(2 * line-height)` on the description in the Theme hero), or clamp it to two lines.
+* **Marker:** the `theme-switch` CLS baseline in `tools/perf/budgets.json` is raised to 0.055, with a `_findings` note. Lower it with the fix.

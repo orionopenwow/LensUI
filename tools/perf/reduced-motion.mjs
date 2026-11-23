@@ -12,7 +12,7 @@ const CASES = [
   { surface: "dock", click: ".dock-search-mag-btn" },
   { surface: "topbar" },
   { surface: "settings" },
-  { surface: "settings", tab: 3 },
+  { surface: "settings", tab: /Dock/ },
   { surface: "palette" },
   { surface: "launcher" },
   { surface: "quicksettings" },
@@ -48,11 +48,11 @@ const browser = await launch();
 let failed = 0;
 let animatedWithMotion = 0;
 for (const c of CASES) {
-  const label = `${c.surface}${c.hover ? " hover" : ""}${c.click ? " search" : ""}${c.tab ? " tab " + c.tab : ""}${c.open ? " " + c.open.layout : ""}`;
+  const label = `${c.surface}${c.hover ? " hover" : ""}${c.click ? " search" : ""}${c.tab ? " tab " + c.tab.source : ""}${c.open ? " " + c.open.layout : ""}`;
   for (const reduced of [true, false]) {
     const page = await openSurface(browser, server.base, { surface: c.surface, query: c.query || "", reducedMotion: reduced });
     if (c.open) await page.evaluate((o) => window.__lensEmit("lens://command/open", o), c.open);
-    if (c.tab) await settingsTabs(page).nth(c.tab).click();
+    if (c.tab) await settingsTabs(page).filter({ hasText: c.tab }).first().click();
     if (c.hover) await page.locator(c.hover).first().hover();
     if (c.click) await page.locator(c.click).first().click();
     await page.waitForTimeout(150);
