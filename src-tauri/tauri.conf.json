@@ -263,6 +263,73 @@
         "shadow": false,
         "visible": false,
         "create": false
+      },
+      {
+        "label": "voicehud",
+        "url": "index.html?surface=voicehud",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "focus": false,
+        "resizable": false,
+        "visible": false,
+        "shadow": false,
+        "width": 480,
+        "height": 560
+      },
+      {
+        "label": "conversation",
+        "url": "index.html?surface=conversation",
+        "title": "Lens",
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": true,
+        "visible": false,
+        "width": 960,
+        "height": 640,
+        "center": true
+      },
+      {
+        "label": "approval",
+        "url": "index.html?surface=approval",
+        "title": "Lens: Needs your OK",
+        "width": 520,
+        "height": 720,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "center": true,
+        "focus": true
+      },
+      {
+        "label": "nowplaying",
+        "url": "index.html?surface=nowplaying",
+        "title": "Now Playing",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 560,
+        "minHeight": 360,
+        "visible": false,
+        "decorations": false,
+        "transparent": false,
+        "resizable": true,
+        "skipTaskbar": false
+      },
+      {
+        "label": "apps",
+        "url": "index.html?surface=apps",
+        "title": "Lens Apps",
+        "width": 1040,
+        "height": 760,
+        "visible": false,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {
@@ -320,7 +387,7 @@
       "icons/icon.ico"
     ],
     "publisher": "Lens UI contributors",
-    "copyright": "MIT © 2026 Lens UI contributors",
+    "copyright": "MIT \u00a9 2026 Lens UI contributors",
     "shortDescription": "Calm, themeable desktop shell for Windows 10 and 11",
     "homepage": "https://orionopenwow.github.io/lensui/"
   },

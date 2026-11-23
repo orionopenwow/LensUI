@@ -7,6 +7,8 @@ import { AiApplyBridge } from "../components/AiApplyBridge";
 import { AskDockPopover, AskModeToggle, useAskMode } from "../dock/ai/AskDock";
 import { DropSparkle, DropToAiMenu } from "../dock/ai/DropToAi";
 import { SuggestedApps, recordDockLaunch } from "../dock/ai/SuggestedApps";
+import { VoiceDockView, DockMicButton, useVoiceDock } from "../dock/voice/VoiceDock";
+import type { DockStyleId as VoiceDockStyle, Edge as VoiceEdge } from "../dock/voice/dockMorph";
 import "../dock/ai/aiDock.css";
 import type { AiContext } from "../ai/surfaceApi";
 import { toDockResults } from "../search/dockAdapter";
@@ -767,6 +769,8 @@ export const DockSurface: React.FC = () => {
   const separatorsAfter = dockExtras.separatorsAfter ?? [];
   const livePreviews = dockExtras.livePreviews === true;
   const dockStyle = normalizeDockStyle(dockExtras.style);
+  // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
+  const voiceDock = useVoiceDock(dockVisible);
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock) === "dock";
@@ -2437,6 +2441,22 @@ export const DockSurface: React.FC = () => {
           </>
         )}
         </div>
+        {voiceDock.enabled && (
+          <>
+            <VoiceDockView
+              style={(dockStyle === "islands" ? "floating" : dockStyle) as VoiceDockStyle}
+              edge={edge as VoiceEdge}
+              width={lockedDockWidth ?? pillRef.current?.getBoundingClientRect().width ?? 480}
+              height={pillRef.current?.getBoundingClientRect().height ?? 56}
+              morph={voiceDock.morph}
+              levels={voiceDock.levels}
+              reducedMotion={prefersReducedMotion()}
+              onUndo={voiceDock.undo}
+              onAnswer={voiceDock.answer}
+            />
+            <DockMicButton size={36} live={voiceDock.live} />
+          </>
+        )}
         {isBar && systemInDock && (
           <DockSystemArea
             trayHost={config.func.trayHost ?? false}

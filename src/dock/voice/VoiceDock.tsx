@@ -14,6 +14,7 @@ import {
   voicePtt,
   voiceSetDockUi,
   voiceUndo,
+  voiceStatus,
   type VoiceHeardEvent,
   type VoiceResultEvent,
   type VoiceStateEvent,
@@ -216,6 +217,13 @@ export function useVoiceDock(visible: boolean) {
   const [morph, dispatch] = useReducer(reduceMorph, IDLE);
   const [levels, setLevels] = useState<number[]>(Array(32).fill(0));
   const [live, setLive] = useState(false);
+  // The Dock shows the mic button and morphs only while voice is on.
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    voiceStatus()
+      .then((s) => setEnabled(!!s?.config?.enabled && s.phase !== "off"))
+      .catch(() => setEnabled(false));
+  }, []);
   useEffect(() => {
     voiceSetDockUi(visible).catch(() => {});
     return () => {
@@ -225,6 +233,7 @@ export function useVoiceDock(visible: boolean) {
   useEffect(() => {
     const uns = [
       listen<VoiceStateEvent>(VOICE_EVENTS.state, (e) => {
+        setEnabled(!!e.payload.enabled && e.payload.phase !== "off");
         setLive(e.payload.listening && e.payload.phase === "listening" && !!e.payload.armed);
         dispatch({ kind: "state", payload: e.payload, now: Date.now() });
       }),
@@ -232,16 +241,22 @@ export function useVoiceDock(visible: boolean) {
       listen<VoiceResultEvent>(VOICE_EVENTS.result, (e) => dispatch({ kind: "result", payload: e.payload, now: Date.now() })),
       listen<{ level: number }>(VOICE_EVENTS.level, (e) => setLevels((l) => [...l.slice(1), Math.max(0, Math.min(1, e.payload.level || 0))])),
     ];
-    const t = window.setInterval(() => dispatch({ kind: "tick", now: Date.now() }), 100);
     return () => {
       uns.forEach((u) => u.then((f) => f()).catch(() => {}));
-      window.clearInterval(t);
     };
   }, []);
+  // Timers (undo countdown, chip fade) only tick while the Dock is morphed, not forever.
+  const active = morph.stage !== "idle";
+  useEffect(() => {
+    if (!active) return;
+    const t = window.setInterval(() => dispatch({ kind: "tick", now: Date.now() }), 100);
+    return () => window.clearInterval(t);
+  }, [active]);
   return {
     morph,
     levels,
     live,
+    enabled,
     undo: () => voiceUndo().catch(() => {}).finally(() => dispatch({ kind: "dismiss" })),
     answer: (yes: boolean) => voiceAnswer(yes).catch(() => {}),
   };

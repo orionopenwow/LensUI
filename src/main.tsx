@@ -61,6 +61,12 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   focusdim: lazy(() =>
     import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
   ),
+  // Standalone "Needs your OK" window for AI-app requests (docs/CLAUDE_CONTROL.md §1–2).
+  approval: lazy(() => import("./approval/ApprovalSurface").then((m) => ({ default: m.ApprovalSurface }))),
+  // Now Playing (docs/MUSIC.md §2).
+  nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
+  // Lens Apps window (docs/LENS_APPS.md §2).
+  apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
   voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
