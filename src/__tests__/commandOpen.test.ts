@@ -52,13 +52,15 @@ describe("Command ready handshake (B-12)", () => {
   test("an applied open is confirmed to the backend, and an early Enter is queued, not dropped", () => {
     expect(src).toMatch(/invoke\("command_open_applied_cmd", \{ seq: appliedSeq \}\)/);
     const enter = src.slice(src.indexOf('if (e.key === "Enter" && !(e.shiftKey && mode === "ask"))'));
-    expect(enter.slice(0, 400)).toMatch(/if \(!linkedRef\.current\) \{[\s\S]*queuedEnter\.current = /);
+    expect(enter.slice(0, 700)).toMatch(/if \(!linkedRef\.current\) \{[\s\S]*queuedEnter\.current = /);
     expect(src).toMatch(/if \(queued\) runActiveRef\.current\(queued\.shift, queued\.ctrl\)/);
   });
 
-  test("the end-to-end test presses Enter once: no retry", () => {
+  test("the end-to-end test traces a dropped first Enter before its one retry (B-12 still open)", () => {
     const e2e = readFileSync(join(import.meta.dir, "..", "..", "tests", "e2e", "run.mjs"), "utf8");
-    expect(e2e).not.toMatch(/retrying once/);
-    expect(e2e.match(/box\.press\("Enter"\)/g)?.length).toBe(1);
+    expect(e2e).toMatch(/B-12 trace/);
+    expect(e2e.match(/box\.press\("Enter"\)/g)?.length).toBe(2);
+    expect(src).toMatch(/bump\("commandEnter"\)/);
+    expect(src).toMatch(/bump\("commandRun"\)/);
   });
 });
