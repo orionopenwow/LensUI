@@ -1,6 +1,7 @@
 // Test double for @tauri-apps/api/core, used only by the parity harness (tools/parity).
 // Every command the surfaces call at startup returns realistic sample data; unknown commands
 // resolve to null, so a surface that crashes on null data shows up as a page error.
+import { applyThemePack } from "../../../src/themes/packs";
 import { emitLocal } from "./event";
 const params = new URLSearchParams(location.search);
 const preset = params.get("preset") || "obsidian";
@@ -41,6 +42,8 @@ const notes = [
   note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
 ];
 config.theme.preset = preset;
+// Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.
+if (preset.startsWith("cc-")) config = applyThemePack(config, preset);
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });
