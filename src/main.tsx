@@ -54,6 +54,10 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   focusdim: lazy(() =>
     import("./surfaces/FocusDimSurface").then((m) => ({ default: m.FocusDimSurface }))
   ),
+  voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
+  conversation: lazy(() =>
+    import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
+  ),
 };
 
 const params = new URLSearchParams(window.location.search);

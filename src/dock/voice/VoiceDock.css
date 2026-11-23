@@ -1,0 +1,427 @@
+/* The Dock as the voice module. Lives inside the pill (absolute, same box); the pill's width
+   never changes. Morph = icons compress + voice content fades/slides in; reduced motion =
+   crossfade only. */
+
+.vdk {
+  --vdk-accent: var(--lens-accent, #fafafa);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  color: var(--lens-fg);
+}
+
+:root[data-scheme="light"] .vdk,
+:root[data-scheme="light"] .vdk-mic {
+  --vdk-accent: color-mix(in srgb, var(--lens-accent, #2563eb) 40%, var(--lens-fg, #18181b));
+}
+
+.vdk.on {
+  pointer-events: auto;
+}
+
+.vdk-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  animation: vdk-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vdk.vertical .vdk-row {
+  flex-direction: column;
+}
+
+.vdk-wave {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  height: 60%;
+  min-height: 14px;
+}
+
+.vdk-wave.v {
+  flex-direction: column;
+  height: auto;
+  width: 60%;
+}
+
+.vdk-wave i {
+  display: block;
+  width: 3px;
+  min-height: 3px;
+  border-radius: 2px;
+  background: var(--vdk-accent);
+  transition: height 60ms linear, width 60ms linear;
+}
+
+.vdk-wave.v i {
+  width: auto;
+  height: 3px;
+  min-width: 3px;
+}
+
+.vdk-text {
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl; /* keep the newest words visible */
+  text-align: left;
+  font-size: 13px;
+  line-height: 16px;
+}
+
+/* One LTR run inside the RTL box: words keep their order, and when the line overflows the
+   oldest words are clipped on the left so the newest stay visible. */
+.vdk-text > * {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.vdk-text b,
+.vdk-flyout b {
+  font-weight: 600;
+  color: var(--lens-fg);
+}
+
+.vdk-text code,
+.vdk-flyout code {
+  font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--lens-fg-muted);
+}
+
+.vdk-hint {
+  color: var(--lens-fg-muted);
+}
+
+.vdk-icons {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.55;
+}
+
+.vdk.vertical .vdk-icons {
+  flex-direction: column;
+}
+
+.vdk-icon {
+  width: var(--vdk-icon);
+  height: var(--vdk-icon);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.vdk-icon > * {
+  width: 100%;
+  height: 100%;
+}
+
+.vdk-chip-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vdk.vertical .vdk-chip-row {
+  flex-direction: column;
+}
+
+.vdk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lens-positive, #22c55e) 18%, transparent);
+  color: var(--lens-fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: vdk-pop 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vdk-chip svg {
+  color: var(--lens-positive, #22c55e);
+  flex: 0 0 auto;
+}
+
+.vdk-chip.ask {
+  background: color-mix(in srgb, var(--vdk-accent) 22%, transparent);
+}
+
+.vdk-chip.ask svg {
+  color: var(--vdk-accent);
+}
+
+.vdk-chip.err {
+  background: color-mix(in srgb, var(--lens-danger, #ef4444) 16%, transparent);
+  font-weight: 500;
+}
+
+.vdk-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vdk-undo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--lens-border-strong, var(--lens-border));
+  background: rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.vdk-undo kbd {
+  font: inherit;
+}
+
+.vdk-undo-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--vdk-accent);
+  transform-origin: left;
+  animation: vdk-timer 1500ms linear forwards;
+}
+
+/* Vertical Docks: the words go in a flyout beside the Dock. */
+.vdk-flyout {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: max-content;
+  min-width: 160px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--lens-pack-elevated, #18181b);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel, 0 8px 24px rgb(0 0 0 / 0.3));
+  font-size: 13px;
+  line-height: 18px;
+  pointer-events: none;
+  animation: vdk-in 200ms ease;
+}
+
+.vdk-edge-left .vdk-flyout {
+  left: calc(100% + 8px);
+}
+
+.vdk-edge-right .vdk-flyout {
+  right: calc(100% + 8px);
+}
+
+.vdk:not(.vertical) .vdk-flyout {
+  left: 50%;
+  translate: -50% 0;
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.vdk-edge-top:not(.vertical) .vdk-flyout {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+/* Approval card above the Dock (beside it for side Docks, below for a top Dock). */
+.vdk-approve {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  translate: -50% 0;
+  width: min(360px, 90vw);
+  box-sizing: border-box;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--lens-pack-elevated, #18181b);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel, 0 12px 32px rgb(0 0 0 / 0.35));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: vdk-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vdk-edge-top .vdk-approve {
+  bottom: auto;
+  top: calc(100% + 12px);
+}
+
+.vdk-edge-left .vdk-approve,
+.vdk-edge-right .vdk-approve {
+  left: auto;
+  translate: 0 -50%;
+  top: 50%;
+  bottom: auto;
+}
+
+.vdk-edge-left .vdk-approve {
+  left: calc(100% + 12px);
+}
+
+.vdk-edge-right .vdk-approve {
+  right: calc(100% + 12px);
+}
+
+.vdk-approve-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vdk-approve-heard {
+  font-size: 11.5px;
+  color: var(--lens-fg-muted);
+}
+
+.vdk-approve-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vdk-btn {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.05);
+  color: var(--lens-fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vdk-btn.yes {
+  background: var(--vdk-accent);
+  border-color: var(--vdk-accent);
+  color: var(--lens-on-fg);
+}
+
+/* Hold-to-talk button: fills while held, stays full + ring when latched. */
+.vdk-mic {
+  --vdk-accent: var(--lens-accent, #fafafa);
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.07);
+  color: var(--lens-fg);
+  cursor: pointer;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.vdk-mic svg {
+  position: relative;
+}
+
+.vdk-mic-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--vdk-accent);
+  transform: scale(0);
+  transition: transform 160ms ease-out;
+}
+
+.vdk-mic.held .vdk-mic-fill,
+.vdk-mic.latched .vdk-mic-fill {
+  transform: scale(1);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vdk-mic.held,
+.vdk-mic.latched {
+  color: var(--lens-on-fg);
+}
+
+.vdk-mic.latched {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vdk-accent) 35%, transparent);
+}
+
+.vdk-mic:focus-visible,
+.vdk-undo:focus-visible,
+.vdk-btn:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--vdk-accent));
+  outline-offset: 2px;
+}
+
+@keyframes vdk-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes vdk-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes vdk-timer {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Reduced motion: crossfade only. */
+.vdk.still .vdk-row,
+.vdk.still .vdk-chip,
+.vdk.still .vdk-flyout,
+.vdk.still .vdk-approve {
+  animation: vdk-fade 120ms linear;
+}
+
+.vdk.still .vdk-wave i {
+  transition: none;
+}
+
+@keyframes vdk-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vdk-row,
+  .vdk-chip,
+  .vdk-flyout,
+  .vdk-approve {
+    animation: vdk-fade 120ms linear;
+  }
+  .vdk-wave i,
+  .vdk-mic-fill {
+    transition: none;
+  }
+}

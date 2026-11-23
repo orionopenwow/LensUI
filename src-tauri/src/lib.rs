@@ -1,5 +1,6 @@
 mod ai;
 mod config;
+mod voice;
 #[cfg(windows)]
 mod ffi;
 mod sys_telemetry;
@@ -130,6 +131,7 @@ pub fn run() {
         win_crash::write_crash_report(info);
         crate::tester::log("error", "panic", &info.to_string());
         crate::app::integration::panic_shutdown();
+        voice::shutdown();
         win_mcp::stop_server();
         win_altdrag::stop_alt_drag();
         win_workspaces::restore_all_windows();
@@ -165,6 +167,7 @@ pub fn run() {
         })
         .setup(move |app| {
             bridge::autostart(commands::bridge::emitter(app.handle()));
+            voice::init(app.handle());
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -411,6 +414,23 @@ pub fn run() {
             commands::ai::ai_intent,
             commands::ai::ai_run_intent,
             commands::ai::ai_usage_log,
+            commands::voice::voice_status,
+            commands::voice::voice_set_config,
+            commands::voice::voice_ptt,
+            commands::voice::voice_mute,
+            commands::voice::voice_cancel,
+            commands::voice::voice_answer,
+            commands::voice::voice_undo,
+            commands::voice::voice_run_text,
+            commands::voice::voice_commands,
+            commands::voice::voice_test_mic,
+            commands::voice::voice_list_mics,
+            commands::voice::voice_list_tts_voices,
+            commands::voice::voice_speak,
+            commands::voice::voice_converse,
+            commands::voice::voice_say,
+            commands::voice::voice_stop_speaking,
+            commands::voice::voice_set_dock_ui,
             commands::power::quit_lens,
             commands::bridge::bridge_status,
             commands::bridge::bridge_set_enabled,
@@ -478,6 +498,7 @@ pub fn run() {
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
                 crate::app::integration::shutdown(Some(_app_handle));
+                voice::shutdown();
                 win_dwm_engine::revert_dwm_theme();
                 restore_taskbar_if_hidden();
             }
