@@ -176,6 +176,13 @@
       "risk": "high"
     },
     {
+      "id": "command-cold-start",
+      "area": "AI and Command",
+      "steps": "Restart Lens, press Ctrl+Alt+Space at once and type \"dock style floating\".",
+      "expected": "The very first command works. CI's Windows end-to-end check currently fails here on main, so please report what you see.",
+      "risk": "high"
+    },
+    {
       "id": "living-sky",
       "area": "Themes",
       "steps": "Settings › Theme & Look › Living themes: apply Sky, set your city, drag the time-lapse scrubber, then press Play a day. Toggle Tint Lens with the sky on and off.",
@@ -211,13 +218,6 @@
       "risk": "med"
     },
     {
-      "id": "command-cold-start",
-      "area": "AI and Command",
-      "steps": "Restart Lens, press Ctrl+Alt+Space at once and type \"dock style floating\".",
-      "expected": "The very first command works.",
-      "risk": "low"
-    },
-    {
       "id": "coreapp-timer",
       "area": "Desktop",
       "steps": "Open Timer with /timer in Command, start 1 minute and pin it with the pin button in its title bar.",
@@ -240,6 +240,7 @@
     }
   ],
   "known_issues": [
+    "Lens Command's first query after launch may go unanswered: the Windows end-to-end check fails on main with no answer for \"dark mode\".",
     "Agent safety is not yet wired into every agent path (B-04); don't point the agent at untrusted pages.",
     "The opt-in injected window-style hook loads a DLL into every app and isn't fully stopped by Remove all until restart (B-05, B-06). Leave it off unless testing it.",
     "Some dock styles clip or leave dead click space above the icons (B-15).",
