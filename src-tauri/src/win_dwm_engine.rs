@@ -382,7 +382,7 @@ fn write_shared_theme(theme: SharedDwmTheme) {
     };
 
     let guard_lock = SHARED_MEM_HANDLE.get_or_init(|| Mutex::new(0));
-    let mut handle_raw = guard_lock.lock().unwrap();
+    let mut handle_raw = guard_lock.lock().unwrap_or_else(|e| e.into_inner());
 
     unsafe {
         let handle = if *handle_raw == 0 {
