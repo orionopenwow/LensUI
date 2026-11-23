@@ -78,6 +78,13 @@ export function BrowserCard() {
         </div>
         {toggle(s.lensContextMenu, "Lens right-click menu on pages", "lensContextMenu")}
       </div>
+      <div className="cc-row cc-row-gap">
+        <div>
+          <div className="cc-label">Lens buttons on pages</div>
+          <div className="cc-desc">A tiny Lens orb beside tweets, YouTube's player, videos, images, 3D models, code and downloads. Applies to tabs opened after you turn it on.</div>
+        </div>
+        {toggle(!!s.pageMarks, "Lens buttons on pages", "pageMarks")}
+      </div>
       <div className="cc-row" style={{ marginTop: 12, justifyContent: "flex-start", gap: 8 }}>
         <button className="cc-btn-ghost" onClick={() => void historyClear(Date.now() - 3600_000).then(() => setMsg("Cleared the last hour of history.")).catch((e) => setMsg(String(e)))}>Clear last hour</button>
         <button className="cc-btn-ghost" onClick={() => void historyClear(0).then(() => setMsg("Cleared all browsing history.")).catch((e) => setMsg(String(e)))}>Clear all history</button>

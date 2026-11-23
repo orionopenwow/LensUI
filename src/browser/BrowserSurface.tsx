@@ -241,6 +241,32 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     async (ev: MenuEvent) => {
       if (ev.action === "key") return combo((ev as MenuEvent & { key: string }).key);
       if (ev.action === "glance") return void openGlance(ev.linkUrl);
+      if (ev.action.startsWith("mark:")) {
+        // In-page Lens marks (docs/IN_PAGE_LENS.md). Copies happen in the page; these need Lens.
+        const kind = ev.action.slice(5);
+        const text = ev.selection?.trim() || "";
+        if (kind === "shelf" || kind === "context") {
+          await shelfAdd({ kind: "text", title: (text || ev.title).slice(0, 80), text: text || ev.linkUrl || ev.url, url: ev.linkUrl || ev.url, tags: kind === "context" ? ["context"] : [] }).catch((e) => flash(String(e)));
+          return flash(kind === "context" ? "Added to Shelf as context" : "Saved to Shelf");
+        }
+        if (kind === "transcript-shelf" || kind === "transcript-copy") {
+          if (aiOn && ai.transcripts) setPanel("transcript");
+          return;
+        }
+        const quick = QUICK[kind === "summarize" ? "summarise" : kind];
+        if (quick && aiOn) {
+          setPanel("ask");
+          setQuick({ prompt: quick, selection: text || undefined, url: ev.url, title: ev.title, page: !text });
+          return;
+        }
+        if (kind === "more" || kind === "command" || quick) {
+          if (!aiOn) return flash("Turn on the AI helper to ask about this");
+          setPanel("ask");
+          setQuick({ prompt: text || "Help me with this page", selection: undefined, url: ev.url, title: ev.title, page: !text });
+          return;
+        }
+        return;
+      }
       const sel = ev.selection?.trim();
       if (QUICK[ev.action]) {
         if (!aiOn) return;
