@@ -613,3 +613,10 @@ body.stage-full { overflow: hidden; }
 .app-title .get-pill { flex: none; width: 128px; padding: 0 8px; }
 @media (max-width: 640px) { .stage-tag { top: 30px; left: 8px; translate: none; } .desk-top .app-n { max-width: 30vw; overflow: hidden; text-overflow: ellipsis; } }
 @media (max-width: 640px) { .desk-dock { gap: 3px; padding: 5px 6px; bottom: 8px; max-width: calc(100% - 16px); } .dk { width: 30px; height: 30px; padding: 2px; } .dk img { width: 26px; height: 26px; border-radius: 7px; } .ex-screen { min-height: 320px; } .ex-store { top: 34px; bottom: 56px; } #ex-apps .ex-screen { min-height: 420px; } }
+footer.site p a { text-decoration: underline; text-underline-offset: 2px; }
+/* Perf: no backdrop blur on the demo desktops (the backdrop animates under them); near-opaque glass instead. */
+.desk .dw, .desk-top, .dn, .desk-dock { backdrop-filter: none; }
+.desk { --m-glass: color-mix(in srgb, var(--m-elev) 97%, transparent); }
+.desk-top { background: color-mix(in srgb, var(--m-base) 92%, var(--m-fg) 3%); }
+.dn { background: var(--m-elev); }
+.desk-dock { background: color-mix(in srgb, var(--m-elev) 96%, transparent); }

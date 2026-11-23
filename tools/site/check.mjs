@@ -130,7 +130,7 @@ for (const scheme of ["dark", "light"]) {
         problems.push(...a11y);
         if (axe && scheme === "dark") {
           await page.addScriptTag({ content: axe });
-          const r = await page.evaluate(async () => (await window.axe.run(document, { resultTypes: ["violations"] })).violations.filter((v) => ["serious", "critical"].includes(v.impact)).map((v) => `${v.id} (${v.nodes.length})`));
+          const r = await page.evaluate(async () => (await window.axe.run(document, { resultTypes: ["violations"] })).violations.filter((v) => ["serious", "critical"].includes(v.impact)).map((v) => `${v.id} (${v.nodes.length}): ${v.nodes.slice(0, 4).map((n) => `${n.target.join(" ")}${n.any?.[0]?.data?.contrastRatio ? ` ${n.any[0].data.contrastRatio}:1 ${n.any[0].data.fgColor}/${n.any[0].data.bgColor}` : ""}`).join(" | ")}`));
           problems.push(...r.map((x) => `axe ${p}: ${x}`));
         }
         report.pages[key] ??= {};
