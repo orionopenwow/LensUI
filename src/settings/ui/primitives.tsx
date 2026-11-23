@@ -3,7 +3,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ChevronDown, ExternalLink, Loader2, AlertTriangle, Info } from "lucide-react";
+import { ChevronDown, ExternalLink, AlertTriangle, Info } from "lucide-react";
+// Shared Lens primitives first, so settings.css (loaded after) keeps the hub's own geometry.
+import { Toggle as UIToggle, Segmented as UISegmented, Skeleton } from "../../ui";
 import "./settings.css";
 
 /** "Open in Windows Settings ↗" — only ms-settings URIs (the backend refuses anything else). */
@@ -28,20 +30,18 @@ export const WinLink: React.FC<{ uri: string; label?: string; compact?: boolean 
 
 export type StateKind = "loading" | "error" | "unavailable" | "info";
 
-/** One-line status: loading, an error with a way out, or why something isn't available here. */
-export const StateNote: React.FC<{ kind: StateKind; children: React.ReactNode; action?: React.ReactNode }> = ({ kind, children, action }) => (
-  <div className={`sh-state sh-state-${kind}`} role={kind === "error" ? "alert" : "status"}>
-    {kind === "loading" ? (
-      <Loader2 size={13} className="sh-spin" aria-hidden />
-    ) : kind === "error" ? (
-      <AlertTriangle size={13} aria-hidden />
-    ) : (
-      <Info size={13} aria-hidden />
-    )}
-    <span>{children}</span>
-    {action}
-  </div>
-);
+/** One-line status: loading (a content-shaped skeleton after 200ms), an error with a way out, or why
+ *  something isn't available here. */
+export const StateNote: React.FC<{ kind: StateKind; children: React.ReactNode; action?: React.ReactNode }> = ({ kind, children, action }) =>
+  kind === "loading" ? (
+    <Skeleton label={typeof children === "string" ? children : "Loading"} rows={2} className="sh-skeleton" />
+  ) : (
+    <div className={`sh-state sh-state-${kind}`} role={kind === "error" ? "alert" : "status"}>
+      {kind === "error" ? <AlertTriangle size={13} aria-hidden /> : <Info size={13} aria-hidden />}
+      <span>{children}</span>
+      {action}
+    </div>
+  );
 
 /** Hero row: the 2–4 things people come to this page for. */
 export const Hero: React.FC<{ children: React.ReactNode }> = ({ children }) => <div className="sh-hero">{children}</div>;
@@ -139,21 +139,15 @@ export const Row: React.FC<{
   </div>
 );
 
-export const Toggle: React.FC<{ checked: boolean; label: string; disabled?: boolean; onChange: (v: boolean) => void }> = ({
-  checked,
-  label,
-  disabled,
-  onChange,
-}) => (
-  <button
-    type="button"
-    role="switch"
-    aria-label={label}
-    aria-checked={checked}
-    disabled={disabled}
-    className={`cc-toggle ${checked ? "on" : ""}`}
-    onClick={() => onChange(!checked)}
-  />
+/** Settings switch: the shared optimistic Toggle with the hub's .cc-toggle geometry. Always named. */
+export const Toggle: React.FC<{
+  checked: boolean;
+  label: string;
+  disabled?: boolean;
+  onChange: (v: boolean) => unknown;
+  onError?: (e: unknown) => void;
+}> = ({ checked, label, disabled, onChange, onError }) => (
+  <UIToggle checked={checked} label={label} disabled={disabled} className="cc-toggle" onChange={onChange} onError={onError} />
 );
 
 export function Segmented<T extends string>({
@@ -170,21 +164,15 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="sh-seg" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="radio"
-          aria-checked={value === o.id}
-          disabled={disabled}
-          className={`sh-seg-btn ${value === o.id ? "active" : ""}`}
-          onClick={() => onChange(o.id)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <UISegmented
+      value={value}
+      options={options}
+      label={label}
+      disabled={disabled}
+      className="sh-seg"
+      buttonClassName="sh-seg-btn"
+      onChange={onChange}
+    />
   );
 }
 

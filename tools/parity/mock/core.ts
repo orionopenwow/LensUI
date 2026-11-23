@@ -43,7 +43,7 @@ const notes = [
 ];
 config.theme.preset = preset;
 // Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.
-if (preset.startsWith("cc-")) config = applyThemePack(config, preset);
+if (preset.startsWith("cc-") || preset.startsWith("living-")) config = applyThemePack(config, preset);
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");

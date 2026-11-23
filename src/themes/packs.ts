@@ -1,5 +1,6 @@
 import type { LensConfig } from "../types/lens";
 import { CLAUDE_PACKS } from "./community/claude";
+import { LIVING_PACKS } from "./living/packs";
 
 /**
  * Lens UI Theme Pack registry — the single source of truth for every built-in theme.
@@ -8,10 +9,11 @@ import { CLAUDE_PACKS } from "./community/claude";
  *
  * To add a pack: append one entry below. Nothing else needs to change.
  */
+
 export interface ThemePack {
   id: string;
   label: string;
-  tier: "Core" | "Linux Suite" | "Studio" | "Light" | "Custom" | "Community";
+  tier: "Core" | "Linux Suite" | "Studio" | "Light" | "Custom" | "Community" | "Living";
   /** Light packs flip the ink/foreground tokens (tokens.css `[data-scheme="light"]`). */
   scheme?: "light";
   /** Solid surface base. Omitted for Obsidian, which uses the stock tokens.css values. */
@@ -210,7 +212,7 @@ export function listCustomPacks(): ThemePack[] {
 
 /** Built-in packs followed by registered custom packs. */
 export function allPacks(): ThemePack[] {
-  return [...THEME_PACKS, ...COMMUNITY_PACKS, ...listCustomPacks()];
+  return [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS, ...listCustomPacks()];
 }
 
 /** The plain definition written into a `.lenstheme` file for a custom pack. */
@@ -232,12 +234,12 @@ export function customPackDefinition(pack: ThemePack): Record<string, unknown> {
 
 export function packById(id: string | undefined | null): ThemePack | undefined {
   if (!id) return undefined;
-  return THEME_PACKS.find((p) => p.id === id) ?? COMMUNITY_PACKS.find((p) => p.id === id) ?? customPacks.get(id);
+  return THEME_PACKS.find((p) => p.id === id) ?? LIVING_PACKS.find((p) => p.id === id) ?? COMMUNITY_PACKS.find((p) => p.id === id) ?? customPacks.get(id);
 }
 
 export function packByAlias(phrase: string): ThemePack | undefined {
   const p = phrase.trim().toLowerCase();
-  return [...THEME_PACKS, ...COMMUNITY_PACKS].find((pack) => pack.id === p || pack.aliases.includes(p));
+  return [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS].find((pack) => pack.id === p || pack.aliases.includes(p));
 }
 
 function clamp255(n: number) {

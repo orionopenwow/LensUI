@@ -1,0 +1,21 @@
+/* Lens elevation scale (docs/polish/AAA_RESEARCH.md §2.2).
+   Five levels on top of --lens-shade-k (the pack's depth multiplier: 1 on dark packs, softer on light),
+   each with a 1px "edge light" so glass reads as glass on any background.
+   Use instead of hand-written box-shadows: box-shadow: var(--lens-elev-2); */
+:root {
+  --lens-edge-light: inset 0 0 0 1px rgb(var(--lens-ink) / 0.06);
+  --lens-elev-0: none;
+  --lens-elev-1: 0 1px 2px rgb(0 0 0 / calc(0.18 * var(--lens-shade-k, 1)));
+  --lens-elev-2:
+    0 4px 12px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k, 1))), 0 1px 2px rgb(0 0 0 / calc(0.16 * var(--lens-shade-k, 1)));
+  --lens-elev-3:
+    0 12px 32px rgb(0 0 0 / calc(0.3 * var(--lens-shade-k, 1))), 0 2px 6px rgb(0 0 0 / calc(0.18 * var(--lens-shade-k, 1)));
+  --lens-elev-4:
+    0 24px 64px rgb(0 0 0 / calc(0.42 * var(--lens-shade-k, 1))), 0 4px 12px rgb(0 0 0 / calc(0.22 * var(--lens-shade-k, 1)));
+
+  /* Hit targets (WCAG 2.2 2.5.8) */
+  --lens-hit-min: 24px;
+  --lens-hit-sm: 28px;
+  --lens-hit: 32px;
+  --lens-hit-lg: 40px;
+}

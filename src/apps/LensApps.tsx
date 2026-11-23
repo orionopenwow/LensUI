@@ -4,6 +4,7 @@
 // Keyboard: "/" focuses search · Enter on a card opens details · Ctrl+Enter on a card is Get ·
 // Esc closes a popover, then goes back · arrows move between cards in a row.
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Skeleton } from "../ui";
 import { ActionPill, pillFor, type PillKind, type PopoverMode, type PopoverProps } from "./ActionPill";
 import {
   applyRecipe,
@@ -496,7 +497,7 @@ export function LensApps({ initialApp, initialQuery = "", demo }: LensAppsProps)
   );
   const home = useMemo(() => (catalog ? homeSections(catalog, settings.showNonOpenSource) : null), [catalog, settings.showNonOpenSource]);
 
-  if (!catalog || !home) return <div className="la la-loading">Loading apps…</div>;
+  if (!catalog || !home) return <div className="la la-loading"><Skeleton label="Loading apps…" shape="grid" rows={3} /></div>;
   const live = settings.liveThumbnails;
   const app = selected ? catalog.apps.find((a) => a.id === selected) : null;
   const browsing = !!query.trim() || !!category || openSourceOnly;

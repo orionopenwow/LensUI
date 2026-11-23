@@ -1,0 +1,99 @@
+/* Theme & Look → Living themes (src/themes/living/LivingThemesRow.tsx) */
+.lv-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lv-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.lv-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 1px solid var(--lens-border);
+  border-radius: calc(var(--lens-radius) + 2px);
+  background: var(--lens-bg-surface);
+  color: var(--lens-fg);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+.lv-tile:hover {
+  border-color: var(--lens-border-strong);
+}
+.lv-tile:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent));
+  outline-offset: 2px;
+}
+.lv-tile.active {
+  border-color: var(--lens-accent);
+  box-shadow: 0 0 0 1px var(--lens-accent);
+}
+.lv-tile-canvas {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.lv-tile-canvas .pg-canvas,
+.lv-tile-canvas canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lv-tile-label {
+  padding: 0 10px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.lv-scrub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lv-scrub input[type="range"] {
+  flex: 1 1 220px;
+  accent-color: var(--lens-accent);
+}
+.lv-scrub-time {
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lens-fg-secondary);
+}
+
+.lv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.lv-loc {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.lv-loc .cc-input {
+  flex: 1;
+}
+.lv-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--lens-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-tile {
+    transition: none;
+  }
+}

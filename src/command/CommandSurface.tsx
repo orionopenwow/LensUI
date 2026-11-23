@@ -30,6 +30,7 @@ import {
 } from "../clip/contract";
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
 import { answersInText, runDo } from "./doMode";
+import { isNewOpen } from "./openSeq";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 
@@ -199,24 +200,36 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   }, [settings.autoAttach, clips]);
 
   // ── opening, bridge requests ────────────────────────────────────────────────────────────────
+  // One listener for the life of the window. It used to be re-registered whenever settings or
+  // context helpers changed, which on a cold start (settings and clips arriving) left gaps where an
+  // "open" event was lost; and the backend's replay of the first open could then land after the
+  // user had typed and pressed Enter, resetting the input. Now the handler reads the latest state
+  // through a ref, and each open carries a `seq` from the backend so a replay is applied only once.
+  type OpenPayload = { mode?: Mode; text?: string; layout?: "mini" | "full"; anchor?: string; seq?: number } | null;
+  const onOpenRef = useRef<(p: OpenPayload) => void>(() => {});
+  const lastOpenSeq = useRef<number | null>(null);
+  onOpenRef.current = (payload: OpenPayload) => {
+    const seq = typeof payload?.seq === "number" ? payload.seq : null;
+    if (seq !== null && !isNewOpen(lastOpenSeq.current, seq)) return; // replay of an open we already applied
+    if (seq !== null) lastOpenSeq.current = seq;
+    const lay = payload?.layout ?? "full";
+    setLayout(lay);
+    setAnchor(payload?.anchor?.startsWith("dock") ? "dock" : "cursor");
+    invoke("command_layout", { layout: lay, anchor: payload?.anchor ?? null }).catch(() => {});
+    if (lay === "mini") {
+      setMiniTab("actions");
+      setActiveTile(0);
+      loadAppContext();
+    }
+    if (payload?.mode) setMode(payload.mode);
+    if (typeof payload?.text === "string") setText(payload.text);
+    if (!settings.keepThread) dispatch({ type: "clear" });
+    offerContext();
+    window.setTimeout(() => inputRef.current?.focus(), 30);
+  };
   useEffect(() => {
     const subs = [
-      listen<{ mode?: Mode; text?: string; layout?: "mini" | "full"; anchor?: string } | null>("lens://command/open", (e) => {
-        const lay = e.payload?.layout ?? "full";
-        setLayout(lay);
-        setAnchor(e.payload?.anchor?.startsWith("dock") ? "dock" : "cursor");
-        invoke("command_layout", { layout: lay, anchor: e.payload?.anchor ?? null }).catch(() => {});
-        if (lay === "mini") {
-          setMiniTab("actions");
-          setActiveTile(0);
-          loadAppContext();
-        }
-        if (e.payload?.mode) setMode(e.payload.mode);
-        if (typeof e.payload?.text === "string") setText(e.payload.text);
-        if (!settings.keepThread) dispatch({ type: "clear" });
-        offerContext();
-        window.setTimeout(() => inputRef.current?.focus(), 30);
-      }),
+      listen<OpenPayload>("lens://command/open", (e) => onOpenRef.current(e.payload)),
       listen<BridgeRequest>("lens://bridge/request", (e) => {
         const r = e.payload;
         if (!r?.id) return;
@@ -226,7 +239,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       }),
     ];
     return () => subs.forEach((p) => p.then((u) => u()).catch(() => {}));
-  }, [offerContext, settings.keepThread, loadAppContext]);
+  }, []);
 
   // ── AI events ───────────────────────────────────────────────────────────────────────────────
   useAiEvents({
@@ -365,6 +378,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         case "clip":
           setMode("clipboard");
           return setText(arg);
+        case "clean":
+          // Lens Cleaner opens on demand; nothing is deleted until you click (docs/CLEANER.md).
+          await invoke("open_surface", { label: "cleaner" }).catch(() => {});
+          hide();
+          return setText("");
         case "shelf":
           setDrawer(true);
           setMode("shelf");

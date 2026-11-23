@@ -95,7 +95,7 @@ export const WidgetDrawerSurface: React.FC = () => {
           }}
         >
           <span style={{ fontWeight: 600, letterSpacing: "0.01em" }}>Lens Widgets</span>
-          <button
+          <button aria-label="Close widgets"
             type="button"
             onClick={() => invoke("hide_surface", { label: "widgets" })}
             style={{

@@ -452,8 +452,8 @@ export const OverviewSurface: React.FC = () => {
                   {g.windows.map((w) => (
                     <div
                       key={w.hwnd}
-                      role="button"
-                      tabIndex={-1}
+                      role="group"
+                      aria-label={w.title || g.label}
                       data-hwnd={w.hwnd}
                       className={`ov-tile ${w.hwnd === selectedHwnd ? "selected" : ""} ${
                         w.isMinimized ? "minimized" : ""

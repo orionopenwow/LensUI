@@ -118,11 +118,11 @@ describe("search", () => {
 });
 
 describe("lessons", () => {
-  test("ships the 11 lessons, each parseable, unique and with real steps", () => {
-    expect(fresh.lessons.length).toBe(11);
+  test("ships the 12 lessons, each parseable, unique and with real steps", () => {
+    expect(fresh.lessons.length).toBe(12);
     const ids = new Set(fresh.lessons.map((l) => l.id));
-    expect(ids.size).toBe(11);
-    for (const id of ["first-five-minutes", "make-it-yours", "windows-like-a-pro", "living-desktop", "command-and-shelf", "right-click-everything", "voice-control", "browser-and-approvals", "ai-privacy", "undo-anything", "keyboard-map"]) expect(ids.has(id)).toBe(true);
+    expect(ids.size).toBe(12);
+    for (const id of ["first-five-minutes", "make-it-yours", "windows-like-a-pro", "living-desktop", "command-and-shelf", "right-click-everything", "voice-control", "browser-and-approvals", "ai-privacy", "undo-anything", "keyboard-map", "free-up-space"]) expect(ids.has(id)).toBe(true);
     for (const l of fresh.lessons) {
       expect(l.steps.length).toBeGreaterThanOrEqual(3);
       for (const st of l.steps) expect(st.text.length).toBeGreaterThan(20);

@@ -26,6 +26,7 @@ import {
 import { useLensState } from "../hooks/useLensState";
 import type { MediaNowPlaying } from "../types/lens";
 import { TrayStrip } from "../components/TrayStrip";
+import { LowSpacePill } from "../cleaner/LowSpacePill";
 import { PluginSlot } from "../components/PluginSlot";
 import { WorkspaceStrip, readWorkspaces } from "../components/WorkspacesCard";
 import { BatteryTopBarModule } from "../components/BatteryModule";
@@ -257,6 +258,8 @@ export const TopBarSurface: React.FC = () => {
         {approvals.requests.length > 0 && (
           <PendingPill count={approvals.requests.length} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
         )}
+        {/* "C: · 9.6 GB left" (only with Lens Cleaner's low-space alert on; docs/CLEANER.md). */}
+        <LowSpacePill />
         <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
           ?
         </button>

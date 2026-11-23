@@ -170,7 +170,7 @@ kbd {
   cursor: pointer;
   scroll-snap-align: start;
   outline: none;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .la-card > .la-thumb {
   border-radius: 13px 13px 0 0;
@@ -301,7 +301,7 @@ kbd {
   object-fit: cover;
   object-position: top center;
   opacity: 0;
-  transition: opacity 500ms ease;
+  transition: opacity 500ms var(--lens-ease-out);
 }
 .la-thumb-large .la-thumb-media {
   object-fit: contain;
@@ -368,7 +368,7 @@ kbd {
   cursor: pointer;
   color: var(--lens-fg);
   background: rgb(var(--lens-ink) / 0.1);
-  transition: background 120ms ease, transform 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 .la-pill:hover {
   background: rgb(var(--lens-ink) / 0.16);
@@ -414,7 +414,7 @@ kbd {
   stroke-linecap: round;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
-  transition: stroke-dashoffset 300ms ease;
+  transition: stroke-dashoffset var(--lens-dur-slower) var(--lens-ease-out);
 }
 .la-ring-stop {
   fill: var(--lens-link, #60a5fa);
@@ -880,7 +880,7 @@ kbd {
   border: 1px solid var(--lens-border);
   white-space: nowrap;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .la-btn:hover:not(:disabled) {
   background: rgb(var(--lens-ink) / 0.11);
@@ -1014,7 +1014,7 @@ kbd {
   display: block;
   height: 100%;
   background: var(--lens-fg);
-  transition: width 300ms ease;
+  transition: width var(--lens-dur-slower) var(--lens-ease-out);
 }
 .la-recipe {
   list-style: none;

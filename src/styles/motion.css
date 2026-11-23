@@ -1,0 +1,202 @@
+/* Lens motion vocabulary (docs/polish/AAA_RESEARCH.md §2.1).
+   Use these instead of raw durations and cubic-beziers. The tests/ui guardrail rejects new raw values
+   in files that have been migrated (src/__tests__/polishGuardrails.test.ts).
+
+   Rules of thumb:
+   - Things used 100+ times a day (Dock hover, list hover, tab switch) get --lens-dur-instant or none.
+   - Enter and state change: --lens-ease-out. Moves on screen: --lens-ease-in-out. Leaving: --lens-ease-exit.
+   - Only animate transform and opacity (and colours). Never width/height/top/left.
+   - Never scale from 0: start at --lens-enter-scale with opacity 0. */
+:root {
+  --lens-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --lens-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --lens-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --lens-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Spring, bounce ≈ 0.2 (critically damped approximation, sampled). Signature moments and Dock only. */
+  --lens-ease-spring: linear(
+    0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%,
+    1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%,
+    0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1
+  );
+
+  --lens-dur-instant: 80ms;
+  --lens-dur-fast: 140ms;
+  --lens-dur-base: 180ms;
+  --lens-dur-slow: 240ms;
+  --lens-dur-slower: 360ms;
+  /* Leaving is quicker than arriving. */
+  --lens-dur-exit: 120ms;
+  --lens-stagger: 30ms;
+
+  --lens-press-scale: 0.98;
+  --lens-enter-scale: 0.96;
+}
+
+/* Reduced motion: Windows "Animation effects" off (unless Lens forces full motion), or the Lens setting.
+   Tokens collapse to 1ms (not 0, so transitionend still fires) and scales to 1. global.css also clamps
+   every transition, so components that still use raw values are covered too. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --lens-dur-instant: 1ms;
+    --lens-dur-fast: 1ms;
+    --lens-dur-base: 1ms;
+    --lens-dur-slow: 1ms;
+    --lens-dur-slower: 1ms;
+    --lens-dur-exit: 1ms;
+    --lens-stagger: 0ms;
+    --lens-press-scale: 1;
+    --lens-enter-scale: 1;
+  }
+}
+:root[data-motion="reduce"] {
+  --lens-dur-instant: 1ms;
+  --lens-dur-fast: 1ms;
+  --lens-dur-base: 1ms;
+  --lens-dur-slow: 1ms;
+  --lens-dur-slower: 1ms;
+  --lens-dur-exit: 1ms;
+  --lens-stagger: 0ms;
+  --lens-press-scale: 1;
+  --lens-enter-scale: 1;
+}
+
+/* ── Press feedback ──────────────────────────────────────────────────────────────────────────────
+   A 0.98 press on every pressable, 140ms ease-out back. :where() keeps specificity at zero so any
+   component transform (Dock magnify, sliders) wins. Opt out with data-no-press. */
+:where(button, [role="button"], .cc-chip, .cc-btn, .cc-btn-ghost, .lens-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active) {
+  transform: scale(var(--lens-press-scale));
+}
+
+/* ── Window enter / exit ─────────────────────────────────────────────────────────────────────────
+   One shared pair for every surface window (C1/C5 in AAA_WAVE_PLAN). Add .lens-enter to a surface
+   root on show and .lens-exit before hide. transform-origin can be set per surface (anchor). */
+@keyframes lens-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(var(--lens-enter-scale));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lens-window-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--lens-press-scale));
+  }
+}
+.lens-enter {
+  animation: lens-window-in var(--lens-dur-base) var(--lens-ease-out) both;
+}
+.lens-exit {
+  animation: lens-window-out var(--lens-dur-exit) var(--lens-ease-exit) both;
+}
+@keyframes lens-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.lens-fade-in {
+  animation: lens-fade-in var(--lens-dur-fast) var(--lens-ease-out) both;
+}
+
+/* ── Theme cross-fade (C4) ───────────────────────────────────────────────────────────────────────
+   document.startViewTransition snapshots the old theme; the new one fades in over it. No white frame. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--lens-dur-base);
+  animation-timing-function: var(--lens-ease-out);
+}
+
+/* ── Numbers ─────────────────────────────────────────────────────────────────────────────────────
+   Anything that changes value uses tabular numerals so it doesn't jitter (AAA audit #10). Explicit
+   class names, not [class*=...] substring selectors: those are matched against every element on
+   every restyle (theme switch). New numeric UI: add .lens-num. */
+:where(
+    .tabular,
+    .lens-num,
+    .ai-badge,
+    .ai-drop-pct,
+    .ai-size,
+    .cs-num,
+    .df-group-count,
+    .dock-close-badge,
+    .dock-instance-badge,
+    .dock-notif-badge,
+    .dock-sys-clock,
+    .dock-sys-time,
+    .dock-win-count,
+    .edge-count,
+    .folder-badge,
+    .guide-badge,
+    .guide-count,
+    .lb-sleep-stat,
+    .lc-time,
+    .ldm-batt-badge,
+    .ldm-date-num,
+    .ldm-stat,
+    .ldm-stats,
+    .lens-plugin-badge,
+    .lf-badge,
+    .lf-count,
+    .lm-count,
+    .lm-q-count,
+    .lm-time,
+    .ln-count,
+    .ln-result-badge,
+    .lv-badge,
+    .lw-count,
+    .lx-clock,
+    .lx-week-badge,
+    .nc-count,
+    .nc-item-time,
+    .nc-time,
+    .ov-badge,
+    .ov-count,
+    .ov-group-count,
+    .ov-ws-badge,
+    .ov-ws-count,
+    .pal-esc-badge,
+    .pal-filter-count,
+    .pal-recent-age,
+    .pal-result-badge,
+    .qs-stat,
+    .rc-badge,
+    .rc-menu-count,
+    .sh-fill-value,
+    .sh-hero-value,
+    .sh-mix-count,
+    .sh-value,
+    .snip-badge,
+    .snip-size,
+    .sysmod-badge,
+    .th-badge,
+    .th-count,
+    .th-log-time,
+    .th-progress-num,
+    .topbar-clock,
+    .tux-badge,
+    .tux-num,
+    .tux-value,
+    .vdk-undo-timer,
+    .wiz-step-num,
+    .wp-idle-clock,
+    .wp-idle-time,
+    [role="slider"],
+    [role="progressbar"],
+    [role="meter"],
+    [role="timer"],
+    time,
+    output,
+    kbd
+  ) {
+  font-variant-numeric: tabular-nums;
+}

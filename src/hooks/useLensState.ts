@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LensConfig, WindowsThemeInfo, RunningWindow } from "../types/lens";
@@ -11,6 +11,8 @@ import { applyShapeStyle } from "../themes/shapes/shapes";
 import "../themes/shapes/expressive.css";
 import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
+import { syncLivingTint } from "../themes/living/tint";
+import { readSchedule } from "../themes/schedule";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
   const root = document.documentElement;
@@ -49,6 +51,8 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     "--lens-accent-tint",
     `${Math.round(cfg.theme.accentTintStrength * 100)}%`
   );
+  // Living packs follow the Sun (light by day) and, if asked, tint glass and accent with the sky.
+  syncLivingTint(pack, activeAccent, readSchedule(cfg));
   root.style.setProperty("--dock-icon-size", `${cfg.dock.iconSize}px`);
   root.style.setProperty("--dock-hover-scale", String(cfg.dock.hoverScale));
   root.style.setProperty("--dock-hover-lift", `${cfg.dock.hoverLift}px`);
@@ -62,7 +66,7 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
   };
   const chosenFont = fontMap[cfg.theme.fontFamily || "rounded-arial"] || fontMap["rounded-arial"];
   root.style.setProperty("--font-sans", chosenFont);
-  document.body.style.fontFamily = chosenFont;
+  if (document.body.style.fontFamily !== chosenFont) document.body.style.fontFamily = chosenFont;
 
   // UI scale: the backend grows the windows, the webview zoom grows the content (src/shell/uiScale.ts)
   applyUiScale(cfg.theme.uiScale);
@@ -77,7 +81,49 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     styleEl.id = "lens-custom-css";
     document.head.appendChild(styleEl);
   }
-  styleEl.textContent = cfg.theme.customCss || "";
+  // Only touch the sheet when it changed: rewriting it re-parses CSS and restyles the whole window
+  // on every config update (a large part of the theme-switch cost, PERF_REPORT).
+  const css = cfg.theme.customCss || "";
+  if (styleEl.textContent !== css) styleEl.textContent = css;
+}
+
+let lastPreset: string | null = null;
+/** Set when this window itself changed the pack (the person clicked here). Only that window
+ *  cross-fades; the other Lens windows, updated by broadcast and often hidden, switch instantly,
+ *  so a theme change never costs every window a full-screen snapshot. */
+let localThemeChange = false;
+
+/** True when motion is allowed (Windows animation effects on, or Lens forces full motion). */
+function motionAllowed(): boolean {
+  const m = document.documentElement.dataset.motion;
+  if (m === "reduce") return false;
+  if (m === "full") return true;
+  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * Applies the theme. When the pack changes in a visible window, the switch is a cross-fade through
+ * the View Transitions API (old view = snapshot, new view = live): no hard cut and no white frame
+ * (AAA_WAVE_PLAN C4). The callback only writes CSS variables, so rendering is blocked for as short
+ * a time as possible. Falls back to an instant switch without the API, with reduced motion, and in
+ * windows that only received the change by broadcast.
+ */
+export function applyThemeWithTransition(cfg: LensConfig, winTheme: WindowsThemeInfo) {
+  const changed = lastPreset !== null && lastPreset !== cfg.theme.preset;
+  lastPreset = cfg.theme.preset;
+  type VT = { startViewTransition?: (cb: () => void) => unknown };
+  const doc = document as Document & VT;
+  const local = localThemeChange;
+  localThemeChange = false;
+  if (changed && local && typeof doc.startViewTransition === "function" && document.visibilityState === "visible" && motionAllowed()) {
+    try {
+      doc.startViewTransition(() => applyThemeToDocument(cfg, winTheme));
+      return;
+    } catch {
+      /* fall through to the instant switch */
+    }
+  }
+  applyThemeToDocument(cfg, winTheme);
 }
 
 export function useLensState() {
@@ -110,6 +156,7 @@ export function useLensState() {
       if (!mounted) return;
       setConfig(cfg);
       if (theme) setWinTheme(theme);
+      lastPreset = cfg.theme.preset;
       applyThemeToDocument(cfg, theme ?? winTheme);
     })().catch(console.error);
 
@@ -130,9 +177,11 @@ export function useLensState() {
     };
   }, []);
 
-  useEffect(() => {
+  // Layout effect: the new theme is applied before the browser paints the re-rendered tree, so there
+  // is never a frame of new content in old colours.
+  useLayoutEffect(() => {
     if (config) {
-      applyThemeToDocument(config, winTheme);
+      applyThemeWithTransition(config, winTheme);
     }
   }, [config, winTheme]);
 
@@ -143,6 +192,7 @@ export function useLensState() {
       (incoming.theme.surfaceHex ?? "") === surfaceHex
         ? incoming
         : { ...incoming, theme: { ...incoming.theme, surfaceHex } };
+    if (next.theme.preset !== lastPreset) localThemeChange = true;
     setConfig(next);
     await invoke("save_config_cmd", { newConfig: next });
   }, []);

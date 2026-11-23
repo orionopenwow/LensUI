@@ -1,4 +1,5 @@
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -97,11 +98,17 @@ export const ControlCenterSurface: React.FC = () => {
   // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
   const initial = resolveTarget(new URLSearchParams(window.location.search).get("tab"));
   const [tab, setPage] = useState<PageId>(() => initial?.page ?? "appearance");
+  // The nav highlight moves at once; the page body renders as a transition (time-sliced, so a heavy
+  // page never blocks the click or the highlight; AAA_WAVE_PLAN C3 / perf settings-tab-switch).
+  const [navTab, setNavTab] = useState<PageId>(tab);
   // Section a deep link asked for (`lens://settings/<page>#<section>`); cleared on manual navigation.
   const [section, setSection] = useState<string | undefined>(() => initial?.section);
   const navigate = (page: PageId, sec?: string) => {
-    setPage(page);
-    setSection(sec);
+    setNavTab(page);
+    startTransition(() => {
+      setPage(page);
+      setSection(sec);
+    });
   };
   /** Accepts page ids, legacy tab ids and `page#section`. */
   const setTab = (target: string) => {
@@ -328,7 +335,7 @@ export const ControlCenterSurface: React.FC = () => {
         />
       )}
       <div className="cc-body">
-        <SettingsNav page={tab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
+        <SettingsNav page={navTab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
 
         <main className="cc-content" ref={contentRef} onScroll={(e) => setStuck(e.currentTarget.scrollTop > 4)}>
           <header className={`sh-pagehead ${stuck ? "stuck" : ""}`}>
@@ -347,7 +354,7 @@ export const ControlCenterSurface: React.FC = () => {
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
           {PageComponent && (
-            <Suspense fallback={<div className="sh-page-loading" aria-busy="true" />}>
+            <Suspense fallback={<Skeleton label={`Loading ${pageDef.label}`} shape="page" rows={4} className="sh-page-loading" />}>
               <PageComponent section={section} config={config} updateConfig={updateConfig} />
             </Suspense>
           )}
@@ -493,7 +500,7 @@ export const ControlCenterSurface: React.FC = () => {
                         onChange={(e) => setMonitorFilter(e.target.value)}
                       />
                     </div>
-                    <button
+                    <button aria-label="Refresh processes"
                       type="button"
                       className="cc-chip"
                       style={{ height: 30, padding: "0 9px", display: "inline-flex", alignItems: "center" }}
@@ -549,7 +556,7 @@ export const ControlCenterSurface: React.FC = () => {
                           >
                             Focus
                           </button>
-                          <button
+                          <button aria-label={`Minimise ${w.title || w.processName}`}
                             type="button"
                             className="cc-chip"
                             style={{ padding: "4px 7px" }}
@@ -557,7 +564,7 @@ export const ControlCenterSurface: React.FC = () => {
                           >
                             <Minus size={12} />
                           </button>
-                          <button
+                          <button aria-label={`Close ${w.title || w.processName}`}
                             type="button"
                             className="cc-chip"
                             style={{ padding: "4px 8px", color: "#fb7185", borderColor: "rgb(251 113 133 / 0.22)" }}
@@ -660,7 +667,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.topBar?.enabled && config.dock.showTopBar ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.topBar?.enabled && config.dock.showTopBar)} aria-label="Enable Top Bar" className={`cc-toggle ${config.topBar?.enabled && config.dock.showTopBar ? "on" : ""}`}
                     onClick={() => {
                       const next = !(config.topBar?.enabled && config.dock.showTopBar);
                       updateConfig({
@@ -1023,7 +1030,7 @@ export const ControlCenterSurface: React.FC = () => {
                       <div className="cc-label">{w.label}</div>
                       <button
                         type="button"
-                        className={`cc-toggle ${isOn ? "on" : ""}`}
+                        role="switch" aria-checked={!!(isOn)} aria-label={w.label} className={`cc-toggle ${isOn ? "on" : ""}`}
                         onClick={() => {
                           const next = isOn
                             ? config.widgets.enabledWidgets.filter((x) => x !== w.id)
@@ -1102,11 +1109,11 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Run Lens UI on Windows Startup</div>
-                    <div className="cc-desc">Enabled by default via HKCU\...\Run</div>
+                    <div className="cc-desc">Starts Lens when you sign in to Windows</div>
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens UI on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1126,7 +1133,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.injectedHook)} aria-label="Legacy In-App Window Styling" className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1143,7 +1150,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.lazyWindows)} aria-label="Create Rarely Used Windows on Demand" className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1160,7 +1167,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.trayHost)} aria-label="System Tray in Top Bar (experimental)" className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1177,7 +1184,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.clipboardHistory)} aria-label="Clipboard History" className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1194,7 +1201,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.tilingHotkeys)} aria-label="Keyboard Tiling Shortcuts" className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1211,7 +1218,7 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.dockNumberHotkeys)} aria-label="Alt+1–9 Opens Dock Apps" className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1260,6 +1267,7 @@ export const ControlCenterSurface: React.FC = () => {
         </main>
       </div>
       <GuideDrawer config={config} context={{ surface: "settings", tab }} aiEnabled={!!config?.ai?.enabled} />
+      <ToastHost />
     </div>
   );
 };
