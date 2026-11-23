@@ -36,16 +36,16 @@ Status: all PRs merged and wired; CI green on Windows (type-check, cargo check, 
 | KEYHOOK.md | §9 tiling work area on the target monitor | `commands/workspaces.rs` |
 | KEYHOOK.md | §10 flyouts beside a left/right/top Dock | `integration::side_dock_flyout`, used by the palette, Quick Settings and Control Center |
 | KEYHOOK.md | §11 one Top Bar per monitor, `topbar-*` capability | `app/integration.rs` |
-| KEYHOOK.md | §12 ShellKeysCard, MonitorPickerCard | Windows & Quick tab |
-| RELEASING.md | Wiring pending: `win_crash`, `win_update`, updater plugin, 8 commands, feature flags, cards | `lib.rs`, `commands/release.rs`, `app/integration.rs`, Windows & Quick tab |
+| KEYHOOK.md | §12 ShellKeysCard, MonitorPickerCard | Windows & Keys tab |
+| RELEASING.md | Wiring pending: `win_crash`, `win_update`, updater plugin, 8 commands, feature flags, cards | `lib.rs`, `commands/release.rs`, `app/integration.rs`, Windows & Keys tab |
 | DOCK_STYLES.md | click-through patch | `app/watcher.rs` |
 | DOCK_STYLES.md | `open_files_with_app_cmd` | `win_windows.rs`, `commands/dock.rs` |
 | DOCK_STYLES.md | Top Bar hides its clock when the Dock shows it | `TopBarSurface.tsx` |
 | Theme UX | `dockStyleOptions` → `src/dock/styles`; the scene preview moved to `src/dock/DockScenePreview.ts`; config helpers moved to `styles.ts` | `ThemeTab`, `DockTab`, `ThemeGallery`, `SetupWizard` |
 | CURSORS.md | steps 1–6: modules, commands, setup, exit/panic, follow theme, cursorfx window, capability, route, card, uninstall, backup | `commands/cursors.rs`, `app/integration.rs`, `tauri.conf.json`, `main.tsx`, Theme & Look › Mouse pointer, `win_uninstall.rs`, `win_backup.rs` |
 | WINDOW_STYLING.md | 3 focusdim route; 4 backup + uninstall; 5 `win_theme` OS features | `main.tsx`, `win_backup.rs`, `win_uninstall.rs`, `win_focus_dim.rs` |
-| PRODUCTIVITY.md | `lens.ts` fields; three cards | `lens.ts`, Windows & Quick tab |
-| PLAYGROUND.md | module, commands, `sync_desktop_input`, idle window, pause monitor, quit/panic, capability, card | `commands/playground.rs`, `app/integration.rs`, `app/setup.rs`, `commands/wallpaper.rs`, Desktops & Widgets tab |
+| PRODUCTIVITY.md | `lens.ts` fields; three cards | `lens.ts`, Windows & Keys tab |
+| PLAYGROUND.md | module, commands, `sync_desktop_input`, idle window, pause monitor, quit/panic, capability, card | `commands/playground.rs`, `app/integration.rs`, `app/setup.rs`, `commands/wallpaper.rs`, Desktop & Widgets tab |
 | AI.md | Apply bridge | `src/components/AiApplyBridge.tsx`, mounted in the Dock next to McpBridge |
 | AI_SURFACES.md | §0 shims swapped: `contract.shim.ts` → `src/ai/surfaceApi.ts` (real client + card adapter), `shelf.shim.ts` → `src/ai/shelfLink.ts`; Shelf text uses `AiContext.shelf_text`; §4 AiCard | AI & Command tab |
 | BROWSER_BRIDGE.md | AI adapter, `br-` event routing, Shelf adapter (list + recent), Command opens first, cards | `app/integration.rs`, `commands/bridge.rs`, AI & Command tab |
@@ -75,7 +75,7 @@ screenshots; parity mocks for every new card.
   only be tested on Windows. Text and links already drag out.
 - **Whisper download checksums** (`media/setup.rs` `PINNED`) are still placeholders, so the
   verified download refuses to run; pointing Lens at an existing whisper.cpp works.
-- **Old clipboard history** (`func.clipboardHistory`, Windows & Quick) and the new clipboard
+- **Old clipboard history** (`func.clipboardHistory`, Windows & Keys) and the new clipboard
   history v2 (AI & Command) both exist. Retire the old one after a hardware check.
 - **A browser request that arrives before the Command window has ever been built** opens the
   window but the first request event can be missed; it is still waiting in the browser inbox.

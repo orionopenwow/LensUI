@@ -113,7 +113,7 @@ impl LensConfig { pub fn command_enabled(&self) -> bool { self.command.get("enab
 
 In `src/types/lens.ts` add `command?: Partial<import("../command/settings").CommandSettings>;` to `LensConfig`.
 
-**6. Control Center** (`ControlCenterSurface.tsx`). In the Windows & Quick tab (or a new "AI & Command" tab, once W6-B's AiCard lands):
+**6. Control Center** (`ControlCenterSurface.tsx`). In the Windows & Keys tab (or a new "AI & Command" tab, once W6-B's AiCard lands):
 
 ```tsx
 <CommandCard config={config} onUpdateConfig={updateConfig} />

@@ -366,7 +366,7 @@ export const CommandPaletteSurface: React.FC = () => {
                 { label: "Tile 50/50", color: "#38BDF8", run: () => { hide(); invoke("tile_windows_cmd", { layout: "split" }).catch(() => {}); } },
                 { label: "Smart Group", color: "#FBBF24", run: () => { hide(); invoke("tile_windows_cmd", { layout: "smart-group" }).catch(() => {}); } },
                 { label: "Next Desktop", color: "#A78BFA", run: () => { hide(); invoke("switch_virtual_desktop_cmd", { direction: "next" }).catch(() => {}); } },
-                { label: "Stats & Tasks", color: "#34D399", run: () => { hide(); invoke("open_dock_popout_tab_cmd", { tab: "monitor" }).catch(() => {}); } },
+                { label: "System & Tasks", color: "#34D399", run: () => { hide(); invoke("open_dock_popout_tab_cmd", { tab: "monitor" }).catch(() => {}); } },
                 { label: "Messages", color: "#60A5FA", run: () => { hide(); invoke("open_dock_popout_tab_cmd", { tab: "messages" }).catch(() => {}); } },
               ].map((qa) => (
                 <button
