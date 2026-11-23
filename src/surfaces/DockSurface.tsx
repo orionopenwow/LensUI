@@ -326,6 +326,8 @@ export const DockSurface: React.FC = () => {
   const runningWindows = useRunningWindows(900);
   const [pinnedIcons, setPinnedIcons] = useState<Record<string, string | null>>({});
   const [dockVisible, setDockVisible] = useState(true);
+  // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
+  const voiceDock = useVoiceDock(dockVisible);
   const [dockSearchOpen, setDockSearchOpen] = useState(false);
   const [dockSearchClosing, setDockSearchClosing] = useState(false);
   const [dockSearchQuery, setDockSearchQuery] = useState("");
@@ -769,8 +771,6 @@ export const DockSurface: React.FC = () => {
   const separatorsAfter = dockExtras.separatorsAfter ?? [];
   const livePreviews = dockExtras.livePreviews === true;
   const dockStyle = normalizeDockStyle(dockExtras.style);
-  // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
-  const voiceDock = useVoiceDock(dockVisible);
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock) === "dock";
