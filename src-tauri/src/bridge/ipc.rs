@@ -29,6 +29,9 @@ const MAX_LINE: usize = 640 * 1024;
 const MAX_INBOX: usize = 50;
 const MAX_PER_MINUTE: usize = 30;
 const MAX_ANSWER_BYTES: usize = 2 * 1024 * 1024;
+/// Explorer starts one process per selected file; requests this close together become one.
+pub const COALESCE_MS: u64 = 1_500;
+pub const MAX_COALESCED_FILES: usize = 100;
 
 pub type Emit = Arc<dyn Fn(&str, Value) + Send + Sync>;
 
@@ -104,6 +107,7 @@ pub fn request_event(e: &InboxEntry) -> Value {
         "image_url": r.image_url,
         "media_url": r.media_url,
         "path": r.path,
+        "paths": r.paths,
         "shelf_ref": r.shelf_ref,
         "origin": r.origin,
         "browser": r.browser,
@@ -139,6 +143,25 @@ fn status_reply(e: &InboxEntry) -> Value {
         &e.state,
         json!({ "text": e.text, "engine": e.engine, "error": e.error, "action": e.request.action, "needsConfirmation": e.needs_confirmation }),
     )
+}
+
+/// Adds `req.path` to a pending `ask_files` request from the same origin made in the last
+/// `COALESCE_MS`. Returns that request's id, or None when this file starts a new request.
+pub fn coalesce_files(entries: &mut VecDeque<InboxEntry>, req: &BridgeRequest, now: u64) -> Option<String> {
+    let path = req.path.clone()?;
+    let e = entries.iter_mut().rev().find(|e| {
+        e.request.action == "ask_files"
+            && e.request.origin == req.origin
+            && e.state == "pending"
+            && now.saturating_sub(e.created_ms) <= COALESCE_MS
+    })?;
+    let already = e.request.path.as_deref() == Some(path.as_str()) || e.request.paths.contains(&path);
+    if !already && 1 + e.request.paths.len() < MAX_COALESCED_FILES {
+        e.request.paths.push(path);
+    }
+    // Keep the window open while files keep arriving.
+    e.created_ms = now;
+    Some(e.id.clone())
 }
 
 /// Handles one validated request. Pure apart from the inbox, the ports and the emitter.
@@ -185,6 +208,28 @@ pub fn handle(req: BridgeRequest) -> Value {
             return reply_err("Too many requests in a minute; try again shortly.");
         }
         ib.recent.push_back(now);
+    }
+
+    // Micro-saves are instant and tiny: saved straight away, no inbox entry, no window.
+    if req.action == "micro_save" {
+        return match shelf().micro_save(&shelf_item_for(&req), req.shelf.as_deref()) {
+            Ok(o) => reply_ok(Some(&o.id.clone()), "saved", json!({ "micro": o })),
+            Err(e) => reply_err(&e),
+        };
+    }
+
+    // "Ask about these files": fold this file into the request its siblings just opened.
+    if req.action == "ask_files" {
+        let merged = match inbox().lock() {
+            Ok(mut ib) => coalesce_files(&mut ib.entries, &req, now_ms()),
+            Err(_) => None,
+        };
+        if let Some(id) = merged {
+            if let Some(e) = get(&id) {
+                emit(EVT_UPDATE, request_event(&e));
+                return status_reply(&e);
+            }
+        }
     }
 
     let ctx = BridgeContext::from_request(&req, None);
@@ -680,6 +725,52 @@ mod tests {
         assert!(t["theme"]["scheme"].is_string());
         assert!(list_inbox().is_empty(), "reads never create inbox entries");
         super::super::ports::set_shelf(Arc::new(super::super::ports::InboxShelf));
+    }
+
+    #[test]
+    fn micro_save_is_saved_directly() {
+        let _g = guard();
+        clear_for_tests();
+        struct MicroShelf;
+        impl super::super::ports::ShelfPort for MicroShelf {
+            fn shelf_add(&self, _: &super::super::protocol::ShelfItem, _: Option<&str>) -> Result<String, String> {
+                Ok("s9".into())
+            }
+            fn shelf_list(&self, _: Option<&str>, _: usize) -> Result<Vec<super::super::ports::ShelfSummary>, String> {
+                Ok(Vec::new())
+            }
+        }
+        super::super::ports::set_shelf(Arc::new(MicroShelf));
+        let r = handle_envelope_line(&env("browser", json!({"action":"micro_save","selection":"x","url":"https://x.com"})));
+        assert_eq!(r["state"], "saved");
+        assert_eq!(r["id"], "s9");
+        assert_eq!(r["micro"]["id"], "s9");
+        assert!(list_inbox().is_empty(), "micro-saves never queue");
+        assert_eq!(handle_envelope_line(&env("browser", json!({"action":"micro_save"})))["ok"], false);
+        super::super::ports::set_shelf(Arc::new(super::super::ports::InboxShelf));
+    }
+
+    #[test]
+    fn ask_files_from_explorer_are_merged() {
+        let _g = guard();
+        clear_for_tests();
+        let a = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\a.txt"})));
+        let b = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\b.txt"})));
+        let c = handle_envelope_line(&env("explorer", json!({"action":"ask_files","path":"C:\\d\\b.txt"})));
+        assert_eq!(a["id"], b["id"]);
+        assert_eq!(b["id"], c["id"]);
+        let e = get(a["id"].as_str().unwrap()).unwrap();
+        assert_eq!(e.request.paths, vec!["C:\\d\\b.txt".to_string()]);
+        assert_eq!(BridgeContext::from_request(&e.request, None).files.len(), 2);
+        // A browser can't name files at all.
+        assert_eq!(handle_envelope_line(&env("browser", json!({"action":"ask_files","path":"C:\\x"})))["ok"], false);
+        // After the window, a new request starts.
+        let mut q: VecDeque<InboxEntry> = VecDeque::new();
+        q.push_back(e.clone());
+        let mut later = e.request.clone();
+        later.path = Some("C:\\d\\z.txt".into());
+        assert!(coalesce_files(&mut q, &later, e.created_ms + COALESCE_MS + 1).is_none());
+        assert_eq!(coalesce_files(&mut q, &later, e.created_ms + 10).as_deref(), Some(e.id.as_str()));
     }
 
     #[test]

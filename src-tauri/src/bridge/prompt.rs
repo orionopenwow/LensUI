@@ -46,6 +46,17 @@ pub fn build_prompt(r: &BridgeRequest) -> String {
             "todos" => format!("Extract the action items and to-dos from {} as a checklist.", subject),
             _ => format!("Extract the tables in {} as Markdown tables.", subject),
         },
+        "ask_files" => match &r.question {
+            Some(q) => q.clone(),
+            None => {
+                let n = 1 + r.paths.len();
+                if n == 1 {
+                    "What is in this file, and what should I know about it?".to_string()
+                } else {
+                    format!("What are these {} files, how do they relate, and what should I know about them?", n)
+                }
+            }
+        },
         "compare" => format!("Compare {} with the Shelf item I picked: what's the same, what differs, and which is better for what.", subject),
         other => format!("{} {}", other.replace('_', " "), subject),
     }

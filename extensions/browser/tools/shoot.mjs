@@ -55,6 +55,28 @@ for (const scheme of ["dark", "light"]) {
     shots.push(f);
     await page.context().close();
   }
+  // Side panel with a YouTube transcript
+  {
+    const page = await newPage(scheme, { width: 400, height: 1000 }, { transcript: true });
+    await page.goto("https://ext.mock/src/panel.html");
+    await page.waitForTimeout(500);
+    const f = path.join(OUT, `transcript-${scheme}.png`);
+    await page.screenshot({ path: f, fullPage: false });
+    shots.push(f);
+    await page.context().close();
+  }
+  // Micro-save toast in the page
+  {
+    const page = await newPage(scheme, { width: 1280, height: 520 });
+    await page.goto("https://lens-demo.example/blog/calm");
+    const src = fs.readFileSync(path.join(EXT, "src/content/toast.js"), "utf8").replace("export function", "function");
+    await page.addScriptTag({ content: `${src}\nshowLensToast("Added to the same note", "~1,240 tokens", "ok");` });
+    await page.waitForTimeout(300);
+    const f = path.join(OUT, `micro-toast-${scheme}.png`);
+    await page.screenshot({ path: f, clip: { x: 340, y: 300, width: 600, height: 220 } });
+    shots.push(f);
+    await page.context().close();
+  }
   // In-page dot + panel
   {
     const page = await newPage(scheme, { width: 1280, height: 800 });

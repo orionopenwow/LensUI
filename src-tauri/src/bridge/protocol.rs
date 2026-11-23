@@ -39,6 +39,9 @@ pub const ACTIONS: &[(&str, ActionKind)] = &[
     ("compare", ActionKind::Ai),
     ("transcribe", ActionKind::Transcribe),
     ("shelf_add", ActionKind::Shelf),
+    ("micro_save", ActionKind::Shelf),
+    ("ask_files", ActionKind::Ai),
+    ("pack_add", ActionKind::Ui),
     ("context_add", ActionKind::Ui),
     ("command_open", ActionKind::Ui),
 ];
@@ -160,6 +163,9 @@ pub struct BridgeRequest {
     pub limit: u32,
     pub status_id: Option<String>,
     pub browser: Option<String>,
+    /// More files for `ask_files`: Explorer starts one process per selected item and Lens merges
+    /// the ones that arrive together (never set from a message; see `ipc::coalesce_files`).
+    pub paths: Vec<String>,
 }
 
 /// Strips NULs and control characters other than newline / tab, and trims.
@@ -305,6 +311,7 @@ pub fn validate(raw: RawRequest, origin: Origin) -> Result<BridgeRequest, String
         limit: raw.limit.unwrap_or(12).clamp(1, 50),
         status_id: opt_text(&raw.id, 96, "The id")?,
         browser: raw.source.and_then(|s| s.browser).map(|b| clean(&b).chars().take(24).collect()),
+        paths: Vec::new(),
         action,
     };
     check_has_content(&req)?;
@@ -358,7 +365,10 @@ fn check_has_content(r: &BridgeRequest) -> Result<(), String> {
         "summarize" | "explain" | "translate" | "rewrite" | "fix_grammar" | "extract" => has_text || r.link_url.is_some(),
         "compare" => (has_text || r.url.is_some()) && r.shelf_ref.is_some(),
         "transcribe" => r.media_url.is_some() || r.path.is_some() || r.url.is_some(),
-        "shelf_add" => r.item.is_some() || has_text || r.url.is_some() || r.link_url.is_some() || r.image_url.is_some(),
+        "shelf_add" | "micro_save" => r.item.is_some() || has_text || r.url.is_some() || r.link_url.is_some() || r.image_url.is_some(),
+        // Only this PC's Explorer / CLI can name files.
+        "ask_files" => r.path.is_some(),
+        "pack_add" => r.item.is_some() || has_text || r.url.is_some(),
         "context_add" => has_text || r.url.is_some(),
         _ => false,
     };
