@@ -13,6 +13,7 @@ pub mod audio;
 pub mod capture;
 pub mod catalog;
 pub mod config;
+pub mod converse;
 pub mod fuzzy;
 pub mod geometry;
 pub mod grammar;
@@ -40,6 +41,7 @@ pub const EV_LEVEL: &str = "lens://voice/level";
 pub const EV_HEARD: &str = "lens://voice/heard";
 pub const EV_RESULT: &str = "lens://voice/result";
 pub const EV_APPLY: &str = "lens://voice/apply";
+pub const EV_SPEECH: &str = "lens://voice/speech";
 
 /// Longest utterance kept in memory (15 s).
 const MAX_SAMPLES: usize = 16_000 * 15;
@@ -55,6 +57,23 @@ pub struct StateEvent {
     pub paused_reason: Option<&'static str>,
     pub hud_position: String,
     pub sounds: bool,
+    /// Conversation mode is on.
+    pub conversation: bool,
+    /// "off" | "panel" | "fullscreen"
+    pub conversation_view: String,
+    /// Lens is speaking an answer aloud.
+    pub speaking: bool,
+}
+
+/// Progress of a spoken answer (conversation mode reveals words in sync).
+#[derive(Debug, Clone, Serialize)]
+pub struct SpeechEvent {
+    pub id: u64,
+    /// Index of the word being spoken (whitespace-separated words).
+    pub word: usize,
+    pub done: bool,
+    /// Stopped early (barge-in, Stop, Esc).
+    pub interrupted: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -207,6 +226,9 @@ fn state_event(v: &Inner) -> StateEvent {
         paused_reason: v.paused_reason.map(|r| r.label()),
         hud_position: v.cfg.hud_position.clone(),
         sounds: v.cfg.sounds,
+        conversation: v.machine.in_conversation(),
+        conversation_view: v.cfg.conversation.clone(),
+        speaking: converse::is_speaking(),
     }
 }
 
@@ -455,7 +477,7 @@ fn perform(fx: Effect) {
 fn sync_capture() {
     let mut v = voice();
     let t = now();
-    let wake = v.cfg.wants_wake() && !v.machine.is_paused() && !v.machine.is_muted();
+    let wake = (v.cfg.wants_wake() && !v.machine.is_paused() || v.machine.in_conversation()) && !v.machine.is_muted();
     let answer = v.cfg.enabled && v.cfg.confirm_by_voice && v.machine.expects_answer() && !v.machine.is_muted();
     let need = v.cfg.enabled && (wake || answer || v.utterance.is_some()) || v.test_mic_until > t;
     // After a microphone error, wait before trying again (no tight retry loop).
@@ -496,6 +518,7 @@ fn on_capture_error(stop: &Arc<AtomicBool>, e: String) {
 fn on_frame(frame: &[i16]) {
     let db = audio::dbfs(frame);
     let mut inputs = Vec::new();
+    let mut barge_in = false;
     let level = {
         let mut v = voice();
         let t = now();
@@ -510,10 +533,17 @@ fn on_frame(frame: &[i16]) {
         } else {
             v.preroll.push(frame);
         }
-        let listening_for_speech = (v.cfg.wants_wake() && !v.machine.is_paused() && !v.machine.is_muted()) || v.machine.expects_answer();
+        let listening_for_speech = ((v.cfg.wants_wake() && !v.machine.is_paused() || v.machine.in_conversation()) && !v.machine.is_muted())
+            || v.machine.expects_answer();
         if listening_for_speech {
-            match v.vad.push(db) {
-                Some(audio::VadEvent::SpeechStart) => inputs.push(Input::SpeechStart),
+            // While Lens speaks, its own voice reaches the mic: only clearly louder speech
+            // barges in.
+            let speaking = converse::is_speaking();
+            match v.vad.push(if speaking { db - 8.0 } else { db }) {
+                Some(audio::VadEvent::SpeechStart) => {
+                    barge_in = speaking;
+                    inputs.push(Input::SpeechStart)
+                }
                 Some(audio::VadEvent::SpeechEnd) => inputs.push(Input::SpeechEnd),
                 None => {}
             }
@@ -527,6 +557,10 @@ fn on_frame(frame: &[i16]) {
     };
     if let Some((app, level)) = level {
         emit(&app, EV_LEVEL, json!({ "level": level }));
+    }
+    if barge_in {
+        // Barge-in: the user talks over the answer, so stop speaking and listen.
+        stop_speaking();
     }
     for i in inputs {
         feed(i);
@@ -646,7 +680,8 @@ fn options_for_next() -> grammar::Options {
         let v = voice();
         (v.cfg.clone(), v.machine.by_ptt(), v.machine.expects_answer(), v.woke_until)
     };
-    let require_wake = cfg.wants_wake() && !by_ptt && !expecting && now() > woke_until;
+    let conversation = voice().machine.in_conversation();
+    let require_wake = cfg.wants_wake() && !by_ptt && !expecting && !conversation && now() > woke_until;
     grammar::Options {
         wake_phrases: cfg.wake_phrases(),
         require_wake,
@@ -832,8 +867,19 @@ fn execute(cmd: VoiceCommand, heard: String, confidence: f32) {
             done(heard, &cmd, confidence, "Summarising in Lens Command.".into(), None);
         }
         VoiceCommand::Ask(q) => {
-            apply_ui("ask", json!({ "text": q }));
-            done(heard, &cmd, confidence, "Asking in Lens Command.".into(), None);
+            // With a conversation view, spoken questions open it (and follow-ups need no wake).
+            let view = voice().cfg.conversation.clone();
+            let converse = view != "off";
+            if converse && !voice().machine.in_conversation() {
+                set_conversation(true);
+            }
+            apply_ui("ask", json!({ "text": q, "conversation": converse }));
+            done(heard, &cmd, confidence, if converse { "Thinking…".into() } else { "Asking in Lens Command.".into() }, None);
+        }
+        VoiceCommand::Converse(on) => {
+            set_conversation(*on);
+            apply_ui("conversation", json!({ "open": on }));
+            done(heard, &cmd, confidence, if *on { "I'm listening.".into() } else { "Conversation ended.".into() }, None);
         }
         VoiceCommand::ReadBack => {
             apply_ui("read_back", json!({}));
@@ -1061,6 +1107,46 @@ pub fn run_typed(text: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Conversation mode on/off. Off also stops any spoken answer.
+pub fn set_conversation(on: bool) {
+    if !on {
+        stop_speaking();
+    }
+    feed(Input::Converse(on));
+    sync_capture();
+    emit_state();
+}
+
+/// Speaks an answer, emitting word progress for the conversation view.
+pub fn speak_answer(text: &str) -> Result<u64, String> {
+    let voice_name = voice().cfg.tts_voice.clone();
+    let owned = text.to_string();
+    let cb: Arc<dyn Fn(u64, converse::Progress) + Send + Sync> = Arc::new(move |id, p| {
+        let ev = match p {
+            converse::Progress::Started => {
+                emit_state();
+                SpeechEvent { id, word: 0, done: false, interrupted: false }
+            }
+            converse::Progress::Word(pos) => SpeechEvent { id, word: converse::word_index(&owned, pos), done: false, interrupted: false },
+            converse::Progress::Done => SpeechEvent { id, word: usize::MAX, done: true, interrupted: false },
+        };
+        let finished = ev.done;
+        emit(&app(), EV_SPEECH, ev);
+        if finished {
+            emit_state();
+        }
+    });
+    converse::speak(text, &voice_name, cb)
+}
+
+/// Stops the spoken answer (Stop button, Esc, barge-in).
+pub fn stop_speaking() {
+    if converse::stop() {
+        emit(&app(), EV_SPEECH, SpeechEvent { id: 0, word: 0, done: true, interrupted: true });
+        emit_state();
+    }
+}
+
 pub fn answer(yes: bool) {
     feed(Input::Answer(yes));
 }
@@ -1079,6 +1165,7 @@ pub fn test_mic(on: bool) {
 }
 
 pub fn shutdown() {
+    converse::stop();
     {
         let mut v = voice();
         if let Some(stop) = v.capture_stop.take() {

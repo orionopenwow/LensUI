@@ -46,6 +46,8 @@ pub struct VoiceConfig {
     pub sounds: bool,
     /// HUD placement: "dock" (above the Dock) | "top" (under the Top Bar).
     pub hud_position: String,
+    /// Conversation view for spoken Q&A: "off" | "panel" | "fullscreen".
+    pub conversation: String,
     /// Command ids switched off in settings.
     pub disabled_commands: Vec<String>,
     pub aliases: Vec<Alias>,
@@ -75,6 +77,7 @@ impl Default for VoiceConfig {
             tts_voice: String::new(),
             sounds: true,
             hud_position: "dock".into(),
+            conversation: "panel".into(),
             disabled_commands: Vec::new(),
             aliases: Vec::new(),
         }
@@ -97,6 +100,9 @@ impl VoiceConfig {
         }
         if !matches!(self.hud_position.as_str(), "dock" | "top") {
             self.hud_position = d.hud_position;
+        }
+        if !matches!(self.conversation.as_str(), "off" | "panel" | "fullscreen") {
+            self.conversation = d.conversation;
         }
         self.ptt_hotkey = cap(&self.ptt_hotkey, 40);
         self.mute_hotkey = cap(&self.mute_hotkey, 40);

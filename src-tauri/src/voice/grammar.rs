@@ -30,6 +30,8 @@ pub enum VoiceCommand {
     Confirm(bool),
     Undo,
     StopListening,
+    /// Conversation mode on/off ("let's talk", "end conversation").
+    Converse(bool),
 }
 
 impl VoiceCommand {
@@ -49,6 +51,7 @@ impl VoiceCommand {
             VoiceCommand::Confirm(_) => "confirm",
             VoiceCommand::Undo => "undo",
             VoiceCommand::StopListening => "stop_listening",
+            VoiceCommand::Converse(_) => "converse",
         }
     }
 
@@ -77,6 +80,8 @@ impl VoiceCommand {
             VoiceCommand::Confirm(false) => "No".into(),
             VoiceCommand::Undo => "Undo".into(),
             VoiceCommand::StopListening => "Stop listening".into(),
+            VoiceCommand::Converse(true) => "Conversation mode".into(),
+            VoiceCommand::Converse(false) => "End the conversation".into(),
         }
     }
 }
@@ -215,6 +220,21 @@ fn voice_only(t: &str, cased: &str) -> Option<(VoiceCommand, f32)> {
             | "be quiet lens" | "turn off voice" | "voice off"
     ) {
         return Some((VoiceCommand::StopListening, 1.0));
+    }
+
+    if matches!(
+        t,
+        "talk" | "chat" | "let's talk" | "lets talk" | "conversation mode" | "start a conversation" | "start conversation" | "talk to me" | "conversation mode on"
+            | "can we talk" | "let's chat" | "lets chat"
+    ) {
+        return Some((VoiceCommand::Converse(true), 1.0));
+    }
+    if matches!(
+        t,
+        "end conversation" | "end the conversation" | "stop conversation" | "stop the conversation" | "conversation mode off" | "that's all"
+            | "thats all" | "we're done" | "were done"
+    ) {
+        return Some((VoiceCommand::Converse(false), 1.0));
     }
 
     // Dictation keeps the original wording and case.
@@ -543,6 +563,10 @@ mod tests {
         ("never mind", "confirm", "false"),
         ("Stop listening.", "stop_listening", ""),
         ("mute the mic", "stop_listening", ""),
+        ("Let's talk.", "converse", ""),
+        ("conversation mode", "converse", ""),
+        ("end the conversation", "converse", ""),
+        ("that's all", "converse", ""),
         // aliases
         ("lights out", "set_color_mode", "mode=dark"),
         ("Work mode.", "set_focus_mode", "enabled=true"),

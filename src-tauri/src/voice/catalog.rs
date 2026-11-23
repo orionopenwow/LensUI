@@ -60,6 +60,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo { id: "summarize", group: "Ask & Command", title: "Summarise", examples: &["summarise this page", "summarise the selection"], risk: "low" },
     CommandInfo { id: "ask", group: "Ask & Command", title: "Ask a question", examples: &["ask what's a good name for a cat", "why is the sky blue"], risk: "low" },
     CommandInfo { id: "read_back", group: "Ask & Command", title: "Read the answer aloud", examples: &["read that back"], risk: "low" },
+    CommandInfo { id: "converse", group: "Ask & Command", title: "Conversation mode", examples: &["let's talk", "end the conversation"], risk: "low" },
     // Voice
     CommandInfo { id: "help", group: "Voice", title: "What can I say?", examples: &["help", "what can I say"], risk: "low" },
     CommandInfo { id: "undo", group: "Voice", title: "Undo the last action", examples: &["undo", "undo that"], risk: "low" },

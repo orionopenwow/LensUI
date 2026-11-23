@@ -90,6 +90,7 @@ export const DEFAULT_VOICE_CONFIG: VoiceConfig = {
   tts_voice: "",
   sounds: true,
   hud_position: "dock",
+  conversation: "panel",
   disabled_commands: [],
   aliases: [],
 };

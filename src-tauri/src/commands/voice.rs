@@ -94,3 +94,22 @@ pub async fn voice_speak(text: String) -> Result<(), String> {
     let v = voice::status().config.tts_voice;
     blocking(move || voice::winops::speak(&text, &v)).await?
 }
+
+/// Conversation mode on/off (the conversation view's open/close).
+#[tauri::command]
+pub fn voice_converse(app: AppHandle, on: bool) {
+    voice::init(&app);
+    voice::set_conversation(on);
+}
+
+/// Speaks an answer with word progress (`lens://voice/speech`); returns the utterance id.
+#[tauri::command]
+pub async fn voice_say(app: AppHandle, text: String) -> Result<u64, String> {
+    voice::init(&app);
+    blocking(move || voice::speak_answer(&text)).await?
+}
+
+#[tauri::command]
+pub fn voice_stop_speaking() {
+    voice::stop_speaking();
+}

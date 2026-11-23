@@ -63,6 +63,8 @@ pub enum Input {
     Cancel,
     /// A typed command (the HUD's text box, settings "Try it"): skip the microphone.
     Typed,
+    /// Conversation mode on/off: while on, speech needs no wake phrase or key.
+    Converse(bool),
     Tick,
 }
 
@@ -142,6 +144,8 @@ pub struct Machine {
     muted: bool,
     /// A confirmation is pending (survives Listening for the spoken answer).
     confirm_pending: bool,
+    /// Conversation mode: follow-ups and barge-in without the wake phrase.
+    conversation: bool,
 }
 
 impl Machine {
@@ -159,6 +163,7 @@ impl Machine {
             paused: false,
             muted: false,
             confirm_pending: false,
+            conversation: false,
         }
     }
 
@@ -180,7 +185,11 @@ impl Machine {
     }
 
     fn wake_listening_allowed(&self) -> bool {
-        matches!(self.activation, Activation::Wake | Activation::Both) && !self.paused && !self.muted
+        (matches!(self.activation, Activation::Wake | Activation::Both) && !self.paused || self.conversation) && !self.muted
+    }
+
+    pub fn in_conversation(&self) -> bool {
+        self.conversation
     }
 
     pub fn is_confirming(&self) -> bool {
@@ -285,7 +294,9 @@ impl Machine {
             Input::SpeechStart => {
                 // Wake-mode utterance (or the yes/no for a pending confirmation).
                 let can = self.wake_listening_allowed() || (self.confirm_pending && !self.muted);
-                if can && matches!(self.phase, Phase::Idle | Phase::Confirming | Phase::Done | Phase::Error) {
+                let ready = matches!(self.phase, Phase::Idle | Phase::Confirming | Phase::Done | Phase::Error)
+                    || self.phase == Phase::Paused && self.conversation;
+                if can && ready {
                     self.by_ptt = false;
                     fx.push(StartCapture);
                     self.go(Phase::Listening, now);
@@ -390,6 +401,13 @@ impl Machine {
                 }
                 self.ptt_down_at = None;
                 self.go(self.rest_phase(), now);
+            }
+            Input::Converse(on) => {
+                self.conversation = on;
+                if !on && self.phase == Phase::Listening && !self.by_ptt {
+                    fx.push(StopAndDiscard);
+                    self.go(self.rest_phase(), now);
+                }
             }
             Input::Typed => {
                 match self.phase {
@@ -577,6 +595,29 @@ mod tests {
         m.step(Input::PttUp, 31_000);
         m.step(Input::Transcript("  ".into()), 31_100);
         assert_eq!(m.phase, Phase::Error);
+    }
+
+    #[test]
+    fn conversation_listens_without_wake_and_barges_in() {
+        let mut m = on(Activation::PushToTalk, PttStyle::Hold);
+        // Push-to-talk only: speech alone does nothing…
+        assert_eq!(m.step(Input::SpeechStart, 0), vec![]);
+        // …until conversation mode is on, even while paused for fullscreen.
+        m.step(Input::Pause, 10);
+        m.step(Input::Converse(true), 20);
+        assert_eq!(m.step(Input::SpeechStart, 100), vec![StartCapture]);
+        assert_eq!(m.step(Input::SpeechEnd, 900), vec![StopAndRecognise]);
+        m.step(Input::Transcript("why is the sky blue".into()), 1000);
+        m.step(Input::ActionDone, 1100);
+        // A follow-up question (or barging in over the spoken answer) starts a new utterance.
+        assert_eq!(m.step(Input::SpeechStart, 1500), vec![StartCapture]);
+        // Leaving conversation mode drops a speech-started utterance.
+        assert_eq!(m.step(Input::Converse(false), 1600), vec![StopAndDiscard]);
+        assert_eq!(m.step(Input::SpeechStart, 1700), vec![]);
+        // Muted means no listening even in conversation mode.
+        m.step(Input::Converse(true), 1800);
+        m.step(Input::Mute, 1900);
+        assert_eq!(m.step(Input::SpeechStart, 2000), vec![]);
     }
 
     #[test]

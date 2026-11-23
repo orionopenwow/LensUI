@@ -342,6 +342,9 @@ pub fn run() {
             commands::voice::voice_list_mics,
             commands::voice::voice_list_tts_voices,
             commands::voice::voice_speak,
+            commands::voice::voice_converse,
+            commands::voice::voice_say,
+            commands::voice::voice_stop_speaking,
             commands::power::quit_lens,
         ])
         .build(tauri::generate_context!())

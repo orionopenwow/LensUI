@@ -25,6 +25,7 @@ const status = {
     tts_voice: "",
     sounds: true,
     hud_position: "dock",
+    conversation: "panel",
     disabled_commands: ["lock_screen"],
     aliases: [
       { phrase: "lights out", means: "dark mode" },
