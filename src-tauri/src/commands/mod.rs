@@ -33,3 +33,4 @@ pub(crate) mod snip;
 pub(crate) mod tester;
 pub(crate) mod voice;
 pub(crate) mod guide;
+pub(crate) mod agentsafe;
