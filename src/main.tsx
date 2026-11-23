@@ -48,6 +48,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
     import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
   ),
   bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // Magic right-click window at the pointer (docs/MAGIC.md).
+  magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).

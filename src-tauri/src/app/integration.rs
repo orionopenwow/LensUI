@@ -30,6 +30,8 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     }
     sync_command_hotkeys(&handle, cfg);
     sync_tester_hotkey(&handle, cfg);
+    // Magic right-click window: its own settings file; off unless the user turned it on.
+    crate::commands::magic::startup(&handle);
     crate::tester::log(
         "info",
         "app",
@@ -135,6 +137,7 @@ pub(crate) fn panic_shutdown() {
     win_altdrag::stop_alt_drag();
     win_cursor_fx::stop();
     win_desktop_input::stop();
+    crate::commands::magic::shutdown();
 }
 
 // ================================================================================ shell keys

@@ -49,6 +49,7 @@ mod tester;
 mod app;
 mod bridge;
 mod clip;
+mod magic;
 mod commands;
 mod media;
 mod shelf;
@@ -177,6 +178,15 @@ pub fn run() {
             )
         })
         .invoke_handler(tauri::generate_handler![
+            commands::magic::magic_get_config,
+            commands::magic::magic_set_config,
+            commands::magic::magic_status,
+            commands::magic::magic_check,
+            commands::magic::magic_open,
+            commands::magic::magic_last,
+            commands::magic::magic_hide,
+            commands::magic::magic_window_action,
+            commands::magic::magic_report_open,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,

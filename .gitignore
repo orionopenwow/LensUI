@@ -44,3 +44,5 @@ src-tauri/lens-dwm-hook/target/
 __pycache__/
 tools/parity/rightclick/out/
 tools/parity/rightclick/shots/
+tools/parity/magic/out/
+tools/parity/magic/shots/
