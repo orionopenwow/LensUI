@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset"] }
+tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset", "unstable"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
@@ -27,12 +27,18 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [
     "ApplicationModel",
+    "ApplicationModel_DataTransfer",
     "Devices_Radios",
     "UI_Notifications",
     "UI_Notifications_Management",
     "Foundation",
     "Foundation_Collections",
+    "Globalization",
+    "Graphics_Imaging",
+    "Media_Ocr",
+    "Storage",
     "Media_Control",
+    "Security_Credentials_UI",
     "Storage_Streams",
     "Win32_Foundation",
     "Win32_Graphics_Dwm",
@@ -41,11 +47,14 @@ windows = { version = "0.58", features = [
     "Win32_Media_Audio_Endpoints",
     "Win32_Security",
     "Win32_Storage_FileSystem",
+    "Win32_Storage_Xps",
     "Win32_System_Com",
     "Win32_System_Console",
+    "Win32_System_DataExchange",
     "Win32_System_LibraryLoader",
     "Win32_System_Memory",
     "Win32_System_Registry",
+    "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_UI_Accessibility",
     "Win32_UI_ColorSystem",
@@ -62,3 +71,7 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Property-based tests (src/tests/robustness, docs/TESTING.md). Not linked into the app.
+[dev-dependencies]
+proptest = "1"

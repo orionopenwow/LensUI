@@ -1,0 +1,644 @@
+{
+  "7zip": {
+    "repo": "ip7z/7zip",
+    "commit": "d3296e39e1f1f92c7b41c0c3848e65640428d42d",
+    "icon": "https://raw.githubusercontent.com/ip7z/7zip/d3296e39e1f1f92c7b41c0c3848e65640428d42d/C/Util/7zipInstall/7zip.ico",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/ip7z/7zip/d3296e39e1f1f92c7b41c0c3848e65640428d42d/C/Util/7zipInstall/7zip.ico": 1078
+    }
+  },
+  "affine": {
+    "repo": "toeverything/AFFiNE",
+    "commit": "577ae12b51a9d617c7e82b7265baf7eaf67dd21c",
+    "icon": "https://raw.githubusercontent.com/toeverything/AFFiNE/577ae12b51a9d617c7e82b7265baf7eaf67dd21c/packages/frontend/apps/electron/resources/icons/icon_beta_512x512.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/toeverything/AFFiNE/577ae12b51a9d617c7e82b7265baf7eaf67dd21c/packages/frontend/apps/electron/resources/icons/icon_beta_512x512.png": 87715
+    }
+  },
+  "appflowy": {
+    "repo": "AppFlowy-IO/AppFlowy",
+    "commit": "8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93",
+    "icon": "https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy/8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93/frontend/appflowy_flutter/android/app/src/main/ic_launcher-playstore.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy/8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93/frontend/appflowy_flutter/android/app/src/main/ic_launcher-playstore.png": 45380
+    }
+  },
+  "artcraft": {
+    "repo": "storytold/artcraft",
+    "commit": "de571bb2f8351ade6c742d41caea81f11f595801",
+    "icon": "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/crates/desktop/artcraft/icons/ios/AppIcon-512%402x.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp",
+      "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/crates/desktop/artcraft/icons/ios/AppIcon-512%402x.png": 33438,
+      "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp": 2639420,
+      "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp": 2332748
+    }
+  },
+  "audacity": {
+    "repo": "audacity/audacity",
+    "commit": "90ca9ed02aaab7a75edaf56cb6457ea03530b930",
+    "icon": "https://raw.githubusercontent.com/audacity/audacity/90ca9ed02aaab7a75edaf56cb6457ea03530b930/share/icons/AppIcon/AU4_AppIcon_512x512.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/audacity/audacity/90ca9ed02aaab7a75edaf56cb6457ea03530b930/share/icons/AppIcon/AU4_AppIcon_512x512.png": 40668
+    }
+  },
+  "blender": {
+    "repo": "blender/blender",
+    "commit": "20a0565aa86c7ba6ab1e9537675a0cd8529337ef",
+    "icon": "https://raw.githubusercontent.com/blender/blender/20a0565aa86c7ba6ab1e9537675a0cd8529337ef/release/freedesktop/icons/scalable/apps/blender.svg",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/blender/blender/20a0565aa86c7ba6ab1e9537675a0cd8529337ef/release/freedesktop/icons/scalable/apps/blender.svg": 2976
+    }
+  },
+  "comfyui": {
+    "repo": "comfyanonymous/ComfyUI",
+    "commit": "b6a958c6c193bbc62be7498c2585fae003cfd039",
+    "icon": "https://raw.githubusercontent.com/Comfy-Org/desktop/e2d964b7456cea8423c7b9d3371c612313c06baa/assets/UI/Comfy_Logo_x256.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/Comfy-Org/desktop/e2d964b7456cea8423c7b9d3371c612313c06baa/assets/UI/Comfy_Logo_x256.png": 4578
+    }
+  },
+  "concat": {
+    "repo": "jub0t/Concat",
+    "commit": "c8bdeb9868b0114e82678e6e26a00e35e1b75df8",
+    "icon": "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/concat_logo_512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/concat_logo_512.png": 21629,
+      "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png": 1756758
+    }
+  },
+  "craft-launcher": {
+    "repo": "storytold/craft-launcher",
+    "commit": "4c819edd164ccd94151ee5a5908654d052145989",
+    "icon": "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/assets/app-icon/hicolor/256x256/apps/ai.storyteller.artcraft-launcher.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-grid.png",
+      "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-table.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/assets/app-icon/hicolor/256x256/apps/ai.storyteller.artcraft-launcher.png": 4321,
+      "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-grid.png": 250914,
+      "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-table.png": 246325
+    }
+  },
+  "darktable": {
+    "repo": "darktable-org/darktable",
+    "commit": "679d594f5d93cde043703ba8ff26873d0e475905",
+    "icon": "https://raw.githubusercontent.com/darktable-org/darktable/679d594f5d93cde043703ba8ff26873d0e475905/data/pixmaps/dt_logo_128x128.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/darktable-org/darktable/679d594f5d93cde043703ba8ff26873d0e475905/data/pixmaps/dt_logo_128x128.png": 15175
+    }
+  },
+  "deckcraft": {
+    "repo": "storytold/deckcraft",
+    "commit": "7fbdc085ebfd6ded43abd3d12a87377a7a0fa852",
+    "icon": "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png",
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/shape-format.png",
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/format-pane.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png": 9327,
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png": 251930,
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/shape-format.png": 262731,
+      "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/format-pane.png": 314182
+    }
+  },
+  "degenview": {
+    "repo": "degenview/degenview",
+    "commit": "471f5dacf9445cb40595d12a7569a5babbed0789",
+    "icon": "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/brand/app_icon.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png",
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-debugger.png",
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-profiler.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/brand/app_icon.png": 96906,
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png": 1324092,
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-debugger.png": 1007286,
+      "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-profiler.png": 1270656
+    }
+  },
+  "designcraft": {
+    "repo": "storytold/designcraft",
+    "commit": "d3190ef798460d8f75bb54505266c4c8f5ba144c",
+    "icon": "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/assets/app-icon/designcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/ui-spread.png",
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-cover.png",
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-2.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/assets/app-icon/designcraft-macos-512.png": 99920,
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/ui-spread.png": 611373,
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-cover.png": 257485,
+      "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-2.png": 209329
+    }
+  },
+  "effectcraft": {
+    "repo": "storytold/effectcraft",
+    "commit": "7e2d0256209974ffb92a29d8bdb6f2a49078f51f",
+    "icon": "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/assets/app-icon/effectcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-hero.png",
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-graph-editor.png",
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-3d.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/assets/app-icon/effectcraft-macos-512.png": 116708,
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-hero.png": 764159,
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-graph-editor.png": 757446,
+      "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-3d.png": 673719
+    }
+  },
+  "excalidraw": {
+    "repo": "excalidraw/excalidraw",
+    "commit": "9c2e462ec23e54c4cf0493328840d6a27191c674",
+    "icon": "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/collaboration.png",
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/export.png",
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/illustration.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png": 14181,
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/collaboration.png": 29035,
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/export.png": 25959,
+      "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/illustration.png": 48095
+    }
+  },
+  "figcraft": {
+    "repo": "storytold/figcraft",
+    "commit": "bbf7ad418f3e02d89546a6c7b044e51df67177f0",
+    "icon": "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/assets/app-icon/figcraft-256.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-1-hero.png",
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-2-components.png",
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-3-prototype.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/assets/app-icon/figcraft-256.png": 48318,
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-1-hero.png": 143672,
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-2-components.png": 113707,
+      "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-3-prototype.png": 118112
+    }
+  },
+  "filmcraft": {
+    "repo": "storytold/filmcraft",
+    "commit": "117876b013e8e88f7f999e406d5dea4ec8e19c6b",
+    "icon": "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/assets/app-icon/filmcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-hero.png",
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-assembly.png",
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-timeline.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/assets/app-icon/filmcraft-macos-512.png": 125210,
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-hero.png": 1281948,
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-assembly.png": 1054638,
+      "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-timeline.png": 429408
+    }
+  },
+  "flow-launcher": {
+    "repo": "Flow-Launcher/Flow.Launcher",
+    "commit": "58b799721a343811d8c42046cb2b4d63de1b3da6",
+    "icon": "https://raw.githubusercontent.com/Flow-Launcher/Flow.Launcher/58b799721a343811d8c42046cb2b4d63de1b3da6/Artworks/Logo/logo512.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/Flow-Launcher/Flow.Launcher/58b799721a343811d8c42046cb2b4d63de1b3da6/Artworks/Logo/logo512.png": 13875
+    }
+  },
+  "gridcraft": {
+    "repo": "storytold/gridcraft",
+    "commit": "927d4d60a6da2db2971b82994f0b79ac7aba3faf",
+    "icon": "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/assets/app-icon/gridcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png",
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/budget.png",
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/grades-formulas.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/assets/app-icon/gridcraft-macos-512.png": 16994,
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png": 392178,
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/budget.png": 324202,
+      "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/grades-formulas.png": 288445
+    }
+  },
+  "handbrake": {
+    "repo": "HandBrake/HandBrake",
+    "commit": "bf63cdcf3b23dd3958bece421607ae6673f39add",
+    "icon": "https://raw.githubusercontent.com/HandBrake/HandBrake/bf63cdcf3b23dd3958bece421607ae6673f39add/gtk/icons/256x256/apps/fr.handbrake.ghb.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/HandBrake/HandBrake/bf63cdcf3b23dd3958bece421607ae6673f39add/gtk/icons/256x256/apps/fr.handbrake.ghb.png": 80949
+    }
+  },
+  "inkscape": {
+    "repo": "inkscape/inkscape",
+    "commit": "1232eac68aff12978b208ff3ebfbbcc3ecbd7022",
+    "icon": null,
+    "screenshots": [],
+    "loop": null,
+    "sizes": {}
+  },
+  "joplin": {
+    "repo": "laurent22/joplin",
+    "commit": "58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa",
+    "icon": "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/SquareIcon512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/WebsiteAssets/images/home-top-img.png",
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501238944.png",
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501239078.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/SquareIcon512.png": 13791,
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/WebsiteAssets/images/home-top-img.png": 616756,
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501238944.png": 154607,
+      "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501239078.png": 174024
+    }
+  },
+  "kdenlive": {
+    "repo": "KDE/kdenlive",
+    "commit": "05d605f56175a86109c59a4d390d060d863bdcfe",
+    "icon": "https://raw.githubusercontent.com/KDE/kdenlive/05d605f56175a86109c59a4d390d060d863bdcfe/data/icons/512-apps-kdenlive.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/KDE/kdenlive/05d605f56175a86109c59a4d390d060d863bdcfe/data/icons/512-apps-kdenlive.png": 8691
+    }
+  },
+  "krita": {
+    "repo": "KDE/krita",
+    "commit": "97e66843f3b4742ddddd020c8824be980f03f6d6",
+    "icon": "https://raw.githubusercontent.com/KDE/krita/97e66843f3b4742ddddd020c8824be980f03f6d6/krita/pics/branding/default/512-apps-krita.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/KDE/krita/97e66843f3b4742ddddd020c8824be980f03f6d6/krita/pics/branding/default/512-apps-krita.png": 54497
+    }
+  },
+  "libreoffice": {
+    "repo": "LibreOffice/core",
+    "commit": "1e7013b89993be78a2e853b6247ea365a4d150b0",
+    "icon": "https://raw.githubusercontent.com/LibreOffice/core/1e7013b89993be78a2e853b6247ea365a4d150b0/sysui/desktop/icons/hicolor/512x512/apps/main.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/LibreOffice/core/1e7013b89993be78a2e853b6247ea365a4d150b0/sysui/desktop/icons/hicolor/512x512/apps/main.png": 26399
+    }
+  },
+  "lightcraft": {
+    "repo": "storytold/lightcraft",
+    "commit": "3200590acb7737624c3d62cd4a207e6d59902267",
+    "icon": "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/assets/app-icon/lightcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/hero-tetons.jpg",
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/curve-tetons.jpg",
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/grading-migrant-mother.jpg"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/assets/app-icon/lightcraft-macos-512.png": 112295,
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/hero-tetons.jpg": 847754,
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/curve-tetons.jpg": 811446,
+      "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/grading-migrant-mother.jpg": 652145
+    }
+  },
+  "lm-studio": {
+    "repo": "lmstudio-ai/lms",
+    "commit": "138dcffbc40e5fe3d9c0d38cf75dcdc1d883d849",
+    "icon": null,
+    "screenshots": [],
+    "loop": null,
+    "sizes": {}
+  },
+  "logseq": {
+    "repo": "logseq/logseq",
+    "commit": "f6ce0e01543def5c06cc2955f4b13434f7b39cdc",
+    "icon": "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/assets/icon.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/resources/img/screenshot.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/assets/icon.png": 33071,
+      "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/resources/img/screenshot.png": 131691
+    }
+  },
+  "marp": {
+    "repo": "marp-team/marp",
+    "commit": "95263d5a0df563633ef6611c986b34b55f936eaa",
+    "icon": "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/marp-logo.svg",
+    "screenshots": [
+      "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/202205-ecosystem-update/transition-showcase-poster.jpg"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/marp-logo.svg": 210,
+      "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/202205-ecosystem-update/transition-showcase-poster.jpg": 14435
+    }
+  },
+  "obs-studio": {
+    "repo": "obsproject/obs-studio",
+    "commit": "0c790bd0151fb9f574867e025ecf57e6eedc58e2",
+    "icon": "https://raw.githubusercontent.com/obsproject/obs-studio/0c790bd0151fb9f574867e025ecf57e6eedc58e2/frontend/cmake/linux/icons/obs-logo-512.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/obsproject/obs-studio/0c790bd0151fb9f574867e025ecf57e6eedc58e2/frontend/cmake/linux/icons/obs-logo-512.png": 130086
+    }
+  },
+  "obsidian": {
+    "repo": "obsidianmd/obsidian-releases",
+    "commit": "5bdf241aedbf540620edbcd5fd3621b7943daa53",
+    "icon": null,
+    "screenshots": [
+      "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/dark.png",
+      "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/light.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/dark.png": 589944,
+      "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/light.png": 599268
+    }
+  },
+  "ollama": {
+    "repo": "ollama/ollama",
+    "commit": "318ee284aa3b5558de57efefff730ea33c4a9bef",
+    "icon": "https://raw.githubusercontent.com/ollama/ollama/318ee284aa3b5558de57efefff730ea33c4a9bef/app/darwin/Ollama.app/Contents/Resources/ollama%402x.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/ollama/ollama/318ee284aa3b5558de57efefff730ea33c4a9bef/app/darwin/Ollama.app/Contents/Resources/ollama%402x.png": 661
+    }
+  },
+  "onlyoffice": {
+    "repo": "ONLYOFFICE/DesktopEditors",
+    "commit": "f05b333402617733e8ed226c00fbfd53cfb1a1fe",
+    "icon": "https://raw.githubusercontent.com/ONLYOFFICE/desktop-apps/332c1905a5361dd4139481827b7ad4f4a9facd85/macos/ONLYOFFICE/Images.xcassets/AppIcon.appiconset/512x512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/ONLYOFFICE/DesktopEditors/f05b333402617733e8ed226c00fbfd53cfb1a1fe/screenshots/ONLYOFFICE%20Desktop%20Editors.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/ONLYOFFICE/desktop-apps/332c1905a5361dd4139481827b7ad4f4a9facd85/macos/ONLYOFFICE/Images.xcassets/AppIcon.appiconset/512x512.png": 36418,
+      "https://raw.githubusercontent.com/ONLYOFFICE/DesktopEditors/f05b333402617733e8ed226c00fbfd53cfb1a1fe/screenshots/ONLYOFFICE%20Desktop%20Editors.png": 1037974
+    }
+  },
+  "opencharts": {
+    "repo": "dylanpersonguy/OpenCharts",
+    "commit": "399e27538d8150796571dbdecbe920a54b771de4",
+    "icon": "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/public/icons/icon-512x512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/docs/screenshot.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/public/icons/icon-512x512.png": 12494,
+      "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/docs/screenshot.png": 109533
+    }
+  },
+  "openstock": {
+    "repo": "Open-Dev-Society/OpenStock",
+    "commit": "62da391edb427a4326f060b89e2361bfe6575655",
+    "icon": "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/logo.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/dashboard.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/logo.png": 32771,
+      "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/dashboard.png": 207645
+    }
+  },
+  "pdfcraft": {
+    "repo": "storytold/pdfcraft",
+    "commit": "993889aff1d29965a2fa86ebaaf6005386ef5ff7",
+    "icon": "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/assets/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-viewer.png",
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-scripts.png",
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-twoup.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/assets/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png": 52771,
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-viewer.png": 707202,
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-scripts.png": 465470,
+      "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-twoup.png": 839826
+    }
+  },
+  "penpot": {
+    "repo": "penpot/penpot",
+    "commit": "8bca3f86eef17dfd67de428e76a5051171c42394",
+    "icon": "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/frontend/resources/images/assets/penpot-logo-icon.svg",
+    "screenshots": [
+      "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/docs/img/codemode-code.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/frontend/resources/images/assets/penpot-logo-icon.svg": 1248,
+      "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/docs/img/codemode-code.png": 185791
+    }
+  },
+  "photocraft": {
+    "repo": "storytold/photocraft",
+    "commit": "b9c946246213d3db22f82395464f0fc2d494ff7d",
+    "icon": "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-demo.jpg",
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-adjustments.jpg",
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-layer-styles.jpg"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png": 56335,
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-demo.jpg": 1078162,
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-adjustments.jpg": 936575,
+      "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-layer-styles.jpg": 359330
+    }
+  },
+  "powertoys": {
+    "repo": "microsoft/PowerToys",
+    "commit": "aa2e6c2128dca7ff3f2c9f61f07163204af7d04b",
+    "icon": "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/installer/PowerToysSetupVNext/Images/logo.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/doc/images/readme/pt-hero.dark.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/installer/PowerToysSetupVNext/Images/logo.png": 6246,
+      "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/doc/images/readme/pt-hero.dark.png": 474720
+    }
+  },
+  "sharex": {
+    "repo": "ShareX/ShareX",
+    "commit": "099bcb60a1c4af514f8b8b936a870492744e98fd",
+    "icon": "https://raw.githubusercontent.com/ShareX/ShareX/099bcb60a1c4af514f8b8b936a870492744e98fd/ShareX.HelpersLib/Resources/ShareX_Logo.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/ShareX/ShareX/099bcb60a1c4af514f8b8b936a870492744e98fd/ShareX.HelpersLib/Resources/ShareX_Logo.png": 25356
+    }
+  },
+  "shotcut": {
+    "repo": "mltframework/shotcut",
+    "commit": "2eba56a72af3b7806876f2a2956cfff789db1468",
+    "icon": "https://raw.githubusercontent.com/mltframework/shotcut/2eba56a72af3b7806876f2a2956cfff789db1468/icons/shotcut-logo-320x320.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/mltframework/shotcut/2eba56a72af3b7806876f2a2956cfff789db1468/icons/shotcut-logo-320x320.png": 17816
+    }
+  },
+  "slidev": {
+    "repo": "slidevjs/slidev",
+    "commit": "437f139ccd4c8482a193b217922e7800a5b3baec",
+    "icon": "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/logo-circle.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/cover.png",
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/covers.png",
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/integrated-editor.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/logo-circle.png": 273951,
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/cover.png": 907804,
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/covers.png": 1846729,
+      "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/integrated-editor.png": 542810
+    }
+  },
+  "soundcraft": {
+    "repo": "storytold/soundcraft",
+    "commit": "3d5916e42cb231ae52da6479ddfac7a857c07bce",
+    "icon": "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/assets/app-icon/soundcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/edit.png",
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/mix.png",
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/midi.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/assets/app-icon/soundcraft-macos-512.png": 30708,
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/edit.png": 572846,
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/mix.png": 553112,
+      "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/midi.png": 563989
+    }
+  },
+  "typst": {
+    "repo": "typst/typst",
+    "commit": "a6dcd82927b2a44bb089bc9151e29566e84e7d5a",
+    "icon": null,
+    "screenshots": [],
+    "loop": null,
+    "sizes": {}
+  },
+  "vectorcraft": {
+    "repo": "storytold/vectorcraft",
+    "commit": "15001f7dfcd5c0677121a36c9de770e393516c81",
+    "icon": "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/assets/app-icon/vectorcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-1-neon.png",
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-2-ribbons.png",
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-4-bezier.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/assets/app-icon/vectorcraft-macos-512.png": 116070,
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-1-neon.png": 782975,
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-2-ribbons.png": 1621017,
+      "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-4-bezier.png": 363525
+    }
+  },
+  "vlc": {
+    "repo": "videolan/vlc",
+    "commit": "391a3bf87302769a3e45143b8a2f9961be45db0e",
+    "icon": "https://raw.githubusercontent.com/videolan/vlc/391a3bf87302769a3e45143b8a2f9961be45db0e/share/icons/256x256/vlc.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/videolan/vlc/391a3bf87302769a3e45143b8a2f9961be45db0e/share/icons/256x256/vlc.png": 54221
+    }
+  },
+  "vscodium": {
+    "repo": "VSCodium/vscodium",
+    "commit": "ca7f7b44b5e5c3faa663f6cdc043998f71936653",
+    "icon": "https://raw.githubusercontent.com/VSCodium/vscodium/ca7f7b44b5e5c3faa663f6cdc043998f71936653/src/stable/resources/server/code-512.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/VSCodium/vscodium/ca7f7b44b5e5c3faa663f6cdc043998f71936653/src/stable/resources/server/code-512.png": 428026
+    }
+  },
+  "whisper-cpp": {
+    "repo": "ggml-org/whisper.cpp",
+    "commit": "5eaee0cc9024eb9e9a99469199920c8b7f5cb9ec",
+    "icon": null,
+    "screenshots": [],
+    "loop": null,
+    "sizes": {}
+  },
+  "wordcraft": {
+    "repo": "storytold/wordcraft",
+    "commit": "c369c3a20befef8742f8913128cacd79002435d6",
+    "icon": "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/assets/app-icon/wordcraft-macos-512.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png",
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/review.png",
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/references.png"
+    ],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/assets/app-icon/wordcraft-macos-512.png": 12242,
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png": 850491,
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/review.png": 875313,
+      "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/references.png": 989145
+    }
+  },
+  "zed": {
+    "repo": "zed-industries/zed",
+    "commit": "f126950f9d3b62666f97437ae5d4ccac2272c4db",
+    "icon": "https://raw.githubusercontent.com/zed-industries/zed/f126950f9d3b62666f97437ae5d4ccac2272c4db/crates/zed/resources/app-icon.png",
+    "screenshots": [],
+    "loop": null,
+    "sizes": {
+      "https://raw.githubusercontent.com/zed-industries/zed/f126950f9d3b62666f97437ae5d4ccac2272c4db/crates/zed/resources/app-icon.png": 168173
+    }
+  }
+}

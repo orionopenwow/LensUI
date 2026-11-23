@@ -1,0 +1,168 @@
+import React, { useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Monitor, Moon, Palette, Sun } from "lucide-react";
+import { DEFAULT_APPEARANCE, type Appearance } from "./api";
+import { Key } from "./ApprovalCard";
+
+/** hsl → #rrggbb */
+export function hslHex(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(c * 255).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/** #rrggbb → [hue 0–360, lightness 0–1] for placing the picker knob. */
+export function hexHueLight(hex: string): [number, number] {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return [220, 0.6];
+  const [r, g, b] = [m[1], m[2], m[3]].map((x) => parseInt(x, 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [Math.round((h * 60 + 360) % 360), l];
+}
+
+/** Field position (0–1, 0–1) → colour: x is hue, y runs from vivid (top) to deep (bottom). */
+export function fieldColor(x: number, y: number): string {
+  const cx = Math.max(0, Math.min(1, x));
+  const cy = Math.max(0, Math.min(1, y));
+  return hslHex(cx * 360, 0.82, 0.68 - cy * 0.42);
+}
+
+export const PRESETS: { id: string; label: string; a: string; b: string; accent: string | null; scheme?: Appearance["scheme"] }[] = [
+  { id: "obsidian", label: "Obsidian", a: "#fafafa", b: "#0b0b0d", accent: null, scheme: "dark" },
+  { id: "paper", label: "Paper", a: "#f4f1ea", b: "#1c1b19", accent: "#3f3f46", scheme: "light" },
+  { id: "sage", label: "Sage", a: "#a8c5a0", b: "#16201a", accent: "#86b18a" },
+  { id: "iris", label: "Iris", a: "#a99cf2", b: "#17142a", accent: "#8b7cf0" },
+  { id: "rose", label: "Rose", a: "#e5a3b0", b: "#2a161b", accent: "#e08aa0" },
+  { id: "contrast", label: "Contrast", a: "#ffffff", b: "#000000", accent: "#ffffff", scheme: "dark" },
+];
+
+function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string, React.ReactNode?][]; onChange(v: T): void; label: string }) {
+  return (
+    <div className="lb-seg" role="radiogroup" aria-label={label}>
+      {options.map(([v, text, icon]) => (
+        <button key={v} role="radio" aria-checked={value === v} className={value === v ? "is-on" : ""} onClick={() => onChange(v)}>
+          {icon}
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Slider({ label, value, onChange, dithered }: { label: string; value: number; onChange(v: number): void; dithered?: boolean }) {
+  return (
+    <label className="lb-slider">
+      <span>{label}</span>
+      <span className={`lb-slider-track${dithered ? " is-dither" : ""}`}>
+        <input type="range" min={0} max={100} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
+        <span className="lb-slider-fill" style={{ width: `${value}%` }} aria-hidden />
+      </span>
+      <span className="lb-mono lb-dim lb-slider-val">{value}</span>
+    </label>
+  );
+}
+
+/** "Make it yours": accent field, scheme, presets, dither/grain, tabs, density, typeface. */
+export function CustomisePanel({ value, onChange }: { value: Appearance; onChange(a: Appearance): void }) {
+  const a = { ...DEFAULT_APPEARANCE, ...value };
+  const field = useRef<HTMLDivElement>(null);
+  const [hue, light] = hexHueLight(a.accent ?? "#7c8cf8");
+  const knob = { left: `${(hue / 360) * 100}%`, top: `${Math.max(0, Math.min(1, (0.68 - light) / 0.42)) * 100}%` };
+  const set = (patch: Partial<Appearance>) => onChange({ ...a, ...patch });
+  const pick = (e: React.PointerEvent) => {
+    const r = field.current!.getBoundingClientRect();
+    set({ accent: fieldColor((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height) });
+  };
+  const nudge = (dx: number, dy: number) => {
+    const x = hue / 360 + dx;
+    const y = (0.68 - light) / 0.42 + dy;
+    set({ accent: fieldColor((x + 1) % 1, y) });
+  };
+  return (
+    <div className="lb-settings">
+      <section className="lb-card lb-make">
+        <div
+          ref={field}
+          className="lb-field"
+          role="slider"
+          tabIndex={0}
+          aria-label="Accent colour"
+          aria-valuetext={a.accent ?? "Follows Lens"}
+          onPointerDown={(e) => {
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            pick(e);
+          }}
+          onPointerMove={(e) => e.buttons === 1 && pick(e)}
+          onKeyDown={(e) => {
+            const step = e.shiftKey ? 0.08 : 0.02;
+            if (e.key === "ArrowLeft") nudge(-step, 0);
+            else if (e.key === "ArrowRight") nudge(step, 0);
+            else if (e.key === "ArrowUp") nudge(0, -step);
+            else if (e.key === "ArrowDown") nudge(0, step);
+            else return;
+            e.preventDefault();
+          }}
+        >
+          <span className="lb-field-knob" style={{ ...knob, background: a.accent ?? "transparent" }} />
+        </div>
+        <Seg
+          label="Colour scheme"
+          value={a.scheme}
+          onChange={(scheme) => set({ scheme })}
+          options={[
+            ["auto", "Auto", <Monitor key="m" size={13} />],
+            ["light", "Light", <Sun key="s" size={13} />],
+            ["dark", "Dark", <Moon key="d" size={13} />],
+          ]}
+        />
+        <div className="lb-swatches" role="radiogroup" aria-label="Presets">
+          {PRESETS.map((p) => {
+            const on = (a.accent ?? null) === p.accent && (!p.scheme || p.scheme === a.scheme);
+            return (
+              <button
+                key={p.id}
+                role="radio"
+                aria-checked={on}
+                aria-label={p.label}
+                className={`lb-swatch${on ? " is-on" : ""}`}
+                style={{ background: `linear-gradient(135deg, ${p.a} 0 50%, ${p.b} 50% 100%)` }}
+                onClick={() => set({ accent: p.accent, ...(p.scheme ? { scheme: p.scheme } : {}) })}
+              />
+            );
+          })}
+        </div>
+        <Slider label="Dither" value={a.dither} onChange={(dither) => set({ dither })} dithered />
+        <Slider label="Grain" value={a.grain} onChange={(grain) => set({ grain })} />
+        <div className="lb-rule" />
+        <div className="lb-make-row">
+          <span className="lb-label">Tabs</span>
+          <Seg label="Tabs" value={a.tabsLayout} onChange={(tabsLayout) => set({ tabsLayout })} options={[["vertical", "Vertical"], ["horizontal", "Horizontal"]]} />
+        </div>
+        <div className="lb-make-row">
+          <span className="lb-label">Density</span>
+          <Seg label="Density" value={a.density} onChange={(density) => set({ density })} options={[["compact", "Compact"], ["comfortable", "Comfortable"]]} />
+        </div>
+        <div className="lb-make-row">
+          <span className="lb-label">Type</span>
+          <Seg label="Typeface" value={a.typeface} onChange={(typeface) => set({ typeface })} options={[["lens", "Lens"], ["system", "System"], ["mono", "Mono"], ["serif", "Serif"]]} />
+        </div>
+        <footer className="lb-make-foot">
+          <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => onChange(DEFAULT_APPEARANCE)}>Reset <Key k="R" /></button>
+          <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(() => {})}>
+            <Palette size={13} /> Customise <Key k="⏎" />
+          </button>
+        </footer>
+      </section>
+      <p className="lb-hint">Change tabs, density, theme and type. Don't like the dither? Slide it to 0.</p>
+    </div>
+  );
+}

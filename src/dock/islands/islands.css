@@ -1,0 +1,121 @@
+/*
+ * "Islands" Dock style: the full-width bar becomes separate rounded islands that float above the
+ * desktop — launcher/workspaces on the left, apps in the centre, tray and clock on the right.
+ * All colours come from the active pack. Scoped to .dock-style-islands, so other styles are untouched.
+ */
+
+.dock-stage.dock-style-islands.is-bar .dock-pill {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0 8px;
+  height: calc(var(--dock-full-icon-size, 36px) + 20px);
+  gap: 12px;
+}
+
+/* Each section is its own island. */
+.dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+  height: calc(var(--dock-full-icon-size, 36px) + 12px);
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--lens-bg-elevated);
+  border: 1px solid rgb(var(--lens-ink) / 0.06);
+  box-shadow: 0 6px 18px rgb(0 0 0 / calc(0.32 * var(--lens-shade-k)));
+  display: flex;
+  align-items: center;
+}
+:root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+  border-color: transparent;
+  background: var(--lens-x-elev-1, var(--lens-bg-elevated));
+}
+:root[data-shape="dotmatrix"] .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+  border-color: transparent;
+  border-radius: 16px;
+  background: var(--ldm-surface, var(--lens-bg-elevated));
+  box-shadow: none;
+}
+
+/* Running apps: a soft underline instead of a dot. */
+.dock-stage.dock-style-islands.is-bar .dock-indicator {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.55;
+}
+.dock-stage.dock-style-islands.is-bar .dock-indicator.focused {
+  width: 22px;
+  opacity: 1;
+  background: var(--lens-accent);
+}
+
+/* Search spreads inside the apps island (the bar never widens: same width lock as other styles). */
+.dock-stage.dock-style-islands.is-bar .dock-search-slot.is-open {
+  border-radius: 999px;
+}
+
+/* ---------- Left island parts (src/dock/islands/IslandParts.tsx) ---------- */
+.lds-island {
+  gap: 6px;
+}
+.lds-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lens-fg);
+  cursor: pointer;
+}
+.lds-btn:hover {
+  background: var(--lens-bg-hover);
+}
+.lds-btn:focus-visible {
+  outline: var(--lens-focus-width) solid var(--lens-focus-ring);
+  outline-offset: 1px;
+}
+.lds-ws {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.lds-ws-btn {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(var(--lens-ink) / 0.45);
+  cursor: pointer;
+}
+.lds-ws-btn.is-active {
+  color: var(--lens-accent);
+  width: 22px;
+}
+.lds-ws-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lds-ws-dash {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.lds-chip {
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+}
+.lds-caret {
+  color: var(--lens-fg-secondary);
+}

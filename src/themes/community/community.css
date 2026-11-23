@@ -1,0 +1,42 @@
+/* Community pack credit row and the "Claude Code" collection header in the theme gallery. */
+.tux-pack-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tux-pack-wrap > .tux-pack {
+  width: 100%;
+}
+.tux-pack-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px;
+  min-width: 0;
+}
+.tux-pack-credit {
+  font-family: var(--lens-mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
+  font-size: 11px;
+  line-height: 16px;
+  color: rgb(var(--lens-ink, 255 255 255) / 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.tux-pack-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.tux-collection-head {
+  margin: 4px 0 8px;
+  font-family: var(--lens-mono, ui-monospace, "Cascadia Mono", Consolas, monospace);
+  font-size: 11px;
+}

@@ -21,6 +21,10 @@ pub const MAX_TAGS: usize = 12;
 pub const MAX_HOST_TO_EXT_BYTES: usize = 1024 * 1024;
 /// Our own ceiling for extension→host messages (page text + selection + overhead).
 pub const MAX_EXT_TO_HOST_BYTES: usize = 512 * 1024;
+/// "Save page offline" snapshots (HTML with inlined images) must fit one message with room for
+/// the page's readable text.
+pub const MAX_ARCHIVE_BYTES: usize = 420 * 1024;
+pub const MAX_ARCHIVE_TEXT_BYTES: usize = 48 * 1024;
 
 /// Every action Lens understands. `ai` actions go through the AI port; the rest are local.
 pub const ACTIONS: &[(&str, ActionKind)] = &[
@@ -39,8 +43,16 @@ pub const ACTIONS: &[(&str, ActionKind)] = &[
     ("compare", ActionKind::Ai),
     ("transcribe", ActionKind::Transcribe),
     ("shelf_add", ActionKind::Shelf),
+    ("micro_save", ActionKind::Shelf),
+    ("ask_files", ActionKind::Ai),
+    ("define", ActionKind::Ai),
+    ("archive_save", ActionKind::Shelf),
+    ("clip", ActionKind::Ui),
+    ("pack_add", ActionKind::Ui),
     ("context_add", ActionKind::Ui),
     ("command_open", ActionKind::Ui),
+    // lens://settings/<page>#<section>; the page id travels in `selection` (docs/SETTINGS_HUB.md).
+    ("settings_open", ActionKind::Ui),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -63,6 +75,7 @@ pub fn variants(action: &str) -> Option<&'static [&'static str]> {
         "summarize" => Some(&["tldr", "key_points", "detailed"]),
         "rewrite" => Some(&["shorter", "friendlier", "formal"]),
         "extract" => Some(&["tables", "links", "dates", "todos"]),
+        "define" => Some(&["define", "translate"]),
         _ => None,
     }
 }
@@ -131,6 +144,23 @@ pub struct RawRequest {
     /// For `status`: the request id to look up.
     pub id: Option<String>,
     pub source: Option<SourceInfo>,
+    /// `archive_save`: the page snapshot (HTML, scripts removed by the extension).
+    pub archive_html: Option<String>,
+    /// Never use a cloud provider for this request (double-click define/translate).
+    pub local_only: Option<bool>,
+    /// `clip`: page metadata for clipper templates.
+    pub meta: Option<PageMeta>,
+}
+
+/// Page metadata for clipper templates (author, description, published date, site, keywords).
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields, default)]
+pub struct PageMeta {
+    pub author: Option<String>,
+    pub description: Option<String>,
+    pub published: Option<String>,
+    pub site: Option<String>,
+    pub keywords: Option<Vec<String>>,
 }
 
 /// A request after validation; this is what Lens stores, shows and acts on.
@@ -160,6 +190,12 @@ pub struct BridgeRequest {
     pub limit: u32,
     pub status_id: Option<String>,
     pub browser: Option<String>,
+    /// More files for `ask_files`: Explorer starts one process per selected item and Lens merges
+    /// the ones that arrive together (never set from a message; see `ipc::coalesce_files`).
+    pub paths: Vec<String>,
+    pub archive_html: Option<String>,
+    pub local_only: bool,
+    pub meta: Option<PageMeta>,
 }
 
 /// Strips NULs and control characters other than newline / tab, and trims.
@@ -282,6 +318,29 @@ pub fn validate(raw: RawRequest, origin: Origin) -> Result<BridgeRequest, String
     };
     let tagsless_shelf = opt_text(&raw.shelf, 80, "Shelf name")?;
 
+    // Snapshots come only from the browser extension and only with `archive_save`.
+    let archive_html = match (&raw.archive_html, origin, action.as_str()) {
+        (None, _, _) => None,
+        (Some(h), Origin::Browser, "archive_save") => {
+            if h.len() > MAX_ARCHIVE_BYTES {
+                return Err(format!("That page is too large to save offline (max {} KB).", MAX_ARCHIVE_BYTES / 1024));
+            }
+            Some(h.clone())
+        }
+        _ => return Err("Page snapshots come only from \"Save page offline\".".into()),
+    };
+    if action == "archive_save" && page_text.as_ref().is_some_and(|t| t.len() > MAX_ARCHIVE_TEXT_BYTES) {
+        return Err("The page text for an offline copy is too large.".into());
+    }
+    let meta = raw.meta.map(|m| PageMeta {
+        author: m.author.map(|x| clean(&x).chars().take(160).collect()),
+        description: m.description.map(|x| clean(&x).chars().take(600).collect()),
+        published: m.published.map(|x| clean(&x).chars().take(40).collect()),
+        site: m.site.map(|x| clean(&x).chars().take(120).collect()),
+        keywords: m.keywords.map(|k| k.iter().map(|x| clean(x).chars().take(40).collect::<String>()).filter(|x| !x.is_empty()).take(20).collect()),
+    });
+    let local_only = raw.local_only.unwrap_or(false);
+
     let req = BridgeRequest {
         kind,
         origin,
@@ -299,12 +358,16 @@ pub fn validate(raw: RawRequest, origin: Origin) -> Result<BridgeRequest, String
         shelf: tagsless_shelf,
         shelf_ref: opt_text(&raw.shelf_ref, 128, "The Shelf reference")?,
         item,
-        prefer_local: raw.prefer_local.unwrap_or(false),
+        prefer_local: raw.prefer_local.unwrap_or(false) || local_only,
         use_clipboard: raw.use_clipboard.unwrap_or(false),
         stream: raw.stream.unwrap_or(false),
         limit: raw.limit.unwrap_or(12).clamp(1, 50),
         status_id: opt_text(&raw.id, 96, "The id")?,
         browser: raw.source.and_then(|s| s.browser).map(|b| clean(&b).chars().take(24).collect()),
+        paths: Vec::new(),
+        archive_html,
+        local_only,
+        meta,
         action,
     };
     check_has_content(&req)?;
@@ -358,8 +421,15 @@ fn check_has_content(r: &BridgeRequest) -> Result<(), String> {
         "summarize" | "explain" | "translate" | "rewrite" | "fix_grammar" | "extract" => has_text || r.link_url.is_some(),
         "compare" => (has_text || r.url.is_some()) && r.shelf_ref.is_some(),
         "transcribe" => r.media_url.is_some() || r.path.is_some() || r.url.is_some(),
-        "shelf_add" => r.item.is_some() || has_text || r.url.is_some() || r.link_url.is_some() || r.image_url.is_some(),
+        "shelf_add" | "micro_save" => r.item.is_some() || has_text || r.url.is_some() || r.link_url.is_some() || r.image_url.is_some(),
+        // Only this PC's Explorer / CLI can name files.
+        "ask_files" => r.path.is_some(),
+        "define" => r.selection.is_some(),
+        "archive_save" => r.archive_html.is_some() && r.url.is_some(),
+        "clip" => has_text || r.url.is_some(),
+        "pack_add" => r.item.is_some() || has_text || r.url.is_some(),
         "context_add" => has_text || r.url.is_some(),
+        "settings_open" => r.selection.as_deref().is_some_and(|s| !s.is_empty() && s.len() <= 64),
         _ => false,
     };
     if ok {

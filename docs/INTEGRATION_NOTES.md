@@ -127,3 +127,54 @@ screenshots; parity mocks for every new card.
 34. Updates card: Check now against a test release; crash report written after a forced panic.
 35. Tester mode: badge appears, Ctrl+Alt+M marks the log, report zip is redacted.
 36. Backup then restore on a clean profile: window styling, pointer backups and checklist results come back.
+
+---
+
+# Waves 7–8 (integration/waves-7-8)
+
+## Merged
+
+| PR | Branch | Commit taken | Note |
+|---|---|---|---|
+| #23 | feature/voice | head at merge | |
+| #18 | feature/lens-guide | head at merge | |
+| #19 | feature/rightclick-context | head at merge | |
+| #20 | feature/lens-browser | head at merge | |
+| #21 | feature/claude-control | head at merge | |
+| #24 | feature/lens-snip | head at merge | |
+| #25 | docs/vision-unified | head at merge | |
+| #26 | docs/browser-delta | head at merge | |
+| #27 | feature/magic-menu | head at merge | |
+| #29 | feature/agent-safety | head at merge | |
+| #30 | site/v2 | f3340aa | **re-merge when final** (logo/site update in progress) |
+| #31 | feature/claude-theme-packs | head at merge | |
+| #32 | feature/pack-rosewood | head at merge | |
+| #33 | feature/lens-music | head at merge | |
+| #34 | feature/lens-apps | fd06593 | **re-merge when final** (v2: real thumbnails, one-click pill) |
+| #35 | feature/settings-hub | e7b7531 (final) | Sound mixer + FillSlider included |
+| #36 | feature/ambient-backdrops | 60047df (final) | |
+| — | feature/robustness-tests | 1942ac5 | **re-merge when final** |
+
+## Applied
+
+- Settings hub page system for every new card: AI & Command sections (Voice, Magic right-click, Right-click menu, Context packs & clipper, Lens Snip, Lens Browser, Permissions, Agent safety, Lens Guide), new **Music** and **Apps** pages, nav icons, search keywords.
+- Guide: drawer in Settings, "?" in Settings and the Top Bar, `data-guide-id` anchors on every surface, `<CoachMarkLayer/>` on every surface (main.tsx), index extractor follows the hub's lazy page map with stable legacy ids.
+- `lens://settings/<page>#<section>`: CLI parser, bridge action `settings_open`, extension protocol mirror, Dock listener (SETTINGS_HUB.md).
+- Windows, capabilities and routes: `approval`, `nowplaying`, `apps`, `voicehud`, `conversation`.
+- Dock: voice morph view + hold-to-talk button (only while voice is on); music mini player (per setting).
+- Top Bar: music mini player (per setting), approvals pill, Guide "?"; old media controls stop while Music is on.
+- Ambient backdrops: already mounted by ThemeTab (Appearance).
+- Remove-all: browser bridge, `lens://` handler, Explorer verbs, Print Screen.
+
+## Not applied yet (and why)
+
+- **agentsafe_check / agentsafe_scan call sites** (AGENT_SAFETY.md): the snippets name fields that differ per package; needs a Windows compile loop.
+- **Shared approval card swap** in browser, magic, snip and voice (CLAUDE_CONTROL.md §4).
+- **Magic hooks** on Dock items, Shelf and notifications (MAGIC.md).
+- **Voice mic indicator** in the Top Bar: `useVoiceHud` would double the earcons; the Dock mic button covers it.
+- **Snip Dock button, Browser per-Space Dock icons, Apps Dock pins**, and the right-click `menuFor` in Dock/Mini/Shelf/notifications.
+- **Voice/Command intents** for Music, Apps and Snip beyond what each package registered itself.
+
+## Reports
+
+docs/DESIGN_AUDIT.md · docs/PERF_REPORT.md · docs/BUG_REPORT.md · docs/NEXT_STEPS.md

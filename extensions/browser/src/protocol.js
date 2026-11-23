@@ -12,18 +12,23 @@ export const MAX_URL_LEN = 4_096;
 
 export const ACTIONS = [
   "ping", "status", "shelf_list", "shelf_recent", "theme_get", "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar",
-  "extract", "compare", "transcribe", "shelf_add", "context_add", "command_open",
+  "extract", "compare", "transcribe", "shelf_add", "micro_save", "ask_files", "define", "archive_save", "clip", "pack_add", "context_add", "command_open", "settings_open",
 ];
 
 export const AI_ACTIONS = new Set([
-  "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar", "extract", "compare",
+  "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar", "extract", "compare", "define",
 ]);
 
 export const VARIANTS = {
   summarize: ["tldr", "key_points", "detailed"],
   rewrite: ["shorter", "friendlier", "formal"],
   extract: ["tables", "links", "dates", "todos"],
+  define: ["define", "translate"],
 };
+
+/** "Save page offline": the snapshot must fit one message (mirrors MAX_ARCHIVE_BYTES in Rust). */
+export const MAX_ARCHIVE_BYTES = 420 * 1024;
+export const MAX_ARCHIVE_TEXT_BYTES = 48 * 1024;
 
 const encoder = new TextEncoder();
 
@@ -104,12 +109,42 @@ export function buildRequest(action, ctx = {}, opts = {}) {
   if (ctx.shelfRef) req.shelfRef = String(ctx.shelfRef).slice(0, 128);
   if (ctx.item) req.item = sanitizeItem(ctx.item);
   if (opts.preferLocal) req.preferLocal = true;
+  if (opts.localOnly) {
+    req.localOnly = true;
+    req.preferLocal = true;
+  }
+  if (typeof ctx.archiveHtml === "string") {
+    if (action !== "archive_save") throw new Error("Snapshots go only with archive_save");
+    if (byteLength(ctx.archiveHtml) > MAX_ARCHIVE_BYTES) throw new Error("That page is too large to save offline");
+    req.archiveHtml = ctx.archiveHtml;
+    if (req.pageText) req.pageText = truncateBytes(req.pageText, MAX_ARCHIVE_TEXT_BYTES).text;
+  }
+  if (ctx.meta && typeof ctx.meta === "object") req.meta = sanitizeMeta(ctx.meta);
   if (opts.stream) req.stream = true;
   if (opts.id) req.id = String(opts.id);
   if (opts.limit) req.limit = Math.max(1, Math.min(50, Number(opts.limit) | 0));
   if (opts.shelf) req.shelf = String(opts.shelf).slice(0, 80);
   req.source = { browser: opts.browser || "chromium", extensionVersion: opts.version || "0" };
   return req;
+}
+
+/** Page metadata for clipper templates (the fields Lens accepts; anything else is dropped). */
+export function sanitizeMeta(m) {
+  const t = (v, n) => (typeof v === "string" && cleanText(v) ? cleanText(v).slice(0, n) : undefined);
+  const out = {};
+  const a = t(m.author, 160);
+  if (a) out.author = a;
+  const d = t(m.description, 600);
+  if (d) out.description = d;
+  const p = t(m.published, 40);
+  if (p) out.published = p;
+  const s = t(m.site, 120);
+  if (s) out.site = s;
+  if (Array.isArray(m.keywords)) {
+    const k = m.keywords.map((x) => t(x, 40)).filter(Boolean).slice(0, 20);
+    if (k.length) out.keywords = k;
+  }
+  return out;
 }
 
 const SHELF_KINDS = ["text", "page", "selection", "file", "image", "transcript", "answer"];

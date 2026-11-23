@@ -7,6 +7,9 @@ import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks
 import { setLocale } from "../i18n";
 import { applyUiScale } from "../shell/uiScale";
 import { applyDockEdge } from "../shell/dockEdge";
+import { applyShapeStyle } from "../themes/shapes/shapes";
+import "../themes/shapes/expressive.css";
+import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
@@ -36,6 +39,7 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     root.style.removeProperty("--lens-pack-elevated");
   }
   root.style.setProperty("--lens-accent", activeAccent);
+  applyShapeStyle(root, cfg.theme.shapeStyle, activeAccent, packById(cfg.theme.preset)?.base ?? "#09090B");
   root.style.setProperty("--lens-windows-accent", winTheme.accentHex);
   root.style.setProperty("--lens-glass-opacity", String(cfg.theme.glassOpacity));
   root.style.setProperty("--lens-glass-opacity-pct", `${Math.round(cfg.theme.glassOpacity * 100)}%`);
@@ -92,18 +96,22 @@ export function useLensState() {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([
-      invoke<LensConfig>("get_config"),
-      invoke<WindowsThemeInfo>("get_windows_theme"),
-    ])
-      .then(async ([cfg, theme]) => {
-        await loadCustomPacksFromDisk();
-        if (!mounted) return;
-        setConfig(cfg);
-        setWinTheme(theme);
-        applyThemeToDocument(cfg, theme);
-      })
-      .catch(console.error);
+    // Config and Windows theme load independently: a failed theme read (IPC hiccup at startup,
+    // registry error) used to blank the whole surface (docs/TESTING.md F1). Fall back to the default
+    // theme info already in state, and retry the config once.
+    (async () => {
+      let cfg: LensConfig | null = null;
+      for (let attempt = 0; attempt < 2 && !cfg; attempt++) {
+        cfg = await invoke<LensConfig>("get_config").catch(() => null);
+      }
+      if (!cfg) return;
+      const theme = await invoke<WindowsThemeInfo>("get_windows_theme").catch(() => null);
+      await loadCustomPacksFromDisk().catch(() => {});
+      if (!mounted) return;
+      setConfig(cfg);
+      if (theme) setWinTheme(theme);
+      applyThemeToDocument(cfg, theme ?? winTheme);
+    })().catch(console.error);
 
     const unlistenCfg = listen<LensConfig>("lens://config-updated", (event) => {
       // A custom pack imported in another window is unknown here until its file is read.

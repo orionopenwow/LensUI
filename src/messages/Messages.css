@@ -1,0 +1,165 @@
+/* Lens Messages. Base surface styles live in ../feeds/Feeds.css. */
+.lm-inbox,
+.lm-conv { height: 100%; }
+.lm-glyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 9px;
+  color: #fff;
+  font-weight: 800;
+  font-family: var(--font-sans);
+}
+.lm-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 6px;
+  padding: 0 9px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgb(var(--lens-ink) / 0.05);
+  color: var(--lens-fg-muted);
+}
+.lm-search input { all: unset; flex: 1; font-size: 12px; color: var(--lens-fg); }
+.lm-row {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--lens-border);
+  cursor: pointer;
+}
+.lm-row:hover,
+.lm-row.on { background: var(--lens-bg-hover); }
+.lm-row:focus-visible { outline: 2px solid var(--lens-fg); outline-offset: -2px; }
+.lm-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.lm-row-head { display: flex; align-items: center; gap: 5px; }
+.lm-title { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lm-row.unread .lm-title { font-weight: 800; }
+.lm-vip { color: #eab308; fill: #eab308; flex: none; }
+.lm-preview { font-size: 11.5px; color: var(--lens-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lm-row.unread .lm-preview { color: var(--lens-fg-secondary); }
+.lm-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; }
+.lm-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.lm-mention { display: inline-flex; align-items: center; gap: 1px; font-size: 10.5px; font-weight: 800; color: #f59e0b; }
+
+/* Focus notch */
+.lm-notch-wrap { position: relative; }
+.lm-notch {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--lens-border);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--lens-fg-secondary);
+}
+.lm-notch.vip { color: #eab308; border-color: color-mix(in srgb, #eab308 50%, transparent); }
+.lm-notch.snoozed { background: var(--lens-fg); color: var(--lens-on-fg); border-color: transparent; }
+.lm-notch:focus-visible { outline: 2px solid var(--lens-fg); }
+.lm-notch-menu {
+  position: absolute;
+  right: 0;
+  top: 28px;
+  z-index: 20;
+  width: 236px;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid var(--lens-border-strong);
+  background: var(--lens-bg-elevated, var(--lens-surface-solid));
+  box-shadow: var(--lens-shadow-panel);
+}
+.lm-notch-menu > button {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 7px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.lm-notch-menu > button:hover,
+.lm-notch-menu > button[aria-checked="true"] { background: var(--lens-bg-hover); }
+.lm-menu-label { font-size: 12px; font-weight: 700; }
+.lm-menu-hint { font-size: 11px; color: var(--lens-fg-muted); }
+.lm-menu-pad { padding: 2px 9px 4px; }
+.lm-menu-sep { height: 1px; background: var(--lens-border); margin: 4px 2px; }
+.lm-snooze { display: flex; gap: 4px; padding: 0 6px 4px; }
+.lm-snooze button { all: unset; flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; padding: 5px 0; border-radius: 7px; border: 1px solid var(--lens-border); cursor: pointer; }
+.lm-snooze button:hover { background: var(--lens-bg-hover); }
+
+/* Conversation */
+.lm-conv-title { display: flex; flex-direction: column; margin-left: 6px; min-width: 0; }
+.lm-lines { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.lm-line { display: flex; flex-direction: column; align-items: flex-start; max-width: 82%; }
+.lm-line.me { align-self: flex-end; align-items: flex-end; }
+.lm-who { font-size: 10.5px; color: var(--lens-fg-muted); margin: 0 0 2px 8px; }
+.lm-bubble { font-size: 12.5px; line-height: 1.4; padding: 6px 10px; border-radius: 12px; background: rgb(var(--lens-ink) / 0.07); overflow-wrap: anywhere; }
+.lm-line.me .lm-bubble { background: var(--lens-fg); color: var(--lens-on-fg); }
+.lm-reply { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--lens-border); }
+.lm-reply input {
+  flex: 1;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--lens-fg);
+  background: rgb(var(--lens-ink) / 0.05);
+  border: 1px solid var(--lens-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  outline: none;
+}
+
+/* Widgets */
+.lw-widget { padding: 4px 4px 8px; }
+.lw-head { all: unset; display: flex; align-items: center; gap: 6px; padding: 8px 10px 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.lw-head:focus-visible { outline: 2px solid var(--lens-fg); border-radius: 8px; }
+.lw-line { display: flex; align-items: center; gap: 7px; padding: 4px 10px; font-size: 12px; min-width: 0; }
+.lw-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--lens-fg-secondary); }
+.lw-text b { color: var(--lens-fg); }
+.lw-apps { display: flex; gap: 10px; padding: 4px 10px; flex-wrap: wrap; }
+.lw-app { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 54px; }
+.lw-count { position: absolute; top: -5px; right: 6px; }
+.lw-app-name { font-size: 10.5px; color: var(--lens-fg-secondary); max-width: 54px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Top-bar pill */
+.lm-pill {
+  all: unset;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+.lm-pill.snoozed { color: var(--lens-fg-muted); font-weight: 600; }
+.lm-pill:focus-visible { outline: 2px solid var(--lens-fg); }
+.lm-pill-dot { position: absolute; top: -1px; right: -1px; width: 7px; height: 7px; border-radius: 99px; background: #f59e0b; box-shadow: 0 0 0 1.5px var(--lens-bg-surface, #0b0b0d); }

@@ -54,8 +54,26 @@
     </section>
 
     <section class="card">
+      <h2>Clean copy</h2>
+      <p class="hint">Links you copy with Lens lose their tracking parameters (utm_…, fbclid, gclid and similar). This setting also stops sites changing what you copy, such as adding "Read more at…" or blocking copy. It doesn't apply on banking or sign-in sites, or on sites you list under "Never".</p>
+      <label class="switch-row"><input type="checkbox" id="copyGuard" /> Stop sites changing what I copy</label>
+    </section>
+
+    <section class="card">
+      <h2>Double-click a word</h2>
+      <p class="hint">Double-click a word to see a short definition or translation next to it. Answers come only from a local model in Lens (Ollama or LM Studio). Nothing is sent to the cloud; without a local model, the bubble says so. Lens doesn't include an offline dictionary yet.</p>
+      <label class="switch-row"><input type="checkbox" id="define" /> Define or translate on double-click</label>
+      <div class="row-fields">
+        <label>Show first
+          <select id="defineMode" aria-label="Show first"><option value="define">Definition</option><option value="translate">Translation</option></select>
+        </label>
+        <label>Translate into <select id="translateTo" aria-label="Translate into"></select></label>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Privacy</h2>
-      <p class="hint">This extension has no network access. It talks only to Lens on this PC through the browser's native messaging. Answers come from a local model unless you let Lens use Claude, and every cloud request waits for your OK in Lens.</p>
+      <p class="hint">This extension makes no network requests of its own. It talks only to Lens on this PC through the browser's native messaging. The one exception is "Get transcript", which asks YouTube for the caption track its own player uses. Answers come from a local model unless you let Lens use Claude, and every cloud request waits for your OK in Lens.</p>
     </section>
     <p class="hint" id="saved" role="status"></p>
   </main>

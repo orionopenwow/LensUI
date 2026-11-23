@@ -186,7 +186,7 @@
 
 .pal-recent-age {
   font-size: 11px;
-  color: var(--lens-fg-muted);
+  color: var(--lens-fg-secondary); /* F6: muted fell below 4.5:1 */
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }

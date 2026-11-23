@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import "../dock/islands/islands.css";
 import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { PluginSlot } from "../components/PluginSlot";
 import { McpBridge } from "../components/McpBridge";
@@ -6,6 +7,10 @@ import { AiApplyBridge } from "../components/AiApplyBridge";
 import { AskDockPopover, AskModeToggle, useAskMode } from "../dock/ai/AskDock";
 import { DropSparkle, DropToAiMenu } from "../dock/ai/DropToAi";
 import { SuggestedApps, recordDockLaunch } from "../dock/ai/SuggestedApps";
+import { VoiceDockView, DockMicButton, useVoiceDock } from "../dock/voice/VoiceDock";
+import { MiniPlayer } from "../music/MiniPlayer";
+import { useMiniPlacement } from "../music/useMiniPlacement";
+import type { DockStyleId as VoiceDockStyle, Edge as VoiceEdge } from "../dock/voice/dockMorph";
 import "../dock/ai/aiDock.css";
 import type { AiContext } from "../ai/surfaceApi";
 import { toDockResults } from "../search/dockAdapter";
@@ -310,6 +315,13 @@ interface NotificationLite {
   appName?: string;
 }
 
+/** Spoken form of the Dock badge (the badge itself is aria-hidden): the same number it shows. */
+function dockBadgeLabel(unread: number, windows: number): string {
+  if (unread > 0) return `, ${unread > 99 ? "99+" : unread} notifications`;
+  if (windows > 1) return `, ${windows} windows`;
+  return "";
+}
+
 export const DockSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
   // Lens Intelligence in the Dock (all off until AI is turned on; docs/AI_SURFACES.md §3).
@@ -323,6 +335,9 @@ export const DockSurface: React.FC = () => {
   const runningWindows = useRunningWindows(900);
   const [pinnedIcons, setPinnedIcons] = useState<Record<string, string | null>>({});
   const [dockVisible, setDockVisible] = useState(true);
+  // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
+  const voiceDock = useVoiceDock(dockVisible);
+  const musicMini = useMiniPlacement();
   const [dockSearchOpen, setDockSearchOpen] = useState(false);
   const [dockSearchClosing, setDockSearchClosing] = useState(false);
   const [dockSearchQuery, setDockSearchQuery] = useState("");
@@ -769,7 +784,7 @@ export const DockSurface: React.FC = () => {
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock) === "dock";
-  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio";
+  const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio" || dockStyle === "islands";
   const unreadTotal = Object.values(notifCounts).reduce((a, b) => a + b, 0);
   const magnification = normalizeMagnification(dockExtras.magnification);
   const magScale = DOCK_MAGNIFICATION.find((m) => m.id === magnification)?.scale ?? 1;
@@ -1166,6 +1181,7 @@ export const DockSurface: React.FC = () => {
 
   return (
     <div
+      data-guide-id="dock"
       className={`dock-stage dock-edge-${edge} dock-style-${dockStyle} dock-align-${alignment} ${isBar ? "is-bar" : ""} ${systemInDock ? "has-dock-system" : ""} ${magnification !== "off" ? `mag-on mag-${magnification}` : ""} ${launchAnimation !== "lift" ? `launch-${launchAnimation}` : ""} ${showLabels ? "show-labels" : ""} icon-theme-${iconTheme} icon-shape-${iconShape}`}
       style={{
         ["--dock-effective-icon-size" as string]: `${
@@ -2071,6 +2087,7 @@ export const DockSurface: React.FC = () => {
                   <input
                     ref={searchInputRef}
                     className="dock-search-glide-input"
+                    data-guide-id="dock.search"
                     value={dockSearchQuery}
                     placeholder={askMode.mode === "ask" ? "Ask anything…" : "Search…"}
                     onChange={(e) => {
@@ -2228,6 +2245,7 @@ export const DockSurface: React.FC = () => {
               )}
               <button
                 type="button"
+                aria-label={`${app.name}${primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : ""}${dockBadgeLabel(unread, wins.length)}`}
                 className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2266,11 +2284,11 @@ export const DockSurface: React.FC = () => {
                   <FallbackAppIcon hint={app.iconHint} />
                 )}
                 {unread > 0 ? (
-                  <span className="dock-notif-badge" aria-label={`${unread} notifications`}>
+                  <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 ) : (
-                  wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
+                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name}</span>}
               </button>
@@ -2328,6 +2346,7 @@ export const DockSurface: React.FC = () => {
               </button>
               <button
                 type="button"
+                aria-label={`${primaryWin.title || "Window"}${primaryWin.isFocused ? " (focused)" : " (running)"}${dockBadgeLabel(unread, wins.length)}`}
                 className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2359,11 +2378,11 @@ export const DockSurface: React.FC = () => {
                   <AppWindow size={19} strokeWidth={1.8} />
                 )}
                 {unread > 0 ? (
-                  <span className="dock-notif-badge" aria-label={`${unread} notifications`}>
+                  <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 ) : (
-                  wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
+                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
               </button>
@@ -2382,6 +2401,7 @@ export const DockSurface: React.FC = () => {
           <span className="dock-tooltip">System Stats &amp; Task Manager</span>
           <button
             type="button"
+            aria-label="System and tasks"
             className={`dock-item ${settingsOpen && activeSettingsTab === "monitor" ? "is-running" : ""} ${launchingId === "monitor" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("monitor");
@@ -2405,6 +2425,7 @@ export const DockSurface: React.FC = () => {
           <span className="dock-tooltip">Settings &amp; Control Center</span>
           <button
             type="button"
+            aria-label="Settings"
             className={`dock-item ${settingsOpen && activeSettingsTab !== "monitor" ? "is-running" : ""} ${launchingId === "settings" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("settings");
@@ -2434,6 +2455,25 @@ export const DockSurface: React.FC = () => {
           </>
         )}
         </div>
+        {musicMini === "dock" && (
+          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />
+        )}
+        {voiceDock.enabled && (
+          <>
+            <VoiceDockView
+              style={(dockStyle === "islands" ? "floating" : dockStyle) as VoiceDockStyle}
+              edge={edge as VoiceEdge}
+              width={lockedDockWidth ?? pillRef.current?.getBoundingClientRect().width ?? 480}
+              height={pillRef.current?.getBoundingClientRect().height ?? 56}
+              morph={voiceDock.morph}
+              levels={voiceDock.levels}
+              reducedMotion={prefersReducedMotion()}
+              onUndo={voiceDock.undo}
+              onAnswer={voiceDock.answer}
+            />
+            <DockMicButton size={36} live={voiceDock.live} />
+          </>
+        )}
         {isBar && systemInDock && (
           <DockSystemArea
             trayHost={config.func.trayHost ?? false}

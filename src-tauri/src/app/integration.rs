@@ -25,11 +25,14 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     start_playground_idle(&handle);
     wire_bridge(&handle);
     crate::commands::clip::init(&handle);
+    crate::commands::snip::init(&handle);
     if cfg.edge_shelf_enabled() {
         let _ = crate::app::setup::build_window_from_config(&handle, "edgeshelf");
     }
     sync_command_hotkeys(&handle, cfg);
     sync_tester_hotkey(&handle, cfg);
+    // Magic right-click window: its own settings file; off unless the user turned it on.
+    crate::commands::magic::startup(&handle);
     crate::tester::log(
         "info",
         "app",
@@ -121,6 +124,7 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
 /// Everything that must never outlive Lens: hooks, overlays, the idle window. Called from
 /// `quit_lens`, the tray's Quit and `RunEvent::Exit`.
 pub(crate) fn shutdown(app: Option<&AppHandle>) {
+    crate::commands::snip::shutdown();
     panic_shutdown();
     if let Some(app) = app {
         if let Some(w) = app.get_webview_window("playground-idle") {
@@ -135,6 +139,7 @@ pub(crate) fn panic_shutdown() {
     win_altdrag::stop_alt_drag();
     win_cursor_fx::stop();
     win_desktop_input::stop();
+    crate::commands::magic::shutdown();
 }
 
 // ================================================================================ shell keys
@@ -218,10 +223,24 @@ pub(crate) fn sync_desktop_input(app: &AppHandle, state: &win_wallpaper::Wallpap
 
 fn start_playground_idle(handle: &AppHandle) {
     let ih = handle.clone();
+    // The monitor ticks every second; read the wallpaper settings file at most every 10 s,
+    // not on every tick (it used to hit the disk once a second even with idle mode off).
+    let cache: std::sync::Mutex<Option<(std::time::Instant, Option<u64>)>> = std::sync::Mutex::new(None);
     win_desktop_input::start_idle_monitor(
-        || {
+        move || {
+            let mut c = match cache.lock() {
+                Ok(c) => c,
+                Err(_) => return None,
+            };
+            if let Some((at, v)) = *c {
+                if at.elapsed() < std::time::Duration::from_secs(10) {
+                    return v;
+                }
+            }
             let s = win_wallpaper::load_settings();
-            (s.idle_enabled && !s.calm).then(|| s.idle_minutes as u64 * 60_000)
+            let v = (s.idle_enabled && !s.calm).then(|| s.idle_minutes as u64 * 60_000);
+            *c = Some((std::time::Instant::now(), v));
+            v
         },
         move |show| {
             let h = ih.clone();

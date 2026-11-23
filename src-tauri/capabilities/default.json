@@ -19,8 +19,16 @@
     "command",
     "edgeshelf",
     "bubble",
+    "snip",
+    "snip-*",
+    "magic",
     "topbar-*",
-    "testerhub"
+    "testerhub",
+    "voicehud",
+    "conversation",
+    "approval",
+    "nowplaying",
+    "apps"
   ],
   "permissions": [
     "core:default",

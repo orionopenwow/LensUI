@@ -10,6 +10,7 @@
 // mounts the Control Center cards (docs/BROWSER_BRIDGE.md, "Wiring").
 #![allow(dead_code)]
 
+pub mod actions;
 pub mod claude_config;
 pub mod cli;
 pub mod ipc;

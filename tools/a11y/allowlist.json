@@ -1,0 +1,11 @@
+{
+  "_note": "Known accessibility exceptions for tools/a11y/run.mjs. Every entry needs a reason and, for a real defect, the docs/TESTING.md finding it is tracked under. Matching: rule id exactly, surface exactly (or \"*\"), and `target` as a substring of the failing node's CSS selector (or \"*\"). Remove an entry together with its fix; unused entries are reported.",
+  "entries": [
+    { "rule": "button-name", "surface": "settings", "target": ".cc-toggle", "reason": "F4: Control Center switches without aria-label (their text label is a sibling, not linked)." },
+    { "rule": "button-name", "surface": "settings", "target": ".cc-chip", "reason": "F4: icon-only chips (colour swatches, small icon buttons) without a name." },
+    { "rule": "button-name", "surface": "widgets", "target": "button", "reason": "F4: icon-only widget buttons without a name." },
+    { "rule": "nested-interactive", "surface": "quicksettings", "target": "*", "reason": "F5: slider pills and app volume rows (role=slider/button) contain focusable buttons." },
+    { "rule": "nested-interactive", "surface": "settings", "target": "*", "reason": "F5: the same slider pills and range rows inside Control Center cards." },
+    { "rule": "nested-interactive", "surface": "overview", "target": "*", "reason": "F5: Overview window cards are buttons that contain close/move buttons." }
+  ]
+}

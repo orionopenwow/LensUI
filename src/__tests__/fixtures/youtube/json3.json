@@ -1,0 +1,9 @@
+{"wireMagic":"pb3","pens":[{}],"events":[
+{"tStartMs":0,"dDurationMs":1200,"id":1,"wpWinPosId":1,"wsWinStyleId":1},
+{"tStartMs":0,"dDurationMs":3500,"segs":[{"utf8":"Welcome to the talk on"},{"utf8":" calm technology."}]},
+{"tStartMs":3500,"dDurationMs":4000,"aAppend":1,"segs":[{"utf8":"\n"}]},
+{"tStartMs":3600,"dDurationMs":4200,"segs":[{"utf8":"Tools should live in the "},{"utf8":"periphery &amp; inform"}]},
+{"tStartMs":7800,"dDurationMs":3000,"segs":[{"utf8":"without demanding attention."}]},
+{"tStartMs":40000,"dDurationMs":2500,"segs":[{"utf8":"[Music]"}]},
+{"tStartMs":43000,"dDurationMs":5000,"segs":[{"utf8":"Q&amp;A starts now &#8212; thanks!"}]}
+]}

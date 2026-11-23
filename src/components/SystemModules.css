@@ -35,7 +35,8 @@
 
 .sysmod-sub {
   font-size: 10.5px;
-  color: var(--lens-fg-muted);
+  /* Secondary, not muted: 10.5 px text needs 4.5:1 (muted is 3.55:1 on the Quick Settings glass). */
+  color: var(--lens-fg-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

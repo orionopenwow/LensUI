@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
+import { resolveTarget } from "../settings/registry";
 import type { LensConfig } from "../types/lens";
 import { applyThemePack, packById } from "../themes/packs";
 import { onAiApply } from "../ai/client";
@@ -39,6 +40,21 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
   const updRef = useRef(updateConfig);
   updRef.current = updateConfig;
 
+  // lens://settings/<page>#<section> links arrive as bridge requests (docs/SETTINGS_HUB.md).
+  useEffect(() => {
+    const un = listen<{ action?: string; selection?: string }>("lens://bridge/request", (e) => {
+      if (e.payload?.action !== "settings_open") return;
+      const target = String(e.payload.selection ?? "");
+      if (!resolveTarget(target)) return;
+      invoke("open_surface", { label: "settings" })
+        .then(() => emit("lens://settings-tab", target))
+        .catch(() => {});
+    });
+    return () => {
+      un.then((f) => f()).catch(() => {});
+    };
+  }, []);
+
   useEffect(() => {
     const timers: number[] = [];
     const notify = (title: string, body: string) =>
@@ -69,7 +85,9 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
           return;
         }
         case "open_settings_page": {
-          const tab = SETTINGS_TABS[String(args.page ?? "home")] ?? "system";
+          const asked = String(args.page ?? "home");
+          // Any Settings hub page id or alias works; older names map through SETTINGS_TABS.
+          const tab = resolveTarget(asked) ? asked : SETTINGS_TABS[asked] ?? "keys";
           invoke("open_surface", { label: "settings" })
             .then(() => emit("lens://settings-tab", tab))
             .catch(() => {});

@@ -8,6 +8,12 @@
   border-bottom: none !important;
   overflow: hidden;
   box-shadow: none;
+  /* Clean corners in every theme: WebView2 doesn't clip backdrop-filter (the glass blur) to
+     border-radius, so a light square of blurred desktop showed through the top-left corner.
+     clip-path does clip it, and padding-box keeps the background inside the 1px border. */
+  clip-path: inset(0 round var(--lens-radius) var(--lens-radius) 0 0);
+  background-clip: padding-box;
+  isolation: isolate;
 }
 
 .cc-drag-strip {
@@ -31,7 +37,7 @@
 .cc-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 178px 1fr;
+  grid-template-columns: 188px 1fr;
   min-height: 0;
 }
 
@@ -1270,20 +1276,10 @@
   display: none;
 }
 
-/* Page title replaces the old top info/quick-tools strip; right padding clears the window controls */
-.cc-page-title {
-  margin: 0;
-  min-height: 28px;
-  padding-right: 96px;
-  display: flex;
-  align-items: center;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--lens-fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Deep-link targets clear the sticky page header */
+.sh-anchor,
+.cc-content [id^="sec-"] {
+  scroll-margin-top: 64px;
 }
 
 /* Sidebar groups: Look / Work / Status */
@@ -1312,4 +1308,14 @@
   height: 1px;
   margin: 6px 8px;
   background: rgb(var(--lens-ink) / 0.08);
+}
+
+/* F8 (docs/TESTING.md): the theme hero reserves two description lines so switching packs never shifts the card. */
+.tux-hero-desc {
+  min-height: calc(2 * 1.45em);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

@@ -3,7 +3,11 @@
 
 #![allow(dead_code)]
 
+pub mod archive;
+pub mod clipper;
+pub mod micro;
 pub mod model;
+pub mod packs;
 pub mod service;
 pub mod templates;
 
