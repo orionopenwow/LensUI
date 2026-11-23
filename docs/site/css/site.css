@@ -916,6 +916,14 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .sc-tabs::-webkit-scrollbar { display: none; }
 .sc-tabs [role="tab"] { flex: 1 0 168px; scroll-snap-align: start; display: grid; gap: 2px; text-align: left; padding: 11px 14px; border-radius: 14px; border: 0; background: color-mix(in srgb, var(--card) 80%, transparent); box-shadow: 0 0 0 1px var(--line); color: var(--fg-2); font: 0.82rem/1.35 var(--sans); cursor: pointer; transition: background var(--lens-dur-base, .2s) var(--lens-ease-out), box-shadow var(--lens-dur-base, .2s), color .2s; }
 .sc-tabs [role="tab"] b { color: var(--fg); font-size: 0.95rem; font-weight: 600; }
+.sc-tabs [role="tab"] { grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; row-gap: 5px; align-items: center; }
+.sc-tabs .sc-tx { display: contents; }
+.sc-tabs .sc-tx b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-tabs .sc-tx > span { grid-column: 1 / -1; }
+.sc-tabs .sc-ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; overflow: hidden; }
+.sc-tabs .sc-ic img { width: 22px; height: 22px; display: block; }
+.sc-tabs .sc-ic.g { background: var(--spectrum); color: #0b0b0d; }
+.sc-tabs .sc-ic.g svg { width: 14px; height: 14px; }
 .sc-tabs [role="tab"] span { color: var(--fg-3); }
 .sc-tabs [role="tab"]:hover { background: var(--card); box-shadow: 0 0 0 1px var(--line-2); }
 .sc-tabs [role="tab"][aria-selected="true"] { background: var(--card); box-shadow: 0 0 0 1.5px rgb(var(--ink) / .5), 0 10px 30px -12px rgb(0 0 0 / .5); }

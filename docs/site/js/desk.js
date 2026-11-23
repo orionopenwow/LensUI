@@ -381,6 +381,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   iconsEl.addEventListener("click", (e) => { const b = e.target.closest(".lx-ic"); if (!b) return; if (b._dragged) { b._dragged = false; return; } iconsEl.querySelectorAll(".lx-ic").forEach((x) => x.classList.toggle("sel", x === b)); });
   // Desktop icons move like real ones: drag one anywhere on the desk; it stays inside it.
   let icDrag = null;
+  iconsEl.addEventListener("dragstart", (e) => e.preventDefault()); // the browser's own image drag would cancel ours
   iconsEl.addEventListener("pointerdown", (e) => {
     const b = e.target.closest(".lx-ic"); if (!b || e.button !== 0) return;
     icDrag = { b, id: e.pointerId, p: toDesk(e), ox: b._dx || 0, oy: b._dy || 0, moved: false };

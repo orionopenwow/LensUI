@@ -60,7 +60,14 @@ const shows = createShowcases(desk, {
     history.replaceState(null, "", `#tour/${st.showcase.id}`);
   },
 });
-scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}" title="${esc(s.line)}"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></button>`).join("");
+// Each tour's tab carries the icon of the thing it shows (the shared icon set; two drawn glyphs).
+const SC_SVG = {
+  magic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`,
+  agent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/></svg>`,
+};
+const SC_IMG = { desktop: "brand/lens-logo-small.svg", browser: "lens-browser", apps: "lens-apps", music: "lens-music", cleaner: "lens-cleaner" };
+const scIcon = (id) => SC_SVG[id] ? `<span class="sc-ic g" aria-hidden="true">${SC_SVG[id]}</span>` : `<span class="sc-ic" aria-hidden="true"><img src="${iconUrl(SC_IMG[id] ?? "lens-command")}" alt="" width="28" height="28"></span>`;
+scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}">${scIcon(s.id)}<span class="sc-tx"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></span></button>`).join("");
 scTabs.addEventListener("click", (e) => {
   const t = e.target.closest("[data-sc]");
   if (!t) return;
