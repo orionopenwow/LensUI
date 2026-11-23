@@ -304,7 +304,8 @@ export const ColorWheel: React.FC<ColorWheelProps> = ({
             <button
               key={hex}
               type="button"
-              title={`${name} (${hex})`}
+              aria-label={`Accent ${name}`}
+              aria-pressed={isSelected}
               onClick={() => onSelectColor(hex)}
               style={{
                 width: 18,
@@ -321,7 +322,7 @@ export const ColorWheel: React.FC<ColorWheelProps> = ({
         })}
         <button
           type="button"
-          title={`Sync Windows Accent (${windowsAccentHex})`}
+          aria-label={`Win: sync Windows accent (${windowsAccentHex})`}
           onClick={onSelectWindowsLive}
           style={{
             height: 18,

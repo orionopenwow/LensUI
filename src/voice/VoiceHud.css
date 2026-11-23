@@ -59,7 +59,7 @@
   place-items: center;
   background: rgb(var(--lens-ink) / 0.08);
   color: var(--lens-fg);
-  transition: background 160ms ease, color 160ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .lv-hud[data-tone="listening"] .lv-badge {
@@ -154,7 +154,7 @@
   border-radius: 2px;
   background: var(--lv-accent);
   opacity: 0.9;
-  transition: height 60ms linear;
+  transition: height var(--lens-dur-instant) linear;
 }
 
 .lv-actions {
@@ -309,7 +309,7 @@
   background: rgb(var(--lens-ink) / 0.06);
   color: var(--lens-fg);
   cursor: pointer;
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .lv-mic-btn:hover {

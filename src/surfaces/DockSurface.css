@@ -29,12 +29,12 @@
   position: relative;
   overflow: visible;
   transition:
-    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    min-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease,
-    background 220ms ease,
-    border-color 220ms ease;
+    width var(--lens-dur-slow) var(--lens-ease-out),
+    min-width var(--lens-dur-slow) var(--lens-ease-out),
+    transform var(--lens-dur-slow) var(--lens-ease-out),
+    opacity var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .dock-pill.is-hidden {
@@ -70,7 +70,7 @@
 /* Original Magnifying Glass Slot that smoothly glides open IN-PLACE inside the Dock row! */
 .dock-search-slot {
   flex: 0 0 auto;
-  transition: flex-grow 240ms cubic-bezier(0.22, 1, 0.36, 1), width 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: flex-grow var(--lens-dur-slow) var(--lens-ease-out), width var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .dock-search-slot.is-open {
@@ -90,11 +90,11 @@
   border: 1px solid transparent;
   overflow: hidden;
   transition:
-    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    padding 200ms ease,
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    width var(--lens-dur-slow) var(--lens-ease-out),
+    padding var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    box-shadow var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-search-inline.is-open {
@@ -115,7 +115,7 @@
   flex-shrink: 0;
   color: var(--lens-fg);
   cursor: pointer;
-  transition: transform 110ms cubic-bezier(0.2, 0.9, 0.3, 1), background 120ms ease;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-search-inline:not(.is-open) .dock-search-mag-btn:hover {
@@ -135,10 +135,10 @@
 
 .dock-pill.is-expanded-launcher .dock-item {
   transition:
-    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    height 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
-    background 160ms ease;
+    width var(--lens-dur-base) var(--lens-ease-out),
+    height var(--lens-dur-base) var(--lens-ease-out),
+    transform var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 /* The search field itself always stays full dock height. */
@@ -186,9 +186,9 @@
   transform-origin: bottom center;
   animation: dock-drawer-grow 250ms cubic-bezier(0.22, 1, 0.36, 1);
   transition:
-    max-height 210ms cubic-bezier(0.32, 0, 0.67, 0),
-    transform 190ms cubic-bezier(0.32, 0, 0.67, 0),
-    opacity 170ms ease-in;
+    max-height var(--lens-dur-slow) var(--lens-ease-exit),
+    transform var(--lens-dur-base) var(--lens-ease-exit),
+    opacity var(--lens-dur-base) var(--lens-ease-exit);
 }
 
 .dock-launcher-card {
@@ -235,7 +235,7 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-launcher-card-link:hover {
@@ -261,7 +261,7 @@
   opacity: 0;
   transform: scaleX(0.18);
   transform-origin: left center;
-  transition: transform 195ms cubic-bezier(0.32, 0, 0.67, 0), opacity 170ms ease-in;
+  transition: transform var(--lens-dur-base) var(--lens-ease-exit), opacity var(--lens-dur-base) var(--lens-ease-exit);
 }
 
 @keyframes dock-glide-expand {
@@ -344,7 +344,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: text;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), box-shadow var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-search-trigger:hover {
@@ -412,7 +412,7 @@
   opacity: 0;
   pointer-events: none;
   box-shadow: 0 10px 28px rgb(0 0 0 / calc(0.65 * var(--lens-shade-k)));
-  transition: opacity 130ms ease, transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
   z-index: 50;
 }
 
@@ -439,11 +439,11 @@
   border: 1px solid transparent;
   transform-origin: center center;
   transition:
-    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 175ms ease,
-    filter 160ms ease;
+    transform var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    box-shadow var(--lens-dur-base) var(--lens-ease-out),
+    filter var(--lens-dur-fast) var(--lens-ease-out);
   position: relative;
 }
 
@@ -461,7 +461,7 @@
     inset 0 2px 5px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k))),
     0 2px 6px rgb(0 0 0 / calc(0.4 * var(--lens-shade-k))) !important;
   filter: brightness(0.94);
-  transition-duration: 70ms;
+  transition-duration: var(--lens-dur-instant);
 }
 
 @keyframes dock-launch-into-window {
@@ -500,7 +500,7 @@
   width: 5px;
   border-radius: 999px;
   background: rgb(var(--lens-ink) / 0.4);
-  transition: width 180ms ease, background 180ms ease;
+  transition: width var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-indicator.focused {
@@ -547,10 +547,10 @@
   z-index: 35;
   box-shadow: 0 4px 10px rgb(0 0 0 / calc(0.6 * var(--lens-shade-k)));
   transition:
-    opacity 120ms ease,
-    transform 130ms cubic-bezier(0.2, 0.9, 0.3, 1),
-    background 110ms ease,
-    border-color 110ms ease;
+    opacity var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-dur-fast) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-item-wrap:hover .dock-close-badge {
@@ -631,7 +631,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: background 110ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-ctx-item:hover {
@@ -749,7 +749,7 @@
   background: rgb(var(--lens-ink) / 0.05);
   color: var(--lens-fg);
   cursor: pointer;
-  transition: background 110ms ease, transform 60ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-instant) var(--lens-ease-out);
 }
 
 .dock-media-btn:hover {
@@ -783,7 +783,7 @@
   background: rgb(var(--lens-ink) / 0.05);
   border: 1px solid rgb(var(--lens-ink) / 0.1);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-topbar-pin-btn:hover {
@@ -830,7 +830,7 @@
   gap: 4px;
   border-radius: 8px;
   padding: 2px 3px 2px 6px;
-  transition: background 110ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-win-row:hover {
@@ -872,7 +872,7 @@
   opacity: 0.7;
   flex-shrink: 0;
   cursor: pointer;
-  transition: background 100ms ease, color 100ms ease, opacity 100ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-win-row-close:hover {
@@ -1044,7 +1044,7 @@
   color: var(--lens-fg-secondary);
   background: rgb(var(--lens-ink) / 0.04);
   border: 1px solid transparent;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-ctx-edge-btn:hover {
@@ -1079,7 +1079,7 @@
   border-radius: 10px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-preview-tile:hover {
@@ -1126,7 +1126,7 @@
   color: var(--lens-fg-secondary);
   opacity: 0;
   flex-shrink: 0;
-  transition: opacity 120ms ease, background 110ms ease, color 110ms ease;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-preview-tile:hover .dock-preview-close {
@@ -1291,7 +1291,7 @@
   transform: translateY(-50%);
   width: 3px;
   height: 5px;
-  transition: height 180ms ease, background 180ms ease;
+  transition: height var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-edge-left .dock-indicator {
@@ -1443,13 +1443,13 @@
 
 .dock-style-minimal .dock-pill {
   transition:
-    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    min-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease,
-    background 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease;
+    width var(--lens-dur-slow) var(--lens-ease-out),
+    min-width var(--lens-dur-slow) var(--lens-ease-out),
+    transform var(--lens-dur-slow) var(--lens-ease-out),
+    opacity var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out),
+    box-shadow var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 /* Bare icons over a wallpaper need a soft shadow to stay legible; full colour is kept. */
@@ -1482,8 +1482,8 @@
   border-bottom-color: rgb(var(--lens-ink) / 0.07);
   box-shadow: var(--lens-shadow-dock);
   transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 180ms ease;
+    transform var(--lens-dur-slow) var(--lens-ease-out),
+    opacity var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-split-pill.is-hidden {
@@ -1796,18 +1796,18 @@
 /* ---------- Magnification (dock.magnification) ---------- */
 .dock-stage.mag-on .dock-icons-row > * {
   translate: var(--mag-x, 0px) 0;
-  transition: translate 110ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: translate var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-stage.mag-on .dock-icons-row > .dock-item-wrap > .dock-item {
   scale: var(--mag-s, 1);
   transform-origin: bottom center;
   transition:
-    scale 110ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 175ms cubic-bezier(0.25, 0.8, 0.25, 1),
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 175ms ease;
+    scale var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-dur-base) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    box-shadow var(--lens-dur-base) var(--lens-ease-out);
 }
 
 /* Magnified icons replace the hover lift and the neighbour poise. */

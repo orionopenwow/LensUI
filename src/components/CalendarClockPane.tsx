@@ -333,7 +333,7 @@ export const CalendarClockPane: React.FC = () => {
             >
               Today
             </button>
-            <button
+            <button aria-label="Previous month"
               type="button"
               style={{ color: "var(--lens-fg)", padding: 4, borderRadius: 6, cursor: "pointer" }}
               onClick={() =>
@@ -342,7 +342,7 @@ export const CalendarClockPane: React.FC = () => {
             >
               <ChevronLeft size={14} />
             </button>
-            <button
+            <button aria-label="Next month"
               type="button"
               style={{ color: "var(--lens-fg)", padding: 4, borderRadius: 6, cursor: "pointer" }}
               onClick={() =>
@@ -472,7 +472,7 @@ export const CalendarClockPane: React.FC = () => {
               outline: "none",
             }}
           />
-          <button
+          <button aria-label="Add event"
             type="button"
             onClick={addEvent}
             style={{
@@ -547,7 +547,7 @@ export const CalendarClockPane: React.FC = () => {
                 >
                   {ev.title}
                 </span>
-                <button
+                <button aria-label="Delete event"
                   type="button"
                   onClick={() => setEvents((prev) => prev.filter((x) => x.id !== ev.id))}
                   style={{ color: "var(--lens-fg-muted)", cursor: "pointer" }}
@@ -585,7 +585,7 @@ export const CalendarClockPane: React.FC = () => {
                 {m}m
               </button>
             ))}
-            <button
+            <button aria-label={timerRunning ? "Pause timer" : "Start timer"}
               type="button"
               onClick={() => setTimerRunning((r) => !r)}
               style={{
@@ -602,7 +602,7 @@ export const CalendarClockPane: React.FC = () => {
             >
               {timerRunning ? <Pause size={13} /> : <Play size={13} />}
             </button>
-            <button
+            <button aria-label="Reset timer"
               type="button"
               onClick={() => {
                 setTimerRunning(false);
