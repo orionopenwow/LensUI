@@ -81,6 +81,30 @@ pub fn set_pill_rect(x: f64, y: f64, w: f64, h: f64) {
     PILL_H.store(h.round().max(0.0) as i32, Ordering::Relaxed);
 }
 
+// The open flyout's rect (hover card, context menu, in-Dock search), CSS px in the Dock window.
+static FLY_X: AtomicI32 = AtomicI32::new(0);
+static FLY_Y: AtomicI32 = AtomicI32::new(0);
+static FLY_W: AtomicI32 = AtomicI32::new(0);
+static FLY_H: AtomicI32 = AtomicI32::new(0);
+
+/// Called by the Dock when a flyout opens, moves or closes (w == 0 when none is open).
+pub fn set_flyout_rect(x: f64, y: f64, w: f64, h: f64) {
+    FLY_X.store(x.round() as i32, Ordering::Relaxed);
+    FLY_Y.store(y.round() as i32, Ordering::Relaxed);
+    FLY_W.store(w.round().max(0.0) as i32, Ordering::Relaxed);
+    FLY_H.store(h.round().max(0.0) as i32, Ordering::Relaxed);
+}
+
+/// Last reported flyout rect in CSS px (x, y, w, h); w == 0 when no flyout is open.
+pub fn flyout_rect_css() -> (i32, i32, i32, i32) {
+    (
+        FLY_X.load(Ordering::Relaxed),
+        FLY_Y.load(Ordering::Relaxed),
+        FLY_W.load(Ordering::Relaxed),
+        FLY_H.load(Ordering::Relaxed),
+    )
+}
+
 /// Last reported pill rect in CSS px (x, y, w, h); w == 0 until the Dock has reported.
 pub fn pill_rect_css() -> (i32, i32, i32, i32) {
     (

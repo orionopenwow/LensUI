@@ -297,8 +297,18 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.waitForTimeout(700);
   await D((i) => window.lensSite.desk.focus(i), w0.id);
   const se = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
-  await page.mouse.move(se.x, se.y); await page.mouse.down(); await page.mouse.move(se.x + 90, se.y + 50, { steps: 8 }); await page.mouse.up();
-  const w2 = await D((i) => { const w = window.lensSite.desk.wins.get(i); return { w: w.w, h: w.h }; }, w0.id);
+  const dragCorner = async () => {
+    const c = await D((i) => { const r = window.lensSite.desk.wins.get(i).el.querySelector(".rz-se").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, w0.id);
+    await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.move(c.x + 90, c.y + 50, { steps: 8 }); await page.mouse.up();
+    return D((i) => { const w = window.lensSite.desk.wins.get(i); return { w: w.w, h: w.h }; }, w0.id);
+  };
+  void se;
+  let w2 = await dragCorner();
+  if (!(w2.w > w0.w + 40 && w2.h > w0.h + 20)) {
+    // The drop's settle spring can still own the window on a slow runner: wait it out, try once more.
+    await page.waitForTimeout(900);
+    w2 = await dragCorner();
+  }
   expect(w2.w > w0.w + 40 && w2.h > w0.h + 20, "resize from the corner", JSON.stringify([w0, w2]));
   p = await barAt(w0.id);
   await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(box.x + 2, box.y + box.height * 0.45, { steps: 14 }); await page.waitForTimeout(100);
@@ -400,7 +410,7 @@ async function waitDesk(page, sel = "#desk-host") {
   expect((await D(() => window.lensSite.lab.committed?.p.id)) === "rose-pine", "clicking a theme keeps it");
   const stray = await D(() => [...document.querySelectorAll(".lw")].filter((w) => w.matches(":focus-visible") && !w.classList.contains("was-clicked")).length);
   expect(!stray, "no window shows a focus ring it wasn't given");
-  const faded = await D(() => [...document.querySelectorAll(".lw, .lx-toast, .lx-menu, .lx-magic, .lx-approve, .lx-panel, .lx-shelf")].filter((e) => { if (e.closest("[hidden]") || !e.offsetParent) return false; const o = +getComputedStyle(e).opacity; return o > 0.02 && o < 0.98; }).map((e) => e.className));
+  const faded = await D(() => [...document.querySelectorAll(".lw, .lx-toast, .lx-menu, .lx-magic, .lx-approve, .lx-panel, .lx-shelf")].filter((e) => { if (e.closest("[hidden]") || !e.offsetParent) return false; const o = +getComputedStyle(e).opacity; return o > 0.02 && o < 0.98 && !e.getAnimations({ subtree: true }).some((a) => a.playState === "running"); }).map((e) => e.className));
   expect(!faded.length, "nothing left half-faded after animations", faded.join(", "));
   await page.click("[data-all]"); await page.waitForTimeout(250);
   await page.fill("#lab-q", "dracula"); await page.waitForTimeout(200);

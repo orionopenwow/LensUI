@@ -10,10 +10,28 @@ name: robustness
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
   # Every branch too (like build.yml), so a branch's own commit is tested and not only its merge
   # with a base that may be mid-change.
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
   schedule:
     - cron: "17 9 * * *" # nightly, 02:17 Phoenix
   workflow_dispatch:

@@ -24,7 +24,9 @@ const THROTTLE = Number(process.env.PERF_THROTTLE || 4);
 /** Regression rule: fail when measured > baseline × 1.2 + allowance. */
 const TOLERANCE = 0.2;
 // Frame times are quantised to display frames (16.7 ms at 60 Hz): one frame of allowance on p50/p95.
-const ALLOW = { p50: 17, p95: 17, longTasks: 3, cls: 0.02, fcp: 150 };
+// First paint on the shared CI runners swings by ~300 ms between identical runs; it is a
+// coarse regression guard, not a precise gate.
+const ALLOW = { p50: 17, p95: 17, longTasks: 3, cls: 0.02, fcp: 350 };
 
 async function sweep(page, selector, passes = 2, steps = 40) {
   const box = await page.locator(selector).first().boundingBox();

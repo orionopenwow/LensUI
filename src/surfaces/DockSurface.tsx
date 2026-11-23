@@ -576,7 +576,26 @@ export const DockSurface: React.FC = () => {
         closeInDockLauncher();
       }
     };
+    // The watcher clears a menu/hover/search flag that has gone stale (pointer away, Dock
+    // unfocused) so auto-hide can resume; close the matching UI here so both sides agree.
+    const unlistenDismiss = listen("lens://dock-dismiss-menus", () => {
+      setHoverCard(null);
+      closeMenu();
+      closeInDockLauncher();
+    });
+    // Leaving the Dock window entirely (fast flicks out through click-through glass) closes a
+    // hover card even when the card's own mouseleave never fired.
+    const onDocLeave = (e: MouseEvent) => {
+      if (e.relatedTarget === null) {
+        setHoverCard(null);
+        if (!dockSearchOpenRef.current) {
+          invoke("set_dock_menu_open", { open: false }).catch(() => {});
+        }
+      }
+    };
+    document.addEventListener("mouseout", onDocLeave);
     const onBlur = () => {
+      setHoverCard(null);
       closeMenu();
       window.setTimeout(() => {
         // Ignore transient Win32 focus handoff right after expanding the dock window
@@ -595,10 +614,37 @@ export const DockSurface: React.FC = () => {
       unlistenSearch.then((fn) => fn());
       unlistenSettings.then((fn) => fn());
       unlistenSettingsTab.then((fn) => fn());
+      unlistenDismiss.then((fn) => fn());
+      document.removeEventListener("mouseout", onDocLeave);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("blur", onBlur);
     };
   }, []);
+
+  // Report the open flyout's rect so the watcher can tell a click or pointer outside the Dock
+  // (and close everything / resume auto-hide) from one inside it.
+  useEffect(() => {
+    const report = () => {
+      const els = document.querySelectorAll<HTMLElement>(
+        ".dock-hover-card, .dock-ctx-menu, .dock-launcher-drawer"
+      );
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      els.forEach((el) => {
+        const rc = el.getBoundingClientRect();
+        if (rc.width === 0 || rc.height === 0) return;
+        l = Math.min(l, rc.left); t = Math.min(t, rc.top);
+        r = Math.max(r, rc.right); b = Math.max(b, rc.bottom);
+      });
+      const open = Number.isFinite(l);
+      invoke("set_dock_flyout_rect_cmd", open ? { x: l, y: t, w: r - l, h: b - t } : { x: 0, y: 0, w: 0, h: 0 }).catch(() => {});
+    };
+    const raf = requestAnimationFrame(report);
+    const t1 = window.setTimeout(report, 260); // after open/close transitions settle
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+    };
+  }, [hoverCard, ctxMenu, dockSearchOpen, dockSearchClosing]);
 
   // Unread notification badges: Windows toasts and Lens history, counted once per id.
   useEffect(() => {
