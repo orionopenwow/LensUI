@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/orionopenwow/LensUI/catalog/apps/schema.json",
+  "title": "Lens Apps catalogue",
+  "type": "object",
+  "required": ["version", "updated", "collections", "categories", "apps"],
+  "properties": {
+    "version": { "const": 1 },
+    "updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "collections": { "type": "array", "items": { "type": "object", "required": ["id", "title"], "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "subtitle": { "type": "string" } } } },
+    "categories": { "type": "array", "items": { "type": "object", "required": ["id", "title"] } },
+    "apps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "category", "collections", "status", "pitch", "why", "openSource", "license", "publisher", "homepage", "install", "media", "integration", "recipe", "sources"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "minLength": 2, "maxLength": 48 },
+          "name": { "type": "string", "minLength": 1 },
+          "category": { "type": "string" },
+          "collections": { "type": "array", "items": { "type": "string" } },
+          "status": { "enum": ["stable", "beta", "alpha"] },
+          "pitch": { "type": "string", "maxLength": 140 },
+          "why": { "type": "string" },
+          "replaces": { "type": "array", "items": { "type": "string" } },
+          "openSource": { "type": "boolean" },
+          "license": { "type": "string", "minLength": 2 },
+          "licenseVerified": { "type": "boolean" },
+          "publisher": { "type": "string" },
+          "homepage": { "type": "string", "pattern": "^https://" },
+          "repo": { "type": ["string", "null"], "pattern": "^https://" },
+          "stars": { "type": ["string", "null"] },
+          "install": {
+            "oneOf": [
+              { "type": "object", "required": ["method", "wingetId", "wingetVerified"], "properties": { "method": { "const": "winget" }, "wingetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$" }, "wingetVerified": { "type": "boolean" } } },
+              { "type": "object", "required": ["method", "repo", "hints"], "properties": { "method": { "const": "githubRelease" }, "repo": { "type": "string" }, "hints": { "type": "array" }, "fallbackUrl": { "type": "string", "pattern": "^https://" } } },
+              { "type": "object", "required": ["method", "via"], "properties": { "method": { "const": "via" }, "via": { "type": "string" }, "fallbackUrl": { "type": "string", "pattern": "^https://" } } },
+              { "type": "object", "required": ["method", "url"], "properties": { "method": { "enum": ["officialSite", "web"] }, "url": { "type": "string", "pattern": "^https://" } } }
+            ]
+          },
+          "media": { "type": "object", "required": ["icon", "screenshots", "loop", "credit", "sourceUrl", "noMedia"], "properties": { "icon": { "type": ["string", "null"], "pattern": "^https://" }, "screenshots": { "type": "array", "items": { "type": "string", "pattern": "^https://" } }, "loop": { "type": ["string", "null"], "pattern": "^https://" }, "credit": { "type": "string" }, "sourceUrl": { "type": "string", "pattern": "^https://" }, "noMedia": { "type": ["string", "null"] }, "iconPlate": { "type": "boolean" } } },
+          "integration": { "type": "object", "required": ["fileTypes", "mcp", "voice"] },
+          "recipe": { "type": "array", "items": { "type": "object", "required": ["kind"] } },
+          "sources": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } }
+        }
+      }
+    }
+  }
+}

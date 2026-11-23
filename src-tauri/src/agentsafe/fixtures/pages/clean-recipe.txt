@@ -1,0 +1,2 @@
+# expect: clean
+dom||Preheat the oven to 200C. From now on, keep the lid closed while the bread bakes.

@@ -1,6 +1,7 @@
 // Test double for @tauri-apps/api/core, used only by the parity harness (tools/parity).
 // Every command the surfaces call at startup returns realistic sample data; unknown commands
 // resolve to null, so a surface that crashes on null data shows up as a page error.
+import { applyThemePack } from "../../../src/themes/packs";
 import { emitLocal } from "./event";
 const params = new URLSearchParams(location.search);
 const preset = params.get("preset") || "obsidian";
@@ -41,6 +42,11 @@ const notes = [
   note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
 ];
 config.theme.preset = preset;
+// Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.
+if (preset.startsWith("cc-")) config = applyThemePack(config, preset);
+// ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
+if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
+if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });
@@ -83,6 +89,12 @@ const handlers: Record<string, (a: any) => any> = {
     privacy: "local_only",
   }),
   ai_usage_log: () => [],
+  // The offline intent engine (ai/intent.rs) for a couple of common phrasings.
+  ai_intent: (a: any) =>
+    /dark mode/i.test(a.text ?? "")
+      ? { action: "set_color_mode", args: { mode: "dark", _tool: "set_color_mode" }, confidence: 0.97, summary: "Switch to dark mode" }
+      : null,
+  ai_run_intent: () => "ai-mock-1",
   clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
   clip_list: () => [],
   selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),
@@ -107,10 +119,55 @@ const handlers: Record<string, (a: any) => any> = {
     transcriptsDir: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\transcripts",
   }),
   get_config: () => config,
-  get_wallpaper_state_cmd: () => ({ settings: { enabled: false, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" }),
+  get_wallpaper_state_cmd: () => {
+    // `?ambient=subtle|lively|still` shows the theme backdrop (docs/AMBIENT.md); `&ambientScene=<id>` overrides it.
+    const q = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
+    const amb = q.get("ambient");
+    const scene = amb ? "ambient" : "";
+    const sceneOptions = amb ? { ambient: { motion: amb, variant: q.get("ambientScene") ?? "auto" } } : {};
+    return { settings: { enabled: !!amb, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false, scene, sceneOptions, fps: 30, calm: false, interactive: false, ripples: false, workspaceScenes: {}, idleEnabled: false, idleMinutes: 10, idleScene: "" }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" };
+  },
   list_wallpapers_cmd: () => [],
-  get_battery_cmd: () => ({ present: true, percent: 76, charging: false, minutesRemaining: 214, powerMode: "balanced", batterySaver: false }),
-  get_keyboard_layouts_cmd: () => ({ current: "00000409", layouts: [{ id: "00000409", short: "ENG", name: "English (United States)" }] }),
+  get_battery_cmd: () => ({ hasBattery: true, percent: 76, charging: false, pluggedIn: false, secondsLeft: 12840, batterySaver: false, powerMode: "balanced", powerModeSupported: true, present: true, minutesRemaining: 214 }),
+  get_keyboard_layouts_cmd: () => ({ activeId: "04090409", current: "04090409", layouts: [{ id: "04090409", short: "ENG", name: "English (United States)" }, { id: "08090809", short: "ENG", name: "English (United Kingdom)" }] }),
+  // Settings hub (Windows pages)
+  get_wifi_cmd: () => ({ available: true, reason: "", radioOn: true, adapter: "Intel Wi-Fi 6E AX211", connectedSsid: "Home 5G", networks: [
+    { ssid: "Home 5G", signal: 92, bars: 4, secured: true, connected: true, hasProfile: true },
+    { ssid: "Home", signal: 80, bars: 3, secured: true, connected: false, hasProfile: true },
+    { ssid: "Cafe Guest", signal: 55, bars: 2, secured: false, connected: false, hasProfile: false },
+    { ssid: "NETGEAR-7F", signal: 30, bars: 1, secured: true, connected: false, hasProfile: false },
+  ] }),
+  get_bluetooth_cmd: () => ({ available: true, reason: "", radioOn: true, devices: [
+    { name: "WH-1000XM5", address: "AA:BB:CC:00:11:22", connected: true, kind: "audio" },
+    { name: "MX Master 3S", address: "AA:BB:CC:00:11:33", connected: true, kind: "input" },
+    { name: "Pixel 9", address: "AA:BB:CC:00:11:44", connected: false, kind: "phone" },
+  ] }),
+  list_audio_devices_cmd: (a: any) => a.flow === "capture"
+    ? { flow: "capture", canSwitch: true, devices: [{ id: "in1", name: "Microphone (Yeti)", isDefault: true }, { id: "in2", name: "Headset mic (WH-1000XM5)", isDefault: false }] }
+    : { flow: "render", canSwitch: true, devices: [{ id: "out1", name: "Speakers (Realtek)", isDefault: true }, { id: "out2", name: "Headphones (WH-1000XM5)", isDefault: false }] },
+  sys_display_modes_cmd: () => [
+    { device: "\\\\.\\DISPLAY1", width: 2560, height: 1440, refreshHz: 144, bitsPerPixel: 32 },
+    { device: "\\\\.\\DISPLAY2", width: 2560, height: 1440, refreshHz: 60, bitsPerPixel: 32 },
+  ],
+  sys_startup_list_cmd: () => [
+    { name: "Discord", command: "\"C:\\Users\\u\\AppData\\Local\\Discord\\Update.exe\" --processStart Discord.exe", enabled: true },
+    { name: "Spotify", command: "C:\\Users\\u\\AppData\\Roaming\\Spotify\\Spotify.exe /minimized", enabled: false },
+    { name: "OneDrive", command: "\"C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe\" /background", enabled: true },
+  ],
+  sys_startup_set_cmd: () => null,
+  sys_drives_cmd: () => [
+    { root: "C:\\", label: "Windows", kind: "fixed", totalBytes: 1_000_204_886_016, freeBytes: 212_000_000_000 },
+    { root: "D:\\", label: "Games", kind: "fixed", totalBytes: 2_000_398_934_016, freeBytes: 120_000_000_000 },
+    { root: "E:\\", label: "USB", kind: "removable", totalBytes: 64_000_000_000, freeBytes: 41_000_000_000 },
+  ],
+  sys_privacy_cmd: () => [
+    { capability: "microphone", app: "Discord", inUse: true },
+    { capability: "webcam", app: "Zoom", inUse: false },
+    { capability: "location", app: "Weather", inUse: false },
+  ],
+  sys_access_cmd: () => ({ animations: true, highContrast: false, textScale: 100 }),
+  sys_time_cmd: () => ({ timeZone: "US Mountain Standard Time", shortTime: "h:mm tt", clock24: false }),
+  sys_gaming_cmd: () => ({ gameMode: true }),
   list_plugins_cmd: () => [],
   list_plugin_approvals_cmd: () => [],
   get_tiling_status_cmd: () => ({ enabled: false, layout: "master-stack", tiled: 0, floating: 0 }),
@@ -136,7 +193,19 @@ const handlers: Record<string, (a: any) => any> = {
   get_icon_for_path: () => null,
   get_media_now_playing_cmd: () => ({ hasSession: true, isPlaying: true, title: "Midnight City", artist: "M83", album: "", sourceApp: "Spotify", thumbnailDataUrl: null }),
   get_quick_state_cmd: () => ({ volume: 62, muted: false, brightness: 80, nightLightEnabled: false, nightLightWarmth: 40 }),
-  list_audio_sessions_cmd: () => [{ pid: 1, name: "Spotify", volume: 70, muted: false }, { pid: 2, name: "Chrome", volume: 40, muted: false }],
+  list_audio_sessions_cmd: () => [
+    { pid: 1, name: "Spotify", volume: 70, muted: false },
+    { pid: 2, name: "Chrome", volume: 40, muted: false },
+    { pid: 3, name: "Discord", volume: 85, muted: false },
+    { pid: 4, name: "Steam", volume: 30, muted: true },
+    { pid: 0, name: "System Sounds", volume: 50, muted: false },
+  ],
+  sys_audio_levels_cmd: () => ({
+    masterPeak: 58,
+    sessions: [{ pid: 1, active: true, peak: 64 }, { pid: 3, active: true, peak: 22 }, { pid: 2, active: false, peak: 0 }, { pid: 4, active: false, peak: 0 }, { pid: 0, active: false, peak: 0 }],
+    mic: { available: true, volume: 72, muted: false, peak: 35 },
+  }),
+  sys_set_mic_cmd: () => null,
   get_telemetry_cmd: () => ({ cpuUsage: 14, memUsedGb: 9.2, memTotalGb: 32, memPercent: 29, uptimeMinutes: 312, cpuUsagePercent: 14, memoryUsedGb: 9.2, memoryTotalGb: 32, uptimeSeconds: 18720 }),
   scan_installed_apps_cmd: () => apps,
   get_launcher_home_cmd: () => ({ recentFiles: [{ name: "Q4 report.docx", path: "C:\\Users\\u\\Documents\\Q4 report.docx", extension: "docx", modifiedMinutesAgo: 12 }, { name: "logo.png", path: "C:\\Users\\u\\Pictures\\logo.png", extension: "png", modifiedMinutesAgo: 40 }], folders: [{ name: "Downloads", path: "C:\\Users\\u\\Downloads", color: "cobalt", itemCount: 42 }, { name: "Documents", path: "C:\\Users\\u\\Documents", color: "amber", itemCount: 18 }] }),

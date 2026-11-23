@@ -1,0 +1,4 @@
+# expect: clean
+dom|hidden|Menu
+dom|hidden|Close
+dom||Lisbon travel guide: trams, pastéis and viewpoints.

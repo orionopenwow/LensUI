@@ -256,7 +256,7 @@ export const AiCard: React.FC<{ onTryIt?: () => void }> = ({ onTryIt }) => {
       <div style={{ display: "flex", flexDirection: "column", gap: 6, opacity: enabled ? 1 : 0.55 }} aria-disabled={!enabled}>
         <div className="cc-row">
           <div className="cc-label">Who answers</div>
-          <button type="button" className="cc-btn-ghost" onClick={refresh} aria-label="Look for local models again" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+          <button type="button" className="cc-btn-ghost" onClick={refresh} aria-label="Detect: look for local models again" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <RefreshCw size={12} strokeWidth={2.4} aria-hidden="true" /> Detect
           </button>
         </div>

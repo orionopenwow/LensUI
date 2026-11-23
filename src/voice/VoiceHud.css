@@ -1,0 +1,362 @@
+/* Voice HUD: one calm card on a 4 px grid, Lens tokens only, light and dark. */
+
+.lv-hud {
+  --lv-accent: var(--lens-accent, #fafafa);
+  position: fixed;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(440px, calc(100vw - 24px));
+  font-family: var(--font-sans, system-ui, sans-serif);
+  color: var(--lens-fg);
+  pointer-events: none;
+  z-index: 50;
+}
+
+:root[data-scheme="light"] .lv-hud,
+:root[data-scheme="light"] .lv-mic-btn {
+  /* Light packs may carry a very light accent: deepen it so white-on-accent stays readable. */
+  --lv-accent: color-mix(in srgb, var(--lens-accent, #2563eb) 35%, var(--lens-fg, #18181b));
+}
+
+.lv-pos-dock {
+  bottom: 12px;
+}
+
+.lv-pos-top {
+  top: 12px;
+  flex-direction: column-reverse;
+}
+
+.lv-card,
+.lv-help {
+  pointer-events: auto;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--lens-pack-elevated, var(--lens-bg-elevated, #18181b));
+  border: 1px solid var(--lens-border);
+  border-radius: max(8px, calc(var(--lens-radius, 8px) + 4px));
+  box-shadow: var(--lens-shadow-panel, 0 12px 32px rgb(0 0 0 / 0.35));
+  animation: lv-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lv-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 12px;
+  min-height: 64px;
+}
+
+.lv-badge {
+  flex: 0 0 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--lens-ink) / 0.08);
+  color: var(--lens-fg);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.lv-hud[data-tone="listening"] .lv-badge {
+  background: var(--lv-accent);
+  color: var(--lens-on-fg);
+  animation: lv-pulse 1.4s ease-in-out infinite;
+}
+
+.lv-hud[data-tone="ok"] .lv-badge {
+  background: var(--lens-positive, #22c55e);
+  color: #fff;
+}
+
+.lv-hud[data-tone="ask"] .lv-badge {
+  background: var(--lv-accent);
+  color: var(--lens-on-fg);
+}
+
+.lv-hud[data-tone="warn"] .lv-badge,
+.lv-hud[data-tone="error"] .lv-badge {
+  background: color-mix(in srgb, var(--lens-danger, #ef4444) 18%, transparent);
+  color: var(--lens-danger, #ef4444);
+}
+
+.lv-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lv-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lv-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--lens-fg-secondary);
+}
+
+.lv-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Errors and refusals explain themselves: allow two lines. */
+.lv-hud[data-tone="error"] .lv-text,
+.lv-hud[data-tone="warn"] .lv-text,
+.lv-hud[data-tone="quiet"] .lv-text,
+.lv-hud[data-tone="muted"] .lv-text {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.lv-text.partial {
+  color: var(--lens-fg-muted);
+  font-style: italic;
+}
+
+.lv-hint {
+  font-size: 11px;
+  line-height: 12px;
+  color: var(--lens-fg-muted);
+}
+
+.lv-wave {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+}
+
+.lv-wave i {
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--lv-accent);
+  opacity: 0.9;
+  transition: height 60ms linear;
+}
+
+.lv-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.lv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.05);
+  color: var(--lens-fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lv-btn:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+}
+
+.lv-btn:focus-visible,
+.lv-icon-btn:focus-visible,
+.lv-mic:focus-visible,
+.lv-mic-btn:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lv-accent));
+  outline-offset: 2px;
+}
+
+.lv-btn-yes {
+  background: var(--lv-accent);
+  border-color: var(--lv-accent);
+  color: var(--lens-on-fg);
+}
+
+.lv-btn-yes:hover {
+  background: var(--lv-accent);
+  filter: brightness(1.08);
+}
+
+/* Help sheet */
+.lv-help {
+  padding: 12px 16px 16px;
+  max-height: min(420px, calc(100vh - 120px));
+  overflow: auto;
+}
+
+.lv-help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.lv-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.lv-help-group h4 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--lens-fg-muted);
+}
+
+.lv-help-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--lens-fg-secondary);
+}
+
+.lv-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+}
+
+.lv-icon-btn:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+  color: var(--lens-fg);
+}
+
+/* Mic indicator (Top Bar / Dock) */
+.lv-mic {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+}
+
+.lv-mic:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+}
+
+.lv-mic.live {
+  color: var(--lens-fg);
+}
+
+.lv-mic.paused,
+.lv-mic.muted {
+  color: var(--lens-fg-muted);
+}
+
+.lv-mic-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lens-danger, #ef4444);
+  box-shadow: 0 0 0 2px var(--lens-pack-base, #09090b);
+}
+
+/* Hold-to-talk button (Dock, Lens Mini) */
+.lv-mic-btn {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.lv-mic-btn:hover {
+  background: rgb(var(--lens-ink) / 0.12);
+}
+
+.lv-mic-btn.live {
+  background: var(--lv-accent, var(--lens-accent));
+  color: var(--lens-on-fg);
+  transform: scale(1.06);
+}
+
+@keyframes lv-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lv-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--lv-accent) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--lv-accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-card,
+  .lv-help,
+  .lv-hud[data-tone="listening"] .lv-badge {
+    animation: none;
+  }
+  .lv-wave i,
+  .lv-mic-btn {
+    transition: none;
+  }
+}
+
+:root[data-motion="reduce"] .lv-card,
+:root[data-motion="reduce"] .lv-help,
+:root[data-motion="reduce"] .lv-hud[data-tone="listening"] .lv-badge {
+  animation: none;
+}

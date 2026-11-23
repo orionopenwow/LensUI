@@ -171,37 +171,57 @@ pub fn url_scheme_plan(exe: &str) -> RegPlan {
 /// (sort key, label, --action verb)
 pub const FILE_VERBS: &[(&str, &str, &str)] = &[
     ("10ask", "Ask Lens about this file", "ask"),
+    ("15askfiles", "Ask about these files", "ask_files"),
     ("20summarize", "Summarise", "summarize"),
+    ("25micro", "Micro-save file", "micro_save"),
     ("30shelf", "Add to Shelf", "shelf_add"),
+    ("35pack", "Add to pack…", "pack_add"),
     ("40context", "Copy path into context", "context_add"),
 ];
 
 pub const FOLDER_VERBS: &[(&str, &str, &str)] = &[
     ("10ask", "Ask Lens about this folder", "ask"),
+    ("15askfiles", "Ask about these folders", "ask_files"),
+    ("25micro", "Micro-save folder", "micro_save"),
     ("30shelf", "Add to Shelf", "shelf_add"),
+    ("35pack", "Add to pack…", "pack_add"),
     ("40context", "Copy path into context", "context_add"),
 ];
+
+/// Verbs that receive several selected items. Explorer starts one process per item; Lens merges
+/// the requests that arrive together into one (see `ipc::coalesce_files`). `Player` lifts
+/// Explorer's 15-item limit for showing the verb.
+pub const MULTI_SELECT_ACTIONS: &[&str] = &["ask_files"];
+
+/// The desktop-background verb ("Lens Command here").
+pub const DESKTOP_ROOT: &str = "Software\\Classes\\DesktopBackground\\Shell\\LensUI.Command";
 
 pub const MEDIA_EXTENSIONS: &[&str] = &[
     ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus", ".aac", ".wma", ".mp4", ".mkv", ".mov", ".webm", ".avi",
     ".wmv", ".m4v",
 ];
 
-pub const EXPLORER_ACTIONS: &[&str] = &["ask", "summarize", "transcribe", "shelf_add", "context_add"];
+pub const EXPLORER_ACTIONS: &[&str] = &["ask", "summarize", "transcribe", "shelf_add", "context_add", "micro_save", "pack_add", "ask_files"];
 
 fn verb_command(exe: &str, action: &str) -> String {
     format!("{} --action {} \"%1\"", quoted(exe), action)
 }
 
-fn submenu(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)]) {
+fn submenu(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)], hidden: &[String]) {
     p.root(root);
     p.set(root, Some("MUIVerb"), "Lens");
     p.set(root, Some("Icon"), &format!("{},0", quoted(exe)));
     // An empty SubCommands value tells Explorer to read the cascade from the `shell` subkey.
     p.set(root, Some("SubCommands"), "");
     for (key, label, action) in verbs {
+        if hidden.iter().any(|h| h == action) {
+            continue;
+        }
         let vk = format!("{}\\shell\\{}", root, key);
         p.set(&vk, Some("MUIVerb"), label);
+        if MULTI_SELECT_ACTIONS.contains(action) {
+            p.set(&vk, Some("MultiSelectModel"), "Player");
+        }
         p.set(&format!("{}\\command", vk), None, &verb_command(exe, action));
     }
 }
@@ -209,15 +229,29 @@ fn submenu(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)])
 /// "Lens ▸" on every file and folder, plus "Transcribe with Lens" on audio/video types.
 /// (On Windows 11 these sit under "Show more options"; the modern menu needs a packaged app.)
 pub fn explorer_plan(exe: &str) -> RegPlan {
+    explorer_plan_with(exe, &[])
+}
+
+/// The Explorer plan without the actions the user hid in Settings → Right-click menu.
+/// Adds "Get transcript with Lens" on audio/video types and "Lens Command here" on the desktop.
+pub fn explorer_plan_with(exe: &str, hidden: &[String]) -> RegPlan {
     let mut p = RegPlan::default();
-    submenu(&mut p, "Software\\Classes\\*\\shell\\LensUI", exe, FILE_VERBS);
-    submenu(&mut p, "Software\\Classes\\Directory\\shell\\LensUI", exe, FOLDER_VERBS);
-    for ext in MEDIA_EXTENSIONS {
-        let root = format!("Software\\Classes\\SystemFileAssociations\\{}\\shell\\LensUI.Transcribe", ext);
-        p.root(&root);
-        p.set(&root, Some("MUIVerb"), "Transcribe with Lens");
-        p.set(&root, Some("Icon"), &format!("{},0", quoted(exe)));
-        p.set(&format!("{}\\command", root), None, &verb_command(exe, "transcribe"));
+    submenu(&mut p, "Software\\Classes\\*\\shell\\LensUI", exe, FILE_VERBS, hidden);
+    submenu(&mut p, "Software\\Classes\\Directory\\shell\\LensUI", exe, FOLDER_VERBS, hidden);
+    if !hidden.iter().any(|h| h == "transcribe") {
+        for ext in MEDIA_EXTENSIONS {
+            let root = format!("Software\\Classes\\SystemFileAssociations\\{}\\shell\\LensUI.Transcribe", ext);
+            p.root(&root);
+            p.set(&root, Some("MUIVerb"), "Get transcript with Lens");
+            p.set(&root, Some("Icon"), &format!("{},0", quoted(exe)));
+            p.set(&format!("{}\\command", root), None, &verb_command(exe, "transcribe"));
+        }
+    }
+    if !hidden.iter().any(|h| h == "command_here") {
+        p.root(DESKTOP_ROOT);
+        p.set(DESKTOP_ROOT, Some("MUIVerb"), "Lens Command here");
+        p.set(DESKTOP_ROOT, Some("Icon"), &format!("{},0", quoted(exe)));
+        p.set(&format!("{}\\command", DESKTOP_ROOT), None, &format!("{} --url \"lens://command\"", quoted(exe)));
     }
     p
 }
@@ -291,7 +325,7 @@ mod tests {
     #[test]
     fn explorer_plan_covers_files_folders_and_media() {
         let p = explorer_plan(EXE);
-        assert_eq!(p.roots.len(), 2 + MEDIA_EXTENSIONS.len());
+        assert_eq!(p.roots.len(), 3 + MEDIA_EXTENSIONS.len());
         let file_cmds: Vec<&RegValue> = p.values.iter().filter(|v| v.key.starts_with("Software\\Classes\\*\\") && v.key.ends_with("\\command")).collect();
         assert_eq!(file_cmds.len(), FILE_VERBS.len());
         assert!(file_cmds.iter().all(|v| v.value.starts_with(&format!("\"{}\" --action ", EXE)) && v.value.ends_with(" \"%1\"")));
@@ -305,6 +339,40 @@ mod tests {
         for (_, _, a) in FILE_VERBS.iter().chain(FOLDER_VERBS) {
             assert!(EXPLORER_ACTIONS.contains(a));
         }
+    }
+
+    #[test]
+    fn explorer_plan_adds_micro_save_packs_multi_select_and_desktop() {
+        let p = explorer_plan(EXE);
+        let has = |key_end: &str, name: Option<&str>, value: &str| {
+            p.values.iter().any(|v| v.key.ends_with(key_end) && v.name.as_deref() == name && v.value == value)
+        };
+        assert!(has("*\\shell\\LensUI\\shell\\25micro", Some("MUIVerb"), "Micro-save file"));
+        assert!(has("*\\shell\\LensUI\\shell\\35pack", Some("MUIVerb"), "Add to pack…"));
+        assert!(has("*\\shell\\LensUI\\shell\\15askfiles", Some("MultiSelectModel"), "Player"));
+        assert!(has("Directory\\shell\\LensUI\\shell\\15askfiles", Some("MultiSelectModel"), "Player"));
+        // Only the multi-select verb gets MultiSelectModel.
+        assert_eq!(p.values.iter().filter(|v| v.name.as_deref() == Some("MultiSelectModel")).count(), 2);
+        // Desktop background: opens Lens Command, owned by Lens like every other root.
+        assert!(p.roots.contains(&DESKTOP_ROOT.to_string()));
+        assert!(has("LensUI.Command\\command", None, &format!("\"{}\" --url \"lens://command\"", EXE)));
+        assert!(p.values.iter().any(|v| v.key == DESKTOP_ROOT && v.name.as_deref() == Some(OWNED_MARKER)));
+        assert!(has(".mp4\\shell\\LensUI.Transcribe", Some("MUIVerb"), "Get transcript with Lens"));
+        // Everything under HKCU\Software\Classes, never HKLM.
+        assert!(p.values.iter().all(|v| v.key.starts_with("Software\\Classes\\")));
+    }
+
+    #[test]
+    fn hidden_actions_are_left_out_of_explorer() {
+        let hidden = vec!["micro_save".to_string(), "transcribe".to_string(), "command_here".to_string()];
+        let p = explorer_plan_with(EXE, &hidden);
+        assert!(!p.values.iter().any(|v| v.value.contains("--action micro_save")));
+        assert!(!p.values.iter().any(|v| v.key.contains("LensUI.Transcribe")));
+        assert!(!p.roots.contains(&DESKTOP_ROOT.to_string()));
+        assert_eq!(p.roots.len(), 2);
+        // Removing what was installed must cover every root the full plan can create.
+        let full = explorer_plan(EXE);
+        assert!(p.roots.iter().all(|r| full.roots.contains(r)));
     }
 
     #[test]

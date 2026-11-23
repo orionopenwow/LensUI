@@ -1,0 +1,279 @@
+/*
+ * Lens "Dot Matrix" style: flat, borderless rounded-square tiles, LED-dot numerals and segmented
+ * stat pills. All colours come from the active pack (surfaces, --lens-fg, accent, danger), so it
+ * works on every pack. Widget tiles are their own components; the :root[data-shape="dotmatrix"]
+ * rules only flatten existing cards and controls, and match nothing when the style is off.
+ */
+
+:root[data-shape="dotmatrix"] {
+  --ldm-tile-radius: 28px;
+  --ldm-surface: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 4%);
+  --ldm-surface-2: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 9%);
+}
+
+:root[data-shape="dotmatrix"] :is(.qs-card, .sysmod-card, .nc-item) {
+  border-radius: 22px;
+  border-color: transparent;
+  background: var(--ldm-surface);
+}
+:root[data-shape="dotmatrix"] :is(.qs-tile, .cc-chip, .tux-chip, .sysmod-chip) {
+  border-radius: 999px;
+  border-color: transparent;
+}
+:root[data-shape="dotmatrix"] .qs-tile.active {
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+}
+
+/* ---------- Tiles ---------- */
+.ldm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 172px);
+  gap: 20px;
+}
+.ldm-tile {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  padding: 18px;
+  box-sizing: border-box;
+  border-radius: var(--ldm-tile-radius, 28px);
+  background: var(--ldm-surface, var(--lens-pack-elevated, #141418));
+  color: var(--lens-fg);
+  overflow: hidden;
+}
+.ldm-tile.is-wide {
+  grid-column: span 2;
+  width: auto;
+  height: auto;
+  min-height: 172px;
+}
+.ldm-tile.is-pill {
+  border-radius: 999px;
+  min-height: 172px;
+  display: grid;
+  place-items: center;
+}
+.ldm-dim {
+  color: var(--lens-fg-secondary);
+}
+.ldm-small {
+  font-size: 10px;
+}
+
+/* Battery */
+.ldm-batt-icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ldm-surface-2, rgb(var(--lens-ink) / 0.08));
+  color: var(--lens-fg);
+}
+.ldm-batt-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--lens-danger);
+  border: 2px solid var(--ldm-surface-2, #222);
+}
+.ldm-batt-badge.is-charging {
+  background: var(--lens-positive);
+}
+.ldm-batt-val {
+  position: absolute;
+  right: 18px;
+  bottom: 22px;
+}
+
+/* Media disc */
+.ldm-disc {
+  width: 96px;
+  height: 96px;
+  margin: 18px auto 0;
+  border-radius: 50%;
+  background: var(--lens-fg);
+  display: grid;
+  place-items: center;
+}
+.ldm-disc-hole {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ldm-surface-2, #333);
+  box-shadow: inset 0 0 0 9px color-mix(in srgb, var(--lens-fg) 70%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduce"]) .ldm-disc.is-playing {
+    animation: ldm-spin 6s linear infinite;
+  }
+}
+@keyframes ldm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ldm-pages {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.ldm-pages span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgb(var(--lens-ink) / 0.25);
+}
+.ldm-pages span.on {
+  background: var(--lens-fg);
+}
+
+/* Weather card */
+.ldm-wx-top {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: start;
+  gap: 18px;
+}
+.ldm-wx-now {
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.ldm-wx-hl {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.ldm-wx-place {
+  text-align: right;
+  font-size: 15px;
+  display: grid;
+  gap: 6px;
+}
+.ldm-wx-days {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 22px;
+}
+.ldm-wx-day {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Big pill clock */
+.ldm-bigclock {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 26px 40px;
+}
+.ldm-colon {
+  display: grid;
+  gap: 14px;
+}
+.ldm-colon i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--lens-fg-secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduce"]) .ldm-colon {
+    animation: ldm-blink 2s steps(1) infinite;
+  }
+}
+@keyframes ldm-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Date tile */
+.ldm-date-wd {
+  text-align: right;
+  font-family: Georgia, Cambria, serif;
+  font-size: 22px;
+  color: var(--lens-danger);
+}
+.ldm-date-num {
+  margin-top: 4px;
+  font-family: Georgia, Cambria, serif;
+  font-size: 92px;
+  line-height: 1;
+  font-weight: 600;
+}
+.ldm-fold {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  border-top-left-radius: 14px;
+  background: var(--ldm-surface-2, rgb(var(--lens-ink) / 0.1));
+}
+
+/* Minimal analogue */
+.ldm-analog {
+  width: 100%;
+  height: 100%;
+}
+.ldm-analog-face {
+  fill: transparent;
+}
+.ldm-analog-hand {
+  stroke: var(--lens-fg);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.ldm-analog-dot {
+  fill: var(--lens-danger);
+}
+
+/* ---------- Stat pills ---------- */
+.ldm-stats {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.07);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lens-fg);
+  white-space: nowrap;
+}
+.ldm-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+}
+.ldm-stat + .ldm-stat {
+  border-left: 1px solid rgb(var(--lens-ink) / 0.18);
+}
+.ldm-stat-ico {
+  color: var(--lens-fg-secondary);
+}
+
+:root[data-shape="dotmatrix"] .qs-win-item {
+  border-radius: 18px !important;
+  border-color: transparent !important;
+  background: var(--ldm-surface) !important;
+}

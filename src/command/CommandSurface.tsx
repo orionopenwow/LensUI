@@ -10,7 +10,7 @@ import {
 import { useLensState } from "../hooks/useLensState";
 import type { RunningWindow } from "../types/lens";
 import {
-  aiAsk, aiCancel, aiConfirmTool, aiIntent, aiStatus, useAiEvents, type AiStatus, type Intent,
+  aiAsk, aiCancel, aiConfirmTool, aiIntent, aiRunIntent, aiStatus, useAiEvents, type AiStatus, type Intent,
 } from "./ai";
 import {
   MODE_LABEL, MODES, cycleMode, destinationOf, mentionAtCaret, mentionSuggestions, parseMentions, parseSlash,
@@ -29,6 +29,7 @@ import {
   DEFAULT_CLIP_SETTINGS, sourceAppName, type ClipKind, type ClipView,
 } from "../clip/contract";
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
+import { answersInText, runDo } from "./doMode";
 import "./Command.css";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
@@ -517,6 +518,39 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     window.setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  // Do mode: the offline engine first (works with AI off), the AI only for what it doesn't know.
+  // Every outcome leaves a visible card — failures included — so Enter never looks like it did nothing.
+  const runDoMode = async (raw: string) => {
+    const typed = raw.trim();
+    setText("");
+    const out = await runDo(
+      typed,
+      {
+        intent: aiIntent,
+        runIntent: aiRunIntent,
+        ask: async (t) => {
+          const built = buildRequest({ text: t, slash: null, chips: [], overrides: settings.providers, providers: ai?.providers ?? [], active: ai?.active ?? "local", allowTools: true });
+          return aiAsk(built.req);
+        },
+      },
+      intent && intent.summary && typed ? intent : null
+    );
+    if (out.kind === "none") return;
+    if (out.kind === "error") {
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent?.summary ?? "Couldn't do that", detail: out.message, ok: false, ts: Date.now() } });
+      return;
+    }
+    if (out.kind === "intent") {
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now() } });
+      if (!answersInText(out.intent)) return;
+    } else {
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: typed.slice(0, 60), detail: "Asked the AI", ok: true, ts: Date.now() } });
+    }
+    const ansKey = newKey("a");
+    dispatch({ type: "push", item: { kind: "answer", key: ansKey, reqId: null, text: "", status: "streaming", ts: Date.now() } });
+    dispatch({ type: "attachReq", key: ansKey, reqId: out.reqId });
+  };
+
   const runActive = (shift: boolean, ctrl: boolean) => {
     if (mode === "clipboard") {
       const c = clips[active];
@@ -548,7 +582,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       return;
     }
     if (mode === "do") {
-      if (text.trim()) ask(text, [], true);
+      if (text.trim()) void runDoMode(text);
       return;
     }
     if (ctrl && latestAnswer) {
@@ -657,6 +691,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         <span>{MODE_LABEL[mode]}</span>
       </button>
       <textarea
+        data-guide-id="command"
         ref={inputRef}
         className="cmd-input"
         rows={1}
@@ -707,7 +742,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
 
   if (layout === "mini") {
     return (
-      <div className="cmd-root is-mini">
+      <div className="cmd-root is-mini" data-guide-id="mini">
         <MiniView
           input={<>{bar}{popoverEl}</>}
           chips={chips}
@@ -850,7 +885,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
                   )}
                   {thread.length ? (
                     <div className="cmd-thread">
-                      {thread.filter((t) => t.kind === "tool" || t.kind === "action").slice(-4).map((it, i, arr) => (
+                      {thread.filter((t) => t.kind === "tool" || t.kind === "action" || (t.kind === "answer" && !!t.text)).slice(-4).map((it, i, arr) => (
                         <ThreadCard key={it.key} item={it} h={handlers} latest={i === arr.length - 1} />
                       ))}
                     </div>

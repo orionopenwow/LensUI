@@ -5,6 +5,7 @@ import { LensConfig, WindowsThemeInfo } from "../types/lens";
 import { allPacks, applyThemePack, packById, recommendedPacks } from "../themes/packs";
 import { PackCard } from "./ThemeGallery";
 import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf, withDock } from "../dock/styles";
+import { enableAmbientBackdrop } from "../playground/ambient/controls";
 
 interface SetupWizardProps {
   config: LensConfig;
@@ -24,6 +25,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
   const [step, setStep] = useState(0);
   const [selfTest, setSelfTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  // "Animated backdrop (subtle)": pre-ticked on the look step, applied only when the user presses Finish.
+  const [ambient, setAmbient] = useState(true);
   const headingRef = useRef<HTMLHeadingElement>(null);
   // Snapshot taken when the wizard opens, so "Undo all changes" can put everything back.
   const initialRef = useRef<LensConfig>(config);
@@ -40,7 +43,11 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
     onFinish();
   };
 
-  const next = () => (step < last ? setStep(step + 1) : finish());
+  const next = () => {
+    if (step < last) return setStep(step + 1);
+    if (ambient) enableAmbientBackdrop().catch(() => {});
+    finish();
+  };
   const back = () => step > 0 && setStep(step - 1);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -137,6 +144,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
                 />
               ))}
             </div>
+            <label className="wiz-ambient">
+              <input type="checkbox" checked={ambient} onChange={(e) => setAmbient(e.target.checked)} />
+              <span>
+                <strong>Animated backdrop (subtle)</strong> A very slow, faint motion behind your desktop in this theme's colours. Turn it off any time in Theme &amp; Look.
+              </span>
+            </label>
           </>
         )}
 

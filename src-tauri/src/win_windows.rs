@@ -152,7 +152,7 @@ fn expand_win_env(raw: &str) -> String {
 }
 
 #[cfg(windows)]
-fn resolve_lnk_icon_and_target(lnk_path: &str) -> (Option<(String, i32)>, Option<String>) {
+pub(crate) fn resolve_lnk_icon_and_target(lnk_path: &str) -> (Option<(String, i32)>, Option<String>) {
     use windows::core::{Interface, PCWSTR};
     use windows::Win32::System::Com::{
         CoCreateInstance, IPersistFile, CLSCTX_INPROC_SERVER, STGM_READ,

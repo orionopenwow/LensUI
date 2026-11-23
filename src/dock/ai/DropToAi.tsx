@@ -16,7 +16,7 @@ import "../../ai/AskPanel.css";
 import "./aiDock.css";
 
 export const DropSparkle: React.FC<{ active: boolean; onClick?: () => void; label?: string }> = ({ active, onClick, label = "Ask AI" }) => (
-  <button type="button" className={`ai-sparkle ${active ? "is-drop" : ""}`} aria-label={active ? "Drop files to use them with AI" : label} onClick={onClick}>
+  <button type="button" data-guide-id="dock.sparkle" className={`ai-sparkle ${active ? "is-drop" : ""}`} aria-label={active ? "Drop files to use them with AI" : label} onClick={onClick}>
     <Sparkles size={18} strokeWidth={2.3} aria-hidden="true" />
   </button>
 );

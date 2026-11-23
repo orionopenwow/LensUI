@@ -1,0 +1,230 @@
+// Fluidity budgets (docs/TESTING.md › Perf). Renders the real frontend with mocked Tauri, throttles
+// the CPU 4× through DevTools, drives each interaction and measures:
+//   frame p50/p95 (ms between animation frames), long tasks > 50 ms, layout shift (CLS),
+//   and first contentful paint of the surface.
+// Then compares with tools/perf/budgets.json: a metric more than 20 % (plus a small absolute
+// allowance for timer noise) above its baseline fails the run.
+//
+//   node tools/robust/build.mjs && node tools/perf/run.mjs            # check
+//   node tools/perf/run.mjs --update                                  # re-baseline from this machine
+//   PERF_ONLY=dock-hover-sweep,theme-switch node tools/perf/run.mjs   # a subset
+//   PERF_SCENE_MS=5000 (default) — how long each Playground scene runs
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { serve, launch, openSurface, setConfig, settingsTabs, pct, here as robustDir } from "../robust/lib.mjs";
+
+const perfDir = join(robustDir, "../perf");
+const outDir = join(perfDir, "out");
+mkdirSync(outDir, { recursive: true });
+const UPDATE = process.argv.includes("--update");
+const ONLY = (process.env.PERF_ONLY || "").split(",").filter(Boolean);
+const SCENE_MS = Number(process.env.PERF_SCENE_MS || 5000);
+const THROTTLE = Number(process.env.PERF_THROTTLE || 4);
+
+/** Regression rule: fail when measured > baseline × 1.2 + allowance. */
+const TOLERANCE = 0.2;
+// Frame times are quantised to display frames (16.7 ms at 60 Hz): one frame of allowance on p50/p95.
+const ALLOW = { p50: 17, p95: 17, longTasks: 3, cls: 0.02, fcp: 150 };
+
+async function sweep(page, selector, passes = 2, steps = 40) {
+  const box = await page.locator(selector).first().boundingBox();
+  if (!box) throw new Error(`nothing to sweep: ${selector}`);
+  const y = box.y + box.height / 2;
+  for (let p = 0; p < passes; p++) {
+    const from = p % 2 ? box.x + box.width : box.x;
+    const to = p % 2 ? box.x : box.x + box.width;
+    for (let i = 0; i <= steps; i++) {
+      await page.mouse.move(from + ((to - from) * i) / steps, y);
+      await page.waitForTimeout(16);
+    }
+  }
+  await page.mouse.move(box.x + box.width / 2, box.y - 300);
+}
+
+const SCENARIOS = {
+  "dock-hover-sweep": { surface: "dock", run: (p) => sweep(p, ".dock-icons-row") },
+  "dock-magnification": {
+    surface: "dock",
+    setup: (p) => setConfig(p, (c) => { c.dock.magnification = "classic"; c.dock.magnificationRange = 3; }),
+    run: (p) => sweep(p, ".dock-icons-row"),
+  },
+  "dock-search-glide": {
+    surface: "dock",
+    run: async (p) => {
+      for (let i = 0; i < 3; i++) {
+        await p.locator(".dock-search-mag-btn").first().click();
+        await p.waitForTimeout(450);
+        await p.keyboard.press("Escape");
+        await p.waitForTimeout(450);
+      }
+    },
+  },
+  "command-mini-expand": {
+    surface: "command",
+    run: async (p) => {
+      for (let i = 0; i < 3; i++) {
+        await p.evaluate(() => window.__lensEmit("lens://command/open", { layout: "mini" }));
+        await p.waitForTimeout(400);
+        const expand = p.locator(".mini-expand");
+        if (await expand.count()) await expand.first().click();
+        await p.waitForTimeout(500);
+      }
+    },
+  },
+  "theme-switch": {
+    surface: "settings",
+    run: async (p) => {
+      for (const preset of ["catppuccin-mocha", "alabaster-daylight", "tokyo-night", "nord-frost", "obsidian", "paper-minimal"]) {
+        await setConfig(p, new Function("c", `c.theme.preset = ${JSON.stringify(preset)};`));
+        await p.waitForTimeout(300);
+      }
+    },
+  },
+  "settings-tab-switch": {
+    surface: "settings",
+    run: async (p) => {
+      const tabs = settingsTabs(p);
+      const n = await tabs.count();
+      for (let i = 0; i < n; i++) {
+        await tabs.nth(i).click();
+        await p.waitForTimeout(260);
+      }
+    },
+  },
+};
+for (const scene of ["sand", "fluid", "flow", "constellation", "aurora", "rain", "starfield", "skyclock"]) {
+  SCENARIOS[`playground-${scene}`] = {
+    surface: "wallpaper",
+    query: `scene=${scene}`,
+    run: async (p) => {
+      // Gentle pointer movement over the scene, like a person idly moving the mouse.
+      const t0 = Date.now();
+      let i = 0;
+      while (Date.now() - t0 < SCENE_MS) {
+        await p.mouse.move(200 + 300 * Math.sin(i / 20), 270 + 120 * Math.cos(i / 15));
+        await p.waitForTimeout(50);
+        i++;
+      }
+    },
+  };
+}
+
+/** Installed before the page loads: frame times, long tasks, layout shifts, paint timing. */
+function instrument() {
+  const st = (window.__perf = { frames: [], long: 0, longMs: 0, cls: 0, recording: false, last: 0 });
+  const tick = (t) => {
+    if (st.recording && st.last) st.frames.push(t - st.last);
+    st.last = t;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  try {
+    new PerformanceObserver((l) => {
+      if (!st.recording) return;
+      for (const e of l.getEntries()) { st.long++; st.longMs += e.duration; }
+    }).observe({ type: "longtask", buffered: false });
+    new PerformanceObserver((l) => {
+      if (!st.recording) return;
+      for (const e of l.getEntries()) if (!e.hadRecentInput) st.cls += e.value;
+    }).observe({ type: "layout-shift", buffered: false });
+  } catch {}
+}
+
+const server = await serve();
+const browser = await launch();
+
+async function measure(name, sc) {
+  // Instrument and throttle, then reload so first paint is measured on the slow machine too.
+  const page = await openSurface(browser, server.base, { surface: sc.surface, query: sc.query || "", settle: 0 });
+  await page.addInitScript(instrument);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
+  await page.reload();
+  await page.waitForTimeout(1200);
+  if (sc.setup) { await sc.setup(page); await page.waitForTimeout(400); }
+  const fcp = await page.evaluate(() => performance.getEntriesByType("paint").find((e) => e.name === "first-contentful-paint")?.startTime ?? 0);
+  await page.evaluate(() => { window.__perf.frames = []; window.__perf.recording = true; });
+  await sc.run(page);
+  const st = await page.evaluate(() => { window.__perf.recording = false; return window.__perf; });
+  // Drop the first frame (it straddles the start) and anything over 1 s (tab was idle).
+  const frames = st.frames.slice(1).filter((f) => f < 1000);
+  if (page.problems.errors.length) console.log(`  errors in ${name}:\n    ${page.problems.errors.join("\n    ")}`);
+  const r = {
+    p50: +pct(frames, 50).toFixed(1),
+    p95: +pct(frames, 95).toFixed(1),
+    longTasks: st.long,
+    cls: +st.cls.toFixed(4),
+    fcp: +fcp.toFixed(0),
+    frames: frames.length,
+    errors: page.problems.errors.length,
+  };
+  await page.context().close();
+  return r;
+}
+
+const budgetsPath0 = join(perfDir, "budgets.json");
+let baseline0 = {};
+try { baseline0 = JSON.parse(readFileSync(budgetsPath0, "utf8")).baseline || {}; } catch {}
+const over = (r, b) => b && ["p50", "p95", "longTasks", "cls", "fcp"].some((k) => r[k] > b[k] * (1 + TOLERANCE) + ALLOW[k]);
+
+const results = {};
+for (const [name, sc] of Object.entries(SCENARIOS)) {
+  if (ONLY.length && !ONLY.includes(name)) continue;
+  let r = await measure(name, sc);
+  // Shared CI runners have noisy neighbours: a scenario over budget gets one more try, and each
+  // metric keeps the better of the two runs. A real regression fails both.
+  if (!UPDATE && over(r, baseline0[name])) {
+    const again = await measure(name, sc);
+    console.log(`  retried ${name}`);
+    r = Object.fromEntries(Object.keys(r).map((k) => [k, k === "frames" ? Math.max(r[k], again[k]) : Math.min(r[k], again[k])]));
+  }
+  results[name] = r;
+}
+await browser.close();
+server.close();
+
+const budgetsPath = join(perfDir, "budgets.json");
+let budgets = {};
+try { budgets = JSON.parse(readFileSync(budgetsPath, "utf8")); } catch {}
+const base = budgets.baseline || {};
+const failures = [];
+const rows = [];
+for (const [name, r] of Object.entries(results)) {
+  const b = base[name];
+  const flags = [];
+  if (b) {
+    for (const k of ["p50", "p95", "longTasks", "cls", "fcp"]) {
+      const limit = b[k] * (1 + TOLERANCE) + ALLOW[k];
+      if (r[k] > limit) flags.push(`${k} ${r[k]} > ${limit.toFixed(k === "cls" ? 3 : 1)}`);
+    }
+  } else if (!UPDATE) flags.push("no baseline");
+  if (r.errors) flags.push(`${r.errors} page errors`);
+  if (flags.length && b) failures.push(`${name}: ${flags.join(", ")}`);
+  rows.push(`| ${name} | ${r.p50} | ${r.p95} | ${r.longTasks} | ${r.cls} | ${r.fcp} | ${r.frames} | ${flags.join("; ") || "ok"} |`);
+}
+const table = [
+  `CPU throttle ${THROTTLE}×. Frame times in ms; FCP in ms.`,
+  "",
+  "| scenario | p50 | p95 | long tasks | CLS | FCP | frames | vs budget |",
+  "|---|---|---|---|---|---|---|---|",
+  ...rows,
+].join("\n");
+console.log(table);
+writeFileSync(join(outDir, "report.md"), table + "\n");
+writeFileSync(join(outDir, "report.json"), JSON.stringify(results, null, 2));
+
+if (UPDATE) {
+  const next = {
+    _note: "Baseline per scenario from `node tools/perf/run.mjs --update`. A run fails when a metric exceeds baseline × 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, on the CI runner's numbers (perf-report artifact).",
+    throttle: THROTTLE,
+    baseline: { ...base, ...Object.fromEntries(Object.entries(results).map(([k, r]) => [k, { p50: r.p50, p95: r.p95, longTasks: r.longTasks, cls: r.cls, fcp: r.fcp }])) },
+  };
+  writeFileSync(budgetsPath, JSON.stringify(next, null, 2) + "\n");
+  console.log(`[perf] baseline written to ${budgetsPath}`);
+  process.exit(0);
+}
+if (failures.length) {
+  console.log(`\n[perf] ${failures.length} regression(s):\n  ${failures.join("\n  ")}`);
+  process.exit(1);
+}
+console.log(`[perf] ${Object.keys(results).length} scenarios within budget`);

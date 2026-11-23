@@ -226,7 +226,7 @@ mod tests {
             content: vec![Block::ToolResult { id: "t1".into(), content: "Volume set to 30%.".into(), is_error: false }],
         });
         let b = build_body(&r, DEFAULT_MODEL);
-        assert_eq!(b["tools"].as_array().unwrap().len(), tools::REGISTRY.len());
+        assert_eq!(b["tools"].as_array().unwrap().len(), tools::REGISTRY.len() + crate::control::tools::TOOLS.len());
         assert_eq!(b["messages"][1]["content"][0]["type"], "tool_use");
         assert_eq!(b["messages"][2]["content"][0]["tool_use_id"], "t1");
         assert_eq!(b["system"], "be brief");

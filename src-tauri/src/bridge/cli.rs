@@ -123,6 +123,16 @@ pub fn parse_lens_url(url: &str) -> Result<Value, String> {
         .ok_or("Not a lens:// link.")?;
     let (head, query) = rest.split_once('?').unwrap_or((rest, ""));
     let host = head.trim_matches('/').to_ascii_lowercase();
+    // lens://settings/<page>[#<section>] opens that Settings page (docs/SETTINGS_HUB.md).
+    if let Some(target) = host.strip_prefix("settings") {
+        let target: String = target
+            .trim_matches('/')
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '#' | '_'))
+            .take(64)
+            .collect();
+        return Ok(json!({ "v": 1, "action": "settings_open", "selection": if target.is_empty() { "appearance".to_string() } else { target } }));
+    }
     let action = match host.as_str() {
         "" | "ask" => "ask",
         "summarize" | "summarise" => "summarize",
@@ -333,6 +343,11 @@ mod tests {
         assert_eq!(parse_lens_url("lens://ask/?q=caf%C3%A9")
             .unwrap()["question"], "café");
         assert!(parse_lens_url("lens://format?x=1").is_err());
+        let st = parse_lens_url("lens://settings/sound#mixer").unwrap();
+        assert_eq!(st["action"], "settings_open");
+        assert_eq!(st["selection"], "sound#mixer");
+        assert_eq!(parse_lens_url("lens://settings").unwrap()["selection"], "appearance");
+        assert_eq!(parse_lens_url("lens://settings/../x<y>").unwrap()["selection"], "xy");
         assert!(parse_lens_url("https://x.com").is_err());
         assert!(parse_lens_url(&format!("lens://ask?q={}", "a".repeat(MAX_LENS_URL))).is_err());
         // A link can't smuggle a file path in.

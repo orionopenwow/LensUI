@@ -15,7 +15,17 @@
     never: [],
     /** Tile pre-selected in the in-page panel (Enter runs it). */
     defaultAction: "summarize",
+    /** "off" | "all": stop pages hijacking copy ("Read more at…", blocked copy). */
+    copyGuard: "off",
+    /** "off" | "all": double-click a word for a definition or translation (local model only). */
+    define: "off",
+    /** What a double-click shows first: "define" | "translate". */
+    defineMode: "define",
+    /** Target language for double-click translate. */
+    translateTo: "English",
   });
+
+  const TRANSLATE_LANGS = ["English", "Spanish", "French", "German", "Portuguese", "Japanese", "Chinese (Simplified)", "Korean", "Hindi", "Arabic"];
 
   const TILE_ACTIONS = ["summarize", "explain", "translate", "rewrite", "ask", "shelf_add"];
 
@@ -95,6 +105,23 @@
     if (s.selectionButton === "all") return { matches: ["https://*/*", "http://*/*"], excludeMatches };
     if (s.selectionButton === "sites") return { matches: s.sites.flatMap(forHost), excludeMatches };
     return { matches: [], excludeMatches: [] };
+  }
+
+  /**
+   * Match patterns for the always-on helpers ("copyGuard", "define"): all sites when on, minus the
+   * "never" list and the built-in sensitive list (banks, sign-in, password managers).
+   */
+  function featureMatches(settings, feature) {
+    const s = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+    if (s[feature] !== "all") return { matches: [], excludeMatches: [] };
+    const forHost = (h) => [`https://${h}/*`, `http://${h}/*`, `https://*.${h}/*`, `http://*.${h}/*`];
+    return { matches: ["https://*/*", "http://*/*"], excludeMatches: [...s.never, ...BUILTIN_DENY].flatMap(forHost) };
+  }
+
+  /** A double-clicked word worth defining: 1–40 letters (hyphen/apostrophe inside), not a number. */
+  function defineWordOk(text) {
+    const t = String(text || "").trim();
+    return t.length > 0 && t.length <= 40 && /^\p{L}[\p{L}\p{M}'’-]*$/u.test(t);
   }
 
   /** Origins to request with permissions.request for these settings. */
@@ -185,12 +212,16 @@
       sites: list(s.sites),
       never: list(s.never),
       defaultAction: TILE_ACTIONS.includes(s.defaultAction) ? s.defaultAction : "summarize",
+      copyGuard: s.copyGuard === "all" ? "all" : "off",
+      define: s.define === "all" ? "all" : "off",
+      defineMode: s.defineMode === "translate" ? "translate" : "define",
+      translateTo: TRANSLATE_LANGS.includes(s.translateTo) ? s.translateTo : "English",
     };
   }
 
   root.LensSel = {
     DEFAULT_SETTINGS, TILE_ACTIONS, BUILTIN_DENY, normalizeHost, hostMatches, isDeniedUrl, buttonEnabledFor,
     contentScriptMatches, originsFor, isSensitiveField, pageHasVisiblePassword, selectionTextOk, dotPosition,
-    panelPosition, sanitizeSettings,
+    panelPosition, sanitizeSettings, featureMatches, defineWordOk, TRANSLATE_LANGS,
   };
 })(globalThis);

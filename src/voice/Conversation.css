@@ -1,0 +1,305 @@
+/* Conversation mode. Large calm type over the pack base; a colourful aurora that follows the
+   theme accent; three round controls. 4 px grid. */
+
+.lc {
+  --lc-accent: var(--lens-accent, #7c5cff);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--lens-fg);
+  background: var(--lens-pack-base, #09090b);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+:root[data-scheme="light"] .lc {
+  --lc-accent: color-mix(in srgb, var(--lens-accent, #2563eb) 45%, var(--lens-fg, #18181b));
+}
+
+.lc-panel {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(440px, calc(100vw - 32px));
+  height: min(760px, calc(100vh - 32px));
+  border-radius: 28px;
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel, 0 24px 64px rgb(0 0 0 / 0.45));
+}
+
+.lc-inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px 0;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.lc-fullscreen .lc-inner {
+  padding-top: 48px;
+}
+
+.lc-status {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--lens-fg-secondary);
+}
+
+.lc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--lens-fg-muted);
+}
+
+.lc[data-status="speaking"] .lc-dot {
+  background: var(--lc-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lc-accent) 22%, transparent);
+}
+
+.lc[data-status="listening"] .lc-dot {
+  background: var(--lens-danger, #ef4444);
+}
+
+.lc[data-status="thinking"] .lc-dot {
+  animation: lc-blink 1.2s ease-in-out infinite;
+}
+
+.lc-time {
+  font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0 32px;
+  overflow: hidden;
+}
+
+.lc-question {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--lens-fg-muted);
+}
+
+.lc-answer {
+  margin: 0;
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--lens-fg);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 9;
+  -webkit-box-orient: vertical;
+}
+
+.lc-fullscreen .lc-answer {
+  font-size: 40px;
+  line-height: 48px;
+}
+
+.lc-w {
+  color: color-mix(in srgb, var(--lens-fg) 32%, transparent);
+  transition: color 180ms ease;
+}
+
+.lc-w.said {
+  color: var(--lens-fg);
+}
+
+.lc-answer.still .lc-w {
+  transition: none;
+}
+
+.lc-placeholder {
+  color: var(--lens-fg-muted);
+  font-weight: 500;
+}
+
+.lc-caption {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--lens-fg-secondary);
+}
+
+.lc-caption::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, var(--lens-fg) 0 22%, transparent 24%), repeating-conic-gradient(var(--lens-fg-muted) 0 15deg, transparent 15deg 30deg);
+  opacity: 0.8;
+  flex: 0 0 auto;
+}
+
+/* Aurora */
+.lc-aurora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30%;
+  min-height: 160px;
+  pointer-events: none;
+  --c1: color-mix(in srgb, var(--lc-accent) 30%, #ff4fd8);
+  --c2: color-mix(in srgb, var(--lc-accent) 30%, #7c5cff);
+  --c3: color-mix(in srgb, var(--lc-accent) 30%, #2fd4ff);
+  --c4: color-mix(in srgb, var(--lc-accent) 30%, #45f0a0);
+  --c5: color-mix(in srgb, var(--lc-accent) 30%, #ffd24a);
+}
+
+.lc-aurora-glow {
+  position: absolute;
+  inset: 35% -10% -30%;
+  background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3), var(--c4), var(--c5), var(--c1));
+  filter: blur(42px);
+  opacity: 0.55;
+}
+
+:root[data-scheme="light"] .lc-aurora-glow {
+  opacity: 0.4;
+}
+
+.lc[data-status="idle"] .lc-aurora-glow,
+.lc[data-status="thinking"] .lc-aurora-glow {
+  opacity: 0.3;
+}
+
+.lc-aurora-bars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 12px;
+  -webkit-mask-image: linear-gradient(to top, #000 55%, transparent);
+  mask-image: linear-gradient(to top, #000 55%, transparent);
+}
+
+.lc-aurora-bars i {
+  display: block;
+  flex: 1 1 0;
+  max-width: 8px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(to top, transparent, color-mix(in srgb, var(--c2) calc((1 - var(--i)) * 100%), var(--c4)), color-mix(in srgb, var(--c1) calc((1 - var(--i)) * 100%), var(--c3)), color-mix(in srgb, var(--c3) 60%, #fff));
+  opacity: 0.9;
+  transition: height 80ms linear;
+}
+
+.lc-aurora.still .lc-aurora-bars i {
+  transition: none;
+}
+
+/* Controls */
+.lc-controls {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px 40px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.lc-panel .lc-controls {
+  padding: 0 24px 32px;
+}
+
+.lc-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--lens-fg) 10%, transparent);
+  background: color-mix(in srgb, var(--lens-pack-elevated, #18181b) 80%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.lc-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lens-fg) 14%, var(--lens-pack-elevated, #18181b));
+}
+
+.lc-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lc-btn.on {
+  color: var(--lens-danger, #ef4444);
+}
+
+.lc-close {
+  width: 64px;
+  height: 64px;
+  background: var(--lens-fg);
+  color: var(--lens-on-fg);
+  border-color: transparent;
+}
+
+.lc-close:hover:not(:disabled) {
+  background: var(--lens-fg);
+  transform: scale(1.04);
+}
+
+.lc-btn:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lc-accent));
+  outline-offset: 3px;
+}
+
+@keyframes lc-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-w,
+  .lc-aurora-bars i,
+  .lc-btn {
+    transition: none;
+  }
+  .lc[data-status="thinking"] .lc-dot {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .lc-w,
+:root[data-motion="reduce"] .lc-aurora-bars i {
+  transition: none;
+}
