@@ -892,10 +892,6 @@ pub fn internal_risk(name: &str) -> Option<Risk> {
     spec(name).map(|t| if t.read_only || matches!(t.name, "lens_shelf" | "lens_snapshot_save") { Risk::Low } else { Risk::Confirm })
 }
 
-/// The "Approve similar actions" scope of a call, when it has one (never for send, pay, delete).
-pub fn similar_scope(a: &Assessment) -> Option<&Value> {
-    a.preview.get("similar").filter(|v| v.is_object())
-}
 
 /// One-line description of a call without touching the desktop (approval prompts, logs).
 pub fn describe(tool: &str, args: &Value) -> String {
