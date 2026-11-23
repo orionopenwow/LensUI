@@ -101,7 +101,7 @@ export const ControlCenterSurface: React.FC = () => {
   const glidePhase = useSurfaceGlide("settings");
   // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
   const initial = resolveTarget(new URLSearchParams(window.location.search).get("tab"));
-  const [tab, setPage] = useState<PageId>(() => initial?.page ?? "appearance");
+  const [tab, setPage] = useState<PageId>(() => initial?.page ?? "quick");
   // The nav highlight moves at once; the page body renders as a transition (time-sliced, so a heavy
   // page never blocks the click or the highlight; AAA_WAVE_PLAN C3 / perf settings-tab-switch).
   const [navTab, setNavTab] = useState<PageId>(tab);
