@@ -79,6 +79,12 @@ function textChip(source: ContextChip["source"], label: string, value: string, e
 }
 
 /** Starting state, for tests and the parity harness. */
+/** Counts an event on <html data-*> so tests and the Tester Hub can see what the surface did. */
+const bump = (key: string) => {
+  const d = document.documentElement.dataset;
+  d[key] = String((Number(d[key]) || 0) + 1);
+};
+
 export interface CommandInitial {
   mode?: Mode;
   text?: string;
@@ -594,6 +600,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   // Every outcome leaves a visible card — failures included — so Enter never looks like it did nothing.
   const runDoMode = async (raw: string) => {
     const typed = raw.trim();
+    bump("commandRun");
     setText("");
     const out = await runDo(
       typed,
@@ -624,6 +631,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   };
 
   const runActive = (shift: boolean, ctrl: boolean) => {
+    document.documentElement.dataset.commandActive = `${mode}:${text.trim().length}`;
     if (mode === "clipboard") {
       const c = clips[active];
       if (!c) return;
@@ -731,7 +739,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     }
     if (e.key === "Enter" && !(e.shiftKey && mode === "ask")) {
       e.preventDefault();
+      // Trace for B-12 (an Enter that seems to do nothing): counted here and in runDoMode, read by the E2E run.
+      bump("commandEnter");
       if (!linkedRef.current) {
+        bump("commandEnterQueued");
         // Still wiring up after a cold start: run this Enter the moment the handshake completes.
         queuedEnter.current = { shift: e.shiftKey, ctrl };
         return;

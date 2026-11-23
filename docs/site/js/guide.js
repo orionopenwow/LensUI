@@ -28,7 +28,7 @@ function build() {
   win.setAttribute("aria-modal", "true");
   win.setAttribute("aria-labelledby", "gw-title");
   win.hidden = true;
-  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
+  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens</strong><span class="gw-sub">offline · on this page</span>
       <button type="button" data-max aria-label="Expand the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg></button>
       <button type="button" data-close aria-label="Collapse the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></header>
     <div class="gw-thread" aria-live="polite"></div>
@@ -66,7 +66,14 @@ function build() {
   restore();
 }
 
-// ---- open / close: the orb morphs into the window ----------------------------------------------
+// ---- open / close: the window opens out of the orb ---------------------------------------------
+function orbClip() {
+  const o = launcher?.querySelector(".orb-logo")?.getBoundingClientRect(), w = win.getBoundingClientRect();
+  if (!o || !w.width) return null;
+  const cx = o.left + o.width / 2 - w.left, cy = o.top + o.height / 2 - w.top, r0 = o.width / 2;
+  const r1 = Math.hypot(Math.max(cx, w.width - cx), Math.max(cy, w.height - cy));
+  return { from: `circle(${r0}px at ${cx}px ${cy}px)`, to: `circle(${r1}px at ${cx}px ${cy}px)` };
+}
 export async function open(q) {
   if (!win) build();
   if (!win.hidden) { if (q) ask(q); return; }
@@ -75,13 +82,15 @@ export async function open(q) {
   launcher?.setAttribute("aria-expanded", "true");
   launcher?.classList.add("is-open");
   sessionStorage.setItem("lens-guide-open", "1");
-  const from = launcher?.getBoundingClientRect(), to = win.getBoundingClientRect();
-  if (from && !reducedMotion() && win.animate) {
-    const sx = from.width / to.width, sy = from.height / to.height;
-    win.animate([{ transformOrigin: "100% 100%", transform: `translate(${from.right - to.right}px, ${from.bottom - to.bottom}px) scale(${sx}, ${sy})`, borderRadius: "50%", opacity: 0.4 }, { transformOrigin: "100% 100%", transform: "translate(-2px, -4px) scale(1.01)", borderRadius: "18px", opacity: 1, offset: 0.75 }, { transformOrigin: "100% 100%", transform: "none", borderRadius: "18px", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
-  } else if (win.animate) win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+  // The window grows out of the orb itself: a circle centred on the orb opens into the window.
+  // Nothing scales or flips; the orb stays put underneath.
+  const grow = orbClip();
+  if (grow && !reducedMotion() && win.animate) {
+    win.animate([{ clipPath: grow.from }, { clipPath: grow.to }], { duration: 420, easing: "cubic-bezier(.2,.9,.25,1)" });
+    win.dataset.opened = "grow"; // read by tools/site/check.mjs: it opens out of the orb, never flips
+  } else if (win.animate) { win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); win.dataset.opened = "fade"; }
   input.focus({ preventScroll: true });
-  if (!thread.children.length) say("lens", `Hi, I'm the Lens Guide. Ask how to do anything in Lens, or tap a suggestion: I'll show you right here on the page.`);
+  if (!thread.children.length) say("lens", `Hi, I'm Lens. Ask me how to do anything, or tap a suggestion: I'll show you right here on the page.`);
   load().catch(() => {});
   if (q) ask(q);
 }
@@ -92,8 +101,8 @@ export function close() {
   const done = () => { win.hidden = true; launcher?.classList.remove("is-open"); };
   launcher?.setAttribute("aria-expanded", "false");
   sessionStorage.setItem("lens-guide-open", "0");
-  const to = launcher?.getBoundingClientRect(), from = win.getBoundingClientRect();
-  if (to && !reducedMotion() && win.animate) win.animate([{ transformOrigin: "100% 100%", transform: "none", opacity: 1 }, { transformOrigin: "100% 100%", transform: `translate(${to.right - from.right}px, ${to.bottom - from.bottom}px) scale(${to.width / from.width}, ${to.height / from.height})`, opacity: 0 }], { duration: 260, easing: "cubic-bezier(.5,0,.75,0)" }).finished.then(done, done);
+  const grow = orbClip();
+  if (grow && !reducedMotion() && win.animate) win.animate([{ clipPath: grow.to }, { clipPath: grow.from }], { duration: 300, easing: "cubic-bezier(.5,0,.75,0)" }).finished.then(done, done)
   else done();
   (lastFocus && document.contains(lastFocus) ? lastFocus : launcher)?.focus?.({ preventScroll: true });
 }
@@ -163,7 +172,7 @@ async function ask(q) {
 
   if (/\btour\b/.test(ql)) {
     if (!onHome()) return goHome("#tour/desktop");
-    await say("lens", "Pick a tour above the desk. Each one goes one step at a time: press Next, or do the highlighted thing yourself. I'll start with the desktop.", { stream: true });
+    await say("lens", "Pick a tour under the desk. Each one goes one step at a time: press Next, or do the highlighted thing yourself. I'll start with the desktop.", { stream: true });
     await flyTo(document.getElementById("sc-tabs"));
     L.playScene("desktop");
     return;

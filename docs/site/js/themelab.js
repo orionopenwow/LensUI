@@ -5,7 +5,7 @@ import { reducedMotion } from "./site.js";
 import { createDesk, getPacks } from "./desk.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const PICKS = ["obsidian", "living-sky", "nord-frost", "catppuccin-mocha", "tokyo-night", "gruvbox-warm", "rose-pine", "hyprland-neon", "dracula-glass", "everforest-dark", "alabaster-daylight", "lens-expressive", "cc-koi-mosaic"];
+const PICKS = ["obsidian", "alabaster-daylight", "living-sky", "gruvbox-warm", "everforest-dark", "rose-pine", "lens-expressive"];
 const ACCENTS = ["#FAFAFA", "#818CF8", "#38BDF8", "#34D399", "#FBBF24", "#FB923C", "#FB7185", "#C084FC"];
 const base = (p) => p.base ?? (p.scheme === "light" ? "#f4f4f5" : "#09090b");
 /** A swatch that looks like the theme: its backdrop, a mini top bar and a dock in its colours. */
