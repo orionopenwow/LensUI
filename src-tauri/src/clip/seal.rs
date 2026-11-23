@@ -79,8 +79,8 @@ mod dpapi {
             data_in: *const DataBlob,
             description: *const u16,
             entropy: *const DataBlob,
-            reserved: *const core::ffi::c_void,
-            prompt: *const core::ffi::c_void,
+            reserved: *mut core::ffi::c_void,
+            prompt: *mut core::ffi::c_void,
             flags: u32,
             data_out: *mut DataBlob,
         ) -> i32;
@@ -88,8 +88,8 @@ mod dpapi {
             data_in: *const DataBlob,
             description: *mut *mut u16,
             entropy: *const DataBlob,
-            reserved: *const core::ffi::c_void,
-            prompt: *const core::ffi::c_void,
+            reserved: *mut core::ffi::c_void,
+            prompt: *mut core::ffi::c_void,
             flags: u32,
             data_out: *mut DataBlob,
         ) -> i32;
@@ -121,8 +121,8 @@ impl Sealer for DpapiSealer {
                 &input,
                 std::ptr::null(),
                 &entropy,
-                std::ptr::null(),
-                std::ptr::null(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
                 CRYPTPROTECT_UI_FORBIDDEN,
                 &mut out,
             )
@@ -147,8 +147,8 @@ impl Sealer for DpapiSealer {
                 &input,
                 std::ptr::null_mut(),
                 &entropy,
-                std::ptr::null(),
-                std::ptr::null(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
                 CRYPTPROTECT_UI_FORBIDDEN,
                 &mut out,
             )

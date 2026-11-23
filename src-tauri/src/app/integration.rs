@@ -139,7 +139,7 @@ fn start_shell_keys(handle: &AppHandle, cfg: &LensConfig) {
         cfg.func.win_key_launcher,
         cfg.func.alt_tab_overview,
         move |seq, event| {
-            #[derive(serde::Serialize)]
+            #[derive(serde::Serialize, Clone)]
             struct Msg<'a> {
                 seq: u64,
                 event: &'a win_keyhook::HookEvent,
