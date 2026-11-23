@@ -945,6 +945,7 @@ mod imp {
         remove();
     }
 
+    #[allow(dead_code)] // only reached through the top-level `is_running`
     pub fn is_running() -> bool {
         hook_running()
     }
@@ -1022,7 +1023,7 @@ mod idle_imp {
                 reserved: *mut u32,
                 class: *mut u16,
                 class_len: *mut u32,
-                time: *mut u64,
+                time: *mut core::ffi::c_void,
             ) -> i32;
             pub fn RegQueryValueExW(
                 key: isize,
@@ -1249,6 +1250,7 @@ pub fn stop() {
     imp::stop()
 }
 
+#[allow(dead_code)] // status probe for diagnostics / the self-test; nothing polls it yet
 pub fn is_running() -> bool {
     imp::is_running()
 }
