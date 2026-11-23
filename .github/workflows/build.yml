@@ -181,6 +181,9 @@ jobs:
       - name: Render Lens Music
         run: node tools/parity/music/build.mjs && node tools/parity/music/shoot.mjs
 
+      - name: Render Lens Apps
+        run: node tools/parity/apps/build.mjs && node tools/parity/apps/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -200,4 +203,5 @@ jobs:
             tools/parity/agentsafe/shots/
             tools/parity/styles/shots/
             tools/parity/music/shots/
+            tools/parity/apps/shots/
           if-no-files-found: warn

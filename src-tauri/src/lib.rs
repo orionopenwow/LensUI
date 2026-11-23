@@ -49,6 +49,7 @@ mod tester;
 mod agentsafe;
 
 mod app;
+mod apps;
 mod bridge;
 mod browser;
 mod clip;
@@ -653,6 +654,25 @@ pub fn run() {
             commands::music::music_lastfm_begin,
             commands::music::music_lastfm_finish,
             commands::music::music_lastfm_disconnect,
+            commands::apps::apps_catalog,
+            commands::apps::apps_catalog_refresh,
+            commands::apps::apps_settings_get,
+            commands::apps::apps_settings_set,
+            commands::apps::apps_lens_installed,
+            commands::apps::apps_audit,
+            commands::apps::apps_show,
+            commands::apps::apps_installed,
+            commands::apps::apps_run,
+            commands::apps::apps_cancel,
+            commands::apps::apps_release_prepare,
+            commands::apps::apps_release_run,
+            commands::apps::apps_release_discard,
+            commands::apps::apps_open,
+            commands::apps::apps_open_link,
+            commands::apps::apps_recipe_preview,
+            commands::apps::apps_integrations,
+            commands::apps::apps_recipe_apply,
+            commands::apps::apps_recipe_revert,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,
