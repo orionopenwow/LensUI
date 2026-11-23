@@ -1,5 +1,6 @@
 import { openGuide } from "../guide/coach";
 import { MiniPlayer } from "../music/MiniPlayer";
+import { useMiniPlacement } from "../music/useMiniPlacement";
 import { PendingPill, usePendingApprovals } from "../approval";
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -39,6 +40,7 @@ export const TopBarSurface: React.FC = () => {
   const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
   const [now, setNow] = useState(() => new Date());
   const approvals = usePendingApprovals();
+  const musicMini = useMiniPlacement();
   const [visible, setVisible] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -247,7 +249,7 @@ export const TopBarSurface: React.FC = () => {
 
       <div className="topbar-right">
         {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
-        <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />
+        {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
         {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
         {approvals.requests.length > 0 && (
           <PendingPill count={approvals.requests.length} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />

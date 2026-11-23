@@ -8,6 +8,8 @@ import { AskDockPopover, AskModeToggle, useAskMode } from "../dock/ai/AskDock";
 import { DropSparkle, DropToAiMenu } from "../dock/ai/DropToAi";
 import { SuggestedApps, recordDockLaunch } from "../dock/ai/SuggestedApps";
 import { VoiceDockView, DockMicButton, useVoiceDock } from "../dock/voice/VoiceDock";
+import { MiniPlayer } from "../music/MiniPlayer";
+import { useMiniPlacement } from "../music/useMiniPlacement";
 import type { DockStyleId as VoiceDockStyle, Edge as VoiceEdge } from "../dock/voice/dockMorph";
 import "../dock/ai/aiDock.css";
 import type { AiContext } from "../ai/surfaceApi";
@@ -328,6 +330,7 @@ export const DockSurface: React.FC = () => {
   const [dockVisible, setDockVisible] = useState(true);
   // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
   const voiceDock = useVoiceDock(dockVisible);
+  const musicMini = useMiniPlacement();
   const [dockSearchOpen, setDockSearchOpen] = useState(false);
   const [dockSearchClosing, setDockSearchClosing] = useState(false);
   const [dockSearchQuery, setDockSearchQuery] = useState("");
@@ -2441,6 +2444,9 @@ export const DockSurface: React.FC = () => {
           </>
         )}
         </div>
+        {musicMini === "dock" && (
+          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />
+        )}
         {voiceDock.enabled && (
           <>
             <VoiceDockView

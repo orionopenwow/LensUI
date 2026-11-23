@@ -54,7 +54,8 @@ export const MusicCard: React.FC = () => {
   const [newSource, setNewSource] = useState("");
 
   useEffect(() => {
-    music.config().then(setCfg).catch(() => {});
+    // Older backends (or a failed read) can answer null: keep the defaults and merge what arrives.
+    music.config().then((c) => c && setCfg({ ...DEFAULT, ...c })).catch(() => {});
     music.spotifyStatus().then(setSpotify).catch(() => {});
     music.lastfmStatus().then(setLastfm).catch(() => {});
   }, []);
@@ -62,7 +63,7 @@ export const MusicCard: React.FC = () => {
   const save = (patch: Partial<MusicConfig>) => {
     const next = { ...cfg, ...patch };
     setCfg(next);
-    music.setConfig(next).then(setCfg).catch((e) => setError(String(e)));
+    music.setConfig(next).then((c) => c && setCfg({ ...DEFAULT, ...c })).catch((e) => setError(String(e)));
   };
   const off = !cfg.enabled;
 
