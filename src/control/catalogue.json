@@ -2866,7 +2866,7 @@
       "category": "Window frames",
       "default": "yellow-green-red",
       "description": "Order of the window buttons.",
-      "example": "{\"args\":{\"changes\":{\"windowControls.order\":\"red-yellow-green\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"windowControls.order\":\"green-yellow-red\"}},\"tool\":\"lens_set\"}",
       "label": "Window button order",
       "path": "windowControls.order",
       "reversible": true,
