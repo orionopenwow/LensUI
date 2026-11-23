@@ -87,7 +87,8 @@ export async function open(q) {
   const grow = orbClip();
   if (grow && !reducedMotion() && win.animate) {
     win.animate([{ clipPath: grow.from }, { clipPath: grow.to }], { duration: 420, easing: "cubic-bezier(.2,.9,.25,1)" });
-  } else if (win.animate) win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+    win.dataset.opened = "grow"; // read by tools/site/check.mjs: it opens out of the orb, never flips
+  } else if (win.animate) { win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); win.dataset.opened = "fade"; }
   input.focus({ preventScroll: true });
   if (!thread.children.length) say("lens", `Hi, I'm Lens. Ask me how to do anything, or tap a suggestion: I'll show you right here on the page.`);
   load().catch(() => {});

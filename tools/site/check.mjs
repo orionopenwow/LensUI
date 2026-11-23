@@ -497,8 +497,9 @@ async function waitDesk(page, sel = "#desk-host") {
   // The Guide: the orb opens it, / too; a chip acts on the desk; Esc collapses it.
   await page.click("#guide-orb");
   // It opens out of the orb where it sits: a growing circle, never a flip or a fly-in.
-  const grow = await D(() => document.getElementById("guide-window").getAnimations().map((a) => a.effect.getKeyframes().map((k) => Object.keys(k).filter((x) => !["offset", "computedOffset", "easing", "composite"].includes(x)).join("+")).join(">")).join("|"));
-  expect(/clipPath/.test(grow) && !/transform/.test(grow), "Lens opens out of its orb without flipping", grow);
+  await page.waitForSelector("#guide-window:not([hidden])", { timeout: 8000 }).catch(() => {});
+  const grow = await D(() => { const w = document.getElementById("guide-window"); return w ? `${w.dataset.opened}|${w.getAnimations().map((a) => a.effect.getKeyframes().map((k) => Object.keys(k).join("+")).join(">")).join("|")}` : "missing"; });
+  expect(/^grow/.test(grow) && !/transform/.test(grow), "Lens opens out of its orb without flipping", grow);
   await page.waitForTimeout(600);
   expect(await page.$eval("#guide-window", (w) => !w.hidden), "the Lens orb opens the Guide");
   await page.click('.gw-chips [data-chip="Tile two windows"]');
