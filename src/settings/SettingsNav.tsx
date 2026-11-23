@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Palette,
+  Music,
+  LayoutGrid,
   PanelBottom,
   Layers,
   Monitor,
@@ -31,6 +33,8 @@ import { buildIndex, search, type SearchEntry } from "./search";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   palette: Palette,
+  music: Music,
+  grid: LayoutGrid,
   dock: PanelBottom,
   layers: Layers,
   monitor: Monitor,

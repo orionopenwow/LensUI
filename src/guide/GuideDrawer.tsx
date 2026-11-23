@@ -64,7 +64,7 @@ export const GuideDrawer: React.FC<GuideDrawerProps> = ({ config, context, aiEna
     <>
       <CoachMarkLayer />
       {open && enabled && (
-        <aside className="guide-drawer" aria-label="Lens Guide">
+        <aside className="guide-drawer" aria-label="Lens Guide" data-guide-id="guide">
           <GuidePanel config={config} context={context} aiEnabled={aiEnabled} onClose={() => setOpen(false)} />
         </aside>
       )}

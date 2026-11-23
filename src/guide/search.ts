@@ -130,7 +130,7 @@ const KIND_BOOST: Record<GuideKind, number> = {
   setting: 1.25,
   card: 1.35,
   tab: 1.0,
-  lesson: 1.15,
+  lesson: 1.3,
   command: 1.0,
   pack: 1.0,
   "dock-style": 1.3,

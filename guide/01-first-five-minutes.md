@@ -32,6 +32,6 @@ check: event:palette-opened
 Press Alt+Space to open the palette. Type an app, a file or a command like "dark mode".
 
 ## Know your escape hatch
-show: settings:system:Remove all Lens changes
+show: settings:about:Remove all Lens changes
 
 Everything Lens changes can be undone. If anything ever looks wrong, the Windows & Quick tab has a one-click restore, and Restore-Windows-Shell.bat in the Lens folder does the same from outside Lens.

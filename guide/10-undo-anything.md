@@ -7,7 +7,7 @@ order: 10
 ---
 
 ## Back up your settings
-show: settings:system:Back up & restore
+show: settings:about:Back up & restore
 
 Save a backup of your Lens settings before big changes. Restore brings everything back in one click.
 

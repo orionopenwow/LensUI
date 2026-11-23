@@ -8,6 +8,16 @@ import { BridgeInbox } from "../../bridge/BridgeInbox";
 import { TranscriptionCard } from "../../media/TranscriptionCard";
 import { McpCard } from "../../components/McpCard";
 import { AgentsPane } from "../../components/AgentsPane";
+import { VoiceCard } from "../../components/VoiceCard";
+import { MagicCard } from "../../components/MagicCard";
+import { ContextMenuCard } from "../../context/ContextMenuCard";
+import { PackEditor } from "../../context/PackEditor";
+import { ClipperCard } from "../../context/templates/ClipperCard";
+import { PermissionsCard } from "../../approval/PermissionsCard";
+import { AgentSafetyCard } from "../../agentsafe/AgentSafetyCard";
+import { GuideCard } from "../../components/GuideCard";
+import { BrowserCard } from "../../components/BrowserCard";
+import { SnipCard } from "../../components/SnipCard";
 import { Section, StateNote } from "../ui/primitives";
 import type { PageProps } from "./common";
 
@@ -33,6 +43,34 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     </Section>
     <Section id="mcp" title="AI apps (MCP)" summary="Let Claude Desktop and Claude Code use Lens" defaultOpen={section === "mcp"} forceOpen={section === "mcp"}>
       <McpCard config={config} onUpdateConfig={updateConfig} />
+    </Section>
+    <Section id="voice" title="Voice" summary="Hold to talk, “Lens…” commands, conversation mode" defaultOpen={section === "voice"} forceOpen={section === "voice"}>
+      <VoiceCard />
+    </Section>
+    <Section id="magic" title="Magic right-click" summary="Ctrl+Alt+right-click anywhere" defaultOpen={section === "magic"} forceOpen={section === "magic"}>
+      <MagicCard config={config} />
+    </Section>
+    <Section id="rightclick" title="Right-click menu" summary="Order, pins, custom actions" defaultOpen={section === "rightclick"} forceOpen={section === "rightclick"}>
+      <ContextMenuCard />
+    </Section>
+    <Section id="packs" title="Context packs & clipper" summary="Bundles for Claude, Markdown templates" defaultOpen={section === "packs"} forceOpen={section === "packs"}>
+      <PackEditor />
+      <ClipperCard />
+    </Section>
+    <Section id="snip" title="Lens Snip" summary="Capture, redact, pin, paste to Claude" defaultOpen={section === "snip"} forceOpen={section === "snip"}>
+      <SnipCard />
+    </Section>
+    <Section id="browser" title="Lens Browser" summary="Spaces, tabs, agent approvals" defaultOpen={section === "browser"} forceOpen={section === "browser"}>
+      <BrowserCard />
+    </Section>
+    <Section id="permissions" title="Permissions" summary="What each AI app may do" defaultOpen={section === "permissions"} forceOpen={section === "permissions"}>
+      <PermissionsCard />
+    </Section>
+    <Section id="safety" title="Agent safety" summary="Sandbox profile, scam and injection guards" defaultOpen={section === "safety"} forceOpen={section === "safety"}>
+      <AgentSafetyCard />
+    </Section>
+    <Section id="guide" title="Lens Guide" summary="Lessons and “how do I…” help" defaultOpen={section === "guide"} forceOpen={section === "guide"}>
+      <GuideCard />
     </Section>
     <Section id="agents" title="Agents" summary="Automations and macros" defaultOpen={section === "agents"} forceOpen={section === "agents"}>
       <AgentsPane config={config} onUpdateConfig={updateConfig} />

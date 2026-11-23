@@ -68,13 +68,39 @@ const LABEL_CLASSES = [
   "cs-head",
 ];
 
-/** Visible Control Center tabs, in nav order: [{id,label}]. */
+/** Settings pages, in nav order: [{id,label}]. Since the Settings hub (src/settings/registry.ts)
+ *  pages have new ids; the index keeps the older tab ids (theme, system, sessions, monitor,
+ *  messages) so lesson and golden-query ids stay stable, and LEGACY_TABS in the registry maps them
+ *  back when a Show me opens Settings. */
+const PAGE_TO_LEGACY = { appearance: "theme", keys: "system", desktop: "sessions", tasks: "monitor", notifications: "messages" };
+const legacy = (id) => PAGE_TO_LEGACY[id] ?? id;
+const REGISTRY = "src/settings/registry.ts";
 export function extractTabs(root) {
-  const src = read(root, CC);
   const out = [];
+  if (exists(root, REGISTRY)) {
+    const src = read(root, REGISTRY);
+    const re = /\{\s*id:\s*"([a-z-]+)",\s*group:\s*"[a-z]+",\s*label:\s*"([^"]+)"/g;
+    let m;
+    while ((m = re.exec(src))) out.push({ id: legacy(m[1]), label: clean(m[2]) });
+    if (out.length) return out;
+  }
+  const src = read(root, CC);
   const re = /\{\s*id:\s*"([a-z-]+)",\s*label:\s*"([^"]+)",\s*icon:/g;
   let m;
   while ((m = re.exec(src))) out.push({ id: m[1], label: clean(m[2]) });
+  return out;
+}
+
+/** Page files mounted by the Settings hub: [{tab, file}]. */
+export function pageFiles(root) {
+  const idx = "src/settings/pages/index.ts";
+  if (!exists(root, idx)) return [];
+  const src = read(root, idx);
+  const out = [];
+  for (const m of src.matchAll(/^\s+([a-z]+):\s*([A-Za-z]+),\s*$/gm)) {
+    const imp = src.match(new RegExp(`import\\s+\\{\\s*${m[2]}\\s*\\}\\s+from\\s+"\\./([^"]+)"`));
+    if (imp) out.push({ tab: legacy(m[1]), file: `src/settings/pages/${imp[1]}.tsx` });
+  }
   return out;
 }
 
@@ -120,7 +146,7 @@ export function extractMounts(root, file = CC, inherited = null) {
     if (!inherited) {
       const blk = line.match(/\{\s*\(?\s*tab === "([a-z-]+)"(.*)&&/);
       if (blk) {
-        tabs = [blk[1], ...[...blk[2].matchAll(/tab === "([a-z-]+)"/g)].map((x) => x[1])];
+        tabs = [blk[1], ...[...blk[2].matchAll(/tab === "([a-z-]+)"/g)].map((x) => x[1])].map(legacy);
         section = null;
       }
     }
@@ -241,6 +267,7 @@ export function extractSettings(root) {
   };
 
   for (const m of extractMounts(root)) addComponent(m);
+  for (const p of pageFiles(root)) for (const m of extractMounts(root, p.file, { tabs: [p.tab], section: null })) addComponent(m);
 
   // Labels written inline in the Control Center itself.
   const lines = read(root, CC).split("\n");
@@ -249,7 +276,7 @@ export function extractSettings(root) {
   lines.forEach((line, i) => {
     const blk = line.match(/\{\s*\(?\s*tab === "([a-z-]+)"(.*)&&/);
     if (blk) {
-      tabsNow = [blk[1], ...[...blk[2].matchAll(/tab === "([a-z-]+)"/g)].map((x) => x[1])];
+      tabsNow = [blk[1], ...[...blk[2].matchAll(/tab === "([a-z-]+)"/g)].map((x) => x[1])].map(legacy);
       section = null;
     }
     const sec = line.match(/className="cc-section-title">([^<{]+)</);

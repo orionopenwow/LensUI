@@ -3,19 +3,15 @@
  "tabs": [
   {
    "id": "theme",
-   "label": "Theme & Look"
+   "label": "Appearance"
   },
   {
    "id": "dock",
-   "label": "Dock & Top Bar"
+   "label": "Dock & Bar"
   },
   {
    "id": "sessions",
-   "label": "Desktop & Widgets"
-  },
-  {
-   "id": "folders",
-   "label": "Folder Icons"
+   "label": "Desktop"
   },
   {
    "id": "system",
@@ -26,8 +22,60 @@
    "label": "AI & Command"
   },
   {
-   "id": "agents",
-   "label": "Agents"
+   "id": "music",
+   "label": "Music"
+  },
+  {
+   "id": "store",
+   "label": "Apps"
+  },
+  {
+   "id": "display",
+   "label": "Display"
+  },
+  {
+   "id": "sound",
+   "label": "Sound"
+  },
+  {
+   "id": "network",
+   "label": "Network & Bluetooth"
+  },
+  {
+   "id": "power",
+   "label": "Power & Battery"
+  },
+  {
+   "id": "apps",
+   "label": "Apps & Startup"
+  },
+  {
+   "id": "storage",
+   "label": "Storage"
+  },
+  {
+   "id": "focus",
+   "label": "Focus & Notifications"
+  },
+  {
+   "id": "privacy",
+   "label": "Privacy & Security"
+  },
+  {
+   "id": "update",
+   "label": "Update"
+  },
+  {
+   "id": "time",
+   "label": "Time & Language"
+  },
+  {
+   "id": "accessibility",
+   "label": "Accessibility"
+  },
+  {
+   "id": "gaming",
+   "label": "Gaming"
   },
   {
    "id": "monitor",
@@ -68,7 +116,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Accent colour"
    ],
    "target": {
@@ -86,7 +134,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Choose a theme"
    ],
    "target": {
@@ -104,7 +152,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Customise"
    ],
    "target": {
@@ -122,7 +170,7 @@
    "text": "Switch packs automatically. A pack you pick by hand stays until the next switch. Day & Night Themes · Day · Night · Switch at. Theme schedule. Day pack / night pack, switched at fixed times or at local sunrise and sunset",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Schedule",
     "Day & Night Themes"
    ],
@@ -142,7 +190,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Schedule",
     "Day & Night Themes",
     "Day"
@@ -163,7 +211,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Schedule",
     "Day & Night Themes",
     "Night"
@@ -184,7 +232,7 @@
    "text": "Day starts · Night starts",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Schedule",
     "Day & Night Themes",
     "Switch at"
@@ -205,7 +253,7 @@
    "text": "Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off. Lens Wallpaper · Wallpapers · Fit · Pause when a window fills the screen · Pause on battery · Wallpaper Accent · Follow wallpaper accent · Accent from my Windows wallpaper. Wallpaper. Lens wallpaper behind the icons, plus accent-from-wallpaper",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper"
    ],
@@ -225,7 +273,7 @@
    "text": "Drop .jpg, .png, .webp, .mp4, .webm or .html files into the wallpapers folder, then press Refresh.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Wallpapers"
@@ -246,7 +294,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Fit"
@@ -267,7 +315,7 @@
    "text": "Stops video and HTML wallpapers while you can't see them.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Pause when a window fills the screen"
@@ -288,7 +336,7 @@
    "text": "Saves power when unplugged.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Pause on battery"
@@ -309,7 +357,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Wallpaper Accent"
@@ -330,7 +378,7 @@
    "text": "Re-colour Lens automatically whenever the Lens wallpaper changes.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Follow wallpaper accent"
@@ -351,7 +399,7 @@
    "text": "Works without the Lens wallpaper: samples the picture Windows is showing.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
     "Accent from my Windows wallpaper"
@@ -372,7 +420,7 @@
    "text": "Accessibility & Language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Accessibility",
     "Accessibility & Language"
    ],
@@ -392,7 +440,7 @@
    "text": "Pointer sets, how the mouse behaves, and effects. Everything here can be undone in one click. Mouse pointer · Tone · Size · Magnifier · Colour · High visibility · Follow theme pack · Enhance pointer precision. Cursor suite. Look (code-drawn Windows pointer sets), Behaviour (speed, wheel, focus follows mouse … through SystemParametersInfo) and Effects (the click-through overlay). Every OS change is backed up before the first write and has a one-click restore",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer"
    ],
    "target": {
@@ -411,7 +459,7 @@
    "text": "Dark pointers have a light rim; light pointers a dark one.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Tone"
    ],
@@ -431,7 +479,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Size"
    ],
@@ -451,7 +499,7 @@
    "text": "Use Windows Magnifier (Windows + Plus). A click-through overlay can't magnify the screen without capturing it, so Lens doesn't.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Magnifier"
    ],
@@ -471,7 +519,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Colour"
    ],
@@ -491,7 +539,7 @@
    "text": "A thick contrasting outline that reads on any background.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "High visibility"
    ],
@@ -511,7 +559,7 @@
    "text": "Re-colour the pointers when you switch theme packs.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Follow theme pack"
    ],
@@ -531,7 +579,7 @@
    "text": "Acceleration: fast flicks travel further. Many gamers and artists turn it off.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Enhance pointer precision"
    ],
@@ -551,7 +599,7 @@
    "text": "Jump to OK in new dialogs.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Snap to default button"
    ],
@@ -571,7 +619,7 @@
    "text": "For left-handed use.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Swap left and right buttons"
    ],
@@ -591,7 +639,7 @@
    "text": "Hold the button briefly to drag without holding it down.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "ClickLock"
    ],
@@ -611,7 +659,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Show location when I press Ctrl"
    ],
@@ -631,7 +679,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Hide while typing"
    ],
@@ -651,7 +699,7 @@
    "text": "The window under the pointer becomes active.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Focus follows mouse"
    ],
@@ -671,7 +719,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "Bring it to the front"
    ],
@@ -691,7 +739,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "On battery"
    ],
@@ -711,7 +759,7 @@
    "text": "Settings › Accessibility › Visual effects › Animation effects.",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Mouse pointer",
     "When Windows animations are off"
    ],
@@ -731,7 +779,7 @@
    "text": "Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own. To use someone else's theme, drop their file into the themes folder and press Refresh. Saved Themes. Saved themes. Save the current look as a `.lenstheme` file, and apply, share or remove saved ones",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Saved & shared themes",
     "Saved Themes"
    ],
@@ -751,7 +799,7 @@
    "text": "Export your current look to a .lenstheme file, or open one someone sent you. Share Themes. Theme sharing. Share looks as files: export to anywhere, import a .lenstheme someone sent you, and browse a theme gallery file (no network yet; only inline themes can be applied)",
    "path": [
     "Settings",
-    "Theme & Look",
+    "Appearance",
     "Saved & shared themes",
     "Share Themes"
    ],
@@ -771,7 +819,7 @@
    "text": "Picking a style also sets a matching icon size. You can change it below.",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Dock style"
    ],
    "target": {
@@ -789,7 +837,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Size"
    ],
    "target": {
@@ -807,7 +855,7 @@
    "text": "Off by default. Lens always brings the taskbar back when it closes, even after a crash.",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Hide the Windows taskbar"
    ],
    "target": {
@@ -825,7 +873,7 @@
    "text": "Hovering a running app shows live pictures of its windows.",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Live window previews"
    ],
    "target": {
@@ -843,7 +891,7 @@
    "text": "Stops apps being dragged, unpinned or removed by accident.",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Lock the Dock"
    ],
    "target": {
@@ -861,7 +909,7 @@
    "text": "Learned on this PC from your Dock launches; no AI model and nothing sent anywhere. Shows while Lens AI is on.",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Suggest apps you usually open now"
    ],
    "target": {
@@ -879,7 +927,7 @@
    "text": "Living wallpapers behind your icons. Hand-marked scenes react to your cursor on the empty desktop; icons and windows work as usual. Playground · Calm · Sand canvas · Frame rate · Click ripples · Scene per workspace · Idle mode · Idle scene. Playground. Playground — interactive and ambient scenes as the Lens wallpaper",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground"
    ],
@@ -898,7 +946,7 @@
    "text": "Freeze the scene into a still picture and stop all animation and cursor tracking.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Calm"
@@ -918,7 +966,7 @@
    "text": "Your drawing is kept between restarts. Right-drag erases; the mouse wheel changes the brush. Painting with the left button also draws Windows' selection box, so pick Alt + left or Middle button if that bothers you.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Sand canvas"
@@ -938,7 +986,7 @@
    "text": "A soft ripple where you click empty desktop. Drawn in the wallpaper only.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Frame rate"
@@ -958,7 +1006,7 @@
    "text": "A soft ripple where you click empty desktop. Drawn in the wallpaper only.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Click ripples"
@@ -978,7 +1026,7 @@
    "text": "Each Lens workspace can show its own scene when you switch to it.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Scene per workspace"
@@ -998,7 +1046,7 @@
    "text": "After a while without input, show a scene full screen. Any key or mouse move brings your desktop back. Never during games, fullscreen apps, presentations, calls or while the microphone is in use.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Idle mode"
@@ -1018,7 +1066,7 @@
    "text": "No desktop scene is set, so idle mode shows .",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Idle scene"
@@ -1038,7 +1086,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Living desktop",
     "Playground",
     "Budget"
@@ -1058,7 +1106,7 @@
    "text": "New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left alone, and a window you move yourself starts floating. Automatic Tiling · Default Layout · New Windows Open · Always Float · Tiling Shortcuts. Tiling. automatic tiling (opt-in)",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Automatic Tiling"
    ],
@@ -1077,7 +1125,7 @@
    "text": "Each workspace can pick its own.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Automatic Tiling",
     "Default Layout"
@@ -1097,7 +1145,7 @@
    "text": "Where a window you just opened goes in the layout",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Automatic Tiling",
     "New Windows Open"
@@ -1117,7 +1165,7 @@
    "text": "These apps are never tiled.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Automatic Tiling",
     "Always Float"
@@ -1137,7 +1185,7 @@
    "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens UI.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Automatic Tiling",
     "Tiling Shortcuts"
@@ -1157,7 +1205,7 @@
    "text": "Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3. Workspaces · Built On · Follow Apps To Their Workspace. Workspaces. named workspaces with their own layout and app rules (opt-in)",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Workspaces"
    ],
@@ -1176,7 +1224,7 @@
    "text": "",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Workspaces",
     "Built On"
@@ -1196,7 +1244,7 @@
    "text": "When an app with an &ldquo;Opens here&rdquo; rule starts, switch to its workspace instead of leaving it there minimised.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Workspaces",
     "Follow Apps To Their Workspace"
@@ -1216,7 +1264,7 @@
    "text": "A session remembers which apps were open and how they were arranged. Restore reopens the ones that are missing, then tiles them. Session Restore. Session restore. Save the apps that are open now as a session, and bring a session back with one click",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Session Restore"
    ],
@@ -1235,7 +1283,7 @@
    "text": "Named sections in the Desktop drawer. They only change how items are shown: nothing on your desktop is moved, renamed or deleted. Desktop Groups · Sort new items automatically · Show \"Everything else\". Desktop groups. Control Center card for desktop groups. Groups are a view: files never move",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Desktop Groups"
    ],
@@ -1254,7 +1302,7 @@
    "text": "Each item joins the first group whose types match, unless you placed it by hand.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Desktop Groups",
     "Sort new items automatically"
@@ -1274,7 +1322,7 @@
    "text": "A section for items no group claims.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Desktop Groups",
     "Show \"Everything else\""
@@ -1294,7 +1342,7 @@
    "text": "Small widgets for the Top Bar, Dock and Widget Drawer. Each runs in a sealed sandbox with no internet, files or system access, and can only use the permissions listed under it. Plugins · wants to. Plugin manager. install, enable, inspect and remove plugins; answer approvals",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Plugins"
    ],
@@ -1313,7 +1361,7 @@
    "text": "Allow once to let it do this from now on. You can reset approvals anytime.",
    "path": [
     "Settings",
-    "Desktop & Widgets",
+    "Desktop",
     "Desktop Sessions Switching",
     "Plugins",
     "wants to"
@@ -1325,907 +1373,6 @@
     "label": "wants to"
    },
    "source": "src/components/PluginManagerCard.tsx"
-  },
-  {
-   "id": "card.ai.bridgeinbox",
-   "kind": "card",
-   "title": "From your browser and files",
-   "text": "From your browser and files. Bridge inbox",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "From your browser and files"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "BridgeInbox",
-    "label": "From your browser and files"
-   },
-   "source": "src/bridge/BridgeInbox.tsx"
-  },
-  {
-   "id": "card.ai.aicard",
-   "kind": "card",
-   "title": "Who answers",
-   "text": "Every suggestion waits for your Approve. Nothing runs on its own. Who answers · Privacy · AI may suggest. Ai. AI in Lens. Off by default. Picks the provider (built-in script helper, a local model through Ollama or LM Studio, or Claude with your own key), sets privacy in plain words, chooses what AI may propose doing, explains what AI can see, and shows a local usage log. Mount snippet: docs/AI_SURFACES.md §",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Who answers"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "AiCard",
-    "label": "Who answers"
-   },
-   "source": "src/components/AiCard.tsx"
-  },
-  {
-   "id": "setting.ai.aicard.privacy",
-   "kind": "setting",
-   "title": "Privacy",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Who answers",
-    "Privacy"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "AiCard",
-    "label": "Privacy"
-   },
-   "source": "src/components/AiCard.tsx"
-  },
-  {
-   "id": "setting.ai.aicard.ai-may-suggest",
-   "kind": "setting",
-   "title": "AI may suggest",
-   "text": "Every suggestion waits for your Approve. Nothing runs on its own.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Who answers",
-    "AI may suggest"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "AiCard",
-    "label": "AI may suggest"
-   },
-   "source": "src/components/AiCard.tsx"
-  },
-  {
-   "id": "card.ai.commandcard",
-   "kind": "card",
-   "title": "Lens Command",
-   "text": "One box for asking, doing, your Shelf and clipboard history. Opens with. Lens Command · Shortcut · Opens in · Offer as context when it opens · Look · Keep the conversation when it closes · Show the Shelf beside it · Lens Mini. Command",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Lens Command"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.shortcut",
-   "kind": "setting",
-   "title": "Shortcut",
-   "text": "Use Ctrl, Alt, Shift or Win with a key, e.g. Ctrl+Alt+Space.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Shortcut"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Shortcut"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.opens-in",
-   "kind": "setting",
-   "title": "Opens in",
-   "text": "Shown as chips you can remove. Nothing is sent until you press Enter.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Opens in"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Opens in"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.offer-as-context-when-it-opens",
-   "kind": "setting",
-   "title": "Offer as context when it opens",
-   "text": "Shown as chips you can remove. Nothing is sent until you press Enter.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Offer as context when it opens"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Offer as context when it opens"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.look",
-   "kind": "setting",
-   "title": "Look",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Look"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Look"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.keep-the-conversation-when-it-closes",
-   "kind": "setting",
-   "title": "Keep the conversation when it closes",
-   "text": "In memory only; gone when Lens restarts.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Keep the conversation when it closes"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Keep the conversation when it closes"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.show-the-shelf-beside-it",
-   "kind": "setting",
-   "title": "Show the Shelf beside it",
-   "text": "Ctrl+B toggles it any time.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Show the Shelf beside it"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Show the Shelf beside it"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.lens-mini",
-   "kind": "setting",
-   "title": "Lens Mini",
-   "text": "A quick tap of opens Mini next to your pointer; tap again or press Expand for the full view.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Lens Mini"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Lens Mini"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.edge-shelf",
-   "kind": "setting",
-   "title": "Edge Shelf",
-   "text": "A thin tab on the edge of the screen. Hover or drag something over it to keep it on your Shelf. Hidden during games and fullscreen video.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Edge Shelf"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Edge Shelf"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.selection-bubble",
-   "kind": "setting",
-   "title": "Selection bubble",
-   "text": "After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Selection bubble"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Selection bubble"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.read-the-selection-when-i-open-mini",
-   "kind": "setting",
-   "title": "Read the selection when I open Mini",
-   "text": "Also powers the “Add selection to Shelf” shortcut.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Read the selection when I open Mini"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Read the selection when I open Mini"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "setting.ai.commandcard.which-ai-each-command-uses",
-   "kind": "setting",
-   "title": "Which AI each command uses",
-   "text": "Local runs on this PC. Claude sends the text you see in the chips to Anthropic.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Lens Command",
-    "Which AI each command uses"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "CommandCard",
-    "label": "Which AI each command uses"
-   },
-   "source": "src/components/CommandCard.tsx"
-  },
-  {
-   "id": "card.ai.clipboardcard",
-   "kind": "card",
-   "title": "Clipboard history",
-   "text": "Keeps what you copy so you can paste it again from Lens Command. Stored encrypted on this PC only; never synced. Clipboard history · Keep clips for · At most · Record images and files · Paste as plain text by default · Never record from · Clear. Clipboard",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Clipboard history"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.keep-clips-for",
-   "kind": "setting",
-   "title": "Keep clips for",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "Keep clips for"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Keep clips for"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.at-most",
-   "kind": "setting",
-   "title": "At most",
-   "text": "Images are kept as small previews; files as their paths.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "At most"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "At most"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.record-images-and-files",
-   "kind": "setting",
-   "title": "Record images and files",
-   "text": "Images are kept as small previews; files as their paths.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "Record images and files"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Record images and files"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.paste-as-plain-text-by-default",
-   "kind": "setting",
-   "title": "Paste as plain text by default",
-   "text": "Shift+Enter always pastes plain text.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "Paste as plain text by default"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Paste as plain text by default"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.never-record-from",
-   "kind": "setting",
-   "title": "Never record from",
-   "text": "Apps are matched by their program file name.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "Never record from"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Never record from"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "setting.ai.clipboardcard.clear",
-   "kind": "setting",
-   "title": "Clear",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Clipboard history",
-    "Clear"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ClipboardCard",
-    "label": "Clear"
-   },
-   "source": "src/components/ClipboardCard.tsx"
-  },
-  {
-   "id": "card.ai.connectionscard",
-   "kind": "card",
-   "title": "Connections",
-   "text": "Bring pages, files and videos into Lens from your browser, File Explorer and scripts, and give Claude access to Lens. Everything stays on this PC until you confirm a request in Lens. Connections · Browser extension · lens:// links · File Explorer right-click · Lens will write · Connect to Claude. Connections",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "Connections"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "setting.ai.connectionscard.browser-extension",
-   "kind": "setting",
-   "title": "Browser extension",
-   "text": "Adds a",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections",
-    "Browser extension"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "Browser extension"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "setting.ai.connectionscard.lens-links",
-   "kind": "setting",
-   "title": "lens:// links",
-   "text": "Lets the bookmarklet and scripts open Lens.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections",
-    "lens:// links"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "lens:// links"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "setting.ai.connectionscard.file-explorer-right-click",
-   "kind": "setting",
-   "title": "File Explorer right-click",
-   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections",
-    "File Explorer right-click"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "File Explorer right-click"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "setting.ai.connectionscard.lens-will-write",
-   "kind": "setting",
-   "title": "Lens will write",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections",
-    "Lens will write"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "Lens will write"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "setting.ai.connectionscard.connect-to-claude",
-   "kind": "setting",
-   "title": "Connect to Claude",
-   "text": "Adds Lens to Claude Desktop's tools (a backup of Claude's config is kept), or use the Claude Code command below. Turn on “Allow AI apps to connect” in AI Apps too.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Connections",
-    "Connect to Claude"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "ConnectionsCard",
-    "label": "Connect to Claude"
-   },
-   "source": "src/bridge/ConnectionsCard.tsx"
-  },
-  {
-   "id": "card.ai.transcriptioncard",
-   "kind": "card",
-   "title": "Transcription",
-   "text": "Turns audio and video into text on this PC with whisper.cpp. Nothing is uploaded. Transcription · Your tools · Save next to the original file · Transcribe web links · Live captions (experimental) · Transcribe a file. Transcription",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Transcription"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "setting.ai.transcriptioncard.your-tools",
-   "kind": "setting",
-   "title": "Your tools",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription",
-    "Your tools"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Your tools"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "setting.ai.transcriptioncard.save-next-to-the-original-file",
-   "kind": "setting",
-   "title": "Save next to the original file",
-   "text": "Otherwise transcripts go to .",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription",
-    "Save next to the original file"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Save next to the original file"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "setting.ai.transcriptioncard.transcribe-web-links",
-   "kind": "setting",
-   "title": "Transcribe web links",
-   "text": "Uses yt-dlp, if you've installed it. Many sites' terms don't allow downloading; only use this where you're allowed to.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription",
-    "Transcribe web links"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Transcribe web links"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "setting.ai.transcriptioncard.live-captions-experimental",
-   "kind": "setting",
-   "title": "Live captions (experimental)",
-   "text": "Captions for whatever your PC is playing. Not finished yet.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription",
-    "Live captions (experimental)"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Live captions (experimental)"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "setting.ai.transcriptioncard.transcribe-a-file",
-   "kind": "setting",
-   "title": "Transcribe a file",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "Transcription",
-    "Transcribe a file"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "TranscriptionCard",
-    "label": "Transcribe a file"
-   },
-   "source": "src/media/TranscriptionCard.tsx"
-  },
-  {
-   "id": "card.ai.mcpcard",
-   "kind": "card",
-   "title": "AI Apps (MCP)",
-   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens UI. Off by default. Requests that need approval show here with Approve / Decline",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "AI Apps (MCP)"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "setting.ai.mcpcard.allow-ai-apps-to-connect",
-   "kind": "setting",
-   "title": "Allow AI apps to connect",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)",
-    "Allow AI apps to connect"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "Allow AI apps to connect"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "setting.ai.mcpcard.ask-me-before-every-change",
-   "kind": "setting",
-   "title": "Ask me before every change",
-   "text": "Volume, brightness, theme and tiling requests also wait for approval.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)",
-    "Ask me before every change"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "Ask me before every change"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "setting.ai.mcpcard.waiting-for-you",
-   "kind": "setting",
-   "title": "Waiting for you",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)",
-    "Waiting for you"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "Waiting for you"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "setting.ai.mcpcard.connect-claude-desktop",
-   "kind": "setting",
-   "title": "Connect Claude Desktop",
-   "text": "Add this to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config), then restart Claude Desktop.",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)",
-    "Connect Claude Desktop"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "Connect Claude Desktop"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "setting.ai.mcpcard.recent-activity",
-   "kind": "setting",
-   "title": "Recent activity",
-   "text": "",
-   "path": [
-    "Settings",
-    "AI & Command",
-    "AI Apps (MCP)",
-    "Recent activity"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "ai",
-    "card": "McpCard",
-    "label": "Recent activity"
-   },
-   "source": "src/components/McpCard.tsx"
-  },
-  {
-   "id": "card.about.testerhubcard",
-   "kind": "card",
-   "title": "Tester hub",
-   "text": "Tester hub",
-   "path": [
-    "Settings",
-    "About & Testing",
-    "Tester hub"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "about",
-    "card": "TesterHubCard",
-    "label": "Tester hub"
-   },
-   "source": "src/tester/TesterHubCard.tsx"
-  },
-  {
-   "id": "card.agents.agentspane",
-   "kind": "card",
-   "title": "Connected Agents & MCP Servers",
-   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected Agents & MCP Servers · AGENTS.md — Global Agent Safety & Consistency Rules. Agents",
-   "path": [
-    "Settings",
-    "Agents",
-    "Connected Agents & MCP Servers"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "agents",
-    "card": "AgentsPane",
-    "label": "Connected Agents & MCP Servers"
-   },
-   "source": "src/components/AgentsPane.tsx"
-  },
-  {
-   "id": "setting.agents.agentspane.agents-md-global-agent-safety-and-consistency-rules",
-   "kind": "setting",
-   "title": "AGENTS.md — Global Agent Safety & Consistency Rules",
-   "text": "Saved to %APPDATA%\\LensUI\\AGENTS.md and injected automatically into connected agents.",
-   "path": [
-    "Settings",
-    "Agents",
-    "Connected Agents & MCP Servers",
-    "AGENTS.md — Global Agent Safety & Consistency Rules"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "agents",
-    "card": "AgentsPane",
-    "label": "AGENTS.md — Global Agent Safety & Consistency Rules"
-   },
-   "source": "src/components/AgentsPane.tsx"
-  },
-  {
-   "id": "card.system.backuprestorecard",
-   "kind": "card",
-   "title": "Back Up & Restore",
-   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back Up & Restore · Include workflow recordings and training data · Remove All Lens Changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Back Up & Restore"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "card": "BackupRestoreCard",
-    "label": "Back Up & Restore"
-   },
-   "source": "src/components/BackupRestoreCard.tsx"
-  },
-  {
-   "id": "setting.system.backuprestorecard.include-workflow-recordings-and-training-data",
-   "kind": "setting",
-   "title": "Include workflow recordings and training data",
-   "text": "Off by default. Applies to both saving and restoring.",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Back Up & Restore",
-    "Include workflow recordings and training data"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "card": "BackupRestoreCard",
-    "label": "Include workflow recordings and training data"
-   },
-   "source": "src/components/BackupRestoreCard.tsx"
-  },
-  {
-   "id": "setting.system.backuprestorecard.remove-all-lens-changes",
-   "kind": "setting",
-   "title": "Remove All Lens Changes",
-   "text": "Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell mode and start-with-Windows. Use before uninstalling.",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Back Up & Restore",
-    "Remove All Lens Changes"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "card": "BackupRestoreCard",
-    "label": "Remove All Lens Changes"
-   },
-   "source": "src/components/BackupRestoreCard.tsx"
-  },
-  {
-   "id": "card.system.shellmodecard",
-   "kind": "card",
-   "title": "Shell Mode (advanced)",
-   "text": "Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens UI instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Shell Mode (advanced)"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "card": "ShellModeCard",
-    "label": "Shell Mode (advanced)"
-   },
-   "source": "src/components/ShellModeCard.tsx"
   },
   {
    "id": "card.system.shellkeyscard",
@@ -2642,42 +1789,2792 @@
    "source": "src/components/WindowRulesCard.tsx"
   },
   {
-   "id": "card.system.updatescard",
+   "id": "card.system.shellmodecard",
+   "kind": "card",
+   "title": "Shell Mode (advanced)",
+   "text": "Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens UI instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Shell Mode (advanced)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "ShellModeCard",
+    "label": "Shell Mode (advanced)"
+   },
+   "source": "src/components/ShellModeCard.tsx"
+  },
+  {
+   "id": "card.ai.bridgeinbox",
+   "kind": "card",
+   "title": "From your browser and files",
+   "text": "From your browser and files. Bridge inbox",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "From your browser and files"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BridgeInbox",
+    "label": "From your browser and files"
+   },
+   "source": "src/bridge/BridgeInbox.tsx"
+  },
+  {
+   "id": "card.ai.aicard",
+   "kind": "card",
+   "title": "Who answers",
+   "text": "Every suggestion waits for your Approve. Nothing runs on its own. Who answers · Privacy · AI may suggest. Ai. AI in Lens. Off by default. Picks the provider (built-in script helper, a local model through Ollama or LM Studio, or Claude with your own key), sets privacy in plain words, chooses what AI may propose doing, explains what AI can see, and shows a local usage log. Mount snippet: docs/AI_SURFACES.md §",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI engine",
+    "Who answers"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AiCard",
+    "label": "Who answers",
+    "section": "engine"
+   },
+   "source": "src/components/AiCard.tsx"
+  },
+  {
+   "id": "setting.ai.aicard.privacy",
+   "kind": "setting",
+   "title": "Privacy",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI engine",
+    "Who answers",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AiCard",
+    "label": "Privacy",
+    "section": "engine"
+   },
+   "source": "src/components/AiCard.tsx"
+  },
+  {
+   "id": "setting.ai.aicard.ai-may-suggest",
+   "kind": "setting",
+   "title": "AI may suggest",
+   "text": "Every suggestion waits for your Approve. Nothing runs on its own.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI engine",
+    "Who answers",
+    "AI may suggest"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AiCard",
+    "label": "AI may suggest",
+    "section": "engine"
+   },
+   "source": "src/components/AiCard.tsx"
+  },
+  {
+   "id": "card.ai.commandcard",
+   "kind": "card",
+   "title": "Lens Command",
+   "text": "One box for asking, doing, your Shelf and clipboard history. Opens with. Lens Command · Shortcut · Opens in · Offer as context when it opens · Look · Keep the conversation when it closes · Show the Shelf beside it · Lens Mini. Command",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Lens Command",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.shortcut",
+   "kind": "setting",
+   "title": "Shortcut",
+   "text": "Use Ctrl, Alt, Shift or Win with a key, e.g. Ctrl+Alt+Space.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Shortcut"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Shortcut",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.opens-in",
+   "kind": "setting",
+   "title": "Opens in",
+   "text": "Shown as chips you can remove. Nothing is sent until you press Enter.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Opens in"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Opens in",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.offer-as-context-when-it-opens",
+   "kind": "setting",
+   "title": "Offer as context when it opens",
+   "text": "Shown as chips you can remove. Nothing is sent until you press Enter.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Offer as context when it opens"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Offer as context when it opens",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.look",
+   "kind": "setting",
+   "title": "Look",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Look"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Look",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.keep-the-conversation-when-it-closes",
+   "kind": "setting",
+   "title": "Keep the conversation when it closes",
+   "text": "In memory only; gone when Lens restarts.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Keep the conversation when it closes"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Keep the conversation when it closes",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.show-the-shelf-beside-it",
+   "kind": "setting",
+   "title": "Show the Shelf beside it",
+   "text": "Ctrl+B toggles it any time.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Show the Shelf beside it"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Show the Shelf beside it",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.lens-mini",
+   "kind": "setting",
+   "title": "Lens Mini",
+   "text": "A quick tap of opens Mini next to your pointer; tap again or press Expand for the full view.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Lens Mini"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Lens Mini",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.edge-shelf",
+   "kind": "setting",
+   "title": "Edge Shelf",
+   "text": "A thin tab on the edge of the screen. Hover or drag something over it to keep it on your Shelf. Hidden during games and fullscreen video.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Edge Shelf"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Edge Shelf",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.selection-bubble",
+   "kind": "setting",
+   "title": "Selection bubble",
+   "text": "After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Selection bubble"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Selection bubble",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.read-the-selection-when-i-open-mini",
+   "kind": "setting",
+   "title": "Read the selection when I open Mini",
+   "text": "Also powers the “Add selection to Shelf” shortcut.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Read the selection when I open Mini"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Read the selection when I open Mini",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "setting.ai.commandcard.which-ai-each-command-uses",
+   "kind": "setting",
+   "title": "Which AI each command uses",
+   "text": "Local runs on this PC. Claude sends the text you see in the chips to Anthropic.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Command",
+    "Which AI each command uses"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "CommandCard",
+    "label": "Which AI each command uses",
+    "section": "command"
+   },
+   "source": "src/components/CommandCard.tsx"
+  },
+  {
+   "id": "card.ai.clipboardcard",
+   "kind": "card",
+   "title": "Clipboard history",
+   "text": "Keeps what you copy so you can paste it again from Lens Command. Stored encrypted on this PC only; never synced. Clipboard history · Keep clips for · At most · Record images and files · Paste as plain text by default · Never record from · Clear. Clipboard",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Clipboard history",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.keep-clips-for",
+   "kind": "setting",
+   "title": "Keep clips for",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "Keep clips for"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Keep clips for",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.at-most",
+   "kind": "setting",
+   "title": "At most",
+   "text": "Images are kept as small previews; files as their paths.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "At most"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "At most",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.record-images-and-files",
+   "kind": "setting",
+   "title": "Record images and files",
+   "text": "Images are kept as small previews; files as their paths.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "Record images and files"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Record images and files",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.paste-as-plain-text-by-default",
+   "kind": "setting",
+   "title": "Paste as plain text by default",
+   "text": "Shift+Enter always pastes plain text.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "Paste as plain text by default"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Paste as plain text by default",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.never-record-from",
+   "kind": "setting",
+   "title": "Never record from",
+   "text": "Apps are matched by their program file name.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "Never record from"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Never record from",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "setting.ai.clipboardcard.clear",
+   "kind": "setting",
+   "title": "Clear",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Clipboard history",
+    "Clear"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipboardCard",
+    "label": "Clear",
+    "section": "clipboard"
+   },
+   "source": "src/components/ClipboardCard.tsx"
+  },
+  {
+   "id": "card.ai.connectionscard",
+   "kind": "card",
+   "title": "Connections",
+   "text": "Bring pages, files and videos into Lens from your browser, File Explorer and scripts, and give Claude access to Lens. Everything stays on this PC until you confirm a request in Lens. Connections · Browser extension · lens:// links · File Explorer right-click · Lens will write · Connect to Claude. Connections",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "Connections",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "setting.ai.connectionscard.browser-extension",
+   "kind": "setting",
+   "title": "Browser extension",
+   "text": "Adds a",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections",
+    "Browser extension"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "Browser extension",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "setting.ai.connectionscard.lens-links",
+   "kind": "setting",
+   "title": "lens:// links",
+   "text": "Lets the bookmarklet and scripts open Lens.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections",
+    "lens:// links"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "lens:// links",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "setting.ai.connectionscard.file-explorer-right-click",
+   "kind": "setting",
+   "title": "File Explorer right-click",
+   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections",
+    "File Explorer right-click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "File Explorer right-click",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "setting.ai.connectionscard.lens-will-write",
+   "kind": "setting",
+   "title": "Lens will write",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections",
+    "Lens will write"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "Lens will write",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "setting.ai.connectionscard.connect-to-claude",
+   "kind": "setting",
+   "title": "Connect to Claude",
+   "text": "Adds Lens to Claude Desktop's tools (a backup of Claude's config is kept), or use the Claude Code command below. Turn on “Allow AI apps to connect” in AI Apps too.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Connections",
+    "Connect to Claude"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ConnectionsCard",
+    "label": "Connect to Claude",
+    "section": "connections"
+   },
+   "source": "src/bridge/ConnectionsCard.tsx"
+  },
+  {
+   "id": "card.ai.transcriptioncard",
+   "kind": "card",
+   "title": "Transcription",
+   "text": "Turns audio and video into text on this PC with whisper.cpp. Nothing is uploaded. Transcription · Your tools · Save next to the original file · Transcribe web links · Live captions (experimental) · Transcribe a file. Transcription",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Transcription",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "setting.ai.transcriptioncard.your-tools",
+   "kind": "setting",
+   "title": "Your tools",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription",
+    "Your tools"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Your tools",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "setting.ai.transcriptioncard.save-next-to-the-original-file",
+   "kind": "setting",
+   "title": "Save next to the original file",
+   "text": "Otherwise transcripts go to .",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription",
+    "Save next to the original file"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Save next to the original file",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "setting.ai.transcriptioncard.transcribe-web-links",
+   "kind": "setting",
+   "title": "Transcribe web links",
+   "text": "Uses yt-dlp, if you've installed it. Many sites' terms don't allow downloading; only use this where you're allowed to.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription",
+    "Transcribe web links"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Transcribe web links",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "setting.ai.transcriptioncard.live-captions-experimental",
+   "kind": "setting",
+   "title": "Live captions (experimental)",
+   "text": "Captions for whatever your PC is playing. Not finished yet.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription",
+    "Live captions (experimental)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Live captions (experimental)",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "setting.ai.transcriptioncard.transcribe-a-file",
+   "kind": "setting",
+   "title": "Transcribe a file",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Transcription",
+    "Transcribe a file"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "TranscriptionCard",
+    "label": "Transcribe a file",
+    "section": "transcription"
+   },
+   "source": "src/media/TranscriptionCard.tsx"
+  },
+  {
+   "id": "card.ai.mcpcard",
+   "kind": "card",
+   "title": "AI Apps (MCP)",
+   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens UI. Off by default. Requests that need approval show here with Approve / Decline",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "AI Apps (MCP)",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "setting.ai.mcpcard.allow-ai-apps-to-connect",
+   "kind": "setting",
+   "title": "Allow AI apps to connect",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)",
+    "Allow AI apps to connect"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "Allow AI apps to connect",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "setting.ai.mcpcard.ask-me-before-every-change",
+   "kind": "setting",
+   "title": "Ask me before every change",
+   "text": "Volume, brightness, theme and tiling requests also wait for approval.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)",
+    "Ask me before every change"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "Ask me before every change",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "setting.ai.mcpcard.waiting-for-you",
+   "kind": "setting",
+   "title": "Waiting for you",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)",
+    "Waiting for you"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "Waiting for you",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "setting.ai.mcpcard.connect-claude-desktop",
+   "kind": "setting",
+   "title": "Connect Claude Desktop",
+   "text": "Add this to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config), then restart Claude Desktop.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)",
+    "Connect Claude Desktop"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "Connect Claude Desktop",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "setting.ai.mcpcard.recent-activity",
+   "kind": "setting",
+   "title": "Recent activity",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "AI apps (MCP)",
+    "AI Apps (MCP)",
+    "Recent activity"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "McpCard",
+    "label": "Recent activity",
+    "section": "mcp"
+   },
+   "source": "src/components/McpCard.tsx"
+  },
+  {
+   "id": "card.ai.voicecard",
+   "kind": "card",
+   "title": "Always listening",
+   "text": "First press starts listening, second press sends. Always listening · Voice control · Hold to talk · Press twice instead of holding · Require “Lens” first · Require Lens first · Mute key · Wake phrase. Voice",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Always listening",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.voice-control",
+   "kind": "setting",
+   "title": "Voice control",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Voice control"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Voice control",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.hold-to-talk",
+   "kind": "setting",
+   "title": "Hold to talk",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Hold to talk"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Hold to talk",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.press-twice-instead-of-holding",
+   "kind": "setting",
+   "title": "Press twice instead of holding",
+   "text": "First press starts listening, second press sends.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Press twice instead of holding"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Press twice instead of holding",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.require-lens-first",
+   "kind": "setting",
+   "title": "Require “Lens” first",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Require “Lens” first"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Require “Lens” first",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.require-lens-first-2",
+   "kind": "setting",
+   "title": "Require Lens first",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Require Lens first"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Require Lens first",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.mute-key",
+   "kind": "setting",
+   "title": "Mute key",
+   "text": "Turns voice off and on from anywhere.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Mute key"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Mute key",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.wake-phrase",
+   "kind": "setting",
+   "title": "Wake phrase",
+   "text": "Say it before a command. “Lens” on its own works too.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Wake phrase"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Wake phrase",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.sensitivity",
+   "kind": "setting",
+   "title": "Sensitivity",
+   "text": "Higher picks up quieter speech; lower ignores more background noise.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Sensitivity"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Sensitivity",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.microphone",
+   "kind": "setting",
+   "title": "Microphone",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Microphone"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Microphone",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.language",
+   "kind": "setting",
+   "title": "Language",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Language"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Language",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.speech-engine",
+   "kind": "setting",
+   "title": "Speech engine",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Speech engine"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Speech engine",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.pause-during-calls",
+   "kind": "setting",
+   "title": "Pause during calls",
+   "text": "Stops always-listening while Teams, Zoom, Discord and other call apps are in front, or another app uses the mic.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Pause during calls"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Pause during calls",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.pause-in-fullscreen",
+   "kind": "setting",
+   "title": "Pause in fullscreen",
+   "text": "Games and fullscreen video. Push-to-talk still works.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Pause in fullscreen"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Pause in fullscreen",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.answer-by-voice",
+   "kind": "setting",
+   "title": "Answer by voice",
+   "text": "Say “yes” or “no” when Lens asks before closing an app or locking.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Answer by voice"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Answer by voice",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.typing-by-voice",
+   "kind": "setting",
+   "title": "Typing by voice",
+   "text": "“Type …” and “paste the last clip”. Never into password fields, sign-in windows or admin apps.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Typing by voice"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Typing by voice",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.sounds",
+   "kind": "setting",
+   "title": "Sounds",
+   "text": "A short tone when listening starts and stops.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Sounds"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Sounds",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.read-answers-aloud",
+   "kind": "setting",
+   "title": "Read answers aloud",
+   "text": "Questions, results and refusals, with a Windows voice.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Read answers aloud"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Read answers aloud",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.voice",
+   "kind": "setting",
+   "title": "Voice",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Voice"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Voice",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.conversation-view",
+   "kind": "setting",
+   "title": "Conversation view",
+   "text": "Questions you ask out loud open a spoken Q&A view. Say “let's talk” to start one, “that's all” or Esc to close.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Conversation view"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Conversation view",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "setting.ai.voicecard.where-the-voice-card-appears",
+   "kind": "setting",
+   "title": "Where the voice card appears",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Voice",
+    "Always listening",
+    "Where the voice card appears"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "VoiceCard",
+    "label": "Where the voice card appears",
+    "section": "voice"
+   },
+   "source": "src/components/VoiceCard.tsx"
+  },
+  {
+   "id": "card.ai.magiccard",
+   "kind": "card",
+   "title": "Magic Right-Click",
+   "text": "One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone. Magic Right-Click · Open With · Starts In · Leave These Apps Alone · Preview · Window Actions · AI in This Window · Frequent First. Magic. Control Center card for the magic right-click window. Off by default",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Magic Right-Click",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.open-with",
+   "kind": "setting",
+   "title": "Open With",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Open With"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Open With",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.starts-in",
+   "kind": "setting",
+   "title": "Starts In",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Starts In"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Starts In",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.leave-these-apps-alone",
+   "kind": "setting",
+   "title": "Leave These Apps Alone",
+   "text": "The gesture goes to the app as usual, e.g. games or design tools.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Leave These Apps Alone"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Leave These Apps Alone",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.preview",
+   "kind": "setting",
+   "title": "Preview",
+   "text": "Fix the warning above to use this trigger.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Preview"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Preview",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.window-actions",
+   "kind": "setting",
+   "title": "Window Actions",
+   "text": "Minimise, snap, move, pin and close for the window under the pointer",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Window Actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Window Actions",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.ai-in-this-window",
+   "kind": "setting",
+   "title": "AI in This Window",
+   "text": "Ask box and AI actions. Uses your AI settings and privacy mode; off hides them here.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "AI in This Window"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "AI in This Window",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "setting.ai.magiccard.frequent-first",
+   "kind": "setting",
+   "title": "Frequent First",
+   "text": "Actions you use most move up. Counts stay on this PC.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Magic right-click",
+    "Magic Right-Click",
+    "Frequent First"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "MagicCard",
+    "label": "Frequent First",
+    "section": "magic"
+   },
+   "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "card.ai.contextmenucard",
+   "kind": "card",
+   "title": "Right-click menu",
+   "text": "One menu everywhere: your browser, Lens Browser, File Explorer, the Shelf, the Dock and Lens Mini. The first show right away; the rest sit under More. Anything sent to Claude asks first. Right-click menu · Learn from use · New action. Context menu",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Right-click menu"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ContextMenuCard",
+    "label": "Right-click menu",
+    "section": "rightclick"
+   },
+   "source": "src/context/ContextMenuCard.tsx"
+  },
+  {
+   "id": "setting.ai.contextmenucard.learn-from-use",
+   "kind": "setting",
+   "title": "Learn from use",
+   "text": "Float the actions you use most to the top. Counts stay on this PC; turning this off forgets them.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Right-click menu",
+    "Learn from use"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ContextMenuCard",
+    "label": "Learn from use",
+    "section": "rightclick"
+   },
+   "source": "src/context/ContextMenuCard.tsx"
+  },
+  {
+   "id": "setting.ai.contextmenucard.new-action",
+   "kind": "setting",
+   "title": "New action",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Right-click menu",
+    "New action"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ContextMenuCard",
+    "label": "New action",
+    "section": "rightclick"
+   },
+   "source": "src/context/ContextMenuCard.tsx"
+  },
+  {
+   "id": "card.ai.clippercard",
+   "kind": "card",
+   "title": "Clipper",
+   "text": "Turn a page or selection into a Markdown note with a template, and save it straight into a folder you choose, such as your Obsidian vault. \"Clip to notes\" in the browser uses the first template. Clipper · Folders Lens may save notes into. Clipper",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Context packs & clipper",
+    "Clipper"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipperCard",
+    "label": "Clipper",
+    "section": "packs"
+   },
+   "source": "src/context/templates/ClipperCard.tsx"
+  },
+  {
+   "id": "setting.ai.clippercard.folders-lens-may-save-notes-into",
+   "kind": "setting",
+   "title": "Folders Lens may save notes into",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Context packs & clipper",
+    "Clipper",
+    "Folders Lens may save notes into"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "ClipperCard",
+    "label": "Folders Lens may save notes into",
+    "section": "packs"
+   },
+   "source": "src/context/templates/ClipperCard.tsx"
+  },
+  {
+   "id": "card.ai.snipcard",
+   "kind": "card",
+   "title": "Before you save",
+   "text": "Recording uses ffmpeg. Set it up under Transcription, or install ffmpeg and restart Lens. Before you save · Saving and sharing · Recording · Lens Snip · Shortcut · Use the Print Screen key · Start in · After a capture. Snip",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Before you save",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.saving-and-sharing",
+   "kind": "setting",
+   "title": "Saving and sharing",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Saving and sharing"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Saving and sharing",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.recording",
+   "kind": "setting",
+   "title": "Recording",
+   "text": "Recording uses ffmpeg. Set it up under Transcription, or install ffmpeg and restart Lens.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Recording"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Recording",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.lens-snip",
+   "kind": "setting",
+   "title": "Lens Snip",
+   "text": "Capture any part of the screen, then mark it up, hide private details, pin it, or send it on — before anything is saved.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Lens Snip"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Lens Snip",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.shortcut",
+   "kind": "setting",
+   "title": "Shortcut",
+   "text": "A modifier plus a key, e.g. Ctrl+Shift+S. Press it again while recording to stop.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Shortcut"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Shortcut",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.use-the-print-screen-key",
+   "kind": "setting",
+   "title": "Use the Print Screen key",
+   "text": "Lens takes over Print Screen and gives it back to Windows when you turn this off or close Lens. A Windows policy can keep the key; your shortcut still works.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Use the Print Screen key"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Use the Print Screen key",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.start-in",
+   "kind": "setting",
+   "title": "Start in",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Start in"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Start in",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.after-a-capture",
+   "kind": "setting",
+   "title": "After a capture",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "After a capture"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "After a capture",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.include-the-pointer",
+   "kind": "setting",
+   "title": "Include the pointer",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Include the pointer"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Include the pointer",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.suggest-what-to-hide",
+   "kind": "setting",
+   "title": "Suggest what to hide",
+   "text": "Reads the text in each snip with Windows OCR on this PC and suggests blurring emails, phone numbers, card numbers, keys and IP addresses. You decide what's hidden.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Suggest what to hide"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Suggest what to hide",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.text-language",
+   "kind": "setting",
+   "title": "Text language",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Text language"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Text language",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.frame",
+   "kind": "setting",
+   "title": "Frame",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Frame"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Frame",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.save-to",
+   "kind": "setting",
+   "title": "Save to",
+   "text": "Empty = Pictures\\Screenshots\\Lens. Recordings go to Videos\\Lens.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Save to"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Save to",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.file-name",
+   "kind": "setting",
+   "title": "File name",
+   "text": "{date} {time} {app} {title} {w} {h} {n:3}",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "File name"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "File name",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.recent-apps",
+   "kind": "setting",
+   "title": "Recent apps",
+   "text": "One-click chips for the apps and share targets you used last. Lens copies the snip and brings the app forward — you always press Send yourself.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Recent apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Recent apps",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.show-recent-apps",
+   "kind": "setting",
+   "title": "Show recent apps",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Show recent apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Show recent apps",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.pins",
+   "kind": "setting",
+   "title": "Pins",
+   "text": "Pinned snips float above your windows.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Pins"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Pins",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.format",
+   "kind": "setting",
+   "title": "Format",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Format"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Format",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.quality",
+   "kind": "setting",
+   "title": "Quality",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Quality"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Quality",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.frames-per-second",
+   "kind": "setting",
+   "title": "Frames per second",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Frames per second"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Frames per second",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.microphone",
+   "kind": "setting",
+   "title": "Microphone",
+   "text": "Off unless you pick one.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Microphone"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Microphone",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.keep-a-history",
+   "kind": "setting",
+   "title": "Keep a history",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Keep a history"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Keep a history",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "setting.ai.snipcard.keep-for",
+   "kind": "setting",
+   "title": "Keep for",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Snip",
+    "Before you save",
+    "Keep for"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SnipCard",
+    "label": "Keep for",
+    "section": "snip"
+   },
+   "source": "src/components/SnipCard.tsx"
+  },
+  {
+   "id": "card.ai.browsercard",
+   "kind": "card",
+   "title": "Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages. Browser. Settings › AI & Command › Lens Browser",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Lens Browser",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.sleep-tabs-after",
+   "kind": "setting",
+   "title": "Sleep tabs after",
+   "text": "Sleeping tabs keep their place but free their memory. Tabs playing sound stay awake.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Sleep tabs after"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Sleep tabs after",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.tabs-awake-at-most",
+   "kind": "setting",
+   "title": "Tabs awake at most",
+   "text": "Older tabs sleep first.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Tabs awake at most"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Tabs awake at most",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.search-with",
+   "kind": "setting",
+   "title": "Search with",
+   "text": "Stops tabs from opening them. It doesn't filter ads inside pages.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Search with"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Search with",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.block-known-ad-and-tracker-sites",
+   "kind": "setting",
+   "title": "Block known ad and tracker sites",
+   "text": "Stops tabs from opening them. It doesn't filter ads inside pages.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Block known ad and tracker sites"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Block known ad and tracker sites",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.lens-right-click-menu-on-pages",
+   "kind": "setting",
+   "title": "Lens right-click menu on pages",
+   "text": "Hold Shift while right-clicking for the page's own menu.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Lens right-click menu on pages"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Lens right-click menu on pages",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "card.ai.permissionscard",
+   "kind": "card",
+   "title": "Permissions",
+   "text": "Permissions. AI & Command › Permissions: what each AI app may do (\"This task can\"), the site trusts it was given (\"Approve similar actions\"), and what Lens never remembers",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Permissions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "PermissionsCard",
+    "label": "Permissions",
+    "section": "permissions"
+   },
+   "source": "src/approval/PermissionsCard.tsx"
+  },
+  {
+   "id": "card.ai.agentsafetycard",
+   "kind": "card",
+   "title": "Agent safety",
+   "text": "Checks every step an AI agent takes, from Lens, voice or Claude, before it runs. It works on this PC and sends nothing anywhere. Agent safety. Agent safety",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Agent safety"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AgentSafetyCard",
+    "label": "Agent safety",
+    "section": "safety"
+   },
+   "source": "src/agentsafe/AgentSafetyCard.tsx"
+  },
+  {
+   "id": "card.ai.guidecard",
+   "kind": "card",
+   "title": "Lens Guide",
+   "text": "Ask \"how do I…\" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC. Lens Guide · Tip of the day · Lessons. Guide. Lens Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and \"Show me\". Off until turned on; works offline; AI answers are optional",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Guide"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "GuideCard",
+    "label": "Lens Guide",
+    "section": "guide"
+   },
+   "source": "src/components/GuideCard.tsx"
+  },
+  {
+   "id": "setting.ai.guidecard.tip-of-the-day",
+   "kind": "setting",
+   "title": "Tip of the day",
+   "text": "One gentle tip a day about a feature you haven't tried. Never a pop-up.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Guide",
+    "Tip of the day"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "GuideCard",
+    "label": "Tip of the day",
+    "section": "guide"
+   },
+   "source": "src/components/GuideCard.tsx"
+  },
+  {
+   "id": "setting.ai.guidecard.lessons",
+   "kind": "setting",
+   "title": "Lessons",
+   "text": "of done. Answers use AI only when AI is on in AI & Command, and only Lens's own help text is sent with your question.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Guide",
+    "Lessons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "GuideCard",
+    "label": "Lessons",
+    "section": "guide"
+   },
+   "source": "src/components/GuideCard.tsx"
+  },
+  {
+   "id": "card.ai.agentspane",
+   "kind": "card",
+   "title": "Connected Agents & MCP Servers",
+   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected Agents & MCP Servers · AGENTS.md — Global Agent Safety & Consistency Rules. Agents",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Agents",
+    "Connected Agents & MCP Servers"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AgentsPane",
+    "label": "Connected Agents & MCP Servers",
+    "section": "agents"
+   },
+   "source": "src/components/AgentsPane.tsx"
+  },
+  {
+   "id": "setting.ai.agentspane.agents-md-global-agent-safety-and-consistency-rules",
+   "kind": "setting",
+   "title": "AGENTS.md — Global Agent Safety & Consistency Rules",
+   "text": "Saved to %APPDATA%\\LensUI\\AGENTS.md and injected automatically into connected agents.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Agents",
+    "Connected Agents & MCP Servers",
+    "AGENTS.md — Global Agent Safety & Consistency Rules"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "AgentsPane",
+    "label": "AGENTS.md — Global Agent Safety & Consistency Rules",
+    "section": "agents"
+   },
+   "source": "src/components/AgentsPane.tsx"
+  },
+  {
+   "id": "card.about.updatescard",
    "kind": "card",
    "title": "Updates",
    "text": "From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page. Updates. Updates. update mode and a manual check. Updates come from GitHub Releases and are signature-checked before installing. Backend: win_update.rs",
    "path": [
     "Settings",
-    "Windows & Keys",
+    "About & Testing",
     "Updates & crash reports",
     "Updates"
    ],
    "target": {
     "surface": "settings",
-    "tab": "system",
+    "tab": "about",
     "card": "UpdatesCard",
-    "label": "Updates"
+    "label": "Updates",
+    "section": "updates"
    },
    "source": "src/components/UpdatesCard.tsx"
   },
   {
-   "id": "card.system.crashreportscard",
+   "id": "card.about.crashreportscard",
    "kind": "card",
    "title": "Crash Reports",
    "text": "Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded. Crash Reports. Crash reports. crash reports Lens wrote on this PC (%APPDATA%\\LensUI\\crashes, newest 10). Nothing is uploaded; \"Copy report\" puts one on the clipboard so it can be pasted into an issue. Backend: win_crash.rs",
    "path": [
     "Settings",
-    "Windows & Keys",
+    "About & Testing",
     "Updates & crash reports",
     "Crash Reports"
    ],
    "target": {
     "surface": "settings",
-    "tab": "system",
+    "tab": "about",
     "card": "CrashReportsCard",
-    "label": "Crash Reports"
+    "label": "Crash Reports",
+    "section": "updates"
    },
    "source": "src/components/CrashReportsCard.tsx"
+  },
+  {
+   "id": "card.about.backuprestorecard",
+   "kind": "card",
+   "title": "Back Up & Restore",
+   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back Up & Restore · Include workflow recordings and training data · Remove All Lens Changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Back up & restore",
+    "Back Up & Restore"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "BackupRestoreCard",
+    "label": "Back Up & Restore",
+    "section": "backup"
+   },
+   "source": "src/components/BackupRestoreCard.tsx"
+  },
+  {
+   "id": "setting.about.backuprestorecard.include-workflow-recordings-and-training-data",
+   "kind": "setting",
+   "title": "Include workflow recordings and training data",
+   "text": "Off by default. Applies to both saving and restoring.",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Back up & restore",
+    "Back Up & Restore",
+    "Include workflow recordings and training data"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "BackupRestoreCard",
+    "label": "Include workflow recordings and training data",
+    "section": "backup"
+   },
+   "source": "src/components/BackupRestoreCard.tsx"
+  },
+  {
+   "id": "setting.about.backuprestorecard.remove-all-lens-changes",
+   "kind": "setting",
+   "title": "Remove All Lens Changes",
+   "text": "Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell mode and start-with-Windows. Use before uninstalling.",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Back up & restore",
+    "Back Up & Restore",
+    "Remove All Lens Changes"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "BackupRestoreCard",
+    "label": "Remove All Lens Changes",
+    "section": "backup"
+   },
+   "source": "src/components/BackupRestoreCard.tsx"
+  },
+  {
+   "id": "card.about.testerhubcard",
+   "kind": "card",
+   "title": "Tester hub",
+   "text": "Tester hub",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Tester Hub",
+    "Tester hub"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "TesterHubCard",
+    "label": "Tester hub",
+    "section": "tester"
+   },
+   "source": "src/tester/TesterHubCard.tsx"
+  },
+  {
+   "id": "card.store.appscard",
+   "kind": "card",
+   "title": "Apps",
+   "text": "Apps",
+   "path": [
+    "Settings",
+    "Apps",
+    "Apps settings",
+    "Apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "store",
+    "card": "AppsCard",
+    "label": "Apps",
+    "section": "settings"
+   },
+   "source": "src/components/AppsCard.tsx"
+  },
+  {
+   "id": "card.music.musiccard",
+   "kind": "card",
+   "title": "Mini player",
+   "text": "Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, \"More by\" and saving songs. It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Dither texture · Sources · Theme follows the music. Music",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Mini player"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.now-playing-window",
+   "kind": "setting",
+   "title": "Now Playing window",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Now Playing window"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Now Playing window"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.connect-spotify-optional",
+   "kind": "setting",
+   "title": "Connect Spotify (optional)",
+   "text": "Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, \"More by\" and saving songs. It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Connect Spotify (optional)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Connect Spotify (optional)"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.spotify-theme-for-spicetify-optional",
+   "kind": "setting",
+   "title": "Spotify theme for Spicetify (optional)",
+   "text": "Lens can write a \"Lens\" theme in your current colours for Spicetify, a separate tool that restyles the Spotify app. Lens never changes Spotify itself and never runs Spicetify: you apply the theme yourself. Spotify updates undo it, and changing the Spotify app may go against Spotify's terms, so it's your call.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Spotify theme for Spicetify (optional)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Spotify theme for Spicetify (optional)"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.music",
+   "kind": "setting",
+   "title": "Music",
+   "text": "One now-playing view for every app that shows up in Windows' media controls: Spotify, Apple Music, your browser, VLC and more.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Music"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Music"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.dither-texture",
+   "kind": "setting",
+   "title": "Dither texture",
+   "text": "Lens's halftone grain over the blurred artwork.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Dither texture"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Dither texture"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.sources",
+   "kind": "setting",
+   "title": "Sources",
+   "text": "Apps shown first when several are playing. Hidden apps are never shown.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Sources"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Sources"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.theme-follows-the-music",
+   "kind": "setting",
+   "title": "Theme follows the music",
+   "text": "Fades your accent towards the artwork's colour while something plays, then back. Never during games or full-screen apps, and nothing is saved.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Theme follows the music"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Theme follows the music"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.strength",
+   "kind": "setting",
+   "title": "Strength",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Strength"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Strength"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.back-to-your-accent-after",
+   "kind": "setting",
+   "title": "Back to your accent after",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Back to your accent after"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Back to your accent after"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.synced-lyrics",
+   "kind": "setting",
+   "title": "Synced lyrics",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Synced lyrics"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Synced lyrics"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.use-lrclib",
+   "kind": "setting",
+   "title": "Use LRCLIB",
+   "text": "Turn off to use only your own .lrc files.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Use LRCLIB"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Use LRCLIB"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.your-lrc-folder",
+   "kind": "setting",
+   "title": "Your .lrc folder",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Your .lrc folder"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Your .lrc folder"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.timing",
+   "kind": "setting",
+   "title": "Timing",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Timing"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Timing"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.now-playing-wallpaper-moves-to-the-music",
+   "kind": "setting",
+   "title": "Now Playing wallpaper moves to the music",
+   "text": "The Playground scene reads your speakers' volume level, a single number. No sound is recorded or stored.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Now Playing wallpaper moves to the music"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Now Playing wallpaper moves to the music"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.audio-reactive-scene",
+   "kind": "setting",
+   "title": "Audio-reactive scene",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Audio-reactive scene"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Audio-reactive scene"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.recently-played-in-lens",
+   "kind": "setting",
+   "title": "Recently played in Lens",
+   "text": "Keeps the last 100 songs on this PC so the Now Playing window can list them.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played in Lens"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played in Lens"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.recently-played",
+   "kind": "setting",
+   "title": "Recently played",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.scrobble-to-last-fm",
+   "kind": "setting",
+   "title": "Scrobble to Last.fm",
+   "text": "Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Scrobble to Last.fm"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Scrobble to Last.fm"
+   },
+   "source": "src/components/MusicCard.tsx"
   },
   {
    "id": "setting.monitor.inline.uptime",
@@ -2703,7 +4600,7 @@
    "text": "Desktop sessions switcher, active app title, and clock",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Top Bar",
     "Enable Top Bar"
    ],
@@ -2721,7 +4618,7 @@
    "text": "On Overlap dodges maximized or top-edge windows automatically",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Top Bar",
     "Auto-Hide Mode"
    ],
@@ -2739,7 +4636,7 @@
    "text": "Full-width edge strip or floating rounded glass pill",
    "path": [
     "Settings",
-    "Dock & Top Bar",
+    "Dock & Bar",
     "Top Bar",
     "Bar Style"
    ],
@@ -2751,159 +4648,74 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.folders.inline.choose-folder-theme",
+   "id": "setting.sessions.inline.choose-folder-theme",
    "kind": "setting",
    "title": "Choose Folder Theme",
    "text": "",
    "path": [
     "Settings",
-    "Folder Icons",
+    "Desktop",
     "Folder Themes",
     "Choose Folder Theme"
    ],
    "target": {
     "surface": "settings",
-    "tab": "folders",
+    "tab": "sessions",
     "label": "Choose Folder Theme"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.folders.inline.replace-all-windows-explorer-default-folders",
+   "id": "setting.sessions.inline.replace-all-windows-explorer-default-folders",
    "kind": "setting",
    "title": "Replace ALL Windows Explorer Default Folders",
    "text": "Safe HKCU Shell Icons override (zero system file edits, 1-click revert)",
    "path": [
     "Settings",
-    "Folder Icons",
+    "Desktop",
     "Folder Themes",
     "Replace ALL Windows Explorer Default Folders"
    ],
    "target": {
     "surface": "settings",
-    "tab": "folders",
+    "tab": "sessions",
     "label": "Replace ALL Windows Explorer Default Folders"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.folders.inline.style-all-core-user-folders",
+   "id": "setting.sessions.inline.style-all-core-user-folders",
    "kind": "setting",
    "title": "Style All Core User Folders",
    "text": "Desktop, Documents, Downloads, Pictures, Music & Videos",
    "path": [
     "Settings",
-    "Folder Icons",
+    "Desktop",
     "Folder Themes",
     "Style All Core User Folders"
    ],
    "target": {
     "surface": "settings",
-    "tab": "folders",
+    "tab": "sessions",
     "label": "Style All Core User Folders"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.folders.inline.style-any-specific-folder",
+   "id": "setting.sessions.inline.style-any-specific-folder",
    "kind": "setting",
    "title": "Style Any Specific Folder",
    "text": "",
    "path": [
     "Settings",
-    "Folder Icons",
+    "Desktop",
     "Folder Themes",
     "Style Any Specific Folder"
    ],
    "target": {
     "surface": "settings",
-    "tab": "folders",
+    "tab": "sessions",
     "label": "Style Any Specific Folder"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.about.inline.tester-mode",
-   "kind": "setting",
-   "title": "Tester mode",
-   "text": "Shows a TEST BUILD badge in the top bar and turns on Ctrl+Alt+M to mark a moment in the log.",
-   "path": [
-    "Settings",
-    "About & Testing",
-    "Tester mode"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "about",
-    "label": "Tester mode"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.system.inline.display-and-eye-care",
-   "kind": "setting",
-   "title": "Display & Eye Care",
-   "text": "",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Display & Eye Care"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "label": "Display & Eye Care"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.system.inline.sound-and-app-mixer",
-   "kind": "setting",
-   "title": "Sound & App Mixer",
-   "text": "",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Sound & App Mixer"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "label": "Sound & App Mixer"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.system.inline.quick-desktop-and-shell-actions",
-   "kind": "setting",
-   "title": "Quick Desktop & Shell Actions",
-   "text": "",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Quick Desktop & Shell Actions"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "label": "Quick Desktop & Shell Actions"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.system.inline.self-test",
-   "kind": "setting",
-   "title": "Self-Test",
-   "text": "Checks Lens without changing anything. Copy the report into a bug report.",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Self-Test"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "label": "Self-Test"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -2922,24 +4734,6 @@
     "surface": "settings",
     "tab": "system",
     "label": "Run Lens UI on Windows Startup"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "setting.system.inline.auto-pause-overlays-in-fullscreen-games-video",
-   "kind": "setting",
-   "title": "Auto-Pause Overlays in Fullscreen Games / Video",
-   "text": "Keeps fullscreen apps completely uninterrupted",
-   "path": [
-    "Settings",
-    "Windows & Keys",
-    "Windows integration & shortcuts",
-    "Auto-Pause Overlays in Fullscreen Games / Video"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "system",
-    "label": "Auto-Pause Overlays in Fullscreen Games / Video"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -3072,11 +4866,11 @@
   {
    "id": "tab.theme",
    "kind": "tab",
-   "title": "Theme & Look",
-   "text": "The Theme & Look tab in Settings.",
+   "title": "Appearance",
+   "text": "The Appearance tab in Settings.",
    "path": [
     "Settings",
-    "Theme & Look"
+    "Appearance"
    ],
    "target": {
     "surface": "settings",
@@ -3087,11 +4881,11 @@
   {
    "id": "tab.dock",
    "kind": "tab",
-   "title": "Dock & Top Bar",
-   "text": "The Dock & Top Bar tab in Settings.",
+   "title": "Dock & Bar",
+   "text": "The Dock & Bar tab in Settings.",
    "path": [
     "Settings",
-    "Dock & Top Bar"
+    "Dock & Bar"
    ],
    "target": {
     "surface": "settings",
@@ -3102,30 +4896,15 @@
   {
    "id": "tab.sessions",
    "kind": "tab",
-   "title": "Desktop & Widgets",
-   "text": "The Desktop & Widgets tab in Settings.",
+   "title": "Desktop",
+   "text": "The Desktop tab in Settings.",
    "path": [
     "Settings",
-    "Desktop & Widgets"
+    "Desktop"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "tab.folders",
-   "kind": "tab",
-   "title": "Folder Icons",
-   "text": "The Folder Icons tab in Settings.",
-   "path": [
-    "Settings",
-    "Folder Icons"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "folders"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -3160,17 +4939,212 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "tab.agents",
+   "id": "tab.music",
    "kind": "tab",
-   "title": "Agents",
-   "text": "The Agents tab in Settings.",
+   "title": "Music",
+   "text": "The Music tab in Settings.",
    "path": [
     "Settings",
-    "Agents"
+    "Music"
    ],
    "target": {
     "surface": "settings",
-    "tab": "agents"
+    "tab": "music"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.store",
+   "kind": "tab",
+   "title": "Apps",
+   "text": "The Apps tab in Settings.",
+   "path": [
+    "Settings",
+    "Apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "store"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.display",
+   "kind": "tab",
+   "title": "Display",
+   "text": "The Display tab in Settings.",
+   "path": [
+    "Settings",
+    "Display"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "display"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.sound",
+   "kind": "tab",
+   "title": "Sound",
+   "text": "The Sound tab in Settings.",
+   "path": [
+    "Settings",
+    "Sound"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "sound"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.network",
+   "kind": "tab",
+   "title": "Network & Bluetooth",
+   "text": "The Network & Bluetooth tab in Settings.",
+   "path": [
+    "Settings",
+    "Network & Bluetooth"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "network"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.power",
+   "kind": "tab",
+   "title": "Power & Battery",
+   "text": "The Power & Battery tab in Settings.",
+   "path": [
+    "Settings",
+    "Power & Battery"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "power"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.apps",
+   "kind": "tab",
+   "title": "Apps & Startup",
+   "text": "The Apps & Startup tab in Settings.",
+   "path": [
+    "Settings",
+    "Apps & Startup"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "apps"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.storage",
+   "kind": "tab",
+   "title": "Storage",
+   "text": "The Storage tab in Settings.",
+   "path": [
+    "Settings",
+    "Storage"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "storage"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.focus",
+   "kind": "tab",
+   "title": "Focus & Notifications",
+   "text": "The Focus & Notifications tab in Settings.",
+   "path": [
+    "Settings",
+    "Focus & Notifications"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "focus"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.privacy",
+   "kind": "tab",
+   "title": "Privacy & Security",
+   "text": "The Privacy & Security tab in Settings.",
+   "path": [
+    "Settings",
+    "Privacy & Security"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "privacy"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.update",
+   "kind": "tab",
+   "title": "Update",
+   "text": "The Update tab in Settings.",
+   "path": [
+    "Settings",
+    "Update"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "update"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.time",
+   "kind": "tab",
+   "title": "Time & Language",
+   "text": "The Time & Language tab in Settings.",
+   "path": [
+    "Settings",
+    "Time & Language"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "time"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.accessibility",
+   "kind": "tab",
+   "title": "Accessibility",
+   "text": "The Accessibility tab in Settings.",
+   "path": [
+    "Settings",
+    "Accessibility"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "accessibility"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.gaming",
+   "kind": "tab",
+   "title": "Gaming",
+   "text": "The Gaming tab in Settings.",
+   "path": [
+    "Settings",
+    "Gaming"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "gaming"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -5295,6 +7269,90 @@
    "source": "docs/AI.md"
   },
   {
+   "id": "doc.apps-research.0",
+   "kind": "doc",
+   "title": "Lens Apps: research (2026-11-23)",
+   "text": "What the user asked for: free tools like concat and ArtCraft offered as optional installs in an Apps section, with instant download, information, live thumbnails and setup integration, including \"that new TradingView GitHub repo rewrite\" . They also want the new rewrites of Docs, Slides and similar apps, plus full voice and menu integration. My reading: Lens becomes a hub that curates the new wave of open-source rewrites of big paid apps. Each one is one click to install, and Lens then wires it into the Dock, right-click menus, voice, Command and the AI helper. About 35 lookups. Quotes are kept under 15 words, one per source.",
+   "path": [
+    "Docs",
+    "Lens Apps: research (2026-11-23)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/APPS_RESEARCH.md",
+    "heading": "Lens Apps: research (2026-11-23)"
+   },
+   "source": "docs/APPS_RESEARCH.md"
+  },
+  {
+   "id": "doc.apps-research.1",
+   "kind": "doc",
+   "title": "Lens Apps: research (2026-11-23): 1. What the three named things are",
+   "text": "Asked for What it is Confidence --- --- --- ArtCraft storytold/artcraft is an \"IDE for artists\": controllable AI image and video with 2D/3D scene tools. It is licensed MIT OR Apache-2.0, with stable Windows/macOS/Linux builds from getartcraft.com. In October 2026 the same team launched a suite of native Rust apps on getartcraft.com/apps, installed and updated by one Craft Launcher (storytold/craft-launcher, v0.1.0, 10 Oct 2026). The suite includes PhotoCraft (Photoshop), VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, AniCraft, DesignCraft, FigCraft (Figma), TextureCraft, MaterialCraft, SoundCraft, WordCraft (Docs/Word), DeckCraft (Slides/PowerPoint), GridCraft (Sheets/Excel) , CADCraft and Craft Anything (TechAeris). Most are early alpha or in development. High. This matches \"docs slides etc the new rewrite\" too. concat jub0t/Concat is \"the truly free, open-source, local-firs",
+   "path": [
+    "Docs",
+    "Lens Apps: research (2026-11-23)",
+    "1. What the three named things are"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/APPS_RESEARCH.md",
+    "heading": "1. What the three named things are"
+   },
+   "source": "docs/APPS_RESEARCH.md"
+  },
+  {
+   "id": "doc.apps-research.2",
+   "kind": "doc",
+   "title": "Lens Apps: research (2026-11-23): 2. Candidate list (51 shipped)",
+   "text": "Winget ids marked ✓ were confirmed on winstall.app on 2026-11-23. The others are well-known ids that Lens re-checks with winget show before offering Install; when that check fails, Lens offers the official link. Licences marked † come from memory and are confirmed by winget show at install time; the confirm sheet shows the authoritative licence. Category App Licence Install route --- --- --- --- Rewrites / Create ArtCraft MIT OR Apache-2.0 GitHub release storytold/artcraft → getartcraft.com Craft Launcher (+12 suite apps: PhotoCraft, VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, DesignCraft, FigCraft, WordCraft, DeckCraft, GridCraft , SoundCraft) Permissive (per app) GitHub release storytold/craft-launcher ; suite apps install \"via\" the launcher Concat AGPL-3.0-or-later GitHub release jub0t/Concat Markets (charts only) degenview GPL-3.0-only GitHub release OpenCharts MIT Web",
+   "path": [
+    "Docs",
+    "Lens Apps: research (2026-11-23)",
+    "2. Candidate list (51 shipped)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/APPS_RESEARCH.md",
+    "heading": "2. Candidate list (51 shipped)"
+   },
+   "source": "docs/APPS_RESEARCH.md"
+  },
+  {
+   "id": "doc.apps-research.3",
+   "kind": "doc",
+   "title": "Lens Apps: research (2026-11-23): 3. Safety model for third-party installs",
+   "text": "1. winget first. The manifests in microsoft/winget-pkgs are reviewed, point to the publisher's own URLs and carry a SHA-256 that winget checks before running. Lens calls winget with a fixed argument vector : no shell, id regex [A-Za-z0-9. -] with no leading - , and --exact --source winget always. Install and upgrade add --accept-package-agreements only after the UI has shown the agreements from winget show . There is no --override , --location , --force or --silent . 2. GitHub-release fallback. - Only github.com's release hosts, and redirects are only followed within them (no mirrors). - SHA-256 is checked against the project's own checksum file when one exists. - The Authenticode signature is checked with Get-AuthenticodeSignature ; the path is passed by environment variable, never interpolated. - A second confirmation shows the checksum result, signer and SmartScreen warning, then Lens",
+   "path": [
+    "Docs",
+    "Lens Apps: research (2026-11-23)",
+    "3. Safety model for third-party installs"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/APPS_RESEARCH.md",
+    "heading": "3. Safety model for third-party installs"
+   },
+   "source": "docs/APPS_RESEARCH.md"
+  },
+  {
+   "id": "doc.apps-research.4",
+   "kind": "doc",
+   "title": "Lens Apps: research (2026-11-23): 4. Suggestions for next polish",
+   "text": "- Verify and pin. CI should run winget show for every unverified id on a Windows runner nightly (the daily lookout can do it), flip wingetVerified , and record the version. - ArtCraft suite deep links. Once the launcher's CLI or URL scheme is documented, \"Install WordCraft\" should open the launcher straight on that app. - Concat MCP. Read Concat's MCP server command from its docs and add an mcpServer recipe step, so \"Lens, cut the silences in this video\" works through approvals. - Signed catalogue updates. Sign catalog.json with the release key (PR #3 updater key, minisign) and enable \"Check for new apps\". - Real media. Ask projects for a short silent demo loop (WebM ≤ 2 MB); cache thumbnails under %APPDATA%\\LensUI\\apps\\media with a size cap. - App collections by task. For example \"Start a YouTube channel\" (OBS + Concat + Audacity + Krita) as a one-confirmation batch.",
+   "path": [
+    "Docs",
+    "Lens Apps: research (2026-11-23)",
+    "4. Suggestions for next polish"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/APPS_RESEARCH.md",
+    "heading": "4. Suggestions for next polish"
+   },
+   "source": "docs/APPS_RESEARCH.md"
+  },
+  {
    "id": "doc.browser-bridge.0",
    "kind": "doc",
    "title": "Lens bridges: browser, right-click, links, scripts and Claude",
@@ -6309,6 +8367,175 @@
    "source": "docs/DOCK_STYLES.md"
   },
   {
+   "id": "doc.lens-apps.0",
+   "kind": "doc",
+   "title": "Lens Apps",
+   "text": "A curated catalogue of free and open-source tools with one-click install, live thumbnails, a detail page, reversible setup recipes, and voice/menu/AI hooks. Research, sources and the safety model are in APPS RESEARCH.md. Everything is off until opened, and nothing installs without a click.",
+   "path": [
+    "Docs",
+    "Lens Apps"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Lens Apps"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.2",
+   "kind": "doc",
+   "title": "Lens Apps: Commands and events",
+   "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, then runs the installer. apps release discard(token) Deletes a prepared download. apps ope",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Commands and events"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Commands and events"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.5",
+   "kind": "doc",
+   "title": "Lens Apps: §2 Standalone window (`main.tsx`, `tauri.conf.json`, `capabilities/default.json`)",
+   "text": "Add \"apps\" to the windows list in capabilities/default.json . Open it with ?surface=apps&app=<id or &q=<query .",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§2 Standalone window (`main.tsx`, `tauri.conf.json`, `capabilities/default.json`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§2 Standalone window (`main.tsx`, `tauri.conf.json`, `capabilities/default.json`)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.6",
+   "kind": "doc",
+   "title": "Lens Apps: §3 Voice and Command (voice package / `src/command/*`)",
+   "text": "Phrases covered by tests: - \"Lens, install ArtCraft\" - \"open the charting app\" - \"update all my apps\" - \"what does Concat do\" - \"what should I use for slides\" - /apps video - /install concat Installs and uninstalls are confirm-risk: the sheet is the approval card.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§3 Voice and Command (voice package / `src/command/*`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§3 Voice and Command (voice package / `src/command/*`)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.7",
+   "kind": "doc",
+   "title": "Lens Apps: §4 Right-click catalogue (`src/context/actions.ts`, feature/rightclick-context)",
+   "text": "Read apps integrations().openWith (app id → extensions). For a file whose extension matches, add { id: \"open in app\", label: \"Open in <App name \", run: () = invoke(\"apps open\", { appId }) } . The magic right-click window uses the same list under \"Open with…\". Listen to lens://apps/integrations to refresh.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§4 Right-click catalogue (`src/context/actions.ts`, feature/rightclick-context)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§4 Right-click catalogue (`src/context/actions.ts`, feature/rightclick-context)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.8",
+   "kind": "doc",
+   "title": "Lens Apps: §5 Dock (`DockSurface.tsx` / config)",
+   "text": "On lens://apps/integrations , add any new dock ids as pins using the Start-menu shortcut Lens finds for that app (the apps open lookup). On revert, remove only pins the recipe added (the event carries the full list).",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§5 Dock (`DockSurface.tsx` / config)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§5 Dock (`DockSurface.tsx` / config)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.9",
+   "kind": "doc",
+   "title": "Lens Apps: §6 Lens AI (feature/ai-core)",
+   "text": "When integrations.localProvider is \"ollama\" or \"lmstudio\" , call ai set config with that provider as the local engine, restoring the previous value on revert. The MCP entries in integrations.mcp go into the MCP client list with per-tool approval.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§6 Lens AI (feature/ai-core)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§6 Lens AI (feature/ai-core)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.10",
+   "kind": "doc",
+   "title": "Lens Apps: §7 Lens Guide (feature/lens-guide)",
+   "text": "Index catalog.json (name, pitch, why, category, replaces) so \"what tool should I use for slides?\" answers from the catalogue. The ready-made logic is parseAppsIntent → recommend . Lesson stubs come from integrations.guide .",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§7 Lens Guide (feature/lens-guide)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§7 Lens Guide (feature/lens-guide)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.11",
+   "kind": "doc",
+   "title": "Lens Apps: §8 Backup and uninstall (`win_backup.rs`, `win_uninstall.rs`)",
+   "text": "- Include %APPDATA%\\LensUI\\apps\\{settings,integrations,journals,installed}.json in backups. - \"Remove all Lens changes\" should call apps recipe revert for each id in journals.json . - \"Remove all Lens changes\" does not uninstall apps; that is a separate, explicit button in AppsCard.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "§8 Backup and uninstall (`win_backup.rs`, `win_uninstall.rs`)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "§8 Backup and uninstall (`win_backup.rs`, `win_uninstall.rs`)"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.13",
+   "kind": "doc",
+   "title": "Lens Apps: Editing the catalogue",
+   "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Editing the catalogue"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Editing the catalogue"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
    "id": "doc.lens-browser.0",
    "kind": "doc",
    "title": "Lens Browser",
@@ -6865,6 +9092,361 @@
     "heading": "Known limits"
    },
    "source": "docs/MCP.md"
+  },
+  {
+   "id": "doc.music.0",
+   "kind": "doc",
+   "title": "Lens Music",
+   "text": "One now-playing layer for every app that shows up in Windows' media controls — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a frosted Now Playing window, an optional \"theme follows the music\" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: MUSIC RESEARCH.md. Everything is off by default. Settings → Music turns it on. Lyrics (network), Spotify, Last.fm and the audio-reactive scene are separate opt-ins.",
+   "path": [
+    "Docs",
+    "Lens Music"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lens Music"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.1",
+   "kind": "doc",
+   "title": "Lens Music: What works with which app",
+   "text": "Any media-session app Spotify + \"Connect Spotify\" Apple Music (Store app) --- --- --- --- Title, artist, album, artwork ✓ (what the app shares) ✓ ✓ Play/pause, next, previous ✓ ✓ ✓ Seek, shuffle, repeat when the app enables them ✓ when enabled Synced lyrics (LRCLIB / your .lrc files) ✓ ✓ ✓ Real queue, add to queue — (Windows never shares a queue) ✓ GET/POST /me/player/queue — Playlists in the sidebar — ✓ GET /me/playlists — Save / like — ✓ PUT/DELETE /me/library — \"More by\" artist — ✓ GET /artists/{id}/albums — Queue panel shows \"Recently played in Lens\" (local) Spotify's queue \"Recently played in Lens\" Apple Music has no public Windows API for Lens to use, so it's \"now playing via Windows\" only; users who want Apple Music itself themed can use Cider (a third-party client with its own themes).",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "What works with which app"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "What works with which app"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.2",
+   "kind": "doc",
+   "title": "Lens Music: Pieces",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback , DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/NowPlaying.tsx , MiniPlayer.tsx , m",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Pieces"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Pieces"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.3",
+   "kind": "doc",
+   "title": "Lens Music: Spotify reskin via Spicetify — the honest route",
+   "text": "Lens never patches Spotify and never runs Spicetify. Settings → Music → \"Spotify theme for Spicetify\" writes a Lens theme ( color.ini + user.css ) generated from the current Lens tokens to %APPDATA%\\LensUI\\music\\spicetify\\Lens , and — only if the user ticks \"Also copy it into Spicetify's Themes folder\" — into %APPDATA%\\spicetify\\Themes\\Lens (that one folder). The user then runs: and spicetify restore to undo. Caveats shown in the card: Spotify updates undo Spicetify (re-run spicetify backup apply ), and modifying the Spotify client may conflict with Spotify's Terms of Use (\"in any manner not expressly permitted\"); it's the user's choice. The theme is cosmetic only: slim rail + library, artwork-tinted headers, a frosted floating player bar, monospace metadata, big bright current lyric line. Generated colours are tested for contrast (text ≥ 7:1, subtext ≥ 4.5:1, accent ≥ 3:1) on the packs;",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Spotify reskin via Spicetify — the honest route"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Spotify reskin via Spicetify — the honest route"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.4",
+   "kind": "doc",
+   "title": "Lens Music: Connect Spotify",
+   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback , ticks Web API, and pastes the client ID. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's February 2026 Development Mode rules apply and are stated in the card: the app owner needs Premium, a new app allows 5 allow-listed users, artist top-tracks and batch metadata were removed (Lens uses artist albums for \"More by\"), library save/remove moved to /me/library , playlist",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Connect Spotify"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Connect Spotify"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.7",
+   "kind": "doc",
+   "title": "Lens Music: 2. Now Playing window (tauri.conf.json, capabilities/default.json, main.tsx)",
+   "text": "Add \"nowplaying\" to capabilities/default.json → windows . In main.tsx : Open it with invoke(\"open surface\", { label: \"nowplaying\" }) .",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "2. Now Playing window (tauri.conf.json, capabilities/default.json, main.tsx)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "2. Now Playing window (tauri.conf.json, capabilities/default.json, main.tsx)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.8",
+   "kind": "doc",
+   "title": "Lens Music: 3. Mini player — Dock (DockSurface.tsx) and Top Bar (TopBarSurface.tsx)",
+   "text": "Read musicConfig once with music.config() and refresh it on lens://music/now or when Settings saves. The existing Top Bar media controls ( win media.rs , topBar.showMediaControls ) can stay as they are; when Lens Music is enabled the Top Bar should hide its old media controls to avoid showing two.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "3. Mini player — Dock (DockSurface.tsx) and Top Bar (TopBarSurface.tsx)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "3. Mini player — Dock (DockSurface.tsx) and Top Bar (TopBarSurface.tsx)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.9",
+   "kind": "doc",
+   "title": "Lens Music: 4. Theme follows the music (every surface root: Dock, Top Bar, Control Center, Command…)",
+   "text": "It only sets an inline --lens-accent on that window's root and removes it on unmount; config is never written.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "4. Theme follows the music (every surface root: Dock, Top Bar, Control Center, Command…)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "4. Theme follows the music (every surface root: Dock, Top Bar, Control Center, Command…)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.10",
+   "kind": "doc",
+   "title": "Lens Music: 5. Playground scene (src/playground/registry.ts)",
+   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "5. Playground scene (src/playground/registry.ts)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "5. Playground scene (src/playground/registry.ts)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.11",
+   "kind": "doc",
+   "title": "Lens Music: 6. Voice and Command intents",
+   "text": "Script intents → music control : Phrase Call --- --- \"Lens, pause\" / \"play\" / \"resume\" music control(\"pause\" / \"play\") \"next song\" / \"skip\" / \"previous song\" music control(\"next\" / \"prev\") \"shuffle on/off\", \"repeat one/all/off\" music control(\"shuffle\", 1/0) , music control(\"repeat\", 1/2/0) \"what's playing\" music now() → speak \"{title} by {artist} on {sourceLabel}\" \"show lyrics\" / \"open now playing\" open surface(\"nowplaying\") \"like this song\" only when Spotify is connected: music spotify save(uri, true) (risk: confirm) \"add this song to Shelf\" shelf add({ kind: \"text\", title: \"{title} — {artist}\", text, tags: [\"music\"] }) \"sleep timer 30 minutes\" / \"stop after this song\" music sleep(30, false) / music sleep(null, true) Add these to src-tauri/src/ai/intent.rs (owned by the voice/AI packages) with risk low , except \"like\" ( confirm , needs Spotify). Lens Command: a /music command that opens",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "6. Voice and Command intents"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "6. Voice and Command intents"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.12",
+   "kind": "doc",
+   "title": "Lens Music: 7. Backup / uninstall",
+   "text": "win backup.rs : include music.json and music\\history.json (not the sealed .bin files — they're bound to the Windows account). win uninstall.rs (\"Remove all Lens changes\"): delete %APPDATA%\\LensUI\\music\\ and, if it exists and was written by Lens, %APPDATA%\\spicetify\\Themes\\Lens — after telling the user to run spicetify restore first if they applied it.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "7. Backup / uninstall"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "7. Backup / uninstall"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.13",
+   "kind": "doc",
+   "title": "Lens Music: 8. Lens Guide",
+   "text": "Anchor ids for coach marks: data-guide-id=\"music.card\" , music.lyrics , music.spotify , music.spicetify , nowplaying.queue , nowplaying.sleep .",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "8. Lens Guide"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "8. Lens Guide"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.14",
+   "kind": "doc",
+   "title": "Lens Music: Needs real hardware",
+   "text": "- GSMTC events firing for Spotify, Apple Music (Store), Edge/Chrome tabs and Firefox ≥ 125; players that send sparse timeline updates; session switching when two apps play. - Album-art thumbnails from each app (some send none or tiny ones). - Seek/shuffle/repeat on apps that report them enabled. - IAudioMeterInformation level while Bluetooth/USB output devices change. - Spotify OAuth loopback (port 43117 free, browser redirect), queue/playlists on a Premium account, and Development-Mode allow-listing. - Last.fm desktop auth and scrobble timing. - The exported Spicetify theme on the current Spotify desktop build.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Needs real hardware"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Needs real hardware"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music-research.0",
+   "kind": "doc",
+   "title": "Lens Music — research notes",
+   "text": "Scope: what makes now-playing, lyrics and music-client reskins loved on Windows (and elsewhere), what Windows actually exposes, and how Lens can offer the same feel without patching other apps or scraping protected lyrics. About 20 lookups, November 2026. Quotes are short; everything else is paraphrased. Where a fact could not be confirmed it says so.",
+   "path": [
+    "Docs",
+    "Lens Music — research notes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Lens Music — research notes"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.2",
+   "kind": "doc",
+   "title": "Lens Music — research notes: Spotify reskins: Spicetify",
+   "text": "- How it works. Spicetify is a command-line tool that rewrites Spotify's own local UI bundle ( xpui ) on disk and injects a theme ( color.ini + user.css , optional theme.js ) and extensions. Settings live in config-xpui.ini ; themes live in %APPDATA%\\spicetify\\Themes\\<Name \\ (the home folder wins over the install folder) (Spicetify themes docs). - color.ini. Sections are colour schemes; each scheme has keys such as text , subtext , main , sidebar , player , card , shadow , main-secondary , button , button-secondary , button-active , button-disabled , nav-active , nav-active-text , play-button , tab-active , notification , notification-error , playback-bar , misc (read from the community Sleek theme's color.ini in spicetify-themes). Values may be hex, decimal r,g,b or ${ENV} ; Spicetify turns them into CSS variables ( --spice-text , --spice-rgb-text , …). - Updates break it. Spotify updat",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "Spotify reskins: Spicetify"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Spotify reskins: Spicetify"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.3",
+   "kind": "doc",
+   "title": "Lens Music — research notes: Apple Music: Cider",
+   "text": "- Cider 2.5 finalised themes (built-in ThemeKit with hot reload), rewrote lyrics for smoother line transitions, added Immersive-view styles from plugins, a plugin API and marketplace; its Windows client moved to .NET 8 + WebView2 + WPF with taskbar controls and playback notifications (Cider devlog). The user's reference screenshot (library rail, artwork-tinted album page, a separate now-playing window with big synced lyrics) is this style of client.",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "Apple Music: Cider"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Apple Music: Cider"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.4",
+   "kind": "doc",
+   "title": "Lens Music — research notes: Windows' system media sessions (GSMTC)",
+   "text": "- GlobalSystemMediaTransportControlsSessionManager lists every app that registered media playback ( GetSessions ), the one media keys control ( GetCurrentSession ), and per session the media properties (title, artist, album, thumbnail), playback info (status, rate, which controls are enabled) and timeline; it's meant for companion apps that show and control playback (The Old New Thing). The data is whatever the player chooses to publish. - Timeline. Position is only current \"as of LastUpdatedTime \" (UTC); there are also StartTime , EndTime , MinSeekTime , MaxSeekTime (Microsoft Learn). So a now-playing UI must interpolate : position + (now − LastUpdatedTime) while playing, clamped to the end. - Who publishes sessions. Spotify and the Store Apple Music app do; Chromium browsers do for sites using the Media Session API; Firefox added timeline and seek support to SMTC in Firefox 125 (Mozill",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "Windows' system media sessions (GSMTC)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Windows' system media sessions (GSMTC)"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.5",
+   "kind": "doc",
+   "title": "Lens Music — research notes: Synced lyrics",
+   "text": "- LRCLIB is a free, open, crowd-sourced synced-lyrics database with a key-less API: GET /api/get?track name&artist name&album name&duration (duration must match within ±2 s, else 404) and GET /api/search ; responses carry plainLyrics , syncedLyrics (LRC), instrumental , duration . Clients should send an identifying User-Agent (app, version, homepage); rough limits ~45/min anonymous, ~90/min identified; on 429 clients must honour Retry-After (LRCLIB API docs). The server code is MIT (tranxuanthang/lrclib). We could not find a stated licence for the lyrics data itself — Lens shows \"Lyrics from LRCLIB\" with a link and caches only locally. - Musixmatch / Spotify lyrics. Spotify's in-app lyrics come from Musixmatch under licence. Musixmatch's API is a commercial product with its own terms; the \"unofficial\" libraries that call Spotify's or Musixmatch's private endpoints are scraping. Lens will",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "Synced lyrics"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Synced lyrics"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.6",
+   "kind": "doc",
+   "title": "Lens Music — research notes: Now-playing widgets and skins",
+   "text": "- Sleeve 2 (macOS) : configurable track/artist/album text and fonts, artwork size and corner rounding, placement (floating, pinned to the desktop, or floating briefly on track change), playback hotkeys and controls, Last.fm scrobbling; works with Music and Spotify (Six Colors). - Rainmeter players read SMTC or the WebNowPlaying companion for browsers; visualiser skins (Monstercat-style) are popular (RainmeterMediaPlayer). Wallpaper Engine exposes media info and audio levels to wallpapers. - Last.fm : a track counts once it is longer than 30 s and has played for half its length or 4 minutes, whichever comes first; track.updateNowPlaying is optional and shouldn't be retried; requests are authenticated with a session key (Last.fm scrobbling docs).",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "Now-playing widgets and skins"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "Now-playing widgets and skins"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.7",
+   "kind": "doc",
+   "title": "Lens Music — research notes: 2. Ranked features for Lens",
+   "text": "# Feature Who does it best Lens plan Status --- --- --- --- --- 1 One now-playing source for any app (Spotify, Apple Music, browsers, VLC…) Windows flyout, Rainmeter GSMTC watcher, event-driven, per-app allow/deny + priority Built ( music/service.rs ) 2 Accurate scrubber without polling Cider, Spotify Interpolate Position from LastUpdatedTime Built ( music/timeline.rs ) 3 Big synced lyrics, current line bright, next lines faded, click to seek Beautiful Lyrics, Cider, Apple Music LRCLIB + local .lrc , offset ±, auto-scroll Built 4 Artwork-tinted, frosted now-playing view Beautiful Lyrics, Cider Immersive Blurred art + palette gradient + optional dither Built ( NowPlaying.tsx ) 5 Theme follows the music Beautiful Lyrics (per page), Wallpaper Engine Palette → contrast-safe accent, crossfade, auto-restore Built (opt-in) 6 Mini player in the dock / bar Sleeve, Windows 11 flyout MiniPlayer.tsx",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "2. Ranked features for Lens"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "2. Ranked features for Lens"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
+  },
+  {
+   "id": "doc.music-research.9",
+   "kind": "doc",
+   "title": "Lens Music — research notes: 4. Don't do",
+   "text": "- Patch Spotify (or any client) ourselves, or run Spicetify for the user. - Scrape or call private Spotify/Musixmatch lyrics endpoints. - Inject into other processes or read their memory to get \"better\" metadata. - Record or store system audio, even \"just for the visualiser\". - Upload listening history anywhere except the user's own Last.fm account, when they connect it. - Ship real album artwork or copyrighted lyrics in the repo or screenshots. - Poll GSMTC in a tight loop; use events.",
+   "path": [
+    "Docs",
+    "Lens Music — research notes",
+    "4. Don't do"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC_RESEARCH.md",
+    "heading": "4. Don't do"
+   },
+   "source": "docs/MUSIC_RESEARCH.md"
   },
   {
    "id": "doc.pack-expressive.0",
@@ -7778,6 +10360,141 @@
     "heading": "Double-click to define or translate"
    },
    "source": "docs/RIGHTCLICK.md"
+  },
+  {
+   "id": "doc.settings-hub.0",
+   "kind": "doc",
+   "title": "Settings hub",
+   "text": "The Settings popout (Control Center, opened from the Dock) is one calm place for both Lens and Windows.",
+   "path": [
+    "Docs",
+    "Settings hub"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Settings hub"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.1",
+   "kind": "doc",
+   "title": "Settings hub: Map",
+   "text": "Group Page What's on it Old tab(s) --- --- --- --- Lens Appearance Theme & Look (packs, accent, glass, window frames, pointer suite) theme, controls Lens Dock & Bar Dock style and options, top bar dock, topbar Lens Desktop Playground, desktop sessions, tiling/workspaces, widgets, folder icons sessions, widgets, folders Lens Windows & Keys Virtual desktops, Windows integration, keys/corners/monitors, window styling, shell mode system, func Lens AI & Command AI engine, Lens Command, clipboard, connections, transcription, MCP, Agents (section) ai, agents Windows Display Brightness, night light + warmth, monitors (arrangement, resolution, Hz, scale), HDR link — Windows Sound Volume, mute, output/input device, per-app volume — Windows Network & Bluetooth Wi-Fi on/off + networks (connect saved/open), Bluetooth on/off + paired devices, airplane link — Windows Power & Battery Power mode, battery",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Map"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Map"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.2",
+   "kind": "doc",
+   "title": "Settings hub: Native vs deep link",
+   "text": "Lens only changes what it can change safely and reversibly; everything else shows the current value plus a precise ms-settings: link. Control How --- --- Brightness, night light, warmth existing native commands ( set brightness cmd , set night light cmd ) Volume, mute, per-app volume Core Audio (existing commands) Default output/input device existing set default audio device cmd (disabled with a note when Windows doesn't allow it) Wi-Fi on/off, Bluetooth on/off Windows.Devices.Radios (existing set radio cmd ) Connect to a saved or open Wi-Fi network WlanAPI with the saved profile (existing wifi connect cmd ). Passwords are only typed into Windows' own page Power mode existing set power mode cmd (PowerSetActiveOverlayScheme) Startup apps on/off new : HKCU Explorer\\StartupApproved\\Run (the Task Manager switch). Originals saved; restored by \"Remove all Lens changes\" Animation effects new : ",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Native vs deep link"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Native vs deep link"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.3",
+   "kind": "doc",
+   "title": "Settings hub: Layout",
+   "text": "Every page is: sticky header (icon, title, one line, \"Windows Settings ↗\") → hero row (the 2–4 things people do most) → collapsible sections with a one-line summary → rows (label column, right-aligned value/control). Primitives live in src/settings/ui/primitives.tsx ; states (loading, error with a Windows Settings way out, unavailable with the reason) in StateNote . Each page renders inside PageErrorBoundary (Retry instead of a blank window). Sliders commit after the hand stops (debounced); toggles are optimistic with rollback and a readable error. Search (top of the sidebar, Ctrl+F or / ) indexes every page, section and 53 Windows Settings pages; results show the breadcrumb and Windows entries open the exact ms-settings: page. Arrow keys move through the sidebar.",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Layout"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Layout"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.4",
+   "kind": "doc",
+   "title": "Settings hub: Deep links",
+   "text": "page , page#section , legacy ids and lens://settings/page#section all resolve. From the frontend: emit(\"lens://settings-tab\", \"sound#mixer\") . From Rust: open dock popout tab cmd { tab: \"network#bluetooth\" } . Snippet for the bridge owner ( src-tauri/src/bridge/cli.rs::parse lens url ) so external lens://settings/... links work: Voice / Command / Guide: emit lens://settings-tab with any page id from PAGES (e.g. \"Lens, open sound settings\" → sound ).",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Deep links"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Deep links"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.5",
+   "kind": "doc",
+   "title": "Settings hub: Duplicates removed",
+   "text": "1. Top stats strip (CPU/RAM/windows + quick actions): removed earlier; all of it lives in System & Tasks, Quick Settings or the palette. 2. Windows & Keys' CPU/Memory/Uptime row: removed earlier. 3. Display & Eye Care and Sound & App Mixer cards in Windows & Keys → Windows › Display and Windows › Sound. 4. The 4 big Windows tiles + 8 pills (Wi-Fi, Bluetooth, Display, Sound, Power, Apps, Storage, Updates, Gaming, Input, Security, System deep links) → replaced by the Windows pages. 5. Hidden \"Window Style & Controls\" tab (traffic lights, button order, control theme, window frame) duplicated Appearance › Window frames & buttons → removed. 6. WindowRulesCard was mounted twice → once, in Windows & Keys › Window styling. 7. Quick-action \"Taskbar Hidden\" and \"Traffic Lights\" toggles duplicated Dock & Bar / Appearance → removed (virtual desktops, Task Manager and File Explorer remain). 8. Self-t",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Duplicates removed"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Duplicates removed"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.6",
+   "kind": "doc",
+   "title": "Settings hub: Not split yet",
+   "text": "Appearance, Dock & Bar, Desktop, Windows & Keys, System & Tasks and Notifications are still rendered by ControlCenterSurface.tsx (now ~1,250 lines, down from ~1,980) inside the new page shell; the next step is moving each into src/settings/pages/ the same way.",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Not split yet"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Not split yet"
+   },
+   "source": "docs/SETTINGS_HUB.md"
+  },
+  {
+   "id": "doc.settings-hub.7",
+   "kind": "doc",
+   "title": "Settings hub: Live updates",
+   "text": "No background polling while Settings is hidden. Each page reloads when the popout is shown or focused, listens to the events Lens already emits ( lens://dnd-changed , lens://windows-changed ), and polls only what changes on its own while visible (Wi-Fi/Bluetooth 15 s, battery 30 s, app audio 5 s, privacy use 10 s). Device add/remove and power-source broadcasts from Windows would replace those polls; that needs a message-only window in the backend (planned).",
+   "path": [
+    "Docs",
+    "Settings hub",
+    "Live updates"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_HUB.md",
+    "heading": "Live updates"
+   },
+   "source": "docs/SETTINGS_HUB.md"
   },
   {
    "id": "doc.shelf.0",
@@ -9158,10 +11875,10 @@
      "n": 5,
      "title": "Know your escape hatch",
      "text": "Everything Lens changes can be undone. If anything ever looks wrong, the Windows & Quick tab has a one-click restore, and Restore-Windows-Shell.bat in the Lens folder does the same from outside Lens.",
-     "show": "settings:system:Remove all Lens changes",
+     "show": "settings:about:Remove all Lens changes",
      "target": {
       "surface": "settings",
-      "tab": "system",
+      "tab": "about",
       "label": "Remove all Lens changes"
      }
     }
@@ -9590,10 +12307,10 @@
      "n": 1,
      "title": "Back up your settings",
      "text": "Save a backup of your Lens settings before big changes. Restore brings everything back in one click.",
-     "show": "settings:system:Back up & restore",
+     "show": "settings:about:Back up & restore",
      "target": {
       "surface": "settings",
-      "tab": "system",
+      "tab": "about",
       "label": "Back up & restore"
      }
     },

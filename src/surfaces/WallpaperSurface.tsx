@@ -200,7 +200,7 @@ export const WallpaperSurface: React.FC = () => {
   const cls = `wp-media ${loaded ? "" : "is-loading"}`;
 
   return (
-    <div className="wp-root" aria-hidden="true">
+    <div className="wp-root" aria-hidden="true" data-guide-id="wallpaper">
       {!src || !state.kind ? (
         <div className="wp-fallback" />
       ) : state.kind === "image" ? (

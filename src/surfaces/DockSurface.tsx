@@ -1167,6 +1167,7 @@ export const DockSurface: React.FC = () => {
 
   return (
     <div
+      data-guide-id="dock"
       className={`dock-stage dock-edge-${edge} dock-style-${dockStyle} dock-align-${alignment} ${isBar ? "is-bar" : ""} ${systemInDock ? "has-dock-system" : ""} ${magnification !== "off" ? `mag-on mag-${magnification}` : ""} ${launchAnimation !== "lift" ? `launch-${launchAnimation}` : ""} ${showLabels ? "show-labels" : ""} icon-theme-${iconTheme} icon-shape-${iconShape}`}
       style={{
         ["--dock-effective-icon-size" as string]: `${
@@ -2072,6 +2073,7 @@ export const DockSurface: React.FC = () => {
                   <input
                     ref={searchInputRef}
                     className="dock-search-glide-input"
+                    data-guide-id="dock.search"
                     value={dockSearchQuery}
                     placeholder={askMode.mode === "ask" ? "Ask anything…" : "Search…"}
                     onChange={(e) => {

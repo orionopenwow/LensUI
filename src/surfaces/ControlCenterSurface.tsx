@@ -76,6 +76,8 @@ import { MessagingHubPane } from "../components/MessagingHubPane";
 import "./ControlCenterSurface.css";
 import { getPage, resolveTarget, type PageId } from "../settings/registry";
 import { PAGE_COMPONENTS } from "../settings/pages";
+import { GuideDrawer } from "../guide/GuideDrawer";
+import { openGuide } from "../guide/coach";
 import { SettingsNav, PageIcon } from "../settings/SettingsNav";
 import { WinLink } from "../settings/ui/primitives";
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
@@ -338,6 +340,9 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="sh-pagehead-desc">{pageDef.description}</div>
             </div>
             {pageDef.winUri && <WinLink uri={pageDef.winUri} label="Windows Settings" compact />}
+            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+              ?
+            </button>
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
@@ -1250,6 +1255,7 @@ export const ControlCenterSurface: React.FC = () => {
           </div>
         </main>
       </div>
+      <GuideDrawer config={config} context={{ surface: "settings", tab }} aiEnabled={!!config?.ai?.enabled} />
     </div>
   );
 };

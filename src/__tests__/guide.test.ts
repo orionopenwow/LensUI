@@ -9,7 +9,7 @@ mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit
 
 const ROOT = join(import.meta.dir, "../..");
 // @ts-ignore plain JS build tool
-const { buildIndex, extractMounts, extractTabs } = await import("../../tools/guide/extract.mjs");
+const { buildIndex, extractMounts, extractTabs, pageFiles } = await import("../../tools/guide/extract.mjs");
 // @ts-ignore plain JS build tool
 const { parseLesson, parseTarget } = await import("../../tools/guide/lessons.mjs");
 const { GuideSearch, normalizeQuestion, tokenize } = await import("../guide/search");
@@ -62,6 +62,9 @@ describe("index", () => {
       expected.push(`${tab}:${m.component}`);
     };
     mounts.forEach(visit);
+    // Settings hub pages live in their own files.
+    for (const p of pageFiles(ROOT) as { tab: string; file: string }[])
+      for (const m of extractMounts(ROOT, p.file, { tabs: [p.tab], section: null }) as typeof mounts) visit({ ...m, tabs: [p.tab] });
     expect(expected.length).toBeGreaterThan(20);
     const missing = expected.filter((k) => !cards.has(k));
     expect(missing).toEqual([]);
@@ -167,7 +170,8 @@ describe("lessons", () => {
       }
     };
     walk("src");
-    const src = files.filter((f) => !f.startsWith("src/guide/")).map((f) => readFileSync(join(ROOT, f), "utf8")).join("\n");
+    // The drawer root is the one anchor that lives in src/guide.
+    const src = files.filter((f) => !f.startsWith("src/guide/") || f.endsWith("GuideDrawer.tsx")).map((f) => readFileSync(join(ROOT, f), "utf8")).join("\n");
     const present = new Set([...src.matchAll(/data-guide-id="([a-z0-9.-]+)"/g)].map((m) => m[1]));
     if (present.size === 0) return; // snippet not applied yet: label matching covers Settings
     for (const a of Object.keys(GUIDE_ANCHORS)) expect(present.has(a)).toBe(true);

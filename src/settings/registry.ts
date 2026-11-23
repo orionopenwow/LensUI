@@ -10,6 +10,8 @@ export type PageId =
   | "desktop"
   | "keys"
   | "ai"
+  | "music"
+  | "store"
   // Windows
   | "display"
   | "sound"
@@ -141,7 +143,38 @@ export const PAGES: PageDef[] = [
       { id: "transcription", label: "Transcription", keywords: ["whisper", "subtitles"] },
       { id: "mcp", label: "AI apps (MCP)", keywords: ["claude code", "mcp"] },
       { id: "agents", label: "Agents", keywords: ["automations", "macros"] },
+      { id: "voice", label: "Voice", keywords: ["voice", "speech", "hold to talk", "wake word", "lens", "dictation", "conversation"] },
+      { id: "magic", label: "Magic right-click", keywords: ["magic menu", "ctrl alt right click", "context window"] },
+      { id: "rightclick", label: "Right-click menu", keywords: ["context menu", "actions", "custom actions", "explorer verbs"] },
+      { id: "packs", label: "Context packs & clipper", keywords: ["packs", "micro save", "obsidian", "clipper", "templates"] },
+      { id: "snip", label: "Lens Snip", keywords: ["screenshot", "snipping", "capture", "redact", "ocr", "record", "pin"] },
+      { id: "browser", label: "Lens Browser", keywords: ["browser", "tabs", "spaces", "import bookmarks", "agent"] },
+      { id: "permissions", label: "Permissions", keywords: ["grants", "allowed", "ask first", "blocked", "audit log"] },
+      { id: "safety", label: "Agent safety", keywords: ["scam", "phishing", "prompt injection", "sandbox"] },
+      { id: "guide", label: "Lens Guide", keywords: ["lessons", "help", "tutorial", "how do i"] },
     ],
+  },
+  {
+    id: "music",
+    group: "lens",
+    label: "Music",
+    description: "Now playing from any app, synced lyrics, and the theme following your music.",
+    icon: "music",
+    color: "#F472B6",
+    controls: ["Now playing", "Lyrics", "Theme follows music"],
+    keywords: ["music", "spotify", "apple music", "lyrics", "now playing", "media", "last.fm", "spicetify", "sleep timer"],
+    sections: [],
+  },
+  {
+    id: "store",
+    group: "lens",
+    label: "Apps",
+    description: "Free and open-source tools, one click to install, nothing without your OK.",
+    icon: "grid",
+    color: "#34D399",
+    controls: ["Browse", "Install", "Update all"],
+    keywords: ["apps", "install", "store", "catalogue", "open source", "artcraft", "concat", "winget", "download"],
+    sections: [{ id: "settings", label: "Apps settings", keywords: ["auto update", "activity log", "remove installed"] }],
   },
   // ---------------- Windows
   {

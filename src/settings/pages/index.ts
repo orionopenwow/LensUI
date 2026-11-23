@@ -15,6 +15,8 @@ import { AccessibilityPage } from "./AccessibilityPage";
 import { GamingPage } from "./GamingPage";
 import { AiCommandPage } from "./AiCommandPage";
 import { AboutPage } from "./AboutPage";
+import { LensAppsPage } from "./LensAppsPage";
+import { MusicPage } from "./MusicPage";
 
 /** Pages that live in their own file. The rest (Appearance, Dock & Bar, Desktop, Windows & Keys,
  *  System & Tasks, Notifications) are still rendered by ControlCenterSurface. */
@@ -33,4 +35,6 @@ export const PAGE_COMPONENTS: Partial<Record<PageId, React.FC<PageProps>>> = {
   gaming: GamingPage,
   ai: AiCommandPage,
   about: AboutPage,
+  store: LensAppsPage,
+  music: MusicPage,
 };

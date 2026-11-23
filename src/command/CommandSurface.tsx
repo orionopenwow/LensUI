@@ -657,6 +657,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         <span>{MODE_LABEL[mode]}</span>
       </button>
       <textarea
+        data-guide-id="command"
         ref={inputRef}
         className="cmd-input"
         rows={1}
@@ -707,7 +708,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
 
   if (layout === "mini") {
     return (
-      <div className="cmd-root is-mini">
+      <div className="cmd-root is-mini" data-guide-id="mini">
         <MiniView
           input={<>{bar}{popoverEl}</>}
           chips={chips}

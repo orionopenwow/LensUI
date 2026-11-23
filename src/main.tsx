@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from "react";
+import { CoachMarkLayer } from "./guide/CoachMarkLayer";
 import ReactDOM from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./styles/tokens.css";
@@ -93,6 +94,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Suspense fallback={null}>
       <Surface />
+      {/* Guide "Show me" highlights work on every surface (docs/GUIDE.md §3). */}
+      <CoachMarkLayer />
       <ReadySignal />
     </Suspense>
   </React.StrictMode>

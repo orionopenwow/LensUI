@@ -1,3 +1,4 @@
+import { openGuide } from "../guide/coach";
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -107,7 +108,7 @@ export const TopBarSurface: React.FC = () => {
 
   return (
     <div className={`topbar-wrapper ${!visible ? "is-hidden" : ""} ${isFloating ? "is-floating" : ""}`}>
-      <header className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
+      <header data-guide-id="topbar" className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
       <div className="topbar-left">
         <button
           type="button"
@@ -242,6 +243,9 @@ export const TopBarSurface: React.FC = () => {
       </div>
 
       <div className="topbar-right">
+        <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+          ?
+        </button>
         <div
           className={`topbar-search-well ${searchOpen ? "is-open" : ""}`}
           onClick={() => {
