@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -94,6 +95,7 @@ interface ProcessEntry {
 }
 
 export const ControlCenterSurface: React.FC = () => {
+  const startupBlock = useStartupBlock();
   const { config, winTheme, updateConfig } = useLensState();
   const runningWindows = useRunningWindows(1400);
   const glidePhase = useSurfaceGlide("settings");
@@ -1120,12 +1122,14 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Run Lens UI on Windows Startup</div>
-                    <div className="cc-desc">Starts Lens when you sign in to Windows</div>
+                    <div className="cc-desc">{startupBlock ?? "Starts Lens when you sign in to Windows"}</div>
                   </div>
                   <button
                     type="button"
                     role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens UI on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
+                      (!startupBlock || config.func.runOnStartup) &&
                       updateConfig({
                         ...config,
                         func: { ...config.func, runOnStartup: !config.func.runOnStartup },

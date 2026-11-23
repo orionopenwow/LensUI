@@ -78,6 +78,8 @@ export interface DockConfig {
   scrollCyclesWindows?: boolean;
   /** Suggest apps you usually open now (local predictor, no AI model). Off by default. */
   suggestedApps?: boolean;
+  /** Set once pins are reordered in Lens; until then Windows' taskbar order is followed (B-22). */
+  pinsUserOrdered?: boolean;
 }
 
 export interface FuncConfig {

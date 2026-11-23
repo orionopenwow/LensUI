@@ -43,6 +43,11 @@ if (Get-ItemProperty -Path $run -Name LensUI -ErrorAction SilentlyContinue) {
   Remove-ItemProperty -Path $run -Name LensUI
   Say "Removed."
 } else { Say "Was not set." }
+$approved = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+if (Get-ItemProperty -Path $approved -Name LensUI -ErrorAction SilentlyContinue) {
+  Remove-ItemProperty -Path $approved -Name LensUI
+  Say "Removed its Task Manager startup switch."
+}
 
 Step "Explorer folder icons"
 $icons = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Icons'

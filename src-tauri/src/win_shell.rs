@@ -284,7 +284,7 @@ extern "system" {
 
 /// Raw bytes of an HKCU value (any type), or None when the key or value is missing.
 #[cfg(windows)]
-fn read_hkcu_bytes(subkey: &str, value_name: &str) -> Option<Vec<u8>> {
+pub(crate) fn read_hkcu_bytes(subkey: &str, value_name: &str) -> Option<Vec<u8>> {
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
         RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
@@ -341,7 +341,7 @@ fn utf16_bytes_to_string(bytes: &[u8]) -> String {
 }
 
 #[cfg(windows)]
-fn read_hkcu_string(subkey: &str, value_name: &str) -> Option<String> {
+pub(crate) fn read_hkcu_string(subkey: &str, value_name: &str) -> Option<String> {
     read_hkcu_bytes(subkey, value_name).map(|b| utf16_bytes_to_string(&b))
 }
 
@@ -384,7 +384,7 @@ fn write_hkcu_string(subkey: &str, value_name: &str, value: &str) -> Result<(), 
 }
 
 #[cfg(windows)]
-fn delete_hkcu_value(subkey: &str, value_name: &str) {
+pub(crate) fn delete_hkcu_value(subkey: &str, value_name: &str) {
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
         RegCloseKey, RegDeleteValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE,

@@ -183,6 +183,8 @@ More: [TESTER_HUB.md](./docs/TESTER_HUB.md)
 
 Restore scripts work even when Lens isn't running: [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat), [`Restore-Windows-Shell.bat`](./Restore-Windows-Shell.bat) and [`Uninstall-Lens-UI.bat`](./Uninstall-Lens-UI.bat). No telemetry and no account.
 
+**Seeing "Hmmm… can't reach this page / localhost refused to connect" windows over your desktop?** A development build of Lens was started without its dev server. Run [`Fix-My-Desktop.bat`](./Fix-My-Desktop.bat): it closes Lens, stops it starting at sign-in and brings Explorer back. Then build the standalone version with `Build-Lens-UI.bat` and turn on Start with Windows from that copy.
+
 ## Works on
 
 | Feature | Windows 10 | Windows 11 |

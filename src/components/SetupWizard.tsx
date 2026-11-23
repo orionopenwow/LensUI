@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
 import { Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { LensConfig, WindowsThemeInfo } from "../types/lens";
@@ -22,6 +23,7 @@ const STEPS = ["Welcome", "Look", "Dock", "Windows", "Done"] as const;
 const WIZARD_DOCKS = ["floating", "slim", "taskbar", "split"];
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUpdateConfig, onFinish }) => {
+  const startupBlock = useStartupBlock();
   const [step, setStep] = useState(0);
   const [selfTest, setSelfTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
@@ -222,7 +224,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
               <div className="tux-row">
                 <div className="tux-row-text">
                   <div className="cc-label">Start Lens with Windows</div>
-                  <div className="cc-desc">Opens Lens when you sign in. Adds one entry to your startup apps that Lens removes when you turn this off.</div>
+                  <div className="cc-desc">{startupBlock ?? "Opens Lens when you sign in. Adds one entry to your startup apps that Lens removes when you turn this off."}</div>
                 </div>
                 <button
                   type="button"
@@ -230,7 +232,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
                   aria-checked={config.func.runOnStartup}
                   aria-label="Start Lens with Windows"
                   className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
-                  onClick={() => toggle("runOnStartup")}
+                  aria-disabled={!!startupBlock && !config.func.runOnStartup}
+                  onClick={() => (!startupBlock || config.func.runOnStartup) && toggle("runOnStartup")}
                 />
               </div>
               <div className="tux-row wiz-unavailable">

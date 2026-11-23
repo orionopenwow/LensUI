@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
 import { THEME_PACKS, applyThemePack, packSwatch } from "../themes/packs";
 import { listen } from "@tauri-apps/api/event";
@@ -83,6 +84,7 @@ const FOLDER_THEMES = [
 ];
 
 export const QuickSettingsSurface: React.FC = () => {
+  const startupBlock = useStartupBlock();
   const { config, winTheme, updateConfig } = useLensState();
   const glidePhase = useSurfaceGlide("quicksettings");
   const [activeTab, setActiveTab] = useState<QsTab>("quick");
@@ -858,12 +860,14 @@ export const QuickSettingsSurface: React.FC = () => {
                 <div className="qs-row">
                   <div>
                     <div className="qs-row-title">Run on Startup</div>
-                    <div className="qs-row-sub">Launch Lens UI automatically with Windows</div>
+                    <div className="qs-row-sub">{startupBlock ?? "Launch Lens UI automatically with Windows"}</div>
                   </div>
                   <button
                     type="button"
                     className={`qs-switch ${config.func.runOnStartup ? "on" : ""}`}
+                    aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
+                      (!startupBlock || config.func.runOnStartup) &&
                       updateConfig({
                         ...config,
                         func: { ...config.func, runOnStartup: !config.func.runOnStartup },
