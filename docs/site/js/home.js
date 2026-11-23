@@ -39,7 +39,10 @@ const scenes = createScenes(desk, {
     bar.querySelectorAll("[data-scene]").forEach((b, k) => { b.setAttribute("aria-current", k === i ? "true" : "false"); if (k === i) list.scrollTo({ left: b.offsetLeft - list.clientWidth / 2 + b.offsetWidth / 2, behavior: reducedMotion() ? "auto" : "smooth" }); });
     const prog = bar.querySelector(".sb-prog i");
     if (prog) { prog.style.animation = "none"; void prog.offsetWidth; prog.style.animation = scenes.playing && !reducedMotion() ? "sb-prog 11s linear" : "none"; }
-    history.replaceState(null, "", `#scene/${sc.id}`);
+    // A scene the visitor picked gets a shareable #scene/… link; the autoplaying reel leaves the URL alone,
+    // so reloading never reopens on whatever scene happened to be playing.
+    if (!scenes.playing) history.replaceState(null, "", `#scene/${sc.id}`);
+    else if (location.hash.startsWith("#scene/")) history.replaceState(null, "", location.pathname + location.search);
   },
   onState(p) { desk.setQuiet(p); bar.querySelector("[data-play]").textContent = p ? "❚❚" : "▶"; bar.querySelector("[data-play]").setAttribute("aria-label", p ? "Pause the scenes" : "Play the scenes"); bar.classList.toggle("is-playing", p); },
 });
@@ -60,7 +63,13 @@ function handover(show = true) {
   if (scenes.playing) scenes.pause();
   chip.hidden = !show;
 }
-desk.on("user", () => handover(true));
+// Only real input hands over control: scripted scene clicks also raise "user" events, so they count
+// only right after a trusted pointer or key event (or focus moving into the dock's frame on a click).
+let lastTrusted = -1e9;
+const mark = (e) => { if (e.isTrusted) lastTrusted = performance.now(); };
+["pointerdown", "keydown", "wheel"].forEach((t) => addEventListener(t, mark, { capture: true, passive: true }));
+addEventListener("blur", () => { if (document.activeElement?.tagName === "IFRAME" && host.contains(document.activeElement)) lastTrusted = performance.now(); });
+desk.on("user", () => { if (performance.now() - lastTrusted < 600) handover(true); });
 desk.root.addEventListener("pointerdown", (e) => { if (e.isTrusted) handover(true); }, true);
 desk.root.addEventListener("keydown", (e) => { if (e.isTrusted) handover(true); }, true);
 chip.querySelector("button").addEventListener("click", () => { chip.hidden = true; scenes.play(); });
