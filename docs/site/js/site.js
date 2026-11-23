@@ -203,7 +203,7 @@ if (location.hash) setTimeout(() => flash(decodeURIComponent(location.hash.slice
 // ---- Guide, loaded on first use ----------------------------------------------------------------
 let guide;
 async function openGuide(q) { guide ??= await import(new URL("./guide.js", import.meta.url).href); guide.open(q); }
-document.getElementById("guide-fab")?.addEventListener("click", () => openGuide());
+document.getElementById("guide-orb")?.addEventListener("click", () => (guide?.isOpen?.() ? guide.close() : openGuide()));
 document.addEventListener("click", (e) => { const a = e.target.closest("[data-ask]"); if (a) { e.preventDefault(); openGuide(a.dataset.ask); } });
 addEventListener("keydown", (e) => {
   if (e.key === "/" && !/input|textarea|select/i.test(document.activeElement?.tagName ?? "") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); openGuide(); }

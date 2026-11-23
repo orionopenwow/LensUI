@@ -10,7 +10,7 @@ import "@lens-src/styles/tokens.css";
 import "@lens-src/styles/global.css";
 import { DockSurface } from "@lens-src/surfaces/DockSurface";
 import { packById, registerCustomPack } from "@lens-src/themes/packs";
-import { APPS, ICON_BY_NAME } from "@tauri-apps/api/core";
+import { APPS, MINI, ICON_BY_NAME, setRunning } from "@tauri-apps/api/core";
 
 const W = globalThis as any;
 
@@ -38,6 +38,16 @@ window.addEventListener("message", (e) => {
     const next = merge(W.__lensConfig(), { theme: { preset: id, customAccent: p.accent, accentMode: "custom", borderRadius: p.radius }, ...(m.dockStyle ? { dock: { style: m.dockStyle } } : {}) });
     W.__lensSetConfig(next);
     W.__lensEmit("lens://config-updated", next);
+  } else if (m.lens === "windows" && Array.isArray(m.list)) {
+    // The page's desk owns the windows: running dots, focus and minimised state follow it.
+    W.__lensEmit("lens://windows-changed", setRunning(m.list));
+  } else if (m.lens === "pin" && m.app) {
+    const cur = W.__lensConfig();
+    if (!cur.dock.pinnedApps.some((a: any) => a.id === m.app.id)) {
+      const next = merge(cur, { dock: { pinnedApps: [...cur.dock.pinnedApps, { ...m.app, iconHint: null }] } });
+      W.__lensSetConfig(next);
+      W.__lensEmit("lens://config-updated", next);
+    }
   } else if (m.lens === "ping") {
     window.parent?.postMessage({ lens: "ready" }, "*");
   } else if (m.lens === "search") {
@@ -81,11 +91,15 @@ function decorate() {
   });
 }
 // Tell the host page when the search drawer opens or closes, so it can give the frame room.
-let drawerOpen = false;
+let drawerOpen = false, tallNow = false;
+// "tall": anything that needs room above the dock (search, the context menu, window previews).
+const TALL = ".dock-launcher-drawer:not(.is-closing), .dock-ctx-menu, .dock-hover-card";
 new MutationObserver(() => {
   decorate();
   const now = !!document.querySelector(".dock-launcher-drawer:not(.is-closing)");
   if (now !== drawerOpen) { drawerOpen = now; window.parent?.postMessage({ lens: "drawer", open: now }, "*"); }
+  const tl = !!document.querySelector(TALL);
+  if (tl !== tallNow) { tallNow = tl; window.parent?.postMessage({ lens: "tall", on: tl }, "*"); }
 }).observe(document.getElementById("root")!, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
 // Fixed sample config for the site: a few recognisable apps, no top bar. Query parameters set the
@@ -95,7 +109,7 @@ const start = W.__lensConfig();
 const pack0 = q.get("pack") && packById(q.get("pack"));
 W.__lensSetConfig(
   merge(start, {
-    dock: { autoHide: "never", magnification: q.get("mag") || "subtle", launchAnimation: "bounce", style: q.get("style") || "floating", showLabels: false, pinnedApps: (APPS as any[]).map(({ id, name, path }) => ({ id, name, path, iconHint: null })) },
+    dock: { autoHide: "never", magnification: q.get("mag") || "subtle", launchAnimation: "bounce", style: q.get("style") || "floating", showLabels: false, pinnedApps: (APPS as any[]).filter((a) => !q.get("mini") || (MINI as string[]).includes(a.id)).map(({ id, name, path }) => ({ id, name, path, iconHint: null })), ...(q.get("mini") ? { pinnedFolders: [] } : {}) },
     topBar: { enabled: false },
     theme: { ...(q.get("shape") ? { shapeStyle: q.get("shape") } : {}), ...(pack0 ? { preset: pack0.id, customAccent: pack0.accent, accentMode: "custom", borderRadius: pack0.radius } : {}) },
   })
@@ -103,3 +117,8 @@ W.__lensSetConfig(
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<DockSurface />);
 window.parent?.postMessage({ lens: "ready" }, "*");
+
+// The rail of dock styles sizes each tile from the dock's real width.
+const report = () => { const p = document.querySelector(".dock-pill"); if (!p) return; const r = p.getBoundingClientRect(); window.parent?.postMessage({ lens: "size", w: Math.round(r.width), h: Math.round(r.height), l: Math.round(r.left), t: Math.round(r.top) }, "*"); };
+new ResizeObserver(report).observe(document.body);
+setInterval(report, 1500);
