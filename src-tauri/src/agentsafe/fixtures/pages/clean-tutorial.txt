@@ -1,0 +1,3 @@
+# expect: clean
+dom||To install, go to the downloads page and run the installer. Then open a terminal.
+dom||You are now ready to start building.

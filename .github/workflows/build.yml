@@ -160,6 +160,9 @@ jobs:
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
 
+      - name: Render agent safety + hostile-page collector check
+        run: node tools/parity/agentsafe/build.mjs && node tools/parity/agentsafe/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,4 +174,5 @@ jobs:
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/
+            tools/parity/agentsafe/shots/
           if-no-files-found: warn

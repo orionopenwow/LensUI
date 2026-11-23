@@ -1,0 +1,2 @@
+# expect: clean
+ocr||TOTAL 42.80 EUR  VISA ****1007  THANK YOU

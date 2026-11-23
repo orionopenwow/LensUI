@@ -45,6 +45,7 @@ mod win_desktop_input;
 mod win_keyhook;
 mod win_update;
 mod tester;
+mod agentsafe;
 
 mod app;
 mod bridge;
@@ -470,6 +471,18 @@ pub fn run() {
             commands::tester::tester_environment,
             commands::tester::tester_export_plan,
             commands::tester::tester_export_report,
+            commands::agentsafe::agentsafe_settings_get,
+            commands::agentsafe::agentsafe_settings_set,
+            commands::agentsafe::agentsafe_check_url,
+            commands::agentsafe::agentsafe_scan,
+            commands::agentsafe::agentsafe_check,
+            commands::agentsafe::agentsafe_grants_list,
+            commands::agentsafe::agentsafe_grant,
+            commands::agentsafe::agentsafe_revoke,
+            commands::agentsafe::agentsafe_revoke_all,
+            commands::agentsafe::agentsafe_run_ended,
+            commands::agentsafe::agentsafe_quarantine_list,
+            commands::agentsafe::agentsafe_quarantine_clear,
             commands::tester::tester_reveal_report,
             commands::tester::tester_open_issue,
         ])
