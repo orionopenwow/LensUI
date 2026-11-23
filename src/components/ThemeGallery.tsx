@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Search, Star, X } from "lucide-react";
+import { ExternalLink, Search, Star, X } from "lucide-react";
+import { openExternal } from "../ai/open";
 import type { LensConfig } from "../types/lens";
 import { allPacks, lighten, type ThemePack } from "../themes/packs";
+import { CLAUDE_COLLECTION } from "../themes/community/claude";
+import "../themes/community/community.css";
 import { dockStyleLabel } from "../dock/styles";
 
 interface Props {
@@ -14,15 +17,16 @@ interface Props {
   onClose?: () => void;
 }
 
-const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Custom"];
+const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Community", "Custom"];
 
-type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "custom";
+type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "claude" | "custom";
 const FILTERS: { id: FilterId; label: string; test: (p: ThemePack) => boolean }[] = [
   { id: "all", label: "All", test: () => true },
   { id: "dark", label: "Dark", test: (p) => p.scheme !== "light" },
   { id: "light", label: "Light", test: (p) => p.scheme === "light" },
   { id: "linux", label: "Linux classics", test: (p) => p.tier === "Linux Suite" },
   { id: "studio", label: "Studio", test: (p) => p.tier === "Studio" },
+  { id: "claude", label: "Claude Code", test: (p) => p.collection === CLAUDE_COLLECTION },
   { id: "custom", label: "Custom", test: (p) => p.tier === "Custom" },
 ];
 
@@ -164,7 +168,7 @@ export const PackCard: React.FC<{
   onApply: (id: string) => void;
 }> = ({ pack, active, accent, size = "large", meta = true, onApply }) => {
   const small = size === "small";
-  return (
+  const card = (
     <button
       type="button"
       className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""}`}
@@ -191,6 +195,26 @@ export const PackCard: React.FC<{
       )}
     </button>
   );
+  if (small || !pack.source) return card;
+  const src = pack.source;
+  return (
+    <div className="tux-pack-wrap">
+      {card}
+      <div className="tux-pack-source">
+        <span className="tux-pack-credit" aria-label={`From ${src.name} by ${src.author}, ${src.license}`}>
+          {src.author}
+        </span>
+        <button
+          type="button"
+          className="cc-btn-ghost tux-pack-link"
+          aria-label={`Open the original ${pack.label} theme by ${src.author}`}
+          onClick={() => openExternal(src.url)}
+        >
+          Original <ExternalLink size={11} aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 /**
@@ -212,7 +236,8 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
           !q ||
           p.label.toLowerCase().includes(q) ||
           (p.description ?? "").toLowerCase().includes(q) ||
-          p.aliases.some((a) => a.includes(q)),
+          p.aliases.some((a) => a.includes(q)) ||
+          (p.source ? `${p.source.name} ${p.source.author}`.toLowerCase().includes(q) : false),
       )
       .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -279,17 +304,24 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
           No themes match “{query}”.
         </div>
       ) : (
-        <div className="tux-pack-grid">
-          {shown.map((pack) => (
-            <PackCard
-              key={pack.id}
-              pack={pack}
-              active={config.theme.preset === pack.id}
-              accent={pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent}
-              onApply={onApply}
-            />
-          ))}
-        </div>
+        <>
+          {filter === "claude" && (
+            <div className="cc-desc tux-collection-head" role="note">
+              Community themes from the Claude Code ecosystem · unofficial · links to originals
+            </div>
+          )}
+          <div className="tux-pack-grid">
+            {shown.map((pack) => (
+              <PackCard
+                key={pack.id}
+                pack={pack}
+                active={config.theme.preset === pack.id}
+                accent={pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent}
+                onApply={onApply}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
