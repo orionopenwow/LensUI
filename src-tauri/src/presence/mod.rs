@@ -20,6 +20,7 @@
 pub mod geom;
 pub mod mask;
 pub mod queue;
+pub mod tool;
 #[cfg(windows)]
 pub mod win;
 
@@ -499,6 +500,33 @@ pub fn before_control(app: &tauri::AppHandle, client: &str, call: &crate::contro
     if step.kind() == StepKind::Setting && !step.settings.is_empty() {
         use tauri::Emitter;
         let _ = app.emit(EVT_UI, serde_json::json!({ "actor": actor, "settings": step.settings, "label": step.label }));
+    }
+    announce_and_wait(app, &actor, step)
+}
+
+/// One-line hook for `ai::tools::lens::LensToolHost::run` (Lens assistant, voice, magic, MCP's
+/// legacy tools): announce the tool as the current thread's actor, wait the lead, or refuse when
+/// the user pressed Stop. Control-gate tools are announced by `before_control` instead.
+pub fn before_tool(app: &tauri::AppHandle, tool: &str, args: &serde_json::Value, summary: &str) -> Result<(), String> {
+    let actor = tool::current_actor();
+    let mut step = tool::step_for_tool(tool, args, summary);
+    #[cfg(windows)]
+    {
+        match step.kind() {
+            StepKind::Window => {
+                step.target = win::foreground_rect();
+                if let (Some(slot), Some(t)) = (tool::snap_slot(tool, args), step.target) {
+                    let monitors = win::monitors();
+                    step.dest = geom::monitor_for(&monitors, t).and_then(|m| geom::snap_rect(&m, &slot));
+                }
+            }
+            StepKind::Setting | StepKind::Click => step.target = win::anchor_rect(app),
+            _ => {}
+        }
+    }
+    if step.kind() == StepKind::Setting && !step.settings.is_empty() {
+        use tauri::Emitter;
+        let _ = app.emit(EVT_UI, serde_json::json!({ "actor": actor, "settings": step.settings, "label": step.label, "tool": tool }));
     }
     announce_and_wait(app, &actor, step)
 }

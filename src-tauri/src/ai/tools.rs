@@ -605,6 +605,8 @@ pub mod lens {
             if crate::control::tools::is_control_tool(tool) {
                 return crate::control::lens::run_internal(&self.app, "internal", tool, args);
             }
+            // "Lens at work": show the step (as this thread's actor) before doing it; refuse after Stop.
+            crate::presence::before_tool(&self.app, tool, args, &super::describe(tool, args))?;
             match tool {
                 "launch_app" => {
                     let apps: Vec<(String, String)> =

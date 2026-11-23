@@ -188,6 +188,48 @@ fn control_steps_map_calls() {
     assert_eq!(s.settings, vec!["theme.mode".to_string()]);
 }
 
+// ------------------------------------------------------------------------ tool steps + actor
+
+#[test]
+fn tool_calls_map_to_steps_with_chips() {
+    use serde_json::json;
+    let s = tool::step_for_tool("set_theme_pack", &json!({ "id": "nord-frost" }), "Apply the theme");
+    assert_eq!(s.kind(), StepKind::Setting);
+    assert_eq!(s.label, "Theme → Nord Frost");
+    assert_eq!(s.settings, vec!["Theme → Nord Frost".to_string()]);
+    let s = tool::step_for_tool("snap_window", &json!({ "slot": "left" }), "Snap the window: left");
+    assert_eq!(s.kind(), StepKind::Window);
+    assert_eq!(tool::snap_slot("snap_window", &json!({ "slot": "left" })).as_deref(), Some("left"));
+    assert_eq!(tool::step_for_tool("launch_app", &json!({ "name": "Spotify" }), "Open Spotify").kind(), StepKind::Click);
+    assert_eq!(tool::step_for_tool("set_volume", &json!({ "delta": -10 }), "x").label, "Volume -10%");
+    let n = tool::step_for_tool("create_note", &json!({ "text": "buy milk" }), "Create a note");
+    assert_eq!(n.kind(), StepKind::Type);
+    assert_eq!(n.text.as_deref(), Some("buy milk"));
+}
+
+#[test]
+fn actor_context_is_scoped_and_restored() {
+    assert_eq!(tool::current_actor(), Actor::lens());
+    let inner = tool::with_actor(Actor::of_kind("voice"), || {
+        let outer = tool::current_actor();
+        let nested = tool::with_actor(actor("claude-code"), tool::current_actor);
+        (outer, nested)
+    });
+    assert_eq!(inner.0.kind, "voice");
+    assert_eq!(inner.1.kind, "claude-code");
+    assert_eq!(tool::current_actor(), Actor::lens());
+}
+
+#[test]
+fn outside_ai_apps_from_mcp_tools_are_external() {
+    let a = Actor { kind: "other".into(), label: "An AI app".into() };
+    assert!(a.is_external());
+    let cfg = PresenceConfig { mode: Mode::Off, ..Default::default() };
+    assert_eq!(effective(&cfg, &a, Env::default()), Visual::Subtle);
+    assert!(!Actor::of_kind("voice").is_external());
+    assert!(!Actor::of_kind("apps").is_external());
+}
+
 mod props {
     use super::*;
     use proptest::prelude::*;

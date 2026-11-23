@@ -253,6 +253,19 @@ fn start_poller(app: &AppHandle) {
         .ok();
 }
 
+/// The foreground window's rect (physical px), for window-move ghosts.
+pub fn foreground_rect() -> Option<PRect> {
+    use windows::Win32::Foundation::RECT;
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowRect;
+    let fg = unsafe { GetForegroundWindow() };
+    if fg.0.is_null() {
+        return None;
+    }
+    let mut r = RECT::default();
+    unsafe { GetWindowRect(fg, &mut r) }.ok()?;
+    Some(PRect { x: r.left, y: r.top, w: r.right - r.left, h: r.bottom - r.top })
+}
+
 /// Where a setting/app action "lands": the open Settings window, else the dock.
 pub fn anchor_rect(app: &AppHandle) -> Option<PRect> {
     for label in ["settings", "dock"] {
