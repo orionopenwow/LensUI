@@ -151,8 +151,10 @@ function renderNotch() {
   const shown = prefs.accent === "pack" ? root.dataset.scheme : mode;
   const acc = prefs.accent === "pack" ? prefs.pack?.label ?? "pack" : prefs.accent || "rainbow";
   pill.querySelector(".mi").innerHTML = ICON[shown] ?? ICON.auto;
-  pill.querySelector(".lbl").textContent = prefs.accent === "pack" ? acc : `${mode} · ${acc}`;
-  pill.setAttribute("aria-label", `Site appearance: ${mode} mode, ${acc}. Change`);
+  const lbl = prefs.accent === "pack" ? acc : `${mode} · ${acc}`;
+  pill.querySelector(".lbl").textContent = lbl;
+  // The accessible name starts with the visible text (WCAG 2.5.3, label in name).
+  pill.setAttribute("aria-label", `${lbl}: site appearance. Change`);
   panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || (g.dataset.k === "density" ? "comfortable" : "auto"))))));
   panel.querySelectorAll("button[data-hue]").forEach((b) => b.setAttribute("aria-pressed", String(prefs.accent !== "pack" && b.dataset.hue === (prefs.accent || "rainbow"))));
   panel.querySelector("#n-pack").value = prefs.accent === "pack" ? prefs.pack?.id ?? "" : "";

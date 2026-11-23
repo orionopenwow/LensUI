@@ -27,7 +27,7 @@ export function home({ clips, visionHref }) {
   const tiles = TILES.map((t, i) => `<article class="tile" id="${t.id}"${has(t.clip) ? ` data-clip="${t.clip}"` : ""}>
   ${has(t.clip) ? `<div class="peek"><img src="media/${t.clip}.webp" alt="" loading="lazy" width="480" height="210"></div>` : ""}
   <div class="t"><h3><span class="dot" style="background:${HUE[i % HUE.length]}" aria-hidden="true"></span>${esc(t.title)}</h3><p>${esc(t.line)}</p>
-  <div class="more">${t.link ? `<a href="${t.link[0]}">${t.link[1]}</a>` : t.pr ? `<a href="${REPO}/pull/${t.pr}">In development</a>` : "<span></span>"}${has(t.clip) ? `<button class="peek-btn" type="button" aria-pressed="false" aria-label="Play the ${esc(t.title)} clip">play clip</button>` : ""}</div></div>
+  <div class="more">${t.link ? `<a href="${t.link[0]}">${t.link[1]}</a>` : t.pr ? `<a href="${REPO}/pull/${t.pr}">In development</a>` : "<span></span>"}${has(t.clip) ? `<button class="peek-btn" type="button" aria-pressed="false" aria-label="play clip: ${esc(t.title)}">play clip</button>` : ""}</div></div>
 </article>`).join("\n");
 
   return `
