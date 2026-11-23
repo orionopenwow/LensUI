@@ -1324,3 +1324,20 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Theme preview: the Dock drawn in the pack's own style (ThemeGallery PackPreview). */
+.tux-pv-dock { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); display: flex; gap: 4px; align-items: flex-end; }
+.tux-pv-dock-taskbar { left: 0; right: 0; bottom: 0; transform: none; }
+.tux-pv-dock-taskbar .tux-pv-pill { flex: 1; justify-content: center; border-left: none; border-right: none; border-bottom: none; }
+.tux-pv-pill { display: flex; gap: 3px; align-items: center; padding: 3px 6px; background: var(--pv-elev); border: 1px solid rgb(var(--pv-ink) / 0.12); border-radius: var(--pv-radius); }
+.tux-pv-dock-slim .tux-pv-pill { padding: 2px 4px; }
+.tux-pv-dock-minimal .tux-pv-pill { background: transparent; border-color: transparent; }
+.tux-pv-dock-split { gap: 7px; }
+.tux-pv-icon { width: 7px; height: 7px; border-radius: var(--pv-ir); background: var(--pv-c); }
+.tux-pv-dock-slim .tux-pv-icon { width: 5px; height: 5px; }
+.tux-pv-label { width: 12px; height: 3px; border-radius: 2px; background: rgb(var(--pv-ink) / 0.4); }
+.tux-gallery-sec { display: grid; gap: var(--lens-space-2, 8px); }
+.tux-gallery-sec + .tux-gallery-sec { margin-top: var(--lens-space-4, 16px); }
+.tux-gallery-sec-head { display: flex; align-items: baseline; gap: var(--lens-space-2, 8px); flex-wrap: wrap; }
+.tux-h3 { font-size: 13px; font-weight: 650; color: rgb(var(--lens-ink)); }
+.tux-undo { display: flex; align-items: center; gap: var(--lens-space-2, 8px); font-size: 12px; color: rgb(var(--lens-ink) / 0.72); }
