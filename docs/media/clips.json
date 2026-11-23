@@ -1,0 +1,192 @@
+[
+  {
+    "id": "dock-magnify",
+    "title": "Dock: hover magnification and a bounce launch",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 6,
+    "mp4": 82913,
+    "gif": 714232,
+    "poster": 4096
+  },
+  {
+    "id": "dock-styles",
+    "title": "Six dock styles: floating, slim, taskbar, studio, minimal, split",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 7.8,
+    "mp4": 35132,
+    "gif": 183534,
+    "poster": 2564
+  },
+  {
+    "id": "dock-search",
+    "title": "Search opens inside the dock; the dock never gets wider",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 4.6,
+    "mp4": 68325,
+    "gif": 348926,
+    "poster": 3058
+  },
+  {
+    "id": "themes",
+    "title": "Theme packs restyle every surface at once",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 8,
+    "mp4": 224467,
+    "gif": 951925,
+    "poster": 31996
+  },
+  {
+    "id": "focus-borders",
+    "title": "Dim inactive windows and a gradient border on the active one",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 3.5,
+    "mp4": 13093,
+    "gif": 104648,
+    "poster": 4776
+  },
+  {
+    "id": "playground-sand",
+    "title": "Falling Sand: paint sand, water, fire and vines on your wallpaper",
+    "gallery": "playground",
+    "kind": "live",
+    "seconds": 11.1,
+    "mp4": 295176,
+    "gif": 2187312,
+    "poster": 5502
+  },
+  {
+    "id": "playground-ink",
+    "title": "Ink: stir coloured ink with your pointer",
+    "gallery": "playground",
+    "kind": "live",
+    "seconds": 9.3,
+    "mp4": 208285,
+    "gif": 1119413,
+    "poster": 4880
+  },
+  {
+    "id": "cursor-effects",
+    "title": "Pointer effects: glow trail and click ripples in your accent",
+    "gallery": "main",
+    "kind": "live",
+    "seconds": 4.9,
+    "mp4": 47481,
+    "gif": 315616,
+    "poster": 2476
+  },
+  {
+    "id": "command-mini",
+    "title": "Lens Mini opens at your pointer and expands into Lens Command",
+    "gallery": "command",
+    "kind": "frames",
+    "seconds": 9.8,
+    "mp4": 46650,
+    "gif": 222772,
+    "poster": 12766
+  },
+  {
+    "id": "shelf-packs",
+    "title": "The Shelf and context packs for Claude",
+    "gallery": "rightclick",
+    "kind": "frames",
+    "seconds": 7.8,
+    "mp4": 28290,
+    "gif": 127566,
+    "poster": 19094
+  },
+  {
+    "id": "right-click",
+    "title": "One right-click menu everywhere, adapting to what you clicked",
+    "gallery": "rightclick",
+    "kind": "frames",
+    "seconds": 7.8,
+    "mp4": 61610,
+    "gif": 450541,
+    "poster": 23818
+  },
+  {
+    "id": "youtube-transcript",
+    "title": "YouTube transcripts with timestamps, in Lens Browser",
+    "gallery": "browser",
+    "kind": "frames",
+    "seconds": 4.3,
+    "mp4": 36772,
+    "gif": 96362,
+    "poster": 15652
+  },
+  {
+    "id": "voice",
+    "title": "Voice: \"Lens, minimise this\" with live transcript, confirm and undo",
+    "gallery": "voice",
+    "kind": "frames",
+    "seconds": 9.8,
+    "mp4": 17782,
+    "gif": 63155,
+    "poster": 7098
+  },
+  {
+    "id": "approvals",
+    "title": "Needs your OK: every risky step waits for you",
+    "gallery": "approval",
+    "kind": "frames",
+    "seconds": 9.8,
+    "mp4": 75608,
+    "gif": 583467,
+    "poster": 17282
+  },
+  {
+    "id": "guide",
+    "title": "Lens Guide answers \"how do I…\" and shows you where",
+    "gallery": "guide",
+    "kind": "frames",
+    "seconds": 3.9,
+    "mp4": 127758,
+    "gif": 711699,
+    "poster": 36010
+  },
+  {
+    "id": "browser-agent",
+    "title": "Lens Browser: vertical tabs, spaces and an agent that asks first",
+    "gallery": "browser",
+    "kind": "frames",
+    "seconds": 5.9,
+    "mp4": 81442,
+    "gif": 163400,
+    "poster": 19950
+  },
+  {
+    "id": "snip",
+    "title": "Lens Snip: annotate, redact and send before anything is saved",
+    "gallery": "snip",
+    "kind": "frames",
+    "seconds": 7.8,
+    "mp4": 139105,
+    "gif": 483131,
+    "poster": 13488
+  },
+  {
+    "id": "tester-hub",
+    "title": "Tester Hub: what's new, today's checklist and a redacted report",
+    "gallery": "tester",
+    "kind": "frames",
+    "seconds": 5.9,
+    "mp4": 125634,
+    "gif": 1054309,
+    "poster": 30130
+  },
+  {
+    "id": "ai-dock",
+    "title": "Ask from the dock: local model first, nothing sent without consent",
+    "gallery": "ai",
+    "kind": "frames",
+    "seconds": 5.9,
+    "mp4": 43489,
+    "gif": 364205,
+    "poster": 3644
+  }
+]
