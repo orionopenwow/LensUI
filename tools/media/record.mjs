@@ -352,7 +352,7 @@ async function recordFrames(browser, clip, base, report) {
   report.push({ id: clip.id, kind: "frames", seconds: +total.toFixed(1), errors, ...sizes });
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await mkdir(outDir, { recursive: true });
   await mkdir(tmp, { recursive: true });
   const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
