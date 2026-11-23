@@ -8552,7 +8552,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.2",
+   "id": "doc.lens-apps.1",
+   "kind": "doc",
+   "title": "Lens Apps: How it looks and behaves",
+   "text": "- Home shows each app once. Sections, in order: - Open-source rewrites; - the ArtCraft suite as one compact row (the launcher plus app icons); - AI on your PC; - Essentials; - a \"Browse by category\" grid. Category tiles and chips filter the list instead of repeating rails. - Real media. Icons and screenshots come from each project's own GitHub repo, pinned to a commit, as raw.githubusercontent.com URLs. - The URLs are found and checked by tools/apps/fetch media.py . That script makes blob-less shallow clones, picks the icon and the README or screenshot images, and records tools/apps/media.json . Hand-checked choices live in tools/apps/media sources.py . - Nothing is committed except the URLs. - 44 of 51 apps have an icon and 26 have screenshots. The rest carry a noMedia reason (closed source, or screenshots only on the project's website), and the tests require one or the other. - Install",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "How it looks and behaves"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "How it looks and behaves"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.3",
    "kind": "doc",
    "title": "Lens Apps: Commands and events",
    "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, then runs the installer. apps release discard(token) Deletes a prepared download. apps ope",
@@ -8569,7 +8586,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.5",
+   "id": "doc.lens-apps.7",
    "kind": "doc",
    "title": "Lens Apps: §2 Standalone window (`main.tsx`, `tauri.conf.json`, `capabilities/default.json`)",
    "text": "Add \"apps\" to the windows list in capabilities/default.json . Open it with ?surface=apps&app=<id or &q=<query .",
@@ -8586,7 +8603,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.6",
+   "id": "doc.lens-apps.8",
    "kind": "doc",
    "title": "Lens Apps: §3 Voice and Command (voice package / `src/command/*`)",
    "text": "Phrases covered by tests: - \"Lens, install ArtCraft\" - \"open the charting app\" - \"update all my apps\" - \"what does Concat do\" - \"what should I use for slides\" - /apps video - /install concat Installs and uninstalls are confirm-risk: the sheet is the approval card.",
@@ -8603,7 +8620,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.7",
+   "id": "doc.lens-apps.9",
    "kind": "doc",
    "title": "Lens Apps: §4 Right-click catalogue (`src/context/actions.ts`, feature/rightclick-context)",
    "text": "Read apps integrations().openWith (app id → extensions). For a file whose extension matches, add { id: \"open in app\", label: \"Open in <App name \", run: () = invoke(\"apps open\", { appId }) } . The magic right-click window uses the same list under \"Open with…\". Listen to lens://apps/integrations to refresh.",
@@ -8620,7 +8637,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.8",
+   "id": "doc.lens-apps.10",
    "kind": "doc",
    "title": "Lens Apps: §5 Dock (`DockSurface.tsx` / config)",
    "text": "On lens://apps/integrations , add any new dock ids as pins using the Start-menu shortcut Lens finds for that app (the apps open lookup). On revert, remove only pins the recipe added (the event carries the full list).",
@@ -8637,7 +8654,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.9",
+   "id": "doc.lens-apps.11",
    "kind": "doc",
    "title": "Lens Apps: §6 Lens AI (feature/ai-core)",
    "text": "When integrations.localProvider is \"ollama\" or \"lmstudio\" , call ai set config with that provider as the local engine, restoring the previous value on revert. The MCP entries in integrations.mcp go into the MCP client list with per-tool approval.",
@@ -8654,7 +8671,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.10",
+   "id": "doc.lens-apps.12",
    "kind": "doc",
    "title": "Lens Apps: §7 Lens Guide (feature/lens-guide)",
    "text": "Index catalog.json (name, pitch, why, category, replaces) so \"what tool should I use for slides?\" answers from the catalogue. The ready-made logic is parseAppsIntent → recommend . Lesson stubs come from integrations.guide .",
@@ -8671,7 +8688,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.11",
+   "id": "doc.lens-apps.13",
    "kind": "doc",
    "title": "Lens Apps: §8 Backup and uninstall (`win_backup.rs`, `win_uninstall.rs`)",
    "text": "- Include %APPDATA%\\LensUI\\apps\\{settings,integrations,journals,installed}.json in backups. - \"Remove all Lens changes\" should call apps recipe revert for each id in journals.json . - \"Remove all Lens changes\" does not uninstall apps; that is a separate, explicit button in AppsCard.",
@@ -8688,7 +8705,7 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.13",
+   "id": "doc.lens-apps.15",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
