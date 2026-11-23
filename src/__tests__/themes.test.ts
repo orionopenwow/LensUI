@@ -61,7 +61,7 @@ describe("theme packs", () => {
     expect(cfg.theme.preset).toBe("obsidian"); // input not mutated
   });
   test("every built-in pack has a description, a known dock style and a distinct look", () => {
-    const dockIds = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
+    const dockIds = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"];
     const looks = new Set<string>();
     for (const p of packs.THEME_PACKS) {
       expect(p.description && p.description.length).toBeGreaterThan(10);

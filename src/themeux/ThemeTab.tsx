@@ -12,6 +12,7 @@ import {
   recommendedPacks,
 } from "../themes/packs";
 import { readSchedule } from "../themes/schedule";
+import { SHAPE_STYLES, normalizeShapeStyle } from "../themes/shapes/shapes";
 import { ColorWheel } from "../components/ColorWheel";
 import { ThemeGallery, PackCard } from "../components/ThemeGallery";
 import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
@@ -303,6 +304,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : "G·Y·R";
   const frameLabel = FRAME_STYLES.find((f) => f.id === wc.frameStyle)?.label ?? "Hairline";
   const folderLabel = FOLDER_THEMES.find((f) => f.id === (config.folderStyle?.theme ?? "accent"))?.label ?? "Accent";
+  const shapeStyle = normalizeShapeStyle(config.theme.shapeStyle);
+  const shapeLabel = SHAPE_STYLES.find((st) => st.id === shapeStyle)?.label ?? "Classic";
   const fontLabel = FONTS.find((f) => f.id === (config.theme.fontFamily ?? "rounded-arial"))?.label ?? "Rounded Arial";
   const sizeLabel = SIZES.find((s) => s.scale === (config.theme.uiScale ?? 100))?.label;
   const t = config.theme as LensConfig["theme"] & { motion?: string; contrast?: string; locale?: string };
@@ -578,6 +581,22 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 Open Folder Icons
               </button>
             </div>
+          </Section>
+
+          <Section
+            id="shapes"
+            title="Shape style"
+            summary={`${shapeLabel} · ${SHAPE_STYLES.find((st) => st.id === shapeStyle)?.description ?? ""}`}
+            open={!!open.shapes}
+            onToggle={() => toggle("shapes")}
+          >
+            <Chips
+              label="Shape style"
+              value={shapeStyle}
+              options={SHAPE_STYLES.map((st) => ({ id: st.id, label: st.label }))}
+              onChange={(id) => setTheme({ shapeStyle: id })}
+            />
+            <div className="tux-help">Works with every theme: colours always come from the theme you picked above.</div>
           </Section>
 
           <Section

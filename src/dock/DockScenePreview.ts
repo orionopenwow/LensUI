@@ -102,6 +102,12 @@ export const DockScenePreview: React.FC<PreviewProps> = ({ styleId, accent = "va
         pill(icons.slice(0, 4).map((c, i) => icon(c, 8, i, i < 2))),
         pill(tray(), { padding: "4px 5px" }));
       break;
+    case "islands":
+      dock = h("div", { style: { position: "absolute", left: 5, right: 5, bottom: 5, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+        pill([h("span", { key: "g", style: { width: 6, height: 6, borderRadius: 2, border: `1.5px solid ${ink(0.6)}` } }), h("span", { key: "w", style: { width: 8, height: 3, borderRadius: 2, background: accent } }), h("span", { key: "w2", style: { width: 3, height: 3, borderRadius: 2, background: ink(0.4) } })], { padding: "3px 6px", borderRadius: 99 }),
+        pill(icons.slice(0, 4).map((c, i) => icon(c, 7, i, i < 2)), { padding: "3px 6px", borderRadius: 99 }),
+        pill(tray(), { padding: "4px 6px", borderRadius: 99 }));
+      break;
     default:
       dock = h("div", { style: { position: "absolute", left: "50%", bottom: 6, transform: "translateX(-50%)" } },
         pill(icons.slice(0, 5).map((c, i) => icon(c, 9, i, i < 2)), { borderRadius: 8, padding: "4px 6px" }));

@@ -42,3 +42,5 @@ src-tauri/lens-dwm-hook/target/
 
 # Python bytecode
 __pycache__/
+tools/parity/styles/out/
+tools/parity/styles/shots/

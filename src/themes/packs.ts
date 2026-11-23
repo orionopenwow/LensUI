@@ -33,6 +33,9 @@ export interface ThemePack {
   description?: string;
   /** Words the natural-language router matches ("catppuccin theme", "nord", ...). */
   aliases: string[];
+  /** Shape style this pack is designed around ("expressive", "dotmatrix"); applied with the pack.
+   *  Packs without it leave the user's own Shape style setting alone. */
+  shapeStyle?: "classic" | "expressive" | "dotmatrix";
 }
 
 export const THEME_PACKS: ThemePack[] = [
@@ -57,9 +60,12 @@ export const THEME_PACKS: ThemePack[] = [
   { id: "sequoia-frost", label: "Sequoia Frost", tier: "Studio", base: "#1E1E20", accent: "#0A84FF", accentMode: "custom", tint: 0, radius: 14, iconTheme: "native", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", dockStyle: "floating", recommended: true, description: "Polished studio dark with system blue, full-colour icons and big corners.", aliases: ["sequoia", "macos"] },
   { id: "cyberpunk-amber", label: "Cyberpunk Amber", tier: "Studio", base: "#0D0B09", accent: "#FCEE0A", accentMode: "custom", tint: 0, radius: 2, iconTheme: "obsidian-squircle", iconShape: "rounded", folderTheme: "amber", frameStyle: "neon", controlStyle: "accent-pills", dockStyle: "taskbar", description: "Hard edges, electric yellow glow and a sharp taskbar.", aliases: ["cyberpunk"] },
   { id: "solarized-matte", label: "Solarized Matte", tier: "Studio", base: "#002B36", accent: "#2AA198", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "frost", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", dockStyle: "studio", description: "Classic teal-blue Solarized with a labelled studio dock.", aliases: ["solarized"] },
+  { id: "lens-expressive", label: "Lens Expressive", tier: "Studio", base: "#0B0B0E", accent: "#FAFAFA", accentMode: "custom", tint: 0, radius: 20, iconTheme: "obsidian-squircle", iconShape: "circle", folderTheme: "obsidian", frameStyle: "obsidian-hairline", controlStyle: "accent-pills", dockStyle: "islands", shapeStyle: "expressive", description: "Obsidian colours with soft, playful shapes: pill tiles, a scalloped clock and an islands dock.", aliases: ["expressive", "lens expressive", "material"] },
+  { id: "lens-dot-matrix", label: "Lens Dot Matrix", tier: "Studio", base: "#101013", accent: "#F4F4F5", accentMode: "custom", tint: 0, radius: 16, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "minimal", frameStyle: "obsidian-hairline", controlStyle: "minimal-dots", dockStyle: "islands", shapeStyle: "dotmatrix", description: "Obsidian colours, flat tiles and LED-dot numerals, with stat pills and an islands dock.", aliases: ["dot matrix", "dotmatrix", "lens dot matrix", "nothing"] },
 
   // ---- Light ----
   { id: "alabaster-daylight", label: "Alabaster Daylight", tier: "Light", scheme: "light", base: "#EEEEF0", accent: "#2563EB", accentMode: "custom", tint: 0, radius: 10, iconTheme: "native", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", dockStyle: "floating", recommended: true, description: "Clean cool-grey daylight with white cards and a clear blue accent.", aliases: ["alabaster", "daylight", "light"] },
+  { id: "lens-expressive-light", label: "Lens Expressive Light", tier: "Light", scheme: "light", base: "#EDEDF0", accent: "#2563EB", accentMode: "custom", tint: 0, radius: 20, iconTheme: "native", iconShape: "circle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "accent-pills", dockStyle: "islands", shapeStyle: "expressive", description: "Alabaster daylight colours with the Expressive shapes and an islands dock.", aliases: ["expressive light"] },
   { id: "paper-minimal", label: "Paper Minimal", tier: "Light", scheme: "light", base: "#F5F1E8", accent: "#C2410C", accentMode: "custom", tint: 0, radius: 6, iconTheme: "native", iconShape: "rounded", folderTheme: "ember", frameStyle: "none", controlStyle: "minimal-dots", dockStyle: "slim", description: "Warm paper white with terracotta ink. Borderless and bookish.", aliases: ["paper"] },
 ];
 
@@ -257,6 +263,8 @@ export function applyThemePack(config: LensConfig, packId: string, options: Appl
   const pack = packById(packId);
   if (!pack) return config;
   const dockStyle = options.applyDockStyle && pack.dockStyle ? { style: pack.dockStyle } : {};
+  // A pack built around a shape style brings it along; other packs keep the user's choice.
+  const shape = pack.shapeStyle ? { shapeStyle: pack.shapeStyle } : {};
   return {
     ...config,
     theme: {
@@ -267,6 +275,7 @@ export function applyThemePack(config: LensConfig, packId: string, options: Appl
       accentTintStrength: pack.tint,
       borderRadius: pack.radius,
       surfaceHex: pack.base ?? "",
+      ...shape,
     },
     iconStyle: { theme: pack.iconTheme, shape: pack.iconShape },
     windowControls: {

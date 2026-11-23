@@ -37,6 +37,13 @@ pub struct ThemeConfig {
     /// "auto" | "en" | "es" | "de"
     #[serde(default = "default_auto")]
     pub locale: String,
+    /// "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack.
+    #[serde(default = "default_shape_style")]
+    pub shape_style: String,
+}
+
+fn default_shape_style() -> String {
+    "classic".into()
 }
 
 fn default_system() -> String {
@@ -389,6 +396,7 @@ impl Default for LensConfig {
                 motion: "system".into(),
                 contrast: "system".into(),
                 locale: "auto".into(),
+                shape_style: default_shape_style(),
             },
             dock: DockConfig {
                 grounded_margin_bottom: 0,

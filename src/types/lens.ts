@@ -18,6 +18,8 @@ export interface ThemeConfig {
   contrast?: string;
   /** "auto" | "en" | "es" | "de" */
   locale?: string;
+  /** "classic" | "expressive" | "dotmatrix" — shape style layer on top of the colour pack. */
+  shapeStyle?: string;
 }
 
 export interface PinnedApp {

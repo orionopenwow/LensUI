@@ -160,6 +160,9 @@ jobs:
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
 
+      - name: Render Expressive and Dot Matrix style layers
+        run: node tools/parity/styles/build.mjs && node tools/parity/styles/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -171,4 +174,5 @@ jobs:
             tools/parity/ai/shots/
             tools/parity/productivity/
             tools/parity/tester/shots/
+            tools/parity/styles/shots/
           if-no-files-found: warn

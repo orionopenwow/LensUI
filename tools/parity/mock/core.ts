@@ -41,6 +41,9 @@ const notes = [
   note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
 ];
 config.theme.preset = preset;
+// ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
+if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
+if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });
