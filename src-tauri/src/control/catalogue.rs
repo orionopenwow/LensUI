@@ -329,6 +329,7 @@ pub fn build(defaults: &[(&str, Value)]) -> Vec<Entry> {
 }
 
 /// Leaves with no rule (the completeness test asserts this is empty).
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn unregistered(defaults: &[(&str, Value)]) -> Vec<String> {
     let mut missing = Vec::new();
     for (store, v) in defaults {

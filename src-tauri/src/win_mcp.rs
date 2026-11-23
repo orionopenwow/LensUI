@@ -893,8 +893,9 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                     *c = client.clone();
                     match host.control_gate(&client, tool, args) {
                         ControlGate::Run => None,
-                        ControlGate::Ask(_) => {
+                        ControlGate::Ask(summary) => {
                             needs_approval = true;
+                            append_audit(&audit_line(&client, name, "needs-approval", true, &clean_text(&summary, 120), 0));
                             None
                         }
                         ControlGate::Block(m) => Some(m),

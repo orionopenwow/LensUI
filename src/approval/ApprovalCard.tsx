@@ -270,11 +270,11 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
             </dl>
           ) : null}
 
-          <p className={`ap-reversible${p.reversible ? "" : " is-final"}`}>
+          {blocked ? null : <p className={`ap-reversible${p.reversible ? "" : " is-final"}`}>
             {p.reversible ? <RotateCcw size={12} aria-hidden /> : <ShieldAlert size={12} aria-hidden />}
             {reversibilityLine(p)}
             <span className="ap-when">· {agoLabel(request.createdMs)}</span>
-          </p>
+          </p>}
 
           {tasks.length ? (
             <details className="ap-tasks" open={!compact}>
