@@ -340,3 +340,32 @@ marker together with the fix.
 * **Repro:** `PERF_ONLY=theme-switch node tools/perf/run.mjs`. Or open Theme & Look and click through the recommended packs.
 * **Suggested fix:** reserve two lines for the description (`min-height: calc(2 * line-height)` on the description in the Theme hero), or clamp it to two lines.
 * **Marker:** the `theme-switch` CLS baseline in `tools/perf/budgets.json` is raised to 0.055, with a `_findings` note. Lower it with the fix.
+
+## Change log: waves 7–8 integration (`integration/waves-7-8`)
+
+The suites caught these when waves 7–8 met the waves 4–6 merge. App bugs were fixed in the app, and
+no test or allowlist entry was loosened.
+
+* **E2E theme-switch: approval and nowplaying kept the old theme.** Both new surfaces (the MCP
+  "Needs your OK" window and Lens Music's Now Playing) never called `useLensState()`. So no
+  `data-scheme` or pack tokens were applied, and they never followed later changes.
+  * **Fix:** both call `useLensState()` like every other surface. The listener is set up when the
+    lazy window is created, so theme changes made before it opens still apply.
+* **E2E lens-command: Enter in "Do" mode did nothing visible.**
+  * **Causes:**
+    * Do mode sent everything to `ai_ask`, which refuses while Lens Intelligence is off.
+    * The offline intent engine (`ai_intent → ai_run_intent`), which needs no model, was only used for the preview row.
+    * Do mode shows only tool and action cards, so `ai_ask`'s error landed on a hidden answer card and Enter looked dead.
+    * When the preview hadn't finished parsing yet, Enter went to `ai_ask` even with the engine available.
+  * **Fix:** `src/command/doMode.ts` runs `ai_intent`, then `ai_run_intent`, and falls back to `ai_ask` only for text the engine doesn't know. Every outcome, including failures, leaves a visible card.
+  * **Coverage:** unit tests in `src/__tests__/commandDo.test.ts`. The e2e scenario now runs with AI **off**, so it is stricter than before.
+* **Accessibility (axe, serious or critical; fixed in markup, no allowlist entries added):**
+  * **Settings search:** `aria-controls` pointed at a results list that only exists while typing. It is now set only then.
+  * **Dock buttons:** the visible badge number wasn't in the button's name. Badges are `aria-hidden`, and the name carries the same count, for example "Terminal, 4 notifications". This closes the badge part of F7 for the Dock.
+  * **Top Bar keyboard-layout button:** its name now starts with the visible "ENG".
+  * **Network signal bars:** `aria-label` sat on a span with no role. They now have `role="img"`.
+  * **Quick Settings `.sysmod-sub` text:** it was 3.55:1 at 10.5 px. It now uses the secondary text token, which passes 4.5:1. This is part of F6.
+* **Visual regression:** the `settings-theme` state picked its tab by the old name "Theme", which no longer exists in the new Settings hub, so the run timed out. It now picks "Appearance".
+  * The `settings-*` and `topbar-*` goldens were re-recorded on the runner: the Settings hub is new UI, and the Top Bar gained Lens Music and keyboard modules.
+  * Each re-recorded image was compared by eye with its old golden before acceptance.
+* **Perf:** within budget on the same run, so no budget changes.

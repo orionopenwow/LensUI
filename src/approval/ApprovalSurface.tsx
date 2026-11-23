@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { ApprovalCard } from "./ApprovalCard";
 import { allowForSession, approveMcp, denyMcp, trustSimilar, undoChange, usePendingApprovals } from "./api";
 import "./ApprovalCard.css";
+import { useLensState } from "../hooks/useLensState";
 
 /**
  * The standalone topmost "Needs your OK" window for MCP requests that arrive while Lens is in the
@@ -9,6 +10,8 @@ import "./ApprovalCard.css";
  * request; hides itself when the queue is empty.
  */
 export const ApprovalSurface: React.FC = () => {
+  // Theme tokens (data-scheme, pack colours) and live updates, like every other surface.
+  useLensState();
   const { requests, refresh } = usePendingApprovals();
   const first = requests[requests.length - 1];
 

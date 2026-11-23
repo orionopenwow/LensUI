@@ -89,6 +89,12 @@ const handlers: Record<string, (a: any) => any> = {
     privacy: "local_only",
   }),
   ai_usage_log: () => [],
+  // The offline intent engine (ai/intent.rs) for a couple of common phrasings.
+  ai_intent: (a: any) =>
+    /dark mode/i.test(a.text ?? "")
+      ? { action: "set_color_mode", args: { mode: "dark", _tool: "set_color_mode" }, confidence: 0.97, summary: "Switch to dark mode" }
+      : null,
+  ai_run_intent: () => "ai-mock-1",
   clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
   clip_list: () => [],
   selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),

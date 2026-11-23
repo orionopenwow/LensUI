@@ -270,10 +270,11 @@ const SCENARIOS = [
     title: "Lens Command opens and the offline engine runs \"dark mode\"",
     async run(s) {
       const dock = surfaces(s).dock;
-      // Lens Command and the offline script engine (no model, nothing leaves the PC).
+      // Lens Command on, Lens Intelligence OFF: "dark mode" must still run through the offline
+      // intent engine (ai_intent → ai_run_intent), which needs no model.
       await updateConfig(dock, (c) => {
         c.command = { ...(c.command || {}), enabled: true };
-        c.ai = { ...(c.ai || {}), enabled: true, provider: "script", allowTools: true };
+        c.ai = { ...(c.ai || {}), enabled: false, allowTools: true };
       });
       await sleep(800);
       await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dark mode" } });

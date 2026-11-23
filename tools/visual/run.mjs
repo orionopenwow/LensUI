@@ -39,7 +39,7 @@ const STATES = [
   { id: "dock-taskbar", surface: "dock", config: "c.dock.style = 'taskbar';", sizes: [[1920, 760], [1366, 640]] },
   { id: "topbar", surface: "topbar", sizes: [[1920, 34], [1366, 34]] },
   { id: "settings", surface: "settings", sizes: [[760, 560], [1024, 700]] },
-  { id: "settings-theme", surface: "settings", tab: /Theme/, sizes: [[760, 560], [1024, 700]] },
+  { id: "settings-theme", surface: "settings", tab: /Appearance/, sizes: [[760, 560], [1024, 700]] },
   { id: "settings-dock", surface: "settings", tab: /Dock/, sizes: [[760, 560], [1024, 700]] },
   { id: "settings-ai", surface: "settings", tab: /AI/, sizes: [[760, 560], [1024, 700]] },
   { id: "palette", surface: "palette", sizes: [[660, 460], [760, 560]] },

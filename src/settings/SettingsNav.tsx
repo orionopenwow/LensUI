@@ -122,7 +122,7 @@ export const SettingsNav: React.FC<{
           type="search"
           placeholder="Search settings"
           aria-label="Search settings (Ctrl+F)"
-          aria-controls="sh-search-results"
+          aria-controls={q.trim() ? "sh-search-results" : undefined}
           aria-activedescendant={results[sel] ? `sh-res-${sel}` : undefined}
           value={q}
           onChange={(e) => setQ(e.target.value)}

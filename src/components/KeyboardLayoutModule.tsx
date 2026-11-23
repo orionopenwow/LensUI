@@ -62,7 +62,7 @@ export const KeyboardTopBarModule: React.FC = () => {
     <button
       type="button"
       className="sysmod-tb-kbd"
-      aria-label={`Keyboard ${active?.name ?? ""}. Switch to ${next.name}`}
+      aria-label={`${active?.short ?? "—"}: keyboard ${active?.name ?? ""}. Switch to ${next.name}`}
       onClick={() => {
         setState({ ...state, activeId: next.id });
         invoke<KeyboardState>("set_keyboard_layout_cmd", { id: next.id })

@@ -80,7 +80,7 @@ export const NetworkPage: React.FC<PageProps> = ({ section }) => {
             key={n.ssid}
             label={
               <>
-                <span className={`sh-bars b${n.bars}`} aria-label={`${n.bars} of 4 bars`} />
+                <span className={`sh-bars b${n.bars}`} role="img" aria-label={`Signal: ${n.bars} of 4 bars`} />
                 {n.ssid || "(hidden network)"}
                 {n.secured && <Lock size={11} aria-label="Secured" />}
               </>

@@ -315,6 +315,13 @@ interface NotificationLite {
   appName?: string;
 }
 
+/** Spoken form of the Dock badge (the badge itself is aria-hidden): the same number it shows. */
+function dockBadgeLabel(unread: number, windows: number): string {
+  if (unread > 0) return `, ${unread > 99 ? "99+" : unread} notifications`;
+  if (windows > 1) return `, ${windows} windows`;
+  return "";
+}
+
 export const DockSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
   // Lens Intelligence in the Dock (all off until AI is turned on; docs/AI_SURFACES.md §3).
@@ -2238,7 +2245,7 @@ export const DockSurface: React.FC = () => {
               )}
               <button
                 type="button"
-                aria-label={`${app.name}${primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : ""}`}
+                aria-label={`${app.name}${primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : ""}${dockBadgeLabel(unread, wins.length)}`}
                 className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2277,11 +2284,11 @@ export const DockSurface: React.FC = () => {
                   <FallbackAppIcon hint={app.iconHint} />
                 )}
                 {unread > 0 ? (
-                  <span className="dock-notif-badge" aria-label={`${unread} notifications`}>
+                  <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 ) : (
-                  wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
+                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name}</span>}
               </button>
@@ -2339,7 +2346,7 @@ export const DockSurface: React.FC = () => {
               </button>
               <button
                 type="button"
-                aria-label={`${primaryWin.title || "Window"}${primaryWin.isFocused ? " (focused)" : " (running)"}`}
+                aria-label={`${primaryWin.title || "Window"}${primaryWin.isFocused ? " (focused)" : " (running)"}${dockBadgeLabel(unread, wins.length)}`}
                 className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
                 onClick={() => {
                   if (suppressClickRef.current) return;
@@ -2371,11 +2378,11 @@ export const DockSurface: React.FC = () => {
                   <AppWindow size={19} strokeWidth={1.8} />
                 )}
                 {unread > 0 ? (
-                  <span className="dock-notif-badge" aria-label={`${unread} notifications`}>
+                  <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 ) : (
-                  wins.length > 1 && <span className="dock-instance-badge">{wins.length}</span>
+                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
               </button>
