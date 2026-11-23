@@ -169,6 +169,32 @@ pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
         },
     );
 
+    // 9. Mouse pointers and pointer settings (restored from the backup Lens took first)
+    crate::win_cursor_fx::stop();
+    for (step, res) in crate::win_cursors::uninstall_restore() {
+        push(&mut steps, step, res);
+    }
+
+    // 10. Windows pinned on top by Lens, focus dimming and the active-window border
+    crate::win_focus_dim::shutdown();
+    push(
+        &mut steps,
+        "Pinned windows and focus overlays",
+        Ok("Unpinned windows Lens pinned and removed the dimming and border overlays.".to_string()),
+    );
+
+    // 11. Hooks: Win key / Alt+Tab, Alt+drag, desktop input for Playground
+    crate::win_keyhook::stop_keyhook();
+    crate::win_altdrag::stop_alt_drag();
+    crate::win_desktop_input::stop();
+    config.func.win_key_launcher = false;
+    config.func.alt_tab_overview = false;
+    push(
+        &mut steps,
+        "Keyboard and mouse hooks",
+        Ok("Win key, Alt+Tab, Alt+drag and desktop input hooks removed.".to_string()),
+    );
+
     push(
         &mut steps,
         "Not changed",

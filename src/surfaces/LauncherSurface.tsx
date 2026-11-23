@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { ackKeyhook, type KeyhookMessage } from "../shell/keyhookResponder";
 import {
   Search,
   Power,
@@ -86,6 +88,17 @@ interface MenuState {
 export const LauncherSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
   const glidePhase = useSurfaceGlide("launcher");
+
+  // Win-key tap (keyboard hook): the backend toggles this window; acknowledging tells the hook
+  // Lens is responsive, otherwise it hands the key back to Windows' Start after 300 ms.
+  useEffect(() => {
+    const un = listen<KeyhookMessage>("lens://keyhook", (e) => {
+      if (e.payload?.event?.kind === "launcherToggle") ackKeyhook(e.payload.seq);
+    });
+    return () => {
+      un.then((fn) => fn());
+    };
+  }, []);
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [home, setHome] = useState<LauncherHomeData>({ recentFiles: [], folders: [] });
   const [query, setQuery] = useState("");

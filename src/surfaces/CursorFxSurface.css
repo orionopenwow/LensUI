@@ -1,0 +1,23 @@
+/* The "cursorfx" overlay: a transparent, click-through window over the pointer's monitor. */
+html:has(.cfx-root),
+body:has(.cfx-root),
+#root:has(.cfx-root) {
+  background: transparent !important;
+  overflow: hidden;
+  margin: 0;
+  pointer-events: none;
+}
+
+.cfx-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cfx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

@@ -30,10 +30,21 @@ static CURRENT_ENABLED: AtomicBool = AtomicBool::new(true);
 static CURRENT_TEXT_BGR: AtomicU32 = AtomicU32::new(0x00FA_FAFA);
 static CURRENT_DARK: AtomicBool = AtomicBool::new(true);
 
+/// The corner preference Lens applies to windows (1 square, 3 small, 2 round), or `None` while
+/// Lens window styling is off (Windows draws its own default corners).
+pub fn current_corner_pref() -> Option<u32> {
+    CURRENT_ENABLED
+        .load(Ordering::Relaxed)
+        .then(|| CURRENT_CORNER_PREF.load(Ordering::Relaxed))
+}
+
 /// Light theme packs need dark titlebar text and light-mode window chrome. Call before `update_dwm_theme`.
 pub fn set_dwm_scheme(light: bool) {
     CURRENT_DARK.store(!light, Ordering::SeqCst);
-    CURRENT_TEXT_BGR.store(if light { 0x001B_1818 } else { 0x00FA_FAFA }, Ordering::SeqCst);
+    CURRENT_TEXT_BGR.store(
+        if light { 0x001B_1818 } else { 0x00FA_FAFA },
+        Ordering::SeqCst,
+    );
 }
 static SHARED_MEM_HANDLE: OnceLock<Mutex<isize>> = OnceLock::new();
 static LAYERED_BY_LENS: OnceLock<Mutex<HashSet<isize>>> = OnceLock::new();
@@ -114,22 +125,7 @@ fn styleable_process_path(hwnd: windows::Win32::Foundation::HWND) -> Option<Stri
             return None;
         }
         let path = String::from_utf16_lossy(&buf[..len as usize]).to_lowercase();
-        let skip = [
-            "lens-ui.exe",
-            "searchhost.exe",
-            "shellexperiencehost.exe",
-            "startmenuexperiencehost.exe",
-            "textinputhost.exe",
-            "lockapp.exe",
-            "dwm.exe",
-            "easyanticheat",
-            "beservice",
-            "vgc.exe",
-            "valorant",
-            "cs2.exe",
-            "fortnite",
-        ];
-        if skip.iter().any(|s| path.contains(s)) {
+        if crate::win_rules::is_protected_process(&path) {
             None
         } else {
             Some(path)
@@ -201,12 +197,17 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
     use windows::Win32::Foundation::COLORREF;
     use windows::Win32::Graphics::Dwm::{
         DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_CAPTION_COLOR, DWMWA_TEXT_COLOR,
-        DWMWA_USE_IMMERSIVE_DARK_MODE, DWMWA_WINDOW_CORNER_PREFERENCE,
+        DWMWA_WINDOW_CORNER_PREFERENCE, DWMWINDOWATTRIBUTE,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         GetWindowLongW, IsWindowVisible, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE,
         LWA_ALPHA, WS_EX_LAYERED,
     };
+
+    // Windows 10 has no titlebar/border colours or corner control; only dark mode applies there.
+    let build = crate::win_theme::windows_build();
+    let features = crate::win_theme::features_for_build(build);
+    let dark_attr = crate::win_theme::dark_mode_attribute_for_build(build);
 
     unsafe {
         if hwnd.0.is_null() || !IsWindowVisible(hwnd).as_bool() {
@@ -236,45 +237,60 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
 
         // Cross-process DWM dark titlebar & border styling (covers cmd.exe/conhost & legacy Win32 windows too!)
         {
-            let dark: i32 = if CURRENT_DARK.load(Ordering::Relaxed) { 1 } else { 0 };
+            let dark: i32 = if CURRENT_DARK.load(Ordering::Relaxed) {
+                1
+            } else {
+                0
+            };
             let cap = CURRENT_CAPTION_BGR.load(Ordering::Relaxed);
             let brd = rule
                 .border_bgr
                 .unwrap_or_else(|| CURRENT_BORDER_BGR.load(Ordering::Relaxed));
+            // Native active border (Windows 11): the focused window's DWM border takes the
+            // border colour; every other window keeps its theme / rule border, so losing focus
+            // restores it the next time the window is styled.
+            let brd = native_active_border(hwnd, &process_path).unwrap_or(brd);
             let txt: u32 = CURRENT_TEXT_BGR.load(Ordering::Relaxed);
             let crn = rule
                 .corner_pref
                 .unwrap_or_else(|| CURRENT_CORNER_PREF.load(Ordering::Relaxed));
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_USE_IMMERSIVE_DARK_MODE,
-                &dark as *const i32 as *const _,
-                std::mem::size_of::<i32>() as u32,
-            );
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_CAPTION_COLOR,
-                &cap as *const u32 as *const _,
-                std::mem::size_of::<u32>() as u32,
-            );
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_TEXT_COLOR,
-                &txt as *const u32 as *const _,
-                std::mem::size_of::<u32>() as u32,
-            );
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_BORDER_COLOR,
-                &brd as *const u32 as *const _,
-                std::mem::size_of::<u32>() as u32,
-            );
-            let _ = DwmSetWindowAttribute(
-                hwnd,
-                DWMWA_WINDOW_CORNER_PREFERENCE,
-                &crn as *const u32 as *const _,
-                std::mem::size_of::<u32>() as u32,
-            );
+            if let Some(attr) = dark_attr {
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWINDOWATTRIBUTE(attr),
+                    &dark as *const i32 as *const _,
+                    std::mem::size_of::<i32>() as u32,
+                );
+            }
+            if !features.frame_colors {
+                // Windows 10: nothing else to set; colours and corners need Windows 11.
+                let _ = (cap, brd, txt, crn);
+            } else {
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_CAPTION_COLOR,
+                    &cap as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u32,
+                );
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_TEXT_COLOR,
+                    &txt as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u32,
+                );
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_BORDER_COLOR,
+                    &brd as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u32,
+                );
+                let _ = DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_WINDOW_CORNER_PREFERENCE,
+                    &crn as *const u32 as *const _,
+                    std::mem::size_of::<u32>() as u32,
+                );
+            }
         }
 
         let key = hwnd.0 as isize;
@@ -285,9 +301,14 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
             set.insert(key);
         }
 
-        let alpha = rule
-            .alpha
-            .unwrap_or_else(|| CURRENT_ALPHA.load(Ordering::Relaxed));
+        let theme_alpha = CURRENT_ALPHA.load(Ordering::Relaxed);
+        let alpha = if rule.inactive_alpha.is_some() {
+            let focused = windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() == hwnd;
+            let fullscreen = !focused && crate::win_focus_dim::is_window_fullscreen(hwnd);
+            crate::win_rules::effective_alpha(&rule, theme_alpha, focused, fullscreen)
+        } else {
+            rule.alpha.unwrap_or(theme_alpha)
+        };
         let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
 
         if alpha < 252 {
@@ -310,6 +331,24 @@ fn style_hwnd(hwnd: windows::Win32::Foundation::HWND) -> bool {
         }
         true
     }
+}
+
+/// The native-mode active border colour for `hwnd`, when it is the focused window and may be
+/// decorated. `None` keeps the theme / rule border.
+#[cfg(windows)]
+fn native_active_border(hwnd: windows::Win32::Foundation::HWND, process_path: &str) -> Option<u32> {
+    let styling = crate::win_rules::get_window_styling();
+    if styling.active_border.mode != "native" {
+        return None;
+    }
+    if unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() } != hwnd {
+        return None;
+    }
+    let fullscreen = crate::win_focus_dim::is_window_fullscreen(hwnd);
+    if crate::win_rules::decorate_decision_for(process_path, fullscreen).is_some() {
+        return None;
+    }
+    Some(crate::win_rules::native_border_bgr(&styling.active_border))
 }
 
 #[cfg(not(windows))]
@@ -539,6 +578,8 @@ pub fn update_dwm_theme(
 }
 
 pub fn revert_dwm_theme() {
+    // Overlays (focus dim, active border, peek) and windows Lens pinned on top go first.
+    crate::win_focus_dim::shutdown();
     CURRENT_ALPHA.store(255, Ordering::SeqCst);
     #[cfg(windows)]
     {

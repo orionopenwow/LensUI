@@ -55,6 +55,7 @@ pub(crate) async fn get_notification_center_cmd() -> win_notifications::Notifica
         .await
         .unwrap_or_else(|_| win_notifications::NotificationCenterState {
             dnd: win_notifications::is_dnd(),
+            dnd_status: win_notifications::dnd_status(),
             items: win_notifications::list_notification_history(),
             windows: win_notifications::WindowsToastResult {
                 status: "unavailable".into(),
@@ -98,6 +99,33 @@ pub(crate) fn set_dnd_cmd(app: AppHandle, enabled: bool) {
 #[tauri::command]
 pub(crate) fn get_dnd_cmd() -> bool {
     win_notifications::is_dnd()
+}
+
+/// Manual switch, quiet hours and fullscreen combined (what the pane's status line shows).
+#[tauri::command]
+pub(crate) fn get_dnd_status_cmd() -> win_notifications::DndStatus {
+    win_notifications::dnd_status()
+}
+
+/// Saves the quiet-hours schedule to the config and applies it at once.
+#[tauri::command]
+pub(crate) fn set_dnd_schedule_cmd(
+    app: AppHandle,
+    state: State<AppState>,
+    schedule: win_notifications::DndSchedule,
+) -> Result<win_notifications::DndStatus, String> {
+    let schedule = win_notifications::sanitize_dnd_schedule(schedule);
+    let next = {
+        let mut cfg = state.config.lock().unwrap_or_else(|e| e.into_inner());
+        cfg.dnd_schedule = schedule.clone();
+        cfg.clone()
+    };
+    save_config(&next)?;
+    let _ = app.emit("lens://config-updated", &next);
+    win_notifications::set_dnd_schedule(schedule);
+    let status = win_notifications::dnd_status();
+    let _ = app.emit("lens://dnd-changed", status.active);
+    Ok(status)
 }
 
 #[tauri::command]

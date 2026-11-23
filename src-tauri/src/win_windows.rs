@@ -641,3 +641,49 @@ pub fn launch_path(path: &str) -> Result<(), String> {
         Ok(())
     }
 }
+
+/// Opens `files` with the app at `app_path` (an .exe or a Start-menu .lnk). Used by the Dock's
+/// "drop files on an app" option (`dock.fileDropOpen`, off by default).
+pub fn open_files_with_app(app_path: &str, files: &[String]) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::Shell::ShellExecuteW;
+        use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+        if files.is_empty() {
+            return Ok(());
+        }
+        // Quote every path; reject embedded quotes so a file name cannot inject arguments.
+        if files.iter().any(|f| f.contains('"')) {
+            return Err("file name contains a quote".into());
+        }
+        let params = files
+            .iter()
+            .map(|f| format!("\"{}\"", f))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let verb: Vec<u16> = "open\0".encode_utf16().collect();
+        let target: Vec<u16> = app_path.encode_utf16().chain(std::iter::once(0)).collect();
+        let args: Vec<u16> = params.encode_utf16().chain(std::iter::once(0)).collect();
+        let res = unsafe {
+            ShellExecuteW(
+                HWND::default(),
+                PCWSTR(verb.as_ptr()),
+                PCWSTR(target.as_ptr()),
+                PCWSTR(args.as_ptr()),
+                PCWSTR::null(),
+                SW_SHOWNORMAL,
+            )
+        };
+        if (res.0 as isize) <= 32 {
+            return Err(format!("ShellExecuteW failed ({})", res.0 as isize));
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (app_path, files);
+        Err("not supported on this platform".into())
+    }
+}

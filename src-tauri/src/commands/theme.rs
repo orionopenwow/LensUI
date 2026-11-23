@@ -99,6 +99,7 @@ pub(crate) fn save_config_cmd(
 ) -> Result<(), String> {
     let prev_config = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
     save_config(&new_config)?;
+    crate::app::integration::on_config_saved(&app, &prev_config, &new_config);
 
     // Only touch taskbar/startup/window geometry when those specific settings actually changed!
     // Never call set_size/set_position/backdrop on every Opacity/Roundness/Color dial tick (eliminates flicker!).
@@ -117,7 +118,8 @@ pub(crate) fn save_config_cmd(
         || prev_config.dock.show_top_bar != new_config.dock.show_top_bar
         || prev_config.top_bar.enabled != new_config.top_bar.enabled
         || prev_config.top_bar.height != new_config.top_bar.height
-        || prev_config.top_bar.floating != new_config.top_bar.floating;
+        || prev_config.top_bar.floating != new_config.top_bar.floating
+        || prev_config.dock.style != new_config.dock.style;
 
     if layout_changed {
         position_dock_and_bars(&app, &new_config);
@@ -149,6 +151,18 @@ pub(crate) fn save_config_cmd(
     }
     if prev_config.tiling != new_config.tiling {
         win_tiler::apply_tiling_config(new_config.tiling.clone());
+    }
+    if prev_config.hot_corners != new_config.hot_corners {
+        win_hotcorners::apply_hot_corners_config(new_config.hot_corners.clone());
+    }
+    if prev_config.alt_drag != new_config.alt_drag {
+        win_altdrag::apply_alt_drag_config(new_config.alt_drag.clone());
+    }
+    if prev_config.dnd_schedule != new_config.dnd_schedule {
+        win_notifications::set_dnd_schedule(new_config.dnd_schedule.clone());
+    }
+    if prev_config.app_summon != new_config.app_summon {
+        crate::commands::shell::sync_app_summon(&app, &new_config.app_summon);
     }
     if prev_config.func.target_monitor != new_config.func.target_monitor {
         sync_wallpaper(&app);

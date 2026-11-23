@@ -18,4 +18,4 @@ If you discover a security vulnerability (privilege escalation, unsafe Win32 hoo
 
 - Please **do not** open a public issue with exploit details.
 - Report it privately via GitHub Security Advisories on this repository.
-- Include steps to reproduce, affected Windows 11 build, and suggested remediation if available.
+- Include steps to reproduce, affected Windows version and build, and suggested remediation if available.

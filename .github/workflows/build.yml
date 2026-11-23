@@ -148,10 +148,27 @@ jobs:
       - name: Render every surface
         run: node tools/parity/shoot.mjs
 
+      - name: Render Lens Command scenes
+        run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
+
+      - name: Render AI surfaces
+        run: node tools/parity/ai/build.mjs && node tools/parity/ai/shoot.mjs
+
+      - name: Render productivity cards
+        run: node tools/parity/productivity/shoot.mjs
+
+      - name: Render Tester Hub
+        run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: parity-screenshots
-          path: tools/parity/shots/
+          path: |
+            tools/parity/shots/
+            tools/parity/command/shots/
+            tools/parity/ai/shots/
+            tools/parity/productivity/
+            tools/parity/tester/shots/
           if-no-files-found: warn

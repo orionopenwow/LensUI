@@ -1,3 +1,4 @@
+mod ai;
 mod config;
 #[cfg(windows)]
 mod ffi;
@@ -6,6 +7,7 @@ mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
 mod win_events;
+mod win_focus_dim;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
@@ -33,9 +35,23 @@ mod win_training;
 mod win_windhawk;
 mod win_monitors;
 mod win_windows;
+mod win_hotcorners;
+mod win_altdrag;
+mod win_summon;
+mod win_crash;
+mod win_cursor_fx;
+mod win_cursors;
+mod win_desktop_input;
+mod win_keyhook;
+mod win_update;
+mod tester;
 
 mod app;
+mod bridge;
+mod clip;
 mod commands;
+mod media;
+mod shelf;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -98,17 +114,27 @@ pub fn run() {
     if win_mcp::is_stdio_invocation() {
         std::process::exit(win_mcp::run_stdio_bridge());
     }
+    // Browser native-messaging host, lens:// links, Explorer verbs and `--ask`: forward and exit.
+    if let Some(code) = bridge::early_exit_code() {
+        std::process::exit(code);
+    }
 
     // Must be first: counts this shell boot before anything that could crash.
     let shell_startup = win_shell::shell_startup();
     let running_as_shell = shell_startup == win_shell::ShellStartup::Shell;
 
+    win_crash::install_log_capture();
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        win_crash::write_crash_report(info);
+        crate::tester::log("error", "panic", &info.to_string());
+        crate::app::integration::panic_shutdown();
         win_mcp::stop_server();
+        win_altdrag::stop_alt_drag();
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
+        win_focus_dim::shutdown();
         restore_taskbar_if_hidden();
         win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
         default_panic(info);
@@ -129,6 +155,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             config: shared_config,
             dock_pill_width,
@@ -137,6 +164,7 @@ pub fn run() {
             topbar_search_open: topbar_search_open_state,
         })
         .setup(move |app| {
+            bridge::autostart(commands::bridge::emitter(app.handle()));
             crate::app::setup::run_setup(
                 app,
                 initial_config,
@@ -149,6 +177,47 @@ pub fn run() {
             )
         })
         .invoke_handler(tauri::generate_handler![
+            commands::clip::clip_status,
+            commands::clip::clip_set_settings,
+            commands::clip::clip_list,
+            commands::clip::clip_get_text,
+            commands::clip::clip_pin,
+            commands::clip::clip_rename,
+            commands::clip::clip_delete,
+            commands::clip::clip_clear,
+            commands::clip::clip_wipe,
+            commands::clip::clip_pause,
+            commands::clip::clip_ignore_next,
+            commands::clip::clip_copy,
+            commands::clip::clip_paste,
+            commands::clip::clip_paste_text,
+            commands::clip::clip_merge,
+            commands::clip::clip_to_shelf,
+            commands::clip::selection_policy_get,
+            commands::clip::selection_policy_set,
+            commands::clip::selection_read,
+            commands::clip::selection_take,
+            commands::clip::selection_to_shelf,
+            commands::clip::context_foreground,
+            commands::clip::context_remember,
+            commands::clip::command_layout,
+            commands::shelf::shelf_list,
+            commands::shelf::shelf_get,
+            commands::shelf::shelf_add,
+            commands::shelf::shelf_remove,
+            commands::shelf::shelf_update,
+            commands::shelf::shelf_reorder,
+            commands::shelf::shelf_pin,
+            commands::shelf::shelf_clear,
+            commands::shelf::shelves_list,
+            commands::shelf::shelf_create,
+            commands::shelf::shelf_rename,
+            commands::shelf::shelf_delete,
+            commands::shelf::shelf_export,
+            commands::shelf::shelf_as_context,
+            commands::shelf::command_templates,
+            commands::shelf::command_templates_save,
+            commands::shelf::command_expand,
             commands::theme::get_config,
             commands::theme::save_config_cmd,
             commands::dock::set_dock_pill_width,
@@ -176,6 +245,7 @@ pub fn run() {
             commands::system::set_app_volume_cmd,
             commands::system::set_app_mute_cmd,
             commands::dock::launch_app_cmd,
+            commands::dock::open_files_with_app_cmd,
             commands::dock::launch_app_advanced_cmd,
             commands::system::get_media_now_playing_cmd,
             commands::system::media_control_cmd,
@@ -238,11 +308,19 @@ pub fn run() {
             commands::notifications::clear_notifications_cmd,
             commands::notifications::set_dnd_cmd,
             commands::notifications::get_dnd_cmd,
+            commands::notifications::get_dnd_status_cmd,
+            commands::notifications::set_dnd_schedule_cmd,
             commands::notifications::request_windows_notification_access_cmd,
             commands::shell::get_shell_mode_status_cmd,
             commands::shell::enable_shell_mode_cmd,
             commands::shell::disable_shell_mode_cmd,
             commands::shell::start_explorer_shell_cmd,
+            commands::shell::test_corner_action_cmd,
+            commands::shell::get_alt_drag_status_cmd,
+            commands::shell::get_app_summon_status_cmd,
+            commands::shell::summon_app_cmd,
+            commands::shell::get_window_workspaces_cmd,
+            commands::shell::move_window_to_workspace_cmd,
             commands::system::clipboard_list_cmd,
             commands::system::clipboard_copy_cmd,
             commands::system::clipboard_delete_cmd,
@@ -251,6 +329,14 @@ pub fn run() {
             commands::system::clipboard_pause_cmd,
             commands::theme::get_window_rules_cmd,
             commands::theme::set_window_rules_cmd,
+            commands::rules::get_window_styling_cmd,
+            commands::rules::set_window_styling_cmd,
+            commands::rules::peek_window_cmd,
+            commands::rules::end_peek_cmd,
+            commands::rules::set_window_pinned_cmd,
+            commands::rules::list_pinned_windows_cmd,
+            commands::rules::pick_window_cmd,
+            commands::rules::cancel_pick_window_cmd,
             commands::workspaces::tiling_action_cmd,
             commands::workspaces::get_tiling_hotkeys_cmd,
             commands::power::power_action_cmd,
@@ -315,12 +401,83 @@ pub fn run() {
             commands::mcp::decline_mcp_action_cmd,
             commands::mcp::complete_mcp_action_cmd,
             commands::mcp::get_mcp_audit_cmd,
+            commands::ai::ai_status,
+            commands::ai::ai_set_config,
+            commands::ai::ai_set_secret,
+            commands::ai::ai_clear_secret,
+            commands::ai::ai_ask,
+            commands::ai::ai_cancel,
+            commands::ai::ai_confirm_tool,
+            commands::ai::ai_intent,
+            commands::ai::ai_run_intent,
+            commands::ai::ai_usage_log,
             commands::power::quit_lens,
+            commands::bridge::bridge_status,
+            commands::bridge::bridge_set_enabled,
+            commands::bridge::bridge_install,
+            commands::bridge::bridge_uninstall,
+            commands::bridge::url_scheme_install,
+            commands::bridge::url_scheme_uninstall,
+            commands::bridge::explorer_verbs_install,
+            commands::bridge::explorer_verbs_uninstall,
+            commands::bridge::bridge_inbox,
+            commands::bridge::bridge_confirm,
+            commands::bridge::bridge_decline,
+            commands::bridge::bridge_record_delta,
+            commands::bridge::bridge_record_done,
+            commands::bridge::mcp_install_claude_desktop,
+            commands::bridge::mcp_uninstall_claude_desktop,
+            commands::bridge::claude_code_command,
+            commands::media::transcribe_settings_get,
+            commands::media::transcribe_settings_save,
+            commands::media::transcribe_setup_plan,
+            commands::media::transcribe_setup_download,
+            commands::media::transcribe_file,
+            commands::media::transcribe_url,
+            commands::media::transcribe_cancel,
+            commands::media::transcribe_status,
+            commands::media::live_captions_start,
+            commands::keys::keyhook_ack_cmd,
+            commands::keys::get_keyhook_status_cmd,
+            commands::keys::get_ui_scale_support_cmd,
+            commands::cursors::cursor_suite_status_cmd,
+            commands::cursors::cursor_previews_cmd,
+            commands::cursors::cursor_apply_cmd,
+            commands::cursors::cursor_restore_cmd,
+            commands::cursors::cursor_follow_theme_cmd,
+            commands::cursors::pointer_set_cmd,
+            commands::cursors::pointer_reset_cmd,
+            commands::cursors::cursor_fx_get_cmd,
+            commands::cursors::cursor_fx_set_cmd,
+            commands::release::write_plugin_frame_cmd,
+            commands::release::list_crash_reports_cmd,
+            commands::release::read_crash_report_cmd,
+            commands::release::open_crashes_folder_cmd,
+            commands::release::get_update_settings_cmd,
+            commands::release::set_update_settings_cmd,
+            commands::release::check_for_update_cmd,
+            commands::release::install_update_cmd,
+            commands::playground::save_playground_state_cmd,
+            commands::playground::load_playground_state_cmd,
+            commands::playground::clear_playground_state_cmd,
+            commands::playground::dismiss_playground_idle_cmd,
+            commands::command_ui::show_command_cmd,
+            commands::tester::tester_results_get,
+            commands::tester::tester_results_set,
+            commands::tester::tester_log_get,
+            commands::tester::tester_log_push,
+            commands::tester::tester_log_mark,
+            commands::tester::tester_environment,
+            commands::tester::tester_export_plan,
+            commands::tester::tester_export_report,
+            commands::tester::tester_reveal_report,
+            commands::tester::tester_open_issue,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                crate::app::integration::shutdown(Some(_app_handle));
                 win_dwm_engine::revert_dwm_theme();
                 restore_taskbar_if_hidden();
             }

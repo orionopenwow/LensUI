@@ -26,10 +26,14 @@ import { PluginSlot } from "../components/PluginSlot";
 import { WorkspaceStrip, readWorkspaces } from "../components/WorkspacesCard";
 import { BatteryTopBarModule } from "../components/BatteryModule";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
+import { resolveSystemArea } from "../dock/styles";
+import { TesterBadge } from "../tester/TesterHub";
 import "./TopBarSurface.css";
 
 export const TopBarSurface: React.FC = () => {
   const { config } = useLensState();
+  // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
+  const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
   const [now, setNow] = useState(() => new Date());
   const [visible, setVisible] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -305,80 +309,87 @@ export const TopBarSurface: React.FC = () => {
           )}
         </div>
 
-        <div className="topbar-utility-group">
-          <PluginSlot slot="topbar-right" />
-          <TrayStrip enabled={config?.func.trayHost ?? false} />
-          {!(config?.func.trayHost ?? false) && (
+        {config?.tester?.enabled && (
+          <TesterBadge onClick={() => invoke("toggle_surface", { label: "testerhub" }).catch(() => {})} />
+        )}
+        {!systemInDock && (
+          <>
+          <div className="topbar-utility-group">
+            <PluginSlot slot="topbar-right" />
+            <TrayStrip enabled={config?.func.trayHost ?? false} />
+            {!(config?.func.trayHost ?? false) && (
+              <button
+                type="button"
+                className="topbar-util-icon"
+                onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(() => {})}
+                aria-label="Show system tray for a few seconds"
+              >
+                <ChevronUp size={16} strokeWidth={2.6} />
+              </button>
+            )}
+
             <button
               type="button"
               className="topbar-util-icon"
-              onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(() => {})}
-              aria-label="Show system tray for a few seconds"
+              onClick={() =>
+                invoke("open_quicksettings_tab_cmd", { tab: "notifications", section: "notifications" })
+              }
+              aria-label="Notifications"
             >
-              <ChevronUp size={16} strokeWidth={2.6} />
+              <Bell size={16} strokeWidth={2.6} />
             </button>
-          )}
+
+            <KeyboardTopBarModule />
+            <BatteryTopBarModule
+              onClick={() => invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })}
+            />
+
+            <button
+              type="button"
+              className="topbar-util-icon"
+              onClick={() =>
+                invoke("open_quicksettings_tab_cmd", { tab: "network", section: "network" })
+              }
+              aria-label="Wi-Fi and Network"
+            >
+              <Wifi size={16} strokeWidth={2.6} />
+            </button>
+
+            <button
+              type="button"
+              className="topbar-util-icon"
+              onClick={() =>
+                invoke("open_quicksettings_tab_cmd", { tab: "audio", section: "audio" })
+              }
+              aria-label="Volume and Audio Mixer"
+            >
+              <Volume2 size={16} strokeWidth={2.6} />
+            </button>
+
+            <button
+              type="button"
+              className="topbar-util-icon"
+              onClick={() =>
+                invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })
+              }
+              aria-label="Quick Settings"
+            >
+              <Settings size={15.5} strokeWidth={2.55} />
+            </button>
+          </div>
 
           <button
             type="button"
-            className="topbar-util-icon"
+            className="topbar-clock"
             onClick={() =>
-              invoke("open_quicksettings_tab_cmd", { tab: "notifications", section: "notifications" })
+              invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })
             }
-            aria-label="Notifications"
+            aria-label="Open Calendar and Clock"
           >
-            <Bell size={16} strokeWidth={2.6} />
+            {dateStr} · {timeStr}
           </button>
-
-          <KeyboardTopBarModule />
-          <BatteryTopBarModule
-            onClick={() => invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })}
-          />
-
-          <button
-            type="button"
-            className="topbar-util-icon"
-            onClick={() =>
-              invoke("open_quicksettings_tab_cmd", { tab: "network", section: "network" })
-            }
-            aria-label="Wi-Fi and Network"
-          >
-            <Wifi size={16} strokeWidth={2.6} />
-          </button>
-
-          <button
-            type="button"
-            className="topbar-util-icon"
-            onClick={() =>
-              invoke("open_quicksettings_tab_cmd", { tab: "audio", section: "audio" })
-            }
-            aria-label="Volume and Audio Mixer"
-          >
-            <Volume2 size={16} strokeWidth={2.6} />
-          </button>
-
-          <button
-            type="button"
-            className="topbar-util-icon"
-            onClick={() =>
-              invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })
-            }
-            aria-label="Quick Settings"
-          >
-            <Settings size={15.5} strokeWidth={2.55} />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="topbar-clock"
-          onClick={() =>
-            invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })
-          }
-          aria-label="Open Calendar and Clock"
-        >
-          {dateStr} · {timeStr}
-        </button>
+          </>
+        )}
       </div>
       </header>
     </div>

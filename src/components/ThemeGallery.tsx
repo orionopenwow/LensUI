@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import { Search, Star, X } from "lucide-react";
 import type { LensConfig } from "../types/lens";
 import { allPacks, lighten, type ThemePack } from "../themes/packs";
+import { dockStyleLabel } from "../dock/styles";
 
 interface Props {
   config: LensConfig;
@@ -8,16 +10,21 @@ interface Props {
   onApply: (packId: string) => void;
   /** Live Windows accent, used to draw packs that follow the OS accent. */
   windowsAccent?: string;
+  /** Shows a close button in the header (used when the gallery opens from "Browse all"). */
+  onClose?: () => void;
 }
 
 const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Custom"];
-const TIER_LABEL: Record<ThemePack["tier"], string> = {
-  Core: "Core",
-  "Linux Suite": "Linux Suite",
-  Studio: "Studio",
-  Light: "Light",
-  Custom: "Your Themes",
-};
+
+type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "custom";
+const FILTERS: { id: FilterId; label: string; test: (p: ThemePack) => boolean }[] = [
+  { id: "all", label: "All", test: () => true },
+  { id: "dark", label: "Dark", test: (p) => p.scheme !== "light" },
+  { id: "light", label: "Light", test: (p) => p.scheme === "light" },
+  { id: "linux", label: "Linux classics", test: (p) => p.tier === "Linux Suite" },
+  { id: "studio", label: "Studio", test: (p) => p.tier === "Studio" },
+  { id: "custom", label: "Custom", test: (p) => p.tier === "Custom" },
+];
 
 const TRAFFIC: Record<string, [string, string, string]> = {
   "traffic-classic": ["#28c840", "#febc2e", "#ff5f57"],
@@ -27,7 +34,7 @@ const TRAFFIC: Record<string, [string, string, string]> = {
 };
 
 /** A miniature desktop drawn entirely from the pack's own values — no screenshots. */
-const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, accent }) => {
+export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: number }> = ({ pack, accent, height = 78 }) => {
   const light = pack.scheme === "light";
   const base = pack.base ?? "#09090B";
   const elevated = light ? "#FFFFFF" : lighten(base, 0.045);
@@ -42,6 +49,19 @@ const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, acce
         : accent;
   const dots = TRAFFIC[pack.controlStyle] ?? TRAFFIC["traffic-classic"];
   const pill = pack.controlStyle === "accent-pills";
+  const compact = height < 64;
+  const dockStyle = pack.dockStyle ?? "floating";
+  const dockIcons = [accent, "#60a5fa", "#34d399", "#fbbf24"];
+  const iconRadius = pack.iconShape === "circle" ? 4 : pack.iconShape === "rounded" ? 2 : 2.5;
+
+  const dockBox: React.CSSProperties =
+    dockStyle === "taskbar"
+      ? { left: 0, right: 0, bottom: 0, justifyContent: "center", borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none" }
+      : dockStyle === "minimal"
+        ? { left: "50%", bottom: 3, transform: "translateX(-50%)", background: "transparent", border: "none" }
+        : dockStyle === "slim"
+          ? { left: "50%", bottom: 3, transform: "translateX(-50%)", padding: "2px 4px", borderRadius: 4 }
+          : { left: "50%", bottom: 3, transform: "translateX(-50%)", borderRadius: radius };
 
   return (
     <div
@@ -49,7 +69,7 @@ const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, acce
       style={{
         position: "relative",
         width: "100%",
-        height: 78,
+        height,
         borderRadius: 8,
         overflow: "hidden",
         background: `linear-gradient(150deg, ${lighten(base, light ? 0 : 0.1)}, ${base})`,
@@ -61,7 +81,7 @@ const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, acce
         style={{
           position: "absolute",
           inset: "0 0 auto 0",
-          height: 9,
+          height: compact ? 7 : 9,
           background: elevated,
           borderBottom: `1px solid rgb(${ink} / 0.1)`,
           display: "flex",
@@ -79,57 +99,51 @@ const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, acce
       <div
         style={{
           position: "absolute",
-          left: 12,
-          right: 26,
-          top: 16,
-          height: 36,
+          left: compact ? 8 : 12,
+          right: compact ? 14 : 26,
+          top: compact ? 12 : 16,
+          height: compact ? height - 30 : 36,
           borderRadius: radius,
           background: elevated,
           border: `1px solid ${frame}`,
           boxShadow:
             pack.frameStyle === "neon" ? `0 0 8px ${accent}88` : `0 3px 8px rgb(0 0 0 / ${light ? 0.12 : 0.45})`,
-          padding: "5px 6px",
+          padding: compact ? "4px 5px" : "5px 6px",
           display: "flex",
           flexDirection: "column",
-          gap: 4,
+          gap: compact ? 3 : 4,
+          overflow: "hidden",
         }}
       >
         <div style={{ display: "flex", gap: 3, justifyContent: "flex-end" }}>
           {dots.map((c, i) => (
-            <span
-              key={i}
-              style={{ width: pill ? 8 : 5, height: pill ? 4 : 5, borderRadius: 3, background: c }}
-            />
+            <span key={i} style={{ width: pill ? 8 : 5, height: pill ? 4 : 5, borderRadius: 3, background: c }} />
           ))}
         </div>
         <span style={{ width: "62%", height: 3, borderRadius: 2, background: text, opacity: 0.85 }} />
-        <span style={{ width: "40%", height: 3, borderRadius: 2, background: `rgb(${ink} / 0.32)` }} />
-        <span style={{ width: 16, height: 5, borderRadius: 3, background: accent }} />
+        {!compact && <span style={{ width: "40%", height: 3, borderRadius: 2, background: `rgb(${ink} / 0.32)` }} />}
+        <span style={{ width: 16, height: compact ? 4 : 5, borderRadius: 3, background: accent }} />
       </div>
 
-      {/* dock */}
+      {/* dock, drawn in the pack's own dock style */}
       <div
         style={{
           position: "absolute",
-          left: "50%",
-          bottom: 0,
-          transform: "translateX(-50%)",
           display: "flex",
           gap: 3,
           padding: "3px 6px",
-          borderRadius: `${radius}px ${radius}px 0 0`,
           background: elevated,
           border: `1px solid rgb(${ink} / 0.12)`,
-          borderBottom: "none",
+          ...dockBox,
         }}
       >
-        {[accent, "#60a5fa", "#34d399", "#fbbf24"].map((c, i) => (
+        {dockIcons.map((c, i) => (
           <span
             key={i}
             style={{
-              width: 7,
-              height: 7,
-              borderRadius: pack.iconShape === "circle" ? 4 : pack.iconShape === "rounded" ? 2 : 2.5,
+              width: dockStyle === "slim" ? 5 : compact ? 6 : 7,
+              height: dockStyle === "slim" ? 5 : compact ? 6 : 7,
+              borderRadius: iconRadius,
               background: c,
             }}
           />
@@ -139,100 +153,144 @@ const PackPreview: React.FC<{ pack: ThemePack; accent: string }> = ({ pack, acce
   );
 };
 
-/**
- * Every theme pack (built-in and custom) grouped by tier, each as a live mini-preview card.
- * Drop-in replacement for the Theme Packs chip list in Control Center.
- */
-export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent }) => {
-  const packs = allPacks();
+/** One selectable pack card. `size="small"` is the compact recommended-row card. */
+export const PackCard: React.FC<{
+  pack: ThemePack;
+  active: boolean;
+  accent: string;
+  size?: "small" | "large";
+  /** Show the Recommended / Light / Dock badges (large cards only). */
+  meta?: boolean;
+  onApply: (id: string) => void;
+}> = ({ pack, active, accent, size = "large", meta = true, onApply }) => {
+  const small = size === "small";
   return (
-    <div className="cc-card">
-      <div className="cc-label">Theme Gallery</div>
-      <div className="cc-desc">
-        One click restyles surfaces, accent, icons, folders, and window frames together.
-      </div>
-      {TIER_ORDER.map((tier) => {
-        const inTier = packs.filter((p) => p.tier === tier);
-        if (inTier.length === 0) return null;
-        return (
-          <div key={tier} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                color: "var(--lens-fg-secondary)",
-              }}
-            >
-              {TIER_LABEL[tier]}
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(132px, 1fr))",
-                gap: 10,
-              }}
-            >
-              {inTier.map((pack) => {
-                const active = config.theme.preset === pack.id;
-                const accent =
-                  pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent;
-                return (
-                  <button
-                    key={pack.id}
-                    type="button"
-                    aria-pressed={active}
-                    aria-label={`${pack.label} theme`}
-                    onClick={() => onApply(pack.id)}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 7,
-                      padding: 7,
-                      borderRadius: 11,
-                      textAlign: "left",
-                      cursor: "pointer",
-                      background: active ? "rgb(var(--lens-ink) / 0.1)" : "rgb(var(--lens-ink) / 0.035)",
-                      border: `1px solid ${active ? "var(--lens-fg)" : "var(--lens-border)"}`,
-                      color: active ? "var(--lens-fg)" : "var(--lens-fg-secondary)",
-                      transition:
-                        "background 150ms cubic-bezier(0.22, 1, 0.36, 1), border-color 150ms cubic-bezier(0.22, 1, 0.36, 1)",
-                    }}
-                  >
-                    <PackPreview pack={pack} accent={accent} />
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 6,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{pack.label}</span>
-                      {active && (
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: 3,
-                            background: "var(--lens-fg)",
-                            flexShrink: 0,
-                          }}
-                        />
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+    <button
+      type="button"
+      className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""}`}
+      aria-pressed={active}
+      aria-label={`${pack.label} theme${pack.description ? `. ${pack.description}` : ""}`}
+      onClick={() => onApply(pack.id)}
+    >
+      <PackPreview pack={pack} accent={accent} height={small ? 52 : 72} />
+      <span className="tux-pack-name">
+        <span className="tux-pack-label">{pack.label}</span>
+        {active && <span className="tux-pack-dot" />}
+      </span>
+      {!small && pack.description && <span className="tux-pack-desc">{pack.description}</span>}
+      {!small && meta && (
+        <span className="tux-pack-meta">
+          {pack.recommended && (
+            <span className="tux-badge">
+              <Star size={10} strokeWidth={2.4} /> Recommended
+            </span>
+          )}
+          <span className="tux-badge muted">{pack.scheme === "light" ? "Light" : "Dark"}</span>
+          {pack.dockStyle && <span className="tux-badge muted">{dockStyleLabel(pack.dockStyle)} dock</span>}
+        </span>
+      )}
+    </button>
+  );
+};
+
+/**
+ * Every theme pack (built-in and custom) with filters and search. Opened from "Browse all" under
+ * the recommended row on the Theme & Look tab.
+ */
+export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, onClose }) => {
+  const packs = allPacks();
+  const [filter, setFilter] = useState<FilterId>("all");
+  const [query, setQuery] = useState("");
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const f = FILTERS.find((x) => x.id === filter) ?? FILTERS[0];
+    return packs
+      .filter(f.test)
+      .filter(
+        (p) =>
+          !q ||
+          p.label.toLowerCase().includes(q) ||
+          (p.description ?? "").toLowerCase().includes(q) ||
+          p.aliases.some((a) => a.includes(q)),
+      )
+      .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packs.length, filter, query]);
+
+  const counts = useMemo(
+    () => Object.fromEntries(FILTERS.map((f) => [f.id, packs.filter(f.test).length])) as Record<FilterId, number>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [packs.length],
+  );
+
+  return (
+    <div className="cc-card tux-gallery">
+      <div className="cc-row" style={{ alignItems: "flex-start" }}>
+        <div>
+          <div className="cc-label">All themes</div>
+          <div className="cc-desc">
+            {packs.length} themes. One click changes colours, icons, folders and window frames together.
           </div>
-        );
-      })}
+        </div>
+        {onClose && (
+          <button type="button" className="cc-btn-ghost tux-icon-btn" aria-label="Close all themes" onClick={onClose}>
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      <div className="tux-gallery-tools">
+        <div className="tux-seg" role="tablist" aria-label="Filter themes">
+          {FILTERS.filter((f) => f.id !== "custom" || counts.custom > 0).map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={filter === f.id}
+              className={filter === f.id ? "active" : ""}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+              <span className="tux-num">{counts[f.id]}</span>
+            </button>
+          ))}
+        </div>
+        <label className="tux-search">
+          <Search size={13} aria-hidden />
+          <input
+            className="cc-input"
+            placeholder="Search themes"
+            aria-label="Search themes"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && query) {
+                e.stopPropagation();
+                setQuery("");
+              }
+            }}
+          />
+        </label>
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="cc-desc" style={{ padding: "16px 0", textAlign: "center" }}>
+          No themes match “{query}”.
+        </div>
+      ) : (
+        <div className="tux-pack-grid">
+          {shown.map((pack) => (
+            <PackCard
+              key={pack.id}
+              pack={pack}
+              active={config.theme.preset === pack.id}
+              accent={pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent}
+              onApply={onApply}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

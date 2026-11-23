@@ -4,6 +4,8 @@ import { sampleConfig } from "./fixtures";
 
 const files: Record<string, string> = {};
 mock.module("@tauri-apps/api/core", () => ({
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
   invoke: async (cmd: string, args?: { name?: string }) => {
     if (cmd === "list_theme_files_cmd") return Object.keys(files).map((name) => ({ name, path: `C:\\t\\${name}` }));
     if (cmd === "read_theme_file_cmd") return files[args?.name ?? ""];
@@ -51,12 +53,34 @@ describe("theme packs", () => {
     const next = packs.applyThemePack(cfg, "tokyo-night");
     expect(next.theme.preset).toBe("tokyo-night");
     expect(next.theme.customAccent).toBe("#7AA2F7");
-    expect(next.theme.surfaceHex).toBe("#0F111A");
+    expect(next.theme.surfaceHex).toBe("#1A1B26");
     expect(next.theme.borderRadius).toBe(10);
     expect(next.iconStyle).toEqual({ theme: "obsidian-squircle", shape: "squircle" });
     expect(next.windowControls.frameStyle).toBe("accent-glow");
     expect(packs.applyThemePack(cfg, "does-not-exist")).toBe(cfg);
     expect(cfg.theme.preset).toBe("obsidian"); // input not mutated
+  });
+  test("every built-in pack has a description, a known dock style and a distinct look", () => {
+    const dockIds = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
+    const looks = new Set<string>();
+    for (const p of packs.THEME_PACKS) {
+      expect(p.description && p.description.length).toBeGreaterThan(10);
+      expect(dockIds).toContain(p.dockStyle);
+      looks.add(`${p.base ?? "#09090B"}|${p.accent}`);
+    }
+    expect(looks.size).toBe(packs.THEME_PACKS.length);
+  });
+  test("exactly six recommended packs, including at least one light pack", () => {
+    const rec = packs.recommendedPacks();
+    expect(rec.length).toBe(6);
+    expect(rec.some((p) => p.scheme === "light")).toBe(true);
+  });
+  test("applyThemePack changes the Dock style only when asked", () => {
+    const cfg = sampleConfig();
+    const kept = packs.applyThemePack(cfg, "tokyo-night") as { dock: { style?: string } };
+    expect(kept.dock.style).toBe((cfg.dock as { style?: string }).style);
+    const changed = packs.applyThemePack(cfg, "tokyo-night", { applyDockStyle: true }) as { dock: { style?: string } };
+    expect(changed.dock.style).toBe("split");
   });
   test("lighten and swatch", () => {
     expect(packs.lighten("#000000", 0.5)).toBe("#808080");

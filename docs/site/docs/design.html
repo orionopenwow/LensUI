@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system — Lens UI</title>
+<meta name="description" content="Colours, type, geometry and motion rules every surface follows.">
+<meta name="theme-color" content="#09090b">
+<link rel="icon" href="../assets/lens.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <a class="mark" href="../" aria-label="Lens UI home"><img src="../assets/lens.svg" alt="" width="16" height="16"> Lens UI</a>
+  <nav aria-label="Docs">
+    <a href="design.html">Design system</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="shell-mode.html">Shell mode</a>
+    <a href="plugins.html">Plugins</a>
+    <a href="mcp.html">MCP server</a>
+  </nav>
+  <a class="bar-link" href="https://github.com/orionopenwow/lensui">GitHub</a>
+</header>
+<main id="main" class="doc">
+<h1 id="lens-ui-living-design-document">Lens UI — Living Design Document</h1>
+<blockquote><p><strong>Purpose:</strong> Single source of truth for Lens UI's visual language, motion physics, surface geometry, and interaction patterns. Every surface (<code>TopBar</code>, <code>Dock</code>, <code>QuickSettings</code>, <code>ControlCenter</code>, <code>CommandPalette</code>, <code>WidgetDrawer</code>, and native Win32 overlays) must follow this document so the shell feels unified, intentional, and cohesive.</p></blockquote>
+<hr>
+<h2 id="1-core-aesthetic-philosophy">1. Core Aesthetic Philosophy</h2>
+<ul>
+<li><strong>Obsidian Monochrome Chrome:</strong> Lens UI's own chrome is permanently monochrome Black &amp; White (<code>#09090b</code> obsidian surfaces, <code>#fafafa</code> high-contrast foreground, <code>rgb(255 255 255 / 0.08–0.14)</code> hairline borders).</li>
+<li><strong>Intentional Color:</strong> Color is reserved strictly for:
+<ol>
+<li>Full-color application icons in the Dock (<strong>never</strong> strip color or apply monochrome filters to app icons).</li>
+<li>Minimal semantic accents on active quick-control tiles and fill bars (Volume blue <code>#60A5FA</code>, Night Mode amber <code>#FBBF24</code>, Audio cyan <code>#38BDF8</code>, Power emerald <code>#34D399</code>).</li>
+<li>The user's live Windows DWM accent color (configured via the Color Wheel — drives Windows titlebars/borders/folders, never pollutes Control Center's own B&amp;W chrome).</li>
+<li>Traffic-light window controls (<strong>Green <code>#28C840</code> · Yellow <code>#FEBC2E</code> · Red <code>#FF5F57</code></strong>).</li>
+</ol>
+</li>
+<li><strong>Zero Visual Clutter:</strong> Never wrap standalone utility icons in unnecessary pill boxes or double borders. Let bold pure-white iconography breathe directly on the obsidian glass.</li>
+</ul>
+<hr>
+<h2 id="2-typography">2. Typography</h2>
+<ul>
+<li><strong>Primary Family:</strong> <code>&quot;Arial Rounded MT Bold&quot;</code>, <code>&quot;Arial Rounded&quot;</code>, <code>&quot;Segoe UI Variable&quot;</code>, <code>system-ui</code>, <code>sans-serif</code>.</li>
+<li><strong>Numeric Discipline:</strong> All clocks, percentages, pixel readouts, and telemetry metrics use <code>font-variant-numeric: tabular-nums</code> so numbers never jitter when updating.</li>
+<li><strong>Hierarchy:</strong>
+<ul>
+<li>Surface Header Title: <code>13px</code>, weight <code>600</code>, <code>#fafafa</code>.</li>
+<li>Section Label: <code>11px</code>, uppercase or semibold, <code>#a1a1aa</code>, <code>letter-spacing: 0.04em</code>.</li>
+<li>Body / Control Label: <code>12px–12.5px</code>, weight <code>500–600</code>, <code>#fafafa</code>.</li>
+<li>Metadata / Subtext: <code>10.5px–11px</code>, <code>#71717a</code>.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="3-surface-architecture-seamless-geometry">3. Surface Architecture &amp; Seamless Geometry</h2>
+<h3 id="31-flush-0px-unified-flow-out">3.1 Flush <code>0px</code> Unified Flow-Out</h3>
+<ul>
+<li>Popouts anchored to the Top Bar (<code>QuickSettings</code>, <code>CommandPalette</code>) attach <strong>flush at <code>0px</code> gap</strong> directly beneath the Top Bar (<code>border-top: none</code>, <code>border-right: none</code>, <code>border-radius: 0 0 0 var(--lens-radius)</code>).</li>
+<li>No floating gap or disconnected double-edge between the Top Bar and its flow-out drawer.</li>
+<li>All popouts auto-dismiss cleanly on window blur (<code>Escape</code> or clicking outside) and mutually exclude each other (opening Search closes Quick Settings, and vice versa).</li>
+</ul>
+<h3 id="32-top-bar">3.2 Top Bar</h3>
+<ul>
+<li><strong>Left:</strong> Basic Virtual Desktops switcher (<code>&lt;</code> · <code>Desktops</code> · <code>&gt;</code> · <code>+</code>).</li>
+<li><strong>Center:</strong> Active window title (<code>App — Title</code>).</li>
+<li><strong>Right:</strong>
+<ul>
+<li>Integrated <strong>matte-glassware search capsule</strong> — no <code>&quot;Search...&quot;</code> placeholder text, subtle recessed specular glass rim + bold pure-white magnifying glass (<code>strokeWidth: 2.55</code>), smoothly expanding on focus (<code>132px → 216px</code>) and streaming live into the flush Command Palette dropdown.</li>
+<li><strong>Free-floating bold system icons</strong> (<code>Wi-Fi</code>, <code>Volume</code>, <code>Gear</code>) — <strong>no bubble/pill wrapper</strong>, thick pure-white strokes (<code>strokeWidth: 2.55–2.6</code>, <code>16px</code>).</li>
+<li><strong>Hover Magnify &amp; Dedicated Routing:</strong> Each icon scales up smoothly (<code>scale(1.26)</code>) with a soft white halo on hover and opens its own dedicated flush area:
+<ul>
+<li><code>Wi-Fi</code> → <strong>Wi-Fi &amp; Network</strong> area (connections, hotspot, VPN, Ethernet, proxy).</li>
+<li><code>Volume</code> → <strong>Sound &amp; Mixer</strong> area (Master Volume + live Per-App Volume Mixer + output/input devices).</li>
+<li><code>Gear</code> → <strong>Quick Settings</strong> (with the 3-way usable flick bar: <code>Quick</code> · <code>Theme</code> · <code>All</code>).</li>
+</ul>
+</li>
+<li><strong>Clock:</strong> Clean tabular date &amp; time (<code>Sat, Nov 21 · 03:30 PM</code>).</li>
+</ul>
+</li>
+<li><strong>Auto-Hide on Overlap:</strong> Enabled by default; stays pinned open whenever Search or Quick Settings is active.</li>
+</ul>
+<h3 id="33-unified-flow-out-quick-settings-with-usable-flick">3.3 Unified Flow-Out Quick Settings (with Usable Flick)</h3>
+<ul>
+<li>A single cohesive right-aligned drawer with a <strong>3-way usable flick switcher</strong> at the top:
+<ol>
+<li><strong><code>Quick</code></strong> — 3×2 quick toggles, Volume &amp; Brightness <code>PillFillBar</code>s, expandable Night Mode card (Strength + Manual / Sunset–Sunrise / Schedule), and real Per-App Volume Mixer (<code>IAudioSessionManager2</code>).</li>
+<li><strong><code>Theme &amp; Desktop</code></strong> — Instant access to <strong>all</strong> theme and desktop controls without leaving the flow-out: Visual Master Theme cards, live Windows Accent Color Wheel, Opacity / Roundness / Accent Strength fill bars, Traffic Light controls, Dock &amp; Top Bar behavior toggles, Taskbar &amp; Startup switches, Folder Theme quick-apply, plus a 1-click pop-out to full Lens Control Center.</li>
+<li><strong><code>All Settings</code></strong> — Full Windows Settings launcher grid + live CPU/RAM/Uptime telemetry strip + Widget Drawer trigger.</li>
+</ol>
+</li>
+<li><strong>Flick Interactions:</strong> Click any segment, <strong>scroll wheel</strong> over the flick bar, <strong>horizontal drag/swipe</strong>, or press <code>ArrowLeft</code> / <code>ArrowRight</code> to flick smoothly between panes.</li>
+</ul>
+<h3 id="34-grounded-bottom-dock">3.4 Grounded Bottom Dock</h3>
+<ul>
+<li>Flush to the bottom edge (<code>0px</code> margin default), preserving soft rounded pill geometry.</li>
+<li><strong>Infinite Auto-Fit:</strong> Dynamically scales icon/gap sizing to accommodate any number of pinned and running apps without overflowing.</li>
+<li><strong>Zero-Dip Click Physics:</strong> Icons magnify smoothly on hover (with neighbor wave), stay elevated on <code>:active</code> (<strong>never dip downward</strong>), and animate upward from themselves when launching.</li>
+<li><strong>Slot Unification:</strong> Running apps appear directly on their pinned slot (zero duplicates), with a subtle instance indicator and rich right-click context menu.</li>
+</ul>
+<h3 id="35-window-controls-traffic-lights">3.5 Window Controls (Traffic Lights)</h3>
+<ul>
+<li>Default order: <strong>Green (Maximize) · Yellow (Minimize) · Red (Close)</strong>, left-to-right.</li>
+<li>Proportions: <code>11.5px–12px</code> diameter (<code>5.75px</code> radius) with <code>20px</code> center-to-center spacing (<code>8px</code> gap), scaled per-monitor by DPI, matching Control Center's own traffic lights.</li>
+<li>Rendered natively on Lens UI windows and across <strong>all visible third-party Windows apps</strong> via the Multi-Window Z-Ordered Win32 Caption Pool (<code>win_caption_engine.rs</code>) with occlusion-safe titlebar pixel matching and true per-window Z-order (no bleed-through).</li>
+</ul>
+<h3 id="36-control-center-first-run-setup-wizard">3.6 Control Center &amp; First-Run Setup Wizard</h3>
+<ul>
+<li><strong>Unified Theme Control Array:</strong> Color Wheel sits on the left (<code>212px</code>), paired directly inside the same card with the 3 brushed-metal rotary knobs on top and the Icon Style &amp; Icon Shape chips tucked right beneath a <code>1px</code> hairline divider — zero dead vertical whitespace.</li>
+<li><strong>Obvious Left-Pane Navigation:</strong> Plain-English, scannable labels (<code>Theme &amp; Look</code>, <code>Bottom Dock</code>, <code>Top Bar</code>, <code>Window Buttons</code>, <code>Folder Icons</code>, <code>Virtual Desktops</code>, <code>Widgets &amp; Stats</code>, <code>Taskbar &amp; Startup</code>, plus <code>Setup Wizard</code> &amp; <code>Quit Lens UI</code>).</li>
+<li><strong>Startup Setup Wizard (<code>SetupWizard.tsx</code>):</strong> Greets first-run users (<code>onboardingCompleted === false</code>) and is re-launchable anytime from the sidebar. 5 live-preview steps: <em>Visual Theme → Color &amp; Glass → Icons &amp; Folders → Windows Experience → Ready</em>.</li>
+</ul>
+<hr>
+<h2 id="4-signature-interactive-controls">4. Signature Interactive Controls</h2>
+<div class="table"><table><thead><tr><th>Control</th><th>Component</th><th>Rules</th></tr></thead><tbody><tr><td><strong>Fill Bar</strong></td><td><code>PillFillBar</code></td><td>Rounded-rectangle track with vibrant fill, crisp <code>4×20px</code> thumb handle, <code>pointer</code>/<code>grabbing</code> cursor, click + drag + non-passive mouse-wheel support. <strong>Never</strong> use a &quot;dot on a thin line&quot; slider.</td></tr><tr><td><strong>Rotary Knob</strong></td><td><code>RotaryDial</code></td><td><code>88px</code> brushed-metal tactile dial with non-passive mouse-wheel, vertical drag, and double-click reset.</td></tr><tr><td><strong>Color Wheel</strong></td><td><code>ColorWheel</code></td><td>Outer Hue Ring + inner <code>68×68</code> SV Square with a live <code>18px</code> zoomed color circle loupe (<strong>never</strong> a crosshair) and 8 curated swatches.</td></tr><tr><td><strong>Toggle Switch</strong></td><td>Monochrome Pill</td><td><code>38×21px</code> capsule; <code>#fafafa</code> active track with <code>#09090b</code> knob (or <code>#FBBF24</code> for Night Mode), smooth <code>cubic-bezier(0.22, 1, 0.36, 1)</code> slide.</td></tr></tbody></table></div>
+<hr>
+<h2 id="5-motion-feel">5. Motion &amp; Feel</h2>
+<ul>
+<li><strong>Primary Easing:</strong> <code>cubic-bezier(0.22, 1, 0.36, 1)</code> (fast crisp start, silky deceleration, zero overshoot bounce).</li>
+<li><strong>Durations:</strong>
+<ul>
+<li>Micro hover/scale: <code>140ms–160ms</code>.</li>
+<li>Panel flow-out &amp; flick transitions: <code>180ms–220ms</code>.</li>
+<li>Auto-hide bar slide: <code>220ms</code>.</li>
+</ul>
+</li>
+<li><strong>Feedback:</strong> Every clickable element has an immediate hover state and clear cursor (<code>pointer</code> / <code>grab</code> / <code>grabbing</code>). No dead clicks, no layout shifts, and <strong>no ugly native HTML <code>title=&quot;...&quot;</code> browser tooltips</strong> (use <code>aria-label</code> or custom obsidian pills only where needed).</li>
+</ul>
+<p class="src">Source: <a href="https://github.com/orionopenwow/lensui/blob/main/DESIGN.md">DESIGN.md</a></p>
+</main>
+<footer><div class="inner"><span>Generated from the repository's markdown. Edit the source on <a href="https://github.com/orionopenwow/lensui">GitHub</a>.</span></div></footer>
+</body>
+</html>

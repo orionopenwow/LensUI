@@ -589,6 +589,16 @@ fn switch_groups(_from: usize, to: usize) {
 
 /// Moves the window in front to another workspace (groups mode only).
 pub fn send_focused_to_workspace(target: &str) -> Result<WorkspaceStatus, String> {
+    #[cfg(windows)]
+    let h = unsafe { crate::win_tiler::ffi::GetForegroundWindow() };
+    #[cfg(not(windows))]
+    let h = 0isize;
+    move_window(h, target)
+}
+
+/// Moves one window to another workspace (groups mode only): the Overview's drag and drop and
+/// Shift+arrow keys, and the "send focused window" hotkeys.
+pub fn move_window(hwnd: isize, target: &str) -> Result<WorkspaceStatus, String> {
     let cfg = ws().cfg.clone();
     if !cfg.enabled {
         return Err("Workspaces are turned off.".into());
@@ -599,8 +609,7 @@ pub fn send_focused_to_workspace(target: &str) -> Result<WorkspaceStatus, String
     #[cfg(windows)]
     {
         use crate::win_tiler::ffi;
-        let h = unsafe { ffi::GetForegroundWindow() };
-        let w = unsafe { crate::win_tiler::describe_window(h) }.ok_or("No app window in front.")?;
+        let w = unsafe { crate::win_tiler::describe_window(hwnd) }.ok_or("That window can't be moved to a workspace.")?;
         let mut s = ws();
         let active = s.active;
         let to = resolve_target(&cfg.workspaces, active, target).ok_or("No such workspace.")?;
@@ -610,13 +619,28 @@ pub fn send_focused_to_workspace(target: &str) -> Result<WorkspaceStatus, String
                 ffi::ShowWindowAsync(w.hwnd, ffi::SW_MINIMIZE);
             }
             s.lens_minimized.insert(w.hwnd);
+        } else if s.lens_minimized.remove(&w.hwnd) {
+            unsafe {
+                ffi::ShowWindowAsync(w.hwnd, ffi::SW_SHOWNOACTIVATE);
+            }
         }
     }
     #[cfg(not(windows))]
-    let _ = target;
+    let _ = (hwnd, target);
     crate::win_tiler::request_retile();
     emit();
     Ok(get_workspace_status())
+}
+
+/// (window, workspace index) for every window Lens has placed (groups mode; empty otherwise).
+pub fn window_workspaces() -> Vec<(isize, usize)> {
+    let s = ws();
+    if !s.cfg.enabled || backend(&s.cfg) != "groups" {
+        return Vec::new();
+    }
+    let mut v: Vec<(isize, usize)> = s.membership.iter().map(|(h, i)| (*h, *i)).collect();
+    v.sort_unstable();
+    v
 }
 
 /// Called from the shared event thread for every window shown / destroyed.

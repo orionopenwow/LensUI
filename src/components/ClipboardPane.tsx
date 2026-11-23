@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Pause, Pin, Play, Search, Trash2, X } from "lucide-react";
+import { useLensState } from "../hooks/useLensState";
+import { AskPanel } from "../ai/AskPanel";
+import { clipboardActions } from "../ai/actions";
+import type { AiContext } from "../ai/surfaceApi";
 import "./ClipboardPane.css";
 
 interface ClipEntryView {
@@ -40,6 +44,10 @@ function ago(tsMs: number, now: number): string {
 export const ClipboardPane: React.FC<Props> = ({ compact = false, onCopied }) => {
   const [query, setQuery] = useState("");
   const [snap, setSnap] = useState<ClipboardSnapshot>({ entries: [], paused: false });
+  // AI quick actions on a clip (only while Lens Intelligence is on; docs/AI_SURFACES.md §5).
+  const { config } = useLensState();
+  const aiOn = !!config?.ai?.enabled;
+  const [ask, setAsk] = useState<{ prompt: string; context: AiContext } | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -129,6 +137,17 @@ export const ClipboardPane: React.FC<Props> = ({ compact = false, onCopied }) =>
         </button>
       </div>
 
+      {ask && (
+        <AskPanel
+          key={ask.prompt + (ask.context.clipboard ?? "")}
+          initialPrompt={ask.prompt}
+          initialContext={ask.context}
+          autoSend
+          compact
+          onClose={() => setAsk(null)}
+        />
+      )}
+
       {snap.entries.length === 0 ? (
         <div className="clip-empty">
           {query ? (
@@ -163,6 +182,18 @@ export const ClipboardPane: React.FC<Props> = ({ compact = false, onCopied }) =>
                 </span>
               </button>
               <div className="clip-actions">
+                {aiOn &&
+                  clipboardActions().map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="clip-mini-btn ai-chipbtn"
+                      aria-label={a.title}
+                      onClick={() => setAsk(a.build({ text: entry.preview }))}
+                    >
+                      {a.short}
+                    </button>
+                  ))}
                 <button
                   type="button"
                   className={`clip-mini-btn ${entry.pinned ? "is-on" : ""}`}

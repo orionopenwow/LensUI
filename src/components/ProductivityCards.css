@@ -1,0 +1,262 @@
+/* Hot Corners, Alt + Drag and App Hotkeys cards (Control Center). Tokens only; 4/8px rhythm. */
+
+.pi-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.pi-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.22);
+  flex-shrink: 0;
+}
+.pi-dot.on {
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgb(52 211 153 / 0.16);
+}
+.pi-dot.warn {
+  background: #fbbf24;
+  box-shadow: 0 0 0 3px rgb(251 191 36 / 0.16);
+}
+
+.pi-off {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* --- Hot corners: a small screen with a button in each corner --- */
+.hc-screen {
+  position: relative;
+  height: 148px;
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 90% at 50% 120%, rgb(var(--lens-ink) / 0.07), transparent 60%),
+    rgb(var(--lens-ink) / 0.03);
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+  overflow: hidden;
+}
+.hc-screen-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+  pointer-events: none;
+}
+.hc-corner {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(50% - 12px);
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  background: rgb(var(--lens-ink) / 0.06);
+  border: 1px solid rgb(var(--lens-ink) / 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.hc-corner:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+.hc-corner.selected {
+  color: var(--lens-fg);
+  border-color: rgb(var(--lens-ink) / 0.34);
+  background: color-mix(in oklch, var(--lens-accent) 18%, rgb(var(--lens-ink) / 0.08));
+}
+.hc-corner.none {
+  color: var(--lens-fg-muted);
+  font-weight: 500;
+}
+.hc-corner[data-corner="topLeft"] { top: 8px; left: 8px; }
+.hc-corner[data-corner="topRight"] { top: 8px; right: 8px; }
+.hc-corner[data-corner="bottomLeft"] { bottom: 8px; left: 8px; }
+.hc-corner[data-corner="bottomRight"] { bottom: 8px; right: 8px; }
+.hc-corner-mark {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  opacity: 0.7;
+}
+.hc-corner[data-corner="topLeft"] .hc-corner-mark { border-right: 0; border-bottom: 0; }
+.hc-corner[data-corner="topRight"] .hc-corner-mark { border-left: 0; border-bottom: 0; order: 2; }
+.hc-corner[data-corner="bottomLeft"] .hc-corner-mark { border-right: 0; border-top: 0; }
+.hc-corner[data-corner="bottomRight"] .hc-corner-mark { border-left: 0; border-top: 0; order: 2; }
+
+.hc-pick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* --- Alt + drag: resize-zone diagram --- */
+.ad-demo {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.ad-zones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 96px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--lens-ink) / 0.14);
+  background: rgb(var(--lens-ink) / 0.03);
+}
+.ad-zones span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-muted);
+  border-right: 1px dashed rgb(var(--lens-ink) / 0.1);
+  border-bottom: 1px dashed rgb(var(--lens-ink) / 0.1);
+}
+.ad-zones span:nth-child(3n) { border-right: 0; }
+.ad-zones span:nth-child(n + 7) { border-bottom: 0; }
+
+/* --- Shared app list (exclusions) --- */
+.pi-app-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 5px;
+}
+.pi-app-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  color: var(--lens-fg-secondary);
+}
+.pi-app-chip-x:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+  color: var(--lens-fg);
+}
+.pi-app-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pi-app-add .cc-input {
+  width: 128px;
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+/* --- App hotkeys --- */
+.as-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.as-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.03);
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+}
+.as-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.as-row-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.as-row-line .cc-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+.as-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.as-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px dashed rgb(var(--lens-ink) / 0.2);
+  color: var(--lens-fg-secondary);
+  font-size: 11.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.as-keys.recording {
+  border-style: solid;
+  border-color: var(--lens-accent);
+  color: var(--lens-fg);
+}
+.as-keys kbd,
+.pi-kbd {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: var(--lens-fg);
+  background: rgb(var(--lens-ink) / 0.07);
+  border: 1px solid rgb(var(--lens-ink) / 0.12);
+  border-bottom-width: 2px;
+}
+.as-msg {
+  font-size: 11px;
+  color: var(--lens-fg-muted);
+}
+.as-msg.ok { color: #34d399; }
+.as-msg.bad { color: #fbbf24; }
+.as-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pi-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: var(--lens-fg-secondary);
+}
+.pi-icon-btn:hover {
+  background: rgb(var(--lens-ink) / 0.08);
+  color: var(--lens-fg);
+}

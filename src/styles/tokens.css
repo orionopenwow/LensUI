@@ -157,3 +157,16 @@
   --lens-clock-face-a: #ffffff;
   --lens-clock-face-b: #e4e4e7;
 }
+
+/* Dark packs with lighter, authentic bases (Nord, Everforest, Dracula, Gruvbox, Solarized): lift the
+   secondary text tone so body text stays at or above 4.5:1 on their cards. */
+:root:is(
+    [data-preset="nord-frost"],
+    [data-preset="everforest-dark"],
+    [data-preset="dracula-glass"],
+    [data-preset="gruvbox-warm"],
+    [data-preset="solarized-matte"]
+  ):not([data-scheme="light"]) {
+  --lens-fg-secondary: #c4c4cc;
+  --lens-fg-muted: #a8a8b0;
+}

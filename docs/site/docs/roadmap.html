@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap — Lens UI</title>
+<meta name="description" content="What is built, what is next and what is deliberately out of scope.">
+<meta name="theme-color" content="#09090b">
+<link rel="icon" href="../assets/lens.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <a class="mark" href="../" aria-label="Lens UI home"><img src="../assets/lens.svg" alt="" width="16" height="16"> Lens UI</a>
+  <nav aria-label="Docs">
+    <a href="design.html">Design system</a>
+    <a href="roadmap.html">Roadmap</a>
+    <a href="shell-mode.html">Shell mode</a>
+    <a href="plugins.html">Plugins</a>
+    <a href="mcp.html">MCP server</a>
+  </nav>
+  <a class="bar-link" href="https://github.com/orionopenwow/lensui">GitHub</a>
+</header>
+<main id="main" class="doc">
+<h1 id="lens-ui-where-it-stands-and-where-it-can-go">Lens UI — Where It Stands and Where It Can Go</h1>
+<p><em>Last updated: 2026-11-21</em></p>
+<h2 id="what-lens-ui-is-today">What Lens UI is today</h2>
+<p>Lens UI is a <strong>shell overlay</strong>, not yet a shell replacement. Windows Explorer (<code>explorer.exe</code>) is still running underneath: Lens hides the native taskbar and desktop icons, then draws its own Dock, Top Bar, Quick Settings, Command Palette, Widgets and notifications as eight transparent Tauri (WebView2) windows. A Rust/Win32 backend handles the parts a web view cannot: DWM titlebar colors, traffic-light caption buttons, tiling, audio sessions, media, folder icons and taskbar restore.</p>
+<p>That is a sound base. The overlay approach is why quitting Lens returns you to stock Windows instantly.</p>
+<h2 id="changed-in-this-pass">Changed in this pass</h2>
+<div class="table"><table><thead><tr><th>Area</th><th>Change</th></tr></thead><tbody><tr><td>Themes</td><td>One registry (<code>src/themes/packs.ts</code>) now defines all 16 dark packs. Control Center, Quick Settings, the Setup Wizard and the natural-language router all apply packs through it, so a pack sets surface, accent, radius, icons, folders and window frame together. Previously the Linux-suite packs were only an accent tint, and three files each kept their own preset list.</td></tr><tr><td>Window styles</td><td>App-window titlebars now take the active pack's surface color instead of always <code>#0C0C0F</code>. The <code>frameStyle</code> setting, which was stored but never used, now drives the DWM border: Hairline, Accent, Neon or Borderless. New &quot;Window Frame&quot; row in Control Center.</td></tr><tr><td>Folder styles</td><td>Three new folder icons (Violet, Frost, Ember); one shared list of 11 styles.</td></tr><tr><td>Folder safety</td><td>Styling a folder used to overwrite its <code>desktop.ini</code>, and reverting deleted it. For Documents, Downloads, Pictures etc. that destroyed Windows' own settings. Lens now backs the original up to <code>%APPDATA%\LensUI\folder-backups</code>, changes only the icon line, and restores the original on revert.</td></tr><tr><td>Glitches</td><td>The <code>notifications</code> and <code>desktopfolder</code> windows were missing from <code>capabilities/default.json</code>, so they had no event or window permissions. Added.</td></tr><tr><td>Weight</td><td>Each window now loads only its own surface code (lazy imports in <code>main.tsx</code>). The running-windows poll skips hidden windows and no longer re-renders the Dock every 900 ms when nothing changed.</td></tr><tr><td>Standalone</td><td><code>Build-Lens-UI.bat</code> builds a release exe/installer so Lens runs without Bun, Vite or a terminal. <code>.gitignore</code> no longer excludes the Windhawk mod source the build needs.</td></tr></tbody></table></div>
+<p><strong>Not verified here:</strong> the Rust changes were syntax-checked and their logic unit-tested, and the TypeScript type-checks, but nothing was compiled or run on Windows. Run <code>bun run tauri dev</code> and try a theme pack, a frame style, and a folder apply/revert before relying on them.</p>
+<h2 id="second-pass-direction-a-part-1">Second pass — direction A, part 1</h2>
+<div class="table"><table><thead><tr><th>Area</th><th>Change</th></tr></thead><tbody><tr><td>Window tracking</td><td>New <code>win_events.rs</code>: WinEvent hooks push <code>lens://windows-changed</code> to every surface the moment a window opens, closes, is renamed, focused or minimized. <code>useRunningWindows</code> listens for it; polling stays only as a safety net (normal rate until the first push arrives, then one check every 5 s).</td></tr><tr><td>No more injection by default</td><td>New windows are now styled from outside their process by the same event tracker. <code>lens_dwm_hook.dll</code> is no longer loaded into other apps unless &quot;Legacy In-App Window Styling&quot; is switched on in Control Center (<code>func.injectedHook</code>).</td></tr><tr><td><code>.lenstheme</code></td><td>Save the current look, apply and remove saved looks, and open the themes folder, from a &quot;Saved Themes&quot; card in Theme &amp; Look. Files are JSON in <code>%APPDATA%\LensUI\themes</code>. Import validates and clamps every field; custom CSS is not part of the format.</td></tr><tr><td>Color tokens</td><td>Every translucent white in CSS and TSX now goes through <code>--lens-ink</code>; hard-coded <code>#fafafa</code> / <code>#09090b</code> / grays go through <code>--lens-fg</code>, <code>--lens-on-fg</code>, <code>--lens-fg-secondary</code>, <code>--lens-fg-muted</code>. Dark packs render exactly as before.</td></tr><tr><td>Light packs</td><td>Alabaster Daylight and Paper Minimal (<code>data-scheme=&quot;light&quot;</code>). Native titlebars switch to dark text and light chrome automatically when the titlebar color is light. First cut: see gap 1.</td></tr><tr><td>Tray access</td><td>A chevron in the Top Bar shows the native taskbar for 8 seconds so tray-only apps are reachable. This is a stopgap until Lens hosts tray icons itself.</td></tr></tbody></table></div>
+<p><strong>Not verified:</strong> as before, nothing here was compiled or run on Windows. The new Rust follows the exact Win32 call patterns already used in <code>win_caption_engine.rs</code>, file-name sanitizing and theme import were unit-tested, and TypeScript type-checks. The light packs have never been looked at on screen.</p>
+<h2 id="third-pass-everything-else-built-by-seven-parallel-agents-and-wired-in">Third pass — everything else, built by seven parallel agents and wired in</h2>
+<p>Every item below is <strong>written and wired but has never been compiled or run on Windows.</strong> Anything that could break the working shell is behind a switch that is <strong>off by default</strong>.</p>
+<div class="table"><table><thead><tr><th>Feature</th><th>Where</th><th>Default</th><th>How it was checked</th></tr></thead><tbody><tr><td>System tray host</td><td><code>win_tray.rs</code>, <code>TrayStrip.tsx</code> (Top Bar)</td><td>off — Control Center &gt; &quot;System Tray in Top Bar&quot;</td><td>Whole module type-checked; message parser and icon encoder unit-tested. Payload offsets are from memory.</td></tr><tr><td>Notification center</td><td><code>win_notifications.rs</code>, <code>NotificationCenterPane.tsx</code> (bell in Top Bar)</td><td>on</td><td>History/Do-Not-Disturb logic unit-tested. Reading other apps' toasts probably needs a packaged install; the pane says so when unavailable.</td></tr><tr><td>Shell replacement</td><td><code>win_shell.rs</code>, <code>ShellModeCard.tsx</code>, <code>Restore-Windows-Shell.bat</code>, <code>docs/SHELL_MODE.md</code></td><td>off — typed confirmation to enable</td><td>Boot-loop guard and startup-command parsing unit-tested. <strong>Try in a VM first.</strong></td></tr><tr><td>Clipboard history</td><td><code>win_clipboard.rs</code>, <code>ClipboardPane.tsx</code> (Widget Drawer)</td><td>off</td><td>Ring buffer unit-tested; text only, memory only.</td></tr><tr><td>Window rules</td><td><code>win_rules.rs</code>, <code>WindowRulesCard.tsx</code></td><td>no rules</td><td>Matching/sanitizing unit-tested.</td></tr><tr><td>Keyboard tiling</td><td><code>win_tiler.rs</code></td><td>off — restart to apply</td><td>Geometry unit-tested.</td></tr><tr><td>Session save/restore</td><td><code>sessions.ts</code>, <code>SessionRestoreCard.tsx</code></td><td>—</td><td>Pure parts run in node.</td></tr><tr><td>Launcher</td><td><code>LauncherSurface.tsx</code> (Alt+A, grid button in Top Bar)</td><td>on</td><td>Type-checked only.</td></tr><tr><td>Overview</td><td><code>OverviewSurface.tsx</code> (Alt+`, layers button in Top Bar)</td><td>on</td><td>Type-checked only.</td></tr><tr><td>Theme gallery, day/night schedule, custom packs in <code>.lenstheme</code>, light-scheme CSS pass</td><td><code>ThemeGallery.tsx</code>, <code>schedule.ts</code>, <code>customPacks.ts</code>, tokens</td><td>schedule off</td><td>Sunrise maths, contrast ratios and custom-pack validation unit-tested.</td></tr><tr><td>Multi-monitor</td><td><code>win_monitors.rs</code>; <code>func.targetMonitor</code></td><td>&quot;primary&quot; (unchanged behaviour)</td><td>Rectangle maths proven identical to the old code for the primary monitor. No picker UI yet.</td></tr></tbody></table></div>
+<p><strong>Deliberately not applied</strong> (see <code>docs/CORE_PATCH_PLAN.md</code>; apply with <code>docs/core_patches.py</code>): on-demand window creation (L0–L8), the slower idle watcher loop (W2), DWM acrylic on flyouts (G1), and the monitor picker UI. They rest on Tauri API details nobody could verify here.</p>
+<p><strong>Not built:</strong> accent colour from the wallpaper (needs an image decoder), an uninstaller step that clears shell mode, per-monitor bars.</p>
+<h2 id="waves-1-and-2-feature-build-out-polish-performance-all-wired-none-compiled-yet">Waves 1 and 2 — feature build-out, polish, performance (all wired, none compiled yet)</h2>
+<div class="table"><table><thead><tr><th>Area</th><th>Where</th><th>Default</th></tr></thead><tbody><tr><td>Automatic tiling + named workspaces</td><td>Control Center &gt; Desktops &amp; Widgets; Top Bar workspace strip</td><td>off</td></tr><tr><td>Dock on any edge, live previews, unread badges, separators, lock, Alt+1–9</td><td>Dock right-click menu; Control Center toggles</td><td>bottom; previews and Alt+1–9 off</td></tr><tr><td>Real Wi-Fi, Bluetooth, battery/power mode, keyboard layout, account, audio devices</td><td>Quick Settings; Top Bar battery + layout chips</td><td>on</td></tr><tr><td>Unified fuzzy search (Launcher, Palette, Dock), file index, calculator, <code>&gt;</code> commands, <code>?</code> web, scripts</td><td>everywhere you search</td><td>on; commands always confirm</td></tr><tr><td>Live wallpaper (image / video / HTML) + accent from wallpaper; desktop groups</td><td>Theme &amp; Look; Desktops &amp; Widgets</td><td>wallpaper off</td></tr><tr><td>Sandboxed plugins (4 examples) + theme sharing</td><td>Desktops &amp; Widgets; Theme &amp; Look</td><td>examples installed, all off</td></tr><tr><td>Accessibility (reduced motion, high contrast, focus rings), i18n framework, backup/restore, remove-all-changes, <code>Uninstall-Lens-UI.bat</code></td><td>Theme &amp; Look; Windows &amp; Quick</td><td>follow Windows</td></tr><tr><td>MCP server for AI apps (<code>lens-ui.exe --mcp-stdio</code>)</td><td>Control Center &gt; Agents &amp; MCP</td><td>off; free-form actions need approval in Lens</td></tr><tr><td>Performance: ~3× fewer window scans, no periodic taskbar re-hide, cached telemetry, reused media manager, on-demand windows</td><td>Control Center toggle for on-demand windows</td><td>on-demand off</td></tr><tr><td>Crash safety: config kept on parse failure + atomic saves; non-ASCII colour crash fixed; no lock panics in lib.rs</td><td>—</td><td>—</td></tr><tr><td>Self-test report</td><td>Control Center &gt; Windows &amp; Quick</td><td>—</td></tr><tr><td>CI: Windows build/clippy/tests + parity screenshots of all 11 surfaces</td><td><code>.github/workflows/build.yml</code>, <code>tools/parity/</code> (<code>bun run parity</code>)</td><td>needs the folder on GitHub</td></tr><tr><td>Competitive strategy + 12-month plan</td><td><code>docs/COMPETITIVE_STRATEGY.md</code></td><td>—</td></tr></tbody></table></div>
+<p>Known open items: UI Scale setting has no effect yet (needs Rust-side window sizing); Dock close &quot;×&quot; and unread badge sit close together; most agents' Rust unit tests still live outside the repo (list in the MCP/CI agent notes); side/top Dock positions leave Control Center, Dock search and Quick Settings anchored to the bottom.</p>
+<h2 id="first-build-checklist">First build checklist</h2>
+<ol>
+<li><code>Build-Lens-UI.bat</code> (or <code>bun run tauri dev</code>). Expect compiler errors; the most likely spots are listed per module in the agents' notes: <code>tauri::window::Monitor</code> path in <code>lens_monitor</code> (try <code>tauri::Monitor</code>), WinRT method names in <code>win_notifications.rs</code> <code>mod toasts</code>, <code>Code::</code> / <code>Modifiers::</code> names in the hotkey block, the <code>for attr in [DWMWA_…]</code> loop in <code>win_dwm_engine.rs</code>, <code>REG_OPTION_VOLATILE</code> in <code>win_shell.rs</code>.</li>
+<li>With everything at defaults, confirm the shell behaves as before (dark-theme shadows included).</li>
+<li>Then switch on one opt-in feature at a time.</li>
+</ol>
+<h2 id="known-gaps">Known gaps</h2>
+<ol>
+<li><strong>Light packs still need a human look</strong>, as do the Launcher, Overview, gallery and every new card.</li>
+<li><strong>Blur is not real</strong>, and all windows are still created at startup (patches exist, not applied).</li>
+<li><strong>No tests in the repo, no CI, <code>csp: null</code></strong>, and an 11 MB <code>windhawk_setup.exe</code> in the folder.</li>
+<li>Global shortcuts Alt+A and Alt+` are taken away from other apps while Lens runs.</li>
+</ol>
+<h2 id="directions">Directions</h2>
+<h3 id="a-make-the-overlay-excellent-recommended-next">A. Make the overlay excellent (recommended next)</h3>
+<p>Lowest risk, biggest daily-use gain.</p>
+<ul>
+<li>System tray host and a real notification center (<code>UserNotificationListener</code>).</li>
+<li>Done: event-driven window list; injected hook off by default.</li>
+<li>Create rarely used windows (Control Center, Widgets, Palette) on demand rather than at startup; every idle WebView costs memory.</li>
+<li>Multi-monitor bars, and real acrylic/mica behind surfaces.</li>
+<li>Done: color tokens, <code>.lenstheme</code>. Light packs need a visual pass.</li>
+</ul>
+<h3 id="b-true-shell-replacement">B. True shell replacement</h3>
+<p>Lens becomes the shell: <code>HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell</code> points at <code>lens-ui.exe</code> and Explorer never starts as the desktop. Lens then owns everything Explorer did:</p>
+<ul>
+<li>wallpaper and desktop icons, tray host, Start/launcher, startup apps (Run keys and the Startup folder);</li>
+<li>Win-key shortcuts and the task switcher that Explorer normally provides;</li>
+<li>UWP/Store app activation, which leans on Explorer more than classic apps do.</li>
+</ul>
+<p>It needs a recovery path before anything else: a watchdog that relaunches Explorer if Lens crashes, a hotkey that restores the stock shell, and a per-user (never machine-wide) registry change. Do this only after direction A, because A builds most of the pieces B requires. Prior art worth reading: Seelen UI (Tauri, overlay model) and Cairo Shell with its ManagedShell library (tray hosting and shell replacement).</p>
+<h3 id="c-theme-platform">C. Theme platform</h3>
+<p>Treat packs as data: <code>.lenstheme</code> files (JSON plus optional CSS and wallpaper), a gallery in Control Center, per-app window rules (&quot;terminal is always 85% opaque, borderless&quot;), wallpaper-derived accent, time-of-day pack switching, and icon packs.</p>
+<h3 id="d-workflow-and-local-ai">D. Workflow and local AI</h3>
+<p>Already the most distinctive part (action router, workflow recorder, tiling). Keyboard-driven tiling with layouts saved per virtual desktop, session restore (&quot;Coding&quot; reopens and re-tiles its apps), window rules, clipboard history, and an action router that can explain and undo what it did.</p>
+<h2 id="suggested-order">Suggested order</h2>
+<ol>
+<li>Build and run both passes on Windows; fix anything the compiler finds. <strong>(next)</strong></li>
+<li>~~WinEvent-driven window tracking; injected hook off by default.~~ Done, unverified.</li>
+<li>System tray host, then notification center.</li>
+<li>~~Color tokenization, light packs, <code>.lenstheme</code>.~~ Done; light packs need a visual pass.</li>
+<li>Multi-monitor and on-demand windows; retire the 65 ms watcher loop.</li>
+<li>Signed release builds and CI.</li>
+<li>Opt-in shell-replacement mode with watchdog.</li>
+</ol>
+<p class="src">Source: <a href="https://github.com/orionopenwow/lensui/blob/main/docs/ROADMAP.md">docs/ROADMAP.md</a></p>
+</main>
+<footer><div class="inner"><span>Generated from the repository's markdown. Edit the source on <a href="https://github.com/orionopenwow/lensui">GitHub</a>.</span></div></footer>
+</body>
+</html>

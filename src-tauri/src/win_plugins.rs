@@ -257,6 +257,10 @@ pub struct PluginState {
     pub grants: BTreeMap<String, Vec<String>>,
     pub pending: Vec<PendingApproval>,
     pub examples_installed: bool,
+    /// HMAC-SHA256 of each plugin's grants, keyed by a per-user secret that Windows DPAPI
+    /// protects (see `grant_key`). `None` only in files written before grant signing existed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grant_sigs: Option<BTreeMap<String, String>>,
 }
 
 pub fn load_state_from(path: &Path) -> PluginState {
@@ -274,12 +278,445 @@ fn save_state_to(path: &Path, state: &PluginState) -> Result<(), String> {
     fs::write(path, json).map_err(|e| e.to_string())
 }
 
+/// Loads the state with only *verified* grants. A grant list whose signature is missing or
+/// wrong (the file was edited by something other than Lens) is dropped: not granted.
 fn load_state() -> PluginState {
-    load_state_from(&state_path())
+    let path = state_path();
+    let mut state = load_state_from(&path);
+    match grant_key() {
+        Some(key) => {
+            // Unsigned grants are trusted only in the one upgrade run that created the key.
+            // Afterwards, a file without signatures is treated like a tampered one.
+            let allow_migration = GRANT_KEY_CREATED.load(std::sync::atomic::Ordering::SeqCst);
+            if apply_grant_integrity(&key, &mut state, allow_migration) == GrantCheck::Migrated {
+                // First run after grant signing was introduced: sign the existing grants once.
+                let _ = save_state_to(&path, &state);
+            }
+        }
+        // No key (DPAPI unavailable): fail closed.
+        None => state.grants.clear(),
+    }
+    state
 }
 
 fn save_state(state: &PluginState) -> Result<(), String> {
-    save_state_to(&state_path(), state)
+    let mut signed = state.clone();
+    signed.grant_sigs = Some(match grant_key() {
+        Some(key) => sign_all_grants(&key, &signed.grants),
+        // Without a key nothing can be signed, so nothing saved here will be trusted.
+        None => BTreeMap::new(),
+    });
+    save_state_to(&state_path(), &signed)
+}
+
+// ---------------------------------------------------------------------------------------
+// Grant integrity: HMAC-SHA256 over each plugin's grants, keyed by a DPAPI-protected secret
+// ---------------------------------------------------------------------------------------
+
+/// Result of checking a loaded state against the grant key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GrantCheck {
+    /// Every grant list carried a valid signature.
+    Verified,
+    /// At least one grant list had a missing or wrong signature and was dropped.
+    Stripped,
+    /// The file predates grant signing; its grants were accepted once and signed.
+    Migrated,
+}
+
+/// Pure SHA-256 (FIPS 180-4). Small inputs only; used for the grant HMAC.
+pub fn sha256(data: &[u8]) -> [u8; 32] {
+    const K: [u32; 64] = [
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
+        0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
+        0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f,
+        0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+        0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+        0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116,
+        0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
+        0xc67178f2,
+    ];
+    let mut h: [u32; 8] = [
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+        0x5be0cd19,
+    ];
+    let mut msg = data.to_vec();
+    let bit_len = (data.len() as u64).wrapping_mul(8);
+    msg.push(0x80);
+    while msg.len() % 64 != 56 {
+        msg.push(0);
+    }
+    msg.extend_from_slice(&bit_len.to_be_bytes());
+    for chunk in msg.chunks_exact(64) {
+        let mut w = [0u32; 64];
+        for i in 0..16 {
+            w[i] = u32::from_be_bytes([
+                chunk[4 * i],
+                chunk[4 * i + 1],
+                chunk[4 * i + 2],
+                chunk[4 * i + 3],
+            ]);
+        }
+        for i in 16..64 {
+            let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
+            let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
+            w[i] = w[i - 16]
+                .wrapping_add(s0)
+                .wrapping_add(w[i - 7])
+                .wrapping_add(s1);
+        }
+        let mut v = h;
+        for i in 0..64 {
+            let s1 = v[4].rotate_right(6) ^ v[4].rotate_right(11) ^ v[4].rotate_right(25);
+            let ch = (v[4] & v[5]) ^ (!v[4] & v[6]);
+            let t1 = v[7]
+                .wrapping_add(s1)
+                .wrapping_add(ch)
+                .wrapping_add(K[i])
+                .wrapping_add(w[i]);
+            let s0 = v[0].rotate_right(2) ^ v[0].rotate_right(13) ^ v[0].rotate_right(22);
+            let maj = (v[0] & v[1]) ^ (v[0] & v[2]) ^ (v[1] & v[2]);
+            let t2 = s0.wrapping_add(maj);
+            v = [
+                t1.wrapping_add(t2),
+                v[0],
+                v[1],
+                v[2],
+                v[3].wrapping_add(t1),
+                v[4],
+                v[5],
+                v[6],
+            ];
+        }
+        for i in 0..8 {
+            h[i] = h[i].wrapping_add(v[i]);
+        }
+    }
+    let mut out = [0u8; 32];
+    for (i, word) in h.iter().enumerate() {
+        out[4 * i..4 * i + 4].copy_from_slice(&word.to_be_bytes());
+    }
+    out
+}
+
+/// HMAC-SHA256 (RFC 2104).
+pub fn hmac_sha256(key: &[u8], msg: &[u8]) -> [u8; 32] {
+    let mut k = [0u8; 64];
+    if key.len() > 64 {
+        k[..32].copy_from_slice(&sha256(key));
+    } else {
+        k[..key.len()].copy_from_slice(key);
+    }
+    let mut inner = Vec::with_capacity(64 + msg.len());
+    inner.extend(k.iter().map(|b| b ^ 0x36));
+    inner.extend_from_slice(msg);
+    let ih = sha256(&inner);
+    let mut outer = Vec::with_capacity(96);
+    outer.extend(k.iter().map(|b| b ^ 0x5c));
+    outer.extend_from_slice(&ih);
+    sha256(&outer)
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+/// Constant-time comparison of two hex strings.
+fn ct_eq(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    a.bytes()
+        .zip(b.bytes())
+        .fold(0u8, |acc, (x, y)| acc | (x ^ y))
+        == 0
+}
+
+/// Signature of one plugin's grant list. Order-independent and bound to the plugin id.
+pub fn sign_grants(key: &[u8], id: &str, grants: &[String]) -> String {
+    let mut sorted: Vec<&str> = grants.iter().map(|g| g.as_str()).collect();
+    sorted.sort_unstable();
+    sorted.dedup();
+    let msg = format!("lens-plugin-grants-v1\n{}\n{}", id, sorted.join("\n"));
+    to_hex(&hmac_sha256(key, msg.as_bytes()))
+}
+
+pub fn sign_all_grants(
+    key: &[u8],
+    grants: &BTreeMap<String, Vec<String>>,
+) -> BTreeMap<String, String> {
+    grants
+        .iter()
+        .filter(|(_, list)| !list.is_empty())
+        .map(|(id, list)| (id.clone(), sign_grants(key, id, list)))
+        .collect()
+}
+
+/// Drops every grant list whose signature doesn't verify. A file written before grant signing
+/// (`grant_sigs == None`) is trusted only when `allow_migration` is set: its grants are kept and
+/// signed (`Migrated`). Otherwise it is treated like any other unsigned file.
+pub fn apply_grant_integrity(
+    key: &[u8],
+    state: &mut PluginState,
+    allow_migration: bool,
+) -> GrantCheck {
+    let sigs = match state.grant_sigs.clone() {
+        Some(sigs) => sigs,
+        None if allow_migration => {
+            state.grant_sigs = Some(sign_all_grants(key, &state.grants));
+            return GrantCheck::Migrated;
+        }
+        None => BTreeMap::new(),
+    };
+    let mut stripped = false;
+    state.grants.retain(|id, list| {
+        if list.is_empty() {
+            return false;
+        }
+        let ok = sigs
+            .get(id)
+            .map(|sig| ct_eq(sig, &sign_grants(key, id, list)))
+            .unwrap_or(false);
+        if !ok {
+            stripped = true;
+        }
+        ok
+    });
+    if stripped {
+        GrantCheck::Stripped
+    } else {
+        GrantCheck::Verified
+    }
+}
+
+/// Set when this process created the grant key (first run with grant signing).
+static GRANT_KEY_CREATED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn grant_key_path() -> PathBuf {
+    config_dir().join("plugin-grants.key")
+}
+
+/// 32 random bytes from the OS.
+fn random_key() -> Option<[u8; 32]> {
+    let mut key = [0u8; 32];
+    #[cfg(windows)]
+    {
+        #[link(name = "bcrypt")]
+        extern "system" {
+            #[link_name = "BCryptGenRandom"]
+            fn lens_bcrypt_gen_random(
+                alg: *mut std::ffi::c_void,
+                buf: *mut u8,
+                len: u32,
+                flags: u32,
+            ) -> i32;
+        }
+        const BCRYPT_USE_SYSTEM_PREFERRED_RNG: u32 = 0x0000_0002;
+        let status = unsafe {
+            lens_bcrypt_gen_random(
+                std::ptr::null_mut(),
+                key.as_mut_ptr(),
+                32,
+                BCRYPT_USE_SYSTEM_PREFERRED_RNG,
+            )
+        };
+        if status != 0 {
+            return None;
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        use std::io::Read;
+        fs::File::open("/dev/urandom")
+            .ok()?
+            .read_exact(&mut key)
+            .ok()?;
+    }
+    Some(key)
+}
+
+/// The per-user grant key, created on first use and stored DPAPI-protected (user scope) in
+/// %APPDATA%\LensUI\plugin-grants.key. Another user, or a copy of the file taken to another
+/// PC, can't unprotect it. If it can't be read, a new key is made: existing grants then fail
+/// verification and must be approved again (fail closed).
+fn grant_key() -> Option<[u8; 32]> {
+    use std::sync::OnceLock;
+    static KEY: OnceLock<Option<[u8; 32]>> = OnceLock::new();
+    *KEY.get_or_init(|| {
+        let path = grant_key_path();
+        if let Ok(blob) = fs::read(&path) {
+            if let Some(raw) = dpapi::unprotect(&blob) {
+                if raw.len() == 32 {
+                    let mut k = [0u8; 32];
+                    k.copy_from_slice(&raw);
+                    return Some(k);
+                }
+            }
+        }
+        let key = random_key()?;
+        let blob = dpapi::protect(&key)?;
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        fs::write(&path, blob).ok()?;
+        GRANT_KEY_CREATED.store(true, std::sync::atomic::Ordering::SeqCst);
+        Some(key)
+    })
+}
+
+#[cfg(windows)]
+mod dpapi {
+    #[repr(C)]
+    struct DataBlob {
+        cb_data: u32,
+        pb_data: *mut u8,
+    }
+
+    #[link(name = "crypt32")]
+    extern "system" {
+        #[link_name = "CryptProtectData"]
+        fn lens_crypt_protect_data(
+            data_in: *const DataBlob,
+            description: *const u16,
+            entropy: *const DataBlob,
+            reserved: *mut std::ffi::c_void,
+            prompt: *mut std::ffi::c_void,
+            flags: u32,
+            data_out: *mut DataBlob,
+        ) -> i32;
+        #[link_name = "CryptUnprotectData"]
+        fn lens_crypt_unprotect_data(
+            data_in: *const DataBlob,
+            description: *mut *mut u16,
+            entropy: *const DataBlob,
+            reserved: *mut std::ffi::c_void,
+            prompt: *mut std::ffi::c_void,
+            flags: u32,
+            data_out: *mut DataBlob,
+        ) -> i32;
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        #[link_name = "LocalFree"]
+        fn lens_local_free(mem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
+    }
+
+    const CRYPTPROTECT_UI_FORBIDDEN: u32 = 0x1;
+    const ENTROPY: &[u8] = b"LensUI plugin grants v1";
+
+    fn run(input: &[u8], protect: bool) -> Option<Vec<u8>> {
+        let data_in = DataBlob {
+            cb_data: input.len() as u32,
+            pb_data: input.as_ptr() as *mut u8,
+        };
+        let entropy = DataBlob {
+            cb_data: ENTROPY.len() as u32,
+            pb_data: ENTROPY.as_ptr() as *mut u8,
+        };
+        let mut out = DataBlob {
+            cb_data: 0,
+            pb_data: std::ptr::null_mut(),
+        };
+        let ok = unsafe {
+            if protect {
+                lens_crypt_protect_data(
+                    &data_in,
+                    std::ptr::null(),
+                    &entropy,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    CRYPTPROTECT_UI_FORBIDDEN,
+                    &mut out,
+                )
+            } else {
+                lens_crypt_unprotect_data(
+                    &data_in,
+                    std::ptr::null_mut(),
+                    &entropy,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    CRYPTPROTECT_UI_FORBIDDEN,
+                    &mut out,
+                )
+            }
+        };
+        if ok == 0 || out.pb_data.is_null() {
+            return None;
+        }
+        let bytes =
+            unsafe { std::slice::from_raw_parts(out.pb_data, out.cb_data as usize).to_vec() };
+        unsafe {
+            lens_local_free(out.pb_data as *mut std::ffi::c_void);
+        }
+        Some(bytes)
+    }
+
+    pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
+        run(data, true)
+    }
+
+    pub fn unprotect(blob: &[u8]) -> Option<Vec<u8>> {
+        run(blob, false)
+    }
+}
+
+/// Non-Windows builds (CI type-checks, tests): no DPAPI, the key file holds the raw key.
+#[cfg(not(windows))]
+mod dpapi {
+    pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
+        Some(data.to_vec())
+    }
+    pub fn unprotect(blob: &[u8]) -> Option<Vec<u8>> {
+        Some(blob.to_vec())
+    }
+}
+
+// ---------------------------------------------------------------------------------------
+// Plugin frames: each plugin document is written to its own file and loaded through the
+// asset protocol, so it is a real document with its own CSP. (A srcdoc frame would inherit
+// the Lens window's strict CSP, which blocks the plugin's inline scripts.)
+// ---------------------------------------------------------------------------------------
+
+const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
+
+pub fn plugin_frames_dir() -> PathBuf {
+    config_dir().join("plugin-frames")
+}
+
+/// Writes the composed plugin document (built by src/plugins/host.ts: Lens CSP + SDK +
+/// sanitized plugin markup) for an enabled plugin and returns its file path.
+pub fn write_plugin_frame_in(
+    frames: &Path,
+    state: &PluginState,
+    id: &str,
+    html: &str,
+) -> Result<PathBuf, String> {
+    if !is_valid_plugin_id(id) {
+        return Err("Invalid plugin id.".into());
+    }
+    if !state.enabled.get(id).copied().unwrap_or(false) {
+        return Err("Plugin is not enabled.".into());
+    }
+    if html.len() > MAX_FRAME_BYTES {
+        return Err("Plugin document is too large.".into());
+    }
+    if !html.contains("http-equiv=\"Content-Security-Policy\"") {
+        return Err("Plugin document is missing the Lens policy.".into());
+    }
+    fs::create_dir_all(frames).map_err(|e| e.to_string())?;
+    let path = frames.join(format!("{}.html", id));
+    let tmp = frames.join(format!("{}.html.tmp", id));
+    fs::write(&tmp, html).map_err(|e| e.to_string())?;
+    fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    Ok(path)
+}
+
+pub fn write_plugin_frame(id: &str, html: &str) -> Result<String, String> {
+    write_plugin_frame_in(&plugin_frames_dir(), &load_state(), id, html)
+        .map(|p| p.to_string_lossy().to_string())
 }
 
 pub fn is_valid_grant(grant: &str) -> bool {
@@ -1025,4 +1462,157 @@ pub fn check_plugin_open_url(id: &str, url: &str) -> Result<String, String> {
     let origin = https_origin(url).ok_or("Only https links can be opened.")?;
     granted(id, "open-urls", &format!("url:{}", origin))?;
     Ok(url.to_string())
+}
+
+#[cfg(test)]
+mod grant_integrity_tests {
+    use super::*;
+
+    fn hex(b: &[u8]) -> String {
+        to_hex(b)
+    }
+
+    #[test]
+    fn sha256_known_vectors() {
+        assert_eq!(
+            hex(&sha256(b"")),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert_eq!(
+            hex(&sha256(b"abc")),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        assert_eq!(
+            hex(&sha256(
+                b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+            )),
+            "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+        );
+        let million = vec![b'a'; 1_000_000];
+        assert_eq!(
+            hex(&sha256(&million)),
+            "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
+        );
+    }
+
+    #[test]
+    fn hmac_rfc4231_vectors() {
+        // Test case 1
+        assert_eq!(
+            hex(&hmac_sha256(&[0x0b; 20], b"Hi There")),
+            "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7"
+        );
+        // Test case 2
+        assert_eq!(
+            hex(&hmac_sha256(b"Jefe", b"what do ya want for nothing?")),
+            "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+        );
+        // Test case 6: key longer than the block size
+        assert_eq!(
+            hex(&hmac_sha256(
+                &[0xaa; 131],
+                b"Test Using Larger Than Block-Size Key - Hash Key First"
+            )),
+            "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"
+        );
+    }
+
+    fn state_with(grants: &[(&str, &[&str])]) -> PluginState {
+        let mut s = PluginState::default();
+        for (id, list) in grants {
+            s.grants
+                .insert(id.to_string(), list.iter().map(|g| g.to_string()).collect());
+        }
+        s
+    }
+
+    #[test]
+    fn signed_grants_verify_and_tampering_is_dropped() {
+        let key = [7u8; 32];
+        let mut s = state_with(&[
+            ("clock", &["url:https://a.example"]),
+            ("pomo", &["launch:notepad"]),
+        ]);
+        s.grant_sigs = Some(sign_all_grants(&key, &s.grants));
+        let mut ok = s.clone();
+        assert_eq!(
+            apply_grant_integrity(&key, &mut ok, false),
+            GrantCheck::Verified
+        );
+        assert_eq!(ok.grants.len(), 2);
+
+        // Another process adds a grant by editing the JSON.
+        let mut edited = s.clone();
+        edited
+            .grants
+            .get_mut("clock")
+            .unwrap()
+            .push("url:https://evil.example".into());
+        assert_eq!(
+            apply_grant_integrity(&key, &mut edited, false),
+            GrantCheck::Stripped
+        );
+        assert!(!edited.grants.contains_key("clock"));
+        assert!(edited.grants.contains_key("pomo"));
+
+        // Grants copied to another plugin id don't verify either.
+        let mut moved = s.clone();
+        let g = moved.grants.remove("clock").unwrap();
+        moved.grants.insert("other".into(), g);
+        apply_grant_integrity(&key, &mut moved, false);
+        assert!(!moved.grants.contains_key("other"));
+
+        // A different key (another user / another PC) verifies nothing.
+        let mut other_key = s.clone();
+        assert_eq!(
+            apply_grant_integrity(&[9u8; 32], &mut other_key, false),
+            GrantCheck::Stripped
+        );
+        assert!(other_key.grants.is_empty());
+    }
+
+    #[test]
+    fn order_of_grants_does_not_matter() {
+        let key = [1u8; 32];
+        let a = sign_grants(&key, "p", &["b".into(), "a".into()]);
+        let b = sign_grants(&key, "p", &["a".into(), "b".into(), "a".into()]);
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn migration_only_when_allowed() {
+        let key = [3u8; 32];
+        let legacy = state_with(&[("clock", &["url:https://a.example"])]);
+        let mut first = legacy.clone();
+        assert_eq!(
+            apply_grant_integrity(&key, &mut first, true),
+            GrantCheck::Migrated
+        );
+        assert_eq!(first.grants.len(), 1);
+        assert!(first.grant_sigs.as_ref().unwrap().contains_key("clock"));
+        // Signatures stripped later (after the upgrade run) means "not granted".
+        let mut later = legacy.clone();
+        assert_eq!(
+            apply_grant_integrity(&key, &mut later, false),
+            GrantCheck::Stripped
+        );
+        assert!(later.grants.is_empty());
+    }
+
+    #[test]
+    fn plugin_frame_file_rules() {
+        let dir = std::env::temp_dir().join(format!("lens-frames-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let mut state = PluginState::default();
+        state.enabled.insert("clock".into(), true);
+        let doc =
+            r#"<meta http-equiv="Content-Security-Policy" content="default-src 'none'"><p>x</p>"#;
+        let p = write_plugin_frame_in(&dir, &state, "clock", doc).unwrap();
+        assert_eq!(fs::read_to_string(&p).unwrap(), doc);
+        assert!(p.starts_with(&dir));
+        assert!(write_plugin_frame_in(&dir, &state, "../evil", doc).is_err());
+        assert!(write_plugin_frame_in(&dir, &state, "pomo", doc).is_err()); // not enabled
+        assert!(write_plugin_frame_in(&dir, &state, "clock", "<p>no policy</p>").is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
 }

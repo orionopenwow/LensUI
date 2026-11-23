@@ -25,36 +25,42 @@ export interface ThemePack {
   folderTheme: string;
   frameStyle: string;
   controlStyle: string;
+  /** Dock layout this pack is designed around (see src/dock/styles.ts). Only applied when the user opts in. */
+  dockStyle?: string;
+  /** One of the six packs shown first in Control Center and the Setup Wizard. */
+  recommended?: boolean;
+  /** One-line, plain-language summary shown on the pack card. */
+  description?: string;
   /** Words the natural-language router matches ("catppuccin theme", "nord", ...). */
   aliases: string[];
 }
 
 export const THEME_PACKS: ThemePack[] = [
   // ---- Core ----
-  { id: "obsidian", label: "Obsidian", tier: "Core", accent: "#FAFAFA", accentMode: "custom", tint: 0, radius: 8, iconTheme: "obsidian-squircle", iconShape: "squircle", folderTheme: "obsidian", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", aliases: ["obsidian"] },
-  { id: "windows-mesh", label: "Windows Mesh", tier: "Core", base: "#0D1017", accent: "#2D7D9A", accentMode: "windows", tint: 0.16, radius: 8, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "accent", frameStyle: "accent-glow", controlStyle: "traffic-muted", aliases: ["mesh", "windows mesh"] },
-  { id: "graphite", label: "Graphite", tier: "Core", base: "#141417", accent: "#A1A1AA", accentMode: "custom", tint: 0, radius: 10, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "minimal", frameStyle: "obsidian-hairline", controlStyle: "minimal-dots", aliases: ["graphite", "stealth"] },
-  { id: "midnight", label: "Midnight", tier: "Core", base: "#050507", accent: "#60A5FA", accentMode: "custom", tint: 0, radius: 8, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "neon", frameStyle: "neon", controlStyle: "accent-pills", aliases: ["midnight"] },
+  { id: "obsidian", label: "Obsidian", tier: "Core", accent: "#FAFAFA", accentMode: "custom", tint: 0, radius: 8, iconTheme: "obsidian-squircle", iconShape: "squircle", folderTheme: "obsidian", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", dockStyle: "floating", recommended: true, description: "Matte black glass with crisp white chrome. The Lens default.", aliases: ["obsidian"] },
+  { id: "windows-mesh", label: "Windows Mesh", tier: "Core", base: "#0D1017", accent: "#2D7D9A", accentMode: "windows", tint: 0.16, radius: 8, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "accent", frameStyle: "accent-glow", controlStyle: "traffic-muted", dockStyle: "taskbar", recommended: true, description: "Follows your Windows accent colour, with a familiar full-width taskbar.", aliases: ["mesh", "windows mesh"] },
+  { id: "graphite", label: "Graphite", tier: "Core", base: "#18181C", accent: "#A1A1AA", accentMode: "custom", tint: 0, radius: 10, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "minimal", frameStyle: "none", controlStyle: "minimal-dots", dockStyle: "minimal", description: "Quiet grey, borderless windows and monochrome icons. Nothing shouts.", aliases: ["graphite", "stealth"] },
+  { id: "midnight", label: "Midnight", tier: "Core", base: "#050507", accent: "#818CF8", accentMode: "custom", tint: 0, radius: 8, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "accent-glow", controlStyle: "traffic-muted", dockStyle: "slim", description: "True-black surfaces with an indigo glow. Easy on OLED screens.", aliases: ["midnight"] },
 
   // ---- Linux Suite ----
-  { id: "catppuccin-mocha", label: "Catppuccin Mocha", tier: "Linux Suite", base: "#11111B", accent: "#CBA6F7", accentMode: "custom", tint: 0, radius: 12, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "violet", frameStyle: "accent-glow", controlStyle: "traffic-muted", aliases: ["catppuccin", "mocha"] },
-  { id: "tokyo-night", label: "Tokyo Night", tier: "Linux Suite", base: "#0F111A", accent: "#7AA2F7", accentMode: "custom", tint: 0, radius: 10, iconTheme: "obsidian-squircle", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "accent-glow", controlStyle: "traffic-classic", aliases: ["tokyo night", "tokyonight", "tokyo"] },
-  { id: "nord-frost", label: "Nord Frost", tier: "Linux Suite", base: "#1B2029", accent: "#88C0D0", accentMode: "custom", tint: 0, radius: 8, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "frost", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", aliases: ["nord"] },
-  { id: "dracula-glass", label: "Dracula Glass", tier: "Linux Suite", base: "#14151F", accent: "#BD93F9", accentMode: "custom", tint: 0, radius: 10, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "violet", frameStyle: "accent-glow", controlStyle: "traffic-classic", aliases: ["dracula"] },
-  { id: "gruvbox-warm", label: "Gruvbox Warm", tier: "Linux Suite", base: "#1D1A18", accent: "#FABD2F", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "amber", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", aliases: ["gruvbox"] },
-  { id: "kanagawa-wave", label: "Kanagawa Wave", tier: "Linux Suite", base: "#16161D", accent: "#7E9CD8", accentMode: "custom", tint: 0, radius: 10, iconTheme: "obsidian-squircle", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", aliases: ["kanagawa"] },
-  { id: "rose-pine", label: "Rosé Pine", tier: "Linux Suite", base: "#191724", accent: "#EBBCBA", accentMode: "custom", tint: 0, radius: 12, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "rose", frameStyle: "accent-glow", controlStyle: "traffic-muted", aliases: ["rose pine", "rosé pine", "rosepine"] },
-  { id: "everforest-dark", label: "Everforest", tier: "Linux Suite", base: "#1E2326", accent: "#A7C080", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "emerald", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", aliases: ["everforest"] },
-  { id: "hyprland-neon", label: "Hyprland Neon", tier: "Linux Suite", base: "#0A0C12", accent: "#38BDF8", accentMode: "custom", tint: 0, radius: 14, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "neon", frameStyle: "neon", controlStyle: "accent-pills", aliases: ["hyprland"] },
+  { id: "catppuccin-mocha", label: "Catppuccin Mocha", tier: "Linux Suite", base: "#1E1E2E", accent: "#CBA6F7", accentMode: "custom", tint: 0, radius: 12, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "violet", frameStyle: "accent-glow", controlStyle: "traffic-muted", dockStyle: "floating", recommended: true, description: "Soft pastel mauve on a cosy dark base. Rounded and friendly.", aliases: ["catppuccin", "mocha"] },
+  { id: "tokyo-night", label: "Tokyo Night", tier: "Linux Suite", base: "#1A1B26", accent: "#7AA2F7", accentMode: "custom", tint: 0, radius: 10, iconTheme: "obsidian-squircle", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "accent-glow", controlStyle: "traffic-classic", dockStyle: "split", recommended: true, description: "Deep navy with neon-city blue. Apps and folders sit in separate pills.", aliases: ["tokyo night", "tokyonight", "tokyo"] },
+  { id: "nord-frost", label: "Nord Frost", tier: "Linux Suite", base: "#2E3440", accent: "#88C0D0", accentMode: "custom", tint: 0, radius: 8, iconTheme: "frosted-glass", iconShape: "squircle", folderTheme: "frost", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", dockStyle: "slim", description: "Arctic slate grey with icy cyan. Lighter than most dark themes.", aliases: ["nord"] },
+  { id: "dracula-glass", label: "Dracula Glass", tier: "Linux Suite", base: "#282A36", accent: "#FF79C6", accentMode: "custom", tint: 0, radius: 10, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "rose", frameStyle: "accent-glow", controlStyle: "accent-pills", dockStyle: "floating", description: "Dracula's grey-violet base with hot-pink highlights and pill buttons.", aliases: ["dracula"] },
+  { id: "gruvbox-warm", label: "Gruvbox Warm", tier: "Linux Suite", base: "#282828", accent: "#FE8019", accentMode: "custom", tint: 0, radius: 6, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "ember", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", dockStyle: "taskbar", description: "Retro warm grey with orange. Squarer corners, taskbar layout.", aliases: ["gruvbox"] },
+  { id: "kanagawa-wave", label: "Kanagawa Wave", tier: "Linux Suite", base: "#1F1F28", accent: "#E46876", accentMode: "custom", tint: 0, radius: 10, iconTheme: "obsidian-squircle", iconShape: "rounded", folderTheme: "ember", frameStyle: "obsidian-hairline", controlStyle: "minimal-dots", dockStyle: "minimal", description: "Ink-wash dark with a muted wave red. Calm, low-contrast chrome.", aliases: ["kanagawa"] },
+  { id: "rose-pine", label: "Rosé Pine", tier: "Linux Suite", base: "#191724", accent: "#EBBCBA", accentMode: "custom", tint: 0, radius: 14, iconTheme: "frosted-glass", iconShape: "circle", folderTheme: "rose", frameStyle: "accent-glow", controlStyle: "traffic-muted", dockStyle: "floating", description: "Dusky purple with rose-gold accents and round icons.", aliases: ["rose pine", "rosé pine", "rosepine"] },
+  { id: "everforest-dark", label: "Everforest", tier: "Linux Suite", base: "#2D353B", accent: "#A7C080", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "emerald", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", dockStyle: "slim", description: "Forest green-grey with moss highlights. Relaxed and natural.", aliases: ["everforest"] },
+  { id: "hyprland-neon", label: "Hyprland Neon", tier: "Linux Suite", base: "#0A0C12", accent: "#33CCFF", accentMode: "custom", tint: 0, radius: 14, iconTheme: "accent-duotone", iconShape: "squircle", folderTheme: "neon", frameStyle: "neon", controlStyle: "accent-pills", dockStyle: "split", description: "Tiling-desktop look: glowing cyan borders and split dock pills.", aliases: ["hyprland"] },
 
   // ---- Studio ----
-  { id: "sequoia-frost", label: "Sequoia Frost", tier: "Studio", base: "#141519", accent: "#0A84FF", accentMode: "custom", tint: 0, radius: 14, iconTheme: "native", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", aliases: ["sequoia", "macos"] },
-  { id: "cyberpunk-amber", label: "Cyberpunk Amber", tier: "Studio", base: "#0D0B09", accent: "#F59E0B", accentMode: "custom", tint: 0, radius: 4, iconTheme: "obsidian-squircle", iconShape: "rounded", folderTheme: "ember", frameStyle: "neon", controlStyle: "accent-pills", aliases: ["cyberpunk"] },
-  { id: "solarized-matte", label: "Solarized Matte", tier: "Studio", base: "#07242B", accent: "#2AA198", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "frost", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", aliases: ["solarized"] },
+  { id: "sequoia-frost", label: "Sequoia Frost", tier: "Studio", base: "#1E1E20", accent: "#0A84FF", accentMode: "custom", tint: 0, radius: 14, iconTheme: "native", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", dockStyle: "floating", recommended: true, description: "Polished studio dark with system blue, full-colour icons and big corners.", aliases: ["sequoia", "macos"] },
+  { id: "cyberpunk-amber", label: "Cyberpunk Amber", tier: "Studio", base: "#0D0B09", accent: "#FCEE0A", accentMode: "custom", tint: 0, radius: 2, iconTheme: "obsidian-squircle", iconShape: "rounded", folderTheme: "amber", frameStyle: "neon", controlStyle: "accent-pills", dockStyle: "taskbar", description: "Hard edges, electric yellow glow and a sharp taskbar.", aliases: ["cyberpunk"] },
+  { id: "solarized-matte", label: "Solarized Matte", tier: "Studio", base: "#002B36", accent: "#2AA198", accentMode: "custom", tint: 0, radius: 8, iconTheme: "monochrome", iconShape: "rounded", folderTheme: "frost", frameStyle: "obsidian-hairline", controlStyle: "traffic-muted", dockStyle: "studio", description: "Classic teal-blue Solarized with a labelled studio dock.", aliases: ["solarized"] },
 
-  // ---- Light (first cut: surfaces and text are tokenized; a few accents are still tuned for dark) ----
-  { id: "alabaster-daylight", label: "Alabaster Daylight", tier: "Light", scheme: "light", base: "#F4F4F5", accent: "#18181B", accentMode: "custom", tint: 0, radius: 10, iconTheme: "native", iconShape: "squircle", folderTheme: "minimal", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", aliases: ["alabaster", "daylight", "light"] },
-  { id: "paper-minimal", label: "Paper Minimal", tier: "Light", scheme: "light", base: "#FAFAF9", accent: "#2563EB", accentMode: "custom", tint: 0, radius: 8, iconTheme: "native", iconShape: "borderless", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", aliases: ["paper"] },
+  // ---- Light ----
+  { id: "alabaster-daylight", label: "Alabaster Daylight", tier: "Light", scheme: "light", base: "#EEEEF0", accent: "#2563EB", accentMode: "custom", tint: 0, radius: 10, iconTheme: "native", iconShape: "squircle", folderTheme: "cobalt", frameStyle: "obsidian-hairline", controlStyle: "traffic-classic", dockStyle: "floating", recommended: true, description: "Clean cool-grey daylight with white cards and a clear blue accent.", aliases: ["alabaster", "daylight", "light"] },
+  { id: "paper-minimal", label: "Paper Minimal", tier: "Light", scheme: "light", base: "#F5F1E8", accent: "#C2410C", accentMode: "custom", tint: 0, radius: 6, iconTheme: "native", iconShape: "rounded", folderTheme: "ember", frameStyle: "none", controlStyle: "minimal-dots", dockStyle: "slim", description: "Warm paper white with terracotta ink. Borderless and bookish.", aliases: ["paper"] },
 ];
 
 /** Every folder icon style the native .ico generator (win_folders.rs) and the Dock know how to draw. */
@@ -235,10 +241,22 @@ export function packSwatch(pack: ThemePack): string {
   return `linear-gradient(135deg, ${base} 0%, ${base} 55%, ${pack.accent} 56%, ${pack.accent} 100%)`;
 }
 
+/** The six packs shown first in Control Center and the Setup Wizard, in display order. */
+export function recommendedPacks(): ThemePack[] {
+  return THEME_PACKS.filter((p) => p.recommended);
+}
+
+export interface ApplyPackOptions {
+  /** Also switch `config.dock.style` to the pack's own dock style. Off unless the user ticks
+   *  "Also change Dock style": a theme never rearranges someone's Dock behind their back. */
+  applyDockStyle?: boolean;
+}
+
 /** Returns a new config with every part of the pack applied together (surface, accent, icons, folders, window frame). */
-export function applyThemePack(config: LensConfig, packId: string): LensConfig {
+export function applyThemePack(config: LensConfig, packId: string, options: ApplyPackOptions = {}): LensConfig {
   const pack = packById(packId);
   if (!pack) return config;
+  const dockStyle = options.applyDockStyle && pack.dockStyle ? { style: pack.dockStyle } : {};
   return {
     ...config,
     theme: {
@@ -262,6 +280,7 @@ export function applyThemePack(config: LensConfig, packId: string): LensConfig {
     },
     dock: {
       ...config.dock,
+      ...dockStyle,
       pinnedFolders: config.dock.pinnedFolders.map((f) => ({ ...f, theme: pack.folderTheme })),
     },
   };

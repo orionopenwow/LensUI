@@ -283,6 +283,15 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
             (w, h, pos.x + size.width as i32 - w as i32, pos.y + bar_h)
         };
 
+        let (x, y) = if anchor == "bottom-dock" {
+            crate::app::integration::side_dock_flyout(
+                &cfg, scale, bar_h, bottom_edge, pal_w, pal_h,
+                win_monitors::FlyoutAlign::Center,
+            )
+            .unwrap_or((x, y))
+        } else {
+            (x, y)
+        };
         let _ = win.set_size(PhysicalSize::new(pal_w, pal_h));
         let _ = win.set_position(PhysicalPosition::new(x, y));
     }
@@ -367,6 +376,15 @@ pub(crate) fn open_quicksettings_tab_cmd(
                 (target_x, target_y)
             } else {
                 (pos.x + size.width as i32 - qs_w as i32, pos.y + bar_h)
+            };
+            let (x, y) = if anchor_mode == "bottom-right" {
+                crate::app::integration::side_dock_flyout(
+                    &cfg, scale, bar_h, bottom_edge, qs_w, qs_h,
+                    win_monitors::FlyoutAlign::End,
+                )
+                .unwrap_or((x, y))
+            } else {
+                (x, y)
             };
             let _ = qs.set_size(PhysicalSize::new(qs_w, qs_h));
             let _ = qs.set_position(PhysicalPosition::new(x, y));

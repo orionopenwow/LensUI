@@ -1,0 +1,143 @@
+# Lens UI release
+#  Push a tag like v0.2.0 -> builds the NSIS (.exe) and MSI installers on windows-latest, signs the
+#  updater artifacts with the TAURI_SIGNING_PRIVATE_KEY secret, writes latest.json for the in-app
+#  updater, and creates a DRAFT GitHub Release with everything attached. A human publishes it.
+#
+#  Required repository settings (see docs/RELEASING.md):
+#    secrets.TAURI_SIGNING_PRIVATE_KEY            contents of the minisign private key file
+#    secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD   its password (may be empty)
+#    vars.TAURI_UPDATER_PUBKEY                    contents of the matching .pub file
+#  The private key is never committed. Without these the job fails before building.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows-installers:
+    name: Windows installers
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Check signing configuration
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+        run: |
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw "Secret TAURI_SIGNING_PRIVATE_KEY is not set. See docs/RELEASING.md." }
+          if (-not $env:TAURI_UPDATER_PUBKEY) { throw "Variable TAURI_UPDATER_PUBKEY is not set. See docs/RELEASING.md." }
+          $conf = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          $want = $env:TAG.TrimStart('v')
+          if ($conf.version -ne $want) { throw "Tag $env:TAG does not match tauri.conf.json version $($conf.version)." }
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            src-tauri
+            src-tauri/lens-dwm-hook
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # Never ship the committed binary: rebuild the injected hook DLL from source.
+      - name: Rebuild lens_dwm_hook.dll from source
+        shell: pwsh
+        run: |
+          cargo build --release --manifest-path src-tauri/lens-dwm-hook/Cargo.toml
+          Copy-Item src-tauri/lens-dwm-hook/target/release/lens_dwm_hook.dll src-tauri/lens_dwm_hook.dll -Force
+
+      - name: Bundle the latest tester notes
+        shell: bash
+        run: |
+          git fetch --depth=1 origin research/daily || true
+          git show origin/research/daily:docs/tester/LATEST.json > docs/tester/LATEST.json 2>/dev/null || true
+          node tools/changelog/gen.mjs
+
+      # The public key and createUpdaterArtifacts are injected only here, so local builds without a
+      # key keep working. `tauri build` signs the updater bundles with TAURI_SIGNING_PRIVATE_KEY.
+      - name: Build NSIS + MSI (signed updater artifacts)
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+        run: |
+          $override = @{
+            bundle  = @{ createUpdaterArtifacts = $true }
+            plugins = @{ updater = @{ pubkey = $env:TAURI_UPDATER_PUBKEY } }
+          } | ConvertTo-Json -Depth 5 -Compress
+          Set-Content -Path release-override.json -Value $override -Encoding utf8NoBOM
+          bun run tauri build --bundles nsis,msi --config release-override.json
+
+      - name: Collect assets and write latest.json
+        shell: pwsh
+        run: |
+          $version = $env:TAG.TrimStart('v')
+          $bundle = "src-tauri/target/release/bundle"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          $nsis = Get-ChildItem "$bundle/nsis/*.exe" | Select-Object -First 1
+          $msi  = Get-ChildItem "$bundle/msi/*.msi"  | Select-Object -First 1
+          if (-not $nsis -or -not $msi) { throw "Installer missing (nsis=$nsis msi=$msi)." }
+          foreach ($f in @($nsis, $msi)) {
+            Copy-Item $f.FullName release/
+            if (-not (Test-Path "$($f.FullName).sig")) { throw "No updater signature for $($f.Name)." }
+            Copy-Item "$($f.FullName).sig" release/
+          }
+          # The updater installs the NSIS build (passive mode); the MSI is offered for IT deployment.
+          $sig = (Get-Content "$($nsis.FullName).sig" -Raw).Trim()
+          $name = [uri]::EscapeDataString($nsis.Name)
+          $notes = "See CHANGELOG.md for $env:TAG."
+          $latest = [ordered]@{
+            version   = $version
+            notes     = $notes
+            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = $sig
+                url       = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/$name"
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content -Path release/latest.json -Encoding utf8NoBOM
+          Get-FileHash release/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path $_.Path -Leaf)" } |
+            Set-Content -Path release/SHA256SUMS.txt -Encoding utf8NoBOM
+          Get-ChildItem release
+
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $existing = gh release view $env:TAG 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:TAG (Get-ChildItem release/*).FullName --clobber
+          } else {
+            gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --title "Lens UI $env:TAG" --notes "Draft. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn."
+          }

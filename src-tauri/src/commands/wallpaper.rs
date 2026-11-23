@@ -22,6 +22,9 @@ pub(crate) fn sync_wallpaper(app: &AppHandle) {
             if let Ok(raw) = win.hwnd() {
                 let r = win_wallpaper::attach_wallpaper_window(raw.0 as isize, rect);
                 eprintln!("[Lens Wallpaper] attach: {:?}", r);
+                if !r.attached {
+                    crate::tester::log("warn", "wallpaper", &format!("attach failed: {}", r.detail));
+                }
             }
             #[cfg(not(windows))]
             let _ = rect;
@@ -31,6 +34,7 @@ pub(crate) fn sync_wallpaper(app: &AppHandle) {
         let _ = win.hide();
     }
     let _ = app.emit("lens://wallpaper-changed", ());
+    crate::app::integration::sync_desktop_input(app, &state, false);
 }
 
 #[tauri::command]

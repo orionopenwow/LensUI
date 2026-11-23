@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lens</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <div id="dash"></div>
+  <main>
+    <h2 class="sec" id="answersHead" hidden>Answers</h2>
+    <section class="card" id="draft" hidden>
+      <div class="row"><span class="title">Ask about this</span><span class="badge local" id="draftBadge">Local</span></div>
+      <div class="chips" id="draftChips"></div>
+      <textarea id="question" placeholder="What do you want to know?" aria-label="Your question"></textarea>
+      <div class="row">
+        <label><input type="checkbox" id="preferLocal" checked /> Keep it on this PC (local model)</label>
+        <span style="flex:1"></span>
+        <button id="cancelDraft">Cancel</button>
+        <button class="primary" id="send">Ask</button>
+      </div>
+    </section>
+    <div id="answers"></div>
+    <p class="empty" id="empty">Right-click a page, selection, link, image or video and choose <b>Lens</b>.</p>
+  </main>
+  <script src="ui/dashboard.js"></script>
+  <script type="module" src="panel.js"></script>
+</body>
+</html>

@@ -5,7 +5,9 @@
 //!   2. Windows toasts from other apps, read through WinRT `UserNotificationListener`.
 //!      That API is only granted to some apps (it normally wants package identity and user
 //!      consent), so every entry point degrades to a status the UI can show. Nothing here panics.
-//!   3. A Do Not Disturb flag (in memory + persisted in the same file).
+//!   3. Do Not Disturb: a manual flag (in memory + persisted in the same file), plus an optional
+//!      schedule (`LensConfig.dndSchedule`, quiet hours that may cross midnight) and an optional
+//!      automatic mode while a fullscreen app, game or presentation is in front.
 
 use crate::config::config_dir;
 use serde::{Deserialize, Serialize};
@@ -78,15 +80,123 @@ impl WindowsToastResult {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationCenterState {
+    /// The manual switch.
     pub dnd: bool,
+    /// What actually applies right now (manual, schedule or fullscreen).
+    pub dnd_status: DndStatus,
     /// Lens history, newest first.
     pub items: Vec<NotificationItem>,
     pub windows: WindowsToastResult,
 }
 
+/// One quiet-hours range. Minutes after local midnight; `end < start` crosses midnight and the
+/// part after midnight belongs to the day it started on. `start == end` means the whole day.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DndRange {
+    pub start_min: u32,
+    pub end_min: u32,
+    /// 0 = Sunday … 6 = Saturday.
+    pub days: Vec<u8>,
+}
+
+fn default_ranges() -> Vec<DndRange> {
+    vec![DndRange { start_min: 22 * 60, end_min: 7 * 60, days: (0..7).collect() }]
+}
+
+/// `LensConfig.dndSchedule`. Everything off by default.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DndSchedule {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_ranges")]
+    pub ranges: Vec<DndRange>,
+    /// Quiet while a fullscreen app, game or presentation is in front.
+    #[serde(default)]
+    pub auto_fullscreen: bool,
+}
+
+impl Default for DndSchedule {
+    fn default() -> Self {
+        Self { enabled: false, ranges: default_ranges(), auto_fullscreen: false }
+    }
+}
+
+/// Why pop-ups are paused right now.
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DndStatus {
+    pub active: bool,
+    pub manual: bool,
+    pub scheduled: bool,
+    pub fullscreen: bool,
+    /// "" | "manual" | "schedule" | "fullscreen"
+    pub reason: String,
+    /// Minutes after local midnight when the current scheduled range ends (if scheduled).
+    pub until_min: Option<u32>,
+}
+
 // ---------------------------------------------------------------------------------------------
 // Pure helpers (unit-tested)
 // ---------------------------------------------------------------------------------------------
+
+pub fn sanitize_dnd_schedule(mut s: DndSchedule) -> DndSchedule {
+    s.ranges.truncate(8);
+    for r in &mut s.ranges {
+        r.start_min = r.start_min.min(24 * 60 - 1);
+        r.end_min = r.end_min.min(24 * 60 - 1);
+        r.days.retain(|d| *d < 7);
+        r.days.sort_unstable();
+        r.days.dedup();
+    }
+    s
+}
+
+/// Is this range in effect on `weekday` (0 = Sunday) at `minute` after local midnight?
+pub fn range_active(r: &DndRange, weekday: u8, minute: u32) -> bool {
+    let on = |d: u8| r.days.contains(&d);
+    let prev = (weekday + 6) % 7;
+    if r.start_min == r.end_min {
+        on(weekday)
+    } else if r.start_min < r.end_min {
+        on(weekday) && minute >= r.start_min && minute < r.end_min
+    } else {
+        (on(weekday) && minute >= r.start_min) || (on(prev) && minute < r.end_min)
+    }
+}
+
+/// End minute of the first scheduled range active now, or None.
+pub fn schedule_active(s: &DndSchedule, weekday: u8, minute: u32) -> Option<u32> {
+    if !s.enabled {
+        return None;
+    }
+    s.ranges
+        .iter()
+        .find(|r| range_active(r, weekday, minute))
+        .map(|r| r.end_min)
+}
+
+pub fn combine_dnd(manual: bool, scheduled_until: Option<u32>, fullscreen: bool) -> DndStatus {
+    let scheduled = scheduled_until.is_some();
+    let reason = if manual {
+        "manual"
+    } else if scheduled {
+        "schedule"
+    } else if fullscreen {
+        "fullscreen"
+    } else {
+        ""
+    };
+    DndStatus {
+        active: manual || scheduled || fullscreen,
+        manual,
+        scheduled,
+        fullscreen,
+        reason: reason.into(),
+        until_min: scheduled_until,
+    }
+}
 
 fn truncate_chars(text: &str, max: usize) -> String {
     let trimmed = text.trim();
@@ -256,6 +366,58 @@ pub fn is_dnd() -> bool {
     store().dnd
 }
 
+static SCHEDULE: OnceLock<Mutex<DndSchedule>> = OnceLock::new();
+
+fn schedule_slot() -> &'static Mutex<DndSchedule> {
+    SCHEDULE.get_or_init(|| Mutex::new(DndSchedule::default()))
+}
+
+pub fn set_dnd_schedule(s: DndSchedule) {
+    *schedule_slot().lock().unwrap_or_else(|e| e.into_inner()) = sanitize_dnd_schedule(s);
+}
+
+/// (weekday 0 = Sunday, minutes after midnight) in local time.
+#[cfg(windows)]
+fn local_weekday_minute() -> (u8, u32) {
+    #[repr(C)]
+    #[derive(Default)]
+    #[allow(dead_code)]
+    struct LocalTime {
+        year: u16,
+        month: u16,
+        day_of_week: u16,
+        day: u16,
+        hour: u16,
+        minute: u16,
+        second: u16,
+        ms: u16,
+    }
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetLocalTime(st: *mut LocalTime);
+    }
+    let mut t = LocalTime::default();
+    unsafe { GetLocalTime(&mut t) };
+    ((t.day_of_week % 7) as u8, t.hour as u32 * 60 + t.minute as u32)
+}
+
+#[cfg(not(windows))]
+fn local_weekday_minute() -> (u8, u32) {
+    let secs = now_unix_ms() / 1000;
+    // UTC is good enough off Windows (tests and portability builds only). 1970-01-01 was a Thursday.
+    (((secs / 86_400 + 4) % 7) as u8, ((secs % 86_400) / 60) as u32)
+}
+
+/// Manual switch, schedule and fullscreen combined.
+pub fn dnd_status() -> DndStatus {
+    let manual = is_dnd();
+    let sched = schedule_slot().lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let (wd, min) = local_weekday_minute();
+    let until = schedule_active(&sched, wd, min);
+    let fullscreen = sched.auto_fullscreen && !manual && until.is_none() && crate::win_hotcorners::user_is_busy();
+    combine_dnd(manual, until, fullscreen)
+}
+
 pub fn set_dnd(enabled: bool) {
     let mut guard = store();
     if guard.dnd != enabled {
@@ -267,7 +429,7 @@ pub fn set_dnd(enabled: bool) {
 /// Should a notification of this category pop up on screen right now?
 /// (It is always recorded in the history either way.)
 pub fn should_show_popup(category: &str) -> bool {
-    popup_allowed(is_dnd(), category)
+    popup_allowed(dnd_status().active, category)
 }
 
 /// One call for the pane: Do Not Disturb, Lens history and Windows toasts.
@@ -275,6 +437,7 @@ pub fn should_show_popup(category: &str) -> bool {
 pub fn notification_center_state() -> NotificationCenterState {
     NotificationCenterState {
         dnd: is_dnd(),
+        dnd_status: dnd_status(),
         items: list_notification_history(),
         windows: fetch_windows_toasts(),
     }

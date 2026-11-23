@@ -52,6 +52,30 @@ export interface DockConfig {
   separatorsAfter?: string[];
   /** Live window thumbnails in the Dock hover card. */
   livePreviews?: boolean;
+  /** Dock shape (see src/dock/styles.ts). Missing = "floating". */
+  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | string;
+  /** Taskbar icon alignment. Missing = "center". */
+  alignment?: "center" | "left" | string;
+  /** Where the clock and system icons live. Missing = "auto". */
+  systemArea?: "auto" | "dock" | "topbar" | string;
+  /** Hover magnification. Missing = "off" (today's gentle hover). */
+  magnification?: "off" | "subtle" | "classic" | string;
+  /** Neighbouring icons each side that magnification reaches (1-4). Missing = 2. */
+  magnificationRange?: number;
+  /** Launch animation. Missing = "lift". */
+  launchAnimation?: "none" | "lift" | "bounce" | "jelly" | string;
+  /** Pulse an app icon when its window is minimised or restored. */
+  minimizeFeedback?: boolean;
+  /** Icon size per Dock style id. */
+  iconSizes?: Record<string, number>;
+  /** App names beside (bars) or under (centred Docks) app icons. */
+  showLabels?: boolean;
+  /** Drop files on a Dock app to open them with it. */
+  fileDropOpen?: boolean;
+  /** Mouse wheel over an app icon cycles its windows. */
+  scrollCyclesWindows?: boolean;
+  /** Suggest apps you usually open now (local predictor, no AI model). Off by default. */
+  suggestedApps?: boolean;
 }
 
 export interface FuncConfig {
@@ -75,6 +99,12 @@ export interface FuncConfig {
   targetMonitor?: string;
   /** Build rarely used windows on first open (takes effect after restart). */
   lazyWindows?: boolean;
+  /** Tap the Win key to open the Lens Launcher. Off by default. */
+  winKeyLauncher?: boolean;
+  /** Alt+Tab opens Lens Overview. Off by default. */
+  altTabOverview?: boolean;
+  /** One Top Bar per monitor (applies after restart). Off by default. */
+  perMonitorBars?: boolean;
 }
 
 export interface WindowControlsConfig {
@@ -148,9 +178,22 @@ export interface LensConfig {
   desktopGroups?: unknown;
   configVersion?: number;
   mcp?: import("../components/McpCard").McpConfig;
+  /** Lens Intelligence settings (off by default). Keys are never part of the config. */
+  ai?: import("../ai/contract").AiConfig;
+  hotCorners?: import("../types/generated").HotCornersConfig;
+  altDrag?: import("../types/generated").AltDragConfig;
+  appSummon?: import("../types/generated").AppSummonConfig;
+  dndSchedule?: import("../types/generated").DndSchedule;
+  /** Lens Command, Mini and the Edge Shelf (off by default; see src/command/settings.ts). */
+  command?: Partial<import("../command/settings").CommandSettings>;
+  /** Tester mode: TEST BUILD badge and Ctrl+Alt+M to mark a moment in the log. */
+  tester?: { enabled: boolean };
 }
 
-export type WindowsThemeInfo = Gen.WindowsThemeInfo;
+/** OS fields are optional on the frontend: older backends and the initial state omit them. */
+export type WindowsThemeInfo = Omit<Gen.WindowsThemeInfo, "osFamily" | "windowsBuild" | "osFeatures"> &
+  Partial<Pick<Gen.WindowsThemeInfo, "osFamily" | "windowsBuild" | "osFeatures">>;
+export type OsFeatures = Gen.OsFeatures;
 
 export interface RunningWindow {
   hwnd: number;

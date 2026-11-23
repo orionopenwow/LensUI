@@ -3,11 +3,24 @@ import { ClipboardPane } from "../components/ClipboardPane";
 import { PluginSlot } from "../components/PluginSlot";
 import { invoke } from "@tauri-apps/api/core";
 import { Cpu, HardDrive, Clock, StickyNote, X, Layers, FolderOpen, Terminal, SlidersHorizontal } from "lucide-react";
-import { useLensState, useSurfaceGlide } from "../hooks/useLensState";
+import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
+import { WindowGroups } from "../dock/ai/WindowGroups";
+import { AskPanel } from "../ai/AskPanel";
+import { aiStatus, type AiContext, type AiStatus } from "../ai/surfaceApi";
+import "../dock/ai/aiDock.css";
 import type { SystemTelemetry } from "../types/lens";
 
 export const WidgetDrawerSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
+  // "What was I doing?" (docs/AI_SURFACES.md §3d): only while Lens Intelligence is on.
+  const aiOn = !!config?.ai?.enabled;
+  const runningWindows = useRunningWindows();
+  const [aiInfo, setAiInfo] = useState<AiStatus | null>(null);
+  const [groupAsk, setGroupAsk] = useState<{ prompt: string; context: AiContext } | null>(null);
+  useEffect(() => {
+    if (!aiOn) return;
+    aiStatus().then(setAiInfo).catch(() => setAiInfo(null));
+  }, [aiOn]);
   const glidePhase = useSurfaceGlide("widgets");
   const [telemetry, setTelemetry] = useState<SystemTelemetry | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -270,6 +283,28 @@ export const WidgetDrawerSurface: React.FC = () => {
               }}
             >
               <ClipboardPane compact />
+            </section>
+          )}
+
+          {aiOn && aiInfo && (
+            <section className="widget-ai-groups">
+              <WindowGroups
+                windows={runningWindows}
+                provider={aiInfo.providers.find((p) => p.id === aiInfo.active) ?? null}
+                privacy={aiInfo.privacy}
+                onFocusWindow={(hwnd) => invoke("focus_window_cmd", { hwnd }).catch(() => {})}
+                onAsk={(prompt, context) => setGroupAsk({ prompt, context })}
+              />
+              {groupAsk && (
+                <AskPanel
+                  key={groupAsk.prompt}
+                  initialPrompt={groupAsk.prompt}
+                  initialContext={groupAsk.context}
+                  autoSend
+                  compact
+                  onClose={() => setGroupAsk(null)}
+                />
+              )}
             </section>
           )}
 

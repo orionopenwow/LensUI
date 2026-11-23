@@ -183,6 +183,137 @@ pub fn pick_monitor(
 }
 
 // ---------------------------------------------------------------------------------------------
+// UI scale (pure). `theme.uiScale` (80–130 %) multiplies every logical size Lens sets, and the
+// frontend sets the same factor as the webview zoom, so each page still sees the CSS viewport it
+// was designed for — just drawn larger or smaller.
+// ---------------------------------------------------------------------------------------------
+
+/// `theme.uiScale` percent → factor, clamped to the range the settings offer.
+pub fn ui_scale_factor(ui_scale_percent: u32) -> f64 {
+    let p = if ui_scale_percent == 0 {
+        100
+    } else {
+        ui_scale_percent
+    };
+    (p.clamp(80, 130) as f64) / 100.0
+}
+
+/// Physical px per logical px for a Lens surface: monitor DPI scale × UI scale.
+pub fn effective_scale(monitor_scale: f64, ui_scale_percent: u32) -> f64 {
+    let ms = if monitor_scale.is_finite() && monitor_scale > 0.0 {
+        monitor_scale
+    } else {
+        1.0
+    };
+    ms * ui_scale_factor(ui_scale_percent)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Flyouts attached to a Dock on any edge (pure).
+// ---------------------------------------------------------------------------------------------
+
+/// Where along the Dock a flyout sits.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FlyoutAlign {
+    /// Centred on the Dock (Control Center, Dock search panel).
+    Center,
+    /// At the far end of the Dock: bottom for side Docks, right for top/bottom (Quick Settings).
+    End,
+}
+
+/// Geometry of the Dock as it sits on screen, physical px.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DockStrip {
+    /// "bottom" | "top" | "left" | "right" (anything else = bottom).
+    pub edge: &'static str,
+    /// Visible pill thickness across the Dock (height for top/bottom, width for left/right).
+    pub thickness: i32,
+    /// Gap between the screen edge and the pill.
+    pub margin: i32,
+    /// Top of the usable area (below the Top Bar).
+    pub top_inset: i32,
+    /// Bottom of the usable area (screen bottom or work-area bottom).
+    pub bottom_edge: i32,
+}
+
+/// Rectangle for a `w`×`h` flyout attached flush (1 px overlap, so no seam) to the inner side of
+/// the Dock, clamped to the monitor. For `edge == "bottom"` callers keep their existing math; this
+/// function still returns the equivalent rectangle so it can be unit-tested against it.
+pub fn flyout_beside_dock(
+    m: &MonitorInfo,
+    dock: &DockStrip,
+    w: u32,
+    h: u32,
+    align: FlyoutAlign,
+) -> SurfaceRect {
+    let left = m.x;
+    let right = m.x + m.width as i32;
+    let top = dock.top_inset.max(m.y);
+    let bottom = dock.bottom_edge.min(m.y + m.height as i32);
+    let avail_h = (bottom - top).max(1) as u32;
+    let avail_w = m.width;
+    match dock.edge {
+        "left" | "right" => {
+            let max_w = (avail_w as i32 - dock.margin - dock.thickness).max(1) as u32;
+            let w = w.min(max_w);
+            let h = h.min(avail_h);
+            let x = if dock.edge == "left" {
+                left + dock.margin + dock.thickness - 1
+            } else {
+                right - dock.margin - dock.thickness - w as i32 + 1
+            };
+            let y = match align {
+                FlyoutAlign::Center => top + (avail_h as i32 - h as i32) / 2,
+                FlyoutAlign::End => bottom - h as i32,
+            };
+            SurfaceRect { x, y, w, h }
+        }
+        "top" => {
+            let h = h.min((avail_h as i32 - dock.margin - dock.thickness).max(1) as u32);
+            let w = w.min(avail_w);
+            let y = top + dock.margin + dock.thickness - 1;
+            let x = match align {
+                FlyoutAlign::Center => left + (avail_w as i32 - w as i32) / 2,
+                FlyoutAlign::End => right - w as i32,
+            };
+            SurfaceRect { x, y, w, h }
+        }
+        _ => {
+            let h = h.min((avail_h as i32 - dock.margin - dock.thickness).max(1) as u32);
+            let w = w.min(avail_w);
+            let y = (bottom - dock.margin - dock.thickness - h as i32 + 1).max(top);
+            let x = match align {
+                FlyoutAlign::Center => left + (avail_w as i32 - w as i32) / 2,
+                FlyoutAlign::End => right - w as i32,
+            };
+            SurfaceRect { x, y, w, h }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// One Top Bar per monitor (pure planning; behind func.perMonitorBars, default off).
+// ---------------------------------------------------------------------------------------------
+
+/// Window label for the Top Bar on monitor `index` in `list_monitors()` order. The bar on the
+/// primary/target monitor keeps the original "topbar" label so nothing else has to change.
+pub fn topbar_label(monitors: &[MonitorInfo], index: usize, target: usize) -> String {
+    if index == target || monitors.is_empty() {
+        "topbar".to_string()
+    } else {
+        format!("topbar-{}", index)
+    }
+}
+
+/// Labels of every extra Top Bar window that should exist (all monitors except the target).
+pub fn extra_topbar_labels(monitors: &[MonitorInfo], target: usize) -> Vec<String> {
+    (0..monitors.len())
+        .filter(|&i| i != target)
+        .map(|i| topbar_label(monitors, i, target))
+        .collect()
+}
+
+// ---------------------------------------------------------------------------------------------
 // Watcher pacing (pure). See docs/CORE_PATCH_PLAN.md, patch W2.
 // ---------------------------------------------------------------------------------------------
 
@@ -376,3 +507,126 @@ pub fn target_monitor(preference: &str) -> Option<MonitorInfo> {
 #[cfg(test)]
 #[path = "tests/win_monitors.rs"]
 mod tests;
+
+#[cfg(test)]
+mod shell_keys_tests {
+    use super::*;
+
+    fn mon(x: i32, y: i32, w: u32, h: u32, primary: bool) -> MonitorInfo {
+        MonitorInfo {
+            id: format!("\\\\.\\DISPLAY{}", x),
+            name: String::new(),
+            x,
+            y,
+            width: w,
+            height: h,
+            work_x: x,
+            work_y: y,
+            work_width: w,
+            work_height: h - 48,
+            scale: 1.0,
+            primary,
+        }
+    }
+
+    #[test]
+    fn ui_scale_is_clamped() {
+        assert_eq!(ui_scale_factor(100), 1.0);
+        assert_eq!(ui_scale_factor(0), 1.0);
+        assert_eq!(ui_scale_factor(92), 0.92);
+        assert_eq!(ui_scale_factor(115), 1.15);
+        assert_eq!(ui_scale_factor(50), 0.8);
+        assert_eq!(ui_scale_factor(400), 1.3);
+        assert!((effective_scale(1.5, 115) - 1.725).abs() < 1e-9);
+        assert_eq!(effective_scale(f64::NAN, 100), 1.0);
+    }
+
+    #[test]
+    fn side_flyouts_attach_flush_to_the_dock() {
+        let m = mon(0, 0, 1920, 1080, true);
+        let dock = DockStrip {
+            edge: "left",
+            thickness: 64,
+            margin: 0,
+            top_inset: 34,
+            bottom_edge: 1080,
+        };
+        let r = flyout_beside_dock(&m, &dock, 720, 560, FlyoutAlign::Center);
+        assert_eq!(r.x, 63, "1 px overlap with the pill");
+        assert_eq!(r.y, 34 + (1046 - 560) / 2);
+        let r = flyout_beside_dock(&m, &dock, 404, 580, FlyoutAlign::End);
+        assert_eq!(r.y + r.h as i32, 1080);
+
+        let dock = DockStrip {
+            edge: "right",
+            thickness: 64,
+            margin: 6,
+            top_inset: 34,
+            bottom_edge: 1080,
+        };
+        let r = flyout_beside_dock(&m, &dock, 720, 560, FlyoutAlign::Center);
+        assert_eq!(r.x + r.w as i32, 1920 - 6 - 64 + 1);
+
+        let dock = DockStrip {
+            edge: "top",
+            thickness: 59,
+            margin: 0,
+            top_inset: 34,
+            bottom_edge: 1080,
+        };
+        let r = flyout_beside_dock(&m, &dock, 720, 560, FlyoutAlign::Center);
+        assert_eq!(r.y, 34 + 59 - 1);
+        assert_eq!(r.x, (1920 - 720) / 2);
+        let r = flyout_beside_dock(&m, &dock, 404, 580, FlyoutAlign::End);
+        assert_eq!(r.x + r.w as i32, 1920);
+    }
+
+    #[test]
+    fn bottom_flyout_matches_the_existing_formula() {
+        // lib.rs: y = bottom_edge - dock_pill_h - margin_bottom - target_h + 1, centred x.
+        let m = mon(0, 0, 2560, 1440, true);
+        for (thick, margin, h) in [(59, 0, 640), (66, 10, 500), (59, 0, 1400)] {
+            let dock = DockStrip {
+                edge: "bottom",
+                thickness: thick,
+                margin,
+                top_inset: 34,
+                bottom_edge: 1440,
+            };
+            let r = flyout_beside_dock(&m, &dock, 800, h, FlyoutAlign::Center);
+            let expect_h = (h as i32).min(1440 - 34 - margin - thick) as u32;
+            assert_eq!(r.h, expect_h);
+            assert_eq!(r.y, (1440 - thick - margin - expect_h as i32 + 1).max(34));
+            assert_eq!(r.x, (2560 - 800) / 2);
+        }
+    }
+
+    #[test]
+    fn flyouts_stay_on_secondary_monitors_and_are_clamped() {
+        let m = mon(-1920, 0, 1920, 1080, false);
+        let dock = DockStrip {
+            edge: "left",
+            thickness: 60,
+            margin: 0,
+            top_inset: 34,
+            bottom_edge: 1080,
+        };
+        let r = flyout_beside_dock(&m, &dock, 4000, 4000, FlyoutAlign::Center);
+        assert!(r.x >= -1920 && r.x + r.w as i32 <= 0);
+        assert!(r.y >= 34 && r.y + r.h as i32 <= 1080);
+    }
+
+    #[test]
+    fn per_monitor_bar_labels() {
+        let ms = vec![
+            mon(0, 0, 1920, 1080, true),
+            mon(1920, 0, 2560, 1440, false),
+            mon(-1280, 0, 1280, 1024, false),
+        ];
+        assert_eq!(topbar_label(&ms, 0, 0), "topbar");
+        assert_eq!(topbar_label(&ms, 1, 0), "topbar-1");
+        assert_eq!(extra_topbar_labels(&ms, 0), vec!["topbar-1", "topbar-2"]);
+        assert_eq!(extra_topbar_labels(&ms, 1), vec!["topbar-0", "topbar-2"]);
+        assert!(extra_topbar_labels(&ms[..1], 0).is_empty());
+    }
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Lens UI",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.lens.ui",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -183,24 +183,156 @@
         "shadow": false,
         "visible": false,
         "focus": false
+      },
+      {
+        "label": "cursorfx",
+        "title": "Lens Pointer Effects",
+        "url": "index.html?surface=cursorfx",
+        "width": 1920,
+        "height": 1080,
+        "x": 0,
+        "y": 0,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "command",
+        "title": "Lens Command",
+        "url": "index.html?surface=command",
+        "width": 1000,
+        "height": 640,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "create": false
+      },
+      {
+        "label": "edgeshelf",
+        "title": "Lens Shelf",
+        "url": "index.html?surface=edgeshelf",
+        "width": 6,
+        "height": 96,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
+      },
+      {
+        "label": "bubble",
+        "title": "Lens Selection",
+        "url": "index.html?surface=bubble",
+        "width": 32,
+        "height": 32,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
+      },
+      {
+        "label": "testerhub",
+        "title": "Lens Tester Hub",
+        "url": "index.html?surface=testerhub",
+        "width": 760,
+        "height": 860,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "skipTaskbar": false,
+        "resizable": true,
+        "shadow": false,
+        "visible": false,
+        "create": false
       }
     ],
     "security": {
-      "csp": null,
+      "csp": {
+        "default-src": "'self' ipc: http://ipc.localhost",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' asset: http://asset.localhost data: blob:",
+        "media-src": "'self' asset: http://asset.localhost blob:",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*",
+        "frame-src": "'self' asset: http://asset.localhost https://discord.com https://web.telegram.org https://www.messenger.com https://messages.google.com https://web.whatsapp.com https://app.slack.com http://localhost:* http://127.0.0.1:*",
+        "worker-src": "'none'",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "form-action": "'none'"
+      },
       "assetProtocol": {
         "enable": true,
         "scope": [
+          "$DATA/LensUI/plugin-frames/**",
           "$DATA/LensUI/wallpapers/**"
         ]
-      }
+      },
+      "devCsp": {
+        "default-src": "'self' ipc: http://ipc.localhost",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' asset: http://asset.localhost data: blob:",
+        "media-src": "'self' asset: http://asset.localhost blob:",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* ws://localhost:1420 ws://127.0.0.1:1420",
+        "frame-src": "'self' asset: http://asset.localhost https://discord.com https://web.telegram.org https://www.messenger.com https://messages.google.com https://web.whatsapp.com https://app.slack.com http://localhost:* http://127.0.0.1:*",
+        "worker-src": "'none'",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "form-action": "'none'"
+      },
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
       "icons/icon.png",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "Lens UI contributors",
+    "copyright": "MIT © 2026 Lens UI contributors",
+    "shortDescription": "Calm, themeable desktop shell for Windows 10 and 11",
+    "homepage": "https://orionopenwow.github.io/lensui/"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/orionopenwow/lensui/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

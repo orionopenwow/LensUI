@@ -45,6 +45,13 @@ unsafe extern "system" fn window_event_cb(
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }
+    // Window styling 2.0 (focus dimming, overlay border) follows every focus change, including
+    // focus moving to the desktop or a tool window, so it sees events before the filter below.
+    // When focus moves on, the previous window is restyled so per-app inactive opacity and the
+    // native active-border colour switch over.
+    if let Some(prev) = crate::win_focus_dim::notify_window_event(event, hwnd.0 as isize) {
+        crate::win_dwm_engine::apply_opacity_to_hwnd(HWND(prev as *mut _));
+    }
     // A destroyed window can no longer be inspected, so always treat it as a change.
     if event != EVENT_OBJECT_DESTROY {
         // Top-level application windows only: skip child controls, tooltips, menus and overlays.
@@ -77,6 +84,8 @@ where
     if TRACKER_STARTED.swap(true, Ordering::SeqCst) {
         return;
     }
+    // Starts the focus-dim / border overlay thread only if those options are switched on.
+    crate::win_focus_dim::init();
 
     // Hook thread: owns the hooks and the message loop they are delivered on.
     thread::spawn(|| unsafe {

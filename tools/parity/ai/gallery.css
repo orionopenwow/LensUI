@@ -1,0 +1,64 @@
+/* Gallery-only scaffolding: a backdrop and a stand-in Dock pill. */
+html,
+body {
+  margin: 0;
+  background: color-mix(in srgb, var(--lens-pack-base, #08080b) 80%, #444 20%);
+}
+#root {
+  background: color-mix(in srgb, var(--lens-pack-base, #08080b) 82%, #777 18%);
+  padding: 24px;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+.g-panel {
+  width: 560px;
+  height: 520px;
+}
+.g-panel.g-short {
+  height: auto;
+}
+.g-card {
+  width: 640px;
+  font-size: 13px;
+  color: var(--lens-fg);
+  background: var(--lens-bg-surface);
+  padding: 16px;
+  border-radius: 14px;
+}
+.g-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.g-dock-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  translate: -50% 0;
+}
+.g-dock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 9px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  background: var(--lens-bg-base);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-dock);
+}
+.g-dock-icons {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  align-items: center;
+}
+.g-icon {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  opacity: 0.9;
+}
