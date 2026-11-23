@@ -31,7 +31,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
 
   useEffect(() => {
     invoke<MonitorInfo[]>("list_monitors_cmd")
-      .then(setMonitors)
+      .then((m) => setMonitors(Array.isArray(m) ? m : []))
       .catch(() => setMonitors([]));
   }, []);
 

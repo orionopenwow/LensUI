@@ -16,6 +16,10 @@ import {
   type DndSchedule,
   type DndStatus,
 } from "../utils/productivity";
+import { useLensState } from "../hooks/useLensState";
+import { AskPanel } from "../ai/AskPanel";
+import { notificationDigest } from "../ai/actions";
+import type { AiContext } from "../ai/surfaceApi";
 import "./NotificationCenterPane.css";
 
 /** Mirrors `NotificationItem` in src-tauri/src/win_notifications.rs. */
@@ -212,6 +216,10 @@ export const NotificationCenterPane: React.FC = () => {
     [state, windowsOk, windowsInfo]
   );
   const total = groups.reduce((n, g) => n + g.items.length, 0);
+  // "Summarise" (only while Lens Intelligence is on; docs/AI_SURFACES.md §5).
+  const { config: lensConfig } = useLensState();
+  const aiOn = !!lensConfig?.ai?.enabled;
+  const [digest, setDigest] = useState<{ prompt: string; context: AiContext } | null>(null);
 
   const toggleDnd = () => {
     const next = !dnd;
@@ -468,10 +476,36 @@ export const NotificationCenterPane: React.FC = () => {
         <div className="qs-section-label">
           Notifications{total > 0 ? ` · ${total}` : ""}
         </div>
+        {aiOn && total > 2 && (
+          <button
+            type="button"
+            className="nc-ghost-btn ai-chipbtn"
+            onClick={() =>
+              setDigest(
+                notificationDigest(
+                  groups.flatMap((g) => g.items).map((n) => ({ appName: n.appName, title: n.title, body: n.body, time: n.tsMs }))
+                )
+              )
+            }
+          >
+            <Sparkles size={12} /> Summarise
+          </button>
+        )}
         <button type="button" className="nc-ghost-btn" disabled={total === 0} onClick={clearAll}>
           Clear all
         </button>
       </div>
+
+      {digest && (
+        <AskPanel
+          key={digest.prompt}
+          initialPrompt={digest.prompt}
+          initialContext={digest.context}
+          autoSend
+          compact
+          onClose={() => setDigest(null)}
+        />
+      )}
 
       {state && total === 0 && (
         <div className="nc-empty">

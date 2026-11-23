@@ -64,6 +64,48 @@ const wsStatus = () =>
     : { enabled: false, active: "1", workspaces: [] };
 config.dndSchedule = { enabled: true, ranges: [{ startMin: 1320, endMin: 420, days: [0, 1, 2, 3, 4, 5, 6] }, { startMin: 540, endMin: 720, days: [1, 2, 3, 4, 5] }], autoFullscreen: true };
 const handlers: Record<string, (a: any) => any> = {
+  // Wave 4–6 cards (integration): enough realistic data for every Control Center tab.
+  list_monitors_cmd: () => [
+    { id: "\\\\.\\DISPLAY1", name: "DELL U2723QE", x: 0, y: 0, width: 2560, height: 1440, workX: 0, workY: 0, workWidth: 2560, workHeight: 1392, scale: 1.5, primary: true },
+    { id: "\\\\.\\DISPLAY2", name: "LG 27GL850", x: 2560, y: 0, width: 2560, height: 1440, workX: 2560, workY: 0, workWidth: 2560, workHeight: 1440, scale: 1, primary: false },
+  ],
+  get_keyhook_status_cmd: () => ({ winLauncher: false, altTab: false, active: false, suspended: false, pausedForFullscreen: false, lastProblem: "" }),
+  get_ui_scale_support_cmd: () => false,
+  get_update_settings_cmd: () => ({ mode: "notify", lastCheckMs: Date.now() - 3600_000 }),
+  list_crash_reports_cmd: () => [],
+  ai_status: () => ({
+    providers: [
+      { id: "script", kind: "script", label: "Offline helper", available: true, model: "", is_local: true, needs_key: false, has_key: false },
+      { id: "local", kind: "local", label: "Ollama", available: true, model: "llama3.2:3b", is_local: true, needs_key: false, has_key: false },
+      { id: "claude", kind: "claude", label: "Claude", available: true, model: "claude-sonnet-5-5", is_local: false, needs_key: true, has_key: false },
+    ],
+    active: "off",
+    privacy: "local_only",
+  }),
+  ai_usage_log: () => [],
+  clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
+  clip_list: () => [],
+  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),
+  command_templates: () => ({ templates: [], error: null, path: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\commands.json" }),
+  shelves_list: () => [{ id: "default", name: "Shelf", created_ms: Date.now(), item_count: 0, approx_tokens: 0 }],
+  shelf_list: () => [],
+  bridge_status: () => ({ enabled: false, running: false, port: 0, hosts: [{ browser: "chrome", installed: false }, { browser: "edge", installed: false }, { browser: "firefox", installed: false }], urlSchemeInstalled: false, explorerVerbsInstalled: false, chromiumExtensionId: "flioplocnjlfpjbgoekcbdmacpedkaej", firefoxExtensionId: "lens@lensui.app", extraExtensionIds: [], pending: 0, windowsOnly: false }),
+  bridge_inbox: () => [],
+  claude_code_command: () => "claude mcp add lens -- \"C:\\Program Files\\Lens UI\\lens-ui.exe\" --mcp-stdio",
+  transcribe_status: () => [],
+  get_mcp_status_cmd: () => ({ running: false, port: 0, connections: 0, command: "C:\\Program Files\\Lens UI\\lens-ui.exe", args: ["--mcp-stdio"], claudeDesktopSnippet: "{}", endpointFile: "" }),
+  list_mcp_actions_cmd: () => [],
+  get_mcp_audit_cmd: () => [],
+  list_top_processes_cmd: () => [
+    { pid: 4120, name: "chrome.exe", cpuUsage: 6.4, memoryMb: 812 },
+    { pid: 8812, name: "Code.exe", cpuUsage: 3.1, memoryMb: 640 },
+    { pid: 2244, name: "lens-ui.exe", cpuUsage: 0.8, memoryMb: 210 },
+  ],
+  transcribe_settings_get: () => ({
+    settings: { whisperBin: null, modelPath: null, ffmpegPath: null, ytdlpPath: null, urlTranscription: false, urlTermsAcknowledged: false, nextToSource: false, defaultLanguage: "auto", threads: null, liveCaptionsExperimental: false },
+    tools: { whisperBin: null, modelPath: null, ffmpegPath: null, ytdlpPath: null, ready: false, canDoVideo: false, canDoUrls: false, notes: ["whisper.cpp not found. Point Lens at whisper-cli.exe."] },
+    transcriptsDir: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\transcripts",
+  }),
   get_config: () => config,
   get_wallpaper_state_cmd: () => ({ settings: { enabled: false, file: "", fit: "cover", blur: 0, dim: 0, saturation: 100, pauseWhenCovered: true, pauseOnBattery: true, accentHex: "", followAccent: false }, path: null, kind: null, attached: false, folder: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\wallpapers" }),
   list_wallpapers_cmd: () => [],

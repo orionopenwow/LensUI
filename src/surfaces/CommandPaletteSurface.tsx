@@ -22,6 +22,10 @@ import type { InstalledApp } from "../types/lens";
 import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { filterByTab, type RankedItem, type SearchItem } from "../search/engine";
 import { ResultIcon, resultBadge } from "../search/ResultIcon";
+import { useAiPaletteItems } from "../ai/paletteAi";
+import { AskPanel } from "../ai/AskPanel";
+import { aiRunIntent } from "../ai/client";
+import { parseNaturalLanguageActions } from "../utils/nlActionRouter";
 import "./CommandPaletteSurface.css";
 
 interface RecentFileItem {
@@ -176,7 +180,15 @@ export const CommandPaletteSurface: React.FC = () => {
     });
   }, [config]);
 
+  // "Ask AI" keeps the palette open and shows the answer in place of the results.
+  const [askPrompt, setAskPrompt] = useState<string | null>(null);
+  const askingRef = useRef(false);
   const hide = () => {
+    if (askingRef.current) {
+      askingRef.current = false;
+      return;
+    }
+    setAskPrompt(null);
     invoke("hide_surface", { label: "palette" }).catch(() => {});
   };
 
@@ -189,13 +201,44 @@ export const CommandPaletteSurface: React.FC = () => {
     updateConfig,
     limit: 40,
   });
-  const filtered = useMemo(() => filterByTab(search.results, filterTab).slice(0, 30), [search.results, filterTab]);
+  const aiOn = !!config?.ai?.enabled;
+  const aiHandlers = useMemo(
+    () => ({
+      openAsk: (p: string) => {
+        askingRef.current = true;
+        setAskPrompt(p);
+      },
+      // "Do it": the offline intent runs through ai-core's tool registry with its risk gating.
+      runIntent: (intent: Parameters<typeof aiRunIntent>[0]) => {
+        aiRunIntent(intent).catch(() => {});
+      },
+    }),
+    []
+  );
+  const ai = useAiPaletteItems(
+    query,
+    { enabled: aiOn, hasLocalPlan: aiOn && parseNaturalLanguageActions(query).length > 0 },
+    aiHandlers
+  );
+  const filtered = useMemo(() => {
+    const base = filterByTab(search.results, filterTab).slice(0, 30);
+    if (!ai.items.length) return base;
+    const aiItems: RankedItem[] = ai.items.map((i) => ({ ...i, score: 0 }));
+    if (ai.exclusive) return aiItems;
+    const top = aiItems.filter((i) => i.special !== "bottom");
+    const bottom = aiItems.filter((i) => i.special === "bottom");
+    return [...top, ...base, ...bottom];
+  }, [search.results, filterTab, ai]);
 
   const showHomeGrid = query.trim() === "" && filterTab === "all";
   navRef.current = { filtered, selected, activate: search.activate };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
+      if (askPrompt !== null) {
+        setAskPrompt(null);
+        return;
+      }
       hide();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -423,6 +466,10 @@ export const CommandPaletteSurface: React.FC = () => {
                 ))}
               </div>
             </div>
+          </div>
+        ) : askPrompt !== null ? (
+          <div className="pal-results">
+            <AskPanel key={askPrompt} initialPrompt={askPrompt} autoSend onClose={() => setAskPrompt(null)} />
           </div>
         ) : (
           <div className="pal-results">

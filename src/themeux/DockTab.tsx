@@ -158,6 +158,12 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
         />
         <Toggle label="Live window previews" desc="Hovering a running app shows live pictures of its windows." on={!!dock.livePreviews} onChange={(v) => setDock({ livePreviews: v })} />
         <Toggle label="Lock the Dock" desc="Stops apps being dragged, unpinned or removed by accident." on={!!dock.locked} onChange={(v) => setDock({ locked: v })} />
+        <Toggle
+          label="Suggest apps you usually open now"
+          desc="Learned on this PC from your Dock launches; no AI model and nothing sent anywhere. Shows while Lens AI is on."
+          on={!!dock.suggestedApps}
+          onChange={(v) => setDock({ suggestedApps: v })}
+        />
       </div>
     </>
   );

@@ -3,9 +3,14 @@ import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { PluginSlot } from "../components/PluginSlot";
 import { McpBridge } from "../components/McpBridge";
 import { AiApplyBridge } from "../components/AiApplyBridge";
+import { AskDockPopover, AskModeToggle, useAskMode } from "../dock/ai/AskDock";
+import { DropSparkle, DropToAiMenu } from "../dock/ai/DropToAi";
+import { SuggestedApps, recordDockLaunch } from "../dock/ai/SuggestedApps";
+import "../dock/ai/aiDock.css";
+import type { AiContext } from "../ai/surfaceApi";
 import { toDockResults } from "../search/dockAdapter";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import {
   Search,
   Folder,
@@ -307,6 +312,12 @@ interface NotificationLite {
 
 export const DockSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
+  // Lens Intelligence in the Dock (all off until AI is turned on; docs/AI_SURFACES.md §3).
+  const aiOn = !!config?.ai?.enabled;
+  const askMode = useAskMode(aiOn);
+  const [askPrompt, setAskPrompt] = useState<string | null>(null);
+  const [askCtx, setAskCtx] = useState<AiContext | undefined>(undefined);
+  const [aiDropPaths, setAiDropPaths] = useState<string[] | null>(null);
   // Day/night theme schedule runs from the Dock only, so exactly one window applies it.
   useThemeSchedule(config, updateConfig, true);
   const runningWindows = useRunningWindows(900);
@@ -630,12 +641,13 @@ export const DockSurface: React.FC = () => {
   // events with physical-pixel positions; we hit-test the app under the pointer.
   const fileDropOn = (config?.dock as DockExtras | undefined)?.fileDropOpen === true;
   useEffect(() => {
-    if (!fileDropOn) return;
+    // Also active while AI is on, for dropping files on the sparkle (drop-to-AI).
+    if (!fileDropOn && !aiOn) return;
     const target = (p?: { x: number; y: number }) => {
       if (!p) return null;
       const dpr = window.devicePixelRatio || 1;
       const el = document.elementFromPoint(p.x / dpr, p.y / dpr) as HTMLElement | null;
-      return el?.closest<HTMLElement>("[data-dock-launch-path]") ?? null;
+      return el?.closest<HTMLElement>(fileDropOn ? "[data-dock-launch-path],[data-dock-ai-drop]" : "[data-dock-ai-drop]") ?? null;
     };
     const offs = [
       listen<DragDropPayload>("tauri://drag-over", (e) => {
@@ -646,13 +658,17 @@ export const DockSurface: React.FC = () => {
         const t = target(e.payload?.position);
         setDropKey(null);
         const files = e.payload?.paths ?? [];
+        if (t?.dataset.dockAiDrop && files.length) {
+          setAiDropPaths(files.slice(0, 20));
+          return;
+        }
         const appPath = t?.dataset.dockLaunchPath;
         if (!appPath || files.length === 0) return;
         invoke("open_files_with_app_cmd", { appPath, files }).catch(() => {});
       }),
     ];
     return () => offs.forEach((u) => u.then((fn) => fn()));
-  }, [fileDropOn]);
+  }, [fileDropOn, aiOn]);
 
   useEffect(() => {
     const el = pillRef.current;
@@ -1230,7 +1246,11 @@ export const DockSurface: React.FC = () => {
                         className="dock-ctx-item"
                         style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
                         onClick={() => {
-                          invoke("window_action_cmd", { hwnd: ctxMenu.windows[0].hwnd, action: "toggle_topmost" });
+                          // Tracked pin: Lens unpins it again on quit (docs/WINDOW_STYLING.md §2).
+                          const hwnd = ctxMenu.windows[0].hwnd;
+                          invoke<{ hwnd: number }[]>("list_pinned_windows_cmd")
+                            .then((list) => invoke("set_window_pinned_cmd", { hwnd, pinned: !list.some((p) => p.hwnd === hwnd) }))
+                            .catch(() => {});
                           closeMenu();
                         }}
                       >
@@ -1748,7 +1768,7 @@ export const DockSurface: React.FC = () => {
         }}
       >
         {/* TIER 1: In-Dock Expanded Launcher Drawer (Directly above the single unified Dock row!) */}
-        {dockSearchOpen && (
+        {dockSearchOpen && askMode.mode !== "ask" && (
           <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
             <div className="pal-filter-bar" style={{ padding: "4px 6px 6px 6px" }}>
               {(
@@ -1932,7 +1952,8 @@ export const DockSurface: React.FC = () => {
                           style={{ padding: "8px 10px", gap: 10 }}
                           onClick={() => {
                             closeInDockLauncher();
-                            invoke("launch_app_cmd", { path: app.path });
+                            if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
+                    invoke("launch_app_cmd", { path: app.path });
                           }}
                         >
                           <AppWindow size={16} strokeWidth={2.2} color="#A78BFA" style={{ flexShrink: 0 }} />
@@ -2051,12 +2072,19 @@ export const DockSurface: React.FC = () => {
                     ref={searchInputRef}
                     className="dock-search-glide-input"
                     value={dockSearchQuery}
-                    placeholder="Search…"
+                    placeholder={askMode.mode === "ask" ? "Ask anything…" : "Search…"}
                     onChange={(e) => {
                       setDockSearchQuery(e.target.value);
                       setDockSelectedIdx(0);
                     }}
                     onKeyDown={(e) => {
+                      if (askMode.onKeyDown(e)) return;
+                      if (askMode.mode === "ask" && e.key === "Enter" && dockSearchQuery.trim()) {
+                        e.preventDefault();
+                        setAskCtx(undefined);
+                        setAskPrompt(dockSearchQuery.trim());
+                        return;
+                      }
                       if (e.key === "Escape") {
                         e.preventDefault();
                         closeInDockLauncher();
@@ -2072,6 +2100,7 @@ export const DockSurface: React.FC = () => {
                       }
                     }}
                   />
+                  {aiOn && <AskModeToggle mode={askMode.mode} onToggle={askMode.toggle} />}
                   <button
                     type="button"
                     className="dock-search-esc"
@@ -2087,7 +2116,73 @@ export const DockSurface: React.FC = () => {
             </div>
           </div>
 
+          {aiOn && !dockSearchOpen && (
+            <div
+              className="dock-item-wrap"
+              data-dock-drag-key="ai-drop"
+              data-dock-ai-drop="true"
+              onContextMenu={(e) => {
+                // Right-click the sparkle: Lens Mini anchored above the Dock (docs/COMMAND.md (b)).
+                e.preventDefault();
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const x = Math.round((window.screenX + r.left + r.width / 2) * dpr);
+                const top = Math.round((window.screenY + r.top) * dpr);
+                invoke("show_command_cmd", { payload: { layout: "mini", anchor: `dock:${x}:${top}` } }).catch(() => {});
+              }}
+            >
+              <DropSparkle
+                active={dropKey === "ai-drop"}
+                onClick={() => {
+                  askMode.setMode("ask");
+                  openInDockLauncher();
+                }}
+              />
+            </div>
+          )}
+
           <div className="dock-divider" />
+
+          {aiOn && (
+            <SuggestedApps
+              enabled={!!config?.dock?.suggestedApps}
+              exclude={pinnedRows.map(({ app }) => app.path.toLowerCase())}
+              iconFor={(p) => pinnedIcons[p]}
+              onLaunch={(sug) => {
+                recordDockLaunch({ key: sug.path.toLowerCase(), name: sug.name, path: sug.path });
+                invoke("launch_app_cmd", { path: sug.path });
+              }}
+            />
+          )}
+
+          {askPrompt !== null && (
+            <AskDockPopover
+              open
+              prompt={askPrompt}
+              context={askCtx}
+              edge={edge}
+              onClose={() => setAskPrompt(null)}
+              onOpenSettings={() => {
+                invoke("open_surface", { label: "settings" })
+                  .then(() => emit("lens://settings-tab", "ai"))
+                  .catch(() => {});
+              }}
+            />
+          )}
+
+          {aiDropPaths && (
+            <div className="dock-ai-drop-anchor">
+              <DropToAiMenu
+                paths={aiDropPaths}
+                onClose={() => setAiDropPaths(null)}
+                onAsk={(prompt, ctx) => {
+                  setAiDropPaths(null);
+                  setAskCtx(ctx);
+                  setAskPrompt(prompt);
+                }}
+              />
+            </div>
+          )}
 
         {/* Pinned Apps (open windows appear directly ON their pinned slot, drag to reorder, hover for windows/Spotify controls & X to close!) */}
         {pinnedRows.map(({ app, wins, primaryWin }) => {
@@ -2141,6 +2236,7 @@ export const DockSurface: React.FC = () => {
                   if (primaryWin) {
                     invoke("focus_window_cmd", { hwnd: primaryWin.hwnd });
                   } else {
+                    if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
                     invoke("launch_app_cmd", { path: app.path });
                   }
                 }}
@@ -2159,6 +2255,7 @@ export const DockSurface: React.FC = () => {
                 }}
                 onAuxClick={(e) => {
                   if (e.button === 1 && config.func.middleClickNewInstance) {
+                    if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
                     invoke("launch_app_cmd", { path: app.path });
                   }
                 }}

@@ -100,7 +100,10 @@ export const ControlCenterSurface: React.FC = () => {
   const { config, winTheme, updateConfig } = useLensState();
   const runningWindows = useRunningWindows(1400);
   const glidePhase = useSurfaceGlide("settings");
-  const [tab, setTab] = useState<TabId>("system");
+  // `?tab=` lets the visual parity harness open a given tab; the app always starts on Windows & Quick.
+  const [tab, setTab] = useState<TabId>(
+    () => (new URLSearchParams(window.location.search).get("tab") as TabId | null) ?? "system"
+  );
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
@@ -161,7 +164,7 @@ export const ControlCenterSurface: React.FC = () => {
 
   const refreshProcesses = () => {
     invoke<ProcessEntry[]>("list_top_processes_cmd")
-      .then(setTopProcesses)
+      .then((p) => setTopProcesses(Array.isArray(p) ? p : []))
       .catch(() => {});
   };
 

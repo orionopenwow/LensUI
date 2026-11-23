@@ -86,8 +86,8 @@ export const McpCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
   const refresh = useCallback(() => {
     invoke<McpStatus>("get_mcp_status_cmd").then(setStatus).catch(() => setStatus(null));
-    invoke<PendingAction[]>("list_mcp_actions_cmd").then(setActions).catch(() => setActions([]));
-    invoke<AuditEntry[]>("get_mcp_audit_cmd", { limit: 12 }).then(setAudit).catch(() => setAudit([]));
+    invoke<PendingAction[]>("list_mcp_actions_cmd").then((a) => setActions(Array.isArray(a) ? a : [])).catch(() => setActions([]));
+    invoke<AuditEntry[]>("get_mcp_audit_cmd", { limit: 12 }).then((a) => setAudit(Array.isArray(a) ? a : [])).catch(() => setAudit([]));
   }, []);
 
   useEffect(() => {
