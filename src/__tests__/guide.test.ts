@@ -4,7 +4,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-mock.module("@tauri-apps/api/core", () => ({ invoke: async () => { throw new Error("no backend"); }, transformCallback: () => 0 }));
+mock.module("@tauri-apps/api/core", () => ({ invoke: async () => { throw new Error("no backend"); }, transformCallback: () => 0, convertFileSrc: (p: string) => p }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
 const ROOT = join(import.meta.dir, "../..");
