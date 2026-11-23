@@ -105,11 +105,12 @@
   height: 16px;
   border-radius: 50%;
   background: var(--lens-fg);
-  transition: left var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
+  will-change: transform;
 }
 
 .sysmod-switch.on .sysmod-switch-knob {
-  left: 19.5px;
+  transform: translateX(17px);
   background: var(--lens-on-fg);
 }
 

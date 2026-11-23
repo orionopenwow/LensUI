@@ -79,7 +79,7 @@ import { AgentsPane } from "../components/AgentsPane";
 import { MessagingHubPane } from "../components/MessagingHubPane";
 import "./ControlCenterSurface.css";
 import { getPage, resolveTarget, type PageId } from "../settings/registry";
-import { PAGE_COMPONENTS } from "../settings/pages";
+import { PAGE_COMPONENTS, preloadSettingsPages } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
 import { SettingsNav, PageIcon } from "../settings/SettingsNav";
@@ -121,6 +121,7 @@ export const ControlCenterSurface: React.FC = () => {
   };
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  useEffect(() => preloadSettingsPages(), []);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });

@@ -173,7 +173,11 @@
   border: 1px solid var(--lens-border);
   font-size: 12px;
   color: var(--lens-fg-secondary);
-  transition: all var(--lens-dur-fast) var(--lens-ease-out);
+  transition:
+    background-color var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    color var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .cc-chip:hover {
