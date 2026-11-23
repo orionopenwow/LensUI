@@ -410,3 +410,14 @@ describe("wallpaper scene", () => {
     expect(JSON.stringify(opts).length).toBeLessThan(2000);
   });
 });
+
+describe("Command /backdrop", () => {
+  test("adds one stub unless a user template already owns the word", async () => {
+    const { backdropTemplate, isBackdropStub } = await import("../studio/backdrop/command");
+    const [t] = backdropTemplate([{ id: "note" }]);
+    expect(t.id).toBe("backdrop");
+    expect(isBackdropStub(t)).toBe(true);
+    expect(isBackdropStub({ id: "backdrop" })).toBe(false);
+    expect(backdropTemplate([{ id: "backdrop" }])).toEqual([]);
+  });
+});

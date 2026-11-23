@@ -87,6 +87,7 @@ pub const ACTIONS: &[&str] = &[
     "set_dock_style",
     "next_wallpaper",
     "set_wallpaper_scene",
+    "make_backdrop",
     "set_calm_mode",
     "lock_screen",
 ];
@@ -354,6 +355,11 @@ pub fn parse(text: &str) -> Option<RawIntent> {
         return Some(i);
     }
 
+    // --- Backdrop Lab: "make me a calm blue aurora backdrop" (before colour mode: "dark backdrop")
+    if let Some(i) = parse_backdrop(t) {
+        return Some(i);
+    }
+
     // --- colour mode
     if let Some(i) = parse_color_mode(t) {
         return Some(i);
@@ -441,6 +447,31 @@ fn parse_math(t: &str) -> Option<RawIntent> {
         }
     }
     None
+}
+
+/// "make me a calm blue aurora backdrop", "backdrop warm sunset", "create a pink gradient".
+/// Needs the word backdrop or gradient so "make it dark" or "aurora scene" never land here.
+fn parse_backdrop(t: &str) -> Option<RawIntent> {
+    if !(t.contains("backdrop") || t.contains("gradient")) {
+        return None;
+    }
+    let rest = strip_any(
+        t,
+        &["make me an ", "make me a ", "make an ", "make a ", "create an ", "create a ", "generate an ", "generate a ", "design a ", "design an ", "new ", "backdrop ", "gradient "],
+    )
+    .unwrap_or(t);
+    let mut p = rest.trim();
+    for suffix in [" gradient backdrop", " gradient background", " backdrop", " gradient", " background", " wallpaper"] {
+        if let Some(x) = p.strip_suffix(suffix) {
+            p = x.trim();
+            break;
+        }
+    }
+    let p = if p.is_empty() || p == "backdrop" || p == "gradient" { "surprise me" } else { p };
+    if p.len() > 200 {
+        return None;
+    }
+    Some(RawIntent::new("make_backdrop", 0.92, format!("Make a backdrop: {}", p)).s("prompt", p))
 }
 
 fn parse_timer(t: &str) -> Option<RawIntent> {
@@ -1079,6 +1110,9 @@ mod tests {
         ("calm mode off", "set_calm_mode", "enabled=false"),
         ("next wallpaper", "next_wallpaper", ""),
         ("show the aurora scene", "set_wallpaper_scene", "scene=aurora"),
+        ("make me a calm blue aurora backdrop", "make_backdrop", "prompt=calm blue aurora"),
+        ("create a pink gradient", "make_backdrop", "prompt=pink"),
+        ("backdrop warm sunset", "make_backdrop", "prompt=warm sunset"),
         ("falling sand", "set_wallpaper_scene", "scene=sand"),
         ("accent purple", "set_accent", "color=#a855f7"),
         ("change the accent colour to teal", "set_accent", "color=#14b8a6"),

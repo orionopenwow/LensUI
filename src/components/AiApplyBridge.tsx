@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { runBackdropSlash } from "../studio/backdrop/command";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { resolveTarget } from "../settings/registry";
@@ -105,6 +106,12 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
               timers.push(window.setTimeout(() => notify(label, "Time's up."), seconds * 1000));
               notify("Timer started", `${label} · ${Math.round(seconds / 60) || 1} min`);
             });
+          return;
+        }
+        case "make_backdrop": {
+          // "Lens, make me a calm blue aurora backdrop": Backdrop Lab opens on that look; nothing
+          // is applied until the person picks Set as wallpaper (docs/BACKDROP_LAB.md).
+          runBackdropSlash(typeof args.prompt === "string" ? args.prompt : "");
           return;
         }
         case "show_desktop":

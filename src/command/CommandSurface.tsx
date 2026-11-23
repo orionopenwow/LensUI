@@ -32,6 +32,7 @@ import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, ty
 import { answersInText, runDo } from "./doMode";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
+import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -132,7 +133,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
           .filter(([id]) => !list.some((t) => t.id === id))
           .map(([id, sp]) => ({ id, name: sp.name, description: sp.name, template: sp.template, provider: "local", input: "selection", options: [], output: "thread", builtin: true, enabled: true }));
         // Lens core apps as `/timer`, `/monitor`… (docs/CORE_APPS.md); ids Command already uses win.
-        setTemplates([...list, ...extra, ...coreAppTemplates([...list, ...extra])]);
+        const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
+        setTemplates([...withApps, ...backdropTemplate(withApps)]);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -352,6 +354,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     if (template && !template.template) {
       const arg = parsed?.args ?? "";
       if (isCoreAppStub(template) && runCoreAppSlash(template.id)) {
+        hide();
+        return setText("");
+      }
+      if (isBackdropStub(template)) {
+        runBackdropSlash(arg);
         hide();
         return setText("");
       }

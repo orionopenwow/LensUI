@@ -130,6 +130,15 @@ the code, and the backdrop becomes the live wallpaper. Every preset passes this 
 - Files go to `Pictures\Lens\Backdrops` with never-overwriting names (`studio_save_export`, which also
   checks the bytes match the extension). Still wallpapers go to Lens's own wallpapers folder.
 
+## 6b. Ask for one
+
+- **Lens Command:** `/backdrop calm blue aurora` opens the Lab on that look (`/backdrop` alone just opens it).
+- **Voice and the assistant:** “Lens, make me a calm blue aurora backdrop” or “create a pink gradient” map to
+  the low-risk `make_backdrop` tool, which opens the Lab on the look. Nothing is applied until the person
+  picks **Set as live wallpaper**.
+- **Theme files:** applying a `.lenstheme` that carries a backdrop (from **Make a theme**) also plays that
+  backdrop as the live wallpaper.
+
 ## 7. Performance
 
 - Preview: up to 60 fps at ≤ 1.25× DPR; thumbnails share one GPU context and redraw a few tiles per tick.
@@ -158,6 +167,3 @@ Cut for this pass (listed so nothing is lost):
 8. Migrate `ui/controls.tsx` to the `src/ui` primitives once the AAA wave is on main.
 9. Add the Lab's presets to the ambient-backdrop scene list (that list is CPU painters; today they appear
    in the Playground card instead).
-10. Lens Command / voice intent “Lens, make me a … backdrop” (the Lab already reads a pending prompt from
-    `localStorage` key `lens.backdrop.pendingPrompt`).
-11. Apply a `.lenstheme`'s `backdrop` field when a theme file is imported.

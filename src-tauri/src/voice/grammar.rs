@@ -498,6 +498,7 @@ mod tests {
         ("Calm mode.", "set_calm_mode", "enabled=true"),
         ("calm mode off", "set_calm_mode", "enabled=false"),
         ("freeze the wallpaper", "set_calm_mode", "enabled=true"),
+        ("Lens, make me a calm blue aurora backdrop.", "make_backdrop", "prompt=calm blue aurora"),
         // look
         ("Dark mode.", "set_color_mode", "mode=dark"),
         ("switch to light mode", "set_color_mode", "mode=light"),

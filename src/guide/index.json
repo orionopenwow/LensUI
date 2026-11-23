@@ -6037,6 +6037,25 @@
    "source": "src-tauri/src/ai/intent.rs"
   },
   {
+   "id": "command.make_backdrop",
+   "kind": "command",
+   "title": "Make backdrop",
+   "text": "Type it in Lens Command or the palette and Lens does it, no AI model needed. For example: “make me a calm blue aurora backdrop”, “create a pink gradient”, “backdrop warm sunset”.",
+   "path": [
+    "Lens Command",
+    "Do"
+   ],
+   "target": {
+    "surface": "command"
+   },
+   "examples": [
+    "make me a calm blue aurora backdrop",
+    "create a pink gradient",
+    "backdrop warm sunset"
+   ],
+   "source": "src-tauri/src/ai/intent.rs"
+  },
+  {
    "id": "command.move_window",
    "kind": "command",
    "title": "Move window",

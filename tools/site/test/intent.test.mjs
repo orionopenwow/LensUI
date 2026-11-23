@@ -15,7 +15,7 @@ check(rows.length >= 60, `table has ${rows.length} rows`);
 // Intents added to the app after the site port was written (voice, window and look commands).
 // The site demo doesn't model them yet; they're reported as skipped, not silently passed.
 // Port them in docs/site/js/intent.js and drop them from this list (docs/NEXT_STEPS.md).
-const APP_ONLY = new Set(["window_action", "move_window", "open_overview", "lock_screen", "set_calm_mode", "next_wallpaper", "set_wallpaper_scene", "set_accent", "set_dock_style"]);
+const APP_ONLY = new Set(["window_action", "move_window", "open_overview", "lock_screen", "set_calm_mode", "next_wallpaper", "set_wallpaper_scene", "set_accent", "set_dock_style", "make_backdrop"]);
 let skipped = 0;
 for (const [phrase, action, spec] of rows) {
   if (APP_ONLY.has(action) || (action === "set_dnd" && spec.startsWith("minutes"))) {

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig } from "../types/lens";
 import { exportLensTheme, exportLensThemeAsCustomPack, importLensTheme } from "../themes/lenstheme";
+import { applyThemeFileBackdrop } from "../studio/backdrop/apply";
 
 interface ThemeFileInfo {
   name: string;
@@ -54,8 +55,10 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
   const apply = async (file: ThemeFileInfo) => {
     try {
       const raw = await invoke<string>("read_theme_file_cmd", { name: file.name });
-      await onUpdateConfig(importLensTheme(config, JSON.parse(raw)));
-      setStatus(`Applied "${file.name}".`);
+      const parsed = JSON.parse(raw);
+      await onUpdateConfig(importLensTheme(config, parsed));
+      const live = await applyThemeFileBackdrop(parsed).catch(() => false);
+      setStatus(live ? `Applied "${file.name}" with its live backdrop.` : `Applied "${file.name}".`);
     } catch (e) {
       setStatus(`Couldn't apply "${file.name}": ${e instanceof Error ? e.message : String(e)}`);
     }

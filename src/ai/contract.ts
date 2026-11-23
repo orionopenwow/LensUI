@@ -179,6 +179,7 @@ export const AI_TOOLS: Record<string, Risk> = {
   next_wallpaper: "low",
   set_wallpaper_scene: "low",
   set_calm_mode: "low",
+  make_backdrop: "low",
   lock_screen: "confirm",
 };
 
@@ -195,7 +196,8 @@ export type AiApplyTool =
   | "set_dock_style"
   | "next_wallpaper"
   | "set_wallpaper_scene"
-  | "set_calm_mode";
+  | "set_calm_mode"
+  | "make_backdrop";
 
 export interface AiApplyPayload {
   tool: AiApplyTool;

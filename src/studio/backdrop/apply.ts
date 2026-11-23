@@ -10,7 +10,7 @@ import type { WallpaperSettings, WallpaperState } from "../../surfaces/wallpaper
 import { applyThemePack } from "../../themes/packs";
 import { exportLensThemeAsCustomPack } from "../../themes/lenstheme";
 import { BACKDROP_SCENE_ID } from "./scene";
-import { backdropToPack, encodeState, type BackdropState, type Keyframes } from "./engine";
+import { backdropToPack, decodeState, encodeState, type BackdropState, type Keyframes } from "./engine";
 import { renderPng } from "./exporter";
 
 async function current(): Promise<WallpaperSettings> {
@@ -119,4 +119,18 @@ export async function makeTheme(s: BackdropState, name: string, config: LensConf
     prevWallpaper = null;
   }
   return { packId, report, prevConfig, prevWallpaper };
+}
+
+/**
+ * A `.lenstheme` made by "Make a theme from this" carries its backdrop as a code. When such a file is
+ * applied, play that backdrop as the live wallpaper too. Files without one (or with an invalid code)
+ * leave the wallpaper alone. Resolves to true when the wallpaper changed.
+ */
+export async function applyThemeFileBackdrop(raw: unknown): Promise<boolean> {
+  const code = raw && typeof raw === "object" ? (raw as { backdrop?: unknown }).backdrop : undefined;
+  if (typeof code !== "string" || code.length > 32_000) return false;
+  const s = decodeState(code);
+  if (!s) return false;
+  await setLiveWallpaper(s);
+  return true;
 }
