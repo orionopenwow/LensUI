@@ -451,7 +451,15 @@ pub(crate) fn surface_ready_set() -> &'static Mutex<std::collections::HashSet<St
 /// Called by each surface page once it has mounted and registered its event listeners.
 #[tauri::command]
 pub(crate) fn surface_ready_cmd(label: String) {
+    crate::app::loadguard::beat(&label);
     surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).insert(label);
+}
+
+/// Heartbeat from the always-on pages (Dock, Top Bar, desktop tab), every few seconds. A visible
+/// window whose page stops sending it is reloaded (docs/FAILSAFE.md §1, `app::loadguard`).
+#[tauri::command]
+pub(crate) fn surface_alive_cmd(label: String) {
+    crate::app::loadguard::beat(&label);
 }
 
 #[tauri::command]

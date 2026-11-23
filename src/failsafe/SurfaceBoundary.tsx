@@ -117,3 +117,23 @@ export class QuietBoundary extends React.Component<{ name: string; children: Rea
     return this.state.failed ? null : this.props.children;
   }
 }
+
+/** Event the chaos tests dispatch on `window` to make the surface throw on its next render. */
+export const TEST_CRASH_EVENT = "lens:test-crash";
+
+/**
+ * Fault injection for the chaos tests (tools/soak, tests/e2e/failsafe.mjs): rendered inside the
+ * surface's boundary, it throws on the render after `lens:test-crash` is dispatched on `window`.
+ * Only a script already running in the page can do that, and all it achieves is what the page
+ * could do to itself anyway: show the boundary.
+ */
+export function CrashProbe(): null {
+  const [armed, setArmed] = React.useState(false);
+  React.useEffect(() => {
+    const arm = () => setArmed(true);
+    window.addEventListener(TEST_CRASH_EVENT, arm);
+    return () => window.removeEventListener(TEST_CRASH_EVENT, arm);
+  }, []);
+  if (armed) throw new Error("test crash (lens:test-crash)");
+  return null;
+}

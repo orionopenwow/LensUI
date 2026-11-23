@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./styles/tokens.css";
 import "./styles/global.css";
-import { QuietBoundary, SurfaceBoundary } from "./failsafe/SurfaceBoundary";
+import { CrashProbe, QuietBoundary, SurfaceBoundary } from "./failsafe/SurfaceBoundary";
 import { installGlobalHandlers } from "./failsafe/report";
 import { FailsafeNotices } from "./failsafe/FailsafeNotices";
 
@@ -107,6 +107,15 @@ function ReadySignal() {
   return null;
 }
 
+// The always-on windows tell the backend they are still running. If the WebView behind one of
+// them dies, the heartbeat stops and the backend reloads that window (docs/FAILSAFE.md §1).
+const HEARTBEAT_SURFACES = ["dock", "topbar", "desktopfolder"];
+if (HEARTBEAT_SURFACES.includes(surfaceName)) {
+  window.setInterval(() => {
+    invoke("surface_alive_cmd", { label: surfaceName }).catch(() => {});
+  }, 5000);
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* One boundary for every surface: a crash shows "This part of Lens hit a problem · Reload"
@@ -114,6 +123,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <SurfaceBoundary surface={surfaceName}>
       <Suspense fallback={null}>
         <Surface />
+        <CrashProbe />
         {/* Inside the same Suspense, after the surface: see ReadySignal. */}
         <ReadySignal />
       </Suspense>

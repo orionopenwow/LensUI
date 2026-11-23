@@ -650,6 +650,7 @@ pub fn run() {
             commands::plugins::open_plugins_folder_cmd,
             commands::theme::save_lenstheme_dialog_cmd,
             commands::surfaces::surface_ready_cmd,
+            commands::surfaces::surface_alive_cmd,
             app::autostart_guard::startup_block_reason_cmd,
             commands::misc::run_self_test_cmd,
             commands::mcp::get_mcp_status_cmd,
