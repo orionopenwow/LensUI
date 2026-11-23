@@ -78,6 +78,7 @@ export interface BrowserSettings {
   searchUrl: string;
   blockTrackers: boolean;
   lensContextMenu: boolean;
+  pageMarks?: boolean;
   defaultZoom: number;
 }
 

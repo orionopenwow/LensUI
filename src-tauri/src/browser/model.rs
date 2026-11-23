@@ -212,6 +212,10 @@ pub struct BrowserSettings {
     pub archive_after_days: u32,
     #[serde(default)]
     pub download_rules: Vec<DownloadRule>,
+    /// Tiny Lens buttons beside tweets, YouTube's player, videos, images, 3D models, code and
+    /// downloads (docs/IN_PAGE_LENS.md). Off until the person turns it on.
+    #[serde(default)]
+    pub page_marks: bool,
 }
 
 fn fourteen() -> u32 {
@@ -231,6 +235,7 @@ impl Default for BrowserSettings {
             ai: BrowserAi::default(),
             archive_after_days: 14,
             download_rules: vec![],
+            page_marks: false,
         }
     }
 }

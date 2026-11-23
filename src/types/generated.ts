@@ -527,6 +527,11 @@ export interface BrowserSettings {
   /** Archive unpinned tabs not opened for this many days (0 = never). */
   archiveAfterDays: number;
   downloadRules: DownloadRule[];
+  /**
+   * Tiny Lens buttons beside tweets, YouTube's player, videos, images, 3D models, code and
+   * downloads (docs/IN_PAGE_LENS.md). Off until the person turns it on.
+   */
+  pageMarks: boolean;
 }
 
 /** Rust: `browserel::BrowserState` */
