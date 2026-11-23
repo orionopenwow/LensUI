@@ -17,10 +17,12 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         MenuItem::with_id(app, "open_palette", "Command Palette (Alt+Space)", true, None::<&str>)?;
     let open_widgets =
         MenuItem::with_id(app, "open_widgets", "Widget Drawer (Alt+W)", true, None::<&str>)?;
+    let open_tester =
+        MenuItem::with_id(app, "open_tester_hub", "Tester Hub…", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit Lens UI", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
-        &[&open_settings, &open_palette, &open_widgets, &quit_item],
+        &[&open_settings, &open_palette, &open_widgets, &open_tester, &quit_item],
     )?;
 
     // No bundled icon (or a tray failure) must never take the whole shell down.
@@ -48,6 +50,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                 }
             }
             "open_palette" => toggle_surface(app.clone(), "palette".into()),
+            "open_tester_hub" => toggle_surface(app.clone(), "testerhub".into()),
             "open_widgets" => toggle_surface(app.clone(), "widgets".into()),
             "quit" => {
                 crate::app::integration::shutdown(Some(app));

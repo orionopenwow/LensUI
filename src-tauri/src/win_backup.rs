@@ -211,6 +211,17 @@ pub fn build_backup(dir: &Path, include_training: bool) -> Result<(Value, Backup
     for (name, text) in crate::win_cursors::backup_files() {
         files.insert(format!("cursors/{}", name), Value::String(text));
     }
+    // Tester Hub checklist results (tester/results-<build>.json).
+    if let Ok(entries) = fs::read_dir(dir.join("tester")) {
+        for e in entries.flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            if is_tester_results_name(&name) {
+                if let Some(v) = read_json(&e.path()) {
+                    files.insert(format!("tester/{}", name), v);
+                }
+            }
+        }
+    }
     if let Some(n) = read_json(&dir.join("notifications.json")) {
         let dnd = n.get("dnd").and_then(Value::as_bool).unwrap_or(false);
         files.insert("notifications-dnd".into(), json!({ "dnd": dnd }));
@@ -342,6 +353,13 @@ pub fn restore_backup(dir: &Path, text: &str, restore_training: bool) -> Result<
                 }
                 scrub_secrets(&mut value);
                 plan.push((dir.join("window-rules.json"), pretty(&value)?, name.clone()));
+            }
+            other if other.starts_with("tester/") && is_tester_results_name(&other["tester/".len()..]) => {
+                if !value.is_object() {
+                    skipped.push(format!("{} (not an object)", name));
+                    continue;
+                }
+                plan.push((dir.join(other), pretty(&value)?, name.clone()));
             }
             "window-styling.json" => {
                 if !value.is_object() {
@@ -482,3 +500,11 @@ pub fn civil_from_unix(t: i64) -> (i64, u32, u32, u32, u32, u32) {
 #[cfg(test)]
 #[path = "tests/win_backup.rs"]
 mod tests;
+
+/// `results-<build>.json`, where the build id is letters, digits, dots, dashes or underscores.
+fn is_tester_results_name(name: &str) -> bool {
+    name.strip_prefix("results-")
+        .and_then(|n| n.strip_suffix(".json"))
+        .map(|id| !id.is_empty() && id.len() <= 80 && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')))
+        .unwrap_or(false)
+}

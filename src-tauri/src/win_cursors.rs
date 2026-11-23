@@ -817,7 +817,7 @@ fn aa(d_units: f32, px_per_unit: f32) -> f32 {
 }
 
 /// Hotspot for `role` at `size` px, in pixels (what goes in the `.cur` directory entry).
-#[cfg_attr(not(test), allow(dead_code))] // the encoder computes hotspots inline; tests check this
+#[allow(dead_code)] // the encoder computes hotspots inline; kept as the documented helper
 pub fn hotspot_px(role: CursorRole, family: CursorFamily, size: u32) -> (u16, u16) {
     let s = shape_for(role, family, 0.0);
     hot_from_units(s.hotspot, size, family == CursorFamily::Retro)
