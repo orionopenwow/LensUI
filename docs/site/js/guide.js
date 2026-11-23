@@ -162,10 +162,10 @@ async function ask(q) {
   const L = window.lensSite;
 
   if (/\btour\b/.test(ql)) {
-    if (!onHome()) return goHome("#scene/everyday");
-    await say("lens", "Here's the tour: the desk plays each feature as a short scene. Click into the desk any time to take over.", { stream: true });
-    await flyTo(document.getElementById("stage"));
-    L.scenes.go(0); L.scenes.play();
+    if (!onHome()) return goHome("#tour/desktop");
+    await say("lens", "Pick a tour above the desk. Each one goes one step at a time: press Next, or do the highlighted thing yourself. I'll start with the desktop.", { stream: true });
+    await flyTo(document.getElementById("sc-tabs"));
+    L.playScene("desktop");
     return;
   }
   // A scene by name ("show me the magic right-click", "how do I connect Claude?").
@@ -187,8 +187,8 @@ async function ask(q) {
     return;
   }
   if (sceneHit && /\b(show|how|play|see|connect)\b/.test(ql)) {
-    if (!onHome()) return goHome(`#scene/${sceneHit.id}`);
-    await say("lens", `${esc(sceneHit.line)} Watch it on the desk.`, { stream: true });
+    if (!onHome()) return goHome(`#scene/${sceneHit.id}`); // home maps #scene/… to the nearest tour
+    await say("lens", `${esc(sceneHit.line)} I've opened that tour on the desk: press Next to go step by step.`, { stream: true });
     await flyTo(document.getElementById("stage"));
     L.playScene(sceneHit.id);
     if (sceneHit.id === "claude") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);

@@ -1,9 +1,9 @@
-// The home page: the hero desk with its scene reel and dock rail, the Theme lab desk, the
+// The home page: the hero desk with its guided tours and dock rail, the Theme lab desk, the
 // bring-your-own-agent panel, the open-source apps and the feature chips. Desks come from js/desk.js,
-// scenes from js/scenes.js, the actions both use from js/actions.js. Nothing touches your system.
+// guided tours from js/showcases.js, the actions both use from js/actions.js. Nothing touches your system.
 import { reducedMotion } from "./site.js";
 import { createDesk, getPacks, iconUrl } from "./desk.js";
-import { createScenes, SCENES } from "./scenes.js";
+import { createShowcases } from "./showcases.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const $ = (s, r = document) => r.querySelector(s);
@@ -27,68 +27,99 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
 const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.1, 0.06], ["notes", 0.6, 0.08]] });
-const bar = $("#scenes");
-const cap = $("#scene-cap");
-const chip = $("#driving");
-let interacted = false;
-const scenes = createScenes(desk, {
-  onScene(i, sc) {
-    cap.innerHTML = `<b>${esc(sc.title)}</b><span>${esc(sc.line)}</span>`;
-    const list = bar.querySelector(".sb-list");
-    // Centre the current scene in the bar by scrolling the bar only (never the page).
-    bar.querySelectorAll("[data-scene]").forEach((b, k) => { b.setAttribute("aria-current", k === i ? "true" : "false"); if (k === i) list.scrollTo({ left: b.offsetLeft - list.clientWidth / 2 + b.offsetWidth / 2, behavior: reducedMotion() ? "auto" : "smooth" }); });
-    const prog = bar.querySelector(".sb-prog i");
-    if (prog) { prog.style.animation = "none"; void prog.offsetWidth; prog.style.animation = scenes.playing && !reducedMotion() ? "sb-prog 11s linear" : "none"; }
-    // A scene the visitor picked gets a shareable #scene/… link; the autoplaying reel leaves the URL alone,
-    // so reloading never reopens on whatever scene happened to be playing.
-    if (!scenes.playing) history.replaceState(null, "", `#scene/${sc.id}`);
-    else if (location.hash.startsWith("#scene/")) history.replaceState(null, "", location.pathname + location.search);
+// The desk is the visitor's: nothing plays on its own. Tabs above it start a guided tour that moves
+// one step at a time, only when the visitor presses Next (or does the highlighted thing).
+const scTabs = $("#sc-tabs");
+const scbar = $("#sc-bar");
+const capN = scbar.querySelector(".sc-n"), capT = scbar.querySelector(".sc-t"), dots = scbar.querySelector(".sc-dots");
+const FREE = { n: "Free play", t: "This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour above and go step by step." };
+const btn = (k) => scbar.querySelector(`[data-${k}]`);
+const shows = createShowcases(desk, {
+  onChange(st) {
+    scTabs.querySelectorAll("[role=tab]").forEach((t) => {
+      const on = st.showcase?.id === t.dataset.sc;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on || (!st.showcase && t === scTabs.firstElementChild) ? 0 : -1;
+    });
+    if (!st.showcase) {
+      capN.textContent = FREE.n; capT.textContent = FREE.t; dots.innerHTML = "";
+      ["back", "next", "reset", "exit"].forEach((k) => (btn(k).disabled = true));
+      scbar.classList.remove("is-touring");
+      if (location.hash.startsWith("#tour/")) history.replaceState(null, "", location.pathname + location.search);
+      return;
+    }
+    scbar.classList.add("is-touring");
+    capN.textContent = `${st.showcase.title} · ${st.index + 1} of ${st.total}`;
+    capT.textContent = st.busy && !st.step ? "Setting up…" : st.step?.cap ?? "";
+    dots.innerHTML = Array.from({ length: st.total }, (_, k) => `<i class="${k < st.index ? "was" : k === st.index ? "on" : ""}"></i>`).join("");
+    btn("back").disabled = st.busy || st.index === 0;
+    btn("next").disabled = st.busy || st.done;
+    btn("next").querySelector("span").textContent = st.done ? "Done" : "Next";
+    btn("reset").disabled = st.busy;
+    btn("exit").disabled = false;
+    history.replaceState(null, "", `#tour/${st.showcase.id}`);
   },
-  onState(p) { desk.setQuiet(p); bar.querySelector("[data-play]").textContent = p ? "❚❚" : "▶"; bar.querySelector("[data-play]").setAttribute("aria-label", p ? "Pause the scenes" : "Play the scenes"); bar.classList.toggle("is-playing", p); },
 });
-bar.querySelector(".sb-list").innerHTML = SCENES.map((s, i) => `<button type="button" data-scene="${i}" aria-current="false"><i aria-hidden="true"></i>${esc(s.title)}</button>`).join("");
-bar.addEventListener("click", (e) => {
-  const s = e.target.closest("[data-scene]");
-  if (s) { handover(false); scenes.go(+s.dataset.scene); return; }
-  if (e.target.closest("[data-play]")) { scenes.playing ? scenes.pause() : (chip.hidden = true, scenes.play()); }
-  if (e.target.closest("[data-prev]")) scenes.prev();
-  if (e.target.closest("[data-next]")) scenes.next();
+scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}" title="${esc(s.line)}"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></button>`).join("");
+scTabs.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-sc]");
+  if (!t) return;
+  if (shows.current?.id === t.dataset.sc) return;
+  // Bring the whole desk and its step bar into view, so each step's caption sits under what it points at.
+  bringIntoView();
+  shows.start(t.dataset.sc);
 });
-bar.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { e.preventDefault(); handover(false); e.key === "ArrowRight" ? scenes.next() : scenes.prev(); bar.querySelector('[aria-current="true"]')?.focus(); }
+scTabs.addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  const all = [...scTabs.querySelectorAll("[role=tab]")], k = all.indexOf(document.activeElement);
+  if (k < 0) return;
+  e.preventDefault();
+  const n = all[(k + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length];
+  n.focus(); n.click();
 });
-/** The visitor took over: stop the reel and show "You're driving". Autoplay resumes only on request. */
-function handover(show = true) {
-  interacted = true;
-  if (scenes.playing) scenes.pause();
-  chip.hidden = !show;
-}
-// Only real input hands over control: scripted scene clicks also raise "user" events, so they count
-// only right after a trusted pointer or key event (or focus moving into the dock's frame on a click).
-let lastTrusted = -1e9;
-const mark = (e) => { if (e.isTrusted) lastTrusted = performance.now(); };
-["pointerdown", "keydown", "wheel"].forEach((t) => addEventListener(t, mark, { capture: true, passive: true }));
-addEventListener("blur", () => { if (document.activeElement?.tagName === "IFRAME" && host.contains(document.activeElement)) lastTrusted = performance.now(); });
-desk.on("user", () => { if (performance.now() - lastTrusted < 600) handover(true); });
-desk.root.addEventListener("pointerdown", (e) => { if (e.isTrusted) handover(true); }, true);
-desk.root.addEventListener("keydown", (e) => { if (e.isTrusted) handover(true); }, true);
-chip.querySelector("button").addEventListener("click", () => { chip.hidden = true; scenes.play(); });
+scbar.addEventListener("click", (e) => {
+  if (e.target.closest("[data-next]")) shows.next();
+  else if (e.target.closest("[data-back]")) shows.back();
+  else if (e.target.closest("[data-reset]")) shows.reset();
+  else if (e.target.closest("[data-exit]")) shows.exit();
+});
+// Arrow keys step the tour while the desk or its bar has focus; Esc leaves it.
+addEventListener("keydown", (e) => {
+  if (!shows.current) return;
+  const inDesk = host.contains(document.activeElement) || scbar.contains(document.activeElement) || document.activeElement === document.body;
+  if (!inDesk || document.activeElement?.closest?.("input, textarea, [contenteditable=true], .lx-cmd")) return;
+  if (e.key === "ArrowRight") { e.preventDefault(); shows.next(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); shows.back(); }
+  else if (e.key === "Escape" && !document.activeElement?.closest?.(".lx-approve, .lx-magic, .gw")) shows.exit();
+});
+// The desk's background chatter (toasts, now-playing ticks) stays quiet so nothing moves by itself.
+desk.setQuiet(true);
+const deep = decodeURIComponent(location.hash).match(/^#tour\/(.+)$/);
+if (deep) shows.start(deep[1]);
 
-// Start the reel once the desk is on screen (not with reduced motion, and not after the visitor has played).
-let started = false;
-new IntersectionObserver(([e]) => {
-  if (!e.isIntersecting) { if (scenes.playing) scenes.pause(), (started = "paused"); return; }
-  if (started === "paused" && !interacted) { scenes.play(); started = true; return; }
-  if (started) return;
-  started = true;
-  const deep = decodeURIComponent(location.hash).match(/^#scene\/(.+)$/);
-  if (deep) { scenes.goId(deep[1]); return; }
-  if (!reducedMotion()) setTimeout(() => { if (!interacted) scenes.play(); }, 1500);
-  else scenes.go(0);
-}, { threshold: 0.2 }).observe(host);
-addEventListener("hashchange", () => { const m = decodeURIComponent(location.hash).match(/^#scene\/(.+)$/); if (m && scenes.current?.id !== m[1]) { handover(false); scenes.goId(m[1]); host.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); } });
-export function playScene(id) { handover(false); host.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); return scenes.goId(id); }
-window.lensSite = { desk, scenes, playScene, detectOS };
+// Old scene names (the Guide, #scene/… links) map to the nearest tour.
+const SCENE_TO_TOUR = { everyday: "desktop", tiling: "desktop", "core-apps": "desktop", settings: "desktop", "magic-right-click": "magic", snip: "magic", claude: "agent", approvals: "agent", ade: "agent", "browser-ai": "browser", apps: "apps", music: "music", cleaner: "cleaner" };
+/** Scroll so the tabs sit just under the header and the step bar is on screen. */
+function bringIntoView() {
+  const head = document.getElementById("bar")?.offsetHeight ?? 60;
+  const top = scTabs.getBoundingClientRect().top, bottom = scbar.getBoundingClientRect().bottom;
+  if (top >= head && bottom <= innerHeight) return;
+  scrollTo({ top: scrollY + top - head - 8, behavior: reducedMotion() ? "auto" : "smooth" });
+}
+export function playScene(id) {
+  bringIntoView();
+  return shows.start(SCENE_TO_TOUR[id] ?? (shows.list.some((s) => s.id === id) ? id : "desktop"));
+}
+const legacy = decodeURIComponent(location.hash).match(/^#scene\/(.+)$/);
+if (legacy) playScene(legacy[1]);
+addEventListener("hashchange", () => {
+  const h = decodeURIComponent(location.hash);
+  const m = h.match(/^#(?:tour|scene)\/(.+)$/);
+  if (m) playScene(m[1]);
+});
+// A small compatibility surface for the Guide and the checks: "scenes" never autoplay any more.
+const scenes = { get playing() { return false; }, play: () => playScene("desktop"), pause() {}, stop: () => shows.exit(), go: (i) => shows.start(shows.list[i]?.id ?? "desktop"), goId: playScene, get current() { return shows.current; } };
+window.lensSite = { desk, scenes, shows, playScene, detectOS };
 addEventListener("lens-play-scene", (e) => playScene(e.detail));
 document.querySelectorAll("[data-play-scene]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); playScene(b.dataset.playScene); }));
 
@@ -151,7 +182,7 @@ function pickDock(i, { focus = false, apply = true } = {}) {
   const [style, name, line, o] = DOCKS[i];
   railInfo.innerHTML = `<b>${esc(name)}</b> <span>${esc(line)}</span>`;
   if (!apply) return;
-  handover(false);
+  if (window.lensSite?.shows?.current) window.lensSite.shows.exit();
   desk.dockStyle(style, o.shape ?? "classic");
   if (o.pack) getPacks().then((ps) => desk.setPack(ps.find((p) => p.id === o.pack)));
 }

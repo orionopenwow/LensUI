@@ -840,6 +840,40 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .cl-go { display: flex; gap: 8px; justify-content: flex-end; margin-top: auto; }
 @property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
 
+/* ---- guided tours on the hero desk (js/showcases.js): tabs above, a step bar below ------------- */
+.sc-tabs { scroll-margin-top: 68px; display: flex; gap: 8px; margin: 0 0 12px; padding: 2px 2px 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.sc-tabs::-webkit-scrollbar { display: none; }
+.sc-tabs [role="tab"] { flex: 1 0 168px; scroll-snap-align: start; display: grid; gap: 2px; text-align: left; padding: 11px 14px; border-radius: 14px; border: 0; background: color-mix(in srgb, var(--card) 80%, transparent); box-shadow: 0 0 0 1px var(--line); color: var(--fg-2); font: 0.82rem/1.35 var(--sans); cursor: pointer; transition: background var(--lens-dur-base, .2s) var(--lens-ease-out), box-shadow var(--lens-dur-base, .2s), color .2s; }
+.sc-tabs [role="tab"] b { color: var(--fg); font-size: 0.95rem; font-weight: 600; }
+.sc-tabs [role="tab"] span { color: var(--fg-3); }
+.sc-tabs [role="tab"]:hover { background: var(--card); box-shadow: 0 0 0 1px var(--line-2); }
+.sc-tabs [role="tab"][aria-selected="true"] { background: var(--card); box-shadow: 0 0 0 1.5px rgb(var(--ink) / .5), 0 10px 30px -12px rgb(0 0 0 / .5); }
+.sc-tabs [role="tab"][aria-selected="true"] b { background: var(--spectrum); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sc-tabs [role="tab"]:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.sc-bar { display: flex; align-items: center; gap: 16px; padding: 12px 8px 6px 10px; }
+@media (min-width: 768px) { .stage:not(.is-full) .sc-bar { padding-right: 84px; } }
+.sc-cap { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.sc-n { font: 600 0.78rem var(--sans); color: var(--fg-3); }
+.sc-t { font-size: 1rem; line-height: 1.45; color: var(--fg); text-wrap: pretty; transition: opacity .3s var(--lens-ease-out); }
+.sc-bar:not(.is-touring) .sc-t { color: var(--fg-2); font-size: 0.92rem; }
+.sc-ctl { flex: none; display: flex; align-items: center; gap: 6px; }
+.sc-dots { display: flex; gap: 5px; margin-right: 6px; }
+.sc-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--ink) / .18); transition: background .3s, transform .3s var(--lens-ease-out); }
+.sc-dots i.was { background: rgb(var(--ink) / .45); }
+.sc-dots i.on { background: var(--fg); transform: scale(1.25); }
+.sc-b { width: auto; padding: 0 12px; gap: 6px; display: inline-flex; align-items: center; }
+.sc-b:disabled { opacity: .35; cursor: default; }
+.sc-bar:not(.is-touring) .sc-b { display: none; }
+.sc-next:not(:disabled) { background: var(--fg); color: var(--bg); }
+.sc-next:not(:disabled):hover { background: var(--fg); color: var(--bg); filter: brightness(1.08); }
+.stage.is-full .sc-bar { position: absolute; left: 50%; bottom: 10px; translate: -50% 0; width: min(960px, calc(100% - 24px)); padding: 10px 12px; border-radius: 18px; background: rgb(12 12 16 / .9); z-index: 20; color: #f4f4f5; }
+.stage.is-full .sc-t { color: #f4f4f5; }
+@media (max-width: 767px) { .sc-bar { flex-direction: column; align-items: stretch; gap: 10px; } .sc-ctl { justify-content: space-between; } .sb-fs .lbl { display: none; } .sc-tabs [role="tab"] { flex-basis: 150px; } .sc-tabs [role="tab"] span { display: none; } }
+/* The spotlight: a soft ring around what to use next, inside the desk's canvas. */
+.lx-spot { position: absolute; left: 0; top: 0; z-index: 64; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 2px rgb(255 255 255 / .9), 0 0 0 6px rgb(139 140 255 / .35), 0 0 0 9999px rgb(0 0 0 / .12); transition: transform .45s var(--lens-ease-out), width .45s var(--lens-ease-out), height .45s var(--lens-ease-out); animation: spot-breathe 2.4s ease-in-out infinite; }
+@keyframes spot-breathe { 50% { box-shadow: 0 0 0 2px rgb(255 255 255 / .95), 0 0 0 10px rgb(139 140 255 / .18), 0 0 0 9999px rgb(0 0 0 / .12); } }
+@media (prefers-reduced-motion: reduce) { .lx-spot { animation: none; transition: none; } }
+
 /* LENS-CLOUD:BEGIN (exact copy of src/styles/lens-cloud.css) */
 /* lens-cloud: the Lens orb's billowing rainbow nebula. Shared by the app (presence orb) and the
    website (docs/site/css/site.css carries an exact copy between the LENS-CLOUD markers; a test

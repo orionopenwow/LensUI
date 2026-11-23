@@ -92,7 +92,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
     else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
-    else { W = cw; H = Math.round(cw * 10 / 16); if (fitViewport) H = Math.max(560, Math.min(H, innerHeight - 150)); k = 1; }
+    else { W = cw; H = Math.round(cw * 10 / 16); /* tabs above + step bar below stay on screen */ if (fitViewport) H = Math.max(520, Math.min(H, innerHeight - 300)); k = 1; }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
     cv.style.transform = k === 1 ? "" : `scale(${k})`;
     host.style.height = full ? "" : `${Math.round(H * k)}px`;
