@@ -44,3 +44,29 @@ fn backup_names_are_case_and_slash_insensitive() {
     assert_eq!(backup_name_for("C:\\Users\\A\\"), backup_name_for("c:\\users\\a"));
     assert_ne!(backup_name_for("a"), backup_name_for("b"));
 }
+
+#[test]
+fn strip_lens_icon_keeps_windows_own_lines() {
+    // Documents' desktop.ini after Lens styled it and the backup was lost.
+    let ini = "[.ShellClassInfo]\r\nIconResource=C:\\Users\\a\\AppData\\Roaming\\LensUI\\icons\\lens_glass_folder_dark.ico,0\r\nLocalizedResourceName=@%SystemRoot%\\system32\\shell32.dll,-21770\r\nIconIndex=-235\r\n";
+    let out = strip_lens_icon_from_ini(ini).expect("localized name must survive");
+    assert!(out.contains("LocalizedResourceName=@%SystemRoot%"));
+    assert!(!out.contains("lens_glass_folder_"));
+    // An icon key that isn't Lens' is the user's own and stays.
+    assert!(out.contains("IconIndex=-235"));
+    assert!(out.starts_with("[.ShellClassInfo]\r\n"));
+}
+
+#[test]
+fn strip_lens_icon_returns_none_when_only_lens_wrote_the_file() {
+    let ini = "[.ShellClassInfo]\r\nIconResource=C:\\x\\lens_glass_folder_light.ico,0\r\n";
+    assert_eq!(strip_lens_icon_from_ini(ini), None);
+}
+
+#[test]
+fn strip_lens_icon_drops_sections_left_empty() {
+    let ini = "[.ShellClassInfo]\r\nIconResource=C:\\x\\lens_glass_folder_light.ico,0\r\n[ViewState]\r\nMode=\r\nFolderType=Pictures\r\n";
+    let out = strip_lens_icon_from_ini(ini).unwrap();
+    assert!(!out.contains("[.ShellClassInfo]"));
+    assert!(out.contains("[ViewState]\r\nMode=\r\nFolderType=Pictures"));
+}

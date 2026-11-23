@@ -5,6 +5,7 @@ import type { BatteryStatus } from "../../types/generated";
 import { Hero, HeroTile, LinkRow, Row, Section, Segmented, Select, StateNote, WinLink } from "../ui/primitives";
 import { optimistic, useResource } from "../useResource";
 import type { PageProps } from "./common";
+import { CoreAppLink } from "../../coreapps/CoreAppLink";
 
 type Mode = "efficiency" | "balanced" | "performance";
 const MODES: { id: Mode; label: string }[] = [
@@ -74,6 +75,7 @@ export const PowerPage: React.FC<PageProps> = ({ section }) => {
         <LinkRow>
           <WinLink uri="ms-settings:powersleep" label="Screen and sleep" />
           <WinLink uri="ms-settings:batterysaver-usagedetails" label="Battery usage by app" />
+          <CoreAppLink id="power" label="Battery health in Lens Power" />
         </LinkRow>
       </Section>
 

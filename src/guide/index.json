@@ -6704,6 +6704,21 @@
    "source": "docs/COMMAND.md"
   },
   {
+   "id": "hotkey.ctrl-shift-u",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+U",
+   "text": "Pin to desktop opens an always-on-top sticky (coreapp-sticky-) with a click-through toggle; Ctrl+Shift+U in Notes makes every sticky clickable again.",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+U"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md"
+   },
+   "source": "docs/CORE_APPS.md"
+  },
+  {
    "id": "hotkey.ctrl-shift-f8",
    "kind": "hotkey",
    "title": "Ctrl+Shift+F8",
@@ -8418,6 +8433,90 @@
     "heading": "App-aware context details"
    },
    "source": "docs/COMMAND.md"
+  },
+  {
+   "id": "doc.core-apps.0",
+   "kind": "doc",
+   "title": "Lens core apps",
+   "text": "Small companion apps built on backends Lens already has. They are quick wins, not rewrites. Each one opens in its own window ( coreapp-<id , route index.html?surface=coreapp&app=<id ). You can open them from: - the Launcher and Command palette search; - Command ( /monitor , /timer , /calc , /color , /notes , /power , /network , /clipboard , /startup , /uninstall , /stopwatch , /pomodoro ); - voice (\"Lens, open timer\"; names Windows owns, like calculator and notes , need the \"Lens\" prefix); - a Dock pin (the pin button in every app's title bar; the pin path is lens-app:<id ); - links on the Settings pages where relevant (Power, Apps & Startup, Network). App Reuses Adds --- --- --- Monitor sys telemetry::collect telemetry , kill process pid cmd , the Dock icon extractor Processes grouped by app with real icons, search and sort, plus sparklines for CPU, RAM, GPU, disk and network. GPU, disk",
+   "path": [
+    "Docs",
+    "Lens core apps"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md",
+    "heading": "Lens core apps"
+   },
+   "source": "docs/CORE_APPS.md"
+  },
+  {
+   "id": "doc.core-apps.1",
+   "kind": "doc",
+   "title": "Lens core apps: Shared shell",
+   "text": "src/coreapps/shell/ holds the shared parts: - AppShell: logo badge and title, the Lens-at-work status ( usePresence announces End task, uninstall and recycle through the presence orb, and Stop cancels), the Guide \"?\" anchor (F1), Pin to Dock, Open in Settings, a keyboard map ( ? ), and a sticky bottom action bar with mono metadata and a solid primary button. - ui.tsx: Hero (draws the headline number in dots on Dot Matrix packs), Card, Sparkline, Meter, Tabs (arrow keys), Switch, Search, Confirm (focus trap; Esc cancels), Toast, Empty (the pack's ambient backdrop), Skeleton, ErrorNote and an error boundary. - hooks.ts: useVisiblePoll and useLoad , which never poll while hidden, and useShape . Every screen has loading, empty, error and success states. Everything is reachable from the keyboard, with accessible names. Spacing is on a 4 px grid, numbers are tabular, and styles use Lens tokens",
+   "path": [
+    "Docs",
+    "Lens core apps",
+    "Shared shell"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md",
+    "heading": "Shared shell"
+   },
+   "source": "docs/CORE_APPS.md"
+  },
+  {
+   "id": "doc.core-apps.2",
+   "kind": "doc",
+   "title": "Lens core apps: Safety",
+   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
+   "path": [
+    "Docs",
+    "Lens core apps",
+    "Safety"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md",
+    "heading": "Safety"
+   },
+   "source": "docs/CORE_APPS.md"
+  },
+  {
+   "id": "doc.core-apps.4",
+   "kind": "doc",
+   "title": "Lens core apps: Needs real hardware",
+   "text": "These parts can only be checked on a real Windows PC: - GPU, disk and network counters (CIM classes; the GPU class needs WDDM 2.x drivers); - powercfg battery reports on a laptop; - the UserAssist last-used dates; - uninstallers starting with UAC, and the Recycle Bin move; - the screen-pixel sampler on mixed-DPI monitors; - sticky click-through; - the Dock countdown badge.",
+   "path": [
+    "Docs",
+    "Lens core apps",
+    "Needs real hardware"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md",
+    "heading": "Needs real hardware"
+   },
+   "source": "docs/CORE_APPS.md"
+  },
+  {
+   "id": "doc.core-apps.5",
+   "kind": "doc",
+   "title": "Lens core apps: Recommended next quick wins (ranked)",
+   "text": "1. Peek: Space-to-preview for files from the Launcher, Desktop drawer and Shelf. Reuses the Snip studio viewer and the Shelf previewers. 2. Screen Ruler: measure distances and pick colours on screen. Reuses the Color sampler and the Snip overlay. 3. Fonts: browse installed fonts with sample text, compare them, and copy CSS. Read-only. 4. Bluetooth devices: battery levels and connect/disconnect. Reuses get bluetooth cmd . 5. Windows Backup status: File History, OneDrive folder backup and the last restore point. Read-only. 6. Hosts / Firewall viewer: a read-only view of the hosts file and the firewall rules per app. 7. Display arranger: a visual layout of the monitors, with scale and refresh rate. Reuses list monitors cmd ; any change goes through Windows Settings. 8. Wallpaper studio: browse, crop and schedule wallpapers. Reuses the Lens wallpaper engine and the ambient scenes. Not quick ",
+   "path": [
+    "Docs",
+    "Lens core apps",
+    "Recommended next quick wins (ranked)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CORE_APPS.md",
+    "heading": "Recommended next quick wins (ranked)"
+   },
+   "source": "docs/CORE_APPS.md"
   },
   {
    "id": "doc.cursors.0",
@@ -12113,6 +12212,23 @@
     "surface": "doc",
     "doc": "docs/THIRD_PARTY_NOTICES.md",
     "heading": "Dictionaries"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.5",
+   "kind": "doc",
+   "title": "Third-party notices: Simple Icons — website demo only",
+   "text": "- Source: <https://github.com/simple-icons/simple-icons · licence: CC0 1.0 Universal. - Used: a handful of brand marks (Spotify, Discord, Chrome, Steam, Obsidian, Figma, VSCodium, Firefox, GitHub, Notion…) vendored in tools/site/vendor/simple-icons/ , drawn as brand-colour tiles in the website's live dock to illustrate apps a person might pin. Nothing ships in the Lens app. - The trademarks belong to their owners. Lens is not affiliated with or endorsed by them. - Windows built-ins (File Explorer, Notepad, Terminal) are shown with original generic stand-ins, not Microsoft's artwork. Open-source apps (Krita, Blender, OBS Studio, Ollama, ArtCraft…) use the icon from each project's own repository, under that project's licence.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Simple Icons — website demo only"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Simple Icons — website demo only"
    },
    "source": "docs/THIRD_PARTY_NOTICES.md"
   },

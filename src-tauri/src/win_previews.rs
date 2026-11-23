@@ -379,7 +379,7 @@ mod sys {
     }
 
     unsafe fn clear_tiles() {
-        let mut live = LIVE.lock().unwrap();
+        let mut live = LIVE.lock().unwrap_or_else(|e| e.into_inner());
         for l in live.drain(..) {
             if l.thumb != 0 {
                 DwmUnregisterThumbnail(l.thumb);
@@ -391,7 +391,7 @@ mod sys {
     }
 
     unsafe fn brush_for(color: u32) -> isize {
-        let mut b = BRUSH.lock().unwrap();
+        let mut b = BRUSH.lock().unwrap_or_else(|e| e.into_inner());
         if b.0 != color || b.1 == 0 {
             if b.1 != 0 {
                 DeleteObject(b.1);
@@ -499,7 +499,7 @@ mod sys {
                 thumb,
             });
         }
-        *LIVE.lock().unwrap() = live;
+        *LIVE.lock().unwrap_or_else(|e| e.into_inner()) = live;
         failed
     }
 

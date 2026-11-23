@@ -5,6 +5,7 @@ import type { BluetoothState, WifiState } from "../../types/generated";
 import { Hero, HeroTile, LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import { optimistic, useResource } from "../useResource";
 import type { PageProps } from "./common";
+import { CoreAppLink } from "../../coreapps/CoreAppLink";
 
 export const NetworkPage: React.FC<PageProps> = ({ section }) => {
   const wifi = useResource<WifiState>("get_wifi_cmd", {}, { pollMs: 15000 });
@@ -105,6 +106,7 @@ export const NetworkPage: React.FC<PageProps> = ({ section }) => {
           <WinLink uri="ms-settings:network-wifisettings" label="Saved networks" />
           <WinLink uri="ms-settings:network-vpn" label="VPN" />
           <WinLink uri="ms-settings:network-proxy" label="Proxy" />
+          <CoreAppLink id="network" label="Who's using my internet" />
         </LinkRow>
       </Section>
 

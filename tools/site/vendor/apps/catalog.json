@@ -1,0 +1,811 @@
+{
+ "source": "catalog/apps/catalog.json on feature/lens-apps (a9c7b62)",
+ "apps": [
+  {
+   "id": "artcraft",
+   "name": "ArtCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "ai"
+   ],
+   "status": "beta",
+   "pitch": "An IDE for artists: controllable AI image and video with 2D and 3D scene tools.",
+   "replaces": [
+    "Midjourney",
+    "Runway"
+   ],
+   "openSource": true,
+   "license": "MIT OR Apache-2.0",
+   "homepage": "https://getartcraft.com"
+  },
+  {
+   "id": "craft-launcher",
+   "name": "Craft Launcher",
+   "category": "create",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "alpha",
+   "pitch": "Installs and updates the whole ArtCraft suite (PhotoCraft, WordCraft, DeckCraft, GridCraft and more).",
+   "replaces": [
+    "Adobe Creative Cloud app"
+   ],
+   "openSource": true,
+   "license": "Permissive (per app; see each repo)",
+   "homepage": "https://getartcraft.com/apps"
+  },
+  {
+   "id": "photocraft",
+   "name": "PhotoCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Image editor. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Photoshop"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/photocraft"
+  },
+  {
+   "id": "vectorcraft",
+   "name": "VectorCraft",
+   "category": "design",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Vector illustration. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Illustrator"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/vectorcraft"
+  },
+  {
+   "id": "filmcraft",
+   "name": "FilmCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Video editing. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Premiere Pro"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/filmcraft"
+  },
+  {
+   "id": "lightcraft",
+   "name": "LightCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Photo library and RAW developer. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Lightroom"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/lightcraft"
+  },
+  {
+   "id": "pdfcraft",
+   "name": "PdfCraft",
+   "category": "docs",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "PDF workbench. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Acrobat"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/pdfcraft"
+  },
+  {
+   "id": "effectcraft",
+   "name": "EffectCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Motion graphics and VFX. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "After Effects"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/effectcraft"
+  },
+  {
+   "id": "designcraft",
+   "name": "DesignCraft",
+   "category": "design",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Page layout and publishing. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "InDesign"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/designcraft"
+  },
+  {
+   "id": "figcraft",
+   "name": "FigCraft",
+   "category": "design",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Interface design and prototyping. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Figma"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/figcraft"
+  },
+  {
+   "id": "wordcraft",
+   "name": "WordCraft",
+   "category": "docs",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Word processing. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Google Docs",
+    "Word"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/wordcraft"
+  },
+  {
+   "id": "deckcraft",
+   "name": "DeckCraft",
+   "category": "slides",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Presentations. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Google Slides",
+    "PowerPoint"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/deckcraft"
+  },
+  {
+   "id": "gridcraft",
+   "name": "GridCraft",
+   "category": "sheets",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Spreadsheets and data analysis. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Google Sheets",
+    "Excel"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/gridcraft"
+  },
+  {
+   "id": "soundcraft",
+   "name": "SoundCraft",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "artcraft-suite"
+   ],
+   "status": "alpha",
+   "pitch": "Digital audio workstation. Part of the open-source ArtCraft suite, native and in Rust.",
+   "replaces": [
+    "Audition",
+    "Logic"
+   ],
+   "openSource": true,
+   "license": "Permissive (see repo)",
+   "homepage": "https://getartcraft.com/apps/soundcraft"
+  },
+  {
+   "id": "concat",
+   "name": "Concat",
+   "category": "create",
+   "collections": [
+    "rewrites",
+    "ai"
+   ],
+   "status": "beta",
+   "pitch": "Free, local-first video editor that replaces CapCut, with AI captions and an MCP/JSON-RPC API.",
+   "replaces": [
+    "CapCut"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0-or-later",
+   "homepage": "https://concatenate.pages.dev"
+  },
+  {
+   "id": "degenview",
+   "name": "degenview",
+   "category": "markets",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "beta",
+   "pitch": "Open-source TradingView-style charting app in Rust with a local Pine Script v6 engine.",
+   "replaces": [
+    "TradingView"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0-only",
+   "homepage": "https://github.com/degenview/degenview"
+  },
+  {
+   "id": "opencharts",
+   "name": "OpenCharts",
+   "category": "markets",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "beta",
+   "pitch": "Self-hosted TradingView alternative in the browser, built on Lightweight Charts.",
+   "replaces": [
+    "TradingView"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://dylanpersonguy.github.io/OpenCharts/"
+  },
+  {
+   "id": "openstock",
+   "name": "OpenStock",
+   "category": "markets",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "stable",
+   "pitch": "Open-source market dashboard: prices, alerts and company insights.",
+   "replaces": [
+    "Paid market platforms"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0",
+   "homepage": "https://openstock-ods.vercel.app"
+  },
+  {
+   "id": "affine",
+   "name": "AFFiNE",
+   "category": "notes",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "stable",
+   "pitch": "Docs, whiteboards and databases in one local-first workspace.",
+   "replaces": [
+    "Notion",
+    "Miro"
+   ],
+   "openSource": true,
+   "license": "MIT (Community Edition)",
+   "homepage": "https://affine.pro"
+  },
+  {
+   "id": "appflowy",
+   "name": "AppFlowy",
+   "category": "notes",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "stable",
+   "pitch": "Open-source Notion alternative with docs, databases and local AI.",
+   "replaces": [
+    "Notion"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0",
+   "homepage": "https://appflowy.com"
+  },
+  {
+   "id": "onlyoffice",
+   "name": "ONLYOFFICE Desktop Editors",
+   "category": "docs",
+   "collections": [
+    "rewrites",
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Documents, spreadsheets, slides and PDFs with strong Microsoft Office compatibility.",
+   "replaces": [
+    "Microsoft Office",
+    "Google Docs"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0",
+   "homepage": "https://www.onlyoffice.com"
+  },
+  {
+   "id": "libreoffice",
+   "name": "LibreOffice",
+   "category": "docs",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "The full open-source office suite: Writer, Calc, Impress, Draw.",
+   "replaces": [
+    "Microsoft Office"
+   ],
+   "openSource": true,
+   "license": "MPL-2.0",
+   "homepage": "https://www.libreoffice.org"
+  },
+  {
+   "id": "penpot",
+   "name": "Penpot",
+   "category": "design",
+   "collections": [
+    "rewrites"
+   ],
+   "status": "stable",
+   "pitch": "Open-source design and prototyping, built on open web standards.",
+   "replaces": [
+    "Figma"
+   ],
+   "openSource": true,
+   "license": "MPL-2.0",
+   "homepage": "https://penpot.app"
+  },
+  {
+   "id": "krita",
+   "name": "Krita",
+   "category": "create",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Professional painting and illustration.",
+   "replaces": [
+    "Photoshop (painting)"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://krita.org"
+  },
+  {
+   "id": "inkscape",
+   "name": "Inkscape",
+   "category": "design",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Vector graphics editor for SVG.",
+   "replaces": [
+    "Illustrator"
+   ],
+   "openSource": true,
+   "license": "GPL-2.0-or-later",
+   "homepage": "https://inkscape.org"
+  },
+  {
+   "id": "blender",
+   "name": "Blender",
+   "category": "create",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "3D modelling, animation, rendering and video editing.",
+   "replaces": [
+    "Maya",
+    "Cinema 4D"
+   ],
+   "openSource": true,
+   "license": "GPL",
+   "homepage": "https://www.blender.org"
+  },
+  {
+   "id": "kdenlive",
+   "name": "Kdenlive",
+   "category": "create",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Multi-track video editor.",
+   "replaces": [
+    "Premiere Pro"
+   ],
+   "openSource": true,
+   "license": "GPL",
+   "homepage": "https://kdenlive.org"
+  },
+  {
+   "id": "shotcut",
+   "name": "Shotcut",
+   "category": "create",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Simple, fast video editor.",
+   "replaces": [
+    "Clipchamp"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://shotcut.org"
+  },
+  {
+   "id": "obs-studio",
+   "name": "OBS Studio",
+   "category": "create",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Screen recording and live streaming.",
+   "replaces": [
+    "Streamlabs"
+   ],
+   "openSource": true,
+   "license": "GPL-2.0",
+   "homepage": "https://obsproject.com"
+  },
+  {
+   "id": "audacity",
+   "name": "Audacity",
+   "category": "create",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Record and edit audio.",
+   "replaces": [
+    "Audition"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://www.audacityteam.org"
+  },
+  {
+   "id": "darktable",
+   "name": "darktable",
+   "category": "create",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Photo workflow and RAW developer.",
+   "replaces": [
+    "Lightroom"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://www.darktable.org"
+  },
+  {
+   "id": "typst",
+   "name": "Typst",
+   "category": "docs",
+   "collections": [],
+   "status": "stable",
+   "pitch": "A fast, modern typesetting system: LaTeX-quality documents from simple markup.",
+   "replaces": [
+    "LaTeX"
+   ],
+   "openSource": true,
+   "license": "Apache-2.0",
+   "homepage": "https://typst.app"
+  },
+  {
+   "id": "slidev",
+   "name": "Slidev",
+   "category": "slides",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Presentation slides from Markdown, for developers.",
+   "replaces": [
+    "PowerPoint"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://sli.dev"
+  },
+  {
+   "id": "marp",
+   "name": "Marp",
+   "category": "slides",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Markdown presentations with a live preview in VS Code or a CLI.",
+   "replaces": [
+    "PowerPoint"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://marp.app"
+  },
+  {
+   "id": "excalidraw",
+   "name": "Excalidraw",
+   "category": "design",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Hand-drawn style whiteboard and diagrams.",
+   "replaces": [
+    "Miro"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://excalidraw.com"
+  },
+  {
+   "id": "obsidian",
+   "name": "Obsidian",
+   "category": "notes",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Private, local Markdown notes with links and plugins.",
+   "replaces": [
+    "Evernote"
+   ],
+   "openSource": false,
+   "license": "Proprietary (free for personal use)",
+   "homepage": "https://obsidian.md"
+  },
+  {
+   "id": "logseq",
+   "name": "Logseq",
+   "category": "notes",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Outliner and knowledge graph, local-first.",
+   "replaces": [
+    "Roam"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0",
+   "homepage": "https://logseq.com"
+  },
+  {
+   "id": "joplin",
+   "name": "Joplin",
+   "category": "notes",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Notes and to-dos with end-to-end encrypted sync.",
+   "replaces": [
+    "Evernote"
+   ],
+   "openSource": true,
+   "license": "AGPL-3.0",
+   "homepage": "https://joplinapp.org"
+  },
+  {
+   "id": "zed",
+   "name": "Zed",
+   "category": "dev",
+   "collections": [],
+   "status": "stable",
+   "pitch": "A very fast code editor, written in Rust, with built-in AI.",
+   "replaces": [
+    "VS Code"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://zed.dev"
+  },
+  {
+   "id": "vscodium",
+   "name": "VSCodium",
+   "category": "dev",
+   "collections": [],
+   "status": "stable",
+   "pitch": "VS Code built from source without Microsoft telemetry.",
+   "replaces": [
+    "VS Code"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://vscodium.com"
+  },
+  {
+   "id": "vlc",
+   "name": "VLC",
+   "category": "media",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Plays nearly every audio and video format.",
+   "replaces": [
+    "Windows Media Player"
+   ],
+   "openSource": true,
+   "license": "GPL-2.0",
+   "homepage": "https://www.videolan.org"
+  },
+  {
+   "id": "handbrake",
+   "name": "HandBrake",
+   "category": "media",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Convert and compress video.",
+   "replaces": [
+    "Paid converters"
+   ],
+   "openSource": true,
+   "license": "GPL-2.0",
+   "homepage": "https://handbrake.fr"
+  },
+  {
+   "id": "powertoys",
+   "name": "PowerToys",
+   "category": "utilities",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Microsoft's power-user utilities: FancyZones, Text Extractor, Color Picker and more.",
+   "replaces": [],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://learn.microsoft.com/windows/powertoys/"
+  },
+  {
+   "id": "everything",
+   "name": "Everything",
+   "category": "utilities",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Finds any file by name instantly.",
+   "replaces": [
+    "Windows Search"
+   ],
+   "openSource": false,
+   "license": "Freeware",
+   "homepage": "https://www.voidtools.com"
+  },
+  {
+   "id": "sharex",
+   "name": "ShareX",
+   "category": "utilities",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Screenshots, screen recording and upload workflows.",
+   "replaces": [
+    "Snagit"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://getsharex.com"
+  },
+  {
+   "id": "flow-launcher",
+   "name": "Flow Launcher",
+   "category": "utilities",
+   "collections": [],
+   "status": "stable",
+   "pitch": "Keyboard launcher with a big plugin store.",
+   "replaces": [
+    "Alfred"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://www.flowlauncher.com"
+  },
+  {
+   "id": "7zip",
+   "name": "7-Zip",
+   "category": "utilities",
+   "collections": [
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Open and make zip, 7z, rar and more.",
+   "replaces": [
+    "WinRAR"
+   ],
+   "openSource": true,
+   "license": "LGPL-2.1 (+ unRAR restriction)",
+   "homepage": "https://www.7-zip.org"
+  },
+  {
+   "id": "ollama",
+   "name": "Ollama",
+   "category": "ai",
+   "collections": [
+    "ai",
+    "essentials"
+   ],
+   "status": "stable",
+   "pitch": "Run open models (Llama, Qwen, Gemma and more) locally.",
+   "replaces": [
+    "Cloud chatbots"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://ollama.com"
+  },
+  {
+   "id": "lm-studio",
+   "name": "LM Studio",
+   "category": "ai",
+   "collections": [
+    "ai"
+   ],
+   "status": "stable",
+   "pitch": "Download and chat with local models in a friendly app.",
+   "replaces": [
+    "Cloud chatbots"
+   ],
+   "openSource": false,
+   "license": "Proprietary (free)",
+   "homepage": "https://lmstudio.ai"
+  },
+  {
+   "id": "comfyui",
+   "name": "ComfyUI",
+   "category": "ai",
+   "collections": [
+    "ai"
+   ],
+   "status": "stable",
+   "pitch": "Node-based local image and video generation.",
+   "replaces": [
+    "Midjourney"
+   ],
+   "openSource": true,
+   "license": "GPL-3.0",
+   "homepage": "https://www.comfy.org"
+  },
+  {
+   "id": "whisper-cpp",
+   "name": "whisper.cpp",
+   "category": "ai",
+   "collections": [
+    "ai"
+   ],
+   "status": "stable",
+   "pitch": "Fast local speech-to-text.",
+   "replaces": [
+    "Cloud transcription"
+   ],
+   "openSource": true,
+   "license": "MIT",
+   "homepage": "https://github.com/ggml-org/whisper.cpp"
+  }
+ ]
+}

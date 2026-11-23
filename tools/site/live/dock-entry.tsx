@@ -5,9 +5,12 @@
 // Nothing here touches a real system: launches, menus and search results are simulated.
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "../../../src/styles/tokens.css";
-import "../../../src/styles/global.css";
-import { DockSurface } from "../../../src/surfaces/DockSurface";
+// "@lens-src" is the dock source chosen by build-live.mjs (this checkout or the dock-styles branch).
+import "@lens-src/styles/tokens.css";
+import "@lens-src/styles/global.css";
+import { DockSurface } from "@lens-src/surfaces/DockSurface";
+import { packById, registerCustomPack } from "@lens-src/themes/packs";
+import { APPS, ICON_BY_NAME } from "@tauri-apps/api/core";
 
 const W = globalThis as any;
 
@@ -26,19 +29,75 @@ window.addEventListener("message", (e) => {
     const next = merge(W.__lensConfig(), m.patch);
     W.__lensSetConfig(next);
     W.__lensEmit("lens://config-updated", next);
+  } else if (m.lens === "pack" && m.pack && typeof m.pack === "object") {
+    // A pack the app build may not ship yet (e.g. the Claude Code collection): register it as a
+    // custom pack through Lens's own validator, then apply it like any other.
+    const p = m.pack;
+    const id = packById(p.id) ? p.id : registerCustomPack({ id: p.id, label: p.label, base: p.base, accent: p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle })?.id;
+    if (!id) return;
+    const next = merge(W.__lensConfig(), { theme: { preset: id, customAccent: p.accent, accentMode: "custom", borderRadius: p.radius }, ...(m.dockStyle ? { dock: { style: m.dockStyle } } : {}) });
+    W.__lensSetConfig(next);
+    W.__lensEmit("lens://config-updated", next);
   } else if (m.lens === "ping") {
     window.parent?.postMessage({ lens: "ready" }, "*");
   } else if (m.lens === "search") {
-    W.__lensEmit("lens://dock-search-open", true);
+    // Open (or close) search the way a person does: the dock's own magnifier button.
+    const open = !!document.querySelector(".dock-launcher-drawer");
+    const want = m.open ?? true;
+    if (open !== want) (document.querySelector(".dock-search-mag-btn") as HTMLElement | null)?.click();
+    if (want && typeof m.q === "string") setTimeout(() => typeIn(m.q, m.focus !== false), 120);
   }
 });
 
-// Fixed sample config for the site: a few recognisable apps, floating dock, no top bar.
+/** Types into the dock's search field, one character at a time, as React sees real typing. */
+function typeIn(q: string, focus = true) {
+  const el = document.querySelector(".dock-search-glide-input, .dock-search-inline input") as HTMLInputElement | null;
+  if (!el) return;
+  if (focus) el.focus();
+  const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+  let i = 0;
+  const next = () => {
+    set.call(el, q.slice(0, ++i));
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    if (i < q.length) setTimeout(next, 70);
+  };
+  set.call(el, "");
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  q ? next() : null;
+}
+// Demo-only: app rows in search show the app's icon (the mock has no icon extractor for search).
+function decorate() {
+  document.querySelectorAll(".dock-launcher-drawer .pal-result-row").forEach((row) => {
+    const slot = row.querySelector(".pal-recent-icon");
+    const name = row.querySelector(":scope > div > div > div:first-child")?.textContent?.trim().toLowerCase() ?? "";
+    const src = (ICON_BY_NAME as Record<string, string>)[name];
+    if (!slot || slot.querySelector("img") || !src) return;
+    // Leave React's own nodes in place (hidden) so reconciliation never trips over them.
+    slot.querySelectorAll("svg").forEach((g) => ((g as unknown as HTMLElement).style.display = "none"));
+    const img = document.createElement("img");
+    Object.assign(img, { src, alt: "" });
+    img.style.cssText = "width:24px;height:24px;border-radius:6px";
+    slot.append(img);
+  });
+}
+// Tell the host page when the search drawer opens or closes, so it can give the frame room.
+let drawerOpen = false;
+new MutationObserver(() => {
+  decorate();
+  const now = !!document.querySelector(".dock-launcher-drawer:not(.is-closing)");
+  if (now !== drawerOpen) { drawerOpen = now; window.parent?.postMessage({ lens: "drawer", open: now }, "*"); }
+}).observe(document.getElementById("root")!, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+
+// Fixed sample config for the site: a few recognisable apps, no top bar. Query parameters set the
+// starting look (used by the "All docks" thumbnails): ?style=islands&shape=dotmatrix&pack=…
+const q = new URLSearchParams(location.search);
 const start = W.__lensConfig();
+const pack0 = q.get("pack") && packById(q.get("pack"));
 W.__lensSetConfig(
   merge(start, {
-    dock: { autoHide: "never", magnification: "subtle", launchAnimation: "bounce", style: "floating", showLabels: false },
+    dock: { autoHide: "never", magnification: q.get("mag") || "subtle", launchAnimation: "bounce", style: q.get("style") || "floating", showLabels: false, pinnedApps: (APPS as any[]).map(({ id, name, path }) => ({ id, name, path, iconHint: null })) },
     topBar: { enabled: false },
+    theme: { ...(q.get("shape") ? { shapeStyle: q.get("shape") } : {}), ...(pack0 ? { preset: pack0.id, customAccent: pack0.accent, accentMode: "custom", borderRadius: pack0.radius } : {}) },
   })
 );
 

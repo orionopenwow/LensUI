@@ -1,0 +1,61 @@
+# Windows and routes
+
+Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
+
+## Declared windows (21)
+
+| Label | Visible at start | Size |
+|---|---|---|
+| `dock` | yes | 920×96 |
+| `topbar` | yes | 1920×34 |
+| `settings` | no (on demand) | 720×530 |
+| `palette` | no (on demand) | 660×460 |
+| `widgets` | no (on demand) | 360×680 |
+| `quicksettings` | no (on demand) | 376×540 |
+| `notifications` | no (on demand) | 364×420 |
+| `desktopfolder` | yes | 88×96 |
+| `launcher` | no (on demand) | 780×640 |
+| `overview` | no (on demand) | 1120×700 |
+| `wallpaper` | no (on demand) | 1920×1080 |
+| `cursorfx` | no (on demand) | 1920×1080 |
+| `command` | no (on demand) | 1000×640 |
+| `edgeshelf` | no (on demand) | 6×96 |
+| `bubble` | no (on demand) | 32×32 |
+| `testerhub` | no (on demand) | 760×860 |
+| `voicehud` | no (on demand) | 480×560 |
+| `conversation` | no (on demand) | 960×640 |
+| `approval` | no (on demand) | 520×720 |
+| `nowplaying` | no (on demand) | 1280×800 |
+| `apps` | no (on demand) | 1040×760 |
+
+## Frontend routes (27) — `index.html?surface=<id>`
+
+| Route | Module | Window |
+|---|---|---|
+| `dock` | `./surfaces/DockSurface` | declared |
+| `topbar` | `./surfaces/TopBarSurface` | declared |
+| `settings` | `./surfaces/ControlCenterSurface` | declared |
+| `palette` | `./surfaces/CommandPaletteSurface` | declared |
+| `widgets` | `./surfaces/WidgetDrawerSurface` | declared |
+| `quicksettings` | `./surfaces/QuickSettingsSurface` | declared |
+| `notifications` | `./surfaces/NotificationOverlaySurface` | declared |
+| `launcher` | `./surfaces/LauncherSurface` | declared |
+| `overview` | `./surfaces/OverviewSurface` | declared |
+| `wallpaper` | `./surfaces/WallpaperSurface` | declared |
+| `desktopfolder` | `./surfaces/DesktopFolderSurface` | declared |
+| `cursorfx` | `./surfaces/CursorFxSurface` | declared |
+| `command` | `./command/CommandSurface` | declared |
+| `edgeshelf` | `./command/mini/EdgeShelfSurface` | declared |
+| `bubble` | `./command/mini/BubbleSurface` | declared |
+| `browser` | `./browser/BrowserSurface` | built at runtime |
+| `snip` | `./snip/SnipSurface` | built at runtime |
+| `magic` | `./magic/MagicSurface` | built at runtime |
+| `testerhub` | `./tester/TesterHubSurface` | declared |
+| `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
+| `approval` | `./approval/ApprovalSurface` | declared |
+| `nowplaying` | `./music/NowPlayingSurface` | declared |
+| `apps` | `./apps/AppsSurface` | declared |
+| `presence` | `./presence/PresenceSurface` | built at runtime |
+| `presencebar` | `./presence/PresenceBar` | built at runtime |
+| `voicehud` | `./surfaces/VoiceHudSurface` | declared |
+| `conversation` | `./surfaces/ConversationSurface` | declared |

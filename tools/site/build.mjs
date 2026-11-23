@@ -17,6 +17,7 @@ import { page, REPO } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
 import { home, download } from "./pages.mjs";
 import { buildBrand } from "./lib/logo.mjs";
+import { writeIcons } from "./lib/icons.mjs";
 import { FEATURES } from "./content/features.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,12 @@ if (existsSync(join(root, "docs/media/clips.json"))) {
   clips = JSON.parse(read("docs/media/clips.json")).filter((c) => c.mp4);
   for (const f of readdirSync(join(root, "docs/media"))) if (/\.(mp4|webp|gif|json)$/.test(f)) copyFileSync(join(root, "docs/media", f), join(site, "media", f));
 }
+
+// Real icons and screenshots for the apps section, from the pinned commits in the Lens Apps catalogue.
+try { execFileSync("node", [join(here, "fetch-app-media.mjs")], { stdio: "inherit" }); } catch { console.warn("[site] app media not fetched; the apps section shows text only"); }
+// App icons for the demo desktops (Lens's own, Simple Icons brand tiles, generic stand-ins).
+writeIcons(root, join(site, "media/icons"));
+const appMedia = existsSync(join(site, "data/app-media.json")) ? JSON.parse(readFileSync(join(site, "data/app-media.json"), "utf8")) : {};
 
 // ---- docs ----------------------------------------------------------------------------------
 const USER = existsSync(join(root, "docs/guide-for-users")) ? readdirSync(join(root, "docs/guide-for-users")).filter((f) => f.endsWith(".md")) : [];
@@ -111,7 +118,7 @@ write("docs/index.html", page({
   title: "Docs", desc: "Lens UI how-to guides and reference docs.", path: "docs/index.html", scripts: ["js/docs-search.js"],
   body: `<div class="inner doc-layout">${docNav("index")}<article class="prose">
 <h1>Documentation</h1>
-<p class="lede">Short how-tos for using Lens, generated from the same data the in-app Guide uses, and the developer reference docs.</p>
+<p class="lede">How to use the everything desktop: short how-tos generated from the same data as the in-app Guide, plus the developer reference.</p>
 <form role="search" id="docs-search" style="display:flex;gap:8px;margin:18px 0 4px"><label class="sr" for="docs-q">Search the docs</label><input id="docs-q" type="search" placeholder="Search the docs: hot corners, undo, voice…" style="flex:1"><button class="btn" type="submit">Search</button></form>
 <ul class="search-results" id="docs-results" aria-live="polite"></ul>
 <h2 id="how-to">How-to</h2>
@@ -136,19 +143,23 @@ const siteEntries = gi.entries.map((e) => {
   if (e.kind === "hotkey") href = "docs/commands-and-shortcuts.html#keyboard-shortcuts";
   if (e.kind === "pack") { href = "#themes"; clip = "themes"; }
   if (e.kind === "dock-style") { href = "#dock"; clip = "dock-styles"; }
-  if (e.kind === "scene") { href = "#sand"; clip = "playground-sand"; }
+  if (e.kind === "scene") { href = "#dock"; clip = "playground-sand"; }
   if (e.kind === "doc" && t.doc) { const r = refFor(t.doc); doc = r ? `docs/${r.slug}.html` : null; }
   return { id: e.id, kind: e.kind, title: e.title, text: (e.text ?? "").slice(0, 480), path: e.path, examples: e.examples, href, doc, clip: clips.some((c) => c.id === clip) ? clip : null };
 });
-const ANCHOR = { dock: "dock", themes: "themes", windows: "trust", "living-desktop": "sand", pointers: "more", command: "command", voice: "voice", browser: "browser", ai: "approvals", snip: "snip", guide: "guide", tester: "more" };
-const featureEntries = FEATURES.map((f) => ({ id: `site.feature.${f.id}`, kind: "card", title: f.title, text: `${f.lede} ${f.bullets.join(" ")}`, path: ["Lens", f.title], href: `#${ANCHOR[f.id] ?? "more"}`, clip: f.clips.find((id) => clips.some((c) => c.id === id)) ?? null }));
+// Feature → stage pane (selecting it through the chips) or a home section.
+const ANCHOR = { dock: "dock", themes: "themes", windows: "windows", "living-desktop": "dock", pointers: "dock", command: "command", voice: "voice", browser: "browser", ai: "ai", snip: "snip", guide: "guide", tester: "trust" };
+const featureEntries = FEATURES.map((f) => ({ id: `site.feature.${f.id}`, kind: "card", title: f.title, text: `${f.lede} ${f.bullets.join(" ")}`, path: ["Lens", f.title], href: `#${ANCHOR[f.id] ?? "stage"}`, clip: f.clips.find((id) => clips.some((c) => c.id === id)) ?? null }));
 write("data/guide-index.json", JSON.stringify({ version: 1, source: guideFile, entries: [...featureEntries, ...siteEntries, ...searchDocs.map((d) => ({ ...d, text: d.text.slice(0, 300) }))] }));
 
 linkPrefix = "docs/"; // pages below live at the site root
 // ---- pages -----------------------------------------------------------------------------------
 const log = (git("log", "--first-parent", "-n", "20", "--date=short", "--pretty=format:%h%x09%ad%x09%s") ?? "").split("\n").filter(Boolean).map((l) => l.split("\t"));
 const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` : `${REPO}/pull/25`;
-write("index.html", page({ title: "", desc: "Lens UI: a calm, themeable desktop for Windows 10 and 11. A dock, themes that restyle everything and an AI helper that asks first. Open source and reversible.", path: "index.html", body: home({ clips, visionHref, nebula: brandOut.nebula }), scripts: ["js/logo.js", "js/demos.js"] }));
+// The Apps pane reads the Lens Apps catalogue (feature/lens-apps; vendored until merged).
+const appsCat = read("catalog/apps/catalog.json") ? JSON.parse(read("catalog/apps/catalog.json")) : JSON.parse(read("tools/site/vendor/apps/catalog.json"));
+write("data/apps.json", JSON.stringify({ apps: (appsCat.apps ?? appsCat).map((a) => ({ name: a.name, category: a.category, pitch: a.pitch, openSource: a.openSource, license: a.license })) }));
+write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs }), scripts: ["js/stage.js"] }));
 write("download.html", page({ title: "Download", desc: "How to get Lens UI: build from source, releases, and which Windows versions it works on.", path: "download.html", body: download({ log }) }));
 
 // Testers: today's checklist from the daily notes.
@@ -185,5 +196,5 @@ writeFileSync(join(site, ".nojekyll"), "");
 
 // Old URLs from the first version of the site point somewhere useful.
 const moved = (to) => `<!DOCTYPE html><meta charset="utf-8"><title>Moved</title><meta http-equiv="refresh" content="0; url=${to}"><link rel="canonical" href="${to}"><p><a href="${to}">This page moved.</a></p>`;
-for (const [from, to] of [["features.html", "./#more"], ["try.html", "./#demos"], ["vision.html", "./#vision"], ["changelog.html", "download.html#releases"]]) write(from, moved(to));
+for (const [from, to] of [["features.html", "./#chips"], ["try.html", "./#stage"], ["vision.html", "./#vision"], ["changelog.html", "download.html#releases"]]) write(from, moved(to));
 console.log(`[site] ${userPages.length + REF.length + 4} pages · ${clips.length} clips · ${packs.length} packs · guide index ${siteEntries.length + featureEntries.length + searchDocs.length} entries · tester notes: ${latestSrc}`);
