@@ -412,7 +412,7 @@ footer.site p { margin: 0; }
 .w-code nav b { font-size: 9.5px; letter-spacing: .06em; }
 .w-code nav .on { color: var(--m-fg); background: color-mix(in srgb, var(--m-accent) 18%, transparent); border-radius: 4px; padding: 1px 4px; margin: 0 -4px; }
 .w-code pre { margin: 0; padding: 8px 10px; font: 10.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--m-fg); overflow: hidden; white-space: pre; }
-.w-code pre i { display: inline-block; width: 18px; color: var(--m-fg2); opacity: .6; font-style: normal; }
+.w-code pre i { display: inline-block; width: 18px; color: var(--m-fg2); font-style: normal; }
 .t-c { color: #7c8a9a; } .t-k { color: #c084fc; } .t-f { color: #60a5fa; } .t-v { color: #f472b6; } .t-n { color: #fbbf24; } .t-s { color: #4ade80; }
 .desk[data-scheme="light"] .t-c { color: #6b7280; } .desk[data-scheme="light"] .t-k { color: #7c3aed; } .desk[data-scheme="light"] .t-f { color: #2563eb; } .desk[data-scheme="light"] .t-v { color: #be185d; } .desk[data-scheme="light"] .t-n { color: #b45309; } .desk[data-scheme="light"] .t-s { color: #15803d; }
 .w-notes { padding: 10px 14px; display: grid; gap: 5px; color: var(--m-fg2); }
