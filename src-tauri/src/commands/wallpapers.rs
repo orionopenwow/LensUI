@@ -2,20 +2,42 @@
 //! picture itself is shown by the Lens wallpaper host (`commands::wallpaper::sync_wallpaper`).
 
 use crate::*;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 use crate::wallpapers::{ItemMeta, LibraryView, Original, Switched, SwitcherSettings};
 
 /// "Change at sign-in" happens once per run of Lens, however often the wallpaper surface reloads.
 static SIGN_IN_DONE: AtomicBool = AtomicBool::new(false);
+/// The local hour the frontend last told us (Rust has no time zone of its own). Used by the
+/// tray's "Next wallpaper" so it draws from the same day or night set.
+static LAST_HOUR: AtomicU32 = AtomicU32::new(12);
 
 async fn blocking<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Result<T, String> {
     tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())
 }
 
+/// Re-syncs the wallpaper host on the main thread (it re-parents a window) and tells the picker.
 fn show(app: &AppHandle, switched: &Switched) {
-    crate::commands::wallpaper::sync_wallpaper(app);
+    // The fade length goes out first, so the surface knows it before the new picture arrives.
     let _ = app.emit("lens://wallpapers-switched", switched.clone());
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || crate::commands::wallpaper::sync_wallpaper(&handle));
+}
+
+fn note_hour(hour: u32) -> u32 {
+    let h = hour.min(23);
+    LAST_HOUR.store(h, Ordering::Relaxed);
+    h
+}
+
+/// Tray menu › Next wallpaper. Runs off the UI thread; an empty library simply does nothing.
+pub(crate) fn step_from_menu(app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        let hour = LAST_HOUR.load(Ordering::Relaxed);
+        if let Ok(Ok(switched)) = blocking(move || crate::wallpapers::step("next", hour)).await {
+            show(&app, &switched);
+        }
+    });
 }
 
 #[tauri::command]
@@ -65,7 +87,8 @@ pub(crate) async fn wallpapers_step_cmd(app: AppHandle, direction: String, hour:
         "random" => "random",
         _ => "next",
     };
-    let switched = blocking(move || crate::wallpapers::step(dir, hour.min(23))).await??;
+    let hour = note_hour(hour);
+    let switched = blocking(move || crate::wallpapers::step(dir, hour)).await??;
     show(&app, &switched);
     Ok(switched)
 }
@@ -75,7 +98,8 @@ pub(crate) async fn wallpapers_step_cmd(app: AppHandle, direction: String, hour:
 #[tauri::command]
 pub(crate) async fn wallpapers_tick_cmd(app: AppHandle, paused: bool, started: bool, hour: u32) -> Result<Option<Switched>, String> {
     let sign_in_done = SIGN_IN_DONE.load(Ordering::Relaxed);
-    let switched = blocking(move || crate::wallpapers::tick(paused, started, hour.min(23), sign_in_done)).await??;
+    let hour = note_hour(hour);
+    let switched = blocking(move || crate::wallpapers::tick(paused, started, hour, sign_in_done)).await??;
     if started && !paused {
         SIGN_IN_DONE.store(true, Ordering::Relaxed);
     }

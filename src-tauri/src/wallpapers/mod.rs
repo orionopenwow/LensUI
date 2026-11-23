@@ -164,6 +164,8 @@ pub struct Switched {
     pub id: String,
     pub name: String,
     pub file: String,
+    /// How long the wallpaper surface should fade from the old picture to this one.
+    pub crossfade_ms: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -745,7 +747,7 @@ pub fn set_current(id: &str) -> Result<Switched, String> {
     save(&lib)?;
     let keep: Vec<String> = lib.history.iter().rev().take(KEEP_LINKED).cloned().collect();
     prune_linked(&keep);
-    Ok(Switched { id: item.id, name: item.name, file })
+    Ok(Switched { id: item.id, name: item.name, file, crossfade_ms: lib.settings.auto.crossfade_ms })
 }
 
 fn seed() -> u64 {

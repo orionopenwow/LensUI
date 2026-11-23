@@ -2,6 +2,8 @@
 // Every command the surfaces call at startup returns realistic sample data; unknown commands
 // resolve to null, so a surface that crashes on null data shows up as a page error.
 import { applyThemePack } from "../../../src/themes/packs";
+import { applyFeaturedLook, isFeatured } from "../../../src/themes/featured";
+import { wallpaperHandlers } from "./wallpapers";
 import { emitLocal } from "./event";
 const params = new URLSearchParams(location.search);
 const preset = params.get("preset") || "obsidian";
@@ -46,6 +48,8 @@ const notes = [
 config.theme.preset = preset;
 // Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.
 if (preset.startsWith("cc-") || preset.startsWith("living-")) config = applyThemePack(config, preset);
+// ?look=1: the whole featured look (font, glass, Dock style and feel), as "Apply" does it.
+if (params.get("look") && isFeatured(preset)) config = applyFeaturedLook(config, preset);
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
@@ -120,6 +124,7 @@ const handlers: Record<string, (a: any) => any> = {
     tools: { whisperBin: null, modelPath: null, ffmpegPath: null, ytdlpPath: null, ready: false, canDoVideo: false, canDoUrls: false, notes: ["whisper.cpp not found. Point Lens at whisper-cli.exe."] },
     transcriptsDir: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\transcripts",
   }),
+  ...wallpaperHandlers,
   get_config: () => config,
   get_wallpaper_state_cmd: () => {
     // `?ambient=subtle|lively|still` shows the theme backdrop (docs/AMBIENT.md); `&ambientScene=<id>` overrides it.

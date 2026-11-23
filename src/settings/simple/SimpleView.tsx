@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig, WindowsThemeInfo } from "../../types/lens";
 import { applyThemePack, packById } from "../../themes/packs";
 import { applyFeaturedLook, featuredPacks } from "../../themes/featured";
+import { SwitcherCard } from "../../wallpapers/SwitcherCard";
 import { matchLookPointer } from "../../themes/featuredPointer";
 import { readSchedule } from "../../themes/schedule";
 import { PackCard } from "../../components/ThemeGallery";
@@ -146,6 +147,9 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
             );
           })}
         </div>
+      </Card>
+      <Card title="Wallpaper" desc="Pick from your own pictures, or let Lens change it for you." wide>
+        <SwitcherCard simple />
       </Card>
       <Card title="Living wallpaper" desc="Animated backdrops, the real sky, or your own gradient.">
         <button type="button" className="ss-living" onClick={() => onMore("creator")}>

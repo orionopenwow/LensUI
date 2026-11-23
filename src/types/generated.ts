@@ -3501,6 +3501,8 @@ export interface Switched {
   id: string;
   name: string;
   file: string;
+  /** How long the wallpaper surface should fade from the old picture to this one. */
+  crossfadeMs: number;
 }
 
 /**

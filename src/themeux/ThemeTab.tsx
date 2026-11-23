@@ -19,6 +19,7 @@ import { ColorWheel } from "../components/ColorWheel";
 import { ThemeGallery, PackCard } from "../components/ThemeGallery";
 import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
 import { WallpaperCard } from "../components/WallpaperCard";
+import { SwitcherCard } from "../wallpapers/SwitcherCard";
 import { AmbientPreview, AmbientWallpaperOptions, AnimatedBackdropSwitch, packPalette } from "../playground/ambient/controls";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
@@ -681,6 +682,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </Section>
 
           <Section id="wallpaper" title="Wallpaper" summary={wallpaperSummary} open={!!open.wallpaper} onToggle={() => toggle("wallpaper")}>
+            <SwitcherCard />
             <AmbientWallpaperOptions />
             <WallpaperCard config={config} onUpdateConfig={updateConfig} />
           </Section>
