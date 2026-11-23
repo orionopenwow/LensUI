@@ -33,7 +33,7 @@ pub struct Entry {
 /// Something that isn't a list of files: empty the bin, run the helper, open a page.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Step {
+pub struct PlanStep {
     pub category: String,
     /// "emptyBin" | "elevated" | "open"
     pub kind: String,
@@ -47,7 +47,7 @@ pub struct Step {
 #[serde(rename_all = "camelCase")]
 pub struct Plan {
     pub entries: Vec<Entry>,
-    pub steps: Vec<Step>,
+    pub steps: Vec<PlanStep>,
     pub total: u64,
     /// Present only for a permanent delete of your files; the run must echo it back.
     pub confirm_token: Option<String>,
@@ -93,7 +93,7 @@ pub fn plan(specs: &[Spec], ctx: &Ctx, guard: &Guard, categories: &[String], pic
     for id in categories {
         let Some(spec) = specs.iter().find(|s| s.id == id.as_str()) else { continue };
         match spec.method {
-            Method::EmptyRecycleBin => p.steps.push(Step { category: id.clone(), kind: "emptyBin".into(), target: String::new(), label: "Empty the Recycle Bin".into(), size: bin_size }),
+            Method::EmptyRecycleBin => p.steps.push(PlanStep { category: id.clone(), kind: "emptyBin".into(), target: String::new(), label: "Empty the Recycle Bin".into(), size: bin_size }),
             Method::DeleteFiles => {
                 let (files, _) = files_for(spec, guard, ctx.now, cancel);
                 for f in files {
@@ -102,12 +102,12 @@ pub fn plan(specs: &[Spec], ctx: &Ctx, guard: &Guard, categories: &[String], pic
             }
             Method::Elevated => {
                 if let Some(task) = spec.action {
-                    p.steps.push(Step { category: id.clone(), kind: "elevated".into(), target: task.into(), label: format!("{} (Windows asks for permission)", spec.title), size: 0 });
+                    p.steps.push(PlanStep { category: id.clone(), kind: "elevated".into(), target: task.into(), label: format!("{} (Windows asks for permission)", spec.title), size: 0 });
                 }
             }
             Method::OpenSettings => {
                 if let Some(uri) = spec.action {
-                    p.steps.push(Step { category: id.clone(), kind: "open".into(), target: uri.into(), label: format!("Open Windows' page for {}", spec.title), size: 0 });
+                    p.steps.push(PlanStep { category: id.clone(), kind: "open".into(), target: uri.into(), label: format!("Open Windows' page for {}", spec.title), size: 0 });
                 }
             }
             // REVIEW categories are never cleaned as a whole: only the items you pick.
@@ -117,7 +117,7 @@ pub fn plan(specs: &[Spec], ctx: &Ctx, guard: &Guard, categories: &[String], pic
     for pick in picks {
         if pick.category == "unused-games" {
             if let Some(link) = pick.link.as_ref().filter(|l| l.starts_with("steam://uninstall/") && l["steam://uninstall/".len()..].chars().all(|c| c.is_ascii_digit())) {
-                p.steps.push(Step { category: pick.category.clone(), kind: "open".into(), target: link.clone(), label: format!("Uninstall {} in Steam", Path::new(&pick.path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()), size: pick.size });
+                p.steps.push(PlanStep { category: pick.category.clone(), kind: "open".into(), target: link.clone(), label: format!("Uninstall {} in Steam", Path::new(&pick.path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()), size: pick.size });
             }
             continue;
         }

@@ -71,7 +71,9 @@ const ListView: React.FC<SpaceProps & { parentSize: number }> = (p) => {
       {kids.map((n, i) => (
         <div
           key={`${n.id}-${n.name}`}
-          ref={(el) => (refs.current[i] = el)}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
           role="row"
           tabIndex={focus === i ? 0 : -1}
           className={`cl-lrow is-${n.kind}${n.note === "smaller" ? " is-smaller" : ""}${p.selected.includes(n.path) ? " is-on" : ""}`}
@@ -155,7 +157,9 @@ const TreemapView: React.FC<SpaceProps> = (p) => {
         return (
           <button
             key={`${n.id}-${n.name}`}
-            ref={(el) => (refs.current[i] = el)}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
             type="button"
             tabIndex={focus === i ? 0 : -1}
             className={`cl-tm is-${n.kind}${n.note === "smaller" ? " is-smaller" : ""}${p.selected.includes(n.path) ? " is-on" : ""}`}
@@ -215,7 +219,9 @@ const SunburstView: React.FC<SpaceProps> = (p) => {
           return (
             <path
               key={`${a.depth}-${a.node.id}-${a.a0.toFixed(4)}`}
-              ref={(el) => (refs.current[i] = el)}
+              ref={(el) => {
+              refs.current[i] = el;
+            }}
               d={arcPath(c, c, a.r0, a.r1, a.a0, a.a1)}
               className={`cl-arc is-${a.node.kind}${a.small ? " is-small" : ""}${hover === a ? " is-hot" : ""}`}
               style={{ ["--shade" as string]: depthShade, ["--d" as string]: a.depth }}

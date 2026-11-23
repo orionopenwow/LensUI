@@ -255,7 +255,7 @@ pub(crate) struct Preview {
     id: String,
     entries: Vec<plan::Entry>,
     entry_count: usize,
-    steps: Vec<plan::Step>,
+    steps: Vec<plan::PlanStep>,
     total: u64,
     confirm_token: Option<String>,
     refused: Vec<(String, String)>,

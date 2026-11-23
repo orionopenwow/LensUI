@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct InstalledApp {
+pub struct UninstallEntry {
     pub key: String,
     pub name: String,
     pub publisher: String,
@@ -21,15 +21,15 @@ pub struct InstalledApp {
 }
 
 /// Parses `reg query <Uninstall key> /s` output into apps.
-pub fn parse_reg_query(out: &str) -> Vec<InstalledApp> {
-    let mut apps: Vec<InstalledApp> = Vec::new();
-    let mut cur: Option<InstalledApp> = None;
+pub fn parse_reg_query(out: &str) -> Vec<UninstallEntry> {
+    let mut apps: Vec<UninstallEntry> = Vec::new();
+    let mut cur: Option<UninstallEntry> = None;
     for line in out.lines() {
         if line.starts_with("HKEY_") {
             if let Some(a) = cur.take() {
                 apps.push(a);
             }
-            cur = Some(InstalledApp { key: line.trim().to_string(), ..Default::default() });
+            cur = Some(UninstallEntry { key: line.trim().to_string(), ..Default::default() });
             continue;
         }
         let Some(a) = cur.as_mut() else { continue };
@@ -61,7 +61,7 @@ pub fn parse_reg_query(out: &str) -> Vec<InstalledApp> {
 }
 
 /// Reads every Uninstall view (machine 64/32-bit, and yours).
-pub fn installed() -> Vec<InstalledApp> {
+pub fn installed() -> Vec<UninstallEntry> {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -127,7 +127,7 @@ pub fn split_uninstall(cmd: &str) -> Option<(String, Vec<String>)> {
 }
 
 /// Where an app usually keeps caches and data, by its name or publisher.
-pub fn data_dirs(app: &InstalledApp, local: &Path, roaming: &Path) -> Vec<PathBuf> {
+pub fn data_dirs(app: &UninstallEntry, local: &Path, roaming: &Path) -> Vec<PathBuf> {
     let mut v = Vec::new();
     // "Spotify", "Discord", "Zoom (64-bit)" → "Zoom", "Blender 4.2" stays as is.
     let mut names = vec![app.name.clone()];
