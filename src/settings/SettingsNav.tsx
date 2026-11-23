@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { GROUPS, PAGES, pagesInGroup, type PageId } from "./registry";
 import { buildIndex, search, type SearchEntry } from "./search";
+import { preloadSettingsPage } from "./pages";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   palette: Palette,
@@ -185,6 +186,8 @@ export const SettingsNav: React.FC<{
                   className={`cc-nav-btn ${page === p.id ? "active" : ""}`}
                   aria-current={page === p.id ? "page" : undefined}
                   onClick={() => onNavigate(p.id)}
+                  onPointerEnter={() => preloadSettingsPage(p.id)}
+                  onFocus={() => preloadSettingsPage(p.id)}
                 >
                   <PageIcon id={p.id} />
                   <span>{p.label}</span>

@@ -4,33 +4,18 @@ import type { PageProps } from "./common";
 
 // Pages load on first visit, so opening Settings doesn't parse every page (and the AI, Apps and
 // Music cards behind them) up front. ControlCenterSurface wraps them in <Suspense>.
-const loaders: Array<() => Promise<unknown>> = [];
+const loaders = new Map<string, () => Promise<unknown>>();
 const page = (load: () => Promise<Record<string, unknown>>, name: string) => {
-  loaders.push(load);
+  loaders.set(name, load);
   return lazy(() => load().then((m) => ({ default: m[name] as React.FC<PageProps> })));
 };
 
-/** Warms every page chunk in idle time after Settings opens, one at a time, so switching pages
- *  never flashes a loading skeleton and the content doesn't jump in a moment later. */
-export function preloadSettingsPages(): () => void {
-  let cancelled = false;
-  type IdleWin = { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
-  const idle = (cb: () => void) => {
-    const w = window as unknown as IdleWin;
-    if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(cb, { timeout: 1200 });
-    else window.setTimeout(cb, 120);
-  };
-  const queue = [...loaders];
-  const next = () => {
-    if (cancelled) return;
-    const load = queue.shift();
-    if (!load) return;
-    load().catch(() => {}).finally(() => idle(next));
-  };
-  window.setTimeout(() => idle(next), 400);
-  return () => {
-    cancelled = true;
-  };
+/** Starts loading a page's chunk when the pointer moves onto its nav entry, so by the click it is
+ *  ready: the page appears at once instead of flashing a loading skeleton and jumping in. */
+export function preloadSettingsPage(id: PageId) {
+  const comp = PAGE_IDS_TO_NAMES[id];
+  const load = comp ? loaders.get(comp) : undefined;
+  if (load) load().catch(() => {});
 }
 
 /** Pages that live in their own file. The rest (Appearance, Dock & Bar, Desktop, Windows & Keys,
@@ -52,4 +37,23 @@ export const PAGE_COMPONENTS: Partial<Record<PageId, React.FC<PageProps>>> = {
   about: page(() => import("./AboutPage"), "AboutPage") as unknown as React.FC<PageProps>,
   store: page(() => import("./LensAppsPage"), "LensAppsPage") as unknown as React.FC<PageProps>,
   music: page(() => import("./MusicPage"), "MusicPage") as unknown as React.FC<PageProps>,
+};
+
+const PAGE_IDS_TO_NAMES: Partial<Record<PageId, string>> = {
+  display: "DisplayPage",
+  sound: "SoundPage",
+  network: "NetworkPage",
+  power: "PowerPage",
+  apps: "AppsPage",
+  storage: "StoragePage",
+  focus: "FocusPage",
+  privacy: "PrivacyPage",
+  update: "UpdatePage",
+  time: "TimePage",
+  accessibility: "AccessibilityPage",
+  gaming: "GamingPage",
+  ai: "AiCommandPage",
+  about: "AboutPage",
+  store: "LensAppsPage",
+  music: "MusicPage",
 };
