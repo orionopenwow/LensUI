@@ -48,8 +48,10 @@ export function onWeather(l: () => void): () => void {
   return () => listeners.delete(l);
 }
 
-function readCache(): Cache | null {
-  if (memory) return memory;
+function readCache(now = Date.now()): Cache | null {
+  // Another Lens window may have fetched since: re-read the shared copy once ours is stale.
+  if (memory && now - memory.at < WEATHER_TTL_MS) return memory;
+  if (typeof localStorage === "undefined") return memory;
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(CACHE_KEY) : null;
     memory = raw ? (JSON.parse(raw) as Cache) : null;
@@ -73,6 +75,11 @@ function writeCache(c: Cache | null) {
 /** Forget any fetched weather (called when live weather is switched off). */
 export function clearWeatherCache() {
   writeCache(null);
+  try {
+    if (typeof localStorage !== "undefined") localStorage.removeItem("lens.living.weather.lock");
+  } catch {
+    /* ignore */
+  }
 }
 
 type Fetcher = (url: string, init: { signal?: AbortSignal }) => Promise<{ ok: boolean; json(): Promise<unknown> }>;
@@ -82,9 +89,20 @@ export async function refreshWeather(s: LivingSettings, now = Date.now(), fetche
   if (!s.weather.online || !fetcher) return;
   const loc = resolveLocation(s);
   const lat = round1(loc.latitude), lon = round1(loc.longitude);
-  const c = readCache();
+  const c = readCache(now);
   if (c && c.lat === lat && c.lon === lon && now - c.at < WEATHER_TTL_MS) return;
   if (inFlight) return inFlight;
+  // One request for all Lens windows: a short-lived shared claim.
+  const LOCK = "lens.living.weather.lock";
+  try {
+    if (typeof localStorage !== "undefined") {
+      const held = Number(localStorage.getItem(LOCK) ?? 0);
+      if (now - held < 60_000 && now >= held) return;
+      localStorage.setItem(LOCK, String(now));
+    }
+  } catch {
+    /* no storage: this window fetches on its own */
+  }
   inFlight = (async () => {
     const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
     const timer = ctl ? setTimeout(() => ctl.abort(), 8000) : null;
@@ -109,7 +127,7 @@ export async function refreshWeather(s: LivingSettings, now = Date.now(), fetche
 /** The weather to draw now. Starts a background refresh when live weather is on and stale. */
 export function currentWeather(s: LivingSettings, now = Date.now()): WeatherKind {
   if (!s.weather.online) return s.weather.manual;
-  const c = readCache();
+  const c = readCache(now);
   if (!c || now - c.at >= WEATHER_TTL_MS) void refreshWeather(s, now);
   // A cached answer up to 6 hours old beats a guess; after that, the manual choice.
   return c && now - c.at < 6 * 3_600_000 ? c.kind : s.weather.manual;
