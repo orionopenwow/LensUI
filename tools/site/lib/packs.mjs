@@ -11,9 +11,11 @@ export async function loadPacks() {
   const tmp = join(root, "tools/site/.cache");
   mkdirSync(tmp, { recursive: true });
   const file = join(tmp, "packs.mjs");
-  await build({ entryPoints: [join(root, "src/themes/packs.ts")], bundle: true, format: "esm", platform: "neutral", outfile: file, logLevel: "error" });
+  const { dockRoot, VENDORED } = await import("../live/build-live.mjs");
+  // The packs of the dock source the live dock is built from (it may have newer packs).
+  await build({ entryPoints: [join(dockRoot().dir, "src/themes/packs.ts")], bundle: true, format: "esm", platform: "neutral", outfile: file, logLevel: "error" });
   const m = await import(pathToFileURL(file).href + "?t=" + Date.now());
-  return m.THEME_PACKS.map((p) => ({
+  const toSite = (p, collection) => ({
     id: p.id,
     label: p.label,
     tier: p.tier,
@@ -28,7 +30,17 @@ export async function loadPacks() {
     description: p.description ?? "",
     frameStyle: p.frameStyle,
     controlStyle: p.controlStyle,
-  }));
+    shapeStyle: p.shapeStyle,
+    ...(collection ? { collection, source: p.source ? { name: p.source.name, author: p.source.author, url: p.source.url } : undefined } : {}),
+  });
+  const core = m.THEME_PACKS.map((p) => toSite(p));
+  // The Claude Code community collection (feature/claude-theme-packs), when available.
+  const cfile = join(tmp, "claude.mjs");
+  await build({ entryPoints: [VENDORED.claudePacks], bundle: true, format: "esm", platform: "neutral", outfile: cfile, logLevel: "error" });
+  const c = await import(pathToFileURL(cfile).href + "?t=" + Date.now());
+  const ids = new Set(core.map((p) => p.id));
+  const community = (c.CLAUDE_PACKS ?? []).filter((p) => !ids.has(p.id)).map((p) => toSite(p, c.CLAUDE_COLLECTION ?? "Claude Code"));
+  return [...core, ...community];
 }
 
 export async function writePacks(outFile) {

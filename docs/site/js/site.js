@@ -45,7 +45,7 @@ export function packVars(p) {
 const PACK_KEYS = ["--pack-bg", "--pack-card", "--pack-sunk", "--pack-hue", "--pack-link", "--fg-2", "--fg-3"];
 function apply() {
   const sys = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  const mode = prefs.mode || "auto";
+  const mode = prefs.mode || "dark"; // dark by default; Auto follows the system
   PACK_KEYS.forEach((k) => root.style.removeProperty(k));
   let scheme = mode === "auto" ? sys : mode;
   if (prefs.accent === "pack" && prefs.pack) {
@@ -61,7 +61,7 @@ function apply() {
   window.dispatchEvent(new CustomEvent("site-theme"));
 }
 function set(patch) { prefs = { ...prefs, ...patch }; save(prefs); apply(); }
-matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => { if ((prefs.mode || "auto") === "auto") apply(); });
+matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => { if (prefs.mode === "auto") apply(); });
 
 // ---- the notch ---------------------------------------------------------------------------------
 const ICON = {
@@ -147,7 +147,7 @@ function close(restore = true) {
 }
 function renderNotch() {
   if (!notch) return;
-  const mode = prefs.mode || "auto";
+  const mode = prefs.mode || "dark";
   const shown = prefs.accent === "pack" ? root.dataset.scheme : mode;
   const acc = prefs.accent === "pack" ? prefs.pack?.label ?? "pack" : prefs.accent || "rainbow";
   pill.querySelector(".mi").innerHTML = ICON[shown] ?? ICON.auto;
@@ -155,7 +155,7 @@ function renderNotch() {
   pill.querySelector(".lbl").textContent = lbl;
   // The accessible name starts with the visible text (WCAG 2.5.3, label in name).
   pill.setAttribute("aria-label", `${lbl}: site appearance. Change`);
-  panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || (g.dataset.k === "density" ? "comfortable" : "auto"))))));
+  panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || ({ density: "comfortable", mode: "dark" }[g.dataset.k] ?? "auto"))))));
   panel.querySelectorAll("button[data-hue]").forEach((b) => b.setAttribute("aria-pressed", String(prefs.accent !== "pack" && b.dataset.hue === (prefs.accent || "rainbow"))));
   panel.querySelector("#n-pack").value = prefs.accent === "pack" ? prefs.pack?.id ?? "" : "";
   panel.querySelector("[data-size-out]").textContent = `${Math.round((prefs.size || 1) * 100)}%`;
@@ -192,7 +192,8 @@ document.querySelectorAll(".tile[data-clip]").forEach((tile) => {
 // ---- highlight a section reached by #hash (the Guide's "Show me") ------------------------------
 export function flash(id) {
   const el = document.getElementById(id);
-  if (!el) return false;
+  // Not an element: maybe a stage pane ("#themes", "#voice"…); js/stage.js handles those.
+  if (!el) { window.dispatchEvent(new CustomEvent("site-show", { detail: id })); return true; }
   el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   return true;
