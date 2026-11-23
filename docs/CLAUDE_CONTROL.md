@@ -82,6 +82,112 @@ The pre-existing tools are covered by the same grants:
 | `lens://theme/current` | Current look values | read settings |
 | `lens://shelf/items` | Shelf items (local-only items hidden) | **Use Shelf = Allowed** for that app |
 
+### Lens Browser tools
+
+| Tool | Capability | Notes |
+|---|---|---|
+| `lens_browser_tabs` | read pages | Spaces and tabs. For AI apps, bank sites and private Spaces are left out |
+| `lens_browser_read` | read pages | `readable` returns the page as markdown; `snapshot` returns text plus numbered elements |
+| `lens_browser_transcript` | read pages | Video captions or transcript |
+| `lens_browser_navigate` | browse | Web address or search. `javascript:`, `file:` and `data:` are refused |
+| `lens_browser_act` | fill in and click | Click, type or select ("approve similar" can trust these per site); submit always asks |
+
+The following are blocked here and again by Lens Browser's own gating (`browser::gating::classify`):
+- card numbers;
+- sign-in pages;
+- checkout and payment pages;
+- password, card and one-time-code fields;
+- CAPTCHAs.
+
+Lens never types card numbers. It only uses a payment method the site already has saved, and the
+user's own action completes the payment.
+
+**Honest answers.** When Lens can't or won't read something, the tool returns
+`{ access: "none", source: null, reason }` with the text "I can't access that. … (No source:
+nothing was read.)". This happens when:
+- the page is a banking page;
+- the tab is in a private Space;
+- Lens Browser isn't running.
+
+The UI shows it with `NoAccessNote` / `NoSourceBadge` (`src/approval/NoSourceBadge.tsx`).
+Successful reads carry their `source` address.
+
+#### Wiring Lens Browser (when feature/lens-browser lands): `control/lens.rs`, `impl Desktop for LensDesktop`
+
+```rust
+fn browser(&self, call: &crate::control::browser::BrowserCall) -> Result<Value, String> {
+    use crate::control::browser::{BrowserCall, PageAct};
+    use tauri::async_runtime::block_on;
+    let app = self.app.clone();
+    match call {
+        BrowserCall::Tabs => serde_json::to_value(crate::commands::browser::browser_state()).map_err(|e| e.to_string()),
+        BrowserCall::Read { tab, mode } => {
+            let op = if mode == "snapshot" { "snapshot" } else { "readable" };
+            let v = block_on(crate::commands::browser::browser_page(op.into(), tab.clone()))?;
+            let url = self.browser_tab(tab.as_deref()).map(|(u, _)| u).unwrap_or_default();
+            // Page text is data, never instructions.
+            Ok(Value::String(crate::commands::browser::browser_untrusted(url, v.to_string())))
+        }
+        BrowserCall::Transcript { tab, lang } => block_on(crate::commands::browser::browser_captions(tab.clone(), lang.clone())),
+        BrowserCall::Navigate { input, new_tab } => block_on(crate::commands::browser::browser_navigate(app, input.clone(), *new_tab))
+            .and_then(|r| serde_json::to_value(r).map_err(|e| e.to_string())),
+        BrowserCall::Act { tab, element, act } => {
+            use crate::browser::gating::{PageAction, Target};
+            let t = Target::default(); // re-described from the live page by browser_agent_act
+            let action = match act {
+                PageAct::Click => PageAction::Click { target: t },
+                PageAct::Submit => PageAction::Submit { target: t },
+                PageAct::Type(text) => PageAction::Type { target: t, text: text.clone() },
+                PageAct::Select(value) => PageAction::Select { target: t, value: value.clone() },
+            };
+            // `approved: true` only because Lens Control already gated this call (card or trust).
+            let req = crate::commands::browser::ActRequest { tab: tab.clone(), element: Some(*element), action, caps: None, approved: true };
+            let r = block_on(crate::commands::browser::browser_agent_act(app, req))?;
+            if r.needs_ok || !r.ran { return Err(r.message); }
+            Ok(Value::String(r.message))
+        }
+    }
+}
+
+fn browser_tab(&self, tab: Option<&str>) -> Option<(String, Option<String>)> {
+    let v = crate::commands::browser::browser_state();
+    let t = match tab {
+        Some(id) => v.tabs.iter().find(|t| t.id == id),
+        None => v.tabs.iter().find(|t| Some(&t.id) == v.active_tab.as_ref()),
+    }?;
+    let space = v.spaces.iter().find(|s| s.id == t.space_id).map(|s| s.name.clone());
+    Some((t.url.clone(), space))
+}
+```
+
+Make `ActRequest` and its fields `pub(crate)` if they aren't. Field names follow
+feature/lens-browser at the time of writing (`BrowserView.tabs`, `active_tab`, `spaces`).
+`browser_agent_act` re-describes the element from the live page and re-runs the browser's own
+gating even with `approved: true`, so Blocked stays blocked.
+
+The Lens Browser agent panel should consult `control_may_remember(url, space)` before saving
+history, Shelf captures or AI memory.
+
+### "Approve similar actions for this task" and site trusts
+
+- When a fill or click card has a scope (for example "fill fields on reserve.example"), it offers **Approve similar actions for this task**. The scope is always visible, along with how long the trust lasts: **This run** (not saved; ends when Lens restarts), **1 day** or **Always**.
+- This creates a `SiteTrust` for that app, capability and site. Calls are then decided with `Grants::decide_at`: Ask-first becomes Allowed for that site and its subdomains only.
+- A trust is never offered or accepted for:
+  - send, pay or delete;
+  - permanent deletes;
+  - Confirm-risk items (submitting, booking). These ask every time.
+- Trusts are listed in the Permissions card and written to the audit log (`outcome: "trusted"`, `undoId: <trust id>`). Revoke one with `control_trust_revoke(id)` from either place.
+
+### Memory controls
+
+`MemoryPolicy` (Permissions card, `control_memory_get` / `control_memory_set`):
+
+| Setting | Default | Effect |
+|---|---|---|
+| Banking and payment sites | on | Never remembered, never shared with AI apps (honest "can't access") |
+| Private Spaces | on | Any Space named "Private", plus named Spaces: never remembered, never shared |
+| Never remember these sites | empty | Not saved to history, Shelf captures or AI memory (reading in the moment still works) |
+
 ## Default grants
 
 | Capability | Claude Desktop / Claude Code / other | Lens assistant / voice |
@@ -94,9 +200,21 @@ The pre-existing tools are covered by the same grants:
 | Open and switch apps | Ask first | Ask first |
 | Close apps | Ask first, and always asks | Ask first |
 | Read and add to your Shelf | Ask first | Allowed |
-| Type text into apps | Ask first | Ask first |
+| Fill in forms and click on sites | Ask first (site trusts allowed) | Ask first |
 | Send context to a cloud AI | Ask first | Ask first |
-| Delete files, use passwords or pay | Blocked (can't be changed) | Blocked |
+| Read your browser tabs, pages and transcripts | Ask first | Allowed |
+| Open pages and search in Lens Browser | Ask first | Ask first |
+| Delete or clear things (to the Bin) | Ask first, and always asks | Ask first, and always asks |
+| Pay with a saved method | **Blocked**; can be set to Ask first, never Allowed; always hold to confirm | Blocked |
+| Send messages in your name | Ask first, and always asks | Ask first, and always asks |
+| Delete permanently, use passwords or card numbers | Blocked (can't be changed) | Blocked |
+
+The principles show as one-line microcopy in "This task can":
+- **Deletions go to the Bin:** deletes are always to a recoverable bin, never a hard delete. Lens's own deletes use the Recycle Bin or a Lens trash with a 30-day undo.
+- **Every payment waits.**
+- **Nothing sent in your name.**
+- **Shows you where it'll click.**
+- **Banking pages and private Spaces stay private.**
 
 The strictest rule wins:
 1. A Blocked risk or the Destructive capability is never allowed.
@@ -123,7 +241,16 @@ screenshot. From top to bottom:
 4. **Details** table.
 5. **Reversibility line:** "Undo available" or "Can't be undone".
 6. **"This task can"** list: the capabilities this request uses come first, with Ask-first items marked.
-7. **Buttons:**
+7. **Typed variants**, one shell:
+   - `delete`: Includes / Keeping / Account / Recovery grid, plus "Review all N";
+   - `payment`: big monospace amount, masked method, red warning, always hold;
+   - `send`: "TO Name · App" and the exact message, plus "Don't send";
+   - `element`: the site's form with the target outlined, "I'll click this · captured 3s ago", "Show tab ↗";
+   - `look`: before/after;
+   - `window` and `settings`.
+
+   Key chips: ⏎ on the primary, ⇧⏎ on deny.
+8. **Buttons:**
    - Deny;
    - the primary verb, using hold-to-confirm for confirm-risk or irreversible items (`holdPref`: confirm/always/never);
    - a keyboard chip, Enter or HOLD;
