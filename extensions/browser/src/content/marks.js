@@ -8,8 +8,8 @@
 // • Never on sign-in / banking pages, never in password fields, never reads credentials.
 // • Saving media only for plain file URLs; never blob:/MediaSource streams or encrypted media.
 //   YouTube gets YouTube's own offline option instead (see docs/IN_PAGE_LENS.md).
-// Runs in the extension (dispatch via runtime messages) and in Lens Browser (dispatch via a
-// cancelled lens-mark:// navigation the host intercepts).
+// Runs in the extension (dispatch via runtime messages) and in Lens Browser (dispatch through the
+// page agent's event queue, window.__lensMarkEvent).
 (function () {
   "use strict";
   if (globalThis.__lensMarksLoaded) return;
@@ -579,13 +579,9 @@
   function dispatch(kind, c) {
     const clean = { url: c.url || location.href, title: c.title || document.title, text: String(c.text || "").slice(0, 20000), request: c.request || "", action: c.action || "", media: c.media && typeof c.media === "object" && c.media.length ? c.media : undefined };
     if (IN_LENS_BROWSER) {
-      try {
-        location.assign("lens-mark://" + kind + "?d=" + encodeURIComponent(JSON.stringify(clean)).slice(0, 30000));
-        toast("Sent to Lens");
-      } catch {
-        toast("Lens isn't reachable");
-      }
-      return;
+      if (typeof window.__lensMarkEvent !== "function") return toast("Lens isn't reachable");
+      window.__lensMarkEvent(kind === "run" ? clean.action : kind, clean);
+      return toast(kind === "shelf" ? "Saved to Shelf" : "Sent to Lens");
     }
     if (!api?.runtime) return toast("Lens isn't reachable");
     const ctx = { selection: clean.text || clean.request, url: clean.url, title: clean.title };

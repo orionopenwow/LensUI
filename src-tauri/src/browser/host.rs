@@ -24,6 +24,16 @@ pub const UI_LABEL: &str = "browser-ui";
 pub const EVT_STATE: &str = "lens://browser/state";
 pub const EVT_DOWNLOADS: &str = "lens://browser/downloads";
 pub const PAGE_AGENT: &str = include_str!("page_agent.js");
+/// In-page Lens marks: the same scripts the browser extension uses, with Lens Browser's host
+/// settings in front (placements on by default here: X, YouTube, GitHub, media, code).
+pub const MARKS_LOGIC: &str = include_str!("../../../extensions/browser/src/content/marksLogic.js");
+pub const MARKS_SCRIPT: &str = include_str!("../../../extensions/browser/src/content/marks.js");
+
+pub fn marks_bootstrap() -> String {
+    format!(
+        "window.__LENS_MARKS_HOST = {{ settings: {{ on: true, adapters: [\"x\", \"youtube\", \"github\", \"reddit\", \"hn\", \"media\", \"images\", \"models\", \"code\", \"files\"] }} }};\n{MARKS_LOGIC}\n{MARKS_SCRIPT}"
+    )
+}
 
 #[derive(Debug, Clone, Copy, Serialize, serde::Deserialize, PartialEq)]
 pub struct Viewport {
@@ -186,9 +196,14 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
     let app_load = app.clone();
     let tab_load = tab_id.clone();
     let app_dl = app.clone();
-    let builder = WebviewBuilder::new(view_label(&tab.id), WebviewUrl::External(url))
+    let marks_on = rt().state.settings.page_marks;
+    let mut builder = WebviewBuilder::new(view_label(&tab.id), WebviewUrl::External(url))
         .data_directory(store::profile_dir(profile))
-        .initialization_script(PAGE_AGENT)
+        .initialization_script(PAGE_AGENT);
+    if marks_on {
+        builder = builder.initialization_script(&marks_bootstrap());
+    }
+    let builder = builder
         .on_navigation(move |u| {
             let scheme = u.scheme();
             if !(scheme == "https" || scheme == "http" || scheme == "about") {
@@ -531,6 +546,16 @@ pub fn ensure_window(app: &AppHandle) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn page_marks_bootstrap_carries_both_scripts_and_the_bridge() {
+        let b = marks_bootstrap();
+        assert!(b.starts_with("window.__LENS_MARKS_HOST = { settings: { on: true"));
+        assert!(b.contains("root.LensMarks"));
+        assert!(b.contains("__lensMarksLoaded"));
+        assert!(PAGE_AGENT.contains("__lensMarkEvent"));
+        assert!(!super::super::model::BrowserSettings::default().page_marks, "off until the person turns it on");
+    }
 
     #[test]
     fn replies_must_match_the_nonce() {
