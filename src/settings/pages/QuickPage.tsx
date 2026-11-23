@@ -96,9 +96,15 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
     invoke<WindowStylingState>("get_window_styling_cmd").then(setStyling).catch(() => {});
   }, []);
   useEffect(() => {
-    refresh();
-    const t = window.setInterval(refresh, 5000);
-    return () => window.clearInterval(t);
+    // First paint first: read the live state just after the page shows, then every 8 s while visible.
+    const first = window.setTimeout(refresh, 60);
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 8000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(t);
+    };
   }, [refresh]);
 
   const saveLayout = (next: TileLayout) => {
