@@ -635,7 +635,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     dockStyle(style, shape) { send({ lens: "config", patch: { dock: { style }, ...(shape ? { theme: { shapeStyle: shape } } : {}) } }); },
     search(open = true, q, opts = {}) { send({ lens: "search", open, focus: opts.focus !== false, ...(q != null ? { q } : {}) }); },
     /** Any backdrop scene from the Lens playground, e.g. the living "living-sky". */
-    setWallpaper(id) { if (!play) return; play.setScene(id); wi = -1; if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
+    setWallpaper(id, opts = {}) { if (!play) return; play.setScene(id); for (const [k, v] of Object.entries(opts)) play.setOption(k, v); wi = -1; if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
     /** Puts the theme's own backdrop back (scenes start from it). */
     resetWallpaper() { if (!play || wi === 0) return; wi = 0; play.setScene("ambient"); play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
     nextWallpaper() { if (!play) return; const id = WALLS[++wi % WALLS.length]; play.setScene(id); if (id === "ambient") play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); toast({ icon: "lens-settings", app: "Lens", title: "Wallpaper changed", body: id === "ambient" ? "Theme backdrop" : id.replace(/-/g, " ") }); },

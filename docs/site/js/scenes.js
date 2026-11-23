@@ -38,7 +38,7 @@ export const SCENES = [
   { id: "apps", title: "Lens Apps", line: "Free and open-source apps in one click; they land in your dock.", look: { pack: "catppuccin-mocha", dock: "studio", shape: "classic" } },
   { id: "approvals", title: "Asks before it acts", line: "Anything risky shows the “Needs your OK” card first.", look: { pack: "obsidian", dock: "floating", shape: "classic" } },
   { id: "snip", title: "Snip", line: "Capture, blur what's private, then send it to Claude or a friend.", look: { pack: "nord-frost", dock: "slim", shape: "classic" } },
-  { id: "backdrops", title: "Living backdrops", line: "Every theme has its own slow backdrop. Change it any time.", look: { pack: "rose-pine", dock: "minimal", shape: "classic" } },
+  { id: "backdrops", title: "Backdrop Lab", line: "Every theme has its own slow backdrop, or make one in Backdrop Lab and set it live.", look: { pack: "rose-pine", dock: "minimal", shape: "classic" } },
   { id: "voice", title: "Voice dock", line: "Hold a key: “Lens, tile my windows.” Recognised on your PC.", look: { pack: "gruvbox-warm", dock: "floating", shape: "classic" } },
   { id: "settings", title: "Settings hub", line: "Lens and Windows settings in one place, with a white-bar mixer.", look: { pack: "alabaster-daylight", dock: "floating", shape: "classic" } },
   { id: "cleaner", title: "Lens Cleaner", line: "See what's taking space. Safe items only, to the Recycle Bin, one click to undo.", look: { pack: "obsidian", dock: "floating", shape: "classic" } },
@@ -159,8 +159,11 @@ export function createScenes(desk, { onScene, onState } = {}) {
       await wait(1600);
     },
     async backdrops() {
-      await wait(1500);
-      desk.nextWallpaper(); await wait(2600);
+      await wait(1200);
+      // Backdrop Lab's signature look, live: the same engine and preset Lens uses as the wallpaper.
+      desk.setWallpaper("backdrop", { preset: "lens-nebula" });
+      desk.toast({ icon: "lens-settings", app: "Backdrop Lab", title: "Lens Nebula", body: "Made in Backdrop Lab, playing live as the wallpaper. Loops seamlessly." });
+      await wait(3600);
       desk.nextWallpaper(); await wait(2600);
     },
     async voice() {

@@ -8,7 +8,7 @@ import { REPO } from "./lib/layout.mjs";
 const FEATURE_CHIPS = [
   ["magic-right-click", "Magic right-click"], ["claude", "Bring your own agent"], ["ade", "Agents at a glance"], ["approvals", "Asks before it acts"],
   ["browser-ai", "Lens Browser"], ["music", "Lens Music"], ["messages", "Messages and feeds"], ["mini", "Lens Mini"], ["snip", "Snip"], ["voice", "Voice dock"],
-  ["cleaner", "Lens Cleaner"], ["sky", "Living Sky"], ["core-apps", "Core apps"], ["settings", "Settings hub"], ["backdrops", "Living backdrops"], ["tiling", "Tiling and snapping"], ["apps", "Lens Apps"], ["everyday", "Lens Command"],
+  ["cleaner", "Lens Cleaner"], ["sky", "Living Sky"], ["core-apps", "Core apps"], ["settings", "Settings hub"], ["backdrops", "Backdrop Lab"], ["tiling", "Tiling and snapping"], ["apps", "Lens Apps"], ["everyday", "Lens Command"],
 ];
 const FEATURED = [
   { id: "artcraft", line: "An IDE for artists: controllable AI image and video, with 2D and 3D scene tools.", suite: ["wordcraft", "deckcraft", "gridcraft"] },
