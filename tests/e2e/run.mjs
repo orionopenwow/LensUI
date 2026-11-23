@@ -316,6 +316,12 @@ try {
   console.log(`FAIL  session: ${e.message}`);
 } finally {
   if (lensProcessCount() > 0 && driver) await quitLens(driver).catch(() => {});
+  if (lensProcessCount() > 0) {
+    // No session to quit through: force it, and tell the probe the taskbar couldn't be restored.
+    try { execFileSync("taskkill", ["/IM", "lens-ui.exe", "/T", "/F"]); } catch {}
+    writeFileSync(join(outDir, "forced-kill.txt"), "lens-ui had to be force-killed; Windows state could not be restored by Lens itself\n");
+    console.log("note  lens-ui force-killed (no WebDriver session to quit through)");
+  }
 }
 
 // Nightly: start → quit → start again without leaking processes.

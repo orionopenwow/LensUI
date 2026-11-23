@@ -70,6 +70,8 @@ jobs:
         # Fails on any changed image; missing goldens are recorded to the visual-new artifact.
         env:
           VISUAL_REQUIRE_GOLDENS: ${{ hashFiles('tools/parity/golden/*.png') != '' && '1' || '0' }}
+          # Artifacts aren't reachable from every review environment; the log always is.
+          VISUAL_EMIT_B64: "1"
         run: node tools/visual/run.mjs
 
       - name: Accessibility (axe-core)
@@ -176,6 +178,24 @@ jobs:
       - name: Install selenium-webdriver
         run: npm install --no-save --no-package-lock selenium-webdriver@4
 
+      # Shows whether the app opens a DevTools endpoint when asked the way msedgedriver asks
+      # (WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS). If it doesn't, WebDriver can't attach.
+      - name: Diagnose WebView2 debugging
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9333"
+          $p = Start-Process -PassThru -FilePath src-tauri/target/debug/lens-ui.exe
+          Start-Sleep -Seconds 20
+          Write-Host "lens-ui running: $(-not $p.HasExited) (exit code $($p.ExitCode))"
+          try { (Invoke-WebRequest http://127.0.0.1:9333/json/list -UseBasicParsing -TimeoutSec 5).Content } catch { Write-Host "no DevTools endpoint on 9333: $_" }
+          Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter DevToolsActivePort -ErrorAction SilentlyContinue | ForEach-Object { "$($_.FullName): $(Get-Content $_.FullName -Raw)" }
+          Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Select-Object -First 3 | ForEach-Object { (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine.Substring(0, 400) }
+          Stop-Process -Name lens-ui -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 2
+          cmd /c Restore-Windows-Taskbar.bat
+          Remove-Item -Recurse -Force (Join-Path $env:APPDATA "LensUI") -ErrorAction SilentlyContinue
+
       - name: Snapshot Windows state
         shell: pwsh
         run: pwsh tools/e2e/probe.ps1 snapshot tests/e2e/out/before.json
@@ -190,6 +210,10 @@ jobs:
           node tests/e2e/run.mjs
           $code = $LASTEXITCODE
           Stop-Process -Id $driver.Id -Force -ErrorAction SilentlyContinue
+          if ($code -ne 0) {
+            Write-Host "---- tauri-driver output ----"
+            Get-Content tests/e2e/out/tauri-driver.log, tests/e2e/out/tauri-driver.err.log -ErrorAction SilentlyContinue | Select-Object -Last 80
+          }
           exit $code
 
       - name: Windows put back after quit

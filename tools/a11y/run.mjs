@@ -67,7 +67,9 @@ async function check(page, label) {
   if (bad.length) failures += bad.length;
   report.push({ label, violations: items });
   console.log(`${bad.length ? "FAIL" : "ok  "} ${label}: ${bad.length} blocking, ${items.length - bad.length} minor`);
-  for (const b of bad.slice(0, 10)) console.log(`      [${b.impact}] ${b.rule} ${b.target} — ${b.summary}`);
+  // One line per blocking node, easy to grep from CI logs: A11Y|rule|surface|target|summary
+  for (const b of bad) console.log(`A11Y|${b.rule}|${surface}|${b.target}|${b.impact}|${b.summary.replace(/\|/g, "/")}`);
+  for (const b of bad) console.log(`      [${b.impact}] ${b.rule} ${b.target} — ${b.summary}`);
 }
 
 for (const [preset, scheme] of PRESETS) {

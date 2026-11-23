@@ -103,7 +103,11 @@ $left = @(Get-Process lens-ui -ErrorAction SilentlyContinue)
 if ($left.Count) { [void]$problems.Add("$($left.Count) lens-ui process(es) still running") }
 $wins = Lens-Windows
 if ($wins.Count) { [void]$problems.Add("Lens windows left behind: $($wins -join '; ')") }
-if ($before.taskbarVisible -and -not $now.taskbarVisible) { [void]$problems.Add("the Windows taskbar is still hidden") }
+$forced = Test-Path (Join-Path (Split-Path -Parent $File) "forced-kill.txt")
+if ($before.taskbarVisible -and -not $now.taskbarVisible) {
+  if ($forced) { Write-Host "[probe] taskbar hidden after a forced kill (Lens never got to restore it; the e2e step already failed)" }
+  else { [void]$problems.Add("the Windows taskbar is still hidden") }
+}
 
 foreach ($k in $Keys) {
   $b = $before.registry.$k

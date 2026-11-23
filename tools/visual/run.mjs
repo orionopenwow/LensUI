@@ -79,6 +79,16 @@ async function diffImages(page, expectedB64, actualB64, threshold = 26) {
   );
 }
 
+/** VISUAL_EMIT_B64=1: also print new/changed renders into the log as base64, for runners whose
+ * artifacts can't be downloaded. Reassemble with tools/visual/from-log.mjs. */
+function emit(name, png) {
+  if (process.env.VISUAL_EMIT_B64 !== "1") return;
+  const b64 = png.toString("base64");
+  const size = 60000;
+  const parts = Math.ceil(b64.length / size);
+  for (let i = 0; i < parts; i++) console.log(`VISUALB64|${name}|${i}|${parts}|${b64.slice(i * size, (i + 1) * size)}`);
+}
+
 const server = await serve();
 const browser = await launch();
 const diffPage = await (await browser.newContext()).newPage();
@@ -113,6 +123,7 @@ for (const preset of PRESET_LIST) {
         status = "updated";
       } else if (!existsSync(goldenPath)) {
         writeFileSync(join(outDir, "new", `${name}.png`), png);
+        emit(name, png);
         status = "missing";
         missing++;
       } else {
@@ -122,6 +133,7 @@ for (const preset of PRESET_LIST) {
           status = r.sizeMismatch ? `size ${r.sizeMismatch}` : `${(r.ratio * 100).toFixed(3)} % differs`;
           failed++;
           if (r.diffPng) writeFileSync(join(outDir, "diff", `${name}.png`), Buffer.from(r.diffPng, "base64"));
+          emit(name, png);
         }
       }
       if (errors.length) { status += ` · ${errors.length} page errors`; failed++; }

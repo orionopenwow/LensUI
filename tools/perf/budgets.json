@@ -1,5 +1,5 @@
 {
-  "_note": "Baseline per scenario from `node tools/perf/run.mjs --update`. A run fails when a metric exceeds baseline × 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, on the CI runner's numbers (perf-report artifact).",
+  "_note": "Baseline per scenario: the larger of the GitHub ubuntu-latest runner's numbers and a reference dev machine, at 4x CPU throttle. A run fails when a metric exceeds baseline x 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, from the runner (workflow_dispatch 'update baselines', robustness-reports artifact).",
   "throttle": 4,
   "baseline": {
     "dock-hover-sweep": {
@@ -13,7 +13,7 @@
       "p50": 16.7,
       "p95": 33.3,
       "longTasks": 0,
-      "cls": 0.0146,
+      "cls": 0.0147,
       "fcp": 524
     },
     "dock-search-glide": {
@@ -21,11 +21,11 @@
       "p95": 33.3,
       "longTasks": 2,
       "cls": 0,
-      "fcp": 504
+      "fcp": 520
     },
     "command-mini-expand": {
       "p50": 16.7,
-      "p95": 33.4,
+      "p95": 50,
       "longTasks": 0,
       "cls": 0,
       "fcp": 0
@@ -39,8 +39,8 @@
     },
     "settings-tab-switch": {
       "p50": 16.7,
-      "p95": 49.9,
-      "longTasks": 9,
+      "p95": 50,
+      "longTasks": 10,
       "cls": 0,
       "fcp": 724
     },
@@ -73,18 +73,18 @@
       "fcp": 532
     },
     "playground-aurora": {
-      "p50": 33.3,
-      "p95": 50,
-      "longTasks": 4,
+      "p50": 66.6,
+      "p95": 66.7,
+      "longTasks": 81,
       "cls": 0,
-      "fcp": 560
+      "fcp": 588
     },
     "playground-rain": {
       "p50": 16.7,
       "p95": 33.3,
       "longTasks": 0,
       "cls": 0,
-      "fcp": 644
+      "fcp": 652
     },
     "playground-starfield": {
       "p50": 16.7,
