@@ -3,7 +3,11 @@ import { describe, expect, mock, test } from "bun:test";
 
 // Other test files mock @tauri-apps/api/core without transformCallback; stub event/window too so
 // modules that import them load in any order.
-mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null, transformCallback: () => 0 }));
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: async () => null,
+  convertFileSrc: (p: string) => `asset://localhost/${encodeURIComponent(p)}`,
+  transformCallback: () => 0,
+}));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
 const { MODES, chipBlocked, cycleMode, destinationOf, expandTemplate, mentionAtCaret, mentionSuggestions, parseMentions, parseSlash, slashSuggestions } = await import("../command/parse");
