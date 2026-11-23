@@ -12,7 +12,7 @@ export const MAX_URL_LEN = 4_096;
 
 export const ACTIONS = [
   "ping", "status", "shelf_list", "shelf_recent", "theme_get", "ask", "summarize", "explain", "translate", "rewrite", "fix_grammar",
-  "extract", "compare", "transcribe", "shelf_add", "micro_save", "ask_files", "define", "archive_save", "clip", "pack_add", "context_add", "command_open",
+  "extract", "compare", "transcribe", "shelf_add", "micro_save", "ask_files", "define", "archive_save", "clip", "pack_add", "context_add", "command_open", "settings_open",
 ];
 
 export const AI_ACTIONS = new Set([
