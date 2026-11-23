@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sun, Moon, Monitor } from "lucide-react";
 import type { MonitorInfo, QuickSettingsState } from "../../types/generated";
-import { Hero, HeroTile, LinkRow, Row, Section, Slider, StateNote, Toggle, WinLink } from "../ui/primitives";
+import { LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
+import { FillSlider } from "../ui/FillSlider";
 import { optimistic, useResource } from "../useResource";
 import type { PageProps } from "./common";
 
@@ -45,23 +46,25 @@ export const DisplayPage: React.FC<PageProps> = ({ section }) => {
 
   return (
     <>
-      <Hero>
-        <HeroTile icon={<Sun size={15} aria-hidden />} label="Brightness" value={s ? `${s.brightness}%` : "—"}>
-          <Slider label="Brightness" value={s?.brightness ?? 0} disabled={!s} onCommit={setBrightness} />
-        </HeroTile>
-        <HeroTile
-          icon={<Moon size={15} aria-hidden />}
-          label="Night light"
-          value={s?.nightLightEnabled ? "On" : "Off"}
-          active={!!s?.nightLightEnabled}
-          sub="Warmer colours in the evening"
-        >
-          <Toggle label="Night light" checked={!!s?.nightLightEnabled} disabled={!s} onChange={(v) => setNight(v)} />
-        </HeroTile>
-        <HeroTile icon={<Moon size={15} aria-hidden />} label="Warmth" value={s ? `${s.nightLightWarmth}%` : "—"}>
-          <Slider label="Night warmth" value={s?.nightLightWarmth ?? 0} disabled={!s} onCommit={(v) => setNight(true, v)} />
-        </HeroTile>
-      </Hero>
+      <div className="cc-card sh-mixer sh-lights">
+        <div className="sh-mix-block">
+          <FillSlider size="lg" label="Brightness" value={s?.brightness ?? 0} disabled={!s} icon={<Sun size={15} aria-hidden />} onCommit={setBrightness} />
+        </div>
+        <div className="sh-mix-block">
+          <div className="sh-mix-head">
+            <span>Night light</span>
+            <Toggle label="Night light" checked={!!s?.nightLightEnabled} disabled={!s} onChange={(v) => setNight(v)} />
+          </div>
+          <FillSlider
+            label="Warmth"
+            value={s?.nightLightWarmth ?? 0}
+            muted={!s?.nightLightEnabled}
+            disabled={!s}
+            icon={<Moon size={14} aria-hidden />}
+            onCommit={(v) => setNight(true, v)}
+          />
+        </div>
+      </div>
       {qs.loading && !s && <StateNote kind="loading">Reading display settings…</StateNote>}
       {(err || qs.error) && (
         <StateNote kind="error" action={<WinLink uri="ms-settings:display" compact label="Windows Settings" />}>

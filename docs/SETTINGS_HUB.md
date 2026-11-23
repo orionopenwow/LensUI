@@ -36,7 +36,11 @@ Lens only changes what it can change safely and reversibly; everything else show
 | Control | How |
 |---|---|
 | Brightness, night light, warmth | existing native commands (`set_brightness_cmd`, `set_night_light_cmd`) |
-| Volume, mute, per-app volume | Core Audio (existing commands) |
+| Volume, mute, per-app volume and mute | Core Audio (existing commands), as white fill bars |
+| Which apps are playing, live output/app/mic levels | **new** `sys_audio_levels_cmd` (session state + IAudioMeterInformation), polled every 1.5 s only while the page is visible |
+| Microphone volume and mute | **new** `sys_set_mic_cmd` (default capture endpoint). Same switch as Windows' own; nothing to restore |
+| Switch output | between the last two output devices you used (remembered on this PC) |
+| Per-app output routing | no public API → link to App volume & device preferences |
 | Default output/input device | existing `set_default_audio_device_cmd` (disabled with a note when Windows doesn't allow it) |
 | Wi-Fi on/off, Bluetooth on/off | Windows.Devices.Radios (existing `set_radio_cmd`) |
 | Connect to a saved or open Wi-Fi network | WlanAPI with the saved profile (existing `wifi_connect_cmd`). Passwords are only typed into Windows' own page |
@@ -49,6 +53,12 @@ Lens only changes what it can change safely and reversibly; everything else show
 | Deep link only | airplane mode, battery saver, screen/sleep timeouts, HDR, resolution/scale, Bluetooth connect/pair, default/installed apps, Storage Sense, Windows notifications/focus, Windows Update, Windows Security, contrast themes, magnifier, Game Mode, time zone |
 
 HKLM is never written. Nothing here touches other processes or games.
+
+## Sound mixer
+
+One connected card, most-used first: master volume (40 px bar, mute, level) → **Playing now** (34 px bars with app icon, mute and a live level) → **Other apps (N)** collapsed → **Output** devices with a "Switch to …" quick toggle → **Microphone** (device, level, volume bar, mute) → "More sound settings" links. Rows only move when an app starts or stops playing (`src/settings/audioOrder.ts`). Everything the old Windows & Quick mixer had (master + mute, per-app bars with icon-click mute) is here.
+
+`FillSlider` (`src/settings/ui/FillSlider.tsx`, logic in `fillModel.ts`) is the shared bar: theme ink fill (near-white on dark, near-black on light), icon/label left and value right that flip colour where the fill passes, drag anywhere, wheel (2%/notch), arrows 1 / PageUp-Down 10 / Home-End; the bar moves live and commits on release (keys/wheel after a short pause). Display uses it for brightness and night-light warmth.
 
 ## Layout
 
