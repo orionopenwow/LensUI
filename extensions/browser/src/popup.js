@@ -86,6 +86,28 @@ api.runtime.sendMessage({ type: "theme" }).then((r) => {
     el("button", { textContent: "Settings", onclick: () => api.runtime.openOptionsPage() }),
   );
   dash.root.insertBefore(site, dash.root.querySelector(".l-foot"));
+  // One-time onboarding chip for the in-page Lens buttons (tweets, YouTube, GitHub, videos, code).
+  const M = globalThis.LensMarks;
+  const { lensMarks, lensMarksChip } = await api.storage.local.get(["lensMarks", "lensMarksChip"]);
+  const marks = M.sanitizeSettings(lensMarks);
+  if (!marks.on && !lensMarksChip) {
+    const chip = el("div", { className: "l-site l-chip" },
+      el("span", { textContent: "Lens buttons next to tweets, YouTube, GitHub, videos and code?" }),
+      el("button", {
+        textContent: "Turn on",
+        onclick: async () => {
+          const next = M.sanitizeSettings({ ...marks, on: true, adapters: M.ONBOARDING });
+          const ok = await api.permissions.request({ origins: M.scriptMatches(next).matches }).catch(() => false);
+          if (!ok) return;
+          await api.storage.local.set({ lensMarks: next, lensMarksChip: 1 });
+          await api.runtime.sendMessage({ type: "marks-sync" }).catch(() => {});
+          chip.replaceChildren(el("span", { textContent: "On. Hover a tweet, video or code block. Change it in Settings." }));
+        },
+      }),
+      el("button", { textContent: "Not now", onclick: async () => { await api.storage.local.set({ lensMarksChip: 1 }); chip.remove(); } }),
+    );
+    dash.root.insertBefore(chip, dash.root.querySelector(".l-foot"));
+  }
   dash.root.insertBefore(links, dash.root.querySelector(".l-foot"));
 })();
 

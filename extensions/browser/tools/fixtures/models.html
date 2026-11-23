@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Free robot models</title><style>
+body{margin:0;background:#fafafa;color:#18181b;font:15px/22px system-ui,sans-serif}.wrap{width:860px;margin:24px auto}
+model-viewer{display:block;width:860px;height:420px;border-radius:14px;background:radial-gradient(circle at 50% 40%,#e0e7ff,#a5b4fc)}
+a{color:#4f46e5}</style></head><body><div class="wrap"><h1>Robot pack</h1>
+<model-viewer src="/models/robot.glb" alt="A friendly robot"></model-viewer>
+<p>Download: <a href="/models/robot.glb">robot.glb</a> · <a href="/models/robot.stl">robot.stl</a></p>
+<pre>import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+new GLTFLoader().load("/models/robot.glb", (g) =&gt; scene.add(g.scene));</pre>
+</div></body></html>

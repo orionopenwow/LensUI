@@ -3865,7 +3865,7 @@
    "id": "card.ai.browsercard",
    "kind": "card",
    "title": "Lens Browser",
-   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages. Browser. Settings › AI & Command › Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages. Browser. Settings › AI & Command › Lens Browser",
    "path": [
     "Settings",
     "AI & Command",
@@ -3976,6 +3976,26 @@
     "tab": "ai",
     "card": "BrowserCard",
     "label": "Lens right-click menu on pages",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.lens-buttons-on-pages",
+   "kind": "setting",
+   "title": "Lens buttons on pages",
+   "text": "A tiny Lens orb beside tweets, YouTube's player, videos, images, 3D models, code and downloads. Applies to tabs opened after you turn it on.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Lens buttons on pages"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Lens buttons on pages",
     "section": "browser"
    },
    "source": "src/components/BrowserCard.tsx"
@@ -6818,6 +6838,21 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "hotkey.alt-l",
+   "kind": "hotkey",
+   "title": "Alt+L",
+   "text": "Docs / Notion / Google Docs Selection button and Alt+L (their pages draw text on canvas) Send to Claude, Save as note, Summarise",
+   "path": [
+    "Keyboard",
+    "Alt+L"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
    "id": "hotkey.ctrl-l",
    "kind": "hotkey",
    "title": "Ctrl+L",
@@ -9395,6 +9430,73 @@
     "heading": "5. What Lens does better"
    },
    "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.in-page-lens.0",
+   "kind": "doc",
+   "title": "In-page Lens buttons",
+   "text": "A tiny Lens orb appears beside things Lens can help with: a tweet's action row, YouTube's player controls, a video, an image, a 3D model, a code block, a download link. Clicking it opens a short command list. It's off until you choose where it appears. - Extension: Settings › \"Lens buttons on pages\" (one switch per placement), or the one-time chip in the popup (\"Lens buttons next to tweets, YouTube, GitHub, videos and code?\"). The browser asks for access to exactly the sites those placements need. - Lens Browser: Settings › Browser › \"Lens buttons on pages\". Applies to tabs opened after you turn it on. - Page actions: press <kbd Alt</kbd +<kbd L</kbd on a page where the buttons are on. The same two scripts run in both: extensions/browser/src/content/marksLogic.js (placements, actions, policy, positions; pure and unit-tested) and extensions/browser/src/content/marks.js (finding things on ",
+   "path": [
+    "Docs",
+    "In-page Lens buttons"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "In-page Lens buttons"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.1",
+   "kind": "doc",
+   "title": "In-page Lens buttons: The orb and the list",
+   "text": "- 18 px orb: the Lens rainbow cloud, still at rest, billowing on hover. It only shows while you hover the thing it belongs to, so pages stay clean. - Everything sits in one fixed layer in a closed shadow root: nothing is inserted into the page's own layout (no layout shift), and page CSS can't reach it. - The list: type to filter, ↑/↓ and Enter, number keys 1–6, M for \"More in Lens…\", Esc closes and returns focus to the orb. At most six rows plus \"More\". The action you used last on a site moves to the top there. - A real <button aria-label=\"Lens actions\" , light and dark, honours reduced motion.",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "The orb and the list"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "The orb and the list"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.2",
+   "kind": "doc",
+   "title": "In-page Lens buttons: Placements",
+   "text": "Placement Where the orb sits Actions (best first) --- --- --- X / Twitter posts End of the tweet's action row (reply · repost · like · views · ⦿) Save to Shelf, Copy as Markdown, Summarise, Translate, Thread → clean article, Copy as quote card, Add to context pack, Send to Claude YouTube player Just left of the player's right-hand controls (CC, settings, fullscreen) Transcript → Shelf, Summarise, Copy link at this moment, Chapters → notes, Copy this frame, Copy transcript, Ask about this, Add to Lens Music, Save offline (YouTube's own) YouTube action row After Like · Share · Download under the video Same as the player YouTube thumbnails Thumbnail corner Summarise without opening, Save to Shelf, Open in Lens Browser Reddit / Hacker News Post and comment corner / row end Save to Shelf, Summarise, Copy as Markdown, Translate, Add to context pack GitHub repo header Header corner Install with",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "Placements"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "Placements"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.3",
+   "kind": "doc",
+   "title": "In-page Lens buttons: Policy",
+   "text": "- Saving media: only offered for plain file URLs ( https://…/clip.mp4 ) on sites that serve them as files. Never for blob: / MediaSource streams (how YouTube, Netflix, Twitch and most players deliver video), never for encrypted media ( mediaKeys ), and never on YouTube, Netflix, Prime Video, Disney+, Twitch, Hulu, Max or Spotify. YouTube gets Save offline (YouTube's own) , which presses YouTube's own Download button (YouTube Premium) or says to use it. Lens doesn't download from YouTube. - Transcripts come from the video's own captions (the same caption track YouTube's player uses); Lens's own transcription stays behind its existing setup and terms notice. - Scripts never run without your OK: \"Run in Lens (asks first)\" opens Lens Command with the code; Lens's approval card decides. - Copying frames and image colours works only where the browser allows reading the pixels (same-site media)",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "Policy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "Policy"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
   },
   {
    "id": "doc.lens-apps.0",

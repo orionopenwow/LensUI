@@ -344,6 +344,20 @@
     return { ok: true, found, total };
   }
 
+  // In-page Lens marks hand their choice to Lens through the same queue as the right-click menu.
+  // Only "mark:<id>" actions; Lens Browser maps them to safe flows (Shelf, panels, Command
+  // prefilled for the person to confirm).
+  Object.defineProperty(W, "__lensMarkEvent", {
+    value: (id, ctx) => {
+      if (!/^[a-z][a-z-]{1,24}$/.test(String(id))) return;
+      const c = ctx || {};
+      const vid = D.querySelector("video");
+      events.push({ action: "mark:" + id, selection: String(c.text || c.request || "").slice(0, 20000), linkUrl: String(c.url || "").slice(0, 2000), imageUrl: "", hasVideo: !!vid, isYouTube: /(^|\.)youtube\.com$/.test(location.hostname), url: location.href, title: D.title, videoTime: vid ? vid.currentTime : null, at: Date.now() });
+      if (events.length > 20) events.shift();
+    },
+    writable: false, configurable: false, enumerable: false,
+  });
+
   const handlers = {
     snapshot: () => snapshot(),
     readable: () => ({ url: location.href, title: D.title, text: readable() }),

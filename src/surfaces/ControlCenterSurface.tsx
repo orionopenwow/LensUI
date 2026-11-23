@@ -123,12 +123,9 @@ export const ControlCenterSurface: React.FC = () => {
     const t = resolveTarget(target);
     if (t) navigate(t.page, t.section);
   };
-  // Simple mode: "More options" opens on a deep link to a section, or when the person asks.
-  const [moreOpen, setMoreOpen] = useState(false);
-  useEffect(() => {
-    if (config) setMoreOpen(moreStartsOpen(effectiveMode(config), tab, section));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, section]);
+  // Simple mode: "More options" opens on a deep link to a section, or when the person asks. Kept
+  // per page (keyed by page#section), so switching pages never costs an extra render.
+  const [moreToggled, setMoreToggled] = useState<{ key: string; open: boolean } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
@@ -258,9 +255,11 @@ export const ControlCenterSurface: React.FC = () => {
   const setMode = (m: SettingsMode) => {
     if (m === config.settingsMode) return;
     updateConfig({ ...config, settingsMode: m });
-    if (m === "advanced") setMoreOpen(true);
   };
   const simpleCards = mode === "simple" && hasSimpleCards(tab);
+  const moreKey = `${tab}#${section ?? ""}`;
+  const moreOpen = moreToggled?.key === moreKey ? moreToggled.open : moreStartsOpen(mode, tab, section);
+  const setMoreOpen = (open: boolean) => setMoreToggled({ key: moreKey, open });
 
   const activeAccentHex =
     config.theme.accentMode === "custom"
@@ -392,8 +391,10 @@ export const ControlCenterSurface: React.FC = () => {
                 setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
               }}
               onMore={(sec) => {
-                setMoreOpen(true);
-                if (sec) setSection(sec);
+                if (sec) {
+                  setMoreToggled({ key: `${tab}#${sec}`, open: true });
+                  setSection(sec);
+                } else setMoreOpen(true);
               }}
             />
           )}
