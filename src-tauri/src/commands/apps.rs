@@ -295,8 +295,10 @@ fn emit_progress(app: &AppHandle, job: &str, app_id: &str, op: &str, ev: &progre
 pub(crate) fn apps_run(app: AppHandle, app_id: String, op: String) -> Result<String, String> {
     let entry = find_app(&app_id)?;
     let op_kind = winget::WingetOp::parse(&op).filter(|o| o.changes_system()).ok_or("op must be install, upgrade or uninstall")?;
-    let InstallSpec::Winget { id } = install_spec(entry)? else {
-        return Err("this app doesn't install with winget".into());
+    let spec = install_spec(entry)?;
+    let method = spec.method();
+    let InstallSpec::Winget { id } = spec else {
+        return Err(format!("this app installs with {method}, not winget"));
     };
     let args = winget::build_args(op_kind, &id)?;
     {
@@ -306,7 +308,7 @@ pub(crate) fn apps_run(app: AppHandle, app_id: String, op: String) -> Result<Str
         }
     }
     let job_id = format!("apps-{}", now_ms());
-    log(&op, &app_id, "winget", "started", &id);
+    log(&op, &app_id, method, "started", &id);
     spawn_winget_job(app, job_id.clone(), app_id, op, args)?;
     Ok(job_id)
 }

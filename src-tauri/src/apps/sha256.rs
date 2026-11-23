@@ -135,6 +135,7 @@ pub fn to_hex(bytes: &[u8]) -> String {
 }
 
 /// SHA-256 of a byte slice, as lower-case hex.
+#[cfg(test)]
 pub fn hex_digest(data: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(data);

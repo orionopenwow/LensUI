@@ -9,8 +9,6 @@
 //! * no step changes a Windows default (file associations are offered as "Open with" entries
 //!   inside Lens menus only, never as the system default).
 
-use std::collections::BTreeMap;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Step {
     /// Pin the app to the Lens Dock.
@@ -195,23 +193,6 @@ pub fn is_safe_mcp_command(command: &str, args: &[String]) -> bool {
     true
 }
 
-/// Serialises a journal into a simple stable map (for persistence by the command layer, which uses
-/// serde_json); kept here so the round-trip can be unit-tested without serde.
-pub fn journal_to_kv(journal: &[JournalEntry]) -> Vec<BTreeMap<&'static str, String>> {
-    journal
-        .iter()
-        .map(|e| {
-            let mut m = BTreeMap::new();
-            m.insert("kind", e.step.kind().to_string());
-            m.insert("changed", e.changed.to_string());
-            if let Some(p) = &e.previous {
-                m.insert("previous", p.clone());
-            }
-            m
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,6 +320,5 @@ mod tests {
         assert!(!is_safe_mcp_command("concat", &["mcp & calc".into()]));
         assert!(!is_safe_mcp_command("concat|calc", &[]));
         assert!(Step::LocalModelProvider { provider: "ollama".into() }.describe("Ollama").contains("local model"));
-        assert_eq!(journal_to_kv(&[JournalEntry { step: Step::AddToDock, previous: None, changed: true }])[0]["kind"], "addToDock");
     }
 }
