@@ -20,7 +20,7 @@
   --radius: 14px;
   --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
-  --gap: 112px;
+  --gap: clamp(72px, 8vw, 96px);
   --w: 1240px; --wide: 1440px;
   color-scheme: dark;
 }
@@ -185,21 +185,21 @@ tr:last-child td { border-bottom: 0; }
 
 /* ---- the rainbow: the logo's nebula, as one utility ------------------------------------------ */
 @property --rb-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+/* Always the full nebula spectrum, whatever the accent: warm pink and orange, gold, green, cyan, violet. */
 .lens-rainbow {
-  --rb: #ff6b8b, #ffa25c, #ffd76a, #6ee7b7, #5ac8fa, #8b8cff, #d38bff, #ff6b8b;
+  --rb: #ff5f8f, #ff9a4d, #ffd25e, #5fe3a6, #4cc9f0, #7d86ff, #c77dff, #ff5f8f;
   background:
-    radial-gradient(120% 140% at 30% 20%, rgb(255 255 255 / 0.22), transparent 45%),
-    conic-gradient(from var(--rb-a) at 50% 55%, var(--rb));
-  background-size: 100% 100%, 220% 220%;
-  background-position: 0 0, 30% 50%;
+    radial-gradient(90% 120% at 30% 15%, rgb(255 255 255 / 0.18), transparent 50%),
+    linear-gradient(100deg, var(--rb));
+  background-size: 100% 100%, 250% 100%;
+  background-position: 0 0, 0% 50%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: rb-flow 18s linear infinite;
-  filter: saturate(1.08);
+  animation: rb-flow 16s ease-in-out infinite alternate;
+  filter: saturate(1.1);
 }
 :root[data-scheme="light"] .lens-rainbow { --rb: #d9245c, #d9630f, #a8780a, #0f8a5f, #0a7bbd, #4f46e5, #9333ea, #d9245c; filter: none; }
-:root:not([data-accent="rainbow"]) .lens-rainbow { --rb: var(--hue), var(--link), var(--hue); }
 .lens-rainbow:hover { animation-duration: 6s; }
-@keyframes rb-flow { to { --rb-a: 360deg; } }
+@keyframes rb-flow { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 100% 50%; } }
 @media (forced-colors: active), (prefers-contrast: more) { .lens-rainbow { color: var(--fg); background: none; } }
 .spectrum-text { background: var(--spectrum-text, var(--spectrum)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
@@ -216,7 +216,7 @@ tr:last-child td { border-bottom: 0; }
 /* ---- header --------------------------------------------------------------------------------------- */
 .bar { position: sticky; top: 0; z-index: 50; transition: background-color .25s, box-shadow .25s, backdrop-filter .25s; }
 .bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, rgb(255 107 139 / .55), rgb(90 200 250 / .55), rgb(211 139 255 / .55), transparent); opacity: 0; transition: opacity .3s; }
-.bar.scrolled { background: color-mix(in srgb, var(--bg) 94%, transparent); box-shadow: 0 1px 0 var(--line); }
+.bar.scrolled { background: color-mix(in srgb, var(--bg) 97%, transparent); box-shadow: 0 1px 0 var(--line); }
 .bar.scrolled::after { opacity: .7; }
 :root:not([data-accent="rainbow"]) .bar::after { background: linear-gradient(90deg, transparent, var(--hue), transparent); }
 .bar-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; height: 58px; max-width: var(--wide); }
@@ -307,21 +307,23 @@ tr:last-child td { border-bottom: 0; }
 .os-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-3); opacity: .6; }
 
 /* ---- the stage: the big desk, its scene bar and the dock row ------------------------------------- */
-.stage-wrap { max-width: var(--wide); margin: 44px auto 0; padding: 0 24px; text-align: left; }
+.stage-wrap { max-width: 1760px; margin: 40px auto 0; padding: 0 clamp(12px, 2vw, 32px); text-align: left; }
 .stage { position: relative; border-radius: 22px; padding: 8px; background: color-mix(in srgb, var(--card) 70%, transparent); box-shadow: 0 0 0 1px var(--line-2), 0 40px 120px -20px rgb(0 0 0 / .55), 0 0 0 9px rgb(var(--ink) / .015); }
 :root[data-scheme="light"] .stage { box-shadow: 0 0 0 1px var(--line-2), 0 40px 100px -30px rgb(30 30 60 / .3); }
 .desk-host { position: relative; border-radius: 15px; overflow: hidden; background: #09090b; contain: layout paint; }
 /* Room for the desks before their scripts size them (no layout shift): the same maths as desk.js fit(). */
-#desk-host { height: max(560px, min(calc((min(100vw, 1440px) - 64px) * 0.625), calc(100vh - 150px))); }
+#desk-host { height: max(560px, min(calc((min(100vw, 1760px) - 2 * clamp(12px, 2vw, 32px) - 16px) * 0.625), calc(100vh - 150px))); }
 #lab-desk { aspect-ratio: 16 / 10; }
 @media (max-width: 767px) { #desk-host { height: calc((100vw - 30px) * 1.2); } #lab-desk { aspect-ratio: 900 / 1080; } }
-.scene-cap { position: absolute; left: 22px; bottom: 74px; z-index: 6; display: flex; flex-direction: column; gap: 1px; max-width: min(420px, 60%); padding: 9px 14px; border-radius: 14px; background: rgb(12 12 16 / .94); color: #f4f4f5; box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 10px 30px rgb(0 0 0 / .3); pointer-events: none; transition: opacity .3s, transform .3s; }
+.scene-cap { position: absolute; left: 22px; bottom: calc(var(--sb-h, 52px) + 84px); z-index: 6; display: flex; flex-direction: column; gap: 1px; max-width: min(420px, 60%); padding: 9px 14px; border-radius: 14px; background: rgb(12 12 16 / .94); color: #f4f4f5; box-shadow: 0 0 0 1px rgb(255 255 255 / .12), 0 10px 30px rgb(0 0 0 / .3); pointer-events: none; transition: opacity .3s, transform .3s; }
 .scene-cap:empty { opacity: 0; transform: translateY(4px); }
 .scene-cap b { font-size: 0.92rem; }
 .scene-cap span { font-size: 0.8rem; color: #c4c4cc; }
-.driving { position: absolute; right: 22px; top: 50px; z-index: 6; display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px; background: rgb(12 12 16 / .94); color: #f4f4f5; font-size: 0.82rem; box-shadow: 0 0 0 1px rgb(255 255 255 / .12); animation: pop-in .2s; }
+.driving { position: absolute; right: 22px; bottom: calc(var(--sb-h, 52px) + 84px); z-index: 6; display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: 999px; background: rgb(12 12 16 / .94); color: #f4f4f5; font-size: 0.82rem; box-shadow: 0 0 0 1px rgb(255 255 255 / .12); animation: pop-in .2s; }
 .driving .pill { border: 0; border-radius: 999px; padding: 5px 10px; background: #f4f4f5; color: #09090b; font: 600 0.78rem var(--sans); cursor: pointer; }
 .scenebar { position: relative; display: flex; align-items: center; gap: 6px; padding: 10px 4px 4px; }
+/* Keep the scene bar's last control (Fullscreen) clear of the floating Guide orb. */
+@media (min-width: 768px) { .stage:not(.is-full) .scenebar { padding-right: 84px; } }
 .sb-btn { flex: none; display: inline-grid; place-items: center; min-width: 34px; height: 34px; border-radius: 999px; border: 0; background: rgb(var(--ink) / 0.05); color: var(--fg-2); cursor: pointer; font: 600 0.8rem var(--sans); }
 .sb-btn:hover { color: var(--fg); background: rgb(var(--ink) / 0.1); }
 .sb-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -346,7 +348,7 @@ tr:last-child td { border-bottom: 0; }
 .stage.is-full .sb-list button, .stage.is-full .sb-btn { color: #d4d4d8; }
 .stage.is-full .sb-play { background: #f4f4f5; color: #09090b; }
 .stage-full { overflow: hidden; }
-@media (max-width: 767px) { .sb-fs .lbl { display: none; } .scene-cap { left: 10px; bottom: 58px; max-width: 70%; padding: 6px 10px; } .scene-cap span { display: none; } .driving { right: 10px; top: 38px; } }
+@media (max-width: 767px) { .sb-fs .lbl { display: none; } .scene-cap { left: 10px; bottom: calc(var(--sb-h, 44px) + 64px); max-width: 70%; padding: 6px 10px; } .scene-cap span { display: none; } .driving { right: 10px; bottom: calc(var(--sb-h, 44px) + 64px); } }
 
 /* the dock row: every dock style, live, sized to the dock itself */
 .docks-row { margin-top: 26px; }
@@ -732,7 +734,7 @@ body:has(.lx.is-dragging) { user-select: none; -webkit-user-select: none; }
 @media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
 .card { background: var(--card); border-radius: var(--radius); box-shadow: 0 0 0 1px var(--line-2); padding: 20px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-footer.site { margin-top: var(--gap); padding: 36px 0 110px; border-top: 1px solid var(--line); color: var(--fg-3); font-size: 0.86rem; }
+footer.site { margin-top: var(--gap); padding: 36px 0 150px; border-top: 1px solid var(--line); color: var(--fg-3); font-size: 0.86rem; }
 .foot-grid { display: grid; grid-template-columns: auto 1fr; gap: 18px 32px; align-items: center; }
 .foot-brand { display: flex; gap: 12px; align-items: center; }
 .foot-brand div { display: grid; }
@@ -772,7 +774,7 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .guide-orb:focus-visible .orb-logo { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--hue); }
 .guide-orb.is-open { opacity: 0; pointer-events: none; transform: scale(.8); transition: opacity .2s, transform .2s; }
 .gw { position: fixed; right: 20px; bottom: 20px; z-index: 61; width: min(400px, calc(100vw - 24px)); height: min(560px, calc(100vh - 100px)); display: flex; flex-direction: column; border-radius: 18px; background: var(--card); color: var(--fg); box-shadow: 0 0 0 1px var(--line-2), 0 30px 90px rgb(0 0 0 / .45); overflow: hidden; }
-.gw.is-max { right: 24px; bottom: 24px; width: min(760px, calc(100vw - 48px)); height: calc(100vh - 110px); }
+.gw.is-max { right: 24px; bottom: 24px; width: min(760px, calc(100vw - 48px)); height: calc(100vh - 150px); }
 .gw-bar { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--line); cursor: grab; user-select: none; }
 .gw-orb { width: 22px; height: 22px; border-radius: 50%; background: url("../brand/lens-orb.webp") center / cover; box-shadow: 0 0 0 1.5px rgb(255 255 255 / .7), 0 0 12px rgb(139 140 255 / .6); animation: orb-spin 8s linear infinite; }
 .gw-sub { font-size: 0.76rem; color: var(--fg-3); }
@@ -814,7 +816,7 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 }
 @media (max-width: 640px) { .stage-wrap { padding: 0 10px; } .stage { padding: 5px; border-radius: 16px; } .hero h1 { font-size: 2.5rem; } }
 @media (max-width: 520px) { .os-sep { display: none; } .os-row { flex-direction: column; gap: 8px; } }
-.stage.is-full .scene-cap { bottom: 130px; }
+.stage.is-full .scene-cap, .stage.is-full .driving { bottom: 130px; }
 
 /* Lens Cleaner on the desk */
 .a-clean { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; padding: 16px; text-align: center; }

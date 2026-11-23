@@ -33,7 +33,7 @@ const stripComments = (md) => md.replace(/<!--[\s\S]*?-->/g, "");
 let stars = null;
 try {
   const r = await fetch("https://api.github.com/repos/orionopenwow/LensUI", { headers: { accept: "application/vnd.github+json", ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) }, signal: AbortSignal.timeout(4000) });
-  if (r.ok) stars = (await r.json()).stargazers_count ?? null;
+  if (r.ok) stars = (await r.json()).stargazers_count || null; // 0 stars → no count
 } catch { /* offline */ }
 setStars(stars);
 

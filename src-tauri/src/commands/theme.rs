@@ -11,11 +11,21 @@ pub(crate) fn get_config(state: State<AppState>) -> LensConfig {
     guard.clone()
 }
 
+/// Applies the theme to Windows. Queued and coalesced (see `app::theme_apply`): window frames update
+/// after a short pause, system-wide writes (Windows accent, Windhawk) after things settle.
 pub(crate) fn apply_theme_to_system(cfg: &LensConfig, write_win_accent: bool) {
+    crate::app::theme_apply::schedule(cfg, write_win_accent);
+}
+
+/// Colours Lens computes for window frames from a config.
+pub(crate) struct FrameColors {
+    pub caption_hex: String,
+    pub border_hex: String,
+    pub is_light: bool,
+}
+
+pub(crate) fn frame_colors(cfg: &LensConfig) -> FrameColors {
     let chosen_accent = if cfg.theme.accent_mode == "custom" {
-        if write_win_accent {
-            let _ = set_windows_accent_color(&cfg.theme.custom_accent);
-        }
         cfg.theme.custom_accent.clone()
     } else {
         read_windows_theme().accent_hex
@@ -53,7 +63,6 @@ pub(crate) fn apply_theme_to_system(cfg: &LensConfig, write_win_accent: bool) {
     );
     // Light packs: dark titlebar text and light window chrome.
     let is_light = 0.299 * cap_r + 0.587 * cap_g + 0.114 * cap_b > 140.0;
-    win_dwm_engine::set_dwm_scheme(is_light);
 
     // Window frame style -> DWM border color. "none" removes the border entirely.
     let hairline = if is_light { "#C8C8CE".to_string() } else { "#27272C".to_string() };
@@ -79,16 +88,39 @@ pub(crate) fn apply_theme_to_system(cfg: &LensConfig, write_win_accent: bool) {
         _ => chosen_accent.clone(),
     };
 
-    // Windhawk's mod needs a real color; DWM accepts the borderless sentinel.
-    let windhawk_border = if border_hex == "none" { caption_hex.clone() } else { border_hex.clone() };
-    let _ = sync_lens_windhawk_mod(&caption_hex, &windhawk_border, cfg.theme.border_radius);
+    FrameColors { caption_hex, border_hex, is_light }
+}
+
+/// Window frames only: DWM caption/border colours for every window (the restyle itself runs on the
+/// DWM engine's own debounced worker).
+pub(crate) fn apply_frames(cfg: &LensConfig) {
+    let c = frame_colors(cfg);
+    win_dwm_engine::set_dwm_scheme(c.is_light);
     win_dwm_engine::update_dwm_theme(
         true,
-        &caption_hex,
-        &border_hex,
+        &c.caption_hex,
+        &c.border_hex,
         cfg.theme.border_radius,
         cfg.theme.glass_opacity as f64,
     );
+}
+
+/// The system-wide writes, each only when its value changed: the Windows accent (registry plus a
+/// settings broadcast every app repaints for) and the Windhawk mod (Windhawk recompiles on write).
+pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool) {
+    if write_win_accent
+        && cfg.theme.accent_mode == "custom"
+        && crate::app::theme_apply::changed("accent", &cfg.theme.custom_accent)
+    {
+        let _ = set_windows_accent_color(&cfg.theme.custom_accent);
+    }
+    let c = frame_colors(cfg);
+    // Windhawk's mod needs a real color; DWM accepts the borderless sentinel.
+    let windhawk_border = if c.border_hex == "none" { c.caption_hex.clone() } else { c.border_hex.clone() };
+    let key = format!("{}|{}|{}", c.caption_hex, windhawk_border, cfg.theme.border_radius);
+    if crate::app::theme_apply::changed("windhawk", &key) {
+        let _ = sync_lens_windhawk_mod(&c.caption_hex, &windhawk_border, cfg.theme.border_radius);
+    }
 }
 
 #[tauri::command]
