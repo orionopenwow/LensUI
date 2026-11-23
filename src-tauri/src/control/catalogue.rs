@@ -109,6 +109,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("dock.magnification", "Magnification", "How icons grow under the pointer: off, subtle or classic.", r#"{"enum":["off","subtle","classic"]}"#),
     ("dock.magnificationRange", "Magnification reach", "How many neighbouring icons grow with the hovered one.", r#"{"minimum":1,"maximum":4}"#),
     ("dock.launchAnimation", "Launch animation", "How an icon reacts when you open an app.", r#"{"enum":["none","lift","bounce","jelly"]}"#),
+    ("dock.pinsUserOrdered", "Keep my Dock order", "On once you reorder Dock pins in Lens. Off: pins from the Windows taskbar follow its order.", "{}"),
     ("dock.autoHide", "Dock auto-hide", "Never hide, hide when a window overlaps, or always hide.", r#"{"enum":["never","smart","always"]}"#),
     ("dock.iconSize", "Dock icon size", "Size of Dock icons in pixels.", r#"{"minimum":24,"maximum":96}"#),
     ("dock.hoverScale", "Hover scale", "How much an icon grows on hover.", r#"{"minimum":1,"maximum":2}"#),
