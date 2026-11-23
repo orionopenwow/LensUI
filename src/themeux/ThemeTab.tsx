@@ -25,6 +25,7 @@ import { AccessibilityCard } from "../components/AccessibilityCard";
 import { CursorSuiteCard } from "../components/CursorSuiteCard";
 import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "../dock/styles";
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
+import { LivingThemesRow } from "../themes/living/LivingThemesRow";
 
 interface Props {
   config: LensConfig;
@@ -491,6 +492,9 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </span>
         </label>
       </section>
+
+      {/* ===== Living themes: real sky, Sun and Moon (docs/LIVING_THEMES.md) ===== */}
+      <LivingThemesRow config={config} onApplyPack={onApplyPack} />
 
       {/* ===== c. Customise ===== */}
       <section className="tux-block" aria-label="Customise">
