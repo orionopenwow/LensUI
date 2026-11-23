@@ -51,6 +51,7 @@ mod clip;
 mod commands;
 mod media;
 mod shelf;
+mod guide;
 
 use config::{load_config, save_config, LensConfig};
 use std::sync::{Arc, Mutex};
@@ -199,6 +200,9 @@ pub fn run() {
             commands::clip::context_foreground,
             commands::clip::context_remember,
             commands::clip::command_layout,
+            commands::guide::guide_progress_get,
+            commands::guide::guide_progress_set,
+            commands::guide::guide_progress_reset,
             commands::shelf::shelf_list,
             commands::shelf::shelf_get,
             commands::shelf::shelf_add,
