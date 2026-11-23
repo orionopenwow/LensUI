@@ -92,7 +92,7 @@ const SCENARIOS = {
     },
   },
 };
-for (const scene of ["sand", "fluid", "flow", "constellation", "aurora", "rain", "starfield", "skyclock"]) {
+for (const scene of ["sand", "fluid", "flow", "constellation", "aurora", "rain", "starfield", "skyclock", "backdrop"]) {
   SCENARIOS[`playground-${scene}`] = {
     surface: "wallpaper",
     query: `scene=${scene}`,

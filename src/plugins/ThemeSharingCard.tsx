@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig } from "../types/lens";
 import { exportLensTheme, importLensTheme } from "../themes/lenstheme";
+import { applyThemeFileBackdrop } from "../studio/backdrop/apply";
 import { parseGalleryIndex, type GalleryEntry, type GalleryIndex } from "./gallery";
 import "./plugins.css";
 
@@ -44,6 +45,7 @@ export const ThemeSharingCard: React.FC<Props> = ({ config, onUpdateConfig }) =>
   const applyTheme = async (raw: unknown, label: string, keep: boolean) => {
     const next = importLensTheme(config, raw);
     await onUpdateConfig(next);
+    await applyThemeFileBackdrop(raw).catch(() => false);
     if (keep) {
       await invoke("save_theme_file_cmd", { name: label, json: JSON.stringify(raw) }).catch(() => {});
     }

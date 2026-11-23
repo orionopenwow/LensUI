@@ -33,6 +33,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo { id: "next_wallpaper", group: "Desktop", title: "Next wallpaper", examples: &["next wallpaper"], risk: "low" },
     CommandInfo { id: "set_wallpaper_scene", group: "Desktop", title: "Living wallpaper scene", examples: &["show the aurora scene", "falling sand"], risk: "low" },
     CommandInfo { id: "set_calm_mode", group: "Desktop", title: "Calm mode", examples: &["calm mode", "calm mode off"], risk: "low" },
+    CommandInfo { id: "make_backdrop", group: "Look", title: "Make a backdrop", examples: &["make me a calm blue aurora backdrop", "create a pink gradient"], risk: "low" },
     // Look
     CommandInfo { id: "set_color_mode", group: "Look", title: "Dark or light mode", examples: &["dark mode", "light mode"], risk: "low" },
     CommandInfo { id: "set_theme_pack", group: "Look", title: "Theme", examples: &["theme tokyo night", "use the nord theme"], risk: "low" },
