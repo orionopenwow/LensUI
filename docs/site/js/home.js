@@ -27,12 +27,12 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
 const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.1, 0.06], ["notes", 0.6, 0.08]] });
-// The desk is the visitor's: nothing plays on its own. Tabs above it start a guided tour that moves
+// The desk is the visitor's: nothing plays on its own. Tabs below it start a guided tour that moves
 // one step at a time, only when the visitor presses Next (or does the highlighted thing).
 const scTabs = $("#sc-tabs");
 const scbar = $("#sc-bar");
 const capN = scbar.querySelector(".sc-n"), capT = scbar.querySelector(".sc-t"), dots = scbar.querySelector(".sc-dots");
-const FREE = { n: "Free play", t: "This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour above and go step by step." };
+const FREE = { n: "Free play", t: "This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour below and go step by step." };
 const btn = (k) => scbar.querySelector(`[data-${k}]`);
 const shows = createShowcases(desk, {
   onChange(st) {
@@ -245,3 +245,34 @@ tabs?.addEventListener("keydown", (e) => {
   if (d && i >= 0) { e.preventDefault(); const n = ts[(i + d + ts.length) % ts.length]; n.focus(); n.click(); }
 });
 void iconUrl;
+
+// ---- slides (ArtCraft suite, core apps): the visitor drives; a slow pan only while visible -------
+document.querySelectorAll("[data-slides]").forEach((box) => {
+  const track = box.querySelector(".sl-track"), items = [...track.children], count = box.querySelector(".sl-count");
+  const idx = () => Math.round(track.scrollLeft / Math.max(1, items[0].offsetWidth + 14));
+  const go = (i) => { const n = (i + items.length) % items.length; track.scrollTo({ left: items[n].offsetLeft - track.offsetLeft, behavior: reducedMotion() ? "auto" : "smooth" }); };
+  const upd = () => { count.textContent = `${Math.min(items.length, idx() + 1)} / ${items.length}`; };
+  box.querySelector("[data-sl-prev]").addEventListener("click", () => { hold(); go(idx() - 1); });
+  box.querySelector("[data-sl-next]").addEventListener("click", () => { hold(); go(idx() + 1); });
+  track.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); hold(); go(idx() + 1); } else if (e.key === "ArrowLeft") { e.preventDefault(); hold(); go(idx() - 1); } });
+  track.addEventListener("scroll", upd, { passive: true }); upd();
+  let timer = 0, held = false, seen = false;
+  const hold = () => { held = true; clearInterval(timer); };
+  const run = () => { clearInterval(timer); if (!held && seen && !reducedMotion()) timer = setInterval(() => go(idx() + 1), 4500); };
+  ["pointerenter", "focusin", "touchstart"].forEach((ev) => box.addEventListener(ev, () => clearInterval(timer), { passive: true }));
+  ["pointerleave", "focusout"].forEach((ev) => box.addEventListener(ev, run));
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; run(); }, { threshold: 0.4 }).observe(box);
+});
+
+// ---- the mini Lens Browser: tabs switch, the Lens button opens the AI side panel -----------------
+document.querySelectorAll("[data-minibr]").forEach((br) => {
+  const url = br.querySelector("[data-mb-url]"), page = br.querySelector("[data-mb-page]"), side = br.querySelector("[data-mb-side]"), lens = br.querySelector("[data-mb-lens]");
+  const PAGES = [["lens.dev/release-notes", "Lens 0.9", "Nine dock styles, 89 themes and a desktop where look, apps and AI work as one."], ["youtube.com/watch?v=lens-tour", "Lens in 90 seconds", "A short tour of the dock, themes, the magic right-click and Claude on the desktop."]];
+  br.querySelectorAll("[data-mb-tab]").forEach((t) => t.addEventListener("click", () => {
+    br.querySelectorAll("[data-mb-tab]").forEach((x) => x.classList.toggle("on", x === t));
+    const [u, h, p] = PAGES[+t.dataset.mbTab];
+    url.textContent = u; page.querySelector(".mb-h").textContent = h; page.querySelector("p").textContent = p;
+    side.querySelector(".mb-q").textContent = +t.dataset.mbTab ? "Get the transcript" : "Summarise this page";
+  }));
+  lens.addEventListener("click", () => { const on = side.hidden; side.hidden = !on; lens.setAttribute("aria-pressed", String(on)); });
+});

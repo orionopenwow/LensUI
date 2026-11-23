@@ -189,7 +189,7 @@ const APPS = {
 
   async settings(b, desk) {
     const packs = await getPacks();
-    const PICK = ["obsidian", "nord-frost", "catppuccin-mocha", "tokyo-night", "gruvbox-warm", "rose-pine", "hyprland-neon", "alabaster-daylight", "lens-expressive", "lens-dot-matrix", "cc-koi-mosaic", "dracula-glass"].map((id) => packs.find((p) => p.id === id)).filter(Boolean);
+    const PICK = ["obsidian", "alabaster-daylight", "living-sky", "gruvbox-warm", "everforest-dark", "rose-pine", "lens-expressive", "lens-dot-matrix"].map((id) => packs.find((p) => p.id === id)).filter(Boolean);
     const SEC = ["Appearance", "Dock", "Sound", "About"];
     let sec = "Appearance";
     const render = () => {

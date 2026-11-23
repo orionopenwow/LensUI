@@ -3,6 +3,9 @@
 import { esc } from "./lib/markdown.mjs";
 import { WORKS_ON } from "./content/features.mjs";
 import { REPO } from "./lib/layout.mjs";
+import { readFileSync } from "node:fs";
+// Ollama's mark from Simple Icons (CC0), credited in THIRD_PARTY_NOTICES.md.
+const OLLAMA = readFileSync(new URL("./vendor/simple-icons/ollama.svg", import.meta.url), "utf8").replace(/<title>[^<]*<\/title>/, "").replace("<svg ", '<svg fill="currentColor" aria-hidden="true" ');
 
 const FEATURED = [
   { id: "artcraft", line: "An IDE for artists: controllable AI image and video, with 2D and 3D scene tools.", suite: ["wordcraft", "deckcraft", "gridcraft"] },
@@ -25,21 +28,20 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
 <section class="hero" aria-labelledby="hero-h">
   <div class="inner hero-copy">
     <span class="hero-logo hero-mark" data-logo data-speed="0.8" data-site="./"><img class="poster" src="brand/lens-logo.svg" alt="The Lens logo: a silver lens holding a rainbow nebula" width="144" height="144" fetchpriority="high"></span>
-    <p class="hero-pill"><span class="dot ok" aria-hidden="true"></span>Open source · in beta</p>
     <h1 id="hero-h">The <span class="lens-rainbow">everything</span> desktop.</h1>
     <p class="lede">The open-source desktop where look, apps and AI finally work as one.</p>
     <div class="actions">
-      <a class="btn primary big hero-dl" data-dl href="download.html"><span class="lbl">Download</span><span class="hint">Windows 10 &amp; 11 · free</span></a>
-      <a class="btn ghost big" href="${REPO}">${GH}<span>View on GitHub</span>${stars != null ? `<span class="stars" aria-label="${stars} stars">★ ${fmtStars(stars)}</span>` : ""}</a>
+      <a class="btn primary hero-dl" data-dl href="download.html">${OS_ICON.windows}<span class="lbl">Download for Windows</span></a>
+      <a class="btn ghost hero-gh" href="${REPO}">${GH}<span>View on GitHub</span>${stars != null ? `<span class="stars" aria-label="${stars} stars">★ ${fmtStars(stars)}</span>` : ""}</a>
     </div>
-    <p class="os-row"><span class="os on">${OS_ICON.windows}Windows 10 &amp; 11</span><span class="os-sep" aria-hidden="true"></span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux on the roadmap</a></p>
+    <p class="dl-more" aria-label="Other ways to install"><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming with the first signed release">winget</span><span class="soon">Portable .zip</span><span class="soon">Installer .msi</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
+    <p class="dl-fine">Windows 10 &amp; 11 · free and open source · winget, .zip and .msi arrive with the first signed release</p>
   </div>
   <div class="stage-wrap">
-    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="Guided tours"></div>
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
       <div class="sc-bar" id="sc-bar">
-        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour above and go step by step.</span></div>
+        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour below and go step by step.</span></div>
         <div class="sc-ctl">
           <span class="sc-dots" aria-hidden="true"></span>
           <button type="button" class="sb-btn sc-b" data-back disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Back</span></button>
@@ -50,6 +52,7 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
         </div>
       </div>
     </div>
+    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="Guided tours"></div>
     <div class="docks-row" id="docks" aria-labelledby="docks-h">
       <div class="dr-head"><h2 id="docks-h" class="h-sm">Nine docks</h2><p id="dock-info" class="dr-info" aria-live="polite"></p>
         <span class="dr-nav"><button type="button" class="sb-btn" data-rail-prev aria-label="Scroll the docks left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="sb-btn" data-rail-next aria-label="Scroll the docks right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></span></div>
@@ -58,21 +61,21 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
   </div>
 </section>
 
-${feat({ id: "f-magic", kicker: "Magic right-click", title: "Right-click anything.", body: "A video, a file, a paragraph or a link: the Lens menu knows what it is and offers the right actions. Summarise it, pull a YouTube transcript, save it to the Shelf, or send it to Claude as context, after your OK.", points: ["Works in Lens Browser, File Explorer, the Shelf, the dock and Lens Mini", "Local models first; anything sent away asks you", "Pin the actions you use; the rest stay under More"], tour: "magic", media: [clip("right-click", "The Lens right-click menu"), clip("youtube-transcript", "Getting a YouTube transcript")] })}
+${feat({ id: "f-magic", icon: "magic", kicker: "Magic right-click", title: "A context window that knows what you clicked.", body: "Right-click a video, a file, a paragraph or a link and Lens opens a small magic window beside it. It knows what the thing is and has Lens AI ready: summarise it, pull a YouTube transcript, explain it, save it to the Shelf, or hand it to Claude as context, after your OK.", points: ["AI built in: answers and summaries right in the window, on your PC first", "Knows the type: videos, files, text, links and images each get their own actions", "Anything sent to Claude or the web asks you first"], tour: "magic", media: [clip("right-click", "The Lens right-click menu"), clip("youtube-transcript", "Getting a YouTube transcript")] })}
 
 <section id="byo" class="sec feat flip" aria-labelledby="byo-h">
   <div class="inner feat-grid">
     <div class="feat-copy">
-      <p class="kicker">The agentic desktop</p>
+      <p class="kicker"><span class="k-ic">${IC.agent}</span>The agentic desktop</p>
       <h2 id="byo-h">Bring your own agent. Stay in charge.</h2>
       <p>Claude, a model on your PC, or any MCP client can see your desktop and change it through Lens. It shows its plan, anything risky waits for your OK on a “Needs your OK” card, Esc stops it, and every change undoes.</p>
       <p class="feat-try"><button type="button" class="btn primary" data-play-scene="agent">▶ Try it on the desk</button></p>
     </div>
     <div class="byo-card">
         <div class="byo-tabs" id="byo-tabs" role="tablist" aria-label="Agent">
-          <button type="button" role="tab" id="byo-t1" aria-selected="true" aria-controls="byo-p1">Claude</button>
-          <button type="button" role="tab" id="byo-t2" aria-selected="false" aria-controls="byo-p2" tabindex="-1">Local model</button>
-          <button type="button" role="tab" id="byo-t3" aria-selected="false" aria-controls="byo-p3" tabindex="-1">Any MCP agent</button>
+          <button type="button" role="tab" id="byo-t1" aria-selected="true" aria-controls="byo-p1"><span class="byo-ic" style="--c:#d97757">C</span>Claude</button>
+          <button type="button" role="tab" id="byo-t2" aria-selected="false" aria-controls="byo-p2" tabindex="-1"><span class="byo-ic" style="--c:#34d399">${OLLAMA}</span>Local model</button>
+          <button type="button" role="tab" id="byo-t3" aria-selected="false" aria-controls="byo-p3" tabindex="-1"><span class="byo-ic" style="--c:#818cf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 3v5M15 3v5M7 8h10v4a5 5 0 0 1-10 0zM12 17v4"/></svg></span>Any MCP agent</button>
         </div>
         <div class="byo-panel" role="tabpanel" id="byo-p1" aria-labelledby="byo-t1">
           <p class="step"><b>Connect</b> Settings › AI shows a ready-made snippet for Claude Desktop or Claude Code. Lens runs as an MCP server over stdio:</p>
@@ -94,23 +97,30 @@ ${feat({ id: "f-magic", kicker: "Magic right-click", title: "Right-click anythin
   </div>
 </section>
 
-${feat({ id: "f-browser", kicker: "Lens Browser", title: "A browser that fits your desktop.", body: "Lens Browser wears your theme like everything else and has an AI side panel built in: summarise the page, get a video's transcript, or hand the page to Claude, only when you say so.", points: ["Side panel that summarises on your PC", "Transcripts and context packs from any page", "Browser agent runs only with approvals, Esc to stop"], tour: "browser", media: [clip("browser-agent", "Lens Browser with its AI side panel")] })}
+${feat({ id: "f-browser", icon: "browser", kicker: "Lens Browser", title: "A browser with nothing in the way.", body: "Lens Browser is a single slim bar: tabs, the address and one Lens button. It wears your theme like everything else. Press the Lens button and an AI side panel opens to summarise the page, get a video's transcript, or hand the page to Claude, only when you say so.", points: ["One slim bar; the page gets the rest", "AI side panel on demand, summaries on your PC", "Browser agent runs only with approvals, Esc to stop"], tour: "browser", media: [`<div class="mini-br" data-minibr>
+  <div class="mb-bar"><span class="mb-tabs"><button type="button" class="mb-tab on" data-mb-tab="0">Release notes</button><button type="button" class="mb-tab" data-mb-tab="1">Lens in 90 seconds</button></span><span class="mb-url" data-mb-url>lens.dev/release-notes</span><button type="button" class="mb-lens" data-mb-lens aria-pressed="false" aria-label="Open the Lens side panel"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></button></div>
+  <div class="mb-body"><article class="mb-page" data-mb-page><p class="mb-h">Lens 0.9</p><p>Nine dock styles, 89 themes and a desktop where look, apps and AI work as one.</p><p class="mb-line"></p><p class="mb-line s"></p><p class="mb-line"></p></article>
+  <aside class="mb-side" data-mb-side aria-label="Lens side panel" hidden><b>Lens</b><p class="mb-q">Summarise this page</p><ul><li>Lens 0.9 ships nine dock styles.</li><li>89 themes, including living ones.</li><li>Every change undoes.</li></ul><button type="button" class="btn small" disabled>Send to Claude · asks first</button></aside></div>
+</div>`] })}
 
 <section id="overlays" class="sec" aria-labelledby="ov-h">
   <div class="inner">
-    <div class="head"><p class="kicker">Overlays for the apps you already use</p><h2 id="ov-h">Your apps, in your look.</h2><p>Lens doesn't replace your apps. It sits on top of them: a themed Now Playing for Spotify and every media app, window frames that match your theme, and small built-in tools for the jobs Windows makes awkward.</p></div>
+    <div class="head"><p class="kicker"><span class="k-ic">${IC.layers}</span>Overlays for the apps you already use</p><h2 id="ov-h">Your apps, in your look.</h2><p>Lens doesn't replace your apps. It sits on top of them: a themed Now Playing for Spotify and every media app, window frames that match your theme, and small built-in tools for the jobs Windows makes awkward.</p></div>
     <div class="ov-grid">
       <article class="ov"><div class="ov-media">${clip("music", "Lens Music Now Playing")}</div><div class="ov-body"><h3>Lens Music</h3><p>Now Playing for any app, coloured by the album art. Optionally reskins Spotify to match your theme (via Spicetify).</p><button type="button" class="link-btn" data-play-scene="music">Try it on the desk ↑</button></div></article>
       <article class="ov"><div class="ov-media"><img src="media/shot-cleaner.webp" alt="Lens Cleaner home screen: 9.6 GB free of 238 GB, Scan my PC" loading="lazy" width="1100" height="619"></div><div class="ov-body"><h3>Lens Cleaner</h3><p>See what's taking space, preview every file, and clean safe items to the Recycle Bin with one-click undo.</p><button type="button" class="link-btn" data-play-scene="cleaner">Try it on the desk ↑</button></div></article>
       <article class="ov"><div class="ov-media">${clip("focus-borders", "Themed window frames and focus borders")}</div><div class="ov-body"><h3>Window styling</h3><p>Other apps' frames get your theme's border, corners and window buttons, with focus dimming you can turn up or off.</p></div></article>
-      <article class="ov"><div class="ov-media"><img src="media/shot-monitor.webp" alt="Lens Monitor: CPU, memory, GPU, disk and network with what's slowing the PC" loading="lazy" width="1100" height="619"></div><div class="ov-body"><h3>Core apps</h3><p>Monitor, Timer, Calculator, Color, Notes, Power, Network and Clipboard: quick, themed, and built in.</p></div></article>
-    </div>
+      </div>
+    <div class="core-head"><h3>Core apps</h3><p>Small, themed tools for the jobs Windows makes awkward. Real screenshots from Lens.</p></div>
+    ${slides("core-slides", "Lens core apps", [["monitor", "Monitor", "What's slowing your PC, by app"], ["timer", "Timer", "Timers, pomodoro, alarms, on the dock"], ["calculator", "Calculator", "Units, programmer mode, history"], ["color", "Color", "Pick any pixel, check contrast"], ["notes", "Notes", "Notes and stickies on the desktop"], ["power", "Power", "Battery health and wear"], ["network", "Network", "Who's using your connection"], ["clipboard", "Clipboard", "History, pins, paste as plain"], ["startup", "Startup & Uninstall", "What starts with Windows"]].map(([k, t, d]) => ({ src: `media/core-${k}.webp`, t, d, alt: `Lens ${t}: ${d}` })))}
   </div>
 </section>
 
 <section id="apps" class="sec" aria-labelledby="apps-h">
   <div class="inner">
-    <div class="head"><p class="kicker">Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so. Start with ArtCraft.</p><p class="feat-try"><button type="button" class="btn" data-play-scene="apps">▶ Install ArtCraft on the desk</button></p></div>
+    <div class="head"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so. Start with ArtCraft.</p><p class="feat-try"><button type="button" class="btn" data-play-scene="apps">▶ Install ArtCraft on the desk</button></p></div>
+    <div class="art-pan"><div class="ap-head"><h3>ArtCraft and its suite</h3><p>The image editor first, then WordCraft, DeckCraft and GridCraft. Screenshots from the ArtCraft project.</p></div>
+    ${slides("artcraft-slides", "ArtCraft suite", [["artcraft-shot0", "ArtCraft", "Image and video editing with AI"], ["artcraft-shot1", "ArtCraft", "Canvas and layers"], ["wordcraft-shot0", "WordCraft", "Documents"], ["deckcraft-shot0", "DeckCraft", "Slides"], ["gridcraft-shot0", "GridCraft", "Spreadsheets"]].map(([f, t, d]) => ({ src: `media/apps/${f}.webp`, t, d, alt: `${t}: ${d}` })))}</div>
     <div class="featured">${FEATURED.map((f) => appCard(f, apps)).join("")}</div>
     <div class="rail" role="list" aria-label="More picks">${RAIL.map((id) => railItem(id, apps)).join("")}</div>
     <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
@@ -184,14 +194,28 @@ ${feat({ id: "f-browser", kicker: "Lens Browser", title: "A browser that fits yo
 /** A short clip that plays only when asked (click, or hover with a mouse). */
 const clip = (id, label) => `<figure class="clip" data-clip><video preload="none" muted playsinline loop poster="media/poster-${id}.webp" aria-label="${esc(label)}"><source src="media/${id}.mp4" type="video/mp4"></video><button type="button" class="clip-play" aria-label="Play: ${esc(label)}"><span aria-hidden="true">▶</span></button></figure>`;
 /** One main feature: copy on one side, real visuals on the other, and a way to try it on the desk. */
-function feat({ id, kicker, title, body, points = [], tour, media = [], flip = false }) {
+const IC = {
+  magic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`,
+  browser: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>`,
+  agent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/></svg>`,
+  layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>`,
+  apps: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
+};
+// A user-controlled slide strip: scroll-snap, Back/Next, arrow keys; a slow pan only while visible,
+// paused on hover, focus or touch, never with reduced motion (js/home.js).
+const slides = (id, label, items) => `<div class="slides" id="${id}" data-slides aria-roledescription="carousel" aria-label="${esc(label)}">
+  <div class="sl-track" tabindex="0">${items.map((it, i) => `<figure class="sl" aria-roledescription="slide" aria-label="${i + 1} of ${items.length}: ${esc(it.t)}"><img src="${it.src}" alt="${esc(it.alt ?? it.t)}" loading="lazy"><figcaption><b>${esc(it.t)}</b>${it.d ? `<span>${esc(it.d)}</span>` : ""}</figcaption></figure>`).join("")}</div>
+  <div class="sl-nav"><button type="button" class="sb-btn" data-sl-prev aria-label="Previous">${'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>'}</button><span class="sl-count" aria-live="polite"></span><button type="button" class="sb-btn" data-sl-next aria-label="Next">${'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'}</button></div>
+</div>`;
+function feat({ id, kicker, title, body, points = [], tour, media = [], flip = false, icon = "" }) {
   return `<section id="${id}" class="sec feat${flip ? " flip" : ""}" aria-labelledby="${id}-h">
   <div class="inner feat-grid">
     <div class="feat-copy">
-      <p class="kicker">${esc(kicker)}</p>
+      <p class="kicker">${icon ? `<span class="k-ic">${IC[icon]}</span>` : ""}${esc(kicker)}</p>
       <h2 id="${id}-h">${esc(title)}</h2>
       <p>${esc(body)}</p>
-      ${points.length ? `<ul class="feat-pts">${points.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      ${points.length ? `<ul class="feat-pts">${points.map((x) => `<li>${IC.check}<span>${esc(x)}</span></li>`).join("")}</ul>` : ""}
       ${tour ? `<p class="feat-try"><button type="button" class="btn primary" data-play-scene="${tour}">▶ Try it on the desk</button></p>` : ""}
     </div>
     <div class="feat-media${media.length > 1 ? " two" : ""}">${media.join("")}</div>

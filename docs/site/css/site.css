@@ -405,10 +405,16 @@ tr:last-child td { border-bottom: 0; }
 .lw.is-max { border-radius: 0; }
 .lw-bar { flex: none; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--lx-line); cursor: grab; user-select: none; }
 .lw-t { flex: 1; min-width: 0; font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lw-btns { display: flex; gap: 7px; }
-.lw-btns button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 0; cursor: pointer; background: color-mix(in srgb, var(--lx-fg) 22%, transparent); position: relative; }
+/* Window buttons = Lens's real TrafficLights (src/components/TrafficLights.tsx, classic style):
+   Yellow · Green · Red, 14 px, 10 px apart, glyphs on hover. */
+.lw-btns { display: flex; gap: 10px; }
+.lw-btns button { width: 14px; height: 14px; padding: 0; border-radius: 50%; border: 0; cursor: pointer; position: relative; display: inline-grid; place-items: center; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / .2); transition: transform .12s var(--lens-ease-out, ease), filter .12s; }
 .lw-btns button::after { content: ""; position: absolute; inset: -6px; }
-.lw.is-focused .lw-btns [data-a="min"] { background: #fbbf24; } .lw.is-focused .lw-btns [data-a="max"] { background: #34d399; } .lw.is-focused .lw-btns [data-a="close"] { background: #fb7185; }
+.lw-btns button i { font: 800 10px/1 var(--sans); font-style: normal; color: rgb(0 0 0 / .72); opacity: 0; transition: opacity .12s; }
+.lw-btns:hover button i { opacity: 1; }
+.lw-btns button:hover { transform: scale(1.14); filter: brightness(1.1); } .lw-btns button:active { transform: scale(.92); }
+.lw-btns [data-a="min"] { background: #febc2e; } .lw-btns [data-a="max"] { background: #28c840; } .lw-btns [data-a="close"] { background: #ff5f57; }
+.lw:not(.is-focused) .lw-btns button { filter: saturate(.55) brightness(.9); }
 .lw-btns button:focus-visible { outline: 2px solid var(--lx-accent); outline-offset: 2px; box-shadow: none; }
 .lw-body { flex: 1; min-height: 0; overflow: auto; position: relative; scrollbar-width: thin; }
 .lw-loading { position: absolute; inset: 14px; border-radius: 8px; background: linear-gradient(90deg, transparent, rgb(var(--ink) / .05), transparent) 0 0 / 200% 100%; animation: shimmer 1.2s linear infinite; }
@@ -759,7 +765,8 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 @media (max-width: 900px) { .platforms { grid-template-columns: 1fr; } }
 
 /* ---- the Lens Guide: the orb, and the window it opens into (js/guide.js) ------------------------- */
-.guide-orb { position: fixed; right: 22px; bottom: 22px; z-index: 60; display: flex; align-items: center; flex-direction: row-reverse; gap: 10px; padding: 0; border: 0; background: none; cursor: pointer; }
+.guide-orb { position: fixed; right: 22px; bottom: 22px; z-index: 60; display: block; padding: 0; border: 0; background: none; cursor: pointer; }
+.guide-orb .orb-lbl { position: absolute; right: calc(100% + 10px); top: 50%; translate: 0 -50%; white-space: nowrap; }
 /* The orb is CSS only (the nebula turns under the still bezel), so it costs nothing while it waits. */
 .orb-logo { position: relative; display: block; aspect-ratio: 1; }
 .orb-glass { position: absolute; inset: 10.9375%; border-radius: 50%; overflow: hidden; background: #0b0b14; }
@@ -767,12 +774,13 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .orb-ov { position: absolute; inset: 0; width: 100%; height: 100%; }
 .guide-orb:hover .orb-glass .lens-cloud, .guide-orb[aria-expanded="true"] .orb-glass .lens-cloud { --lc-speed: 0.55; }
 .orb-logo { width: 60px; border-radius: 50%; box-shadow: 0 10px 24px rgb(0 0 0 / .45), 0 0 22px rgb(139 140 255 / .4); transition: transform .35s var(--lens-ease-out); }
-.guide-orb:hover .orb-logo { transform: translateY(-3px) scale(1.06); }
+.guide-orb:hover .orb-logo { box-shadow: 0 10px 24px rgb(0 0 0 / .45), 0 0 30px rgb(139 140 255 / .6); }
 .orb-lbl { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--card); color: var(--fg); font: 550 0.86rem var(--sans); box-shadow: 0 0 0 1px var(--line-2), 0 10px 30px rgb(0 0 0 / .3); opacity: 0; transform: translateX(10px); transition: opacity .2s, transform .25s; pointer-events: none; white-space: nowrap; }
 .guide-orb:hover .orb-lbl, .guide-orb:focus-visible .orb-lbl { opacity: 1; transform: none; }
 .guide-orb:focus-visible { outline: 0; box-shadow: none; }
 .guide-orb:focus-visible .orb-logo { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--hue); }
-.guide-orb.is-open { opacity: 0; pointer-events: none; transform: scale(.8); transition: opacity .2s, transform .2s; }
+.guide-orb.is-open { pointer-events: none; }
+.guide-orb.is-open .orb-lbl { opacity: 0; }
 .gw { position: fixed; right: 20px; bottom: 20px; z-index: 61; width: min(400px, calc(100vw - 24px)); height: min(560px, calc(100vh - 100px)); display: flex; flex-direction: column; border-radius: 18px; background: var(--card); color: var(--fg); box-shadow: 0 0 0 1px var(--line-2), 0 30px 90px rgb(0 0 0 / .45); overflow: hidden; }
 .gw.is-max { right: 24px; bottom: 24px; width: min(760px, calc(100vw - 48px)); height: calc(100vh - 150px); }
 .gw-bar { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-bottom: 1px solid var(--line); cursor: grab; user-select: none; }
@@ -933,6 +941,78 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .lx-spot { position: absolute; left: 0; top: 0; z-index: 64; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 2px rgb(255 255 255 / .9), 0 0 0 6px rgb(139 140 255 / .35), 0 0 0 9999px rgb(0 0 0 / .12); transition: transform .45s var(--lens-ease-out), width .45s var(--lens-ease-out), height .45s var(--lens-ease-out); animation: spot-breathe 2.4s ease-in-out infinite; }
 @keyframes spot-breathe { 50% { box-shadow: 0 0 0 2px rgb(255 255 255 / .95), 0 0 0 10px rgb(139 140 255 / .18), 0 0 0 9999px rgb(0 0 0 / .12); } }
 @media (prefers-reduced-motion: reduce) { .lx-spot { animation: none; transition: none; } }
+
+
+/* The light/dark switch in the header: obvious, labelled, one click. */
+.appear { display: inline-flex; align-items: center; gap: 4px; }
+.mode-switch { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px 0 4px; border-radius: 999px; border: 1px solid rgb(var(--ink) / .14); background: rgb(var(--ink) / .04); color: var(--fg); cursor: pointer; font: 500 13px/1 inherit; transition: background var(--lens-dur-fast, .15s) var(--lens-ease-out, ease), border-color var(--lens-dur-fast, .15s); }
+.mode-switch:hover { background: rgb(var(--ink) / .08); border-color: rgb(var(--ink) / .24); }
+.mode-switch:focus-visible { outline: 2px solid var(--hue, #818cf8); outline-offset: 2px; }
+.mode-switch .ms-track { position: relative; width: 44px; height: 24px; border-radius: 999px; background: rgb(var(--ink) / .12); }
+.mode-switch .ms-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / .3); transition: transform .28s var(--lens-ease-out, cubic-bezier(.2,.9,.25,1)); }
+.mode-switch[aria-checked="true"] .ms-thumb { transform: translateX(20px); }
+.mode-switch .ms-sun, .mode-switch .ms-moon { position: absolute; width: 0; height: 0; overflow: hidden; }
+.mode-switch .ms-track::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: center / 14px no-repeat; }
+.mode-switch .ms-lbl::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; background: currentColor; -webkit-mask: var(--ms-icon) center / contain no-repeat; mask: var(--ms-icon) center / contain no-repeat; }
+.mode-switch { --ms-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z'/%3E%3C/svg%3E"); }
+.mode-switch[aria-checked="true"] { --ms-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/%3E%3C/svg%3E"); }
+@media (max-width: 720px) { .mode-switch .ms-lbl { display: none; } .mode-switch { padding-right: 4px; } }
+
+
+/* Hero download: slim, with the Windows logo; other installers in a quiet row under it. */
+.hero-dl, .hero-gh { min-height: 42px; padding: 8px 18px; font-size: 0.95rem; gap: 9px; }
+.hero-dl { flex-direction: row; min-width: 0; }
+.hero-dl svg { width: 16px; height: 16px; }
+.dl-more { display: flex; gap: 6px 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 16px 0 0; font-size: 0.82rem; color: var(--fg-3); }
+.dl-more a, .dl-more .soon { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-2); text-decoration: none; }
+.dl-more a:hover { color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); background: none; }
+.dl-more .soon { color: var(--fg-3); }
+.dl-more .soon::after { content: "soon"; font-size: 0.68rem; padding: 1px 5px; border-radius: 6px; background: rgb(var(--ink) / .07); }
+.dl-more svg { width: 14px; height: 14px; }
+.dl-fine { margin: 10px 0 0; font-size: 0.76rem; color: var(--fg-3); }
+.sc-tabs { margin: 12px 0 0; }
+
+
+/* Section icons and checkmark points. */
+.kicker .k-ic { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-right: 8px; vertical-align: -8px; border-radius: 8px; background: var(--spectrum); color: #0b0b0d; }
+.kicker .k-ic svg { width: 16px; height: 16px; }
+.feat-pts { list-style: none; padding: 0; }
+.feat-pts li { display: flex; gap: 10px; align-items: flex-start; }
+.feat-pts li::before { content: none; }
+.feat-pts li svg { flex: none; width: 18px; height: 18px; margin-top: 3px; color: var(--hue, #818cf8); }
+/* BYO agent tab icons: small pops of colour. */
+.byo-ic { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; vertical-align: -5px; border-radius: 6px; background: var(--c); color: #0b0b0d; font: 700 12px/1 var(--sans); }
+.byo-ic svg { width: 13px; height: 13px; }
+/* Slides: user-controlled strips (ArtCraft suite, core apps). */
+.slides { margin-top: 18px; }
+.sl-track { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 4px 2px 10px; scrollbar-width: none; }
+.sl-track::-webkit-scrollbar { display: none; }
+.sl { flex: 0 0 min(420px, 78%); min-width: 0; margin: 0; scroll-snap-align: start; border-radius: 16px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.sl img { display: block; width: 100%; height: 280px; object-fit: cover; object-position: top; background: var(--sunk, #111); }
+.sl figcaption { display: grid; gap: 2px; padding: 12px 14px; }
+.sl figcaption b { font-weight: 600; } .sl figcaption span { color: var(--fg-3); font-size: 0.86rem; }
+.sl-nav { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 6px; }
+.sl-count { font-size: 0.8rem; color: var(--fg-3); min-width: 3.5em; text-align: center; }
+.core-head, .ap-head { margin-top: 36px; } .core-head h3, .ap-head h3 { margin: 0 0 4px; font-size: 1.15rem; } .core-head p, .ap-head p { margin: 0; color: var(--fg-2); }
+.art-pan .sl img { height: 300px; }
+/* A live, minimal Lens Browser. */
+.mini-br { border-radius: 16px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line-2), 0 24px 60px -20px rgb(0 0 0 / .5); }
+.mb-bar { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px; border-bottom: 1px solid var(--line); }
+.mb-tabs { display: flex; gap: 4px; min-width: 0; }
+.mb-tab { border: 0; background: none; color: var(--fg-3); font: 500 12px var(--sans); padding: 5px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.mb-tab.on { background: rgb(var(--ink) / .08); color: var(--fg); }
+.mb-url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--fg-3); padding: 5px 10px; border-radius: 8px; background: rgb(var(--ink) / .04); }
+.mb-lens { position: relative; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: none; }
+.mb-lens .lens-cloud { --lc-bezel: 1.5px; }
+.mb-lens[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--hue, #818cf8); }
+.mb-body { display: flex; min-height: 240px; }
+.mb-page { flex: 1; padding: 18px 20px; min-width: 0; }
+.mb-page .mb-h { margin: 0 0 6px; font-weight: 650; color: var(--fg); font-size: 1rem; } .mb-page p { margin: 0 0 10px; color: var(--fg-2); font-size: 0.9rem; }
+.mb-line { height: 9px; border-radius: 5px; background: rgb(var(--ink) / .08); } .mb-line.s { width: 60%; }
+.mb-side { flex: 0 0 44%; padding: 16px; border-left: 1px solid var(--line); background: rgb(var(--ink) / .03); font-size: 0.86rem; animation: mb-in .32s var(--lens-ease-out, ease) both; }
+.mb-side ul { margin: 8px 0 12px; padding-left: 18px; color: var(--fg-2); } .mb-q { margin: 6px 0 0; color: var(--fg-3); }
+@keyframes mb-in { from { opacity: 0; transform: translateX(14px); } }
+@media (prefers-reduced-motion: reduce) { .mb-side { animation: none; } .sl-track { scroll-behavior: auto; } }
 
 /* LENS-CLOUD:BEGIN (exact copy of src/styles/lens-cloud.css) */
 /* lens-cloud: the Lens orb's billowing rainbow nebula. Shared by the app (presence orb) and the

@@ -15,7 +15,7 @@ const MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 
 // Runs before first paint (dark unless the visitor picked otherwise) so the notch choices (mode, accent, pack colours, density,
 // text size, motion) don't flash. Mirrors apply() in docs/site/js/site.js.
-const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"dark",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
+const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"auto",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
 
 /**
  * @param {object} o

@@ -56,7 +56,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       <div class="lx-snap" hidden></div>
       <div class="lx-top">
         <button type="button" class="lt-logo" data-cmd aria-label="Lens Command"><img src="${new URL("brand/lens-logo-small.svg", SITE)}" alt="" width="16" height="16"></button>
-        <b class="lt-app">Desktop</b><span class="lt-menu">File</span><span class="lt-menu">Edit</span><span class="lt-menu">View</span>
+        <b class="lt-app">Desktop</b>
         <span class="lt-sp"></span>
         <button type="button" class="lt-search" data-cmd><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>Search<kbd>Ctrl Space</kbd></button>
         <span class="lt-sp"></span>
@@ -122,7 +122,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     el.setAttribute("role", "group");
     el.setAttribute("aria-label", `${a.name} window`);
     el.innerHTML = `<header class="lw-bar"><img src="${iconUrl(a.icon)}" alt="" width="16" height="16"><span class="lw-t">${esc(a.name)}</span>
-      <span class="lw-btns"><button type="button" data-a="min" aria-label="Minimise ${esc(a.name)}"></button><button type="button" data-a="max" aria-label="Maximise ${esc(a.name)}"></button><button type="button" data-a="close" aria-label="Close ${esc(a.name)}"></button></span></header>
+      <span class="lw-btns"><button type="button" data-a="min" aria-label="Minimise ${esc(a.name)}"><i aria-hidden="true">−</i></button><button type="button" data-a="max" aria-label="Maximise ${esc(a.name)}"><i aria-hidden="true">+</i></button><button type="button" data-a="close" aria-label="Close ${esc(a.name)}"><i aria-hidden="true">×</i></button></span></header>
       <div class="lw-body"><div class="lw-loading" aria-hidden="true"></div></div>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join("")}`;
     const wk = work(), cnt = wins.size;
     const w = { id: ++hw, app: id, el, w: Math.min(a.w, W - 40), h: Math.min(a.h, wk.h - 20), x: 0, y: 0, min: false, max: false, prev: null, tile: null };

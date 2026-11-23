@@ -443,8 +443,8 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.waitForSelector("#lab-desk .lw", { timeout: 20000 });
   await page.waitForTimeout(800);
   const kept = await D(() => window.lensSite.lab.committed?.p.id);
-  await page.hover('.lab-picks [data-pack="nord-frost"]'); await page.waitForTimeout(300);
-  expect((await D(() => window.lensSite.lab.pack?.id)) === "nord-frost", "hovering a theme previews it");
+  await page.hover('.lab-picks [data-pack="everforest-dark"]'); await page.waitForTimeout(300);
+  expect((await D(() => window.lensSite.lab.pack?.id)) === "everforest-dark", "hovering a theme previews it");
   await page.mouse.move(5, 5); await page.waitForTimeout(300);
   expect((await D(() => window.lensSite.lab.pack?.id)) === kept, "leaving the picker restores the kept theme");
   await page.click('.lab-picks [data-pack="rose-pine"]'); await page.waitForTimeout(1600);
@@ -460,7 +460,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.click("[data-shuffle]"); await page.waitForTimeout(600);
   expect((await D(() => window.lensSite.lab.committed?.p.id)) !== "rose-pine", "Shuffle changes the theme");
   // Icons: every icon on the page comes from the shared set (or the brand folder, or the apps' own repos).
-  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|brand\//.test(s)));
+  const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|media\/core-|brand\//.test(s)));
   expect(!odd.length, "icons come from the shared icon set", odd.slice(0, 5).join(", "));
   // Bring your own agent tabs, by keyboard.
   await page.focus("#byo-t1"); await page.keyboard.press("ArrowRight"); await page.waitForTimeout(100);
@@ -511,7 +511,8 @@ async function waitDesk(page, sel = "#desk-host") {
     if (r.toasts.some((t) => hit(r.bar, t)) || hit(r.bar, r.dock)) lp(`${w}px: the tour bar overlaps the desk`);
     // The rainbow word uses the full spectrum (not the accent colour).
     const rb = await page.$eval(".hero .lens-rainbow", (e) => getComputedStyle(e).backgroundImage);
-    if (!/255, 95, 143|ff5f8f/i.test(rb) || !/95, 227, 166|5fe3a6/i.test(rb)) lp(`${w}px: "everything" doesn't use the nebula spectrum`);
+    const dark = /255, 95, 143|ff5f8f/i.test(rb) && /95, 227, 166|5fe3a6/i.test(rb), light = /217, 36, 92|d9245c/i.test(rb) && /15, 138, 95|0f8a5f/i.test(rb);
+    if (!dark && !light) lp(`${w}px: "everything" doesn't use the nebula spectrum`);
     // The Guide orb and its label never sit on footer text when scrolled to the end.
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(400);
