@@ -163,7 +163,7 @@
   gap: 12px;
   background: var(--lens-pack-elevated, var(--lens-bg-surface));
   border-bottom: 1px solid transparent;
-  transition: border-color 120ms ease;
+  transition: border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .sh-pagehead.stuck {
   border-bottom-color: rgb(var(--lens-ink) / 0.08);
@@ -675,7 +675,7 @@
   background: var(--sh-fill-ink);
   border-radius: inherit;
   pointer-events: none;
-  transition: clip-path 90ms linear;
+  transition: clip-path var(--lens-dur-instant) linear;
 }
 .sh-fill-bar.is-dragging .sh-fill-fill {
   transition: none;
@@ -776,7 +776,7 @@
   border-radius: inherit;
   background: #34d399;
   transform-origin: bottom;
-  transition: transform 160ms linear;
+  transition: transform var(--lens-dur-fast) linear;
 }
 @media (prefers-reduced-motion: reduce) {
   .sh-level > span {
@@ -867,7 +867,7 @@
 }
 .sh-mix-more svg {
   transform: rotate(-90deg);
-  transition: transform 120ms ease;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 .sh-mix-more svg.open {
   transform: none;

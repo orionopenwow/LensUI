@@ -74,7 +74,7 @@ export const AnimatedBackdropSwitch: React.FC = () => {
         <span className="amb-switch-hint">A very slow, faint motion in this theme's colours</span>
       </span>
       <span className={`amb-switch ${a.on ? "on" : ""}`}>
-        <input type="checkbox" role="switch" aria-checked={a.on} checked={a.on} onChange={(e) => a.setOn(e.target.checked)} />
+        <input type="checkbox" role="switch" aria-label="Animated backdrop" aria-checked={a.on} checked={a.on} onChange={(e) => a.setOn(e.target.checked)} />
         <span className="amb-knob" />
       </span>
     </label>

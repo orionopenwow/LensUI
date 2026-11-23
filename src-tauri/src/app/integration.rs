@@ -456,8 +456,21 @@ pub(crate) fn before_bridge_request(app: &AppHandle) {
 
 // ============================================================================== Lens Command
 
+/// Sequence number for `lens://command/open`, so the frontend can tell a replay from a new open.
+static OPEN_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 /// Shows the Command window (building it on first use) and tells it how to open.
-pub(crate) fn show_command(app: &AppHandle, payload: serde_json::Value) {
+///
+/// Each open is stamped with a `seq`. When the window is built on first use, this function runs
+/// again as the build's retry with the *same* payload (and seq): the frontend applies it once, so a
+/// late replay can no longer reset what the user typed in the meantime (cold-start race).
+pub(crate) fn show_command(app: &AppHandle, mut payload: serde_json::Value) {
+    if payload.get("seq").is_none() {
+        if let Some(obj) = payload.as_object_mut() {
+            let seq = OPEN_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+            obj.insert("seq".into(), serde_json::json!(seq));
+        }
+    }
     let retry_payload = payload.clone();
     if let Some(win) = crate::app::setup::ensure_window(app, "command", move |a| show_command(&a, retry_payload)) {
         let _ = win.show();

@@ -4763,7 +4763,7 @@
    "id": "setting.system.inline.run-lens-ui-on-windows-startup",
    "kind": "setting",
    "title": "Run Lens UI on Windows Startup",
-   "text": "Enabled by default via HKCU\\...\\Run",
+   "text": "Starts Lens when you sign in to Windows",
    "path": [
     "Settings",
     "Windows & Keys",

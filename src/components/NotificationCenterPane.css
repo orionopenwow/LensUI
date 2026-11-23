@@ -17,7 +17,7 @@
   background: rgb(var(--lens-ink) / 0.05);
   border: 1px solid rgb(var(--lens-ink) / 0.08);
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .nc-ghost-btn:hover {
@@ -76,7 +76,7 @@
   border-radius: max(4px, calc(var(--lens-radius) - 3px));
   background: rgb(var(--lens-ink) / 0.04);
   border: 1px solid rgb(var(--lens-ink) / 0.08);
-  transition: background 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .nc-item:hover {
@@ -122,7 +122,7 @@
   color: var(--lens-fg-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 140ms ease, background 140ms ease, color 140ms ease;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .nc-item:hover .nc-dismiss,
@@ -193,7 +193,7 @@
   color: var(--lens-fg-muted);
 }
 .nc-chev {
-  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out);
 }
 .nc-chev.open {
   transform: rotate(180deg);

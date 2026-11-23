@@ -74,7 +74,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .pal-filter-pill:hover {
@@ -147,7 +147,7 @@
   border: 1px solid transparent;
   text-align: left;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .pal-recent-row:hover,
@@ -209,7 +209,7 @@
   background: rgb(var(--lens-ink) / 0.045);
   border: 1px solid rgb(var(--lens-ink) / 0.08);
   cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), background 140ms ease, border-color 140ms ease;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .pal-folder-card:hover {
@@ -242,7 +242,7 @@
   background: rgb(var(--lens-ink) / 0.045);
   border: 1px solid rgb(var(--lens-ink) / 0.08);
   cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), background 140ms ease, border-color 140ms ease;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .pal-app-card:hover {
