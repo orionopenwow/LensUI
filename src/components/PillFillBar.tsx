@@ -197,7 +197,7 @@ export const PillFillBar: React.FC<PillFillBarProps> = ({
             {icon}
           </button>
         ) : (
-          <span style={{ display: "inline-flex", alignItems: "center", color: fillColor, padding: 2 }} aria-hidden>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: fillColor, minWidth: 24, minHeight: 24, padding: 2 }} aria-hidden>
             {icon}
           </span>
         )}
