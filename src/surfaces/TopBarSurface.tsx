@@ -1,4 +1,6 @@
 import { openGuide } from "../guide/coach";
+import { MiniPlayer } from "../music/MiniPlayer";
+import { PendingPill, usePendingApprovals } from "../approval";
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -36,6 +38,7 @@ export const TopBarSurface: React.FC = () => {
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
   const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
   const [now, setNow] = useState(() => new Date());
+  const approvals = usePendingApprovals();
   const [visible, setVisible] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -243,6 +246,12 @@ export const TopBarSurface: React.FC = () => {
       </div>
 
       <div className="topbar-right">
+        {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
+        <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />
+        {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
+        {approvals.requests.length > 0 && (
+          <PendingPill count={approvals.requests.length} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
+        )}
         <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
           ?
         </button>
