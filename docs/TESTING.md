@@ -368,4 +368,6 @@ no test or allowlist entry was loosened.
 * **Visual regression:** the `settings-theme` state picked its tab by the old name "Theme", which no longer exists in the new Settings hub, so the run timed out. It now picks "Appearance".
   * The `settings-*` and `topbar-*` goldens were re-recorded on the runner: the Settings hub is new UI, and the Top Bar gained Lens Music and keyboard modules.
   * Each re-recorded image was compared by eye with its old golden before acceptance.
+  * Quick Settings (`quicksettings-*`, 33–39 % changed): the waves 7–8 Battery and Keyboard modules now sit above Display & Eye Care. These are new features, not a regression, so the goldens were re-recorded.
+  * Command full view and the launcher (0.1–0.3 %): the keycap hints in their footers changed padding with the shared `kbd` style. The goldens were re-recorded.
 * **Perf:** within budget on the same run, so no budget changes.
