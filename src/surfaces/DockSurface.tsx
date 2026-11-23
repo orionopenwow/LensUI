@@ -2035,7 +2035,6 @@ export const DockSurface: React.FC = () => {
               <span className="dock-tooltip">Launcher</span>
               <button
                 type="button"
-                aria-label="Launcher"
                 className={`dock-item dock-launcher-btn ${launchingId === "launcher" ? "is-launching" : ""}`}
                 aria-label="Open Launcher"
                 onClick={() => {
