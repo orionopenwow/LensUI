@@ -204,6 +204,7 @@ pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
     push(&mut steps, "Browser extension bridge", report(crate::commands::bridge::bridge_uninstall()));
     push(&mut steps, "lens:// links", report(crate::commands::bridge::url_scheme_uninstall()));
     push(&mut steps, "File Explorer right-click", report(crate::commands::bridge::explorer_verbs_uninstall()));
+    push(&mut steps, "Lens Cleaner drive menu", crate::commands::cleaner::uninstall_verb());
     push(&mut steps, "Claude Desktop connection", crate::bridge::claude_config::remove_for_uninstall());
     push(
         &mut steps,
