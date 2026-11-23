@@ -83,7 +83,8 @@ import { PAGE_COMPONENTS } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
 import { SettingsNav, PageIcon } from "../settings/SettingsNav";
-import { SimpleView } from "../settings/simple/SimpleView";
+// Simple-mode cards load only when Simple mode shows them, so Advanced pays nothing for them.
+const SimpleView = React.lazy(() => import("../settings/simple/SimpleView").then((m) => ({ default: m.SimpleView })));
 import { MoreOptions } from "../settings/simple/MoreOptions";
 import { ModeHint } from "../settings/simple/ModePill";
 import { effectiveMode, hasSimpleCards, modeUnchosen, moreStartsOpen, moreSummary, SIMPLE_RESETS, type SettingsMode } from "../settings/simple/mode";
@@ -380,6 +381,7 @@ export const ControlCenterSurface: React.FC = () => {
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
           {simpleCards && (
+            <Suspense fallback={<Skeleton label="Loading" shape="page" rows={2} className="sh-page-loading" />}>
             <SimpleView
               page={tab}
               config={config}
@@ -397,6 +399,7 @@ export const ControlCenterSurface: React.FC = () => {
                 } else setMoreOpen(true);
               }}
             />
+            </Suspense>
           )}
           <MoreOptions
             enabled={simpleCards}
