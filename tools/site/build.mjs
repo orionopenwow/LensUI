@@ -17,6 +17,7 @@ import { page, REPO } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
 import { home, download } from "./pages.mjs";
 import { buildBrand } from "./lib/logo.mjs";
+import { writeIcons } from "./lib/icons.mjs";
 import { FEATURES } from "./content/features.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -53,6 +54,8 @@ if (existsSync(join(root, "docs/media/clips.json"))) {
 
 // Real icons and screenshots for the apps section, from the pinned commits in the Lens Apps catalogue.
 try { execFileSync("node", [join(here, "fetch-app-media.mjs")], { stdio: "inherit" }); } catch { console.warn("[site] app media not fetched; the apps section shows text only"); }
+// App icons for the demo desktops (Lens's own, Simple Icons brand tiles, generic stand-ins).
+writeIcons(root, join(site, "media/icons"));
 const appMedia = existsSync(join(site, "data/app-media.json")) ? JSON.parse(readFileSync(join(site, "data/app-media.json"), "utf8")) : {};
 
 // ---- docs ----------------------------------------------------------------------------------
@@ -156,7 +159,7 @@ const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` :
 // The Apps pane reads the Lens Apps catalogue (feature/lens-apps; vendored until merged).
 const appsCat = read("catalog/apps/catalog.json") ? JSON.parse(read("catalog/apps/catalog.json")) : JSON.parse(read("tools/site/vendor/apps/catalog.json"));
 write("data/apps.json", JSON.stringify({ apps: (appsCat.apps ?? appsCat).map((a) => ({ name: a.name, category: a.category, pitch: a.pitch, openSource: a.openSource, license: a.license })) }));
-write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia }), scripts: ["js/stage.js"] }));
+write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs }), scripts: ["js/stage.js"] }));
 write("download.html", page({ title: "Download", desc: "How to get Lens UI: build from source, releases, and which Windows versions it works on.", path: "download.html", body: download({ log }) }));
 
 // Testers: today's checklist from the daily notes.

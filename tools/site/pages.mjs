@@ -6,7 +6,7 @@ import { REPO } from "./lib/layout.mjs";
 
 const STYLES = [["floating", "Floating"], ["slim", "Slim"], ["taskbar", "Taskbar"], ["studio", "Studio"], ["minimal", "Minimal"], ["split", "Split"], ["islands", "Islands"]];
 // The "All docks" strip: every dock style, plus the two shape styles (Expressive, Dot Matrix), which
-// ship with their own packs and the Islands dock. Islands/Expressive/Dot Matrix are in PR #32.
+// ship with their own packs and the Islands dock. 
 const ALL_DOCKS = [
   { id: "floating", label: "Floating", style: "floating" },
   { id: "slim", label: "Slim", style: "slim" },
@@ -14,25 +14,30 @@ const ALL_DOCKS = [
   { id: "studio", label: "Studio", style: "studio" },
   { id: "minimal", label: "Minimal", style: "minimal" },
   { id: "split", label: "Split", style: "split" },
-  { id: "islands", label: "Islands", style: "islands", beta: 32 },
-  { id: "expressive", label: "Expressive", style: "islands", shape: "expressive", pack: "lens-expressive", beta: 32 },
-  { id: "dotmatrix", label: "Dot Matrix", style: "islands", shape: "dotmatrix", pack: "lens-dot-matrix", beta: 32 },
+  { id: "islands", label: "Islands", style: "islands" },
+  { id: "expressive", label: "Expressive", style: "islands", shape: "expressive", pack: "lens-expressive" },
+  { id: "dotmatrix", label: "Dot Matrix", style: "islands", shape: "dotmatrix", pack: "lens-dot-matrix" },
 ];
+// "Also in Lens": everything that isn't one of the four exhibits, as chips. pr: number = in beta
+// (open pull request), "coming" = not built yet, null = in the beta build.
 const ALSO = [
-  ["Magic right-click", "One menu everywhere: summarise, translate, keep or send anything you right-click.", 19],
-  ["Voice dock", "Hold a key and say “Lens, minimise this”; speech is recognised on your PC.", 23],
-  ["Browser agent", "Lens Browser can fill a form for you, and stops at a Needs your OK card before it submits.", 20],
-  ["Snip with auto-redact", "Capture, and Lens suggests blurring e-mails, keys and card numbers before you save.", 24],
-  ["Shelf and context packs", "Collect selections, pages and files, then hand them to Claude as one tidy pack.", 19],
-  ["Music with lyrics", "Now Playing in the dock and a mini player with synced lyrics.", 33],
-  ["Feeds and messages", "Your feeds and chats in one inbox.", "coming"],
-  ["Animated theme backdrops", "Every theme gets a slow, faint backdrop in its own colours.", 36],
-  ["80 themes", "21 Lens packs plus 59 credited community palettes from the Claude Code theme scene.", 31],
-  ["Settings hub", "Search every Windows and Lens setting in one place.", 35],
-  ["See Lens at work", "When Lens or Claude controls your desktop, you watch every step and can stop it with Esc. Try “Watch Lens do it” on the stage.", "coming"],
-  ["Agent safety", "AI tools get per-task permissions, an audit log and undo for every change.", 29],
-  ["Tester Hub", "What changed, today's test plan and a one-click redacted report.", null],
+  ["voice", "Voice dock", "Hold a key and say “Lens, minimise this”; speech is recognised on your PC.", null],
+  ["right-click", "Magic right-click", "One menu everywhere: summarise, translate, keep or send anything you right-click.", null],
+  ["browser", "Browser agent", "Lens Browser can fill a form for you, and stops at a Needs your OK card before it submits.", null],
+  ["snip", "Snip with auto-redact", "Capture, and Lens suggests blurring e-mails, keys and card numbers before you save.", null],
+  ["shelf", "Shelf and context packs", "Collect selections, pages and files, then hand them to Claude as one tidy pack.", null],
+  ["music", "Music with lyrics", "Now Playing in the dock and a mini player with synced lyrics.", null],
+  ["guide", "Guide", "Ask “how do I…” and Lens shows you the exact setting.", null],
+  ["settings", "Settings hub", "Search every Windows and Lens setting in one place.", null],
+  ["windows", "Window focus", "Dim what you're not using; a gradient border on the window you are.", null],
+  ["safety", "Agent safety", "AI tools get per-task permissions, an audit log and undo for every change.", null],
+  ["feeds", "Feeds and messages", "Your feeds and chats in one inbox.", null],
+  ["tester", "Tester Hub", "What changed, today's test plan and a one-click redacted report.", null],
 ];
+// The Themes exhibit's quick picks (every pack is in the menu next to them).
+const PICKS = ["obsidian", "nord-frost", "catppuccin-mocha", "tokyo-night", "gruvbox-warm", "rose-pine", "hyprland-neon", "alabaster-daylight", "lens-expressive", "cc-koi-mosaic"];
+const ACCENTS = ["#FAFAFA", "#818CF8", "#38BDF8", "#34D399", "#FBBF24", "#FB923C", "#FB7185", "#C084FC"];
+const ASKS = ["tile left and go dark", "open my launch plan", "play some music", "switch to Nord", "close Discord"];
 const FEATURED = [
   { id: "artcraft", line: "An IDE for artists: controllable AI image and video, with 2D and 3D scene tools.", suite: ["wordcraft", "deckcraft", "gridcraft"] },
   { id: "concat", line: "A free, local-first video editor: a CapCut alternative with AI captions." },
@@ -41,84 +46,38 @@ const FEATURED = [
 const RAIL = ["ollama", "obs-studio", "krita", "blender", "affine", "excalidraw"];
 const HUE = ["#ff5f6d", "#ff9f43", "#e5b800", "#22c55e", "#0ea5e9", "#6366f1", "#a855f7"];
 
-// The chips under the stage: one per feature. pane = live demo id or a recorded clip.
-const CHIPS = [
-  { id: "themes", label: "Themes", cap: "Start from any pack and download a theme file Lens can import.", hue: 0 },
-  { id: "dock", label: "Dock", cap: "The real dock on your theme's ambient backdrop. Hover, click, search.", hue: 1 },
-  { id: "windows", label: "Windows", cap: "Dim what you're not using; a gradient border on the window you are.", hue: 2 },
-  { id: "command", label: "Command", cap: "Plain requests, understood offline with no AI model.", hue: 3 },
-  { id: "ai", label: "AI", cap: "Anything risky waits for you. Deny, or press and hold to approve.", hue: 4 },
-  { id: "voice", label: "Voice", cap: "“Lens, minimise this.” Push-to-talk, recognised on your PC.", hue: 5, beta: 23 },
-  { id: "browser", label: "Browser", cap: "Spaces, vertical tabs and an agent that stops for your OK.", hue: 6, beta: 20 },
-  { id: "snip", label: "Snip", cap: "Capture, blur what's private and paste to Claude before saving.", hue: 0, beta: 24 },
-  { id: "shelf", label: "Shelf", cap: "Right-click anything to summarise it, translate it or keep it on the Shelf.", hue: 1, beta: 19 },
-  { id: "music", label: "Music", cap: "Now playing in the dock, with controls one hover away.", hue: 2, beta: 33 },
-  { id: "apps", label: "Apps", cap: "Free and open-source apps in one click. Lens downloads the official release.", hue: 3, beta: 34 },
-  { id: "guide", label: "Guide", cap: "Ask “how do I…” and Lens shows you the exact setting.", hue: 5, beta: 18 },
-];
-
-const pane = (c, body, extra = "") => `<div class="pane pane-${c.id}" data-pane="${c.id}" data-title="${esc(c.label)}"${c.id === "dock" ? "" : " hidden"}>
-  <div class="pane-body">${body}</div>
-  <p class="pane-cap"><span class="tag meta">live UI · simulated system</span>${c.beta ? `<span class="meta"><span class="dot warn" aria-hidden="true"></span>in beta</span>` : ""}<span>${esc(c.cap)}</span>${extra}</p>
-</div>`;
-
-function panes() {
-  const by = Object.fromEntries(CHIPS.map((c) => [c.id, c]));
-  return [
-    pane(by.dock, `<div class="backdrop" aria-hidden="true"></div><img class="fallback" src="media/dock-magnify.webp" alt="The Lens dock: app icons on a glass bar" width="720" height="187"><iframe data-src="live/dock/index.html" title="Live Lens dock: hover and click the icons"></iframe>`),
-    pane(by.themes, `<div class="theme-lab">
-        <div class="panel">
-          <label>Pack<select data-pack><option>Catppuccin Mocha</option></select></label>
-          <div><span class="meta" id="t-acc">Accent</span><div class="swatches" role="group" aria-labelledby="t-acc"></div></div>
-          <label>Roundness <span class="meta" data-v="radius"></span><input type="range" name="radius" min="0" max="20" value="12"></label>
-          <label>Glass <span class="meta" data-v="glass"></span><input type="range" name="glass" min="40" max="100" value="96"></label>
-          <button class="btn small primary" type="button" data-export>Download .lenstheme</button>
-          <p class="meta" data-out aria-live="polite"></p>
-        </div>
-        <div class="mini" aria-hidden="true">
-          <div class="mw" style="left:7%;top:9%;width:52%;height:44%"><div class="tb"><i></i><i></i><i></i>Notes</div><div class="ct"><div class="ln" style="width:70%"></div><div class="ln"></div><div class="ln acc" style="width:30%"></div></div></div>
-          <div class="mw active" style="left:34%;top:30%;width:58%;height:46%"><div class="tb"><i></i><i></i><i></i>Settings</div><div class="ct"><div class="ln" style="width:40%"></div><div class="ln" style="width:90%"></div><div class="ln" style="width:60%"></div><span class="bm">Apply</span></div></div>
-          <div class="md"><b></b><b></b><b></b><b></b><b></b></div>
-        </div>
-      </div>`),
-    pane(by.command, `<div class="cmd"><label class="sr" for="cmd-in">Type a request</label><input id="cmd-in" type="text" placeholder="dark mode, snap left, timer 10 min…" autocomplete="off">
-        <div class="chips-s">${["dark mode", "snap left", "apply nord", "volume 40", "5 km in miles", "summarise this page"].map((x) => `<button type="button">${x}</button>`).join("")}</div>
-        <div class="cmd-out" aria-live="polite"></div></div>`),
-    pane(by.ai, `<div class="approve-stage"><div class="approve-tabs"><div class="seg" role="group" aria-label="Card type" data-variants>${["delete", "payment", "send", "click"].map((v, i) => `<button type="button" data-v="${v}" aria-pressed="${i === 0}">${v[0].toUpperCase() + v.slice(1)}</button>`).join("")}</div></div><div data-card></div></div>`),
-    pane(by.apps, `<div class="apps"><div class="seg" role="group" aria-label="Category" data-cat></div><div class="apps-grid"></div></div>`),
-    ...["windows", "voice", "browser", "snip", "shelf", "music", "guide"].map((id) => pane(by[id], "")),
-  ].join("\n");
-}
-
-export function home({ visionHref, apps = {} }) {
-  const chips = CHIPS.map((c, i) => `<button type="button" role="tab" id="chip-${c.id}" data-pane="${c.id}" aria-controls="stage-screen" aria-selected="${c.id === "dock"}" tabindex="${c.id === "dock" ? 0 : -1}"><span class="dot" style="background:${HUE[c.hue]}" aria-hidden="true"></span>${c.label}${c.beta ? `<span class="beta">beta</span>` : ""}</button>`).join("");
+export function home({ visionHref, apps = {}, packs = [] }) {
+  const byId = Object.fromEntries(packs.map((p) => [p.id, p]));
+  const picks = PICKS.map((id) => byId[id]).filter(Boolean);
   return `
 <section class="hero">
   <div class="inner">
     <p class="eyebrow center">Lens UI · open source · beta</p>
     <h1>The <span class="spectrum-text">everything</span> desktop.</h1>
     <p class="lede">The open-source desktop where look, apps and AI finally work as one.</p>
+    <p class="support">macOS's docks, Linux's theming, a launcher like Raycast and an AI co-pilot, rebuilt as one open-source app for Windows.</p>
     <div class="actions"><a class="btn primary" href="download.html">Download</a><a class="btn" href="${REPO}">View on GitHub</a></div>
     <p class="trustline meta">Open source · off until you turn it on · every change undoes · local-first AI</p>
   </div>
   <div class="inner">
-    <div class="stage on-dock" id="stage">
-      <div class="stage-screen" id="stage-screen" role="tabpanel" aria-labelledby="chip-dock" tabindex="-1">
-        ${panes()}
+    <div class="stage" id="stage">
+      <div class="stage-screen" id="stage-screen" aria-label="Live demo desktop with the real Lens dock">
+        <img class="fallback" src="media/dock-magnify.webp" alt="The Lens dock: app icons on a glass bar" width="720" height="187">
+        <iframe data-src="live/dock/index.html" title="Live Lens dock: hover and click the icons, or search"></iframe>
         <div class="toasts" aria-live="polite"></div>
+        <p class="stage-tag meta">live UI · simulated system</p>
+        <div class="fs-bar"><button class="pill" type="button" data-tour>▶ Take the tour</button><button class="pill" type="button" data-fs-exit>✕ Exit fullscreen <kbd>Esc</kbd></button></div>
       </div>
       <div class="pills" aria-label="Stage controls">
         <label class="pill"><span class="meta">Dock</span><select data-style aria-label="Dock style">${STYLES.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></label>
         <label class="pill"><span class="meta">Shape</span><select data-shape aria-label="Shape style"><option value="classic">Classic</option><option value="expressive">Expressive</option><option value="dotmatrix">Dot Matrix</option></select></label>
         <label class="pill"><span class="meta">Theme</span><select data-theme aria-label="Theme pack"><option>Obsidian</option></select></label>
-        <label class="pill"><span class="meta">Backdrop</span><select data-scene aria-label="Backdrop scene"><option>Theme backdrop</option></select></label>
-        <form class="pill ask" data-askform><label class="meta" for="ask-q">Ask</label><input id="ask-q" name="q" type="text" placeholder="go dark and slim dock…" autocomplete="off"><button type="submit" class="go" aria-label="Run">↵</button></form>
-        <button class="pill" type="button" data-voice><span class="meta">Voice</span>try a phrase</button>
-        <button class="pill" type="button" data-search><span class="meta">Search</span>in the dock</button>
-        <button class="pill watch-lens" type="button" data-watch><img src="brand/lens-orb.webp" alt="" width="16" height="16">Watch Lens do it</button>
+        <button class="pill primary-pill" type="button" data-search aria-expanded="false">Search in the dock</button>
+        <span class="sp"></span>
+        <button class="pill" type="button" data-tour>▶ Take the tour</button>
+        <button class="pill" type="button" data-fs aria-pressed="false">⤢ Fullscreen</button>
       </div>
     </div>
-    <div class="chips" id="chips" role="tablist" aria-label="What Lens does">${chips}</div>
   </div>
 </section>
 
@@ -128,13 +87,45 @@ export function home({ visionHref, apps = {} }) {
     <div class="docks" role="list">${ALL_DOCKS.map((d) => `<button type="button" class="dock-thumb" role="listitem" data-style="${d.style}"${d.shape ? ` data-shape="${d.shape}"` : ""}${d.pack ? ` data-pack="${d.pack}"` : ""} aria-label="Show the ${d.label} dock on the stage">
       <span class="thumb-screen"><iframe data-src="live/dock/index.html?style=${d.style}${d.shape ? `&amp;shape=${d.shape}` : ""}${d.pack ? `&amp;pack=${d.pack}` : ""}&amp;mag=off" title="${d.label} dock" tabindex="-1" aria-hidden="true"></iframe></span>
       <span class="thumb-label">${d.label}${d.beta ? ` <span class="dot warn" aria-hidden="true"></span><span class="sr">in beta</span>` : ""}</span></button>`).join("")}</div>
-    <p class="meta" style="margin-top:10px">live UI · simulated system · <span class="dot warn" aria-hidden="true"></span> in beta (pull request #32)</p>
+    <p class="meta" style="margin-top:10px">live UI · simulated system · every style is in the beta build</p>
+  </div>
+</section>
+
+<section id="themes" aria-labelledby="themes-h">
+  <div class="inner">
+    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>80 packs, from Obsidian to the Claude Code community palettes. Pick one and the whole desktop restyles on its own moving backdrop.</p></div>
+    <div class="exhibit" id="ex-themes">
+      <div class="ex-screen"></div>
+      <div class="ex-controls">
+        <div class="picks" role="group" aria-label="Theme">${picks.map((p, i) => `<button type="button" data-pick="${p.id}" aria-pressed="${i === 0}"><span class="sw" style="background:${p.base ?? (p.scheme === "light" ? "#f4f4f5" : "#09090b")};box-shadow:inset 0 0 0 4px ${p.base ?? "#09090b"},inset 0 0 0 9px ${p.accent}"></span>${esc(p.label)}</button>`).join("")}<label class="more"><span class="sr">All themes</span><select data-allpacks aria-label="All themes"><option value="">All ${packs.length} themes…</option>${packs.map((p) => `<option value="${p.id}">${esc(p.label)}${p.collection ? " (community)" : ""}</option>`).join("")}</select></label></div>
+        <div class="accents"><span class="meta" id="acc-l">Accent</span><div class="swatches" role="group" aria-labelledby="acc-l">${ACCENTS.map((a) => `<button type="button" data-accent="${a}" aria-label="Accent ${a}" aria-pressed="false" style="background:${a}"></button>`).join("")}</div>
+          <button class="btn small" type="button" data-export>Download .lenstheme</button></div>
+        <p class="meta" data-out aria-live="polite">live UI · simulated system</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ai" aria-labelledby="ai-h">
+  <div class="inner">
+    <div class="head"><h2 id="ai-h">Ask Lens. Watch it work.</h2><p>Plain requests, understood on your PC. The orb shows every step, Esc stops it, and anything risky waits for your OK.</p></div>
+    <div class="exhibit" id="ex-ai">
+      <div class="ex-screen"></div>
+      <div class="ex-controls">
+        <form class="askbar" data-askform><label class="sr" for="ai-q">Ask Lens</label><img src="brand/lens-orb.webp" alt="" width="20" height="20"><input id="ai-q" name="q" type="text" placeholder="Lens, tile left and go dark…" autocomplete="off"><button class="btn small primary" type="submit">Ask</button></form>
+        <div class="sugg" role="group" aria-label="Try">${ASKS.map((a) => `<button type="button" data-try="${esc(a)}">${esc(a)}</button>`).join("")}</div>
+        <p class="meta">Offline intent engine (a port of Lens's own) · live UI · simulated system</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <section id="apps" aria-labelledby="apps-h">
   <div class="inner">
-    <div class="head"><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so. <span class="dot warn" aria-hidden="true"></span> in beta (pull request #34).</p></div>
+    <div class="head"><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks it and installs it when you say so. In the beta build.</p></div>
+    <div class="exhibit" id="ex-apps">
+      <div class="ex-screen"></div>
+    </div>
     <div class="featured">${FEATURED.map((f) => appCard(f, apps)).join("")}</div>
     <div class="rail" role="list" aria-label="More picks">${RAIL.map((id) => railItem(id, apps)).join("")}</div>
     <p class="meta" style="margin-top:12px">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
@@ -144,8 +135,9 @@ export function home({ visionHref, apps = {} }) {
 <section id="also" aria-labelledby="also-h">
   <div class="inner">
     <div class="head"><h2 id="also-h">Also in Lens.</h2></div>
-    <div class="also">${ALSO.map(([t, line, pr]) => `<details><summary>${pr === "coming" ? `<span class="dot" aria-hidden="true"></span>` : pr ? `<span class="dot warn" aria-hidden="true"></span>` : `<span class="dot ok" aria-hidden="true"></span>`}${esc(t)}${pr === "coming" ? ` <span class="meta">coming</span>` : ""}</summary><p>${esc(line)}${typeof pr === "number" ? ` <a href="${REPO}/pull/${pr}">In beta · #${pr}</a>` : ""}</p></details>`).join("")}</div>
-    <p class="meta" style="margin-top:14px"><span class="dot ok" aria-hidden="true"></span> in the beta build · <span class="dot warn" aria-hidden="true"></span> in beta (open pull request) · <span class="dot" aria-hidden="true"></span> coming</p>
+    <div class="also-chips" role="group" aria-label="More features">${ALSO.map(([id, t, line, pr], i) => `<button type="button" id="also-${id}" data-also="${id}" aria-pressed="${i === 0}" data-line="${esc(line)}" data-pr="${pr ?? ""}"><span class="dot${pr === "coming" ? "" : pr ? " warn" : " ok"}" aria-hidden="true"></span>${esc(t)}</button>`).join("")}</div>
+    <p class="also-line" aria-live="polite">${esc(ALSO[0][2])}</p>
+    <p class="meta"><span class="dot ok" aria-hidden="true"></span> in the beta build</p>
     <p class="coming"><strong>Coming next:</strong> Peek, Split view, Spaces, Routines and a phone companion.</p>
   </div>
 </section>

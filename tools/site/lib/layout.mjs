@@ -71,6 +71,7 @@ ${body}
 <footer class="site">
   <div class="inner">
     <p>Lens UI · the everything desktop · open source (MIT) · not affiliated with Microsoft, Apple or Anthropic</p>
+    <p class="meta">Third-party names and logos belong to their owners; shown to illustrate apps you might pin. Brand icons from <a href="https://simpleicons.org">Simple Icons</a> (CC0).</p>
     <nav aria-label="Footer"><a href="${REPO}">GitHub</a><a href="${REPO}/issues">Issues</a><a href="${base}docs/">Docs</a><a href="${base}download.html">Download</a><a href="${base}test.html">Testers</a></nav>
   </div>
 </footer>

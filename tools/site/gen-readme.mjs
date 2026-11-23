@@ -88,7 +88,7 @@ After the first launch, open Settings and press **Run self-test**. If anything l
 ## Documentation
 
 - [User guide](./docs/guide-for-users/README.md): short how-tos for every area, generated from Lens's own settings.
-- [Website](${SITE}): live demos of the dock, themes, Lens Command, approvals and Falling Sand.
+- [Website](${SITE}): the real dock with super search, a guided tour, live themes, Ask Lens and the open-source apps.
 - Reference: [Dock styles](./docs/DOCK_STYLES.md) · [Window styling](./docs/WINDOW_STYLING.md) · [Productivity](./docs/PRODUCTIVITY.md) · [Playground](./docs/PLAYGROUND.md) · [Pointers](./docs/CURSORS.md) · [AI](./docs/AI.md) · [Command](./docs/COMMAND.md) · [Shelf](./docs/SHELF.md) · [Browser bridge](./docs/BROWSER_BRIDGE.md) · [Transcription](./docs/TRANSCRIPTION.md) · [MCP](./docs/MCP.md) · [Plugins](./docs/PLUGINS.md) · [Shell mode](./docs/SHELL_MODE.md)
 - Project: [Master plan](./docs/MASTERPLAN.md) · [Roadmap](./docs/ROADMAP.md) · [Design system](./DESIGN.md) · [Releasing](./docs/RELEASING.md) · [Tester Hub](./docs/TESTER_HUB.md) · [Media](./docs/media/README.md)
 

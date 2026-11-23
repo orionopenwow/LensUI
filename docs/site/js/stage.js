@@ -1,273 +1,204 @@
-// The home-page stage: a small live desktop under the headline.
-//   Dock pane   the real ambient backdrop of the chosen pack (src/playground/ambient) behind the
-//               real Lens dock (an iframe running DockSurface on a mocked backend). The pills pick
-//               the dock style, the theme (every Lens pack plus the Claude Code collection), the
-//               backdrop scene, and run "Ask" / "Voice" through the offline intent engine.
-//   Other panes the strip of chips swaps in one feature at a time: live demos (theme lab, Lens
-//               Command, approvals, the Apps catalogue) or short clips recorded from the real UI.
-// Only one pane is active; each is built the first time it's chosen. Nothing touches your system.
+// The hero stage: a living mini desktop (js/desk.js) on the real ambient backdrop of the chosen
+// pack, with the real Lens dock on top (an iframe running DockSurface on a mocked backend).
+// The pills pick the dock style, the shape and the theme, and open super search inside the dock.
+// "⤢ Fullscreen" fills the screen; "▶ Take the tour" loads js/tour.js on demand.
+// The other exhibits (Themes, Ask Lens, Apps) and the Also-in-Lens chips load from js/exhibits.js
+// when they scroll near. Nothing here touches the visitor's system.
 import { reducedMotion, isLight } from "./site.js";
 import { getPacks } from "./demos.js";
-import { parse } from "./intent.js";
-import { createPresence } from "./presence.js";
+import { createDesk } from "./desk.js";
 
 const SITE = new URL("../", import.meta.url);
 const root = document.documentElement;
 const stage = document.getElementById("stage");
 const screen = stage.querySelector(".stage-screen");
-const toasts = stage.querySelector(".toasts");
+const live = stage.querySelector(".toasts");
+const frame = screen.querySelector("iframe");
+const styleSel = stage.querySelector("select[data-style]");
+const themeSel = stage.querySelector("select[data-theme]");
+const shapeSel = stage.querySelector("select[data-shape]");
+const searchBtn = stage.querySelector("[data-search]");
+const fsBtn = stage.querySelector("[data-fs]");
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-// ---- toasts on the stage --------------------------------------------------------------------
+// ---- the desk under the dock ------------------------------------------------------------------
+const backdrop = document.createElement("div");
+backdrop.className = "backdrop";
+backdrop.setAttribute("aria-hidden", "true");
+const desk = createDesk(screen, { layout: "hero", backdrop, label: "Demo desktop" });
+screen.prepend(desk.el);
+
+/** A notification on the desk, and the same words for screen readers. */
 export function toast(title, detail = "", kind = "ok") {
-  const t = document.createElement("div");
-  t.className = "toast";
-  t.innerHTML = `<span class="dot ${kind}" aria-hidden="true"></span><div><strong>${esc(title)}</strong>${detail ? `<span>${esc(detail)}</span>` : ""}</div>`;
-  toasts.prepend(t);
-  while (toasts.children.length > 3) toasts.lastChild.remove();
-  setTimeout(() => t.classList.add("out"), 4200);
-  setTimeout(() => t.remove(), 4700);
+  desk.notify({ icon: kind === "warn" ? "lens-command" : "lens-settings", app: "Lens", title, body: detail });
+  live.textContent = `${title}. ${detail}`;
 }
 
-// ---- the dock pane ----------------------------------------------------------------------------
-let packs = [], current = null, pg = null, playground = null, frameReady = false;
-const frame = stage.querySelector(".pane-dock iframe");
-const backdrop = stage.querySelector(".backdrop");
+// ---- the dock frame ---------------------------------------------------------------------------
+let packs = [], current = null, pg = null, playground = null, frameReady = false, drawerOpen = false;
 const send = (m) => frame.contentWindow?.postMessage(m, location.origin);
 const pending = [];
 const post = (m) => (frameReady ? send(m) : pending.push(m));
+let scale = 1;
+const BASE_H = 150;
+/** The frame's height in on-screen pixels: room for the dock (and its tooltips), or the whole desk while search is open. */
+function sizeFrame() {
+  const H = screen.clientHeight;
+  const want = drawerOpen ? H - 30 : Math.min(BASE_H, H);
+  frame.style.height = `${Math.round(want / scale)}px`;
+  try { frame.contentDocument?.documentElement.style.setProperty("--site-list-h", `${Math.max(96, Math.min(240, want / scale - 250))}px`); } catch { /* not ready */ }
+}
 addEventListener("message", (e) => {
-  if (e.source !== frame.contentWindow || e.data?.lens !== "ready" || frameReady) return;
-  frameReady = true;
-  stage.classList.add("dock-live");
-  pending.splice(0).forEach(send);
+  if (e.source !== frame.contentWindow) return;
+  if (e.data?.lens === "ready" && !frameReady) {
+    frameReady = true;
+    stage.classList.add("dock-live");
+    pending.splice(0).forEach(send);
+  } else if (e.data?.lens === "drawer") {
+    drawerOpen = !!e.data.open;
+    searchBtn.setAttribute("aria-expanded", String(drawerOpen));
+    searchBtn.textContent = drawerOpen ? "Close search" : "Search in the dock";
+    stage.classList.toggle("searching", drawerOpen);
+    sizeFrame();
+  }
 });
 frame.addEventListener("load", () => send({ lens: "ping" }));
 
+/** Opens (or closes) super search inside the dock; `q` is typed into it. */
+function search(open = true, q, { focus = true } = {}) {
+  if (open) sizeFrameFor(true);
+  post({ lens: "search", open, focus, ...(q != null ? { q } : {}) });
+  if (open && focus) setTimeout(() => frame.contentWindow?.focus(), 60);
+}
+const sizeFrameFor = (open) => { drawerOpen = open; sizeFrame(); };
+
+// The dock renders at desktop width; on narrow screens the frame scales down like a screenshot.
+function fit() {
+  const w = screen.clientWidth;
+  scale = Math.min(1, w / 640);
+  Object.assign(frame.style, scale < 1 ? { width: "640px", maxWidth: "none", transform: `scale(${scale})`, transformOrigin: "left bottom" } : { width: "", maxWidth: "", transform: "", transformOrigin: "" });
+  stage.style.setProperty("--dock-space", `${Math.round(96 * scale)}px`);
+  sizeFrame();
+}
+addEventListener("resize", fit);
+
+// ---- theme, style, shape ----------------------------------------------------------------------
 function applyPack(id, { fromUser = false, quiet = false } = {}) {
   const p = packs.find((x) => x.id === id) ?? packs[0];
   if (!p) return;
   current = p;
   themeSel.value = p.id;
-  // The stage wears the pack: its base colour behind the dock, and the backdrop repainted in it.
-  const base = p.base ?? "#09090b";
+  const base = p.base ?? (p.scheme === "light" ? "#f4f4f5" : "#09090b");
   stage.style.setProperty("--stage-bg", base);
   stage.dataset.scheme = p.scheme;
   root.dataset.preset = p.collection ? "" : p.id; // the ambient backdrop picks its scene from this
+  desk.setPack(p);
   playground?.setPalette(pg.packPalette({ base, accent: p.accent, scheme: p.scheme }));
   post({ lens: "pack", pack: { id: p.id, label: p.label, base, accent: p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle } });
   if (fromUser) stage.dataset.userPack = "1";
   if (shapeSel.value !== (p.shapeStyle ?? "classic")) setShape(p.shapeStyle ?? "classic", true);
-  if (!quiet) toast(`Theme: ${p.label}`, p.collection ? `${p.collection} collection · palette by ${p.source?.author ?? "the community"}` : p.description);
+  if (!quiet) toast(`Theme: ${p.label}`, p.collection ? `${p.collection} collection · palette by ${p.source?.author ?? "the community"}` : p.description ?? "");
 }
-
-const styleSel = stage.querySelector("select[data-style]");
-const themeSel = stage.querySelector("select[data-theme]");
-const sceneSel = stage.querySelector("select[data-scene]");
-const shapeSel = stage.querySelector("select[data-shape]");
 const SHAPE_LABEL = { classic: "Classic", expressive: "Expressive", dotmatrix: "Dot Matrix" };
 function setShape(v, quiet = false) {
   shapeSel.value = v;
   post({ lens: "config", patch: { theme: { shapeStyle: v } } });
-  if (!quiet) toast(`Shape: ${SHAPE_LABEL[v]}`, v === "classic" ? "The default look." : "A style layer on top of any theme · in beta (#32)", v === "classic" ? "ok" : "warn");
+  if (!quiet) toast(`Shape: ${SHAPE_LABEL[v]}`, v === "classic" ? "The default look." : "A style layer on top of any theme.");
 }
 function setStyle(v, quiet = false) {
   styleSel.value = v;
   post({ lens: "config", patch: { dock: { style: v } } });
-  if (!quiet) toast(`Dock style: ${styleSel.selectedOptions[0].textContent}`, v === "islands" ? "Separate islands for apps and status · in beta (#32)" : "Same apps, same physics.", v === "islands" ? "warn" : "ok");
+  if (!quiet) toast(`Dock style: ${styleSel.selectedOptions[0].textContent}`, v === "islands" ? "Separate islands for apps and status." : "Same apps, same physics.");
 }
 
+let stageVisible = true;
+const still = () => reducedMotion() || !stageVisible || document.hidden;
 async function initDock() {
   frame.src = frame.dataset.src;
+  fit();
   packs = await getPacks();
   const core = packs.filter((p) => !p.collection), community = packs.filter((p) => p.collection);
   themeSel.innerHTML = `<optgroup label="Lens packs">${core.map((p) => `<option value="${p.id}">${esc(p.label)}</option>`).join("")}</optgroup>` +
-    (community.length ? `<optgroup label="${esc(community[0].collection)} collection (in beta)">${community.map((p) => `<option value="${p.id}">${esc(p.label)}</option>`).join("")}</optgroup>` : "");
+    (community.length ? `<optgroup label="${esc(community[0].collection)} collection">${community.map((p) => `<option value="${p.id}">${esc(p.label)}</option>`).join("")}</optgroup>` : "");
+  const start = packs.find((p) => p.id === (isLight() ? "alabaster-daylight" : "obsidian"));
+  if (start) desk.setPack(start);
   // Backdrop: the real Playground runner with the ambient "theme backdrop" scene.
   pg = await import(new URL("live/playground/playground.js", SITE).href);
-  sceneSel.innerHTML = pg.scenes.map((s) => `<option value="${s.id}">${s.id === "ambient" ? "Theme backdrop" : esc(s.name)}</option>`).join("");
+  playground = pg.mount(backdrop, { scene: "ambient", fps: 24, seed: 5, still: still(), ripples: false, options: { motion: "lively" }, palette: pg.packPalette({ base: start?.base ?? "#09090b", accent: start?.accent ?? "#fafafa", scheme: start?.scheme ?? "dark" }) });
   const follow = () => { if (!stage.dataset.userPack) applyPack(isLight() ? "alabaster-daylight" : "obsidian", { quiet: true }); };
-  const start = isLight() ? packs.find((p) => p.id === "alabaster-daylight") : packs.find((p) => p.id === "obsidian");
-  playground = pg.mount(backdrop, { scene: "ambient", fps: 24, seed: 5, still: reducedMotion(), ripples: false, options: { motion: "lively" }, palette: pg.packPalette({ base: start?.base ?? "#09090b", accent: start?.accent ?? "#fafafa", scheme: start?.scheme ?? "dark" }) });
   follow();
-  addEventListener("site-theme", () => { follow(); playground?.setStill(reducedMotion() || !stageVisible || active !== "dock"); });
+  addEventListener("site-theme", () => { follow(); playground?.setStill(still()); });
   styleSel.addEventListener("change", () => setStyle(styleSel.value));
   shapeSel.addEventListener("change", () => setShape(shapeSel.value));
   themeSel.addEventListener("change", () => applyPack(themeSel.value, { fromUser: true }));
-  sceneSel.addEventListener("change", () => {
-    playground.setScene(sceneSel.value);
-    if (sceneSel.value === "ambient") playground.setOption("motion", "lively");
-    if (current) playground.setPalette(pg.packPalette({ base: current.base ?? "#09090b", accent: current.accent, scheme: current.scheme }));
-    playground.setStill(reducedMotion());
-    toast(`Backdrop: ${sceneSel.selectedOptions[0].textContent}`, sceneSel.value === "sand" ? "Drag on the stage to paint." : "A Playground scene in your theme's colours.");
-  });
-  stage.querySelector("[data-search]")?.addEventListener("click", () => { send({ lens: "search" }); frame.focus(); });
-  fit();
 }
-
-// The dock renders at desktop width; on narrow screens the frame scales down like a screenshot.
-function fit() {
-  const w = screen.clientWidth, s = Math.min(1, w / 640);
-  Object.assign(frame.style, s < 1 ? { width: "640px", maxWidth: "none", transform: `scale(${s})`, transformOrigin: "left bottom" } : { width: "", maxWidth: "", transform: "", transformOrigin: "" });
-}
-addEventListener("resize", fit);
-
-// ---- Ask and Voice: the offline intent engine, acting on the stage where it can ---------------
-function act(text, via) {
-  const i = parse(text);
-  if (!i) return toast("Not a desktop command", "With AI turned on, Lens would hand this to your local model or Claude.", "warn");
-  if (i.action === "set_theme_pack" && packs.some((p) => p.id === i.args.id)) { applyPack(i.args.id, { fromUser: true, quiet: true }); return toast(i.summary, `${via} · done on the stage`); }
-  if (i.action === "set_color_mode") { applyPack(i.args.mode === "light" ? "alabaster-daylight" : "obsidian", { fromUser: true, quiet: true }); return toast(i.summary, `${via} · done on the stage`); }
-  const asks = i.action === "close_app" || i.action === "create_note";
-  toast(i.summary, `${via} · ${asks ? "would ask first" : "simulated here"} · ${i.action}`, asks ? "warn" : "ok");
-}
-// ---- "Lens at work": the orb shows each step of an Ask request, or a short demo script ----------
-const presence = createPresence(stage);
-const askForm = stage.querySelector("form[data-askform]");
-const askInput = askForm.elements.q;
-const pill = (el) => el.closest(".pill") ?? el;
-const toDock = () => { if (active !== "dock") return select("dock"); };
-const snapZone = document.createElement("div");
-snapZone.className = "snap-zone";
-snapZone.innerHTML = "<span>Window · left half</span>";
-stage.querySelector(".pane-dock")?.append(snapZone);
-function snap(slot) {
-  snapZone.classList.toggle("right", slot === "right");
-  snapZone.firstChild.textContent = `Window · ${slot === "right" ? "right" : "left"} half`;
-  snapZone.classList.add("on");
-  setTimeout(() => snapZone.classList.remove("on"), 1800);
-}
-/** One clause of a request ("go dark", "slim dock") → one visible step, or null. */
-function stepFor(clause) {
-  const c = clause.toLowerCase();
-  const st = [...styleSel.options].find((o) => new RegExp(`\\b${o.textContent.toLowerCase()}\\b`).test(c) && /\b(dock|style)\b/.test(c));
-  if (st) return { say: `Switching to the ${st.textContent.toLowerCase()} dock`, prep: toDock, target: () => pill(styleSel), act: () => setStyle(st.value, true) };
-  if (/\b(apps? ?store|lens apps)\b/.test(c)) return { say: "Opening the Apps store", target: () => document.getElementById("chip-apps"), act: () => select("apps") };
-  const i = parse(clause);
-  if (!i) return null;
-  if (i.action === "set_theme_pack" && packs.some((p) => p.id === i.args.id)) {
-    const p = packs.find((x) => x.id === i.args.id);
-    return { say: `Switching to ${p.label}`, prep: toDock, target: () => pill(themeSel), act: () => applyPack(p.id, { fromUser: true, quiet: true }) };
-  }
-  if (i.action === "set_color_mode") return { say: `Turning on ${i.args.mode} mode`, prep: toDock, target: () => pill(themeSel), act: () => applyPack(i.args.mode === "light" ? "alabaster-daylight" : "obsidian", { fromUser: true, quiet: true }) };
-  if (i.action === "snap_window") return { say: `Tiling the window ${i.args.slot === "right" ? "right" : "left"}`, prep: toDock, target: () => snapZone, act: () => { snap(i.args.slot); toast(i.summary, "Simulated here: the stage has no real windows.", "warn"); } };
-  const asks = i.action === "close_app" || i.action === "create_note";
-  return { say: i.summary, target: () => pill(askInput), act: () => toast(i.summary, `${asks ? "would ask first" : "simulated here"} · ${i.action}`, asks ? "warn" : "ok") };
-}
-function script(text) {
-  return text.split(/\s*(?:,|;|\band then\b|\bthen\b|\band\b)\s*/i).filter(Boolean).map(stepFor).filter(Boolean);
-}
-askForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const v = askInput.value.trim();
-  if (!v) return;
-  askInput.value = "";
-  const steps = script(v);
-  if (steps.length) presence.run(steps); else act(v, "Ask");
-});
-// "Watch Lens do it": short scripts, typed visibly into Ask first. The last one shows an outside
-// app (Claude Desktop, over MCP) driving Lens, which is always named on screen.
-const DEMOS = [
-  { text: "tile left and go dark" },
-  { text: "switch to Nord and slim dock" },
-  { text: "open the Apps store", driver: "Claude Desktop" },
-];
-let di = 0;
-stage.querySelector("[data-watch]")?.addEventListener("click", () => {
-  const d = DEMOS[di++ % DEMOS.length];
-  presence.run([{ say: "Reading the request", target: () => askInput, type: d.text, pause: 200 }, ...script(d.text)], { driver: d.driver });
-});
-const PHRASES = ["Lens, apply nord", "Lens, dark mode", "Lens, snap left", "Lens, volume thirty", "Lens, theme catppuccin", "Lens, light mode", "Lens, timer five minutes"];
-let vi = 0;
-stage.querySelector("[data-voice]").addEventListener("click", async (e) => {
-  const b = e.currentTarget;
-  if (b.disabled) return;
-  b.disabled = true;
-  const phrase = PHRASES[vi++ % PHRASES.length];
-  toast("Listening…", `“${phrase}”`, "warn");
-  await new Promise((r) => setTimeout(r, reducedMotion() ? 200 : 900));
-  act(phrase.replace(/thirty/, "30").replace(/five minutes/, "5 minutes"), "Voice (text demo)");
-  b.disabled = false;
-});
-
-// ---- other panes -----------------------------------------------------------------------------
-const CLIP = { windows: "focus-borders", voice: "voice", browser: "browser-agent", snip: "snip", shelf: "right-click", music: "music", guide: "guide" };
-const built = new Set(["dock"]);
-async function buildPane(id, pane) {
-  if (CLIP[id]) {
-    const c = CLIP[id];
-    pane.querySelector(".pane-body").innerHTML = `<video muted loop playsinline preload="none" poster="${new URL(`media/${c}.webp`, SITE)}" src="${new URL(`media/${c}.mp4`, SITE)}" aria-label="${esc(pane.dataset.title)}"></video>${reducedMotion() ? `<button class="btn small play" type="button">Play</button>` : ""}`;
-    pane.querySelector(".play")?.addEventListener("click", (e) => { pane.querySelector("video").play(); e.currentTarget.remove(); });
-    return;
-  }
-  const mod = await import("./demos.js");
-  if (id === "themes") await mod.themes(pane);
-  else if (id === "command") await mod.command(pane);
-  else if (id === "ai") mod.approvals(pane);
-  else if (id === "apps") await apps(pane);
-}
-
-async function apps(pane) {
-  const cat = await fetch(new URL("data/apps.json", SITE)).then((r) => r.json());
-  const grid = pane.querySelector(".apps-grid"), filt = pane.querySelector("[data-cat]");
-  const hue = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
-  const cats = ["all", ...new Set(cat.apps.map((a) => a.category))];
-  filt.innerHTML = cats.map((c, i) => `<button type="button" data-v="${c}" aria-pressed="${i === 0}">${c === "all" ? "All" : c[0].toUpperCase() + c.slice(1)}</button>`).join("");
-  const render = (c) => {
-    grid.innerHTML = cat.apps.filter((a) => c === "all" || a.category === c).slice(0, 12).map((a) => `<div class="app">
-      <span class="mono-ic" style="--h:${hue(a.name)}" aria-hidden="true">${esc(a.name[0])}</span>
-      <div><strong>${esc(a.name)}</strong><span>${esc(a.pitch ?? "")}</span><span class="meta">${a.openSource ? "open source" : "free"}${a.license ? ` · ${esc(a.license)}` : ""}</span></div>
-      <button class="btn small" type="button" data-install="${esc(a.name)}">Get</button></div>`).join("");
-  };
-  filt.addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; filt.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); render(b.dataset.v); });
-  grid.addEventListener("click", (e) => { const b = e.target.closest("[data-install]"); if (b) toast(`Get ${b.dataset.install}`, "In Lens this downloads the official release and asks before installing. Simulated here."); });
-  render("all");
-}
-
-// ---- chips: one active pane, arrow keys move ------------------------------------------------
-const chips = [...document.querySelectorAll("#chips [role=tab]")];
-let active = "dock", stageVisible = true;
-async function select(id, focus = false) {
-  const chip = chips.find((c) => c.dataset.pane === id);
-  chips.forEach((c) => { const on = c === chip; c.setAttribute("aria-selected", String(on)); c.tabIndex = on ? 0 : -1; });
-  if (focus) chip.focus();
-  screen.setAttribute("aria-labelledby", chip.id);
-  stage.querySelectorAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== id; p.querySelector("video")?.pause(); });
-  stage.classList.toggle("on-dock", id === "dock");
-  if (id !== active) toasts.replaceChildren();
-  active = id;
-  const pane = stage.querySelector(`.pane[data-pane="${id}"]`);
-  if (!built.has(id)) { built.add(id); await buildPane(id, pane).catch((err) => { pane.querySelector(".pane-body").insertAdjacentHTML("beforeend", `<p class="note">This demo didn't load (${esc(err.message)}).</p>`); }); }
-  const v = pane.querySelector("video");
-  if (v && !reducedMotion()) v.play().catch(() => {});
-  playground?.setStill(reducedMotion() || id !== "dock" || !stageVisible);
-}
-chips.forEach((c, i) => {
-  c.addEventListener("click", () => select(c.dataset.pane));
-  c.addEventListener("keydown", (e) => {
-    const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (k) { e.preventDefault(); select(chips[(i + k + chips.length) % chips.length].dataset.pane, true); }
-    if (e.key === "Home") { e.preventDefault(); select(chips[0].dataset.pane, true); }
-    if (e.key === "End") { e.preventDefault(); select(chips.at(-1).dataset.pane, true); }
-  });
-});
+searchBtn.addEventListener("click", () => search(!drawerOpen));
 
 // Pause the backdrop when the stage is off-screen or the tab is hidden.
-new IntersectionObserver(([e]) => {
-  stageVisible = e.isIntersecting;
-  playground?.setStill(reducedMotion() || active !== "dock" || !stageVisible || document.hidden);
-}).observe(stage);
-document.addEventListener("visibilitychange", () => playground?.setStill(reducedMotion() || active !== "dock" || !stageVisible || document.hidden));
+new IntersectionObserver(([e]) => { stageVisible = e.isIntersecting; playground?.setStill(still()); }).observe(stage);
+document.addEventListener("visibilitychange", () => playground?.setStill(still()));
 
-// "#themes", "#voice"… (from the Guide's Show me, or a link) open that pane.
-const show = (id) => {
-  if (!chips.some((c) => c.dataset.pane === id)) return;
-  select(id);
-  stage.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-  stage.classList.remove("flash"); void stage.offsetWidth; stage.classList.add("flash");
+// ---- fullscreen: the Fullscreen API, or a fixed overlay where it isn't available ---------------
+const isFull = () => stage.classList.contains("is-full");
+async function enterFs() {
+  if (isFull()) return;
+  stage.parentElement.style.minHeight = `${stage.offsetHeight}px`; // hold its place, so nothing below moves
+  stage.classList.add("is-full");
+  document.body.classList.add("stage-full");
+  fsBtn.setAttribute("aria-pressed", "true");
+  try { if (stage.requestFullscreen && !document.fullscreenElement) await stage.requestFullscreen({ navigationUI: "hide" }); } catch { /* the overlay is enough */ }
+  fit();
+  stage.querySelector("[data-fs-exit]").focus({ preventScroll: true });
+}
+async function exitFs() {
+  if (!isFull()) return;
+  stage.classList.remove("is-full");
+  stage.parentElement.style.minHeight = "";
+  document.body.classList.remove("stage-full");
+  fsBtn.setAttribute("aria-pressed", "false");
+  if (document.fullscreenElement) try { await document.exitFullscreen(); } catch { /* already out */ }
+  fit();
+  fsBtn.focus({ preventScroll: true });
+}
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && isFull()) exitFs(); });
+fsBtn.addEventListener("click", () => (isFull() ? exitFs() : enterFs()));
+stage.querySelector("[data-fs-exit]").addEventListener("click", exitFs);
+// Esc: close search first, then the tour (tour.js listens itself), then fullscreen.
+addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (drawerOpen) { search(false); e.preventDefault(); return; }
+  if (tour?.running()) return;
+  if (isFull()) { e.preventDefault(); exitFs(); }
+});
+
+// ---- the tour, loaded on demand ----------------------------------------------------------------
+let tour = null;
+const api = {
+  stage, screen, desk, frame, post, search, toast, applyPack, setStyle, setShape, enterFs, exitFs, isFull,
+  get packs() { return packs; }, get playground() { return playground; }, get pg() { return pg; }, get drawerOpen() { return drawerOpen; },
+  frameDoc: () => { try { return frame.contentDocument; } catch { return null; } },
 };
-addEventListener("site-show", (e) => show(e.detail));
-addEventListener("hashchange", () => show(decodeURIComponent(location.hash.slice(1))));
+async function startTour(opts = {}) {
+  const m = await import("./tour.js");
+  tour ??= m.createTour(api);
+  if (drawerOpen) search(false);
+  tour.start(opts);
+}
+stage.querySelectorAll("[data-tour]").forEach((b) => b.addEventListener("click", () => startTour({ fullscreen: isFull() })));
+// index.html#tour starts the tour in fullscreen (the overlay, if the browser wants a click first).
+if (location.hash === "#tour") addEventListener("load", () => setTimeout(() => startTour({ fullscreen: true }), 600));
+
+// ---- "#voice", "#browser"… from the Guide's Show me: the matching exhibit or chip -----------------
+const SHOW = { dock: "stage", command: "ai", ai: "ai", themes: "themes", apps: "apps" };
+addEventListener("site-show", (e) => {
+  const id = e.detail;
+  const target = SHOW[id] ?? (document.getElementById(`also-${id}`) ? `also-${id}` : null);
+  if (!target) return;
+  const el = document.getElementById(target);
+  el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+  if (target.startsWith("also-")) el.click();
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+});
 
 // ---- the "All docks" strip: each thumbnail is the real dock, loaded one at a time when in view ----
 const thumbs = [...document.querySelectorAll(".dock-thumb")];
@@ -283,7 +214,6 @@ function loadThumbs() {
   };
   ("requestIdleCallback" in window ? requestIdleCallback : setTimeout)(next);
 }
-// Scale each thumbnail's 640 px dock render to the tile's width.
 const fitThumbs = () => thumbs.forEach((t) => t.style.setProperty("--thumb-scale", String(Math.min(0.9, t.clientWidth / 640))));
 addEventListener("resize", fitThumbs);
 fitThumbs();
@@ -292,29 +222,18 @@ thumbs.forEach((t) => t.addEventListener("click", () => {
   if (t.dataset.pack) applyPack(t.dataset.pack, { fromUser: true, quiet: true });
   setShape(t.dataset.shape ?? (t.dataset.pack ? shapeSel.value : "classic"), true);
   setStyle(t.dataset.style, true);
-  select("dock");
   stage.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
   toast(`${t.querySelector(".thumb-label").textContent.trim()} dock`, "Now on the stage. Hover it, click an app, open search.");
 }));
 
-// ---- the one-click "Get" pill (the Lens Apps flow, simulated: nothing downloads) ---------------
-const STAGES = ["Finding package", "Downloading", "Verifying", "Installing", "Done"];
-document.querySelectorAll("[data-get]").forEach((b) => b.addEventListener("click", async () => {
-  if (b.dataset.busy) return;
-  if (b.textContent === "Open") { b.textContent = "Get"; b.classList.remove("done"); return; }
-  b.dataset.busy = "1";
-  b.classList.add("busy");
-  for (const [i, st] of STAGES.entries()) {
-    if (st === "Downloading") {
-      for (let pct = 0; pct <= 100; pct += 20) { b.textContent = `${st} ${pct}%`; b.style.setProperty("--p", `${pct}%`); await new Promise((r) => setTimeout(r, reducedMotion() ? 0 : 180)); }
-    } else { b.textContent = st; await new Promise((r) => setTimeout(r, reducedMotion() ? 0 : 450)); }
-    b.style.setProperty("--p", `${Math.round(((i + 1) / STAGES.length) * 100)}%`);
-  }
-  b.classList.remove("busy");
-  b.classList.add("done");
-  b.textContent = "Open";
-  b.setAttribute("aria-label", `Open ${b.dataset.get} (simulated)`);
-  delete b.dataset.busy;
-}));
+// ---- the other exhibits load when they come near --------------------------------------------------
+const later = document.querySelectorAll("#themes, #ai, #apps, #also");
+let exhibits = null;
+const io = new IntersectionObserver((es) => {
+  if (!es.some((e) => e.isIntersecting)) return;
+  io.disconnect();
+  exhibits ??= import("./exhibits.js").then((m) => m.init({ toast }));
+}, { rootMargin: "400px" });
+later.forEach((s) => io.observe(s));
 
 initDock();

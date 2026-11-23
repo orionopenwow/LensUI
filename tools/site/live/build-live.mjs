@@ -85,14 +85,24 @@ function fresh(dir) {
   return dir;
 }
 
+// Site-only CSS: the demo frame is a few hundred pixels tall, so the in-dock search drawer shows one
+// compact column (recent files and open windows, or the results) instead of the desktop's 520 px grid.
+const SITE_DOCK_CSS = [
+  ".dock-launcher-drawer .pal-two-col{min-height:0!important;grid-template-columns:minmax(0,1fr)!important}",
+  ".dock-launcher-drawer .pal-two-col>div:nth-child(2){display:none!important}",
+  ".dock-launcher-drawer .pal-recent-list{max-height:var(--site-list-h,176px)!important}",
+  ".dock-launcher-drawer .pal-results{min-height:0!important;max-height:var(--site-list-h,176px)!important}",
+  ".dock-launcher-drawer .pal-filter-bar{flex-wrap:nowrap;overflow:hidden}",
+].join("");
+
 export async function buildDock(outRoot = join(root, "docs/site/live")) {
   const out = fresh(join(outRoot, "dock"));
   const d = dockRoot();
-  await build({ ...common, entryPoints: { dock: join(here, "dock-entry.tsx") }, outdir: out, alias: { ...mocksFor(d.dir), "@lens-src": join(d.dir, "src") }, nodePaths: [join(root, "node_modules")] });
+  await build({ ...common, entryPoints: { dock: join(here, "dock-entry.tsx") }, outdir: out, alias: { ...mocksFor(d.dir), "@tauri-apps/api/core": join(here, "site-core.ts"), "@lens-src": join(d.dir, "src") }, nodePaths: [join(root, "node_modules")] });
   writeFileSync(join(out, "source.txt"), `Built from ${d.from}\n`);
   writeFileSync(
     join(out, "index.html"),
-    `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Lens Dock (live demo)</title><link rel="stylesheet" href="dock.css"><style>:root{color-scheme:normal!important}html,body{background:transparent!important;overflow:hidden}</style></head><body><div id="root"></div><script type="module" src="dock.js"></script></body></html>`
+    `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Lens Dock (live demo)</title><link rel="stylesheet" href="dock.css"><style>:root{color-scheme:normal!important}html,body{background:transparent!important;overflow:hidden}${SITE_DOCK_CSS}</style></head><body><div id="root"></div><script type="module" src="dock.js"></script></body></html>`
   );
   return out;
 }

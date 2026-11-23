@@ -177,7 +177,7 @@ for (const scheme of ["dark", "light"]) {
 }
 
 // The hero stage: frame pacing and long tasks with the CPU throttled 4× (a slow laptop), a still
-// backdrop with reduced motion, and screenshots of a few chip states.
+// backdrop with reduced motion, and the Ask Lens orb with reduced motion.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
@@ -197,34 +197,167 @@ for (const scheme of ["dark", "light"]) {
   report.stage = { throttle4x: Object.fromEntries(Object.entries(perf).map(([k, v]) => [k, Math.round(v * 10) / 10])) };
   if (perf.p95 > 50) problems.push(`stage: p95 frame interval ${perf.p95.toFixed(1)} ms at 4× throttle (> 50 ms)`);
   if (perf.longestTask > 200) problems.push(`stage: a ${perf.longestTask.toFixed(0)} ms long task at 4× throttle`);
-  for (const id of ["themes", "apps", "ai"]) {
-    await page.click(`#chip-${id}`);
-    await page.waitForTimeout(1500);
-    const found = await page.evaluate(audit);
-    problems.push(...found.map((x) => `chip ${id}: ${x}`));
-    await page.locator(".stage").screenshot({ path: join(shots, `chip-${id}.png`) });
-  }
   await ctx.close();
   const rm = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
   const p2 = await rm.newPage();
   await p2.goto(base + "index.html");
   await p2.waitForTimeout(3000);
-  const grab = () => p2.$eval(".backdrop canvas", (c) => c.toDataURL());
+  const grab = () => p2.$eval("#stage .backdrop canvas", (c) => c.toDataURL());
   const a = await grab();
   await p2.waitForTimeout(1500);
   const still = a === (await grab());
   report.stage.reducedMotionStill = still;
   if (!still) problems.push("stage: the backdrop moves with reduced motion");
-  // "Lens at work" with reduced motion: a caption and a highlight ring, and the orb never shows.
-  await p2.fill("#ask-q", "switch to Nord and slim dock");
-  await p2.press("#ask-q", "Enter");
+  // "Lens at work" in the Ask Lens exhibit, with reduced motion: a caption and a highlight ring, no orb.
+  await p2.locator("#ai").scrollIntoViewIfNeeded();
+  await p2.waitForSelector("#ex-ai .desk");
+  await p2.fill("#ai-q", "tile left and go dark");
+  await p2.press("#ai-q", "Enter");
   await p2.waitForTimeout(400);
-  const lens = await p2.evaluate(() => ({ caption: document.querySelector(".lens-caption")?.textContent ?? "", ring: !!document.querySelector(".lens-ring"), orb: getComputedStyle(document.querySelector(".lens-orb")).opacity }));
+  const lens = await p2.evaluate(() => ({ caption: document.querySelector("#ex-ai .lens-caption")?.textContent ?? "", ring: !!document.querySelector("#ex-ai .lens-ring"), orb: getComputedStyle(document.querySelector("#ex-ai .lens-orb")).opacity }));
   await p2.waitForTimeout(3500);
-  lens.style = await p2.$eval("select[data-style]", (s) => s.value);
+  lens.tiledLeft = await p2.$eval("#ex-ai .dw.active", (w) => parseFloat(w.style.left) < 3 && parseFloat(w.style.width) > 45);
   report.stage.lensAtWork = lens;
-  if (!/Lens/.test(lens.caption) || !lens.ring || lens.orb !== "0" || lens.style !== "slim") problems.push(`stage: Lens at work (reduced motion) ${JSON.stringify(lens)}`);
+  if (!/Lens/.test(lens.caption) || !lens.ring || lens.orb !== "0" || !lens.tiledLeft) problems.push(`ask lens (reduced motion) ${JSON.stringify(lens)}`);
   await rm.close();
+}
+
+// Interaction smoke test: every control on the home page, clicked like a visitor would. Fails on a
+// console or page error (in the page or the dock frame), anything drawn outside the stage, a page
+// wider than the window, the stage moving when it shouldn't, or layout shift above 0.1 outside
+// the demo desktops (their windows moving is the demo).
+{
+  const ctx = await browser.newContext({ viewport: { width: 1366, height: 860 } });
+  await ctx.addInitScript(() => {
+    window.__cls = 0;
+    // Windows moving inside a demo desktop are the demo; anything else shifting is a bug.
+    const demo = (n) => n?.closest?.(".stage-screen, .ex-screen");
+    new PerformanceObserver((l) => l.getEntries().forEach((e) => { if (!e.hadRecentInput && e.sources.some((x) => !demo(x.node))) window.__cls += e.value; })).observe({ type: "layout-shift", buffered: true });
+  });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("pageerror", (e) => errs.push(`page error: ${e.message}`));
+  page.on("console", (m) => { if (m.type() === "error") errs.push(`console: ${m.text().slice(0, 160)}`); });
+  await page.goto(base + "index.html");
+  await page.waitForTimeout(3000);
+  const dock = page.frames().find((f) => f.url().includes("live/dock/index.html") && !f.url().includes("?"));
+  const done = [];
+  const stageBox = () => page.$eval("#stage", (s) => { const r = s.getBoundingClientRect(); return { y: Math.round(r.top + scrollY), h: Math.round(r.height) }; });
+  const home = await stageBox();
+  async function verify(label) {
+    const r = await page.evaluate(() => {
+      const scr = document.querySelector("#stage .stage-screen").getBoundingClientRect();
+      const fr = document.querySelector("#stage .stage-screen > iframe");
+      const fb = fr.getBoundingClientRect(), k = fb.width / (fr.offsetWidth || fb.width);
+      const out = [];
+      const doc = fr.contentDocument;
+      for (const sel of [".dock-pill", ".dock-launcher-drawer"]) {
+        const el = doc?.querySelector(sel);
+        if (!el) continue;
+        const b = el.getBoundingClientRect();
+        const box = { l: fb.left + b.left * k, t: fb.top + b.top * k, r: fb.left + b.right * k, b: fb.top + b.bottom * k };
+        if (box.t < scr.top - 1 || box.b > scr.bottom + 1 || box.l < scr.left - 1 || box.r > scr.right + 1) out.push(`${sel} outside the stage`);
+        if (sel === ".dock-launcher-drawer" && b.height > 40 && !doc.querySelector(".dock-launcher-drawer .pal-recent-row, .dock-launcher-drawer .pal-result-row")) out.push("search drawer is open but empty");
+      }
+      if (document.documentElement.scrollWidth > innerWidth + 1) out.push(`page is ${document.documentElement.scrollWidth}px wide in a ${innerWidth}px window`);
+      return out;
+    });
+    problems.push(...r.map((x) => `interaction ${label}: ${x}`));
+    const b = await stageBox();
+    if (!(await page.$eval("#stage", (s) => s.classList.contains("is-full"))) && (Math.abs(b.y - home.y) > 1 || Math.abs(b.h - home.h) > 1)) problems.push(`interaction ${label}: the stage moved or resized (${JSON.stringify(home)} → ${JSON.stringify(b)})`);
+    done.push(label);
+  }
+  if (!dock) problems.push("interaction: the dock frame didn't load");
+  else {
+    const items = dock.locator(".dock-item");
+    const n = await items.count();
+    for (let i = 0; i < n; i++) { await items.nth(i).hover(); await page.waitForTimeout(60); }
+    await verify(`hover ${n} dock icons`);
+    for (let i = 0; i < n; i++) {
+      const cls = await items.nth(i).getAttribute("class");
+      if (/dock-launcher-btn|dock-search/.test(cls ?? "")) continue;
+      await items.nth(i).click(); await page.waitForTimeout(120);
+      if (await dock.locator(".dock-ctx-menu, [role=menu]").count()) await page.keyboard.press("Escape");
+    }
+    await verify("click every dock icon");
+  }
+  for (const v of await page.$$eval("select[data-style] option", (o) => o.map((x) => x.value))) { await page.selectOption("select[data-style]", v); await page.waitForTimeout(250); await verify(`dock style ${v}`); }
+  for (const v of ["expressive", "dotmatrix", "classic"]) { await page.selectOption("select[data-shape]", v); await page.waitForTimeout(250); await verify(`shape ${v}`); }
+  for (const v of ["nord-frost", "alabaster-daylight", "cc-koi-mosaic", "lens-dot-matrix", "obsidian"]) { await page.selectOption("select[data-theme]", v); await page.waitForTimeout(300); await verify(`pack ${v}`); }
+  // Super search: opens inside the dock, lists results, types, closes with Esc and with the pill.
+  await page.click(".pills [data-search]");
+  await page.waitForTimeout(700);
+  await verify("search open");
+  if (dock && !(await dock.locator(".dock-launcher-drawer").count())) problems.push("interaction: search didn't open in the dock");
+  await page.screenshot({ path: join(shots, "search-open.png"), clip: await page.locator("#stage").boundingBox() });
+  await page.keyboard.type("kri", { delay: 60 });
+  await page.waitForTimeout(500);
+  await verify("search typed");
+  if (dock && !(await dock.locator(".pal-result-row").count())) problems.push("interaction: typing in search showed no results");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(600);
+  if (dock && (await dock.locator(".dock-launcher-drawer").count())) problems.push("interaction: Esc didn't close search");
+  if ((await page.getAttribute(".pills [data-search]", "aria-expanded")) !== "false") problems.push("interaction: the Search pill still says expanded after Esc");
+  await page.click(".pills [data-search]"); await page.waitForTimeout(500); await page.click(".pills [data-search]"); await page.waitForTimeout(600);
+  if (dock && (await dock.locator(".dock-launcher-drawer").count())) problems.push("interaction: the Search pill didn't close search");
+  await verify("search closed");
+  // Fullscreen: fills the window, the dock at the bottom; Esc leaves.
+  await page.click(".pills [data-fs]");
+  await page.waitForTimeout(600);
+  const fs = await page.evaluate(() => { const s = document.querySelector("#stage .stage-screen").getBoundingClientRect(); return { w: Math.round(s.width), h: Math.round(s.height), full: document.querySelector("#stage").classList.contains("is-full") }; });
+  if (!fs.full || fs.w < 1360 || fs.h < 850) problems.push(`interaction: fullscreen didn't fill the window ${JSON.stringify(fs)}`);
+  await verify("fullscreen");
+  await page.screenshot({ path: join(shots, "fullscreen.png") });
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
+  if (await page.$eval("#stage", (s) => s.classList.contains("is-full"))) problems.push("interaction: Esc didn't leave fullscreen");
+  // The tour: starts, steps with the arrow keys, Esc ends it.
+  await page.click(".pills [data-tour]");
+  await page.waitForTimeout(1200);
+  for (let i = 0; i < 3; i++) { await page.keyboard.press("ArrowRight"); await page.waitForTimeout(400); }
+  const step = await page.evaluate(() => [...document.querySelectorAll(".tour-dots button")].findIndex((b) => b.hasAttribute("aria-current")));
+  if (step !== 3) problems.push(`interaction: the tour is on step ${step + 1} after three → (expected 4)`);
+  await verify("tour");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(500);
+  if (!(await page.$eval(".tour", (t) => t.hidden))) problems.push("interaction: Esc didn't end the tour");
+  // Exhibits.
+  await page.locator("#themes").scrollIntoViewIfNeeded();
+  await page.waitForSelector("#ex-themes .desk");
+  for (const b of await page.$$("#ex-themes [data-pick]")) { await b.click(); await page.waitForTimeout(150); }
+  await page.click("#ex-themes [data-accent]:nth-child(3)");
+  await page.selectOption("#ex-themes [data-allpacks]", "cc-halftone-dusk");
+  await page.waitForTimeout(300);
+  await verify("themes exhibit");
+  await page.locator("#ai").scrollIntoViewIfNeeded();
+  await page.click('#ex-ai [data-try="tile left and go dark"]');
+  await page.waitForTimeout(7000);
+  if (!(await page.$eval("#ex-ai .dw.active", (w) => parseFloat(w.style.left) < 3))) problems.push("interaction: Ask Lens didn't tile the window left");
+  await page.click('#ex-ai [data-try="close Discord"]');
+  await page.waitForTimeout(3500);
+  if (!(await page.locator("#ex-ai .ex-approval").count())) problems.push("interaction: “close Discord” didn't ask first");
+  else await page.click("#ex-ai .ex-approval [data-no]");
+  await page.fill("#ai-q", "what's the weather like on mars");
+  await page.press("#ai-q", "Enter");
+  await page.waitForTimeout(400);
+  await verify("ask lens");
+  await page.locator("#apps").scrollIntoViewIfNeeded();
+  await page.waitForSelector("#ex-apps .ex-store [data-get]");
+  const before = await page.locator("#ex-apps .dk").count();
+  await page.click("#ex-apps .ex-store [data-get]");
+  await page.waitForTimeout(3500);
+  if ((await page.locator("#ex-apps .dk").count()) !== before + 1) problems.push("interaction: Get didn't add the app to the dock");
+  await page.click(".featured [data-get]");
+  await page.waitForTimeout(3500);
+  await verify("apps exhibit");
+  for (const b of await page.$$(".also-chips [data-also]")) { await b.click(); await page.waitForTimeout(60); }
+  if ((await page.$$eval(".also-chips [aria-pressed=true]", (x) => x.length)) !== 1) problems.push("interaction: Also-in-Lens chips aren't single-select");
+  await verify("also chips");
+  const cls = await page.evaluate(() => window.__cls);
+  report.interaction = { steps: done.length, cls: Math.round(cls * 1000) / 1000, errors: errs.length };
+  if (cls > 0.1) problems.push(`interaction: layout shift ${cls.toFixed(3)} (> 0.1)`);
+  problems.push(...[...new Set(errs)].map((e) => `interaction: ${e}`));
+  await ctx.close();
 }
 
 // Notch variants: set the preference, reload, audit contrast and screenshot.
@@ -266,6 +399,7 @@ await writeFile(join(shots, "report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report.pages, null, 0));
 console.log("logo", JSON.stringify(report.logo));
 console.log("stage", JSON.stringify(report.stage));
+console.log("interaction", JSON.stringify(report.interaction));
 console.log(`${seen.size} internal links checked · axe ${axe ? "on" : "not installed (built-in checks only)"}`);
 if (problems.length) { console.log(problems.slice(0, 80).join("\n")); console.log(`${problems.length} problem(s)`); process.exit(1); }
 console.log("no problems");
