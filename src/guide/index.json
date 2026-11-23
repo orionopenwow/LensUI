@@ -2629,6 +2629,26 @@
    "source": "src/components/McpCard.tsx"
   },
   {
+   "id": "card.ai.presencecard",
+   "kind": "card",
+   "title": "Presence",
+   "text": "Presence",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens at work",
+    "Presence"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "PresenceCard",
+    "label": "Presence",
+    "section": "presence"
+   },
+   "source": "src/presence/PresenceCard.tsx"
+  },
+  {
    "id": "card.ai.voicecard",
    "kind": "card",
    "title": "Always listening",
@@ -10341,6 +10361,107 @@
     "heading": "Gallery index format"
    },
    "source": "docs/PLUGINS.md"
+  },
+  {
+   "id": "doc.presence.0",
+   "kind": "doc",
+   "title": "Lens at work (presence)",
+   "text": "When Lens, your voice, or an outside AI app (Claude Desktop, Claude Code, any MCP client) does something on your PC, Lens shows it: a small nebula orb travels to the target, rings it, ripples on clicks, shows what is being typed (secrets as ••• ), outlines where a window is about to go, and names who is acting with a step counter. One API feeds it; the visuals never hold an action up by more than 150 ms. Where What --- --- src-tauri/src/presence/mod.rs Config, actors, steps, announce() , policy ( effective() ), stop/done src-tauri/src/presence/queue.rs Ordered playback queue, 150 ms lead, catch-up, run/idle timing src-tauri/src/presence/geom.rs Physical ↔ logical rects per monitor (mixed DPI), snap slots, page to screen src-tauri/src/presence/mask.rs Secret masking (card numbers, key prefixes, JWTs, high-entropy tokens) src-tauri/src/presence/tool.rs Actor context (thread-local) and tool",
+   "path": [
+    "Docs",
+    "Lens at work (presence)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "Lens at work (presence)"
+   },
+   "source": "docs/PRESENCE.md"
+  },
+  {
+   "id": "doc.presence.1",
+   "kind": "doc",
+   "title": "Lens at work (presence): Behaviour",
+   "text": "- Overlay. One transparent, click-through, topmost, no-activate window ( presence ) created on first use and moved to the monitor of the step's target. It is excluded from screen capture ( SetWindowDisplayAffinity(WDA EXCLUDEFROMCAPTURE) ), so it never shows up in screenshots, recordings or what an AI sees. Only the orb is hit-testable (polled at 30 Hz while visible); clicking it stops the run. Hidden after 3.5 s idle. - Modes (Settings › AI & Command › Lens at work ): Full (orb travels, rings, ripples, chips, captions), Subtle — default — (rings and captions only, no orb), Off . - Outside apps always show. \"Always show when an outside app is in control\" is locked on: an external actor is never below Subtle, even with Off, and gets the banner \" Claude Desktop is controlling Lens · Stop\" at the top of the work area. - Suppression. Nothing is drawn over fullscreen apps or games, the lock s",
+   "path": [
+    "Docs",
+    "Lens at work (presence)",
+    "Behaviour"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "Behaviour"
+   },
+   "source": "docs/PRESENCE.md"
+  },
+  {
+   "id": "doc.presence.2",
+   "kind": "doc",
+   "title": "Lens at work (presence): API",
+   "text": "Rust (any thread): Lens windows (TypeScript) — may only announce as internal voice magic apps , never as an outside app: target / dest may be an element or a CSS-px rect in the calling window; the backend converts it to screen px with the window's origin and scale factor.",
+   "path": [
+    "Docs",
+    "Lens at work (presence)",
+    "API"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "API"
+   },
+   "source": "docs/PRESENCE.md"
+  },
+  {
+   "id": "doc.presence.3",
+   "kind": "doc",
+   "title": "Lens at work (presence): Already wired",
+   "text": "Caller How --- --- AI tool runner ( ai ask , intents, apply bridge) LensToolHost::run → presence::before tool (actor from context, default Lens) Control gate ( lens control tools, MCP) control/lens.rs → presence::before control (actor from the MCP client) Voice voice/mod.rs wraps tool runs in tool::with actor(Actor::of kind(\"voice\"), …) MCP legacy AI tools win mcp.rs::run ai tool wraps with an external \"An AI app\" actor Magic menu AI actions go through LensToolHost (above); direct menu clicks are the user's own and aren't announced Lens Browser agent src/browser/AgentPanel.tsx → src/presence/browser.ts::pageStep before every page action Lens Apps src/apps/LensApps.tsx announces \"Installing/Updating/Removing <app \" on the app's card",
+   "path": [
+    "Docs",
+    "Lens at work (presence)",
+    "Already wired"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "Already wired"
+   },
+   "source": "docs/PRESENCE.md"
+  },
+  {
+   "id": "doc.presence.4",
+   "kind": "doc",
+   "title": "Lens at work (presence): Browser page rects → screen",
+   "text": "Page elements carry viewport rects from page agent.js . The page webview sits over .lb-page , so: In Rust the same conversion is geom::page to screen(rect, window origin px, scale, scroll) .",
+   "path": [
+    "Docs",
+    "Lens at work (presence)",
+    "Browser page rects → screen"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "Browser page rects → screen"
+   },
+   "source": "docs/PRESENCE.md"
+  },
+  {
+   "id": "doc.presence.7",
+   "kind": "doc",
+   "title": "Lens at work (presence): Needs real hardware",
+   "text": "Capture exclusion (Win10 2004+), mixed-DPI multi-monitor placement, the orb hit-test with click-through, fullscreen/game and secure-desktop suppression, global hotkey registration, and overlay frame pacing on low-end GPUs can only be verified on Windows.",
+   "path": [
+    "Docs",
+    "Lens at work (presence)",
+    "Needs real hardware"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/PRESENCE.md",
+    "heading": "Needs real hardware"
+   },
+   "source": "docs/PRESENCE.md"
   },
   {
    "id": "doc.productivity.0",

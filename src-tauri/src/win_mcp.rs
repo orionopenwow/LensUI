@@ -1436,7 +1436,9 @@ pub mod lens_host {
 
         fn run_ai_tool(&self, tool: &str, args: &Value) -> Result<String, String> {
             use crate::ai::tools::ToolHost;
-            crate::ai::tools::lens::LensToolHost { app: self.app.clone() }.run(tool, args)
+            // An outside AI app is driving: presence shows it (and its "is controlling Lens" banner).
+            let actor = crate::presence::Actor { kind: "other".into(), label: "An AI app".into() };
+            crate::presence::tool::with_actor(actor, || crate::ai::tools::lens::LensToolHost { app: self.app.clone() }.run(tool, args))
         }
 
         fn grant_decision(&self, client: &str, tool: &str) -> Option<crate::control::grants::Decision> {

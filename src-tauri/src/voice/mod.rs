@@ -1261,7 +1261,7 @@ fn run_tool_raw(tool: &'static str, args: &Value) -> Result<(String, Option<undo
     let app = app().ok_or("Lens isn't ready yet.")?;
     let snap = snapshot(tool, args);
     let host = tools::lens::LensToolHost { app };
-    let msg = host.run(tool, args)?;
+    let msg = crate::presence::tool::with_actor(crate::presence::Actor::of_kind("voice"), || host.run(tool, args))?;
     Ok((msg, undo::inverse(tool, &argv(args), &snap)))
 }
 
@@ -1328,7 +1328,7 @@ fn run_undo_step(step: undo::Step) -> Result<(), String> {
             }
             let args = tools::validate(tool, &Value::Object(m))?;
             let app = app().ok_or("Lens isn't ready yet.")?;
-            tools::lens::LensToolHost { app }.run(tool, &args)?;
+            crate::presence::tool::with_actor(crate::presence::Actor::of_kind("voice"), || tools::lens::LensToolHost { app }.run(tool, &args))?;
         }
     }
     Ok(())

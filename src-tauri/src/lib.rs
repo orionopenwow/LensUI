@@ -57,6 +57,7 @@ mod feeds;
 mod messages;
 mod clip;
 mod magic;
+mod presence;
 mod commands;
 mod control;
 mod media;
@@ -221,6 +222,13 @@ pub fn run() {
             commands::magic::magic_hide,
             commands::magic::magic_window_action,
             commands::magic::magic_report_open,
+            commands::presence::presence_announce,
+            commands::presence::presence_done,
+            commands::presence::presence_stop,
+            commands::presence::presence_get_config,
+            commands::presence::presence_set_config,
+            commands::presence::presence_last,
+            commands::presence::presence_status,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,
