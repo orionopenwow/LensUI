@@ -2,7 +2,7 @@
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
   <picture><source srcset="./docs/brand/lens-logo-anim.webp" media="(prefers-reduced-motion: no-preference)"><img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" /></picture>
-  <h1>Lens UI</h1>
+  <h1>Lens</h1>
   <p><strong>The everything desktop.</strong> The open-source desktop where look, apps and AI finally work as one.</p>
   <p>
     <a href="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml"><img src="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
@@ -149,7 +149,7 @@ Capture, then do the useful part before anything is saved.
 - Auto-redaction suggests blurring e-mails, API keys and card-like numbers it finds in the image.
 - One key to copy, copy text, pin to screen, add to the Shelf or paste to Claude with what is sent shown first.
 
-### Lens Guide
+### Ask Lens
 
 > **In development** — in [pull request #18](https://github.com/orionopenwow/LensUI/pull/18), not in a build yet.
 
@@ -233,4 +233,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[MIT](./LICENSE). Lens UI is not affiliated with Microsoft or Anthropic.
+[MIT](./LICENSE). Lens is not affiliated with Microsoft or Anthropic.

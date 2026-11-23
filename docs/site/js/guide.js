@@ -28,7 +28,7 @@ function build() {
   win.setAttribute("aria-modal", "true");
   win.setAttribute("aria-labelledby", "gw-title");
   win.hidden = true;
-  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
+  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens</strong><span class="gw-sub">offline · on this page</span>
       <button type="button" data-max aria-label="Expand the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg></button>
       <button type="button" data-close aria-label="Collapse the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></header>
     <div class="gw-thread" aria-live="polite"></div>
@@ -81,7 +81,7 @@ export async function open(q) {
     win.animate([{ transformOrigin: "100% 100%", transform: `translate(${from.right - to.right}px, ${from.bottom - to.bottom}px) scale(${sx}, ${sy})`, borderRadius: "50%", opacity: 0.4 }, { transformOrigin: "100% 100%", transform: "translate(-2px, -4px) scale(1.01)", borderRadius: "18px", opacity: 1, offset: 0.75 }, { transformOrigin: "100% 100%", transform: "none", borderRadius: "18px", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
   } else if (win.animate) win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
   input.focus({ preventScroll: true });
-  if (!thread.children.length) say("lens", `Hi, I'm the Lens Guide. Ask how to do anything in Lens, or tap a suggestion: I'll show you right here on the page.`);
+  if (!thread.children.length) say("lens", `Hi, I'm Lens. Ask me how to do anything, or tap a suggestion: I'll show you right here on the page.`);
   load().catch(() => {});
   if (q) ask(q);
 }

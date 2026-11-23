@@ -30,7 +30,7 @@ const readme = `<!-- The feature tour below is generated from tools/site/content
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
   <picture><source srcset="./docs/brand/lens-logo-anim.webp" media="(prefers-reduced-motion: no-preference)"><img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" /></picture>
-  <h1>Lens UI</h1>
+  <h1>Lens</h1>
   <p><strong>The everything desktop.</strong> The open-source desktop where look, apps and AI finally work as one.</p>
   <p>
     <a href="${REPO}/actions/workflows/build.yml"><img src="${REPO}/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
@@ -106,7 +106,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[MIT](./LICENSE). Lens UI is not affiliated with Microsoft or Anthropic.
+[MIT](./LICENSE). Lens is not affiliated with Microsoft or Anthropic.
 `;
 
 writeFileSync(join(root, "README.md"), readme);
