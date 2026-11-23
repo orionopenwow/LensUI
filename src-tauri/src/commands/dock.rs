@@ -132,6 +132,13 @@ pub(crate) fn set_dock_pill_rect_cmd(x: f64, y: f64, w: f64, h: f64) {
     win_previews::set_pill_rect(x, y, w, h);
 }
 
+/// The Dock reports its open flyout's rect (CSS px inside the dock window; w = 0 when closed), so
+/// the watcher knows when the pointer or a click is outside every part of the Dock.
+#[tauri::command]
+pub(crate) fn set_dock_flyout_rect_cmd(x: f64, y: f64, w: f64, h: f64) {
+    win_previews::set_flyout_rect(x, y, w, h);
+}
+
 /// Tiles arrive in CSS px relative to the dock window; converted here to physical screen px.
 #[derive(serde::Deserialize)]
 pub(crate) struct DockPreviewTileCss {
