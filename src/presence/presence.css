@@ -1,0 +1,218 @@
+/* "Lens at work" — overlay, banner, in-app twin, settings card. Tokens only; 4 px grid.
+   Docs: docs/PRESENCE.md. Motion respects prefers-reduced-motion (fade in place). */
+.pr-root {
+  --pr-accent: var(--lens-accent, #8b9cff);
+  --pr-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-sans, system-ui);
+  color: var(--lens-fg, #fafafa);
+}
+.pr-root.is-error { --pr-accent: #f43f5e; }
+
+.pr-orb {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 4px 12px rgb(0 0 0 / 0.45)) drop-shadow(0 0 10px color-mix(in srgb, var(--pr-accent) 55%, transparent));
+}
+.pr-orb img { display: block; width: 100%; height: 100%; }
+.pr-orb:focus-visible { outline: 2px solid var(--lens-focus-ring, #fff); outline-offset: 2px; }
+
+.pr-ring {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: calc(var(--lens-radius, 8px) + 4px);
+  border: 2px solid var(--pr-accent);
+  /* Ink hairline keeps the ring visible when the accent is close to the page (white on light). */
+  box-shadow: 0 0 0 1px rgb(var(--lens-ink, 255 255 255) / 0.45), 0 0 0 5px color-mix(in srgb, var(--pr-accent) 22%, transparent), 0 0 24px color-mix(in srgb, var(--pr-accent) 35%, transparent);
+  animation: pr-ring 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes pr-ring { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+
+.pr-ripple {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--pr-accent);
+  box-shadow: 0 0 0 1px rgb(var(--lens-ink, 255 255 255) / 0.35), inset 0 0 0 1px rgb(var(--lens-ink, 255 255 255) / 0.35);
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0.9;
+  animation: pr-ripple 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes pr-ripple { to { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } }
+
+.pr-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: var(--lens-radius, 8px);
+  border: 2px dashed rgb(var(--lens-ink, 255 255 255) / 0.6);
+  background: color-mix(in srgb, var(--pr-accent) 12%, rgb(var(--lens-ink, 255 255 255) / 0.06));
+  opacity: 0.35;
+  transition: opacity 200ms ease;
+}
+.pr-ghost.is-on { opacity: 1; }
+.pr-ghost.is-from { border-style: solid; border-color: rgb(var(--lens-ink, 255 255 255) / 0.25); background: none; opacity: 0.6; }
+
+.pr-chip,
+.pr-caption {
+  position: absolute;
+  max-width: 420px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--lens-pack-elevated, #111116);
+  border: 1px solid rgb(var(--lens-ink, 255 255 255) / 0.12);
+  box-shadow: 0 8px 24px rgb(0 0 0 / calc(0.32 * var(--lens-shade-k, 1)));
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pr-chip { transform: translateX(-50%); font-weight: 600; border-color: color-mix(in srgb, var(--pr-accent) 50%, transparent); }
+.pr-chip.is-type { font-family: var(--pr-mono); font-weight: 500; }
+.pr-caret {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: currentColor;
+  animation: pr-caret 1s steps(1) infinite;
+}
+@keyframes pr-caret { 50% { opacity: 0; } }
+.pr-caption { color: var(--lens-fg-2, rgb(255 255 255 / 0.8)); }
+.is-error .pr-caption { color: #fda4af; }
+
+.pr-root.is-still *,
+.pr-twin.is-still * { animation: none !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-ring, .pr-ripple, .pr-caret, .pr-twin-orb { animation: none !important; transition: opacity 120ms linear !important; }
+}
+
+/* Banner: "Claude Desktop is controlling Lens · Stop" */
+.pr-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 44px;
+  width: 100%;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  background: var(--lens-pack-elevated, var(--lens-surface-solid, #111116));
+  border: 1px solid rgb(var(--lens-ink, 255 255 255) / 0.12);
+  box-shadow: 0 12px 32px rgb(0 0 0 / calc(0.38 * var(--lens-shade-k, 1)));
+  color: var(--lens-fg, #fafafa);
+  font-family: var(--font-sans, system-ui);
+  font-size: 13px;
+  animation: pr-ring 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pr-bar-orb { width: 22px; height: 22px; flex: none; }
+.pr-bar-text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pr-bar-text b { font-weight: 600; }
+.pr-bar-step { color: var(--lens-fg-muted, rgb(255 255 255 / 0.6)); }
+.pr-key {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--lens-ink, 255 255 255) / 0.18);
+  color: var(--lens-fg-muted, rgb(255 255 255 / 0.6));
+  white-space: nowrap;
+}
+.pr-stop {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #f43f5e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pr-stop:focus-visible { outline: 2px solid var(--lens-focus-ring, #fff); outline-offset: 2px; }
+
+/* In-app twin */
+.pr-twin { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; }
+.pr-twin-orb {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  transition: left 380ms cubic-bezier(0.65, 0, 0.35, 1), top 380ms cubic-bezier(0.65, 0, 0.35, 1), opacity 200ms ease;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--lens-accent, #8b9cff) 60%, transparent));
+}
+.pr-twin-orb img { width: 100%; height: 100%; display: block; }
+.pr-twin-ring {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: calc(var(--lens-radius, 8px) + 2px);
+  border: 2px solid var(--lens-accent, #8b9cff);
+  box-shadow: 0 0 0 1px rgb(var(--lens-ink, 255 255 255) / 0.45), 0 0 0 5px color-mix(in srgb, var(--lens-accent, #8b9cff) 20%, transparent);
+  animation: pr-ring 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pr-twin-chip { position: absolute; transform: translateY(-50%); }
+.pr-flip { animation: pr-flip 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes pr-flip { 40% { transform: scale(1.06); filter: brightness(1.25); } }
+
+/* Settings card */
+.pr-card { display: flex; flex-direction: column; gap: 12px; }
+.pr-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+.pr-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pr-row-title { font-size: 13px; font-weight: 600; color: var(--lens-fg); }
+.pr-row-sub { font-size: 12px; color: var(--lens-fg-muted); }
+.pr-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: rgb(var(--lens-ink) / 0.06); }
+.pr-seg button {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lens-fg-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pr-seg button[aria-pressed="true"] { background: var(--lens-pack-elevated, var(--lens-surface-solid)); color: var(--lens-fg); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.pr-seg button:focus-visible { outline: 2px solid var(--lens-focus-ring); outline-offset: 1px; }
+.pr-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.18);
+  cursor: pointer;
+}
+.pr-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left 160ms ease; }
+.pr-toggle[aria-checked="true"] { background: var(--lens-accent); }
+.pr-toggle[aria-checked="true"]::after { left: 18px; background: var(--lens-pack-base, #09090b); box-shadow: 0 0 0 1px rgb(var(--lens-ink) / 0.2); }
+.pr-toggle:disabled { cursor: default; opacity: 0.7; }
+.pr-hotkey {
+  width: 160px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--lens-border);
+  background: transparent;
+  color: var(--lens-fg);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+}
+.pr-hotkey.is-bad { border-color: #f43f5e; }
+.pr-note { font-size: 12px; color: var(--lens-fg-muted); }
+.pr-note.is-bad { color: #f43f5e; }
+:root[data-scheme="light"] .pr-note.is-bad, :root[data-scheme="light"] .pr-hotkey.is-bad { color: #be123c; border-color: #be123c; }
+.pr-preview { position: relative; height: 96px; border-radius: 8px; overflow: hidden; background: rgb(var(--lens-ink) / 0.04); border: 1px solid var(--lens-border); }
+.pr-preview .pr-root { position: absolute; }

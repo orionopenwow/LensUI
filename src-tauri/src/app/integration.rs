@@ -33,6 +33,8 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     sync_tester_hotkey(&handle, cfg);
     // Magic right-click window: its own settings file; off unless the user turned it on.
     crate::commands::magic::startup(&handle);
+    // "Lens at work" presence: pause hotkey only; the overlay is created on first use.
+    crate::commands::presence::startup(&handle);
     crate::tester::log(
         "info",
         "app",
@@ -127,6 +129,7 @@ pub(crate) fn shutdown(app: Option<&AppHandle>) {
     crate::commands::snip::shutdown();
     panic_shutdown();
     if let Some(app) = app {
+        crate::commands::presence::shutdown(app);
         if let Some(w) = app.get_webview_window("playground-idle") {
             let _ = w.close();
         }

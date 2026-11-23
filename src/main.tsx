@@ -67,6 +67,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
   // Lens Apps window (docs/LENS_APPS.md §2).
   apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
+  presence: lazy(() => import("./presence/PresenceSurface").then((m) => ({ default: m.PresenceSurface }))),
+  presencebar: lazy(() => import("./presence/PresenceBar").then((m) => ({ default: m.PresenceBarSurface }))),
   voicehud: lazy(() => import("./surfaces/VoiceHudSurface").then((m) => ({ default: m.VoiceHudSurface }))),
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
@@ -83,6 +85,9 @@ window.addEventListener("unhandledrejection", (e) => {
   invoke("tester_log_push", { level: "warn", area: "ui", message: String(e.reason) }).catch(() => {});
 });
 const Surface = surfaces[params.get("surface") || "dock"] ?? surfaces.dock;
+// "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
+const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
+const withTwin = !["presence", "presencebar"].includes(params.get("surface") || "dock");
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their
 // listen() calls. Windows built on first use wait for this before their opening command is replayed.
@@ -102,6 +107,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Surface />
       {/* Guide "Show me" highlights work on every surface (docs/GUIDE.md §3). */}
       <CoachMarkLayer />
+      {withTwin ? <PresenceTwin /> : null}
       <ReadySignal />
     </Suspense>
   </React.StrictMode>

@@ -432,6 +432,11 @@ pub fn run(app: &AppHandle, client: &str, tool: &str, args: &Value, outcome_word
     let call = tools::parse(tool, args)?;
     let d = LensDesktop::new(app, client);
     let summary = tools::assess(engine(), &d, client, &call).map(|a| a.summary).unwrap_or_else(|_| tool.to_string());
+    // "Lens at work": show who is doing what before it happens; refuse when the user pressed Stop.
+    if let Err(e) = crate::presence::before_control(app, client, &call, &summary, get_rect) {
+        log(client, tool, &summary, "stopped", None);
+        return Err(e);
+    }
     match tools::execute(engine(), &d, client, &call) {
         Ok(o) => {
             if !matches!(call, Call::List { .. } | Call::Get { .. } | Call::Windows) {

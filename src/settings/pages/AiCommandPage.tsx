@@ -18,6 +18,7 @@ import { AgentSafetyCard } from "../../agentsafe/AgentSafetyCard";
 import { GuideCard } from "../../components/GuideCard";
 import { BrowserCard } from "../../components/BrowserCard";
 import { SnipCard } from "../../components/SnipCard";
+import { PresenceCard } from "../../presence/PresenceCard";
 import { Section, StateNote } from "../ui/primitives";
 import type { PageProps } from "./common";
 
@@ -43,6 +44,9 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     </Section>
     <Section id="mcp" title="AI apps (MCP)" summary="Let Claude Desktop and Claude Code use Lens" defaultOpen={section === "mcp"} forceOpen={section === "mcp"}>
       <McpCard config={config} onUpdateConfig={updateConfig} />
+    </Section>
+    <Section id="presence" title="Lens at work" summary="See each step Lens or Claude takes; Esc, the orb or the pause key stops it" defaultOpen={section === "presence"} forceOpen={section === "presence"}>
+      <PresenceCard />
     </Section>
     <Section id="voice" title="Voice" summary="Hold to talk, “Lens…” commands, conversation mode" defaultOpen={section === "voice"} forceOpen={section === "voice"}>
       <VoiceCard />

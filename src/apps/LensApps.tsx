@@ -31,6 +31,7 @@ import type { AppShow, AppsSettings, Catalog, CatalogApp, InstalledInfo, Prepare
 import { DEFAULT_SETTINGS } from "./types";
 import { AppIcon, AppThumb } from "./visuals";
 import "./apps.css";
+import { announce as presenceAnnounce } from "../presence/api";
 
 const STATUS_LABEL: Record<string, string> = { stable: "Stable", beta: "Beta", alpha: "Early alpha" };
 const METHOD_LABEL: Record<string, string> = { winget: "winget", githubRelease: "GitHub release, verified", via: "Craft Launcher", officialSite: "Official site", web: "Web app" };
@@ -94,6 +95,9 @@ function useAppsController(catalog: Catalog | null, demo: LensAppsProps["demo"])
     const app = byId[next.appId];
     if (!app) return;
     dispatch({ type: "started", appId: next.appId });
+    // "Lens at work": ring the app's card with "Installing Obsidian" (Subtle by default).
+    const verb = next.op === "uninstall" ? "Removing" : next.op === "upgrade" ? "Updating" : "Installing";
+    void presenceAnnounce("apps", { kind: "click", label: `${verb} ${app.name}` }, document.querySelector(`[data-app-id="${CSS.escape(app.id)}"]`));
     if (app.install.method === "githubRelease") {
       prepareRelease(app.id).then(
         (p) => {
@@ -295,6 +299,7 @@ function AppCard({ app, ctl, live, hero, hovered, onOpen }: { app: CatalogApp; c
       role="listitem"
       tabIndex={0}
       data-card
+      data-app-id={app.id}
       aria-label={`${app.name}. ${app.pitch}`}
       onClick={onOpen}
       onKeyDown={onKey}

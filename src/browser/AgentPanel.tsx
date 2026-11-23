@@ -12,6 +12,7 @@ import { cardModel } from "./approvalShape";
 import { agentPrompt, parsePlan, scanForInjection, wrapUntrusted, type PlanStep } from "./guard";
 import { elapsed, hostOf } from "./model";
 import { ResultView } from "./ResultCards";
+import { pageStep } from "../presence/browser";
 import { Avatar } from "./Sidebar";
 
 export interface AgentSeed {
@@ -97,10 +98,12 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
     return () => window.clearInterval(id);
   }, [running, now]);
 
+  const lastSnap = useRef<PageSnapshot | null>(null);
   const runTurn = useCallback(async () => {
     let snap: PageSnapshot;
     try {
       snap = await pageRead<PageSnapshot>("snapshot");
+      lastSnap.current = snap;
     } catch (e) {
       push({ kind: "say", key: key(), text: `I can't read this page yet (${String(e)}).`, at: Date.now() });
       setRunning(false);
@@ -130,6 +133,12 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
       if (paused.current) await new Promise<void>((r) => (resume.current = r));
       const step = queue.current.shift()!;
       const { action, element } = stepToAction(step);
+      // "Lens at work": show the step on the real element first (≤ 150 ms lead); Stop ends the run.
+      if ((await pageStep(action, element, lastSnap.current)).stopped) {
+        queue.current = [];
+        setRunning(false);
+        return;
+      }
       try {
         let res = await agentAct({ element, action, caps });
         if (res.needsOk && element) {
