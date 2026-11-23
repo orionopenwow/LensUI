@@ -50,6 +50,9 @@ pub(crate) async fn get_running_windows() -> Vec<RunningWindow> {
 
 #[tauri::command]
 pub(crate) async fn get_icon_for_path(path: String) -> Option<String> {
+    if let Some(icon) = crate::commands::coreapps::pin_icon(&path) {
+        return Some(icon);
+    }
     tauri::async_runtime::spawn_blocking(move || extract_icon_for_path(&path))
         .await
         .ok()
@@ -77,7 +80,11 @@ pub(crate) async fn open_files_with_app_cmd(app_path: String, files: Vec<String>
 }
 
 #[tauri::command]
-pub(crate) async fn launch_app_cmd(path: String) -> Result<(), String> {
+pub(crate) async fn launch_app_cmd(app: AppHandle, path: String) -> Result<(), String> {
+    // Dock pins of Lens core apps ("lens-app:timer") open the app's window.
+    if let Some(id) = crate::coreapps::pin_target(&path) {
+        return crate::commands::coreapps::open_core_app(&app, id, None);
+    }
     tauri::async_runtime::spawn_blocking(move || launch_path(&path))
         .await
         .map_err(|e| e.to_string())?
