@@ -26,3 +26,14 @@ SingleFile (AGPL-3.0) is the best-known page-archiving extension. Lens does not 
 Lens does not include an offline dictionary. Double-click "Define" uses the user's local model only.
 
 WordNet 3.0 (Princeton) is a redistributable option for a future offline fallback. Its licence permits redistribution with its notice, but its size (about 30 MB) needs a separate decision.
+
+## Simple Icons — website demo only
+
+- Source: <https://github.com/simple-icons/simple-icons> · licence: CC0 1.0 Universal.
+- Used: a handful of brand marks (Spotify, Discord, Chrome, Steam, Obsidian, Figma, VSCodium, Firefox,
+  GitHub, Notion…) vendored in `tools/site/vendor/simple-icons/`, drawn as brand-colour tiles in the
+  website's live dock to illustrate apps a person might pin. Nothing ships in the Lens app.
+- The trademarks belong to their owners. Lens is not affiliated with or endorsed by them.
+- Windows built-ins (File Explorer, Notepad, Terminal) are shown with original generic stand-ins, not
+  Microsoft's artwork. Open-source apps (Krita, Blender, OBS Studio, Ollama, ArtCraft…) use the icon from
+  each project's own repository, under that project's licence.

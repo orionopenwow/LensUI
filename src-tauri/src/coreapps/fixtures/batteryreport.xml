@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BatteryReport xmlns="http://schemas.microsoft.com/battery/2012">
+  <ReportInformation>
+    <ReportVersion>1</ReportVersion>
+    <ScanTime>2026-11-21T09:12:44</ScanTime>
+    <LocalScanTime>2026-11-21T09:12:44</LocalScanTime>
+  </ReportInformation>
+  <SystemInformation>
+    <ComputerName>LENS-LAPTOP</ComputerName>
+    <SystemManufacturer>Lens Test</SystemManufacturer>
+  </SystemInformation>
+  <Batteries>
+    <Battery>
+      <Id>5B10W51867</Id>
+      <Manufacturer>SMP</Manufacturer>
+      <SerialNumber>1234</SerialNumber>
+      <ManufactureDate />
+      <Chemistry>LiP</Chemistry>
+      <LongTerm>1</LongTerm>
+      <RelativeCapacity>0</RelativeCapacity>
+      <DesignCapacity>57000</DesignCapacity>
+      <FullChargeCapacity>49590</FullChargeCapacity>
+      <CycleCount>214</CycleCount>
+    </Battery>
+  </Batteries>
+  <RecentUsage>
+    <UsageEntry Timestamp="2026-11-20T09:00:00" LocalTimestamp="2026-11-20T10:00:00" Duration="PT1H" Ac="1" EntryType="Active" ChargeCapacity="49590" Discharge="0" FullChargeCapacity="49590" IsNextOnBattery="0" />
+    <UsageEntry Timestamp="2026-11-20T11:00:00" LocalTimestamp="2026-11-20T12:00:00" Duration="PT1H30M" Ac="0" EntryType="Active" ChargeCapacity="39672" Discharge="9918" FullChargeCapacity="49590" IsNextOnBattery="1" />
+    <UsageEntry Timestamp="2026-11-20T12:30:00" LocalTimestamp="2026-11-20T13:30:00" Duration="PT2H" Ac="0" EntryType="Suspend" ChargeCapacity="37192" Discharge="2480" FullChargeCapacity="49590" IsNextOnBattery="1" />
+    <UsageEntry Timestamp="2026-11-20T14:30:00" LocalTimestamp="2026-11-20T15:30:00" Duration="PT1H" Ac="1" EntryType="Active" ChargeCapacity="24795" Discharge="12397" FullChargeCapacity="49590" IsNextOnBattery="0" />
+  </RecentUsage>
+  <History>
+    <HistoryEntry StartDate="2026-05-01" EndDate="2026-06-01" LocalStartDate="2026-05-01" LocalEndDate="2026-06-01" FullChargeCapacity="55200" DesignCapacity="57000" CycleCount="0" ActiveAcTime="PT100H" />
+    <HistoryEntry StartDate="2026-08-01" EndDate="2026-09-01" LocalStartDate="2026-08-01" LocalEndDate="2026-09-01" FullChargeCapacity="52100" DesignCapacity="57000" CycleCount="160" ActiveAcTime="PT90H" />
+    <HistoryEntry StartDate="2026-11-01" EndDate="2026-11-21" LocalStartDate="2026-11-01" LocalEndDate="2026-11-21" FullChargeCapacity="49590" DesignCapacity="57000" CycleCount="214" ActiveAcTime="PT40H" />
+  </History>
+</BatteryReport>
