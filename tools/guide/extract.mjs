@@ -97,6 +97,11 @@ export function pageFiles(root) {
   if (!exists(root, idx)) return [];
   const src = read(root, idx);
   const out = [];
+  // Lazy entries: `display: page(() => import("./DisplayPage"), "DisplayPage")`.
+  for (const m of src.matchAll(/^\s+([a-z]+):\s*page\(\(\)\s*=>\s*import\("\.\/([A-Za-z]+)"\)/gm)) {
+    out.push({ tab: legacy(m[1]), file: `src/settings/pages/${m[2]}.tsx` });
+  }
+  // Plain entries: `display: DisplayPage,` with a matching import.
   for (const m of src.matchAll(/^\s+([a-z]+):\s*([A-Za-z]+),\s*$/gm)) {
     const imp = src.match(new RegExp(`import\\s+\\{\\s*${m[2]}\\s*\\}\\s+from\\s+"\\./([^"]+)"`));
     if (imp) out.push({ tab: legacy(m[1]), file: `src/settings/pages/${imp[1]}.tsx` });

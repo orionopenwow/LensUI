@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -346,7 +346,11 @@ export const ControlCenterSurface: React.FC = () => {
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
-          {PageComponent && <PageComponent section={section} config={config} updateConfig={updateConfig} />}
+          {PageComponent && (
+            <Suspense fallback={<div className="sh-page-loading" aria-busy="true" />}>
+              <PageComponent section={section} config={config} updateConfig={updateConfig} />
+            </Suspense>
+          )}
           {tab === "tasks" && (
             <>
               {/* Live Computer Stats Hero Grid */}
