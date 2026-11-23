@@ -129,3 +129,82 @@ describe("voice settings helpers", () => {
     expect(earconFor("thinking", "done")).toBeNull();
   });
 });
+
+import { INITIAL_CONV, auroraBars, captionFrom, estimateWordMs, formatElapsed, isSpoken, reduceConv, statusLabel, words, type ConvAction } from "../voice/convoState";
+
+const conv = (a: ConvAction[]) => a.reduce(reduceConv, INITIAL_CONV);
+
+describe("conversation mode", () => {
+  test("question → streamed answer → spoken word by word", () => {
+    let s = conv([{ kind: "open", at: 1000 }]);
+    expect(s.open).toBe(true);
+    expect(s.status).toBe("listening");
+    expect(statusLabel(s)).toBe("Listening");
+    s = conv([
+      { kind: "open", at: 0 },
+      { kind: "question", text: "Which one's quieter on a plane?" },
+      { kind: "request", id: "r1" },
+      { kind: "delta", id: "r1", text: "The XM6. " },
+      { kind: "delta", id: "other", text: "ignored " },
+      { kind: "delta", id: "r1", text: "RTINGS measured it quieter." },
+      { kind: "answered", id: "r1" },
+    ]);
+    expect(s.answer).toBe("The XM6. RTINGS measured it quieter.");
+    expect(s.status).toBe("speaking");
+    expect(statusLabel(s)).toBe("Lens is speaking");
+    s = reduceConv(s, { kind: "word", word: 2, synced: true });
+    expect([0, 1, 2, 3].map((i) => isSpoken(i, s.spokenWord, false))).toEqual([true, true, true, false]);
+    // Progress never goes backwards.
+    s = reduceConv(s, { kind: "word", word: 1, synced: true });
+    expect(s.spokenWord).toBe(2);
+    s = reduceConv(s, { kind: "spoken", interrupted: false });
+    expect(isSpoken(5, s.spokenWord, false)).toBe(true);
+    expect(s.status).toBe("idle");
+  });
+
+  test("barge-in keeps what was said and listens", () => {
+    const s = conv([{ kind: "open", at: 0 }, { kind: "say", text: "one two three four" }, { kind: "word", word: 1, synced: true }, { kind: "spoken", interrupted: true }]);
+    expect(s.status).toBe("listening");
+    expect(s.spokenWord).toBe(1);
+  });
+
+  test("reduced motion shows the whole answer at once", () => {
+    expect(isSpoken(40, -1, true)).toBe(true);
+  });
+
+  test("close resets but keeps mute", () => {
+    const s = conv([{ kind: "open", at: 0 }, { kind: "muted", muted: true }, { kind: "question", text: "x" }, { kind: "close" }]);
+    expect(s.open).toBe(false);
+    expect(s.question).toBe("");
+    expect(s.muted).toBe(true);
+  });
+
+  test("words match the backend's whitespace split", () => {
+    expect(words("The  XM6.\\nRTINGS ok").map((w) => w.text)).toEqual(["The", "XM6.\\nRTINGS", "ok"]);
+    expect(words("a b\nc").map((w) => w.text)).toEqual(["a", "b", "c"]);
+    expect(words("")).toEqual([]);
+  });
+
+  test("timers, captions and estimates", () => {
+    expect(formatElapsed(61_000)).toBe("1:01");
+    expect(formatElapsed(-5)).toBe("0:00");
+    expect(formatElapsed(3_599_000)).toBe("59:59");
+    expect(captionFrom({ source: "the RTINGS review" })).toBe("Reading the RTINGS review…");
+    expect(captionFrom({ summary: "Searching files for budget." })).toBe("Searching files for budget…");
+    expect(captionFrom({ provider: "local", model: "llama3.2" })).toBe("Answered on this PC · llama3.2");
+    expect(captionFrom({})).toBe("");
+    expect(estimateWordMs("sits.")).toBeGreaterThan(estimateWordMs("sits"));
+  });
+
+  test("aurora stays in range and is still under reduced motion", () => {
+    for (const status of ["idle", "listening", "thinking", "speaking"] as const) {
+      const b = auroraBars(56, status, [0.2, 0.9, 0.5], 1.3, false);
+      expect(b.length).toBe(56);
+      expect(b.every((v) => v >= 0 && v <= 1)).toBe(true);
+    }
+    expect(auroraBars(8, "speaking", [], 0.1, true)).toEqual(auroraBars(8, "speaking", [], 9.7, true));
+    // Louder in the middle.
+    const mid = auroraBars(9, "idle", [], 0, false);
+    expect(mid[4]).toBeGreaterThan(mid[0]);
+  });
+});

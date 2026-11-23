@@ -13,6 +13,8 @@ import { VoiceCard } from "../../../src/components/VoiceCard";
 import { INITIAL_HUD, reduceHud, type HudAction, type HudState } from "../../../src/voice/hudState";
 import type { VoiceResultEvent, VoiceStateEvent } from "../../../src/voice/contract";
 import { COMMANDS } from "./mockCore";
+import { Conversation } from "../../../src/voice/Conversation";
+import { INITIAL_CONV, type ConvState } from "../../../src/voice/convoState";
 import { invoke } from "./mockCore";
 
 const params = new URLSearchParams(location.search);
@@ -120,7 +122,40 @@ function Sheet() {
   );
 }
 
+const ANSWER = "The XM6. RTINGS measured it noticeably quieter in the low end, which is where engine drone sits.";
+const QUESTION = "Which one's quieter on a plane for twelve hours?";
+const CONV: Record<string, ConvState> = {
+  speaking: { ...INITIAL_CONV, open: true, status: "speaking", question: QUESTION, answer: ANSWER, spokenWord: 11, synced: true, caption: "Reading the RTINGS review on this PC…" },
+  listening: { ...INITIAL_CONV, open: true, status: "listening" },
+  thinking: { ...INITIAL_CONV, open: true, status: "thinking", question: QUESTION, caption: "Searching your Shelf for “headphones”…" },
+  done: { ...INITIAL_CONV, open: true, status: "idle", question: QUESTION, answer: ANSWER, spokenWord: Number.POSITIVE_INFINITY, caption: "Answered on this PC · llama3.2" },
+  muted: { ...INITIAL_CONV, open: true, status: "listening", muted: true },
+};
+const micLevels = Array.from({ length: 24 }, (_, i) => 0.2 + 0.7 * Math.abs(Math.sin(i * 0.6)));
+
+function ConvScene({ name }: { name: string }) {
+  // conv-<panel|full>-<state>[-reduced]
+  const [, view, which, reduced] = name.split("-");
+  return (
+    <div className="vg-conv">
+      {view === "panel" && <div className="vg-desk" />}
+      <Conversation
+        state={CONV[which] ?? CONV.speaking}
+        view={view === "full" ? "fullscreen" : "panel"}
+        levels={micLevels}
+        elapsedMs={61_000}
+        reducedMotion={reduced === "reduced"}
+        frozenT={1.35}
+        onMute={() => {}}
+        onStop={() => {}}
+        onClose={() => {}}
+      />
+    </div>
+  );
+}
+
 function App() {
+  if (scene.startsWith("conv-")) return <ConvScene name={scene} />;
   if (scene === "sheet") return <Sheet />;
   if (scene === "card")
     return (

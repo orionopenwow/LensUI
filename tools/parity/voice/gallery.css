@@ -75,3 +75,8 @@ body {
   padding: 16px;
   width: 480px;
 }
+
+.vg-conv {
+  position: fixed;
+  inset: 0;
+}

@@ -29,6 +29,13 @@ const SCENES = [
   ["sheet", 1040, 1900],
   ["card", 760, 2700],
   ...["listening", "partial", "thinking", "recognised", "undo", "confirm", "suggest", "error", "refused", "muted", "help"].map((s) => [s, 512, s === "help" ? 660 : 172]),
+  ["conv-panel-speaking", 520, 820],
+  ["conv-panel-listening", 520, 820],
+  ["conv-panel-thinking", 520, 820],
+  ["conv-panel-muted", 520, 820],
+  ["conv-full-speaking", 1280, 800],
+  ["conv-full-done", 1280, 800],
+  ["conv-full-speaking-reduced", 1280, 800],
 ];
 let failed = 0;
 for (const preset of PRESETS) {
@@ -40,7 +47,7 @@ for (const preset of PRESETS) {
     await page.goto(`${base}/index.html?scene=${scene}&preset=${preset}`);
     await page.waitForTimeout(500);
     const empty = await page.evaluate(() => (document.getElementById("root")?.innerText || "").trim().length === 0);
-    await page.screenshot({ path: join(shots, `${preset}-${scene}.png`), fullPage: true });
+    await page.screenshot({ path: join(shots, `${preset}-${scene}.png`), fullPage: !scene.startsWith("conv-") });
     if (errors.length || empty) {
       failed++;
       console.log(`FAIL ${preset} ${scene}: ${empty ? "empty " : ""}${errors.join(" | ")}`);

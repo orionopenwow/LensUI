@@ -18,7 +18,7 @@
 | Runtime: hotkeys, capture lifecycle, watchdog, live words, executing commands, undo stack | `voice/mod.rs` | (pure parts above) |
 | Settings (`%APPDATA%\LensUI\voice.json`) | `voice/config.rs` | 3 tests |
 | Commands | `commands/voice.rs` | generated types |
-| HUD, mic indicator, mic button, earcons | `src/voice/*` | `src/__tests__/voice.test.ts` (13 tests) |
+| HUD, mic indicator, mic button, earcons, conversation view | `src/voice/*` | `src/__tests__/voice.test.ts` (20 tests) |
 | Settings card | `src/components/VoiceCard.tsx` | parity gallery |
 
 ### Shared grammar and gating with AI
@@ -28,6 +28,29 @@ New intents in `ai/intent.rs` are used by voice, the palette's "Do it" and `ai_r
 - **confirm:** `lock_screen`
 
 `close_app` and `create_note` stay **confirm**. Dictation and paste are **voice-only**. They are not AI tools, because the registry still blocks `type_text` and `press_keys` for AI, and every use goes through `safety::dictation_allowed`.
+
+## Conversation mode
+
+An optional large panel or full-screen view for spoken Q&A (Settings › Voice › Conversation view: Off / Panel / Full screen; default Panel).
+
+- **Opening it:** say "let's talk" / "conversation mode", or ask a question by voice while the view isn't Off.
+- **Closing it:** say "that's all" / "end the conversation", press **Esc**, or click ✕.
+- **Layout:**
+  - top: "Lens is speaking · 1:01" with a coloured status dot;
+  - the question in muted text;
+  - the answer in large type, revealed word by word in sync with speech (spoken words bright, upcoming dimmed);
+  - a monospace source line ("Reading …", the tool step, or "Answered on this PC · model");
+  - bottom: an audio-reactive aurora in theme-accent colours with mute mic / stop / close.
+- **Speech:**
+  - `voice_say` speaks through Windows' voices and reports each word (`SpeakProgress`, read from a small PowerShell host via stdin/stdout, with nothing interpolated). `lens://voice/speech { id, word, done, interrupted }` drives the reveal.
+  - If no word progress arrives within 1.5 s (speech unavailable), the view reveals by an estimate of about 170 wpm.
+- **Follow-ups and barge-in:**
+  - While the conversation is open, the mic listens without the key or wake phrase (state machine `Converse`), so follow-ups just work. Mute or close stops it.
+  - Speaking over Lens stops the answer and starts listening. While Lens speaks, the VAD needs speech 8 dB louder, so Lens's own voice doesn't trigger it.
+- **Reduced motion:** the aurora is a still band and the whole answer shows at once (no word animation).
+- **Commands:** `voice_converse(on)`, `voice_say(text) -> id`, `voice_stop_speaking()`. The state event gains `conversation`, `conversation_view` and `speaking`; `lens://voice/apply` gains `conversation { open }`, and `ask` gets `{ conversation: true }`.
+- **Window snippet:** add a `conversation` window (`index.html?surface=conversation`, transparent, decorations off, always on top, skipTaskbar, hidden). For "panel" size it 480×800 centred on the Lens monitor; for "fullscreen" size it to the monitor. Show it when the state event says `conversation: true`; the surface hides itself on close. Add it to `capabilities/default.json`.
+- **Not verified:** that `SpeakProgress` events reach PowerShell's event queue promptly on every Windows build (it's the documented pattern; the estimate covers the gap), and echo levels on laptop speakers (barge-in margin).
 
 ## Contract
 

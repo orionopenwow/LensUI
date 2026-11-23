@@ -21,6 +21,20 @@ export interface VoiceStateEvent {
   paused_reason: string | null;
   hud_position: "dock" | "top" | string;
   sounds: boolean;
+  /** Conversation mode is on (speech needs no key or wake phrase). */
+  conversation?: boolean;
+  /** "off" | "panel" | "fullscreen" */
+  conversation_view?: string;
+  /** Lens is speaking an answer. */
+  speaking?: boolean;
+}
+
+/** Word progress of a spoken answer. `word` indexes whitespace-separated words. */
+export interface VoiceSpeechEvent {
+  id: number;
+  word: number;
+  done: boolean;
+  interrupted: boolean;
 }
 
 export type VoiceResultStatus = "done" | "failed" | "confirm" | "suggest" | "refused" | "info" | "hint";
@@ -43,11 +57,11 @@ export interface VoiceHeardEvent {
 }
 
 /** UI-layer actions voice asks other surfaces to do. */
-export type VoiceApplyAction = "help" | "shelf_open" | "shelf_add_selection" | "shelf_clear" | "summarize" | "ask" | "read_back";
+export type VoiceApplyAction = "help" | "shelf_open" | "shelf_add_selection" | "shelf_clear" | "summarize" | "ask" | "read_back" | "conversation";
 
 export interface VoiceApplyEvent {
   action: VoiceApplyAction;
-  args: { target?: "page" | "selection" | "auto"; text?: string };
+  args: { target?: "page" | "selection" | "auto"; text?: string; conversation?: boolean; open?: boolean };
 }
 
 export interface VoiceCommandInfo {
@@ -64,6 +78,7 @@ export const VOICE_EVENTS = {
   heard: "lens://voice/heard",
   result: "lens://voice/result",
   apply: "lens://voice/apply",
+  speech: "lens://voice/speech",
 } as const;
 
 export const VOICE_GROUPS = ["Windows", "Apps", "Desktop", "Look", "System", "Shelf & clipboard", "Ask & Command", "Voice"] as const;
@@ -112,6 +127,11 @@ export const voiceTestMic = (on: boolean) => invoke<void>("voice_test_mic", { on
 export const voiceListMics = () => invoke<VoiceMic[]>("voice_list_mics");
 export const voiceListTtsVoices = () => invoke<string[]>("voice_list_tts_voices");
 export const voiceSpeak = (text: string) => invoke<void>("voice_speak", { text });
+/** Conversation mode on/off. */
+export const voiceConverse = (on: boolean) => invoke<void>("voice_converse", { on });
+/** Speaks an answer with word progress (lens://voice/speech); resolves with the utterance id. */
+export const voiceSay = (text: string) => invoke<number>("voice_say", { text });
+export const voiceStopSpeaking = () => invoke<void>("voice_stop_speaking");
 
 /** "Ctrl+Alt+V" → "Ctrl + Alt + V" for display. */
 export const prettyKeys = (k: string) =>

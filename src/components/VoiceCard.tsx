@@ -331,6 +331,19 @@ export function VoiceCard({ initialStatus }: VoiceCardProps) {
             </select>
           </Row>
         )}
+        <Row label="Conversation view" desc="Questions you ask out loud open a spoken Q&A view. Say “let's talk” to start one, “that's all” or Esc to close.">
+          <div className="cc-chip-grid">
+            {[
+              ["off", "Off"],
+              ["panel", "Panel"],
+              ["fullscreen", "Full screen"],
+            ].map(([id, label]) => (
+              <button key={id} type="button" className={`cc-chip ${cfg.conversation === id ? "active" : ""}`} onClick={() => save({ conversation: id })}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </Row>
         <Row label="Where the voice card appears">
           <div className="cc-chip-grid">
             {[
