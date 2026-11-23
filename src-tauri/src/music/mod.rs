@@ -280,13 +280,7 @@ pub fn now() -> NowPlaying {
 /// Transport control: "play_pause" | "play" | "pause" | "next" | "prev" | "seek" (value = ms)
 /// | "shuffle" (value 0/1) | "repeat" (value 0 none, 1 track, 2 list).
 pub fn control(action: &str, value: Option<f64>) -> Result<bool, String> {
-    const ALLOWED: [&str; 8] = ["play_pause", "play", "pause", "next", "prev", "seek", "shuffle", "repeat"];
-    if !ALLOWED.contains(&action) {
-        return Err("Unknown media action.".into());
-    }
-    if action == "seek" && !value.is_some_and(|v| v.is_finite() && v >= 0.0) {
-        return Err("Seek needs a position.".into());
-    }
+    validate_control(action, value)?;
     #[cfg(windows)]
     {
         Ok(service::control(action, value))
@@ -296,6 +290,18 @@ pub fn control(action: &str, value: Option<f64>) -> Result<bool, String> {
         let _ = value;
         Ok(false)
     }
+}
+
+/// Rejects unknown actions and bad seek positions before anything reaches Windows.
+pub fn validate_control(action: &str, value: Option<f64>) -> Result<(), String> {
+    const ALLOWED: [&str; 8] = ["play_pause", "play", "pause", "next", "prev", "seek", "shuffle", "repeat"];
+    if !ALLOWED.contains(&action) {
+        return Err("Unknown media action.".into());
+    }
+    if action == "seek" && !value.is_some_and(|v| v.is_finite() && v >= 0.0) {
+        return Err("Seek needs a position.".into());
+    }
+    Ok(())
 }
 
 pub fn select_session(id: &str) {
@@ -352,9 +358,12 @@ mod tests {
 
     #[test]
     fn control_validation() {
-        assert!(control("explode", None).is_err());
-        assert!(control("seek", None).is_err());
-        assert!(control("seek", Some(-1.0)).is_err());
+        // Pure check only: tests must not reach the Windows service (it pulls in the Tauri runtime).
+        assert!(validate_control("explode", None).is_err());
+        assert!(validate_control("seek", None).is_err());
+        assert!(validate_control("seek", Some(-1.0)).is_err());
+        assert!(validate_control("seek", Some(1500.0)).is_ok());
+        assert!(validate_control("next", None).is_ok());
     }
 
     #[test]
