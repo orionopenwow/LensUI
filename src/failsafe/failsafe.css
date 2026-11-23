@@ -1,0 +1,49 @@
+/* The card a surface shows in place of itself after it crashed (docs/FAILSAFE.md §1). One line,
+   so it fits the Top Bar and the Dock pill as well as a full window. Nothing here animates. */
+.fs-problem {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+.fs-problem-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 16px));
+  max-height: calc(100vh - 4px);
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--lens-border-strong);
+  background: var(--lens-surface-solid, #101014);
+  color: var(--lens-fg);
+  font: 500 12.5px/1.3 var(--font-sans);
+  box-shadow: var(--lens-shadow-panel);
+}
+.fs-problem-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fs-problem-btn {
+  flex: none;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--lens-border-strong);
+  background: var(--lens-bg-hover);
+  color: var(--lens-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.fs-problem-btn:hover {
+  background: rgb(var(--lens-ink) / 0.14);
+}
+.fs-problem-btn:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, #fff);
+  outline-offset: 2px;
+}

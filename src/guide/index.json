@@ -4179,6 +4179,105 @@
    "source": "src/components/CrashReportsCard.tsx"
   },
   {
+   "id": "card.about.failsafecard",
+   "kind": "card",
+   "title": "Safety net",
+   "text": "It stopped answering several times in a row. Last problem. Safety net · is paused · Held off by features.json · Settings repaired at start-up · Errors contained. Failsafe. Safety net card. Shows what Lens switched off to protect the desktop: Safe Mode, features paused after repeated failures (with \"Turn back on\"), features held off by features.json, settings that were repaired at start-up, and errors that were caught and contained. Backend: src-tauri/src/failsafe (doc",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Safety net",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.is-paused",
+   "kind": "setting",
+   "title": "is paused",
+   "text": "It stopped answering several times in a row. Last problem",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "is paused"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "is paused",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.held-off-by-features-json",
+   "kind": "setting",
+   "title": "Held off by features.json",
+   "text": ". Remove them from features.json in the Lens data folder and restart Lens to use them again.",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Held off by features.json"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Held off by features.json",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.settings-repaired-at-start-up",
+   "kind": "setting",
+   "title": "Settings repaired at start-up",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Settings repaired at start-up"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Settings repaired at start-up",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.errors-contained",
+   "kind": "setting",
+   "title": "Errors contained",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Errors contained"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Errors contained",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
    "id": "card.about.backuprestorecard",
    "kind": "card",
    "title": "Back Up & Restore",
