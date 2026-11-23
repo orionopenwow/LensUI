@@ -141,9 +141,14 @@ for (const scheme of ["dark", "light"]) {
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto(base + "index.html", { waitUntil: "domcontentloaded" });
-  const posterFirst = await page.$eval("[data-logo] .poster", (i) => !!i && !document.querySelector("[data-logo] canvas"));
+  await page.goto(base + "index.html");
   await page.waitForTimeout(5000);
+  // The poster is in the HTML; the animation may only begin after the load event.
+  const posterFirst = await page.evaluate(() => {
+    const start = performance.getEntriesByName("lens-logo-start")[0]?.startTime;
+    const load = performance.getEntriesByType("navigation")[0]?.loadEventEnd;
+    return !!document.querySelector("[data-logo] .poster") && start !== undefined && start >= load;
+  });
   const st = await page.$eval("[data-logo]", (e) => e.logoStats?.() ?? null);
   report.logo = { posterFirst, ...(st ?? { skipped: "no WebGL" }) };
   if (!posterFirst) problems.push("logo: the animation started before the static poster was shown");

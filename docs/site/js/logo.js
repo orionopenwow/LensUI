@@ -41,6 +41,7 @@ void main() {
 export async function animateLogo(host) {
   if (host.dataset.animated) return;
   host.dataset.animated = "1";
+  performance.mark("lens-logo-start");
   const [overlaySvg, img] = await Promise.all([
     fetch(new URL("brand/lens-logo-overlay.svg", SITE)).then((r) => r.text()),
     new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = new URL(host.dataset.nebula || "brand/nebula.webp", SITE).href; }),
