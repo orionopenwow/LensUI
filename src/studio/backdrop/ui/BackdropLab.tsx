@@ -57,7 +57,7 @@ import { ControlsPanel, type SetFn } from "./ControlsPanel";
 import { LooksPanel } from "./LooksPanel";
 import { LiveCanvas, type HandlesMode, type Readability } from "./LiveCanvas";
 import { ExportSheet } from "./ExportSheet";
-import { LabSlider, Segmented, Toggle } from "./controls";
+import { LabSlider, Segmented, Tip, Toggle } from "./controls";
 import "./lab.css";
 
 interface Toast {
@@ -513,14 +513,18 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
             {paused ? <Play size={14} aria-hidden /> : <Pause size={14} aria-hidden />}
           </button>
           <span className="bd-mode-name">{mode?.name}</span>
-          <span className="bd-sp" />
           <Segmented label="Handles" small value={handles} options={[{ id: "hover", label: "Handles on hover" }, { id: "always", label: "Always" }, { id: "off", label: "Off" }]} onChange={setHandles} />
-          <button type="button" className={`bd-btn ${compare ? "on" : ""}`} aria-pressed={!!compare} onClick={() => setCompare((c) => (c ? null : committed.current))} aria-keyshortcuts="C">
-            <ArrowLeftRight size={13} aria-hidden /> Compare
-          </button>
-          <button type="button" className={`bd-btn ${context ? "on" : ""}`} aria-pressed={context} onClick={() => setContext((c) => !c)}>
-            <Eye size={13} aria-hidden /> In context
-          </button>
+          <Tip text="Compare with your last saved step (C)">
+            <button type="button" className={`bd-btn icon ${compare ? "on" : ""}`} aria-label="Compare" aria-pressed={!!compare} onClick={() => setCompare((c) => (c ? null : committed.current))} aria-keyshortcuts="C">
+              <ArrowLeftRight size={13} aria-hidden />
+            </button>
+          </Tip>
+          <Tip text="Preview with the Top Bar, a window and the Dock">
+            <button type="button" className={`bd-btn icon ${context ? "on" : ""}`} aria-label="In context" aria-pressed={context} onClick={() => setContext((c) => !c)}>
+              <Eye size={13} aria-hidden />
+            </button>
+          </Tip>
+          <div className="bd-stage-actions">
           <div className="bd-split">
             <button type="button" className="bd-btn primary" onClick={live}>
               <Monitor size={13} aria-hidden /> Set as live wallpaper
@@ -535,6 +539,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           <button type="button" className="bd-btn" onClick={theme}>
             Make a theme
           </button>
+          </div>
           <button type="button" className="bd-btn icon bd-panel-toggle" aria-label="Controls" aria-expanded={panelOpen} onClick={() => setPanelOpen((o) => !o)}>
             <SlidersHorizontal size={13} aria-hidden />
           </button>

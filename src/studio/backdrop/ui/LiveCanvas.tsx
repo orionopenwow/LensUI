@@ -231,7 +231,8 @@ export const LiveCanvas: React.FC<Props> = ({
   const nudge = (i: number) => (e: React.KeyboardEvent) => {
     if (!onHandles) return;
     const step = e.shiftKey ? 0.05 : 0.01;
-    const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    const d = moves[e.key];
     if (!d) return;
     e.preventDefault();
     onHandles(state.handles.map((h, k) => (k === i ? { x: h.x + d[0], y: h.y + d[1] } : h)));
@@ -254,9 +255,36 @@ export const LiveCanvas: React.FC<Props> = ({
       aria-label={`${label}: ${mode?.name ?? ""}`}
     >
       <canvas ref={cA} className="bd-canvas-gl" />
+      {compare && <canvas ref={cB} className="bd-canvas-gl" style={{ clipPath: `inset(0 0 0 ${divider * 100}%)` }} />}
+      {context && (
+        <div className="bd-context" aria-hidden="true">
+          <div className="bd-ctx-bar">
+            <span className="bd-ctx-logo" />
+            <span>Lens</span>
+            <span className="bd-ctx-sp" />
+            <span>Mon 9:41</span>
+          </div>
+          <div className="bd-ctx-window">
+            <div className="bd-ctx-dots">
+              <i />
+              <i />
+              <i />
+            </div>
+            <div className="bd-ctx-lines">
+              <b />
+              <b />
+              <b className="short" />
+            </div>
+          </div>
+          <div className="bd-ctx-dock">
+            {Array.from({ length: 7 }, (_, i) => (
+              <i key={i} />
+            ))}
+          </div>
+        </div>
+      )}
       {compare && (
         <>
-          <canvas ref={cB} className="bd-canvas-gl" style={{ clipPath: `inset(0 0 0 ${divider * 100}%)` }} />
           <div
             className="bd-divider"
             style={{ left: `${divider * 100}%` }}
@@ -287,33 +315,6 @@ export const LiveCanvas: React.FC<Props> = ({
       {failed && (
         <div className="bd-canvas-fallback" style={{ background: `linear-gradient(160deg, ${state.stops.map((s) => s.color).join(", ")})` }}>
           <span>Live preview needs WebGL 2. Exports and the wallpaper fall back to a still gradient.</span>
-        </div>
-      )}
-      {context && (
-        <div className="bd-context" aria-hidden="true">
-          <div className="bd-ctx-bar">
-            <span className="bd-ctx-logo" />
-            <span>Lens</span>
-            <span className="bd-ctx-sp" />
-            <span>Mon 9:41</span>
-          </div>
-          <div className="bd-ctx-window">
-            <div className="bd-ctx-dots">
-              <i />
-              <i />
-              <i />
-            </div>
-            <div className="bd-ctx-lines">
-              <b />
-              <b />
-              <b className="short" />
-            </div>
-          </div>
-          <div className="bd-ctx-dock">
-            {Array.from({ length: 7 }, (_, i) => (
-              <i key={i} />
-            ))}
-          </div>
         </div>
       )}
       {showHandles && h0 && (

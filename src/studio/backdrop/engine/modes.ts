@@ -345,7 +345,7 @@ vec3 look(vec2 p, vec2 uv) {
   float across = dot(q, nrm) + 0.15 * fbm3(vec2(dot(q, dir) * 1.2, 0.0) + orbit(1.0, 0.0));
   float w = uP.y * 0.5;
   float inBand = 1.0 - smoothstep(w, w + softw(), abs(across));
-  float bg = 0.04 + 0.1 * (0.5 + 0.5 * dot(p, dir));
+  float bg = 0.01 + 0.04 * (0.5 + 0.5 * dot(p, dir));
   float t = mix(bg, clamp(across / (2.0 * w) + 0.5, 0.0, 1.0), inBand);
   return vec3(t, inBand * 0.2 * exp(-abs(across) / max(w, 0.01)), 1.0);
 }`,
@@ -479,9 +479,25 @@ vec3 look(vec2 p, vec2 uv) {
   float bar = 0.012 * uP.y;
   float mull = (1.0 - smoothstep(bar - pen * 0.5, bar + pen, abs(q.x))) + (1.0 - smoothstep(bar - pen * 0.5, bar + pen, abs(q.y)));
   lit *= 1.0 - clamp(mull, 0.0, 1.0) * 0.92;
+  // A branch of leaves across the light, swaying once per loop: soft ellipses along a curve.
   float sway = osc(1.0, 0.0) * uSpd;
-  vec2 lq = p - c - vec2(0.34, 0.26) * uP.y + vec2(sway * 0.05, sway * 0.02);
-  float leaves = smoothstep(0.06, 0.2, fbm3(lq * 5.0 + 3.0 + vec2(0.0, sway * 0.3)) + 0.32 - length(lq) * 1.2);
+  vec2 bq = p - c - vec2(0.34, 0.27) * uP.y;
+  float leaves = 0.0;
+  for (int i = 0; i < 14; i++) {
+    float fi = float(i);
+    float u = fi / 13.0;
+    float side = mod(fi, 2.0) * 2.0 - 1.0;
+    vec2 stem = vec2(-u * 0.44, -u * 0.1 + 0.035 * sin(u * 6.0)) * uP.y + vec2(sway * 0.025 * u, sway * 0.01 * u);
+    float a = 2.5 + side * 0.85 + 0.35 * sin(fi * 2.3) + sway * (0.3 + u * 0.5);
+    vec2 d = bq - (stem + side * vec2(-0.01, 0.026) * uP.y);
+    d = vec2(cos(a) * d.x + sin(a) * d.y, -sin(a) * d.x + cos(a) * d.y);
+    float e = length(d / (vec2(0.042, 0.016) * uP.y * (0.75 + 0.5 * hash(vec2(fi, 2.0)))));
+    leaves = max(leaves, 1.0 - smoothstep(0.75 - uSoft * 0.3, 1.0 + uSoft * 0.6, e));
+  }
+  float su = clamp(-bq.x / (0.44 * uP.y), 0.0, 1.0);
+  float stemY = (-su * 0.1 + 0.035 * sin(su * 6.0)) * uP.y;
+  float stemLine = (1.0 - smoothstep(0.003, 0.003 + pen + 0.002, abs(bq.y - stemY))) * step(-0.44 * uP.y, bq.x) * step(bq.x, 0.0);
+  leaves = max(leaves, stemLine * 0.9);
   lit *= 1.0 - leaves * uP.z * 0.85;
   float wall = 0.26 + 0.12 * (0.5 - uv.y) + 0.025 * fbm3(p * 30.0);
   float t = clamp(wall + lit * 0.64, 0.0, 1.0);

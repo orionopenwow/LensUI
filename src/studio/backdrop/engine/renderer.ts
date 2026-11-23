@@ -91,7 +91,7 @@ export class BackdropRenderer {
   private pulse = 0;
   private lost = false;
   private disposed = false;
-  /** Test builds: paint NaN / Inf pixels magenta. */
+  /** Test builds: draw a mask of NaN / Inf look pixels (red) instead of the image. */
   debugNaN = false;
   private readonly opts: RendererOptions;
   private readonly onLostEvt = (e: Event) => {

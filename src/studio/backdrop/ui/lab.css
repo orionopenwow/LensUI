@@ -221,7 +221,7 @@
 }
 .bd-tip {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   left: 50%;
   translate: -50% 0;
   padding: 4px 8px;
@@ -570,7 +570,7 @@
 }
 .bd-divider-tag {
   position: absolute;
-  top: 10px;
+  top: 34px;
   padding: 3px 7px;
   border-radius: 6px;
   background: rgb(0 0 0 / 0.55);
@@ -589,6 +589,15 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+.bd-stage-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  align-items: center;
+}
+.bd-stage-bar .bd-field-label {
+  margin-left: 6px;
 }
 .bd-mode-name {
   font-weight: 600;

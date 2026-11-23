@@ -224,10 +224,11 @@ void main() {
   } else {
     col = texture(uA, uv).rgb;
   }
-  // Test builds: flag any NaN / infinity from a look in magenta (tools/parity/backdrop).
+  // Test builds: a mask of NaN / infinity pixels from the look (red = bad), nothing else.
   if (uDebug == 1) {
     vec3 raw = texture(uA, uv).rgb;
-    if (any(isnan(raw)) || any(isinf(raw))) { outColor = vec4(1.0, 0.0, 1.0, 1.0); return; }
+    outColor = vec4((any(isnan(raw)) || any(isinf(raw))) ? 1.0 : 0.0, 0.0, 0.0, 1.0);
+    return;
   }
   if (uLayer > 0) {
     vec3 b = texture(uB, uv).rgb;

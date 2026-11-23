@@ -48,9 +48,9 @@ function diff(a: Uint8Array, b: Uint8Array): number {
   return s / (a.length / 4) / 3;
 }
 
-function magenta(px: Uint8Array): number {
+function badMask(px: Uint8Array): number {
   let n = 0;
-  for (let i = 0; i < px.length; i += 4) if (px[i] === 255 && px[i + 1] === 0 && px[i + 2] === 255) n++;
+  for (let i = 0; i < px.length; i += 4) if (px[i] > 128) n++;
   return n;
 }
 
@@ -91,7 +91,7 @@ async function run() {
     for (const m of MODES) {
       const s = defaultState(m.id);
       // Each look with a preset palette that suits it, so the sheet reads like the Lab.
-      const p = allPresets().find((x) => x.state.mode === m.id);
+      const p = allPresets().find((x) => x.state.mode === m.id && x.group !== "Lens" && x.group !== "Packs") ?? allPresets().find((x) => x.state.mode === m.id);
       r.replace(p ? { ...s, stops: p.state.stops, space: p.state.space, bloom: p.state.bloom } : s);
       r.render(4);
       const d = document.createElement("div");
@@ -100,7 +100,7 @@ async function run() {
       img.style.cssText = "display:block;border-radius:8px";
       const t = document.createElement("div");
       t.textContent = `${m.name} · ${m.family}`;
-      t.style.cssText = "padding:5px 2px";
+      t.style.cssText = "padding:5px 2px;color:#e4e4e7;font:600 12px Arial";
       d.append(img, t);
       root.append(d);
     }
@@ -124,7 +124,6 @@ async function run() {
     const out: Record<string, unknown> = {};
     const c = canvas(192, 108);
     const r = new BackdropRenderer(c, { preserve: true });
-    r.debugNaN = true;
     const errors: string[] = [];
     const seams: Record<string, number> = {};
     const jumps: Record<string, number> = {};
@@ -150,7 +149,15 @@ async function run() {
         const after = r.readPixels();
         seams[id] = diff(a, b);
         jumps[id] = Math.max(diff(before, a), diff(a, after));
-        nan[id] = magenta(a) + magenta(b) + magenta(before);
+        // NaN / Inf mask at three times.
+        r.debugNaN = true;
+        let bad = 0;
+        for (const t of [0, s.loop * 0.37, s.loop - 1 / 30]) {
+          r.render(t);
+          bad += badMask(r.readPixels());
+        }
+        r.debugNaN = false;
+        nan[id] = bad;
         let lum = 0;
         for (let i = 0; i < a.length; i += 4) lum += a[i] + a[i + 1] + a[i + 2];
         if (lum / (a.length / 4) / 3 < 1) blank.push(id);
@@ -274,7 +281,21 @@ async function run() {
     const r = new BackdropRenderer(c, { preserve: true });
     r.replace(s);
     r.render(4);
-    W.result = { report, pack, id: reg?.id };
+    // Apply the generated pack, then show Settings (Appearance) and the Dock in it, over the backdrop.
+    const core = await import("@tauri-apps/api/core");
+    const { applyThemePack } = await import("../../../src/themes/packs");
+    const cfg = await core.invoke<any>("get_config");
+    await core.invoke("save_config_cmd", { newConfig: applyThemePack(cfg, reg!.id) });
+    const { ControlCenterSurface } = await import("../../../src/surfaces/ControlCenterSurface");
+    const { DockSurface } = await import("../../../src/surfaces/DockSurface");
+    const cc = document.createElement("div");
+    cc.style.cssText = "position:absolute;left:60px;top:48px;width:760px;height:540px;overflow:hidden;border-radius:12px";
+    const dock = document.createElement("div");
+    dock.style.cssText = "position:absolute;left:0;right:0;bottom:0;height:120px";
+    root.append(cc, dock);
+    ReactDOM.createRoot(cc).render(<ControlCenterSurface />);
+    ReactDOM.createRoot(dock).render(<DockSurface />);
+    setTimeout(() => (W.result = { report, pack, id: reg?.id }), 1500);
     return;
   }
 }

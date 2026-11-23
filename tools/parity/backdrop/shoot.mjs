@@ -126,6 +126,8 @@ for (const id of PRESETS8) (await snap(`scene=frame&id=${id}&w=1920&h=1080`, `pr
   const r = await result(p);
   await writeFile(join(shots, "theme.json"), JSON.stringify(r, null, 2));
   if (!r.report?.ok) errors.push(`theme from backdrop not readable: ${JSON.stringify(r.report)}`);
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: join(shots, "theme-applied.png") });
   await p.close();
 }
 
