@@ -622,10 +622,12 @@ impl LogRing {
         v.into_iter().skip(skip).collect()
     }
 
+    #[allow(dead_code)] // collection API, used by tests and the hub's future paging
     pub fn len(&self) -> usize {
         self.lines.len()
     }
 
+    #[allow(dead_code)] // pairs with `len` (clippy::len_without_is_empty)
     pub fn is_empty(&self) -> bool {
         self.lines.is_empty()
     }

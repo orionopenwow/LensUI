@@ -60,7 +60,6 @@ import {
   Activity,
   X,
   Search,
-  Columns2,
   Minus,
   MessageSquare,
   FlaskConical,
@@ -103,9 +102,9 @@ export const ControlCenterSurface: React.FC = () => {
   const { config, winTheme, updateConfig } = useLensState();
   const runningWindows = useRunningWindows(1400);
   const glidePhase = useSurfaceGlide("settings");
-  // `?tab=` lets the visual parity harness open a given tab; the app always starts on Windows & Quick.
+  // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
   const [tab, setTab] = useState<TabId>(
-    () => (new URLSearchParams(window.location.search).get("tab") as TabId | null) ?? "system"
+    () => (new URLSearchParams(window.location.search).get("tab") as TabId | null) ?? "theme"
   );
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
@@ -241,18 +240,35 @@ export const ControlCenterSurface: React.FC = () => {
   const _appWindow = getCurrentWindow();
   void _appWindow;
 
-  const navItems: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: "system", label: "Windows & Quick", icon: <Monitor size={15} strokeWidth={2.2} color="#38BDF8" /> },
-    { id: "monitor", label: "Stats & Tasks", icon: <Activity size={15} strokeWidth={2.2} color="#34D399" /> },
-    { id: "messages", label: "Messages", icon: <MessageSquare size={15} strokeWidth={2.2} color="#60A5FA" /> },
-    { id: "theme", label: "Theme & Look", icon: <Palette size={15} strokeWidth={2.2} color="#A78BFA" /> },
-    { id: "dock", label: "Dock & Top Bar", icon: <PanelBottom size={15} strokeWidth={2.2} color="#60A5FA" /> },
-    { id: "folders", label: "Folder Icons", icon: <FolderHeart size={15} strokeWidth={2.2} color="#FBBF24" /> },
-    { id: "sessions", label: "Desktops & Widgets", icon: <Layers size={15} strokeWidth={2.2} color="#818CF8" /> },
-    { id: "ai", label: "AI & Command", icon: <Sparkles size={15} strokeWidth={2.2} color="#F472B6" /> },
-    { id: "agents", label: "Agents", icon: <Bot size={15} strokeWidth={2.2} color="#22D3EE" /> },
-    { id: "about", label: "About & Testing", icon: <FlaskConical size={15} strokeWidth={2.2} color="#FBBF24" /> },
+  // Grouped by what people come to do: make it look right, make it work, then check on it.
+  const navGroups: { label: string; items: { id: TabId; label: string; icon: React.ReactNode }[] }[] = [
+    {
+      label: "Look",
+      items: [
+        { id: "theme", label: "Theme & Look", icon: <Palette size={15} strokeWidth={2.2} color="#A78BFA" /> },
+        { id: "dock", label: "Dock & Top Bar", icon: <PanelBottom size={15} strokeWidth={2.2} color="#60A5FA" /> },
+        { id: "sessions", label: "Desktop & Widgets", icon: <Layers size={15} strokeWidth={2.2} color="#818CF8" /> },
+        { id: "folders", label: "Folder Icons", icon: <FolderHeart size={15} strokeWidth={2.2} color="#FBBF24" /> },
+      ],
+    },
+    {
+      label: "Work",
+      items: [
+        { id: "system", label: "Windows & Keys", icon: <Monitor size={15} strokeWidth={2.2} color="#38BDF8" /> },
+        { id: "ai", label: "AI & Command", icon: <Sparkles size={15} strokeWidth={2.2} color="#F472B6" /> },
+        { id: "agents", label: "Agents", icon: <Bot size={15} strokeWidth={2.2} color="#22D3EE" /> },
+      ],
+    },
+    {
+      label: "Status",
+      items: [
+        { id: "monitor", label: "System & Tasks", icon: <Activity size={15} strokeWidth={2.2} color="#34D399" /> },
+        { id: "messages", label: "Notifications", icon: <MessageSquare size={15} strokeWidth={2.2} color="#60A5FA" /> },
+        { id: "about", label: "About & Testing", icon: <FlaskConical size={15} strokeWidth={2.2} color="#FBBF24" /> },
+      ],
+    },
   ];
+  const navItems = navGroups.flatMap((g) => g.items);
 
   const activeAccentHex =
     config.theme.accentMode === "custom"
@@ -347,118 +363,28 @@ export const ControlCenterSurface: React.FC = () => {
           onFinish={() => setShowWizardManual(false)}
         />
       )}
-      {/* Top Info & Quick Tools Bar (live system status + 1-click obsidian utilities) */}
-      <div
-        style={{
-          height: 44,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          padding: "0 14px",
-          borderBottom: "1px solid rgb(var(--lens-ink) / 0.08)",
-          background: "rgb(var(--lens-ink) / 0.02)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--lens-fg)", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
-            {navItems.find((n) => n.id === tab)?.label ?? "Lens Control Center"}
-          </span>
-          <span style={{ width: 1, height: 14, background: "rgb(var(--lens-ink) / 0.12)" }} />
-          <button
-            type="button"
-            className="cc-chip"
-            style={{ padding: "4px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
-            onClick={() => setTab("monitor")}
-          >
-            <Cpu size={12} color="#34D399" />
-            <span>CPU {telemetry ? `${Math.round(telemetry.cpuUsage)}%` : "--"}</span>
-          </button>
-          <button
-            type="button"
-            className="cc-chip"
-            style={{ padding: "4px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}
-            onClick={() => setTab("monitor")}
-          >
-            <HardDrive size={12} color="#38BDF8" />
-            <span>
-              RAM {telemetry ? `${telemetry.memUsedGb}/${telemetry.memTotalGb}G` : "--"}
-            </span>
-          </button>
-          <span className="cc-hide-narrow" style={{ fontSize: 11, color: "var(--lens-fg-secondary)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-            {runningWindows.length} windows
-          </span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          <button
-            type="button"
-            className="cc-chip cc-hide-narrow"
-            style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
-            onClick={() => invoke("tile_windows_cmd", { layout: "split" }).catch(() => {})}
-          >
-            <Columns2 size={12} color="#38BDF8" />
-            <span>50/50 Tile</span>
-          </button>
-          <button
-            type="button"
-            className="cc-chip cc-hide-narrow"
-            style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
-            onClick={() => invoke("tile_windows_cmd", { layout: "smart-group" }).catch(() => {})}
-          >
-            <Sparkles size={12} color="#FBBF24" />
-            <span>Smart Group</span>
-          </button>
-          <button
-            type="button"
-            className={`cc-chip ${qs.nightLightEnabled ? "active" : ""}`}
-            style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
-            onClick={() => {
-              const next = !qs.nightLightEnabled;
-              setQs((prev) => ({ ...prev, nightLightEnabled: next }));
-              invoke("set_night_light_cmd", { enabled: next, warmth: qs.nightLightWarmth || 45 }).catch(() => {});
-            }}
-          >
-            <Moon size={12} color={qs.nightLightEnabled ? "var(--lens-on-fg, #09090b)" : "#FB923C"} />
-            <span>Night</span>
-          </button>
-          <button
-            type="button"
-            className={`cc-chip ${tab === "messages" ? "active" : ""}`}
-            style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
-            onClick={() => setTab("messages")}
-          >
-            <MessageSquare size={12} color={tab === "messages" ? "var(--lens-on-fg, #09090b)" : "#60A5FA"} />
-            <span>Messages</span>
-          </button>
-          <button
-            type="button"
-            className={`cc-chip ${tab === "monitor" ? "active" : ""}`}
-            style={{ padding: "4px 9px", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 5 }}
-            onClick={() => setTab("monitor")}
-          >
-            <Activity size={12} color={tab === "monitor" ? "var(--lens-on-fg, #09090b)" : "#34D399"} />
-            <span>Tasks</span>
-          </button>
-        </div>
-      </div>
-
       <div className="cc-body">
         <aside className="cc-sidebar">
-          {navItems.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              className={`cc-nav-btn ${tab === n.id ? "active" : ""}`}
-              onClick={() => setTab(n.id)}
-            >
-              {n.icon}
-              <span>{n.label}</span>
-            </button>
+          {navGroups.map((g) => (
+            <div key={g.label} className="cc-nav-group" role="group" aria-label={g.label}>
+              <div className="cc-nav-group-label">{g.label}</div>
+              {g.items.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  className={`cc-nav-btn ${tab === n.id ? "active" : ""}`}
+                  aria-current={tab === n.id ? "page" : undefined}
+                  onClick={() => setTab(n.id)}
+                >
+                  {n.icon}
+                  <span>{n.label}</span>
+                </button>
+              ))}
+            </div>
           ))}
 
           <div style={{ flex: 1 }} />
+          <div className="cc-nav-divider" />
 
           <button
             type="button"
@@ -482,6 +408,7 @@ export const ControlCenterSurface: React.FC = () => {
         </aside>
 
         <main className="cc-content" ref={contentRef}>
+          <h1 className="cc-page-title">{navItems.find((n) => n.id === tab)?.label ?? "Settings"}</h1>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           {tab === "monitor" && (
             <>
@@ -1475,169 +1402,10 @@ export const ControlCenterSurface: React.FC = () => {
 
           {tab === "system" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Top Bar: Colored Functional Telemetry Pills (Click CPU/RAM for Task Manager, Uptime for Power) + Windows Settings */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1.25fr 1fr auto",
-                  gap: 8,
-                  alignItems: "stretch",
-                }}
-              >
-                {/* CPU Load Pill -> Opens Task Manager */}
-                <button
-                  type="button"
-                  className="cc-chip"
-                  onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" })}
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    padding: "9px 12px",
-                    borderRadius: 10,
-                    background: "rgb(var(--lens-ink) / 0.035)",
-                    border: "1px solid rgb(56 189 248 / 0.24)",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      width: `${telemetry ? Math.min(100, Math.round(telemetry.cpuUsage)) : 0}%`,
-                      background: "linear-gradient(90deg, rgb(56 189 248 / 0.22), rgb(56 189 248 / 0.08))",
-                      transition: "width 300ms ease",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7 }}>
-                    <Cpu size={14.5} strokeWidth={2.3} color="#38BDF8" />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--lens-fg)" }}>CPU Load</span>
-                  </div>
-                  <span
-                    style={{
-                      position: "relative",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      color: "#38BDF8",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {telemetry ? `${Math.round(telemetry.cpuUsage)}%` : "—"}
-                  </span>
-                </button>
-
-                {/* Memory RAM Pill -> Opens Task Manager */}
-                <button
-                  type="button"
-                  className="cc-chip"
-                  onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" })}
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    padding: "9px 12px",
-                    borderRadius: 10,
-                    background: "rgb(var(--lens-ink) / 0.035)",
-                    border: "1px solid rgb(167 139 250 / 0.24)",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      width: `${
-                        telemetry && telemetry.memTotalGb > 0
-                          ? Math.min(100, Math.round((telemetry.memUsedGb / telemetry.memTotalGb) * 100))
-                          : 0
-                      }%`,
-                      background: "linear-gradient(90deg, rgb(167 139 250 / 0.22), rgb(167 139 250 / 0.08))",
-                      transition: "width 300ms ease",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7 }}>
-                    <HardDrive size={14.5} strokeWidth={2.3} color="#A78BFA" />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--lens-fg)" }}>Memory</span>
-                  </div>
-                  <span
-                    style={{
-                      position: "relative",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "#C4B5FD",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {telemetry ? `${telemetry.memUsedGb} / ${telemetry.memTotalGb} GB` : "—"}
-                  </span>
-                </button>
-
-                {/* Uptime & Power Pill -> Opens Power & Sleep Settings */}
-                <button
-                  type="button"
-                  className="cc-chip"
-                  onClick={() => invoke("open_windows_setting_cmd", { uri: "ms-settings:powersleep" })}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    padding: "9px 12px",
-                    borderRadius: 10,
-                    background: "rgb(52 211 153 / 0.08)",
-                    border: "1px solid rgb(52 211 153 / 0.24)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <Clock size={14.5} strokeWidth={2.3} color="#34D399" />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--lens-fg)" }}>Uptime</span>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "#34D399",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {telemetry ? `${Math.floor(telemetry.uptimeMinutes / 60)}h ${telemetry.uptimeMinutes % 60}m` : "—"}
-                  </span>
-                </button>
-
-                {/* Windows Settings Action Pill */}
-                <button
-                  type="button"
-                  className="cc-chip"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 7,
-                    padding: "9px 13px",
-                    borderRadius: 10,
-                    background: "rgb(96 165 250 / 0.12)",
-                    border: "1px solid rgb(96 165 250 / 0.28)",
-                    fontSize: 11.5,
-                    fontWeight: 700,
-                    color: "var(--lens-fg)",
-                  }}
-                  onClick={() => invoke("open_windows_setting_cmd", { uri: "ms-settings:" })}
-                >
-                  <Monitor size={14} strokeWidth={2.3} color="#60A5FA" />
-                  <span>All Settings</span>
-                  <ExternalLink size={11.5} color="#60A5FA" />
-                </button>
-              </div>
-
               {/* Clean 2-Column Organization: Display & Eye Care (Left) + Sound & App Mixer (Right) */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {/* DISPLAY & EYE CARE */}
-                <div className="cc-card" style={{ gap: 10, justifyContent: "space-between" }}>
+                <div className="cc-card" style={{ gap: 10, justifyContent: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                       <Sun size={14} strokeWidth={2.3} color="#FBBF24" />
