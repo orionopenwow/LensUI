@@ -74,6 +74,8 @@ flowchart TB
 - `config.rs` — `LensConfig` (serde, versioned), `config_dir()` = `%APPDATA%\LensUI`.
 - `commands/*.rs` — thin `#[tauri::command]` layer, one file per area (41 files).
 - `ffi.rs` — shared raw Win32 declarations.
+- `input.rs` — the input service: Lens's only low-level keyboard and mouse hooks, one thread, one watchdog, one pause signal (§7).
+- `changes.rs` — the change registry: every OS change and its undo; "Remove all Lens changes" walks it (§7).
 
 **Shell and windows (`win_*.rs`)**
 - `win_shell` opt-in shell replacement; `win_taskbar` hide/show native taskbar and desktop icons, run-on-startup, console handler; `win_tray` system-tray host.
@@ -173,13 +175,12 @@ Frontend listeners: 126 `listen(` call sites; `DockSurface.tsx` alone has 9.
 
 | Thread / hook | Module | What it does | Guard |
 |---|---|---|---|
-| `lens-keyhook` (`WH_KEYBOARD_LL`) + `-events` + `-watchdog` | win_keyhook | Win key and Alt+Tab interception | Watchdog re-installs if Windows silently unhooks; opt-in |
-| `lens-altdrag` (`WH_MOUSE_LL`) + `-watchdog` | win_altdrag | Alt+drag move/resize | Watchdog; opt-in |
-| `lens-desktop-input-hook/-worker/-guard` (`WH_MOUSE_LL`) | win_desktop_input | Desktop clicks for Playground | Guard thread; stops on fullscreen |
-| `lens-cursorfx-hook` (`WH_MOUSE_LL`) + `lens-cursorfx` | win_cursor_fx | Pointer effects | Stops with the overlay |
-| `lens-magic-hook` (`WH_MOUSE_LL`) + `-tick`, `-open`, `-watchdog` | magic/win | Magic right-click trigger | Watchdog |
-| voice keyhold (`WH_KEYBOARD_LL`) + `lens-voice-mic`, `lens-voice-tick` | voice | Push-to-talk (Right Ctrl), capture | Released on mute/cancel |
-| clip UIA hook | clip/uia | Source app of copies | — |
+| `lens-input` (`WH_KEYBOARD_LL` + `WH_MOUSE_LL`) + `lens-input-watchdog` | input | **The input service: the only low-level keyboard and mouse hooks in Lens.** Features claim a device and get events in a fixed order: keyboard → keyhook (Win key, Alt+Tab), voice push-to-talk, cursor-effect keys; mouse → Alt+drag, Magic right-click, clip selection bubble, desktop input, cursor effects. | One watchdog: pauses everything for fullscreen apps, games and excluded processes (never swallows while paused); a handler that stalls for 400 ms gets the hook removed, its thread replaced and the feature benched for 60 s; a hook Windows dropped silently is reinstalled. `input_status_cmd` reports it. |
+| `lens-keyhook-events`, `-watchdog` | win_keyhook | Turns key decisions into events; falls back to Windows if the UI doesn't answer | Opt-in |
+| `lens-desktop-input-worker/-guard` | win_desktop_input | Desktop clicks for Playground (fed by the input service) | Guard thread; stops when the screen is taken |
+| `lens-cursorfx` | win_cursor_fx | Pointer effects (fed by the input service) | Stops with the overlay |
+| `lens-magic-tick`, `-open` | magic/win | Magic right-click timing (fed by the input service) | — |
+| `lens-voice-mic`, `lens-voice-tick` | voice | Push-to-talk capture (key state from the input service) | Released on mute/cancel |
 | Global `WH_CALLWNDPROC` (DLL in every GUI process) | win_dwm_engine | In-process window styling | Opt-in (`injected_hook`); DLL bails in a deny list of anti-cheat processes |
 | `SetWinEventHook` | win_events, win_tiler, win_focus_dim, win_caption_engine | Foreground, move, create/destroy | Out-of-context |
 | `lens-hotcorners` | win_hotcorners | Polls the pointer | — |
@@ -190,7 +191,23 @@ Frontend listeners: 126 `listen(` call sites; `DockSurface.tsx` alone has 9.
 | bridge IPC, MCP stdio | bridge/ipc, win_mcp | Native messaging and MCP | — |
 | Panic hook | win_crash | Writes a scrubbed crash report | — |
 
-About 41 files spawn threads. Low-level hooks are installed on dedicated threads with message loops so a slow WebView never stalls input.
+About 41 files spawn threads. Both low-level hooks live on one dedicated thread with a message loop (`input.rs`), so a slow WebView never stalls input and there is one place that decides when Lens must keep its hands off the keyboard and mouse.
+
+### Input service (`src-tauri/src/input.rs`)
+
+- **Claims.** A feature calls `input::claim_keyboard(Feature::X)` / `claim_mouse` and `release_*`. A hook is installed only while a live claim wants it; with nothing claimed there is no hook at all.
+- **Dispatch.** Handlers are plain `fn(&KeyEvent) -> bool` / `fn(&MouseEvent) -> bool` in two static tables. The first handler that returns `true` swallows the event; otherwise it goes on to Windows unchanged. The pure `dispatch` is property-tested: input passes through untouched when no feature claims it, and nothing is swallowed while paused.
+- **Pause.** One signal (`input::paused()`) for fullscreen apps, presentation mode, games and excluded (anti-cheat) processes. `Skip` handlers are not called while paused and their hook is removed; `Observe` handlers (keyhook, push-to-talk) still see keys so their state stays right, but their answer is ignored.
+- **Watchdog.** One thread, 250 ms tick: reinstalls a hook Windows dropped, and when a handler has not returned for 400 ms it unhooks from outside, replaces the hook thread and benches that feature for 60 s.
+
+### Change registry (`src-tauri/src/changes.rs`)
+
+Every change Lens makes outside `%APPDATA%\LensUI` is one row: id, report label, scope (persistent, session, Lens data), what it writes (HKCU keys and values, files), the source files that write it, and its undo. "Remove all Lens changes" is `changes::remove_all`: it walks the table in order and reports each row, then says what it leaves alone (apps you installed). Two checks keep it honest:
+
+- `node tools/changes/check.mjs` (build.yml and `bun test src`) fails when a source file calls a registry, `SPI_SET*`, hook or hotkey API and is not named in a row or in `NOT_CHANGES`.
+- `tests/e2e/remove-all.mjs` (e2e.yml, Windows) snapshots every key and file the registry lists, turns features on through the real app, runs Remove all and fails on any difference, on any failed step, or if fewer than six features changed anything.
+
+To add a writer: write its undo (restore from a backup taken before the first write), add a row, list the file in `sources`.
 
 ## 8. External integrations
 

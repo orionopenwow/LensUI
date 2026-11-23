@@ -1,4 +1,5 @@
-//! Windows layer for the magic window: the opt-in low-level mouse hook (with watchdog), the
+//! Windows layer for the magic window: the opt-in mouse handler on the shared input service
+//! (`input.rs` owns the hook, its watchdog and the fullscreen pause), the
 //! "what's under the cursor" fact gathering (UI Automation, window manager, Explorer folders),
 //! and window actions.
 //!
@@ -6,18 +7,17 @@
 //! are gathered on a worker thread, and only the configured combination is ever swallowed.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use windows::core::PWSTR;
-use windows::Win32::Foundation::{CloseHandle, HANDLE, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+use windows::Win32::Foundation::{CloseHandle, HANDLE, HWND, POINT, RECT};
 use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
-use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Threading::{
-    GetCurrentProcess, GetCurrentThreadId, OpenProcess, OpenProcessToken, QueryFullProcessImageNameW,
+    GetCurrentProcess, OpenProcess, OpenProcessToken, QueryFullProcessImageNameW,
     PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows::Win32::UI::Accessibility::{
@@ -30,19 +30,18 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     MOUSEINPUT, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, DispatchMessageW, GetAncestor, GetClassNameW, GetCursorPos, GetForegroundWindow, GetMessageW,
-    GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, IsWindow, IsZoomed, PostThreadMessageW, SetWindowPos,
-    SetWindowsHookExW, ShowWindow, TranslateMessage, UnhookWindowsHookEx, WindowFromPoint, GA_ROOT, HHOOK, MSG,
-    MSLLHOOKSTRUCT, SWP_NOACTIVATE, SWP_NOZORDER, SW_RESTORE, WH_MOUSE_LL, WM_LBUTTONDOWN, WM_LBUTTONUP,
-    WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEMOVE, WM_QUIT, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
+    GetAncestor, GetClassNameW, GetCursorPos, GetForegroundWindow, GetWindowRect, GetWindowTextW,
+    GetWindowThreadProcessId, IsWindow, IsZoomed, SetWindowPos, ShowWindow, WindowFromPoint, GA_ROOT,
+    SWP_NOACTIVATE, SWP_NOZORDER, SW_RESTORE, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP,
+    WM_MOUSEMOVE, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
 };
 
 use super::placement::{move_between, step_monitor};
 use super::target::{self, ElemFact, ElemKind, Facts, LensFact, Rect, SelFact, Target, WinFact};
 use super::trigger::{combo_matches, Btn, Ev, Input, Machine, Mods, Out, TriggerMode};
 use super::MagicConfig;
+use crate::input::{self, Feature, MouseEvent};
 
-const LLMHF_INJECTED: u32 = 0x01;
 /// Marks Lens's own replayed clicks (they come back injected and always pass).
 const LENS_EXTRA_INFO: usize = 0x4C45_4E53;
 /// How long fact gathering may take before the window opens with what it has.
@@ -52,14 +51,9 @@ const ADDRESS_SCAN_BUDGET: usize = 600;
 // ------------------------------------------------------------------------------ state
 
 static WANT: AtomicBool = AtomicBool::new(false);
-static ACTIVE: AtomicBool = AtomicBool::new(false);
-static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
-static EVENTS: AtomicU64 = AtomicU64::new(0);
-static REINSTALLS: AtomicU32 = AtomicU32::new(0);
 static HELPERS_STARTED: AtomicBool = AtomicBool::new(false);
 static MACHINE: OnceLock<Mutex<Machine>> = OnceLock::new();
 static CONFIG: OnceLock<Mutex<MagicConfig>> = OnceLock::new();
-static PROBLEM: OnceLock<Mutex<String>> = OnceLock::new();
 static ELIGIBLE: OnceLock<Mutex<HashMap<isize, (bool, Instant)>>> = OnceLock::new();
 static SELF_ELEVATED: OnceLock<bool> = OnceLock::new();
 
@@ -73,13 +67,6 @@ fn machine() -> &'static Mutex<Machine> {
 fn config() -> &'static Mutex<MagicConfig> {
     CONFIG.get_or_init(|| Mutex::new(MagicConfig::default()))
 }
-fn set_problem(s: &str) {
-    if let Ok(mut p) = PROBLEM.get_or_init(|| Mutex::new(String::new())).lock() {
-        *p = s.to_string();
-    }
-    crate::tester::log("warn", "magic", s);
-}
-
 pub fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
 }
@@ -105,23 +92,23 @@ pub fn apply(cfg: &MagicConfig) {
     WANT.store(on, Ordering::SeqCst);
     if on {
         start_helpers();
-        install_hook();
+        input::claim_mouse(Feature::Magic);
     } else {
-        remove_hook();
+        input::release_mouse(Feature::Magic);
     }
 }
 
-/// Removes the hook (quit / panic). Never blocks.
+/// Gives up the mouse claim (quit / panic). Never blocks.
 pub fn stop() {
     WANT.store(false, Ordering::SeqCst);
-    remove_hook();
+    input::release_mouse(Feature::Magic);
 }
 
 pub fn hook_status() -> (bool, u32, String) {
     (
-        ACTIVE.load(Ordering::SeqCst),
-        REINSTALLS.load(Ordering::Relaxed),
-        PROBLEM.get().and_then(|p| p.lock().ok().map(|s| s.clone())).unwrap_or_default(),
+        input::mouse_live(Feature::Magic),
+        input::status().reinstalls,
+        input::status().last_problem,
     )
 }
 
@@ -194,89 +181,58 @@ unsafe fn eligible_at(pt: POINT) -> bool {
     ok
 }
 
-unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    if code >= 0 && lparam.0 != 0 {
-        EVENTS.fetch_add(1, Ordering::Relaxed);
-        let info = &*(lparam.0 as *const MSLLHOOKSTRUCT);
-        let ev = match wparam.0 as u32 {
-            WM_RBUTTONDOWN => Some(Ev::Down(Btn::Right)),
-            WM_RBUTTONUP => Some(Ev::Up(Btn::Right)),
-            WM_MBUTTONDOWN => Some(Ev::Down(Btn::Middle)),
-            WM_MBUTTONUP => Some(Ev::Up(Btn::Middle)),
-            WM_LBUTTONDOWN => Some(Ev::Down(Btn::Left)),
-            WM_LBUTTONUP => Some(Ev::Up(Btn::Left)),
-            WM_MOUSEMOVE => Some(Ev::Move),
-            // Side buttons: tracked only so a held gesture can give its press back.
-            WM_XBUTTONDOWN => Some(Ev::Down(Btn::Other)),
-            WM_XBUTTONUP => Some(Ev::Up(Btn::Other)),
-            _ => None,
-        };
-        if let (Some(ev), Ok(mut m)) = (ev, machine().try_lock()) {
-            // Cheap path: ordinary mouse moves only matter while a hold is pending.
-            if ev != Ev::Move || m.wants_moves() {
-                let injected = info.flags & LLMHF_INJECTED != 0;
-                let fresh_down = m.is_idle() && matches!(ev, Ev::Down(_)) && !injected;
-                let mods = if fresh_down { mods_now() } else { Mods::default() };
-                let gate_ok = !(fresh_down && combo_matches(m.mode, mods)) || eligible_at(info.pt);
-                if gate_ok {
-                    let out = m.step(Input { ev, t_ms: now_ms(), x: info.pt.x, y: info.pt.y, mods, injected });
-                    match out {
-                        Out::SwallowOpen { x, y } | Out::Open { x, y } => request_open(x, y),
-                        Out::ReplayClick { .. } => replay_right(true),
-                        Out::ReplayDown { .. } => replay_right(false),
-                        Out::Pass | Out::Swallow => {}
-                    }
-                    if out.eats_event() {
-                        return LRESULT(1);
-                    }
-                }
-            }
-        }
+/// The input service calls this for every mouse event while the gesture is on (never while it
+/// is paused for a fullscreen app). Returns true to swallow the event. Never blocks: state sits
+/// behind `try_lock` (busy = pass through) and facts are gathered on a worker thread.
+pub fn input_mouse(e: &MouseEvent) -> bool {
+    let ev = match e.msg {
+        WM_RBUTTONDOWN => Some(Ev::Down(Btn::Right)),
+        WM_RBUTTONUP => Some(Ev::Up(Btn::Right)),
+        WM_MBUTTONDOWN => Some(Ev::Down(Btn::Middle)),
+        WM_MBUTTONUP => Some(Ev::Up(Btn::Middle)),
+        WM_LBUTTONDOWN => Some(Ev::Down(Btn::Left)),
+        WM_LBUTTONUP => Some(Ev::Up(Btn::Left)),
+        WM_MOUSEMOVE => Some(Ev::Move),
+        // Side buttons: tracked only so a held gesture can give its press back.
+        WM_XBUTTONDOWN => Some(Ev::Down(Btn::Other)),
+        WM_XBUTTONUP => Some(Ev::Up(Btn::Other)),
+        _ => None,
+    };
+    let (Some(ev), Ok(mut m)) = (ev, machine().try_lock()) else {
+        return false;
+    };
+    // Cheap path: ordinary mouse moves only matter while a hold is pending.
+    if ev == Ev::Move && !m.wants_moves() {
+        return false;
     }
-    CallNextHookEx(HHOOK::default(), code, wparam, lparam)
+    let injected = e.injected();
+    let fresh_down = m.is_idle() && matches!(ev, Ev::Down(_)) && !injected;
+    let mods = if fresh_down { mods_now() } else { Mods::default() };
+    let pt = POINT { x: e.x, y: e.y };
+    let gate_ok = !(fresh_down && combo_matches(m.mode, mods)) || unsafe { eligible_at(pt) };
+    if !gate_ok {
+        return false;
+    }
+    let out = m.step(Input { ev, t_ms: now_ms(), x: e.x, y: e.y, mods, injected });
+    match out {
+        Out::SwallowOpen { x, y } | Out::Open { x, y } => request_open(x, y),
+        Out::ReplayClick { .. } => replay_right(true),
+        Out::ReplayDown { .. } => replay_right(false),
+        Out::Pass | Out::Swallow => {}
+    }
+    out.eats_event()
 }
 
-fn install_hook() {
-    if ACTIVE.load(Ordering::SeqCst) {
-        return;
-    }
-    let _ = std::thread::Builder::new().name("lens-magic-hook".into()).spawn(|| unsafe {
-        let hmod = GetModuleHandleW(windows::core::PCWSTR::null()).unwrap_or_default();
-        let hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(hook_proc), hmod, 0) {
-            Ok(h) => h,
-            Err(e) => {
-                set_problem(&format!("Could not watch the mouse: {:?}", e));
-                return;
-            }
-        };
-        HOOK_THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
-        ACTIVE.store(true, Ordering::SeqCst);
-        let mut msg = MSG::default();
-        while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
-            let _ = TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-        let _ = UnhookWindowsHookEx(hook);
-        if let Ok(mut m) = machine().lock() {
-            m.reset();
-        }
-        ACTIVE.store(false, Ordering::SeqCst);
-        HOOK_THREAD.store(0, Ordering::SeqCst);
-    });
-}
-
-fn remove_hook() {
-    let tid = HOOK_THREAD.load(Ordering::SeqCst);
-    if tid != 0 {
-        unsafe {
-            let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
-        }
+/// The pause signal turned on (a fullscreen app came to the front): forget any half-made gesture.
+pub fn input_paused() {
+    if let Ok(mut m) = machine().try_lock() {
+        m.reset();
     }
 }
 
-/// Three helper threads, started once: the open worker (facts are gathered off the hook
-/// thread), the ticker (hold mode and stuck-gesture cleanup) and the watchdog (re-installs the
-/// hook if Windows silently drops it).
+/// Two helper threads, started once: the open worker (facts are gathered off the input
+/// thread) and the ticker (hold mode and stuck-gesture cleanup). The input service's watchdog
+/// re-installs the mouse hook if Windows silently drops it.
 fn start_helpers() {
     if HELPERS_STARTED.swap(true, Ordering::SeqCst) {
         return;
@@ -309,36 +265,6 @@ fn start_helpers() {
             }
         } else {
             std::thread::sleep(Duration::from_millis(150));
-        }
-    });
-    let _ = std::thread::Builder::new().name("lens-magic-watchdog".into()).spawn(|| {
-        let mut last_pt = POINT::default();
-        let mut last_events = 0u64;
-        let mut silent = 0u32;
-        loop {
-            std::thread::sleep(Duration::from_secs(2));
-            if !WANT.load(Ordering::SeqCst) {
-                silent = 0;
-                continue;
-            }
-            if !ACTIVE.load(Ordering::SeqCst) {
-                install_hook();
-                continue;
-            }
-            let mut pt = POINT::default();
-            let moved = unsafe { GetCursorPos(&mut pt) }.is_ok() && (pt.x != last_pt.x || pt.y != last_pt.y);
-            last_pt = pt;
-            let ev = EVENTS.load(Ordering::Relaxed);
-            silent = if moved && ev == last_events { silent + 1 } else { 0 };
-            last_events = ev;
-            if silent >= 2 {
-                silent = 0;
-                REINSTALLS.fetch_add(1, Ordering::Relaxed);
-                set_problem("Windows dropped the mouse hook; Lens installed it again.");
-                remove_hook();
-                std::thread::sleep(Duration::from_millis(100));
-                install_hook();
-            }
         }
     });
 }

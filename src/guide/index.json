@@ -12373,7 +12373,7 @@
    "id": "doc.smoothness.8",
    "kind": "doc",
    "title": "Smoothness: Still open",
-   "text": "- Note for wave 2 (Dock window sizing). The Dock's placement is still set size then set position ( src-tauri/src/app/watcher.rs:75 ). Swap it for crate::app::place::place window(&dock, x, y, dock w, dock h) ; nothing else changes. If the Dock window is ever resized for search or edge changes, do it while the page is still, never during a glide (D3). - Top Bar search well and clock (G-11). Wait for PR #60, then use captureFlip as the Dock does. - Desktop folder (G-10) , Command edge shelf (G-12) , Guide spotlight (G-13) , meters (G-14), Dock indicator (G-15). - After PR #60 merges, useSurfaceGlide can become a thin alias of useSurfaceTransition , which already understands the \"pre\" state. - Run the smoothness check on a real PC and attach the report; the verdicts decide the next pass.",
+   "text": "- Dock window sizing (done in wave 2). The Dock is placed with place window . Its depth now follows the measured pill plus flyout room; win previews::DockSizer only lets the native window change size after the Dock has been still for 500 ms, never during a glide (D3). - Top Bar search well and clock (G-11). Wait for PR #60, then use captureFlip as the Dock does. - Desktop folder (G-10) , Command edge shelf (G-12) , Guide spotlight (G-13) , meters (G-14), Dock indicator (G-15). - After PR #60 merges, useSurfaceGlide can become a thin alias of useSurfaceTransition , which already understands the \"pre\" state. - Run the smoothness check on a real PC and attach the report; the verdicts decide the next pass.",
    "path": [
     "Docs",
     "Smoothness",

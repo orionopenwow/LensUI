@@ -52,7 +52,7 @@ Static findings, with the motion lint's numbers. "Fixed" means fixed in this cha
 | ID | Sev | Finding | Where | Fix | State |
 |---|---|---|---|---|---|
 | G-01 | High | Settings resized its native window to fit every page. The page reported its height after layout, Rust called `set_size` then `set_position`, and the page tore while it switched. | `src/surfaces/ControlCenterSurface.tsx` (the `syncHeight` effect) → `set_settings_content_height_cmd` (`src-tauri/src/commands/surfaces.rs:474`) → `src-tauri/src/app/watcher.rs:227` | One height while open (`SETTINGS_LOGICAL_H`, 720 logical px, capped to the screen). Pages scroll. | Fixed |
-| G-02 | High | Every placement was `set_size` followed by `set_position`: two native operations, so for one frame a window had its new size at its old place. | `watcher.rs:92, 114, 138, 148, 158, 227`; `surfaces.rs:175, 248, 326, 419` | `place_window` (`src-tauri/src/app/place.rs`): one `SetWindowPos` when both change. | Fixed for ten pairs. Open: Dock (`watcher.rs:75`), see wave 2 note |
+| G-02 | High | Every placement was `set_size` followed by `set_position`: two native operations, so for one frame a window had its new size at its old place. | `watcher.rs:92, 114, 138, 148, 158, 227`; `surfaces.rs:175, 248, 326, 419` | `place_window` (`src-tauri/src/app/place.rs`): one `SetWindowPos` when both change. | Fixed for all eleven pairs. The Dock joined in wave 2 (`dock_window_target` + `place_window`, and `resize_dock_window` for depth changes) |
 | G-03 | High | `position_dock_and_bars` re-applied size and position to every window on a settings save (`commands/theme.rs:177`, `backup.rs:31`), even when nothing had moved. Each call makes WebView2 lay out and repaint, visible as a flash on theme switch. | `src-tauri/src/app/watcher.rs:34` | `place_window` does nothing when the window is already in place. | Fixed (same ten pairs) |
 | G-04 | High | Dock search animated `width`, `min-width`, `height`, `flex-grow`, `padding` and `max-height` on the icon row and drawer: layout on every frame for the whole Dock, and a `setTimeout` decided when closing was done. | `src/surfaces/DockSurface.css` (`.dock-pill`, `.dock-search-slot`, `.dock-search-inline`, `dock-drawer-grow`), `DockSurface.tsx` | Layout changes once; items move by FLIP (`captureSearchFlip`, `DockSurface.tsx:414`); the drawer glides with transform and opacity and closing waits on the animation itself (`:474`). | Fixed |
 | G-05 | High | A closing surface was hidden after a fixed 185 ms, whether or not its exit had finished. On a busy PC the exit was cut mid-frame, and that cut frame was the first thing shown at the next open. | `glide_hide_surface` (`surfaces.rs:79`) | The page answers `surface_exit_done_cmd` after its exit and one painted frame; a 400 ms timer is only the fallback. | Fixed for Settings, Quick Settings, search palette, Widgets, launcher, overview |
@@ -180,11 +180,9 @@ rewrites the baseline after a migration.
 
 ## Still open
 
-- **Note for wave 2 (Dock window sizing).** The Dock's placement is still `set_size` then
-  `set_position` (`src-tauri/src/app/watcher.rs:75`). Swap it for
-  `crate::app::place::place_window(&dock, x, y, dock_w, dock_h)`; nothing else changes. If the Dock
-  window is ever resized for search or edge changes, do it while the page is still, never during a
-  glide (D3).
+- **Dock window sizing (done in wave 2).** The Dock is placed with `place_window`. Its depth now
+  follows the measured pill plus flyout room; `win_previews::DockSizer` only lets the native window
+  change size after the Dock has been still for 500 ms, never during a glide (D3).
 - **Top Bar search well and clock (G-11).** Wait for PR #60, then use `captureFlip` as the Dock does.
 - **Desktop folder (G-10)**, **Command edge shelf (G-12)**, **Guide spotlight (G-13)**, meters
   (G-14), Dock indicator (G-15).

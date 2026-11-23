@@ -628,6 +628,8 @@ pub fn revert_global_explorer_folder_theme() -> Result<(), String> {
             let _ = RegCloseKey(hkey);
         }
     }
+    // Windows has no "Shell Icons" key by default: Lens made it, so an empty one goes too.
+    crate::bridge::reg::delete_key_if_empty("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Icons");
     refresh_windows_icon_cache();
     Ok(())
 }

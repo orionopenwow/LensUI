@@ -209,6 +209,131 @@ pub fn read_windows_theme() -> WindowsThemeInfo {
     }
 }
 
+/// The Windows accent values Lens writes (all under HKCU). Their previous state is remembered
+/// once, before the first write, so "Remove all Lens changes" puts them back exactly
+/// (`restore_windows_accent`, registered in `crate::changes`).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub const ACCENT_VALUES: [(&str, &str); 4] = [
+    ("Software\\Microsoft\\Windows\\DWM", "AccentColor"),
+    ("Software\\Microsoft\\Windows\\DWM", "ColorizationColor"),
+    ("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", "AccentColorMenu"),
+    ("Software\\Microsoft\\Windows\\DWM", "ColorPrevalence"),
+];
+
+/// What the accent values were before Lens first changed them, in `ACCENT_VALUES` order.
+/// `None` means the value did not exist.
+#[cfg_attr(not(windows), allow(dead_code))]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct AccentBackup {
+    pub values: Vec<Option<u32>>,
+}
+
+/// What to do with one accent value on restore.
+#[cfg_attr(not(windows), allow(dead_code))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccentRestore {
+    Set(u32),
+    Delete,
+    Leave,
+}
+
+/// One action per `ACCENT_VALUES` entry: write the remembered number back, delete a value that
+/// did not exist before, and leave alone anything that already matches (or was never recorded).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn plan_accent_restore(backup: &AccentBackup, current: &[Option<u32>]) -> Vec<AccentRestore> {
+    (0..ACCENT_VALUES.len())
+        .map(|i| {
+            let now = current.get(i).copied().flatten();
+            match backup.values.get(i) {
+                None => AccentRestore::Leave,
+                Some(before) if *before == now => AccentRestore::Leave,
+                Some(Some(v)) => AccentRestore::Set(*v),
+                Some(None) => AccentRestore::Delete,
+            }
+        })
+        .collect()
+}
+
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn accent_backup_path() -> std::path::PathBuf {
+    crate::config::config_dir().join("backups").join("windows-accent.json")
+}
+
+/// Records the accent values as they are now, unless a record already exists.
+#[cfg(windows)]
+fn remember_accent_once() {
+    let path = accent_backup_path();
+    if path.exists() {
+        return;
+    }
+    let values = ACCENT_VALUES.iter().map(|(k, v)| crate::snip::win::reg_get_dword(k, v)).collect();
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if let Ok(json) = serde_json::to_vec(&AccentBackup { values }) {
+        let _ = std::fs::write(&path, json);
+    }
+}
+
+/// "Remove all Lens changes": puts the Windows accent colour and the "accent on title bars"
+/// switch back to what they were before Lens first wrote them.
+#[cfg(windows)]
+pub fn restore_windows_accent() -> Result<String, String> {
+    use windows::Win32::Foundation::{LPARAM, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SendMessageTimeoutW, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE,
+    };
+
+    let path = accent_backup_path();
+    let Some(backup) = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice::<AccentBackup>(&b).ok()) else {
+        return Ok("Lens never changed it.".to_string());
+    };
+    let current: Vec<Option<u32>> =
+        ACCENT_VALUES.iter().map(|(k, v)| crate::snip::win::reg_get_dword(k, v)).collect();
+    let mut failed: Vec<String> = Vec::new();
+    let mut changed = 0usize;
+    for (i, act) in plan_accent_restore(&backup, &current).into_iter().enumerate() {
+        let (key, value) = ACCENT_VALUES[i];
+        let res = match act {
+            AccentRestore::Set(v) => crate::snip::win::reg_set_dword(key, value, v),
+            AccentRestore::Delete => crate::snip::win::reg_delete(key, value),
+            AccentRestore::Leave => continue,
+        };
+        match res {
+            Ok(()) => changed += 1,
+            Err(e) => failed.push(format!("{value}: {e}")),
+        }
+    }
+    if !failed.is_empty() {
+        return Err(format!("Could not restore {}", failed.join("; ")));
+    }
+    let _ = std::fs::remove_file(&path);
+    if changed > 0 {
+        let param: Vec<u16> = "ImmersiveColorSet\0".encode_utf16().collect();
+        unsafe {
+            let _ = SendMessageTimeoutW(
+                HWND_BROADCAST,
+                WM_SETTINGCHANGE,
+                WPARAM(0),
+                LPARAM(param.as_ptr() as isize),
+                SMTO_ABORTIFHUNG,
+                200,
+                None,
+            );
+        }
+    }
+    Ok(if changed > 0 {
+        "Accent colour and title-bar accent restored.".to_string()
+    } else {
+        "Already as it was before Lens.".to_string()
+    })
+}
+
+#[cfg(not(windows))]
+pub fn restore_windows_accent() -> Result<String, String> {
+    Ok("Windows only.".to_string())
+}
+
 /// Safely toggles Windows 11's native DWM titlebar & border accent coloring (HKCU\...\DWM\ColorPrevalence)
 /// with zero DLL injection and zero system file modification.
 #[cfg(windows)]
@@ -228,6 +353,7 @@ pub fn set_windows_native_titlebar_accent(enabled: bool) -> Result<(), String> {
         .collect();
     let val_name: Vec<u16> = "ColorPrevalence\0".encode_utf16().collect();
     let dword: u32 = if enabled { 1 } else { 0 };
+    remember_accent_once();
 
     unsafe {
         let mut hkey = HKEY::default();
@@ -292,6 +418,7 @@ pub fn set_windows_accent_color(hex: &str) -> Result<(), String> {
     // Windows DWM AccentColor is 0xAABBGGRR
     let abgr: u32 = 0xFF00_0000 | (b << 16) | (g << 8) | r;
     let bytes = abgr.to_le_bytes();
+    remember_accent_once();
 
     unsafe {
         for (subkey_str, val_str) in [
@@ -370,5 +497,20 @@ mod os_tests {
         assert_eq!(dark_mode_attribute_for_build(19045), Some(20));
         assert_eq!(dark_mode_attribute_for_build(26100), Some(20));
         assert_eq!(dark_mode_attribute_for_build(17134), None);
+    }
+
+    #[test]
+    fn accent_restore_puts_back_only_what_changed() {
+        let backup = AccentBackup { values: vec![Some(1), None, Some(3), Some(0)] };
+        // First value changed, second was created by Lens, third untouched, fourth changed.
+        let current = [Some(9), Some(9), Some(3), Some(1)];
+        assert_eq!(
+            plan_accent_restore(&backup, &current),
+            vec![AccentRestore::Set(1), AccentRestore::Delete, AccentRestore::Leave, AccentRestore::Set(0)]
+        );
+        // A value that never existed and still doesn't is left alone.
+        assert_eq!(plan_accent_restore(&AccentBackup { values: vec![None] }, &[None])[0], AccentRestore::Leave);
+        // A short (older) record never touches values it did not record.
+        assert_eq!(plan_accent_restore(&AccentBackup::default(), &current), vec![AccentRestore::Leave; 4]);
     }
 }
