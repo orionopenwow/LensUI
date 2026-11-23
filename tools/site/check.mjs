@@ -387,9 +387,19 @@ async function waitDesk(page, sel = "#desk-host") {
   await D(() => { for (const w of window.lensSite.desk.wins.values()) window.lensSite.desk.minimize(w.id); });
   await page.waitForTimeout(600);
   // Rest the pointer on the desktop first (the dock frame lets go of the pointer once it's away from the dock).
-  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.4, { steps: 4 }); await page.waitForTimeout(700);
-  await page.mouse.click(box.x + box.width * 0.6, box.y + box.height * 0.45, { button: "right" });
+  // Pick a point that really is bare wallpaper (no window, toast, icon or dock frame on top), then right-click it.
+  const bare = await D(() => {
+    const h = document.getElementById("desk-host").getBoundingClientRect();
+    for (const fy of [0.45, 0.35, 0.55, 0.25]) for (const fx of [0.6, 0.5, 0.7, 0.4, 0.8]) {
+      const x = h.left + h.width * fx, y = h.top + h.height * fy, e = document.elementFromPoint(x, y);
+      if (e && h.top + 40 < y && !e.closest(".lw, .lx-toasts, .lx-dock, iframe, .lt, .dk-ic, .lx-ic, button, a")) return { x, y };
+    }
+    return { x: h.left + h.width * 0.6, y: h.top + h.height * 0.45 };
+  });
+  await page.mouse.move(bare.x, bare.y - 20, { steps: 4 }); await page.waitForTimeout(700);
+  await page.mouse.click(bare.x, bare.y, { button: "right" });
   await page.waitForTimeout(250);
+  if (!(await page.$eval("#desk-host .lx-menu", (m) => !m.hidden))) { await page.waitForTimeout(500); await page.mouse.click(bare.x, bare.y, { button: "right" }); await page.waitForTimeout(300); }
   expect(await page.$eval("#desk-host .lx-menu", (m) => !m.hidden && /New note/.test(m.textContent)), "desktop right-click menu");
   await page.keyboard.press("Escape");
   // Lens Command: Ctrl+Space, type, Enter.
