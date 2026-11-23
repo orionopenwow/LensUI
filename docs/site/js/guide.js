@@ -1,103 +1,233 @@
-// "Ask the Guide" on the website. The same BM25 search Lens uses (src/guide/search.ts, bundled to
-// live/guide/search.js) over the Lens Guide index plus this site's pages. Runs entirely in the
-// browser: no network calls beyond loading these files, no model, no keys.
-import { flash } from "./site.js";
+// The Lens Guide on the website: the floating Lens orb (bottom right, or press /) opens into a Lens
+// glass window with a chat thread. Answers come from the same offline search Lens uses
+// (src/guide/search.ts → live/guide/search.js) over the Guide index and this site's pages: no
+// network, no model, no keys. When a question is about something on the page, the Guide does it:
+// the orb flies to the target, the page scrolls there, and the step list ticks off as Lens works,
+// using the site's one action engine (js/actions.js) and scene engine (js/scenes.js).
+import { reducedMotion } from "./site.js";
 
 const SITE = new URL("../", import.meta.url);
-const SUGGEST = ["How do I make the dock thinner?", "Change the theme", "Turn off AI", "Undo everything Lens changed", "Falling sand wallpaper", "Hot corners", "What does Lens send to Claude?", "Keyboard shortcuts"];
-let search, entries, panel, input, body, lastFocus;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const CHIPS = ["Show me the docks", "Make it dark", "Tile two windows", "Show me the magic right-click", "How do I connect Claude?", "What's open source here?", "How do I install?", "Take the tour"];
+const HOME = new URL("index.html", SITE).href;
+const onHome = () => !!window.lensSite?.desk;
+let search, launcher, win, thread, input, lastFocus, busy = null;
 
 async function load() {
   if (search) return;
-  const [{ GuideSearch }, idx] = await Promise.all([
-    import(new URL("live/guide/search.js", SITE).href),
-    fetch(new URL("data/guide-index.json", SITE)).then((r) => r.json()),
-  ]);
-  entries = idx.entries;
+  const [{ GuideSearch }, idx] = await Promise.all([import(new URL("live/guide/search.js", SITE).href), fetch(new URL("data/guide-index.json", SITE)).then((r) => r.json())]);
   search = new GuideSearch(idx);
 }
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 function build() {
-  panel = document.createElement("div");
-  panel.className = "guide-panel";
-  panel.id = "guide-panel";
-  panel.setAttribute("role", "dialog");
-  panel.setAttribute("aria-modal", "false");
-  panel.setAttribute("aria-labelledby", "guide-title");
-  panel.innerHTML = `
-    <header><strong id="guide-title">Ask the Guide</strong><span class="meta">offline · BM25</span>
-      <button class="x" type="button" data-close aria-label="Close the Guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header>
-    <form role="search"><label class="sr" for="guide-q">Question</label><input id="guide-q" type="search" placeholder="How do I…" autocomplete="off"><button class="btn small" type="submit">Ask <kbd>⏎</kbd></button></form>
-    <div class="body" aria-live="polite"></div>
-    <div class="foot">This guide runs in your browser. In Lens it can also use your local model or Claude if you turn AI on.</div>`;
-  document.body.append(panel);
-  input = panel.querySelector("input");
-  body = panel.querySelector(".body");
-  panel.querySelector("form").addEventListener("submit", (e) => { e.preventDefault(); answer(input.value); });
-  input.addEventListener("input", () => { clearTimeout(input._t); input._t = setTimeout(() => answer(input.value, true), 180); });
-  panel.querySelector("[data-close]").addEventListener("click", close);
-  panel.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-  body.addEventListener("click", (e) => {
-    const s = e.target.closest("[data-sugg]");
-    if (s) { input.value = s.dataset.sugg; answer(s.dataset.sugg); return; }
-    const show = e.target.closest("[data-show]");
-    if (show) showMe(show.dataset.show, e);
+  win = document.createElement("section");
+  win.className = "gw";
+  win.id = "guide-window";
+  win.setAttribute("role", "dialog");
+  win.setAttribute("aria-modal", "true");
+  win.setAttribute("aria-labelledby", "gw-title");
+  win.hidden = true;
+  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
+      <button type="button" data-max aria-label="Expand the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg></button>
+      <button type="button" data-close aria-label="Collapse the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></header>
+    <div class="gw-thread" aria-live="polite"></div>
+    <div class="gw-chips">${CHIPS.map((c) => `<button type="button" data-chip="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+    <form class="gw-in"><label class="sr" for="gw-q">Ask Lens</label><input id="gw-q" type="text" placeholder="Ask Lens how to do anything…" autocomplete="off"><button type="submit" aria-label="Ask">↵</button></form>
+    <i class="gw-rz" aria-hidden="true"></i>`;
+  document.body.append(win);
+  thread = win.querySelector(".gw-thread");
+  input = win.querySelector("input");
+  win.querySelector("form").addEventListener("submit", (e) => { e.preventDefault(); const v = input.value.trim(); if (v) { input.value = ""; ask(v); } });
+  win.querySelector(".gw-chips").addEventListener("click", (e) => { const b = e.target.closest("[data-chip]"); if (b) ask(b.dataset.chip); });
+  win.querySelector("[data-close]").addEventListener("click", () => close());
+  win.querySelector("[data-max]").addEventListener("click", () => win.classList.toggle("is-max"));
+  win.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); if (busy) stopAgent("Stopped. Nothing else will run."); else close(); }
+    if (e.key === "Tab") {
+      const f = [...win.querySelectorAll("button, input, a[href]")].filter((x) => x.offsetParent !== null);
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+      else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+    }
   });
-  home();
+  // Drag by the header, resize from the corner.
+  const barEl = win.querySelector(".gw-bar");
+  let d = null;
+  barEl.addEventListener("pointerdown", (e) => { if (e.target.closest("button") || matchMedia("(max-width: 640px)").matches) return; const r = win.getBoundingClientRect(); d = { x: e.clientX - r.left, y: e.clientY - r.top, id: e.pointerId }; barEl.setPointerCapture(e.pointerId); });
+  barEl.addEventListener("pointermove", (e) => { if (!d || d.id !== e.pointerId) return; win.style.left = `${Math.max(8, Math.min(innerWidth - 120, e.clientX - d.x))}px`; win.style.top = `${Math.max(8, Math.min(innerHeight - 60, e.clientY - d.y))}px`; win.style.right = "auto"; win.style.bottom = "auto"; });
+  barEl.addEventListener("pointerup", () => { d = null; });
+  const rz = win.querySelector(".gw-rz");
+  let r0 = null;
+  rz.addEventListener("pointerdown", (e) => { const r = win.getBoundingClientRect(); r0 = { x: e.clientX, y: e.clientY, w: r.width, h: r.height, id: e.pointerId }; rz.setPointerCapture(e.pointerId); });
+  rz.addEventListener("pointermove", (e) => { if (!r0 || r0.id !== e.pointerId) return; win.style.width = `${Math.max(320, r0.w + e.clientX - r0.x)}px`; win.style.height = `${Math.max(380, r0.h + e.clientY - r0.y)}px`; });
+  rz.addEventListener("pointerup", () => { r0 = null; });
+  // Any click on the page while the agent works stops it.
+  addEventListener("pointerdown", (e) => { if (busy && e.isTrusted && !win.contains(e.target)) stopAgent("You took over. Nothing else will run."); }, true);
+  restore();
 }
 
-function home() {
-  body.innerHTML = `<p class="meta">Try one:</p><div class="sugg">${SUGGEST.map((s) => `<button type="button" data-sugg="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+// ---- open / close: the orb morphs into the window ----------------------------------------------
+export async function open(q) {
+  if (!win) build();
+  if (!win.hidden) { if (q) ask(q); return; }
+  lastFocus = document.activeElement;
+  win.hidden = false;
+  launcher?.setAttribute("aria-expanded", "true");
+  launcher?.classList.add("is-open");
+  sessionStorage.setItem("lens-guide-open", "1");
+  const from = launcher?.getBoundingClientRect(), to = win.getBoundingClientRect();
+  if (from && !reducedMotion() && win.animate) {
+    const sx = from.width / to.width, sy = from.height / to.height;
+    win.animate([{ transformOrigin: "100% 100%", transform: `translate(${from.right - to.right}px, ${from.bottom - to.bottom}px) scale(${sx}, ${sy})`, borderRadius: "50%", opacity: 0.4 }, { transformOrigin: "100% 100%", transform: "translate(-2px, -4px) scale(1.01)", borderRadius: "18px", opacity: 1, offset: 0.75 }, { transformOrigin: "100% 100%", transform: "none", borderRadius: "18px", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
+  } else if (win.animate) win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+  input.focus({ preventScroll: true });
+  if (!thread.children.length) say("lens", `Hi, I'm the Lens Guide. Ask how to do anything in Lens, or tap a suggestion: I'll show you right here on the page.`);
+  load().catch(() => {});
+  if (q) ask(q);
+}
+export const isOpen = () => !!win && !win.hidden;
+export function close() {
+  if (!win || win.hidden) return;
+  stopAgent();
+  const done = () => { win.hidden = true; launcher?.classList.remove("is-open"); };
+  launcher?.setAttribute("aria-expanded", "false");
+  sessionStorage.setItem("lens-guide-open", "0");
+  const to = launcher?.getBoundingClientRect(), from = win.getBoundingClientRect();
+  if (to && !reducedMotion() && win.animate) win.animate([{ transformOrigin: "100% 100%", transform: "none", opacity: 1 }, { transformOrigin: "100% 100%", transform: `translate(${to.right - from.right}px, ${to.bottom - from.bottom}px) scale(${to.width / from.width}, ${to.height / from.height})`, opacity: 0 }], { duration: 260, easing: "cubic-bezier(.5,0,.75,0)" }).finished.then(done, done);
+  else done();
+  (lastFocus && document.contains(lastFocus) ? lastFocus : launcher)?.focus?.({ preventScroll: true });
+}
+const save = () => sessionStorage.setItem("lens-guide-thread", thread.innerHTML.slice(-40000));
+function restore() { const t = sessionStorage.getItem("lens-guide-thread"); if (t) thread.innerHTML = t; }
+
+// ---- the thread ---------------------------------------------------------------------------------
+function say(who, html, { stream = false } = {}) {
+  const m = document.createElement("div");
+  m.className = `gm ${who}`;
+  thread.append(m);
+  if (!stream || reducedMotion()) { m.innerHTML = html; thread.scrollTop = 1e6; save(); return Promise.resolve(m); }
+  // Streaming-style reveal: words appear in order (the markup stays intact).
+  m.innerHTML = html;
+  const words = [];
+  const walk = (n) => { for (const c of [...n.childNodes]) { if (c.nodeType === 3) { const parts = c.textContent.split(/(\s+)/); const frag = document.createDocumentFragment(); for (const p of parts) { const s = document.createElement("span"); s.textContent = p; s.className = "w"; frag.append(s); words.push(s); } c.replaceWith(frag); } else walk(c); } };
+  walk(m);
+  return new Promise((res) => {
+    let i = 0;
+    const step = () => { for (let k = 0; k < 3 && i < words.length; k++) words[i++].classList.add("on"); thread.scrollTop = 1e6; if (i < words.length) setTimeout(step, 28); else { m.querySelectorAll(".w").forEach((w) => w.replaceWith(w.textContent)); m.normalize(); save(); res(m); } };
+    step();
+  });
+}
+function typingDots() { const d = document.createElement("div"); d.className = "gm lens typing"; d.innerHTML = "<i></i><i></i><i></i>"; d.setAttribute("aria-label", "Lens is typing"); thread.append(d); thread.scrollTop = 1e6; return d; }
+function steps(list) {
+  const el = document.createElement("ol");
+  el.className = "gm lens steps";
+  el.innerHTML = `<li class="hd">Lens is doing…</li>${list.map((s) => `<li>${esc(s)}</li>`).join("")}`;
+  thread.append(el); thread.scrollTop = 1e6;
+  return { tick(i, st) { const li = el.children[i + 1]; if (li) li.className = st; }, end(note) { el.querySelector(".hd").textContent = note ?? "Done"; el.classList.add("finished"); save(); } };
+}
+function stopAgent(note) {
+  if (!busy) return;
+  busy.stop();
+  busy = null;
+  if (note) say("lens", esc(note));
 }
 
-function card(e) {
-  const where = (e.path || []).join(" › ");
-  const text = (e.text || "").replace(/\s+/g, " ");
-  const short = text.length > 220 ? text.slice(0, text.lastIndexOf(" ", 220)) + "…" : text;
-  const clip = e.clip ? `<img src="${new URL(`media/${e.clip}.webp`, SITE)}" alt="" loading="lazy" width="380">` : "";
-  const examples = e.examples?.length ? `<p class="mono" style="font-size:12.5px">${e.examples.slice(0, 3).map((x) => `“${esc(x)}”`).join(" · ")}</p>` : "";
-  return `<div class="ans"><h4>${esc(e.title)}</h4><div class="meta">${esc(where)}</div>${clip}${short && short !== e.title ? `<p>${esc(short)}</p>` : ""}${examples}
-    <div class="row">${e.href ? `<a class="btn small" href="${new URL(e.href, SITE)}" data-show="${esc(e.href)}">Show me</a>` : ""}${e.doc ? `<a class="btn small" href="${new URL(e.doc, SITE)}">Read the doc</a>` : ""}</div></div>`;
+/** Flies a copy of the orb from the Guide window to an element on the page, and rings it. */
+async function flyTo(el) {
+  if (!el) return;
+  el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+  await new Promise((r) => setTimeout(r, reducedMotion() ? 50 : 520));
+  const from = win.querySelector(".gw-orb").getBoundingClientRect(), to = el.getBoundingClientRect();
+  if (!reducedMotion()) {
+    const o = document.createElement("span");
+    o.className = "fly-orb";
+    document.body.append(o);
+    const a = o.animate([{ transform: `translate(${from.left}px, ${from.top}px)` }, { transform: `translate(${(from.left + to.left) / 2}px, ${Math.min(from.top, to.top) - 80}px)`, offset: 0.5 }, { transform: `translate(${to.left + to.width / 2 - 14}px, ${to.top + Math.min(40, to.height / 2) - 14}px)` }], { duration: 700, easing: "cubic-bezier(.3,.7,.3,1)", fill: "forwards" });
+    await a.finished.catch(() => {});
+    setTimeout(() => o.remove(), 400);
+  }
+  el.classList.remove("guide-ring"); void el.offsetWidth; el.classList.add("guide-ring");
+  setTimeout(() => el.classList.remove("guide-ring"), 2200);
 }
 
-async function answer(q, typing = false) {
-  q = q.trim();
-  if (!q) return home();
-  if (!search) { body.innerHTML = `<p class="meta">Loading the index…</p>`; await load(); }
-  const hits = search.search(q, { limit: 4 });
-  const top = hits[0]?.score ?? 0;
-  if (!hits.length || top < 1.2) {
-    if (typing) return;
-    body.innerHTML = `<p>I couldn't find that in Lens's settings or docs. Try other words, or browse the <a href="${new URL("docs/", SITE)}">user guide</a>.</p><div class="sugg">${SUGGEST.slice(0, 4).map((s) => `<button type="button" data-sugg="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+// ---- answers -------------------------------------------------------------------------------------
+const goHome = (hash) => { location.href = `${HOME}${hash}`; };
+async function ask(q) {
+  if (busy) stopAgent();
+  say("you", esc(q));
+  const t = typingDots();
+  const ql = q.toLowerCase();
+  await new Promise((r) => setTimeout(r, reducedMotion() ? 50 : 420));
+  t.remove();
+  const L = window.lensSite;
+
+  if (/\btour\b/.test(ql)) {
+    if (!onHome()) return goHome("#scene/everyday");
+    await say("lens", "Here's the tour: the desk plays each feature as a short scene. Click into the desk any time to take over.", { stream: true });
+    await flyTo(document.getElementById("stage"));
+    L.scenes.go(0); L.scenes.play();
     return;
   }
-  const good = hits.filter((h) => h.score >= top * 0.45).slice(0, 3);
-  body.innerHTML = `<p class="meta">${good.length === 1 ? "Best match" : `Top ${good.length} matches`} from Lens's own index</p>${good.map((h) => card(h.entry)).join("")}`;
-}
-
-function showMe(href, e) {
-  const u = new URL(href, SITE);
-  if (u.pathname === location.pathname && u.hash) {
-    e.preventDefault();
-    flash(decodeURIComponent(u.hash.slice(1)));
-    history.replaceState(null, "", u.hash);
-    if (matchMedia("(max-width: 560px)").matches) close();
+  // A scene by name ("show me the magic right-click", "how do I connect Claude?").
+  const SC = (await import("./scenes.js")).SCENES;
+  const sceneHit = SC.find((s) => ql.includes(s.id.replace(/-/g, " ")) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "claude") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic-right-click") : null);
+  if (/\bdocks?\b/.test(ql) && !/\bdark|tile\b/.test(ql)) {
+    if (!onHome()) return goHome("#docks");
+    await say("lens", "Lens has nine dock styles. These are the real docks, live. I'll put Islands on the desk.", { stream: true });
+    const st = steps(["Scroll to the dock styles", "Pick Islands", "Apply it to the desk"]);
+    st.tick(0, "doing");
+    const rail = document.getElementById("dock-rail");
+    await flyTo(rail);
+    st.tick(0, "done"); st.tick(1, "doing");
+    const tile = [...rail.querySelectorAll(".dr")].find((b) => /Islands/.test(b.textContent));
+    await flyTo(tile);
+    st.tick(1, "done"); st.tick(2, "doing");
+    tile?.click();
+    st.tick(2, "done"); st.end("Done · try another dock in the row");
+    return;
   }
+  if (sceneHit && /\b(show|how|play|see|connect)\b/.test(ql)) {
+    if (!onHome()) return goHome(`#scene/${sceneHit.id}`);
+    await say("lens", `${esc(sceneHit.line)} Watch it on the desk.`, { stream: true });
+    await flyTo(document.getElementById("stage"));
+    L.playScene(sceneHit.id);
+    if (sceneHit.id === "claude") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
+    return;
+  }
+  if (onHome()) {
+    const A = await import("./actions.js");
+    const desk = L.desk;
+    const plan = await A.plan(q, desk);
+    if (plan.length) {
+      await say("lens", `On it. I'll do it on the desk; press Esc or click anywhere to stop me.`, { stream: true });
+      L.scenes.pause();
+      await flyTo(document.getElementById("stage"));
+      const st = steps(plan.map((s) => s.say));
+      const o = A.orbFor(desk);
+      busy = { stop: () => o.stop() };
+      try { await A.run(desk, plan, { onStep: (i, _s, state) => st.tick(i, state) }); st.end("Done · every change undoes"); } catch { st.end("Stopped"); }
+      busy = null;
+      return;
+    }
+  }
+  if (/\bopen.?source\b/.test(ql)) {
+    await say("lens", `Lens itself is open source (MIT), and Lens Apps installs free and open-source tools like ArtCraft, Concat, Krita and Blender from their official releases.`, { stream: true });
+    if (onHome()) await flyTo(document.getElementById("apps"));
+    return;
+  }
+  if (/\binstall|download|get lens\b/.test(ql)) {
+    await say("lens", `Lens runs on Windows 10 and 11. It's in beta: build it from source today (a few minutes), and signed installers arrive on GitHub Releases. macOS and Linux are on the roadmap. <a href="${new URL("download.html", SITE)}">Download page</a>`, { stream: true });
+    return;
+  }
+  // Everything else: the Guide index.
+  try { await load(); } catch { return say("lens", `The Guide index didn't load. The <a href="${new URL("docs/", SITE)}">user guide</a> has the same answers.`); }
+  const hits = search.search(q, { limit: 3 });
+  if (!hits.length || hits[0].score < 1.2) return say("lens", `I couldn't find that in Lens's settings or docs. Try other words, or browse the <a href="${new URL("docs/", SITE)}">user guide</a>.`, { stream: true });
+  const e = hits[0].entry;
+  const where = (e.path || []).join(" › ");
+  const text = (e.text || "").replace(/\s+/g, " ");
+  const short = text.length > 260 ? `${text.slice(0, text.lastIndexOf(" ", 260))}…` : text;
+  await say("lens", `<b>${esc(e.title)}</b>${where ? ` <span class="where">${esc(where)}</span>` : ""}<br>${esc(short || "Here's where it lives in Lens.")}${e.doc ? ` <a href="${new URL(e.doc, SITE)}">Read more</a>` : ""}${hits[1] ? `<span class="also">Also: ${hits.slice(1).map((h) => esc(h.entry.title)).join(" · ")}</span>` : ""}`, { stream: true });
 }
 
-export async function open(q) {
-  if (!panel) build();
-  lastFocus = document.activeElement;
-  panel.classList.add("open");
-  document.getElementById("guide-fab")?.setAttribute("aria-expanded", "true");
-  input.focus();
-  load().catch(() => { body.innerHTML = `<p>The Guide index didn't load. The <a href="${new URL("docs/", SITE)}">user guide</a> has the same answers.</p>`; });
-  if (q) { input.value = q; answer(q); }
-}
-function close() {
-  panel.classList.remove("open");
-  document.getElementById("guide-fab")?.setAttribute("aria-expanded", "false");
-  lastFocus?.focus?.();
-}
+launcher = document.getElementById("guide-orb");

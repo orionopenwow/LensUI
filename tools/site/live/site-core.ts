@@ -1,68 +1,67 @@
 // The website's backend for the live dock: the parity harness's mock (tools/parity/mock/core.ts) with
-// a believable set of apps and real icons. Icons are files the site build writes to media/icons and
-// media/apps (see tools/site/lib/icons.mjs); the dock iframe lives at live/dock/, hence "../../".
+// the demo desk's apps and real icons, bridged to the page. The page's desk (docs/site/js/desk.js)
+// owns the windows: it tells the dock which are open ({lens:"windows"}), and the dock's launch, focus,
+// minimise and close requests go back to the page ({lens:"act"}). Icons are files the site build writes
+// to media/icons and media/apps (tools/site/lib/icons.mjs); the dock frame lives at live/dock/.
 import { invoke as baseInvoke } from "../../parity/mock/core";
 export { calls, convertFileSrc, isTauri } from "../../parity/mock/core";
 
 const I = (id: string) => `../../media/icons/${id}.svg`;
 const A = (file: string) => `../../media/apps/${file}`;
 
+/** The desk's apps, pinned in this order. `id` is the desk app id the page opens. */
 export const APPS = [
-  { id: "lens-browser", name: "Lens Browser", path: "C:\\Program Files\\Lens UI\\lens-browser.exe", proc: "lens-browser.exe", icon: I("lens-browser") },
-  { id: "explorer", name: "File Explorer", path: "C:\\Windows\\explorer.exe", proc: "explorer.exe", icon: I("explorer") },
-  { id: "terminal", name: "Terminal", path: "C:\\Apps\\wt.exe", proc: "wt.exe", icon: I("terminal") },
-  { id: "vscodium", name: "VSCodium", path: "C:\\Apps\\VSCodium\\VSCodium.exe", proc: "VSCodium.exe", icon: I("vscodium") },
-  { id: "spotify", name: "Spotify", path: "C:\\Apps\\Spotify\\Spotify.exe", proc: "Spotify.exe", icon: I("spotify") },
-  { id: "discord", name: "Discord", path: "C:\\Apps\\Discord\\Discord.exe", proc: "Discord.exe", icon: I("discord") },
-  { id: "obsidian", name: "Obsidian", path: "C:\\Apps\\Obsidian\\Obsidian.exe", proc: "Obsidian.exe", icon: I("obsidian") },
-  { id: "figma", name: "Figma", path: "C:\\Apps\\Figma\\Figma.exe", proc: "Figma.exe", icon: I("figma") },
-  { id: "krita", name: "Krita", path: "C:\\Apps\\Krita\\krita.exe", proc: "krita.exe", icon: A("krita-icon.webp") },
-  { id: "steam", name: "Steam", path: "C:\\Apps\\Steam\\steam.exe", proc: "steam.exe", icon: I("steam") },
-  { id: "lens-apps", name: "Lens Apps", path: "lens://apps", proc: "lens-apps", icon: I("lens-apps") },
-  { id: "lens-settings", name: "Lens Settings", path: "lens://settings", proc: "lens-settings", icon: I("lens-settings") },
+  { id: "browser", name: "Lens Browser", path: "lens://browser", icon: I("lens-browser") },
+  { id: "files", name: "Files", path: "lens://files", icon: I("explorer") },
+  { id: "notes", name: "Notes", path: "lens://notes", icon: I("lens-notes") },
+  { id: "music", name: "Lens Music", path: "lens://music", icon: I("lens-music") },
+  { id: "monitor", name: "Monitor", path: "lens://monitor", icon: I("lens-monitor") },
+  { id: "timer", name: "Timer", path: "lens://timer", icon: I("lens-timer") },
+  { id: "cleaner", name: "Lens Cleaner", path: "lens://cleaner", icon: I("lens-cleaner") },
+  { id: "terminal", name: "Terminal", path: "lens://terminal", icon: I("terminal") },
+  { id: "code", name: "VSCodium", path: "lens://code", icon: I("vscodium") },
+  { id: "chat", name: "Discord", path: "lens://chat", icon: I("discord") },
+  { id: "store", name: "Lens Apps", path: "lens://store", icon: I("lens-apps") },
+  { id: "settings", name: "Settings", path: "lens://settings", icon: I("lens-settings") },
 ];
-// Search results beyond the pinned ones (what "Installed apps" shows).
+/** The short set used by the dock-style rail (?mini=1). */
+export const MINI = ["browser", "files", "notes", "music", "code", "settings"];
 const EXTRA = [
-  { name: "Notepad", path: "C:\\Windows\\notepad.exe", icon: I("notepad") },
-  { name: "Blender", path: "C:\\Apps\\Blender\\blender.exe", icon: A("blender-icon.svg") },
-  { name: "OBS Studio", path: "C:\\Apps\\obs\\obs64.exe", icon: A("obs-studio-icon.webp") },
-  { name: "Ollama", path: "C:\\Apps\\Ollama\\ollama app.exe", icon: A("ollama-icon.webp") },
-  { name: "ArtCraft", path: "C:\\Apps\\ArtCraft\\artcraft.exe", icon: A("artcraft-icon.webp") },
-  { name: "Firefox", path: "C:\\Apps\\Firefox\\firefox.exe", icon: I("firefox") },
-  { name: "Lens Command", path: "lens://command", icon: I("lens-command") },
+  { name: "Krita", path: "lens://store/krita", icon: A("krita-icon.webp") },
+  { name: "Blender", path: "lens://store/blender", icon: A("blender-icon.svg") },
+  { name: "OBS Studio", path: "lens://store/obs-studio", icon: A("obs-studio-icon.webp") },
+  { name: "Spotify", path: "lens://music/spotify", icon: I("spotify") },
+  { name: "Firefox", path: "lens://browser/firefox", icon: I("firefox") },
 ];
-/** App name → icon, for decorating search rows in the demo. */
 export const ICON_BY_NAME: Record<string, string> = Object.fromEntries([...APPS, ...EXTRA].map((a) => [a.name.toLowerCase(), a.icon]));
 const ICON: Record<string, string> = Object.fromEntries([...APPS, ...EXTRA].map((a) => [a.path.toLowerCase(), a.icon]));
 
-const win = (hwnd: number, title: string, id: string, focused = false) => {
-  const a = APPS.find((x) => x.id === id)!;
-  return { hwnd, title, processName: a.proc, exePath: a.path, isFocused: focused, isMinimized: false, isMaximized: false, iconDataUrl: a.icon };
-};
-const RUNNING = [
-  win(201, "lens-ui — VSCodium", "vscodium", true),
-  win(202, "Release notes · Lens Browser", "lens-browser"),
-  win(203, "Spotify", "spotify"),
-  win(204, "Downloads", "explorer"),
-  win(205, "#design — Discord", "discord"),
-];
-const INSTALLED = [...APPS.filter((a) => !a.path.startsWith("lens://")), ...EXTRA]
-  .map((a) => ({ name: a.name, path: a.path, category: "App" }))
-  .sort((a, b) => a.name.localeCompare(b.name));
+let running: any[] = [];
+/** The page's open windows, in the dock's RunningWindow shape. */
+export function setRunning(list: { hwnd: number; app: string; title: string; focused: boolean; min: boolean }[]) {
+  running = list.map((w) => {
+    const a = APPS.find((x) => x.id === w.app) ?? APPS[0];
+    return { hwnd: w.hwnd, title: w.title, processName: a.path.split("/").pop(), exePath: a.path, isFocused: w.focused, isMinimized: w.min, isMaximized: false, iconDataUrl: a.icon };
+  });
+  return running;
+}
+const toPage = (cmd: string, args: any) => { try { window.parent?.postMessage({ lens: "act", cmd, args }, "*"); } catch { /* no host */ } };
+const INSTALLED = [...APPS, ...EXTRA].map((a) => ({ name: a.name, path: a.path, category: "App" })).sort((a, b) => a.name.localeCompare(b.name));
 
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   if (cmd === "get_icon_for_path") return (ICON[String(args?.path ?? "").toLowerCase()] ?? null) as T;
-  if (cmd === "get_running_windows") return RUNNING as T;
+  if (cmd === "get_running_windows") return running as T;
   if (cmd === "scan_installed_apps_cmd") return INSTALLED as T;
+  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd") { toPage(cmd, args); return null as T; }
   if (cmd === "get_launcher_home_cmd") {
     return {
       recentFiles: [
-        { name: "Launch plan.md", path: "C:\\Users\\you\\Documents\\Launch plan.md", extension: "md", modifiedMinutesAgo: 6 },
-        { name: "dock-mockup.fig", path: "C:\\Users\\you\\Design\\dock-mockup.fig", extension: "fig", modifiedMinutesAgo: 25 },
+        { name: "Launch plan.md", path: "lens://notes", extension: "md", modifiedMinutesAgo: 6 },
+        { name: "release-notes.html", path: "lens://browser", extension: "html", modifiedMinutesAgo: 25 },
       ],
       folders: [
-        { name: "Downloads", path: "C:\\Users\\you\\Downloads", color: "cobalt", itemCount: 42 },
-        { name: "Projects", path: "C:\\Users\\you\\Projects", color: "amber", itemCount: 9 },
+        { name: "Downloads", path: "lens://files", color: "cobalt", itemCount: 6 },
+        { name: "Projects", path: "lens://files", color: "amber", itemCount: 9 },
       ],
     } as T;
   }

@@ -13,7 +13,7 @@ import { dirname, join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { render, setLinkResolver, slugify, esc } from "./lib/markdown.mjs";
-import { page, REPO } from "./lib/layout.mjs";
+import { page, REPO, setStars } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
 import { home, download } from "./pages.mjs";
 import { buildBrand } from "./lib/logo.mjs";
@@ -28,6 +28,14 @@ const write = (rel, html) => { const f = join(site, rel); mkdirSync(dirname(f), 
 const git = (...a) => { try { return execFileSync("git", ["-C", root, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch { return null; } };
 const read = (p) => (existsSync(join(root, p)) ? readFileSync(join(root, p), "utf8") : null);
 const stripComments = (md) => md.replace(/<!--[\s\S]*?-->/g, "");
+
+// ---- GitHub stars for the header and hero (build time; offline → no count) --------------------
+let stars = null;
+try {
+  const r = await fetch("https://api.github.com/repos/orionopenwow/LensUI", { headers: { accept: "application/vnd.github+json", ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) }, signal: AbortSignal.timeout(4000) });
+  if (r.ok) stars = (await r.json()).stargazers_count ?? null;
+} catch { /* offline */ }
+setStars(stars);
 
 // ---- data ----------------------------------------------------------------------------------
 const packs = await writePacks(join(site, "data/packs.json"));
@@ -139,16 +147,16 @@ const siteEntries = gi.entries.map((e) => {
   let href = null, clip = null, doc = null;
   if (t.tab) { href = `docs/settings-reference.html#${slugify(tabLabel[t.tab] ?? t.tab)}`; clip = CLIP_BY_TAB[t.tab] ?? null; }
   if (e.kind === "lesson") href = `docs/${t.lesson}.html`;
-  if (e.kind === "command") { href = "#command"; }
+  if (e.kind === "command") { href = "#scene/everyday"; }
   if (e.kind === "hotkey") href = "docs/commands-and-shortcuts.html#keyboard-shortcuts";
   if (e.kind === "pack") { href = "#themes"; clip = "themes"; }
-  if (e.kind === "dock-style") { href = "#dock"; clip = "dock-styles"; }
-  if (e.kind === "scene") { href = "#dock"; clip = "playground-sand"; }
+  if (e.kind === "dock-style") { href = "#docks"; clip = "dock-styles"; }
+  if (e.kind === "scene") { href = "#scene/backdrops"; clip = "playground-sand"; }
   if (e.kind === "doc" && t.doc) { const r = refFor(t.doc); doc = r ? `docs/${r.slug}.html` : null; }
   return { id: e.id, kind: e.kind, title: e.title, text: (e.text ?? "").slice(0, 480), path: e.path, examples: e.examples, href, doc, clip: clips.some((c) => c.id === clip) ? clip : null };
 });
 // Feature → stage pane (selecting it through the chips) or a home section.
-const ANCHOR = { dock: "dock", themes: "themes", windows: "windows", "living-desktop": "dock", pointers: "dock", command: "command", voice: "voice", browser: "browser", ai: "ai", snip: "snip", guide: "guide", tester: "trust" };
+const ANCHOR = { dock: "docks", themes: "themes", windows: "scene/tiling", "living-desktop": "scene/backdrops", pointers: "stage", command: "scene/everyday", voice: "scene/voice", browser: "scene/browser-ai", ai: "byo", snip: "scene/snip", guide: "stage", tester: "trust" };
 const featureEntries = FEATURES.map((f) => ({ id: `site.feature.${f.id}`, kind: "card", title: f.title, text: `${f.lede} ${f.bullets.join(" ")}`, path: ["Lens", f.title], href: `#${ANCHOR[f.id] ?? "stage"}`, clip: f.clips.find((id) => clips.some((c) => c.id === id)) ?? null }));
 write("data/guide-index.json", JSON.stringify({ version: 1, source: guideFile, entries: [...featureEntries, ...siteEntries, ...searchDocs.map((d) => ({ ...d, text: d.text.slice(0, 300) }))] }));
 
@@ -159,8 +167,8 @@ const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` :
 // The Apps pane reads the Lens Apps catalogue (feature/lens-apps; vendored until merged).
 const appsCat = read("catalog/apps/catalog.json") ? JSON.parse(read("catalog/apps/catalog.json")) : JSON.parse(read("tools/site/vendor/apps/catalog.json"));
 write("data/apps.json", JSON.stringify({ apps: (appsCat.apps ?? appsCat).map((a) => ({ name: a.name, category: a.category, pitch: a.pitch, openSource: a.openSource, license: a.license })) }));
-write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs }), scripts: ["js/stage.js"] }));
-write("download.html", page({ title: "Download", desc: "How to get Lens UI: build from source, releases, and which Windows versions it works on.", path: "download.html", body: download({ log }) }));
+write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs, stars }), scripts: ["js/home.js"] }));
+write("download.html", page({ title: "Download", desc: "How to get Lens UI on Windows 10 and 11, where macOS and Linux stand, releases, and which Windows versions it works on.", path: "download.html", body: download({ log, stars }) }));
 
 // Testers: today's checklist from the daily notes.
 let latestSrc = "research/daily";
@@ -196,5 +204,5 @@ writeFileSync(join(site, ".nojekyll"), "");
 
 // Old URLs from the first version of the site point somewhere useful.
 const moved = (to) => `<!DOCTYPE html><meta charset="utf-8"><title>Moved</title><meta http-equiv="refresh" content="0; url=${to}"><link rel="canonical" href="${to}"><p><a href="${to}">This page moved.</a></p>`;
-for (const [from, to] of [["features.html", "./#chips"], ["try.html", "./#stage"], ["vision.html", "./#vision"], ["changelog.html", "download.html#releases"]]) write(from, moved(to));
+for (const [from, to] of [["features.html", "./#features"], ["try.html", "./#stage"], ["vision.html", "./#trust"], ["changelog.html", "download.html#releases"]]) write(from, moved(to));
 console.log(`[site] ${userPages.length + REF.length + 4} pages · ${clips.length} clips · ${packs.length} packs · guide index ${siteEntries.length + featureEntries.length + searchDocs.length} entries · tester notes: ${latestSrc}`);

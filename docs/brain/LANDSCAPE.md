@@ -57,3 +57,17 @@ Fifteen lookups across the products Lens is compared with. Each row: what change
 2. **Raycast and PowerToys are converging on Lens's Command + dock.** Lens wins on the whole-desktop design and visible, reversible agents; it must not lose on speed (clipboard, cold start).
 3. **Integrate over rebuild** (Beeper, Raycast-style MCP configs, Windows agent workspace).
 4. **Cleaner and Living skies have clear demand**; ship both with Lens's reversibility guarantees as the headline.
+
+## Cross-platform plan (macOS and Linux)
+
+Written with site v3, which now states platform status on the Download page (`download.html#platforms`).
+
+- **Today.** Lens is a Windows 10/11 shell. 78 of the Rust modules in `src-tauri/src` gate their work on `cfg(windows)`; the portability workflow only runs `cargo check` on macOS and Ubuntu, so nothing runs there. The site says "on the roadmap", never "coming soon" with a date, and points to GitHub Releases.
+- **Already portable.** `.lenstheme` files (plain JSON), the theme packs (`src/themes`), the playground and living backdrops (canvas/WebGL, `src/playground`), Lens Command's intent engine, the Guide index and search, and the website's desk demo.
+- **Not portable.** The dock as a taskbar replacement, window styling and the DWM hook, keyboard and mouse hooks, tiling, Explorer integration, the Cleaner's Windows paths, toast mirroring, and Windows Settings pages.
+- **First steps, in order.**
+  1. Split `src-tauri` into a platform trait (`Shell`: windows list, focus, launch, wallpaper, notifications) with the Windows implementation behind it. This doesn't change behaviour; CI keeps it green.
+  2. Run Lens on Linux (GNOME/KDE) as an app, without replacing the shell: Command, Shelf, Browser, Music, themes and the living wallpaper as a window. Ship it as an AppImage or Flatpak beta.
+  3. Do the same on macOS: a menu-bar app with Command, Shelf, Browser and themes. The dock stays macOS's own.
+  4. Then decide per platform whether a dock or panel replacement is worth it (KDE Plasma applets and GNOME extensions are the native routes).
+- **Website.** When step 2 ships, change the Linux card on `download.html` from "On the roadmap" to "Preview" and add a download link. `home.js` OS detection already routes Mac and Linux visitors to the platform section.
