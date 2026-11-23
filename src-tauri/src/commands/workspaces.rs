@@ -27,7 +27,7 @@ pub(crate) fn tile_windows_cmd(app: AppHandle, state: State<AppState>, layout: S
             work.position.y + work.size.height as i32
         };
         let dock_h = if cfg.dock.auto_hide == "never" {
-            ((cfg.dock.icon_size as f64 + 26.0 + cfg.dock.grounded_margin_bottom as f64) * scale) as i32
+            ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 26.0 + cfg.dock.grounded_margin_bottom as f64) * scale) as i32
         } else {
             0
         };
@@ -59,7 +59,7 @@ pub(crate) fn tiling_work_area(app: &AppHandle, cfg: &LensConfig) -> Option<(i32
         work.position.y + work.size.height as i32
     };
     let dock_h = if cfg.dock.auto_hide == "never" {
-        ((cfg.dock.icon_size as f64 + 26.0 + cfg.dock.grounded_margin_bottom as f64) * scale) as i32
+        ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 26.0 + cfg.dock.grounded_margin_bottom as f64) * scale) as i32
     } else {
         0
     };

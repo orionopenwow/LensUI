@@ -84,6 +84,77 @@ fn delete_tree(subkey: &str) -> Result<(), String> {
     unsafe { RegDeleteTreeW(HKEY_CURRENT_USER, PCWSTR(k.as_ptr())).ok().map_err(|e| e.to_string()) }
 }
 
+/// True when the HKCU key exists and holds no values and no subkeys.
+#[cfg(windows)]
+pub fn key_is_empty(subkey: &str) -> bool {
+    use windows::core::{PCWSTR, PWSTR};
+    use windows::Win32::Foundation::ERROR_NO_MORE_ITEMS;
+    use windows::Win32::System::Registry::{RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_READ};
+    let k = wide(subkey);
+    unsafe {
+        let mut h = HKEY::default();
+        if RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(k.as_ptr()), 0, KEY_READ, &mut h).is_err() {
+            return false;
+        }
+        // Anything but "no more items" (including "more data") means there is something there.
+        let mut name = vec![0u16; 512];
+        let mut len = name.len() as u32;
+        let no_subkeys = RegEnumKeyExW(h, 0, PWSTR(name.as_mut_ptr()), &mut len, None, PWSTR::null(), None, None) == ERROR_NO_MORE_ITEMS;
+        let mut vname = vec![0u16; 512];
+        let mut vlen = vname.len() as u32;
+        let no_values = RegEnumValueW(h, 0, PWSTR(vname.as_mut_ptr()), &mut vlen, None, None, None, None) == ERROR_NO_MORE_ITEMS;
+        let _ = RegCloseKey(h);
+        no_subkeys && no_values
+    }
+}
+
+/// Deletes the HKCU key only when it is empty. Returns whether it was deleted.
+#[cfg(windows)]
+pub fn delete_key_if_empty(subkey: &str) -> bool {
+    use windows::core::PCWSTR;
+    use windows::Win32::System::Registry::{RegDeleteKeyW, HKEY_CURRENT_USER};
+    if !key_is_empty(subkey) {
+        return false;
+    }
+    let k = wide(subkey);
+    // RegDeleteKeyW itself refuses a key that has subkeys.
+    unsafe { RegDeleteKeyW(HKEY_CURRENT_USER, PCWSTR(k.as_ptr())).is_ok() }
+}
+
+#[cfg(not(windows))]
+pub fn delete_key_if_empty(_subkey: &str) -> bool {
+    false
+}
+
+/// Parents of `root` that Lens may have created on the way to it, nearest first. Each is removed
+/// again when (and only when) it is left empty, so taking a Lens key out leaves no empty shells
+/// like `SystemFileAssociations\.mp3\shell` behind. Never `Software` itself, and never the
+/// shared `Software\Classes` or `Software\Microsoft`.
+pub fn prunable_parents(root: &str) -> Vec<String> {
+    let parts: Vec<&str> = root.split('\\').filter(|p| !p.is_empty()).collect();
+    let mut out = Vec::new();
+    let mut n = parts.len().saturating_sub(1);
+    while n >= 2 {
+        let key = parts[..n].join("\\");
+        let lower = key.to_ascii_lowercase();
+        if lower == "software\\classes" || lower == "software\\microsoft" {
+            break;
+        }
+        out.push(key);
+        n -= 1;
+    }
+    out
+}
+
+/// Removes the empty parents a deleted root leaves behind, stopping at the first that is in use.
+fn prune_empty_parents(root: &str) {
+    for parent in prunable_parents(root) {
+        if !delete_key_if_empty(&parent) {
+            break;
+        }
+    }
+}
+
 #[cfg(not(windows))]
 pub fn key_exists(_subkey: &str) -> bool {
     false
@@ -133,7 +204,39 @@ pub fn remove(plan: &RegPlan) -> Result<Vec<String>, String> {
         if is_owned(r) {
             delete_tree(r)?;
             removed.push(r.clone());
+            prune_empty_parents(r);
         }
     }
     Ok(removed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_parents_are_pruned_up_to_the_shared_roots() {
+        assert_eq!(
+            prunable_parents("Software\\Classes\\SystemFileAssociations\\.mp3\\shell\\LensUI.Transcribe"),
+            vec![
+                "Software\\Classes\\SystemFileAssociations\\.mp3\\shell",
+                "Software\\Classes\\SystemFileAssociations\\.mp3",
+                "Software\\Classes\\SystemFileAssociations",
+            ]
+        );
+        assert_eq!(prunable_parents("Software\\Classes\\*\\shell\\LensUI"), vec!["Software\\Classes\\*\\shell", "Software\\Classes\\*"]);
+        // A key straight under Software\Classes has no parent Lens may remove.
+        assert!(prunable_parents("Software\\Classes\\lens").is_empty());
+        // Browser keys: up to the vendor, never Software itself, never Software\Microsoft.
+        assert_eq!(
+            prunable_parents("Software\\Google\\Chrome\\NativeMessagingHosts\\com.lensui.bridge"),
+            vec!["Software\\Google\\Chrome\\NativeMessagingHosts", "Software\\Google\\Chrome", "Software\\Google"]
+        );
+        assert_eq!(
+            prunable_parents("Software\\Microsoft\\Edge\\NativeMessagingHosts\\com.lensui.bridge"),
+            vec!["Software\\Microsoft\\Edge\\NativeMessagingHosts", "Software\\Microsoft\\Edge"]
+        );
+        assert!(prunable_parents("Software").is_empty());
+        assert!(prunable_parents("").is_empty());
+    }
 }

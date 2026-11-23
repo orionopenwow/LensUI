@@ -323,7 +323,7 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
         let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
         let (pal_w, pal_h, x, y) = if anchor == "bottom-dock" {
             // Exact live dock length, positioned strictly 0px flush directly ABOVE the dock pill!
-            let dock_pill_h = ((cfg.dock.icon_size as f64 + 18.0) * scale) as i32;
+            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
             let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
             let w = (dock_w.max(680.0) * scale).round() as u32;
             let h = (412.0 * scale) as u32;
@@ -424,7 +424,7 @@ pub(crate) fn open_quicksettings_tab_cmd(
             };
 
             let (x, y) = if anchor_mode == "bottom-right" {
-                let dock_pill_h = ((cfg.dock.icon_size as f64 + 18.0) * scale) as i32;
+                let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
                 let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
                 let dock_right = pos.x + ((size.width as i32 + (dock_w * scale) as i32) / 2);
                 let target_x = (dock_right - qs_w as i32).max(pos.x + 8);

@@ -7,6 +7,7 @@ pub(crate) mod watcher;
 pub(crate) mod loadguard;
 pub(crate) mod autostart_guard;
 pub(crate) mod theme_apply;
+pub(crate) mod command_link;
 pub(crate) mod place;
 
 use crate::*;

@@ -143,5 +143,7 @@ pub fn approval_hotkey() -> Option<String> {
 pub fn shutdown(app: &AppHandle) {
     #[cfg(windows)]
     presence::win::shutdown(app);
-    presence::esc::shutdown(app);
+    presence::esc::undo();
+    #[cfg(not(windows))]
+    let _ = app;
 }

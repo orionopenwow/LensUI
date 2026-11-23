@@ -16,8 +16,96 @@ use std::sync::atomic::{AtomicI32, Ordering};
 // Pure geometry
 // ---------------------------------------------------------------------------------------------
 
-/// Height (bottom/top) or width (left/right) of the transparent Dock window, in logical px.
+/// Smallest height (bottom/top) or width (left/right) of the transparent Dock window, in logical
+/// px, and its depth until the Dock has reported its pill.
 pub const DOCK_WINDOW_DEPTH: f64 = 760.0;
+/// Room kept past the pill for flyouts (hover cards, menus, in-Dock search, previews), logical px.
+/// With the default 64 px pill this gives exactly `DOCK_WINDOW_DEPTH`.
+pub const DOCK_FLYOUT_ROOM: f64 = 696.0;
+/// The Dock window never grows past this, whatever a page reports.
+pub const DOCK_WINDOW_DEPTH_MAX: f64 = 1000.0;
+/// The wanted depth must hold, with the Dock idle, this long before the window is resized.
+pub const DOCK_RESIZE_SETTLE_MS: u64 = 500;
+/// Dock icon sizes the frontend accepts (`src/dock/styles.ts`); the backend clamps the same way.
+pub const DOCK_ICON_MIN: u32 = 16;
+pub const DOCK_ICON_MAX: u32 = 96;
+
+/// `dock.iconSize` as the Dock actually draws it. A hand-edited or restored config can hold any
+/// number; geometry must never be built from the raw value (docs/TESTING.md F2, B-15).
+pub fn clamp_icon_size(raw: u32) -> f64 {
+    raw.clamp(DOCK_ICON_MIN, DOCK_ICON_MAX) as f64
+}
+
+/// Depth of the Dock window for a measured pill `(x, y, w, h)` in CSS px: the pill's own depth
+/// on its edge plus flyout room, in 8 px steps, never smaller than `DOCK_WINDOW_DEPTH` and never
+/// larger than `DOCK_WINDOW_DEPTH_MAX`. An unreported pill (zero size) keeps the default.
+pub fn dock_depth_for_pill(edge: &str, pill: (i32, i32, i32, i32)) -> f64 {
+    let (_, _, w, h) = pill;
+    if w <= 0 || h <= 0 {
+        return DOCK_WINDOW_DEPTH;
+    }
+    let pill_depth = match normalize_edge(edge) {
+        "left" | "right" => w,
+        _ => h,
+    } as f64;
+    let wanted = ((pill_depth + DOCK_FLYOUT_ROOM) / 8.0).ceil() * 8.0;
+    wanted.clamp(DOCK_WINDOW_DEPTH, DOCK_WINDOW_DEPTH_MAX)
+}
+
+/// Decides when the Dock window may take a new depth. The native window is never resized while
+/// the Dock is animating or in use: the wanted depth has to stay the same, with the Dock idle,
+/// for `DOCK_RESIZE_SETTLE_MS` before it is applied.
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub struct DockSizer {
+    /// Depth being waited on (0 = none).
+    wanted: f64,
+    since_ms: u64,
+}
+
+impl DockSizer {
+    /// `applied` is the window's current depth, `wanted` what the measured pill asks for, `busy`
+    /// true while anything is moving or open. Returns the depth to apply now, if any.
+    pub fn step(&mut self, now_ms: u64, applied: f64, wanted: f64, busy: bool) -> Option<f64> {
+        if (wanted - applied).abs() < 0.5 {
+            self.wanted = 0.0;
+            return None;
+        }
+        if busy || (wanted - self.wanted).abs() >= 0.5 {
+            self.wanted = wanted;
+            self.since_ms = now_ms;
+            return None;
+        }
+        if now_ms.saturating_sub(self.since_ms) >= DOCK_RESIZE_SETTLE_MS {
+            self.wanted = 0.0;
+            return Some(wanted);
+        }
+        None
+    }
+}
+
+/// The pill rect after the Dock window changed depth, before the page reports again. The pill
+/// is anchored to the window's outer edge, so on the bottom and right edges it moves with the
+/// far side of the window; on the top and left edges it stays where it was.
+pub fn pill_after_depth_change(edge: &str, pill: (i32, i32, i32, i32), old_depth: f64, new_depth: f64) -> (i32, i32, i32, i32) {
+    let d = (new_depth - old_depth).round() as i32;
+    let (x, y, w, h) = pill;
+    match normalize_edge(edge) {
+        "bottom" => (x, y + d, w, h),
+        "right" => (x + d, y, w, h),
+        _ => pill,
+    }
+}
+
+// Current depth of the Dock window in logical px (see `dock_depth_for_pill`).
+static DOCK_DEPTH: AtomicI32 = AtomicI32::new(DOCK_WINDOW_DEPTH as i32);
+
+pub fn dock_depth_css() -> f64 {
+    DOCK_DEPTH.load(Ordering::Relaxed) as f64
+}
+
+pub fn set_dock_depth_css(depth: f64) {
+    DOCK_DEPTH.store(depth.clamp(DOCK_WINDOW_DEPTH, DOCK_WINDOW_DEPTH_MAX).round() as i32, Ordering::Relaxed);
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IRect {
@@ -47,6 +135,9 @@ pub fn normalize_edge(raw: &str) -> &'static str {
 /// `mon` = monitor `(x, y, w, h)`; `bottom_edge` = where the bottom Dock sits (screen bottom or
 /// work-area bottom); `top_inset` = Top Bar height when it is shown; `margin` = dock margin.
 /// For "bottom" this is exactly the rectangle `position_dock_and_bars` has always used.
+/// The reference the geometry tests pin; at run time the depth comes from the measured pill
+/// (`dock_window_rect_with_depth`).
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn dock_window_rect(
     edge: &str,
     mon: (i32, i32, i32, i32),
@@ -55,8 +146,21 @@ pub fn dock_window_rect(
     margin: i32,
     scale: f64,
 ) -> (i32, i32, i32, i32) {
+    dock_window_rect_with_depth(edge, mon, bottom_edge, top_inset, margin, scale, DOCK_WINDOW_DEPTH)
+}
+
+/// `dock_window_rect` for a given window depth in logical px (`dock_depth_css()` at run time).
+pub fn dock_window_rect_with_depth(
+    edge: &str,
+    mon: (i32, i32, i32, i32),
+    bottom_edge: i32,
+    top_inset: i32,
+    margin: i32,
+    scale: f64,
+    depth_css: f64,
+) -> (i32, i32, i32, i32) {
     let (mx, my, mw, _mh) = mon;
-    let depth = (DOCK_WINDOW_DEPTH * scale) as u32 as i32;
+    let depth = (depth_css * scale) as u32 as i32;
     let side_top = my + top_inset;
     let side_h = (bottom_edge - side_top).max(1);
     match normalize_edge(edge) {
@@ -633,6 +737,95 @@ pub fn hide_previews() {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn icon_size_is_clamped_like_the_frontend() {
+        assert_eq!(clamp_icon_size(0), 16.0);
+        assert_eq!(clamp_icon_size(40), 40.0);
+        assert_eq!(clamp_icon_size(5000), 96.0);
+    }
+
+    #[test]
+    fn dock_depth_follows_the_measured_pill() {
+        // Not reported yet, and the default pill: the depth Lens has always used.
+        assert_eq!(dock_depth_for_pill("bottom", (0, 0, 0, 0)), DOCK_WINDOW_DEPTH);
+        assert_eq!(dock_depth_for_pill("bottom", (600, 696, 720, 64)), DOCK_WINDOW_DEPTH);
+        assert_eq!(dock_depth_for_pill("bottom", (600, 701, 720, 59)), DOCK_WINDOW_DEPTH);
+        // A taller pill keeps its full flyout room instead of losing it.
+        assert_eq!(dock_depth_for_pill("bottom", (600, 640, 720, 120)), 816.0);
+        // Side Docks measure across: the pill's width is its depth.
+        assert_eq!(dock_depth_for_pill("left", (0, 200, 120, 600)), 816.0);
+        assert_eq!(dock_depth_for_pill("right", (640, 200, 64, 600)), DOCK_WINDOW_DEPTH);
+        // A broken report cannot make a screen-sized window.
+        assert_eq!(dock_depth_for_pill("bottom", (0, 0, 100, 50_000)), DOCK_WINDOW_DEPTH_MAX);
+        for h in 1..400 {
+            let d = dock_depth_for_pill("top", (0, 0, 500, h));
+            assert!((DOCK_WINDOW_DEPTH..=DOCK_WINDOW_DEPTH_MAX).contains(&d));
+            assert!(d >= (h as f64 + DOCK_FLYOUT_ROOM).min(DOCK_WINDOW_DEPTH_MAX), "pill {h} loses flyout room at depth {d}");
+            assert_eq!(d % 8.0, 0.0);
+        }
+    }
+
+    #[test]
+    fn dock_window_is_never_resized_while_busy_or_before_it_settles() {
+        let mut s = DockSizer::default();
+        // Same depth: nothing to do.
+        assert_eq!(s.step(0, 760.0, 760.0, false), None);
+        // A new depth is wanted but the Dock is animating: wait, however long that lasts.
+        for t in (0..5000).step_by(65) {
+            assert_eq!(s.step(t, 760.0, 816.0, true), None);
+        }
+        // Idle now. Not before the settle time has passed without interruption...
+        assert_eq!(s.step(5000, 760.0, 816.0, false), None);
+        assert_eq!(s.step(5300, 760.0, 816.0, false), None);
+        // ...and a hover in between starts the wait again.
+        assert_eq!(s.step(5400, 760.0, 816.0, true), None);
+        assert_eq!(s.step(5700, 760.0, 816.0, false), None);
+        assert_eq!(s.step(5899, 760.0, 816.0, false), None);
+        assert_eq!(s.step(5900, 760.0, 816.0, false), Some(816.0));
+        // Applied: quiet again.
+        assert_eq!(s.step(6000, 816.0, 816.0, false), None);
+    }
+
+    #[test]
+    fn a_wanted_depth_that_keeps_changing_never_resizes() {
+        // A pill that is still animating its size reports a new rect every frame.
+        let mut s = DockSizer::default();
+        for (i, t) in (0..4000u64).step_by(65).enumerate() {
+            let wanted = 768.0 + ((i % 2) as f64) * 8.0;
+            assert_eq!(s.step(t, 760.0, wanted, false), None);
+        }
+    }
+
+    #[test]
+    fn dock_rect_with_default_depth_is_the_rect_lens_always_used() {
+        for edge in ["bottom", "top", "left", "right"] {
+            for scale in [1.0, 1.25, 1.5, 2.0] {
+                let mon = (-1920, 0, 2560, 1440);
+                assert_eq!(
+                    dock_window_rect_with_depth(edge, mon, 1400, 34, 6, scale, DOCK_WINDOW_DEPTH),
+                    dock_window_rect(edge, mon, 1400, 34, 6, scale)
+                );
+            }
+        }
+        // Deeper window on the bottom edge: same bottom, taller upwards.
+        let a = dock_window_rect("bottom", (0, 0, 1920, 1080), 1080, 0, 0, 1.0);
+        let b = dock_window_rect_with_depth("bottom", (0, 0, 1920, 1080), 1080, 0, 0, 1.0, 816.0);
+        assert_eq!((a.1 + a.3, b.1 + b.3), (1080, 1080));
+        assert_eq!(b.3, 816);
+        // Right edge: same outer edge, wider inwards.
+        let r = dock_window_rect_with_depth("right", (0, 0, 1920, 1080), 1080, 0, 0, 1.0, 816.0);
+        assert_eq!(r.0 + r.2, 1920);
+    }
+
+    #[test]
+    fn pill_moves_with_the_far_side_on_bottom_and_right() {
+        let pill = (600, 696, 720, 64);
+        assert_eq!(pill_after_depth_change("bottom", pill, 760.0, 816.0), (600, 752, 720, 64));
+        assert_eq!(pill_after_depth_change("right", (696, 100, 64, 500), 760.0, 816.0), (752, 100, 64, 500));
+        assert_eq!(pill_after_depth_change("top", pill, 760.0, 816.0), pill);
+        assert_eq!(pill_after_depth_change("left", pill, 760.0, 816.0), pill);
+    }
 
     #[test]
     fn bottom_rect_matches_legacy() {

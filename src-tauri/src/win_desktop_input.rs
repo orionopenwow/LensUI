@@ -1,12 +1,12 @@
 //! Desktop input for the Playground ("living desktop") wallpaper scenes.
 //!
 //! The wallpaper window lives behind the desktop icons (re-parented into WorkerW), so it never
-//! receives mouse input of its own. This module watches the mouse with a low-level hook
-//! (`WH_MOUSE_LL`) and forwards *only* what happens over the bare desktop to the wallpaper
+//! receives mouse input of its own. This module claims the mouse on the shared input service
+//! (`input.rs`, the only `WH_MOUSE_LL` hook in Lens) and forwards *only* what happens over the bare desktop to the wallpaper
 //! surface, as `lens://desktop-input` events.
 //!
 //! Safety rules, in order of importance:
-//! 1. Never swallow input: the hook proc always calls `CallNextHookEx` and returns its result.
+//! 1. Never swallow input: the handler always answers "pass on".
 //! 2. Never block the hook proc: it copies the event into a bounded channel with `try_send`
 //!    (dropped if full) and returns. All window queries, the icon hit test and emitting run on
 //!    a separate worker thread.
@@ -434,7 +434,6 @@ pub mod logic {
 mod imp {
     use super::logic::{is_desktop_target, normalise, Coalescer, Gate, Raw, Verdict};
     use super::DesktopInput;
-    use std::cell::RefCell;
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
     use std::sync::mpsc::{sync_channel, Receiver, RecvTimeoutError, SyncSender};
@@ -445,36 +444,15 @@ mod imp {
     mod ffi {
         use std::ffi::c_void;
         pub type HWND = isize;
-        pub type HHOOK = isize;
         pub type HANDLE = isize;
-        pub type LRESULT = isize;
         pub type WPARAM = usize;
         pub type LPARAM = isize;
-        pub type HOOKPROC = unsafe extern "system" fn(i32, WPARAM, LPARAM) -> LRESULT;
 
         #[repr(C)]
         #[derive(Default, Clone, Copy)]
         pub struct POINT {
             pub x: i32,
             pub y: i32,
-        }
-        #[repr(C)]
-        pub struct MSLLHOOKSTRUCT {
-            pub pt: POINT,
-            pub mouseData: u32,
-            pub flags: u32,
-            pub time: u32,
-            pub dwExtraInfo: usize,
-        }
-        #[repr(C)]
-        pub struct MSG {
-            pub hwnd: HWND,
-            pub message: u32,
-            pub wParam: WPARAM,
-            pub lParam: LPARAM,
-            pub time: u32,
-            pub pt: POINT,
-            pub lPrivate: u32,
         }
         /// LVHITTESTINFO (comctl32 v6): POINT pt; UINT flags; int iItem; int iSubItem; int iGroup.
         #[repr(C)]
@@ -487,9 +465,6 @@ mod imp {
             pub iGroup: i32,
         }
 
-        pub const WH_MOUSE_LL: i32 = 14;
-        pub const HC_ACTION: i32 = 0;
-        pub const WM_QUIT: u32 = 0x0012;
         pub const WM_MOUSEMOVE: u32 = 0x0200;
         pub const WM_LBUTTONDOWN: u32 = 0x0201;
         pub const WM_LBUTTONUP: u32 = 0x0202;
@@ -516,11 +491,6 @@ mod imp {
 
         #[link(name = "user32")]
         extern "system" {
-            pub fn SetWindowsHookExW(id: i32, f: HOOKPROC, hmod: isize, thread: u32) -> HHOOK;
-            pub fn UnhookWindowsHookEx(h: HHOOK) -> i32;
-            pub fn CallNextHookEx(h: HHOOK, code: i32, w: WPARAM, l: LPARAM) -> LRESULT;
-            pub fn GetMessageW(msg: *mut MSG, hwnd: HWND, min: u32, max: u32) -> i32;
-            pub fn PostThreadMessageW(thread: u32, msg: u32, w: WPARAM, l: LPARAM) -> i32;
             pub fn WindowFromPoint(pt: POINT) -> HWND;
             pub fn GetAncestor(hwnd: HWND, flags: u32) -> HWND;
             pub fn GetClassNameW(hwnd: HWND, buf: *mut u16, len: i32) -> i32;
@@ -540,7 +510,6 @@ mod imp {
         }
         #[link(name = "kernel32")]
         extern "system" {
-            pub fn GetCurrentThreadId() -> u32;
             pub fn GetCurrentProcessId() -> u32;
             pub fn OpenProcess(access: u32, inherit: i32, pid: u32) -> HANDLE;
             pub fn CloseHandle(h: HANDLE) -> i32;
@@ -579,46 +548,39 @@ mod imp {
         at: Instant,
     }
 
-    thread_local! {
-        static HOOK_TX: RefCell<Option<SyncSender<RawEvent>>> = const { RefCell::new(None) };
-        static HOOK_HANDLE: RefCell<ffi::HHOOK> = const { RefCell::new(0) };
-    }
+    /// Where the input handler puts events for the worker. `None` while the feature holds no claim.
+    static HOOK_TX: Mutex<Option<SyncSender<RawEvent>>> = Mutex::new(None);
 
-    /// The hook proc. Copies the event into the channel without blocking and always passes the
-    /// event on. Nothing else happens here.
-    unsafe extern "system" fn hook_proc(code: i32, w: ffi::WPARAM, l: ffi::LPARAM) -> ffi::LRESULT {
-        let hook = HOOK_HANDLE.with(|h| *h.borrow());
-        if code == ffi::HC_ACTION && l != 0 {
-            let msg = w as u32;
-            let wanted = matches!(
-                msg,
-                ffi::WM_MOUSEMOVE
-                    | ffi::WM_LBUTTONDOWN
-                    | ffi::WM_LBUTTONUP
-                    | ffi::WM_RBUTTONDOWN
-                    | ffi::WM_RBUTTONUP
-                    | ffi::WM_MBUTTONDOWN
-                    | ffi::WM_MBUTTONUP
-                    | ffi::WM_MOUSEWHEEL
-            );
-            if wanted {
-                let info = &*(l as *const ffi::MSLLHOOKSTRUCT);
-                let ev = RawEvent {
-                    msg,
-                    x: info.pt.x,
-                    y: info.pt.y,
-                    wheel: (info.mouseData >> 16) as i16,
-                    at: Instant::now(),
-                };
-                HOOK_TX.with(|tx| {
-                    if let Some(tx) = tx.borrow().as_ref() {
-                        // Full channel (worker busy): drop the event rather than wait.
-                        let _ = tx.try_send(ev);
-                    }
-                });
+    /// The mouse handler the input service dispatches to. Copies the event into the channel
+    /// without blocking and never swallows it. Nothing else happens here.
+    pub fn on_mouse(m: &crate::input::MouseEvent) -> bool {
+        let wanted = matches!(
+            m.msg,
+            ffi::WM_MOUSEMOVE
+                | ffi::WM_LBUTTONDOWN
+                | ffi::WM_LBUTTONUP
+                | ffi::WM_RBUTTONDOWN
+                | ffi::WM_RBUTTONUP
+                | ffi::WM_MBUTTONDOWN
+                | ffi::WM_MBUTTONUP
+                | ffi::WM_MOUSEWHEEL
+        );
+        if wanted {
+            let ev = RawEvent {
+                msg: m.msg,
+                x: m.x,
+                y: m.y,
+                wheel: (m.mouse_data >> 16) as i16,
+                at: Instant::now(),
+            };
+            if let Ok(guard) = HOOK_TX.try_lock() {
+                if let Some(tx) = guard.as_ref() {
+                    // Full channel (worker busy): drop the event rather than wait.
+                    let _ = tx.try_send(ev);
+                }
             }
         }
-        ffi::CallNextHookEx(hook, code, w, l)
+        false
     }
 
     fn class_of(hwnd: ffi::HWND) -> String {
@@ -821,7 +783,8 @@ mod imp {
 
     type SharedEmit = std::sync::Arc<dyn Fn(DesktopInput) + Send + Sync + 'static>;
 
-    static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
+    /// The feature holds its mouse claim on the input service and its worker is running.
+    static HOOK_ON: AtomicBool = AtomicBool::new(false);
     static HOOK_FPS: AtomicU32 = AtomicU32::new(30);
     /// The app wants input (an interactive scene is showing). The guard thread installs the
     /// hook only while this is set AND no fullscreen / maximised app or game is in front.
@@ -830,7 +793,7 @@ mod imp {
     static LOCK: Mutex<Option<SharedEmit>> = Mutex::new(None);
 
     fn hook_running() -> bool {
-        HOOK_THREAD.load(Ordering::SeqCst) != 0
+        HOOK_ON.load(Ordering::SeqCst)
     }
 
     /// Something fills the screen (game, video, maximised app, presentation): no global hook.
@@ -844,47 +807,24 @@ mod imp {
         }
         // 256 raw events is ~1 s of a 240 Hz mouse; beyond that we drop, never wait.
         let (tx, rx) = sync_channel::<RawEvent>(256);
-        let (ready_tx, ready_rx) = sync_channel::<Result<u32, String>>(1);
         std::thread::Builder::new()
             .name("lens-desktop-input-worker".into())
             .spawn(move || worker(rx, fps, Box::new(move |e| emit(e))))
             .map_err(|e| e.to_string())?;
-        std::thread::Builder::new()
-            .name("lens-desktop-input-hook".into())
-            .spawn(move || unsafe {
-                HOOK_TX.with(|t| *t.borrow_mut() = Some(tx));
-                let hook = ffi::SetWindowsHookExW(ffi::WH_MOUSE_LL, hook_proc, 0, 0);
-                if hook == 0 {
-                    HOOK_TX.with(|t| *t.borrow_mut() = None);
-                    let _ = ready_tx.send(Err("Could not watch the mouse on the desktop.".into()));
-                    return;
-                }
-                HOOK_HANDLE.with(|h| *h.borrow_mut() = hook);
-                let _ = ready_tx.send(Ok(ffi::GetCurrentThreadId()));
-                let mut msg: ffi::MSG = std::mem::zeroed();
-                // The hook is serviced by this thread's message loop; WM_QUIT ends it.
-                while ffi::GetMessageW(&mut msg, 0, 0, 0) > 0 {}
-                ffi::UnhookWindowsHookEx(hook);
-                HOOK_HANDLE.with(|h| *h.borrow_mut() = 0);
-                // Dropping the sender ends the worker.
-                HOOK_TX.with(|t| *t.borrow_mut() = None);
-            })
-            .map_err(|e| e.to_string())?;
-        match ready_rx.recv_timeout(Duration::from_secs(2)) {
-            Ok(Ok(tid)) => {
-                HOOK_THREAD.store(tid, Ordering::SeqCst);
-                HOOK_FPS.store(fps, Ordering::SeqCst);
-                Ok(())
-            }
-            Ok(Err(e)) => Err(e),
-            Err(_) => Err("Desktop input did not start in time.".into()),
-        }
+        *HOOK_TX.lock().map_err(|_| "desktop input lock poisoned")? = Some(tx);
+        HOOK_FPS.store(fps, Ordering::SeqCst);
+        HOOK_ON.store(true, Ordering::SeqCst);
+        crate::input::claim_mouse(crate::input::Feature::DesktopInput);
+        Ok(())
     }
 
     fn remove() {
-        let tid = HOOK_THREAD.swap(0, Ordering::SeqCst);
-        if tid != 0 {
-            unsafe { ffi::PostThreadMessageW(tid, ffi::WM_QUIT, 0, 0) };
+        if HOOK_ON.swap(false, Ordering::SeqCst) {
+            crate::input::release_mouse(crate::input::Feature::DesktopInput);
+        }
+        // Dropping the sender ends the worker. try_lock: this also runs from the panic hook.
+        if let Ok(mut guard) = HOOK_TX.try_lock() {
+            *guard = None;
         }
     }
 
@@ -1248,6 +1188,12 @@ where
 /// Removes the hook and ends both threads (idempotent; safe from panic and exit paths).
 pub fn stop() {
     imp::stop()
+}
+
+/// The mouse handler the input service dispatches to (`input.rs`, `MOUSE_TABLE`).
+#[cfg(windows)]
+pub(crate) fn input_mouse(ev: &crate::input::MouseEvent) -> bool {
+    imp::on_mouse(ev)
 }
 
 #[allow(dead_code)] // status probe for diagnostics / the self-test; nothing polls it yet

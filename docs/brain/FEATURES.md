@@ -8,7 +8,7 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 
 | Feature | Status | Entry points | Key files | Tests | Known issues |
 |---|---|---|---|---|---|
-| Dock | Shipped | UI: always on; Key: Alt+1…9 opens the nth app; Cmd: "pin Spotify" | `src/surfaces/DockSurface.tsx` (2.5k lines), `src/dock/*`, `commands/dock.rs`, `win_previews.rs` | `windowStyling`, `shapeStyles`, E2E fluidity | Backend still sizes the window from raw icon size (F2 half-fixed); 9 listeners and 57 hard-coded colours in one file |
+| Dock | Shipped | UI: always on; Key: Alt+1…9 opens the nth app; Cmd: "pin Spotify" | `src/surfaces/DockSurface.tsx` (2.5k lines), `src/dock/*`, `commands/dock.rs`, `win_previews.rs` | `windowStyling`, `shapeStyles`, E2E fluidity | Window depth and hit-testing come from the measured pill (B-15 fixed); 9 listeners and 57 hard-coded colours in one file |
 | Dock styles (Classic, Floating, Rail, Minimal…) | Shipped | Settings › Dock › Style; Cmd: "dock style floating" | `src/dock/styles/*`, `docs/DOCK_STYLES.md` | `shapeStyles.test.ts` | Theme switch over frame budget (PERF_REPORT) |
 | Top Bar and system modules | Shipped | UI: always on | `TopBarSurface.tsx`, `win_system_modules.rs`, `CalendarClockPane.tsx` | `productivity.test.ts` | Feeds pill slot not mounted (B-09) |
 | Quick Settings | Shipped | Top bar › controls icon | `QuickSettingsSurface.tsx`, `win_quick_settings.rs`, `commands/system.rs` | E2E visuals | — |

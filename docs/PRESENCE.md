@@ -39,11 +39,11 @@ more than 150 ms.
   **Pause Lens** hotkey (default `Ctrl+Alt+Pause`, configurable, checked against Lens's own
   shortcuts and against registration failure). Stop cancels the running actor(s) and, for Lens's
   own assistant, the requests behind the run; further steps from them are refused for 10 s.
-  *How Esc works (`presence/esc.rs`):* while a run is active, and only then, one small thread reads
-  the Esc key state every 30 ms. There is no keyboard hook, the key is never swallowed (the app in
-  front still gets it), and the thread ends with the run. An Esc that was already down when the
-  run began is ignored until it is released. This check moves into the single input service in
-  wave 3.
+  *How Esc works (`presence/esc.rs`):* while a run is active, and only then, the module holds a
+  keyboard claim on the input service (`input.rs`, `Feature::AgentStop`). It observes Esc and
+  never swallows it (the app in front still gets the key), keeps observing while a fullscreen app
+  is in front, and releases the claim when the run ends. An Esc that was already down when the run
+  began is ignored until it is released.
 - **Timing.** Steps are queued in order. The overlay gets each step ≈150 ms before the action
   (`LEAD_MS`), never more; if the overlay falls behind, it jumps to the newest step (`catch_up`).
 - **In-app twin.** Inside Lens windows a small orb glides to the real control (Guide

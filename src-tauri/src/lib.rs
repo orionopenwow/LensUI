@@ -47,6 +47,8 @@ mod win_cursor_fx;
 mod win_cursors;
 mod win_desktop_input;
 mod win_keyhook;
+mod input;
+mod changes;
 mod win_update;
 mod tester;
 mod smooth;
@@ -605,6 +607,8 @@ pub fn run() {
             commands::backup::export_backup_cmd,
             commands::backup::import_backup_cmd,
             commands::backup::remove_all_lens_changes_cmd,
+            commands::backup::changes_manifest_cmd,
+            commands::keys::input_status_cmd,
             commands::plugins::list_plugins_cmd,
             commands::plugins::read_plugin_entry_cmd,
             commands::plugins::install_plugin_files_cmd,
@@ -712,6 +716,9 @@ pub fn run() {
             studio::studio_open_exports_folder,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::command_ui::command_ready_cmd,
+            commands::command_ui::command_open_applied_cmd,
+            commands::command_ui::command_link_status_cmd,
             commands::snip::snip_status,
             commands::snip::snip_set_settings,
             commands::snip::snip_start,

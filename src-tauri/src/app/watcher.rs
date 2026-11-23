@@ -31,6 +31,54 @@ pub(crate) fn lens_monitor_pref(app: &AppHandle) -> String {
         .unwrap_or_default()
 }
 
+/// Where the Dock window belongs, in physical px `(x, y, w, h)`: a see-through strip along the
+/// Dock's edge, `win_previews::dock_depth_css()` deep (the measured pill plus flyout room).
+fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), bottom_edge: i32, scale: f64) -> (i32, i32, u32, u32) {
+    let depth_css = win_previews::dock_depth_css();
+    let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
+    // Bottom (default) keeps the original rectangle; other edges get a side/top strip.
+    if win_previews::normalize_edge(&cfg.dock.position) == "bottom" {
+        let dock_h = (depth_css * scale) as u32;
+        return (pos.0, bottom_edge - dock_h as i32 - margin_bottom, size.0, dock_h);
+    }
+    let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+        ((cfg.top_bar.height as f64) * scale) as i32 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
+    } else {
+        0
+    };
+    let (rx, ry, rw, rh) = win_previews::dock_window_rect_with_depth(
+        &cfg.dock.position,
+        (pos.0, pos.1, size.0 as i32, size.1 as i32),
+        bottom_edge,
+        top_inset,
+        margin_bottom,
+        scale,
+        depth_css,
+    );
+    (rx, ry, rw.max(1) as u32, rh.max(1) as u32)
+}
+
+/// Gives the Dock window its current target rect in one step (`place_window`: position and size
+/// in a single native call, so the pill never jumps for a frame). Called by the watcher when the measured pill asks for a
+/// different depth and the Dock has been idle long enough (`win_previews::DockSizer`); never
+/// during an animation.
+pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
+    let Some(dock) = app.get_webview_window("dock") else {
+        return;
+    };
+    let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) else {
+        return;
+    };
+    let (size, pos, work, scale) = (monitor.size(), monitor.position(), monitor.work_area(), monitor.scale_factor());
+    let bottom_edge = if cfg.func.hide_native_taskbar {
+        pos.y + size.height as i32
+    } else {
+        work.position.y + work.size.height as i32
+    };
+    let (x, y, w, h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
+    crate::app::place::place_window(&dock, x, y, w, h);
+}
+
 pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
     if let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) {
         let size = monitor.size();
@@ -47,33 +95,12 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             work.position.y + work.size.height as i32
         };
 
-        // Full-width transparent dock container (760px tall, non-resizable frameless window locked flush to bottom_edge!)
+        // Full-width transparent Dock container, flush to bottom_edge. Its depth follows the
+        // measured pill plus flyout room (`win_previews::dock_depth_css`, 760 px by default).
         if let Some(dock) = app.get_webview_window("dock") {
-            let dock_w = size.width;
-            let dock_h = (760.0 * scale) as u32;
-            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-            // Bottom (default) keeps the original rectangle; other edges get a side/top strip.
-            let (x, y, dock_w, dock_h) = if win_previews::normalize_edge(&cfg.dock.position) == "bottom" {
-                (pos.x, bottom_edge - dock_h as i32 - margin_bottom, dock_w, dock_h)
-            } else {
-                let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
-                    ((cfg.top_bar.height as f64) * scale) as i32
-                        + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
-                } else {
-                    0
-                };
-                let (rx, ry, rw, rh) = win_previews::dock_window_rect(
-                    &cfg.dock.position,
-                    (pos.x, pos.y, size.width as i32, size.height as i32),
-                    bottom_edge,
-                    top_inset,
-                    margin_bottom,
-                    scale,
-                );
-                (rx, ry, rw.max(1) as u32, rh.max(1) as u32)
-            };
-            let _ = dock.set_size(PhysicalSize::new(dock_w, dock_h));
-            let _ = dock.set_position(PhysicalPosition::new(x, y));
+            let (x, y, dock_w, dock_h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
+            // One native call, and none at all when the Dock is already there (G-02, G-03).
+            crate::app::place::place_window(&dock, x, y, dock_w, dock_h);
             let _ = dock.set_always_on_top(true);
             // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
             if crate::app::loadguard::may_show("dock") {
@@ -204,7 +231,7 @@ pub(crate) fn position_settings_docked_with_height(
             work.position.y + work.size.height as i32
         };
         // Exact bottom dock pill height (padding-top 8 + padding-bottom 10 + icon_size + 1px bottom border)
-        let dock_pill_h = ((cfg.dock.icon_size as f64 + 19.0) * scale).round() as i32;
+        let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
         let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
         // Exact live dock width so Control Center aligns pixel-for-pixel with the Dock's left and right edges!
         let unified_w = dock_pill_w.max(580.0);
@@ -367,6 +394,12 @@ pub(crate) fn spawn_watcher(
         let mut dock_edge_since: Option<Instant> = None;
         let mut dock_leave_since: Option<Instant> = None;
         let mut dock_ignoring_cursor = false;
+        // Dock window depth follows the measured pill; resized only when the Dock is idle (B-15).
+        let watcher_started = Instant::now();
+        let mut dock_sizer = win_previews::DockSizer::default();
+        let mut dock_last_pill = win_previews::pill_rect_css();
+        let mut dock_pill_changed_at = Instant::now();
+        let mut dock_vis_changed_at = Instant::now();
         let mut last_settings_vis = false;
         // Auto-hide watchdog: a menu, hover card or search can report "open" and then never report
         // "closed" (the pointer left through click-through glass, an app launch took focus, the
@@ -605,21 +638,17 @@ pub(crate) fn spawn_watcher(
                     let center_x = mon_left + (msize.width as i32 / 2);
                     let mon_bottom = mpos.y + msize.height as i32;
                     let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-                    let pill_h = ((cfg.dock.icon_size as f64 + 34.0) * scale) as i32;
+                    // Fallback geometry until the Dock has reported its pill: the clamped icon size,
+                    // never the raw config value (docs/TESTING.md F2).
+                    let pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 34.0) * scale) as i32;
                     let pill_top = bottom_edge - margin_bottom - pill_h;
 
                     let cursor_in_mon_x = cursor
                         .map(|(cx, _)| cx >= mon_left && cx <= mon_right)
                         .unwrap_or(false);
-                    // Docks on the top/left/right edge, and every bottom Dock whose shape is not the
-                    // plain floating pill (Slim, Taskbar, Studio, Minimal, Split, magnification), use
-                    // the rect the Dock reports. Plain Floating keeps the original code path.
-                    let reported_rect_needed = win_previews::normalize_edge(&cfg.dock.position)
-                        != "bottom"
-                        || cfg.dock.style != "floating"
-                        || cfg.dock.magnification != "off";
-                    let edge_zones = if reported_rect_needed && win_previews::pill_rect_css().2 > 0
-                    {
+                    // Every Dock, on every edge and in every style, is hit-tested against the rect it
+                    // measured and reported. The estimate above is only used until the first report.
+                    let edge_zones = if win_previews::pill_rect_css().2 > 0 && win_previews::pill_rect_css().3 > 0 {
                         dock_win.outer_position().ok().map(|p| {
                             win_previews::dock_zones(
                                 &cfg.dock.position,
@@ -759,6 +788,7 @@ pub(crate) fn spawn_watcher(
                     }
 
                     if next_dock_vis != dock_visible {
+                        dock_vis_changed_at = Instant::now();
                         dock_visible = next_dock_vis;
                         let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
                     } else if tick % 30 == 0 && cfg.dock.auto_hide != "never" {
@@ -773,6 +803,34 @@ pub(crate) fn spawn_watcher(
                         let _ = dock_win.unminimize();
                         let _ = dock_win.show();
                         let _ = watcher_handle.emit("lens://dock-visible", true);
+                    }
+
+                    // Window depth = measured pill + flyout room, so a tall pill keeps its flyout room
+                    // and nothing is clipped. The native window is only resized when the Dock has
+                    // been idle: shown, not sliding, not hovered, no flyout or menu open, and the
+                    // pill itself done changing size.
+                    let pill_now = win_previews::pill_rect_css();
+                    if pill_now != dock_last_pill {
+                        dock_last_pill = pill_now;
+                        dock_pill_changed_at = Instant::now();
+                    }
+                    let dock_busy = !dock_visible
+                        || menu_open
+                        || dock_flyout_open
+                        || cursor_over_pill
+                        || win_previews::flyout_rect_css().2 > 0
+                        || dock_vis_changed_at.elapsed().as_millis() < 800
+                        || dock_pill_changed_at.elapsed().as_millis() < 600;
+                    let depth_now = win_previews::dock_depth_css();
+                    let depth_wanted = win_previews::dock_depth_for_pill(&cfg.dock.position, pill_now);
+                    if let Some(depth) = dock_sizer.step(watcher_started.elapsed().as_millis() as u64, depth_now, depth_wanted, dock_busy) {
+                        win_previews::set_dock_depth_css(depth);
+                        // The pill keeps its place on screen; tell the hit-test where it now is
+                        // inside the window until the page reports again (it does, on resize).
+                        let (px, py, pw, ph) = win_previews::pill_after_depth_change(&cfg.dock.position, pill_now, depth_now, depth);
+                        win_previews::set_pill_rect(px as f64, py as f64, pw as f64, ph as f64);
+                        dock_last_pill = win_previews::pill_rect_css();
+                        resize_dock_window(&watcher_handle, &cfg);
                     }
 
                     // Click-through everywhere except over the visible dock pill (or when context menu/search/hover card is open)

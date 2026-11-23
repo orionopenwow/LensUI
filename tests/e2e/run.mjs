@@ -281,28 +281,28 @@ const SCENARIOS = [
       const cmd = await waitForSurface(s, "command");
       const take = watchErrors(cmd);
       const box = cmd.locator("textarea").first();
-      // A window built on first use replays its opening event once it is ready. The open carries
-      // a seq, so the replay is applied exactly once and can't reset the input after Enter
-      // (src/command/openSeq.ts). No re-open and no re-submit: one open, one Enter.
+      // Ready handshake (docs/brain/BUGS.md B-12): the page asks the backend for the open it
+      // still has to apply once its listeners are registered, applies it once (the open carries
+      // a seq) and confirms it. One open, one Enter, no retry.
       await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 8000 }).catch(async () => {
-        throw new Error(`the opening text never reached Command; input is "${await box.inputValue()}"`);
+        throw new Error(`the opening text never reached Command; input is "${await box.inputValue()}"; link: ${JSON.stringify(await invoke(dock, "command_link_status_cmd").catch((e) => String(e)))}`);
       });
-      const answered = () =>
-        cmd
-          .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 8000 })
-          .then(() => true, () => false);
       await box.press("Enter");
-      let ok = await answered();
-      if (!ok && (await box.inputValue()) === "dark mode") {
-        // Known cold-start race (docs/brain/BUGS.md B-12): the very first Enter after the window
-        // is built can land before the submit handler is wired. Tracked separately; one retry
-        // here keeps it from failing unrelated PRs.
-        console.log("note lens-command: first Enter was dropped (B-12); retrying once");
-        await box.press("Enter");
-        ok = await answered();
-      }
+      const ok = await cmd
+        .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 8000 })
+        .then(() => true, () => false);
       if (!ok) {
-        throw new Error(`no answer or action card for "dark mode"; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 600)}`);
+        const link = await invoke(dock, "command_link_status_cmd").catch((e) => String(e));
+        const page = await cmd.evaluate(() => ({
+          input: document.querySelector("textarea")?.value,
+          mode: document.querySelector(".cmd-mode")?.textContent,
+          ready: document.documentElement.dataset.commandReady,
+          open: document.documentElement.dataset.commandOpen,
+          visible: document.visibilityState,
+          focused: document.hasFocus(),
+          text: document.getElementById("root").innerText.slice(0, 600),
+        }));
+        throw new Error(`no answer or action card for "dark mode"; link ${JSON.stringify(link)}; page ${JSON.stringify(page)}`);
       }
       await shot(cmd, "command-dark-mode");
       const errs = take();

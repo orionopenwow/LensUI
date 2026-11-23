@@ -32,7 +32,7 @@ Twelve end-to-end flows as they work on `main` (`5a4a5b2`), read from the code. 
 
 | Friction | Rank | Fix |
 |---|---|---|
-| Backend sizes the dock window from the raw icon size (F2, B-15), so some styles clip shadows or leave an invisible click-blocking strip. | P1 | Size the window from the style's measured pill rect (`set_dock_pill_rect_cmd` already reports it). |
+| Fixed (B-15): the Dock window's depth and every style's hit-testing come from the measured pill rect; the native window is only resized while the Dock is idle. | Done | Check on real hardware: tall pills (96 px icons, magnification), side Docks, auto-hide. |
 | Picking a style silently changes icon size. | P3 | Say it inline: "Floating uses 48 px icons. Change below." (text exists; move it next to the grid). |
 
 ## 4. Command "do it"
