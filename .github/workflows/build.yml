@@ -151,6 +151,9 @@ jobs:
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
 
+      - name: Render Lens Browser scenes and smoke-test the page agent
+        run: node tools/parity/browser/build.mjs && node tools/parity/browser/shoot.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,4 +162,5 @@ jobs:
           path: |
             tools/parity/shots/
             tools/parity/command/shots/
+            tools/parity/browser/shots/
           if-no-files-found: warn

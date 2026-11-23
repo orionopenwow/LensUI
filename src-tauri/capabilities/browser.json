@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "browser-frame",
+  "description": "Lens Browser frame UI only. Tab webviews (web pages) get no capability: they are reached solely through the page agent via eval.",
+  "webviews": ["browser-ui"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-focus"
+  ]
+}
