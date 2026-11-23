@@ -1,10 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import catalogJson from "../../catalog/apps/catalog.json";
 import { validateCatalog, validateApp, isWingetId, isHttpsUrl } from "../apps/validate";
-import { filterApps, resolveApp, categoryFor, recommend, rails, heroApps, score } from "../apps/search";
+import { filterApps, resolveApp, categoryFor, recommend, homeSections, score } from "../apps/search";
 import { parseAppsIntent, describeIntent } from "../apps/intents";
 import { reduceJobs, overallPct, clearJob, type Jobs } from "../apps/jobs";
-import { placeholderDataUri, hueFor, monogram } from "../apps/placeholder";
+import { hueFor } from "../apps/placeholder";
+import { reduceQueue, nextToStart, traySummary, emptyQueue, itemFor, type QueueState } from "../apps/queue";
+import { pillFor } from "../apps/ActionPill";
+import { defaultChosen } from "../apps/DownloadTray";
+import { isMediaUrl } from "../apps/validate";
 import type { Catalog, CatalogApp, ProgressEvent } from "../apps/types";
 
 const catalog = catalogJson as unknown as Catalog;
@@ -50,7 +54,10 @@ describe("catalogue", () => {
     expect(bad({ install: { method: "via", via: "nope" } }).length).toBeGreaterThan(0);
     expect(bad({ install: { method: "githubRelease", repo: "a/b/c", hints: [] } }).length).toBeGreaterThan(0);
     expect(bad({ recipe: [{ kind: "mcpServer", name: "x", command: "cmd & calc", args: [] }] }).length).toBeGreaterThan(0);
-    expect(bad({ media: { images: ["javascript:alert(1)"], video: null, credit: "x" } }).length).toBeGreaterThan(0);
+    const m = ok.media;
+    expect(bad({ media: { ...m, icon: "javascript:alert(1)" } }).length).toBeGreaterThan(0);
+    expect(bad({ media: { ...m, screenshots: ["http://insecure.example/a.png"] } }).length).toBeGreaterThan(0);
+    expect(bad({ media: { ...m, icon: null, screenshots: [], noMedia: null } }).length).toBeGreaterThan(0);
     expect(bad({ license: "" }).length).toBeGreaterThan(0);
   });
 });
@@ -82,14 +89,17 @@ describe("search", () => {
     expect(rec.length).toBeGreaterThan(0);
     expect(rec[rec.length - 1].status === "alpha" || rec.every((a) => a.status !== "alpha")).toBe(true);
   });
-  test("rails and hero", () => {
-    const r = rails(catalog, true);
-    expect(r.some((x) => x.id === "collection:ai")).toBe(true);
-    expect(r.every((x) => x.apps.length > 0)).toBe(true);
-    const hero = heroApps(catalog);
-    expect(hero.length).toBeGreaterThan(3);
-    expect(hero.every((a) => a.collections.includes("rewrites"))).toBe(true);
-    expect(hero[0].install.method).not.toBe("via");
+  test("home shows every app at most once, suite as one compact row", () => {
+    const h = homeSections(catalog, true);
+    const ids = [...h.hero, ...(h.suite.launcher ? [h.suite.launcher] : []), ...h.suite.apps, ...h.ai, ...h.essentials].map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(h.hero.some((a) => a.id === "artcraft")).toBe(true);
+    expect(h.hero.every((a) => a.install.method !== "via" && a.id !== "craft-launcher")).toBe(true);
+    expect(h.suite.launcher?.id).toBe("craft-launcher");
+    expect(h.suite.apps.map((a) => a.id)).toContain("wordcraft");
+    expect(h.ai.some((a) => a.id === "artcraft" || a.id === "concat")).toBe(false);
+    expect(h.categories.reduce((n, c) => n + c.count, 0)).toBe(catalog.apps.length);
+    expect(h.categories.every((c) => c.preview.length > 0)).toBe(true);
     expect(score(byId("ollama"), "")).toBe(1);
   });
 });
@@ -152,18 +162,80 @@ describe("jobs", () => {
   });
 });
 
-describe("placeholders", () => {
-  test("deterministic, tinted per app, data-URI SVG", () => {
-    expect(placeholderDataUri("concat")).toBe(placeholderDataUri("concat"));
-    expect(placeholderDataUri("concat")).not.toBe(placeholderDataUri("krita"));
-    expect(placeholderDataUri("concat").startsWith("data:image/svg+xml,")).toBe(true);
-    expect(placeholderDataUri("concat", false)).not.toBe(placeholderDataUri("concat", true));
+describe("media", () => {
+  test("every entry has an https icon and a screenshot, or says why not", () => {
+    for (const a of catalog.apps) {
+      const m = a.media;
+      const complete = !!m.icon && m.screenshots.length > 0;
+      expect(complete || (m.noMedia ?? "").length > 10).toBe(true);
+      for (const u of [m.icon, ...m.screenshots, m.loop].filter(Boolean)) expect(isMediaUrl(u)).toBe(true);
+      expect(isHttpsUrl(m.sourceUrl)).toBe(true);
+    }
+  });
+  test("media is pinned to a commit in the project's own repo", () => {
+    let n = 0;
+    for (const a of catalog.apps) {
+      for (const u of [a.media.icon, ...a.media.screenshots].filter(Boolean) as string[]) {
+        const m = u.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+\/[^/]+)\/([0-9a-f]{40})\//);
+        expect(m).not.toBeNull();
+        n++;
+      }
+    }
+    expect(n).toBeGreaterThan(80);
+    expect(catalog.apps.filter((a) => a.media.icon).length).toBeGreaterThanOrEqual(40);
+  });
+  test("tints are stable and avoid muddy hues", () => {
     for (const a of catalog.apps) {
       const h = hueFor(a.id);
       expect(h >= 0 && h < 360 && !(h >= 60 && h < 120)).toBe(true);
     }
-    expect(monogram("OBS Studio")).toBe("OS");
-    expect(monogram("7-Zip")).toBe("7Z");
-    expect(monogram("Concat")).toBe("Co");
+    expect(hueFor("concat")).toBe(hueFor("concat"));
+  });
+});
+
+describe("Get queue and pill", () => {
+  test("gets line up and run one at a time; releases wait for Run without blocking", () => {
+    let q: QueueState = emptyQueue;
+    q = reduceQueue(q, { type: "enqueue", appId: "ollama", op: "install" });
+    q = reduceQueue(q, { type: "enqueue", appId: "concat", op: "install" });
+    q = reduceQueue(q, { type: "enqueue", appId: "krita", op: "install" });
+    q = reduceQueue(q, { type: "enqueue", appId: "ollama", op: "install" });
+    expect(q.items.length).toBe(3);
+    expect(nextToStart(q)?.appId).toBe("ollama");
+    q = reduceQueue(q, { type: "started", appId: "ollama", jobId: "j1" });
+    expect(nextToStart(q)).toBeNull();
+    q = reduceQueue(q, { type: "finished", appId: "ollama", ok: true });
+    expect(itemFor(q, "ollama")?.setupPending).toBe(true);
+    expect(nextToStart(q)?.appId).toBe("concat");
+    q = reduceQueue(q, { type: "started", appId: "concat" });
+    q = reduceQueue(q, { type: "verified", appId: "concat", token: "t" });
+    expect(nextToStart(q)?.appId).toBe("krita");
+    expect(traySummary(q)).toContain("1 queued");
+    expect(traySummary(q)).toContain("1 ready to run");
+    q = reduceQueue(q, { type: "cancel", appId: "krita" });
+    expect(itemFor(q, "krita")?.status).toBe("cancelled");
+    q = reduceQueue(q, { type: "setupDone", appId: "ollama" });
+    q = reduceQueue(q, { type: "clearFinished" });
+    expect(q.items.map((i) => i.appId)).toEqual(["concat"]);
+  });
+  test("pill states", () => {
+    const k = byId("krita");
+    expect(pillFor(k, undefined, undefined)).toBe("get");
+    expect(pillFor(k, { version: "1", available: null }, undefined)).toBe("open");
+    expect(pillFor(k, { version: "1", available: "2" }, undefined)).toBe("update");
+    expect(pillFor(k, undefined, { appId: "krita", op: "install", status: "queued" })).toBe("queued");
+    expect(pillFor(k, undefined, { appId: "krita", op: "install", status: "running" })).toBe("running");
+    expect(pillFor(byId("concat"), undefined, { appId: "concat", op: "install", status: "verified", token: "t" })).toBe("run");
+    expect(pillFor(k, undefined, { appId: "krita", op: "install", status: "failed" })).toBe("retry");
+    expect(pillFor(byId("excalidraw"), undefined, undefined)).toBe("open");
+    expect(pillFor(byId("slidev"), undefined, undefined)).toBe("getExternal");
+  });
+  test("setup checklist pre-ticks everything except switching the AI model", () => {
+    const steps = [
+      { index: 0, kind: "addToDock" as const, description: "" },
+      { index: 1, kind: "localModelProvider" as const, description: "" },
+      { index: 2, kind: "voiceVerbs" as const, description: "" },
+    ];
+    expect(defaultChosen(steps)).toEqual([0, 2]);
   });
 });

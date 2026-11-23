@@ -4,6 +4,34 @@ A curated catalogue of free and open-source tools with one-click install, live t
 
 Everything is off until opened, and nothing installs without a click.
 
+## How it looks and behaves
+
+- **Home shows each app once.** Sections, in order:
+  - Open-source rewrites;
+  - the ArtCraft suite as one compact row (the launcher plus app icons);
+  - AI on your PC;
+  - Essentials;
+  - a "Browse by category" grid. Category tiles and chips filter the list instead of repeating rails.
+- **Real media.** Icons and screenshots come from each project's own GitHub repo, pinned to a commit, as `raw.githubusercontent.com` URLs.
+  - The URLs are found and checked by `tools/apps/fetch_media.py`. That script makes blob-less shallow clones, picks the icon and the README or screenshot images, and records `tools/apps/media.json`. Hand-checked choices live in `tools/apps/media_sources.py`.
+  - Nothing is committed except the URLs.
+  - 44 of 51 apps have an icon and 26 have screenshots. The rest carry a `noMedia` reason (closed source, or screenshots only on the project's website), and the tests require one or the other.
+  - Installed apps prefer the icon extracted from their own program file (`apps_installed_icon`).
+- **Media loading in Lens.**
+  - `apps_media(appId, url)` downloads only URLs listed in that app's entry, over HTTPS, with same-host redirects only.
+  - It checks per-type size caps and the file's magic number, and refuses SVGs that contain scripts, event handlers or external references.
+  - Files are cached as `%APPDATA%\LensUI\apps\media\<sha256(url)>.<ext>`, least-recently-used, with a 300 MB cap.
+  - The page shows them through the asset protocol, so the window's CSP never loads remote images.
+  - While loading there's a shimmer. If there are no screenshots, or one fails, the app's icon sits on a backdrop tinted from its id; if there's no icon, a category glyph is shown, never letters.
+- **One click.** Each card has an App Store-style pill:
+  - **Get** becomes a progress ring (tap to cancel), then **Open**.
+  - **Update** appears when one is available; **Run** appears for a verified release download.
+  - **⋯** opens Details, Show in folder and Uninstall.
+  - The single confirmation is a compact popover anchored to the pill. It shows the source, licence, size and "via winget" or "GitHub release". For winget, that popover is the only confirmation.
+  - GitHub releases download and verify in the queue, then ask once more in the same popover ("GitHub release, verified": checksum and signature) before running.
+- **Queue and tray.** Several Gets queue and run one at a time, and a download tray in the window's corner shows progress. After an install, the tray shows a short setup checklist (Dock pin, "Open in…", voice phrases, Guide lesson) with sensible defaults ticked; switching Lens AI's model provider stays unticked. It never blocks browsing.
+- **Keyboard.** `/` searches, Enter on a card opens details, Ctrl+Enter on a card is Get, Esc closes the popover and then goes back, and the arrow keys move along a row.
+
 ## Files
 
 | Area | Files |
@@ -35,11 +63,19 @@ Everything is off until opened, and nothing installs without a click.
 | `apps_open(appId)` | Web URL, or the matching Start-menu shortcut. |
 | `apps_open_link(appId, url)` | Only URLs present in that app's entry. |
 | `apps_recipe_preview` / `apps_recipe_apply(appId, chosen)` / `apps_recipe_revert` | Setup recipes. |
+| `apps_media(appId, url)` | Cached local path for one of the app's official media URLs. |
+| `apps_installed_icon(appId)` | PNG data URL of the installed app's own icon. |
+| `apps_reveal(appId)` | Shows the installed program file in File Explorer. |
 | `apps_integrations` | Current recipe-written integration state. |
 
 **Events:**
 - `lens://apps/progress {jobId, appId, op, stage, pct, message}`, where `stage` is `resolving` → `downloading` → `verifying` → `installing` → `done` or `failed`.
 - `lens://apps/integrations` carries the full integration state after a recipe change.
+
+## Shared files touched by the media work
+
+- `tauri.conf.json`: `"$DATA/LensUI/apps/media/**"` was added to `assetProtocol.scope`, so cached media can be shown.
+- `win_windows.rs`: `resolve_lnk_icon_and_target` is now `pub(crate)`, for `apps_reveal`.
 
 ## Snippets for shared files and other packages
 

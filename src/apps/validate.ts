@@ -24,6 +24,11 @@ export function isWingetId(id: unknown): id is string {
   return typeof id === "string" && id.length <= 128 && WINGET_ID.test(id) && !id.includes("..");
 }
 
+const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg|ico|mp4|webm)$/i;
+export function isMediaUrl(u: unknown): u is string {
+  return isHttpsUrl(u) && MEDIA_EXT.test(new URL(u).pathname);
+}
+
 /** Problems with one entry; empty when valid. `ids` is the set of all app ids (for `via`). */
 export function validateApp(a: CatalogApp, ids: Set<string>, categories: Set<string>, collections: Set<string>): string[] {
   const e: string[] = [];
@@ -43,9 +48,12 @@ export function validateApp(a: CatalogApp, ids: Set<string>, categories: Set<str
   req(isHttpsUrl(a.homepage), "homepage must be https");
   req(a.repo === null || isHttpsUrl(a.repo), "repo must be https or null");
   req(Array.isArray(a.sources) && a.sources.length > 0 && a.sources.every(isHttpsUrl), "sources must be https links");
-  req(Array.isArray(a.media?.images) && a.media.images.every(isHttpsUrl), "media images must be https");
-  req(a.media?.video === null || isHttpsUrl(a.media?.video), "media video must be https or null");
-  req(!!a.media?.credit, "media credit required");
+  const m = a.media;
+  req(m?.icon === null || isMediaUrl(m?.icon), "media icon must be an https image URL or null");
+  req(Array.isArray(m?.screenshots) && m.screenshots.every(isMediaUrl), "screenshots must be https image URLs");
+  req(m?.loop === null || isMediaUrl(m?.loop), "loop must be an https media URL or null");
+  req(!!m?.credit && isHttpsUrl(m?.sourceUrl), "media credit and https sourceUrl required");
+  req(!!(m?.icon && m.screenshots.length) || (typeof m?.noMedia === "string" && m.noMedia.length > 10), "icon + a screenshot, or a noMedia reason");
   req(Array.isArray(a.integration?.fileTypes) && a.integration.fileTypes.every((x) => EXT.test(x)), "file types like .mp4");
   req(Array.isArray(a.integration?.voice), "voice phrases array");
   const i = a.install as any;

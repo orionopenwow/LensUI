@@ -1,6 +1,6 @@
 // Bundles tools/parity/apps/entry.tsx with the Lens Apps mocks into tools/parity/apps/out/.
 import { build } from "esbuild";
-import { readdirSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { readdirSync, rmSync, writeFileSync, mkdirSync, cpSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +23,11 @@ await build({
   define: { "process.env.NODE_ENV": '"production"' },
   logLevel: "warning",
 });
+// Official media fetched by tools/apps/fetch_media.py (gitignored cache). When present, the gallery
+// shows the real icons and screenshots; without it (e.g. CI) it shows the icon/tint fallbacks.
+const media = join(here, "../../apps/.media-cache");
+if (existsSync(media)) cpSync(media, join(out, "media"), { recursive: true });
+console.log(`[parity:apps] media cache ${existsSync(media) ? "found" : "missing (fallbacks only)"}`);
 const css = readdirSync(out).filter((f) => f.endsWith(".css"));
 writeFileSync(
   join(out, "harness.html"),

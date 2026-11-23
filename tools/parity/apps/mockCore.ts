@@ -7,7 +7,10 @@ export { convertFileSrc, isTauri } from "../mock/core";
 const t0 = Date.UTC(2026, 10, 23, 16, 4, 0);
 const handlers: Record<string, (a: any) => any> = {
   apps_catalog: () => catalog,
-  apps_settings_get: () => ({ autoUpdate: false, checkUpdates: "weekly", showNonOpenSource: true, liveThumbnails: false }),
+  apps_settings_get: () => ({ autoUpdate: false, checkUpdates: "weekly", showNonOpenSource: true, liveThumbnails: true }),
+  // Serve official media from the local cache copied into out/media by build.mjs.
+  apps_media: (a) => `media/${a.appId}/${encodeURIComponent(String(a.url).split("/").pop() || "")}`,
+  apps_installed_icon: () => null,
   apps_settings_set: () => null,
   apps_installed: () => ({ ollama: { version: "0.40.10", available: "0.40.16" }, krita: { version: "5.3.4.1", available: null }, "obs-studio": { version: "33.0.0", available: null } }),
   apps_lens_installed: () => ["ollama", "krita"],
@@ -34,6 +37,7 @@ export const SHOW = {
   homepage: "https://ollama.com",
   agreements: [{ label: "Terms of Service", text: "https://ollama.com/terms" }],
   installerType: "inno",
+  installerSize: 1_181_116_006,
   installerUrl: "https://github.com/ollama/ollama/releases/download/v0.40.16/OllamaSetup.exe",
   installerSha256: "3f0a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728",
 };

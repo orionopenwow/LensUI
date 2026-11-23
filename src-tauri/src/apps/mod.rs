@@ -9,6 +9,7 @@
 pub mod audit;
 pub mod catalog;
 pub mod github;
+pub mod media;
 pub mod progress;
 pub mod recipe;
 pub mod sha256;

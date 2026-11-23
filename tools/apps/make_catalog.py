@@ -353,7 +353,38 @@ def default_recipe(app):
         steps.append({"kind": "voiceVerbs", "phrases": app["integration"]["voice"][:3]})
     return steps
 
+import sys as _sys
+_sys.path.insert(0, str(pathlib.Path(__file__).parent))
+from media_sources import ICON_PLATE, NO_MEDIA, SOURCES  # noqa: E402
+
+MEDIA = json.loads((pathlib.Path(__file__).parent / "media.json").read_text())
+
+
+def media_for(app):
+    m = MEDIA.get(app["id"])
+    repo = SOURCES.get(app["id"])
+    icon = m["icon"] if m else None
+    shots = m["screenshots"] if m else []
+    loop = m["loop"] if m else None
+    reasons = []
+    if app["id"] in NO_MEDIA:
+        reasons.append(NO_MEDIA[app["id"]])
+    elif not shots:
+        host = app["homepage"].split("//", 1)[1].split("/", 1)[0]
+        reasons.append(f"Screenshots live on {host}, not in the repo; Lens shows the icon on a tinted backdrop.")
+    return {
+        "icon": icon,
+        "screenshots": shots,
+        "loop": loop,
+        "credit": f"github.com/{repo}" if repo else app["publisher"],
+        "sourceUrl": f"https://github.com/{repo}" if repo else app["homepage"],
+        "noMedia": " ".join(reasons) or None,
+        "iconPlate": app["id"] in ICON_PLATE,
+    }
+
+
 for app in APPS:
+    app["media"] = media_for(app)
     app.setdefault("stars", None)
     app.setdefault("notes", None)
     app.setdefault("replaces", [])

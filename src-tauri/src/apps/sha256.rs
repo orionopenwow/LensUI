@@ -134,6 +134,13 @@ pub fn to_hex(bytes: &[u8]) -> String {
     s
 }
 
+/// SHA-256 of a string, as lower-case hex (cache file names).
+pub fn hex_digest_str(s: &str) -> String {
+    let mut h = Sha256::new();
+    h.update(s.as_bytes());
+    to_hex(&h.finish())
+}
+
 /// SHA-256 of a byte slice, as lower-case hex.
 #[cfg(test)]
 pub fn hex_digest(data: &[u8]) -> String {

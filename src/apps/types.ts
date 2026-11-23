@@ -38,11 +38,25 @@ export interface CatalogApp {
   size: string | null;
   platforms: string[];
   install: InstallSpec;
-  media: { images: string[]; video: string | null; credit: string };
+  media: AppMedia;
   integration: { fileTypes: string[]; mcp: boolean; cli: string | null; urlScheme: string | null; voice: string[] };
   recipe: RecipeStep[];
   notes: string | null;
   sources: string[];
+}
+
+/** Official media, loaded at runtime from the project's own repo (pinned commit). */
+export interface AppMedia {
+  icon: string | null;
+  screenshots: string[];
+  /** Optional short muted demo loop (mp4/webm/gif/animated webp). */
+  loop: string | null;
+  credit: string;
+  sourceUrl: string;
+  /** Why the icon or screenshots are missing, when they are. */
+  noMedia: string | null;
+  /** The icon is drawn for light backgrounds; show it on a light plate. */
+  iconPlate: boolean;
 }
 
 export interface Catalog {
@@ -88,6 +102,7 @@ export interface AppShow {
   installerType: string;
   installerUrl: string;
   installerSha256: string;
+  installerSize: number | null;
 }
 
 export interface PreparedRelease {

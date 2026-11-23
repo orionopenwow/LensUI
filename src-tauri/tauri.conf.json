@@ -284,7 +284,8 @@
         "enable": true,
         "scope": [
           "$DATA/LensUI/plugin-frames/**",
-          "$DATA/LensUI/wallpapers/**"
+          "$DATA/LensUI/wallpapers/**",
+          "$DATA/LensUI/apps/media/**"
         ]
       },
       "devCsp": {

@@ -44,3 +44,4 @@ src-tauri/lens-dwm-hook/target/
 
 # Python bytecode
 __pycache__/
+tools/apps/.media-cache/

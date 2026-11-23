@@ -38,7 +38,7 @@
               { "type": "object", "required": ["method", "url"], "properties": { "method": { "enum": ["officialSite", "web"] }, "url": { "type": "string", "pattern": "^https://" } } }
             ]
           },
-          "media": { "type": "object", "required": ["images", "credit"], "properties": { "images": { "type": "array", "items": { "type": "string", "pattern": "^https://" } }, "video": { "type": ["string", "null"], "pattern": "^https://" }, "credit": { "type": "string" } } },
+          "media": { "type": "object", "required": ["icon", "screenshots", "loop", "credit", "sourceUrl", "noMedia"], "properties": { "icon": { "type": ["string", "null"], "pattern": "^https://" }, "screenshots": { "type": "array", "items": { "type": "string", "pattern": "^https://" } }, "loop": { "type": ["string", "null"], "pattern": "^https://" }, "credit": { "type": "string" }, "sourceUrl": { "type": "string", "pattern": "^https://" }, "noMedia": { "type": ["string", "null"] }, "iconPlate": { "type": "boolean" } } },
           "integration": { "type": "object", "required": ["fileTypes", "mcp", "voice"] },
           "recipe": { "type": "array", "items": { "type": "object", "required": ["kind"] } },
           "sources": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^https://" } }

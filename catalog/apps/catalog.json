@@ -99,12 +99,16 @@
         "fallbackUrl": "https://getartcraft.com"
       },
       "media": {
-        "images": [
-          "https://raw.githubusercontent.com/storytold/github-media/main/ship-editing.gif",
-          "https://raw.githubusercontent.com/storytold/github-media/22a27373707b13f48fc56405f1f89ca143c43d5d/character-posing.webp"
+        "icon": "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/crates/desktop/artcraft/icons/ios/AppIcon-512%402x.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp",
+          "https://raw.githubusercontent.com/storytold/artcraft/de571bb2f8351ade6c742d41caea81f11f595801/frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp"
         ],
-        "video": null,
-        "credit": "storytold/artcraft README"
+        "loop": null,
+        "credit": "github.com/storytold/artcraft",
+        "sourceUrl": "https://github.com/storytold/artcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -177,9 +181,16 @@
         "fallbackUrl": "https://getartcraft.com/apps"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/assets/app-icon/hicolor/256x256/apps/ai.storyteller.artcraft-launcher.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-grid.png",
+          "https://raw.githubusercontent.com/storytold/craft-launcher/4c819edd164ccd94151ee5a5908654d052145989/docs/screenshots/artcraft-launcher-table.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/craft-launcher",
+        "sourceUrl": "https://github.com/storytold/craft-launcher",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -239,9 +250,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/photocraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-demo.jpg",
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-adjustments.jpg",
+          "https://raw.githubusercontent.com/storytold/photocraft/b9c946246213d3db22f82395464f0fc2d494ff7d/docs/images/photocraft-layer-styles.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/photocraft",
+        "sourceUrl": "https://github.com/storytold/photocraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -315,9 +334,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/vectorcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/assets/app-icon/vectorcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-1-neon.png",
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-2-ribbons.png",
+          "https://raw.githubusercontent.com/storytold/vectorcraft/15001f7dfcd5c0677121a36c9de770e393516c81/docs/images/shot-4-bezier.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/vectorcraft",
+        "sourceUrl": "https://github.com/storytold/vectorcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -385,9 +412,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/filmcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/assets/app-icon/filmcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-hero.png",
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-assembly.png",
+          "https://raw.githubusercontent.com/storytold/filmcraft/117876b013e8e88f7f999e406d5dea4ec8e19c6b/docs/images/filmcraft-timeline.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/filmcraft",
+        "sourceUrl": "https://github.com/storytold/filmcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -457,9 +492,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/lightcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/assets/app-icon/lightcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/hero-tetons.jpg",
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/curve-tetons.jpg",
+          "https://raw.githubusercontent.com/storytold/lightcraft/3200590acb7737624c3d62cd4a207e6d59902267/docs/images/grading-migrant-mother.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/lightcraft",
+        "sourceUrl": "https://github.com/storytold/lightcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -529,9 +572,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/pdfcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/assets/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-viewer.png",
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-scripts.png",
+          "https://raw.githubusercontent.com/storytold/pdfcraft/993889aff1d29965a2fa86ebaaf6005386ef5ff7/docs/images/pdfcraft-twoup.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/pdfcraft",
+        "sourceUrl": "https://github.com/storytold/pdfcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -599,9 +650,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/effectcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/assets/app-icon/effectcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-hero.png",
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-graph-editor.png",
+          "https://raw.githubusercontent.com/storytold/effectcraft/7e2d0256209974ffb92a29d8bdb6f2a49078f51f/docs/images/effectcraft-3d.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/effectcraft",
+        "sourceUrl": "https://github.com/storytold/effectcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -661,9 +720,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/designcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/assets/app-icon/designcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/ui-spread.png",
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-cover.png",
+          "https://raw.githubusercontent.com/storytold/designcraft/d3190ef798460d8f75bb54505266c4c8f5ba144c/docs/images/page-2.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/designcraft",
+        "sourceUrl": "https://github.com/storytold/designcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -723,9 +790,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/figcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/assets/app-icon/figcraft-256.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-1-hero.png",
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-2-components.png",
+          "https://raw.githubusercontent.com/storytold/figcraft/bbf7ad418f3e02d89546a6c7b044e51df67177f0/docs/images/shot-3-prototype.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/figcraft",
+        "sourceUrl": "https://github.com/storytold/figcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -786,9 +861,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/wordcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/assets/app-icon/wordcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/hero.png",
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/review.png",
+          "https://raw.githubusercontent.com/storytold/wordcraft/c369c3a20befef8742f8913128cacd79002435d6/docs/images/references.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/wordcraft",
+        "sourceUrl": "https://github.com/storytold/wordcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -861,9 +944,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/deckcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/assets/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/editor.png",
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/shape-format.png",
+          "https://raw.githubusercontent.com/storytold/deckcraft/7fbdc085ebfd6ded43abd3d12a87377a7a0fa852/docs/images/format-pane.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/deckcraft",
+        "sourceUrl": "https://github.com/storytold/deckcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -934,9 +1025,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/gridcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/assets/app-icon/gridcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/hero-sales.png",
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/budget.png",
+          "https://raw.githubusercontent.com/storytold/gridcraft/927d4d60a6da2db2971b82994f0b79ac7aba3faf/docs/images/grades-formulas.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/gridcraft",
+        "sourceUrl": "https://github.com/storytold/gridcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1009,9 +1108,17 @@
         "fallbackUrl": "https://getartcraft.com/apps/soundcraft"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getartcraft.com"
+        "icon": "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/assets/app-icon/soundcraft-macos-512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/edit.png",
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/mix.png",
+          "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/midi.png"
+        ],
+        "loop": null,
+        "credit": "github.com/storytold/soundcraft",
+        "sourceUrl": "https://github.com/storytold/soundcraft",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1083,11 +1190,15 @@
         "fallbackUrl": "https://github.com/jub0t/Concat/releases"
       },
       "media": {
-        "images": [
-          "https://cdn.jsdelivr.net/gh/jub0t/Concat@main/assets/editor.png"
+        "icon": "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/concat_logo_512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/jub0t/Concat/c8bdeb9868b0114e82678e6e26a00e35e1b75df8/assets/editor.png"
         ],
-        "video": null,
-        "credit": "jub0t/Concat README"
+        "loop": null,
+        "credit": "github.com/jub0t/Concat",
+        "sourceUrl": "https://github.com/jub0t/Concat",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1173,12 +1284,17 @@
         "fallbackUrl": "https://github.com/degenview/degenview/releases"
       },
       "media": {
-        "images": [
-          "https://github.com/degenview/degenview/raw/main/assets/screenshots/hero.png",
-          "https://github.com/degenview/degenview/raw/main/assets/screenshots/pine-debugger.png"
+        "icon": "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/brand/app_icon.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/hero.png",
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-debugger.png",
+          "https://raw.githubusercontent.com/degenview/degenview/471f5dacf9445cb40595d12a7569a5babbed0789/assets/screenshots/pine-profiler.png"
         ],
-        "video": null,
-        "credit": "degenview README"
+        "loop": null,
+        "credit": "github.com/degenview/degenview",
+        "sourceUrl": "https://github.com/degenview/degenview",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1238,11 +1354,15 @@
         "url": "https://dylanpersonguy.github.io/OpenCharts/"
       },
       "media": {
-        "images": [
-          "https://github.com/dylanpersonguy/OpenCharts/raw/main/docs/screenshot.png"
+        "icon": "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/public/icons/icon-512x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/dylanpersonguy/OpenCharts/399e27538d8150796571dbdecbe920a54b771de4/docs/screenshot.png"
         ],
-        "video": null,
-        "credit": "OpenCharts README"
+        "loop": null,
+        "credit": "github.com/dylanpersonguy/OpenCharts",
+        "sourceUrl": "https://github.com/dylanpersonguy/OpenCharts",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -1300,9 +1420,15 @@
         "url": "https://openstock-ods.vercel.app"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "Open-Dev-Society/OpenStock"
+        "icon": "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/logo.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/Open-Dev-Society/OpenStock/62da391edb427a4326f060b89e2361bfe6575655/public/assets/images/dashboard.png"
+        ],
+        "loop": null,
+        "credit": "github.com/Open-Dev-Society/OpenStock",
+        "sourceUrl": "https://github.com/Open-Dev-Society/OpenStock",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -1360,9 +1486,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "affine.pro"
+        "icon": "https://raw.githubusercontent.com/toeverything/AFFiNE/577ae12b51a9d617c7e82b7265baf7eaf67dd21c/packages/frontend/apps/electron/resources/icons/icon_beta_512x512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/toeverything/AFFiNE",
+        "sourceUrl": "https://github.com/toeverything/AFFiNE",
+        "noMedia": "Screenshots live on affine.pro, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1428,9 +1558,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "appflowy.com"
+        "icon": "https://raw.githubusercontent.com/AppFlowy-IO/AppFlowy/8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93/frontend/appflowy_flutter/android/app/src/main/ic_launcher-playstore.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/AppFlowy-IO/AppFlowy",
+        "sourceUrl": "https://github.com/AppFlowy-IO/AppFlowy",
+        "noMedia": "Screenshots live on appflowy.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1500,9 +1634,15 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "onlyoffice.com"
+        "icon": "https://raw.githubusercontent.com/ONLYOFFICE/desktop-apps/332c1905a5361dd4139481827b7ad4f4a9facd85/macos/ONLYOFFICE/Images.xcassets/AppIcon.appiconset/512x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/ONLYOFFICE/DesktopEditors/f05b333402617733e8ed226c00fbfd53cfb1a1fe/screenshots/ONLYOFFICE%20Desktop%20Editors.png"
+        ],
+        "loop": null,
+        "credit": "github.com/ONLYOFFICE/DesktopEditors",
+        "sourceUrl": "https://github.com/ONLYOFFICE/DesktopEditors",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1576,9 +1716,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "libreoffice.org"
+        "icon": "https://raw.githubusercontent.com/LibreOffice/core/1e7013b89993be78a2e853b6247ea365a4d150b0/sysui/desktop/icons/hicolor/512x512/apps/main.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/LibreOffice/core",
+        "sourceUrl": "https://github.com/LibreOffice/core",
+        "noMedia": "Screenshots live on www.libreoffice.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1653,9 +1797,15 @@
         "url": "https://design.penpot.app"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "penpot.app"
+        "icon": "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/frontend/resources/images/assets/penpot-logo-icon.svg",
+        "screenshots": [
+          "https://raw.githubusercontent.com/penpot/penpot/8bca3f86eef17dfd67de428e76a5051171c42394/docs/img/codemode-code.png"
+        ],
+        "loop": null,
+        "credit": "github.com/penpot/penpot",
+        "sourceUrl": "https://github.com/penpot/penpot",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1715,9 +1865,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "krita.org"
+        "icon": "https://raw.githubusercontent.com/KDE/krita/97e66843f3b4742ddddd020c8824be980f03f6d6/krita/pics/branding/default/512-apps-krita.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/KDE/krita",
+        "sourceUrl": "https://github.com/KDE/krita",
+        "noMedia": "Screenshots live on krita.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1785,9 +1939,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "inkscape.org"
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/inkscape/inkscape",
+        "sourceUrl": "https://github.com/inkscape/inkscape",
+        "noMedia": "The GitHub mirror holds only a README and GitLab isn't reachable from the build; icon comes from the installed app.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1856,9 +2014,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "blender.org"
+        "icon": "https://raw.githubusercontent.com/blender/blender/20a0565aa86c7ba6ab1e9537675a0cd8529337ef/release/freedesktop/icons/scalable/apps/blender.svg",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/blender/blender",
+        "sourceUrl": "https://github.com/blender/blender",
+        "noMedia": "Screenshots live on www.blender.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1928,9 +2090,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "kdenlive.org"
+        "icon": "https://raw.githubusercontent.com/KDE/kdenlive/05d605f56175a86109c59a4d390d060d863bdcfe/data/icons/512-apps-kdenlive.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/KDE/kdenlive",
+        "sourceUrl": "https://github.com/KDE/kdenlive",
+        "noMedia": "Screenshots live on kdenlive.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -1998,9 +2164,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "shotcut.org"
+        "icon": "https://raw.githubusercontent.com/mltframework/shotcut/2eba56a72af3b7806876f2a2956cfff789db1468/icons/shotcut-logo-320x320.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/mltframework/shotcut",
+        "sourceUrl": "https://github.com/mltframework/shotcut",
+        "noMedia": "Screenshots live on shotcut.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2068,9 +2238,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "obsproject.com"
+        "icon": "https://raw.githubusercontent.com/obsproject/obs-studio/0c790bd0151fb9f574867e025ecf57e6eedc58e2/frontend/cmake/linux/icons/obs-logo-512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/obsproject/obs-studio",
+        "sourceUrl": "https://github.com/obsproject/obs-studio",
+        "noMedia": "Screenshots live on obsproject.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -2128,9 +2302,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "audacityteam.org"
+        "icon": "https://raw.githubusercontent.com/audacity/audacity/90ca9ed02aaab7a75edaf56cb6457ea03530b930/share/icons/AppIcon/AU4_AppIcon_512x512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/audacity/audacity",
+        "sourceUrl": "https://github.com/audacity/audacity",
+        "noMedia": "Screenshots live on www.audacityteam.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2200,9 +2378,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "darktable.org"
+        "icon": "https://raw.githubusercontent.com/darktable-org/darktable/679d594f5d93cde043703ba8ff26873d0e475905/data/pixmaps/dt_logo_128x128.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/darktable-org/darktable",
+        "sourceUrl": "https://github.com/darktable-org/darktable",
+        "noMedia": "Screenshots live on www.darktable.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2272,9 +2454,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "typst.app"
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/typst/typst",
+        "sourceUrl": "https://github.com/typst/typst",
+        "noMedia": "The repo ships no app icon or screenshots; the logo lives on typst.app.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2337,9 +2523,17 @@
         "url": "https://sli.dev/guide/"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "sli.dev"
+        "icon": "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/logo-circle.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/cover.png",
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/covers.png",
+          "https://raw.githubusercontent.com/slidevjs/slidev/437f139ccd4c8482a193b217922e7800a5b3baec/assets/screenshots/integrated-editor.png"
+        ],
+        "loop": null,
+        "credit": "github.com/slidevjs/slidev",
+        "sourceUrl": "https://github.com/slidevjs/slidev",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2394,9 +2588,15 @@
         "url": "https://marp.app"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "marp.app"
+        "icon": "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/marp-logo.svg",
+        "screenshots": [
+          "https://raw.githubusercontent.com/marp-team/marp/95263d5a0df563633ef6611c986b34b55f936eaa/website/public/assets/202205-ecosystem-update/transition-showcase-poster.jpg"
+        ],
+        "loop": null,
+        "credit": "github.com/marp-team/marp",
+        "sourceUrl": "https://github.com/marp-team/marp",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2451,9 +2651,17 @@
         "url": "https://excalidraw.com"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "excalidraw.com"
+        "icon": "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/collaboration.png",
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/export.png",
+          "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/screenshots/illustration.png"
+        ],
+        "loop": null,
+        "credit": "github.com/excalidraw/excalidraw",
+        "sourceUrl": "https://github.com/excalidraw/excalidraw",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2515,9 +2723,16 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "obsidian.md"
+        "icon": null,
+        "screenshots": [
+          "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/dark.png",
+          "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/5bdf241aedbf540620edbcd5fd3621b7943daa53/light.png"
+        ],
+        "loop": null,
+        "credit": "github.com/obsidianmd/obsidian-releases",
+        "sourceUrl": "https://github.com/obsidianmd/obsidian-releases",
+        "noMedia": "Closed source; the public releases repo has screenshots but no app icon. Lens uses the installed app's icon.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2581,9 +2796,15 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "logseq.com"
+        "icon": "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/assets/icon.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/logseq/logseq/f6ce0e01543def5c06cc2955f4b13434f7b39cdc/resources/img/screenshot.png"
+        ],
+        "loop": null,
+        "credit": "github.com/logseq/logseq",
+        "sourceUrl": "https://github.com/logseq/logseq",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2647,9 +2868,17 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "joplinapp.org"
+        "icon": "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/SquareIcon512.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/WebsiteAssets/images/home-top-img.png",
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501238944.png",
+          "https://raw.githubusercontent.com/laurent22/joplin/58fbd837cac2f9ea8fb9a1edbcb7f0f5b0d3d6aa/Assets/Screenshots/Screenshot_1501239078.png"
+        ],
+        "loop": null,
+        "credit": "github.com/laurent22/joplin",
+        "sourceUrl": "https://github.com/laurent22/joplin",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2715,9 +2944,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "zed.dev"
+        "icon": "https://raw.githubusercontent.com/zed-industries/zed/f126950f9d3b62666f97437ae5d4ccac2272c4db/crates/zed/resources/app-icon.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/zed-industries/zed",
+        "sourceUrl": "https://github.com/zed-industries/zed",
+        "noMedia": "Screenshots live on zed.dev, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2787,9 +3020,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "vscodium.com"
+        "icon": "https://raw.githubusercontent.com/VSCodium/vscodium/ca7f7b44b5e5c3faa663f6cdc043998f71936653/src/stable/resources/server/code-512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/VSCodium/vscodium",
+        "sourceUrl": "https://github.com/VSCodium/vscodium",
+        "noMedia": "Screenshots live on vscodium.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2861,9 +3098,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "videolan.org"
+        "icon": "https://raw.githubusercontent.com/videolan/vlc/391a3bf87302769a3e45143b8a2f9961be45db0e/share/icons/256x256/vlc.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/videolan/vlc",
+        "sourceUrl": "https://github.com/videolan/vlc",
+        "noMedia": "Screenshots live on www.videolan.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -2935,9 +3176,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "handbrake.fr"
+        "icon": "https://raw.githubusercontent.com/HandBrake/HandBrake/bf63cdcf3b23dd3958bece421607ae6673f39add/gtk/icons/256x256/apps/fr.handbrake.ghb.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/HandBrake/HandBrake",
+        "sourceUrl": "https://github.com/HandBrake/HandBrake",
+        "noMedia": "Screenshots live on handbrake.fr, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -3005,9 +3250,15 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "microsoft/PowerToys"
+        "icon": "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/installer/PowerToysSetupVNext/Images/logo.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/microsoft/PowerToys/aa2e6c2128dca7ff3f2c9f61f07163204af7d04b/doc/images/readme/pt-hero.dark.png"
+        ],
+        "loop": null,
+        "credit": "github.com/microsoft/PowerToys",
+        "sourceUrl": "https://github.com/microsoft/PowerToys",
+        "noMedia": null,
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -3065,9 +3316,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "voidtools.com"
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "voidtools",
+        "sourceUrl": "https://www.voidtools.com",
+        "noMedia": "Closed source with no public media repo; Lens uses the installed app's own icon once it's installed.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -3123,9 +3378,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "getsharex.com"
+        "icon": "https://raw.githubusercontent.com/ShareX/ShareX/099bcb60a1c4af514f8b8b936a870492744e98fd/ShareX.HelpersLib/Resources/ShareX_Logo.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ShareX/ShareX",
+        "sourceUrl": "https://github.com/ShareX/ShareX",
+        "noMedia": "Screenshots live on getsharex.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -3181,9 +3440,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "flowlauncher.com"
+        "icon": "https://raw.githubusercontent.com/Flow-Launcher/Flow.Launcher/58b799721a343811d8c42046cb2b4d63de1b3da6/Artworks/Logo/logo512.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/Flow-Launcher/Flow.Launcher",
+        "sourceUrl": "https://github.com/Flow-Launcher/Flow.Launcher",
+        "noMedia": "Screenshots live on www.flowlauncher.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [],
@@ -3241,9 +3504,13 @@
         "wingetVerified": false
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "7-zip.org"
+        "icon": "https://raw.githubusercontent.com/ip7z/7zip/d3296e39e1f1f92c7b41c0c3848e65640428d42d/C/Util/7zipInstall/7zip.ico",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ip7z/7zip",
+        "sourceUrl": "https://github.com/ip7z/7zip",
+        "noMedia": "Screenshots live on www.7-zip.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -3316,9 +3583,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "ollama.com"
+        "icon": "https://raw.githubusercontent.com/ollama/ollama/318ee284aa3b5558de57efefff730ea33c4a9bef/app/darwin/Ollama.app/Contents/Resources/ollama%402x.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ollama/ollama",
+        "sourceUrl": "https://github.com/ollama/ollama",
+        "noMedia": "Screenshots live on ollama.com, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": true
       },
       "integration": {
         "fileTypes": [],
@@ -3384,9 +3655,13 @@
         "wingetVerified": true
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "lmstudio.ai"
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/lmstudio-ai/lms",
+        "sourceUrl": "https://github.com/lmstudio-ai/lms",
+        "noMedia": "Closed-source app; its public repos hold SDKs without the app icon. Lens uses the installed app's icon.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -3447,9 +3722,13 @@
         "url": "https://www.comfy.org/download"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "comfy.org"
+        "icon": "https://raw.githubusercontent.com/Comfy-Org/desktop/e2d964b7456cea8423c7b9d3371c612313c06baa/assets/UI/Comfy_Logo_x256.png",
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/comfyanonymous/ComfyUI",
+        "sourceUrl": "https://github.com/comfyanonymous/ComfyUI",
+        "noMedia": "Screenshots live on www.comfy.org, not in the repo; Lens shows the icon on a tinted backdrop.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
@@ -3514,9 +3793,13 @@
         "url": "https://github.com/ggml-org/whisper.cpp/releases"
       },
       "media": {
-        "images": [],
-        "video": null,
-        "credit": "ggml-org/whisper.cpp"
+        "icon": null,
+        "screenshots": [],
+        "loop": null,
+        "credit": "github.com/ggml-org/whisper.cpp",
+        "sourceUrl": "https://github.com/ggml-org/whisper.cpp",
+        "noMedia": "A library and command-line tool with no app icon or screenshots.",
+        "iconPlate": false
       },
       "integration": {
         "fileTypes": [
