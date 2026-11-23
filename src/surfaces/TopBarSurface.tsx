@@ -1,4 +1,5 @@
 import { openGuide } from "../guide/coach";
+import { searchStep, isExpanded, type SearchPhase, type SearchEvent } from "../topbar/searchMachine";
 import { MiniPlayer } from "../music/MiniPlayer";
 import { useMiniPlacement } from "../music/useMiniPlacement";
 import { PendingPill, usePendingApprovals } from "../approval";
@@ -43,7 +44,19 @@ export const TopBarSurface: React.FC = () => {
   const approvals = usePendingApprovals();
   const musicMini = useMiniPlacement();
   const [visible, setVisible] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
+  // Phase-driven (src/topbar/searchMachine.ts): searchOpen is derived, so the bubble can't flicker.
+  const [searchPhase, setSearchPhase] = useState<SearchPhase>("closed");
+  const searchOpen = isExpanded(searchPhase);
+  const searchPhaseRef = React.useRef<SearchPhase>("closed");
+  const searchDo = (ev: SearchEvent, query = "") => {
+    const r = searchStep(searchPhaseRef.current, ev);
+    searchPhaseRef.current = r.phase;
+    setSearchPhase(r.phase);
+    if (r.effect === "sync-open") invoke("sync_topbar_search_cmd", { query, open: true }).catch(() => {});
+    if (r.effect === "sync-close") invoke("sync_topbar_search_cmd", { query: "", open: false }).catch(() => {});
+    if (r.phase === "opening") window.setTimeout(() => searchDo("opened"), 220);
+    if (r.phase === "closing") window.setTimeout(() => searchDo("closed"), 220);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [media, setMedia] = useState<MediaNowPlaying | null>(null);
   const topSearchInputRef = React.useRef<HTMLInputElement>(null);
@@ -85,20 +98,14 @@ export const TopBarSurface: React.FC = () => {
       setVisible(e.payload);
     });
     const unlistenSearch = listen<boolean>("lens://topbar-search-open", (e) => {
-      setSearchOpen(e.payload);
+      searchDo(e.payload ? "backend-open" : "backend-close");
       if (!e.payload) {
         setSearchQuery("");
       }
     });
-    const onBlur = () => {
-      window.setTimeout(() => {
-        if (!document.hasFocus() && searchOpenRef.current) {
-          setSearchOpen(false);
-          setSearchQuery("");
-          invoke("sync_topbar_search_cmd", { query: "", open: false }).catch(() => {});
-        }
-      }, 220);
-    };
+    // Focus moving into the search palette is normal, so the bar no longer closes itself on blur;
+    // the watcher closes it on a click outside the bar and palette, or when neither has focus.
+    const onBlur = () => {};
     window.addEventListener("blur", onBlur);
     return () => {
       window.clearInterval(t);
@@ -260,16 +267,15 @@ export const TopBarSurface: React.FC = () => {
         )}
         {/* "C: · 9.6 GB left" (only with Lens Cleaner's low-space alert on; docs/CLEANER.md). */}
         <LowSpacePill />
-        <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+        <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Ask Lens" onClick={() => void openGuide()}>
           ?
         </button>
         <div
           className={`topbar-search-well ${searchOpen ? "is-open" : ""}`}
           onClick={() => {
             if (!searchOpen) {
-              setSearchOpen(true);
               setSearchQuery("");
-              invoke("sync_topbar_search_cmd", { query: "", open: true }).catch(() => {});
+              searchDo("request-open");
               window.setTimeout(() => topSearchInputRef.current?.focus(), 20);
             } else {
               topSearchInputRef.current?.focus();
@@ -284,10 +290,7 @@ export const TopBarSurface: React.FC = () => {
             placeholder={searchOpen ? "Search apps, files, folders..." : ""}
             aria-label="Search apps, files, folders"
             onFocus={() => {
-              if (!searchOpen) {
-                setSearchOpen(true);
-                invoke("sync_topbar_search_cmd", { query: searchQuery, open: true }).catch(() => {});
-              }
+              if (!searchOpen) searchDo("request-open", searchQuery);
             }}
             onChange={(e) => {
               const v = e.target.value;
@@ -297,15 +300,16 @@ export const TopBarSurface: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 e.preventDefault();
-                setSearchOpen(false);
                 setSearchQuery("");
-                invoke("sync_topbar_search_cmd", { query: "", open: false }).catch(() => {});
+                searchDo("request-close");
                 topSearchInputRef.current?.blur();
               } else if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") {
                 e.preventDefault();
                 invoke("dock_search_nav_cmd", { key: e.key }).catch(() => {});
                 if (e.key === "Enter") {
-                  setSearchOpen(false);
+                  searchPhaseRef.current = "closing";
+                  setSearchPhase("closing");
+                  window.setTimeout(() => searchDo("closed"), 220);
                   setSearchQuery("");
                   topSearchInputRef.current?.blur();
                 }
@@ -319,9 +323,8 @@ export const TopBarSurface: React.FC = () => {
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setSearchOpen(false);
                 setSearchQuery("");
-                invoke("sync_topbar_search_cmd", { query: "", open: false }).catch(() => {});
+                searchDo("request-close");
                 topSearchInputRef.current?.blur();
               }}
             >
