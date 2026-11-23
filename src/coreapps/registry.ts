@@ -193,3 +193,14 @@ export function coreAppSearchItems() {
     },
   }));
 }
+
+/**
+ * Core apps only show for real word matches ("mon", "timer", "battery"), never for loose fuzzy
+ * hits, so they don't crowd unrelated searches like "spo" for Spotify.
+ */
+export function coreAppMatches(query: string, item: { key: string; title: string; keywords?: string }): boolean {
+  if (!item.key.startsWith("lens:coreapp:")) return true;
+  const words = `${item.title} ${item.keywords ?? ""}`.toLowerCase().split(/[^a-z0-9-]+/).filter(Boolean);
+  const toks = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return toks.length > 0 && toks.every((t) => words.some((w) => w.startsWith(t)));
+}

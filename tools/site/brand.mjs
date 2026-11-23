@@ -40,11 +40,12 @@ const nebula = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">${
 await writeFile(join(brand, "nebula.svg"), nebula);
 await shot(img(nebula, 512), 512, 512, join(brand, "nebula.png"), false);
 
-// Social card: the site's neutral base, the logo, the line and a thin spectrum rule.
+// Social card ("Lens — the everything desktop"): the site's neutral base, the logo, the line and a thin spectrum rule.
 await shot(`<div style="width:1200px;height:630px;background:#0b0b0d;color:#f4f4f5;font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;display:flex;align-items:center;gap:64px;padding:0 96px;box-sizing:border-box;position:relative">
   ${img(master, 300)}
   <div><div style="font-size:84px;font-weight:650;letter-spacing:-0.035em;line-height:1">Lens</div>
-  <div style="font-size:40px;color:#b6b6bf;margin-top:18px;line-height:1.2;letter-spacing:-0.01em">a calmer desktop<br>for Windows</div>
+  <div style="font-size:46px;color:#d4d4d8;margin-top:18px;line-height:1.15;letter-spacing:-0.015em">— the everything desktop</div>
+  <div style="font-size:24px;color:#8e8e98;margin-top:14px;line-height:1.35">The open-source desktop where look, apps<br>and AI finally work as one.</div>
   <div style="height:4px;width:160px;border-radius:2px;margin-top:36px;background:linear-gradient(90deg,#ff5f6d,#ff9f43,#ffd43b,#3ddc97,#38bdf8,#818cf8,#c084fc)"></div></div>
   <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#ff5f6d,#ff9f43,#ffd43b,#3ddc97,#38bdf8,#818cf8,#c084fc)"></div>
 </div>`, 1200, 630, join(brand, "og.png"), false);

@@ -8,7 +8,7 @@ import { SETTINGS_PAGES } from "./settingsIndex";
 import { loadUsage, onUsageLoaded, recordUsage } from "./usage";
 import type { CalcResult } from "./calc";
 import type * as Gen from "../types/generated";
-import { coreAppSearchItems } from "../coreapps/registry";
+import { coreAppMatches, coreAppSearchItems } from "../coreapps/registry";
 
 export type FileHit = Gen.FileHit;
 
@@ -337,7 +337,7 @@ export function useUnifiedSearch(query: string, opts: UnifiedSearchOptions): Uni
         });
       }
     }
-    return { results: rankItems(q, items, { limit: limit ?? 40 }), calc: special.calc };
+    return { results: rankItems(q, items.filter((i) => coreAppMatches(q, i)), { limit: limit ?? 40 }), calc: special.calc };
   }, [q, baseItems, fileHits, handlers, config, updateConfig, surface, limit]);
 
   const activate = useCallback(

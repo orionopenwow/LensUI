@@ -10,7 +10,7 @@ mock.module("@tauri-apps/api/core", () => ({
 }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
-import { CORE_APPS, coreAppSearchItems, coreAppTemplates, iconUrl, isCoreAppStub, pinEntry, SLASH } from "../coreapps/registry";
+import { CORE_APPS, coreAppMatches, coreAppSearchItems, coreAppTemplates, iconUrl, isCoreAppStub, pinEntry, SLASH } from "../coreapps/registry";
 import { friendlyError, loadReducer, type Load } from "../coreapps/models/load";
 import { cpuShare, push, slowHints, sortApps } from "../coreapps/models/monitor";
 import { sortPrograms, sortStartup, startupImpact, unusedFor } from "../coreapps/models/startup";
@@ -43,6 +43,11 @@ describe("registry", () => {
     const items = coreAppSearchItems();
     expect(items.length).toBe(CORE_APPS.length);
     expect(items.every((i) => i.kind === "app" && i.key.startsWith("lens:coreapp:"))).toBe(true);
+    const mon = items.find((i) => i.key === "lens:coreapp:monitor")!;
+    expect(coreAppMatches("spo", mon)).toBe(false);
+    expect(coreAppMatches("mon", mon)).toBe(true);
+    expect(coreAppMatches("task man", mon)).toBe(true);
+    expect(coreAppMatches("spo", { key: "app:spotify", title: "Spotify" })).toBe(true);
   });
   test("slash stubs never shadow an existing command", () => {
     const stubs = coreAppTemplates([{ id: "note" }, { id: "timer" }]);
