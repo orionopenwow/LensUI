@@ -19,6 +19,7 @@ pub mod catalogue;
 pub mod engine;
 pub mod grants;
 pub mod lens;
+pub mod safety;
 pub mod tools;
 
 pub use crate::ai::tools::Risk;

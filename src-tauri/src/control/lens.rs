@@ -415,15 +415,24 @@ pub enum Gate {
 pub fn gate(app: &AppHandle, client: &str, tool: &str, args: &Value) -> Result<Gate, String> {
     let call = tools::parse(tool, args)?;
     let d = LensDesktop::new(app, client);
-    let a = tools::assess(engine(), &d, client, &call)?;
+    let mut a = tools::assess(engine(), &d, client, &call)?;
     let decision = grants().lock().unwrap_or_else(|e| e.into_inner()).decide_at(client, &a.capabilities, a.risk, a.site.as_deref(), crate::win_mcp::now_ms());
+    if let Decision::Block(m) = &decision {
+        log(client, tool, &a.summary, "blocked", None);
+        return Ok(Gate::Block(m.clone()));
+    }
+    // The agent-safety gate: look-alike sites, steps planned from untrusted text, the
+    // confused-deputy rule and the hard blocks. It can only make a call wait or refuse it.
+    let safety = super::safety::check_call(client, &call, a.site.as_deref(), matches!(decision, Decision::Run));
+    if safety.is_block() {
+        log(client, tool, &a.summary, "blocked by safety", None);
+        let _ = app.emit("lens://agentsafe/flag", json!({ "id": "", "source": "control", "label": a.summary, "client": client, "verdict": "block", "setAside": 0, "reasons": super::safety::reasons_json(&safety) }));
+        return Ok(Gate::Block(format!("Lens stopped this for safety: {}", safety.text())));
+    }
+    super::safety::attach(&mut a.preview, &safety);
     Ok(match decision {
-        Decision::Run => Gate::Run,
-        Decision::Ask => Gate::Ask(a),
-        Decision::Block(m) => {
-            log(client, tool, &a.summary, "blocked", None);
-            Gate::Block(m)
-        }
+        Decision::Run if !safety.is_ask() => Gate::Run,
+        _ => Gate::Ask(a),
     })
 }
 
@@ -439,6 +448,22 @@ pub fn run(app: &AppHandle, client: &str, tool: &str, args: &Value, outcome_word
     }
     match tools::execute(engine(), &d, client, &call) {
         Ok(o) => {
+            // An outside app was just handed untrusted content: scan it, set the findings aside
+            // for the viewer, and remember it so the app's next write requests are checked as
+            // possibly planned from that content.
+            if d.external() {
+                if let Some(label) = super::safety::facts(&call, None).reads_untrusted {
+                    let scanned = crate::agentsafe::gate::scan_text(&o.text, "tool", label);
+                    crate::agentsafe::gate::taint_note(client, label, scanned.injection);
+                } else if matches!(call, Call::Windows) {
+                    // Window titles come from pages and documents; they only count when they
+                    // actually carry something that reads as an instruction.
+                    let scanned = crate::agentsafe::gate::scan_text(&o.text, "tool", "window titles");
+                    if !scanned.injection.is_clean() {
+                        crate::agentsafe::gate::taint_note(client, "window titles", scanned.injection);
+                    }
+                }
+            }
             if !matches!(call, Call::List { .. } | Call::Get { .. } | Call::Windows) {
                 log(client, tool, &summary, outcome_word, o.undo_id.clone());
                 let _ = app.emit("lens://control/changed", json!({ "tool": tool, "undoId": o.undo_id }));
@@ -465,16 +490,23 @@ pub fn run_internal(app: &AppHandle, client: &str, tool: &str, args: &Value) -> 
 pub fn preview(app: &AppHandle, client: &str, tool: &str, args: &Value) -> Result<Value, String> {
     let (caps, mut pv) = if tools::is_control_tool(tool) {
         let call = tools::parse(tool, args)?;
-        let a = tools::assess(engine(), &LensDesktop::new(app, client), client, &call)?;
+        let mut a = tools::assess(engine(), &LensDesktop::new(app, client), client, &call)?;
+        let granted = matches!(
+            grants().lock().unwrap_or_else(|e| e.into_inner()).decide_at(client, &a.capabilities, a.risk, a.site.as_deref(), crate::win_mcp::now_ms()),
+            Decision::Run
+        );
+        super::safety::attach(&mut a.preview, &super::safety::check_call(client, &call, a.site.as_deref(), granted));
         (a.capabilities, a.preview)
     } else {
         let (caps, risk) = legacy_needs(tool);
         let text = crate::ai::tools::describe(tool, args);
-        let pv = json!({
+        let mut pv = json!({
             "question": format!("{}?", text), "reason": format!("{} wants to {}.", super::grants::client_label(super::grants::client_kind(client)), text.to_lowercase()),
             "verb": "Allow", "kind": "none", "details": [], "reversible": tool != "close_app", "risk": risk,
             "holdToConfirm": risk == Risk::Confirm, "capabilities": caps.iter().map(|c| c.id()).collect::<Vec<_>>()
         });
+        let granted = matches!(grants().lock().unwrap_or_else(|e| e.into_inner()).decide(client, &caps, risk), Decision::Run);
+        super::safety::attach(&mut pv, &super::safety::check_legacy(client, tool, granted));
         (caps, pv)
     };
     let g = grants().lock().unwrap_or_else(|e| e.into_inner());
@@ -508,7 +540,20 @@ pub fn legacy_needs(tool: &str) -> (Vec<Capability>, Risk) {
 /// Grants decision for a pre-existing tool (MCP gating for non-`lens_*` tools).
 pub fn legacy_decision(client: &str, tool: &str) -> Decision {
     let (caps, risk) = legacy_needs(tool);
-    grants().lock().unwrap_or_else(|e| e.into_inner()).decide(client, &caps, risk)
+    let decision = grants().lock().unwrap_or_else(|e| e.into_inner()).decide(client, &caps, risk);
+    if matches!(decision, Decision::Block(_)) {
+        return decision;
+    }
+    // Same agent-safety gate as `gate` above, for the older tools.
+    let safety = super::safety::check_legacy(client, tool, matches!(decision, Decision::Run));
+    if safety.is_block() {
+        log(client, tool, tool, "blocked by safety", None);
+        Decision::Block(format!("Lens stopped this for safety: {}", safety.text()))
+    } else if safety.is_ask() {
+        Decision::Ask
+    } else {
+        decision
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -543,7 +588,12 @@ pub fn read_resource(app: &AppHandle, client: &str, uri: &str) -> Result<Value, 
             if g.level(client, Capability::UseShelf) != Level::Allowed {
                 return Err("Allow \"Use Shelf\" for this app in Lens (AI & Command › Permissions) to share Shelf items.".into());
             }
-            d.shelf(&ShelfAction::List { shelf: None, limit: 100 })?
+            let items = d.shelf(&ShelfAction::List { shelf: None, limit: 100 })?;
+            if d.external() {
+                let scanned = crate::agentsafe::gate::scan_text(&items.to_string(), "tool", "Shelf items");
+                crate::agentsafe::gate::taint_note(client, "Shelf items", scanned.injection);
+            }
+            items
         }
         _ => return Err("Unknown resource.".into()),
     };

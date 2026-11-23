@@ -40,6 +40,8 @@ pub const EVENT_DELTA: &str = "lens://ai/delta";
 pub const EVENT_DONE: &str = "lens://ai/done";
 pub const EVENT_TOOL_PROPOSAL: &str = "lens://ai/tool-proposal";
 pub const EVENT_TOOL_RESULT: &str = "lens://ai/tool-result";
+/// The agent-safety gate found something or stopped a step (see [`SafetyFlagEvent`]).
+pub const EVENT_SAFETY_FLAG: &str = "lens://agentsafe/flag";
 
 pub const PROVIDER_IDS: [&str; 4] = ["off", "script", "local", "claude"];
 
@@ -271,6 +273,20 @@ pub struct DoneEvent {
     pub error: Option<String>,
 }
 
+/// One reason from the agent-safety gate, shown as a chip on the approval card.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SafetyNote {
+    pub code: String,
+    pub severity: String,
+    pub detail: String,
+}
+
+impl SafetyNote {
+    pub fn from_reasons(reasons: &[crate::agentsafe::Reason]) -> Vec<SafetyNote> {
+        reasons.iter().map(|r| SafetyNote { code: r.code.into(), severity: r.severity.as_str().into(), detail: r.detail.clone() }).collect()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ToolProposalEvent {
     pub id: String,
@@ -279,6 +295,112 @@ pub struct ToolProposalEvent {
     pub args: Value,
     pub summary: String,
     pub risk: Risk,
+    /// Why the agent-safety gate made this step wait or refused it (empty when it had no say).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub safety: Vec<SafetyNote>,
+}
+
+/// `lens://agentsafe/flag`: the gate found something in what a request attached ("context"),
+/// or made a step wait or refused it ("step"). The surface that sent the request shows it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SafetyFlagEvent {
+    pub id: String,
+    /// "context" | "step"
+    pub source: String,
+    /// What it is about: "page text", "clipboard", or the step's summary.
+    pub label: String,
+    /// "ask" | "block"
+    pub verdict: String,
+    /// Spans set aside before the model saw the text.
+    pub set_aside: u32,
+    pub reasons: Vec<SafetyNote>,
+}
+
+/// What the runner knows about where a request's steps come from.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StepSafety {
+    /// The request attached content someone else wrote (a page, the clipboard, a file), so a
+    /// step the model plans may have been planned from it.
+    pub untrusted: bool,
+    /// The person asked for exactly this step (a typed or spoken command, no model in between).
+    pub granted: bool,
+    /// What the scan of the attached content found.
+    pub injection: Option<crate::agentsafe::gate::Injection>,
+}
+
+impl StepSafety {
+    /// A step the person asked for directly.
+    pub fn person() -> Self {
+        StepSafety { untrusted: false, granted: true, injection: None }
+    }
+}
+
+/// Scans what a request attached. Flagged spans are set aside (the model never sees them) and
+/// recorded for the viewer in Settings; the returned context is what gets sent. Clean text is
+/// returned unchanged.
+pub fn scan_context(ctx: &AiContext) -> (AiContext, StepSafety, Vec<SafetyFlagEvent>) {
+    use crate::agentsafe::gate::{scan_text, Injection};
+    let mut out = ctx.clone();
+    let mut total = Injection::default();
+    let mut flags = Vec::new();
+    let mut content = false;
+    let mut scan = |slot: &mut Option<String>, source: &str, label: &str, counts: bool| {
+        let Some(text) = slot.as_deref().filter(|t| !t.trim().is_empty()) else { return };
+        content |= counts;
+        let scanned = scan_text(text, source, label);
+        if scanned.injection.is_clean() && scanned.reasons.is_empty() {
+            return;
+        }
+        total = total.merge(scanned.injection);
+        flags.push(SafetyFlagEvent {
+            id: String::new(),
+            source: "context".into(),
+            label: label.into(),
+            verdict: if scanned.injection.high > 0 || scanned.injection.exfiltration { "block" } else { "ask" }.into(),
+            set_aside: scanned.set_aside.len() as u32,
+            reasons: SafetyNote::from_reasons(&scanned.reasons),
+        });
+        *slot = Some(scanned.text);
+    };
+    scan(&mut out.selection, "page", "selected text", true);
+    scan(&mut out.clipboard, "clipboard", "clipboard", true);
+    scan(&mut out.page_text, "page", "page text", true);
+    scan(&mut out.shelf_text, "file", "Shelf items", true);
+    // A window title is set by whatever page or document is open; it only counts when it
+    // actually carries something.
+    scan(&mut out.window_title, "page", "window title", false);
+    // File names only (never contents); like a title, they count only when flagged.
+    if out.files.is_some() {
+        let mut joined = out.files.as_ref().map(|f| f.join("\n"));
+        scan(&mut joined, "file", "attached files", false);
+        out.files = joined.map(|j| j.lines().map(str::to_string).collect());
+    }
+    let safety = StepSafety { untrusted: content || !flags.is_empty(), granted: false, injection: (!total.is_clean()).then_some(total) };
+    (out, safety, flags)
+}
+
+/// The gate's answer for one step of a request.
+pub fn step_gate(name: &str, args: &Value, s: &StepSafety) -> crate::agentsafe::gate::GateDecision {
+    use crate::agentsafe::gate;
+    let facts = if crate::control::tools::is_control_tool(name) {
+        match crate::control::tools::parse(name, args) {
+            Ok(call) => crate::control::safety::facts(&call, None),
+            Err(_) => return gate::GateDecision::allow(), // validation reports the bad arguments
+        }
+    } else {
+        crate::control::safety::CallFacts { action: gate::action_for_tool(name), url: None, reads_untrusted: None }
+    };
+    gate::decide(&gate::GateInput {
+        client: "internal",
+        action: facts.action,
+        untrusted: s.untrusted,
+        // With nothing untrusted attached, the step was planned from the person's own words.
+        granted: s.granted || !s.untrusted,
+        url: facts.url.as_deref(),
+        injection: s.injection,
+        ..Default::default()
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -401,6 +523,8 @@ pub trait AiSink: Send + Sync {
     fn done(&self, ev: &DoneEvent);
     fn tool_proposal(&self, ev: &ToolProposalEvent);
     fn tool_result(&self, ev: &ToolResultEvent);
+    /// The agent-safety gate found something (see [`SafetyFlagEvent`]).
+    fn safety(&self, _ev: &SafetyFlagEvent) {}
 }
 
 /// Calls waiting for the user's yes/no (`ai_confirm_tool`).
@@ -491,7 +615,12 @@ fn wait_for(approvals: &Approvals, rx: &mpsc::Receiver<bool>, call_id: &str, can
 }
 
 /// Proposes, gates, runs and reports one tool call. Returns (ok, message).
-fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunDeps, ran: &mut Vec<String>) -> (bool, String) {
+///
+/// Every step passes the agent-safety gate here (`step_gate`), whoever started the request:
+/// Lens Command, voice, the AI dock, Snip, the bridge inbox. The gate can refuse a step or make
+/// a low-risk one wait for the person; it never lets anything through that the tool's own risk
+/// would have stopped.
+fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunDeps, safety: &StepSafety, ran: &mut Vec<String>) -> (bool, String) {
     let risk = tools::risk_of(name);
     let (ok, message) = match tools::validate(name, input) {
         Err(e) => {
@@ -502,31 +631,61 @@ fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunD
                 args: input.clone(),
                 summary: tools::describe(name, input),
                 risk,
+                safety: Vec::new(),
             });
             (false, e)
         }
         Ok(args) => {
-            let rx = (risk == Risk::Confirm).then(|| deps.approvals.register(id, call_id));
-            deps.sink.tool_proposal(&ToolProposalEvent {
-                id: id.into(),
-                call_id: call_id.into(),
-                tool: name.into(),
-                args: args.clone(),
-                summary: tools::describe(name, &args),
-                risk,
-            });
-            let approved = match &rx {
-                Some(rx) => wait_for(deps.approvals, rx, call_id, deps.cancel, deps.approval_timeout),
-                None => true,
-            };
-            if approved {
-                ran.push(name.to_string());
-                match deps.host.run(name, &args) {
-                    Ok(m) => (true, m),
-                    Err(e) => (false, e),
-                }
+            let verdict = step_gate(name, &args, safety);
+            let summary = tools::describe(name, &args);
+            let mut notes = SafetyNote::from_reasons(verdict.reasons());
+            if verdict.is_ask() && safety.untrusted && !notes.iter().any(|n| n.code.starts_with("inject.")) {
+                notes.insert(
+                    0,
+                    SafetyNote {
+                        code: "origin.untrusted".into(),
+                        severity: "low".into(),
+                        detail: "Planned after reading text you attached, so Lens checks with you first".into(),
+                    },
+                );
+            }
+            if verdict.is_block() {
+                deps.sink.tool_proposal(&ToolProposalEvent {
+                    id: id.into(),
+                    call_id: call_id.into(),
+                    tool: name.into(),
+                    args: args.clone(),
+                    summary: summary.clone(),
+                    risk: Risk::Blocked,
+                    safety: notes.clone(),
+                });
+                deps.sink.safety(&SafetyFlagEvent { id: id.into(), source: "step".into(), label: summary, verdict: "block".into(), set_aside: 0, reasons: notes });
+                (false, format!("Lens stopped this step for safety: {}. Tell the user; do not try another way.", verdict.text()))
             } else {
-                (false, "The user declined this action.".to_string())
+                let ask = verdict.is_ask();
+                let rx = (risk == Risk::Confirm || ask).then(|| deps.approvals.register(id, call_id));
+                deps.sink.tool_proposal(&ToolProposalEvent {
+                    id: id.into(),
+                    call_id: call_id.into(),
+                    tool: name.into(),
+                    args: args.clone(),
+                    summary,
+                    risk: if ask { Risk::Confirm } else { risk },
+                    safety: if ask { notes } else { Vec::new() },
+                });
+                let approved = match &rx {
+                    Some(rx) => wait_for(deps.approvals, rx, call_id, deps.cancel, deps.approval_timeout),
+                    None => true,
+                };
+                if approved {
+                    ran.push(name.to_string());
+                    match deps.host.run(name, &args) {
+                        Ok(m) => (true, m),
+                        Err(e) => (false, e),
+                    }
+                } else {
+                    (false, "The user declined this action.".to_string())
+                }
             }
         }
     };
@@ -570,7 +729,8 @@ pub fn run_intent(id: &str, intent: &Intent, deps: &RunDeps) -> (DoneEvent, Vec<
             }
         }
     }
-    let (ok, message) = run_tool_call(id, &format!("{}-i0", id), name, &Value::Object(args), deps, &mut ran);
+    // Typed or spoken by the person and parsed by the script engine: no model, nothing untrusted.
+    let (ok, message) = run_tool_call(id, &format!("{}-i0", id), name, &Value::Object(args), deps, &StepSafety::person(), &mut ran);
     deps.sink.delta(&DeltaEvent { id: id.into(), text: message.clone() });
     if ok {
         finish(None, ran)
@@ -621,6 +781,7 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
                 args: json!({ "provider": p.id(), "label": p.label(), "model": p.model(), "fields": fields }),
                 summary: format!("Send {} to {}?", shown, p.label()),
                 risk: Risk::Confirm,
+                safety: Vec::new(),
             });
             let ok = wait_for(deps.approvals, &rx, &call_id, deps.cancel, deps.approval_timeout);
             deps.sink.tool_result(&ToolResultEvent {
@@ -635,9 +796,17 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
         }
     }
 
+    // Agent safety: scan what was attached before any model sees it. Flagged spans are set
+    // aside, and steps the model plans after reading someone else's text wait for the person.
+    let (context, safety, flags) = scan_context(&req.context);
+    for mut flag in flags {
+        flag.id = id.to_string();
+        deps.sink.safety(&flag);
+    }
+
     let allow_tools = req.allow_tools;
     let system = system_prompt(allow_tools, &deps.system_extra);
-    let mut messages = vec![ChatMessage::user_text(format!("{}{}", prompt, req.context.render()))];
+    let mut messages = vec![ChatMessage::user_text(format!("{}{}", prompt, context.render()))];
     let mut total: Option<Usage> = None;
 
     for round in 0..MAX_ROUNDS {
@@ -673,7 +842,7 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
         let mut results = Vec::new();
         for (n, (tid, name, input)) in out.tool_calls.iter().enumerate() {
             let call_id = format!("{}-r{}-{}", id, round, n);
-            let (ok, message) = run_tool_call(id, &call_id, name, input, deps, &mut ran_tools);
+            let (ok, message) = run_tool_call(id, &call_id, name, input, deps, &safety, &mut ran_tools);
             results.push(Block::ToolResult { id: tid.clone(), content: message, is_error: !ok });
         }
         messages.push(ChatMessage { role: Role::User, content: results });

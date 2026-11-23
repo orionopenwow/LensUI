@@ -14,8 +14,93 @@ pub(crate) fn emitter(app: &AppHandle) -> ipc::Emit {
             // Open Lens Command first (when it is on) so its thread is there to show the request.
             crate::app::integration::before_bridge_request(&app);
         }
+        if name == "lens://bridge/request" || name == "lens://bridge/update" {
+            mirror_to_queue(&app, payload.get("id").and_then(serde_json::Value::as_str).unwrap_or(""));
+        }
         let _ = app.emit(name, payload);
     })
+}
+
+/// What the shared approval card shows for a bridge request that waits for the person. Pure.
+pub(crate) fn approval_preview(e: &ipc::InboxEntry) -> (String, String, serde_json::Value) {
+    use serde_json::json;
+    let r = &e.request;
+    let origin = match r.origin {
+        bridge::protocol::Origin::Browser => "Browser",
+        bridge::protocol::Origin::UrlLink => "Link",
+        bridge::protocol::Origin::Explorer => "File Explorer",
+        bridge::protocol::Origin::Cli => "Script",
+    };
+    let transcribe = r.kind == bridge::protocol::ActionKind::Transcribe;
+    let action = r.action.replace('_', " ");
+    let text = if transcribe { "Transcribe this".to_string() } else { format!("Send this to Lens AI ({})", action) };
+    let mut details = Vec::new();
+    let mut row = |label: &str, value: String| details.push(json!({ "label": label, "value": value }));
+    if let Some(q) = r.question.as_deref().filter(|q| !q.trim().is_empty()) {
+        row("Question", q.chars().take(120).collect());
+    }
+    if let Some(t) = r.title.as_deref().filter(|t| !t.trim().is_empty()) {
+        row("From", t.chars().take(80).collect());
+    }
+    if let Some(s) = &r.selection {
+        row("Selection", format!("{} characters", s.chars().count()));
+    }
+    if let Some(p) = &r.page_text {
+        row("Page text", format!("{} KB", (p.len() / 1024).max(1)));
+    }
+    if let Some(p) = &r.path {
+        row("File", p.rsplit(['\\', '/']).next().unwrap_or(p).chars().take(80).collect());
+    }
+    if r.media_url.is_some() {
+        row("Video", "link".into());
+    }
+    if r.use_clipboard {
+        row("Clipboard", "read when you approve".into());
+    }
+    let preview = json!({
+        "question": format!("{}?", text),
+        "reason": format!("{} asked Lens to {} this. Nothing is sent until you say so.", origin, if transcribe { "transcribe" } else { action.as_str() }),
+        "verb": if transcribe { "Transcribe" } else { "Send" },
+        "denyLabel": "Decline",
+        "kind": "none",
+        "details": details,
+        "reversible": true,
+        "noUndoLine": true,
+        "risk": "low",
+        "holdToConfirm": false,
+        "capabilities": [],
+        "source": { "client": "bridge", "kind": "bridge", "label": origin },
+    });
+    (text, origin.to_string(), preview)
+}
+
+/// Keeps the shared approval queue in step with the bridge inbox: a request that waits for the
+/// person gets a card; once it is answered anywhere, the card closes.
+fn mirror_to_queue(app: &AppHandle, id: &str) {
+    let Some(e) = ipc::get(id) else { return };
+    let changed = if e.state == "pending" && e.needs_confirmation {
+        let (text, origin, preview) = approval_preview(&e);
+        let args = serde_json::json!({ "useClipboard": e.request.use_clipboard });
+        crate::win_mcp::enqueue_local("bridge", &e.id, &e.request.action, &args, &text, &origin, preview).is_ok()
+    } else {
+        let ok = !matches!(e.state.as_str(), "declined" | "failed");
+        crate::win_mcp::finish_local("bridge", &e.id, ok, e.error.as_deref().unwrap_or(if ok { "Sent." } else { "Declined." })).is_some()
+    };
+    if changed {
+        let _ = app.emit("lens://mcp-changed", ());
+    }
+}
+
+/// The person answered a bridge request on the shared approval card.
+pub(crate) fn resolve_from_card(app: &AppHandle, id: &str, approve: bool) -> Result<(), String> {
+    ipc::set_emitter(emitter(app));
+    if approve {
+        // A request that wanted the clipboard is confirmed by the card itself through
+        // `bridge_confirm` (the click reads it); from here it goes without.
+        ipc::confirm(id, None).map(|_| ())
+    } else {
+        ipc::decline(id).map(|_| ())
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
