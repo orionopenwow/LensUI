@@ -1,7 +1,9 @@
 //! Win key → Lens Launcher, Alt+Tab → Lens Overview (opt-in, both default off).
 //!
 //! Design (see docs/KEYHOOK.md):
-//! * One `WH_KEYBOARD_LL` hook on its own thread with its own message loop. The hook procedure
+//! * The keyboard hook belongs to the shared input service (`input.rs`): one thread, one
+//!   watchdog and one fullscreen/game pause for every Lens hook. This module claims the keyboard
+//!   and supplies the handler. The handler
 //!   only runs the pure [`KeyMachine`] below (a few integer compares), optionally sends a single
 //!   "mask" key with `SendInput`, pushes an event onto a channel and returns. It never waits for
 //!   the UI, so it stays far inside Windows' `LowLevelHooksTimeout`.

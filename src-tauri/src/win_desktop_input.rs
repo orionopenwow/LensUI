@@ -1,12 +1,12 @@
 //! Desktop input for the Playground ("living desktop") wallpaper scenes.
 //!
 //! The wallpaper window lives behind the desktop icons (re-parented into WorkerW), so it never
-//! receives mouse input of its own. This module watches the mouse with a low-level hook
-//! (`WH_MOUSE_LL`) and forwards *only* what happens over the bare desktop to the wallpaper
+//! receives mouse input of its own. This module claims the mouse on the shared input service
+//! (`input.rs`, the only `WH_MOUSE_LL` hook in Lens) and forwards *only* what happens over the bare desktop to the wallpaper
 //! surface, as `lens://desktop-input` events.
 //!
 //! Safety rules, in order of importance:
-//! 1. Never swallow input: the hook proc always calls `CallNextHookEx` and returns its result.
+//! 1. Never swallow input: the handler always answers "pass on".
 //! 2. Never block the hook proc: it copies the event into a bounded channel with `try_send`
 //!    (dropped if full) and returns. All window queries, the icon hit test and emitting run on
 //!    a separate worker thread.

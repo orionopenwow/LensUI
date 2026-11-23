@@ -1,4 +1,5 @@
-//! Windows layer for the magic window: the opt-in low-level mouse hook (with watchdog), the
+//! Windows layer for the magic window: the opt-in mouse handler on the shared input service
+//! (`input.rs` owns the hook, its watchdog and the fullscreen pause), the
 //! "what's under the cursor" fact gathering (UI Automation, window manager, Explorer folders),
 //! and window actions.
 //!

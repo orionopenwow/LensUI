@@ -2,16 +2,16 @@
 //! it from the nearest edge or corner (the Linux/KDE/AltSnap gesture).
 //!
 //! Safety, in order of importance:
-//! * Off by default. The low-level mouse hook is only installed while the feature is on, and it
-//!   is removed again when it is turned off.
-//! * The hook never looks at the keyboard stream. It reads the modifier state with
+//! * Off by default. The feature claims the mouse on the shared input service (`input.rs`) only
+//!   while it is on, and releases it when it is turned off. With no claim there is no hook.
+//! * The handler never looks at the keyboard stream. It reads the modifier state with
 //!   `GetAsyncKeyState` only when a mouse button goes down.
 //! * Without the modifier every event passes through untouched (unit-tested on `decide`).
 //! * Never acts on fullscreen windows, games, presentations, Lens itself, the desktop or taskbar,
 //!   excluded apps, or windows of an elevated process Lens cannot move.
 //! * The callback does no blocking work: state sits behind `try_lock`, and a busy lock means
-//!   "pass through". A watchdog re-installs the hook if Windows silently drops it and resets a
-//!   drag that stopped receiving events.
+//!   "pass through". The input service's watchdog re-installs a hook Windows silently dropped
+//!   and pauses everything for fullscreen apps; a drag that stopped receiving events is reset.
 
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;

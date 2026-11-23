@@ -2,18 +2,18 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (21)
+## Declared windows (23)
 
 | Label | Visible at start | Size |
 |---|---|---|
-| `dock` | yes | 920×96 |
-| `topbar` | yes | 1920×34 |
+| `dock` | no (on demand) | 920×96 |
+| `topbar` | no (on demand) | 1920×34 |
 | `settings` | no (on demand) | 720×530 |
 | `palette` | no (on demand) | 660×460 |
 | `widgets` | no (on demand) | 360×680 |
 | `quicksettings` | no (on demand) | 376×540 |
 | `notifications` | no (on demand) | 364×420 |
-| `desktopfolder` | yes | 88×96 |
+| `desktopfolder` | no (on demand) | 88×96 |
 | `launcher` | no (on demand) | 780×640 |
 | `overview` | no (on demand) | 1120×700 |
 | `wallpaper` | no (on demand) | 1920×1080 |
@@ -22,13 +22,15 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `edgeshelf` | no (on demand) | 6×96 |
 | `bubble` | no (on demand) | 32×32 |
 | `testerhub` | no (on demand) | 760×860 |
+| `studio` | no (on demand) | 1280×820 |
 | `voicehud` | no (on demand) | 480×560 |
 | `conversation` | no (on demand) | 960×640 |
 | `approval` | no (on demand) | 520×720 |
 | `nowplaying` | no (on demand) | 1280×800 |
 | `apps` | no (on demand) | 1040×760 |
+| `cleaner` | no (on demand) | 1040×760 |
 
-## Frontend routes (27) — `index.html?surface=<id>`
+## Frontend routes (30) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -55,7 +57,10 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `approval` | `./approval/ApprovalSurface` | declared |
 | `nowplaying` | `./music/NowPlayingSurface` | declared |
 | `apps` | `./apps/AppsSurface` | declared |
+| `cleaner` | `./cleaner/CleanerSurface` | declared |
+| `coreapp` | `./coreapps/CoreAppSurface` | built at runtime |
 | `presence` | `./presence/PresenceSurface` | built at runtime |
 | `presencebar` | `./presence/PresenceBar` | built at runtime |
 | `voicehud` | `./surfaces/VoiceHudSurface` | declared |
+| `studio` | `./studio/StudioSurface` | declared |
 | `conversation` | `./surfaces/ConversationSurface` | declared |
