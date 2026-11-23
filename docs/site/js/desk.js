@@ -69,7 +69,7 @@ const WINDOWS = {
 // Window positions, in % of the area between the top bar and the dock.
 const LAYOUTS = {
   hero: { browser: [3, 5, 47, 80], code: [30, 13, 48, 80], music: [80, 56, 19, 34] },
-  themes: { browser: [3, 6, 52, 80], notes: [42, 18, 36, 66], music: [74, 58, 24, 34] },
+  themes: { browser: [3, 6, 52, 80], files: [44, 20, 34, 62], music: [74, 58, 24, 34] },
   ai: { browser: [4, 6, 48, 80], code: [30, 14, 50, 78], chat: [72, 8, 25, 50], notes: [58, 30, 34, 58] },
   apps: { files: [2, 10, 34, 56] },
 };
