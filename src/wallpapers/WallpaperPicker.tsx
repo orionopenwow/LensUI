@@ -457,8 +457,8 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
 
       <div
         className="wsw-stage"
-        role="listbox"
-        aria-label="Wallpapers"
+        role={shown.length ? "listbox" : undefined}
+        aria-label={shown.length ? "Wallpapers" : undefined}
         aria-activedescendant={focus ? `wsw-card-${focus.id}` : undefined}
         onWheel={onWheel}
       >
