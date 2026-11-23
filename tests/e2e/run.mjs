@@ -63,7 +63,10 @@ function surfaces(s) {
   const map = {};
   for (const p of pages(s)) {
     try {
-      map[new URL(p.url()).searchParams.get("surface") || "dock"] = p;
+      // Only real Lens surfaces: every window loads index.html?surface=<name>. Anything else
+      // (about:blank while a window is being built, DevTools targets) is skipped.
+      const surface = new URL(p.url()).searchParams.get("surface");
+      if (surface && !p.isClosed()) map[surface] = p;
     } catch {}
   }
   return map;

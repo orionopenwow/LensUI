@@ -94,9 +94,13 @@ if ($Mode -eq "snapshot") {
 }
 
 # compare
-Start-Sleep -Seconds 2
 $before = Get-Content $File -Raw | ConvertFrom-Json
+# Explorer shows the taskbar asynchronously; give it up to 10 s before calling it a failure.
 $now = State
+for ($i = 0; $i -lt 20 -and $before.taskbarVisible -and -not $now.taskbarVisible; $i++) {
+  Start-Sleep -Milliseconds 500
+  $now = State
+}
 $problems = New-Object System.Collections.ArrayList
 
 $left = @(Get-Process lens-ui -ErrorAction SilentlyContinue)
