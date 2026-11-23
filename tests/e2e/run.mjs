@@ -290,12 +290,21 @@ const SCENARIOS = [
         await sleep(1500);
         if ((await box.inputValue()) !== "dark mode") await box.fill("dark mode");
       }
-      await box.press("Enter");
-      await cmd
-        .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 10000 })
-        .catch(async () => {
-          throw new Error(`no answer or action card for "dark mode"; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 600)}`);
-        });
+      // On a cold start the window's replayed "open" event can land after our Enter and reset the
+      // input, swallowing the run. Re-submit up to three times; "dark mode" is idempotent.
+      const answered = () =>
+        cmd
+          .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 4000 })
+          .then(() => true, () => false);
+      let ok = false;
+      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+        if ((await box.inputValue()) !== "dark mode") await box.fill("dark mode");
+        await box.press("Enter");
+        ok = await answered();
+      }
+      if (!ok) {
+        throw new Error(`no answer or action card for "dark mode"; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 600)}`);
+      }
       await shot(cmd, "command-dark-mode");
       const errs = take();
       if (errs.length) throw new Error(errs.join("\n"));
