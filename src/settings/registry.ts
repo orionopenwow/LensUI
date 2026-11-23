@@ -142,6 +142,7 @@ export const PAGES: PageDef[] = [
       { id: "connections", label: "Connections", keywords: ["browser", "explorer", "claude desktop"] },
       { id: "transcription", label: "Transcription", keywords: ["whisper", "subtitles"] },
       { id: "mcp", label: "AI apps (MCP)", keywords: ["claude code", "mcp"] },
+      { id: "presence", label: "Lens at work", keywords: ["orb", "show steps", "watch ai", "captions", "pause lens", "stop", "claude is controlling", "overlay"] },
       { id: "agents", label: "Agents", keywords: ["automations", "macros"] },
       { id: "voice", label: "Voice", keywords: ["voice", "speech", "hold to talk", "wake word", "lens", "dictation", "conversation"] },
       { id: "magic", label: "Magic right-click", keywords: ["magic menu", "ctrl alt right click", "context window"] },

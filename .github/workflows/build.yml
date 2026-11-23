@@ -171,6 +171,8 @@ jobs:
         run: node tools/parity/guide/build.mjs && node tools/parity/guide/shoot.mjs
       - name: Magic right-click window gallery
         run: node tools/parity/magic/build.mjs && node tools/parity/magic/shoot.mjs
+      - name: Lens at work gallery (overlay, banner, in-app twin, demo reel)
+        run: node tools/parity/presence/build.mjs && node tools/parity/presence/shoot.mjs
 
       - name: Render agent safety + hostile-page collector check
         run: node tools/parity/agentsafe/build.mjs && node tools/parity/agentsafe/shoot.mjs
@@ -207,6 +209,8 @@ jobs:
             tools/parity/productivity/
             tools/parity/tester/shots/
             tools/parity/guide/shots/
+            tools/parity/presence/shots/*.png
+            tools/parity/presence/shots/*.webp
             tools/parity/approval/shots/
             tools/parity/magic/shots/
             tools/parity/agentsafe/shots/

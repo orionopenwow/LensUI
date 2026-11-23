@@ -2629,6 +2629,26 @@
    "source": "src/components/McpCard.tsx"
   },
   {
+   "id": "card.ai.presencecard",
+   "kind": "card",
+   "title": "Presence",
+   "text": "Presence",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens at work",
+    "Presence"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "PresenceCard",
+    "label": "Presence",
+    "section": "presence"
+   },
+   "source": "src/presence/PresenceCard.tsx"
+  },
+  {
    "id": "card.ai.voicecard",
    "kind": "card",
    "title": "Always listening",

@@ -20,7 +20,7 @@ use super::{Env, Monitor, PRect, PresenceEvent, Visual, EVT_BANNER, EVT_STEP};
 
 pub const OVERLAY: &str = "presence";
 pub const BANNER: &str = "presencebar";
-const BANNER_W: f64 = 520.0;
+const BANNER_W: f64 = 560.0;
 const BANNER_H: f64 = 44.0;
 /// Hide the overlay this long after the last step.
 const IDLE_HIDE_MS: u64 = 3_500;
@@ -177,8 +177,15 @@ pub fn show(app: &AppHandle, ev: PresenceEvent) {
     if ev.visual == Visual::Full {
         if let Some(t) = ev.target.or(ev.dest) {
             let s = super::geom::safe_scale(m.scale);
-            ORB_X.store(m.rect.x + ((t.x + t.w / 2.0) * s) as i32, Ordering::Relaxed);
-            ORB_Y.store(m.rect.y + ((t.y + t.h / 2.0) * s) as i32, Ordering::Relaxed);
+            // Same resting point as src/presence/model.ts restPoint(): beside the card while waiting,
+            // on the destination for window moves, else on the target.
+            let (cx, cy) = match (ev.kind, ev.dest) {
+                (super::StepKind::Wait, _) if ev.target.is_some() => (t.x - 28.0, t.y + (t.h / 2.0).min(28.0)),
+                (super::StepKind::Window, Some(d)) => (d.x + d.w / 2.0, d.y + d.h / 2.0),
+                _ => (t.x + t.w / 2.0, t.y + t.h / 2.0),
+            };
+            ORB_X.store(m.rect.x + (cx * s) as i32, Ordering::Relaxed);
+            ORB_Y.store(m.rect.y + (cy * s) as i32, Ordering::Relaxed);
             ORB_R.store((ORB_HIT_RADIUS * s) as i32, Ordering::Relaxed);
         }
     } else {
