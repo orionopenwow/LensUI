@@ -258,6 +258,8 @@ pub(crate) fn run_setup(
         let _ = set_run_on_startup(true);
     }
 
+    // Dock, top bar and desktop tab stay hidden until their pages report ready (B-21).
+    crate::app::loadguard::start(&handle);
     position_dock_and_bars(&handle, &initial_config);
 
     // Shell mode: start the user's startup apps, then mark the boot good after ~20 s.

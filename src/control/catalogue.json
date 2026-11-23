@@ -73,7 +73,7 @@
     "Command & Shelf": 1,
     "Desktop": 1,
     "Do Not Disturb": 3,
-    "Dock": 24,
+    "Dock": 25,
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 5,
@@ -91,7 +91,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 180,
+  "count": 181,
   "entries": [
     {
       "capability": "change_settings",
@@ -1100,6 +1100,21 @@
       "schema": {
         "maxItems": 200,
         "type": "array"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Dock",
+      "default": false,
+      "description": "On once you reorder Dock pins in Lens. Off: pins from the Windows taskbar follow its order.",
+      "example": "{\"args\":{\"changes\":{\"dock.pinsUserOrdered\":true}},\"tool\":\"lens_set\"}",
+      "label": "Keep my Dock order",
+      "path": "dock.pinsUserOrdered",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
       },
       "store": "config"
     },

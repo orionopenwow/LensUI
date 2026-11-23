@@ -24,7 +24,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "topbar",
@@ -40,7 +40,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "settings",
@@ -133,7 +133,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "launcher",
