@@ -38,6 +38,7 @@ void main() {
   gl_FragColor = vec4(hueRotate(c, hue), 1.0);
 }`;
 
+let logoCount = 0;
 export async function animateLogo(host) {
   if (host.dataset.animated) return;
   host.dataset.animated = "1";
@@ -74,10 +75,12 @@ export async function animateLogo(host) {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
   const U = { t: gl.getUniformLocation(prog, "t"), warp: gl.getUniformLocation(prog, "warp"), hue: gl.getUniformLocation(prog, "hue") };
 
-  host.insertAdjacentHTML("beforeend", overlaySvg);
+  // Each logo on the page gets its own ids (the hero and the Guide orb both animate).
+  const n = ++logoCount;
+  host.insertAdjacentHTML("beforeend", n === 1 ? overlaySvg : overlaySvg.replace(/lg-/g, `lg${n}-`));
   host.prepend(canvas);
   const overlay = host.querySelector(".logo-overlay");
-  const glare = overlay.querySelector("#lg-glare");
+  const glare = overlay.querySelector(n === 1 ? "#lg-glare" : `#lg${n}-glare`);
 
   const size = () => {
     const dpr = Math.min(2, devicePixelRatio || 1);

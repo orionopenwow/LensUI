@@ -34,7 +34,9 @@ let interacted = false;
 const scenes = createScenes(desk, {
   onScene(i, sc) {
     cap.innerHTML = `<b>${esc(sc.title)}</b><span>${esc(sc.line)}</span>`;
-    bar.querySelectorAll("[data-scene]").forEach((b, k) => { b.setAttribute("aria-current", k === i ? "true" : "false"); if (k === i) b.scrollIntoView({ block: "nearest", inline: "center", behavior: "auto" }); });
+    const list = bar.querySelector(".sb-list");
+    // Centre the current scene in the bar by scrolling the bar only (never the page).
+    bar.querySelectorAll("[data-scene]").forEach((b, k) => { b.setAttribute("aria-current", k === i ? "true" : "false"); if (k === i) list.scrollTo({ left: b.offsetLeft - list.clientWidth / 2 + b.offsetWidth / 2, behavior: reducedMotion() ? "auto" : "smooth" }); });
     const prog = bar.querySelector(".sb-prog i");
     if (prog) { prog.style.animation = "none"; void prog.offsetWidth; prog.style.animation = scenes.playing && !reducedMotion() ? "sb-prog 11s linear" : "none"; }
     history.replaceState(null, "", `#scene/${sc.id}`);
@@ -101,7 +103,7 @@ async function exitFs() {
 }
 fsBtn.addEventListener("click", () => (stage.classList.contains("is-full") ? exitFs() : enterFs()));
 document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && stage.classList.contains("is-full")) exitFs(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape" && stage.classList.contains("is-full") && !document.fullscreenElement && document.activeElement?.closest?.(".lx-cmd, .lx-fly, .lx-menu, .lx-magic, .lx-approve") == null) exitFs(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape" && stage.classList.contains("is-full") && document.activeElement?.closest?.(".lx-cmd, .lx-fly, .lx-menu, .lx-magic, .lx-approve, .gw") == null) exitFs(); });
 
 // ---- the dock rail: every dock style, live, sized from the dock's real width -------------------------
 const DOCKS = [

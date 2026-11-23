@@ -60,6 +60,7 @@ export function createScenes(desk, { onScene, onState } = {}) {
     const p = packs.find((x) => x.id === sc.look.pack);
     if (p && desk.pack?.id !== p.id) desk.setPack(p);
     desk.dockStyle(sc.look.dock, sc.look.shape);
+    if (sc.id !== "backdrops") desk.resetWallpaper?.();
     // Windows morph from the last scene: keep the ones both scenes use and move them; close the rest.
     const want = L[sc.id === "magic-right-click" ? "magic" : sc.id === "backdrops" ? "wall" : sc.id === "claude" ? "agent" : sc.id === "browser-ai" ? "browserai" : sc.id === "approvals" ? "approve" : sc.id] ?? [];
     for (const w of [...desk.wins.values()]) if (!want.some(([a]) => a === w.app)) desk.close(w.id);

@@ -259,6 +259,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       const p = toDesk(e);
       dragging = { w, mode: rz ? rz.dataset.rz : "move", start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id: e.pointerId };
       root.classList.add("is-dragging");
+      play?.setStill(true); // the window gets the frames while it moves
       emit("user", "drag");
     });
     el.addEventListener("pointermove", (e) => { if (dragging?.w === w && dragging.id === e.pointerId) move(toDesk(e)); });
@@ -315,6 +316,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     dragging = null;
     cancelAnimationFrame(raf); raf = 0;
     root.classList.remove("is-dragging");
+    play?.setStill(still());
     showSnap(null);
     const w = d.w;
     if (d.slot) snap(w.id, d.slot);
@@ -557,14 +559,16 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   const wall = cv.querySelector(".lx-wall"), glow = cv.querySelector(".lx-glow");
   let pg = null, play = null, pack = null, accent = null, committed = null;
   let par = null;
+  let parRaf = 0;
   cv.addEventListener("pointermove", (e) => {
-    if (reducedMotion()) return;
-    const p = toDesk(e);
-    par = p;
-    if (!par.raf) requestAnimationFrame(() => {
+    // No parallax while a window is dragged: the window gets the frames.
+    if (reducedMotion() || dragging) return;
+    par = toDesk(e);
+    if (!parRaf) parRaf = requestAnimationFrame(() => {
+      parRaf = 0;
       if (!par) return;
       glow.style.transform = `translate3d(${par.x - 300}px, ${par.y - 300}px, 0)`;
-      wall.style.transform = `translate3d(${(par.x / W - 0.5) * -14}px, ${(par.y / H - 0.5) * -10}px, 0) scale(1.03)`;
+      wall.style.transform = `translate3d(${(par.x / W - 0.5) * -14}px, ${(par.y / H - 0.5) * -10}px, 0)`;
     });
   });
   const still = () => reducedMotion() || !visible || document.hidden;
@@ -574,7 +578,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const p = pack ?? { base: "#09090b", accent: "#fafafa", scheme: "dark" };
     play = pg.mount(wall, { scene: "ambient", fps: 24, seed: n * 7, still: still(), ripples: false, options: { motion: "lively" }, palette: pg.packPalette({ base: p.base ?? "#09090b", accent: accent ?? p.accent, scheme: p.scheme }) });
   }
-  const WALLS = ["ambient", "waves", "drift-aurora", "star-drift", "contours", "glow-contours"];
+  const WALLS = ["ambient", "drift-aurora", "aurora", "star-drift", "glow-contours", "caustics"];
   let wi = 0;
 
   // ---- theme -------------------------------------------------------------------------------------------
@@ -624,6 +628,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); toast({ icon: "lens-settings", app: "Lens", title: `Theme: ${p.label}`, body: p.description ?? `${p.collection} collection` }); },
     dockStyle(style, shape) { send({ lens: "config", patch: { dock: { style }, ...(shape ? { theme: { shapeStyle: shape } } : {}) } }); },
     search(open = true, q, opts = {}) { send({ lens: "search", open, focus: opts.focus !== false, ...(q != null ? { q } : {}) }); },
+    /** Puts the theme's own backdrop back (scenes start from it). */
+    resetWallpaper() { if (!play || wi % WALLS.length === 0) return; wi = 0; play.setScene("ambient"); play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
     nextWallpaper() { if (!play) return; const id = WALLS[++wi % WALLS.length]; play.setScene(id); if (id === "ambient") play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); toast({ icon: "lens-settings", app: "Lens", title: "Wallpaper changed", body: id === "ambient" ? "Theme backdrop" : id.replace(/-/g, " ") }); },
     tileAll() { const ws = [...wins.values()].filter((w) => !w.min); const slots = ws.length === 1 ? ["max"] : ws.length === 2 ? ["left", "right"] : ["tl", "tr", "bl", "br"]; ws.slice(0, slots.length).forEach((w, i) => snap(w.id, slots[i])); },
     showDesktop() { for (const w of wins.values()) minimize(w.id); },
