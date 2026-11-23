@@ -214,7 +214,7 @@ pub struct FuncConfig {
 pub struct WindowControlsConfig {
     pub enabled: bool,
     pub style: String,    // "traffic-classic" | "traffic-muted" | "minimal-dots" | "accent-pills"
-    pub order: String,    // "green-yellow-red" | "red-yellow-green"
+    pub order: String,    // "yellow-green-red" (default) | "green-yellow-red" | "red-yellow-green"
     pub position: String, // "top-right" | "top-left"
     #[serde(default = "default_true")]
     pub frame_border_enabled: bool,
@@ -489,7 +489,7 @@ impl Default for LensConfig {
             window_controls: WindowControlsConfig {
                 enabled: true,
                 style: "traffic-classic".into(),
-                order: "green-yellow-red".into(),
+                order: "yellow-green-red".into(),
                 position: "top-right".into(),
                 frame_border_enabled: true,
                 frame_style: "obsidian-hairline".into(),

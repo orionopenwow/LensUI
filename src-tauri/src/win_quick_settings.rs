@@ -28,12 +28,13 @@ where
     };
 
     unsafe {
+        // RPC_E_CHANGED_MODE (thread already initialised as STA) is fine: COM is usable either way.
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-        let enumerator: IMMDeviceEnumerator =
-            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).map_err(|e| e.to_string())?;
+        let enumerator: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
+            .map_err(|e| format!("Couldn't reach Windows audio ({e})."))?;
         let device = enumerator
             .GetDefaultAudioEndpoint(eRender, eMultimedia)
-            .map_err(|e| e.to_string())?;
+            .map_err(|_| "No sound output device is active.".to_string())?;
         let endpoint: IAudioEndpointVolume = device
             .Activate(CLSCTX_ALL, None)
             .map_err(|e| e.to_string())?;
@@ -61,7 +62,12 @@ pub fn set_system_volume(level: u32) -> Result<(), String> {
     let scalar = (level.min(100) as f32) / 100.0;
     with_endpoint_volume(|ep| unsafe {
         ep.SetMasterVolumeLevelScalar(scalar, std::ptr::null())
-            .map_err(|e| e.to_string())
+            .map_err(|e| format!("Windows didn't accept the volume change ({e})."))?;
+        // Moving the slider up while muted used to leave the PC silent with the UI saying 'unmuted'.
+        if level > 0 && ep.GetMute().map(|b| b.as_bool()).unwrap_or(false) {
+            ep.SetMute(false, std::ptr::null()).map_err(|e| e.to_string())?;
+        }
+        Ok(())
     })
 }
 
@@ -83,52 +89,14 @@ pub fn set_system_mute(_muted: bool) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(windows)]
+/// First screen that accepts brightness (built-in panel first), or 0 when none does.
 pub fn get_screen_brightness() -> u32 {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
-    let out = std::process::Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness -ErrorAction SilentlyContinue | Select-Object -First 1).CurrentBrightness",
-        ])
-        .creation_flags(CREATE_NO_WINDOW)
-        .output();
-    if let Ok(o) = out {
-        let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
-        if let Ok(val) = s.parse::<u32>() {
-            return val.min(100);
-        }
-    }
-    80
+    crate::win_brightness::first_level().unwrap_or(0)
 }
 
-#[cfg(not(windows))]
-pub fn get_screen_brightness() -> u32 {
-    80
-}
-
-#[cfg(windows)]
+/// Sets every screen that accepts it (built-in over WMI, external over DDC/CI).
 pub fn set_screen_brightness(level: u32) -> Result<(), String> {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
-    let clamped = level.min(100);
-    let cmd = format!(
-        "$m = Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightnessMethods -ErrorAction SilentlyContinue | Select-Object -First 1; if ($m) {{ Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{{ Timeout = 0; Brightness = {} }} | Out-Null }}",
-        clamped
-    );
-    std::process::Command::new("powershell")
-        .args(["-NoProfile", "-Command", &cmd])
-        .creation_flags(CREATE_NO_WINDOW)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-#[cfg(not(windows))]
-pub fn set_screen_brightness(_level: u32) -> Result<(), String> {
-    Ok(())
+    crate::win_brightness::set_all(level)
 }
 
 /// Applies instant hardware-level Night Light warmth via GDI Gamma Ramp (100% reversible).
@@ -364,4 +332,127 @@ pub fn set_app_audio(pid_target: u32, volume: Option<u32>, muted: Option<bool>) 
 #[cfg(not(windows))]
 pub fn set_app_audio(_pid_target: u32, _volume: Option<u32>, _muted: Option<bool>) -> Result<(), String> {
     Ok(())
+}
+
+// ---- Night light schedule --------------------------------------------------------------------
+// Off, or on between two local times (crossing midnight is fine). Stored in
+// %APPDATA%\LensUI\night-light.json and applied by a small background check once a minute.
+
+#[derive(Debug, Clone, Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NightLightSchedule {
+    /// "off" | "custom"
+    pub mode: String,
+    /// "HH:MM", local time.
+    pub from: String,
+    pub to: String,
+    pub warmth: u32,
+}
+
+impl Default for NightLightSchedule {
+    fn default() -> Self {
+        Self { mode: "off".into(), from: "21:00".into(), to: "07:00".into(), warmth: 50 }
+    }
+}
+
+/// Minutes since midnight for "HH:MM".
+pub fn hhmm(s: &str) -> Option<u32> {
+    let (h, m) = s.trim().split_once(':')?;
+    let (h, m): (u32, u32) = (h.parse().ok()?, m.parse().ok()?);
+    (h < 24 && m < 60).then_some(h * 60 + m)
+}
+
+/// Whether the schedule wants night light on at `now` (minutes since midnight).
+pub fn schedule_active(s: &NightLightSchedule, now: u32) -> bool {
+    if s.mode != "custom" {
+        return false;
+    }
+    let (Some(a), Some(b)) = (hhmm(&s.from), hhmm(&s.to)) else { return false };
+    if a == b {
+        return false;
+    }
+    if a < b {
+        now >= a && now < b
+    } else {
+        now >= a || now < b
+    }
+}
+
+fn schedule_path() -> std::path::PathBuf {
+    crate::config::config_dir().join("night-light.json")
+}
+
+pub fn get_night_light_schedule() -> NightLightSchedule {
+    std::fs::read_to_string(schedule_path())
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default()
+}
+
+pub fn set_night_light_schedule(s: NightLightSchedule) -> Result<(), String> {
+    if s.mode == "custom" && (hhmm(&s.from).is_none() || hhmm(&s.to).is_none()) {
+        return Err("Times must look like 21:00.".into());
+    }
+    let text = serde_json::to_string_pretty(&s).map_err(|e| e.to_string())?;
+    std::fs::write(schedule_path(), text).map_err(|e| e.to_string())?;
+    apply_schedule_now(&s);
+    Ok(())
+}
+
+fn local_minutes() -> u32 {
+    #[cfg(windows)]
+    {
+        let t = unsafe { windows::Win32::System::SystemInformation::GetLocalTime() };
+        t.wHour as u32 * 60 + t.wMinute as u32
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
+static SCHEDULE_LAST: AtomicU32 = AtomicU32::new(2); // 0 off, 1 on, 2 unknown
+
+fn apply_schedule_now(s: &NightLightSchedule) {
+    if s.mode != "custom" {
+        SCHEDULE_LAST.store(2, Ordering::SeqCst);
+        return;
+    }
+    let want = schedule_active(s, local_minutes());
+    let w = if want { 1 } else { 0 };
+    // Only act on a change of state, so a person who flips the tile by hand keeps their choice.
+    if SCHEDULE_LAST.swap(w, Ordering::SeqCst) != w {
+        let _ = set_night_light(want, s.warmth);
+    }
+}
+
+/// Starts the once-a-minute schedule check. Safe to call once at startup.
+pub fn start_night_light_schedule() {
+    std::thread::spawn(|| loop {
+        apply_schedule_now(&get_night_light_schedule());
+        std::thread::sleep(std::time::Duration::from_secs(60));
+    });
+}
+
+#[cfg(test)]
+mod night_tests {
+    use super::*;
+    fn sched(from: &str, to: &str) -> NightLightSchedule {
+        NightLightSchedule { mode: "custom".into(), from: from.into(), to: to.into(), warmth: 50 }
+    }
+    #[test]
+    fn schedule_windows() {
+        let s = sched("21:00", "07:00");
+        assert!(schedule_active(&s, 22 * 60));
+        assert!(schedule_active(&s, 3 * 60));
+        assert!(!schedule_active(&s, 12 * 60));
+        assert!(!schedule_active(&s, 7 * 60));
+        let d = sched("13:30", "14:00");
+        assert!(schedule_active(&d, 13 * 60 + 45));
+        assert!(!schedule_active(&d, 14 * 60));
+        assert!(!schedule_active(&NightLightSchedule::default(), 22 * 60));
+        assert!(!schedule_active(&sched("x", "07:00"), 22 * 60));
+        assert_eq!(hhmm("07:05"), Some(425));
+        assert_eq!(hhmm("24:00"), None);
+    }
 }

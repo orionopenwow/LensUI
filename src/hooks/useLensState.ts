@@ -315,12 +315,15 @@ export function useSurfaceGlide(label: string) {
       });
     };
 
-    const unlisten = listen<{ label: string; state: "open" | "closing" }>(
+    const unlisten = listen<{ label: string; state: "pre" | "open" | "closing" }>(
       "lens://surface-glide",
       (e) => {
         if (e.payload?.label !== label) return;
         if (e.payload.state === "closing") {
           setPhase("is-closing");
+        } else if (e.payload.state === "pre") {
+          // Sent just before the window is shown: start hidden in the entry pose, no transition.
+          setPhase("is-pre-open");
         } else {
           triggerOpenGlide();
         }
