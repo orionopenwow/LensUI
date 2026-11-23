@@ -12235,6 +12235,175 @@
    "source": "docs/SHELL_MODE.md"
   },
   {
+   "id": "doc.smoothness.0",
+   "kind": "doc",
+   "title": "Smoothness",
+   "text": "Lens is many small see-through windows, each a WebView2 page, shown, hidden and placed from Rust. Motion looks wrong when the page and its native window disagree for even one frame, or when the page animates something the browser has to lay out again on every frame. This document holds the measurement tool (R1), the audit and the decisions (R2), and the motion system that follows from them (R3). Status: R1 to R3 landed with the first migrations. Open items are listed under \"Still open\".",
+   "path": [
+    "Docs",
+    "Smoothness"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Smoothness"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.1",
+   "kind": "doc",
+   "title": "Smoothness: Run the smoothness check",
+   "text": "1. Open Lens Settings, then Tester Hub , then the Smoothness tab. If the tab says it runs in its own window, press Open Tester Hub window . 2. Press Run smoothness check . Leave the mouse and keyboard alone for about two minutes: Lens plays 30 interactions on itself (Quick Settings, calendar, notifications, a toast, Widgets, the Dock hover sweep, hover card, right-click menu and search, Top Bar search, Settings open, page switch, scroll, More options, mode and theme switch, Command, the launcher). 3. Read the table. Each interaction gets a verdict: - smooth : under 1 % of frames dropped, worst frame under 33.4 ms, and no native window resize while it ran. - rough : up to 5 % dropped or a worst frame up to 50 ms. - janky : worse than that, or the native window changed size mid-animation. 4. Copy results puts a plain-text report on the clipboard. The full recording is saved as %APPDATA%\\Le",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Run the smoothness check"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Run the smoothness check"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.2",
+   "kind": "doc",
+   "title": "Smoothness: How it measures",
+   "text": "Signal Source Used for --- --- --- Frame times requestAnimationFrame in every surface ( src/smooth/probe.ts ) dropped-frame %, worst frame Long animation frames PerformanceObserver(\"long-animation-frame\") which frames were blocked by script or layout Layout shifts PerformanceObserver(\"layout-shift\") content that jumps Window show / hide / move / resize a 4 ms sampler thread in Rust ( src-tauri/src/smooth.rs ) reading IsWindowVisible and GetWindowRect \"native window resized mid-animation\" Interaction marks smooth mark cmd begin / end from the runner cutting the recording per interaction A gap between two frames is rounded to whole display frames; every frame beyond the first in that gap counts as dropped. Gaps over half a second, or across a show or hide, are pauses, not drops ( src/smooth/analyze.ts ).",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "How it measures"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "How it measures"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.3",
+   "kind": "doc",
+   "title": "Smoothness: Audit",
+   "text": "Static findings, with the motion lint's numbers. \"Fixed\" means fixed in this change. ID Sev Finding Where Fix State --- --- --- --- --- --- G-01 High Settings resized its native window to fit every page. The page reported its height after layout, Rust called set size then set position , and the page tore while it switched. src/surfaces/ControlCenterSurface.tsx (the syncHeight effect) → set settings content height cmd ( src-tauri/src/commands/surfaces.rs:474 ) → src-tauri/src/app/watcher.rs:227 One height while open ( SETTINGS LOGICAL H , 720 logical px, capped to the screen). Pages scroll. Fixed G-02 High Every placement was set size followed by set position : two native operations, so for one frame a window had its new size at its old place. watcher.rs:92, 114, 138, 148, 158, 227 ; surfaces.rs:175, 248, 326, 419 place window ( src-tauri/src/app/place.rs ): one SetWindowPos when both cha",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Audit"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Audit"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.4",
+   "kind": "doc",
+   "title": "Smoothness: Decisions",
+   "text": "One decision per cause. Sources are listed at the end. D1. Animate only transform and opacity . Those two can be animated by the compositor without layout or paint; width , height , top , left , margins and padding force layout on every frame [1]. In Lens a layout pass on the Dock or Settings is expensive enough to drop frames at 4× CPU throttle. Enforced by the motion lint. D2. Size and position changes use FLIP. Change the layout once, measure before and after, and animate the difference with a transform [2]. Text fields that would look stretched by a scale use a clip-path reveal instead ( mode: \"clip\" ). D3. A native window never changes size while its page animates. WebView2 is a child surface of the window; a native resize makes it lay out and repaint at the new size while the old frame is still on screen, and on a see-through window there is no background to hide that. Windows are ",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Decisions"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Decisions"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.5",
+   "kind": "doc",
+   "title": "Smoothness: The motion system",
+   "text": "src/ui/motion/ is the one way to move things in code. Piece What it does --- --- glide(el, from, to, opts) Web Animations API, transform and opacity (and clip-path ) only. glideIn , glideOut . additive: true keeps an element's own anchoring transform. captureFlip(elements).play(opts) FLIP for layout changes: scale , move or clip per element. usePresence(show) Keeps an element mounted until its exit has finished. An exit can be interrupted. useLingering(value) The same for {value && <Popover / } : keeps the last value on screen while it leaves. PresenceList Keyed lists: items glide in and out, survivors move into place. useSurfaceTransition(label) / useSurfaceExitAck(label) Whole-window enter and exit in step with Rust (D5). useSurfaceGlide uses the acknowledgement. springEasing(opts) A spring as { easing: \"linear(…)\", duration } . duration(token) , ease(token) , reducedMotion() The token",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "The motion system"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "The motion system"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.6",
+   "kind": "doc",
+   "title": "Smoothness: Motion lint",
+   "text": "node tools/polish/motion-lint.mjs (also bun run lint:motion , and a step in the \"IPC types + frontend tests\" CI job). Each file is held to its count in tools/polish/motion-baseline.json ; counts may only go down and new files start at zero. --list prints every finding, --update rewrites the baseline after a migration. Rule Catches --- --- transition-all transition: all layout-transition a transition on a layout property layout-keyframes keyframes that change a layout property timer-animation a timer standing in for an animation's clock or end native-resize a page asking for its window to be resized or moved inline-animation animation or transition written as an inline style string backdrop-filter reported only",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Motion lint"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Motion lint"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.7",
+   "kind": "doc",
+   "title": "Smoothness: Migrated",
+   "text": "Surface Before Now --- --- --- Settings page switch native window resized per page one size while open; pages scroll Settings \"More options\" timer and class; no exit glides both ways Notification toasts no exit; siblings jumped glide in and out; siblings close ranks Dock search layout animated on every frame; timer on close FLIP; drawer glides; no timer Dock hover card and right-click menu vanished on close glide out Quick Settings, Settings, search palette, Widgets, launcher, overview (window show and hide) hidden after a fixed 185 ms; resized on open after a save hidden on a finished frame; one atomic placement; no placement when unchanged",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Migrated"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Migrated"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.8",
+   "kind": "doc",
+   "title": "Smoothness: Still open",
+   "text": "- Note for wave 2 (Dock window sizing). The Dock's placement is still set size then set position ( src-tauri/src/app/watcher.rs:75 ). Swap it for crate::app::place::place window(&dock, x, y, dock w, dock h) ; nothing else changes. If the Dock window is ever resized for search or edge changes, do it while the page is still, never during a glide (D3). - Top Bar search well and clock (G-11). Wait for PR #60, then use captureFlip as the Dock does. - Desktop folder (G-10) , Command edge shelf (G-12) , Guide spotlight (G-13) , meters (G-14), Dock indicator (G-15). - After PR #60 merges, useSurfaceGlide can become a thin alias of useSurfaceTransition , which already understands the \"pre\" state. - Run the smoothness check on a real PC and attach the report; the verdicts decide the next pass.",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Still open"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Still open"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.9",
+   "kind": "doc",
+   "title": "Smoothness: Sources",
+   "text": "1. web.dev, \"How to create high-performance CSS animations\": https://web.dev/articles/animations-guide 2. Paul Lewis, \"FLIP Your Animations\": https://aerotwist.com/blog/flip-your-animations/ 3. Microsoft Learn, SetWindowPos : https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos 4. Microsoft Learn, ICoreWebView2Controller ( IsVisible ): https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller 5. Chrome for Developers, \"Create complex animation curves in CSS with the linear() easing function\": https://developer.chrome.com/docs/css-ui/css-linear-easing-function 6. Chrome for Developers, \"Animating a blur\": https://developer.chrome.com/blog/animated-blur/ 7. Microsoft Learn, DWMWINDOWATTRIBUTE : https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute 8. Chrome for Developers, \"Long Animati",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Sources"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
    "id": "doc.snip.0",
    "kind": "doc",
    "title": "Lens Snip",

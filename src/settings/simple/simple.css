@@ -271,7 +271,6 @@
 .ss-more-chev { transition: transform var(--lens-dur-base) var(--lens-ease-out); }
 .ss-more.open .ss-more-chev { transform: rotate(180deg); }
 .ss-more-body { display: flex; flex-direction: column; gap: 12px; }
-.ss-more-body.entering { animation: ss-reveal var(--lens-dur-slower) var(--lens-ease-out) both; }
 
 /* Advanced-only search results */
 .ss-adv-tag { margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 5px; color: rgb(var(--lens-ink) / 0.6); background: rgb(var(--lens-ink) / 0.08); }
@@ -284,5 +283,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ss-pill-thumb, .ss-more-chev, .ss-swatch, .ss-ah-dock, .ss-size-icon { transition: none; }
-  .ss-view, .ss-hint, .ss-nav-extra, .ss-more-body.entering, .ss-living-art, .ss-corner-dot, .ss-ad-win { animation: none; }
+  .ss-view, .ss-hint, .ss-nav-extra, .ss-living-art, .ss-corner-dot, .ss-ad-win { animation: none; }
 }
