@@ -393,6 +393,46 @@ pub fn run(install: bool, exe: &str, confirm_hash: Option<&str>) -> Result<Claud
     Ok(p)
 }
 
+/// Removes Lens's `lens-ui` entry from one Claude Desktop config file, keeping a backup next to it.
+/// Returns the backup path when something was removed, `None` when Lens wasn't in that file.
+pub fn remove_lens_from(path: &Path) -> Result<Option<PathBuf>, String> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let original = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let Some(new_text) = remove_lens_server(&original)? else {
+        return Ok(None);
+    };
+    let backup = path.with_file_name(format!("claude_desktop_config.json.lens-backup-{}", crate::media::now_ms()));
+    std::fs::copy(path, &backup).map_err(|e| format!("Couldn't back up Claude's config: {}", e))?;
+    let tmp = path.with_extension("json.lens-tmp");
+    std::fs::write(&tmp, &new_text).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, path).map_err(|e| e.to_string())?;
+    Ok(Some(backup))
+}
+
+/// "Remove all Lens changes": take Lens out of every Claude Desktop config it may be in (classic
+/// and Store installs). Otherwise Claude Desktop keeps launching a Lens that may no longer exist.
+pub fn remove_for_uninstall() -> Result<String, String> {
+    let mut removed = 0usize;
+    let mut errors = Vec::new();
+    for path in config_candidates() {
+        match remove_lens_from(&path) {
+            Ok(Some(_)) => removed += 1,
+            Ok(None) => {}
+            Err(e) => errors.push(e),
+        }
+    }
+    if !errors.is_empty() {
+        return Err(errors.join("; "));
+    }
+    Ok(if removed == 0 {
+        "Lens wasn't connected to Claude Desktop.".into()
+    } else {
+        "Removed Lens from Claude Desktop's config (a backup sits next to it). Restart Claude Desktop.".into()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -492,5 +532,26 @@ mod tests {
         let c = vec![PathBuf::from("/msix/c.json"), PathBuf::from("/roaming/c.json")];
         assert_eq!(pick_config_path(&c, &|p: &Path| p.ends_with("roaming/c.json")), Some(PathBuf::from("/roaming/c.json")));
         assert_eq!(pick_config_path(&c, &|_| false), Some(PathBuf::from("/msix/c.json")));
+    }
+
+    #[test]
+    fn remove_lens_from_file_keeps_other_servers_and_backs_up() {
+        let dir = std::env::temp_dir().join(format!("lens-claude-cfg-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("claude_desktop_config.json");
+        let installed = merge_lens_server("{\n  \"mcpServers\": {\n    \"git\": {\"command\": \"uvx\"}\n  }\n}\n", EXE).unwrap().unwrap();
+        std::fs::write(&path, &installed).unwrap();
+
+        let backup = remove_lens_from(&path).unwrap().expect("Lens was in the file");
+        let after: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert!(after["mcpServers"].get(SERVER_NAME).is_none());
+        assert_eq!(after["mcpServers"]["git"]["command"], "uvx");
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), installed);
+        // Second run: nothing to do, nothing written.
+        assert_eq!(remove_lens_from(&path).unwrap(), None);
+        // Missing file: nothing to do.
+        assert_eq!(remove_lens_from(&dir.join("nope.json")).unwrap(), None);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

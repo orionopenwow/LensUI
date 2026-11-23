@@ -393,6 +393,46 @@ fn merge_icon_into_ini(existing: &str, ico_path: &str) -> String {
     text
 }
 
+/// Removes the icon keys Lens wrote (`IconResource=...lens_glass_folder_...`) from a desktop.ini
+/// and returns what is left, or `None` when nothing meaningful remains (the file can go).
+/// Icon keys that don't point at a Lens icon are kept: they are the user's own.
+fn strip_lens_icon_from_ini(text: &str) -> Option<String> {
+    let mut out: Vec<String> = Vec::new();
+    for raw in text.lines() {
+        let line = raw.trim_end_matches('\r');
+        let t = line.trim();
+        if is_icon_key(t) && t.contains("lens_glass_folder_") {
+            continue;
+        }
+        out.push(line.to_string());
+    }
+    // Drop section headers left with no keys under them.
+    let mut kept: Vec<String> = Vec::new();
+    for (i, line) in out.iter().enumerate() {
+        let t = line.trim();
+        if t.starts_with('[') {
+            let has_keys = out[i + 1..]
+                .iter()
+                .map(|l| l.trim())
+                .take_while(|l| !l.starts_with('['))
+                .any(|l| !l.is_empty() && !l.starts_with(';'));
+            if !has_keys {
+                continue;
+            }
+        }
+        kept.push(line.clone());
+    }
+    while kept.last().map(|l| l.trim().is_empty()).unwrap_or(false) {
+        kept.pop();
+    }
+    if kept.iter().all(|l| l.trim().is_empty()) {
+        return None;
+    }
+    let mut text = kept.join("\r\n");
+    text.push_str("\r\n");
+    Some(text)
+}
+
 /// Stable file name for a folder's desktop.ini backup (FNV-1a of the lower-cased path).
 fn backup_name_for(folder_path: &str) -> String {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
@@ -476,10 +516,30 @@ pub fn revert_folder_theme(folder_path: &str) -> Result<(), String> {
         run_attrib(&["+s", "+h", &ini_str]);
         let _ = fs::remove_file(&backup);
     } else {
-        if ini_path.exists() {
-            let _ = fs::remove_file(&ini_path);
+        // No backup (it was lost, or %APPDATA%\LensUI was reset). Only drop the icon Lens set and
+        // keep everything else (localized names, folder type); delete the file only if nothing is left.
+        if let Ok(bytes) = fs::read(&ini_path) {
+            let text = decode_ini_bytes(&bytes);
+            if !text.contains("lens_glass_folder_") {
+                // Not Lens's icon: the file is the user's, leave it exactly as it is.
+                run_attrib(&["+s", "+h", &ini_str]);
+                #[cfg(windows)]
+                notify_shell_folder_changed(folder_path);
+                return Ok(());
+            }
+            match strip_lens_icon_from_ini(&text) {
+                Some(rest) => {
+                    fs::write(&ini_path, encode_ini_utf16(&rest)).map_err(|e| e.to_string())?;
+                    run_attrib(&["+s", "+h", &ini_str]);
+                }
+                None => {
+                    let _ = fs::remove_file(&ini_path);
+                    run_attrib(&["-r", folder_path]);
+                }
+            }
+        } else {
+            run_attrib(&["-r", folder_path]);
         }
-        run_attrib(&["-r", folder_path]);
     }
 
     #[cfg(windows)]
