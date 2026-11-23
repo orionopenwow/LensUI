@@ -189,6 +189,9 @@ jobs:
       - name: Render Lens Cleaner
         run: node tools/parity/cleaner/build.mjs && node tools/parity/cleaner/shoot.mjs
 
+      - name: Backdrop Lab (shader compile, NaN, loop seams, switch flash, screenshots)
+        run: node tools/parity/backdrop/build.mjs && node tools/parity/backdrop/shoot.mjs
+
       - name: Render ambient backdrops (contact sheets + in-browser timing)
         run: node tools/parity/ambient/build.mjs && node tools/parity/ambient/shoot.mjs
         env:
@@ -220,5 +223,6 @@ jobs:
             tools/parity/styles/shots/
             tools/parity/music/shots/
             tools/parity/apps/shots/
+            tools/parity/backdrop/shots/
             tools/parity/ambient/shots/
           if-no-files-found: warn

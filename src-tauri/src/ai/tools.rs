@@ -61,6 +61,7 @@ pub const REGISTRY: &[ToolSpec] = &[
     ToolSpec { name: "set_dock_style", risk: Risk::Low, description: "Switches the Dock style: floating, slim, taskbar, studio, minimal or split." },
     ToolSpec { name: "next_wallpaper", risk: Risk::Low, description: "Moves to the next wallpaper in the user's rotation." },
     ToolSpec { name: "set_wallpaper_scene", risk: Risk::Low, description: "Shows a Playground living-wallpaper scene by id." },
+    ToolSpec { name: "make_backdrop", risk: Risk::Low, description: "Opens Backdrop Lab with a backdrop made from a short description (e.g. calm blue aurora). Nothing is applied until the user chooses." },
     ToolSpec { name: "set_calm_mode", risk: Risk::Low, description: "Freezes or resumes the living wallpaper (omit enabled to toggle)." },
     ToolSpec { name: "lock_screen", risk: Risk::Confirm, description: "Locks the PC. Needs the user's approval." },
 ];
@@ -153,6 +154,7 @@ pub fn schema(name: &str) -> Value {
         ),
         "set_dock_style" => obj(json!({ "style": { "type": "string", "enum": DOCK_STYLE_IDS } }), &["style"]),
         "set_wallpaper_scene" => obj(json!({ "scene": { "type": "string", "pattern": "^[a-z0-9-]{1,32}$" } }), &["scene"]),
+        "make_backdrop" => obj(json!({ "prompt": { "type": "string", "minLength": 1, "maxLength": 200 } }), &["prompt"]),
         "set_calm_mode" => obj(json!({ "enabled": { "type": "boolean" } }), &[]),
         _ => obj(json!({}), &[]),
     }
@@ -390,6 +392,13 @@ pub fn validate(name: &str, args: &Value) -> Result<Value, String> {
             Some(b) => json!({ "enabled": b }),
             None => json!({}),
         },
+        "make_backdrop" => {
+            let p = get_str(m, "prompt").map(|s| clean(s, 200)).unwrap_or_default();
+            if p.is_empty() {
+                return Err("prompt must not be empty".into());
+            }
+            json!({ "prompt": p })
+        }
         _ => return Err("unknown tool".into()),
     })
 }
@@ -470,6 +479,7 @@ pub fn describe(name: &str, args: &Value) -> String {
         "set_dock_style" => format!("Switch the Dock to {}", s("style")),
         "next_wallpaper" => "Next wallpaper".into(),
         "set_wallpaper_scene" => format!("Show the {} scene", s("scene")),
+        "make_backdrop" => format!("Make a backdrop: \"{}\"", s("prompt")),
         "set_calm_mode" => match b("enabled") {
             Some(true) => "Turn on calm mode".into(),
             Some(false) => "Turn off calm mode".into(),
@@ -530,6 +540,7 @@ pub fn tool_for_action(action: &str) -> Option<(&'static str, &'static [&'static
         "set_dock_style" => ("set_dock_style", &["style"]),
         "next_wallpaper" => ("next_wallpaper", &[]),
         "set_wallpaper_scene" => ("set_wallpaper_scene", &["scene"]),
+        "make_backdrop" => ("make_backdrop", &["prompt"]),
         "set_calm_mode" => ("set_calm_mode", &["enabled"]),
         "lock_screen" => ("lock_screen", &[]),
         _ => return None,
@@ -735,6 +746,7 @@ pub mod lens {
                 "set_dock_style" => self.emit_apply(tool, args, &format!("Dock style: {}.", s("style"))),
                 "next_wallpaper" => self.emit_apply(tool, args, "Next wallpaper."),
                 "set_wallpaper_scene" => self.emit_apply(tool, args, &format!("Scene: {}.", s("scene"))),
+                "make_backdrop" => self.emit_apply(tool, args, "Opened Backdrop Lab with that look. Nothing changes until you pick Set as wallpaper."),
                 "set_calm_mode" => self.emit_apply(tool, args, "Calm mode updated."),
                 other => Err(format!("Lens can't run \"{}\".", other)),
             }

@@ -99,6 +99,7 @@ function SettingControls({ scene, values, onChange }: { scene: SceneModule; valu
   return (
     <>
       {scene.settings.map((f) => {
+        if (f.type === "text") return null;
         if (f.type === "range") {
           return (
             <PillFillBar

@@ -35,6 +35,8 @@ export interface LensThemeFile {
    * Validated by validateCustomPack and registered under a "custom-…" id on import.
    */
   pack?: Record<string, unknown>;
+  /** Optional Backdrop Lab code ("LBG1.…"): the living wallpaper made with this theme (docs/BACKDROP_LAB.md). */
+  backdrop?: string;
 }
 
 export function exportLensTheme(config: LensConfig, name: string): LensThemeFile {

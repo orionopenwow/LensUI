@@ -71,6 +71,8 @@ import { RotaryDial } from "../components/RotaryDial";
 import { PillFillBar } from "../components/PillFillBar";
 import { SetupWizard } from "../components/SetupWizard";
 import { ThemeTab } from "../themeux/ThemeTab";
+// Backdrop Lab embed (src/studio/backdrop): loads only once scrolled into view (CreatorSlot).
+import { CreatorSlot } from "../studio/backdrop/ui/CreatorSlot";
 import { DockTab } from "../themeux/DockTab";
 import { AgentsPane } from "../components/AgentsPane";
 import { MessagingHubPane } from "../components/MessagingHubPane";
@@ -646,6 +648,15 @@ export const ControlCenterSurface: React.FC = () => {
               }}
               onOpenTab={(t) => setTab(t)}
             />
+          )}
+          {tab === "appearance" && (
+            <>
+              <div id="sec-creator" className="sh-anchor">
+                <div className="cc-section-title">Creator</div>
+                <div className="cc-section-sub">Make your own animated backgrounds and themes with Backdrop Lab.</div>
+              </div>
+              <CreatorSlot config={config} updateConfig={updateConfig} />
+            </>
           )}
 
           {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} />}

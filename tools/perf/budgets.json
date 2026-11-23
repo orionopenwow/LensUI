@@ -99,9 +99,17 @@
       "longTasks": 0,
       "cls": 0,
       "fcp": 0
+    },
+    "playground-backdrop": {
+      "p50": 33.4,
+      "p95": 116.6,
+      "longTasks": 40,
+      "cls": 0,
+      "fcp": 932
     }
   },
   "_findings": {
-    "theme-switch.cls": "F8 (docs/TESTING.md): the Theme & Look hero jumps ~29 px when a pack's description wraps to a second line. Baseline CLS raised to today's 0.055 so a worse shift still fails; lower it with the fix."
+    "theme-switch.cls": "F8 (docs/TESTING.md): the Theme & Look hero jumps ~29 px when a pack's description wraps to a second line. Baseline CLS raised to today's 0.055 so a worse shift still fails; lower it with the fix.",
+    "playground-backdrop": "Backdrop Lab wallpaper (WebGL). CI renders WebGL in software (SwiftShader), so draws block the main thread: p95 and long tasks reflect that, not a GPU. p50 33.4 is the intended 30 fps cap. The scene steps resolution down to 0.25 and then to half rate when frames are slow. Baseline is the larger of the runner (p50 16.7, p95 66.7, 36 long tasks, FCP 932) and a slower dev container."
   }
 }

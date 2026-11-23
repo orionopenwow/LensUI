@@ -43,7 +43,7 @@ pub struct WallpaperSettings {
     pub follow_accent: bool,
     /// Playground scene id ("" = show `file` instead). See src/playground/.
     pub scene: String,
-    /// Per-scene settings, owned by the frontend (validated: a JSON object, at most 8 KB).
+    /// Per-scene settings, owned by the frontend (validated: a JSON object, at most 32 KB).
     pub scene_options: serde_json::Value,
     /// Frame cap for Playground scenes: 30 or 60.
     pub fps: u32,
@@ -141,7 +141,8 @@ pub fn sanitize_settings(mut s: WallpaperSettings) -> WallpaperSettings {
     }
     let options_ok = s.scene_options.is_object()
         && serde_json::to_string(&s.scene_options)
-            .map(|t| t.len() <= 8 * 1024)
+            // 32 KB: room for Backdrop Lab codes and time-of-day keyframes (docs/BACKDROP_LAB.md).
+            .map(|t| t.len() <= 32 * 1024)
             .unwrap_or(false);
     if !options_ok {
         s.scene_options = serde_json::Value::Object(Default::default());
@@ -953,6 +954,20 @@ mod playground_tests {
         assert!(c.scene_options.is_object());
         assert_eq!(c.workspace_scenes.len(), 1);
         assert!(c.interactive, "kept: a workspace scene is set");
+    }
+
+    #[test]
+    fn scene_options_size_cap_fits_backdrop_codes() {
+        let keep = WallpaperSettings {
+            scene_options: serde_json::json!({ "backdrop": { "code": "x".repeat(20 * 1024) } }),
+            ..Default::default()
+        };
+        assert!(sanitize_settings(keep).scene_options["backdrop"]["code"].is_string());
+        let drop = WallpaperSettings {
+            scene_options: serde_json::json!({ "backdrop": { "code": "x".repeat(40 * 1024) } }),
+            ..Default::default()
+        };
+        assert_eq!(sanitize_settings(drop).scene_options, serde_json::json!({}));
     }
 
     #[test]

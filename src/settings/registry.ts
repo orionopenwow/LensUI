@@ -70,12 +70,13 @@ export const PAGES: PageDef[] = [
     icon: "palette",
     color: "#A78BFA",
     controls: ["Theme pack", "Dark / Light / Auto", "Accent colour"],
-    keywords: ["theme", "look", "pack", "accent", "colour", "color", "dark mode", "light mode", "glass", "blur", "roundness", "cursor", "pointer", "font", "icons", "wallpaper schedule", "shape style"],
+    keywords: ["theme", "look", "pack", "accent", "colour", "color", "dark mode", "light mode", "glass", "blur", "roundness", "cursor", "pointer", "font", "icons", "wallpaper schedule", "shape style", "backdrop lab", "gradient maker"],
     sections: [
       { id: "current", label: "Current theme", keywords: ["pack", "accent", "glass", "roundness"] },
       { id: "choose", label: "Choose a theme", keywords: ["gallery", "browse", "catppuccin", "nord", "claude"] },
       { id: "customise", label: "Customise", keywords: ["window frames", "buttons", "traffic lights", "icons", "fonts", "schedule", "accessibility"] },
       { id: "pointer", label: "Mouse pointer", keywords: ["cursor", "pointer", "trail", "ripple", "spotlight"] },
+      { id: "creator", label: "Creator", keywords: ["backdrop lab", "backdrop", "gradient", "background maker", "live wallpaper", "studio", "make a theme"] },
     ],
   },
   {
