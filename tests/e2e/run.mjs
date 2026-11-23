@@ -82,6 +82,20 @@ async function waitForSurface(s, name, ms = 20000) {
   throw new Error(`no "${name}" window after ${ms} ms (have: ${Object.keys(surfaces(s)).join(", ")})`);
 }
 
+/** Shows a surface through the same command the Dock and hotkeys use, and waits until it settles
+ * (lazy windows load, then may reload once while the surface wires itself up). */
+async function showSurface(s, name) {
+  await invoke(surfaces(s).dock, "open_surface", { label: name });
+  let p = await waitForSurface(s, name);
+  await p.waitForLoadState("load").catch(() => {});
+  await sleep(1200);
+  p = await waitForSurface(s, name);
+  return p;
+}
+
+/** Clicks through the DOM, so a window that is still gliding in (or hidden) doesn't matter. */
+const domClick = (locator) => locator.evaluate((el) => el.click());
+
 /** Calls a Tauri command from a window, like the UI does. */
 async function invoke(page, cmd, args = {}) {
   const r = await page.evaluate(
@@ -152,11 +166,10 @@ const SCENARIOS = [
     id: "control-center",
     title: "Control Center opens and every tab renders without errors",
     async run(s) {
-      await invoke(surfaces(s).dock, "toggle_surface", { label: "settings" });
-      const cc = await waitForSurface(s, "settings");
+      const cc = await showSurface(s, "settings");
       const take = watchErrors(cc);
       // The first-run wizard has its own scenario.
-      await cc.keyboard.press("Escape").catch(() => {});
+      if (await cc.locator(".wiz").count()) await cc.locator(".wiz").press("Escape").catch(() => {});
       await sleep(400);
       const tabs = cc.locator(".cc-nav-btn").filter({ hasNotText: /Setup Wizard|Quit Lens/ });
       const n = await tabs.count();
@@ -164,7 +177,7 @@ const SCENARIOS = [
       const problems = [];
       for (let i = 0; i < n; i++) {
         const name = (await tabs.nth(i).innerText()).trim();
-        await tabs.nth(i).click();
+        await domClick(tabs.nth(i));
         await sleep(600);
         const len = await cc.evaluate(() => document.querySelector(".cc-content")?.innerText.trim().length || 0);
         if (!len) problems.push(`tab "${name}" rendered nothing`);
@@ -218,10 +231,14 @@ const SCENARIOS = [
     id: "palette",
     title: "the palette opens and finds results",
     async run(s) {
-      await invoke(surfaces(s).dock, "toggle_surface", { label: "palette" });
-      const pal = await waitForSurface(s, "palette");
-      await pal.locator("input").first().fill("notepad");
-      await pal.waitForSelector(".pal-result-row", { timeout: 8000 });
+      const pal = await showSurface(s, "palette");
+      // The palette has no input of its own: the query is typed with the palette focused (its
+      // search field lives in the Dock / Top Bar).
+      await pal.bringToFront().catch(() => {});
+      await pal.keyboard.type("notepad", { delay: 30 });
+      await pal.waitForSelector(".pal-result-row", { timeout: 8000 }).catch(async () => {
+        throw new Error(`no palette results for "notepad"; palette shows: ${(await pal.evaluate(() => document.getElementById("root").innerText)).slice(0, 400)}`);
+      });
       await shot(pal, "palette-results");
       await pal.keyboard.press("Escape");
     },
@@ -231,7 +248,11 @@ const SCENARIOS = [
     title: "Lens Command opens and the offline engine runs \"dark mode\"",
     async run(s) {
       const dock = surfaces(s).dock;
-      await updateConfig(dock, (c) => { c.command = { ...(c.command || {}), enabled: true }; });
+      // Lens Command and the offline script engine (no model, nothing leaves the PC).
+      await updateConfig(dock, (c) => {
+        c.command = { ...(c.command || {}), enabled: true };
+        c.ai = { ...(c.ai || {}), enabled: true, provider: "script", allowTools: true };
+      });
       await sleep(800);
       await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do" } });
       const cmd = await waitForSurface(s, "command");
@@ -239,7 +260,11 @@ const SCENARIOS = [
       const box = cmd.locator("textarea").first();
       await box.fill("dark mode");
       await box.press("Enter");
-      await cmd.waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 10000 });
+      await cmd
+        .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 10000 })
+        .catch(async () => {
+          throw new Error(`no answer or action card for "dark mode"; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 600)}`);
+        });
       await shot(cmd, "command-dark-mode");
       const errs = take();
       if (errs.length) throw new Error(errs.join("\n"));
@@ -249,10 +274,9 @@ const SCENARIOS = [
     id: "setup-wizard",
     title: "the setup wizard can be skipped and completed",
     async run(s) {
-      await invoke(surfaces(s).dock, "toggle_surface", { label: "settings" }).catch(() => {});
-      const cc = await waitForSurface(s, "settings");
+      const cc = await showSurface(s, "settings");
       const open = async () => {
-        if (!(await cc.locator(".wiz").count())) await cc.locator(".cc-nav-btn", { hasText: "Setup Wizard" }).click();
+        if (!(await cc.locator(".wiz").count())) await domClick(cc.locator(".cc-nav-btn", { hasText: "Setup Wizard" }));
         await cc.waitForSelector(".wiz[role=dialog]", { timeout: 5000 });
       };
       await open();
@@ -260,7 +284,7 @@ const SCENARIOS = [
       await cc.waitForSelector(".wiz", { state: "detached", timeout: 5000 }).catch(() => { throw new Error("Escape did not close the wizard"); });
       await open();
       for (let i = 0; i < 8 && (await cc.locator(".wiz").count()); i++) {
-        await cc.locator("[data-wiz-next]").click();
+        await domClick(cc.locator("[data-wiz-next]"));
         await sleep(500);
         await shot(cc, `wizard-step-${i + 1}`);
       }

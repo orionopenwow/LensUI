@@ -48,13 +48,11 @@ SOAK_SCALE=0.2 node tools/soak/run.mjs  # quick soak + chaos (1.0 = full)
 End-to-end needs Windows 10/11 with the WebView2 runtime:
 
 ```powershell
-bun run tauri build --debug --no-bundle
-cargo install tauri-driver --locked
-# msedgedriver.exe matching your WebView2 version: https://developer.microsoft.com/microsoft-edge/tools/webdriver/
-Start-Process tauri-driver -ArgumentList "--native-driver", "C:\path\msedgedriver.exe"
-npm i --no-save selenium-webdriver@4
+node tests/e2e/tauri-config.mjs                       # overlay: DevTools port on every webview
+bun run tauri build --debug --no-bundle --config tests/e2e/out/tauri.e2e.json
+npm i --no-save playwright@1.63.0                    # attaches over CDP, no browser download needed
 pwsh tools/e2e/probe.ps1 snapshot tests/e2e/out/before.json
-node tests/e2e/run.mjs                       # E2E_ONLY=palette,theme-switch for a subset
+node tests/e2e/run.mjs                               # E2E_ONLY=palette,theme-switch for a subset
 pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
 ```
 
@@ -98,9 +96,25 @@ scales them all.
 
 ### End-to-end (Windows)
 
-`tests/e2e/run.mjs` uses selenium-webdriver against tauri-driver. Every Lens surface is its own
-WebView2 window, and scenarios find them by their `surface` URL parameter. Backend commands are
-called through `window.__TAURI_INTERNALS__.invoke`, the way the UI calls them.
+`tests/e2e/run.mjs` starts the built app and attaches Playwright to its WebView2 windows over the
+Chrome DevTools Protocol. Every Lens surface is its own webview (a CDP page), and scenarios find
+them by their `surface` URL parameter. Backend commands are called through
+`window.__TAURI_INTERNALS__.invoke`, the way the UI calls them.
+
+**Why not tauri-driver / msedgedriver.** That was the first approach, and it can't attach to Lens.
+wry always hands WebView2 its own `AdditionalBrowserArguments`, which replace the
+`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` variable msedgedriver relies on. No debugging port ever
+opens: CI reported "DevToolsActivePort file doesn't exist", and a diagnostic run showed the
+webview processes start without `--remote-debugging-port`.
+
+The test build therefore uses a config overlay instead (`tests/e2e/tauri-config.mjs`, passed with
+`tauri build --config`):
+* it adds `--remote-debugging-port=9222` to every window's `additionalBrowserArgs`, next to wry's defaults;
+* every window gets identical arguments, because all webviews share one WebView2 environment;
+* release builds are untouched.
+
+The one window built in code rather than from the config, Playground's idle window, isn't covered
+by the overlay. It isn't used by the end-to-end run.
 
 | Scenario | Checks |
 |---|---|
