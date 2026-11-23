@@ -105,25 +105,36 @@ export function recommend(catalog: Catalog, category: string, limit = 3): Catalo
     .slice(0, limit);
 }
 
-/** Rails for the home screen: featured collections first, then each category. */
-export function rails(catalog: Catalog, showNonOpenSource: boolean): { id: string; title: string; subtitle?: string; apps: CatalogApp[] }[] {
-  const visible = catalog.apps.filter((a) => showNonOpenSource || a.openSource);
-  const out: { id: string; title: string; subtitle?: string; apps: CatalogApp[] }[] = [];
-  for (const c of catalog.collections) {
-    if (c.id === "rewrites") continue; // shown as the hero row
-    const apps = visible.filter((a) => a.collections.includes(c.id));
-    if (apps.length) out.push({ id: `collection:${c.id}`, title: c.title, subtitle: c.subtitle, apps });
-  }
-  for (const c of catalog.categories) {
-    const apps = visible.filter((a) => a.category === c.id);
-    if (apps.length) out.push({ id: `category:${c.id}`, title: c.title, apps });
-  }
-  return out;
+export interface HomeSections {
+  hero: CatalogApp[];
+  suite: { launcher: CatalogApp | null; apps: CatalogApp[] };
+  ai: CatalogApp[];
+  essentials: CatalogApp[];
+  categories: { id: string; title: string; count: number; preview: CatalogApp[] }[];
 }
 
-/** The hero row: open-source rewrites, one per thing they replace, apps before suite members. */
-export function heroApps(catalog: Catalog, limit = 8): CatalogApp[] {
-  const rw = catalog.apps.filter((a) => a.collections.includes("rewrites"));
-  const order = (a: CatalogApp) => (a.install.method === "via" ? 1 : 0);
-  return [...rw].sort((a, b) => order(a) - order(b)).slice(0, limit);
+/**
+ * The Home page, with every app shown at most once: open-source rewrites (not the suite apps), the
+ * ArtCraft suite as one compact row, AI on your PC, Essentials, then a "Browse by category" grid
+ * (tiles filter the list instead of repeating rails).
+ */
+export function homeSections(catalog: Catalog, showNonOpenSource: boolean): HomeSections {
+  const visible = catalog.apps.filter((a) => showNonOpenSource || a.openSource);
+  const used = new Set<string>();
+  const take = (apps: CatalogApp[]) => apps.filter((a) => !used.has(a.id) && (used.add(a.id), true));
+  const isSuite = (a: CatalogApp) => a.collections.includes("artcraft-suite") || (a.install.method === "via");
+  const launcher = visible.find((a) => a.id === "craft-launcher") ?? null;
+  const hero = take(visible.filter((a) => a.collections.includes("rewrites") && !isSuite(a) && a !== launcher));
+  if (launcher) used.add(launcher.id);
+  const suiteApps = take(visible.filter(isSuite));
+  const ai = take(visible.filter((a) => a.collections.includes("ai")));
+  const essentials = take(visible.filter((a) => a.collections.includes("essentials")));
+  const categories = catalog.categories
+    .map((c) => {
+      const apps = visible.filter((a) => a.category === c.id);
+      const preview = [...apps].sort((a, b) => Number(!!b.media.icon) - Number(!!a.media.icon)).slice(0, 4);
+      return { id: c.id, title: c.title, count: apps.length, preview };
+    })
+    .filter((c) => c.count > 0);
+  return { hero, suite: { launcher, apps: suiteApps }, ai, essentials, categories };
 }

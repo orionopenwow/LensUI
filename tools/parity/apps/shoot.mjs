@@ -10,9 +10,9 @@ const out = join(here, "out");
 const shots = join(here, "shots");
 await mkdir(shots, { recursive: true });
 const { chromium } = await import(process.env.PARITY_PLAYWRIGHT ? pathToFileURL(process.env.PARITY_PLAYWRIGHT).href : "playwright");
-const SCENES = { home: 1500, search: 900, detail: 980, confirm: 900, installing: 760, release: 900, recipe: 900, voice: 900, settings: 900 };
+const SCENES = { home: 1700, hover: 900, "popover-winget": 760, "popover-release": 760, run: 760, installing: 1000, setup: 820, detail: 1080, "detail-suite": 1080, search: 900, category: 760, settings: 900 };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".mp4": "video/mp4", ".webm": "video/webm" };
 const server = createServer(async (req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([/\\])+/, "");
   const file = join(here, path);
@@ -21,7 +21,8 @@ const server = createServer(async (req, res) => {
     return res.writeHead(403).end();
   }
   try {
-    res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(await readFile(file));
+    const body = await readFile(file);
+    res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(body);
   } catch {
     res.writeHead(404).end();
   }
@@ -37,7 +38,7 @@ for (const preset of PRESETS) {
     page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
     page.on("console", (m) => m.type() === "error" && !/favicon/.test(m.text()) && errors.push(`console: ${m.text().slice(0, 200)}`));
     await page.goto(`${base}/out/harness.html?scene=${scene}&preset=${preset}`);
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(scene === "hover" ? 2900 : 1500);
     const name = `${preset}-${scene}.png`;
     await page.screenshot({ path: join(shots, name), fullPage: true });
     if (process.env.PARITY_OUT) {

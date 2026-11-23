@@ -12,7 +12,7 @@
 //! * Lens never elevates: installers trigger their own UAC prompt if they need one;
 //! * every action is written to `%APPDATA%\LensUI\apps\audit.jsonl`.
 
-use crate::apps::{self, audit, catalog::InstallSpec, github, progress, recipe, sha256, winget};
+use crate::apps::{self, audit, catalog::InstallSpec, github, media, progress, recipe, sha256, winget};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -216,12 +216,33 @@ pub(crate) struct AppShow {
     pub installer_type: String,
     pub installer_url: String,
     pub installer_sha256: String,
+    /// Installer size from a HEAD request to the manifest's URL, when the host answers.
+    pub installer_size: Option<u64>,
+}
+
+fn head_size(url: &str) -> Option<u64> {
+    if !apps::catalog::is_https_url(url) {
+        return None;
+    }
+    let c = reqwest::blocking::Client::builder()
+        .user_agent(concat!("LensUI/", env!("CARGO_PKG_VERSION")))
+        .timeout(std::time::Duration::from_secs(6))
+        .https_only(true)
+        .build()
+        .ok()?;
+    let r = c.head(url).send().ok()?;
+    r.headers().get("content-length")?.to_str().ok()?.parse().ok()
 }
 
 /// `winget show` for a catalogue app: the authoritative version, publisher, licence and the
 /// agreements the UI shows before the Install button is enabled.
 #[tauri::command]
-pub(crate) fn apps_show(app_id: String) -> Result<AppShow, String> {
+pub(crate) async fn apps_show(app_id: String) -> Result<AppShow, String> {
+    tauri::async_runtime::spawn_blocking(move || show_blocking(&app_id)).await.map_err(|e| e.to_string())?
+}
+
+fn show_blocking(app_id: &str) -> Result<AppShow, String> {
+    let app_id = app_id.to_string();
     let app = find_app(&app_id)?;
     let InstallSpec::Winget { id } = install_spec(app)? else {
         return Err("not a winget app".into());
@@ -240,6 +261,7 @@ pub(crate) fn apps_show(app_id: String) -> Result<AppShow, String> {
         license_url: s.license_url,
         homepage: s.homepage,
         agreements: s.agreements.into_iter().map(|(label, text)| Agreement { label, text }).collect(),
+        installer_size: head_size(&s.installer_url),
         installer_type: s.installer_type,
         installer_url: s.installer_url,
         installer_sha256: s.installer_sha256,
@@ -818,4 +840,134 @@ pub(crate) fn apps_recipe_revert(handle: AppHandle, app_id: String) -> Result<In
     log("recipe-revert", &app_id, "recipe", if errors.is_empty() { "ok" } else { "failed" }, &errors.join("; "));
     let _ = handle.emit(INTEGRATIONS_EVENT, &host.0);
     Ok(host.0)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Media cache and installed icons
+// ---------------------------------------------------------------------------------------------
+
+fn media_dir() -> PathBuf {
+    data_dir().join("media")
+}
+
+fn entry_media_urls(app: &Value) -> Vec<String> {
+    let m = &app["media"];
+    let mut v: Vec<String> = Vec::new();
+    for k in ["icon", "loop"] {
+        if let Some(u) = m[k].as_str() {
+            v.push(u.to_string());
+        }
+    }
+    for u in m["screenshots"].as_array().into_iter().flatten() {
+        if let Some(u) = u.as_str() {
+            v.push(u.to_string());
+        }
+    }
+    v
+}
+
+fn evict(keep: &str) {
+    let dir = media_dir();
+    let Ok(rd) = std::fs::read_dir(&dir) else { return };
+    let files: Vec<media::CachedFile> = rd
+        .flatten()
+        .filter_map(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            if !media::is_cache_name(&name) {
+                return None;
+            }
+            let md = e.metadata().ok()?;
+            let used_ms = md.modified().ok()?.duration_since(UNIX_EPOCH).ok()?.as_millis() as u64;
+            Some(media::CachedFile { name, size: md.len(), used_ms })
+        })
+        .collect();
+    for name in media::eviction_plan(&files, media::TOTAL_CAP, keep) {
+        let _ = std::fs::remove_file(dir.join(name));
+    }
+}
+
+/// Returns a local path for one of an app's official media URLs, downloading it on first use. Only
+/// URLs listed in that app's catalogue entry are fetched (https, known image/video types, size caps,
+/// magic-number checks, SVGs without scripts). The UI shows it through the asset protocol.
+#[tauri::command]
+pub(crate) async fn apps_media(app_id: String, url: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || media_blocking(&app_id, &url)).await.map_err(|e| e.to_string())?
+}
+
+fn media_blocking(app_id: &str, url: &str) -> Result<String, String> {
+    use std::io::Read;
+    let app = find_app(app_id)?;
+    let urls = entry_media_urls(app);
+    let refs: Vec<&str> = urls.iter().map(String::as_str).collect();
+    if !media::is_allowed(url, &refs) {
+        return Err("that media isn't part of this app's entry".into());
+    }
+    let kind = media::kind_from_url(url).ok_or("unknown media type")?;
+    let name = media::cache_name(url).ok_or("unknown media type")?;
+    let dir = media_dir();
+    let path = dir.join(&name);
+    if path.exists() {
+        // Touch for LRU.
+        if let Ok(f) = std::fs::File::options().append(true).open(&path) {
+            let _ = f.set_modified(SystemTime::now());
+        }
+        return Ok(path.to_string_lossy().into_owned());
+    }
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let host = media::https_host(url).ok_or("bad host")?;
+    let client = reqwest::blocking::Client::builder()
+        .user_agent(concat!("LensUI/", env!("CARGO_PKG_VERSION")))
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(60))
+        .https_only(true)
+        // Redirects may only stay on the same host.
+        .redirect(reqwest::redirect::Policy::custom(move |a| {
+            if a.previous().len() > 3 || media::https_host(a.url().as_str()).as_deref() != Some(host.as_str()) {
+                a.stop()
+            } else {
+                a.follow()
+            }
+        }))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let resp = client.get(url).send().and_then(|r| r.error_for_status()).map_err(|e| e.to_string())?;
+    if resp.content_length().is_some_and(|n| n > kind.cap()) {
+        return Err("file is too large".into());
+    }
+    let mut bytes = Vec::new();
+    resp.take(kind.cap() + 1).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+    media::sniff(kind, &bytes).map_err(String::from)?;
+    let tmp = dir.join(format!("{name}.part"));
+    std::fs::write(&tmp, &bytes).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    evict(&name);
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// The installed app's real icon (from its Start-menu shortcut target), as a PNG data URL.
+#[tauri::command]
+pub(crate) fn apps_installed_icon(app_id: String) -> Option<String> {
+    let app = find_app(&app_id).ok()?;
+    let name = app["name"].as_str()?;
+    let shortcuts = start_menu_shortcuts();
+    let stems: Vec<String> = shortcuts.iter().map(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default()).collect();
+    let best = apps::best_shortcut_match(&stems, name)?;
+    let idx = stems.iter().position(|s| s == best)?;
+    crate::win_windows::extract_icon_for_path(&shortcuts[idx].to_string_lossy())
+}
+
+/// Shows an installed app's program file in File Explorer (its Start-menu shortcut target).
+#[tauri::command]
+pub(crate) fn apps_reveal(app_id: String) -> Result<(), String> {
+    let app = find_app(&app_id)?;
+    let name = app["name"].as_str().unwrap_or_default();
+    let shortcuts = start_menu_shortcuts();
+    let stems: Vec<String> = shortcuts.iter().map(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default()).collect();
+    let best = apps::best_shortcut_match(&stems, name).ok_or_else(|| format!("Couldn't find {name} in the Start menu."))?;
+    let lnk = shortcuts[stems.iter().position(|s| s == best).unwrap_or(0)].to_string_lossy().into_owned();
+    #[cfg(windows)]
+    let target = crate::win_windows::resolve_lnk_icon_and_target(&lnk).1.unwrap_or(lnk);
+    #[cfg(not(windows))]
+    let target = lnk;
+    crate::win_windows::launch_path_advanced(&target, "reveal")
 }

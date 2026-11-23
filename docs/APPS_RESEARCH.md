@@ -60,13 +60,10 @@ Winget ids marked ✓ were confirmed on winstall.app on 2026-11-23. The others a
 
 Stars and release dates are only shown where a page confirmed them (Concat 11.9k, OpenStock 16.3k, OpenCharts 315). Everything else shows the live `winget show` version at install time.
 
-**Official media used for live thumbnails** (loaded at runtime from the project's own host, never committed):
-- ArtCraft's README GIF and WebP;
-- Concat's `assets/editor.png` via jsDelivr;
-- degenview's `assets/screenshots/*.png`;
-- OpenCharts' `docs/screenshot.png`.
-
-The other entries have no published media URL I could confirm, so they show dithered placeholders. Adding a URL is a one-line catalogue edit.
+**Official media.** Icons and screenshots were found in each project's own GitHub repo with `tools/apps/fetch_media.py` (git, blob-less shallow clones; raw.githubusercontent.com itself is blocked from the build sandbox, but git reaches github.com). Each file was reviewed on a contact sheet before being recorded as a commit-pinned raw URL:
+- 44 of 51 apps have an icon. The ArtCraft suite apps each have their own icon from their repos.
+- 26 have 1–3 screenshots, including Concat's editor, degenview's charts and Pine debugger, every ArtCraft suite app, Slidev, Joplin and Excalidraw.
+- No icon (each with a `noMedia` reason): Everything (closed source), LM Studio (closed source), Obsidian (screenshots only), Inkscape (the GitHub mirror is a stub and GitLab is blocked from the build), Typst and whisper.cpp. For installed apps, Lens uses the program's own icon instead.
 
 ## 3. Safety model for third-party installs
 

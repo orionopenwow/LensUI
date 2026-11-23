@@ -1,49 +1,256 @@
-// Lens Apps: a calm catalogue of free and open-source tools with one-click install, live
-// thumbnails, a detail page and setup recipes. Mounted as Settings › Apps (docs/LENS_APPS.md §1)
-// and as the standalone `apps` surface. Keyboard: "/" focuses search, Esc goes back, arrows move
-// between cards in a rail.
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { auditLog, installedApps, lensInstalled, loadCatalog, loadSettings, onProgress, openApp, openLink, revertRecipe } from "./api";
-import { InstallSheet, type SheetOp } from "./InstallSheet";
+// Lens Apps: free and open-source tools with real thumbnails and App Store-style one-click Get.
+// Mounted as Settings › Apps (docs/LENS_APPS.md §1) and as the standalone `apps` surface.
+//
+// Keyboard: "/" focuses search · Enter on a card opens details · Ctrl+Enter on a card is Get ·
+// Esc closes a popover, then goes back · arrows move between cards in a row.
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { ActionPill, pillFor, type PillKind, type PopoverMode, type PopoverProps } from "./ActionPill";
+import {
+  applyRecipe,
+  cancelJob,
+  discardRelease,
+  installedApps,
+  loadCatalog,
+  loadSettings,
+  onProgress,
+  openApp,
+  openLink,
+  prepareRelease,
+  recipePreview,
+  revealApp,
+  revertRecipe,
+  runApp,
+  runRelease,
+  showApp,
+} from "./api";
+import { DownloadTray } from "./DownloadTray";
 import { reduceJobs, type Jobs } from "./jobs";
-import { LiveThumb } from "./LiveThumb";
-import { filterApps, heroApps, rails } from "./search";
-import type { AppsSettings, Catalog, CatalogApp, InstalledInfo } from "./types";
+import { emptyQueue, itemFor, nextToStart, reduceQueue, type QueueOp, type QueueState } from "./queue";
+import { filterApps, homeSections } from "./search";
+import type { AppShow, AppsSettings, Catalog, CatalogApp, InstalledInfo, PreparedRelease, RecipeStepView } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
+import { AppIcon, AppThumb } from "./visuals";
 import "./apps.css";
 
-const METHOD_LABEL: Record<string, string> = {
-  winget: "winget",
-  githubRelease: "GitHub release",
-  via: "Craft Launcher",
-  officialSite: "Official site",
-  web: "Web app",
-};
-
 const STATUS_LABEL: Record<string, string> = { stable: "Stable", beta: "Beta", alpha: "Early alpha" };
+const METHOD_LABEL: Record<string, string> = { winget: "winget", githubRelease: "GitHub release, verified", via: "Craft Launcher", officialSite: "Official site", web: "Web app" };
 
 export interface LensAppsProps {
-  /** Start on an app's page (used by voice "install …" / "what does … do" and screenshots). */
   initialApp?: string;
   initialQuery?: string;
-  /** Screenshot/test hooks. */
+  /** Screenshot/test hooks: preset state instead of talking to the backend. */
   demo?: {
     catalog?: Catalog;
     installed?: Record<string, InstalledInfo>;
+    queue?: QueueState;
     jobs?: Jobs;
-    sheet?: { appId: string; op: SheetOp; phase: "confirm" | "progress" | "releaseConfirm" | "recipe" | "done" | "error"; data?: any };
+    prepared?: Record<string, PreparedRelease>;
+    shows?: Record<string, AppShow>;
+    recipes?: Record<string, RecipeStepView[]>;
+    popover?: { appId: string; mode: PopoverMode };
+    hover?: string;
+    category?: string;
   };
 }
 
-function ArrowRail({ children, label }: { children: ReactNode; label: string }) {
+// ---------------------------------------------------------------------------------------------
+// Controller
+// ---------------------------------------------------------------------------------------------
+
+function useAppsController(catalog: Catalog | null, demo: LensAppsProps["demo"]) {
+  const [installed, setInstalled] = useState<Record<string, InstalledInfo>>(demo?.installed ?? {});
+  const [queue, dispatch] = useReducer(reduceQueue, demo?.queue ?? emptyQueue);
+  const [jobs, setJobs] = useState<Jobs>(demo?.jobs ?? {});
+  const [prepared, setPrepared] = useState<Record<string, PreparedRelease>>(demo?.prepared ?? {});
+  const [shows, setShows] = useState<Record<string, AppShow | { error: string }>>(demo?.shows ?? {});
+  const [recipes, setRecipes] = useState<Record<string, RecipeStepView[]>>(demo?.recipes ?? {});
+  const [popover, setPopover] = useState<{ appId: string; mode: PopoverMode } | null>(demo?.popover ?? null);
+  const byId = useMemo<Record<string, CatalogApp>>(() => Object.fromEntries((catalog?.apps ?? []).map((a) => [a.id, a])), [catalog]);
+
+  useEffect(() => {
+    if (demo) return;
+    installedApps().then(setInstalled);
+  }, [demo]);
+
+  // Progress events → jobs; job end → queue.
+  useEffect(() => {
+    if (demo) return;
+    let un: (() => void) | undefined;
+    onProgress((e) => {
+      setJobs((j) => reduceJobs(j, e));
+      if (e.op === "download") return; // release downloads finish through apps_release_prepare
+      if (e.stage === "done" || e.stage === "failed") {
+        dispatch({ type: "finished", appId: e.appId, ok: e.stage === "done", message: e.message });
+        installedApps().then(setInstalled);
+      }
+    }).then((u) => (un = u));
+    return () => un?.();
+  }, [demo]);
+
+  // Queue runner: start the next queued item when nothing is running.
+  const next = nextToStart(queue);
+  useEffect(() => {
+    if (!next || demo || !catalog) return;
+    const app = byId[next.appId];
+    if (!app) return;
+    dispatch({ type: "started", appId: next.appId });
+    if (app.install.method === "githubRelease") {
+      prepareRelease(app.id).then(
+        (p) => {
+          setPrepared((m) => ({ ...m, [app.id]: p }));
+          dispatch({ type: "verified", appId: app.id, token: p.token });
+        },
+        (e) => dispatch({ type: "finished", appId: app.id, ok: false, message: String(e) }),
+      );
+    } else {
+      runApp(app.id, next.op).then(
+        (jobId) => dispatch({ type: "started", appId: app.id, jobId }),
+        (e) => dispatch({ type: "finished", appId: app.id, ok: false, message: String(e) }),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [next?.appId, next?.status, demo, catalog, byId]);
+
+  // After a successful install, fetch the setup checklist for the tray.
+  useEffect(() => {
+    if (demo) return;
+    for (const it of queue.items) {
+      if (it.setupPending && !recipes[it.appId]) {
+        recipePreview(it.appId).then(
+          (r) => (r.length ? setRecipes((m) => ({ ...m, [it.appId]: r })) : dispatch({ type: "setupDone", appId: it.appId })),
+          () => dispatch({ type: "setupDone", appId: it.appId }),
+        );
+      }
+    }
+  }, [queue, recipes, demo]);
+
+  const viaOf = useCallback((app: CatalogApp): CatalogApp | null => (app.install.method === "via" ? byId[app.install.via] ?? null : null), [byId]);
+
+  const openPopover = useCallback(
+    (app: CatalogApp, mode: PopoverMode) => {
+      const target = viaOf(app) ?? app;
+      setPopover({ appId: app.id, mode });
+      if (target.install.method === "winget" && !shows[target.id] && !demo) {
+        showApp(target.id).then(
+          (s) => setShows((m) => ({ ...m, [target.id]: s })),
+          (e) => setShows((m) => ({ ...m, [target.id]: { error: String(e) } })),
+        );
+      }
+    },
+    [shows, demo, viaOf],
+  );
+
+  const primary = useCallback(
+    (app: CatalogApp, kind: PillKind) => {
+      switch (kind) {
+        case "open":
+          if (app.install.method === "web" && !installed[app.id]) openApp(app.id).catch(() => openLink(app.id, (app.install as { url: string }).url));
+          else openApp(app.id).catch(() => undefined);
+          return;
+        case "getExternal":
+          openLink(app.id, (app.install as { url: string }).url).catch(() => undefined);
+          return;
+        case "update":
+          return openPopover(app, "update");
+        case "run":
+          return openPopover(app, "run");
+        default:
+          return openPopover(app, "get");
+      }
+    },
+    [installed, openPopover],
+  );
+
+  const confirm = useCallback(() => {
+    if (!popover) return;
+    const app = byId[popover.appId];
+    const target = viaOf(app) ?? app;
+    setPopover(null);
+    if (popover.mode === "run") {
+      const it = itemFor(queue, target.id);
+      if (it?.token)
+        runRelease(it.token).then(
+          () => dispatch({ type: "finished", appId: target.id, ok: true }),
+          (e) => dispatch({ type: "finished", appId: target.id, ok: false, message: String(e) }),
+        );
+      return;
+    }
+    const op: QueueOp = popover.mode === "update" ? "upgrade" : popover.mode === "uninstall" ? "uninstall" : "install";
+    dispatch({ type: "enqueue", appId: target.id, op });
+  }, [popover, byId, queue, viaOf]);
+
+  const cancelId = useCallback(
+    (appId: string) => {
+      const it = itemFor(queue, appId);
+      if (it?.jobId) cancelJob(it.jobId);
+      if (it?.token) discardRelease(it.token);
+      dispatch({ type: "cancel", appId });
+    },
+    [queue],
+  );
+
+  const targetOf = (app: CatalogApp) => viaOf(app) ?? app;
+
+  const popoverProps = (app: CatalogApp): PopoverProps | null => {
+    if (!popover || popover.appId !== app.id) return null;
+    const via = viaOf(app);
+    const target = via ?? app;
+    const s = shows[target.id];
+    return {
+      app,
+      mode: popover.mode,
+      via,
+      show: s && !("error" in s) ? s : null,
+      showError: s && "error" in s ? s.error : null,
+      prepared: prepared[target.id] ?? null,
+      onConfirm: confirm,
+      onClose: () => setPopover(null),
+    };
+  };
+
+  const pill = (app: CatalogApp) => pillFor(app, installed[app.id], itemFor(queue, targetOf(app).id));
+
+  return {
+    installed,
+    queue,
+    jobs,
+    recipes,
+    byId,
+    popoverOpen: !!popover,
+    pill,
+    item: (app: CatalogApp) => itemFor(queue, targetOf(app).id),
+    job: (app: CatalogApp) => jobs[targetOf(app).id] ?? null,
+    primary,
+    cancel: (app: CatalogApp) => cancelId(targetOf(app).id),
+    cancelId,
+    get: (app: CatalogApp) => primary(app, pill(app)),
+    uninstall: (app: CatalogApp) => openPopover(app, "uninstall"),
+    popoverProps,
+    runId: (appId: string) => byId[appId] && openPopover(byId[appId], "run"),
+    dismiss: (appId: string) => dispatch({ type: "dismiss", appId }),
+    applySetup: (appId: string, chosen: number[]) => {
+      applyRecipe(appId, chosen).catch(() => undefined);
+      dispatch({ type: "setupDone", appId });
+    },
+    skipSetup: (appId: string) => dispatch({ type: "setupDone", appId }),
+  };
+}
+
+type Ctl = ReturnType<typeof useAppsController>;
+
+// ---------------------------------------------------------------------------------------------
+// Pieces
+// ---------------------------------------------------------------------------------------------
+
+function Row({ children, label }: { children: ReactNode; label: string }) {
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    const cards = [...(e.currentTarget.querySelectorAll<HTMLElement>(".la-card"))];
+    const cards = [...e.currentTarget.querySelectorAll<HTMLElement>("[data-card]")];
     const i = cards.indexOf(document.activeElement as HTMLElement);
     if (i < 0) return;
-    const next = cards[Math.max(0, Math.min(cards.length - 1, i + (e.key === "ArrowRight" ? 1 : -1)))];
-    next?.focus();
-    next?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const nextCard = cards[Math.max(0, Math.min(cards.length - 1, i + (e.key === "ArrowRight" ? 1 : -1)))];
+    nextCard?.focus();
+    nextCard?.scrollIntoView({ block: "nearest", inline: "nearest" });
     e.preventDefault();
   };
   return (
@@ -53,132 +260,145 @@ function ArrowRail({ children, label }: { children: ReactNode; label: string }) 
   );
 }
 
-function Badge({ app, installed }: { app: CatalogApp; installed?: InstalledInfo }) {
-  if (installed?.available) return <span className="la-badge la-badge-update">Update</span>;
-  if (installed) return <span className="la-badge la-badge-ok">Installed</span>;
-  if (app.status !== "stable") return <span className="la-badge">{STATUS_LABEL[app.status]}</span>;
-  if (!app.openSource) return <span className="la-badge">Free</span>;
-  return null;
-}
-
-function AppCard({ app, installed, live, hero, onOpen }: { app: CatalogApp; installed?: InstalledInfo; live: boolean; hero?: boolean; onOpen: () => void }) {
+function Pill({ app, ctl, onDetails, compact }: { app: CatalogApp; ctl: Ctl; onDetails?: () => void; compact?: boolean }) {
+  const kind = ctl.pill(app);
   return (
-    <button className={`la-card${hero ? " la-card-hero" : ""}`} role="listitem" onClick={onOpen} aria-label={`${app.name}. ${app.pitch}`}>
-      <LiveThumb app={app} live={live} large={hero} />
-      <div className="la-card-body">
-        <div className="la-card-title">
-          <span className="la-card-name">{app.name}</span>
-          <Badge app={app} installed={installed} />
-        </div>
-        {hero && app.replaces.length > 0 && <div className="la-mono la-muted la-replaces">replaces {app.replaces.slice(0, 2).join(", ")}</div>}
-        <div className="la-card-pitch">{app.pitch}</div>
-      </div>
-    </button>
+    <ActionPill
+      app={app}
+      kind={kind}
+      job={ctl.job(app)}
+      item={ctl.item(app)}
+      installed={!!ctl.installed[app.id]}
+      popover={ctl.popoverProps(app)}
+      onPrimary={() => ctl.primary(app, kind)}
+      onCancel={() => ctl.cancel(app)}
+      onDetails={onDetails}
+      onUninstall={() => ctl.uninstall(app)}
+      onReveal={() => revealApp(app.id).catch(() => undefined)}
+      compact={compact}
+    />
   );
 }
 
-function Detail({
-  app,
-  catalog,
-  installed,
-  live,
-  onBack,
-  onAction,
-}: {
-  app: CatalogApp;
-  catalog: Catalog;
-  installed?: InstalledInfo;
-  live: boolean;
-  onBack: () => void;
-  onAction: (op: SheetOp) => void;
-}) {
-  const via = app.install.method === "via" ? catalog.apps.find((a) => a.id === (app.install as any).via) : null;
+function AppCard({ app, ctl, live, hero, hovered, onOpen }: { app: CatalogApp; ctl: Ctl; live: boolean; hero?: boolean; hovered?: boolean; onOpen: () => void }) {
+  const [hover, setHover] = useState(false);
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget || e.key !== "Enter") return;
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) ctl.get(app);
+    else onOpen();
+  };
+  const isInstalled = !!ctl.installed[app.id];
+  return (
+    <div
+      className={`la-card${hero ? " la-card-hero" : ""}${ctl.popoverProps(app) ? " la-card-pop" : ""}`}
+      role="listitem"
+      tabIndex={0}
+      data-card
+      aria-label={`${app.name}. ${app.pitch}`}
+      onClick={onOpen}
+      onKeyDown={onKey}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <AppThumb app={app} live={live} hover={hover || hovered} installed={isInstalled} />
+      <div className="la-card-body">
+        <AppIcon app={app} size={hero ? 40 : 34} installed={isInstalled} live={live} />
+        <div className="la-card-text">
+          <span className="la-card-name">{app.name}</span>
+          <span className="la-card-pitch">{hero && app.replaces.length ? `Instead of ${app.replaces[0]} · ${app.license}` : app.pitch}</span>
+        </div>
+        <Pill app={app} ctl={ctl} onDetails={onOpen} />
+      </div>
+    </div>
+  );
+}
+
+function SuiteRow({ launcher, apps, ctl, live, onOpen }: { launcher: CatalogApp | null; apps: CatalogApp[]; ctl: Ctl; live: boolean; onOpen: (id: string) => void }) {
+  if (!launcher && !apps.length) return null;
+  return (
+    <div className="la-suite">
+      {launcher && (
+        <div className="la-suite-lead" onClick={() => onOpen(launcher.id)}>
+          <AppIcon app={launcher} size={44} installed={!!ctl.installed[launcher.id]} live={live} />
+          <div className="la-card-text">
+            <span className="la-card-name">{launcher.name}</span>
+            <span className="la-card-pitch">One launcher installs and updates all {apps.length} apps</span>
+          </div>
+          <Pill app={launcher} ctl={ctl} onDetails={() => onOpen(launcher.id)} />
+        </div>
+      )}
+      <div className="la-suite-icons" role="list" aria-label="ArtCraft suite apps">
+        {apps.map((a) => (
+          <button key={a.id} className="la-suite-app" role="listitem" onClick={() => onOpen(a.id)} aria-label={`${a.name}: ${a.pitch}`}>
+            <AppIcon app={a} size={40} installed={!!ctl.installed[a.id]} live={live} />
+            <span className="la-suite-name">{a.name.replace(/Craft$/, "")}</span>
+            <span className="la-suite-sub">{a.replaces[0] ?? ""}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, subtitle, count, children }: { title: string; subtitle?: string; count?: number; children: ReactNode }) {
+  return (
+    <section className="la-block">
+      <div className="la-block-head">
+        <span className="la-block-title">{title}</span>
+        {subtitle && <span className="la-block-sub">{subtitle}</span>}
+        {count != null && <span className="la-mono la-muted">{count}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Detail({ app, catalog, ctl, live, onBack, onOpen }: { app: CatalogApp; catalog: Catalog; ctl: Ctl; live: boolean; onBack: () => void; onOpen: (id: string) => void }) {
+  const inst = ctl.installed[app.id];
   const link = (url: string) => openLink(app.id, url).catch(() => window.open(url, "_blank", "noopener"));
-  const primary = (() => {
-    switch (app.install.method) {
-      case "winget":
-      case "githubRelease":
-        return installed ? null : (
-          <button className="la-btn la-btn-primary" onClick={() => onAction("install")} autoFocus>
-            Install <kbd>⏎</kbd>
-          </button>
-        );
-      case "via":
-        return (
-          <button className="la-btn la-btn-primary" onClick={() => onAction("install")} autoFocus>
-            Get {via?.name ?? "the launcher"} <kbd>⏎</kbd>
-          </button>
-        );
-      case "web":
-        return (
-          <button className="la-btn la-btn-primary" onClick={() => openApp(app.id).catch(() => link((app.install as any).url))} autoFocus>
-            Open web app <kbd>⏎</kbd>
-          </button>
-        );
-      case "officialSite":
-        return (
-          <button className="la-btn la-btn-primary" onClick={() => link((app.install as any).url)} autoFocus>
-            Get it from the official site ↗
-          </button>
-        );
-    }
-  })();
   const howLens: string[] = [];
   if (app.integration.fileTypes.length) howLens.push(`"Open in ${app.name}" for ${app.integration.fileTypes.slice(0, 4).join(", ")} in Lens right-click menus`);
   if (app.integration.voice.length) howLens.push(`Voice: ${app.integration.voice.slice(0, 2).map((v) => `"Lens, ${v}"`).join(", ")}`);
   if (app.integration.mcp) howLens.push("Has an MCP server, so Lens AI and Claude can use its tools (each action still asks first)");
-  if (app.recipe.some((r) => r.kind === "localModelProvider")) howLens.push("Becomes Lens AI's local model, so answers stay on your PC");
-  if (app.integration.cli) howLens.push(`Command line: ${app.integration.cli}`);
+  if (app.recipe.some((r) => r.kind === "localModelProvider")) howLens.push("Can become Lens AI's local model, so answers stay on your PC");
   howLens.push("Pinned to the Dock if you choose, and searchable from Lens Command");
-
+  const via = app.install.method === "via" ? catalog.apps.find((a) => a.id === (app.install as { via: string }).via) : null;
   return (
-    <div className="la-detail" onKeyDown={(e) => e.key === "Escape" && onBack()}>
+    <div className="la-detail" onKeyDown={(e) => e.key === "Escape" && !ctl.popoverOpen && onBack()}>
       <button className="la-back" onClick={onBack}>
         ← All apps <kbd>Esc</kbd>
       </button>
       <div className="la-detail-top">
-        <LiveThumb app={app} live={live} large />
+        <AppIcon app={app} size={72} installed={!!inst} live={live} />
         <div className="la-detail-head">
           <div className="la-detail-name">{app.name}</div>
           <div className="la-detail-pitch">{app.pitch}</div>
           <div className="la-chips">
             <span className="la-chip">{catalog.categories.find((c) => c.id === app.category)?.title}</span>
             <span className="la-chip">{STATUS_LABEL[app.status]}</span>
-            <span className="la-chip">{app.openSource ? "Open source" : "Free, not open source"}</span>
+            <span className="la-chip">{app.openSource ? app.license : "Free, not open source"}</span>
             {app.replaces.slice(0, 2).map((r) => (
               <span key={r} className="la-chip la-chip-dim">
                 instead of {r}
               </span>
             ))}
           </div>
-          <div className="la-actions la-actions-left">
-            {primary}
-            {installed && (
-              <button className="la-btn la-btn-primary" onClick={() => openApp(app.id)}>
-                Open
-              </button>
-            )}
-            {installed?.available && (
-              <button className="la-btn" onClick={() => onAction("upgrade")}>
-                Update to {installed.available}
-              </button>
-            )}
-            {installed && app.install.method === "winget" && (
-              <button className="la-btn" onClick={() => onAction("uninstall")}>
-                Uninstall
-              </button>
-            )}
-            {installed && (
-              <button className="la-btn la-btn-ghost" onClick={() => revertRecipe(app.id)}>
-                Undo Lens setup
-              </button>
-            )}
-            <button className="la-btn la-btn-ghost" onClick={() => link(app.homepage)}>
-              Website ↗
+        </div>
+        <div className="la-detail-pill">
+          <Pill app={app} ctl={ctl} />
+          {inst && (
+            <button className="la-link la-fine" onClick={() => revertRecipe(app.id)}>
+              Undo Lens setup
             </button>
-          </div>
+          )}
         </div>
       </div>
+      {(app.media.screenshots.length > 0 || app.media.loop) && (
+        <div className="la-gallery">
+          <AppThumb app={app} live={live} large />
+        </div>
+      )}
       <div className="la-detail-grid">
         <section className="la-section">
           <div className="la-label">Why we picked it</div>
@@ -194,15 +414,12 @@ function Detail({
         <section className="la-section">
           <dl className="la-facts">
             <dt>Licence</dt>
-            <dd>
-              {app.license}
-              {!app.licenseVerified && <span className="la-muted"> · confirmed at install</span>}
-            </dd>
+            <dd>{app.license}</dd>
             <dt>Publisher</dt>
             <dd>{app.publisher}</dd>
             <dt>Install</dt>
             <dd>
-              {METHOD_LABEL[app.install.method]}
+              {via ? `Through ${via.name}` : METHOD_LABEL[app.install.method]}
               {app.install.method === "winget" && <span className="la-mono la-muted"> {app.install.wingetId}</span>}
             </dd>
             {app.stars && (
@@ -211,10 +428,10 @@ function Detail({
                 <dd className="la-mono">{app.stars}</dd>
               </>
             )}
-            {installed && (
+            {inst && (
               <>
                 <dt>Installed</dt>
-                <dd className="la-mono">{installed.version}</dd>
+                <dd className="la-mono">{inst.version}</dd>
               </>
             )}
             {app.repo && (
@@ -227,47 +444,42 @@ function Detail({
                 </dd>
               </>
             )}
-            <dt>Changes</dt>
-            <dd>{app.install.method === "web" ? "Nothing on your PC" : "Installs an app for your user; uninstall any time"}</dd>
           </dl>
-          <div className="la-fine">Official media from {app.media.credit}</div>
+          <div className="la-fine">{app.media.noMedia ?? `Official media from ${app.media.credit}`}</div>
         </section>
       </div>
+      {via && (
+        <button className="la-link la-fine" onClick={() => onOpen(via.id)}>
+          About {via.name} →
+        </button>
+      )}
     </div>
   );
 }
 
+// ---------------------------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------------------------
+
 export function LensApps({ initialApp, initialQuery = "", demo }: LensAppsProps) {
   const [catalog, setCatalog] = useState<Catalog | null>(demo?.catalog ?? null);
-  const [installed, setInstalled] = useState<Record<string, InstalledInfo>>(demo?.installed ?? {});
   const [settings, setSettings] = useState<AppsSettings>(DEFAULT_SETTINGS);
   const [query, setQuery] = useState(initialQuery);
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(demo?.category ?? null);
   const [openSourceOnly, setOpenSourceOnly] = useState(false);
-  const [selected, setSelected] = useState<string | null>(initialApp ?? demo?.sheet?.appId ?? null);
-  const [sheet, setSheet] = useState<{ appId: string; op: SheetOp } | null>(demo?.sheet ? { appId: demo.sheet.appId, op: demo.sheet.op } : null);
-  const [jobs, setJobs] = useState<Jobs>(demo?.jobs ?? {});
+  const [selected, setSelected] = useState<string | null>(initialApp ?? null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  const ctl = useAppsController(catalog, demo);
 
   useEffect(() => {
     loadSettings().then(setSettings);
     if (demo?.catalog) return;
     loadCatalog().then(setCatalog);
-    installedApps().then(setInstalled);
   }, [demo]);
 
-  useEffect(() => {
-    let un: (() => void) | undefined;
-    onProgress((e) => {
-      setJobs((j) => reduceJobs(j, e));
-      if (e.stage === "done") installedApps().then(setInstalled);
-    }).then((u) => (un = u));
-    return () => un?.();
-  }, []);
-
   const onKey = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    const t = e.target as HTMLElement;
-    if (e.key === "/" && t.tagName !== "INPUT") {
+    if (e.key === "/" && (e.target as HTMLElement).tagName !== "INPUT") {
       searchRef.current?.focus();
       e.preventDefault();
     }
@@ -277,40 +489,31 @@ export function LensApps({ initialApp, initialQuery = "", demo }: LensAppsProps)
     () => (catalog ? filterApps(catalog.apps, { query, category, openSourceOnly, showNonOpenSource: settings.showNonOpenSource }) : []),
     [catalog, query, category, openSourceOnly, settings.showNonOpenSource],
   );
+  const home = useMemo(() => (catalog ? homeSections(catalog, settings.showNonOpenSource) : null), [catalog, settings.showNonOpenSource]);
 
-  if (!catalog) return <div className="la la-loading">Loading apps…</div>;
-  const app = selected ? catalog.apps.find((a) => a.id === selected) : null;
-  const sheetApp = sheet ? catalog.apps.find((a) => a.id === sheet.appId) : null;
+  if (!catalog || !home) return <div className="la la-loading">Loading apps…</div>;
   const live = settings.liveThumbnails;
+  const app = selected ? catalog.apps.find((a) => a.id === selected) : null;
   const browsing = !!query.trim() || !!category || openSourceOnly;
-
-  const startAction = (a: CatalogApp, op: SheetOp) => {
-    if (a.install.method === "via") {
-      const v = catalog.apps.find((x) => x.id === (a.install as any).via);
-      if (v) {
-        setSelected(v.id);
-        setSheet({ appId: v.id, op: "install" });
-      }
-      return;
-    }
-    setSheet({ appId: a.id, op });
+  const open = (id: string) => {
+    setSelected(id);
+    topRef.current?.scrollIntoView({ block: "start" });
   };
+  const card = (a: CatalogApp, hero = false) => <AppCard key={a.id} app={a} ctl={ctl} live={live} hero={hero} hovered={demo?.hover === a.id} onOpen={() => open(a.id)} />;
 
   return (
-    <div className="la" onKeyDown={onKey}>
+    <div className="la" onKeyDown={onKey} ref={topRef}>
       {app ? (
-        <Detail app={app} catalog={catalog} installed={installed[app.id]} live={live} onBack={() => setSelected(null)} onAction={(op) => startAction(app, op)} />
+        <Detail app={app} catalog={catalog} ctl={ctl} live={live} onBack={() => setSelected(null)} onOpen={open} />
       ) : (
         <>
           <div className="la-head">
-            <div>
-              <div className="la-title">Apps</div>
-              <div className="la-sub">
-                Free and open-source tools, picked for Lens. One click to install, nothing without your OK.{" "}
-                <span className="la-mono la-muted">
-                  {catalog.apps.length} apps · {catalog.updated}
-                </span>
-              </div>
+            <div className="la-title">Apps</div>
+            <div className="la-sub">
+              Free and open-source tools, picked for Lens.{" "}
+              <span className="la-mono la-muted">
+                {catalog.apps.length} apps · {catalog.updated}
+              </span>
             </div>
           </div>
           <div className="la-searchbar">
@@ -341,53 +544,52 @@ export function LensApps({ initialApp, initialQuery = "", demo }: LensAppsProps)
           {browsing ? (
             <div className="la-grid" role="list" aria-label="Results">
               {results.length === 0 && <div className="la-empty">No apps match. Try what you want to do, like "edit video" or "slides".</div>}
-              {results.map((a) => (
-                <AppCard key={a.id} app={a} installed={installed[a.id]} live={live} onOpen={() => setSelected(a.id)} />
-              ))}
+              {results.map((a) => card(a))}
             </div>
           ) : (
             <>
-              <section className="la-block">
-                <div className="la-block-head">
-                  <span className="la-block-title">{catalog.collections.find((c) => c.id === "rewrites")?.title}</span>
-                  <span className="la-block-sub">{catalog.collections.find((c) => c.id === "rewrites")?.subtitle}</span>
-                </div>
-                <ArrowRail label="Open-source rewrites">
-                  {heroApps(catalog).map((a) => (
-                    <AppCard key={a.id} app={a} installed={installed[a.id]} live={live} hero onOpen={() => setSelected(a.id)} />
+              <Section title="Open-source rewrites" subtitle="New open alternatives to the big paid apps">
+                <Row label="Open-source rewrites">{home.hero.map((a) => card(a, true))}</Row>
+              </Section>
+              <Section title="The ArtCraft suite" subtitle="Native creative and office apps, one launcher" count={home.suite.apps.length + (home.suite.launcher ? 1 : 0)}>
+                <SuiteRow launcher={home.suite.launcher} apps={home.suite.apps} ctl={ctl} live={live} onOpen={open} />
+              </Section>
+              <Section title="AI on your PC" subtitle="Local models, generation and transcription" count={home.ai.length}>
+                <Row label="AI on your PC">{home.ai.map((a) => card(a))}</Row>
+              </Section>
+              <Section title="Essentials" subtitle="Free tools almost everyone wants" count={home.essentials.length}>
+                <Row label="Essentials">{home.essentials.map((a) => card(a))}</Row>
+              </Section>
+              <Section title="Browse by category">
+                <div className="la-cats">
+                  {home.categories.map((c) => (
+                    <button key={c.id} className="la-cat" onClick={() => setCategory(c.id)}>
+                      <span className="la-cat-icons">
+                        {c.preview.map((a) => (
+                          <AppIcon key={a.id} app={a} size={26} live={live} />
+                        ))}
+                      </span>
+                      <span className="la-cat-title">{c.title}</span>
+                      <span className="la-mono la-muted">{c.count}</span>
+                    </button>
                   ))}
-                </ArrowRail>
-              </section>
-              {rails(catalog, settings.showNonOpenSource).map((r) => (
-                <section key={r.id} className="la-block">
-                  <div className="la-block-head">
-                    <span className="la-block-title">{r.title}</span>
-                    {r.subtitle && <span className="la-block-sub">{r.subtitle}</span>}
-                    <span className="la-mono la-muted">{r.apps.length}</span>
-                  </div>
-                  <ArrowRail label={r.title}>
-                    {r.apps.map((a) => (
-                      <AppCard key={a.id} app={a} installed={installed[a.id]} live={live} onOpen={() => setSelected(a.id)} />
-                    ))}
-                  </ArrowRail>
-                </section>
-              ))}
+                </div>
+              </Section>
             </>
           )}
         </>
       )}
-      {sheet && sheetApp && (
-        <InstallSheet
-          app={sheetApp}
-          op={sheet.op}
-          job={jobs[sheetApp.id] ?? null}
-          onClose={() => setSheet(null)}
-          demo={demo?.sheet ? { phase: demo.sheet.phase, ...(demo.sheet.data ?? {}) } : undefined}
-        />
-      )}
+      <DownloadTray
+        queue={ctl.queue}
+        jobs={ctl.jobs}
+        apps={ctl.byId}
+        recipes={ctl.recipes}
+        onCancel={ctl.cancelId}
+        onRun={ctl.runId}
+        onDismiss={ctl.dismiss}
+        onApplySetup={ctl.applySetup}
+        onSkipSetup={ctl.skipSetup}
+      />
     </div>
   );
 }
-
-/** Lens-installed apps and the audit log, for the AppsCard settings. */
-export { auditLog, lensInstalled };
