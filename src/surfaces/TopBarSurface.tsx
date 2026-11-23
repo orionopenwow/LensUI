@@ -27,6 +27,7 @@ import { WorkspaceStrip, readWorkspaces } from "../components/WorkspacesCard";
 import { BatteryTopBarModule } from "../components/BatteryModule";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { resolveSystemArea } from "../dock/styles";
+import { TesterBadge } from "../tester/TesterHub";
 import "./TopBarSurface.css";
 
 export const TopBarSurface: React.FC = () => {
@@ -308,6 +309,9 @@ export const TopBarSurface: React.FC = () => {
           )}
         </div>
 
+        {config?.tester?.enabled && (
+          <TesterBadge onClick={() => invoke("toggle_surface", { label: "testerhub" }).catch(() => {})} />
+        )}
         {!systemInDock && (
           <>
           <div className="topbar-utility-group">

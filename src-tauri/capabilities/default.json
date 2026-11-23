@@ -19,7 +19,8 @@
     "command",
     "edgeshelf",
     "bubble",
-    "topbar-*"
+    "topbar-*",
+    "testerhub"
   ],
   "permissions": [
     "core:default",

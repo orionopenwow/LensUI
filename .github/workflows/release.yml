@@ -73,6 +73,13 @@ jobs:
           cargo build --release --manifest-path src-tauri/lens-dwm-hook/Cargo.toml
           Copy-Item src-tauri/lens-dwm-hook/target/release/lens_dwm_hook.dll src-tauri/lens_dwm_hook.dll -Force
 
+      - name: Bundle the latest tester notes
+        shell: bash
+        run: |
+          git fetch --depth=1 origin research/daily || true
+          git show origin/research/daily:docs/tester/LATEST.json > docs/tester/LATEST.json 2>/dev/null || true
+          node tools/changelog/gen.mjs
+
       # The public key and createUpdaterArtifacts are injected only here, so local builds without a
       # key keep working. `tauri build` signs the updater bundles with TAURI_SIGNING_PRIVATE_KEY.
       - name: Build NSIS + MSI (signed updater artifacts)
