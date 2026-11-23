@@ -29,14 +29,14 @@ ${note}${docs}`;
 const readme = `<!-- The feature tour below is generated from tools/site/content/features.mjs by
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
-  <img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" />
+  <picture><source srcset="./docs/brand/lens-logo-anim.webp" media="(prefers-reduced-motion: no-preference)"><img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" /></picture>
   <h1>Lens UI</h1>
-  <p>A calm, themeable desktop for Windows 10 and 11: dock, themes, window styling, a living wallpaper and a local-first AI helper, in one app that undoes everything it changes.</p>
+  <p><strong>The everything desktop.</strong> The open-source desktop where look, apps and AI finally work as one.</p>
   <p>
     <a href="${REPO}/actions/workflows/build.yml"><img src="${REPO}/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-09090b?style=flat-square" alt="MIT license" /></a>
   </p>
-  <p><a href="${SITE}">Website</a> · <a href="${SITE}#demos">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
+  <p><a href="${SITE}">Website</a> · <a href="${SITE}#stage">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
 </div>
 
 <p align="center">${gif(HERO_CLIP, "The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches")}</p>
@@ -47,9 +47,9 @@ const readme = `<!-- The feature tour below is generated from tools/site/content
 
 ## What Lens is
 
-Lens sits on top of Windows Explorer instead of patching it. It gives you a dock and a top bar that are quick to read, themes that restyle every surface (including other apps' window frames) in one design language, and a command layer that works offline. An optional AI helper can use a model on your own PC or Claude, and it asks before anything risky. Quit Lens and Windows is as you left it.
+Lens is the everything desktop for Windows 10 and 11: macOS's docks, Linux's theming, a launcher like Raycast and an AI co-pilot, rebuilt as one open-source app. That means a dock with real magnification, theme packs that restyle every surface (including other apps' window frames), a launcher that understands plain requests, and an AI co-pilot that runs on your PC or with Claude and asks before it acts. It sits on top of Windows Explorer instead of patching it: features stay off until you turn them on, and every change undoes.
 
-Built with [Tauri 2](https://tauri.app) (Rust and Win32) and React.
+Built with [Tauri 2](https://tauri.app) (Rust and Win32) and React. Try the dock and themes on the [website](${SITE}).
 
 ## Feature tour
 

@@ -7,9 +7,9 @@ export const SITE_URL = "https://orionopenwow.github.io/lensui/";
 const NAV = [["", "Home"], ["docs/", "Docs"], ["download.html", "Download"], ["test.html", "Testers"]];
 const MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 
-// Runs before first paint so the visitor's notch choices (mode, accent, pack colours, density,
+// Runs before first paint (dark unless the visitor picked otherwise) so the notch choices (mode, accent, pack colours, density,
 // text size, motion) don't flash. Mirrors apply() in docs/site/js/site.js.
-const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"auto",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
+const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"dark",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
 
 /**
  * @param {object} o
@@ -32,7 +32,7 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title ? `${title} — Lens UI` : "Lens UI — a calmer desktop for Windows")}</title>
+<title>${esc(title ? `${title} — Lens UI` : "Lens UI — the everything desktop")}</title>
 <meta name="description" content="${esc(desc)}">
 <meta property="og:title" content="${esc(title || "Lens UI")}">
 <meta property="og:description" content="${esc(desc)}">
@@ -41,7 +41,7 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <meta property="og:image" content="${SITE_URL}brand/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Lens logo, a silver lens holding a rainbow nebula, beside the words: Lens, a calmer desktop for Windows">
+<meta property="og:image:alt" content="The Lens logo, a silver lens holding a rainbow nebula, beside the words: Lens, the everything desktop">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="${SITE_URL}brand/og.png">
 <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
@@ -56,7 +56,7 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar">
   <div class="inner">
-    <a class="mark" href="${base}" aria-label="Lens UI home"><img src="${base}brand/lens-logo-small.svg" alt="" width="22" height="22">Lens UI</a>
+    <a class="mark" href="${base}" aria-label="Lens UI home"><span class="hero-logo nav-logo" data-logo data-speed="0.6" data-site="${base}"><img class="poster" src="${base}brand/lens-logo-small.svg" alt="" width="24" height="24"></span>Lens UI</a>
     <nav id="site-nav" aria-label="Site">${nav}</nav>
     <div class="end">
       <a class="btn small gh" href="${REPO}">GitHub</a>
@@ -70,12 +70,13 @@ ${body}
 </main>
 <footer class="site">
   <div class="inner">
-    <p>Lens UI · MIT · not affiliated with Microsoft or Anthropic</p>
+    <p>Lens UI · the everything desktop · open source (MIT) · not affiliated with Microsoft, Apple or Anthropic</p>
     <nav aria-label="Footer"><a href="${REPO}">GitHub</a><a href="${REPO}/issues">Issues</a><a href="${base}docs/">Docs</a><a href="${base}download.html">Download</a><a href="${base}test.html">Testers</a></nav>
   </div>
 </footer>
 <button id="guide-fab" class="guide-fab" type="button" aria-controls="guide-panel" aria-expanded="false"><span class="q" aria-hidden="true">?</span>Guide <kbd>/</kbd></button>
 <script type="module" src="${base}js/site.js"></script>
+<script type="module" src="${base}js/logo.js"></script>
 ${scripts.map((s) => `<script type="module" src="${base}${s}"></script>`).join("\n")}
 </body>
 </html>

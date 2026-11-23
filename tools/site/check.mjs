@@ -1,3 +1,4 @@
+import { gzipSync } from "node:zlib";
 // Quality checks for the built site (run after tools/site/build.mjs):
 //   - every page loads without page or console errors, in light and dark
 //   - internal links and assets resolve (no 404s)
@@ -99,15 +100,25 @@ for (const scheme of ["dark", "light"]) {
   for (const p of PAGES) {
     for (const w of [375, 768, 1440]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, colorScheme: scheme, reducedMotion: "no-preference" });
+      // The site defaults to dark; light screenshots pick Light in the notch's saved preference.
+      if (scheme === "light") await ctx.addInitScript(() => localStorage.setItem("lens-site", JSON.stringify({ mode: "light" })));
       const page = await ctx.newPage();
       const errs = [];
       let bytes = 0;
       page.on("pageerror", (e) => errs.push(`pageerror: ${e.message}`));
       page.on("console", (m) => { if (m.type() === "error") errs.push(`console: ${m.text().slice(0, 160)}`); });
+      // Weight = what Pages would send: each URL once (iframes share the browser cache there) and
+      // text gzipped (Pages serves gzip); images and fonts count at their real size.
+      const seen = new Set();
       page.on("response", async (r) => {
         if (r.status() >= 400) errs.push(`${r.status()} ${r.url().replace(base, "/")}`);
-        const len = Number((await r.allHeaders())["content-length"] || 0);
-        bytes += len;
+        const url = r.url().split("#")[0];
+        if (seen.has(url) || r.status() >= 300) return;
+        seen.add(url);
+        try {
+          const body = await r.body();
+          bytes += /\.(js|mjs|css|html?|json|svg|txt)(\?|$)|\/$/.test(url) ? gzipSync(body).length : body.length;
+        } catch { bytes += Number((await r.allHeaders())["content-length"] || 0); }
       });
       await page.goto(base + p, { waitUntil: "load" });
       await page.waitForTimeout(600);
@@ -124,7 +135,7 @@ for (const scheme of ["dark", "light"]) {
         }
         report.pages[key] ??= {};
         report.pages[key][scheme] = { firstLoadKB: Math.round(bytes / 1024), a11yIssues: a11y.length };
-        if (bytes > 1.5 * 1024 * 1024) problems.push(`${scheme} ${p}: first load ${Math.round(bytes / 1024)} KB > 1.5 MB`);
+        if (bytes > 1.2 * 1024 * 1024) problems.push(`${scheme} ${p}: ${Math.round(bytes / 1024)} KB transferred with everything loaded > 1.2 MB`);
         for (const h of await page.$$eval("a[href], img[src], link[href], script[src], iframe[src]", (els) => els.map((e) => e.href || e.src))) {
           if (h.startsWith(base)) links.add(h.split("#")[0]);
         }
@@ -162,6 +173,57 @@ for (const scheme of ["dark", "light"]) {
   const moving = await p2.$eval("[data-logo]", (e) => e.logoStats?.().running ?? false);
   report.logo.reducedMotionStill = !moving;
   if (moving) problems.push("logo: animates with reduced motion");
+  await rm.close();
+}
+
+// The hero stage: frame pacing and long tasks with the CPU throttled 4× (a slow laptop), a still
+// backdrop with reduced motion, and screenshots of a few chip states.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(base + "index.html");
+  await page.waitForTimeout(3000);
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  const perf = await page.evaluate(() => new Promise((res) => {
+    const gaps = [], longs = [];
+    new PerformanceObserver((l) => l.getEntries().forEach((e) => longs.push(e.duration))).observe({ type: "longtask", buffered: false });
+    let last = performance.now();
+    const end = last + 5000;
+    const tick = (t) => { gaps.push(t - last); last = t; if (t < end) requestAnimationFrame(tick); else { gaps.sort((a, b) => a - b); res({ frames: gaps.length, p50: gaps[Math.floor(gaps.length * 0.5)], p95: gaps[Math.floor(gaps.length * 0.95)], longTasks: longs.length, longestTask: Math.max(0, ...longs) }); } };
+    requestAnimationFrame(tick);
+  }));
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  report.stage = { throttle4x: Object.fromEntries(Object.entries(perf).map(([k, v]) => [k, Math.round(v * 10) / 10])) };
+  if (perf.p95 > 50) problems.push(`stage: p95 frame interval ${perf.p95.toFixed(1)} ms at 4× throttle (> 50 ms)`);
+  if (perf.longestTask > 200) problems.push(`stage: a ${perf.longestTask.toFixed(0)} ms long task at 4× throttle`);
+  for (const id of ["themes", "apps", "ai"]) {
+    await page.click(`#chip-${id}`);
+    await page.waitForTimeout(1500);
+    const found = await page.evaluate(audit);
+    problems.push(...found.map((x) => `chip ${id}: ${x}`));
+    await page.locator(".stage").screenshot({ path: join(shots, `chip-${id}.png`) });
+  }
+  await ctx.close();
+  const rm = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
+  const p2 = await rm.newPage();
+  await p2.goto(base + "index.html");
+  await p2.waitForTimeout(3000);
+  const grab = () => p2.$eval(".backdrop canvas", (c) => c.toDataURL());
+  const a = await grab();
+  await p2.waitForTimeout(1500);
+  const still = a === (await grab());
+  report.stage.reducedMotionStill = still;
+  if (!still) problems.push("stage: the backdrop moves with reduced motion");
+  // "Lens at work" with reduced motion: a caption and a highlight ring, and the orb never shows.
+  await p2.fill("#ask-q", "switch to Nord and slim dock");
+  await p2.press("#ask-q", "Enter");
+  await p2.waitForTimeout(400);
+  const lens = await p2.evaluate(() => ({ caption: document.querySelector(".lens-caption")?.textContent ?? "", ring: !!document.querySelector(".lens-ring"), orb: getComputedStyle(document.querySelector(".lens-orb")).opacity }));
+  await p2.waitForTimeout(3500);
+  lens.style = await p2.$eval("select[data-style]", (s) => s.value);
+  report.stage.lensAtWork = lens;
+  if (!/Lens/.test(lens.caption) || !lens.ring || lens.orb !== "0" || lens.style !== "slim") problems.push(`stage: Lens at work (reduced motion) ${JSON.stringify(lens)}`);
   await rm.close();
 }
 
@@ -203,6 +265,7 @@ report.problems = problems;
 await writeFile(join(shots, "report.json"), JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report.pages, null, 0));
 console.log("logo", JSON.stringify(report.logo));
+console.log("stage", JSON.stringify(report.stage));
 console.log(`${seen.size} internal links checked · axe ${axe ? "on" : "not installed (built-in checks only)"}`);
 if (problems.length) { console.log(problems.slice(0, 80).join("\n")); console.log(`${problems.length} problem(s)`); process.exit(1); }
 console.log("no problems");

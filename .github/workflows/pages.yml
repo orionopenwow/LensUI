@@ -49,7 +49,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fetch the branches the site reads (tester notes, vision)
-        run: git fetch origin research/daily docs/vision-unified || true
+        run: git fetch origin research/daily docs/vision-unified feature/pack-rosewood || true
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
         with:
