@@ -867,3 +867,35 @@
 .lb-panel-head.is-tight .lb-ptab:not(.is-on) > span { display: none; }
 .lb-panel-head.is-tight .lb-ptab:not(.is-on) { padding: 0 9px; }
 
+
+/* Lens glow: the new tab and error pages sit on the theme background with a soft wash of the Lens
+   logo's colours behind the search box (the same six hues as the Lens cloud orb, src/styles/
+   lens-cloud.css), drifting slowly. Transform-only animation on two pseudo-elements; text keeps
+   full contrast because the wash stays faint and fades out well before the content edges. Reduced
+   motion stops the drift (global rule) and leaves a still glow. */
+.lb-glow { isolation: isolate; overflow: hidden; background: var(--lens-bg-base); }
+.lb-glow::before,
+.lb-glow::after { content: ""; position: absolute; z-index: -1; pointer-events: none; border-radius: 50%; will-change: transform; }
+.lb-glow::before {
+  width: min(900px, 120%); aspect-ratio: 16 / 9; left: 50%; top: -6%;
+  background:
+    radial-gradient(closest-side at 22% 55%, hsl(0 95% 60% / 0.55), transparent),
+    radial-gradient(closest-side at 40% 35%, hsl(45 95% 58% / 0.45), transparent),
+    radial-gradient(closest-side at 58% 60%, hsl(140 90% 52% / 0.40), transparent),
+    radial-gradient(closest-side at 72% 38%, hsl(195 95% 58% / 0.50), transparent),
+    radial-gradient(closest-side at 84% 60%, hsl(255 95% 66% / 0.50), transparent),
+    radial-gradient(closest-side at 50% 80%, hsl(306 95% 62% / 0.40), transparent);
+  filter: blur(64px) saturate(1.2);
+  opacity: var(--lb-glow-k, 0.32);
+  transform: translateX(-50%);
+  animation: lb-glow-drift 28s ease-in-out infinite alternate;
+}
+/* A dark falloff so the glow reads as light from behind the search box, never as a coloured page. */
+.lb-glow::after { inset: -20%; border-radius: 0; background: radial-gradient(ellipse 60% 45% at 50% 18%, transparent 0 40%, var(--lens-bg-base) 85%); will-change: auto; }
+.lb-glow-quiet { --lb-glow-k: 0.18; }
+:root[data-scheme="light"] .lb-glow { --lb-glow-k: 0.2; }
+:root[data-scheme="light"] .lb-glow-quiet { --lb-glow-k: 0.12; }
+@keyframes lb-glow-drift {
+  from { transform: translateX(-52%) translateY(0) rotate(-4deg) scale(1); }
+  to { transform: translateX(-48%) translateY(3%) rotate(4deg) scale(1.08); }
+}
