@@ -4460,7 +4460,7 @@
    "id": "card.about.updatescard",
    "kind": "card",
    "title": "Updates",
-   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page. Updates. Updates. update mode and a manual check. Updates come from GitHub Releases and are signature-checked before installing. Backend: win_update.rs",
+   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to update. To roll back, run the previous installer from the Releases page. Updates. Updates. Settings › About & Testing › Updates: update mode, \"Check now\", what's new, and \"Restart to update\". Updates come from GitHub Releases and are signature-checked before anything installs. Backend: win_update.rs. The Top Bar pill and `/update` in Command use the same state",
    "path": [
     "Settings",
     "About & Testing",
@@ -12172,6 +12172,22 @@
     "heading": "Manual checks on Windows"
    },
    "source": "docs/PRODUCTIVITY.md"
+  },
+  {
+   "id": "doc.reporting.0",
+   "kind": "doc",
+   "title": "Reporting a problem",
+   "text": "Where: Settings › About & Testing › Report a problem. Also: the tray menu (\"Report a problem…\"), /report in Command, and the \"Report a problem\" button on the card a crashed window shows. What the person fills in: what happened (required, a few words) and, optionally, the steps. What can be attached (each a switch, defaults in brackets): Attachment Default Source --- --- --- Lens and Windows versions on report::system text (Lens, Windows build, WebView2) Recent log on last 200 lines of the session log ( tester::ring ) Latest crash report on newest file in %APPDATA%\\LensUI\\crashes Self-test off the read-only run self test cmd Which features are on off config.json reduced to switches and short choices ( report::settings summary ): no free text, paths, names, lists, or anything secret-looking Privacy: the report is built and redacted in Rust ( src-tauri/src/report.rs ) with the Tester Hub's ",
+   "path": [
+    "Docs",
+    "Reporting a problem"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/REPORTING.md",
+    "heading": "Reporting a problem"
+   },
+   "source": "docs/REPORTING.md"
   },
   {
    "id": "doc.rightclick.0",
