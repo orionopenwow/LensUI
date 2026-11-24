@@ -360,9 +360,119 @@ pub struct PreviewTile {
     pub h: i32,
 }
 
+/// The window that asked for previews, so they can never outlive it or drift away from it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PreviewOwner {
+    /// Native handle of the asking window (Dock or Quick Settings).
+    pub hwnd: isize,
+    /// The asking window's top-left on screen when the tiles were placed (physical px).
+    pub origin: (i32, i32),
+    /// The asking window's screen rect (left, top, right, bottom) at that moment.
+    pub rect: (i32, i32, i32, i32),
+    /// Extra screen rect the pointer may be in without closing the previews (the Dock's hover card
+    /// and pill). `None` means the previews follow the owner's visibility only (Quick Settings).
+    pub keep: Option<(i32, i32, i32, i32)>,
+}
+
+/// How long the pointer may be outside the hover card before previews go, in ms. Long enough to
+/// cross the gap between an icon and its card, short enough that nothing is ever left floating.
+pub const PREVIEW_LEAVE_GRACE_MS: u64 = 260;
+/// How often the preview thread checks the owner and the pointer while tiles are shown, in ms.
+pub const PREVIEW_WATCH_MS: u32 = 60;
+
+/// Pure: keeps only the tiles that lie inside the owner window (with a small margin). A tile
+/// outside it was measured against a stale origin (the window was still sliding, resizing or
+/// parked off screen) and would float somewhere unrelated, such as a screen corner.
+pub fn tiles_inside_owner(tiles: &[PreviewTile], owner: (i32, i32, i32, i32)) -> (Vec<PreviewTile>, Vec<isize>) {
+    let (l, t, r, b) = owner;
+    let pad = 4;
+    let mut ok = Vec::new();
+    let mut bad = Vec::new();
+    for tile in tiles {
+        let inside = r - l > 0
+            && b - t > 0
+            && tile.w > 0
+            && tile.h > 0
+            && tile.x >= l - pad
+            && tile.y >= t - pad
+            && tile.x + tile.w <= r + pad
+            && tile.y + tile.h <= b + pad;
+        if inside {
+            ok.push(*tile);
+        } else {
+            bad.push(tile.hwnd);
+        }
+    }
+    (ok, bad)
+}
+
+/// Pure: the screen rect the pointer may stay in: every tile plus the owner's hover card, padded.
+pub fn preview_keep_zone(tiles: &[PreviewTile], card: Option<(i32, i32, i32, i32)>, pad: i32) -> Option<(i32, i32, i32, i32)> {
+    let mut zone: Option<(i32, i32, i32, i32)> = card.filter(|c| c.2 > c.0 && c.3 > c.1);
+    for t in tiles {
+        let r = (t.x, t.y, t.x + t.w, t.y + t.h);
+        zone = Some(match zone {
+            None => r,
+            Some(z) => (z.0.min(r.0), z.1.min(r.1), z.2.max(r.2), z.3.max(r.3)),
+        });
+    }
+    zone.map(|z| (z.0 - pad, z.1 - pad, z.2 + pad, z.3 + pad))
+}
+
+/// What the preview watchdog does on one tick.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PreviewTick {
+    /// Leave the tiles where they are.
+    Keep,
+    /// The owner moved by (dx, dy): move every tile by the same amount.
+    Follow(i32, i32),
+    /// Remove every tile now.
+    Close,
+}
+
+/// Pure: one watchdog tick. `owner_visible` is false when the owner is gone, hidden or minimized;
+/// `origin_now` is the owner's current top-left; `cursor` is the pointer (None when Windows would
+/// not say, e.g. on the secure desktop). `outside_since` carries the time the pointer left the
+/// keep zone between ticks.
+pub fn preview_tick(
+    owner: &PreviewOwner,
+    owner_visible: bool,
+    origin_now: Option<(i32, i32)>,
+    cursor: Option<(i32, i32)>,
+    outside_since: &mut Option<u64>,
+    now_ms: u64,
+) -> PreviewTick {
+    if !owner_visible {
+        return PreviewTick::Close;
+    }
+    let Some(origin_now) = origin_now else {
+        return PreviewTick::Close;
+    };
+    let (dx, dy) = (origin_now.0 - owner.origin.0, origin_now.1 - owner.origin.1);
+    if let Some((l, t, r, b)) = owner.keep {
+        // The keep zone moves with the owner.
+        let inside = cursor
+            .map(|(x, y)| x >= l + dx && x < r + dx && y >= t + dy && y < b + dy)
+            .unwrap_or(false);
+        if inside {
+            *outside_since = None;
+        } else {
+            let since = *outside_since.get_or_insert(now_ms);
+            if now_ms.saturating_sub(since) >= PREVIEW_LEAVE_GRACE_MS {
+                return PreviewTick::Close;
+            }
+        }
+    }
+    if dx != 0 || dy != 0 {
+        PreviewTick::Follow(dx, dy)
+    } else {
+        PreviewTick::Keep
+    }
+}
+
 #[cfg(windows)]
 mod sys {
-    use super::{fit_thumbnail, PreviewTile};
+    use super::{fit_thumbnail, preview_tick, PreviewOwner, PreviewTick, PreviewTile, PREVIEW_WATCH_MS};
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicIsize, Ordering};
     use std::sync::mpsc;
@@ -424,6 +534,10 @@ mod sys {
     const WM_USER: u32 = 0x0400;
     const WM_APP_SHOW: u32 = WM_USER + 81;
     const WM_APP_HIDE: u32 = WM_USER + 82;
+    const WM_TIMER: u32 = 0x0113;
+    const WATCH_TIMER: usize = 0x4C50;
+    const SWP_NOSIZE: u32 = 0x0001;
+    const SWP_NOZORDER: u32 = 0x0004;
 
     #[link(name = "user32")]
     extern "system" {
@@ -434,6 +548,18 @@ mod sys {
             -> i32;
         fn IsWindow(hwnd: Hwnd) -> i32;
         fn IsIconic(hwnd: Hwnd) -> i32;
+        fn IsWindowVisible(hwnd: Hwnd) -> i32;
+        fn GetWindowRect(hwnd: Hwnd, rect: *mut Rect) -> i32;
+        fn GetCursorPos(point: *mut Point) -> i32;
+        fn SetTimer(hwnd: Hwnd, id: usize, ms: u32, func: *const c_void) -> usize;
+        fn KillTimer(hwnd: Hwnd, id: usize) -> i32;
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Default)]
+    struct Point {
+        x: i32,
+        y: i32,
     }
 
     #[link(name = "kernel32")]
@@ -464,13 +590,26 @@ mod sys {
     struct ShowRequest {
         tiles: Vec<PreviewTile>,
         background: u32,
+        owner: Option<PreviewOwner>,
         reply: mpsc::Sender<Vec<isize>>,
+    }
+
+    /// The owner of the tiles on screen, how far they have followed it, and when the pointer left.
+    struct Watch {
+        owner: PreviewOwner,
+        outside_since: Option<u64>,
     }
 
     static CONTROL: AtomicIsize = AtomicIsize::new(0);
     static START: OnceLock<()> = OnceLock::new();
     static LIVE: Mutex<Vec<Live>> = Mutex::new(Vec::new());
     static BRUSH: Mutex<(u32, isize)> = Mutex::new((u32::MAX, 0));
+    static WATCH: Mutex<Option<Watch>> = Mutex::new(None);
+    static EPOCH: OnceLock<std::time::Instant> = OnceLock::new();
+
+    fn now_ms() -> u64 {
+        EPOCH.get_or_init(std::time::Instant::now).elapsed().as_millis() as u64
+    }
 
     fn wide(s: &str) -> Vec<u16> {
         s.encode_utf16().chain(std::iter::once(0)).collect()
@@ -506,14 +645,75 @@ mod sys {
             WM_APP_SHOW => {
                 let req = Box::from_raw(lparam as *mut ShowRequest);
                 let failed = show_tiles(&req.tiles, req.background);
+                let any_live = !LIVE.lock().unwrap_or_else(|e| e.into_inner()).is_empty();
+                // The owner's origin is re-read here with the same call the watchdog uses, so a
+                // frame the window manager adds never reads as movement.
+                let owner = req.owner.filter(|_| any_live).map(|mut owner| {
+                    let mut r = Rect::default();
+                    if GetWindowRect(owner.hwnd, &mut r) != 0 {
+                        owner.origin = (r.left, r.top);
+                    }
+                    owner
+                });
+                *WATCH.lock().unwrap_or_else(|e| e.into_inner()) = owner.map(|owner| Watch { owner, outside_since: None });
+                if any_live {
+                    // Every tile is watched: it follows its owner and goes when the owner hides or
+                    // the pointer leaves, even if the page that asked never says "hide".
+                    SetTimer(hwnd, WATCH_TIMER, PREVIEW_WATCH_MS, std::ptr::null());
+                } else {
+                    KillTimer(hwnd, WATCH_TIMER);
+                }
                 let _ = req.reply.send(failed);
                 0
             }
             WM_APP_HIDE => {
                 clear_tiles();
+                *WATCH.lock().unwrap_or_else(|e| e.into_inner()) = None;
+                KillTimer(hwnd, WATCH_TIMER);
+                0
+            }
+            WM_TIMER if wparam == WATCH_TIMER => {
+                if !watch_tick() {
+                    clear_tiles();
+                    *WATCH.lock().unwrap_or_else(|e| e.into_inner()) = None;
+                    KillTimer(hwnd, WATCH_TIMER);
+                }
                 0
             }
             _ => DefWindowProcW(hwnd, msg, wparam, lparam),
+        }
+    }
+
+    /// One watchdog tick on the preview thread. False when the tiles must go.
+    unsafe fn watch_tick() -> bool {
+        let mut guard = WATCH.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(w) = guard.as_mut() else {
+            // Tiles without an owner (an old caller): never leave them for more than a moment.
+            return false;
+        };
+        let owner_hwnd = w.owner.hwnd;
+        let visible = IsWindow(owner_hwnd) != 0 && IsWindowVisible(owner_hwnd) != 0 && IsIconic(owner_hwnd) == 0;
+        let mut r = Rect::default();
+        let origin_now = (visible && GetWindowRect(owner_hwnd, &mut r) != 0).then_some((r.left, r.top));
+        let mut p = Point::default();
+        let cursor = (GetCursorPos(&mut p) != 0).then_some((p.x, p.y));
+        match preview_tick(&w.owner, visible, origin_now, cursor, &mut w.outside_since, now_ms()) {
+            PreviewTick::Keep => true,
+            PreviewTick::Close => false,
+            PreviewTick::Follow(dx, dy) => {
+                let live = LIVE.lock().unwrap_or_else(|e| e.into_inner());
+                for l in live.iter() {
+                    let mut tr = Rect::default();
+                    if GetWindowRect(l.tile_hwnd, &mut tr) != 0 {
+                        SetWindowPos(l.tile_hwnd, 0, tr.left + dx, tr.top + dy, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+                    }
+                }
+                w.owner.origin = (w.owner.origin.0 + dx, w.owner.origin.1 + dy);
+                if let Some(k) = w.owner.keep.as_mut() {
+                    *k = (k.0 + dx, k.1 + dy, k.2 + dx, k.3 + dy);
+                }
+                true
+            }
         }
     }
 
@@ -692,7 +892,7 @@ mod sys {
         CONTROL.load(Ordering::SeqCst)
     }
 
-    pub fn show(tiles: Vec<PreviewTile>, background: u32) -> Vec<isize> {
+    pub fn show(tiles: Vec<PreviewTile>, background: u32, owner: Option<PreviewOwner>) -> Vec<isize> {
         let all: Vec<isize> = tiles.iter().map(|t| t.hwnd).collect();
         let ctl = ensure_thread();
         if ctl == 0 {
@@ -702,6 +902,7 @@ mod sys {
         let req = Box::into_raw(Box::new(ShowRequest {
             tiles,
             background,
+            owner,
             reply: tx,
         }));
         unsafe {
@@ -725,14 +926,29 @@ mod sys {
 
 /// Shows live previews in the given tiles (physical screen px). Returns the source windows that
 /// could not be previewed (minimized, closed, or DWM refused) so the Dock can show an icon instead.
+///
+/// With an `owner`, tiles outside the owner window are refused (reported as failed) and the rest
+/// are watched: they follow the owner when it moves and are removed when it hides, is minimized
+/// or closes, or (with a keep zone) when the pointer has left the hover card for
+/// [`PREVIEW_LEAVE_GRACE_MS`].
 #[cfg(windows)]
-pub fn show_previews(tiles: Vec<PreviewTile>, background_hex: &str) -> Vec<isize> {
+pub fn show_previews(tiles: Vec<PreviewTile>, background_hex: &str, owner: Option<PreviewOwner>) -> Vec<isize> {
     let bg = hex_to_colorref(background_hex).unwrap_or(0x0018_1414);
-    sys::show(tiles, bg)
+    let (tiles, mut refused) = match owner {
+        Some(o) => tiles_inside_owner(&tiles, o.rect),
+        None => (tiles, Vec::new()),
+    };
+    if tiles.is_empty() {
+        hide_previews();
+        return refused;
+    }
+    let mut failed = sys::show(tiles, bg, owner);
+    failed.append(&mut refused);
+    failed
 }
 
 #[cfg(not(windows))]
-pub fn show_previews(tiles: Vec<PreviewTile>, _background_hex: &str) -> Vec<isize> {
+pub fn show_previews(tiles: Vec<PreviewTile>, _background_hex: &str, _owner: Option<PreviewOwner>) -> Vec<isize> {
     tiles.iter().map(|t| t.hwnd).collect()
 }
 
@@ -748,6 +964,78 @@ pub fn hide_previews() {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn tile(hwnd: isize, x: i32, y: i32, w: i32, h: i32) -> PreviewTile {
+        PreviewTile { hwnd, x, y, w, h }
+    }
+
+    #[test]
+    fn tiles_outside_their_window_are_refused() {
+        // Dock window at (400, 900) sized 1000 × 180.
+        let owner = (400, 900, 1400, 1080);
+        let (ok, bad) = tiles_inside_owner(
+            &[tile(1, 500, 920, 200, 120), tile(2, 1700, 1000, 200, 120), tile(3, 1300, 960, 200, 120), tile(4, 500, 920, 0, 0)],
+            owner,
+        );
+        assert_eq!(ok.iter().map(|t| t.hwnd).collect::<Vec<_>>(), vec![1]);
+        assert_eq!(bad, vec![2, 3, 4], "a tile measured against a stale origin must not float in a screen corner");
+        // A window with no size (hidden, parked) takes nothing.
+        let (ok, bad) = tiles_inside_owner(&[tile(1, 0, 0, 10, 10)], (0, 0, 0, 0));
+        assert!(ok.is_empty() && bad == vec![1]);
+    }
+
+    #[test]
+    fn keep_zone_covers_card_and_tiles() {
+        assert_eq!(preview_keep_zone(&[], None, 10), None);
+        assert_eq!(
+            preview_keep_zone(&[tile(1, 100, 100, 50, 40), tile(2, 200, 90, 50, 40)], Some((80, 60, 300, 160)), 10),
+            Some((70, 50, 310, 170))
+        );
+        // An empty card report is ignored.
+        assert_eq!(preview_keep_zone(&[tile(1, 100, 100, 50, 40)], Some((0, 0, 0, 0)), 0), Some((100, 100, 150, 140)));
+    }
+
+    fn owner(keep: Option<(i32, i32, i32, i32)>) -> PreviewOwner {
+        PreviewOwner { hwnd: 1, origin: (400, 900), rect: (400, 900, 1400, 1080), keep }
+    }
+
+    #[test]
+    fn previews_close_when_the_owner_hides() {
+        let mut since = None;
+        assert_eq!(preview_tick(&owner(None), false, Some((400, 900)), None, &mut since, 0), PreviewTick::Close);
+        assert_eq!(preview_tick(&owner(None), true, None, None, &mut since, 0), PreviewTick::Close);
+        // Quick Settings' previews (no keep zone) stay while the panel stays, wherever the pointer is.
+        assert_eq!(preview_tick(&owner(None), true, Some((400, 900)), Some((0, 0)), &mut since, 10_000), PreviewTick::Keep);
+    }
+
+    #[test]
+    fn previews_close_shortly_after_the_pointer_leaves_the_card() {
+        let o = owner(Some((500, 800, 900, 1080)));
+        let mut since = None;
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), Some((600, 900)), &mut since, 0), PreviewTick::Keep);
+        // Left: kept for the grace (crossing from icon to card), then closed.
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), Some((50, 50)), &mut since, 100), PreviewTick::Keep);
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), Some((50, 50)), &mut since, 100 + PREVIEW_LEAVE_GRACE_MS - 1), PreviewTick::Keep);
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), Some((50, 50)), &mut since, 100 + PREVIEW_LEAVE_GRACE_MS), PreviewTick::Close);
+        // Coming back inside the grace resets it.
+        let mut since = None;
+        let _ = preview_tick(&o, true, Some((400, 900)), Some((50, 50)), &mut since, 0);
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), Some((600, 900)), &mut since, 200), PreviewTick::Keep);
+        assert_eq!(since, None);
+        // No pointer position at all (secure desktop) counts as away.
+        let mut since = None;
+        let _ = preview_tick(&o, true, Some((400, 900)), None, &mut since, 0);
+        assert_eq!(preview_tick(&o, true, Some((400, 900)), None, &mut since, 1000), PreviewTick::Close);
+    }
+
+    #[test]
+    fn previews_follow_a_moving_owner() {
+        let o = owner(Some((500, 800, 900, 1080)));
+        let mut since = None;
+        // The Dock slid up 40 px: tiles follow, and the pointer is judged against the moved card.
+        assert_eq!(preview_tick(&o, true, Some((400, 860)), Some((600, 770)), &mut since, 0), PreviewTick::Follow(0, -40));
+        assert_eq!(since, None);
+    }
 
     #[test]
     fn icon_size_is_clamped_like_the_frontend() {
