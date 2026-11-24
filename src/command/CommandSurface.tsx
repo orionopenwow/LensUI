@@ -685,6 +685,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
 
   runActiveRef.current = runActive;
 
+  // B-12b trace: counts every Enter keydown the page receives at all (capture phase, before
+  // React), so a dropped Enter can be told apart from one the handler skipped.
+  useEffect(() => {
+    const seen = (e: KeyboardEvent) => {
+      if (e.key === "Enter") bump("commandEnterSeen");
+    };
+    window.addEventListener("keydown", seen, true);
+    return () => window.removeEventListener("keydown", seen, true);
+  }, []);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const ctrl = e.ctrlKey || e.metaKey;
     if (popover && popover.items.length) {

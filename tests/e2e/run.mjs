@@ -296,7 +296,7 @@ const SCENARIOS = [
       if (!ok) {
         // B-12 is not fully closed: on rare cold starts the first Enter still does nothing. Print
         // the trace so the cause can be pinned down, then try once more so unrelated PRs aren't blocked.
-        const trace = await cmd.evaluate(() => ({ ...document.documentElement.dataset, activeEl: document.activeElement?.tagName, input: document.querySelector("textarea")?.value }));
+        const trace = await cmd.evaluate(() => ({ ...document.documentElement.dataset, activeEl: document.activeElement?.tagName, input: document.querySelector("textarea")?.value, hasFocus: document.hasFocus(), visible: document.visibilityState, disabled: document.querySelector("textarea")?.disabled, readOnly: document.querySelector("textarea")?.readOnly }));
         console.log(`WARN lens-command: first Enter did nothing (B-12 trace): ${JSON.stringify(trace)}`);
         await box.press("Enter");
         ok = await answered();
@@ -462,7 +462,10 @@ const SCENARIOS = [
         stopped = (await announce()).stopped;
       }
       press.kill();
-      if (!stopped) throw new Error(`Esc did not stop the run within 15 s (active: ${JSON.stringify((await invoke(dock, "presence_status")).active)})`);
+      if (!stopped) {
+        const input = await invoke(dock, "input_status_cmd").catch((e) => `input_status failed: ${e}`);
+        throw new Error(`Esc did not stop the run within 15 s (active: ${JSON.stringify((await invoke(dock, "presence_status")).active)}; input: ${JSON.stringify(input)})`);
+      }
       const active = (await invoke(dock, "presence_status")).active;
       if (active.includes("internal")) throw new Error(`the run is still listed as active after Esc: ${JSON.stringify(active)}`);
     },

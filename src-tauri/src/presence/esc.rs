@@ -5,6 +5,8 @@
 //! low-level keyboard hooks. This module holds a keyboard claim (`Feature::AgentStop`) only
 //! while a run is active: `arm` (called when a step is announced) takes the claim and starts
 //! one small thread that waits for a press and releases the claim as soon as no run is active.
+//! That thread also reads the key state itself on each tick, so stopping never depends on the
+//! hook alone.
 //! The handler only observes: Esc is never swallowed (the app in front still gets it). It is
 //! marked `Observe` when paused, so a run can still be stopped while a fullscreen app is in
 //! front.
@@ -95,15 +97,25 @@ mod imp {
         if WATCHING.swap(true, Ordering::AcqRel) {
             return;
         }
-        // Where the key is right now (read once, not polled), so a held Esc doesn't count.
+        // Where the key is right now, so a held Esc doesn't count (this read also clears the
+        // "pressed since last read" bit, so an older tap is not taken for a new one).
         let down_now = (unsafe { GetAsyncKeyState(VK_ESCAPE.0 as i32) } as u16 & 0x8000) != 0;
         ESC_DOWN.store(down_now, Ordering::Relaxed);
         PRESSED.store(false, Ordering::SeqCst);
         input::claim_keyboard(Feature::AgentStop);
         let app = app.clone();
         let spawned = std::thread::Builder::new().name("lens-agent-stop".into()).spawn(move || loop {
+            // Second path beside the input-service claim: this thread, which only exists while a
+            // run is active, also reads the key state on each tick. A stop key must not depend on
+            // one mechanism: if the hook is benched, being reinstalled, or not delivered to (seen
+            // on the CI desktop), Esc still stops the run. Same rule as the hook (`Watch`).
+            let mut polled = super::Watch::starting(down_now);
             while run_active() {
-                if take_press() {
+                let state = unsafe { GetAsyncKeyState(VK_ESCAPE.0 as i32) } as u16;
+                let down = state & 0x8000 != 0;
+                // Down now after being up, or (low bit) pressed and released between two ticks.
+                let fresh = polled.key(down) || (!down && state & 0x0001 != 0);
+                if take_press() || fresh {
                     let _ = crate::presence::stop(&app);
                 }
                 std::thread::sleep(std::time::Duration::from_millis(WAIT_MS));
