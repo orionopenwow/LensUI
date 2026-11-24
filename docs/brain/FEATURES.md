@@ -25,6 +25,8 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 | Folder icons | Shipped | Settings › Theme › Icons & folders | `win_folders.rs` | `tests/win_folders.rs` | Revert without a backup deleted the whole `desktop.ini` (**fixed this pass**, B-03) |
 | Cursors and pointer effects | Shipped | Settings › Theme › Mouse pointer | `win_cursors.rs` (3.5k lines), `win_cursor_fx.rs`, `src/cursors/*`, `docs/CURSORS.md` | Rust tests | Largest file in the repo |
 | Wallpaper, Playground and ambient scenes | Shipped | Settings › Wallpaper; idle | `win_wallpaper.rs`, `win_desktop_input.rs`, `src/playground/*`, `docs/PLAYGROUND.md`, `docs/AMBIENT.md` | `ambient.test.ts` (paint budget) | — |
+| Wallpaper Switcher | Shipped (first cut) | Settings › Appearance › Wallpaper; `/wallpaper`; "next wallpaper"; tray | `src-tauri/src/wallpapers/*`, `src/wallpapers/*`, `docs/WALLPAPER_SWITCHER.md` | `wallpapers.test.ts`, `wallpapers/tests.rs` | Wallpaper of the day, per-monitor, video thumbnails |
+| Featured themes | Shipped | Settings › Appearance; Theme gallery | `src/themes/featured.ts`, `src/themes/distance.ts`, `docs/THEMES_AUDIT.md` | `featuredThemes.test.ts` (distance, contrast, apply) | — |
 | Settings hub (search, deep links, Windows settings) | Shipped | Tray › Settings; Cmd: "open sound settings" | `ControlCenterSurface.tsx`, `src/settings/*`, `syssettings/`, `docs/SETTINGS_HUB.md` | `settingsHub.test.ts`, `syssettings` 7 | Three ways to change a setting (see SCOPE dup #3); tab switch over frame budget |
 | Backup, restore, Remove all Lens changes | Shipped | Settings › About › Back up & restore | `win_backup.rs`, `win_uninstall.rs`, `BackupRestoreCard.tsx` | `tests/win_backup.rs`, `tests/win_uninstall.rs` | Claude Desktop entry and Spicetify theme were left behind (**fixed this pass**, B-01, B-02) |
 | Plugins (HTML widgets) | Shipped | Widget drawer | `win_plugins.rs`, `src/plugins/*`, `docs/PLUGINS.md` | `pluginHost.test.ts` | — |
@@ -77,6 +79,6 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 
 ## Planned (not started)
 
-- **Wallpaper Switcher** — carousel picker with palette chips, collections/tags, duplicates, auto-change with fullscreen/battery pause, wallpaper of the day, live video/shader wallpapers, tray quick controls; lives in Customizer › Appearance › Wallpaper and as an add-on. Spec: `docs/WALLPAPER_SWITCHER.md`.
+- **Wallpaper Switcher, the rest** — the picker, library, auto-change and live wallpapers shipped (see the table above). Still planned: wallpaper of the day, per-monitor and span, video thumbnails, more tray and Top Bar controls, sorting, an add-on card, and packs that carry a wallpaper collection. `docs/WALLPAPER_SWITCHER.md` › Deferred.
 
 From `docs/MASTERPLAN.md` and `docs/vision/*`: Shelf file drag-out and Explorer selection, Feeds cards in the top bar, magic menu on every surface, shared approval card everywhere, agentsafe on every agent path, UI-scale for native windows, Windows agent workspace interop, signed plugin catalogue.

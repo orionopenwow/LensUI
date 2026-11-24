@@ -8,6 +8,7 @@ pub(crate) mod power;
 pub(crate) mod search;
 pub(crate) mod workspaces;
 pub(crate) mod wallpaper;
+pub(crate) mod wallpapers;
 pub(crate) mod plugins;
 pub(crate) mod mcp;
 pub(crate) mod backup;
