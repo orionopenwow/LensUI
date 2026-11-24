@@ -411,21 +411,23 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 38, paddingTop: 4 }}>
                     {cpuHistory.map((val, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          flex: 1,
-                          height: `${Math.max(10, val)}%`,
-                          borderRadius: 3,
-                          background:
-                            i === cpuHistory.length - 1
-                              ? "#34D399"
-                              : val > 75
-                                ? "rgb(251 113 133 / 0.72)"
-                                : "rgb(52 211 153 / 0.34)",
-                          transition: "height 220ms ease",
-                        }}
-                      />
+                      <div key={i} className="lens-meter" style={{ flex: 1, height: "100%", borderRadius: 3 }}>
+                        <div
+                          className="lens-meter-fill is-upright"
+                          style={
+                            {
+                              "--fill": Math.max(10, Math.min(100, val)) / 100,
+                              borderRadius: 3,
+                              background:
+                                i === cpuHistory.length - 1
+                                  ? "#34D399"
+                                  : val > 75
+                                    ? "rgb(251 113 133 / 0.72)"
+                                    : "rgb(52 211 153 / 0.34)",
+                            } as React.CSSProperties
+                          }
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -441,15 +443,16 @@ export const ControlCenterSurface: React.FC = () => {
                       {telemetry ? `${Math.round((telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) * 100)}%` : "--"}
                     </span>
                   </div>
-                  <div style={{ height: 8, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)", overflow: "hidden" }}>
+                  <div className="lens-meter" style={{ height: 8, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)" }}>
                     <div
-                      style={{
-                        height: "100%",
-                        width: `${telemetry ? Math.min(100, (telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) * 100) : 0}%`,
-                        background: "linear-gradient(90deg, #38BDF8, #818CF8)",
-                        borderRadius: 999,
-                        transition: "width 260ms ease",
-                      }}
+                      className="lens-meter-fill"
+                      style={
+                        {
+                          "--fill": telemetry ? Math.min(1, telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) : 0,
+                          background: "linear-gradient(90deg, #38BDF8, #818CF8)",
+                          borderRadius: 999,
+                        } as React.CSSProperties
+                      }
                     />
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--lens-fg-secondary)", fontVariantNumeric: "tabular-nums" }}>

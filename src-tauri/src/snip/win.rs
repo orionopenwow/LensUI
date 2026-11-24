@@ -45,6 +45,11 @@ fn rect_of(r: &RECT) -> Rect {
 // ------------------------------------------------------------------------------------ monitors
 
 unsafe extern "system" fn monitor_cb(hm: HMONITOR, _dc: HDC, _r: *mut RECT, data: LPARAM) -> BOOL {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("snip.monitor_cb", BOOL(1), || monitor_cb_guarded(hm, _dc, _r, data))
+}
+
+unsafe fn monitor_cb_guarded(hm: HMONITOR, _dc: HDC, _r: *mut RECT, data: LPARAM) -> BOOL {
     let out = &mut *(data.0 as *mut Vec<Monitor>);
     let mut mi = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
     if GetMonitorInfoW(hm, &mut mi).as_bool() {
@@ -224,6 +229,11 @@ struct EnumCtx {
 }
 
 unsafe extern "system" fn window_cb(h: HWND, data: LPARAM) -> BOOL {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("snip.window_cb", BOOL(1), || window_cb_guarded(h, data))
+}
+
+unsafe fn window_cb_guarded(h: HWND, data: LPARAM) -> BOOL {
     let ctx = &mut *(data.0 as *mut EnumCtx);
     if !IsWindowVisible(h).as_bool() || IsIconic(h).as_bool() {
         return BOOL(1);

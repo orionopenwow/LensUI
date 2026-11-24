@@ -80,6 +80,8 @@ export interface BrowserSettings {
   lensContextMenu: boolean;
   pageMarks?: boolean;
   defaultZoom: number;
+  /** Zoom remembered per site (host → factor). */
+  siteZoom?: Record<string, number>;
 }
 
 export interface BrowserState {
@@ -92,6 +94,8 @@ export interface BrowserState {
   bookmarks: Bookmark[];
   settings: BrowserSettings;
   nextId: number;
+  /** Recently closed tabs, newest last (Ctrl+Shift+T reopens the last). */
+  closed?: { tab: Tab; closedMs: number }[];
 }
 
 export interface Download {
@@ -234,7 +238,8 @@ export const tabMove = (id: string, index: number, folder: string | null) => inv
 export const tabPin = (id: string, on: boolean) => invoke<BrowserView>("browser_tab_pin", { id, on });
 export const tabMute = (id: string, on: boolean) => invoke<BrowserView>("browser_tab_mute", { id, on });
 export const tabSleep = (id: string) => invoke<BrowserView>("browser_tab_sleep", { id });
-export const historyNav = (action: "back" | "forward" | "reload") => invoke<void>("browser_history_nav", { action });
+export const tabDuplicate = (id: string) => invoke<BrowserView>("browser_tab_duplicate", { id });
+export const historyNav = (action: "back" | "forward" | "reload" | "stop") => invoke<void>("browser_history_nav", { action });
 export const setZoom = (zoom: number) => invoke<number>("browser_zoom", { zoom });
 export const findInPage = (text: string, back = false) => invoke<{ found: boolean; total: number }>("browser_find", { text, back });
 export const spaceAdd = (name: string) => invoke<BrowserView>("browser_space_add", { name });
@@ -246,6 +251,9 @@ export const folderToggle = (id: string) => invoke<BrowserView>("browser_folder_
 export const bookmarkToggle = () => invoke<boolean>("browser_bookmark_toggle");
 export const historySearch = (query: string, limit = 20) => invoke<HistoryEntry[]>("browser_history_search", { query, limit });
 export const historyClear = (sinceMs: number) => invoke<void>("browser_history_clear", { sinceMs });
+export const historyRemove = (url: string) => invoke<void>("browser_history_remove", { url });
+/** Clears finished downloads from the list (files stay). With `id`, removes only that one. */
+export const downloadsClear = (id?: number) => invoke<Download[]>("browser_downloads_clear", { id: id ?? null });
 export const settingsSet = (settings: BrowserSettings) => invoke<BrowserView>("browser_settings_set", { settings });
 export const pageRead = <T = PageSnapshot>(op: "snapshot" | "readable" | "status", tab?: string) => invoke<T>("browser_page", { op, tab: tab ?? null });
 export const pageEvents = () => invoke<MenuEvent[]>("browser_events");
@@ -279,7 +287,18 @@ export interface ImportProgress { browser: string; step: "bookmarks" | "history"
 export const EVT_BROWSER_IMPORT = "lens://browser/import";
 export const importDetect = () => invoke<ImportSource[]>("browser_import_detect");
 export const importPreview = (browser: string, profile: string, kinds: ImportKinds) => invoke<ImportCounts>("browser_import_preview", { browser, profile, kinds });
-export const importRun = (browser: string, profile: string, kinds: ImportKinds) => invoke<ImportApplied>("browser_import_run", { browser, profile, kinds });
+export interface ImportItem { url: string; title: string; folder: string; pinned: boolean }
+/** What the other browser was set to: its search engine (as a Lens search address when usable) and home page. */
+export interface ImportDefaults { searchName?: string | null; searchUrl?: string | null; homepage?: string | null }
+export interface ImportItems { bookmarks: ImportItem[]; tabs: ImportItem[]; truncated: boolean; defaults: ImportDefaults }
+/** One past import: what it added, so it can be removed in one step. */
+export interface ImportReceipt { id: string; label: string; atMs: number; bookmarks: number; tabs: number; spaces: number; history: number; searchChanged: boolean }
+export const importItems = (browser: string, profile: string) => invoke<ImportItems>("browser_import_items", { browser, profile });
+/** `skip`: URLs of bookmarks and tabs left unticked. `adoptSearch`: also use that browser's search engine. */
+export const importRun = (browser: string, profile: string, kinds: ImportKinds, skip: string[] = [], adoptSearch = false) =>
+  invoke<ImportApplied>("browser_import_run", { browser, profile, kinds, skip, adoptSearch });
+export const importReceipts = () => invoke<ImportReceipt[]>("browser_import_receipts");
+export const importUndo = (id: string) => invoke<BrowserView>("browser_import_undo", { id });
 
 // ---- Sessions, tidy, archive, bookmarks, glance, media, locks, notes ----
 export interface ArchivedTab { id: string; url: string; title: string; archivedMs: number; space: string }

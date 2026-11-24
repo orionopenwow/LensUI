@@ -307,6 +307,11 @@ fn send_paste() {
 }
 
 unsafe extern "system" fn wnd_proc(hwnd: isize, msg: u32, w: usize, l: isize) -> isize {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard_else("clip.wnd_proc", || DefWindowProcW(hwnd, msg, w, l), || wnd_proc_guarded(hwnd, msg, w, l))
+}
+
+unsafe fn wnd_proc_guarded(hwnd: isize, msg: u32, w: usize, l: isize) -> isize {
     match msg {
         WM_CLIPBOARDUPDATE => {
             on_update(hwnd);

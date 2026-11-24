@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { Bell, Calendar, Timer, Monitor, Sparkles, X } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import { PresenceList, duration } from "../ui/motion";
@@ -110,6 +110,12 @@ export const NotificationOverlaySurface: React.FC = () => {
               invoke("open_windows_setting_cmd", { uri: "ms-settings:notifications" }).catch(() => {});
             } else if (n.category === "calendar" || n.category === "timer") {
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" }).catch(() => {});
+            } else if (n.category === "failsafe") {
+              // Lens paused or repaired something: Settings › About & Testing › Safety net has
+              // the details and "Turn back on".
+              invoke("open_surface", { label: "settings" })
+                .then(() => emit("lens://settings-tab", "about"))
+                .catch(() => {});
             }
             dismiss(n.id);
           }}

@@ -681,33 +681,64 @@ pub fn merge_windows_taskbar_pins(cfg: &mut LensConfig) -> bool {
     changed
 }
 
+/// Keeps a copy of a config file Lens could not load as written, so nothing the person had is
+/// lost when parts (or all) of it fall back to defaults.
+fn keep_unreadable_copy(path: &std::path::Path) {
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let _ = fs::copy(path, config_dir().join(format!("config.json.unreadable-{}", ms)));
+}
+
+/// Loads `config.json`. Never fails and never panics (docs/FAILSAFE.md §7):
+///
+/// * a file that loads is used as it is;
+/// * a file with some unusable values keeps everything else: only the damaged values (or, if
+///   that is not enough, the damaged sections) fall back to their defaults, a copy of the old
+///   file is kept, and the person is told once;
+/// * a file that is not JSON at all is copied aside and defaults are used.
 pub fn load_config() -> LensConfig {
+    use crate::failsafe::{config_check, notify_once};
     let path = config_path();
     if let Ok(content) = fs::read_to_string(&path) {
-        let parsed = serde_json::from_str::<serde_json::Value>(&content)
+        let document = serde_json::from_str::<serde_json::Value>(&content)
             .map_err(|e| e.to_string())
-            .and_then(crate::win_backup::migrate_config_value)
-            .and_then(|(v, from)| {
-                serde_json::from_value::<LensConfig>(v)
-                    .map(|c| (c, from))
-                    .map_err(|e| e.to_string())
-            });
-        match parsed {
-            Ok((mut cfg, from)) => {
-                let migrated = from < crate::win_backup::CURRENT_CONFIG_VERSION;
-                if merge_windows_taskbar_pins(&mut cfg) || migrated {
-                    let _ = save_config(&cfg);
+            .and_then(crate::win_backup::migrate_config_value);
+        match document {
+            Ok((doc, from)) => match serde_json::from_value::<LensConfig>(doc.clone()) {
+                Ok(mut cfg) => {
+                    let migrated = from < crate::win_backup::CURRENT_CONFIG_VERSION;
+                    if merge_windows_taskbar_pins(&mut cfg) || migrated {
+                        let _ = save_config(&cfg);
+                    }
+                    return cfg;
                 }
-                return cfg;
-            }
+                Err(e) => {
+                    keep_unreadable_copy(&path);
+                    let defaults = serde_json::to_value(LensConfig::default()).unwrap_or(serde_json::Value::Null);
+                    if let Some(repaired) = config_check::load_repaired::<LensConfig>(doc, &defaults) {
+                        eprintln!(
+                            "[Lens Config] config.json had values Lens could not use ({}); kept a copy and reset only: {}.",
+                            e,
+                            repaired.reset.join(", ")
+                        );
+                        config_check::set_last_repairs(&repaired.reset);
+                        notify_once("config-repaired", "info", &config_check::repair_message(&repaired.reset));
+                        let mut cfg = repaired.config;
+                        let _ = merge_windows_taskbar_pins(&mut cfg);
+                        let _ = save_config(&cfg);
+                        return cfg;
+                    }
+                    eprintln!("[Lens Config] config.json could not be repaired ({}); kept a copy, using defaults.", e);
+                    config_reset_notice();
+                }
+            },
             Err(e) => {
                 // Keep the unreadable file instead of silently overwriting it with defaults.
-                let ms = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_millis())
-                    .unwrap_or(0);
-                let _ = fs::copy(&path, config_dir().join(format!("config.json.unreadable-{}", ms)));
+                keep_unreadable_copy(&path);
                 eprintln!("[Lens Config] config.json could not be loaded ({}); kept a copy, using defaults.", e);
+                config_reset_notice();
             }
         }
     }
@@ -717,10 +748,46 @@ pub fn load_config() -> LensConfig {
     default_cfg
 }
 
+fn config_reset_notice() {
+    crate::failsafe::config_check::set_last_repairs(&["everything".to_string()]);
+    crate::failsafe::notify_once(
+        "config-reset",
+        "error",
+        "Lens could not read its settings file and started with default settings. A copy of the old file is in the Lens data folder.",
+    );
+}
+
+/// [`load_config`] with this run's kill switches and Safe Mode applied (docs/FAILSAFE.md §5).
+/// The switched-off values live in memory only: [`save_config`] writes the stored values back.
+pub fn load_config_for_run() -> LensConfig {
+    let cfg = load_config();
+    let Ok(mut doc) = serde_json::to_value(&cfg) else {
+        return cfg;
+    };
+    crate::failsafe::features::apply_at_startup(&mut doc, &config_dir());
+    if !crate::failsafe::features::overrides_active() {
+        return cfg;
+    }
+    serde_json::from_value(doc).unwrap_or(cfg)
+}
+
 pub fn save_config(cfg: &LensConfig) -> Result<(), String> {
     let dir = config_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
+    let json = if crate::failsafe::features::overrides_active() {
+        // Safe Mode or features.json is holding some switches off for this run. What is written
+        // keeps the person's stored choice for those switches, not the held-off value.
+        let mut doc = serde_json::to_value(cfg).map_err(|e| e.to_string())?;
+        let stored = fs::read_to_string(config_path())
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+        if let Some(stored) = stored {
+            crate::failsafe::features::keep_disk_values(&mut doc, &stored);
+        }
+        serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?
+    } else {
+        serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?
+    };
     crate::win_backup::write_atomic(&config_path(), json.as_bytes())
 }
 

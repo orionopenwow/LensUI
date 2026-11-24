@@ -411,6 +411,11 @@ struct EnumTarget {
 }
 
 unsafe extern "system" fn enum_targets_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("caption_engine.enum_targets_cb", BOOL(1), || enum_targets_cb_guarded(hwnd, lparam))
+}
+
+unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let targets = &mut *(lparam.0 as *mut Vec<EnumTarget>);
     if targets.len() >= MAX_POOL_SLOTS {
         return BOOL(0);
@@ -789,6 +794,19 @@ unsafe extern "system" fn win_event_cb(
     _thread: u32,
     _time: u32,
 ) {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("caption_engine.win_event_cb", (), || win_event_cb_guarded(_hook, event, hwnd, id_object, _id_child, _thread, _time))
+}
+
+unsafe fn win_event_cb_guarded(
+    _hook: HWINEVENTHOOK,
+    event: u32,
+    hwnd: HWND,
+    id_object: i32,
+    _id_child: i32,
+    _thread: u32,
+    _time: u32,
+) {
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }
@@ -808,6 +826,16 @@ unsafe extern "system" fn manager_wnd_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard_else("caption_engine.manager_wnd_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || manager_wnd_proc_guarded(hwnd, msg, wparam, lparam))
+}
+
+unsafe fn manager_wnd_proc_guarded(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
     match msg {
         WM_APP_SYNC => {
             sync_all_windows(true);
@@ -822,6 +850,16 @@ unsafe extern "system" fn manager_wnd_proc(
 }
 
 unsafe extern "system" fn caption_wnd_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard_else("caption_engine.caption_wnd_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || caption_wnd_proc_guarded(hwnd, msg, wparam, lparam))
+}
+
+unsafe fn caption_wnd_proc_guarded(
     hwnd: HWND,
     msg: u32,
     wparam: WPARAM,

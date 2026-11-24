@@ -23,7 +23,7 @@ export const RULES = ["transition-all", "layout-transition", "layout-keyframes",
 
 const LAYOUT = /^(width|height|min-width|min-height|max-width|max-height|top|left|right|bottom|inset(-[a-z-]+)?|margin(-[a-z-]+)?|padding(-[a-z-]+)?|gap|row-gap|column-gap|flex-basis|flex-grow|flex|grid-template-(rows|columns)|font-size|line-height|border-width|letter-spacing)$/;
 // Commands that resize or move a Lens window when a page calls them.
-const RESIZE_CMDS = /invoke\(\s*["'](set_desktop_folder_expanded_cmd|set_settings_content_height_cmd|set_dock_window_size_cmd|resize_[a-z_]+_cmd|[a-z_]+_resize_cmd)["']/g;
+const RESIZE_CMDS = /invoke\(\s*["'](place_surface_cmd|set_desktop_folder_expanded_cmd|set_settings_content_height_cmd|set_dock_window_size_cmd|resize_[a-z_]+_cmd|[a-z_]+_resize_cmd)["']/g;
 
 const lineOf = (text, index) => text.slice(0, index).split("\n").length;
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));

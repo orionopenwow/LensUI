@@ -1,5 +1,6 @@
-import React from "react";
-import { ChevronDown, ChevronRight, FolderPlus, Lock, LockOpen, MoonStar, PanelLeft, Pause, Plus, Search, Settings, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import React, { useLayoutEffect, useRef } from "react";
+import { ChevronDown, ChevronRight, Copy, FolderPlus, Loader2, Lock, LockOpen, MoonStar, PanelLeft, Pause, Pin, PinOff, Plus, Search, Settings, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { captureFlip, type FlipCapture } from "../ui/motion";
 import { media as mediaCmd, SLEEP_SAVING_MB, type BrowserView, type Tab } from "./api";
 import { avatar, relTime, sidebarModel, tabLabel } from "./model";
 
@@ -22,6 +23,9 @@ interface Props {
   onClose(id: string): void;
   onMute(id: string, on: boolean): void;
   onPin(id: string, on: boolean): void;
+  onDuplicate?(id: string): void;
+  /** The active tab is loading a page. */
+  loading?: boolean;
   onToggleFolder(id: string): void;
   onDrop(tabId: string, beforeId: string | null, folder: string | null): void;
   onOpenUrl(url: string, background?: boolean): void;
@@ -44,7 +48,7 @@ export function Avatar({ url, title, size = 16 }: { url: string; title?: string;
   );
 }
 
-function TabRow({ t, active, p, depth }: { t: Tab; active: boolean; p: Props; depth: number }) {
+function TabRow({ t, active, p, depth }: { t: Tab; active: boolean; p: Props & { arm(): void }; depth: number }) {
   const sleeping = t.life === "sleeping" && !active;
   return (
     <div
@@ -56,18 +60,25 @@ function TabRow({ t, active, p, depth }: { t: Tab; active: boolean; p: Props; de
       style={{ paddingLeft: 8 + depth * 12 }}
       onClick={() => p.onActivate(t.id)}
       onKeyDown={(e) => {
-        if (e.key === "Enter") p.onActivate(t.id);
-        if (e.key === "Delete") p.onClose(t.id);
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onActivate(t.id); }
+        if (e.key === "Delete") { p.arm(); p.onClose(t.id); }
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          // Move through the tab list without leaving it.
+          e.preventDefault();
+          const rows = Array.from(e.currentTarget.closest(".lb-scroll")?.querySelectorAll<HTMLElement>(".lb-tab") ?? []);
+          rows[rows.indexOf(e.currentTarget) + (e.key === "ArrowDown" ? 1 : -1)]?.focus();
+        }
       }}
       onAuxClick={(e) => e.button === 1 && p.onClose(t.id)}
       onDragStart={(e) => e.dataTransfer.setData("text/lens-tab", t.id)}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         const id = e.dataTransfer.getData("text/lens-tab");
-        if (id && id !== t.id) p.onDrop(id, t.id, t.folderId ?? null);
+        if (id && id !== t.id) { p.arm(); p.onDrop(id, t.id, t.folderId ?? null); }
       }}
     >
-      <Avatar url={t.url} title={t.title} />
+      {active && p.loading ? <Loader2 size={16} className="lb-spin lb-dim" aria-label="Loading" /> : <Avatar url={t.url} title={t.title} />}
       <span className="lb-tab-title">{tabLabel(t)}</span>
       {t.badge === "approve" ? <span className="lb-pill">approve</span> : null}
       {t.busy ? <span className="lb-dot is-amber" aria-label="Unsaved changes" /> : null}
@@ -77,16 +88,37 @@ function TabRow({ t, active, p, depth }: { t: Tab; active: boolean; p: Props; de
           {t.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
         </button>
       ) : null}
-      <button className="lb-icon-btn sm lb-tab-x" aria-label="Close tab" onClick={(e) => { e.stopPropagation(); p.onClose(t.id); }}>
+      <button className="lb-icon-btn sm lb-tab-act" aria-label={t.pinned ? "Unpin tab" : "Pin tab"} onClick={(e) => { e.stopPropagation(); p.arm(); p.onPin(t.id, !t.pinned); }}>
+        {t.pinned ? <PinOff size={12} /> : <Pin size={12} />}
+      </button>
+      {p.onDuplicate ? (
+        <button className="lb-icon-btn sm lb-tab-act" aria-label="Duplicate tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onDuplicate!(t.id); }}>
+          <Copy size={12} />
+        </button>
+      ) : null}
+      <button className="lb-icon-btn sm lb-tab-x" aria-label="Close tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onClose(t.id); }}>
         <X size={12} />
       </button>
     </div>
   );
 }
 
-export function Sidebar(p: Props) {
-  const s = p.view.state;
+export function Sidebar(props: Props) {
+  const s = props.view.state;
   const m = sidebarModel(s);
+  // Reorders glide (FLIP): remember where every row is just before a change, then move each one
+  // from there to its new place once React has laid the list out again.
+  const listRef = useRef<HTMLDivElement>(null);
+  const flip = useRef<FlipCapture | null>(null);
+  const arm = () => {
+    flip.current = captureFlip(listRef.current?.querySelectorAll(".lb-tab, .lb-folder-head"));
+  };
+  const p = { ...props, arm };
+  const layoutKey = [...m.pinned, ...m.folders.flatMap((f) => [{ id: `${f.folder.id}:${f.folder.collapsed}` }, ...f.tabs]), ...m.loose].map((t) => t.id).join(",");
+  useLayoutEffect(() => {
+    flip.current?.play({ mode: "move", duration: "base" });
+    flip.current = null;
+  }, [layoutKey]);
   const space = s.spaces.find((x) => x.id === s.activeSpace);
   const pins = s.bookmarks.slice(0, 5);
   return (
@@ -120,7 +152,7 @@ export function Sidebar(p: Props) {
         </div>
       ) : null}
 
-      <div className="lb-scroll">
+      <div className="lb-scroll" ref={listRef}>
         <div className="lb-head">
           <span>Tabs</span>
           <span className="lb-head-right">
@@ -143,10 +175,10 @@ export function Sidebar(p: Props) {
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               const id = e.dataTransfer.getData("text/lens-tab");
-              if (id) p.onDrop(id, null, folder.id);
+              if (id) { arm(); p.onDrop(id, null, folder.id); }
             }}
           >
-            <button className="lb-folder-head" aria-expanded={!folder.collapsed} onClick={() => p.onToggleFolder(folder.id)}>
+            <button className="lb-folder-head" aria-expanded={!folder.collapsed} onClick={() => { arm(); p.onToggleFolder(folder.id); }}>
               {folder.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
               <span>{folder.name}</span>
               {badges ? <span className="lb-pill">approve</span> : null}
@@ -160,7 +192,7 @@ export function Sidebar(p: Props) {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             const id = e.dataTransfer.getData("text/lens-tab");
-            if (id) p.onDrop(id, null, null);
+            if (id) { arm(); p.onDrop(id, null, null); }
           }}
         >
           {m.loose.map((t) => <TabRow key={t.id} t={t} active={t.id === s.activeTab} p={p} depth={0} />)}

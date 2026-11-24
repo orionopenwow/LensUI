@@ -60,26 +60,30 @@ Static findings, with the motion lint's numbers. "Fixed" means fixed in this cha
 | G-07 | Med | Notification toasts had no exit, and the remaining toasts jumped up when one left. | `src/surfaces/NotificationOverlaySurface.tsx` | `PresenceList`: glide in, glide out, survivors move by FLIP (`:95`). | Fixed |
 | G-08 | Med | Quick Settings was sized 396 × 600 by the placement pass and 404 × 580 when opened, so the first open after any settings save resized it. | `watcher.rs:136` vs `surfaces.rs:389` | Same size in both. | Fixed |
 | G-09 | Med | "More options" used a timer and a class to fake its entry and had no exit. | `src/settings/simple/MoreOptions.tsx` | `usePresence` (`:23`): glides both ways. | Fixed |
-| G-10 | Med | The desktop folder resizes its native window when it expands (84 × 68 → 356 × 460) while the page animates `width`. | `src/surfaces/DesktopFolderSurface.tsx:96, 130, 135, 144, 233`; `set_desktop_folder_expanded_cmd` (`surfaces.rs:157`) | Now one atomic placement. Proper fix: keep the window at the expanded size, pass clicks through outside the tile, and scale the panel in. | Partly (atomic); open |
-| G-11 | Med | Top Bar search well, clock and utility group animate `width`, `max-width` and `padding`. | `src/surfaces/TopBarSurface.css:178, 203, 315` | FLIP with a clip reveal, the same as the Dock search. | Open, after PR #60 (it rewrites the Top Bar search) |
-| G-12 | Med | The Command edge shelf resizes and moves its window from the page, on timers. | `src/command/mini/EdgeShelfSurface.tsx:41, 42, 65, 75` | Fixed-size window plus transform. | Open (Command is another agent's area) |
-| G-13 | Low | The Lens Guide spotlight animates `top`, `left`, `width` and `height`. | `src/guide/guide.css:439` | One element moved by transform and scale (FLIP). | Open |
-| G-14 | Low | Meters and progress bars animate `width` or `height` through inline styles. | `ControlCenterSurface.tsx:426, 451`; `WidgetDrawerSurface.tsx:160, 181`; `PlaygroundCard.tsx:212`; `TranscriptionCard.tsx:211` | `transform: scaleX()` on an inner fill. | Open |
-| G-15 | Low | The Dock's running indicator animates `width` and `height`. | `DockSurface.css:490, 1281` | A scale transform. Small, absolutely placed, about 20 style variants: left for a later pass. | Open |
+| G-10 | Med | The desktop folder resizes its native window when it expands (84 × 68 → 356 × 460) while the page animates `width`. | `src/surfaces/DesktopFolderSurface.tsx`; `set_desktop_folder_expanded_cmd` (`surfaces.rs`) | The window still changes size, in one atomic placement, but never while anything moves: opening grows the window first and then glides the drawer in; closing glides the drawer out and then shrinks the window around the tab. The tab's hover is a transform; nothing animates `width`. | **Mitigated (R4).** A fixed-size window needs a hit region so its see-through part does not eat desktop clicks; that needs a real desktop to verify (BUGS B-30) |
+| G-11 | Med | Top Bar search well, clock and utility group animate `width`, `max-width` and `padding`. | `src/surfaces/TopBarSurface.css`, `TopBarSurface.tsx` | FLIP: the right-hand group takes its new layout in one frame, each item glides from where it was, and the search field is revealed by a clip. The clock and utilities fade and slide. The window never changes. | **Fixed (R4)** |
+| G-12 | Med | The Command edge shelf resizes and moves its window from the page, on timers. | `src/command/mini/EdgeShelfSurface.tsx`; `place_surface_cmd` (`surfaces.rs`) | One native step (`place_window`) instead of `setSize` then `setPosition`. The panel's exit finishes (`glideOut().finished`) before the window shrinks; coming back mid-exit cancels it. The hover and leave delays are intent delays, not animation clocks. | **Mitigated (R4).** Same limit as G-10 (BUGS B-30) |
+| G-13 | Low | The Lens Guide spotlight animates `top`, `left`, `width` and `height`. | `src/guide/guide.css`, `CoachMarkLayer.tsx` | The ring sits at the corner and is moved by `translate3d`; its size is set directly and only changes with the target. | **Fixed (R4)** |
+| G-14 | Low | Meters and progress bars animate `width` or `height` through inline styles. | `ControlCenterSurface.tsx`, `WidgetDrawerSurface.tsx`, `PlaygroundCard.tsx`, `TranscriptionCard.tsx` | `.lens-meter` / `.lens-meter-fill` in `styles/global.css`: a full-size fill slid into its clipping track by transform, driven by `--fill`. | **Fixed (R4)** |
+| G-15 | Low | The Dock's running indicator animates `width` and `height`. | `DockSurface.css`, `dock/islands/islands.css` | The mark is laid out at its focused length and scaled along that axis by `--dock-ind-k`; every style variant sets the ratio, not a size. | **Fixed (R4)** |
 | G-16 | Low | 28 rules use `backdrop-filter`. A blur is recomputed whenever what is behind it changes, so a blurred element that moves, or sits over something that moves, costs every frame. | `node tools/polish/motion-lint.mjs --list` | Do not put a blur on anything that glides; blur the still container. Counted, not failed on. | Policy |
 | G-17 | Info | Windows plays its own show and hide transition on top of the page's glide, and the first frame of a shown window is whatever the page last painted. | `glide_show_surface` (`surfaces.rs:46`) | PR #60 turns the DWM transition off per window and sends a "pre" state before showing. The exit here always ends on the see-through entry pose. | Fixed by PR #60 plus G-05 |
 
 Motion lint totals:
 
-| Rule | Before | Now |
-|---|---|---|
-| `transition-all` | 0 | 0 |
-| `layout-transition` | 36 | 30 |
-| `layout-keyframes` | 1 | 0 |
-| `timer-animation` | 5 | 3 |
-| `native-resize` | 8 | 7 |
-| `inline-animation` | 10 | 9 |
-| `backdrop-filter` (reported only) | 28 | 28 |
+| Rule | Before | After the first pass | After R4 |
+|---|---|---|---|
+| `transition-all` | 0 | 0 | 0 |
+| `layout-transition` | 36 | 30 | 16 |
+| `layout-keyframes` | 1 | 0 | 0 |
+| `timer-animation` | 5 | 3 | 1 |
+| `native-resize` | 8 | 7 | 3 |
+| `inline-animation` | 10 | 9 | 2 |
+| `backdrop-filter` (reported only) | 28 | 28 | 28 |
+
+The three native resizes left are the desktop tab and the edge shelf (one atomic placement each,
+with nothing moving; G-10, G-12) and the Snip recording frame. `place_surface_cmd` is counted by
+the lint like any other resize command.
 
 ## Decisions
 
@@ -183,9 +187,13 @@ rewrites the baseline after a migration.
 - **Dock window sizing (done in wave 2).** The Dock is placed with `place_window`. Its depth now
   follows the measured pill plus flyout room; `win_previews::DockSizer` only lets the native window
   change size after the Dock has been still for 500 ms, never during a glide (D3).
-- **Top Bar search well and clock (G-11).** Wait for PR #60, then use `captureFlip` as the Dock does.
-- **Desktop folder (G-10)**, **Command edge shelf (G-12)**, **Guide spotlight (G-13)**, meters
-  (G-14), Dock indicator (G-15).
+- **Desktop tab and Command edge shelf as fixed-size windows (G-10, G-12).** Both now resize in
+  one step with nothing moving. Keeping the window at its largest size all the time needs a hit
+  region (`SetWindowRgn`) so the see-through part does not eat clicks; try it on a real desktop.
+- **The 16 layout transitions left** were not reviewed in R4. They are in the AI dock, voice,
+  Lens Apps, Cleaner, Lens Command (`Command.css:30`), the context menu, presence, Core Apps,
+  Backdrop Lab, the Tester Hub, one Guide rule and the focus-dimming preview
+  (`node tools/polish/motion-lint.mjs --list`).
 - After PR #60 merges, `useSurfaceGlide` can become a thin alias of `useSurfaceTransition`, which
   already understands the "pre" state.
 - Run the smoothness check on a real PC and attach the report; the verdicts decide the next pass.

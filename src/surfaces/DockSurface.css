@@ -478,20 +478,24 @@
   filter: drop-shadow(0 2px 4px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k))));
 }
 
+/* Running indicator (docs/SMOOTHNESS.md, G-15). The mark is always laid out at its focused
+   length and scaled along that axis to its resting length, so focusing an app animates a
+   transform and never the Dock's layout. --dock-ind-k is resting length / focused length. */
 .dock-indicator {
   position: absolute;
   bottom: -6px;
   left: 50%;
-  transform: translateX(-50%);
+  --dock-ind-k: 0.3125; /* 5px of 16px */
+  transform: translateX(-50%) scaleX(var(--dock-ind-k));
   height: 3px;
-  width: 5px;
+  width: 16px;
   border-radius: 999px;
   background: rgb(var(--lens-ink) / 0.4);
-  transition: width var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
+  transition: transform var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-indicator.focused {
-  width: 16px;
+  --dock-ind-k: 1;
   background: var(--lens-accent, var(--lens-fg));
 }
 
@@ -1275,10 +1279,9 @@
 .dock-edge-right .dock-indicator {
   bottom: auto;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scaleY(var(--dock-ind-k));
   width: 3px;
-  height: 5px;
-  transition: height var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
+  height: 16px;
 }
 
 .dock-edge-left .dock-indicator {
@@ -1288,12 +1291,6 @@
 .dock-edge-right .dock-indicator {
   left: auto;
   right: -6px;
-}
-
-.dock-edge-left .dock-indicator.focused,
-.dock-edge-right .dock-indicator.focused {
-  width: 3px;
-  height: 16px;
 }
 
 .dock-hover-card.dock-hover-edge-left,
@@ -1634,13 +1631,12 @@
 /* Windows-style underline indicators: a short dash when running, a long accent line when focused. */
 .dock-stage.is-bar .dock-indicator {
   bottom: -4px;
-  width: 6px;
-  height: 3px;
+  --dock-ind-k: 0.375; /* 6px of 16px */
   background: rgb(var(--lens-ink) / 0.5);
 }
 
 .dock-stage.is-bar .dock-indicator.focused {
-  width: 16px;
+  --dock-ind-k: 1;
   background: var(--lens-accent, var(--lens-fg));
 }
 
@@ -1757,21 +1753,11 @@
 .dock-stage.is-bar.dock-edge-left .dock-indicator {
   left: -4px;
   bottom: auto;
-  width: 3px;
-  height: 6px;
 }
 
 .dock-stage.is-bar.dock-edge-right .dock-indicator {
   right: -4px;
   bottom: auto;
-  width: 3px;
-  height: 6px;
-}
-
-.dock-stage.is-bar.dock-edge-left .dock-indicator.focused,
-.dock-stage.is-bar.dock-edge-right .dock-indicator.focused {
-  width: 3px;
-  height: 16px;
 }
 
 .dock-stage.is-bar.dock-edge-left .dock-launcher-drawer,

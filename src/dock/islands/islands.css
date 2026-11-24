@@ -39,13 +39,15 @@
 
 /* Running apps: a soft underline instead of a dot. */
 .dock-stage.dock-style-islands.is-bar .dock-indicator {
-  width: 14px;
-  height: 3px;
+  --dock-ind-k: 0.636; /* 14px of 22px; scaled, never resized (docs/SMOOTHNESS.md, G-15) */
   border-radius: 2px;
   opacity: 0.55;
 }
-.dock-stage.dock-style-islands.is-bar .dock-indicator.focused {
+.dock-stage.dock-style-islands.is-bar:not(.dock-edge-left):not(.dock-edge-right) .dock-indicator {
   width: 22px;
+}
+.dock-stage.dock-style-islands.is-bar .dock-indicator.focused {
+  --dock-ind-k: 1;
   opacity: 1;
   background: var(--lens-accent);
 }

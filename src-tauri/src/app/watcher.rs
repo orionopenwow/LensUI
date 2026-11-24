@@ -304,6 +304,11 @@ pub(crate) fn collect_overlap_rects() -> Vec<OverlapRect> {
     }
 
     unsafe extern "system" fn cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("app.watcher.cb", BOOL(1), || cb_guarded(hwnd, lparam))
+    }
+
+    unsafe fn cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         let ctx = &mut *(lparam.0 as *mut Ctx);
         if !IsWindowVisible(hwnd).as_bool() || IsIconic(hwnd).as_bool() {
             return BOOL(1);
