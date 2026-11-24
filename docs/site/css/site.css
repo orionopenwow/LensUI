@@ -1062,3 +1062,17 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .lens-cloud, .lens-cloud i { animation: none !important; } }
 .is-still .lens-cloud, .is-still .lens-cloud i { animation: none !important; }
 /* LENS-CLOUD:END */
+
+/* ---- the desk's real surfaces: frameless Lens windows, each a live frame of the app's own UI ---- */
+.lw { background: transparent; }
+.lw-body { overflow: hidden; border-radius: inherit; background: var(--lx-glass); }
+.lw-glass .lw-body, .lw.is-ready .lw-body { background: transparent; }
+.lw-glass { box-shadow: none !important; }
+.lw-frame, .lx-over iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: normal; }
+.lw:not(.is-ready) .lw-frame { opacity: 0; }
+.lw.is-ready .lw-loading { display: none; }
+.lx.is-pagedrag iframe { pointer-events: none; }
+.lx-topbar { position: absolute; left: 0; top: 0; width: 100%; border: 0; z-index: 30; background: transparent; color-scheme: normal; }
+.lx-over { position: absolute; left: 0; top: 0; z-index: 50; border-radius: 16px; }
+.lx-over[data-over="cmd"] { z-index: 60; }
+.lx-over[hidden] { display: none; }

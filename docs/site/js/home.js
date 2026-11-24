@@ -26,13 +26,13 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
-const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.1, 0.06], ["notes", 0.6, 0.08]] });
+const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.03, 0.05], ["notes", 0.58, 0.12]] });
 // The desk is the visitor's: nothing plays on its own. Tabs below it start a guided tour that moves
 // one step at a time, only when the visitor presses Next (or does the highlighted thing).
 const scTabs = $("#sc-tabs");
 const scbar = $("#sc-bar");
 const capN = scbar.querySelector(".sc-n"), capT = scbar.querySelector(".sc-t"), dots = scbar.querySelector(".sc-dots");
-const FREE = { n: "Free play", t: "This is a working Lens desktop: drag, snap, right-click, open apps. Or pick a tour below and go step by step." };
+const FREE = { n: "Free play", t: "Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or pick a tour and go step by step." };
 const btn = (k) => scbar.querySelector(`[data-${k}]`);
 const shows = createShowcases(desk, {
   onChange(st) {
@@ -65,7 +65,7 @@ const SC_SVG = {
   magic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`,
   agent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/></svg>`,
 };
-const SC_IMG = { desktop: "brand/lens-logo-small.svg", browser: "lens-browser", apps: "lens-apps", music: "lens-music", cleaner: "lens-cleaner" };
+const SC_IMG = { desktop: "brand/lens-logo-small.svg", browser: "lens-browser", apps: "lens-apps", music: "lens-music", cleaner: "lens-cleaner", core: "lens-monitor", settings: "lens-settings" };
 const scIcon = (id) => SC_SVG[id] ? `<span class="sc-ic g" aria-hidden="true">${SC_SVG[id]}</span>` : `<span class="sc-ic" aria-hidden="true"><img src="${iconUrl(SC_IMG[id] ?? "lens-command")}" alt="" width="28" height="28"></span>`;
 scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}">${scIcon(s.id)}<span class="sc-tx"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></span></button>`).join("");
 scTabs.addEventListener("click", (e) => {
@@ -105,7 +105,7 @@ const deep = decodeURIComponent(location.hash).match(/^#tour\/(.+)$/);
 if (deep) shows.start(deep[1]);
 
 // Old scene names (the Guide, #scene/… links) map to the nearest tour.
-const SCENE_TO_TOUR = { everyday: "desktop", tiling: "desktop", "core-apps": "desktop", settings: "desktop", "magic-right-click": "magic", snip: "magic", claude: "agent", approvals: "agent", ade: "agent", "browser-ai": "browser", apps: "apps", music: "music", cleaner: "cleaner" };
+const SCENE_TO_TOUR = { everyday: "desktop", tiling: "desktop", "core-apps": "core", settings: "settings", "magic-right-click": "magic", snip: "magic", claude: "agent", approvals: "agent", ade: "agent", "browser-ai": "browser", apps: "apps", music: "music", cleaner: "cleaner" };
 /** Scroll so the tabs sit just under the header and the step bar is on screen. */
 function bringIntoView() {
   const head = document.getElementById("bar")?.offsetHeight ?? 60;

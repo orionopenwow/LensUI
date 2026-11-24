@@ -43,7 +43,7 @@ if (args.has("--data-only")) { console.log(`[site] data/packs.json (${packs.leng
 
 if (!args.has("--no-live")) {
   const live = await import("./live/build-live.mjs");
-  await live.buildDock(); await live.buildPlayground(); await live.buildThemes();
+  await live.buildDock(); await live.buildPlayground(); await live.buildThemes(); await live.buildApp();
   const g = await live.buildGuide();
   console.log(`[site] live widgets built (guide search from ${g.source})`);
 }
