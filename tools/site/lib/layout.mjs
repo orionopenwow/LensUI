@@ -4,7 +4,7 @@
 import { esc } from "./markdown.mjs";
 
 export const REPO = "https://github.com/orionopenwow/LensUI";
-export const SITE_URL = "https://orionopenwow.github.io/lensui/";
+export const SITE_URL = "https://orionopenwow.github.io/LensUI/";
 const NAV = [["", "Home"], ["#features", "Features"], ["docs/", "Docs"], ["download.html", "Download"], ["test.html", "Testers"]];
 let STARS = null;
 /** GitHub stars, read at build time (null when offline: the header shows the icon alone). */
@@ -15,7 +15,7 @@ const MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 
 // Runs before first paint (dark unless the visitor picked otherwise) so the notch choices (mode, accent, pack colours, density,
 // text size, motion) don't flash. Mirrors apply() in docs/site/js/site.js.
-const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"dark",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
+const PREPAINT = `(function(){var r=document.documentElement,p={};try{p=JSON.parse(localStorage.getItem("lens-site")||"{}")||{}}catch(e){}var m=p.mode||"auto",s=m==="auto"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):m;if(p.accent==="pack"&&p.pack){s=p.pack.scheme;for(var k in p.pack.vars)r.style.setProperty(k,p.pack.vars[k])}r.dataset.scheme=s;r.dataset.accent=p.accent||"rainbow";r.dataset.density=p.density||"comfortable";if(p.size)r.style.setProperty("--text-scale",p.size);if(p.motion&&p.motion!=="auto")r.dataset.motion=p.motion})()`;
 
 /**
  * @param {object} o
@@ -38,9 +38,9 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title ? `${title} — Lens UI` : "Lens UI — the everything desktop")}</title>
+<title>${esc(title ? `${title} — Lens` : "Lens — the everything desktop")}</title>
 <meta name="description" content="${esc(desc)}">
-<meta property="og:title" content="${esc(title || "Lens UI")}">
+<meta property="og:title" content="${esc(title || "Lens")}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${SITE_URL}${path.replace(/index\.html$/, "")}">
@@ -62,11 +62,11 @@ export function page({ title, desc, body, path, scripts = [] }) {
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar" id="bar">
   <div class="inner bar-grid">
-    <a class="mark" href="${base}" aria-label="Lens UI home"><img class="mark-logo" src="${base}brand/lens-logo-small.svg" alt="" width="28" height="28">Lens UI</a>
+    <a class="mark" href="${base}" aria-label="Lens home"><img class="mark-logo" src="${base}brand/lens-logo-small.svg" alt="" width="28" height="28">Lens</a>
     <nav id="site-nav" class="site-nav" aria-label="Site"><span class="nav-ind" aria-hidden="true"></span>${nav}</nav>
     <div class="end">
       <span class="theme-slot" id="theme-slot"></span>
-      <a class="gh" href="${REPO}" aria-label="Lens UI on GitHub${STARS != null ? `, ${STARS} stars` : ""}">${GH}${STARS != null ? `<span class="stars" aria-hidden="true">${fmt(STARS)}</span>` : ""}</a>
+      <a class="gh" href="${REPO}" aria-label="Lens on GitHub${STARS != null ? `, ${STARS} stars` : ""}">${GH}${STARS != null ? `<span class="stars" aria-hidden="true">${fmt(STARS)}</span>` : ""}</a>
       <a class="btn small primary bar-dl" href="${base}download.html" data-dl><span class="lbl">Download</span></a>
       <button id="menu-btn" class="menu-btn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">${MENU}</button>
     </div>
@@ -77,7 +77,7 @@ ${body}
 </main>
 <footer class="site">
   <div class="inner foot-grid">
-    <div class="foot-brand"><img src="${base}brand/lens-logo-small.svg" alt="" width="28" height="28"><div><b>Lens UI</b><span>The everything desktop · open source (MIT)</span></div></div>
+    <div class="foot-brand"><img src="${base}brand/lens-logo-small.svg" alt="" width="28" height="28"><div><b>Lens</b><span>The everything desktop · Browser · Music · Cleaner · Backdrop Lab · Apps · open source (MIT)</span></div></div>
     <nav aria-label="Footer"><a href="${base}docs/">Docs</a><a href="${base}download.html">Download</a><a href="${base}download.html#platforms">Platforms</a><a href="${base}test.html">Testers</a><a href="${REPO}">GitHub</a><a href="${REPO}/issues">Issues</a></nav>
     <p class="fine">Windows 10 &amp; 11 today · macOS &amp; Linux on the roadmap. Not affiliated with Microsoft, Apple or Anthropic. Third-party names and logos belong to their owners; shown to illustrate apps you might pin. Brand icons from <a href="https://simpleicons.org">Simple Icons</a> (CC0).</p>
   </div>

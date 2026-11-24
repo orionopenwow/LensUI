@@ -77,4 +77,6 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 
 ## Planned (not started)
 
+- **Wallpaper Switcher** — carousel picker with palette chips, collections/tags, duplicates, auto-change with fullscreen/battery pause, wallpaper of the day, live video/shader wallpapers, tray quick controls; lives in Customizer › Appearance › Wallpaper and as an add-on. Spec: `docs/WALLPAPER_SWITCHER.md`.
+
 From `docs/MASTERPLAN.md` and `docs/vision/*`: Shelf file drag-out and Explorer selection, Feeds cards in the top bar, magic menu on every surface, UI-scale for native windows, Windows agent workspace interop, signed plugin catalogue.
