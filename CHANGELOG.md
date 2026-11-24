@@ -44,6 +44,11 @@ the end.
 - One clipboard history and one place that writes your settings (safely, refusing settings Lens
   could not load back).
 - Command takes keyboard focus as soon as it opens, so the first Enter runs.
+- **Start with Windows is now off for new installs** (existing settings are kept).
+- The Windhawk window-styling mod is only installed when you click "Install in Windhawk", and it
+  now skips every game on Lens's anti-cheat list (42 names, kept in sync by a test).
+- "Remove all Lens changes" with "delete data" keeps the Lens data folder when any undo step
+  failed, so the backups needed to retry aren't lost.
 
 ### Fixed
 - Docks that forgot to hide; clicking outside an open dock area now closes it.
