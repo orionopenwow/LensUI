@@ -1839,22 +1839,6 @@
       "store": "config"
     },
     {
-      "capability": "destructive",
-      "category": "Internal",
-      "default": "",
-      "description": "Sets the setup seen version option under Internal.",
-      "example": "{\"args\":{\"changes\":{\"setupSeenVersion\":\"\"}},\"tool\":\"lens_set\"}",
-      "label": "Setup seen version",
-      "path": "setupSeenVersion",
-      "reversible": true,
-      "risk": "blocked",
-      "schema": {
-        "maxLength": 400,
-        "type": "string"
-      },
-      "store": "config"
-    },
-    {
       "capability": "change_settings",
       "category": "Sessions",
       "default": [
@@ -1908,6 +1892,22 @@
           "simple",
           "advanced"
         ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "destructive",
+      "category": "Internal",
+      "default": "",
+      "description": "Sets the setup seen version option under Internal.",
+      "example": "{\"args\":{\"changes\":{\"setupSeenVersion\":\"\"}},\"tool\":\"lens_set\"}",
+      "label": "Setup seen version",
+      "path": "setupSeenVersion",
+      "reversible": true,
+      "risk": "blocked",
+      "schema": {
         "maxLength": 400,
         "type": "string"
       },
