@@ -346,20 +346,43 @@ const SCENARIOS = [
         expect(problems, Number(killed) > 0, "found no Lens WebView2 renderer to kill");
         await sleep(2000);
         expect(problems, lensProcessCount() > 0, "Lens went down with its WebView renderers");
-        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself.
-        let revived = null;
+        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself. The pages this
+        // DevTools connection knew are gone for good (a crashed target does not come back to
+        // the client that saw it crash), so each look uses a fresh connection.
+        await s.browser.close().catch(() => {});
+        let revived = false;
         const t0 = Date.now();
-        while (Date.now() - t0 < 120000 && !revived) {
-          await sleep(3000);
-          const p = surfaces(s).dock;
-          if (!p) continue;
-          const alive = await p.evaluate(() => !!window.__TAURI_INTERNALS__ && (document.getElementById("root")?.innerHTML.length || 0) > 0).catch(() => false);
-          if (alive) revived = p;
+        while (Date.now() - t0 < 150000 && !revived) {
+          await sleep(5000);
+          let fresh = null;
+          try {
+            fresh = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 15000 });
+            const probe = { browser: fresh };
+            const p = surfaces(probe).dock;
+            const alive = p
+              ? await Promise.race([
+                  p.evaluate(() => !!window.__TAURI_INTERNALS__ && (document.getElementById("root")?.innerHTML.length || 0) > 0).catch(() => false),
+                  sleep(4000).then(() => false),
+                ])
+              : false;
+            if (alive) {
+              const cfg = await invoke(p, "get_config").catch(() => null);
+              expect(problems, !!cfg && !!cfg.dock, "the reloaded Dock page cannot reach the backend");
+              const log = await invoke(p, "tester_log_get", { after: null, limit: 500 }).catch(() => []);
+              expect(problems, log.some((l) => l.area === "loadguard" && /stopped answering/.test(l.message)), "the session log does not say the Dock page was reloaded by the load guard");
+              revived = true;
+              s.browser = fresh; // quitLens uses it
+              fresh = null;
+            }
+          } catch {
+            /* the DevTools endpoint can be busy while pages are being rebuilt */
+          } finally {
+            if (fresh) await fresh.close().catch(() => {});
+          }
         }
-        expect(problems, !!revived, "the Dock page was not reloaded after its renderer was killed");
-        if (revived) {
-          const cfg = await invoke(revived, "get_config").catch(() => null);
-          expect(problems, !!cfg && !!cfg.dock, "the reloaded Dock page cannot reach the backend");
+        if (!revived) {
+          const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe/i.test(l)).slice(-12);
+          problems.push(`the Dock page was not reloaded after its renderer was killed. Lens said:\n        ${said.join("\n        ") || "(nothing)"}`);
         }
         expect(problems, lensProcessCount() > 0, "Lens exited while recovering");
       } finally {
