@@ -510,6 +510,9 @@ export const CalendarClockPane: React.FC = () => {
               >
                 <button
                   type="button"
+                  role="checkbox"
+                  aria-checked={!!ev.done}
+                  aria-label={`Done: ${ev.title}`}
                   onClick={() =>
                     setEvents((prev) =>
                       prev.map((x) => (x.id === ev.id ? { ...x, done: !x.done } : x))
