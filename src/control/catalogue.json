@@ -1456,9 +1456,9 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
-      "default": true,
+      "default": false,
       "description": "Starts Lens when you sign in.",
-      "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":false}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":true}},\"tool\":\"lens_set\"}",
       "label": "Start with Windows",
       "path": "func.runOnStartup",
       "reversible": true,

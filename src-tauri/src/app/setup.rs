@@ -245,11 +245,12 @@ pub(crate) fn run_setup(
         win_caption_engine::start_caption_engine();
     }
 
-    // Auto-sync bundled Windhawk native window style mod on startup if Windhawk is also present
+    // Refresh the Windhawk mod only if the person installed it earlier (never installs it).
     let _ = sync_lens_windhawk_mod(
         "#0C0C0F",
         "#27272C",
         initial_config.theme.border_radius,
+        false,
     );
 
     // Auto-register startup in release builds when enabled
