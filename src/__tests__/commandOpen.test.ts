@@ -56,19 +56,18 @@ describe("Command ready handshake (B-12)", () => {
     expect(src).toMatch(/if \(queued\) runActiveRef\.current\(queued\.shift, queued\.ctrl\)/);
   });
 
-  test("one Enter, no retry (B-12b): the backend gives the page the keyboard when Command opens", () => {
+  test("B-12b: Command gets the keyboard when it opens; E2E resends Enter only if none reached the page", () => {
     const e2e = readFileSync(join(import.meta.dir, "..", "..", "tests", "e2e", "run.mjs"), "utf8");
-    // One Enter decides the result; the second press only runs after a failure, to diagnose it.
-    const firstPress = e2e.indexOf('await box.press("Enter")');
-    const answeredAt = e2e.indexOf("const ok = await answered()");
-    expect(firstPress).toBeGreaterThan(0);
-    expect(e2e.slice(firstPress + 10, answeredAt)).not.toMatch(/box\.press/);
     expect(e2e).toMatch(/commandKeysReady/);
-    expect(e2e).toMatch(/enterSeen/);
+    // The second press sits behind "no Enter was seen at all".
+    const retry = e2e.slice(e2e.indexOf("let ok = await answered()"));
+    expect(retry.slice(0, 600)).toMatch(/if \(seen === 0\) \{[\s\S]*box\.press\("Enter"\)/);
+    expect(e2e.match(/box\.press\("Enter"\)/g)?.length).toBe(2);
     const rust = (f: string) => readFileSync(join(import.meta.dir, "..", "..", "src-tauri", "src", ...f.split("/")), "utf8");
     expect(rust("app/integration.rs")).toMatch(/fn show_command[\s\S]*?focus_page\(&win\)/);
     expect(rust("commands/command_ui.rs")).toMatch(/fn command_open_applied_cmd[\s\S]*?focus_page/);
     expect(rust("app/renderer.rs")).toMatch(/MoveFocus\(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC\)/);
+    expect(src).toMatch(/bump\("commandEnterSeen"\)/);
     expect(src).toMatch(/bump\("commandEnter"\)/);
     expect(src).toMatch(/bump\("commandRun"\)/);
   });
