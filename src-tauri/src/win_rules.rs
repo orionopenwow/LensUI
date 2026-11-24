@@ -158,27 +158,83 @@ pub fn effective_alpha(rule: &ResolvedRule, theme_alpha: u8, focused: bool, full
 
 // ---------- Window styling 2.0: focus dimming, active border, exclusions ----------
 
-/// Process-name fragments Lens never styles, dims, peeks over or pins: its own windows, shell
-/// hosts, and anti-cheat protected games. Matched against the lower-cased full exe path.
-pub const PROTECTED_PROCESS_FRAGMENTS: &[&str] = &[
+/// Lens's own windows and Windows shell hosts: never styled, dimmed, peeked over or pinned.
+/// Matched against the lower-cased full exe path.
+pub const SHELL_PROCESS_FRAGMENTS: &[&str] = &[
     "lens-ui.exe",
     "searchhost.exe",
     "shellexperiencehost.exe",
     "startmenuexperiencehost.exe",
     "textinputhost.exe",
     "lockapp.exe",
+    "logonui.exe",
+    "consent.exe",
     "dwm.exe",
-    "easyanticheat",
-    "beservice",
-    "vgc.exe",
-    "valorant",
-    "cs2.exe",
-    "fortnite",
 ];
+
+/// Anti-cheat services, the launchers that ship one, and games known to act on code loaded
+/// into them. Lens never touches their windows, and while any of them is running the legacy
+/// in-app hook is not installed at all (`win_hook_guard`). Fragments are matched against the
+/// lower-cased exe name or full path, so keep them specific: a broad word here would switch
+/// styling off for ordinary apps.
+pub const ANTI_CHEAT_FRAGMENTS: &[&str] = &[
+    // Anti-cheat systems
+    "easyanticheat",
+    "eac_launcher",
+    "eaanticheat",
+    "beservice",
+    "battleye",
+    "bedaisy",
+    "vgc.exe",
+    "vgtray.exe",
+    "vanguard",
+    "faceit",
+    "eseaclient",
+    "punkbuster",
+    "pnkbstr",
+    "xigncode",
+    "gameguard",
+    "gamemon",
+    "mhyprot",
+    "hoyokprotect",
+    "anticheatexpert",
+    "ricochet",
+    // Games and launchers that ship one
+    "valorant",
+    "riotclientservices",
+    "leagueclient",
+    "league of legends.exe",
+    "cs2.exe",
+    "csgo.exe",
+    "fortnite",
+    "cod.exe",
+    "modernwarfare",
+    "r5apex",
+    "tslgame",
+    "rainbowsix",
+    "destiny2.exe",
+    "overwatch.exe",
+    "eldenring.exe",
+    "rustclient.exe",
+    "escapefromtarkov",
+    "dayz",
+    "deadbydaylight",
+    "rocketleague.exe",
+    "genshinimpact.exe",
+    "starrail.exe",
+];
+
+/// Kept for callers and docs that name the whole list: shell hosts first, then anti-cheat.
+pub const PROTECTED_PROCESS_FRAGMENTS: &[&[&str]] = &[SHELL_PROCESS_FRAGMENTS, ANTI_CHEAT_FRAGMENTS];
+
+pub fn is_anti_cheat_process(exe_path: &str) -> bool {
+    let lower = exe_path.to_lowercase();
+    ANTI_CHEAT_FRAGMENTS.iter().any(|s| lower.contains(s))
+}
 
 pub fn is_protected_process(exe_path: &str) -> bool {
     let lower = exe_path.to_lowercase();
-    PROTECTED_PROCESS_FRAGMENTS.iter().any(|s| lower.contains(s))
+    PROTECTED_PROCESS_FRAGMENTS.iter().any(|list| list.iter().any(|s| lower.contains(s)))
 }
 
 fn default_border_mode() -> String {

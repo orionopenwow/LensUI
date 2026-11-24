@@ -26,6 +26,7 @@ import {
   type LookState,
   type TrustSpan,
 } from "./model";
+import { ReasonChips } from "../agentsafe/ReasonChips";
 import "./ApprovalCard.css";
 
 export interface ApprovalCardProps {
@@ -300,7 +301,8 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
   const tone = toneOf(p);
   const [span, setSpan] = useState<TrustSpan>("run");
   const similar = onApproveSimilar && canApproveSimilar(p) ? p.similar : undefined;
-  const showReversible = !blocked && (p.kind === "look" || p.kind === "window" || p.kind === "settings" || p.kind === "none");
+  const showReversible = !blocked && !p.noUndoLine && (p.kind === "look" || p.kind === "window" || p.kind === "settings" || p.kind === "none");
+  const safety = (p.safetyReasons ?? []).filter((r) => r && typeof r.detail === "string" && r.detail);
 
   const approve = useCallback(async () => {
     dispatch({ type: "approve" });
@@ -376,6 +378,12 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
         {p.question}
       </h2>
 
+      {safety.length ? (
+        <div className="ap-safety" data-testid="ap-safety">
+          <ReasonChips reasons={safety} />
+        </div>
+      ) : null}
+
       {!s.collapsed ? (
         <>
           <Body p={p} onShowTab={onShowTab} />
@@ -444,7 +452,7 @@ export const ApprovalCard: React.FC<ApprovalCardProps> = ({
           ) : null
         ) : blocked ? (
           <p className="ap-blocked">
-            <Lock size={13} aria-hidden /> Lens never lets an AI do this.
+            <Lock size={13} aria-hidden /> {safety.length ? "Lens stopped this step." : "Lens never lets an AI do this."}
           </p>
         ) : (
           <>

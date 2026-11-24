@@ -37,6 +37,10 @@ impl McpHost for Fake {
     fn confirm_all(&self) -> bool { self.confirm }
     fn pending_changed(&self, a: &PendingAction) { self.log.lock().unwrap().push(format!("pending {} {}", a.id, a.status)); }
     fn run_ai_tool(&self, t: &str, a: &Value) -> Result<String, String> { self.log.lock().unwrap().push(format!("ai {} {}", t, a)); Ok(format!("ran {}", t)) }
+    fn resolve_local(&self, a: &PendingAction, approve: bool) -> Result<(), String> {
+        self.log.lock().unwrap().push(format!("resolve {} {} {}", a.kind, a.reference, approve));
+        if a.reference.ends_with("-gone") { Err("Nothing is waiting for that approval (it may have timed out).".into()) } else { Ok(()) }
+    }
 }
 
 fn call(s: &mut Session, h: &dyn McpHost, id: i64, name: &str, args: &str) -> Value {
@@ -212,4 +216,64 @@ fn ai_registry_tools_share_risk_gating() {
     // The offline stand-in explains itself.
     let r = call(&mut s, &OfflineHost, 5, "set_mute", r#"{"muted":false}"#);
     assert!(is_err(&r));
+}
+
+
+// --- one approval card: requests raised inside Lens share the queue (Fable wave 1) -------------
+
+#[test]
+fn local_requests_become_pending_actions_on_the_shared_queue() {
+    let h = Fake { log: Mutex::new(Vec::new()), confirm: false };
+    let card = json!({ "question": "Close Word?", "verb": "Allow", "kind": "none", "details": [], "reversible": false, "risk": "confirm", "capabilities": [] });
+
+    // Only Lens's own kinds, and only with an id the owner can be told about.
+    assert!(enqueue_local("tool", "x", "close_app", &json!({}), "Close Word", "Lens", Value::Null).is_err());
+    assert!(enqueue_local("ai", "  ", "close_app", &json!({}), "Close Word", "Lens", Value::Null).is_err());
+    assert!(is_local_kind("ai") && is_local_kind("bridge") && is_local_kind("app"));
+    assert!(!is_local_kind("tool") && !is_local_kind("nl"));
+
+    // An assistant step: kind, reference and the ready card ride along, camelCased for the UI.
+    let a = enqueue_local("ai", "t-local-r0-0", "close_app", &json!({"name": "word"}), "Close Word", "Lens", card.clone()).unwrap();
+    assert_eq!((a.kind.as_str(), a.status.as_str(), a.reference.as_str()), ("ai", "pending", "t-local-r0-0"));
+    let wire = serde_json::to_value(&a).unwrap();
+    assert_eq!(wire["reference"], "t-local-r0-0");
+    assert_eq!(wire["preview"]["question"], "Close Word?");
+    assert_eq!(wire["createdMs"], json!(a.created_ms));
+    // Asking again for the same step returns the request that is already waiting.
+    assert_eq!(enqueue_local("ai", "t-local-r0-0", "close_app", &json!({}), "Close Word", "Lens", Value::Null).unwrap().id, a.id);
+    assert!(list_actions().iter().any(|x| x.id == a.id && x.status == "pending"));
+
+    // Approved on the shared card: the owner is told, then reports the outcome.
+    let ap = approve_action(&a.id, &h).unwrap();
+    assert_eq!(ap.status, "approved");
+    assert!(h.log.lock().unwrap().iter().any(|l| l == "resolve ai t-local-r0-0 true"));
+    let done = finish_local("ai", "t-local-r0-0", true, "Closed Word.").unwrap();
+    assert_eq!((done.status.as_str(), done.result.as_str()), ("done", "Closed Word."));
+    assert!(finish_local("ai", "t-local-r0-0", true, "again").is_none(), "settled once");
+
+    // Declined on the shared card: the owner is told no.
+    let b = enqueue_local("bridge", "t-local-b1", "summarize", &json!({"useClipboard": false}), "Send this to Lens AI (summarize)", "Browser", Value::Null).unwrap();
+    assert_eq!(decline_action(&b.id, &h).unwrap().status, "declined");
+    assert!(h.log.lock().unwrap().iter().any(|l| l == "resolve bridge t-local-b1 false"));
+
+    // Answered in the surface that raised it: the record closes without the queue being asked.
+    let c = enqueue_local("ai", "t-local-r0-1", "lock_screen", &json!({}), "Lock the PC", "Lens", Value::Null).unwrap();
+    assert_eq!(finish_local("ai", "t-local-r0-1", false, "The user declined this action.").unwrap().status, "declined");
+    assert_eq!(find_action(&c.id).unwrap().status, "declined");
+    let d = enqueue_local("app", "t-local-app:npp:get", "apps_get", &Value::Null, "Get Notepad++", "Lens Apps", Value::Null).unwrap();
+    assert_eq!(finish_local("app", "t-local-app:npp:get", true, "Done.").unwrap().status, "done");
+    assert!(approve_action(&d.id, &h).is_err(), "nothing left to approve");
+
+    // The owner no longer waits (timed out): approving says so instead of pretending.
+    let e = enqueue_local("ai", "t-local-gone", "create_note", &json!({}), "Save a note", "Lens", Value::Null).unwrap();
+    let failed = approve_action(&e.id, &h).unwrap();
+    assert_eq!(failed.status, "failed");
+    assert!(failed.result.contains("timed out"));
+
+    // MCP records are unchanged on the wire: no reference, no preview.
+    let m = PendingAction { id: "x".into(), kind: "tool".into(), tool: "set_volume".into(), args: json!({}), text: "t".into(), client: "c".into(), created_ms: 1, status: "pending".into(), result: String::new(), reference: String::new(), preview: Value::Null };
+    let wire = serde_json::to_value(&m).unwrap();
+    assert!(wire.get("reference").is_none() && wire.get("preview").is_none());
+    let back: PendingAction = serde_json::from_value(json!({ "id": "x", "kind": "tool", "tool": "set_volume", "args": {}, "text": "t", "client": "c", "createdMs": 1, "status": "pending", "result": "" })).unwrap();
+    assert_eq!(back, m);
 }

@@ -4921,20 +4921,20 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.legacy-in-app-window-styling",
+   "id": "setting.system.inline.legacy-in-app-window-styling-experimental",
    "kind": "setting",
-   "title": "Legacy In-App Window Styling",
-   "text": "Loads a helper into every app to restyle windows. Leave off unless a window keeps its old titlebar; turning it off takes effect after restarting Lens UI.",
+   "title": "Legacy In-App Window Styling (experimental)",
+   "text": "Off by default: Lens already styles windows from outside each app. This loads a small helper into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a fullscreen app or an anti-cheat protected game is running, and removes it the moment you switch this off, quit, or use Remove all.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Legacy In-App Window Styling"
+    "Legacy In-App Window Styling (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Legacy In-App Window Styling"
+    "label": "Legacy In-App Window Styling (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -6732,10 +6732,55 @@
    "source": "docs/BROWSER_BRIDGE.md"
   },
   {
+   "id": "hotkey.ctrl-alt-y",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Y",
+   "text": "global hotkey Lens registered for the approval window: the first free one of Ctrl+Alt+Y,",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Y"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
+   "id": "hotkey.ctrl-alt-shift-y",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Shift+Y",
+   "text": "Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O (presence::esc::registerapprovalhotkey, read with",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Shift+Y"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
+   "id": "hotkey.ctrl-alt-shift-o",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Shift+O",
+   "text": "Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O (presence::esc::registerapprovalhotkey, read with",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Shift+O"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
    "id": "hotkey.ctrl-alt-j",
    "kind": "hotkey",
    "title": "Ctrl+Alt+J",
-   "text": "Ctrl+Alt+J; register that hotkey to show the approval window in app/setup.rs next to the other",
+   "text": "Ctrl+Alt+J, which this page once suggested, is the tiler's \"snap",
    "path": [
     "Keyboard",
     "Ctrl+Alt+J"
@@ -7322,7 +7367,24 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.4",
+   "id": "doc.agent-safety.3",
+   "kind": "doc",
+   "title": "Agent safety (W8-O): Where the check sits (Fable wave 1)",
+   "text": "Every agent path goes through one adapter, agentsafe::gate : Call What it answers --- --- gate::decide(&GateInput) May this client do this action now? Allow, ask (with reasons) or block (with reasons). gate::scan text(text, source, label) Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). gate::taint note / taint for Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. It is called from the two places every path already passes, so callers inherit it without doing anything: 1. Lens Control — control::lens::gate , preview and legacy decision , through control::safety (which maps a Call to the pipeline's action word). That covers every MCP client (Claude Desktop, Claude Code, others), every lens to",
+   "path": [
+    "Docs",
+    "Agent safety (W8-O)",
+    "Where the check sits (Fable wave 1)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_SAFETY.md",
+    "heading": "Where the check sits (Fable wave 1)"
+   },
+   "source": "docs/AGENT_SAFETY.md"
+  },
+  {
+   "id": "doc.agent-safety.5",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Browser (feature/lens-browser)",
    "text": "1. Agent profile. In src-tauri/src/browser/host.rs , where an agent run opens or reuses a tab webview, pick the data folder from the grants: When a run ends: call crate::commands::agentsafe::agentsafe run ended(run id) , close the agent webviews and delete profiles root.join(\"agent\") . Never navigate a signed-in webview to a different site than the grant's ( grant.site == registrable domain(new url) ); otherwise reopen in the sandbox. 2. Before each page action. In browser/gating.rs classify(action, caps) , after the existing capability decision: 3. Reading pages. Replace gating::untrusted block(url, text) with the collector plus scan: COLLECTOR JS is collectorScript() from src/agentsafe/collector.ts . Pass it from the UI once at start-up with browser set collector(js) , or build it into the binary with include str! of a generated file. 4. Banner. In the browser frame, above the page:",
@@ -7339,7 +7401,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.5",
+   "id": "doc.agent-safety.6",
    "kind": "doc",
    "title": "Agent safety (W8-O): Claude control (feature/claude-control)",
    "text": "1. Run the pipeline in control::lens::gate before the grant decision: 2. MCP tool and resource text is untrusted. Scan it with agentsafe scan(nodes, \"tool:<client \") before it reaches the internal model. 3. Approval card. In src/approval/ApprovalCard.tsx , under the one-line question: Use hold-to-confirm whenever holdToConfirm is true.",
@@ -7356,7 +7418,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.6",
+   "id": "doc.agent-safety.7",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Snip (feature/lens-snip)",
    "text": "Before Paste to Claude , Ask and Translate , scan the OCR text. Pass the OCR's own contrast estimate per line if it has one ( collectorHelpers.contrastRatio on the line's sampled text and background colours):",
@@ -7373,7 +7435,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.7",
+   "id": "doc.agent-safety.8",
    "kind": "doc",
    "title": "Agent safety (W8-O): Right-click and the extension (feature/rightclick-context, feature/ai-bridges)",
    "text": "- Page text from the extension ( page text , selections, YouTube transcripts) is untrusted. In the bridge's LensAi adapter, scan it first with agentsafe scan([{ id: 0, text, source: \"dom\" }], url) and pass wrapped as page text . - The content script can also run lensTextCollector(4000) ; bundle src/agentsafe/collector.ts into the content script. That gives full style facts instead of plain text. - The \"Copy page into context\" and \"Add to Shelf\" actions store the raw text, but mark the Shelf item source = page so packs re-scan it when sent to a model.",
@@ -7390,7 +7452,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.8",
+   "id": "doc.agent-safety.9",
    "kind": "doc",
    "title": "Agent safety (W8-O): Voice and the internal AI (feature/voice, feature/ai-core)",
    "text": "- Voice commands the user spoke are origin: \"user\" . - Steps an AI proposes after reading pages, files or tool output are origin: \"untrusted\" . - In ai/tools.rs 's runner, call agentsafe check with the tool's kind before executing.",
@@ -7407,7 +7469,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.9",
+   "id": "doc.agent-safety.10",
    "kind": "doc",
    "title": "Agent safety (W8-O): Control Center",
    "text": "Mount the card in AI & Command , below the approvals or permissions card:",
@@ -7424,7 +7486,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.11",
+   "id": "doc.agent-safety.12",
    "kind": "doc",
    "title": "Agent safety (W8-O): Third-party data",
    "text": "agentsafe/confusables.rs uses a hand-picked subset of the prototype mappings in Unicode's confusables.txt (UTS #39, \"Unicode Security Mechanisms\"). Copyright © 1991-2026 Unicode, Inc. Distributed under the Unicode License v3 (https://www.unicode.org/license.txt), which permits copying and modification provided the copyright and permission notice are included. The brand list, lure words and risky-TLD list were compiled by hand from public phishing-trend reporting. There is no third-party list.",
@@ -7441,7 +7503,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.12",
+   "id": "doc.agent-safety.13",
    "kind": "doc",
    "title": "Agent safety (W8-O): Privacy",
    "text": "- Grants and settings are saved under %APPDATA%\\LensUI\\agentsafe\\ . Grants are saved as site names and times only. - The set-aside viewer is in memory only, keeps the last 200 entries, and is never written to disk. - No check makes a network request.",
@@ -8407,7 +8469,7 @@
    "id": "doc.claude-control.15",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail: 3. Pending pill: top bar (`src/surfaces/TopBarSurface.tsx`) and Dock (`src/surfaces/DockSurface.tsx`)",
-   "text": "Use whichever \"show window\" command the surfaces already use. The pill's shortcut chip says Ctrl+Alt+J; register that hotkey to show the approval window in app/setup.rs next to the other global shortcuts.",
+   "text": "Use whichever \"show window\" command the surfaces already use. The pill's shortcut chip shows the global hotkey Lens registered for the approval window: the first free one of Ctrl+Alt+Y , Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O ( presence::esc::register approval hotkey , read with useApprovalHotkey() ). Ctrl+Alt+J, which this page once suggested, is the tiler's \"snap bottom-left\". If Windows lets Lens register none of them, the chip is simply not shown. One queue for every confirmation (Fable wave 1). win mcp 's PendingAction queue also carries requests raised inside Lens: the assistant's steps ( kind: \"ai\" , from Lens Command, the AI dock and voice), bridge inbox requests ( \"bridge\" ) and Lens Apps confirmations ( \"app\" ). Each carries a reference (the id its owner knows it by) and a ready preview for the card. Approving or denying on the shared card hands the answer to the owner ( McpHost",
    "path": [
     "Docs",
     "Lens Control: Claude control over every desktop detail",
@@ -14122,6 +14184,23 @@
     "surface": "doc",
     "doc": "docs/WINDOW_STYLING.md",
     "heading": "Shared-file edits made in this PR (minimal, needed to compile)"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.7",
+   "kind": "doc",
+   "title": "Window styling 2.0: The legacy in-app hook (experimental, off by default)",
+   "text": "Lens styles windows from outside their process. One optional extra, Legacy In-App Window Styling ( func.injectedHook ), installs a global WH CALLWNDPROC hook so a small DLL can restyle a window that keeps its old titlebar. Because Windows loads a global hook's DLL into every app with a window, this stays an explicit experimental switch and is fenced in ( win hook guard.rs , docs/brain/BUGS.md B-05, B-06): - Kept out when it could do harm. While the switch is on, the engine re-checks every 1.5 s. If an anti-cheat service or a protected game is running, or a fullscreen app is in front, the hook is removed at once; it returns only after about six clear seconds. - Removed, not abandoned. Switching it off, quitting, the tray's Exit and Remove all Lens changes all call stop dwm hook engine() : the hook is removed, apps are nudged to unload the DLL, and the thread ends. No restart needed. - The",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "The legacy in-app hook (experimental, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "The legacy in-app hook (experimental, off by default)"
    },
    "source": "docs/WINDOW_STYLING.md"
   },

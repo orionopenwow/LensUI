@@ -2,7 +2,7 @@ import { openGuide } from "../guide/coach";
 import { searchStep, isExpanded, type SearchPhase, type SearchEvent } from "../topbar/searchMachine";
 import { MiniPlayer } from "../music/MiniPlayer";
 import { useMiniPlacement } from "../music/useMiniPlacement";
-import { PendingPill, usePendingApprovals } from "../approval";
+import { PendingPill, useApprovalHotkey, usePendingApprovals } from "../approval";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { captureFlip, type FlipCapture } from "../ui/motion";
 import { invoke } from "@tauri-apps/api/core";
@@ -43,6 +43,8 @@ export const TopBarSurface: React.FC = () => {
   const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
   const [now, setNow] = useState(() => new Date());
   const approvals = usePendingApprovals();
+  // The global hotkey for the approval window, once Lens has registered one (B-14).
+  const approvalKey = useApprovalHotkey();
   const musicMini = useMiniPlacement();
   const [visible, setVisible] = useState(true);
   // Phase-driven (src/topbar/searchMachine.ts): searchOpen is derived, so the bubble can't flicker.
@@ -280,7 +282,7 @@ export const TopBarSurface: React.FC = () => {
         {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
         {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
         {approvals.requests.length > 0 && (
-          <PendingPill count={approvals.requests.length} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
+          <PendingPill count={approvals.requests.length} shortcut={approvalKey} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
         )}
         {/* "C: · 9.6 GB left" (only with Lens Cleaner's low-space alert on; docs/CLEANER.md). */}
         <LowSpacePill />

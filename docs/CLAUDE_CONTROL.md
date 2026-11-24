@@ -291,9 +291,19 @@ const { requests } = usePendingApprovals();
 <PendingPill count={requests.length} onOpen={() => invoke("show_surface_cmd", { label: "approval" })} />
 ```
 
-Use whichever "show window" command the surfaces already use. The pill's shortcut chip says
-Ctrl+Alt+J; register that hotkey to show the approval window in `app/setup.rs` next to the other
-global shortcuts.
+Use whichever "show window" command the surfaces already use. The pill's shortcut chip shows the
+global hotkey Lens registered for the approval window: the first free one of **Ctrl+Alt+Y**,
+Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O (`presence::esc::register_approval_hotkey`, read with
+`useApprovalHotkey()`). Ctrl+Alt+J, which this page once suggested, is the tiler's "snap
+bottom-left". If Windows lets Lens register none of them, the chip is simply not shown.
+
+**One queue for every confirmation (Fable wave 1).** `win_mcp`'s `PendingAction` queue also carries
+requests raised inside Lens: the assistant's steps (`kind: "ai"`, from Lens Command, the AI dock and
+voice), bridge inbox requests (`"bridge"`) and Lens Apps confirmations (`"app"`). Each carries a
+`reference` (the id its owner knows it by) and a ready `preview` for the card. Approving or denying on
+the shared card hands the answer to the owner (`McpHost::resolve_local`); answering in the surface
+that raised it closes the queue record (`finish_local`). Either way there is one request, one card
+and one outcome. Local requests have their own limit and never crowd an AI app out of the queue.
 
 ### 4. Command thread, Mini and Dock popover: tool proposals
 

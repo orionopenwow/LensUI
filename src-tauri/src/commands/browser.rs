@@ -401,10 +401,38 @@ pub async fn browser_events() -> Result<Value, String> {
     .await
 }
 
-/// Classifies a proposed action without running it (for the agent timeline).
+/// The taint key for pages the browser agent has read (see `agentsafe::gate::taint_note`).
+const AGENT_TAINT: &str = "browser-agent";
+
+/// The browser's own classification, then the shared agent-safety gate on top of it: look-alike
+/// sites, steps planned from a page that hides instructions, and the hard blocks. Returns the
+/// combined decision and the gate's reasons for the card.
+fn checked(action: &PageAction, caps: &Capabilities, page_url: Option<&str>) -> (Decision, Vec<crate::ai::SafetyNote>) {
+    use crate::agentsafe::gate;
+    let own = gating::classify(action, caps);
+    let (word, field, target_url) = gating::gate_question(action, &own);
+    let url = target_url.as_deref().or(page_url).filter(|u| !u.is_empty());
+    let verdict = gate::decide(&gate::GateInput {
+        client: "internal",
+        action: word,
+        // Every agent step is planned from what the page says.
+        untrusted: true,
+        granted: false,
+        url,
+        field,
+        carries_user_data: matches!(action, PageAction::Type { .. } | PageAction::Select { .. } | PageAction::Submit { .. }),
+        payments_ask_first: caps.payments,
+        injection: gate::taint_for(AGENT_TAINT).map(|t| t.injection),
+    });
+    let notes = crate::ai::SafetyNote::from_reasons(verdict.reasons());
+    (gating::with_gate(own, verdict.kind(), &verdict.text()), notes)
+}
+
+/// Classifies a proposed action without running it (for the agent timeline). `url` is the page
+/// the action is on, when the caller knows it.
 #[tauri::command]
-pub fn browser_agent_check(action: PageAction, caps: Option<Capabilities>) -> Decision {
-    gating::classify(&action, &caps.unwrap_or_default())
+pub fn browser_agent_check(action: PageAction, caps: Option<Capabilities>, url: Option<String>) -> Decision {
+    checked(&action, &caps.unwrap_or_default(), url.as_deref()).0
 }
 
 /// Everything the "Needs your OK" card shows about one element (scrolls it into view).
@@ -438,6 +466,9 @@ pub struct ActResult {
     pub ran: bool,
     pub needs_ok: bool,
     pub message: String,
+    /// Why the agent-safety gate made the step wait or refused it (chips on the card).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub safety: Vec<crate::ai::SafetyNote>,
 }
 
 /// Runs one agent action on the page after the approval rules. The element is re-described
@@ -466,20 +497,38 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
                 other => other,
             };
         }
-        let decision = gating::classify(&action, &caps);
+        let page_url = rt().state.tab(&tab_id).map(|t| t.url.clone());
+        let own_risk = gating::classify(&action, &caps).risk;
+        let (decision, safety) = checked(&action, &caps, page_url.as_deref());
+        if decision.risk != own_risk {
+            // The shared gate changed the answer: tell the browser so it shows the banner.
+            use tauri::Emitter;
+            let _ = app.emit(
+                crate::ai::EVENT_SAFETY_FLAG,
+                crate::ai::SafetyFlagEvent {
+                    id: tab_id.clone(),
+                    source: "browser".into(),
+                    label: page_url.clone().unwrap_or_default(),
+                    verdict: if decision.risk == Risk::Blocked { "block" } else { "ask" }.into(),
+                    set_aside: 0,
+                    reasons: safety.clone(),
+                },
+            );
+        }
         match decision.risk {
-            Risk::Blocked => return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: false }),
+            Risk::Blocked => return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: false, safety }),
             Risk::AskFirst if !req.approved => {
                 if let Some(t) = rt().state.tab_mut(&tab_id) {
                     t.badge = Some("approve".into());
                 }
                 host::emit_state(&app);
-                return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: true });
+                return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: true, safety });
             }
             _ => {}
         }
+        let safety = Vec::new();
         let cmd = match &action {
-            PageAction::ReadPage => return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Read the page.".into() }),
+            PageAction::ReadPage => return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Read the page.".into(), safety }),
             PageAction::Scroll { dy } => json!({ "do": "scroll", "dy": dy, "ref": req.element }),
             PageAction::Click { .. } => json!({ "do": "click", "ref": req.element }),
             PageAction::Submit { .. } => json!({ "do": "submit", "ref": req.element }),
@@ -488,13 +537,13 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
             PageAction::Navigate { url } => {
                 let u: tauri::Url = url.parse().map_err(|_| "Bad URL.".to_string())?;
                 view.navigate(u).map_err(|e| e.to_string())?;
-                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Opened the page.".into() });
+                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Opened the page.".into(), safety });
             }
             PageAction::Search { query } => {
                 let url = rt().state.settings.search_url.replace("{q}", &crate::browser::model::urlencode(query));
                 let u: tauri::Url = url.parse().map_err(|_| "Bad search URL.".to_string())?;
                 view.navigate(u).map_err(|e| e.to_string())?;
-                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Searched the web.".into() });
+                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Searched the web.".into(), safety });
             }
         };
         if matches!(cmd.get("ref"), Some(Value::Null)) && !matches!(action, PageAction::Scroll { .. }) {
@@ -510,15 +559,40 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
             ran: res.get("ok").and_then(Value::as_bool).unwrap_or(false),
             needs_ok: false,
             message: res.get("msg").and_then(Value::as_str).unwrap_or("").chars().take(200).collect(),
+            safety,
         })
     })
     .await
 }
 
 /// Wraps page text as untrusted data for a model prompt.
+///
+/// The text is scanned first: spans that hide or smuggle instructions are set aside (the model
+/// never sees them; they are listed in Settings › AI & Command › Agent safety), and what the
+/// scan found is remembered so the agent's next steps on this page are checked against it.
 #[tauri::command]
-pub fn browser_untrusted(url: String, text: String) -> String {
-    gating::untrusted_block(&url, &text.chars().take(200_000).collect::<String>())
+pub fn browser_untrusted(app: AppHandle, url: String, text: String) -> String {
+    let text: String = text.chars().take(200_000).collect();
+    let label = tauri::Url::parse(&url).ok().and_then(|u| u.host_str().map(str::to_string)).unwrap_or_else(|| "a web page".into());
+    let scanned = crate::agentsafe::gate::scan_text(&text, "page", &label);
+    // The agent's taint is the page it last read: a clean page lifts what an earlier one left.
+    crate::agentsafe::gate::taint_clear(AGENT_TAINT);
+    crate::agentsafe::gate::taint_note(AGENT_TAINT, &label, scanned.injection);
+    if !scanned.reasons.is_empty() {
+        use tauri::Emitter;
+        let _ = app.emit(
+            crate::ai::EVENT_SAFETY_FLAG,
+            crate::ai::SafetyFlagEvent {
+                id: String::new(),
+                source: "browser".into(),
+                label,
+                verdict: if scanned.injection.high > 0 || scanned.injection.exfiltration { "block" } else { "ask" }.into(),
+                set_aside: scanned.set_aside.len() as u32,
+                reasons: crate::ai::SafetyNote::from_reasons(&scanned.reasons),
+            },
+        );
+    }
+    gating::untrusted_block(&url, &scanned.text)
 }
 
 /// Reads the YouTube caption track the page itself loads (json3). Returns the raw track for the

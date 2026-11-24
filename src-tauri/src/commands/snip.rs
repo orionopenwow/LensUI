@@ -681,7 +681,26 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
     let snip = service::get_snip(&req.id).ok_or("This snip is no longer open.")?;
     let png = image::from_data_url(&req.png)?;
     let img = image::decode_png(&png)?;
-    let ocr = req.ocr_text.clone().unwrap_or_default();
+    // Agent safety: text in a screenshot is untrusted. Scan it before it goes anywhere near a
+    // model; spans that read as instructions to an AI are set aside and shown to the person.
+    let scanned = crate::agentsafe::gate::scan_text(&req.ocr_text.clone().unwrap_or_default(), "ocr", "screenshot text");
+    let flagged = !scanned.reasons.is_empty();
+    let notes = crate::ai::SafetyNote::from_reasons(&scanned.reasons);
+    if flagged {
+        use tauri::Emitter;
+        let _ = app.emit(
+            crate::ai::EVENT_SAFETY_FLAG,
+            crate::ai::SafetyFlagEvent {
+                id: snip.id.clone(),
+                source: "snip".into(),
+                label: "screenshot text".into(),
+                verdict: if scanned.injection.high > 0 || scanned.injection.exfiltration { "block" } else { "ask" }.into(),
+                set_aside: scanned.set_aside.len() as u32,
+                reasons: notes.clone(),
+            },
+        );
+    }
+    let ocr = scanned.text.clone();
     let res = if req.target == "desktop" {
         set_clipboard(&img, &png)?;
         #[cfg(windows)]
@@ -689,10 +708,12 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
         #[cfg(not(windows))]
         let found = false;
         remember_recent(RecentTarget { id: "claude-desktop".into(), kind: "claude".into(), label: "Claude".into(), exe: None, last_ms: 0, count: 0 });
+        // The image itself can't be cleaned, so say what Lens saw before the person pastes it.
+        let heads_up = if flagged { " Heads up: this image contains text that reads as instructions to an AI." } else { "" };
         if found {
-            ok("Image copied — Claude is in front. Press Ctrl+V to attach it.", None)
+            ok(format!("Image copied — Claude is in front. Press Ctrl+V to attach it.{}", heads_up), None)
         } else {
-            ok("Image copied. Open Claude and press Ctrl+V to attach it.", None)
+            ok(format!("Image copied. Open Claude and press Ctrl+V to attach it.{}", heads_up), None)
         }
     } else {
         let path = service::write_handoff(&snip.id, &png)?;
@@ -707,6 +728,7 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
                 "width": img.w,
                 "height": img.h,
                 "ocrText": ocr,
+                "safety": { "setAside": scanned.set_aside.len(), "reasons": notes },
             }
         });
         crate::app::integration::show_command(&app, payload);

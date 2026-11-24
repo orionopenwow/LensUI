@@ -26,6 +26,7 @@
 
 pub mod confusables;
 pub mod domains;
+pub mod gate;
 pub mod hidden_text;
 pub mod pipeline;
 pub mod profile;

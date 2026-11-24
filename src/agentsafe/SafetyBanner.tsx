@@ -11,6 +11,8 @@ export interface SafetyBannerProps {
   /** The site as people read it (punycode decoded). */
   site: string;
   reasons: SafetyReason[];
+  /** Headline override, for banners that are about attached text or a step rather than a site. */
+  title?: string;
   /** Number of spans set aside from what the AI reads on this page. */
   setAside?: number;
   onLeave?: () => void;
@@ -18,11 +20,11 @@ export interface SafetyBannerProps {
   onShowSetAside?: () => void;
 }
 
-export const SafetyBanner: React.FC<SafetyBannerProps> = ({ site, reasons, setAside = 0, onLeave, onContinue, onShowSetAside }) => {
+export const SafetyBanner: React.FC<SafetyBannerProps> = ({ site, reasons, title: titleOverride, setAside = 0, onLeave, onContinue, onShowSetAside }) => {
   const sev = worstSeverity(reasons);
   const serious = sev === "high" || sev === "critical";
   const Icon = serious ? ShieldAlert : reasons.length ? ShieldQuestion : ShieldCheck;
-  const title = serious ? "This site may not be what it seems" : setAside > 0 ? "Lens set aside text the AI shouldn't follow" : "Take a second look at this site";
+  const title = titleOverride ?? (serious ? "This site may not be what it seems" : setAside > 0 ? "Lens set aside text the AI shouldn't follow" : "Take a second look at this site");
   return (
     <section className={`as-banner as-sev-${sev}`} role={serious ? "alert" : "status"} aria-live="polite">
       <Icon className="as-banner-icon" size={18} strokeWidth={2.2} aria-hidden="true" />
@@ -40,7 +42,7 @@ export const SafetyBanner: React.FC<SafetyBannerProps> = ({ site, reasons, setAs
           <button type="button" className="as-btn" onClick={onShowSetAside}>Show what was set aside</button>
         ) : null}
         {onContinue ? (
-          <button type="button" className="as-btn" onClick={onContinue}>{serious ? "Continue anyway" : "Continue"}</button>
+          <button type="button" className="as-btn" onClick={onContinue}>{titleOverride ? "OK" : serious ? "Continue anyway" : "Continue"}</button>
         ) : null}
         {onLeave ? (
           <button type="button" className="as-btn primary" onClick={onLeave}>

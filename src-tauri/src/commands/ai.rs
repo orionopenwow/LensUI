@@ -32,11 +32,66 @@ impl AiSink for TauriSink {
         let _ = self.app.emit(ai::EVENT_DONE, ev);
     }
     fn tool_proposal(&self, ev: &ToolProposalEvent) {
+        // One approval card: a step that waits for the person also joins the shared queue, so
+        // the pill, the approval window and the surface that asked all show the same request.
+        if ev.risk == crate::ai::tools::Risk::Confirm {
+            let preview = proposal_preview(&self.app, ev);
+            if crate::win_mcp::enqueue_local("ai", &ev.call_id, &ev.tool, &ev.args, &ev.summary, "Lens", preview).is_ok() {
+                let _ = self.app.emit("lens://mcp-changed", ());
+            }
+        }
         let _ = self.app.emit(ai::EVENT_TOOL_PROPOSAL, ev);
     }
     fn tool_result(&self, ev: &ToolResultEvent) {
+        if crate::win_mcp::finish_local("ai", &ev.call_id, ev.ok, &ev.message).is_some() {
+            let _ = self.app.emit("lens://mcp-changed", ());
+        }
         let _ = self.app.emit(ai::EVENT_TOOL_RESULT, ev);
     }
+    fn safety(&self, ev: &ai::SafetyFlagEvent) {
+        let _ = self.app.emit(ai::EVENT_SAFETY_FLAG, ev);
+    }
+}
+
+/// The shared approval card's data for a step the assistant proposed.
+fn proposal_preview(app: &AppHandle, ev: &ToolProposalEvent) -> serde_json::Value {
+    use serde_json::json;
+    let mut pv = if ev.tool == "send_to_cloud" {
+        json!({
+            "question": ev.summary,
+            "reason": "Your privacy setting asks before anything leaves this PC.",
+            "verb": "Send",
+            "denyLabel": "Don't send",
+            "kind": "none",
+            "details": [
+                { "label": "To", "value": ev.args.get("label").and_then(|v| v.as_str()).unwrap_or("a cloud model") },
+                { "label": "Model", "value": ev.args.get("model").and_then(|v| v.as_str()).unwrap_or("") },
+            ],
+            "reversible": true,
+            "noUndoLine": true,
+            "risk": "low",
+            "holdToConfirm": false,
+            "capabilities": [],
+        })
+    } else {
+        crate::control::lens::preview(app, "internal", &ev.tool, &ev.args).unwrap_or_else(|_| {
+            json!({
+                "question": format!("{}?", ev.summary.trim_end_matches(['.', '?'])),
+                "verb": "Allow",
+                "kind": "none",
+                "details": [],
+                "reversible": true,
+                "risk": "low",
+                "holdToConfirm": false,
+                "capabilities": [],
+            })
+        })
+    };
+    if !ev.safety.is_empty() {
+        pv["safetyReasons"] = json!(ev.safety);
+    }
+    pv["source"] = json!({ "client": "internal", "kind": "internal", "label": "Lens" });
+    pv
 }
 
 fn ai_config(app: &AppHandle) -> AiConfig {

@@ -104,7 +104,7 @@ export function threadReducer(state: ThreadItem[], a: ThreadAction): ThreadItem[
           key: `tool-${a.proposal.call_id}`,
           proposal: a.proposal,
           state: a.proposal.risk === "blocked" ? "denied" : "pending",
-          message: a.proposal.risk === "blocked" ? "Lens never runs this kind of action." : undefined,
+          message: a.proposal.risk === "blocked" ? (a.proposal.safety?.length ? "Lens stopped this step." : "Lens never runs this kind of action.") : undefined,
           ts: a.ts,
         },
       });

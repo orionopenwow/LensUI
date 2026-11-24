@@ -110,6 +110,11 @@ pub trait McpHost: Send + Sync {
     fn confirm_all(&self) -> bool;
     /// A request was queued for approval or changed state (show it to the user).
     fn pending_changed(&self, action: &PendingAction);
+    /// Hands the person's answer for a local request (see [`LOCAL_KINDS`]) to the part of Lens
+    /// that raised it.
+    fn resolve_local(&self, _action: &PendingAction, _approve: bool) -> Result<(), String> {
+        Err(OFFLINE.into())
+    }
     /// False only for the bridge's stand-in when Lens UI can't be reached.
     fn available(&self) -> bool {
         true
@@ -595,6 +600,24 @@ pub struct PendingAction {
     /// pending | approved | declined | done | failed | expired
     pub status: String,
     pub result: String,
+    /// For requests raised inside Lens (see [`LOCAL_KINDS`]): the id the owning part of Lens
+    /// knows the request by (the assistant's call id, a bridge message id, a Lens App release).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub reference: String,
+    /// A ready card for local requests (same shape as `control_preview`); null for MCP requests,
+    /// whose card is built on demand.
+    #[serde(default, skip_serializing_if = "Value::is_null")]
+    pub preview: Value,
+}
+
+/// Requests raised inside Lens rather than by an MCP client: the assistant ("ai": Lens Command,
+/// the AI dock, voice), the bridge inbox ("bridge") and Lens Apps ("app"). They ride the same
+/// queue so there is one approval card, one pill and one history, whoever is asking.
+pub const LOCAL_KINDS: [&str; 3] = ["ai", "bridge", "app"];
+const MAX_LOCAL_PENDING: usize = 12;
+
+pub fn is_local_kind(kind: &str) -> bool {
+    LOCAL_KINDS.contains(&kind)
 }
 
 fn queue() -> &'static Mutex<Vec<PendingAction>> {
@@ -633,7 +656,8 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
     if let Some(dup) = q.iter().find(|a| a.status == "pending" && a.text == text) {
         return Ok(dup.clone());
     }
-    if q.iter().filter(|a| a.status == "pending").count() >= MAX_PENDING {
+    // Requests raised inside Lens have their own limit; they never crowd an AI app out.
+    if q.iter().filter(|a| a.status == "pending" && !is_local_kind(&a.kind)).count() >= MAX_PENDING {
         return Err(format!("{} requests are already waiting for the user; try again after they answer.", MAX_PENDING));
     }
     let a = PendingAction {
@@ -646,9 +670,59 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
         created_ms: now,
         status: "pending".into(),
         result: String::new(),
+        reference: String::new(),
+        preview: Value::Null,
     };
     q.push(a.clone());
     Ok(a)
+}
+
+/// Queues a confirmation raised inside Lens. Asking twice for the same `reference` returns the
+/// request that is already waiting. The owner calls [`finish_local`] when it is settled.
+pub fn enqueue_local(kind: &str, reference: &str, tool: &str, args: &Value, text: &str, client: &str, preview: Value) -> Result<PendingAction, String> {
+    if !is_local_kind(kind) || reference.trim().is_empty() {
+        return Err("Not a local approval request.".into());
+    }
+    let mut q = queue().lock().unwrap_or_else(|e| e.into_inner());
+    let now = now_ms();
+    expire_old(&mut q, now);
+    if let Some(dup) = q.iter().find(|a| a.status == "pending" && a.kind == kind && a.reference == reference) {
+        return Ok(dup.clone());
+    }
+    if q.iter().filter(|a| a.status == "pending" && is_local_kind(&a.kind)).count() >= MAX_LOCAL_PENDING {
+        return Err("Too many requests are already waiting for you.".into());
+    }
+    let a = PendingAction {
+        id: format!("lens-{}-{}", now % 1_000_000_000, NEXT_ID.fetch_add(1, Ordering::SeqCst)),
+        kind: kind.into(),
+        tool: clean_text(tool, 60),
+        args: args.clone(),
+        text: clean_text(text, 300),
+        client: clean_text(client, 60),
+        created_ms: now,
+        status: "pending".into(),
+        result: String::new(),
+        reference: clean_text(reference, 120),
+        preview,
+    };
+    q.push(a.clone());
+    Ok(a)
+}
+
+/// The owner of a local request settled it (answered in its own surface, timed out, or ran it
+/// after an approval here). Returns the updated record, or `None` if nothing was waiting.
+pub fn finish_local(kind: &str, reference: &str, ok: bool, message: &str) -> Option<PendingAction> {
+    let mut q = queue().lock().unwrap_or_else(|e| e.into_inner());
+    expire_old(&mut q, now_ms());
+    let a = q.iter_mut().find(|a| a.kind == kind && a.reference == reference && matches!(a.status.as_str(), "pending" | "approved"))?;
+    a.status = match (a.status.as_str(), ok) {
+        (_, true) => "done",
+        ("pending", false) => "declined",
+        _ => "failed",
+    }
+    .into();
+    a.result = clean_text(message, 300);
+    Some(a.clone())
 }
 
 pub fn find_action(id: &str) -> Option<PendingAction> {
@@ -685,6 +759,16 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
         host.pending_changed(&a);
         return Ok(a);
     }
+    if is_local_kind(&a.kind) {
+        // The owner runs it and reports back through `finish_local`.
+        let a = match host.resolve_local(&a, true) {
+            Ok(()) => a,
+            Err(e) => set_status(id, &["approved"], "failed", &e)?,
+        };
+        host.pending_changed(&a);
+        append_audit(&audit_line(&a.client, &a.tool, "approved", a.status == "approved", &a.text, 0));
+        return Ok(a);
+    }
     let out = match parse_tool_call(&a.tool, &a.args) {
         Ok(mut call) => {
             if let ToolCall::Control { client, .. } = &mut call {
@@ -705,6 +789,9 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
 
 pub fn decline_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, String> {
     let a = set_status(id, &["pending"], "declined", "The user declined this request.")?;
+    if is_local_kind(&a.kind) {
+        let _ = host.resolve_local(&a, false);
+    }
     host.pending_changed(&a);
     append_audit(&audit_line(&a.client, &a.tool, "declined", true, &a.text, 0));
     Ok(a)
@@ -1466,8 +1553,23 @@ pub mod lens_host {
             crate::control::lens::read_resource(&self.app, client, uri)
         }
 
+        fn resolve_local(&self, action: &PendingAction, approve: bool) -> Result<(), String> {
+            match action.kind.as_str() {
+                "ai" => crate::ai::runtime().approvals.resolve(&action.reference, approve),
+                "bridge" => crate::commands::bridge::resolve_from_card(&self.app, &action.reference, approve),
+                // Lens Apps answer in their own window; it listens for `lens://mcp-changed`.
+                "app" => Ok(()),
+                _ => Err("Unknown request kind.".into()),
+            }
+        }
+
         fn pending_changed(&self, action: &PendingAction) {
             let _ = self.app.emit("lens://mcp-changed", ());
+            // A request raised inside Lens is already on screen in the surface that raised it
+            // (same card); the pill and the approval window pick it up from the event above.
+            if is_local_kind(&action.kind) {
+                return;
+            }
             if action.status == "pending" {
                 // The standalone "Needs your OK" window (docs/CLAUDE_CONTROL.md), when configured.
                 if let Some(w) = self.app.get_webview_window("approval") {

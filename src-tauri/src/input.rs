@@ -49,9 +49,12 @@ pub enum Feature {
     DesktopInput = 5,
     /// Pointer effects: ripples, trails, key chips (`win_cursor_fx`).
     CursorFx = 6,
+    /// Esc stops a running agent (`presence::esc`). Claimed only while a run is active; it
+    /// observes and never swallows.
+    AgentStop = 7,
 }
 
-pub const FEATURES: usize = 7;
+pub const FEATURES: usize = 8;
 
 impl Feature {
     pub const ALL: [Feature; FEATURES] = [
@@ -62,6 +65,7 @@ impl Feature {
         Feature::ClipBubble,
         Feature::DesktopInput,
         Feature::CursorFx,
+        Feature::AgentStop,
     ];
 
     pub fn name(self) -> &'static str {
@@ -73,6 +77,7 @@ impl Feature {
             Feature::ClipBubble => "Selection bubble",
             Feature::DesktopInput => "Desktop input",
             Feature::CursorFx => "Pointer effects",
+            Feature::AgentStop => "Esc stops an agent",
         }
     }
 }
@@ -229,7 +234,10 @@ mod rt {
     };
 
     /// Keyboard dispatch order. Only the Win key / Alt+Tab machine ever swallows a key.
-    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 3] = [
+    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 4] = [
+        // First, so it sees Esc whatever the others do. It observes only, also while paused:
+        // a run must be stoppable with a fullscreen app in front.
+        (Feature::AgentStop, crate::presence::esc::input_key, WhenPaused::Observe),
         (Feature::Keyhook, crate::win_keyhook::input_key, WhenPaused::Observe),
         (Feature::VoiceHold, crate::voice::keyhold::input_key, WhenPaused::Observe),
         (Feature::CursorFx, crate::win_cursor_fx::input_key, WhenPaused::Skip),
@@ -321,7 +329,7 @@ mod rt {
         BENCHED_UNTIL[f as usize].load(Ordering::Relaxed) > now
     }
 
-    fn key_slots(now: u64) -> [Slot<KeyEvent>; 3] {
+    fn key_slots(now: u64) -> [Slot<KeyEvent>; 4] {
         KEY_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (KEY_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,

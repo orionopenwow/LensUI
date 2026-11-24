@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type * as Gen from "../types/generated";
+import { ApprovalCard } from "../approval/ApprovalCard";
+import { usePendingApprovals } from "../approval/api";
+import { fallbackPreview, type ApprovalRequest } from "../approval/model";
 
 /**
  * Requests that arrived from the browser, Explorer, lens:// links or scripts and wait for the
@@ -50,6 +53,53 @@ export function contextChips(r: Gen.BridgeRequest): string[] {
   if (r.question) chips.push(`“${r.question.slice(0, 60)}”`);
   return chips;
 }
+
+/** The shared-card request for an inbox entry, used until (or without) its queue record. Pure. */
+export function requestForEntry(e: Gen.InboxEntry): ApprovalRequest {
+  const r = e.request;
+  const origin = ORIGIN_LABEL[r.origin] ?? "Another app";
+  const transcribe = r.action === "transcribe";
+  const what = transcribe ? "Transcribe this" : `Send this to Lens AI (${(ACTION_LABEL[r.action] ?? r.action).toLowerCase()})`;
+  return {
+    id: `bridge-${e.id}`,
+    origin: "bridge",
+    source: origin,
+    reference: e.id,
+    wantsClipboard: !!r.useClipboard,
+    createdMs: e.createdMs,
+    preview: {
+      ...fallbackPreview(what, origin, "low"),
+      reason: `${origin} asked for this. Nothing is sent until you say so.`,
+      verb: transcribe ? "Transcribe" : "Send",
+      denyLabel: "Decline",
+      details: contextChips(r).map((c, i) => ({ label: i === 0 ? "Includes" : "", value: c })),
+      reversible: true,
+      noUndoLine: true,
+      source: { client: "bridge", kind: "bridge", label: origin },
+    },
+  };
+}
+
+/** One waiting request, drawn by the shared approval card. The request is also in the shared
+ *  queue (the pill and the approval window show it); the card prefers that record. Mounted only
+ *  while something waits, so an empty inbox costs the settings page nothing. */
+const WaitingRequest: React.FC<{ entry: Gen.InboxEntry; onApprove: () => Promise<void>; onDeny: () => Promise<void> }> = ({ entry, onApprove, onDeny }) => {
+  const { requests } = usePendingApprovals();
+  const request = requests.find((q) => q.origin === "bridge" && q.reference === entry.id) ?? requestForEntry(entry);
+  return (
+    <ApprovalCard
+      request={request}
+      compact
+      onApprove={async () => {
+        await onApprove();
+        return true;
+      }}
+      onDeny={() => {
+        void onDeny();
+      }}
+    />
+  );
+};
 
 export const BridgeInbox: React.FC = () => {
   const [items, setItems] = useState<Gen.InboxEntry[]>([]);
@@ -105,34 +155,11 @@ export const BridgeInbox: React.FC = () => {
   return (
     <div className="cc-card">
       <div className="cc-label">From your browser and files</div>
-      {pending.map((e) => {
-        const r = e.request;
-        const title = [ACTION_LABEL[r.action] ?? r.action, r.variant?.replace("_", " "), r.targetLang].filter(Boolean).join(" · ");
-        return (
-          <div key={e.id} className="cc-row" style={{ alignItems: "flex-start", gap: 10 }}>
-            <div style={{ minWidth: 0 }}>
-              <div className="cc-label">{title}</div>
-              <div className="cc-desc" style={{ overflowWrap: "anywhere" }}>
-                {ORIGIN_LABEL[r.origin] ?? r.origin}
-                {r.title ? ` · ${r.title}` : ""}
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-                {contextChips(r).map((c) => (
-                  <span key={c} className="cc-chip">{c}</span>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-              <button type="button" className="cc-btn" disabled={busy === e.id} onClick={() => confirm(e)}>
-                {r.action === "transcribe" ? "Transcribe" : "Send"}
-              </button>
-              <button type="button" className="cc-btn-ghost" disabled={busy === e.id} onClick={() => decline(e)}>
-                Decline
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      {pending.map((e) => (
+        <div key={e.id} aria-busy={busy === e.id}>
+          <WaitingRequest entry={e} onApprove={() => confirm(e)} onDeny={() => decline(e)} />
+        </div>
+      ))}
       {recent.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {recent.map((e) => (

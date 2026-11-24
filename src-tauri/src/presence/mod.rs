@@ -17,6 +17,7 @@
 //! Pure logic lives in `geom`, `mask`, `queue` and the functions below; the Windows window plumbing
 //! lives in `win`.
 
+pub mod esc;
 pub mod geom;
 pub mod mask;
 pub mod queue;
@@ -388,6 +389,8 @@ pub fn announce(app: &tauri::AppHandle, actor: &Actor, step: Step) -> Announce {
         let seq = q.next_seq();
         (slot, run, seq, index)
     };
+    // A run is active from here: Esc anywhere stops it (the check ends with the run).
+    esc::arm(app);
     #[cfg(windows)]
     {
         let env = win::env();
@@ -434,6 +437,11 @@ pub fn stop(app: &tauri::AppHandle) -> Vec<String> {
     let kinds = state().lock().unwrap_or_else(|e| e.into_inner()).stop_all(now_ms());
     for k in &kinds {
         run_cancellers(k);
+    }
+    // Lens's own assistant (Command, the AI dock, voice): also cancel the requests behind the
+    // run, so a model round in flight ends now instead of at its next step.
+    if kinds.iter().any(|k| k == "internal" || k == "voice") {
+        crate::ai::runtime().cancel_all();
     }
     let _ = app.emit(EVT_STOP, &kinds);
     #[cfg(windows)]

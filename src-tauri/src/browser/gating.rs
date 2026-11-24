@@ -254,6 +254,50 @@ pub fn classify(action: &PageAction, caps: &Capabilities) -> Decision {
     }
 }
 
+/// What the shared agent-safety gate (`agentsafe::gate`) is asked about a classified action:
+/// the pipeline's action word and, for a field the agent must never type into, the field kind.
+/// The browser's own classification is the input: its category picks the question, so the two
+/// sets of rules can never disagree about what an action is.
+pub fn gate_question(action: &PageAction, d: &Decision) -> (&'static str, Option<&'static str>, Option<String>) {
+    let url = match action {
+        PageAction::Navigate { url } => Some(url.clone()),
+        _ => None,
+    };
+    let (word, field) = match d.category {
+        Category::Read | Category::Scroll => ("read", None),
+        Category::Navigate | Category::Search => ("navigate", None),
+        Category::Type => ("type", None),
+        Category::Click | Category::Captcha => ("click", None),
+        Category::Submit | Category::Booking => ("submit", None),
+        Category::Send => ("send", None),
+        Category::Delete => ("delete", None),
+        // The task's "Pay or buy" switch is the browser's own rule; when it allows asking, the
+        // shared gate still checks the site and the page the step came from.
+        Category::Purchase if d.risk == Risk::Blocked => ("pay", None),
+        Category::Purchase => ("submit", None),
+        Category::Login => ("login", None),
+        Category::Secret => ("type", Some("password")),
+    };
+    (word, field, url)
+}
+
+/// Folds the shared gate's answer ("allow" | "ask" | "block" and its reasons as one line) into
+/// the browser's decision. The stricter of the two wins; the gate can never loosen a decision.
+pub fn with_gate(mut d: Decision, gate_kind: &str, gate_text: &str) -> Decision {
+    match gate_kind {
+        "block" if d.risk != Risk::Blocked => {
+            d.risk = Risk::Blocked;
+            d.reason = format!("Lens stopped this step: {}.", gate_text.trim_end_matches('.'));
+        }
+        "ask" if d.risk == Risk::Auto => {
+            d.risk = Risk::AskFirst;
+            d.reason = format!("{}.", gate_text.trim_end_matches('.'));
+        }
+        _ => {}
+    }
+    d
+}
+
 /// Wraps page content so a model treats it as data. Instructions found in a page are never
 /// followed; they are only reported to the user (see `src/browser/guard.ts`).
 pub fn untrusted_block(url: &str, text: &str) -> String {
@@ -267,6 +311,53 @@ pub fn untrusted_block(url: &str, text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_shared_gate_can_only_tighten_a_decision() {
+        let auto = d(Risk::Auto, Category::Click, "Clicks a link or button.");
+        assert_eq!(with_gate(auto.clone(), "allow", ""), auto);
+        let asked = with_gate(auto.clone(), "ask", "This site looks like paypal.com but isn't");
+        assert_eq!(asked.risk, Risk::AskFirst);
+        assert!(asked.reason.contains("paypal.com"));
+        let blocked = with_gate(auto, "block", "The content this step came from hides instructions aimed at the AI");
+        assert_eq!(blocked.risk, Risk::Blocked);
+        assert!(blocked.reason.starts_with("Lens stopped this step"));
+        // Already stricter: unchanged.
+        let own = d(Risk::Blocked, Category::Login, "Signing in is left to you.");
+        assert_eq!(with_gate(own.clone(), "ask", "x"), own);
+        assert_eq!(with_gate(own.clone(), "block", "x"), own);
+        let ask = d(Risk::AskFirst, Category::Submit, "This submits a form.");
+        assert_eq!(with_gate(ask.clone(), "ask", "x"), ask);
+        assert_eq!(with_gate(ask, "block", "y").risk, Risk::Blocked);
+    }
+
+    #[test]
+    fn classified_actions_ask_the_gate_the_right_question() {
+        let caps = Capabilities::default();
+        let q = |a: PageAction| {
+            let dec = classify(&a, &caps);
+            let (w, f, u) = gate_question(&a, &dec);
+            (w, f, u)
+        };
+        assert_eq!(q(PageAction::ReadPage).0, "read");
+        assert_eq!(q(PageAction::Navigate { url: "https://example.com".into() }), ("navigate", None, Some("https://example.com".to_string())));
+        assert_eq!(q(PageAction::Click { target: Target { tag: "a".into(), text: "Read more".into(), ..Default::default() } }).0, "click");
+        assert_eq!(q(PageAction::Submit { target: btn("Submit") }).0, "submit");
+        assert_eq!(q(PageAction::Click { target: btn("Send message") }).0, "send");
+        assert_eq!(q(PageAction::Click { target: btn("Delete account") }).0, "delete");
+        assert_eq!(q(PageAction::Click { target: btn("Sign in") }).0, "login");
+        assert_eq!(q(PageAction::Click { target: btn("Pay now") }).0, "pay");
+        let pw = Target { tag: "input".into(), input_type: "password".into(), ..Default::default() };
+        assert_eq!(q(PageAction::Type { target: pw, text: "x".into() }), ("type", Some("password"), None));
+        // With "Pay or buy" switched to ask-first the browser asks; the gate checks it as a submit.
+        let pay = Capabilities { payments: true, ..Capabilities::default() };
+        let a = PageAction::Click { target: btn("Pay now") };
+        assert_eq!(gate_question(&a, &classify(&a, &pay)).0, "submit");
+        // Every word is one the pipeline knows.
+        for w in ["read", "navigate", "type", "click", "submit", "send", "delete", "pay", "login"] {
+            assert!(crate::agentsafe::pipeline::ActionKind::parse(w).is_some(), "{w}");
+        }
+    }
 
     fn btn(text: &str) -> Target {
         Target { tag: "button".into(), text: text.into(), in_form: true, ..Default::default() }

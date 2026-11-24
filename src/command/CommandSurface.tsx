@@ -20,6 +20,7 @@ import { buildRequest, resolveProvider } from "./request";
 import { useCommandSettings } from "./settings";
 import { newKey, threadReducer, type BridgeRequest, type ContextChip, type ThreadItem } from "./thread";
 import { ThreadCard, type CardHandlers } from "./cards/Cards";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import { ShelfDrawer, useShelf, KIND_ICON } from "./ShelfDrawer";
 import { ClipList, useClips } from "./ClipList";
 import { MiniView } from "./mini/MiniView";
@@ -684,6 +685,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
 
   runActiveRef.current = runActive;
 
+  // B-12b trace: counts every Enter keydown the page receives at all (capture phase, before
+  // React), so a dropped Enter can be told apart from one the handler skipped.
+  useEffect(() => {
+    const seen = (e: KeyboardEvent) => {
+      if (e.key === "Enter") bump("commandEnterSeen");
+    };
+    window.addEventListener("keydown", seen, true);
+    return () => window.removeEventListener("keydown", seen, true);
+  }, []);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const ctrl = e.ctrlKey || e.metaKey;
     if (popover && popover.items.length) {
@@ -956,6 +967,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
             </div>
           ) : null}
 
+          <SafetyFlagBanners sources={["context", "step", "snip", "control"]} />
           {expanded ? (
             <div className="cmd-body" ref={bodyRef}>
               {mode === "ask" ? (
