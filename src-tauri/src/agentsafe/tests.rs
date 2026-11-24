@@ -45,6 +45,7 @@ const PAGES: &[(&str, &str)] = &[
     ("hidden-injection-in-article", include_str!("fixtures/pages/hidden-injection-in-article.txt")),
     ("exfil-near-discussion", include_str!("fixtures/pages/exfil-near-discussion.txt")),
     ("instruction-with-such-as", include_str!("fixtures/pages/instruction-with-such-as.txt")),
+    ("article-with-concrete-exfil", include_str!("fixtures/pages/article-with-concrete-exfil.txt")),
 ];
 
 fn lines(s: &str) -> impl Iterator<Item = &str> {
