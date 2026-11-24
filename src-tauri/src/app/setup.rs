@@ -67,8 +67,18 @@ pub(crate) fn build_window_from_config(app: &AppHandle, label: &str) -> Option<t
         .iter()
         .find(|w| w.label == label)?
         .clone();
+    crate::tester::log("info", "surface", &format!("building the {label} window (already registered: {})", app.get_webview_window(label).is_some()));
     match tauri::WebviewWindowBuilder::from_config(app, &entry).and_then(|b| b.build()) {
-        Ok(win) => Some(win),
+        Ok(win) => {
+            crate::tester::log("info", "surface", &format!("built the {label} window"));
+            let l = label.to_string();
+            win.on_window_event(move |e| {
+                if matches!(e, tauri::WindowEvent::Destroyed) {
+                    crate::tester::log("info", "surface", &format!("the {l} window was destroyed"));
+                }
+            });
+            Some(win)
+        }
         Err(e) => {
             eprintln!("[Lens UI] Could not create '{}' window: {:?}", label, e);
             None
@@ -155,6 +165,9 @@ where
                     break;
                 }
                 thread::sleep(Duration::from_millis(25));
+            }
+            if !surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).contains(&label2) {
+                crate::tester::log("warn", "surface", &format!("the {label2} page did not report ready within 4 s (registered: {})", app2.get_webview_window(&label2).is_some()));
             }
             lazy_building().lock().unwrap_or_else(|e| e.into_inner()).remove(&label2);
             retry(app2);
