@@ -117,6 +117,11 @@ pub fn set_desktop_icons_hidden(hide: bool) {
                 found: HWND,
             }
             unsafe extern "system" fn cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+                // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+                crate::failsafe::guard::ffi_guard("taskbar.cb", BOOL(1), || cb_guarded(hwnd, lparam))
+            }
+
+            unsafe fn cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
                 let ctx = &mut *(lparam.0 as *mut FindCtx);
                 if let Ok(dv) = FindWindowExW(
                     hwnd,
@@ -182,7 +187,12 @@ pub fn install_exit_restore_handler() {
     use windows::Win32::System::Console::SetConsoleCtrlHandler;
 
     unsafe extern "system" fn ctrl_handler(_ctrl_type: u32) -> BOOL {
-        restore_taskbar_if_hidden();
+        // Runs on a thread Windows creates; a panic here must not cross into it.
+        crate::failsafe::guard::ffi_guard("taskbar.ctrl_handler", (), || {
+            restore_taskbar_if_hidden();
+            // Closing the console is the person stopping Lens, not a failed start.
+            crate::app::safe_start::mark_started();
+        });
         BOOL(0) // allow default exit after restoring taskbar
     }
 

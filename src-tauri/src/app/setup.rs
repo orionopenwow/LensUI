@@ -274,6 +274,8 @@ pub(crate) fn run_setup(
         thread::sleep(Duration::from_secs(win_shell::BOOT_OK_AFTER_SECS));
         win_shell::mark_shell_boot_ok();
     });
+    // Crash-loop guard: this start counts as good once the UI has been up for a while.
+    crate::app::safe_start::mark_started_when_up();
     // Lens Cleaner: snapshot / low-space alert / weekly SAFE clean, each off until turned on.
     crate::commands::cleaner::start_background(handle.clone());
 

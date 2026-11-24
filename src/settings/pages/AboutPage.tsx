@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { UpdatesCard } from "../../components/UpdatesCard";
 import { CrashReportsCard } from "../../components/CrashReportsCard";
+import { FailsafeCard } from "../../components/FailsafeCard";
 import { BackupRestoreCard } from "../../components/BackupRestoreCard";
 import { TesterHubCard } from "../../tester/TesterHubCard";
 import { LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
@@ -17,6 +18,9 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
       <Section id="updates" title="Updates & crash reports" summary="Lens updates are signed" forceOpen={section === "updates"}>
         <UpdatesCard />
         <CrashReportsCard />
+      </Section>
+      <Section id="safety" title="Safety net" summary="Safe Mode and paused features" forceOpen={section === "safety"}>
+        <FailsafeCard />
       </Section>
       <Section id="selftest" title="Self-test" summary="Checks Lens without changing anything" forceOpen={section === "selftest"}>
         <Row label="Run self-test" desc="Copy the report into a bug report.">

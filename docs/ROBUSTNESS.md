@@ -133,8 +133,10 @@ wrong format versions, invalid JSON), atomic write, date formatting.
 
 ## 5. Crash-safety audit
 
-Release builds use `panic = "abort"`: **any** panic kills the whole shell (the panic hook does restore the
-taskbar). Mutex poisoning can therefore only happen in dev builds; the real risks are panics and data loss.
+Release builds used `panic = "abort"` when this audit was written: any panic killed the whole shell (the
+panic hook restored the taskbar first). Since the failsafe pass (docs/FAILSAFE.md) release builds unwind so
+that a panic inside an OS callback is caught at its guard and the event passed on; a panic outside a guard
+still ends the process after the same restore. The risks below were found under the old rule.
 
 | # | Risk | Severity |
 | :--- | :--- | :--- |

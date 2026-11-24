@@ -339,7 +339,43 @@ mod rt {
         MY_GENERATION.with(|g| g.get()) == GENERATION.load(Ordering::Relaxed)
     }
 
+    /// A handler panicked inside a hook procedure. The panic was caught at the guard, the event
+    /// goes on to the next hook, and the feature that was running sits out for a minute, the
+    /// same as a handler that stalled.
+    fn bench_after_panic() {
+        let culprit = IN_PROC_FEATURE.swap(0, Ordering::Relaxed);
+        IN_PROC_SINCE.store(0, Ordering::Relaxed);
+        match Feature::ALL.get(culprit.wrapping_sub(1)) {
+            Some(&f) if culprit != 0 => {
+                BENCHED_UNTIL[f as usize].store(now_ms() + BENCH_MS, Ordering::SeqCst);
+                set_problem(&format!(
+                    "{} hit an error while handling a key or mouse event, so Lens switched it off for a minute. Nothing was blocked.",
+                    f.name()
+                ));
+            }
+            _ => set_problem("Input handling hit an error; the event was passed on. Nothing was blocked."),
+        }
+    }
+
     unsafe extern "system" fn key_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        // No panic may cross into Windows from here: it would take the whole process down with
+        // the keyboard hook installed.
+        let swallow = crate::failsafe::guard::ffi_guard_else(
+            "input.key_proc",
+            || {
+                bench_after_panic();
+                false
+            },
+            || key_event(code, wparam, lparam),
+        );
+        if swallow {
+            return LRESULT(1);
+        }
+        CallNextHookEx(HHOOK::default(), code, wparam, lparam)
+    }
+
+    /// The keyboard hook's work. True when a handler swallowed the event.
+    unsafe fn key_event(code: i32, wparam: WPARAM, lparam: LPARAM) -> bool {
         if code >= 0 && lparam.0 != 0 && current_thread_is_live() {
             KEY_EVENTS.fetch_add(1, Ordering::Relaxed);
             let k = &*(lparam.0 as *const RawKbd);
@@ -362,15 +398,29 @@ mod rt {
             if current_thread_is_live() {
                 IN_PROC_FEATURE.store(0, Ordering::Relaxed);
                 IN_PROC_SINCE.store(0, Ordering::Relaxed);
-                if swallow {
-                    return LRESULT(1);
-                }
+                return swallow;
             }
+        }
+        false
+    }
+
+    unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+        let swallow = crate::failsafe::guard::ffi_guard_else(
+            "input.mouse_proc",
+            || {
+                bench_after_panic();
+                false
+            },
+            || mouse_event(code, wparam, lparam),
+        );
+        if swallow {
+            return LRESULT(1);
         }
         CallNextHookEx(HHOOK::default(), code, wparam, lparam)
     }
 
-    unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    /// The mouse hook's work. True when a handler swallowed the event.
+    unsafe fn mouse_event(code: i32, wparam: WPARAM, lparam: LPARAM) -> bool {
         if code >= 0 && lparam.0 != 0 && current_thread_is_live() {
             MOUSE_EVENTS.fetch_add(1, Ordering::Relaxed);
             let m = &*(lparam.0 as *const RawMouse);
@@ -394,12 +444,10 @@ mod rt {
             if current_thread_is_live() {
                 IN_PROC_FEATURE.store(0, Ordering::Relaxed);
                 IN_PROC_SINCE.store(0, Ordering::Relaxed);
-                if swallow {
-                    return LRESULT(1);
-                }
+                return swallow;
             }
         }
-        CallNextHookEx(HHOOK::default(), code, wparam, lparam)
+        false
     }
 
     fn key_hook_wanted(paused: bool) -> bool {
@@ -705,6 +753,10 @@ mod rt {
     }
 
     pub fn claim(f: Feature, keyboard: bool) {
+        // Safe Mode: no low-level hook is installed, whatever asks for one.
+        if crate::failsafe::features::safe_mode() {
+            return;
+        }
         let table = if keyboard { &KEY_CLAIMED } else { &MOUSE_CLAIMED };
         table[f as usize].store(true, Ordering::SeqCst);
         ensure_started();

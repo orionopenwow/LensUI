@@ -436,11 +436,13 @@
     0 0 0 4px rgb(var(--lens-ink, 255 255 255) / 0.11),
     0 0 0 9999px rgb(0 0 0 / 0.18);
   animation: guide-ring 1.6s ease-in-out infinite;
-  transition:
-    top 160ms ease,
-    left 160ms ease,
-    width 160ms ease,
-    height 160ms ease;
+  /* The ring sits at the top-left corner and is moved by transform (docs/SMOOTHNESS.md, G-13):
+     following a target that scrolls or shifts glides on the compositor. Its size is set
+     directly; it only changes when the ring moves on to a different target. */
+  top: 0;
+  left: 0;
+  transition: transform var(--lens-dur-base) var(--lens-ease-out);
+  will-change: transform;
 }
 .guide-coach-tip {
   position: fixed;

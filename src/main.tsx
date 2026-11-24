@@ -4,6 +4,9 @@ import ReactDOM from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./styles/tokens.css";
 import "./styles/global.css";
+import { CrashProbe, QuietBoundary, SurfaceBoundary } from "./failsafe/SurfaceBoundary";
+import { installGlobalHandlers } from "./failsafe/report";
+import { FailsafeNotices } from "./failsafe/FailsafeNotices";
 
 // Each surface is its own window, so each window only downloads, parses and runs its own code.
 // (The Dock no longer carries the Control Center, and so on.)
@@ -81,40 +84,64 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
 
 const params = new URLSearchParams(window.location.search);
 
-// Feed frontend errors into the Tester Hub session log (redacted, in memory only).
-window.addEventListener("error", (e) => {
-  invoke("tester_log_push", { level: "error", area: "ui", message: String(e.message) }).catch(() => {});
-});
-window.addEventListener("unhandledrejection", (e) => {
-  invoke("tester_log_push", { level: "warn", area: "ui", message: String(e.reason) }).catch(() => {});
-});
-const Surface = surfaces[params.get("surface") || "dock"] ?? surfaces.dock;
+// Uncaught errors and unhandled rejections go to the same reporter as surface crashes
+// (docs/FAILSAFE.md §1): the session log and lens.log on this PC, rate-limited, never uploaded.
+installGlobalHandlers();
+const surfaceName = params.get("surface") || "dock";
+const Surface = surfaces[surfaceName] ?? surfaces.dock;
 // Smoothness probe (docs/SMOOTHNESS.md): idle until Tester Hub starts a check.
-import("./smooth/probe").then((m) => m.installSmoothProbe(params.get("surface") || "dock")).catch(() => {});
+import("./smooth/probe").then((m) => m.installSmoothProbe(surfaceName)).catch(() => {});
 // "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
 const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
-const withTwin = !["presence", "presencebar"].includes(params.get("surface") || "dock");
+const withTwin = !["presence", "presencebar"].includes(surfaceName);
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their
 // listen() calls. Windows built on first use wait for this before their opening command is replayed.
 function ReadySignal() {
   React.useEffect(() => {
     const t = window.setTimeout(() => {
-      invoke("surface_ready_cmd", { label: params.get("surface") || "dock" }).catch(() => {});
+      invoke("surface_ready_cmd", { label: surfaceName }).catch(() => {});
     }, 50);
     return () => window.clearTimeout(t);
   }, []);
   return null;
 }
 
+// The always-on windows tell the backend they are still running. If the WebView behind one of
+// them dies, the heartbeat stops and the backend reloads that window (docs/FAILSAFE.md §1).
+const HEARTBEAT_SURFACES = ["dock", "topbar", "desktopfolder"];
+if (HEARTBEAT_SURFACES.includes(surfaceName)) {
+  window.setInterval(() => {
+    invoke("surface_alive_cmd", { label: surfaceName }).catch(() => {});
+  }, 5000);
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Suspense fallback={null}>
-      <Surface />
-      {/* Guide "Show me" highlights work on every surface (docs/GUIDE.md §3). */}
-      <CoachMarkLayer />
-      {withTwin ? <PresenceTwin /> : null}
-      <ReadySignal />
-    </Suspense>
+    {/* One boundary for every surface: a crash shows "This part of Lens hit a problem · Reload"
+        (nothing at all for overlays), is reported, reloads once, and stops after three in a row. */}
+    <SurfaceBoundary surface={surfaceName}>
+      <Suspense fallback={null}>
+        <Surface />
+        <CrashProbe />
+        {/* Inside the same Suspense, after the surface: see ReadySignal. */}
+        <ReadySignal />
+      </Suspense>
+    </SurfaceBoundary>
+    {/* Helpers beside the surface fail on their own; they never take the surface with them. */}
+    <QuietBoundary name={`${surfaceName}-coach`}>
+      <Suspense fallback={null}>
+        {/* Guide "Show me" highlights work on every surface (docs/GUIDE.md §3). */}
+        <CoachMarkLayer />
+      </Suspense>
+    </QuietBoundary>
+    {withTwin ? (
+      <QuietBoundary name={`${surfaceName}-twin`}>
+        <Suspense fallback={null}>
+          <PresenceTwin />
+        </Suspense>
+      </QuietBoundary>
+    ) : null}
+    {surfaceName === "dock" ? <FailsafeNotices /> : null}
   </React.StrictMode>
 );

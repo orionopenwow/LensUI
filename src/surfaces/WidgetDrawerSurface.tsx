@@ -151,14 +151,10 @@ export const WidgetDrawerSurface: React.FC = () => {
                   <span>CPU</span>
                   <span style={{ fontFamily: "var(--font-mono)" }}>{telemetry.cpuUsage.toFixed(0)}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)", overflow: "hidden" }}>
+                <div className="lens-meter" style={{ height: 6, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)" }}>
                   <div
-                    style={{
-                      width: `${Math.min(100, telemetry.cpuUsage)}%`,
-                      height: "100%",
-                      background: "var(--lens-accent)",
-                      transition: "width 400ms ease",
-                    }}
+                    className="lens-meter-fill"
+                    style={{ "--fill": Math.max(0, Math.min(100, telemetry.cpuUsage)) / 100, background: "var(--lens-accent)" } as React.CSSProperties}
                   />
                 </div>
               </div>
@@ -172,14 +168,10 @@ export const WidgetDrawerSurface: React.FC = () => {
                     {telemetry.memUsedGb} / {telemetry.memTotalGb} GB
                   </span>
                 </div>
-                <div style={{ height: 6, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)", overflow: "hidden" }}>
+                <div className="lens-meter" style={{ height: 6, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)" }}>
                   <div
-                    style={{
-                      width: `${Math.min(100, telemetry.memPercent)}%`,
-                      height: "100%",
-                      background: "var(--lens-accent)",
-                      transition: "width 400ms ease",
-                    }}
+                    className="lens-meter-fill"
+                    style={{ "--fill": Math.max(0, Math.min(100, telemetry.memPercent)) / 100, background: "var(--lens-accent)" } as React.CSSProperties}
                   />
                 </div>
               </div>
