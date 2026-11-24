@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ChevronDown, Check, RotateCcw, Pipette } from "lucide-react";
 import type { LensConfig, WindowsThemeInfo } from "../types/lens";
@@ -9,15 +9,17 @@ import {
   allPacks,
   applyThemePack,
   packById,
-  recommendedPacks,
   type ThemePack,
 } from "../themes/packs";
+import { applyFeaturedLook, featuredPacks, isFeatured } from "../themes/featured";
+import { matchLookPointer } from "../themes/featuredPointer";
 import { readSchedule } from "../themes/schedule";
 import { SHAPE_STYLES, normalizeShapeStyle } from "../themes/shapes/shapes";
 import { ColorWheel } from "../components/ColorWheel";
 import { ThemeGallery, PackCard } from "../components/ThemeGallery";
 import { ThemeScheduleCard } from "../components/ThemeScheduleCard";
 import { WallpaperCard } from "../components/WallpaperCard";
+import { SwitcherCard } from "../wallpapers/SwitcherCard";
 import { AmbientPreview, AmbientWallpaperOptions, AnimatedBackdropSwitch, packPalette } from "../playground/ambient/controls";
 import { SavedThemesCard } from "../components/SavedThemesCard";
 import { ThemeSharingCard } from "../plugins/ThemeSharingCard";
@@ -192,6 +194,7 @@ const HeroPreview: React.FC<{ config: LensConfig; accent: string; pack?: ThemePa
   const opacity = Math.round((config.theme.glassOpacity ?? 0.96) * 100);
   let dots = TRAFFIC[wc.style] ?? TRAFFIC["traffic-classic"];
   if (wc.order === "red-yellow-green") dots = [dots[2], dots[1], dots[0]];
+  else if (wc.order !== "green-yellow-red") dots = [dots[1], dots[0], dots[2]]; // yellow · green · red (default)
   const pill = wc.style === "accent-pills";
   const border =
     frame === "none"
@@ -259,7 +262,9 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const schedule = readSchedule(config);
   const appearance: Appearance = schedule.enabled ? "auto" : light ? "light" : "dark";
   const total = allPacks().length;
-  const recommended = recommendedPacks();
+  const featured = featuredPacks();
+  // The config before the last theme click, so one press puts everything back.
+  const [undo, setUndo] = useState<LensConfig | null>(null);
 
   useEffect(() => {
     invoke<WallpaperState>("get_wallpaper_state_cmd").then(setWallpaper).catch(() => {});
@@ -280,7 +285,18 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
     };
   }, [wheelOpen]);
 
-  const apply = (packId: string) => onApplyPack(applyThemePack(config, packId, { applyDockStyle: alsoDock }));
+  // A featured look is applied whole (it defines its own Dock, font, glass and motion); any other
+  // pack keeps the "Also change Dock style" choice.
+  const apply = (packId: string) => {
+    setUndo(config);
+    onApplyPack(isFeatured(packId) ? applyFeaturedLook(config, packId) : applyThemePack(config, packId, { applyDockStyle: alsoDock }));
+    if (isFeatured(packId)) void matchLookPointer(packId);
+  };
+
+  // One function for the life of the tab, so the memoised theme cards skip unrelated re-renders.
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  const applyStable = useCallback((packId: string) => applyRef.current(packId), []);
 
   const setTheme = (patch: Partial<LensConfig["theme"]>) => updateConfig({ ...config, theme: { ...config.theme, ...patch } });
 
@@ -311,7 +327,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
 
   const wc = config.windowControls;
-  const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : "G·Y·R";
+  const orderLabel = !wc.enabled ? "Windows buttons" : wc.order === "red-yellow-green" ? "R·Y·G" : wc.order === "green-yellow-red" ? "G·Y·R" : "Y·G·R";
   const frameLabel = FRAME_STYLES.find((f) => f.id === wc.frameStyle)?.label ?? "Hairline";
   const folderLabel = FOLDER_THEMES.find((f) => f.id === (config.folderStyle?.theme ?? "accent"))?.label ?? "Accent";
   const shapeStyle = normalizeShapeStyle(config.theme.shapeStyle);
@@ -465,30 +481,46 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
         <div className="tux-block-head">
           <div className="tux-h2">Choose a theme</div>
           <button type="button" className="cc-btn-ghost tux-small-btn" data-browse-all aria-expanded={browseAll} onClick={() => setBrowseAll((v) => !v)}>
-            {browseAll ? "Show recommended" : `Browse all ${total}`}
+            {browseAll ? "Show featured" : `Browse all ${total}`}
           </button>
         </div>
         {browseAll ? (
-          <ThemeGallery config={config} onApply={apply} windowsAccent={winTheme.accentHex} onClose={() => setBrowseAll(false)} />
+          <ThemeGallery config={config} onApply={applyStable} windowsAccent={winTheme.accentHex} onClose={() => setBrowseAll(false)} />
         ) : (
           <div className="tux-rec-row">
-            {recommended.map((p) => (
+            {featured.map((p) => (
               <PackCard
                 key={p.id}
                 pack={p}
                 size="small"
                 active={config.theme.preset === p.id}
                 accent={p.accentMode === "windows" ? winTheme.accentHex : p.accent}
-                onApply={apply}
+                onApply={applyStable}
               />
             ))}
+          </div>
+        )}
+        {undo && (
+          <div className="tux-undo" role="status">
+            <span>Theme applied.</span>
+            <button
+              type="button"
+              className="cc-btn-ghost tux-small-btn"
+              data-undo-theme
+              onClick={() => {
+                onApplyPack(undo);
+                setUndo(null);
+              }}
+            >
+              Undo
+            </button>
           </div>
         )}
         <label className="tux-check">
           <input type="checkbox" checked={alsoDock} onChange={(e) => setAlsoDock(e.target.checked)} />
           <span>
             Also change Dock style
-            <span className="tux-help"> Each theme has a matching Dock. Off keeps your current Dock ({dockStyleLabel(dockStyleOf(config))}).</span>
+            <span className="tux-help"> Featured looks always bring their own Dock. For other themes, off keeps your current Dock ({dockStyleLabel(dockStyleOf(config))}).</span>
           </span>
         </label>
       </section>
@@ -532,8 +564,9 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             />
             <Chips
               label="Button order"
-              value={!wc.enabled ? "native" : wc.order === "red-yellow-green" ? "ryg" : "gyr"}
+              value={!wc.enabled ? "native" : wc.order === "red-yellow-green" ? "ryg" : wc.order === "green-yellow-red" ? "gyr" : "ygr"}
               options={[
+                { id: "ygr", label: "Yellow · Green · Red" },
                 { id: "gyr", label: "Green · Yellow · Red" },
                 { id: "ryg", label: "Red · Yellow · Green" },
                 { id: "native", label: "Windows default" },
@@ -542,7 +575,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 updateConfig({
                   ...config,
                   windowControls:
-                    id === "native" ? { ...wc, enabled: false } : { ...wc, enabled: true, order: id === "ryg" ? "red-yellow-green" : "green-yellow-red" },
+                    id === "native" ? { ...wc, enabled: false } : { ...wc, enabled: true, order: id === "ryg" ? "red-yellow-green" : id === "gyr" ? "green-yellow-red" : "yellow-green-red" },
                 })
               }
             />
@@ -654,6 +687,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </Section>
 
           <Section id="wallpaper" title="Wallpaper" summary={wallpaperSummary} open={!!open.wallpaper} onToggle={() => toggle("wallpaper")}>
+            <SwitcherCard />
             <AmbientWallpaperOptions />
             <WallpaperCard config={config} onUpdateConfig={updateConfig} />
           </Section>

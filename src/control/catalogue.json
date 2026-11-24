@@ -68,12 +68,12 @@
   "categories": {
     "AI access": 13,
     "Alt+drag": 6,
-    "Behaviour": 15,
+    "Behaviour": 16,
     "Clipboard": 10,
     "Command & Shelf": 1,
     "Desktop": 1,
     "Do Not Disturb": 3,
-    "Dock": 24,
+    "Dock": 25,
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 5,
@@ -91,7 +91,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 180,
+  "count": 182,
   "entries": [
     {
       "capability": "change_settings",
@@ -1106,6 +1106,21 @@
     {
       "capability": "change_look",
       "category": "Dock",
+      "default": false,
+      "description": "On once you reorder Dock pins in Lens. Off: pins from the Windows taskbar follow its order.",
+      "example": "{\"args\":{\"changes\":{\"dock.pinsUserOrdered\":true}},\"tool\":\"lens_set\"}",
+      "label": "Keep my Dock order",
+      "path": "dock.pinsUserOrdered",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Dock",
       "default": "bottom",
       "description": "Which screen edge the Dock sits on.",
       "example": "{\"args\":{\"changes\":{\"dock.position\":\"top\"}},\"tool\":\"lens_set\"}",
@@ -1858,6 +1873,27 @@
       "schema": {
         "maxItems": 200,
         "type": "array"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Behaviour",
+      "default": "",
+      "description": "Simple shows the core settings with previews; Advanced shows every option.",
+      "example": "{\"args\":{\"changes\":{\"settingsMode\":\"simple\"}},\"tool\":\"lens_set\"}",
+      "label": "Settings detail",
+      "path": "settingsMode",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "",
+          "simple",
+          "advanced"
+        ],
+        "maxLength": 400,
+        "type": "string"
       },
       "store": "config"
     },
@@ -2828,15 +2864,16 @@
     {
       "capability": "change_look",
       "category": "Window frames",
-      "default": "green-yellow-red",
+      "default": "yellow-green-red",
       "description": "Order of the window buttons.",
-      "example": "{\"args\":{\"changes\":{\"windowControls.order\":\"red-yellow-green\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"windowControls.order\":\"green-yellow-red\"}},\"tool\":\"lens_set\"}",
       "label": "Window button order",
       "path": "windowControls.order",
       "reversible": true,
       "risk": "low",
       "schema": {
         "enum": [
+          "yellow-green-red",
           "green-yellow-red",
           "red-yellow-green"
         ],

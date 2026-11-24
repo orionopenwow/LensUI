@@ -258,6 +258,8 @@ pub(crate) fn run_setup(
         let _ = set_run_on_startup(true);
     }
 
+    // Dock, top bar and desktop tab stay hidden until their pages report ready (B-21).
+    crate::app::loadguard::start(&handle);
     position_dock_and_bars(&handle, &initial_config);
 
     // Shell mode: start the user's startup apps, then mark the boot good after ~20 s.
@@ -272,6 +274,8 @@ pub(crate) fn run_setup(
         thread::sleep(Duration::from_secs(win_shell::BOOT_OK_AFTER_SECS));
         win_shell::mark_shell_boot_ok();
     });
+    // Crash-loop guard: this start counts as good once the UI has been up for a while.
+    crate::app::safe_start::mark_started_when_up();
     // Lens Cleaner: snapshot / low-space alert / weekly SAFE clean, each off until turned on.
     crate::commands::cleaner::start_background(handle.clone());
 
@@ -319,6 +323,7 @@ pub(crate) fn run_setup(
 
     // File index for search: first build after 8 s, refresh every 15 min, cancellable
     win_search::start_file_index();
+    crate::win_quick_settings::start_night_light_schedule();
 
     // Plugins: copy the 4 example plugins once, all switched off
     if let Err(e) = win_plugins::install_example_plugins_if_first_run() {

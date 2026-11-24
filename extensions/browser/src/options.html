@@ -71,6 +71,16 @@
       </div>
     </section>
 
+    <section class="card" id="marksCard">
+      <h2>Lens buttons on pages</h2>
+      <p class="hint">A tiny Lens orb next to things Lens can help with: a tweet's actions, YouTube's player, videos, images, 3D models, code and downloads. Click it for a short list of actions. Off until you choose where it appears.</p>
+      <label class="switch-row"><input type="checkbox" id="marksOn" /> Show Lens buttons on pages</label>
+      <div id="marksBox">
+        <ul class="list checks" id="marksAdapters"></ul>
+        <p class="hint">Press <kbd>Alt</kbd>+<kbd>L</kbd> on a page where they're on for page actions. Saving video or audio is only offered for plain files: never streams, protected media or YouTube (which gets YouTube's own offline option).</p>
+      </div>
+      <p class="hint" id="marksHint"></p>
+    </section>
     <section class="card">
       <h2>Privacy</h2>
       <p class="hint">This extension makes no network requests of its own. It talks only to Lens on this PC through the browser's native messaging. The one exception is "Get transcript", which asks YouTube for the caption track its own player uses. Answers come from a local model unless you let Lens use Claude, and every cloud request waits for your OK in Lens.</p>
@@ -78,6 +88,8 @@
     <p class="hint" id="saved" role="status"></p>
   </main>
   <script src="content/selectionLogic.js"></script>
+  <script src="content/marksLogic.js"></script>
+  <script type="module" src="marksOptions.js"></script>
   <script type="module" src="options.js"></script>
 </body>
 </html>

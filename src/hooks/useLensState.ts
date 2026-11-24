@@ -12,6 +12,7 @@ import "../themes/shapes/expressive.css";
 import "../themes/dotmatrix/dotmatrix.css";
 import { installKeyhookResponder } from "../shell/keyhookResponder";
 import { syncLivingTint } from "../themes/living/tint";
+import { useSurfaceExitAck } from "../ui/motion/useSurfaceTransition";
 import { readSchedule } from "../themes/schedule";
 
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
@@ -126,6 +127,46 @@ export function applyThemeWithTransition(cfg: LensConfig, winTheme: WindowsTheme
   applyThemeToDocument(cfg, winTheme);
 }
 
+// Saves are coalesced: rapid changes (clicking through themes, dragging a slider) update this
+// window at once but reach the backend as one save per quiet moment, one at a time. Every other
+// window then re-renders once instead of once per click.
+const SAVE_QUIET_MS = 90;
+let saveLatest: LensConfig | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let saveInFlight: Promise<void> | null = null;
+let saveWaiters: Array<{ resolve: () => void; reject: (e: unknown) => void }> = [];
+
+function flushSave() {
+  saveTimer = null;
+  if (saveInFlight) {
+    // One at a time: try again when the current save finishes.
+    saveInFlight.finally(() => {
+      if (!saveTimer && saveLatest) saveTimer = setTimeout(flushSave, 0);
+    });
+    return;
+  }
+  const cfg = saveLatest;
+  const waiters = saveWaiters;
+  saveLatest = null;
+  saveWaiters = [];
+  if (!cfg) return;
+  saveInFlight = invoke("save_config_cmd", { newConfig: cfg })
+    .then(() => waiters.forEach((w) => w.resolve()))
+    .catch((e) => waiters.forEach((w) => w.reject(e)))
+    .finally(() => {
+      saveInFlight = null;
+    }) as Promise<void>;
+}
+
+export function queueSave(cfg: LensConfig): Promise<void> {
+  saveLatest = cfg;
+  return new Promise<void>((resolve, reject) => {
+    saveWaiters.push({ resolve, reject });
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, SAVE_QUIET_MS);
+  });
+}
+
 export function useLensState() {
   const [config, setConfig] = useState<LensConfig | null>(null);
   const [winTheme, setWinTheme] = useState<WindowsThemeInfo>({
@@ -161,9 +202,12 @@ export function useLensState() {
     })().catch(console.error);
 
     const unlistenCfg = listen<LensConfig>("lens://config-updated", (event) => {
+      // A newer change from this window is still waiting to be saved: the echo of an older save
+      // would flick the window back to the previous theme for a moment.
+      if (saveLatest) return;
       // A custom pack imported in another window is unknown here until its file is read.
       ensurePackLoaded(event.payload.theme.preset).finally(() => {
-        if (mounted) setConfig({ ...event.payload });
+        if (mounted && !saveLatest) setConfig({ ...event.payload });
       });
     });
     const unlistenTheme = listen<WindowsThemeInfo>("lens://windows-theme", (event) => {
@@ -194,7 +238,7 @@ export function useLensState() {
         : { ...incoming, theme: { ...incoming.theme, surfaceHex } };
     if (next.theme.preset !== lastPreset) localThemeChange = true;
     setConfig(next);
-    await invoke("save_config_cmd", { newConfig: next });
+    await queueSave(next);
   }, []);
 
   return { config, winTheme, updateConfig };
@@ -261,6 +305,8 @@ export function useRunningWindows(intervalMs = 900) {
 
 export function useSurfaceGlide(label: string) {
   const [phase, setPhase] = useState<"is-open" | "is-pre-open" | "is-closing">("is-open");
+  // Tell the backend when the exit has finished, so the window is hidden on a finished frame.
+  useSurfaceExitAck(label);
 
   useEffect(() => {
     const triggerOpenGlide = () => {
@@ -272,12 +318,15 @@ export function useSurfaceGlide(label: string) {
       });
     };
 
-    const unlisten = listen<{ label: string; state: "open" | "closing" }>(
+    const unlisten = listen<{ label: string; state: "pre" | "open" | "closing" }>(
       "lens://surface-glide",
       (e) => {
         if (e.payload?.label !== label) return;
         if (e.payload.state === "closing") {
           setPhase("is-closing");
+        } else if (e.payload.state === "pre") {
+          // Sent just before the window is shown: start hidden in the entry pose, no transition.
+          setPhase("is-pre-open");
         } else {
           triggerOpenGlide();
         }

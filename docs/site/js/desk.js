@@ -1,10 +1,11 @@
-// The Lens desk: a live, 1:1-styled Lens desktop on the website. One module, used by the hero and
-// the Theme lab. It draws the real ambient theme backdrop (src/playground), Lens's top bar with its
-// Quick Settings and notification flyouts, desktop icons, app windows you can drag, resize, snap,
-// maximise, minimise to the dock and close, and Lens Command (Ctrl+Space). The dock is the real
-// Lens dock (src/surfaces/DockSurface.tsx in an iframe, see tools/site/live/); the page and the dock
-// talk with postMessage, so the dock's running dots, clicks, menus and minimise all drive these windows.
-// Apps' contents load on demand from js/apps.js. Nothing here touches the visitor's system.
+// The Lens desk: a live Lens desktop on the website, made of the app's real surfaces. One module,
+// used by the hero and the Theme lab. The backdrop is the real ambient theme scene (src/playground);
+// the dock is the real DockSurface; the top bar, Quick Settings, Lens Command, the magic right-click
+// window and every app window are the real React surfaces too, each in a same-origin frame built by
+// tools/site/live/build-live.mjs (live/app/*.html) on the parity harness's mock backend with scripted
+// demo data. This file only does what Windows and the Lens backend do for those surfaces: it places,
+// drags, snaps, minimises and closes their (frameless) windows, and routes what one surface asks of
+// another. It draws no app UI of its own. Nothing here touches the visitor's system.
 import { reducedMotion, isLight } from "./site.js";
 
 const SITE = new URL("../", import.meta.url);
@@ -13,78 +14,74 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 let packsP = null;
 export const getPacks = () => (packsP ??= fetch(new URL("data/packs.json", SITE)).then((r) => r.json()));
 
-/** Desk apps: id → name, icon, default size (design px). Pinned order matches tools/site/live/site-core.ts. */
+/**
+ * Desk apps: id → name, the real surface it hosts (a page under live/app/), its default size in
+ * design px, and the class the real component's root carries (the checks assert on it).
+ * Pinned order matches tools/site/live/site-core.ts. Every entry is a surface that exists in Lens.
+ */
 export const APPS = {
-  browser: { name: "Lens Browser", icon: "lens-browser", w: 720, h: 470 },
-  files: { name: "Files", icon: "explorer", w: 560, h: 360 },
-  notes: { name: "Notes", icon: "lens-notes", w: 420, h: 380 },
-  music: { name: "Lens Music", icon: "lens-music", w: 380, h: 232 },
-  monitor: { name: "Monitor", icon: "lens-monitor", w: 440, h: 300 },
-  timer: { name: "Timer", icon: "lens-timer", w: 320, h: 300 },
-  cleaner: { name: "Lens Cleaner", icon: "lens-cleaner", w: 560, h: 420 },
-  terminal: { name: "Terminal", icon: "terminal", w: 560, h: 330 },
-  code: { name: "VSCodium", icon: "vscodium", w: 680, h: 430 },
-  chat: { name: "Discord", icon: "discord", w: 420, h: 430 },
-  store: { name: "Lens Apps", icon: "lens-apps", w: 560, h: 470 },
-  settings: { name: "Settings", icon: "lens-settings", w: 660, h: 470 },
+  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 540, marker: ".lb-root" },
+  notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 440, marker: ".ca-app-notes" },
+  music: { name: "Lens Music", icon: "lens-music", src: "music.html?scene=np-expanded", w: 820, h: 520, marker: ".lm-np" },
+  monitor: { name: "Monitor", icon: "lens-monitor", src: "coreapps.html?app=monitor", w: 720, h: 500, marker: ".ca-app-monitor" },
+  timer: { name: "Timer", icon: "lens-timer", src: "coreapps.html?app=timer", w: 420, h: 500, marker: ".ca-app-timer" },
+  cleaner: { name: "Lens Cleaner", icon: "lens-cleaner", src: "cleaner.html?scene=cleanup", w: 860, h: 560, marker: ".cl-app" },
+  store: { name: "Lens Apps", icon: "lens-apps", src: "shell.html?surface=apps", w: 900, h: 580, marker: ".lens-glass" },
+  settings: { name: "Settings", icon: "lens-settings", src: "shell.html?surface=settings&settingsMode=simple", w: 900, h: 580, marker: ".cc-shell" },
+  // Not pinned to the dock: opened from the core apps grid, Command, or a tour.
+  calculator: { name: "Calculator", icon: "lens-calculator", src: "coreapps.html?app=calculator", w: 380, h: 560, marker: ".ca-app-calculator" },
+  color: { name: "Color", icon: "lens-color", src: "coreapps.html?app=color", w: 520, h: 520, marker: ".ca-app-color" },
+  power: { name: "Power", icon: "lens-power", src: "coreapps.html?app=power", w: 600, h: 500, marker: ".ca-app-power" },
+  network: { name: "Network", icon: "lens-network", src: "coreapps.html?app=network", w: 680, h: 500, marker: ".ca-app-network" },
+  clipboard: { name: "Clipboard", icon: "lens-clipboard", src: "coreapps.html?app=clipboard", w: 520, h: 540, marker: ".ca-app-clipboard" },
+  startup: { name: "Startup", icon: "lens-startup", src: "coreapps.html?app=startup", w: 720, h: 520, marker: ".ca-app-startup" },
+  approval: { name: "Needs your OK", icon: "lens-command", src: "approval.html?scene=window&drag=0", w: 440, h: 520, marker: "[class^='ap-']", glass: true },
 };
-const TOP = 32;          // top bar height (design px)
+/** Real surfaces that float over the desk instead of living in a window. */
+const OVER = {
+  qs: { src: "shell.html?surface=quicksettings&esc=1&drag=0", w: 400, h: 600, label: "Quick Settings", marker: ".qs-shell" },
+  cmd: { src: "command.html?scene=compact&esc=1&drag=0", w: 720, h: 470, label: "Lens Command", marker: ".cmd-root" },
+  magic: { src: "magic.html?esc=1&drag=0&magic=0", w: 360, h: 440, label: "Magic right-click", marker: "[class^='magic-']" },
+};
+export const OVERS = OVER;
+export const appUrl = (src, preset) => new URL(`live/app/${src}${src.includes("?") ? "&" : "?"}preset=${encodeURIComponent(preset || "obsidian")}`, SITE).href;
+const TOP = 34;          // the real top bar's height (config.topBar.height)
 const DOCK_H = 132;      // the dock frame's resting height: the dock, its lift and tooltips
 const WORK_BOTTOM = 96;  // windows tile above the dock
-const ICONS = [["notes", "Launch plan.md", "file-doc"], ["browser", "Release notes", "lens-browser"], ["files", "Downloads", "explorer"], ["store", "Lens Apps", "lens-apps"]];
-const NOTES = [
-  { icon: "discord", app: "Discord", title: "Maya", body: "The islands dock looks great on Nord." },
-  { icon: "lens-settings", app: "Lens", title: "Theme schedule", body: "Alabaster Daylight at sunrise." },
-  { icon: "lens-apps", app: "Lens Apps", title: "Krita 5.3 is ready", body: "Official release, checked." },
-  { icon: "lens-notes", app: "Notes", title: "Reminder", body: "Demo with the team, Friday 10:00." },
-];
 
 let uid = 0;
 /**
- * createDesk(host, { label, layout, notify, quiet })
+ * createDesk(host, { label, layout })
  * host: an element the desk fills (it sets its height from the 16:10 design size).
  */
-export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.04, 0.1], ["code", 0.33, 0.17], ["music", 0.72, 0.52]], notify = true, fitViewport = false } = {}) {
+export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false } = {}) {
   const n = ++uid;
   host.classList.add("lx-host");
   host.innerHTML = `<div class="lx" tabindex="0" role="application" aria-roledescription="desktop" aria-label="${esc(label)}" aria-describedby="lx-help-${n}">
     <div class="lx-canvas">
       <div class="lx-bg" aria-hidden="true"><div class="lx-wall"></div><div class="lx-glow"></div></div>
-      <div class="lx-icons" role="group" aria-label="Desktop icons">${ICONS.map(([app, name, ic]) => `<button type="button" class="lx-ic" data-open="${app}"><img src="${iconUrl(ic)}" alt="" width="44" height="44"><span>${esc(name)}</span></button>`).join("")}</div>
-      <div class="lx-marquee" hidden></div>
       <div class="lx-wins"></div>
       <div class="lx-snap" hidden></div>
-      <div class="lx-top">
-        <button type="button" class="lt-logo" data-cmd aria-label="Lens Command"><img src="${new URL("brand/lens-logo-small.svg", SITE)}" alt="" width="16" height="16"></button>
-        <b class="lt-app">Desktop</b><span class="lt-menu">File</span><span class="lt-menu">Edit</span><span class="lt-menu">View</span>
-        <span class="lt-sp"></span>
-        <button type="button" class="lt-search" data-cmd><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>Search<kbd>Ctrl Space</kbd></button>
-        <span class="lt-sp"></span>
-        <button type="button" class="lt-btn" data-fly="notes" aria-label="Notifications" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i class="lt-badge">2</i></button>
-        <button type="button" class="lt-btn lt-qs" data-fly="qs" aria-label="Quick Settings" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a12 12 0 0 1 16 0M7 13.5a7.5 7.5 0 0 1 10 0M10.5 17a2.5 2.5 0 0 1 3 0"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg><span class="lt-bat"><i></i></span></button>
-        <time class="lt-clock"></time>
-      </div>
-      <div class="lx-fly lx-qs" role="dialog" aria-label="Quick Settings" hidden></div>
-      <div class="lx-fly lx-nc" role="dialog" aria-label="Notifications" hidden></div>
+      <iframe class="lx-topbar" title="Lens top bar (live): search, Quick Settings, the clock" loading="lazy"></iframe>
       <iframe class="lx-dock" title="Lens dock (live): click an app to open or focus it, right-click for its menu" loading="lazy"></iframe>
-      <div class="lx-toasts" aria-hidden="true"></div>
-      <div class="lx-menu" role="menu" hidden></div>
-      <div class="lx-cmd" role="dialog" aria-label="Lens Command" hidden><div class="lc-box"><div class="lc-in"><img src="${new URL("brand/lens-logo-small.svg", SITE)}" alt="" width="18" height="18"><input type="text" aria-label="Ask Lens or search" placeholder="Ask Lens or search apps, themes, actions…" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div><div class="lc-res" role="listbox" aria-label="Results"></div></div></div>
+      <div class="lx-over" data-over="qs" role="dialog" aria-label="Quick Settings" hidden></div>
+      <div class="lx-over" data-over="cmd" role="dialog" aria-label="Lens Command" hidden></div>
+      <div class="lx-over" data-over="magic" role="dialog" aria-label="Magic right-click" hidden></div>
     </div>
-    <p class="sr" id="lx-help-${n}">A live demo of the Lens desktop. Tab to a window or a desktop icon. With a window focused: Ctrl+Alt+Arrow keys snap or maximise it, Ctrl+Alt+M minimises, Delete closes. Ctrl+Space opens Lens Command. Nothing here touches your computer.</p>
+    <p class="sr" id="lx-help-${n}">A live demo of the Lens desktop, made of the app's real windows. Tab to a window. With a window focused: Ctrl+Alt+Arrow keys snap or maximise it, Ctrl+Alt+M minimises, Delete closes. Ctrl+Space opens Lens Command. Right-click for the Lens menu. Nothing here touches your computer.</p>
   </div>`;
   const root = host.querySelector(".lx");
   const cv = root.querySelector(".lx-canvas");
   const winsEl = cv.querySelector(".lx-wins");
   const snapEl = cv.querySelector(".lx-snap");
-  const menuEl = cv.querySelector(".lx-menu");
-  const toastsEl = cv.querySelector(".lx-toasts");
   const frame = cv.querySelector(".lx-dock");
-  const cmdEl = cv.querySelector(".lx-cmd");
-  const appLabel = cv.querySelector(".lt-app");
+  const topbar = cv.querySelector(".lx-topbar");
   const listeners = {};
   const emit = (ev, d) => (listeners[ev] ?? []).forEach((f) => f(d));
   const on = (ev, f) => ((listeners[ev] ??= []).push(f), () => (listeners[ev] = listeners[ev].filter((x) => x !== f)));
+  let pack = null, accent = null, committed = null, visible = false;
+  const packMsg = () => (pack ? { lens: "pack", pack: { id: pack.id, label: pack.label, base: baseOf(pack), accent: accent ?? pack.accent, radius: pack.radius, scheme: pack.scheme, frameStyle: pack.frameStyle, controlStyle: pack.controlStyle } } : null);
+  const tell = (f, m) => { try { if (m) f?.contentWindow?.postMessage(m, location.origin); } catch { /* frame gone */ } };
 
   // ---- size: a 16:10 design canvas, scaled down on small screens --------------------------------
   let W = 1280, H = 800, k = 1, full = false;
@@ -92,12 +89,18 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
     else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
-    else { W = cw; H = Math.round(cw * 10 / 16); if (fitViewport) H = Math.max(560, Math.min(H, innerHeight - 150)); k = 1; }
+    else {
+      // Real Lens windows are desktop-sized, so the desk keeps a desktop's width (1600 design px at
+      // least) and scales down to fit the page, the way a screenshot of a monitor would.
+      W = Math.max(cw, 1600); k = cw / W; H = Math.round(W * 10 / 16);
+      /* tabs above + step bar below stay on screen */ if (fitViewport) H = Math.round(Math.max(560 / k, Math.min(H, (innerHeight - 280) / k)));
+    }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
     cv.style.transform = k === 1 ? "" : `scale(${k})`;
     host.style.height = full ? "" : `${Math.round(H * k)}px`;
     for (const w of wins.values()) { clampWin(w); paint(w); }
     sizeFrame();
+    topbar.style.height = `${TOP}px`;
   }
   const toDesk = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; };
 
@@ -117,27 +120,37 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const ex = [...wins.values()].find((w) => w.app === id);
     if (ex) { if (ex.min) restore(ex.id); focus(ex.id); return ex; }
     const el = document.createElement("section");
-    el.className = "lw";
+    el.className = `lw${a.glass ? " lw-glass" : ""}`;
     el.tabIndex = 0;
+    el.dataset.app = id;
     el.setAttribute("role", "group");
     el.setAttribute("aria-label", `${a.name} window`);
-    el.innerHTML = `<header class="lw-bar"><img src="${iconUrl(a.icon)}" alt="" width="16" height="16"><span class="lw-t">${esc(a.name)}</span>
-      <span class="lw-btns"><button type="button" data-a="min" aria-label="Minimise ${esc(a.name)}"></button><button type="button" data-a="max" aria-label="Maximise ${esc(a.name)}"></button><button type="button" data-a="close" aria-label="Close ${esc(a.name)}"></button></span></header>
-      <div class="lw-body"><div class="lw-loading" aria-hidden="true"></div></div>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join("")}`;
+    // A Lens window is frameless: the real surface inside draws its own title bar and buttons.
+    el.innerHTML = `<div class="lw-body"><div class="lw-loading" aria-hidden="true"></div><iframe class="lw-frame" title="${esc(a.name)} (the real Lens surface, live)"></iframe></div>${["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => `<i class="rz rz-${d}" data-rz="${d}" aria-hidden="true"></i>`).join("")}`;
     const wk = work(), cnt = wins.size;
-    const w = { id: ++hw, app: id, el, w: Math.min(a.w, W - 40), h: Math.min(a.h, wk.h - 20), x: 0, y: 0, min: false, max: false, prev: null, tile: null };
-    w.x = at ? at[0] * W : Math.round(W * 0.18 + (cnt % 5) * 36);
-    w.y = at ? TOP + at[1] * wk.h : Math.round(TOP + 30 + (cnt % 5) * 30);
+    const w = { id: ++hw, app: id, el, frame: el.querySelector("iframe"), src: a.src, w: Math.min(a.w, W - 24), h: Math.min(a.h, wk.h - 12), x: 0, y: 0, min: false, max: false, prev: null, tile: null, ready: false };
+    w.x = at ? at[0] * W : Math.round(W * 0.14 + (cnt % 5) * 36);
+    w.y = at ? TOP + at[1] * wk.h : Math.round(TOP + 24 + (cnt % 5) * 30);
+    // Keep a new window's bottom edge (and its resize corner) clear of the dock on shorter desks.
+    w.h = Math.max(240, Math.min(w.h, H - DOCK_H - w.y - 8));
     clampWin(w);
     wins.set(w.id, w);
     paint(w);
     winsEl.append(el);
     wire(w);
     if (!reducedMotion()) el.animate([{ opacity: 0, transform: `translate3d(${w.x}px, ${w.y + 14}px, 0) scale(.96)` }, { opacity: 1, transform: `translate3d(${w.x}px, ${w.y}px, 0)` }], { duration: 220, easing: "cubic-bezier(.2,.8,.2,1)" });
-    import("./apps.js").then((m) => { el.querySelector(".lw-body").replaceChildren(); m.mount(id, el.querySelector(".lw-body"), api); });
+    if (visible) w.frame.src = appUrl(w.src, pack?.id);
     focus(w.id, { quiet: true });
     sync();
     emit("open", w);
+    return w;
+  }
+  /** Shows another scene of the same real surface in an open window (tours step through these). */
+  function scene(app, src) {
+    const w = open(app);
+    if (!w || w.src === src) return w;
+    w.src = src; w.ready = false; w.el.classList.remove("is-ready");
+    if (visible) w.frame.src = appUrl(src, pack?.id);
     return w;
   }
   function focus(hwnd, { quiet = false, user = false } = {}) {
@@ -148,10 +161,9 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     for (const x of wins.values()) x.el.classList.toggle("is-focused", x === w);
     // A focus ring only after a real click or keyboard focus, never from a script.
     if (user) w.el.classList.add("was-clicked");
-    appLabel.textContent = APPS[w.app].name;
     if (!quiet) sync();
   }
-  function blurAll() { focusedId = null; for (const x of wins.values()) x.el.classList.remove("is-focused"); appLabel.textContent = "Desktop"; sync(); }
+  function blurAll() { focusedId = null; for (const x of wins.values()) x.el.classList.remove("is-focused"); sync(); }
   /** The dock icon's centre, in desk px (for the genie). */
   function dockIconAt(app) {
     try {
@@ -245,7 +257,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     snapEl.style.width = `${r.w}px`; snapEl.style.height = `${r.h}px`;
   }
 
-  // Pointer: drag by the title bar (or Alt+drag anywhere), resize from edges, double-click maximises.
+  // Pointer: the real surface's own title bar drags its window (the frame reports the pointer, see
+  // tools/site/live/surfaces/embed.ts); Alt+drag or the edges work from the page.
   let dragging = null;
   function wire(w) {
     const el = w.el;
@@ -253,27 +266,44 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       if (e.button !== 0) return;
       focus(w.id, { user: e.isTrusted });
       const rz = e.target.closest("[data-rz]");
-      const onBar = e.target.closest(".lw-bar") && !e.target.closest("button");
-      if (!rz && !onBar && !e.altKey) return;
+      if (!rz && !e.altKey) return;
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
       const p = toDesk(e);
-      dragging = { w, mode: rz ? rz.dataset.rz : "move", start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id: e.pointerId };
-      root.classList.add("is-dragging");
-      play?.setStill(true); // the window gets the frames while it moves
-      emit("user", "drag");
+      startDrag(w, rz ? rz.dataset.rz : "move", p, e.pointerId);
     });
     el.addEventListener("pointermove", (e) => { if (dragging?.w === w && dragging.id === e.pointerId) move(toDesk(e)); });
     const end = (e) => { if (dragging?.w === w && dragging.id === e.pointerId) drop(); };
     el.addEventListener("pointerup", end);
     el.addEventListener("pointercancel", end);
     el.addEventListener("lostpointercapture", end);
-    el.querySelector(".lw-bar").addEventListener("dblclick", (e) => { if (!e.target.closest("button")) snap(w.id, "max"); });
-    el.querySelector(".lw-btns").addEventListener("click", (e) => {
-      const a = e.target.closest("[data-a]")?.dataset.a;
-      if (a === "min") minimize(w.id); else if (a === "max") snap(w.id, "max"); else if (a === "close") close(w.id);
-    });
     el.addEventListener("focus", (e) => { if (e.target === el) focus(w.id, { user: true }); });
+  }
+  function startDrag(w, mode, p, id) {
+    dragging = { w, mode, start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id };
+    root.classList.add("is-dragging");
+    calm(true);
+    root.classList.toggle("is-pagedrag", id !== "frame"); // frames stay live while their own title bar drags
+    play?.setStill(true); // the window gets the frames while it moves
+    emit("user", "drag");
+  }
+  /** While a window moves, the embedded surfaces hold still and drop their glass blur: every blur
+   *  over a moving window would otherwise be recomputed each frame. Restored on drop. */
+  function calm(on) {
+    document.documentElement.classList.toggle("is-calm", on); // the page's own ambient loops pause too
+    for (const f of document.querySelectorAll("iframe")) {
+      try {
+        const doc = f.contentDocument;
+        if (!doc?.documentElement) continue;
+        if (on && !doc.getElementById("site-calm")) {
+          const st = doc.createElement("style");
+          st.id = "site-calm";
+          st.textContent = ".site-calm *, .site-calm *::before, .site-calm *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation-play-state: paused !important; }";
+          doc.head.appendChild(st);
+        }
+        doc.documentElement.classList.toggle("site-calm", on);
+      } catch { /* not ready yet */ }
+    }
   }
   let raf = 0, pending = null;
   function move(p) {
@@ -321,7 +351,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (raf) { cancelAnimationFrame(raf); raf = 0; apply(pending); }
     pending = null;
     dragging = null;
-    root.classList.remove("is-dragging");
+    root.classList.remove("is-dragging", "is-pagedrag");
+    calm(false);
     play?.setStill(still());
     showSnap(null);
     const w = d.w;
@@ -334,6 +365,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     emit("moved", w);
   }
 
+
   // ---- the dock frame: real Lens dock, bridged ------------------------------------------------------
   let frameReady = false, tall = false;
   const outbox = [];
@@ -343,7 +375,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     frame.style.top = `${tall ? TOP : H - DOCK_H}px`;
   }
   function sync() {
-    const list = [...wins.values()].map((w) => ({ hwnd: w.id, app: w.app, title: w.el.querySelector(".lw-t").textContent, focused: w.id === focusedId && !w.min, min: w.min }));
+    const list = [...wins.values()].map((w) => ({ hwnd: w.id, app: w.app, title: APPS[w.app].name, focused: w.id === focusedId && !w.min, min: w.min }));
     send({ lens: "windows", list });
     emit("windows", list);
   }
@@ -352,13 +384,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const m = e.data ?? {};
     if (m.lens === "ready" && !frameReady) { frameReady = true; root.classList.add("dock-live"); outbox.splice(0).forEach((x) => frame.contentWindow.postMessage(x, location.origin)); sync(); }
     else if (m.lens === "tall") { tall = !!m.on; sizeFrame(); frame.classList.toggle("is-tall", tall); emit("dock-tall", tall); }
-    else if (m.lens === "act") {
-      emit("user", "dock");
-      const { cmd, args = {} } = m;
-      if (cmd === "launch_app_cmd") { const id = String(args.path ?? "").replace("lens://", "").split("/")[0]; open(APPS[id] ? id : "browser"); }
-      else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) return; if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
-      else if (cmd === "window_action_cmd") { const w = wins.get(args.hwnd); if (!w) return; ({ minimize: () => minimize(w.id), close: () => close(w.id), maximize: () => snap(w.id, "max"), restore: () => restore(w.id) })[args.action]?.(); }
-    }
+    else if (m.lens === "act") { emit("user", "dock"); act(m.cmd, m.args); }
   });
   frame.addEventListener("load", () => frame.contentWindow?.postMessage({ lens: "ping" }, location.origin));
   // The frame only takes the pointer over the dock itself, so windows under its empty band stay clickable.
@@ -366,189 +392,116 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function pillRect() {
     try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); return { l: r.left - 12, r: r.right + 12, t: frame.offsetTop + r.top - 70, b: frame.offsetTop + r.bottom + 10 }; } catch { return null; }
   }
-  cv.addEventListener("pointermove", (e) => {
-    if (dragging || tall) return;
-    const p = toDesk(e);
+  function pillTest(p) {
     pill = pillRect();
     frame.style.pointerEvents = pill && p.x > pill.l && p.x < pill.r && p.y > pill.t && p.y < pill.b ? "auto" : "none";
-  });
+  }
+  cv.addEventListener("pointermove", (e) => { if (!dragging && !tall) pillTest(toDesk(e)); });
   const post = (m) => send(m);
 
-  // ---- desktop: icons, drag-select, right-click menu ---------------------------------------------------
-  const iconsEl = cv.querySelector(".lx-icons");
-  iconsEl.addEventListener("click", (e) => { const b = e.target.closest(".lx-ic"); if (!b) return; iconsEl.querySelectorAll(".lx-ic").forEach((x) => x.classList.toggle("sel", x === b)); });
-  iconsEl.addEventListener("dblclick", (e) => { const b = e.target.closest(".lx-ic"); if (b) open(b.dataset.open); });
-  iconsEl.addEventListener("keydown", (e) => { const b = e.target.closest(".lx-ic"); if (b && e.key === "Enter") open(b.dataset.open); });
-  const marq = cv.querySelector(".lx-marquee");
-  let sel = null;
-  cv.querySelector(".lx-bg").parentElement.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0 || e.target !== cv) return;
-    closeFly(); hideMenu();
-    blurAll();
-    const p = toDesk(e);
-    sel = { p, id: e.pointerId };
-    cv.setPointerCapture(e.pointerId);
-    emit("user", "desktop");
-  });
-  cv.addEventListener("pointermove", (e) => {
-    if (!sel || sel.id !== e.pointerId) return;
-    const q = toDesk(e), x = Math.min(q.x, sel.p.x), y = Math.min(q.y, sel.p.y), w = Math.abs(q.x - sel.p.x), h = Math.abs(q.y - sel.p.y);
-    marq.hidden = w + h < 4;
-    Object.assign(marq.style, { transform: `translate3d(${x}px, ${y}px, 0)`, width: `${w}px`, height: `${h}px` });
-    const cr = cv.getBoundingClientRect();
-    iconsEl.querySelectorAll(".lx-ic").forEach((b) => { const r = b.getBoundingClientRect(), bx = (r.left - cr.left) / k, by = (r.top - cr.top) / k; b.classList.toggle("sel", bx < x + w && bx + r.width / k > x && by < y + h && by + r.height / k > y); });
-  });
-  const endSel = () => { sel = null; marq.hidden = true; };
-  cv.addEventListener("pointerup", endSel); cv.addEventListener("pointercancel", endSel);
 
-  function showMenu(x, y, items) {
-    menuEl.innerHTML = items.map((it, i) => it === "-" ? `<hr>` : `<button type="button" role="menuitem" data-i="${i}">${it.icon ? `<img src="${iconUrl(it.icon)}" alt="" width="16" height="16">` : `<span class="mi"></span>`}${esc(it.label)}${it.hint ? `<kbd>${esc(it.hint)}</kbd>` : ""}</button>`).join("");
-    menuEl.hidden = false;
-    const mw = 230, mh = menuEl.offsetHeight || 260;
-    menuEl.style.transform = `translate3d(${Math.min(x, W - mw - 8)}px, ${Math.min(y, H - mh - 8)}px, 0)`;
-    menuEl.onclick = (e) => { const b = e.target.closest("[data-i]"); if (!b) return; hideMenu(); items[+b.dataset.i].run(); };
-    menuEl.querySelector("button")?.focus({ preventScroll: true });
+  // ---- the real surfaces: what each frame asks of its window, and of the desk ---------------------------
+  const overs = Object.fromEntries([...cv.querySelectorAll(".lx-over")].map((el) => [el.dataset.over, { el, frame: null, src: null }]));
+  const ownerOf = (src) => {
+    for (const w of wins.values()) if (w.frame.contentWindow === src) return { w };
+    for (const [k2, o] of Object.entries(overs)) if (o.frame?.contentWindow === src) return { over: k2 };
+    if (topbar.contentWindow === src) return { top: true };
+    return null;
+  };
+  /** A real surface asked for something outside itself (the backend's job in the app). */
+  function act(cmd, args = {}) {
+    if (cmd === "launch_app_cmd") { const id = String(args.path ?? "").replace("lens://", "").split("/")[0]; open(APPS[id] ? id : "browser"); }
+    else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) return; if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
+    else if (cmd === "window_action_cmd") { const w = wins.get(args.hwnd); if (!w) return; ({ minimize: () => minimize(w.id), close: () => close(w.id), maximize: () => snap(w.id, "max"), restore: () => restore(w.id) })[args.action]?.(); }
+    else if (cmd === "open_quicksettings_tab_cmd") openOver("qs", { toggle: true });
+    // The dock's own Monitor and Settings buttons.
+    else if (cmd === "open_dock_popout_tab_cmd") open(args.tab === "monitor" ? "monitor" : "settings");
+    else if (cmd === "toggle_settings_docked") { const ws = [api.byApp("settings"), api.byApp("monitor")].filter(Boolean); ws.length ? ws.forEach((w) => close(w.id)) : open("settings"); }
+    else if (cmd === "show_command_cmd") openCmd();
+    else if (cmd === "browser_open") open("browser");
+    else if (cmd === "open_surface" || cmd === "toggle_surface") {
+      const to = { settings: "settings", nowplaying: "music", apps: "store", cleaner: "cleaner", browser: "browser", approval: "approval" }[args.label];
+      if (to) open(to); else if (args.label === "command" || args.label === "launcher" || args.label === "palette") openCmd(); else if (args.label === "quicksettings") openOver("qs", { toggle: true });
+    }
   }
-  function hideMenu() { menuEl.hidden = true; }
-  menuEl.addEventListener("keydown", (e) => {
-    const bs = [...menuEl.querySelectorAll("button")], i = bs.indexOf(document.activeElement);
-    if (e.key === "ArrowDown") { e.preventDefault(); bs[(i + 1) % bs.length].focus(); }
-    if (e.key === "ArrowUp") { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); }
-    if (e.key === "Escape") { e.stopPropagation(); hideMenu(); root.focus({ preventScroll: true }); }
+  addEventListener("message", (e) => {
+    const who = e.source && e.origin === location.origin ? ownerOf(e.source) : null;
+    const m = e.data ?? {};
+    if (!who) return;
+    if (m.lens === "act") { emit("user", "surface"); if (who.over === "magic" || who.over === "cmd") closeOver(who.over); return act(m.cmd, m.args); }
+    if (m.lens !== "win") return;
+    const w = who.w;
+    if (m.a === "ready") {
+      tell(e.source, packMsg());
+      if (w) { w.ready = true; w.el.classList.add("is-ready"); emit("ready", w); }
+      else if (who.over) { overs[who.over].el.classList.add("is-ready"); emit("ready", { over: who.over }); }
+      else { root.classList.add("top-live"); emit("ready", { top: true }); }
+      return;
+    }
+    if (m.a === "hover") { if (w && !dragging && !tall) pillTest({ x: w.x + m.x, y: w.y + m.y }); return; }
+    if (m.a === "command") { emit("user", "key"); return overs.cmd.el.hidden ? openCmd() : closeCmd(); }
+    if (m.a === "focus") { if (who.over !== "qs") closeOver("qs"); if (who.over !== "magic") closeOver("magic"); if (who.over !== "cmd") closeOver("cmd"); if (w) focus(w.id, { user: true }); return; }
+    if (m.a === "magic") { const r = e.source.frameElement.getBoundingClientRect(), c = cv.getBoundingClientRect(); emit("user", "menu"); return openMagic(m.kind || "window", { x: (r.left - c.left) / k + m.x, y: (r.top - c.top) / k + m.y }); }
+    if (who.over) { if (m.a === "hide" || m.a === "close") closeOver(who.over); return; }
+    if (!w) return;
+    if (m.a === "close" || m.a === "hide") close(w.id);
+    else if (m.a === "min") minimize(w.id);
+    else if (m.a === "max") snap(w.id, "max");
+    else if (m.a === "drag-start") {
+      // The frame reports screen px; the desk knows where its window is, so the two line up here.
+      const at = { x: w.x + m.cx, y: w.y + m.cy };
+      startDrag(w, "move", at, "frame");
+      dragging.off = { x: at.x - m.sx / k, y: at.y - m.sy / k };
+    } else if (m.a === "drag-move" && dragging?.id === "frame") move({ x: m.sx / k + dragging.off.x, y: m.sy / k + dragging.off.y });
+    else if (m.a === "drag-end" && dragging?.id === "frame") drop();
   });
-  cv.addEventListener("contextmenu", async (e) => {
-    if (e.target.closest(".lx-top, .lx-fly, .lx-cmd, .lx-menu, .lx-magic, input, textarea, [contenteditable]")) return;
+
+  function openOver(which, { toggle = false, src, at } = {}) {
+    const o = overs[which], spec = OVER[which];
+    if (!o.el.hidden && toggle) return closeOver(which);
+    for (const k2 of Object.keys(overs)) if (k2 !== which) closeOver(k2);
+    const want = src ?? spec.src;
+    if (!o.frame) { o.frame = document.createElement("iframe"); o.frame.title = `${spec.label} (the real Lens surface, live)`; o.el.append(o.frame); }
+    if (o.src !== want) { o.src = want; o.el.classList.remove("is-ready"); o.frame.src = appUrl(want, pack?.id); }
+    const ww = Math.min(spec.w, W - 16), hh = Math.min(spec.h, H - TOP - 16);
+    const x = which === "qs" ? W - ww - 10 : which === "cmd" ? (W - ww) / 2 : Math.max(8, Math.min(at?.x ?? 0, W - ww - 8));
+    const y = which === "qs" ? TOP + 6 : which === "cmd" ? Math.max(TOP + 8, H * 0.14) : Math.max(TOP + 4, Math.min(at?.y ?? 0, H - hh - 8));
+    Object.assign(o.el.style, { transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`, width: `${ww}px`, height: `${hh}px` });
+    o.el.hidden = false;
+    if (!reducedMotion()) o.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140 });
+    try { o.frame.focus({ preventScroll: true }); } catch { /* not focusable yet */ }
+    emit("over", { which, open: true });
+    return o;
+  }
+  function closeOver(which) { const o = overs[which]; if (!o || o.el.hidden) return; o.el.hidden = true; emit("over", { which, open: false }); if (which === "cmd") emit("cmd", false); }
+  const closeFly = () => closeOver("qs");
+  const hideMenu = () => closeOver("magic");
+  /** The real magic right-click window, opened at a desk point on a kind of thing (or a result step). */
+  function openMagic(kindOrScene, at, over = {}) {
+    const qs2 = new URLSearchParams({ scene: kindOrScene, ...over }).toString();
+    return openOver("magic", { src: `${OVER.magic.src}&${qs2}`, at });
+  }
+  function openCmd(sceneId = "compact") { closeFly(); hideMenu(); const o = openOver("cmd", { src: `command.html?scene=${sceneId}&esc=1&drag=0` }); emit("cmd", true); return o; }
+  const closeCmd = () => closeOver("cmd");
+  // Right-click on the desktop itself: the same real window, on the desktop target.
+  cv.addEventListener("contextmenu", (e) => {
+    if (e.target.closest("iframe, input, textarea")) return;
     e.preventDefault();
     emit("user", "menu");
-    const p = toDesk(e);
     hint?.remove(); hint = null;
-    if (e.target.closest(".lw, .lx-ic")) {
-      const M = await import("./magic.js");
-      const ic = e.target.closest(".lx-ic");
-      const ctx = ic ? { kind: "file", label: ic.textContent.trim(), el: { dataset: { app: ic.dataset.open } } } : M.contextOf(e.target);
-      if (ctx) return M.magicMenu(api, ctx, p);
-    }
-    desktopMenu(p.x, p.y);
+    openMagic("desktop", toDesk(e));
   });
+  cv.addEventListener("pointerdown", (e) => { if (e.target === cv || e.target.closest(".lx-bg")) { for (const k2 of Object.keys(overs)) closeOver(k2); blurAll(); emit("user", "desktop"); } });
   // A one-time hint: right-click is the feature people miss.
   let hint = document.createElement("div");
   hint.className = "lx-hint";
   hint.innerHTML = "Try right-click <b>✦</b>";
   cv.append(hint);
   setTimeout(() => { hint?.remove(); hint = null; }, 14000);
-  function desktopMenu(x, y) {
-    showMenu(x, y, [
-      { label: "New note", icon: "lens-notes", run: () => open("notes") },
-      { label: "Change wallpaper", icon: "lens-settings", run: () => api.nextWallpaper() },
-      { label: "Next theme", icon: "lens-settings", hint: "T", run: () => api.shuffle() },
-      "-",
-      { label: "Tile open windows", icon: "lens-command", run: () => api.tileAll() },
-      { label: "Show desktop", icon: "explorer", run: () => api.showDesktop() },
-      { label: "Lens Command", icon: "lens-command", hint: "Ctrl Space", run: () => openCmd() },
-    ]);
-  }
-  addEventListener("pointerdown", (e) => { if (!menuEl.hidden && !menuEl.contains(e.target)) hideMenu(); if (!e.target.closest?.(".lx-fly, [data-fly]")) closeFly(); }, true);
-
-  // ---- top bar: clock, flyouts ---------------------------------------------------------------------
-  const clock = cv.querySelector(".lt-clock");
-  const tick = () => { const d = new Date(); clock.textContent = `${d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })}  ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; clock.dateTime = d.toISOString(); };
-  tick(); setInterval(tick, 15000);
-  const state = { wifi: true, bt: true, dnd: false, night: false, volume: 62, bright: 90, unread: 2, notes: [...NOTES.slice(0, 2)] };
-  const qs = cv.querySelector(".lx-qs"), nc = cv.querySelector(".lx-nc");
-  function renderQS() {
-    const tile = (k2, label, on) => `<button type="button" class="qt${on ? " on" : ""}" data-qt="${k2}" aria-pressed="${on}">${label}</button>`;
-    qs.innerHTML = `<div class="qg">${tile("wifi", "Wi-Fi", state.wifi)}${tile("bt", "Bluetooth", state.bt)}${tile("dnd", "Do not disturb", state.dnd)}${tile("night", "Night light", state.night)}${tile("dark", "Dark mode", !api.light)}${tile("focus", "Tile windows", false)}</div>
-      <label class="qsl">Volume<input type="range" min="0" max="100" value="${state.volume}" data-q="volume"></label>
-      <label class="qsl">Brightness<input type="range" min="40" max="100" value="${state.bright}" data-q="bright"></label>`;
-  }
-  qs.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-qt]");
-    if (!b) return;
-    const q = b.dataset.qt;
-    if (q === "dark") api.setMode(api.light ? "dark" : "light");
-    else if (q === "focus") api.tileAll();
-    else { state[q] = !state[q]; if (q === "night") cv.classList.toggle("is-night", state.night); }
-    renderQS();
-  });
-  qs.addEventListener("input", (e) => { const s = e.target.dataset.q; if (!s) return; state[s] = +e.target.value; if (s === "bright") cv.style.setProperty("--lx-bright", String(state.bright / 100)); });
-  function renderNC() {
-    nc.innerHTML = `<div class="nh"><b>Notifications</b><button type="button" data-clear>Clear all</button></div>${state.notes.length ? state.notes.map((x) => `<div class="ni"><img src="${iconUrl(x.icon)}" alt="" width="28" height="28"><div><span class="nm">${esc(x.app)}</span><strong>${esc(x.title)}</strong><span>${esc(x.body)}</span></div></div>`).join("") : `<p class="ne">You're all caught up.</p>`}`;
-  }
-  nc.addEventListener("click", (e) => { if (e.target.closest("[data-clear]")) { state.notes = []; state.unread = 0; renderNC(); badge(); } });
-  const badge = () => { const b = cv.querySelector(".lt-badge"); b.textContent = String(state.unread); b.hidden = !state.unread; b.parentElement.setAttribute("aria-label", state.unread ? `${state.unread} Notifications` : "Notifications"); };
-  function openFly(which) {
-    const el = which === "qs" ? qs : nc, other = which === "qs" ? nc : qs;
-    other.hidden = true;
-    const was = !el.hidden;
-    cv.querySelectorAll("[data-fly]").forEach((b) => b.setAttribute("aria-expanded", String(!was && b.dataset.fly === which)));
-    if (was) { el.hidden = true; return; }
-    which === "qs" ? renderQS() : (renderNC(), (state.unread = 0), badge());
-    el.hidden = false;
-    el.querySelector("button")?.focus({ preventScroll: true });
-    emit("user", "fly");
-  }
-  function closeFly() { qs.hidden = true; nc.hidden = true; cv.querySelectorAll("[data-fly]").forEach((b) => b.setAttribute("aria-expanded", "false")); }
-  cv.querySelectorAll("[data-fly]").forEach((b) => b.addEventListener("click", () => openFly(b.dataset.fly)));
-  [qs, nc].forEach((f) => f.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeFly(); root.focus({ preventScroll: true }); } }));
-
-  // Toasts: they slide in and are removed for good (never left half-faded).
-  let ni = 0, nTimer = 0, visible = false, quiet = false;
-  function toast(x) {
-    state.notes.unshift(x); state.notes.length = Math.min(state.notes.length, 6);
-    if (nc.hidden) { state.unread++; badge(); }
-    const c = document.createElement("div");
-    c.className = "lx-toast";
-    c.innerHTML = `<img src="${iconUrl(x.icon)}" alt="" width="28" height="28"><div><span class="nm">${esc(x.app)} · now</span><strong>${esc(x.title)}</strong><span>${esc(x.body)}</span></div>`;
-    toastsEl.prepend(c);
-    while (toastsEl.children.length > 2) toastsEl.lastChild.remove();
-    const gone = () => c.remove();
-    setTimeout(() => { if (reducedMotion() || !c.animate) return gone(); c.animate([{ opacity: 1 }, { opacity: 0, transform: "translateX(16px)" }], { duration: 300, fill: "forwards" }).finished.then(gone, gone); }, 4200);
-    return c;
-  }
-  const loop = () => {
-    clearTimeout(nTimer);
-    if (!notify || !visible || document.hidden || quiet || reducedMotion()) return;
-    toast(NOTES[(ni++ + 2) % NOTES.length]);
-    nTimer = setTimeout(loop, 11000 + Math.random() * 5000);
-  };
-  badge();
-
-  // ---- Lens Command ---------------------------------------------------------------------------------
-  const cmdIn = cmdEl.querySelector("input"), cmdRes = cmdEl.querySelector(".lc-res");
-  let cmdSel = 0, cmdItems = [];
-  function openCmd(q = "") {
-    closeFly(); hideMenu();
-    cmdEl.hidden = false;
-    cmdIn.value = q;
-    renderCmd();
-    cmdIn.focus({ preventScroll: true });
-    emit("cmd", true);
-  }
-  function closeCmd() { if (cmdEl.hidden) return; cmdEl.hidden = true; root.focus({ preventScroll: true }); emit("cmd", false); }
-  async function renderCmd() {
-    const q = cmdIn.value.trim();
-    const A = await import("./actions.js");
-    cmdItems = await A.suggest(q, api);
-    cmdSel = 0;
-    cmdRes.innerHTML = cmdItems.map((it, i) => `<button type="button" role="option" class="lc-r${i === 0 ? " sel" : ""}" aria-selected="${i === 0}" data-i="${i}"><img src="${iconUrl(it.icon)}" alt="" width="22" height="22"><span><b>${esc(it.title)}</b>${it.sub ? `<span>${esc(it.sub)}</span>` : ""}</span><kbd>${esc(it.kind)}</kbd></button>`).join("") || `<p class="lc-empty">Try “dark mode”, “tile left”, “timer 1 min”, “open notes”.</p>`;
-  }
-  const runCmd = async (i) => { const it = cmdItems[i]; if (!it) return; closeCmd(); await it.run(); };
-  cmdIn.addEventListener("input", renderCmd);
-  cmdIn.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      cmdSel = (cmdSel + (e.key === "ArrowDown" ? 1 : -1) + cmdItems.length) % Math.max(1, cmdItems.length);
-      cmdRes.querySelectorAll(".lc-r").forEach((b, i) => { b.classList.toggle("sel", i === cmdSel); b.setAttribute("aria-selected", String(i === cmdSel)); });
-    } else if (e.key === "Enter") { e.preventDefault(); runCmd(cmdSel); }
-    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeCmd(); }
-  });
-  cmdRes.addEventListener("click", (e) => { const b = e.target.closest("[data-i]"); if (b) runCmd(+b.dataset.i); });
-  cmdEl.addEventListener("pointerdown", (e) => { if (e.target === cmdEl) closeCmd(); });
-  cv.querySelectorAll("[data-cmd]").forEach((b) => b.addEventListener("click", () => { emit("user", "cmd"); openCmd(); }));
 
   // ---- keyboard ---------------------------------------------------------------------------------------
   root.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && (e.code === "Space" || e.key === " ")) { e.preventDefault(); emit("user", "key"); cmdEl.hidden ? openCmd() : closeCmd(); return; }
+    if (e.ctrlKey && (e.code === "Space" || e.key === " ")) { e.preventDefault(); emit("user", "key"); overs.cmd.el.hidden ? openCmd() : closeCmd(); return; }
     if (/input|textarea/i.test(e.target.tagName) || e.target.isContentEditable) return;
     const w = wins.get(focusedId);
     if (e.ctrlKey && e.altKey && w) {
@@ -558,12 +511,12 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     }
     if (e.key === "Delete" && w && document.activeElement === w.el) { e.preventDefault(); close(w.id); root.focus({ preventScroll: true }); }
     if (e.key.toLowerCase() === "t" && !e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement === root) { e.preventDefault(); api.shuffle(); }
-    if (e.key === "Escape") { if (!menuEl.hidden) hideMenu(); closeFly(); }
+    if (e.key === "Escape") { for (const k2 of Object.keys(overs)) closeOver(k2); }
   });
 
   // ---- backdrop: the real ambient theme scene, with a cursor glow and a little parallax -----------
   const wall = cv.querySelector(".lx-wall"), glow = cv.querySelector(".lx-glow");
-  let pg = null, play = null, pack = null, accent = null, committed = null;
+  let pg = null, play = null;
   let par = null;
   let parRaf = 0;
   cv.addEventListener("pointermove", (e) => {
@@ -587,6 +540,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   const WALLS = ["ambient", "drift-aurora", "aurora", "star-drift", "glow-contours", "caustics"];
   let wi = 0;
 
+
   // ---- theme -------------------------------------------------------------------------------------------
   const baseOf = (p) => p.base ?? (p.scheme === "light" ? "#f4f4f5" : "#09090b");
   /** Applies a pack (and optional accent) to everything on the desk: tokens, backdrop, dock. */
@@ -605,18 +559,20 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     play?.setPalette(pg.packPalette({ base: baseOf(p), accent: acc ?? p.accent, scheme: p.scheme }));
     if (!p.collection) document.documentElement.dataset.preset = p.id;
     send({ lens: "pack", pack: { id: p.id, label: p.label, base: baseOf(p), accent: acc ?? p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle }, ...(dockStyle ? { dockStyle } : {}) });
+    for (const f of [topbar, ...[...wins.values()].map((w) => w.frame), ...Object.values(overs).map((o) => o.frame)]) tell(f, packMsg());
     emit("theme", { p, acc, preview });
   }
   const revert = () => { if (committed) setPack(committed.p, { acc: committed.acc }); };
 
-  // ---- visibility: pause the backdrop and toasts off-screen ----------------------------------------------
+
+  // ---- visibility: frames load when the desk is near the screen; the backdrop pauses off-screen ---------
   new IntersectionObserver(([e]) => {
-    const was = visible;
     visible = e.isIntersecting;
     if (visible && !frame.src) frame.src = new URL("live/dock/index.html", SITE).href;
+    if (visible && !topbar.src) topbar.src = appUrl("shell.html?surface=topbar&drag=0&magic=0", pack?.id);
+    if (visible) for (const w of wins.values()) if (!w.frame.src) w.frame.src = appUrl(w.src, pack?.id);
     if (visible) mountBackdrop();
     play?.setStill(still());
-    if (visible && !was) nTimer = setTimeout(loop, 4000); else if (!visible) clearTimeout(nTimer);
     root.classList.toggle("is-off", !visible);
   }, { rootMargin: "200px" }).observe(root);
   document.addEventListener("visibilitychange", () => play?.setStill(still()));
@@ -624,25 +580,32 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   if (fitViewport) addEventListener("resize", () => fit());
 
   const api = {
-    root, canvas: cv, frame, wins, light: isLight(), get W() { return W; }, get H() { return H; }, get k() { return k; }, TOP,
-    on, open, close, focus, minimize, restore, snap, setRect, toast, openCmd, closeCmd, showMenu, hideMenu, desktopMenu, openFly, closeFly, post, revert,
+    root, canvas: cv, frame, topbar, wins, overs, light: isLight(), get W() { return W; }, get H() { return H; }, get k() { return k; }, TOP,
+    on, open, scene, close, focus, minimize, restore, snap, setRect, openCmd, closeCmd, openMagic, hideMenu, openFly: () => openOver("qs"), closeFly, closeOver, post, revert,
     focused: () => wins.get(focusedId) ?? null,
     byApp: (app) => [...wins.values()].find((w) => w.app === app) ?? null,
+    /** The document of a real surface (a window's app id, or "qs" | "cmd" | "magic" | "top"), for tours and checks. */
+    doc: (id) => { try { return (id === "top" ? topbar : overs[id]?.frame ?? api.byApp(id)?.frame)?.contentDocument ?? null; } catch { return null; } },
     get pack() { return pack; }, get committed() { return committed; },
     setPack,
     async setMode(m) { const ps = await getPacks(); setPack(ps.find((x) => x.id === (m === "light" ? "alabaster-daylight" : "obsidian"))); },
-    async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); toast({ icon: "lens-settings", app: "Lens", title: `Theme: ${p.label}`, body: p.description ?? `${p.collection} collection` }); },
-    dockStyle(style, shape) { send({ lens: "config", patch: { dock: { style }, ...(shape ? { theme: { shapeStyle: shape } } : {}) } }); },
-    search(open = true, q, opts = {}) { send({ lens: "search", open, focus: opts.focus !== false, ...(q != null ? { q } : {}) }); },
+    async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); },
+    dockStyle(style, shape) {
+      const m = { lens: "config", patch: { dock: { style }, ...(shape ? { theme: { shapeStyle: shape } } : {}) } };
+      send(m);
+      // The top bar hands its clock and system icons to a Taskbar-style dock, as in the app.
+      tell(topbar, m);
+    },
+    search(open2 = true, q, opts = {}) { send({ lens: "search", open: open2, focus: opts.focus !== false, ...(q != null ? { q } : {}) }); },
     /** Any backdrop scene from the Lens playground, e.g. the living "living-sky". */
-    setWallpaper(id, opts = {}) { if (!play) return; play.setScene(id); for (const [k, v] of Object.entries(opts)) play.setOption(k, v); wi = -1; if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
-    /** Puts the theme's own backdrop back (scenes start from it). */
+    setWallpaper(id, opts = {}) { if (!play) return; play.setScene(id); for (const [k2, v] of Object.entries(opts)) play.setOption(k2, v); wi = -1; if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
+    /** Puts the theme's own backdrop back (tours start from it). */
     resetWallpaper() { if (!play || wi === 0) return; wi = 0; play.setScene("ambient"); play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
-    nextWallpaper() { if (!play) return; const id = WALLS[++wi % WALLS.length]; play.setScene(id); if (id === "ambient") play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); toast({ icon: "lens-settings", app: "Lens", title: "Wallpaper changed", body: id === "ambient" ? "Theme backdrop" : id.replace(/-/g, " ") }); },
+    nextWallpaper() { if (!play) return; const id = WALLS[++wi % WALLS.length]; play.setScene(id); if (id === "ambient") play.setOption("motion", "lively"); if (pack) play.setPalette(pg.packPalette({ base: baseOf(pack), accent: accent ?? pack.accent, scheme: pack.scheme })); },
     tileAll() { const ws = [...wins.values()].filter((w) => !w.min); const slots = ws.length === 1 ? ["max"] : ws.length === 2 ? ["left", "right"] : ["tl", "tr", "bl", "br"]; ws.slice(0, slots.length).forEach((w, i) => snap(w.id, slots[i])); },
     showDesktop() { for (const w of wins.values()) minimize(w.id); },
-    reset() { for (const w of [...wins.values()]) { wins.delete(w.id); w.el.remove(); w.cleanup?.(); } blurAll(); closeCmd(); closeFly(); hideMenu(); toastsEl.replaceChildren(); layout.forEach(([id, x, y]) => open(id, [x, y])); blurAll(); },
-    setQuiet(q) { quiet = q; if (!q) loop(); else clearTimeout(nTimer); },
+    reset() { for (const w of [...wins.values()]) { wins.delete(w.id); w.el.remove(); } blurAll(); for (const k2 of Object.keys(overs)) closeOver(k2); layout.forEach(([id, x, y]) => open(id, [x, y])); blurAll(); },
+    setQuiet() {},
     setFull(f) { full = f; root.classList.toggle("is-full", f); fit(); },
     dockIconAt, fit, slotAt, showSnap, emit,
   };

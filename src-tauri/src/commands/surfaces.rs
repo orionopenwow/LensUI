@@ -23,30 +23,41 @@ pub(crate) fn get_desktop_icons_hidden_cmd() -> bool {
     is_desktop_icons_hidden()
 }
 
-pub(crate) fn surface_glide_gen(label: &str) -> &'static std::sync::atomic::AtomicU64 {
-    use std::sync::atomic::AtomicU64;
-    static G_SETTINGS: AtomicU64 = AtomicU64::new(0);
-    static G_QS: AtomicU64 = AtomicU64::new(0);
-    static G_PALETTE: AtomicU64 = AtomicU64::new(0);
-    static G_WIDGETS: AtomicU64 = AtomicU64::new(0);
-    static G_OTHER: AtomicU64 = AtomicU64::new(0);
-    static G_LAUNCHER: AtomicU64 = AtomicU64::new(0);
-    static G_OVERVIEW: AtomicU64 = AtomicU64::new(0);
-    match label {
-        "launcher" => &G_LAUNCHER,
-        "overview" => &G_OVERVIEW,
-        "settings" => &G_SETTINGS,
-        "quicksettings" => &G_QS,
-        "palette" => &G_PALETTE,
-        "widgets" => &G_WIDGETS,
-        _ => &G_OTHER,
+/// Windows' own show/hide animation fights the CSS glide on these see-through windows (a zoom
+/// on top of our slide reads as a snap). Turn it off per window; harmless if it fails.
+#[cfg(windows)]
+fn disable_dwm_transitions(win: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::{BOOL, HWND};
+    use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED};
+    if let Ok(raw) = win.hwnd() {
+        let on = BOOL(1);
+        unsafe {
+            let _ = DwmSetWindowAttribute(
+                HWND(raw.0 as *mut _),
+                DWMWA_TRANSITIONS_FORCEDISABLED,
+                &on as *const BOOL as *const std::ffi::c_void,
+                std::mem::size_of::<BOOL>() as u32,
+            );
+        }
     }
 }
 
 pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
-    use std::sync::atomic::Ordering;
-    surface_glide_gen(label).fetch_add(1, Ordering::SeqCst);
+    use crate::app::surface_state::{self, Step};
+    // A show always wins: it takes a new generation, so a hide still in flight (the page's late
+    // "exit done", or the fallback timer) can no longer hide this window.
+    let Step::Show(generation) = surface_state::request_show(label) else {
+        return;
+    };
+    // Put the page in its start pose before the window appears, so the first visible frame is
+    // never the old open (or closed) pose snapping into place.
+    let _ = app.emit(
+        "lens://surface-glide",
+        serde_json::json!({ "label": label, "state": "pre" }),
+    );
     if let Some(win) = app.get_webview_window(label) {
+        #[cfg(windows)]
+        disable_dwm_transitions(&win);
         let _ = win.unminimize();
         if focus {
             let _ = win.show();
@@ -74,31 +85,68 @@ pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
         "lens://surface-glide",
         serde_json::json!({ "label": label, "state": "open" }),
     );
+    surface_state::mark_shown(label, generation);
 }
 
 pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
-    use std::sync::atomic::Ordering;
+    use crate::app::surface_state::{self, Step};
     let Some(win) = app.get_webview_window(label) else {
         return;
     };
-    if !win.is_visible().unwrap_or(false) {
+    let visible = win.is_visible().unwrap_or(false);
+    let Step::BeginHide(gen) = surface_state::request_hide(label, visible) else {
+        // Not visible, or already closing: one exit is enough.
         return;
-    }
-    let gen = surface_glide_gen(label).fetch_add(1, Ordering::SeqCst) + 1;
+    };
+    // The page plays its exit and answers with surface_exit_done_cmd; the window is hidden then,
+    // on a finished, see-through frame. The timer below only covers a page that never answers.
     let _ = app.emit(
         "lens://surface-glide",
-        serde_json::json!({ "label": label, "state": "closing" }),
+        serde_json::json!({ "label": label, "state": "closing", "gen": gen }),
     );
     let app_clone = app.clone();
     let label_owned = label.to_string();
+    let fallback_ms = exit_fallback_ms(label);
     thread::spawn(move || {
-        thread::sleep(Duration::from_millis(185));
-        if surface_glide_gen(&label_owned).load(Ordering::SeqCst) == gen {
-            if let Some(w) = app_clone.get_webview_window(&label_owned) {
-                let _ = w.hide();
-            }
-        }
+        thread::sleep(Duration::from_millis(fallback_ms));
+        finish_hide(&app_clone, &label_owned, gen);
     });
+}
+
+/// Hides the window if `generation` is still the hide in progress (the page's acknowledgement
+/// and the fallback timer both end here; whichever comes second finds nothing to do).
+fn finish_hide(app: &AppHandle, label: &str, generation: u64) {
+    use crate::app::surface_state::{self, Step};
+    if surface_state::acknowledge_hidden(label, generation) == Step::HideNow {
+        if let Some(w) = app.get_webview_window(label) {
+            let _ = w.hide();
+        }
+    }
+}
+
+/// Surfaces whose page plays the shared glide and reports when its exit is done.
+pub(crate) fn has_glide_page(label: &str) -> bool {
+    matches!(label, "settings" | "quicksettings" | "palette" | "widgets" | "launcher" | "overview")
+}
+
+/// How long to wait for a closing surface before hiding it anyway. A glide page normally answers
+/// in about 130 ms; other windows have no exit to wait for and keep the old fixed delay.
+pub(crate) fn exit_fallback_ms(label: &str) -> u64 {
+    if has_glide_page(label) {
+        400
+    } else {
+        185
+    }
+}
+
+/// The page finished its exit: hide the window now, unless it was reopened in the meantime
+/// (`generation` no longer matches).
+#[tauri::command]
+pub(crate) fn surface_exit_done_cmd(app: AppHandle, label: String, generation: u64) {
+    if !has_glide_page(&label) {
+        return;
+    }
+    finish_hide(&app, &label, generation);
 }
 
 pub(crate) fn dismiss_other_surfaces(app: &AppHandle, keep: &str) {
@@ -120,6 +168,27 @@ pub(crate) fn dismiss_other_surfaces(app: &AppHandle, keep: &str) {
     }
 }
 
+/// Sizes and places a window that positions itself from its page (the Command edge shelf) in one
+/// native step (docs/SMOOTHNESS.md, G-12). The page used to call `setSize` and then
+/// `setPosition`: two operations, with a torn frame between them on a see-through window.
+/// Logical pixels, as the page measures them.
+#[tauri::command]
+pub(crate) fn place_surface_cmd(app: AppHandle, label: String, x: f64, y: f64, w: f64, h: f64) {
+    // Only windows whose page owns their placement may use this.
+    if label != "edgeshelf" {
+        return;
+    }
+    if ![x, y, w, h].iter().all(|v| v.is_finite()) || w < 1.0 || h < 1.0 {
+        return;
+    }
+    let Some(win) = app.get_webview_window(&label) else {
+        return;
+    };
+    let scale = win.scale_factor().unwrap_or(1.0);
+    let px = |v: f64| (v * scale).round();
+    crate::app::place::place_window(&win, px(x) as i32, px(y) as i32, px(w).max(1.0) as u32, px(h).max(1.0) as u32);
+}
+
 #[tauri::command]
 pub(crate) fn set_desktop_folder_expanded_cmd(app: AppHandle, expanded: bool) {
     let Some(win) = app.get_webview_window("desktopfolder") else {
@@ -139,8 +208,7 @@ pub(crate) fn set_desktop_folder_expanded_cmd(app: AppHandle, expanded: bool) {
         };
         let x = pos.x;
         let y = pos.y + ((size.height as i32 - h as i32) / 2);
-        let _ = win.set_size(PhysicalSize::new(w, h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, w, h);
         let _ = win.set_always_on_top(expanded);
         if expanded {
             let _ = win.set_focus();
@@ -213,8 +281,7 @@ pub(crate) fn sync_topbar_search_cmd(app: AppHandle, state: State<AppState>, que
                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
             let x = pos.x + size.width as i32 - pal_w as i32;
             let y = pos.y + bar_h;
-            let _ = win.set_size(PhysicalSize::new(pal_w, pal_h));
-            let _ = win.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&win, x, y, pal_w, pal_h);
         }
         glide_show_surface(&app, "palette", false);
         let _ = app.emit("lens://topbar-search-open", true);
@@ -265,7 +332,7 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
         let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
         let (pal_w, pal_h, x, y) = if anchor == "bottom-dock" {
             // Exact live dock length, positioned strictly 0px flush directly ABOVE the dock pill!
-            let dock_pill_h = ((cfg.dock.icon_size as f64 + 18.0) * scale) as i32;
+            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
             let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
             let w = (dock_w.max(680.0) * scale).round() as u32;
             let h = (412.0 * scale) as u32;
@@ -292,8 +359,7 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
         } else {
             (x, y)
         };
-        let _ = win.set_size(PhysicalSize::new(pal_w, pal_h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, pal_w, pal_h);
     }
 
     let _ = win.unminimize();
@@ -367,7 +433,7 @@ pub(crate) fn open_quicksettings_tab_cmd(
             };
 
             let (x, y) = if anchor_mode == "bottom-right" {
-                let dock_pill_h = ((cfg.dock.icon_size as f64 + 18.0) * scale) as i32;
+                let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
                 let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
                 let dock_right = pos.x + ((size.width as i32 + (dock_w * scale) as i32) / 2);
                 let target_x = (dock_right - qs_w as i32).max(pos.x + 8);
@@ -386,8 +452,7 @@ pub(crate) fn open_quicksettings_tab_cmd(
             } else {
                 (x, y)
             };
-            let _ = qs.set_size(PhysicalSize::new(qs_w, qs_h));
-            let _ = qs.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&qs, x, y, qs_w, qs_h);
         }
 
         glide_show_surface(&app, "quicksettings", true);
@@ -407,7 +472,15 @@ pub(crate) fn surface_ready_set() -> &'static Mutex<std::collections::HashSet<St
 /// Called by each surface page once it has mounted and registered its event listeners.
 #[tauri::command]
 pub(crate) fn surface_ready_cmd(label: String) {
+    crate::app::loadguard::beat(&label);
     surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).insert(label);
+}
+
+/// Heartbeat from the always-on pages (Dock, Top Bar, desktop tab), every few seconds. A visible
+/// window whose page stops sending it is reloaded (docs/FAILSAFE.md §1, `app::loadguard`).
+#[tauri::command]
+pub(crate) fn surface_alive_cmd(label: String) {
+    crate::app::loadguard::beat(&label);
 }
 
 #[tauri::command]
@@ -553,4 +626,25 @@ pub(crate) fn peek_native_taskbar_cmd(state: State<AppState>, seconds: u64) {
             set_native_taskbar_hidden(true);
         }
     });
+}
+
+#[cfg(test)]
+mod glide_tests {
+    use super::*;
+
+    #[test]
+    fn glide_pages_get_time_to_finish_their_exit() {
+        for label in ["settings", "quicksettings", "palette", "widgets", "launcher", "overview"] {
+            assert!(has_glide_page(label));
+            assert!(exit_fallback_ms(label) >= 300, "{label} must outlast a slow exit");
+        }
+    }
+
+    #[test]
+    fn windows_without_an_exit_keep_the_short_delay() {
+        for label in ["testerhub", "clipboard", "dock", ""] {
+            assert!(!has_glide_page(label));
+            assert_eq!(exit_fallback_ms(label), 185);
+        }
+    }
 }

@@ -31,6 +31,54 @@ pub(crate) fn lens_monitor_pref(app: &AppHandle) -> String {
         .unwrap_or_default()
 }
 
+/// Where the Dock window belongs, in physical px `(x, y, w, h)`: a see-through strip along the
+/// Dock's edge, `win_previews::dock_depth_css()` deep (the measured pill plus flyout room).
+fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), bottom_edge: i32, scale: f64) -> (i32, i32, u32, u32) {
+    let depth_css = win_previews::dock_depth_css();
+    let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
+    // Bottom (default) keeps the original rectangle; other edges get a side/top strip.
+    if win_previews::normalize_edge(&cfg.dock.position) == "bottom" {
+        let dock_h = (depth_css * scale) as u32;
+        return (pos.0, bottom_edge - dock_h as i32 - margin_bottom, size.0, dock_h);
+    }
+    let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+        ((cfg.top_bar.height as f64) * scale) as i32 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
+    } else {
+        0
+    };
+    let (rx, ry, rw, rh) = win_previews::dock_window_rect_with_depth(
+        &cfg.dock.position,
+        (pos.0, pos.1, size.0 as i32, size.1 as i32),
+        bottom_edge,
+        top_inset,
+        margin_bottom,
+        scale,
+        depth_css,
+    );
+    (rx, ry, rw.max(1) as u32, rh.max(1) as u32)
+}
+
+/// Gives the Dock window its current target rect in one step (`place_window`: position and size
+/// in a single native call, so the pill never jumps for a frame). Called by the watcher when the measured pill asks for a
+/// different depth and the Dock has been idle long enough (`win_previews::DockSizer`); never
+/// during an animation.
+pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
+    let Some(dock) = app.get_webview_window("dock") else {
+        return;
+    };
+    let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) else {
+        return;
+    };
+    let (size, pos, work, scale) = (monitor.size(), monitor.position(), monitor.work_area(), monitor.scale_factor());
+    let bottom_edge = if cfg.func.hide_native_taskbar {
+        pos.y + size.height as i32
+    } else {
+        work.position.y + work.size.height as i32
+    };
+    let (x, y, w, h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
+    crate::app::place::place_window(&dock, x, y, w, h);
+}
+
 pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
     if let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) {
         let size = monitor.size();
@@ -47,35 +95,17 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             work.position.y + work.size.height as i32
         };
 
-        // Full-width transparent dock container (760px tall, non-resizable frameless window locked flush to bottom_edge!)
+        // Full-width transparent Dock container, flush to bottom_edge. Its depth follows the
+        // measured pill plus flyout room (`win_previews::dock_depth_css`, 760 px by default).
         if let Some(dock) = app.get_webview_window("dock") {
-            let dock_w = size.width;
-            let dock_h = (760.0 * scale) as u32;
-            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-            // Bottom (default) keeps the original rectangle; other edges get a side/top strip.
-            let (x, y, dock_w, dock_h) = if win_previews::normalize_edge(&cfg.dock.position) == "bottom" {
-                (pos.x, bottom_edge - dock_h as i32 - margin_bottom, dock_w, dock_h)
-            } else {
-                let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
-                    ((cfg.top_bar.height as f64) * scale) as i32
-                        + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
-                } else {
-                    0
-                };
-                let (rx, ry, rw, rh) = win_previews::dock_window_rect(
-                    &cfg.dock.position,
-                    (pos.x, pos.y, size.width as i32, size.height as i32),
-                    bottom_edge,
-                    top_inset,
-                    margin_bottom,
-                    scale,
-                );
-                (rx, ry, rw.max(1) as u32, rh.max(1) as u32)
-            };
-            let _ = dock.set_size(PhysicalSize::new(dock_w, dock_h));
-            let _ = dock.set_position(PhysicalPosition::new(x, y));
+            let (x, y, dock_w, dock_h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
+            // One native call, and none at all when the Dock is already there (G-02, G-03).
+            crate::app::place::place_window(&dock, x, y, dock_w, dock_h);
             let _ = dock.set_always_on_top(true);
-            let _ = dock.show();
+            // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
+            if crate::app::loadguard::may_show("dock") {
+                let _ = dock.show();
+            }
             eprintln!(
                 "[Lens UI] Dock positioned at ({}, {}) size {}x{} (bottom_edge={}, scale={})",
                 x, y, dock_w, dock_h, bottom_edge, scale
@@ -86,11 +116,10 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
         if let Some(topbar) = app.get_webview_window("topbar") {
             let bar_h = ((cfg.top_bar.height as f64) * scale) as u32;
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
-            let _ = topbar.set_size(PhysicalSize::new(size.width, bar_h + extra_h));
-            let _ = topbar.set_position(PhysicalPosition::new(pos.x, pos.y));
+            crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
             let _ = topbar.set_ignore_cursor_events(false);
-            if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+            if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
                 let _ = topbar.unminimize();
                 let _ = topbar.show();
                 let _ = app.emit("lens://topbar-visible", true);
@@ -109,8 +138,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let w_h = ((bottom_edge - pos.y) as f64 - (52.0 * scale)).max(420.0) as u32;
             let x = pos.x + size.width as i32 - w_w as i32 - (12.0 * scale) as i32;
             let y = pos.y + (42.0 * scale) as i32;
-            let _ = widgets.set_size(PhysicalSize::new(w_w, w_h));
-            let _ = widgets.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&widgets, x, y, w_w, w_h);
             apply_win11_obsidian_backdrop(&widgets, true);
         }
 
@@ -130,12 +158,12 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
         if let Some(qs) = app.get_webview_window("quicksettings") {
             let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
-            let qs_w = (396.0 * scale) as u32;
-            let qs_h = (600.0 * scale) as u32;
+            // Same size as open_quicksettings uses, so opening never has to resize it (G-08).
+            let qs_w = (404.0 * scale) as u32;
+            let qs_h = (580.0 * scale) as u32;
             let x = pos.x + size.width as i32 - qs_w as i32;
             let y = pos.y + bar_h;
-            let _ = qs.set_size(PhysicalSize::new(qs_w, qs_h));
-            let _ = qs.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&qs, x, y, qs_w, qs_h);
             apply_win11_obsidian_backdrop(&qs, true);
         }
 
@@ -145,8 +173,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let n_h = (420.0 * scale) as u32;
             let x = pos.x + size.width as i32 - n_w as i32 - (14.0 * scale) as i32;
             let y = bottom_edge - n_h as i32 - (14.0 * scale) as i32;
-            let _ = notif.set_size(PhysicalSize::new(n_w, n_h));
-            let _ = notif.set_position(PhysicalPosition::new(x, y));
+            crate::app::place::place_window(&notif, x, y, n_w, n_h);
             let _ = notif.set_always_on_top(true);
         }
 
@@ -156,9 +183,10 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let h = (68.0 * scale) as u32;
             let x = pos.x;
             let y = pos.y + ((size.height as i32 - h as i32) / 2);
-            let _ = df.set_size(PhysicalSize::new(w, h));
-            let _ = df.set_position(PhysicalPosition::new(x, y));
-            let _ = df.show();
+            crate::app::place::place_window(&df, x, y, w, h);
+            if crate::app::loadguard::may_show("desktopfolder") {
+                let _ = df.show();
+            }
             #[cfg(windows)]
             if let Ok(raw) = df.hwnd() {
                 use windows::Win32::Foundation::HWND;
@@ -203,7 +231,7 @@ pub(crate) fn position_settings_docked_with_height(
             work.position.y + work.size.height as i32
         };
         // Exact bottom dock pill height (padding-top 8 + padding-bottom 10 + icon_size + 1px bottom border)
-        let dock_pill_h = ((cfg.dock.icon_size as f64 + 19.0) * scale).round() as i32;
+        let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
         let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
         // Exact live dock width so Control Center aligns pixel-for-pixel with the Dock's left and right edges!
         let unified_w = dock_pill_w.max(580.0);
@@ -213,7 +241,7 @@ pub(crate) fn position_settings_docked_with_height(
         // Fluid content-driven height so the user NEVER has to scroll when space is available on screen!
         let max_h = ((bottom_edge - dock_pill_h - margin_bottom) - (pos.y + bar_h + (8.0 * scale) as i32))
             .max((420.0 * scale) as i32) as u32;
-        let desired_h = ((desired_logical_h.unwrap_or(640.0) + 28.0).max(400.0) * scale).round() as u32;
+        let desired_h = ((desired_logical_h.unwrap_or(SETTINGS_LOGICAL_H) + 28.0).max(400.0) * scale).round() as u32;
         let target_h = desired_h.min(max_h);
         let x = pos.x + ((size.width as i32 - target_w as i32) / 2);
         // Strictly flush (+1px overlap eliminates any hairline seam between Control Center and the fused Dock!)
@@ -224,13 +252,16 @@ pub(crate) fn position_settings_docked_with_height(
             win_monitors::FlyoutAlign::Center,
         )
         .unwrap_or((x, y));
-        let _ = win.set_size(PhysicalSize::new(target_w, target_h));
-        let _ = win.set_position(PhysicalPosition::new(x, y));
+        crate::app::place::place_window(&win, x, y, target_w, target_h);
         if win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false) {
             let _ = app.emit("lens://settings-open", true);
         }
     }
 }
+
+/// Settings keeps one height while it is open (docs/SMOOTHNESS.md, G-01): resizing the native
+/// window to fit each page tore the page as it switched. Pages scroll inside this height.
+pub(crate) const SETTINGS_LOGICAL_H: f64 = 720.0;
 
 pub(crate) fn position_settings_docked(app: &AppHandle, cfg: &LensConfig, dock_pill_w: f64) {
     position_settings_docked_with_height(app, cfg, dock_pill_w, None);
@@ -273,6 +304,11 @@ pub(crate) fn collect_overlap_rects() -> Vec<OverlapRect> {
     }
 
     unsafe extern "system" fn cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("app.watcher.cb", BOOL(1), || cb_guarded(hwnd, lparam))
+    }
+
+    unsafe fn cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         let ctx = &mut *(lparam.0 as *mut Ctx);
         if !IsWindowVisible(hwnd).as_bool() || IsIconic(hwnd).as_bool() {
             return BOOL(1);
@@ -363,7 +399,19 @@ pub(crate) fn spawn_watcher(
         let mut dock_edge_since: Option<Instant> = None;
         let mut dock_leave_since: Option<Instant> = None;
         let mut dock_ignoring_cursor = false;
+        // Dock window depth follows the measured pill; resized only when the Dock is idle (B-15).
+        let watcher_started = Instant::now();
+        let mut dock_sizer = win_previews::DockSizer::default();
+        let mut dock_last_pill = win_previews::pill_rect_css();
+        let mut dock_pill_changed_at = Instant::now();
+        let mut dock_vis_changed_at = Instant::now();
         let mut last_settings_vis = false;
+        // Auto-hide watchdog: a menu, hover card or search can report "open" and then never report
+        // "closed" (the pointer left through click-through glass, an app launch took focus, the
+        // webview reloaded). Each blocker only counts while it is plausibly in use.
+        let mut menu_idle_since: Option<Instant> = None;
+        let mut settings_unfocused_since: Option<Instant> = None;
+        let mut search_idle_since: Option<Instant> = None;
 
         loop {
             thread::sleep(Duration::from_millis(65));
@@ -449,7 +497,10 @@ pub(crate) fn spawn_watcher(
                     .unwrap_or(false);
 
                 // --- TOP BAR AUTO-HIDE ON OVERLAP ---
-                if let Some(topbar_win) = watcher_handle.get_webview_window("topbar") {
+                if let Some(topbar_win) = watcher_handle
+                    .get_webview_window("topbar")
+                    .filter(|_| crate::app::loadguard::may_show("topbar"))
+                {
                     if cfg.top_bar.enabled && cfg.dock.show_top_bar {
                         let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
@@ -480,6 +531,40 @@ pub(crate) fn spawn_watcher(
                                     && !w.is_minimized().unwrap_or(false)
                             })
                             .unwrap_or(false);
+                        // Top Bar search: a palette left showing while neither it nor the bar has focus
+                        // (focus moved to an app, a missed close event) used to pin the bar open forever.
+                        // Close it after a short grace, or at once on a click outside both.
+                        let mut palette_vis = palette_vis;
+                        if palette_vis {
+                            let in_rect = |w: &tauri::WebviewWindow| match (w.outer_position(), w.outer_size(), cursor) {
+                                (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                    cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                }
+                                _ => false,
+                            };
+                            let pal = watcher_handle.get_webview_window("palette");
+                            let pal_focused = pal.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
+                            let bar_focused = topbar_win.is_focused().unwrap_or(false);
+                            let pointer_in = pal.as_ref().map(in_rect).unwrap_or(false) || in_rect(&topbar_win);
+                            let close = search_should_close(
+                                SearchGuardInput {
+                                    palette_focused: pal_focused,
+                                    bar_focused,
+                                    pointer_inside: pointer_in,
+                                    click_outside: !pointer_in && mouse_button_down(),
+                                },
+                                &mut search_idle_since,
+                                Instant::now(),
+                            );
+                            if close {
+                                bg_topbar_search_open.store(false, std::sync::atomic::Ordering::Relaxed);
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "palette");
+                                let _ = watcher_handle.emit("lens://topbar-search-open", false);
+                                palette_vis = false;
+                            }
+                        } else {
+                            search_idle_since = None;
+                        }
                         let flyout_open = palette_vis || qs_vis;
 
                         let should_hide_when_idle = if flyout_open {
@@ -548,28 +633,27 @@ pub(crate) fn spawn_watcher(
                 }
 
                 // --- GROUNDED BOTTOM DOCK AUTO-HIDE & DYNAMIC CLICK-THROUGH ---
-                if let Some(dock_win) = watcher_handle.get_webview_window("dock") {
+                if let Some(dock_win) = watcher_handle
+                    .get_webview_window("dock")
+                    .filter(|_| crate::app::loadguard::may_show("dock"))
+                {
                     let live_pill_w = *bg_dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
                     let pill_half_w = (((live_pill_w * scale) / 2.0) as i32 + 18)
                         .min(msize.width as i32 / 2);
                     let center_x = mon_left + (msize.width as i32 / 2);
                     let mon_bottom = mpos.y + msize.height as i32;
                     let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-                    let pill_h = ((cfg.dock.icon_size as f64 + 34.0) * scale) as i32;
+                    // Fallback geometry until the Dock has reported its pill: the clamped icon size,
+                    // never the raw config value (docs/TESTING.md F2).
+                    let pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 34.0) * scale) as i32;
                     let pill_top = bottom_edge - margin_bottom - pill_h;
 
                     let cursor_in_mon_x = cursor
                         .map(|(cx, _)| cx >= mon_left && cx <= mon_right)
                         .unwrap_or(false);
-                    // Docks on the top/left/right edge, and every bottom Dock whose shape is not the
-                    // plain floating pill (Slim, Taskbar, Studio, Minimal, Split, magnification), use
-                    // the rect the Dock reports. Plain Floating keeps the original code path.
-                    let reported_rect_needed = win_previews::normalize_edge(&cfg.dock.position)
-                        != "bottom"
-                        || cfg.dock.style != "floating"
-                        || cfg.dock.magnification != "off";
-                    let edge_zones = if reported_rect_needed && win_previews::pill_rect_css().2 > 0
-                    {
+                    // Every Dock, on every edge and in every style, is hit-tested against the rect it
+                    // measured and reported. The estimate above is only used until the first report.
+                    let edge_zones = if win_previews::pill_rect_css().2 > 0 && win_previews::pill_rect_css().3 > 0 {
                         dock_win.outer_position().ok().map(|p| {
                             win_previews::dock_zones(
                                 &cfg.dock.position,
@@ -619,9 +703,45 @@ pub(crate) fn spawn_watcher(
                         let _ = watcher_handle.emit("lens://settings-open", settings_now_vis);
                     }
 
-                    // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is open!
-                    let menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
-                    let dock_flyout_open = menu_open || settings_now_vis || palette_vis_now;
+                    // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is
+                    // in use. "In use" is checked here rather than trusted: see DockGuard below.
+                    let mut menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
+                    let dock_focused = dock_win.is_focused().unwrap_or(false);
+                    // The Dock window is a tall see-through strip, so "over the Dock" means over the
+                    // pill or over the open flyout (both reported by the Dock in CSS px).
+                    let cursor_over_dock_window = match (dock_win.outer_position(), cursor) {
+                        (Ok(p), Some((cx, cy))) => {
+                            let (fx, fy, fw, fh) = win_previews::flyout_rect_css();
+                            let pad = (6.0 * scale) as i32;
+                            fw > 0 && {
+                                let l = p.x + (fx as f64 * scale) as i32 - pad;
+                                let t = p.y + (fy as f64 * scale) as i32 - pad;
+                                let r = l + (fw as f64 * scale) as i32 + 2 * pad;
+                                let b = t + (fh as f64 * scale) as i32 + 2 * pad;
+                                cx >= l && cx < r && cy >= t && cy < b
+                            }
+                        }
+                        _ => false,
+                    };
+                    let guard = dock_guard(DockGuardInput {
+                        menu_open,
+                        dock_focused,
+                        cursor_over_pill,
+                        cursor_over_dock_window,
+                        settings_visible: settings_now_vis,
+                        settings_focused: watcher_handle
+                            .get_webview_window("settings")
+                            .and_then(|w| w.is_focused().ok())
+                            .unwrap_or(false),
+                        palette_visible: palette_vis_now,
+                        click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
+                    }, &mut menu_idle_since, &mut settings_unfocused_since);
+                    if guard.clear_stale_menu {
+                        *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
+                        menu_open = false;
+                        let _ = watcher_handle.emit("lens://dock-dismiss-menus", ());
+                    }
+                    let dock_flyout_open = guard.blocks_hide;
 
                     let should_hide_dock = if dock_flyout_open {
                         false
@@ -673,7 +793,12 @@ pub(crate) fn spawn_watcher(
                     }
 
                     if next_dock_vis != dock_visible {
+                        dock_vis_changed_at = Instant::now();
                         dock_visible = next_dock_vis;
+                        let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
+                    } else if tick % 30 == 0 && cfg.dock.auto_hide != "never" {
+                        // Re-send the state every ~2 s so a Dock page that missed an event (reload,
+                        // load-guard retry, sleep/resume) can't stay out of sync with the watcher.
                         let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
                     }
                     if dock_visible
@@ -685,6 +810,34 @@ pub(crate) fn spawn_watcher(
                         let _ = watcher_handle.emit("lens://dock-visible", true);
                     }
 
+                    // Window depth = measured pill + flyout room, so a tall pill keeps its flyout room
+                    // and nothing is clipped. The native window is only resized when the Dock has
+                    // been idle: shown, not sliding, not hovered, no flyout or menu open, and the
+                    // pill itself done changing size.
+                    let pill_now = win_previews::pill_rect_css();
+                    if pill_now != dock_last_pill {
+                        dock_last_pill = pill_now;
+                        dock_pill_changed_at = Instant::now();
+                    }
+                    let dock_busy = !dock_visible
+                        || menu_open
+                        || dock_flyout_open
+                        || cursor_over_pill
+                        || win_previews::flyout_rect_css().2 > 0
+                        || dock_vis_changed_at.elapsed().as_millis() < 800
+                        || dock_pill_changed_at.elapsed().as_millis() < 600;
+                    let depth_now = win_previews::dock_depth_css();
+                    let depth_wanted = win_previews::dock_depth_for_pill(&cfg.dock.position, pill_now);
+                    if let Some(depth) = dock_sizer.step(watcher_started.elapsed().as_millis() as u64, depth_now, depth_wanted, dock_busy) {
+                        win_previews::set_dock_depth_css(depth);
+                        // The pill keeps its place on screen; tell the hit-test where it now is
+                        // inside the window until the page reports again (it does, on resize).
+                        let (px, py, pw, ph) = win_previews::pill_after_depth_change(&cfg.dock.position, pill_now, depth_now, depth);
+                        win_previews::set_pill_rect(px as f64, py as f64, pw as f64, ph as f64);
+                        dock_last_pill = win_previews::pill_rect_css();
+                        resize_dock_window(&watcher_handle, &cfg);
+                    }
+
                     // Click-through everywhere except over the visible dock pill (or when context menu/search/hover card is open)
                     let want_ignore = !menu_open && (!dock_visible || !cursor_over_pill);
                     if want_ignore != dock_ignoring_cursor {
@@ -694,7 +847,10 @@ pub(crate) fn spawn_watcher(
                 }
 
                 // --- LEFT-EDGE DESKTOP CONDENSER TAB: ONLY VISIBLE WHEN DESKTOP WALLPAPER IS EXPOSED AT THAT AREA ---
-                if let Some(df_win) = watcher_handle.get_webview_window("desktopfolder") {
+                if let Some(df_win) = watcher_handle
+                    .get_webview_window("desktopfolder")
+                    .filter(|_| crate::app::loadguard::may_show("desktopfolder"))
+                {
                     let tab_w = (88.0 * scale) as i32;
                     let tab_h = (72.0 * scale) as i32;
                     let tab_top = mon_top + ((msize.height as i32 - tab_h) / 2);
@@ -742,4 +898,217 @@ pub(crate) fn spawn_watcher(
         }
     });
 
+}
+
+/// How long a Dock "menu open" report may stand with the pointer away and the Dock unfocused.
+pub(crate) const STALE_MENU_MS: u128 = 1200;
+/// How long a visible but unfocused Control Center may keep the Dock up.
+pub(crate) const SETTINGS_UNFOCUSED_MS: u128 = 1500;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct DockGuardInput {
+    pub menu_open: bool,
+    pub dock_focused: bool,
+    pub cursor_over_pill: bool,
+    pub cursor_over_dock_window: bool,
+    pub settings_visible: bool,
+    pub settings_focused: bool,
+    pub palette_visible: bool,
+    /// A mouse button is down somewhere outside the Dock window (a click elsewhere).
+    pub click_outside: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct DockGuard {
+    /// Something genuinely in use: don't auto-hide.
+    pub blocks_hide: bool,
+    /// The menu flag has been stale long enough: clear it and dismiss the Dock's flyouts.
+    pub clear_stale_menu: bool,
+}
+
+/// Decides whether open flyouts should keep the Dock up. A menu flag only counts while the Dock
+/// window has focus or the pointer is over it; once neither has been true for STALE_MENU_MS it is
+/// treated as stale. A visible Control Center only counts while focused (plus a short grace).
+pub(crate) fn dock_guard(
+    i: DockGuardInput,
+    menu_idle_since: &mut Option<std::time::Instant>,
+    settings_unfocused_since: &mut Option<std::time::Instant>,
+) -> DockGuard {
+    dock_guard_at(i, menu_idle_since, settings_unfocused_since, std::time::Instant::now())
+}
+
+pub(crate) fn dock_guard_at(
+    i: DockGuardInput,
+    menu_idle_since: &mut Option<std::time::Instant>,
+    settings_unfocused_since: &mut Option<std::time::Instant>,
+    now: std::time::Instant,
+) -> DockGuard {
+    let menu_in_use = i.dock_focused || i.cursor_over_pill || i.cursor_over_dock_window;
+    let mut clear_stale_menu = false;
+    let menu_blocks = if i.menu_open && i.click_outside {
+        // Clicking anywhere outside the Dock closes its menus at once, focused or not.
+        *menu_idle_since = None;
+        clear_stale_menu = true;
+        false
+    } else if i.menu_open {
+        if menu_in_use {
+            *menu_idle_since = None;
+            true
+        } else {
+            let since = *menu_idle_since.get_or_insert(now);
+            if now.duration_since(since).as_millis() >= STALE_MENU_MS {
+                *menu_idle_since = None;
+                clear_stale_menu = true;
+                false
+            } else {
+                true
+            }
+        }
+    } else {
+        *menu_idle_since = None;
+        false
+    };
+    let settings_blocks = if i.settings_visible {
+        if i.settings_focused || menu_in_use {
+            *settings_unfocused_since = None;
+            true
+        } else {
+            let since = *settings_unfocused_since.get_or_insert(now);
+            now.duration_since(since).as_millis() < SETTINGS_UNFOCUSED_MS
+        }
+    } else {
+        *settings_unfocused_since = None;
+        false
+    };
+    DockGuard { blocks_hide: menu_blocks || settings_blocks || i.palette_visible, clear_stale_menu }
+}
+
+#[cfg(test)]
+mod dock_guard_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn run(i: DockGuardInput, steps: &[u64]) -> Vec<DockGuard> {
+        let t0 = Instant::now();
+        let (mut a, mut b) = (None, None);
+        steps.iter().map(|ms| dock_guard_at(i, &mut a, &mut b, t0 + Duration::from_millis(*ms))).collect()
+    }
+
+    #[test]
+    fn menu_in_use_keeps_dock_up() {
+        let i = DockGuardInput { menu_open: true, cursor_over_pill: true, ..Default::default() };
+        assert!(run(i, &[0, 5000]).iter().all(|g| g.blocks_hide && !g.clear_stale_menu));
+    }
+
+    #[test]
+    fn stale_menu_is_cleared_after_grace() {
+        let i = DockGuardInput { menu_open: true, ..Default::default() };
+        let r = run(i, &[0, 600, 1300]);
+        assert!(r[0].blocks_hide && r[1].blocks_hide);
+        assert_eq!(r[2], DockGuard { blocks_hide: false, clear_stale_menu: true });
+    }
+
+    #[test]
+    fn unfocused_settings_stops_blocking() {
+        let i = DockGuardInput { settings_visible: true, ..Default::default() };
+        let r = run(i, &[0, 1000, 1600]);
+        assert!(r[0].blocks_hide && r[1].blocks_hide && !r[2].blocks_hide);
+    }
+
+    #[test]
+    fn focused_settings_and_palette_block() {
+        let s = DockGuardInput { settings_visible: true, settings_focused: true, ..Default::default() };
+        assert!(run(s, &[0, 9000]).iter().all(|g| g.blocks_hide));
+        let p = DockGuardInput { palette_visible: true, ..Default::default() };
+        assert!(run(p, &[0]).iter().all(|g| g.blocks_hide));
+    }
+
+    #[test]
+    fn click_outside_closes_menu_immediately() {
+        let i = DockGuardInput { menu_open: true, dock_focused: true, click_outside: true, ..Default::default() };
+        assert_eq!(run(i, &[0])[0], DockGuard { blocks_hide: false, clear_stale_menu: true });
+    }
+
+    #[test]
+    fn nothing_open_never_blocks() {
+        assert!(run(DockGuardInput::default(), &[0, 2000]).iter().all(|g| !g.blocks_hide && !g.clear_stale_menu));
+    }
+}
+
+/// True while the left, right or middle mouse button is held (any window).
+#[cfg(windows)]
+pub(crate) fn mouse_button_down() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON};
+    unsafe {
+        [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON]
+            .iter()
+            .any(|vk| (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0)
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn mouse_button_down() -> bool {
+    false
+}
+
+/// How long a Top Bar search palette may stay open with neither it nor the bar focused.
+pub(crate) const SEARCH_IDLE_MS: u128 = 1200;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct SearchGuardInput {
+    pub palette_focused: bool,
+    pub bar_focused: bool,
+    pub pointer_inside: bool,
+    pub click_outside: bool,
+}
+
+/// True when the open Top Bar search should close: a click outside the bar and palette, or
+/// SEARCH_IDLE_MS with neither focused and the pointer elsewhere.
+pub(crate) fn search_should_close(
+    i: SearchGuardInput,
+    idle_since: &mut Option<std::time::Instant>,
+    now: std::time::Instant,
+) -> bool {
+    if i.click_outside {
+        *idle_since = None;
+        return true;
+    }
+    if i.palette_focused || i.bar_focused || i.pointer_inside {
+        *idle_since = None;
+        return false;
+    }
+    let since = *idle_since.get_or_insert(now);
+    if now.duration_since(since).as_millis() >= SEARCH_IDLE_MS {
+        *idle_since = None;
+        true
+    } else {
+        false
+    }
+}
+
+#[cfg(test)]
+mod search_guard_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn focused_or_hovered_search_stays_open() {
+        let t0 = Instant::now();
+        let mut s = None;
+        for i in [SearchGuardInput { palette_focused: true, ..Default::default() }, SearchGuardInput { bar_focused: true, ..Default::default() }, SearchGuardInput { pointer_inside: true, ..Default::default() }] {
+            assert!(!search_should_close(i, &mut s, t0 + Duration::from_secs(9)));
+        }
+    }
+
+    #[test]
+    fn unfocused_search_closes_after_grace_and_click_outside_closes_at_once() {
+        let t0 = Instant::now();
+        let mut s = None;
+        let idle = SearchGuardInput::default();
+        assert!(!search_should_close(idle, &mut s, t0));
+        assert!(!search_should_close(idle, &mut s, t0 + Duration::from_millis(600)));
+        assert!(search_should_close(idle, &mut s, t0 + Duration::from_millis(1300)));
+        let mut s2 = None;
+        assert!(search_should_close(SearchGuardInput { bar_focused: true, click_outside: true, ..Default::default() }, &mut s2, t0));
+    }
 }

@@ -1,9 +1,11 @@
 // The Settings hub's map: every page, its sections, and the Windows Settings pages Lens can open.
 // Pure data + helpers (no React), so search and deep links are unit-testable.
 
-export type GroupId = "lens" | "windows" | "status";
+export type GroupId = "quick" | "lens" | "windows" | "status";
 
 export type PageId =
+  // Quick
+  | "quick"
   // Lens
   | "appearance"
   | "dock"
@@ -55,12 +57,29 @@ export interface PageDef {
 }
 
 export const GROUPS: { id: GroupId; label: string }[] = [
+  { id: "quick", label: "Quick" },
   { id: "lens", label: "Lens" },
   { id: "windows", label: "Windows" },
   { id: "status", label: "Status" },
 ];
 
 export const PAGES: PageDef[] = [
+  // ---------------- Quick
+  {
+    id: "quick",
+    group: "quick",
+    label: "Quick settings",
+    description: "The settings you change most, and quick window layouts.",
+    icon: "quick",
+    color: "#FAFAFA",
+    controls: ["Wi-Fi and Bluetooth", "Volume and brightness", "Window layouts"],
+    keywords: ["quick", "quick settings", "most used", "favourites", "shortcuts page", "minimise all", "always on top", "window layouts"],
+    sections: [
+      { id: "quick", label: "Quick settings", keywords: ["most used", "favourites"] },
+      { id: "look", label: "Quick theme", keywords: ["quick theme"] },
+      { id: "window", label: "Quick window", keywords: ["minimise all", "always on top", "window layouts"] },
+    ],
+  },
   // ---------------- Lens
   {
     id: "appearance",
@@ -70,7 +89,7 @@ export const PAGES: PageDef[] = [
     icon: "palette",
     color: "#A78BFA",
     controls: ["Theme pack", "Dark / Light / Auto", "Accent colour"],
-    keywords: ["theme", "look", "pack", "accent", "colour", "color", "dark mode", "light mode", "glass", "blur", "roundness", "cursor", "pointer", "font", "icons", "wallpaper schedule", "shape style", "backdrop lab", "gradient maker"],
+    keywords: ["theme", "look", "pack", "accent", "colour", "color", "dark mode", "light mode", "glass", "blur", "roundness", "cursor", "pointer", "font", "icons", "wallpaper schedule", "shape style", "backdrop lab", "gradient maker", "featured themes", "wallpaper picker", "wallpaper switcher", "slideshow"],
     sections: [
       { id: "current", label: "Current theme", keywords: ["pack", "accent", "glass", "roundness"] },
       { id: "choose", label: "Choose a theme", keywords: ["gallery", "browse", "catppuccin", "nord", "claude"] },
@@ -379,13 +398,14 @@ export const PAGES: PageDef[] = [
     id: "about",
     group: "status",
     label: "About & Testing",
-    description: "Lens updates, crash reports, self-test, backups and the Tester Hub.",
+    description: "Lens updates, crash reports, the safety net, self-test, backups and the Tester Hub.",
     icon: "flask",
     color: "#FBBF24",
     controls: ["Check for updates", "Run self-test", "Back up settings"],
-    keywords: ["about", "version", "update lens", "crash reports", "self test", "backup", "restore", "tester", "remove all lens changes", "uninstall"],
+    keywords: ["about", "version", "update lens", "crash reports", "safe mode", "safety net", "self test", "backup", "restore", "tester", "remove all lens changes", "uninstall"],
     sections: [
       { id: "updates", label: "Updates & crash reports" },
+      { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch"] },
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },
       { id: "tester", label: "Tester Hub" },

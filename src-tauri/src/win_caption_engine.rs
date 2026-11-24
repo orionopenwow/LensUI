@@ -46,7 +46,30 @@ const MAX_POOL_SLOTS: usize = 12;
 
 static ENGINE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ENGINE_ENABLED: AtomicBool = AtomicBool::new(true);
-static ORDER_RED_FIRST: AtomicBool = AtomicBool::new(false); // Green -> Yellow -> Red
+/// Button order: ORDER_YGR (Windows' own minimise, maximise, close; the default),
+/// ORDER_GYR or ORDER_RYG (macOS-style, red first).
+pub(crate) const ORDER_YGR: u8 = 0;
+pub(crate) const ORDER_GYR: u8 = 1;
+pub(crate) const ORDER_RYG: u8 = 2;
+static ORDER: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(ORDER_YGR);
+
+pub(crate) fn order_code(order: &str) -> u8 {
+    match order {
+        "red-yellow-green" => ORDER_RYG,
+        "green-yellow-red" => ORDER_GYR,
+        _ => ORDER_YGR,
+    }
+}
+
+/// Which button sits in each of the three slots, left to right: 0 maximise (green),
+/// 1 minimise (yellow), 2 close (red).
+pub(crate) fn slot_buttons(order: u8) -> [u8; 3] {
+    match order {
+        ORDER_RYG => [2, 1, 0],
+        ORDER_GYR => [0, 1, 2],
+        _ => [1, 0, 2],
+    }
+}
 static CORNER_RADIUS_PX: AtomicI32 = AtomicI32::new(8);
 static MANAGER_HWND: AtomicIsize = AtomicIsize::new(0);
 
@@ -60,7 +83,7 @@ struct CaptionSlot {
     bg_bgr: u32,
     hovered: bool,
     is_topmost: bool,
-    order_red_first: bool,
+    order: u8,
     corner_r: i32,
 }
 
@@ -72,7 +95,7 @@ thread_local! {
 
 pub fn set_caption_engine_config(enabled: bool, order: &str, border_radius: u32) {
     ENGINE_ENABLED.store(enabled, Ordering::SeqCst);
-    ORDER_RED_FIRST.store(order == "red-yellow-green", Ordering::SeqCst);
+    ORDER.store(order_code(order), Ordering::SeqCst);
     // Match Windows 11 DWM hardware corner radii: 0px (square), 4px (small), 8px (standard)
     let dwm_r = if border_radius <= 2 {
         0
@@ -216,7 +239,7 @@ unsafe fn paint_layered_caption(
     h: i32,
     bg_bgr: u32,
     hovered: bool,
-    red_first: bool,
+    order: u8,
 ) {
     let screen_dc = GetDC(None);
     let mem_dc = CreateCompatibleDC(screen_dc);
@@ -262,19 +285,22 @@ unsafe fn paint_layered_caption(
     let c2 = (w as f32) - (38.0 * scale);
     let c3 = (w as f32) - (18.0 * scale);
 
-    let btns: [(f32, f32, f32, f32, f32, u8); 3] = if red_first {
-        [
-            (c1, cy, 255.0, 95.0, 87.0, 2),  // Red Close
-            (c2, cy, 254.0, 188.0, 46.0, 1), // Yellow Minimize
-            (c3, cy, 40.0, 200.0, 64.0, 0),  // Green Maximize
-        ]
-    } else {
-        [
-            (c1, cy, 40.0, 200.0, 64.0, 0),  // Green Maximize
-            (c2, cy, 254.0, 188.0, 46.0, 1), // Yellow Minimize
-            (c3, cy, 255.0, 95.0, 87.0, 2),  // Red Close
-        ]
+    let colour = |id: u8| match id {
+        0 => (40.0, 200.0, 64.0),  // Green Maximize
+        1 => (254.0, 188.0, 46.0), // Yellow Minimize
+        _ => (255.0, 95.0, 87.0),  // Red Close
     };
+    let ids = slot_buttons(order);
+    let btns: [(f32, f32, f32, f32, f32, u8); 3] = [c1, c2, c3]
+        .iter()
+        .zip(ids)
+        .map(|(&cx, id)| {
+            let (r, g, b) = colour(id);
+            (cx, cy, r, g, b, id)
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap_or([(c1, cy, 254.0, 188.0, 46.0, 1), (c2, cy, 40.0, 200.0, 64.0, 0), (c3, cy, 255.0, 95.0, 87.0, 2)]);
 
     let feather_px = (8.0 * scale).round().max(4.0) as i32;
     let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * scale;
@@ -385,6 +411,11 @@ struct EnumTarget {
 }
 
 unsafe extern "system" fn enum_targets_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("caption_engine.enum_targets_cb", BOOL(1), || enum_targets_cb_guarded(hwnd, lparam))
+}
+
+unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let targets = &mut *(lparam.0 as *mut Vec<EnumTarget>);
     if targets.len() >= MAX_POOL_SLOTS {
         return BOOL(0);
@@ -579,7 +610,7 @@ unsafe fn sync_all_windows(resample_colors: bool) {
     let mut targets: Vec<EnumTarget> = Vec::with_capacity(MAX_POOL_SLOTS);
     let _ = EnumWindows(Some(enum_targets_cb), LPARAM(&mut targets as *mut _ as isize));
 
-    let red_first = ORDER_RED_FIRST.load(Ordering::Relaxed);
+    let red_first: u8 = ORDER.load(Ordering::Relaxed);
     let cur_corner_r = CORNER_RADIUS_PX.load(Ordering::Relaxed);
     let active_keys: HashSet<isize> = targets.iter().map(|t| t.hwnd.0 as isize).collect();
 
@@ -634,7 +665,7 @@ unsafe fn sync_all_windows(resample_colors: bool) {
                     bg_bgr: old.bg_bgr,
                     hovered: false,
                     is_topmost: target.is_topmost,
-                    order_red_first: red_first,
+                    order: red_first,
                     corner_r: cur_corner_r,
                 };
                 SLOTS.with(|s| {
@@ -661,7 +692,7 @@ unsafe fn sync_all_windows(resample_colors: bool) {
                     bg_bgr: 0x0018_181B,
                     hovered: false,
                     is_topmost: target.is_topmost,
-                    order_red_first: red_first,
+                    order: red_first,
                     corner_r: cur_corner_r,
                 };
                 SLOTS.with(|s| {
@@ -690,7 +721,7 @@ unsafe fn sync_all_windows(resample_colors: bool) {
         let pos_changed = slot.x != x || slot.y != y;
         let size_changed = is_new_slot || slot.w != target.cap_w || slot.h != target.cap_h;
         let visual_changed =
-            bg != slot.bg_bgr || slot.order_red_first != red_first || slot.corner_r != cur_corner_r;
+            bg != slot.bg_bgr || slot.order != red_first || slot.corner_r != cur_corner_r;
 
         // Check if overlay is already immediately above target_hwnd in Z-order
         let prev = GetWindow(target.hwnd, GW_HWNDPREV).unwrap_or(HWND(std::ptr::null_mut()));
@@ -702,7 +733,7 @@ unsafe fn sync_all_windows(resample_colors: bool) {
             slot.w = target.cap_w;
             slot.h = target.cap_h;
             slot.bg_bgr = bg;
-            slot.order_red_first = red_first;
+            slot.order = red_first;
             slot.corner_r = cur_corner_r;
 
             SLOTS.with(|s| {
@@ -763,6 +794,19 @@ unsafe extern "system" fn win_event_cb(
     _thread: u32,
     _time: u32,
 ) {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard("caption_engine.win_event_cb", (), || win_event_cb_guarded(_hook, event, hwnd, id_object, _id_child, _thread, _time))
+}
+
+unsafe fn win_event_cb_guarded(
+    _hook: HWINEVENTHOOK,
+    event: u32,
+    hwnd: HWND,
+    id_object: i32,
+    _id_child: i32,
+    _thread: u32,
+    _time: u32,
+) {
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }
@@ -782,6 +826,16 @@ unsafe extern "system" fn manager_wnd_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard_else("caption_engine.manager_wnd_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || manager_wnd_proc_guarded(hwnd, msg, wparam, lparam))
+}
+
+unsafe fn manager_wnd_proc_guarded(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
     match msg {
         WM_APP_SYNC => {
             sync_all_windows(true);
@@ -796,6 +850,16 @@ unsafe extern "system" fn manager_wnd_proc(
 }
 
 unsafe extern "system" fn caption_wnd_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+    crate::failsafe::guard::ffi_guard_else("caption_engine.caption_wnd_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || caption_wnd_proc_guarded(hwnd, msg, wparam, lparam))
+}
+
+unsafe fn caption_wnd_proc_guarded(
     hwnd: HWND,
     msg: u32,
     wparam: WPARAM,
@@ -839,7 +903,7 @@ unsafe extern "system" fn caption_wnd_proc(
                         slot.h,
                         slot.bg_bgr,
                         true,
-                        slot.order_red_first,
+                        slot.order,
                     );
                 }
             }
@@ -866,7 +930,7 @@ unsafe extern "system" fn caption_wnd_proc(
                         slot.h,
                         slot.bg_bgr,
                         false,
-                        slot.order_red_first,
+                        slot.order,
                     );
                 }
             }
@@ -880,18 +944,15 @@ unsafe extern "system" fn caption_wnd_proc(
                 if let Some(slot) = slot_opt {
                     let target = HWND(key as *mut _);
                     let scale = (slot.w as f32) / (BASE_W as f32);
-                    let red_first = ORDER_RED_FIRST.load(Ordering::Relaxed);
+                    let red_first: u8 = ORDER.load(Ordering::Relaxed);
                     let split1 = slot.w - (48.0 * scale) as i32;
                     let split2 = slot.w - (28.0 * scale) as i32;
 
-                    let action = if click_x < split1 {
-                        if red_first { "close" } else { "maximize" }
-                    } else if click_x < split2 {
-                        "minimize"
-                    } else if red_first {
-                        "maximize"
-                    } else {
-                        "close"
+                    let slot_i = if click_x < split1 { 0 } else if click_x < split2 { 1 } else { 2 };
+                    let action = match slot_buttons(red_first)[slot_i] {
+                        0 => "maximize",
+                        1 => "minimize",
+                        _ => "close",
                     };
 
                     let cmd = match action {
@@ -1005,4 +1066,16 @@ pub fn start_caption_engine() {
         }
         clear_all_slots();
     });
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+    #[test]
+    fn default_is_windows_order() {
+        assert_eq!(slot_buttons(order_code("")), [1, 0, 2]);
+        assert_eq!(slot_buttons(order_code("yellow-green-red")), [1, 0, 2]);
+        assert_eq!(slot_buttons(order_code("green-yellow-red")), [0, 1, 2]);
+        assert_eq!(slot_buttons(order_code("red-yellow-green")), [2, 1, 0]);
+    }
 }

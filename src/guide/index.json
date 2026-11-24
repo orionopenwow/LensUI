@@ -2,6 +2,10 @@
  "version": 1,
  "tabs": [
   {
+   "id": "quick",
+   "label": "Quick settings"
+  },
+  {
    "id": "theme",
    "label": "Appearance"
   },
@@ -245,6 +249,26 @@
     "section": "schedule"
    },
    "source": "src/components/ThemeScheduleCard.tsx"
+  },
+  {
+   "id": "card.theme.switchercard",
+   "kind": "card",
+   "title": "Switcher",
+   "text": "Switcher. Settings › Appearance › Wallpaper: the Wallpaper Switcher's card. Simple mode shows the picker button and \"Change automatically\"; everything else is in the full card and in the picker",
+   "path": [
+    "Settings",
+    "Appearance",
+    "Wallpaper",
+    "Switcher"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "theme",
+    "card": "SwitcherCard",
+    "label": "Switcher",
+    "section": "wallpaper"
+   },
+   "source": "src/wallpapers/SwitcherCard.tsx"
   },
   {
    "id": "card.theme.wallpapercard",
@@ -3861,7 +3885,7 @@
    "id": "card.ai.browsercard",
    "kind": "card",
    "title": "Lens Browser",
-   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages. Browser. Settings › AI & Command › Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages. Browser. Settings › AI & Command › Lens Browser",
    "path": [
     "Settings",
     "AI & Command",
@@ -3972,6 +3996,26 @@
     "tab": "ai",
     "card": "BrowserCard",
     "label": "Lens right-click menu on pages",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.lens-buttons-on-pages",
+   "kind": "setting",
+   "title": "Lens buttons on pages",
+   "text": "A tiny Lens orb beside tweets, YouTube's player, videos, images, 3D models, code and downloads. Applies to tabs opened after you turn it on.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Lens buttons on pages"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Lens buttons on pages",
     "section": "browser"
    },
    "source": "src/components/BrowserCard.tsx"
@@ -4153,6 +4197,105 @@
     "section": "updates"
    },
    "source": "src/components/CrashReportsCard.tsx"
+  },
+  {
+   "id": "card.about.failsafecard",
+   "kind": "card",
+   "title": "Safety net",
+   "text": "It stopped answering several times in a row. Last problem. Safety net · is paused · Held off by features.json · Settings repaired at start-up · Errors contained. Failsafe. Safety net card. Shows what Lens switched off to protect the desktop: Safe Mode, features paused after repeated failures (with \"Turn back on\"), features held off by features.json, settings that were repaired at start-up, and errors that were caught and contained. Backend: src-tauri/src/failsafe (doc",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Safety net",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.is-paused",
+   "kind": "setting",
+   "title": "is paused",
+   "text": "It stopped answering several times in a row. Last problem",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "is paused"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "is paused",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.held-off-by-features-json",
+   "kind": "setting",
+   "title": "Held off by features.json",
+   "text": ". Remove them from features.json in the Lens data folder and restart Lens to use them again.",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Held off by features.json"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Held off by features.json",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.settings-repaired-at-start-up",
+   "kind": "setting",
+   "title": "Settings repaired at start-up",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Settings repaired at start-up"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Settings repaired at start-up",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.errors-contained",
+   "kind": "setting",
+   "title": "Errors contained",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Errors contained"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Errors contained",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
   },
   {
    "id": "card.about.backuprestorecard",
@@ -4763,7 +4906,7 @@
    "id": "setting.system.inline.run-lens-ui-on-windows-startup",
    "kind": "setting",
    "title": "Run Lens UI on Windows Startup",
-   "text": "Starts Lens when you sign in to Windows",
+   "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -4900,6 +5043,21 @@
     "surface": "settings",
     "tab": "system",
     "label": "Global Shortcuts"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "tab.quick",
+   "kind": "tab",
+   "title": "Quick settings",
+   "text": "The Quick settings tab in Settings.",
+   "path": [
+    "Settings",
+    "Quick settings"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "quick"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -6797,6 +6955,21 @@
     "doc": "docs/CURSORS.md"
    },
    "source": "docs/CURSORS.md"
+  },
+  {
+   "id": "hotkey.alt-l",
+   "kind": "hotkey",
+   "title": "Alt+L",
+   "text": "Docs / Notion / Google Docs Selection button and Alt+L (their pages draw text on canvas) Send to Claude, Save as note, Summarise",
+   "path": [
+    "Keyboard",
+    "Alt+L"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
   },
   {
    "id": "hotkey.ctrl-l",
@@ -9210,6 +9383,158 @@
    "source": "docs/DOCK_STYLES.md"
   },
   {
+   "id": "doc.failsafe.0",
+   "kind": "doc",
+   "title": "Failsafe engineering",
+   "text": "One fault must never break the desktop. Lens sits where the taskbar, the Start key and Alt+Tab used to be, so a bug in one feature cannot be allowed to take the others, or Windows itself, down with it. This page lists every guard, what it does when it fires, and how it is tested. The rule behind all of them: contain the fault, hand the event back to Windows, tell the person once, and keep the rest running. § Guard Where What happens when it fires --- --- --- --- 1 Surface isolation src/failsafe/ , src/main.tsx , app/loadguard.rs The crashed window shows one line and reloads itself; three failures in a row switch that window off for the session. A window whose page dies is reloaded. 2 Window state machine app/surface state.rs , commands/surfaces.rs A stale or repeated show or hide is ignored. 3 No panic across FFI failsafe/guard.rs , every OS callback The panic is caught and counted, the ",
+   "path": [
+    "Docs",
+    "Failsafe engineering"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Failsafe engineering"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.1",
+   "kind": "doc",
+   "title": "Failsafe engineering: 1. Surface isolation",
+   "text": "Every surface (Dock, Top Bar, Settings, each flyout and overlay) is its own WebView2 window and renders inside one error boundary, SurfaceBoundary in src/main.tsx . When a surface throws while rendering: 1. The crash is reported ( failsafe ui crash ): the session log and lens.log get the message and the top of the stack, with the user name and profile path removed. 2. First failure: the window says \"This part of Lens hit a problem. Reloading…\" and reloads itself after 0.8 s. 3. Second failure in a row (within a minute): a window offers a Reload button and waits for it. An overlay, which has nothing to click, waits 4 s and reloads once more. 4. Third failure in a row: the surface is off until Lens restarts. A window says so and offers Try again ; the person is told once by a Lens notification. Overlay surfaces (wallpaper, pointer effects, focus dimming, the notification stack, the snip ov",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "1. Surface isolation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "1. Surface isolation"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.2",
+   "kind": "doc",
+   "title": "Failsafe engineering: 2. Window state machine",
+   "text": "app/surface state.rs owns show and hide for every surface window: Each window has its own phase and its own generation. Every accepted show or hide takes a new generation, and the acknowledgement that finishes a hide (the page's \"exit done\" or the fallback timer) must quote it. So: a show always wins: a hide still in flight can no longer hide a window that was just reopened; a second hide while closing does nothing; a late or repeated acknowledgement is ignored; a window shown or hidden by another path is settled from what the native window reports. Before this, every window that was not on a short list shared one counter, so a show for one window could cancel another window's hide. glide show surface , glide hide surface and surface exit done cmd now all go through the machine. The phases are listed in failsafe status for the Tester Hub.",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "2. Window state machine"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "2. Window state machine"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.3",
+   "kind": "doc",
+   "title": "Failsafe engineering: 3. No panic across FFI",
+   "text": "A panic inside an extern \"system\" callback cannot unwind into Windows; Rust aborts the process, with the keyboard hook installed and the taskbar possibly hidden. Every callback body now runs inside failsafe::guard::ffi guard : the low-level keyboard and mouse hooks ( input.rs ): a panicking handler passes the event to the next hook and the feature that was running is left out of dispatch for a minute, the same as a handler that stalled; window procedures (caption buttons, tray host, clipboard listeners, previews, focus dimming): the message goes to DefWindowProcW ; WinEvent callbacks (window events, tiler, caption engine, focus dimming): the event is dropped; enumeration callbacks (windows, monitors): enumeration continues; the console control handler. Release builds now use panic = \"unwind\" so the guards can catch. A panic outside a guard is still the end of the process, exactly as befo",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "3. No panic across FFI"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "3. No panic across FFI"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.4",
+   "kind": "doc",
+   "title": "Failsafe engineering: 4. Timeouts and retries",
+   "text": "failsafe::call is the one way to make an OS call that can hang (COM, WMI, DDC/CI monitors, the radio stack, PowerShell): with timeout(what, limit, f) runs f on a worker thread and waits at most limit . The error is typed: TimedOut , Failed , Busy or Crashed , each with one sentence for the person. A call that never returns leaves its thread parked. At most two such threads exist per kind of call; after that new calls are refused at once ( Busy ) instead of piling up. Calls that are merely running at the same time (a slider being dragged) are never refused. retry(what, policy, f) is a bounded retry with backoff ( Retry::QUICK : three tries, 150 ms then 450 ms; Retry::ONCE MORE : two tries 80 ms apart, for sliders). os call(feature, label, what, limit, f) adds the feature's circuit breaker (§5). An honest \"can't\" from Windows (no such device, access refused) is passed through unchanged and",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "4. Timeouts and retries"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "4. Timeouts and retries"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.5",
+   "kind": "doc",
+   "title": "Failsafe engineering: 5. Circuit breakers, kill switches and Safe Mode",
+   "text": "Circuit breaker. Three faults (timeouts, crashes, stuck calls) from one feature inside a minute pause that feature for the session. Further calls are refused with a sentence that says so, one Lens notification is shown, and Settings › About & Testing › Safety net lists the feature with Turn back on . A success in between starts the count again. Kill switches. %APPDATA%\\LensUI\\features.json switches named features off at startup, whatever the settings say: Name Feature --- --- taskbar Hiding the Windows taskbar windowHook Window styling hook keyboard Win key, Alt+Tab, Dock number and tiling shortcuts tray Tray icons in the Top Bar clipboard Clipboard history windowButtons Lens window buttons and frames tiling , workspaces , hotCorners , altDrag , appSummon As named mcp Connections from AI apps ai , command Lens AI, Lens Command Unknown names are ignored. The file is read once, at launch. ",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "5. Circuit breakers, kill switches and Safe Mode"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "5. Circuit breakers, kill switches and Safe Mode"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.6",
+   "kind": "doc",
+   "title": "Failsafe engineering: 6. Crash-loop guard",
+   "text": "Every start is written to %APPDATA%\\LensUI\\boot-guard.json before the config is loaded or anything is switched on. A start is marked good when a surface page has reported ready and Lens has been up for 20 s, when Lens quits cleanly, or when its console is closed. Two starts inside five minutes that never got that mark mean Lens is failing on launch. The next start then, before anything else: 1. brings the Windows taskbar back; 2. asks once, in a native message box (not a Lens window: the WebView may be what is failing): Yes starts normally, No starts in Safe Mode, Cancel does not start Lens and opens the crash reports folder so a report can be sent. Answering forgets the earlier failures; the start in progress still has to prove itself, so a Lens that keeps failing keeps asking. Development runs ( tauri dev ), which are killed on every code change, are not counted. LENS SAFE MODE CHOICE=",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "6. Crash-loop guard"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "6. Crash-loop guard"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.7",
+   "kind": "doc",
+   "title": "Failsafe engineering: 7. Config validation",
+   "text": "load config never fails and never panics: 1. A file that loads is used as written. 2. Otherwise a copy is kept ( config.json.unreadable-<time ), and values whose JSON type differs from the default's are replaced, path by path ( theme.borderRadius , dock ). 3. If the document still does not load, each top-level section is tried on top of the defaults and the ones that fail are replaced whole. 4. Only a file that is not JSON at all, or was written by a newer Lens, falls back to full defaults. The person is told once what was reset, and the list stays in Settings › About & Testing › Safety net until Lens restarts.",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "7. Config validation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "7. Config validation"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.9",
+   "kind": "doc",
+   "title": "Failsafe engineering: Needs a real PC",
+   "text": "CI has no GPU session, no second monitor, no real DDC/CI screen and no sleep. Before a release, check on hardware: Safe Mode question on a real sign-in (Lens set to start with Windows), all three answers. A hung DDC/CI monitor or a disabled audio service: the control is paused after three timeouts and Turn back on works. Sleep and resume, and a display unplugged, with the Dock visible: the liveness check must not reload a healthy page. Killing msedgewebview2.exe (the GPU process and the browser process, not only a renderer). A fullscreen game in front while a hook handler is benched: input must be unaffected. Release build size and start-up time after the move from panic = \"abort\" to \"unwind\" .",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Needs a real PC"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Needs a real PC"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
    "id": "doc.feeds.0",
    "kind": "doc",
    "title": "Lens Feeds",
@@ -9376,6 +9701,73 @@
     "heading": "5. What Lens does better"
    },
    "source": "docs/FEEDS_RESEARCH.md"
+  },
+  {
+   "id": "doc.in-page-lens.0",
+   "kind": "doc",
+   "title": "In-page Lens buttons",
+   "text": "A tiny Lens orb appears beside things Lens can help with: a tweet's action row, YouTube's player controls, a video, an image, a 3D model, a code block, a download link. Clicking it opens a short command list. It's off until you choose where it appears. - Extension: Settings › \"Lens buttons on pages\" (one switch per placement), or the one-time chip in the popup (\"Lens buttons next to tweets, YouTube, GitHub, videos and code?\"). The browser asks for access to exactly the sites those placements need. - Lens Browser: Settings › Browser › \"Lens buttons on pages\". Applies to tabs opened after you turn it on. - Page actions: press <kbd Alt</kbd +<kbd L</kbd on a page where the buttons are on. The same two scripts run in both: extensions/browser/src/content/marksLogic.js (placements, actions, policy, positions; pure and unit-tested) and extensions/browser/src/content/marks.js (finding things on ",
+   "path": [
+    "Docs",
+    "In-page Lens buttons"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "In-page Lens buttons"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.1",
+   "kind": "doc",
+   "title": "In-page Lens buttons: The orb and the list",
+   "text": "- 18 px orb: the Lens rainbow cloud, still at rest, billowing on hover. It only shows while you hover the thing it belongs to, so pages stay clean. - Everything sits in one fixed layer in a closed shadow root: nothing is inserted into the page's own layout (no layout shift), and page CSS can't reach it. - The list: type to filter, ↑/↓ and Enter, number keys 1–6, M for \"More in Lens…\", Esc closes and returns focus to the orb. At most six rows plus \"More\". The action you used last on a site moves to the top there. - A real <button aria-label=\"Lens actions\" , light and dark, honours reduced motion.",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "The orb and the list"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "The orb and the list"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.2",
+   "kind": "doc",
+   "title": "In-page Lens buttons: Placements",
+   "text": "Placement Where the orb sits Actions (best first) --- --- --- X / Twitter posts End of the tweet's action row (reply · repost · like · views · ⦿) Save to Shelf, Copy as Markdown, Summarise, Translate, Thread → clean article, Copy as quote card, Add to context pack, Send to Claude YouTube player Just left of the player's right-hand controls (CC, settings, fullscreen) Transcript → Shelf, Summarise, Copy link at this moment, Chapters → notes, Copy this frame, Copy transcript, Ask about this, Add to Lens Music, Save offline (YouTube's own) YouTube action row After Like · Share · Download under the video Same as the player YouTube thumbnails Thumbnail corner Summarise without opening, Save to Shelf, Open in Lens Browser Reddit / Hacker News Post and comment corner / row end Save to Shelf, Summarise, Copy as Markdown, Translate, Add to context pack GitHub repo header Header corner Install with",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "Placements"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "Placements"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
+  },
+  {
+   "id": "doc.in-page-lens.3",
+   "kind": "doc",
+   "title": "In-page Lens buttons: Policy",
+   "text": "- Saving media: only offered for plain file URLs ( https://…/clip.mp4 ) on sites that serve them as files. Never for blob: / MediaSource streams (how YouTube, Netflix, Twitch and most players deliver video), never for encrypted media ( mediaKeys ), and never on YouTube, Netflix, Prime Video, Disney+, Twitch, Hulu, Max or Spotify. YouTube gets Save offline (YouTube's own) , which presses YouTube's own Download button (YouTube Premium) or says to use it. Lens doesn't download from YouTube. - Transcripts come from the video's own captions (the same caption track YouTube's player uses); Lens's own transcription stays behind its existing setup and terms notice. - Scripts never run without your OK: \"Run in Lens (asks first)\" opens Lens Command with the code; Lens's approval card decides. - Copying frames and image colours works only where the browser allows reading the pixels (same-site media)",
+   "path": [
+    "Docs",
+    "In-page Lens buttons",
+    "Policy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/IN_PAGE_LENS.md",
+    "heading": "Policy"
+   },
+   "source": "docs/IN_PAGE_LENS.md"
   },
   {
    "id": "doc.lens-apps.0",
@@ -9865,6 +10257,23 @@
     "surface": "doc",
     "doc": "docs/LENS_BROWSER.md",
     "heading": "Delta items (docs/research/BROWSER_DELTA.md)"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "doc.lens-browser.19",
+   "kind": "doc",
+   "title": "Lens Browser: AAA pass",
+   "text": "The feature map, what waits and why, and the real-hardware test list are in BROWSER AAA.md. In short, this pass added: Tab switching by keyboard, duplicate tab, a close button and arrow keys on the horizontal strip. Address suggestions from open tabs, bookmarks, history and search, with arrow keys. Back and forward that are only enabled when there is somewhere to go; a loading mark and Stop. Zoom in, out and reset, remembered per site. Find with previous and next. A new-tab page (most visited, bookmarks, recently closed) and Lens's own page when a site fails to load. History with search, days, remove one and clear; downloads that survive a restart. Import item by item, with a receipt so an import can be removed in one step. New commands: browser tab duplicate , browser history remove , browser downloads clear , browser import items , browser import receipts , browser import undo . browse",
+   "path": [
+    "Docs",
+    "Lens Browser",
+    "AAA pass"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md",
+    "heading": "AAA pass"
    },
    "source": "docs/LENS_BROWSER.md"
   },
@@ -11896,6 +12305,90 @@
    "source": "docs/SETTINGS_HUB.md"
   },
   {
+   "id": "doc.settings-simple.0",
+   "kind": "doc",
+   "title": "Settings: Simple and Advanced",
+   "text": "Settings had too many options for a new user and many had no visual. Simple mode shows the core, most fun settings as visual cards; Advanced shows everything as before.",
+   "path": [
+    "Docs",
+    "Settings: Simple and Advanced"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_SIMPLE.md",
+    "heading": "Settings: Simple and Advanced"
+   },
+   "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.settings-simple.1",
+   "kind": "doc",
+   "title": "Settings: Simple and Advanced: The choice: concept B, \"More options expands in place\"",
+   "text": "Three concepts were mocked up ( /mnt/user-data/outputs/settings-simple/concepts/ ): Concept How deeper settings appear Verdict --- --- --- A A side sheet slides over the page Hides the page you were looking at; two scroll areas B One \"More options · Show ⌄\" row expands the rest of the page in place Chosen C Every card has its own ··· popover Fiddly; hard to search; no place for long sections B wins on friendliness: one obvious place to look, nothing covers the page, deep links and search can simply open it, and Advanced is the same page with the row already open. From A we kept the per-page Reset button (it sits in the More options row once it's open).",
+   "path": [
+    "Docs",
+    "Settings: Simple and Advanced",
+    "The choice: concept B, \"More options expands in place\""
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_SIMPLE.md",
+    "heading": "The choice: concept B, \"More options expands in place\""
+   },
+   "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.settings-simple.2",
+   "kind": "doc",
+   "title": "Settings: Simple and Advanced: How it works",
+   "text": "- The pill: a Simple / Advanced pill sits at the top of the sidebar and again at its foot, so it's always in reach. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform. - Simple sidebar: Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under ··· More (N pages) . A folded page you open from search or a link still shows. - Card pages (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under More options , which reveals with a fade and slide (transform and opacity only). Nothing above it moves. - Pages left as they are: Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple. - Search always searches everything. In Simple mode, results that are ",
+   "path": [
+    "Docs",
+    "Settings: Simple and Advanced",
+    "How it works"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_SIMPLE.md",
+    "heading": "How it works"
+   },
+   "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.settings-simple.3",
+   "kind": "doc",
+   "title": "Settings: Simple and Advanced: What Simple shows",
+   "text": "Page Cards (visual aid) --- --- Appearance Theme (8 real pack previews, \"All themes ›\"); Light/Dark/Auto; Accent (8 swatches); Living wallpaper (animated spectrum, opens Creator) Dock & Bar Dock style (6 real mini Docks); Size (slider and live icon preview); Auto-hide (animated window and Dock illustration and choice); Screen edge (4 edge diagrams) Windows & Keys Window buttons (real dots: Yellow·Green·Red default, Green first, Mac order, Windows buttons); Start with Windows (respects the dev-build guard); Hot corners (corner pulse); Alt + drag (moving window and Alt key) AI & Command Lens assistant on/off with engine tiles (Offline / On this PC / Claude, \"Connect Claude ›\"); Lens Command (mini bar); Magic right-click (mini menu); Voice (try it / settings) Reset (in the open More options row): Dock goes back to 40 px, bottom edge and auto-hide off. Windows & Keys goes back to Yellow·Gree",
+   "path": [
+    "Docs",
+    "Settings: Simple and Advanced",
+    "What Simple shows"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_SIMPLE.md",
+    "heading": "What Simple shows"
+   },
+   "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.settings-simple.4",
+   "kind": "doc",
+   "title": "Settings: Simple and Advanced: Visual-aid audit",
+   "text": "Everything shown in Simple now has a visual. The remaining Advanced-only settings that still have none are listed for a later pass: - Appearance › Customise: fonts, folder icon style, shape style (the shape style has chips but no preview). - Dock & Bar: top bar height, clock format, magnification amount (a number only). - Windows & Keys: hotkey list, window rules, shell mode. - AI & Command: engine privacy modes, permissions, context packs, the right-click order editor. - Desktop: sessions and widgets (text rows). - Windows pages: Focus, Privacy, Update, Time, Accessibility and Gaming are mostly rows and toggles. They are fine for Advanced, but a few would benefit from icons.",
+   "path": [
+    "Docs",
+    "Settings: Simple and Advanced",
+    "Visual-aid audit"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETTINGS_SIMPLE.md",
+    "heading": "Visual-aid audit"
+   },
+   "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
    "id": "doc.shelf.0",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract",
@@ -12028,6 +12521,175 @@
     "heading": "Three ways back to the normal desktop"
    },
    "source": "docs/SHELL_MODE.md"
+  },
+  {
+   "id": "doc.smoothness.0",
+   "kind": "doc",
+   "title": "Smoothness",
+   "text": "Lens is many small see-through windows, each a WebView2 page, shown, hidden and placed from Rust. Motion looks wrong when the page and its native window disagree for even one frame, or when the page animates something the browser has to lay out again on every frame. This document holds the measurement tool (R1), the audit and the decisions (R2), and the motion system that follows from them (R3). Status: R1 to R3 landed with the first migrations. Open items are listed under \"Still open\".",
+   "path": [
+    "Docs",
+    "Smoothness"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Smoothness"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.1",
+   "kind": "doc",
+   "title": "Smoothness: Run the smoothness check",
+   "text": "1. Open Lens Settings, then Tester Hub , then the Smoothness tab. If the tab says it runs in its own window, press Open Tester Hub window . 2. Press Run smoothness check . Leave the mouse and keyboard alone for about two minutes: Lens plays 30 interactions on itself (Quick Settings, calendar, notifications, a toast, Widgets, the Dock hover sweep, hover card, right-click menu and search, Top Bar search, Settings open, page switch, scroll, More options, mode and theme switch, Command, the launcher). 3. Read the table. Each interaction gets a verdict: - smooth : under 1 % of frames dropped, worst frame under 33.4 ms, and no native window resize while it ran. - rough : up to 5 % dropped or a worst frame up to 50 ms. - janky : worse than that, or the native window changed size mid-animation. 4. Copy results puts a plain-text report on the clipboard. The full recording is saved as %APPDATA%\\Le",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Run the smoothness check"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Run the smoothness check"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.2",
+   "kind": "doc",
+   "title": "Smoothness: How it measures",
+   "text": "Signal Source Used for --- --- --- Frame times requestAnimationFrame in every surface ( src/smooth/probe.ts ) dropped-frame %, worst frame Long animation frames PerformanceObserver(\"long-animation-frame\") which frames were blocked by script or layout Layout shifts PerformanceObserver(\"layout-shift\") content that jumps Window show / hide / move / resize a 4 ms sampler thread in Rust ( src-tauri/src/smooth.rs ) reading IsWindowVisible and GetWindowRect \"native window resized mid-animation\" Interaction marks smooth mark cmd begin / end from the runner cutting the recording per interaction A gap between two frames is rounded to whole display frames; every frame beyond the first in that gap counts as dropped. Gaps over half a second, or across a show or hide, are pauses, not drops ( src/smooth/analyze.ts ).",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "How it measures"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "How it measures"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.3",
+   "kind": "doc",
+   "title": "Smoothness: Audit",
+   "text": "Static findings, with the motion lint's numbers. \"Fixed\" means fixed in this change. ID Sev Finding Where Fix State --- --- --- --- --- --- G-01 High Settings resized its native window to fit every page. The page reported its height after layout, Rust called set size then set position , and the page tore while it switched. src/surfaces/ControlCenterSurface.tsx (the syncHeight effect) → set settings content height cmd ( src-tauri/src/commands/surfaces.rs:474 ) → src-tauri/src/app/watcher.rs:227 One height while open ( SETTINGS LOGICAL H , 720 logical px, capped to the screen). Pages scroll. Fixed G-02 High Every placement was set size followed by set position : two native operations, so for one frame a window had its new size at its old place. watcher.rs:92, 114, 138, 148, 158, 227 ; surfaces.rs:175, 248, 326, 419 place window ( src-tauri/src/app/place.rs ): one SetWindowPos when both cha",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Audit"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Audit"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.4",
+   "kind": "doc",
+   "title": "Smoothness: Decisions",
+   "text": "One decision per cause. Sources are listed at the end. D1. Animate only transform and opacity . Those two can be animated by the compositor without layout or paint; width , height , top , left , margins and padding force layout on every frame [1]. In Lens a layout pass on the Dock or Settings is expensive enough to drop frames at 4× CPU throttle. Enforced by the motion lint. D2. Size and position changes use FLIP. Change the layout once, measure before and after, and animate the difference with a transform [2]. Text fields that would look stretched by a scale use a clip-path reveal instead ( mode: \"clip\" ). D3. A native window never changes size while its page animates. WebView2 is a child surface of the window; a native resize makes it lay out and repaint at the new size while the old frame is still on screen, and on a see-through window there is no background to hide that. Windows are ",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Decisions"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Decisions"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.5",
+   "kind": "doc",
+   "title": "Smoothness: The motion system",
+   "text": "src/ui/motion/ is the one way to move things in code. Piece What it does --- --- glide(el, from, to, opts) Web Animations API, transform and opacity (and clip-path ) only. glideIn , glideOut . additive: true keeps an element's own anchoring transform. captureFlip(elements).play(opts) FLIP for layout changes: scale , move or clip per element. usePresence(show) Keeps an element mounted until its exit has finished. An exit can be interrupted. useLingering(value) The same for {value && <Popover / } : keeps the last value on screen while it leaves. PresenceList Keyed lists: items glide in and out, survivors move into place. useSurfaceTransition(label) / useSurfaceExitAck(label) Whole-window enter and exit in step with Rust (D5). useSurfaceGlide uses the acknowledgement. springEasing(opts) A spring as { easing: \"linear(…)\", duration } . duration(token) , ease(token) , reducedMotion() The token",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "The motion system"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "The motion system"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.6",
+   "kind": "doc",
+   "title": "Smoothness: Motion lint",
+   "text": "node tools/polish/motion-lint.mjs (also bun run lint:motion , and a step in the \"IPC types + frontend tests\" CI job). Each file is held to its count in tools/polish/motion-baseline.json ; counts may only go down and new files start at zero. --list prints every finding, --update rewrites the baseline after a migration. Rule Catches --- --- transition-all transition: all layout-transition a transition on a layout property layout-keyframes keyframes that change a layout property timer-animation a timer standing in for an animation's clock or end native-resize a page asking for its window to be resized or moved inline-animation animation or transition written as an inline style string backdrop-filter reported only",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Motion lint"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Motion lint"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.7",
+   "kind": "doc",
+   "title": "Smoothness: Migrated",
+   "text": "Surface Before Now --- --- --- Settings page switch native window resized per page one size while open; pages scroll Settings \"More options\" timer and class; no exit glides both ways Notification toasts no exit; siblings jumped glide in and out; siblings close ranks Dock search layout animated on every frame; timer on close FLIP; drawer glides; no timer Dock hover card and right-click menu vanished on close glide out Quick Settings, Settings, search palette, Widgets, launcher, overview (window show and hide) hidden after a fixed 185 ms; resized on open after a save hidden on a finished frame; one atomic placement; no placement when unchanged",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Migrated"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Migrated"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.8",
+   "kind": "doc",
+   "title": "Smoothness: Still open",
+   "text": "- Dock window sizing (done in wave 2). The Dock is placed with place window . Its depth now follows the measured pill plus flyout room; win previews::DockSizer only lets the native window change size after the Dock has been still for 500 ms, never during a glide (D3). - Desktop tab and Command edge shelf as fixed-size windows (G-10, G-12). Both now resize in one step with nothing moving. Keeping the window at its largest size all the time needs a hit region ( SetWindowRgn ) so the see-through part does not eat clicks; try it on a real desktop. - The 16 layout transitions left were not reviewed in R4. They are in the AI dock, voice, Lens Apps, Cleaner, Lens Command ( Command.css:30 ), the context menu, presence, Core Apps, Backdrop Lab, the Tester Hub, one Guide rule and the focus-dimming preview ( node tools/polish/motion-lint.mjs --list ). - After PR #60 merges, useSurfaceGlide can beco",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Still open"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Still open"
+   },
+   "source": "docs/SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.smoothness.9",
+   "kind": "doc",
+   "title": "Smoothness: Sources",
+   "text": "1. web.dev, \"How to create high-performance CSS animations\": https://web.dev/articles/animations-guide 2. Paul Lewis, \"FLIP Your Animations\": https://aerotwist.com/blog/flip-your-animations/ 3. Microsoft Learn, SetWindowPos : https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos 4. Microsoft Learn, ICoreWebView2Controller ( IsVisible ): https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2controller 5. Chrome for Developers, \"Create complex animation curves in CSS with the linear() easing function\": https://developer.chrome.com/docs/css-ui/css-linear-easing-function 6. Chrome for Developers, \"Animating a blur\": https://developer.chrome.com/blog/animated-blur/ 7. Microsoft Learn, DWMWINDOWATTRIBUTE : https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute 8. Chrome for Developers, \"Long Animati",
+   "path": [
+    "Docs",
+    "Smoothness",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SMOOTHNESS.md",
+    "heading": "Sources"
+   },
+   "source": "docs/SMOOTHNESS.md"
   },
   {
    "id": "doc.snip.0",
@@ -12433,6 +13095,260 @@
     "heading": "Not done here"
    },
    "source": "docs/TESTER_HUB.md"
+  },
+  {
+   "id": "doc.themes-audit.0",
+   "kind": "doc",
+   "title": "Theme audit",
+   "text": "Generated by bun tools/themes/audit.ts from src/themes/distance.ts and src/themes/featured.ts . Do not edit by hand; src/ tests /featuredThemes.test.ts fails when it is out of date. 89 packs were compared pair by pair. The distance adds up how far apart two packs are in surface colour and accent (OKLab), light or dark, corner radius and shape style, Dock style, window chrome (frame, buttons, icons) and animated backdrop. Under 0.30 two packs read as the same theme with a tweak.",
+   "path": [
+    "Docs",
+    "Theme audit"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Theme audit"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.1",
+   "kind": "doc",
+   "title": "Theme audit: The featured twelve",
+   "text": "Each is a whole look: palette, accent, glass, corners, Dock style and motion, window frame and buttons, icons, font, its own animated backdrop and a pointer family. No two share a backdrop. Look Character Surface · accent Corners Glass Dock Frame · buttons Icons Font Backdrop Pointer Feel --- --- --- --- --- --- --- --- --- --- --- --- Obsidian Matte black glass with white chrome. The Lens default. #09090B · #FAFAFA 8px 96%, 20px blur floating, no magnify, lift launch obsidian-hairline · traffic-classic obsidian-squircle, squircle Rounded waves obsidian Calm Alabaster Daylight Bright daylight, white cards and one clear blue. #EEEEF0 · #2563EB (light) 10px 98%, 16px blur floating, subtle magnify, lift launch obsidian-hairline · traffic-classic native, squircle Modern sans paper outline Crisp Sky The real sky, live. Light by day, dark at night. #0B1230 · #A9B8EE 16px 80%, 28px blur floatin",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "The featured twelve"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "The featured twelve"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.2",
+   "kind": "doc",
+   "title": "Theme audit: Contrast",
+   "text": "Text on the surface and on raised cards must reach 4.5:1; the accent must reach 3:1 against both. Look Text on surface Text on cards Accent on surface Accent on cards --- --- --- --- --- Obsidian 19.1:1 17.6:1 19.1:1 17.6:1 Alabaster Daylight 15.3:1 17.7:1 4.5:1 5.2:1 Sky 17.6:1 15.9:1 9.4:1 8.5:1 Catppuccin Mocha 15.7:1 13.9:1 8.1:1 7.1:1 Hyprland Neon 18.7:1 17.2:1 10.4:1 9.6:1 Cyberpunk Amber 18.8:1 17.3:1 16.3:1 14.9:1 Paper Minimal 15.7:1 17.7:1 4.6:1 5.2:1 Lens Expressive 18.8:1 17.3:1 18.8:1 17.3:1 Lens Dot Matrix 18.2:1 16.5:1 17.3:1 15.6:1 Everforest 11.9:1 10.4:1 6.2:1 5.4:1 Solarized Matte 14.4:1 12.6:1 4.8:1 4.2:1 Gruvbox Warm 14.1:1 12.3:1 5.8:1 5.1:1",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Contrast"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Contrast"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.3",
+   "kind": "doc",
+   "title": "Theme audit: Near-duplicates",
+   "text": "Pairs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.20 Green Phosphor CRT dock, shape, accent 0.20 Claude Light Claude Light Brand dock, accent 0.20 Paper Minimal Plotter Tide shape, chrome, accent 0.21 Catppuccin Mocha Catppuccin Macchiato accent, base 0.22 Catppuccin Macchiato Rosé Pine Moon accent, base, shape 0.24 Weather Window Tides of Light backdrop, accent, ",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Near-duplicates"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Near-duplicates"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.4",
+   "kind": "doc",
+   "title": "Theme audit: More themes, by family",
+   "text": "The other 77 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "More themes, by family"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "More themes, by family"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.5",
+   "kind": "doc",
+   "title": "Theme audit: Like Obsidian (5)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Desert Day (0.35) GitHub Dark 0.65 Daltonized Dark (0.14) Daltonized Dark 0.66 GitHub Dark (0.14) Claude Midnight 1.02 Claude Dark Brand (0.73)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Obsidian (5)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Obsidian (5)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.6",
+   "kind": "doc",
+   "title": "Theme audit: Like Alabaster Daylight (13)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) One Half Light 0.26 Alabaster Daylight (0.26) Daltonized Light 0.34 GitHub Light (0.09) GitHub Light 0.35 Daltonized Light (0.09) Base16 Cupcake 0.37 Rosé Pine Dawn (0.18) Rosé Pine Dawn 0.40 Base16 Cupcake (0.18) Circit 0.43 Koi Mosaic (0.38) Claude Light 0.50 Claude Light Brand (0.20) Honu Lagoon 0.50 Koi Mosaic (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31) Solarized Light 0.55 One Half Light (0.40) Lens Expressive Light 0.57 Alabaster Daylight (0.57) Gruvbox Light 0.63 GitHub Light (0.43)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Alabaster Daylight (13)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Alabaster Daylight (13)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.7",
+   "kind": "doc",
+   "title": "Theme audit: Like Sky (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Sky (0.27) Tides of Light 0.31 Weather Window (0.24) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Braille Stars 0.46 Night Reef (0.30) Seasons 0.49 Tides of Light (0.31) Northern Lights 0.50 Tides of Light (0.33)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Sky (8)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Sky (8)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.8",
+   "kind": "doc",
+   "title": "Theme audit: Like Catppuccin Mocha (17)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Aurora (Claude) 0.39 Night Reef (0.34) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 Catppuccin Mocha (0.50) Snow Pines 0.50 Golden Hour (0.35) Tokyo Night 0.53 One Dark (0.42) Desert Day 0.55 Golden Hour (0.31) Dither Dunes Night 0.55 Halftone Dusk (0.28) Plotter Tide, Night 0.56 Ember (0.45) Ember 0.57 Dither Dunes Night (0.32) Nature 0.60 Seasons (0.35) Windows Mesh 0.71 Daltonized Dark (0.46)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Catppuccin Mocha (17)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Catppuccin Mocha (17)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.9",
+   "kind": "doc",
+   "title": "Theme audit: Like Hyprland Neon (4)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Midnight 0.72 Braille Stars (0.41) Block Clouds 0.75 Vector Range (0.42) High Contrast 0.82 CGA-4 (0.44) Synthwave 0.82 White-Label Cyberpunk (0.28)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Hyprland Neon (4)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Hyprland Neon (4)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.10",
+   "kind": "doc",
+   "title": "Theme audit: Like Cyberpunk Amber (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 CRT (0.20) Departure Board 0.53 Amber Monitor (0.36) High Contrast Pro 0.56 High Contrast (0.52) CRT 0.60 Green Phosphor (0.20) CGA-4 0.81 High Contrast (0.44) White-Label Cyberpunk 0.88 Synthwave (0.28)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Cyberpunk Amber (8)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Cyberpunk Amber (8)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.11",
+   "kind": "doc",
+   "title": "Theme audit: Like Paper Minimal (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Paper Minimal (0.20) Warm Neutral 0.39 Plotter Tide (0.28) Terracotta 0.49 Claude Light (0.27) Dither Dunes 0.51 Halftone Dawn (0.17) Halftone Dawn 0.53 Dither Dunes (0.17) Everforest Light 0.54 Warm Neutral (0.33) Paper Garden 0.54 Claude Light Brand (0.29) Claude Light Brand 0.55 Claude Light (0.20)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Paper Minimal (8)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Paper Minimal (8)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.12",
+   "kind": "doc",
+   "title": "Theme audit: Like Everforest (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.47 Base16 Ocean (0.31) Monokai Pro 0.50 Blueprint (0.43) Base16 Ocean 0.54 Base16 Eighties (0.24) One Dark 0.55 Base16 Eighties (0.37) Paper Garden, Kraft 0.56 Plotter Tide, Night (0.50) Monokai 0.61 Monokai Pro (0.45) Blueprint 0.61 Monokai Pro (0.43) Graphite 0.62 Kanagawa Wave (0.47)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Everforest (8)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Everforest (8)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.13",
+   "kind": "doc",
+   "title": "Theme audit: Like Solarized Matte (2)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.59 Base16 Ocean (0.24) GitHub Dark Dimmed 0.64 GitHub Dark (0.25)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Solarized Matte (2)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Solarized Matte (2)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.14",
+   "kind": "doc",
+   "title": "Theme audit: Like Gruvbox Warm (4)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.52 Kanagawa Wave (0.44) Claude Dark Brand 0.60 Claude Dark (0.40) Kanagawa Wave 0.61 Claude Dusk (0.44) Vector Range 0.65 Block Clouds (0.42)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Gruvbox Warm (4)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Gruvbox Warm (4)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-claude.0",
@@ -12989,6 +13905,158 @@
     "heading": "Needs real hardware"
    },
    "source": "docs/VOICE.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.0",
+   "kind": "doc",
+   "title": "Wallpaper Switcher",
+   "text": "A library of your own pictures and loops, a full-screen picker, and automatic changes. Off until you use it: Lens lists nothing until you add a folder, and nothing changes on a timer until you turn \"Change automatically\" on.",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Wallpaper Switcher"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.1",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: What it never does",
+   "text": "- It never writes the Windows wallpaper. The picture you pick is shown by the Lens wallpaper host, the window Lens draws behind your desktop icons ( win wallpaper.rs , docs/PLAYGROUND.md ). Turn Lens Wallpaper off, quit Lens, or use Remove all, and your own Windows wallpaper is what you see, untouched. There is nothing to restore in Windows because nothing in Windows was changed. - It never moves, renames or edits your files. A chosen picture is hard-linked (or, across drives, copied) into %APPDATA%\\LensUI\\wallpapers as lib-<id .<ext ; only the last three of those are kept. - It never deletes for good. Delete asks first, in the picker, and then sends the one file to the Windows Recycle Bin, where you can restore it. - It never uses the network. \"Wallpaper of the day\" is a stored setting that is off by default and has no source yet (see Deferred), so nothing is fetched.",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "What it never does"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "What it never does"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.2",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: Remove all",
+   "text": "The first change records what the wallpaper host was showing (on or off, which file or scene). The wallpaper-switcher row in the change registry ( src-tauri/src/changes.rs ) turns automatic changes off, puts that back and removes the linked copies; the wallpaper row right after it detaches the host. node tools/changes/check.mjs covers both files (they call no OS writer at all, and a test in src/ tests /wallpapers.test.ts keeps it that way).",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "Remove all"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Remove all"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.3",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: The library",
+   "text": "--- --- Sources Folders you add (four levels deep, up to 5,000 files), plus Backdrop Lab presets and the living themes' wallpapers, which Lens draws itself Files jpg, jpeg, png, webp, bmp, gif, avif; mp4, webm, mov, m4v loops Thumbnails 256 px WebP in %APPDATA%\\LensUI\\wallpapers\\thumbs , made once per picture Per picture favourite, hidden, tags, collections, size, five-colour palette, look-alike hash Look-alikes A 64-bit difference hash; pictures within 5 bits are listed together under \"Look-alikes\" for you to review. Nothing is removed for you Stored in %APPDATA%\\LensUI\\wallpaper-library.json Thumbnails, palettes and hashes are made in the webview (it already decodes every format the host can show): Rust hands over one original at a time, only from a folder you added and only up to 48 MB, and stores what comes back. Indexing runs while the picker is open, nearest the card in focus first",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "The library"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "The library"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.4",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: The picker",
+   "text": "Lens Studio › Wallpapers (the Studio window, shared with Backdrop Lab). A curved fan of cards over a backdrop made of the focused wallpaper's own five colours; each card carries its palette as five chips. Key Does --- --- ← → (PgUp/PgDn, Home/End, wheel) Browse Enter Set as wallpaper (toast has Undo) / Search names, folders, tags and collections F · H Favourite · Hide T · C Tags · Collection R Random from the library V Fit: fill, show it all, stretch, actual size M Make a theme from this O Open its folder Del Move to the Recycle Bin (asks first) S Change automatically Esc Close the panel, clear the search, then close Make a theme from this turns the picture's palette into a pack the same way Backdrop Lab does ( engine/theme.ts backdropToPack : a base and an accent checked for 4.5:1 text and 3:1 accent contrast), saves it as a .lenstheme and applies it, with Undo. The picture stays the wa",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "The picker"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "The picker"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.5",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: Change automatically",
+   "text": "Setting --- --- How often 5 minutes to once a day, or not on a timer When Lens starts One change per run Order Shuffled (never the one showing, and not the recent ones while there are others) or in order Choose from Everything, favourites, a collection or a tag Day and night A set for the day and another for the night, with the hours each starts Crossfade Cut to very slow; the old picture stays underneath until the new one has faded in It pauses with the wallpaper itself: in fullscreen apps and games, while a window covers the desktop, and on battery or battery saver (the host's own pause rules, win wallpaper::pause reason ). It also waits while Calm is on or while a living scene, not a picture, is the wallpaper. The wallpaper surface asks once a minute; the rules are in Rust ( wallpapers::due , pick next ) and are unit-tested.",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "Change automatically"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Change automatically"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.6",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: Where it is",
+   "text": "- Settings › Appearance › Wallpaper. Simple mode shows the picker button and \"Change automatically\"; the rest (when Lens starts, order, sets, crossfade, Next / Previous / Random) is under More options. - Lens Command: /wallpaper next , /wallpaper previous , /wallpaper random , or /wallpaper to open the picker. - Voice and Lens AI: \"next wallpaper\" (the existing next wallpaper intent now does this). - The tray icon's menu: Next wallpaper.",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "Where it is"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Where it is"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.7",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: Deferred",
+   "text": "From the plan (the spec this replaced, 23 Nov 2026), not built yet: - Wallpaper of the day (Bing, NASA APOD, Unsplash with a key). The opt-in setting exists and is off; no source is wired, so there is no toggle in the UI yet and nothing is ever fetched. It needs a source whose terms allow it and an approval the first time. - Per-monitor wallpapers and span. The host attaches to one monitor (the Lens monitor). Different pictures per monitor, and a \"span\" fit, need one host window per monitor. - Thumbnails for video loops. Loops are listed and play as wallpapers; their cards show a placeholder, not a frame. - A folder picker dialog. Folders are added from the suggestions or by pasting a path. - Auto-change through Lens' own living wallpapers. They are in the picker and can be set by hand; the timer rotates your files only. - More quick controls. The tray menu has Next wallpaper. Previous, ",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "Deferred"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Deferred"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.wallpaper-switcher.8",
+   "kind": "doc",
+   "title": "Wallpaper Switcher: Code",
+   "text": "--- --- Rules and files src-tauri/src/wallpapers/mod.rs (+ tests.rs ) Commands src-tauri/src/commands/wallpapers.rs Picker src/wallpapers/WallpaperPicker.tsx , wallpapers.css Pure model src/wallpapers/model.ts (hash, palette, look-alikes, filtering, fan geometry) Indexer src/wallpapers/indexer.ts Settings card src/wallpapers/SwitcherCard.tsx , AutoChangeControls.tsx Auto-change clock and crossfade src/surfaces/WallpaperSurface.tsx Tests src/ tests /wallpapers.test.ts , src-tauri/src/wallpapers/tests.rs Screenshots node tools/parity/build.mjs && node tools/parity/themes/shoot.mjs",
+   "path": [
+    "Docs",
+    "Wallpaper Switcher",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WALLPAPER_SWITCHER.md",
+    "heading": "Code"
+   },
+   "source": "docs/WALLPAPER_SWITCHER.md"
   },
   {
    "id": "doc.window-styling.0",

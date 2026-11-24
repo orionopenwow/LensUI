@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { findTarget, openSection } from "../guide/coach";
-import { ORB_URL } from "./orb";
+import { LensCloud } from "./LensCloud";
 import { twinAnchor } from "./model";
 import { stop } from "./api";
 import { EVT_STOP, EVT_UI, type UiEvent } from "./types";
@@ -86,8 +86,8 @@ export function PresenceTwin({ still = false }: { still?: boolean }) {
   return (
     <div className={`pr-twin${still ? " is-still" : ""}`} aria-hidden="true">
       {st.ring ? <div className="pr-twin-ring" style={{ left: st.ring.x, top: st.ring.y, width: st.ring.w, height: st.ring.h }} /> : null}
-      <div className="pr-twin-orb" style={{ left: st.x, top: st.y, opacity: st.visible ? 1 : 0 }}>
-        <img src={ORB_URL} alt="" draggable={false} />
+      <div className="pr-twin-orb is-billowing" style={{ left: st.x, top: st.y, opacity: st.visible ? 1 : 0 }}>
+        <LensCloud />
       </div>
       {st.ring && st.visible ? (
         <div className="pr-chip is-setting pr-twin-chip" style={{ left: st.ring.x + st.ring.w + 8, top: st.ring.y + st.ring.h / 2 }}>

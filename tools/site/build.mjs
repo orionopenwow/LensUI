@@ -33,7 +33,7 @@ const stripComments = (md) => md.replace(/<!--[\s\S]*?-->/g, "");
 let stars = null;
 try {
   const r = await fetch("https://api.github.com/repos/orionopenwow/LensUI", { headers: { accept: "application/vnd.github+json", ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}) }, signal: AbortSignal.timeout(4000) });
-  if (r.ok) stars = (await r.json()).stargazers_count ?? null;
+  if (r.ok) stars = (await r.json()).stargazers_count || null; // 0 stars → no count
 } catch { /* offline */ }
 setStars(stars);
 
@@ -43,7 +43,7 @@ if (args.has("--data-only")) { console.log(`[site] data/packs.json (${packs.leng
 
 if (!args.has("--no-live")) {
   const live = await import("./live/build-live.mjs");
-  await live.buildDock(); await live.buildPlayground(); await live.buildThemes();
+  await live.buildDock(); await live.buildPlayground(); await live.buildThemes(); await live.buildApp();
   const g = await live.buildGuide();
   console.log(`[site] live widgets built (guide search from ${g.source})`);
 }

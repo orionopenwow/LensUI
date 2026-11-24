@@ -13,6 +13,7 @@ import { pageMeta } from "./content/pageMeta.js";
 import { MAX_ARCHIVE_BYTES } from "./protocol.js";
 import { isYoutubeVideoUrl, parseCaptions, toPlainText, transcriptShelfItem, transcriptSummary } from "./youtube.js";
 import "./content/selectionLogic.js"; // attaches globalThis.LensSel
+import "./content/marksLogic.js"; // attaches globalThis.LensMarks
 
 const api = globalThis.browser ?? globalThis.chrome;
 const IS_FIREFOX = !!(api.sidebarAction && globalThis.browser);
@@ -518,6 +519,24 @@ async function handleMessage(msg, sender) {
       });
       return clientId ? { ok: true, clientId } : { ok: false, error: "Lens couldn't build that request." };
     }
+    case "open-panel": {
+      // "More in Lens…" from an in-page mark: the side panel where the browser allows it, else Command.
+      try {
+        if (api.sidePanel?.open && fromTab != null) {
+          await api.sidePanel.open({ tabId: fromTab });
+          return { ok: true };
+        }
+        if (api.sidebarAction?.open) {
+          await api.sidebarAction.open();
+          return { ok: true };
+        }
+      } catch {
+        /* needs a user gesture in some browsers: fall through */
+      }
+      return oneShot("command_open", msg.ctx || {}, { quiet: true });
+    }
+    case "marks-sync":
+      return syncMarksScript();
     case "archive-page":
       return archivePage(await activeTab());
     default:
@@ -589,9 +608,48 @@ async function syncContentScripts() {
   return { ok: true, registered: granted.length };
 }
 
+// In-page Lens marks (tweets, YouTube, videos, images, 3D models, code, downloads): opt-in.
+const MARKS_ID = "lens-marks";
+async function syncMarksScript() {
+  if (!api.scripting.registerContentScripts) return { ok: false, error: "This browser can't register scripts." };
+  try {
+    await api.scripting.unregisterContentScripts({ ids: [MARKS_ID] });
+  } catch {
+    /* not registered */
+  }
+  const { lensMarks } = await api.storage.local.get("lensMarks");
+  const { matches, excludeMatches } = globalThis.LensMarks.scriptMatches(lensMarks);
+  const granted = [];
+  for (const m of matches) {
+    if (await api.permissions.contains({ origins: [m] }).catch(() => false)) granted.push(m);
+  }
+  if (!granted.length) return { ok: true, registered: 0 };
+  await api.scripting.registerContentScripts([
+    { id: MARKS_ID, matches: granted, excludeMatches: excludeMatches.length ? excludeMatches : undefined, js: MARKS_FILES, runAt: "document_idle", allFrames: false, persistAcrossSessions: false },
+  ]);
+  return { ok: true, registered: granted.length };
+}
+const MARKS_FILES = ["src/content/marksLogic.js", "src/content/marks.js"];
+
 api.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.lensSettings) syncContentScripts().catch(() => {});
+  if (area === "local" && changes.lensMarks) {
+    const before = globalThis.LensMarks.scriptMatches(changes.lensMarks.oldValue);
+    const after = globalThis.LensMarks.scriptMatches(changes.lensMarks.newValue);
+    // "last used" updates don't need re-registering.
+    if (JSON.stringify(before) !== JSON.stringify(after)) syncMarksScript().catch(() => {});
+  }
 });
-api.permissions?.onRemoved?.addListener(() => syncContentScripts().catch(() => {}));
-api.runtime.onInstalled.addListener(() => syncContentScripts().catch(() => {}));
-api.runtime.onStartup?.addListener(() => syncContentScripts().catch(() => {}));
+api.permissions?.onAdded?.addListener(() => syncMarksScript().catch(() => {}));
+api.permissions?.onRemoved?.addListener(() => {
+  syncContentScripts().catch(() => {});
+  syncMarksScript().catch(() => {});
+});
+api.runtime.onInstalled.addListener(() => {
+  syncContentScripts().catch(() => {});
+  syncMarksScript().catch(() => {});
+});
+api.runtime.onStartup?.addListener(() => {
+  syncContentScripts().catch(() => {});
+  syncMarksScript().catch(() => {});
+});

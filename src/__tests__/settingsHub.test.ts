@@ -34,7 +34,7 @@ describe("page registry", () => {
   });
 
   test("groups are Lens, Windows, Status and each has pages", () => {
-    expect(GROUPS.map((g) => g.id)).toEqual(["lens", "windows", "status"]);
+    expect(GROUPS.map((g) => g.id)).toEqual(["quick", "lens", "windows", "status"]);
     for (const g of GROUPS) expect(PAGES.filter((p) => p.group === g.id).length).toBeGreaterThan(0);
     // Agents and Folder Icons are sections now, not pages.
     expect(PAGES.some((p) => (p.id as string) === "agents" || (p.id as string) === "folders")).toBe(false);

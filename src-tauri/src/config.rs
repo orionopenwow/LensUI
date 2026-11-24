@@ -132,6 +132,10 @@ pub struct DockConfig {
     /// Suggest 1-3 apps you usually open at this time (local predictor, no AI model). OFF by default.
     #[serde(default)]
     pub suggested_apps: bool,
+    /// Set once the person reorders Dock pins in Lens. Until then, pins mirrored from the
+    /// Windows taskbar follow Windows' own pin order (B-22).
+    #[serde(default)]
+    pub pins_user_ordered: bool,
 }
 
 fn default_dock_magnification() -> String {
@@ -210,7 +214,7 @@ pub struct FuncConfig {
 pub struct WindowControlsConfig {
     pub enabled: bool,
     pub style: String,    // "traffic-classic" | "traffic-muted" | "minimal-dots" | "accent-pills"
-    pub order: String,    // "green-yellow-red" | "red-yellow-green"
+    pub order: String,    // "yellow-green-red" (default) | "green-yellow-red" | "red-yellow-green"
     pub position: String, // "top-right" | "top-left"
     #[serde(default = "default_true")]
     pub frame_border_enabled: bool,
@@ -344,6 +348,10 @@ pub struct LensConfig {
     pub styled_folders: Vec<StyledFolderRecord>,
     #[serde(default)]
     pub onboarding_completed: bool,
+    /// Settings hub detail level: "simple" (core settings with visual previews) or "advanced"
+    /// (everything). Empty until chosen: new users start Simple, existing users Advanced.
+    #[serde(default)]
+    pub settings_mode: String,
     #[serde(default)]
     pub theme_schedule: Option<ThemeScheduleConfig>,
     #[serde(default)]
@@ -457,6 +465,7 @@ impl Default for LensConfig {
                 file_drop_open: false,
                 scroll_cycles_windows: false,
                 suggested_apps: false,
+                pins_user_ordered: false,
             },
             top_bar: TopBarConfig::default(),
             func: FuncConfig {
@@ -480,7 +489,7 @@ impl Default for LensConfig {
             window_controls: WindowControlsConfig {
                 enabled: true,
                 style: "traffic-classic".into(),
-                order: "green-yellow-red".into(),
+                order: "yellow-green-red".into(),
                 position: "top-right".into(),
                 frame_border_enabled: true,
                 frame_style: "obsidian-hairline".into(),
@@ -528,6 +537,7 @@ impl Default for LensConfig {
             },
             styled_folders: vec![],
             onboarding_completed: false,
+            settings_mode: String::new(),
             theme_schedule: None,
             tiling: Default::default(),
             workspaces: Default::default(),
@@ -575,8 +585,32 @@ pub fn scan_windows_taskbar_pins() -> Vec<PinnedApp> {
     let Ok(entries) = fs::read_dir(&taskbar_dir) else {
         return pins;
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
+    // read_dir is alphabetical on NTFS, not the taskbar's order (B-22): start from pin time
+    // (oldest first), then apply Explorer's own order from Taskband\Favorites.
+    let mut paths: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .flatten()
+        .map(|e| {
+            let t = e
+                .metadata()
+                .and_then(|m| m.created().or_else(|_| m.modified()))
+                .unwrap_or(std::time::UNIX_EPOCH);
+            (t, e.path())
+        })
+        .collect();
+    paths.sort_by(|a, b| a.0.cmp(&b.0));
+    let stems: Vec<String> = paths
+        .iter()
+        .filter_map(|(_, p)| p.file_stem().and_then(|s| s.to_str()).map(str::to_string))
+        .collect();
+    let order = match crate::win_pin_order::read_favorites_blob() {
+        Some(blob) => crate::win_pin_order::order_by_favorites(&stems, &blob),
+        None => stems,
+    };
+    paths.sort_by_key(|(_, p)| {
+        let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        order.iter().position(|o| o == stem).unwrap_or(usize::MAX)
+    });
+    for (_, path) in paths {
         if !path.is_file() {
             continue;
         }
@@ -611,6 +645,7 @@ pub fn scan_windows_taskbar_pins() -> Vec<PinnedApp> {
 
 pub fn merge_windows_taskbar_pins(cfg: &mut LensConfig) -> bool {
     let tb_pins = scan_windows_taskbar_pins();
+    let order: Vec<String> = tb_pins.iter().map(|p| p.name.clone()).collect();
     let mut changed = false;
     for tp in tb_pins {
         let tp_lower = tp.name.to_lowercase();
@@ -631,36 +666,79 @@ pub fn merge_windows_taskbar_pins(cfg: &mut LensConfig) -> bool {
             changed = true;
         }
     }
+    // Until the person reorders pins in Lens, mirrored Windows pins follow Windows' order.
+    // Lens never writes Windows' own pin data (B-22).
+    if !cfg.dock.pins_user_ordered {
+        if crate::win_pin_order::apply_order(
+            &mut cfg.dock.pinned_apps,
+            |a| a.id.starts_with("tb-"),
+            |a| a.name.clone(),
+            &order,
+        ) {
+            changed = true;
+        }
+    }
     changed
 }
 
+/// Keeps a copy of a config file Lens could not load as written, so nothing the person had is
+/// lost when parts (or all) of it fall back to defaults.
+fn keep_unreadable_copy(path: &std::path::Path) {
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let _ = fs::copy(path, config_dir().join(format!("config.json.unreadable-{}", ms)));
+}
+
+/// Loads `config.json`. Never fails and never panics (docs/FAILSAFE.md §7):
+///
+/// * a file that loads is used as it is;
+/// * a file with some unusable values keeps everything else: only the damaged values (or, if
+///   that is not enough, the damaged sections) fall back to their defaults, a copy of the old
+///   file is kept, and the person is told once;
+/// * a file that is not JSON at all is copied aside and defaults are used.
 pub fn load_config() -> LensConfig {
+    use crate::failsafe::{config_check, notify_once};
     let path = config_path();
     if let Ok(content) = fs::read_to_string(&path) {
-        let parsed = serde_json::from_str::<serde_json::Value>(&content)
+        let document = serde_json::from_str::<serde_json::Value>(&content)
             .map_err(|e| e.to_string())
-            .and_then(crate::win_backup::migrate_config_value)
-            .and_then(|(v, from)| {
-                serde_json::from_value::<LensConfig>(v)
-                    .map(|c| (c, from))
-                    .map_err(|e| e.to_string())
-            });
-        match parsed {
-            Ok((mut cfg, from)) => {
-                let migrated = from < crate::win_backup::CURRENT_CONFIG_VERSION;
-                if merge_windows_taskbar_pins(&mut cfg) || migrated {
-                    let _ = save_config(&cfg);
+            .and_then(crate::win_backup::migrate_config_value);
+        match document {
+            Ok((doc, from)) => match serde_json::from_value::<LensConfig>(doc.clone()) {
+                Ok(mut cfg) => {
+                    let migrated = from < crate::win_backup::CURRENT_CONFIG_VERSION;
+                    if merge_windows_taskbar_pins(&mut cfg) || migrated {
+                        let _ = save_config(&cfg);
+                    }
+                    return cfg;
                 }
-                return cfg;
-            }
+                Err(e) => {
+                    keep_unreadable_copy(&path);
+                    let defaults = serde_json::to_value(LensConfig::default()).unwrap_or(serde_json::Value::Null);
+                    if let Some(repaired) = config_check::load_repaired::<LensConfig>(doc, &defaults) {
+                        eprintln!(
+                            "[Lens Config] config.json had values Lens could not use ({}); kept a copy and reset only: {}.",
+                            e,
+                            repaired.reset.join(", ")
+                        );
+                        config_check::set_last_repairs(&repaired.reset);
+                        notify_once("config-repaired", "info", &config_check::repair_message(&repaired.reset));
+                        let mut cfg = repaired.config;
+                        let _ = merge_windows_taskbar_pins(&mut cfg);
+                        let _ = save_config(&cfg);
+                        return cfg;
+                    }
+                    eprintln!("[Lens Config] config.json could not be repaired ({}); kept a copy, using defaults.", e);
+                    config_reset_notice();
+                }
+            },
             Err(e) => {
                 // Keep the unreadable file instead of silently overwriting it with defaults.
-                let ms = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_millis())
-                    .unwrap_or(0);
-                let _ = fs::copy(&path, config_dir().join(format!("config.json.unreadable-{}", ms)));
+                keep_unreadable_copy(&path);
                 eprintln!("[Lens Config] config.json could not be loaded ({}); kept a copy, using defaults.", e);
+                config_reset_notice();
             }
         }
     }
@@ -670,10 +748,46 @@ pub fn load_config() -> LensConfig {
     default_cfg
 }
 
+fn config_reset_notice() {
+    crate::failsafe::config_check::set_last_repairs(&["everything".to_string()]);
+    crate::failsafe::notify_once(
+        "config-reset",
+        "error",
+        "Lens could not read its settings file and started with default settings. A copy of the old file is in the Lens data folder.",
+    );
+}
+
+/// [`load_config`] with this run's kill switches and Safe Mode applied (docs/FAILSAFE.md §5).
+/// The switched-off values live in memory only: [`save_config`] writes the stored values back.
+pub fn load_config_for_run() -> LensConfig {
+    let cfg = load_config();
+    let Ok(mut doc) = serde_json::to_value(&cfg) else {
+        return cfg;
+    };
+    crate::failsafe::features::apply_at_startup(&mut doc, &config_dir());
+    if !crate::failsafe::features::overrides_active() {
+        return cfg;
+    }
+    serde_json::from_value(doc).unwrap_or(cfg)
+}
+
 pub fn save_config(cfg: &LensConfig) -> Result<(), String> {
     let dir = config_dir();
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let json = serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?;
+    let json = if crate::failsafe::features::overrides_active() {
+        // Safe Mode or features.json is holding some switches off for this run. What is written
+        // keeps the person's stored choice for those switches, not the held-off value.
+        let mut doc = serde_json::to_value(cfg).map_err(|e| e.to_string())?;
+        let stored = fs::read_to_string(config_path())
+            .ok()
+            .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+        if let Some(stored) = stored {
+            crate::failsafe::features::keep_disk_values(&mut doc, &stored);
+        }
+        serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?
+    } else {
+        serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?
+    };
     crate::win_backup::write_atomic(&config_path(), json.as_bytes())
 }
 

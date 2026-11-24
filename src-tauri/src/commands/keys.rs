@@ -19,3 +19,10 @@ pub(crate) fn get_keyhook_status_cmd() -> win_keyhook::KeyhookStatus {
 pub(crate) fn get_ui_scale_support_cmd() -> bool {
     false
 }
+
+/// The shared input service: which features hold the keyboard and mouse hooks, whether input is
+/// paused for a fullscreen app, and how often the watchdog had to step in.
+#[tauri::command]
+pub(crate) fn input_status_cmd() -> crate::input::InputStatus {
+    crate::input::status()
+}

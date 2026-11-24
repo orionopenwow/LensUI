@@ -78,6 +78,8 @@ export interface DockConfig {
   scrollCyclesWindows?: boolean;
   /** Suggest apps you usually open now (local predictor, no AI model). Off by default. */
   suggestedApps?: boolean;
+  /** Set once pins are reordered in Lens; until then Windows' taskbar order is followed (B-22). */
+  pinsUserOrdered?: boolean;
 }
 
 export interface FuncConfig {
@@ -112,7 +114,7 @@ export interface FuncConfig {
 export interface WindowControlsConfig {
   enabled: boolean;
   style: "traffic-classic" | "traffic-muted" | "minimal-dots" | "accent-pills" | string;
-  order: "green-yellow-red" | "red-yellow-green" | string;
+  order: "yellow-green-red" | "green-yellow-red" | "red-yellow-green" | string;
   position: "top-right" | "top-left" | string;
   frameBorderEnabled?: boolean;
   frameStyle?: "accent-glow" | "obsidian-hairline" | "neon" | "none" | string;
@@ -174,6 +176,8 @@ export interface LensConfig {
   widgets: WidgetsConfig;
   styledFolders: StyledFolderRecord[];
   onboardingCompleted?: boolean;
+  /** Settings hub detail level; "" until chosen (new users start Simple, existing users Advanced). */
+  settingsMode?: "simple" | "advanced" | "";
   themeSchedule?: Partial<import("../themes/schedule").ThemeSchedule> | null;
   tiling?: import("../components/TilingCard").TilingConfig;
   workspaces?: import("../components/WorkspacesCard").WorkspacesConfig;

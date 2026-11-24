@@ -2,13 +2,13 @@
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
   <picture><source srcset="./docs/brand/lens-logo-anim.webp" media="(prefers-reduced-motion: no-preference)"><img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" /></picture>
-  <h1>Lens UI</h1>
+  <h1>Lens</h1>
   <p><strong>The everything desktop.</strong> The open-source desktop where look, apps and AI finally work as one.</p>
   <p>
     <a href="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml"><img src="https://github.com/orionopenwow/LensUI/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-09090b?style=flat-square" alt="MIT license" /></a>
   </p>
-  <p><a href="https://orionopenwow.github.io/lensui/">Website</a> · <a href="https://orionopenwow.github.io/lensui/#stage">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
+  <p><a href="https://orionopenwow.github.io/LensUI/">Website</a> · <a href="https://orionopenwow.github.io/LensUI/#stage">Try it in your browser</a> · <a href="./docs/guide-for-users/README.md">User guide</a> · <a href="./docs/MASTERPLAN.md">Plan</a></p>
 </div>
 
 <p align="center"><img src="./docs/media/dock-magnify.gif" alt="The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches" width="720"></p>
@@ -21,7 +21,7 @@
 
 Lens is the everything desktop for Windows 10 and 11: macOS's docks, Linux's theming, a launcher like Raycast and an AI co-pilot, rebuilt as one open-source app. That means a dock with real magnification, theme packs that restyle every surface (including other apps' window frames), a launcher that understands plain requests, and an AI co-pilot that runs on your PC or with Claude and asks before it acts. It sits on top of Windows Explorer instead of patching it: features stay off until you turn them on, and every change undoes.
 
-Built with [Tauri 2](https://tauri.app) (Rust and Win32) and React. Try the dock and themes on the [website](https://orionopenwow.github.io/lensui/).
+Built with [Tauri 2](https://tauri.app) (Rust and Win32) and React. Try the dock and themes on the [website](https://orionopenwow.github.io/LensUI/).
 
 ## Feature tour
 
@@ -149,7 +149,7 @@ Capture, then do the useful part before anything is saved.
 - Auto-redaction suggests blurring e-mails, API keys and card-like numbers it finds in the image.
 - One key to copy, copy text, pin to screen, add to the Shelf or paste to Claude with what is sent shown first.
 
-### Lens Guide
+### Ask Lens
 
 > **In development** — in [pull request #18](https://github.com/orionopenwow/LensUI/pull/18), not in a build yet.
 
@@ -183,6 +183,8 @@ More: [TESTER_HUB.md](./docs/TESTER_HUB.md)
 
 Restore scripts work even when Lens isn't running: [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat), [`Restore-Windows-Shell.bat`](./Restore-Windows-Shell.bat) and [`Uninstall-Lens-UI.bat`](./Uninstall-Lens-UI.bat). No telemetry and no account.
 
+**Seeing "Hmmm… can't reach this page / localhost refused to connect" windows over your desktop?** A development build of Lens was started without its dev server. Run [`Fix-My-Desktop.bat`](./Fix-My-Desktop.bat): it closes Lens, stops it starting at sign-in and brings Explorer back. Then build the standalone version with `Build-Lens-UI.bat` and turn on Start with Windows from that copy.
+
 ## Works on
 
 | Feature | Windows 10 | Windows 11 |
@@ -215,7 +217,7 @@ After the first launch, open Settings and press **Run self-test**. If anything l
 ## Documentation
 
 - [User guide](./docs/guide-for-users/README.md): short how-tos for every area, generated from Lens's own settings.
-- [Website](https://orionopenwow.github.io/lensui/): the real dock with super search, a guided tour, live themes, Ask Lens and the open-source apps.
+- [Website](https://orionopenwow.github.io/LensUI/): the real dock with super search, a guided tour, live themes, Ask Lens and the open-source apps.
 - Reference: [Dock styles](./docs/DOCK_STYLES.md) · [Window styling](./docs/WINDOW_STYLING.md) · [Productivity](./docs/PRODUCTIVITY.md) · [Playground](./docs/PLAYGROUND.md) · [Pointers](./docs/CURSORS.md) · [AI](./docs/AI.md) · [Command](./docs/COMMAND.md) · [Shelf](./docs/SHELF.md) · [Browser bridge](./docs/BROWSER_BRIDGE.md) · [Transcription](./docs/TRANSCRIPTION.md) · [MCP](./docs/MCP.md) · [Plugins](./docs/PLUGINS.md) · [Shell mode](./docs/SHELL_MODE.md)
 - Project: [Master plan](./docs/MASTERPLAN.md) · [Roadmap](./docs/ROADMAP.md) · [Design system](./DESIGN.md) · [Releasing](./docs/RELEASING.md) · [Tester Hub](./docs/TESTER_HUB.md) · [Media](./docs/media/README.md)
 
@@ -231,4 +233,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[MIT](./LICENSE). Lens UI is not affiliated with Microsoft or Anthropic.
+[MIT](./LICENSE). Lens is not affiliated with Microsoft or Anthropic.

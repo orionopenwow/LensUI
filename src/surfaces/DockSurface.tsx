@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useLayoutEffect } from "react";
 import "../dock/islands/islands.css";
 import { useUnifiedSearch } from "../search/useUnifiedSearch";
 import { PluginSlot } from "../components/PluginSlot";
@@ -16,6 +16,7 @@ import type { AiContext } from "../ai/surfaceApi";
 import { toDockResults } from "../search/dockAdapter";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
+import { captureFlip, glideOut, useLingering, type FlipCapture } from "../ui/motion";
 import {
   Search,
   Folder,
@@ -407,6 +408,12 @@ export const DockSurface: React.FC = () => {
   } | null>(null);
   const suppressClickRef = useRef<boolean>(false);
   const pillRef = useRef<HTMLElement>(null);
+  // Search opens and closes by FLIP (docs/SMOOTHNESS.md, G-04): layout changes in one frame and the
+  // icons glide from where they were, instead of animating width/height on every icon.
+  const searchFlip = useRef<FlipCapture | null>(null);
+  const captureSearchFlip = () => {
+    searchFlip.current = captureFlip(pillRef.current?.querySelectorAll(".dock-icons-row > *"));
+  };
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchOpenedAtRef = useRef<number>(0);
   const dockSearchOpenRef = useRef<boolean>(false);
@@ -446,6 +453,7 @@ export const DockSurface: React.FC = () => {
       );
       setSearchIconSize(Math.max(minIcon, Math.min(effectiveIconSize, fit)));
     }
+    if (!dockSearchOpenRef.current) captureSearchFlip();
     setDockSearchQuery("");
     setDockFilterTab("all");
     setDockSelectedIdx(0);
@@ -461,7 +469,10 @@ export const DockSurface: React.FC = () => {
     if (!dockSearchOpenRef.current) return;
     dockSearchOpenRef.current = false;
     setDockSearchClosing(true);
-    window.setTimeout(() => {
+    // The results panel glides out first; then the row collapses in one frame and the icons glide back.
+    const drawer = pillRef.current?.querySelector(".dock-launcher-drawer");
+    glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished.then(() => {
+      captureSearchFlip();
       setDockSearchOpen(false);
       setDockSearchClosing(false);
       setDockSearchQuery("");
@@ -469,8 +480,24 @@ export const DockSurface: React.FC = () => {
       setSearchIconSize(null);
       setLockedRowOffset(null);
       invoke("set_dock_search_expanded_cmd", { expanded: false }).catch(() => {});
-    }, 200);
+    });
   };
+
+  useLayoutEffect(() => {
+    searchFlip.current?.play({
+      duration: "slow",
+      // The search field is revealed by clipping (no stretched text); icons move and scale.
+      mode: (el) => (el.classList.contains("dock-search-slot") ? "clip" : "scale"),
+    });
+    searchFlip.current = null;
+  }, [dockSearchOpen]);
+
+  // The hover card and the right-click menu keep their CSS entry and gain an exit: they glide out
+  // before they are removed (docs/SMOOTHNESS.md, G-06).
+  const hoverLinger = useLingering(hoverCard && !ctxMenu && !settingsOpen && !dockSearchOpen ? hoverCard : null, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
+  const shownCard = hoverLinger.value;
+  const menuLinger = useLingering(ctxMenu, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
+  const shownMenu = menuLinger.value;
 
   const closeMenu = () => {
     setCtxMenu(null);
@@ -576,7 +603,26 @@ export const DockSurface: React.FC = () => {
         closeInDockLauncher();
       }
     };
+    // The watcher clears a menu/hover/search flag that has gone stale (pointer away, Dock
+    // unfocused) so auto-hide can resume; close the matching UI here so both sides agree.
+    const unlistenDismiss = listen("lens://dock-dismiss-menus", () => {
+      setHoverCard(null);
+      closeMenu();
+      closeInDockLauncher();
+    });
+    // Leaving the Dock window entirely (fast flicks out through click-through glass) closes a
+    // hover card even when the card's own mouseleave never fired.
+    const onDocLeave = (e: MouseEvent) => {
+      if (e.relatedTarget === null) {
+        setHoverCard(null);
+        if (!dockSearchOpenRef.current) {
+          invoke("set_dock_menu_open", { open: false }).catch(() => {});
+        }
+      }
+    };
+    document.addEventListener("mouseout", onDocLeave);
     const onBlur = () => {
+      setHoverCard(null);
       closeMenu();
       window.setTimeout(() => {
         // Ignore transient Win32 focus handoff right after expanding the dock window
@@ -595,10 +641,37 @@ export const DockSurface: React.FC = () => {
       unlistenSearch.then((fn) => fn());
       unlistenSettings.then((fn) => fn());
       unlistenSettingsTab.then((fn) => fn());
+      unlistenDismiss.then((fn) => fn());
+      document.removeEventListener("mouseout", onDocLeave);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("blur", onBlur);
     };
   }, []);
+
+  // Report the open flyout's rect so the watcher can tell a click or pointer outside the Dock
+  // (and close everything / resume auto-hide) from one inside it.
+  useEffect(() => {
+    const report = () => {
+      const els = document.querySelectorAll<HTMLElement>(
+        ".dock-hover-card, .dock-ctx-menu, .dock-launcher-drawer"
+      );
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      els.forEach((el) => {
+        const rc = el.getBoundingClientRect();
+        if (rc.width === 0 || rc.height === 0) return;
+        l = Math.min(l, rc.left); t = Math.min(t, rc.top);
+        r = Math.max(r, rc.right); b = Math.max(b, rc.bottom);
+      });
+      const open = Number.isFinite(l);
+      invoke("set_dock_flyout_rect_cmd", open ? { x: l, y: t, w: r - l, h: b - t } : { x: 0, y: 0, w: 0, h: 0 }).catch(() => {});
+    };
+    const raf = requestAnimationFrame(report);
+    const t1 = window.setTimeout(report, 260); // after open/close transitions settle
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+    };
+  }, [hoverCard, ctxMenu, dockSearchOpen, dockSearchClosing]);
 
   // Unread notification badges: Windows toasts and Lens history, counted once per id.
   useEffect(() => {
@@ -705,6 +778,9 @@ export const DockSurface: React.FC = () => {
     if (!el) return;
     const report = () => {
       if (dockSearchOpenRef.current) return;
+      // A hidden Dock is slid off its edge: keep the last resting rect. The backend hit-tests
+      // every style against this rect, so it must never be the off-screen one.
+      if (el.classList.contains("is-hidden")) return;
       const rect = el.getBoundingClientRect();
       if (rect.width > 0) {
         // Split: the backend hit-tests one rect, so report the union of both pills. On the bottom
@@ -749,8 +825,21 @@ export const DockSurface: React.FC = () => {
     const ro = new ResizeObserver(report);
     ro.observe(el);
     if (splitPillRef.current) ro.observe(splitPillRef.current);
-    return () => ro.disconnect();
+    // The backend sizes this window from the reported pill (plus flyout room) once the Dock is
+    // idle. The pill keeps its place on screen but moves inside the window, so report again.
+    window.addEventListener("resize", report);
+    // After the Dock has slid back in, report where it came to rest.
+    const onSettled = (e: TransitionEvent) => {
+      if (e.target === el) report();
+    };
+    el.addEventListener("transitionend", onSettled);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", report);
+      el.removeEventListener("transitionend", onSettled);
+    };
   }, [
+    dockVisible,
     config?.dock.pinnedApps.length,
     config?.dock.iconSize,
     runningWindows.length,
@@ -1210,26 +1299,28 @@ export const DockSurface: React.FC = () => {
     >
       <McpBridge config={config} updateConfig={updateConfig} />
       <AiApplyBridge config={config} updateConfig={updateConfig} />
-      {ctxMenu && (
+      {shownMenu && menuLinger.mounted && (
         <>
-          <div className="dock-ctx-backdrop" onClick={closeMenu} onContextMenu={(e) => { e.preventDefault(); closeMenu(); }} />
+          {!menuLinger.leaving && <div className="dock-ctx-backdrop" onClick={closeMenu} onContextMenu={(e) => { e.preventDefault(); closeMenu(); }} />}
           <div
+            ref={menuLinger.ref}
+            inert={menuLinger.leaving}
             className={`dock-ctx-menu dock-ctx-edge-${edge}`}
             style={
               edge === "left"
-                ? { left: (pillRef.current?.getBoundingClientRect().right ?? 60) + 12, top: Math.max(170, Math.min(window.innerHeight - 170, ctxMenu.y + effectiveIconSize / 2)) }
+                ? { left: (pillRef.current?.getBoundingClientRect().right ?? 60) + 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
                 : edge === "right"
-                  ? { left: (pillRef.current?.getBoundingClientRect().left ?? window.innerWidth - 60) - 12, top: Math.max(170, Math.min(window.innerHeight - 170, ctxMenu.y + effectiveIconSize / 2)) }
+                  ? { left: (pillRef.current?.getBoundingClientRect().left ?? window.innerWidth - 60) - 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
                   : edge === "top"
-                    ? { left: Math.max(100, Math.min(window.innerWidth - 100, ctxMenu.x)), top: ctxMenu.y + effectiveIconSize + 18 }
-                    : { left: Math.max(100, Math.min(window.innerWidth - 100, ctxMenu.x)), top: ctxMenu.y - 12 }
+                    ? { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y + effectiveIconSize + 18 }
+                    : { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y - 12 }
             }
           >
-            {ctxMenu.kind === "app" && (
+            {shownMenu.kind === "app" && (
               <>
-                {ctxMenu.windows.length > 0 ? (
+                {shownMenu.windows.length > 0 ? (
                   <>
-                    {ctxMenu.windows.slice(0, 3).map((w) => (
+                    {shownMenu.windows.slice(0, 3).map((w) => (
                       <button
                         key={w.hwnd}
                         type="button"
@@ -1253,7 +1344,7 @@ export const DockSurface: React.FC = () => {
                         className="dock-ctx-item"
                         style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
                         onClick={() => {
-                          invoke("window_action_cmd", { hwnd: ctxMenu.windows[0].hwnd, action: "minimize" });
+                          invoke("window_action_cmd", { hwnd: shownMenu.windows[0].hwnd, action: "minimize" });
                           closeMenu();
                         }}
                       >
@@ -1265,7 +1356,7 @@ export const DockSurface: React.FC = () => {
                         className="dock-ctx-item"
                         style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
                         onClick={() => {
-                          invoke("window_action_cmd", { hwnd: ctxMenu.windows[0].hwnd, action: "maximize" });
+                          invoke("window_action_cmd", { hwnd: shownMenu.windows[0].hwnd, action: "maximize" });
                           closeMenu();
                         }}
                       >
@@ -1278,7 +1369,7 @@ export const DockSurface: React.FC = () => {
                         style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
                         onClick={() => {
                           // Tracked pin: Lens unpins it again on quit (docs/WINDOW_STYLING.md §2).
-                          const hwnd = ctxMenu.windows[0].hwnd;
+                          const hwnd = shownMenu.windows[0].hwnd;
                           invoke<{ hwnd: number }[]>("list_pinned_windows_cmd")
                             .then((list) => invoke("set_window_pinned_cmd", { hwnd, pinned: !list.some((p) => p.hwnd === hwnd) }))
                             .catch(() => {});
@@ -1296,7 +1387,7 @@ export const DockSurface: React.FC = () => {
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        invoke("launch_app_cmd", { path: ctxMenu.launchPath });
+                        invoke("launch_app_cmd", { path: shownMenu.launchPath });
                         closeMenu();
                       }}
                     >
@@ -1307,7 +1398,7 @@ export const DockSurface: React.FC = () => {
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        invoke("launch_app_advanced_cmd", { path: ctxMenu.launchPath, mode: "admin" });
+                        invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "admin" });
                         closeMenu();
                       }}
                     >
@@ -1321,7 +1412,7 @@ export const DockSurface: React.FC = () => {
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        invoke("launch_app_cmd", { path: ctxMenu.launchPath });
+                        invoke("launch_app_cmd", { path: shownMenu.launchPath });
                         closeMenu();
                       }}
                     >
@@ -1332,7 +1423,7 @@ export const DockSurface: React.FC = () => {
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        invoke("launch_app_advanced_cmd", { path: ctxMenu.launchPath, mode: "admin" });
+                        invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "admin" });
                         closeMenu();
                       }}
                     >
@@ -1346,7 +1437,7 @@ export const DockSurface: React.FC = () => {
                   type="button"
                   className="dock-ctx-item"
                   onClick={() => {
-                    invoke("launch_app_advanced_cmd", { path: ctxMenu.launchPath, mode: "reveal" });
+                    invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "reveal" });
                     closeMenu();
                   }}
                 >
@@ -1354,12 +1445,12 @@ export const DockSurface: React.FC = () => {
                   <span>File Location</span>
                 </button>
 
-                {ctxMenu.pinnedApp && !locked && (
+                {shownMenu.pinnedApp && !locked && (
                   <button
                     type="button"
                     className="dock-ctx-item"
                     onClick={() => {
-                      const id = ctxMenu.pinnedApp!.id;
+                      const id = shownMenu.pinnedApp!.id;
                       updateDockExtras({
                         separatorsAfter: separatorsAfter.includes(id)
                           ? separatorsAfter.filter((x) => x !== id)
@@ -1369,17 +1460,17 @@ export const DockSurface: React.FC = () => {
                     }}
                   >
                     <SeparatorVertical size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                    <span>{separatorsAfter.includes(ctxMenu.pinnedApp.id) ? "Remove Separator" : "Add Separator After"}</span>
+                    <span>{separatorsAfter.includes(shownMenu.pinnedApp.id) ? "Remove Separator" : "Add Separator After"}</span>
                   </button>
                 )}
 
-                {ctxMenu.pinnedApp ? (
+                {shownMenu.pinnedApp ? (
                   !locked && (
                     <button
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        unpinApp(ctxMenu.pinnedApp!.id);
+                        unpinApp(shownMenu.pinnedApp!.id);
                         closeMenu();
                       }}
                     >
@@ -1388,12 +1479,12 @@ export const DockSurface: React.FC = () => {
                     </button>
                   )
                 ) : (
-                  ctxMenu.windows[0] && (
+                  shownMenu.windows[0] && (
                     <button
                       type="button"
                       className="dock-ctx-item"
                       onClick={() => {
-                        pinWindow(ctxMenu.windows[0]);
+                        pinWindow(shownMenu.windows[0]);
                         closeMenu();
                       }}
                     >
@@ -1403,34 +1494,34 @@ export const DockSurface: React.FC = () => {
                   )
                 )}
 
-                {ctxMenu.windows.length > 0 && (
+                {shownMenu.windows.length > 0 && (
                   <>
                     <div className="dock-ctx-sep" />
                     <button
                       type="button"
                       className="dock-ctx-item danger"
                       onClick={() => {
-                        ctxMenu.windows.forEach((w) =>
+                        shownMenu.windows.forEach((w) =>
                           invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" })
                         );
                         closeMenu();
                       }}
                     >
                       <X size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-                      <span>Close {ctxMenu.windows.length > 1 ? `All (${ctxMenu.windows.length})` : "Window"}</span>
+                      <span>Close {shownMenu.windows.length > 1 ? `All (${shownMenu.windows.length})` : "Window"}</span>
                     </button>
                   </>
                 )}
               </>
             )}
 
-            {ctxMenu.kind === "folder" && (
+            {shownMenu.kind === "folder" && (
               <>
                 <button
                   type="button"
                   className="dock-ctx-item"
                   onClick={() => {
-                    invoke("launch_app_cmd", { path: ctxMenu.folder.path });
+                    invoke("launch_app_cmd", { path: shownMenu.folder.path });
                     closeMenu();
                   }}
                 >
@@ -1442,7 +1533,7 @@ export const DockSurface: React.FC = () => {
                     type="button"
                     className="dock-ctx-item danger"
                     onClick={() => {
-                      removeFolder(ctxMenu.folder.id);
+                      removeFolder(shownMenu.folder.id);
                       closeMenu();
                     }}
                   >
@@ -1453,7 +1544,7 @@ export const DockSurface: React.FC = () => {
               </>
             )}
 
-            {ctxMenu.kind === "dock" && (
+            {shownMenu.kind === "dock" && (
               <>
                 <button
                   type="button"
@@ -1599,24 +1690,26 @@ export const DockSurface: React.FC = () => {
       )}
 
       {/* Lightweight Hover Popover: Spotify Media Controls + Album Thumbnail OR Running Windows Switcher for Any Dock Icon / Folder */}
-      {hoverCard && !ctxMenu && !settingsOpen && !dockSearchOpen && (
+      {shownCard && hoverLinger.mounted && (
         <div
+          ref={hoverLinger.ref}
+          inert={hoverLinger.leaving}
           className={`dock-hover-card dock-hover-edge-${edge} ${
-            livePreviews && !hoverCard.isSpotify && hoverCard.windows.length > 0 ? "has-previews" : ""
+            livePreviews && !shownCard.isSpotify && shownCard.windows.length > 0 ? "has-previews" : ""
           }`}
           style={
             edge === "left"
-              ? { left: hoverCard.x + 12, top: Math.max(150, Math.min(window.innerHeight - 150, hoverCard.y)) }
+              ? { left: shownCard.x + 12, top: Math.max(150, Math.min(window.innerHeight - 150, shownCard.y)) }
               : edge === "right"
-                ? { left: hoverCard.x - 12, top: Math.max(150, Math.min(window.innerHeight - 150, hoverCard.y)) }
+                ? { left: shownCard.x - 12, top: Math.max(150, Math.min(window.innerHeight - 150, shownCard.y)) }
                 : edge === "top"
-                  ? { left: Math.max(135, Math.min(window.innerWidth - 135, hoverCard.x)), top: hoverCard.y + 12 }
-                  : { left: Math.max(135, Math.min(window.innerWidth - 135, hoverCard.x)), top: hoverCard.y - 12 }
+                  ? { left: Math.max(135, Math.min(window.innerWidth - 135, shownCard.x)), top: shownCard.y + 12 }
+                  : { left: Math.max(135, Math.min(window.innerWidth - 135, shownCard.x)), top: shownCard.y - 12 }
           }
           onMouseEnter={cancelHoverClose}
           onMouseLeave={scheduleHoverClose}
         >
-          {hoverCard.isSpotify ? (
+          {shownCard.isSpotify ? (
             <div className="dock-spotify-card">
               <div className="dock-spotify-top">
                 {mediaInfo?.thumbnailDataUrl ? (
@@ -1628,7 +1721,7 @@ export const DockSurface: React.FC = () => {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="dock-spotify-title">
-                    {mediaInfo?.title || hoverCard.windows[0]?.title || "Spotify"}
+                    {mediaInfo?.title || shownCard.windows[0]?.title || "Spotify"}
                   </div>
                   <div className="dock-spotify-artist">
                     {mediaInfo?.artist || "Ready to play"}
@@ -1703,9 +1796,9 @@ export const DockSurface: React.FC = () => {
             </div>
           ) : livePreviews ? (
             <DockPreviewStrip
-              key={hoverCard.key}
-              windows={hoverCard.windows}
-              iconUrl={hoverCard.iconUrl}
+              key={shownCard.key}
+              windows={shownCard.windows}
+              iconUrl={shownCard.iconUrl}
               onFocus={(hwnd) => {
                 setHoverCard(null);
                 invoke("set_dock_menu_open", { open: false }).catch(() => {});
@@ -1721,10 +1814,10 @@ export const DockSurface: React.FC = () => {
           ) : (
             <div className="dock-win-list">
               <div className="dock-win-list-head">
-                <span>{hoverCard.title}</span>
-                <span className="dock-win-count">{hoverCard.windows.length}</span>
+                <span>{shownCard.title}</span>
+                <span className="dock-win-count">{shownCard.windows.length}</span>
               </div>
-              {hoverCard.windows.slice(0, 7).map((w) => (
+              {shownCard.windows.slice(0, 7).map((w) => (
                 <div key={w.hwnd} className={`dock-win-row ${w.isFocused ? "focused" : ""}`}>
                   <button
                     type="button"
@@ -1735,9 +1828,9 @@ export const DockSurface: React.FC = () => {
                       invoke("focus_window_cmd", { hwnd: w.hwnd });
                     }}
                   >
-                    {w.iconDataUrl || hoverCard.iconUrl ? (
+                    {w.iconDataUrl || shownCard.iconUrl ? (
                       <img
-                        src={w.iconDataUrl || hoverCard.iconUrl || ""}
+                        src={w.iconDataUrl || shownCard.iconUrl || ""}
                         alt=""
                         style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }}
                       />

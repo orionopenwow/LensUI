@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -82,6 +83,11 @@ import { PAGE_COMPONENTS } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
 import { SettingsNav, PageIcon } from "../settings/SettingsNav";
+// Simple-mode cards load only when Simple mode shows them, so Advanced pays nothing for them.
+const SimpleView = React.lazy(() => import("../settings/simple/SimpleView").then((m) => ({ default: m.SimpleView })));
+import { MoreOptions } from "../settings/simple/MoreOptions";
+import { ModeHint } from "../settings/simple/ModePill";
+import { effectiveMode, hasSimpleCards, modeUnchosen, moreStartsOpen, moreSummary, SIMPLE_RESETS, type SettingsMode } from "../settings/simple/mode";
 import { WinLink } from "../settings/ui/primitives";
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
 
@@ -94,12 +100,13 @@ interface ProcessEntry {
 }
 
 export const ControlCenterSurface: React.FC = () => {
+  const startupBlock = useStartupBlock();
   const { config, winTheme, updateConfig } = useLensState();
   const runningWindows = useRunningWindows(1400);
   const glidePhase = useSurfaceGlide("settings");
   // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
   const initial = resolveTarget(new URLSearchParams(window.location.search).get("tab"));
-  const [tab, setPage] = useState<PageId>(() => initial?.page ?? "appearance");
+  const [tab, setPage] = useState<PageId>(() => initial?.page ?? "quick");
   // The nav highlight moves at once; the page body renders as a transition (time-sliced, so a heavy
   // page never blocks the click or the highlight; AAA_WAVE_PLAN C3 / perf settings-tab-switch).
   const [navTab, setNavTab] = useState<PageId>(tab);
@@ -117,6 +124,9 @@ export const ControlCenterSurface: React.FC = () => {
     const t = resolveTarget(target);
     if (t) navigate(t.page, t.section);
   };
+  // Simple mode: "More options" opens on a deep link to a section, or when the person asks. Kept
+  // per page (keyed by page#section), so switching pages never costs an extra render.
+  const [moreToggled, setMoreToggled] = useState<{ key: string; open: boolean } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
@@ -133,7 +143,6 @@ export const ControlCenterSurface: React.FC = () => {
   }, [tab, section]);
   // Sticky page header gets a hairline once the page scrolls.
   const [stuck, setStuck] = useState(false);
-  const lastReportedHRef = useRef<number>(0);
   const [showWizardManual, setShowWizardManual] = useState(false);
   const [topProcesses, setTopProcesses] = useState<ProcessEntry[]>([]);
   const [cpuHistory, setCpuHistory] = useState<number[]>([18, 22, 20, 26, 24, 29, 25, 21, 24, 28, 26, 23]);
@@ -213,27 +222,8 @@ export const ControlCenterSurface: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
-    const syncHeight = () => {
-      // Page header + vertical padding so nothing ever clips
-      const contentH = Math.ceil(el.scrollHeight + 86);
-      if (Math.abs(contentH - lastReportedHRef.current) > 4) {
-        lastReportedHRef.current = contentH;
-        invoke("set_settings_content_height_cmd", { height: contentH }).catch(() => {});
-      }
-    };
-    const raf = requestAnimationFrame(syncHeight);
-    const t = window.setTimeout(syncHeight, 120);
-    const ro = new ResizeObserver(syncHeight);
-    ro.observe(el);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
-      ro.disconnect();
-    };
-  }, [tab, config?.onboardingCompleted, showWizardManual]);
+  // The Settings window keeps one size while it is open (docs/SMOOTHNESS.md, G-01): resizing the
+  // native window to fit each page tore the page mid-switch. Pages scroll inside it instead.
 
   if (!config) return null;
 
@@ -242,6 +232,15 @@ export const ControlCenterSurface: React.FC = () => {
 
   const pageDef = getPage(tab);
   const PageComponent = PAGE_COMPONENTS[tab];
+  const mode = effectiveMode(config);
+  const setMode = (m: SettingsMode) => {
+    if (m === config.settingsMode) return;
+    updateConfig({ ...config, settingsMode: m });
+  };
+  const simpleCards = mode === "simple" && hasSimpleCards(tab);
+  const moreKey = `${tab}#${section ?? ""}`;
+  const moreOpen = moreToggled?.key === moreKey ? moreToggled.open : moreStartsOpen(mode, tab, section);
+  const setMoreOpen = (open: boolean) => setMoreToggled({ key: moreKey, open });
 
   const activeAccentHex =
     config.theme.accentMode === "custom"
@@ -337,7 +336,13 @@ export const ControlCenterSurface: React.FC = () => {
         />
       )}
       <div className="cc-body">
-        <SettingsNav page={navTab} onNavigate={navigate} onWizard={() => setShowWizardManual(true)} />
+        <SettingsNav
+          page={navTab}
+          mode={mode}
+          onMode={setMode}
+          onNavigate={navigate}
+          onWizard={() => setShowWizardManual(true)}
+        />
 
         <main className="cc-content" ref={contentRef} onScroll={(e) => setStuck(e.currentTarget.scrollTop > 4)}>
           <header className={`sh-pagehead ${stuck ? "stuck" : ""}`}>
@@ -354,6 +359,35 @@ export const ControlCenterSurface: React.FC = () => {
             </button>
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
+          {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
+          {simpleCards && (
+            <Suspense fallback={<Skeleton label="Loading" shape="page" rows={2} className="sh-page-loading" />}>
+            <SimpleView
+              page={tab}
+              config={config}
+              winTheme={winTheme}
+              accent={activeAccentHex}
+              updateConfig={updateConfig}
+              onApplyConfig={(next) => {
+                updateConfig(next);
+                setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
+              }}
+              onMore={(sec) => {
+                if (sec) {
+                  setMoreToggled({ key: `${tab}#${sec}`, open: true });
+                  setSection(sec);
+                } else setMoreOpen(true);
+              }}
+            />
+            </Suspense>
+          )}
+          <MoreOptions
+            enabled={simpleCards}
+            open={moreOpen}
+            onToggle={setMoreOpen}
+            summary={moreSummary(tab).text}
+            onReset={SIMPLE_RESETS[tab] ? () => updateConfig(SIMPLE_RESETS[tab]!(config)) : undefined}
+          >
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
           {PageComponent && (
             <Suspense fallback={<Skeleton label={`Loading ${pageDef.label}`} shape="page" rows={4} className="sh-page-loading" />}>
@@ -377,21 +411,23 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 38, paddingTop: 4 }}>
                     {cpuHistory.map((val, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          flex: 1,
-                          height: `${Math.max(10, val)}%`,
-                          borderRadius: 3,
-                          background:
-                            i === cpuHistory.length - 1
-                              ? "#34D399"
-                              : val > 75
-                                ? "rgb(251 113 133 / 0.72)"
-                                : "rgb(52 211 153 / 0.34)",
-                          transition: "height 220ms ease",
-                        }}
-                      />
+                      <div key={i} className="lens-meter" style={{ flex: 1, height: "100%", borderRadius: 3 }}>
+                        <div
+                          className="lens-meter-fill is-upright"
+                          style={
+                            {
+                              "--fill": Math.max(10, Math.min(100, val)) / 100,
+                              borderRadius: 3,
+                              background:
+                                i === cpuHistory.length - 1
+                                  ? "#34D399"
+                                  : val > 75
+                                    ? "rgb(251 113 133 / 0.72)"
+                                    : "rgb(52 211 153 / 0.34)",
+                            } as React.CSSProperties
+                          }
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -407,15 +443,16 @@ export const ControlCenterSurface: React.FC = () => {
                       {telemetry ? `${Math.round((telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) * 100)}%` : "--"}
                     </span>
                   </div>
-                  <div style={{ height: 8, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)", overflow: "hidden" }}>
+                  <div className="lens-meter" style={{ height: 8, borderRadius: 999, background: "rgb(var(--lens-ink) / 0.08)" }}>
                     <div
-                      style={{
-                        height: "100%",
-                        width: `${telemetry ? Math.min(100, (telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) * 100) : 0}%`,
-                        background: "linear-gradient(90deg, #38BDF8, #818CF8)",
-                        borderRadius: 999,
-                        transition: "width 260ms ease",
-                      }}
+                      className="lens-meter-fill"
+                      style={
+                        {
+                          "--fill": telemetry ? Math.min(1, telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) : 0,
+                          background: "linear-gradient(90deg, #38BDF8, #818CF8)",
+                          borderRadius: 999,
+                        } as React.CSSProperties
+                      }
                     />
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--lens-fg-secondary)", fontVariantNumeric: "tabular-nums" }}>
@@ -1120,12 +1157,14 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Run Lens UI on Windows Startup</div>
-                    <div className="cc-desc">Starts Lens when you sign in to Windows</div>
+                    <div className="cc-desc">{startupBlock ?? "Starts Lens when you sign in to Windows"}</div>
                   </div>
                   <button
                     type="button"
                     role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens UI on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
+                      (!startupBlock || config.func.runOnStartup) &&
                       updateConfig({
                         ...config,
                         func: { ...config.func, runOnStartup: !config.func.runOnStartup },
@@ -1274,6 +1313,7 @@ export const ControlCenterSurface: React.FC = () => {
             </>
           )}
           </PageErrorBoundary>
+          </MoreOptions>
           </div>
         </main>
       </div>

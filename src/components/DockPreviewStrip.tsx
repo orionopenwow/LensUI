@@ -72,7 +72,7 @@ export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, o
       const background =
         getComputedStyle(document.documentElement).getPropertyValue("--lens-pack-base").trim() ||
         "#141418";
-      invoke<number[]>("dock_preview_show_cmd", { tiles, background })
+      invoke<number[]>("dock_preview_show_cmd", { tiles, background, surface: "dock" })
         .then((bad) => {
           if (!cancelled) setFailed(new Set(bad ?? []));
         })

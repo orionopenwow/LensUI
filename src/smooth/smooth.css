@@ -1,0 +1,31 @@
+/* Tester Hub › Smoothness (docs/SMOOTHNESS.md). Tokens only. */
+.sm-lead { margin: 0 0 12px; color: rgb(var(--lens-ink) / 0.72); max-width: 68ch; line-height: 1.5; }
+.sm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sm-progress { display: grid; gap: 6px; margin-top: 12px; }
+.sm-progress-bar { height: 4px; border-radius: 2px; background: rgb(var(--lens-ink) / 0.1); overflow: hidden; }
+.sm-progress-fill { display: block; height: 100%; width: 100%; background: var(--lens-accent, rgb(var(--lens-ink))); transform-origin: left center; transform: scaleX(0); transition: transform var(--lens-dur-slow) var(--lens-ease-out); }
+.sm-progress-fill[data-pct="5"] { transform: scaleX(0.05); } .sm-progress-fill[data-pct="10"] { transform: scaleX(0.1); }
+.sm-progress-fill[data-pct="15"] { transform: scaleX(0.15); } .sm-progress-fill[data-pct="20"] { transform: scaleX(0.2); }
+.sm-progress-fill[data-pct="25"] { transform: scaleX(0.25); } .sm-progress-fill[data-pct="30"] { transform: scaleX(0.3); }
+.sm-progress-fill[data-pct="35"] { transform: scaleX(0.35); } .sm-progress-fill[data-pct="40"] { transform: scaleX(0.4); }
+.sm-progress-fill[data-pct="45"] { transform: scaleX(0.45); } .sm-progress-fill[data-pct="50"] { transform: scaleX(0.5); }
+.sm-progress-fill[data-pct="55"] { transform: scaleX(0.55); } .sm-progress-fill[data-pct="60"] { transform: scaleX(0.6); }
+.sm-progress-fill[data-pct="65"] { transform: scaleX(0.65); } .sm-progress-fill[data-pct="70"] { transform: scaleX(0.7); }
+.sm-progress-fill[data-pct="75"] { transform: scaleX(0.75); } .sm-progress-fill[data-pct="80"] { transform: scaleX(0.8); }
+.sm-progress-fill[data-pct="85"] { transform: scaleX(0.85); } .sm-progress-fill[data-pct="90"] { transform: scaleX(0.9); }
+.sm-progress-fill[data-pct="95"] { transform: scaleX(0.95); } .sm-progress-fill[data-pct="100"] { transform: scaleX(1); }
+.sm-error { margin-top: 10px; color: var(--lens-danger, rgb(var(--lens-ink))); }
+.sm-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sm-stat { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: rgb(var(--lens-ink) / 0.05); }
+.sm-stat b { font-size: 18px; font-weight: 600; }
+.sm-stat span { font-size: 12px; color: rgb(var(--lens-ink) / 0.6); }
+.sm-table { display: grid; margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid rgb(var(--lens-ink) / 0.08); }
+.sm-row { display: grid; grid-template-columns: minmax(0, 2.2fr) 0.9fr 0.7fr 0.9fr minmax(0, 1.3fr); gap: 10px; padding: 7px 12px; align-items: baseline; font-size: 13px; border-top: 1px solid rgb(var(--lens-ink) / 0.06); }
+.sm-row:first-child { border-top: 0; }
+.sm-head { font-size: 12px; color: rgb(var(--lens-ink) / 0.6); background: rgb(var(--lens-ink) / 0.04); }
+.sm-verdict { font-weight: 600; }
+.sm-rough .sm-verdict { color: var(--lens-warning, rgb(var(--lens-ink))); }
+.sm-janky .sm-verdict { color: var(--lens-danger, rgb(var(--lens-ink))); }
+.sm-smooth .sm-verdict { color: var(--lens-success, rgb(var(--lens-ink))); }
+.sm-no-data { color: rgb(var(--lens-ink) / 0.55); }
+.sm-note { font-style: normal; color: rgb(var(--lens-ink) / 0.55); }

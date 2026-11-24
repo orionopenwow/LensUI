@@ -3,7 +3,7 @@
 // (src/guide/search.ts → live/guide/search.js) over the Guide index and this site's pages: no
 // network, no model, no keys. When a question is about something on the page, the Guide does it:
 // the orb flies to the target, the page scrolls there, and the step list ticks off as Lens works,
-// using the site's one action engine (js/actions.js) and scene engine (js/scenes.js).
+// and starts the home page's tours (js/showcases.js), which run on the app's real surfaces.
 import { reducedMotion } from "./site.js";
 
 const SITE = new URL("../", import.meta.url);
@@ -28,7 +28,7 @@ function build() {
   win.setAttribute("aria-modal", "true");
   win.setAttribute("aria-labelledby", "gw-title");
   win.hidden = true;
-  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"></span><strong id="gw-title">Lens Guide</strong><span class="gw-sub">offline · on this page</span>
+  win.innerHTML = `<header class="gw-bar"><span class="gw-orb" aria-hidden="true"><span class="lens-cloud" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><strong id="gw-title">Lens</strong><span class="gw-sub">offline · on this page</span>
       <button type="button" data-max aria-label="Expand the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg></button>
       <button type="button" data-close aria-label="Collapse the Guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></header>
     <div class="gw-thread" aria-live="polite"></div>
@@ -66,7 +66,14 @@ function build() {
   restore();
 }
 
-// ---- open / close: the orb morphs into the window ----------------------------------------------
+// ---- open / close: the window opens out of the orb ---------------------------------------------
+function orbClip() {
+  const o = launcher?.querySelector(".orb-logo")?.getBoundingClientRect(), w = win.getBoundingClientRect();
+  if (!o || !w.width) return null;
+  const cx = o.left + o.width / 2 - w.left, cy = o.top + o.height / 2 - w.top, r0 = o.width / 2;
+  const r1 = Math.hypot(Math.max(cx, w.width - cx), Math.max(cy, w.height - cy));
+  return { from: `circle(${r0}px at ${cx}px ${cy}px)`, to: `circle(${r1}px at ${cx}px ${cy}px)` };
+}
 export async function open(q) {
   if (!win) build();
   if (!win.hidden) { if (q) ask(q); return; }
@@ -75,13 +82,15 @@ export async function open(q) {
   launcher?.setAttribute("aria-expanded", "true");
   launcher?.classList.add("is-open");
   sessionStorage.setItem("lens-guide-open", "1");
-  const from = launcher?.getBoundingClientRect(), to = win.getBoundingClientRect();
-  if (from && !reducedMotion() && win.animate) {
-    const sx = from.width / to.width, sy = from.height / to.height;
-    win.animate([{ transformOrigin: "100% 100%", transform: `translate(${from.right - to.right}px, ${from.bottom - to.bottom}px) scale(${sx}, ${sy})`, borderRadius: "50%", opacity: 0.4 }, { transformOrigin: "100% 100%", transform: "translate(-2px, -4px) scale(1.01)", borderRadius: "18px", opacity: 1, offset: 0.75 }, { transformOrigin: "100% 100%", transform: "none", borderRadius: "18px", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
-  } else if (win.animate) win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+  // The window grows out of the orb itself: a circle centred on the orb opens into the window.
+  // Nothing scales or flips; the orb stays put underneath.
+  const grow = orbClip();
+  if (grow && !reducedMotion() && win.animate) {
+    win.animate([{ clipPath: grow.from }, { clipPath: grow.to }], { duration: 420, easing: "cubic-bezier(.2,.9,.25,1)" });
+    win.dataset.opened = "grow"; // read by tools/site/check.mjs: it opens out of the orb, never flips
+  } else if (win.animate) { win.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); win.dataset.opened = "fade"; }
   input.focus({ preventScroll: true });
-  if (!thread.children.length) say("lens", `Hi, I'm the Lens Guide. Ask how to do anything in Lens, or tap a suggestion: I'll show you right here on the page.`);
+  if (!thread.children.length) say("lens", `Hi, I'm Lens. Ask me how to do anything, or tap a suggestion: I'll show you right here on the page.`);
   load().catch(() => {});
   if (q) ask(q);
 }
@@ -92,8 +101,8 @@ export function close() {
   const done = () => { win.hidden = true; launcher?.classList.remove("is-open"); };
   launcher?.setAttribute("aria-expanded", "false");
   sessionStorage.setItem("lens-guide-open", "0");
-  const to = launcher?.getBoundingClientRect(), from = win.getBoundingClientRect();
-  if (to && !reducedMotion() && win.animate) win.animate([{ transformOrigin: "100% 100%", transform: "none", opacity: 1 }, { transformOrigin: "100% 100%", transform: `translate(${to.right - from.right}px, ${to.bottom - from.bottom}px) scale(${to.width / from.width}, ${to.height / from.height})`, opacity: 0 }], { duration: 260, easing: "cubic-bezier(.5,0,.75,0)" }).finished.then(done, done);
+  const grow = orbClip();
+  if (grow && !reducedMotion() && win.animate) win.animate([{ clipPath: grow.to }, { clipPath: grow.from }], { duration: 300, easing: "cubic-bezier(.5,0,.75,0)" }).finished.then(done, done)
   else done();
   (lastFocus && document.contains(lastFocus) ? lastFocus : launcher)?.focus?.({ preventScroll: true });
 }
@@ -162,15 +171,16 @@ async function ask(q) {
   const L = window.lensSite;
 
   if (/\btour\b/.test(ql)) {
-    if (!onHome()) return goHome("#scene/everyday");
-    await say("lens", "Here's the tour: the desk plays each feature as a short scene. Click into the desk any time to take over.", { stream: true });
-    await flyTo(document.getElementById("stage"));
-    L.scenes.go(0); L.scenes.play();
+    if (!onHome()) return goHome("#tour/desktop");
+    await say("lens", "Pick a tour under the desk. Each one goes one step at a time: press Next, or do the highlighted thing yourself. I'll start with the desktop.", { stream: true });
+    await flyTo(document.getElementById("sc-tabs"));
+    L.playScene("desktop");
     return;
   }
   // A scene by name ("show me the magic right-click", "how do I connect Claude?").
-  const SC = (await import("./scenes.js")).SCENES;
-  const sceneHit = SC.find((s) => ql.includes(s.id.replace(/-/g, " ")) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "claude") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic-right-click") : null);
+  // A tour by name ("show me the magic right-click", "how do I connect Claude?"). The tours live with the home page's desk.
+  const SC = (await import("./showcases.js")).SHOWCASES;
+  const sceneHit = SC.find((s) => ql.includes(s.id) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "agent") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic") : null);
   if (/\bdocks?\b/.test(ql) && !/\bdark|tile\b/.test(ql)) {
     if (!onHome()) return goHome("#docks");
     await say("lens", "Lens has nine dock styles. These are the real docks, live. I'll put Islands on the desk.", { stream: true });
@@ -187,28 +197,31 @@ async function ask(q) {
     return;
   }
   if (sceneHit && /\b(show|how|play|see|connect)\b/.test(ql)) {
-    if (!onHome()) return goHome(`#scene/${sceneHit.id}`);
-    await say("lens", `${esc(sceneHit.line)} Watch it on the desk.`, { stream: true });
+    if (!onHome()) return goHome(`#scene/${sceneHit.id}`); // home maps #scene/… to the nearest tour
+    await say("lens", `${esc(sceneHit.line)} I've opened that tour on the desk: press Next to go step by step.`, { stream: true });
     await flyTo(document.getElementById("stage"));
     L.playScene(sceneHit.id);
-    if (sceneHit.id === "claude") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
+    if (sceneHit.id === "agent") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
     return;
   }
-  if (onHome()) {
-    const A = await import("./actions.js");
-    const desk = L.desk;
-    const plan = await A.plan(q, desk);
-    if (plan.length) {
-      await say("lens", `On it. I'll do it on the desk; press Esc or click anywhere to stop me.`, { stream: true });
-      L.scenes.pause();
-      await flyTo(document.getElementById("stage"));
-      const st = steps(plan.map((s) => s.say));
-      const o = A.orbFor(desk);
-      busy = { stop: () => o.stop() };
-      try { await A.run(desk, plan, { onStep: (i, _s, state) => st.tick(i, state) }); st.end("Done · every change undoes"); } catch { st.end("Stopped"); }
-      busy = null;
-      return;
-    }
+  // Two things the desk itself can do (the windows on it are the real app's): tile, and light or dark.
+  if (onHome() && /\btile\b/.test(ql)) {
+    await say("lens", "On the desk: I'll put the open windows side by side.", { stream: true });
+    const st = steps(["Scroll to the desk", "Tile the open windows"]);
+    st.tick(0, "doing");
+    if (L.shows.current) L.shows.exit();
+    await flyTo(document.getElementById("stage"));
+    st.tick(0, "done"); st.tick(1, "doing");
+    L.desk.tileAll();
+    st.tick(1, "done"); st.end("Done · drag a window off its side to undo");
+    return;
+  }
+  if (onHome() && /\b(dark|light)\b/.test(ql) && /\b(make|mode|theme|turn|switch)\b/.test(ql)) {
+    const m = /\blight\b/.test(ql) ? "light" : "dark";
+    await L.desk.setMode(m);
+    await say("lens", `The desk is in ${m} mode now: every window on it re-themed, like in Lens.`, { stream: true });
+    await flyTo(document.getElementById("stage"));
+    return;
   }
   if (/\bopen.?source\b/.test(ql)) {
     await say("lens", `Lens itself is open source (MIT), and Lens Apps installs free and open-source tools like ArtCraft, Concat, Krita and Blender from their official releases.`, { stream: true });

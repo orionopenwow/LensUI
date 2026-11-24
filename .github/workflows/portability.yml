@@ -8,6 +8,15 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
 
 permissions:
   contents: read

@@ -117,6 +117,11 @@ pub fn set_desktop_icons_hidden(hide: bool) {
                 found: HWND,
             }
             unsafe extern "system" fn cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+                // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+                crate::failsafe::guard::ffi_guard("taskbar.cb", BOOL(1), || cb_guarded(hwnd, lparam))
+            }
+
+            unsafe fn cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
                 let ctx = &mut *(lparam.0 as *mut FindCtx);
                 if let Ok(dv) = FindWindowExW(
                     hwnd,
@@ -182,7 +187,12 @@ pub fn install_exit_restore_handler() {
     use windows::Win32::System::Console::SetConsoleCtrlHandler;
 
     unsafe extern "system" fn ctrl_handler(_ctrl_type: u32) -> BOOL {
-        restore_taskbar_if_hidden();
+        // Runs on a thread Windows creates; a panic here must not cross into it.
+        crate::failsafe::guard::ffi_guard("taskbar.ctrl_handler", (), || {
+            restore_taskbar_if_hidden();
+            // Closing the console is the person stopping Lens, not a failed start.
+            crate::app::safe_start::mark_started();
+        });
         BOOL(0) // allow default exit after restoring taskbar
     }
 
@@ -197,6 +207,12 @@ pub fn install_exit_restore_handler() {}
 #[cfg(windows)]
 pub fn set_run_on_startup(enabled: bool) -> Result<(), String> {
     use windows::core::PCWSTR;
+    // A development build must never start at sign-in: it needs its dev server (B-21).
+    if enabled {
+        if let Some(reason) = crate::app::autostart_guard::startup_block_reason() {
+            return Err(reason);
+        }
+    }
     use windows::Win32::System::Registry::{
         RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CURRENT_USER,
         KEY_SET_VALUE, REG_SZ,
@@ -221,7 +237,10 @@ pub fn set_run_on_startup(enabled: bool) -> Result<(), String> {
 
         let result = if enabled {
             let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-            let exe_str = format!("\"{}\"\0", exe.to_string_lossy());
+            let exe_str = format!(
+                "{}\0",
+                crate::app::autostart_guard::run_value_for(&exe.to_string_lossy())
+            );
             let wide: Vec<u16> = exe_str.encode_utf16().collect();
             let bytes = std::slice::from_raw_parts(wide.as_ptr() as *const u8, wide.len() * 2);
             RegSetValueExW(hkey, PCWSTR(val_name.as_ptr()), 0, REG_SZ, Some(bytes))
@@ -233,6 +252,10 @@ pub fn set_run_on_startup(enabled: bool) -> Result<(), String> {
         };
 
         let _ = RegCloseKey(hkey);
+        if !enabled {
+            // Also drop Task Manager's on/off switch for the entry.
+            crate::app::autostart_guard::remove_run_entry();
+        }
         result
     }
 }

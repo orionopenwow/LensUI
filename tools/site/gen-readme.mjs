@@ -9,7 +9,7 @@ import { FEATURES, TRUST, WORKS_ON, REPO, HERO_CLIP } from "./content/features.m
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const clips = existsSync(join(root, "docs/media/clips.json")) ? JSON.parse(readFileSync(join(root, "docs/media/clips.json"), "utf8")) : [];
 const clip = (id) => clips.find((c) => c.id === id && c.gif);
-const SITE = "https://orionopenwow.github.io/lensui/";
+const SITE = "https://orionopenwow.github.io/LensUI/";
 
 const gif = (id, alt) => (clip(id) ? `<img src="./docs/media/${id}.gif" alt="${alt.replace(/"/g, "&quot;")}" width="720">` : "");
 const statusLine = (f) => (f.status === "dev" ? `> **In development** — in [pull request #${f.pr}](${REPO}/pull/${f.pr}), not in a build yet.\n\n` : "");
@@ -30,7 +30,7 @@ const readme = `<!-- The feature tour below is generated from tools/site/content
      tools/site/gen-readme.mjs. Edit that file, then re-run the script. -->
 <div align="center">
   <picture><source srcset="./docs/brand/lens-logo-anim.webp" media="(prefers-reduced-motion: no-preference)"><img src="./docs/brand/lens-logo.svg" alt="Lens logo: a silver lens holding a rainbow nebula" width="112" /></picture>
-  <h1>Lens UI</h1>
+  <h1>Lens</h1>
   <p><strong>The everything desktop.</strong> The open-source desktop where look, apps and AI finally work as one.</p>
   <p>
     <a href="${REPO}/actions/workflows/build.yml"><img src="${REPO}/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
@@ -59,6 +59,8 @@ ${tour}
 ${TRUST.map(([t, d]) => `- **${t}.** ${d}`).join("\n")}
 
 Restore scripts work even when Lens isn't running: [\`Restore-Windows-Taskbar.bat\`](./Restore-Windows-Taskbar.bat), [\`Restore-Windows-Shell.bat\`](./Restore-Windows-Shell.bat) and [\`Uninstall-Lens-UI.bat\`](./Uninstall-Lens-UI.bat). No telemetry and no account.
+
+**Seeing "Hmmm… can't reach this page / localhost refused to connect" windows over your desktop?** A development build of Lens was started without its dev server. Run [\`Fix-My-Desktop.bat\`](./Fix-My-Desktop.bat): it closes Lens, stops it starting at sign-in and brings Explorer back. Then build the standalone version with \`Build-Lens-UI.bat\` and turn on Start with Windows from that copy.
 
 ## Works on
 
@@ -104,7 +106,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).
 
 ## License
 
-[MIT](./LICENSE). Lens UI is not affiliated with Microsoft or Anthropic.
+[MIT](./LICENSE). Lens is not affiliated with Microsoft or Anthropic.
 `;
 
 writeFileSync(join(root, "README.md"), readme);

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { Bookmark, Check, History, KeyRound, LayoutGrid, Loader2, PanelsTopLeft, X } from "lucide-react";
+import { Bookmark, Check, ChevronDown, ChevronRight, History, KeyRound, LayoutGrid, Loader2, PanelsTopLeft, Search, Undo2, X } from "lucide-react";
 import {
-  EVT_BROWSER_IMPORT, importDetect, importPreview, importRun, type ImportCounts, type ImportKinds, type ImportProgress, type ImportSource,
+  EVT_BROWSER_IMPORT, importDetect, importItems, importPreview, importReceipts, importRun, importUndo, type ImportCounts, type ImportItem, type ImportItems,
+  type ImportKinds, type ImportProgress, type ImportReceipt, type ImportSource,
 } from "./api";
 import { Key } from "./ApprovalCard";
+import { hostOf, relTime } from "./model";
 
 export const BROWSER_TINT: Record<string, string> = {
   chrome: "#4285f4", edge: "#0c8ad8", brave: "#fb542b", firefox: "#ff7139", opera: "#ff1b2d", opera_gx: "#fa1e4e", vivaldi: "#ef3939", arc: "#5e5ce6",
@@ -23,10 +25,75 @@ export interface ImportSeed {
   pick?: { browser: string; profile: string };
   counts?: ImportCounts;
   progress?: Partial<Record<Step, ImportProgress["state"]>>;
+  items?: ImportItems;
+  receipts?: ImportReceipt[];
+  /** Parity: which item list starts open, and which URLs start unticked. */
+  open?: "bookmarks" | "tabs";
+  skip?: string[];
+  now?: number;
+}
+
+const SHOWN = 200;
+
+/** Tick list for one kind (bookmarks or tabs): filter, tick all, untick all. */
+function ItemPicker({ label, items, skip, onSkip }: { label: string; items: ImportItem[]; skip: Set<string>; onSkip(next: Set<string>): void }) {
+  const [filter, setFilter] = useState("");
+  const f = filter.trim().toLowerCase();
+  const match = f ? items.filter((i) => `${i.title} ${i.url} ${i.folder}`.toLowerCase().includes(f)) : items;
+  const kept = items.filter((i) => !skip.has(i.url)).length;
+  const setAll = (on: boolean) => {
+    const next = new Set(skip);
+    for (const i of match) {
+      if (on) next.delete(i.url);
+      else next.add(i.url);
+    }
+    onSkip(next);
+  };
+  return (
+    <div className="lb-pick-list" role="group" aria-label={`Choose ${label}`}>
+      <div className="lb-list-actions">
+        <label className="lb-filter">
+          <Search size={13} className="lb-dim" />
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Filter ${label}`} aria-label={`Filter ${label}`} />
+        </label>
+        <button className="lb-chip" onClick={() => setAll(true)}>All</button>
+        <button className="lb-chip" onClick={() => setAll(false)}>None</button>
+      </div>
+      <p className="lb-mono lb-dim" aria-live="polite">{kept.toLocaleString()} of {items.length.toLocaleString()} will come across</p>
+      <ul className="lb-pick-items">
+        {match.slice(0, SHOWN).map((i, n) => (
+          <li key={`${i.url}-${n}`}>
+            <label className="lb-pick-row">
+              <input
+                type="checkbox"
+                checked={!skip.has(i.url)}
+                onChange={(e) => {
+                  const next = new Set(skip);
+                  if (e.target.checked) next.delete(i.url);
+                  else next.add(i.url);
+                  onSkip(next);
+                }}
+              />
+              <span className="lb-tab-title">{i.title || hostOf(i.url) || i.url}</span>
+              <span className="lb-mono lb-dim">{i.folder || hostOf(i.url)}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {match.length > SHOWN ? <p className="lb-mono lb-dim">Showing the first {SHOWN}. Filter to find the rest; All and None apply to every match.</p> : null}
+      {match.length === 0 ? <p className="lb-dim">Nothing matches “{filter}”.</p> : null}
+    </div>
+  );
 }
 
 /** "Bring everything with you": pick a browser, agree to a look inside, then import. */
-export function ImportPanel({ seed }: { seed?: ImportSeed }) {
+export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed; searchUrl?: string; onChanged?(): void }) {
+  const [items, setItems] = useState<ImportItems | null>(seed?.items ?? null);
+  const [skip, setSkip] = useState<Set<string>>(new Set(seed?.skip ?? []));
+  const [open, setOpen] = useState<"bookmarks" | "tabs" | null>(seed?.open ?? null);
+  const [adopt, setAdopt] = useState(false);
+  const [receipts, setReceipts] = useState<ImportReceipt[]>(seed?.receipts ?? []);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [sources, setSources] = useState<ImportSource[] | null>(seed?.sources ?? null);
   const [pick, setPick] = useState<{ browser: string; profile: string } | null>(seed?.pick ?? null);
   const [counts, setCounts] = useState<ImportCounts | null>(seed?.counts ?? null);
@@ -39,6 +106,7 @@ export function ImportPanel({ seed }: { seed?: ImportSeed }) {
   useEffect(() => {
     if (seed) return;
     importDetect().then(setSources).catch((e) => setErr(String(e)));
+    importReceipts().then(setReceipts).catch(() => {});
     const un = listen<ImportProgress>(EVT_BROWSER_IMPORT, (e) => {
       if (e.payload.step !== "done") setProgress((p) => ({ ...p, [e.payload.step]: e.payload.state }));
     });
@@ -54,10 +122,16 @@ export function ImportPanel({ seed }: { seed?: ImportSeed }) {
     setConsent(null);
     setCounts(null);
     setProgress({});
+    setItems(null);
+    setSkip(new Set());
+    setOpen(null);
+    setAdopt(false);
     setBusy(true);
     setErr(null);
     try {
       setCounts(await importPreview(browser, profile, { bookmarks: true, history: true, tabs: true, spaces: true }));
+      // The rows to tick and the defaults that can carry over; the counts above don't depend on it.
+      importItems(browser, profile).then(setItems).catch(() => {});
     } catch (e) {
       setErr(String(e));
     } finally {
@@ -70,13 +144,31 @@ export function ImportPanel({ seed }: { seed?: ImportSeed }) {
     setBusy(true);
     setErr(null);
     try {
-      await importRun(pick.browser, pick.profile, kinds);
+      await importRun(pick.browser, pick.profile, kinds, [...skip], adopt);
+      setReceipts(await importReceipts().catch(() => receipts));
+      onChanged?.();
     } catch (e) {
       setErr(String(e));
     } finally {
       setBusy(false);
     }
   };
+
+  const remove = async (id: string) => {
+    if (removing !== id) return setRemoving(id);
+    setRemoving(null);
+    setErr(null);
+    try {
+      if (!seed) await importUndo(id);
+      setReceipts((list) => list.filter((r) => r.id !== id));
+      onChanged?.();
+    } catch (e) {
+      setErr(String(e));
+    }
+  };
+  const pickable = (id: Step): ImportItem[] => (id === "bookmarks" ? items?.bookmarks ?? [] : id === "tabs" || id === "spaces" ? items?.tabs ?? [] : []);
+  const defaults = items?.defaults;
+  const sameSearch = !!defaults?.searchUrl && defaults.searchUrl === searchUrl;
 
   return (
     <div className="lb-settings">
@@ -134,18 +226,32 @@ export function ImportPanel({ seed }: { seed?: ImportSeed }) {
           {steps.map((s) => {
             const st = progress[s.id];
             const zero = (s.id === "bookmarks" && !counts.bookmarks) || (s.id === "history" && !counts.history) || (s.id === "tabs" && !counts.openTabs) || (s.id === "spaces" && !counts.spaces);
+            const rows = pickable(s.id);
+            const listKey = s.id === "bookmarks" ? "bookmarks" : "tabs";
+            const canPick = rows.length > 0 && kinds[s.id] && !zero && !busy && !st;
+            const left = rows.filter((r) => skip.has(r.url)).length;
             return (
-              <label key={s.id} className={`lb-check-row${zero ? " is-empty" : ""}`}>
-                <input type="checkbox" checked={kinds[s.id] && !zero} disabled={zero || busy} onChange={(e) => setKinds({ ...kinds, [s.id]: e.target.checked })} />
-                <span className="lb-check-icon" aria-hidden>{s.icon}</span>
-                <span className="lb-check-text">
-                  <b>{s.title}</b>
-                  <span className="lb-dim">{zero ? "Nothing to bring" : s.sub(counts)}</span>
-                </span>
-                <span className="lb-check-state" aria-label={st ?? (kinds[s.id] && !zero ? "Will import" : "Skipped")}>
-                  {st === "done" ? <Check size={15} /> : st === "running" ? <span className="lb-progress" /> : st === "failed" ? <X size={15} className="lb-never" /> : null}
-                </span>
-              </label>
+              <React.Fragment key={s.id}>
+                <div className={`lb-check-row${zero ? " is-empty" : ""}`}>
+                  <label className="lb-check-main">
+                    <input type="checkbox" checked={kinds[s.id] && !zero} disabled={zero || busy} onChange={(e) => setKinds({ ...kinds, [s.id]: e.target.checked })} />
+                    <span className="lb-check-icon" aria-hidden>{s.icon}</span>
+                    <span className="lb-check-text">
+                      <b>{s.title}</b>
+                      <span className="lb-dim">{zero ? "Nothing to bring" : left ? `${s.sub(counts)} · ${left} left behind` : s.sub(counts)}</span>
+                    </span>
+                  </label>
+                  {canPick ? (
+                    <button className="lb-chip" aria-expanded={open === listKey} onClick={() => setOpen(open === listKey ? null : listKey)}>
+                      {open === listKey ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Choose
+                    </button>
+                  ) : null}
+                  <span className="lb-check-state" aria-label={st ?? (kinds[s.id] && !zero ? "Will import" : "Skipped")}>
+                    {st === "done" ? <Check size={15} /> : st === "running" ? <span className="lb-progress" /> : st === "failed" ? <X size={15} className="lb-never" /> : null}
+                  </span>
+                </div>
+                {canPick && open === listKey ? <ItemPicker label={s.id === "bookmarks" ? "bookmarks" : "tabs"} items={rows} skip={skip} onSkip={setSkip} /> : null}
+              </React.Fragment>
             );
           })}
           {counts.notes.map((n, i) => <p key={i} className="lb-note lb-dim">{n}</p>)}
@@ -156,6 +262,63 @@ export function ImportPanel({ seed }: { seed?: ImportSeed }) {
               {busy ? <Loader2 size={13} className="lb-spin" /> : null} Import <Key k="⏎" />
             </button>
           </div>
+        </section>
+      ) : null}
+
+      {counts && pick ? (
+        <section className="lb-card lb-carry" aria-label="What carries over">
+          <b>Settings that carry over</b>
+          <dl className="lb-carry-list">
+            <div>
+              <dt>Search engine</dt>
+              <dd>
+                {defaults?.searchUrl ? (
+                  sameSearch ? (
+                    <span className="lb-dim">{defaults.searchName ?? hostOf(defaults.searchUrl)} · already the same</span>
+                  ) : (
+                    <label className="lb-pick-row">
+                      <input type="checkbox" checked={adopt} disabled={busy} onChange={(e) => setAdopt(e.target.checked)} />
+                      <span>Use {defaults.searchName ?? hostOf(defaults.searchUrl)} here too</span>
+                    </label>
+                  )
+                ) : (
+                  <span className="lb-dim">{items ? `Couldn't be read from ${src?.label}. Lens keeps its own.` : "Checking…"}</span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>New tab page</dt>
+              <dd className="lb-dim">{defaults?.homepage ? `Lens keeps its own. ${hostOf(defaults.homepage)} was your home page; bookmark it to keep it one click away.` : "Lens keeps its own, with your most visited sites."}</dd>
+            </div>
+            <div>
+              <dt>Selection highlight</dt>
+              <dd className="lb-dim">{src?.engine === "firefox" ? "Pages use the Chromium highlight colour here; it can't be changed per browser." : "Same as before: pages use the same engine and the same highlight."}</dd>
+            </div>
+            <div>
+              <dt>Smooth scrolling</dt>
+              <dd className="lb-dim">On by default, as in {src?.engine === "firefox" ? "Edge and Chrome" : src?.label}.</dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+
+      {receipts.length ? (
+        <section className="lb-card lb-receipts" aria-label="Past imports">
+          <b>Past imports</b>
+          {receipts.map((r) => (
+            <div key={r.id} className="lb-receipt">
+              <span className="lb-check-text">
+                <span>{r.label} <span className="lb-mono lb-dim">· {relTime(r.atMs, seed?.now)}</span></span>
+                <span className="lb-dim">
+                  {[r.bookmarks && `${r.bookmarks.toLocaleString()} bookmarks`, r.tabs && `${r.tabs} tabs`, r.history && `${r.history.toLocaleString()} history pages`, r.searchChanged && "search engine"].filter(Boolean).join(" · ") || "Nothing left"}
+                </span>
+              </span>
+              <button className={`lb-chip${removing === r.id ? " is-warn" : ""}`} onClick={() => void remove(r.id)} onBlur={() => setRemoving(null)}>
+                <Undo2 size={12} /> {removing === r.id ? "Really remove all of it?" : "Remove"}
+              </button>
+            </div>
+          ))}
+          <p className="lb-mono lb-dim">Remove takes out exactly what that import added. Things you already had stay.</p>
         </section>
       ) : null}
 

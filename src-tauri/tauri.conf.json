@@ -24,7 +24,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "topbar",
@@ -40,7 +40,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "settings",
@@ -133,7 +133,7 @@
         "skipTaskbar": true,
         "resizable": false,
         "shadow": false,
-        "visible": true
+        "visible": false
       },
       {
         "label": "launcher",
@@ -421,7 +421,7 @@
     "publisher": "Lens UI contributors",
     "copyright": "MIT \u00a9 2026 Lens UI contributors",
     "shortDescription": "Calm, themeable desktop shell for Windows 10 and 11",
-    "homepage": "https://orionopenwow.github.io/lensui/"
+    "homepage": "https://orionopenwow.github.io/LensUI/"
   },
   "plugins": {
     "updater": {

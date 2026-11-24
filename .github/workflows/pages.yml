@@ -28,7 +28,6 @@ on:
       - "src/themes/**"
       - "src/playground/**"
       - "src/surfaces/DockSurface*"
-      - "src-tauri/src/ai/intent.rs"
       - ".github/workflows/pages.yml"
   schedule:
     - cron: "41 13 * * *" # daily, after the research task updates the tester notes
@@ -58,8 +57,6 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Pillow (resizes the app icons and screenshots the site shows)
         run: sudo python3 -m pip install --quiet --break-system-packages pillow
-      - name: Command-engine port matches the app
-        run: node tools/site/test/intent.test.mjs
       - name: User docs from the Guide index
         run: node tools/site/gen-user-docs.mjs
       - name: Build the site

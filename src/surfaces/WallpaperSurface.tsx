@@ -76,6 +76,14 @@ export const WallpaperSurface: React.FC = () => {
   const [paused, setPaused] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Crossfade between pictures (Wallpaper Switcher): the one before stays underneath until the
+  // new one has loaded and finished fading in, so a change never shows the bare background.
+  const mediaShown = useRef<{ src: string; kind: string } | null>(null);
+  const mediaBefore = useRef<{ src: string; kind: string } | null>(null);
+  const fadeMs = useRef(420);
+  const pausedRef = useRef<string | null>(null);
+  pausedRef.current = paused;
   const configRef = useRef(config);
   configRef.current = config;
   const lastAccentRef = useRef<string>("");
@@ -95,11 +103,35 @@ export const WallpaperSurface: React.FC = () => {
     refresh();
     const un1 = listen("lens://wallpaper-changed", () => refresh());
     const un2 = listen<string | null>("lens://wallpaper-pause", (e) => setPaused(e.payload ?? null));
+    const un3 = listen<{ crossfadeMs?: number }>("lens://wallpapers-switched", (e) => {
+      // At least 1 ms, so the fade always ends with a transitionend (which drops the old picture).
+      fadeMs.current = Math.max(1, Math.min(4000, Number(e.payload?.crossfadeMs ?? 420)));
+      rootRef.current?.style.setProperty("--wp-fade", `${fadeMs.current}ms`);
+    });
     return () => {
       un1.then((f) => f());
       un2.then((f) => f());
+      un3.then((f) => f());
     };
   }, [refresh]);
+
+  // Wallpaper Switcher's auto-change clock. The rules live in Rust (src-tauri/src/wallpapers): this
+  // asks once shortly after start ("change when Lens starts") and then every minute, and says
+  // whether the wallpaper's own pause rules (fullscreen, covered, battery) are holding it.
+  useEffect(() => {
+    if (IDLE_MODE) return;
+    let started = true;
+    const tick = () => {
+      invoke("wallpapers_tick_cmd", { paused: !!pausedRef.current, started, hour: new Date().getHours() }).catch(() => {});
+      started = false;
+    };
+    const first = window.setTimeout(tick, 5000);
+    const every = window.setInterval(tick, 60_000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(every);
+    };
+  }, []);
 
   // Pause / resume video without reloading it.
   useEffect(() => {
@@ -230,9 +262,29 @@ export const WallpaperSurface: React.FC = () => {
     ["--wp-overscan" as string]: blur > 0 ? String(1 + (blur * 2.2) / 1000) : "1",
   };
   const cls = `wp-media ${loaded ? "" : "is-loading"}`;
+  // Decided during render, like the scene crossfade above: the outgoing picture is never unmounted
+  // for a frame, because React keeps its element by key underneath the incoming one.
+  const fades = !!src && (state.kind === "image" || state.kind === "video");
+  if (fades && mediaShown.current && mediaShown.current.src !== src) mediaBefore.current = mediaShown.current;
+  if (!fades) mediaBefore.current = null;
+  mediaShown.current = fades && src ? { src, kind: state.kind as string } : null;
+  const before = mediaBefore.current && mediaBefore.current.src !== src ? mediaBefore.current : null;
+  const dropBefore = (e?: React.TransitionEvent) => {
+    if (e && e.propertyName !== "opacity") return;
+    if (!mediaBefore.current) return;
+    mediaBefore.current = null;
+    bump((n) => n + 1);
+  };
 
   return (
-    <div className="wp-root" aria-hidden="true" data-guide-id="wallpaper">
+    <div className="wp-root" ref={rootRef} aria-hidden="true" data-guide-id="wallpaper">
+      {before &&
+        (before.kind === "video" ? (
+          // Same attributes as when it was the wallpaper, so the element is kept and nothing reloads.
+          <video key={before.src} className="wp-media" style={mediaStyle} src={before.src} crossOrigin="anonymous" muted loop playsInline preload="auto" disablePictureInPicture />
+        ) : (
+          <img key={before.src} className="wp-media" style={mediaStyle} src={before.src} crossOrigin="anonymous" alt="" draggable={false} />
+        ))}
       {!src || !state.kind ? (
         <div className="wp-fallback" />
       ) : state.kind === "image" ? (
@@ -249,6 +301,7 @@ export const WallpaperSurface: React.FC = () => {
             reportAccent(e.currentTarget);
           }}
           onError={() => setLoaded(true)}
+          onTransitionEnd={dropBefore}
         />
       ) : state.kind === "video" ? (
         <video
@@ -269,6 +322,7 @@ export const WallpaperSurface: React.FC = () => {
             reportAccent(e.currentTarget);
           }}
           onError={() => setLoaded(true)}
+          onTransitionEnd={dropBefore}
         />
       ) : (
         // HTML wallpapers run sandboxed: scripts yes, but an opaque origin with no access to

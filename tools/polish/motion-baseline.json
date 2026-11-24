@@ -1,0 +1,106 @@
+{
+  "src/apps/apps.css": {
+    "layout-transition": 1
+  },
+  "src/cleaner/cleaner.css": {
+    "backdrop-filter": 1,
+    "layout-transition": 1
+  },
+  "src/command/Command.css": {
+    "backdrop-filter": 1,
+    "layout-transition": 1
+  },
+  "src/command/mini/EdgeShelfSurface.tsx": {
+    "native-resize": 1
+  },
+  "src/command/mini/edge.css": {
+    "backdrop-filter": 1
+  },
+  "src/command/mini/mini.css": {
+    "backdrop-filter": 1
+  },
+  "src/components/SystemModules.css": {
+    "layout-transition": 1
+  },
+  "src/components/VoiceCard.css": {
+    "layout-transition": 1
+  },
+  "src/context/context.css": {
+    "backdrop-filter": 1,
+    "layout-transition": 1
+  },
+  "src/coreapps/shell/shell.css": {
+    "backdrop-filter": 1,
+    "layout-transition": 1
+  },
+  "src/dock/ai/aiDock.css": {
+    "layout-transition": 1
+  },
+  "src/dock/voice/VoiceDock.css": {
+    "layout-transition": 1
+  },
+  "src/guide/guide.css": {
+    "layout-transition": 1
+  },
+  "src/magic/magic.css": {
+    "backdrop-filter": 1
+  },
+  "src/music/music.css": {
+    "backdrop-filter": 3
+  },
+  "src/presence/presence.css": {
+    "layout-transition": 1
+  },
+  "src/snip/Record.tsx": {
+    "native-resize": 1
+  },
+  "src/snip/snip.css": {
+    "backdrop-filter": 4
+  },
+  "src/studio/backdrop/ui/lab.css": {
+    "backdrop-filter": 4,
+    "layout-transition": 1
+  },
+  "src/styles/global.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/CommandPaletteSurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/ControlCenterSurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/DesktopFolderSurface.tsx": {
+    "backdrop-filter": 2,
+    "native-resize": 1
+  },
+  "src/surfaces/DockSurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/FocusDimSurface.tsx": {
+    "inline-animation": 2,
+    "layout-transition": 1
+  },
+  "src/surfaces/LauncherSurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/NotificationOverlaySurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/surfaces/OverviewSurface.tsx": {
+    "timer-animation": 1
+  },
+  "src/surfaces/TopBarSurface.css": {
+    "backdrop-filter": 1
+  },
+  "src/tester/TesterHub.css": {
+    "layout-transition": 1
+  },
+  "src/voice/Conversation.css": {
+    "backdrop-filter": 1,
+    "layout-transition": 1
+  },
+  "src/voice/VoiceHud.css": {
+    "layout-transition": 1
+  }
+}

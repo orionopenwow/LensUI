@@ -4,14 +4,17 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalPosition, LogicalSize } from "@tauri-apps/api/dpi";
 import { Archive, ArrowUpRight, FileText, Trash2 } from "lucide-react";
 import { useLensState } from "../../hooks/useLensState";
 import { useCommandSettings } from "../settings";
 import { useShelf, KIND_ICON } from "../ShelfDrawer";
 import { DEFAULT_SHELF, formatTokens, shelfAdd, shelfRemove } from "../../shelf/contract";
 import { panelRect, tabRect, tabVisible, type Rect } from "./edgeGeometry";
+import { clearPose, glideOut, type GlideHandle } from "../../ui/motion";
 import "./edge.css";
+
+/** How long the pointer may be away before the panel closes (a grace period, not an animation). */
+const LEAVE_GRACE_MS = 420;
 
 type Phase = "collapsed" | "open" | "drop";
 
@@ -31,15 +34,25 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
   const { items } = useShelf(DEFAULT_SHELF);
   const hoverTimer = useRef<number | null>(null);
   const leaveTimer = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const exit = useRef<GlideHandle | null>(null);
+  /** Coming back while the panel is fading out: stop the exit and show the panel again. */
+  const cancelExit = () => {
+    if (!exit.current) return;
+    exit.current.cancel();
+    exit.current = null;
+    clearPose(panelRef.current);
+  };
 
   // Size and place the window for the current phase.
   useEffect(() => {
     if (initial) return; // scripted (parity)
     const area = screenArea();
     const r = phase === "collapsed" ? tabRect(area, s) : panelRect(area, s);
-    const w = getCurrentWindow();
-    w.setSize(new LogicalSize(r.w, r.h)).catch(() => {});
-    w.setPosition(new LogicalPosition(r.x, r.y)).catch(() => {});
+    // One native step (docs/SMOOTHNESS.md, G-12): size and place together, never one after the
+    // other. The window only changes while nothing is moving: the panel's entry starts after it
+    // has grown, and its exit has finished before it shrinks (see `close`).
+    invoke("place_surface_cmd", { label: "edgeshelf", x: r.x, y: r.y, w: r.w, h: r.h }).catch(() => {});
   }, [phase, s.edge, s.offset, s.thickness, s.length, s.panel.w, s.panel.h]);
 
   // Stay out of the way of games, video and slideshows.
@@ -60,6 +73,7 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
 
   const open = useCallback((now = false) => {
     if (leaveTimer.current) window.clearTimeout(leaveTimer.current);
+    cancelExit();
     if (now) return setPhase((p) => (p === "drop" ? p : "open"));
     if (hoverTimer.current) return;
     hoverTimer.current = window.setTimeout(() => {
@@ -72,7 +86,16 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
       window.clearTimeout(hoverTimer.current);
       hoverTimer.current = null;
     }
-    leaveTimer.current = window.setTimeout(() => setPhase("collapsed"), 420);
+    leaveTimer.current = window.setTimeout(() => {
+      // Exit first; the window shrinks to the tab only once the panel is fully see-through.
+      const handle = glideOut(panelRef.current, { scale: 0.97, opacity: 0 });
+      exit.current = handle;
+      void handle.finished.then(() => {
+        if (exit.current !== handle) return;
+        exit.current = null;
+        setPhase("collapsed");
+      });
+    }, LEAVE_GRACE_MS);
   }, []);
 
   const flash = (t: string) => {
@@ -129,6 +152,7 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
 
   return (
     <div
+      ref={panelRef}
       className={`edge-panel is-${s.edge}${phase === "drop" ? " is-drop" : ""}`}
       onMouseEnter={() => open(true)}
       onMouseLeave={close}

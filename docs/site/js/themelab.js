@@ -5,7 +5,7 @@ import { reducedMotion } from "./site.js";
 import { createDesk, getPacks } from "./desk.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const PICKS = ["obsidian", "living-sky", "nord-frost", "catppuccin-mocha", "tokyo-night", "gruvbox-warm", "rose-pine", "hyprland-neon", "dracula-glass", "everforest-dark", "alabaster-daylight", "lens-expressive", "cc-koi-mosaic"];
+const PICKS = ["obsidian", "alabaster-daylight", "living-sky", "gruvbox-warm", "everforest-dark", "rose-pine", "lens-expressive"];
 const ACCENTS = ["#FAFAFA", "#818CF8", "#38BDF8", "#34D399", "#FBBF24", "#FB923C", "#FB7185", "#C084FC"];
 const base = (p) => p.base ?? (p.scheme === "light" ? "#f4f4f5" : "#09090b");
 /** A swatch that looks like the theme: its backdrop, a mini top bar and a dock in its colours. */
@@ -14,7 +14,7 @@ export const swatch = (p) => `<span class="tsw" style="--b:${base(p)};--a:${p.ac
 export async function init(section) {
   const packs = await getPacks();
   const host = section.querySelector("#lab-desk");
-  const desk = createDesk(host, { label: "Theme lab desktop", layout: [["browser", 0.1, 0.07], ["files", 0.56, 0.06], ["music", 0.6, 0.6]], notify: false });
+  const desk = createDesk(host, { label: "Theme lab desktop", layout: [["browser", 0.03, 0.05], ["music", 0.45, 0.38]] });
   const picker = section.querySelector(".lab-picks");
   const picks = PICKS.map((id) => packs.find((p) => p.id === id)).filter(Boolean);
   picker.innerHTML = picks.map((p) => `<button type="button" class="tp" data-pack="${p.id}" aria-pressed="false">${swatch(p)}<span>${esc(p.label)}</span></button>`).join("");

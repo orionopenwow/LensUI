@@ -73,13 +73,20 @@ pub fn sync_lens_windhawk_mod(
     if let Some(parent) = out_path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    fs::write(&out_path, &src).map_err(|e| e.to_string())?;
+    // Writing an identical file still makes Windhawk recompile the mod and reload it in every
+    // process, so unchanged content is never rewritten.
+    let same = |p: &Path| fs::read_to_string(p).map(|cur| cur == src).unwrap_or(false);
+    if !same(&out_path) {
+        fs::write(&out_path, &src).map_err(|e| e.to_string())?;
+    }
 
     // If Windhawk's ModsSource directory is writable, copy directly in so Windhawk picks it up immediately
     let wh_mods = Path::new(r"C:\ProgramData\Windhawk\ModsSource");
     if wh_mods.is_dir() {
         let target = wh_mods.join("lens-window-style.wh.cpp");
-        let _ = fs::write(&target, &src);
+        if !same(&target) {
+            let _ = fs::write(&target, &src);
+        }
     }
 
     Ok(out_path.to_string_lossy().to_string())

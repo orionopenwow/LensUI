@@ -25,7 +25,7 @@ pub(crate) fn import_backup_cmd(
     if let Some(dnd) = report.dnd {
         win_notifications::set_dnd(dnd);
     }
-    let cfg = config::load_config();
+    let cfg = config::load_config_for_run();
     *state.config.lock().unwrap_or_else(|e| e.into_inner()) = cfg.clone();
     apply_theme_to_system(&cfg, true);
     position_dock_and_bars(&app, &cfg);
@@ -40,10 +40,9 @@ pub(crate) fn remove_all_lens_changes_cmd(
     delete_data: bool,
 ) -> Vec<win_uninstall::UninstallStep> {
     let mut cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    win_workspaces::restore_all_windows();
-    win_wallpaper::detach_wallpaper_window();
-    win_desktop_input::stop();
+    // Workspaces, the live wallpaper and the input hooks are rows in the change registry too.
     let mut steps = win_uninstall::remove_all_lens_changes(&mut cfg);
+    let _ = app.emit(crate::commands::apps::INTEGRATIONS_EVENT, crate::commands::apps::apps_integrations());
     if delete_data {
         let res = win_uninstall::delete_lens_data();
         steps.push(win_uninstall::UninstallStep {
@@ -52,9 +51,18 @@ pub(crate) fn remove_all_lens_changes_cmd(
             detail: res.unwrap_or_else(|e| e),
         });
     } else {
+        // Remove all switches features off for good: write those values as they are.
+        crate::failsafe::features::release_overrides();
         let _ = save_config(&cfg);
     }
     *state.config.lock().unwrap_or_else(|e| e.into_inner()) = cfg.clone();
     let _ = app.emit("lens://config-updated", &cfg);
     steps
+}
+
+/// The change registry without its undo functions: what Lens can change outside its own data
+/// folder and where. Shown in Settings and used by the Remove-all check on CI.
+#[tauri::command]
+pub(crate) fn changes_manifest_cmd() -> Vec<crate::changes::ChangeInfo> {
+    crate::changes::manifest()
 }

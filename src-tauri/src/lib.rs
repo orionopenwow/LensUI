@@ -12,6 +12,7 @@ mod win_focus_dim;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
+mod win_brightness;
 mod win_sessions;
 mod win_taskbar;
 mod win_theme;
@@ -20,6 +21,7 @@ mod win_notifications;
 mod win_previews;
 mod win_rules;
 mod win_shell;
+mod win_pin_order;
 mod win_themes;
 mod win_backup;
 mod win_plugins;
@@ -28,6 +30,7 @@ mod win_search;
 mod win_system_modules;
 mod win_uninstall;
 mod win_wallpaper;
+mod wallpapers;
 mod win_workspaces;
 mod win_tray;
 mod win_tiler;
@@ -44,8 +47,12 @@ mod win_cursor_fx;
 mod win_cursors;
 mod win_desktop_input;
 mod win_keyhook;
+mod input;
+mod changes;
+mod failsafe;
 mod win_update;
 mod tester;
+mod smooth;
 mod agentsafe;
 mod syssettings;
 
@@ -74,7 +81,7 @@ mod studio;
 #[path = "tests/robustness/mod.rs"]
 mod robustness_tests;
 
-use config::{load_config, save_config, LensConfig};
+use config::{save_config, LensConfig};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -148,10 +155,29 @@ pub fn run() {
     let shell_startup = win_shell::shell_startup();
     let running_as_shell = shell_startup == win_shell::ShellStartup::Shell;
 
+    // B-21: a start-with-Windows entry that points at a development build is removed, a
+    // development build started at sign-in cleans up and exits, and a development build with no
+    // dev server explains itself instead of opening windows full of WebView2 error pages.
+    app::autostart_guard::heal_stale_run_entry();
+    if let Some(code) = app::autostart_guard::dev_signin_exit_code(running_as_shell) {
+        std::process::exit(code);
+    }
+    if let Some(code) = app::autostart_guard::dev_server_exit_code() {
+        std::process::exit(code);
+    }
+
     win_crash::install_log_capture();
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        // A panic inside a guard (an OS callback, a timed call) is caught there and the event is
+        // passed on (docs/FAILSAFE.md §3): keep a report of the first few and tear nothing down.
+        if failsafe::guard::in_guard() {
+            if failsafe::guard::report_budget() {
+                win_crash::write_crash_report(info);
+            }
+            return;
+        }
         win_crash::write_crash_report(info);
         crate::tester::log("error", "panic", &info.to_string());
         crate::app::integration::panic_shutdown();
@@ -164,9 +190,20 @@ pub fn run() {
         restore_taskbar_if_hidden();
         win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
         default_panic(info);
+        // Release builds unwind (so guards can catch), but a panic outside a guard is still the
+        // end of the process, exactly as before: everything was just handed back to Windows, and
+        // a half-torn-down Lens must not keep running.
+        #[cfg(not(debug_assertions))]
+        std::process::abort();
     }));
 
-    let initial_config = load_config();
+    // Crash-loop guard: two starts that never reached "the UI is up" within five minutes lead to
+    // the Safe Mode question, before the config is loaded or anything is switched on.
+    if let Some(code) = app::safe_start::begin() {
+        std::process::exit(code);
+    }
+
+    let initial_config = config::load_config_for_run();
     let shared_config = Arc::new(Mutex::new(initial_config.clone()));
     let dock_pill_width = Arc::new(Mutex::new(640.0f64));
     let dock_menu_open = Arc::new(Mutex::new(false));
@@ -190,6 +227,14 @@ pub fn run() {
             topbar_search_open: topbar_search_open_state,
         })
         .setup(move |app| {
+            {
+                // A feature paused after repeated failures tells the Dock window, which shows
+                // one toast with "Turn back on".
+                let notice_handle = app.handle().clone();
+                failsafe::breaker::set_listener(move |_tripped| {
+                    let _ = notice_handle.emit(commands::failsafe::NOTICE_EVENT, ());
+                });
+            }
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
             commands::coreapps::init_timers(app.handle());
@@ -301,6 +346,7 @@ pub fn run() {
             commands::browser::browser_tab_activate,
             commands::browser::browser_tab_close,
             commands::browser::browser_tab_move,
+            commands::browser::browser_tab_duplicate,
             commands::browser::browser_tab_pin,
             commands::browser::browser_tab_mute,
             commands::browser::browser_tab_sleep,
@@ -316,7 +362,9 @@ pub fn run() {
             commands::browser::browser_bookmark_toggle,
             commands::browser::browser_history_search,
             commands::browser::browser_history_clear,
+            commands::browser::browser_history_remove,
             commands::browser::browser_downloads,
+            commands::browser::browser_downloads_clear,
             commands::browser::browser_settings_set,
             commands::browser::browser_page,
             commands::browser::browser_events,
@@ -331,6 +379,9 @@ pub fn run() {
             commands::browser::browser_import_detect,
             commands::browser::browser_import_preview,
             commands::browser::browser_import_run,
+            commands::browser::browser_import_items,
+            commands::browser::browser_import_receipts,
+            commands::browser::browser_import_undo,
             commands::browser::browser_reopen_closed,
             commands::browser::browser_tidy,
             commands::browser::browser_archived,
@@ -426,6 +477,7 @@ pub fn run() {
             commands::theme::save_config_cmd,
             commands::dock::set_dock_pill_width,
             commands::dock::set_dock_pill_rect_cmd,
+            commands::dock::set_dock_flyout_rect_cmd,
             commands::dock::dock_preview_show_cmd,
             commands::dock::dock_preview_hide_cmd,
             commands::dock::set_dock_search_expanded_cmd,
@@ -444,6 +496,11 @@ pub fn run() {
             commands::system::set_mute_cmd,
             commands::system::set_brightness_cmd,
             commands::system::set_night_light_cmd,
+            commands::system::list_brightness_cmd,
+            commands::system::set_monitor_brightness_cmd,
+            commands::system::get_volume_cmd,
+            commands::system::get_night_light_schedule_cmd,
+            commands::system::set_night_light_schedule_cmd,
             commands::system::open_windows_setting_cmd,
             commands::system::list_audio_sessions_cmd,
             commands::system::set_app_volume_cmd,
@@ -579,9 +636,21 @@ pub fn run() {
             commands::wallpaper::open_wallpapers_folder_cmd,
             commands::wallpaper::set_wallpaper_accent_cmd,
             commands::wallpaper::snapshot_windows_wallpaper_cmd,
+            commands::wallpapers::wallpapers_library_cmd,
+            commands::wallpapers::wallpapers_save_settings_cmd,
+            commands::wallpapers::wallpapers_set_meta_cmd,
+            commands::wallpapers::wallpapers_read_cmd,
+            commands::wallpapers::wallpapers_save_thumb_cmd,
+            commands::wallpapers::wallpapers_set_cmd,
+            commands::wallpapers::wallpapers_step_cmd,
+            commands::wallpapers::wallpapers_tick_cmd,
+            commands::wallpapers::wallpapers_recycle_cmd,
+            commands::wallpapers::wallpapers_reveal_cmd,
             commands::backup::export_backup_cmd,
             commands::backup::import_backup_cmd,
             commands::backup::remove_all_lens_changes_cmd,
+            commands::backup::changes_manifest_cmd,
+            commands::keys::input_status_cmd,
             commands::plugins::list_plugins_cmd,
             commands::plugins::read_plugin_entry_cmd,
             commands::plugins::install_plugin_files_cmd,
@@ -598,6 +667,9 @@ pub fn run() {
             commands::plugins::open_plugins_folder_cmd,
             commands::theme::save_lenstheme_dialog_cmd,
             commands::surfaces::surface_ready_cmd,
+            commands::surfaces::surface_alive_cmd,
+            commands::surfaces::place_surface_cmd,
+            app::autostart_guard::startup_block_reason_cmd,
             commands::misc::run_self_test_cmd,
             commands::mcp::get_mcp_status_cmd,
             commands::mcp::list_mcp_actions_cmd,
@@ -686,6 +758,9 @@ pub fn run() {
             studio::studio_open_exports_folder,
             commands::playground::dismiss_playground_idle_cmd,
             commands::command_ui::show_command_cmd,
+            commands::command_ui::command_ready_cmd,
+            commands::command_ui::command_open_applied_cmd,
+            commands::command_ui::command_link_status_cmd,
             commands::snip::snip_status,
             commands::snip::snip_set_settings,
             commands::snip::snip_start,
@@ -799,6 +874,14 @@ pub fn run() {
             commands::apps::apps_media,
             commands::apps::apps_installed_icon,
             commands::apps::apps_reveal,
+            commands::surfaces::surface_exit_done_cmd,
+            commands::smooth::smooth_start_cmd,
+            commands::smooth::smooth_active_cmd,
+            commands::smooth::smooth_submit_cmd,
+            commands::smooth::smooth_mark_cmd,
+            commands::smooth::smooth_stop_cmd,
+            commands::smooth::smooth_save_cmd,
+            commands::smooth::smooth_open_folder_cmd,
             commands::tester::tester_results_get,
             commands::tester::tester_results_set,
             commands::tester::tester_log_get,
@@ -821,11 +904,18 @@ pub fn run() {
             commands::agentsafe::agentsafe_quarantine_clear,
             commands::tester::tester_reveal_report,
             commands::tester::tester_open_issue,
+            commands::failsafe::failsafe_status,
+            commands::failsafe::failsafe_take_notices,
+            commands::failsafe::failsafe_reset_feature,
+            commands::failsafe::failsafe_safe_mode_next,
+            commands::failsafe::failsafe_ui_crash,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                // A clean exit is never a failed start.
+                crate::app::safe_start::mark_started();
                 crate::app::integration::shutdown(Some(_app_handle));
                 voice::shutdown();
                 win_dwm_engine::revert_dwm_theme();

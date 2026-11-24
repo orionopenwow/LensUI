@@ -29,8 +29,6 @@
   position: relative;
   overflow: visible;
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    min-width var(--lens-dur-slow) var(--lens-ease-out),
     transform var(--lens-dur-slow) var(--lens-ease-out),
     opacity var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-slow) var(--lens-ease-out),
@@ -70,7 +68,7 @@
 /* Original Magnifying Glass Slot that smoothly glides open IN-PLACE inside the Dock row! */
 .dock-search-slot {
   flex: 0 0 auto;
-  transition: flex-grow var(--lens-dur-slow) var(--lens-ease-out), width var(--lens-dur-slow) var(--lens-ease-out);
+  /* Opens by FLIP (DockSurface.tsx): layout changes at once, the motion is a clip + transform. */
 }
 
 .dock-search-slot.is-open {
@@ -90,8 +88,6 @@
   border: 1px solid transparent;
   overflow: hidden;
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    padding var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-fast) var(--lens-ease-out),
     border-color var(--lens-dur-fast) var(--lens-ease-out),
     box-shadow var(--lens-dur-fast) var(--lens-ease-out);
@@ -135,8 +131,6 @@
 
 .dock-pill.is-expanded-launcher .dock-item {
   transition:
-    width var(--lens-dur-base) var(--lens-ease-out),
-    height var(--lens-dur-base) var(--lens-ease-out),
     transform var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-fast) var(--lens-ease-out);
 }
@@ -149,13 +143,11 @@
 @keyframes dock-drawer-grow {
   from {
     opacity: 0;
-    max-height: 0;
-    transform: translateY(14px);
+    transform: translateY(14px) scale(var(--lens-enter-scale));
   }
   to {
     opacity: 1;
-    max-height: 690px;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
@@ -184,11 +176,7 @@
   overflow: hidden;
   max-height: 640px;
   transform-origin: bottom center;
-  animation: dock-drawer-grow 250ms cubic-bezier(0.22, 1, 0.36, 1);
-  transition:
-    max-height var(--lens-dur-slow) var(--lens-ease-exit),
-    transform var(--lens-dur-base) var(--lens-ease-exit),
-    opacity var(--lens-dur-base) var(--lens-ease-exit);
+  animation: dock-drawer-grow var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .dock-launcher-card {
@@ -252,9 +240,8 @@
 }
 
 .dock-launcher-drawer.is-closing {
-  opacity: 0;
-  max-height: 0;
-  transform: translateY(14px);
+  /* The exit itself is a glide from DockSurface.tsx (glideOut); this only stops clicks meanwhile. */
+  pointer-events: none;
 }
 
 .dock-search-glide-bar.is-closing {
@@ -491,20 +478,24 @@
   filter: drop-shadow(0 2px 4px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k))));
 }
 
+/* Running indicator (docs/SMOOTHNESS.md, G-15). The mark is always laid out at its focused
+   length and scaled along that axis to its resting length, so focusing an app animates a
+   transform and never the Dock's layout. --dock-ind-k is resting length / focused length. */
 .dock-indicator {
   position: absolute;
   bottom: -6px;
   left: 50%;
-  transform: translateX(-50%);
+  --dock-ind-k: 0.3125; /* 5px of 16px */
+  transform: translateX(-50%) scaleX(var(--dock-ind-k));
   height: 3px;
-  width: 5px;
+  width: 16px;
   border-radius: 999px;
   background: rgb(var(--lens-ink) / 0.4);
-  transition: width var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
+  transition: transform var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-indicator.focused {
-  width: 16px;
+  --dock-ind-k: 1;
   background: var(--lens-accent, var(--lens-fg));
 }
 
@@ -676,7 +667,7 @@
   box-shadow: 0 16px 38px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k)));
   pointer-events: auto;
   transform: translate(-50%, -100%);
-  animation: dock-hover-card-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-hover-card-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-spotify-card {
@@ -1207,7 +1198,7 @@
 .dock-hover-card.dock-hover-edge-top,
 .dock-ctx-menu.dock-ctx-edge-top {
   transform: translate(-50%, 0);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 /* ---------- Left / right edges ---------- */
@@ -1288,10 +1279,9 @@
 .dock-edge-right .dock-indicator {
   bottom: auto;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scaleY(var(--dock-ind-k));
   width: 3px;
-  height: 5px;
-  transition: height var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
+  height: 16px;
 }
 
 .dock-edge-left .dock-indicator {
@@ -1303,22 +1293,16 @@
   right: -6px;
 }
 
-.dock-edge-left .dock-indicator.focused,
-.dock-edge-right .dock-indicator.focused {
-  width: 3px;
-  height: 16px;
-}
-
 .dock-hover-card.dock-hover-edge-left,
 .dock-ctx-menu.dock-ctx-edge-left {
   transform: translate(0, -50%);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dock-hover-card.dock-hover-edge-right,
 .dock-ctx-menu.dock-ctx-edge-right {
   transform: translate(-100%, -50%);
-  animation: dock-side-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: dock-side-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 @keyframes dock-side-pop-in {
@@ -1443,8 +1427,6 @@
 
 .dock-style-minimal .dock-pill {
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
-    min-width var(--lens-dur-slow) var(--lens-ease-out),
     transform var(--lens-dur-slow) var(--lens-ease-out),
     opacity var(--lens-dur-base) var(--lens-ease-out),
     background var(--lens-dur-slow) var(--lens-ease-out),
@@ -1649,13 +1631,12 @@
 /* Windows-style underline indicators: a short dash when running, a long accent line when focused. */
 .dock-stage.is-bar .dock-indicator {
   bottom: -4px;
-  width: 6px;
-  height: 3px;
+  --dock-ind-k: 0.375; /* 6px of 16px */
   background: rgb(var(--lens-ink) / 0.5);
 }
 
 .dock-stage.is-bar .dock-indicator.focused {
-  width: 16px;
+  --dock-ind-k: 1;
   background: var(--lens-accent, var(--lens-fg));
 }
 
@@ -1665,6 +1646,42 @@
 
 .dock-stage.is-bar .dock-tooltip {
   bottom: calc(100% + 12px);
+}
+
+/* Taskbar on a horizontal edge: the Windows 11 taskbar's proportions at 100% scale. A 48 px bar,
+   40 px buttons with 4 px corners and 4 px between them, 24 px icons, and the running / active
+   marks inside the button's bottom edge (6 px running, 16 px accent when active). */
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill {
+  height: 48px;
+  padding: 0 12px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) > :is(img, svg) {
+  width: 24px;
+  height: 24px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-icons-row {
+  gap: 4px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar.dock-edge-bottom .dock-indicator {
+  bottom: 1px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar.dock-edge-top .dock-indicator {
+  top: 1px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-sys-btn {
+  height: 40px;
+  border-radius: 4px;
 }
 
 /* Top edge bar. */
@@ -1736,21 +1753,11 @@
 .dock-stage.is-bar.dock-edge-left .dock-indicator {
   left: -4px;
   bottom: auto;
-  width: 3px;
-  height: 6px;
 }
 
 .dock-stage.is-bar.dock-edge-right .dock-indicator {
   right: -4px;
   bottom: auto;
-  width: 3px;
-  height: 6px;
-}
-
-.dock-stage.is-bar.dock-edge-left .dock-indicator.focused,
-.dock-stage.is-bar.dock-edge-right .dock-indicator.focused {
-  width: 3px;
-  height: 16px;
 }
 
 .dock-stage.is-bar.dock-edge-left .dock-launcher-drawer,

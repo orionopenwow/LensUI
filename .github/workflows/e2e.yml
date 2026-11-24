@@ -2,7 +2,8 @@
 #  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
 #                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
 #  * windows-e2e  — every PR: builds the real app and drives its WebView2 windows on Windows over
-#                   CDP, then checks Windows was put back the way it was (tools/e2e/probe.ps1).
+#                   CDP, then checks Windows was put back the way it was (tools/e2e/probe.ps1), then
+#                   proves "Remove all Lens changes" leaves nothing behind (tests/e2e/remove-all.mjs).
 #  * nightly      — the long versions: full soak, longer Playground runs, a 10× start/quit loop and
 #                   property tests with many more cases.
 # Rust property tests (src-tauri/src/tests/robustness) also run in build.yml's `cargo test --lib`.
@@ -10,10 +11,28 @@ name: robustness
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
   # Every branch too (like build.yml), so a branch's own commit is tested and not only its merge
   # with a base that may be mid-change.
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
   schedule:
     - cron: "17 9 * * *" # nightly, 02:17 Phoenix
   workflow_dispatch:
@@ -32,6 +51,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # The crash-loop guard asks its question in a message box; an unattended run answers "start
+  # normally" (docs/FAILSAFE.md §6). tests/e2e/failsafe.mjs sets its own answer per start.
+  LENS_SAFE_MODE_CHOICE: normal
   # Goldens and budgets are recorded with this exact Chromium; bump them together.
   PLAYWRIGHT_VERSION: "1.63.0"
 
@@ -176,6 +198,22 @@ jobs:
         if: always() && hashFiles('tests/e2e/out/before.json') != ''
         shell: pwsh
         run: pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
+
+      # Remove-all proof: snapshots every HKCU key and file in the change registry
+      # (src-tauri/src/changes.rs), turns features on through the real app, runs "Remove all Lens
+      # changes" and diffs against the snapshot. Any leftover fails the job.
+      - name: Remove all Lens changes leaves nothing behind
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/remove-all.mjs
+
+      # Failsafe chaos (docs/FAILSAFE.md §8): damaged and unreadable config, a kill switch, a crash
+      # loop into Safe Mode, a window made to crash, every WebView renderer killed, a registry key
+      # that refuses writes. Lens must keep the desktop usable through each one.
+      - name: Failsafe chaos (the desktop stays usable)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/failsafe.mjs
 
       - name: Collect Lens logs
         if: always()

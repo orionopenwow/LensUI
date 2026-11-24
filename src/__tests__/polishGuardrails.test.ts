@@ -185,6 +185,7 @@ describe("ratchets and bans", () => {
   test("src/ui primitives use tokens only", () => {
     const dir = join(SRC, "ui");
     for (const f of readdirSync(dir)) {
+      if (!/\.(tsx?|css)$/.test(f)) continue; // sub-folders (motion/) have their own tests
       const s = readFileSync(join(dir, f), "utf8");
       expect({ f, hex: s.match(/#[0-9a-fA-F]{3,8}\b/g) }).toEqual({ f, hex: null });
       if (f.endsWith(".css")) {

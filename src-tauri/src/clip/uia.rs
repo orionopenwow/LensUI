@@ -5,22 +5,19 @@
 //! Never uses the clipboard trick (no simulated Ctrl+C). Every read goes through
 //! `selection_rules::may_read` first, and runs on a worker thread with a 150 ms timeout.
 
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
-use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Threading::GetCurrentThreadId;
 use windows::Win32::UI::Input::KeyboardAndMouse::GetDoubleClickTime;
 use windows::Win32::UI::Accessibility::{CUIAutomation, IUIAutomation, IUIAutomationTextPattern, UIA_TextPatternId};
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, DispatchMessageW, GetDesktopWindow, GetForegroundWindow, GetMessageW,
-    GetShellWindow, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, PostThreadMessageW, SetWindowsHookExW,
-    TranslateMessage, UnhookWindowsHookEx, HHOOK, MSG, MSLLHOOKSTRUCT, WH_MOUSE_LL, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_QUIT,
+    GetDesktopWindow, GetForegroundWindow, GetShellWindow, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId,
+    WM_LBUTTONDOWN, WM_LBUTTONUP,
 };
 
 use super::appctx::categorize;
@@ -183,7 +180,6 @@ pub struct BubbleEvent {
 
 type BubbleFn = Box<dyn Fn(BubbleEvent) + Send + Sync>;
 
-static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
 static RUNNING: AtomicBool = AtomicBool::new(false);
 static ON_BUBBLE: OnceLock<BubbleFn> = OnceLock::new();
 static GESTURE: OnceLock<Mutex<Gesture>> = OnceLock::new();
@@ -211,37 +207,36 @@ pub fn take_pending() -> Option<(String, ForegroundInfo)> {
     }
 }
 
-unsafe extern "system" fn mouse_proc(code: i32, w: WPARAM, l: LPARAM) -> LRESULT {
-    if code >= 0 {
-        let info = &*(l.0 as *const MSLLHOOKSTRUCT);
-        let pt = (info.pt.x, info.pt.y);
-        if let Ok(mut g) = GESTURE.get_or_init(Default::default).lock() {
-            match w.0 as u32 {
-                WM_LBUTTONDOWN => {
-                    g.down = pt;
-                    g.down_at = Some(Instant::now());
+/// The mouse handler the input service dispatches to (`input.rs`, `MOUSE_TABLE`). It only
+/// notices "a drag or double-click just ended" and hands the rest to the worker; it never
+/// swallows and never blocks.
+pub fn input_mouse(e: &crate::input::MouseEvent) -> bool {
+    if e.msg != WM_LBUTTONDOWN && e.msg != WM_LBUTTONUP {
+        return false;
+    }
+    let pt = (e.x, e.y);
+    if let Ok(mut g) = GESTURE.get_or_init(Default::default).try_lock() {
+        if e.msg == WM_LBUTTONDOWN {
+            g.down = pt;
+            g.down_at = Some(Instant::now());
+        } else {
+            let held = g.down_at.map(|t| t.elapsed().as_millis() as u32).unwrap_or(0);
+            let dbl = unsafe { GetDoubleClickTime() };
+            let multi = g.last_up.is_some_and(|(t, p)| {
+                t.elapsed().as_millis() as u32 <= dbl && (p.0 - pt.0).abs() <= 4 && (p.1 - pt.1).abs() <= 4
+            });
+            g.last_up = Some((Instant::now(), pt));
+            if looks_like_selection(g.down, pt, held, multi) {
+                if let Some(tx) = WORK.get_or_init(Default::default).try_lock().ok().and_then(|w| w.clone()) {
+                    let _ = tx.send(pt);
                 }
-                WM_LBUTTONUP => {
-                    let held = g.down_at.map(|t| t.elapsed().as_millis() as u32).unwrap_or(0);
-                    let dbl = GetDoubleClickTime();
-                    let multi = g.last_up.is_some_and(|(t, p)| {
-                        t.elapsed().as_millis() as u32 <= dbl && (p.0 - pt.0).abs() <= 4 && (p.1 - pt.1).abs() <= 4
-                    });
-                    g.last_up = Some((Instant::now(), pt));
-                    if looks_like_selection(g.down, pt, held, multi) {
-                        if let Some(tx) = WORK.get_or_init(Default::default).lock().ok().and_then(|w| w.clone()) {
-                            let _ = tx.send(pt);
-                        }
-                    }
-                }
-                _ => {}
             }
         }
     }
-    CallNextHookEx(HHOOK::default(), code, w, l)
+    false
 }
 
-/// Starts the bubble hook (idempotent). `policy` and `excluded` are read on each selection.
+/// Starts the bubble (idempotent): a worker plus a mouse claim on the input service. `policy` and `excluded` are read on each selection.
 pub fn start_bubble(get_policy: impl Fn() -> (SelectionPolicy, Vec<String>) + Send + 'static) {
     if RUNNING.swap(true, Ordering::SeqCst) {
         return;
@@ -273,24 +268,7 @@ pub fn start_bubble(get_policy: impl Fn() -> (SelectionPolicy, Vec<String>) + Se
             }
         }
     });
-    std::thread::spawn(|| unsafe {
-        HOOK_THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
-        let hmod = GetModuleHandleW(None).unwrap_or_default();
-        let hook = match SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), HINSTANCE(hmod.0), 0) {
-            Ok(h) => h,
-            Err(_) => {
-                RUNNING.store(false, Ordering::SeqCst);
-                return;
-            }
-        };
-        let mut msg = MSG::default();
-        while GetMessageW(&mut msg, HWND::default(), 0, 0).as_bool() {
-            let _ = TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-        let _ = UnhookWindowsHookEx(hook);
-        HOOK_THREAD.store(0, Ordering::SeqCst);
-    });
+    crate::input::claim_mouse(crate::input::Feature::ClipBubble);
 }
 
 pub fn stop_bubble() {
@@ -300,11 +278,6 @@ pub fn stop_bubble() {
     if let Ok(mut w) = WORK.get_or_init(Default::default).lock() {
         *w = None; // ends the worker loop
     }
-    let tid = HOOK_THREAD.load(Ordering::SeqCst);
-    if tid != 0 {
-        unsafe {
-            let _ = PostThreadMessageW(tid, WM_QUIT, WPARAM(0), LPARAM(0));
-        }
-    }
+    crate::input::release_mouse(crate::input::Feature::ClipBubble);
 }
 

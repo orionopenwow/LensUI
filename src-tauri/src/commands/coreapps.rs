@@ -260,8 +260,20 @@ fn perf_rates() -> monitor::PerfRates {
     st.rates.clone()
 }
 
+/// The sampler shells out to PowerShell, which can hang (a broken WMI repository does it): it
+/// gets 15 s, then this sample is empty and the next one starts fresh (docs/FAILSAFE.md §4).
 #[cfg(windows)]
 fn read_perf() -> monitor::PerfRates {
+    crate::failsafe::call::os_read(
+        "The performance sampler",
+        std::time::Duration::from_secs(15),
+        monitor::PerfRates::default(),
+        read_perf_now,
+    )
+}
+
+#[cfg(windows)]
+fn read_perf_now() -> monitor::PerfRates {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     match std::process::Command::new("powershell.exe")

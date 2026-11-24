@@ -1,7 +1,7 @@
 //! Lens cursor suite, part 3: pointer effects drawn on the click-through "cursorfx" overlay.
 //!
-//! A `WH_MOUSE_LL` hook (and, only while the keystroke visualiser or spotlight is on, a
-//! `WH_KEYBOARD_LL` hook) runs on its own thread with its own message loop. The hook procedures
+//! Mouse events (and, only while the keystroke visualiser or spotlight is on, key events) come
+//! from the input service (`input.rs`), which owns Lens's only low-level hooks. The handlers
 //! never block, never allocate on the move path and never swallow input: a move only stores the
 //! latest position in an atomic; clicks, wheel and keys are sent down an unbounded channel. A
 //! worker thread coalesces them into at most one frame per display refresh and hands the frame to
@@ -601,10 +601,21 @@ pub fn current_pause() -> Option<String> {
     platform::current_pause()
 }
 
+/// The mouse handler the input service dispatches to (`input.rs`, `MOUSE_TABLE`).
+#[cfg(windows)]
+pub(crate) fn input_mouse(ev: &crate::input::MouseEvent) -> bool {
+    platform::on_mouse(ev)
+}
+
+/// The keyboard handler the input service dispatches to (`input.rs`, `KEY_TABLE`).
+#[cfg(windows)]
+pub(crate) fn input_key(ev: &crate::input::KeyEvent) -> bool {
+    platform::on_key(ev)
+}
+
 #[cfg(any(windows, lens_win_check))]
 mod platform {
     use super::*;
-    use std::cell::RefCell;
     use std::ffi::c_void;
     use std::sync::atomic::{AtomicBool, AtomicI64, AtomicIsize, AtomicU32, Ordering};
     use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
@@ -623,32 +634,6 @@ mod platform {
     // (clippy: clashing_extern_declarations).
     use crate::ffi::Rect as WinRect;
     #[repr(C)]
-    struct MsllHook {
-        pt: Point,
-        mouse_data: u32,
-        flags: u32,
-        time: u32,
-        extra: usize,
-    }
-    #[repr(C)]
-    struct KbdllHook {
-        vk: u32,
-        scan: u32,
-        flags: u32,
-        time: u32,
-        extra: usize,
-    }
-    #[repr(C)]
-    struct Msg {
-        hwnd: Hwnd,
-        message: u32,
-        wparam: usize,
-        lparam: isize,
-        time: u32,
-        pt: Point,
-        private: u32,
-    }
-    #[repr(C)]
     struct MonitorInfo {
         size: u32,
         monitor: WinRect,
@@ -666,13 +651,8 @@ mod platform {
         full_life_time: u32,
     }
 
-    type HookProc = unsafe extern "system" fn(i32, usize, isize) -> isize;
     type MonitorEnumProc = unsafe extern "system" fn(isize, isize, *mut WinRect, isize) -> i32;
 
-    const WH_KEYBOARD_LL: i32 = 13;
-    const WH_MOUSE_LL: i32 = 14;
-    const WM_QUIT: u32 = 0x0012;
-    const LLKHF_INJECTED: u32 = 0x10;
     const GWL_EXSTYLE: i32 = -20;
     const WS_EX_TRANSPARENT: isize = 0x20;
     const WS_EX_TOOLWINDOW: isize = 0x80;
@@ -692,11 +672,6 @@ mod platform {
 
     #[link(name = "user32")]
     extern "system" {
-        fn SetWindowsHookExW(id: i32, proc_: HookProc, hmod: isize, tid: u32) -> isize;
-        fn UnhookWindowsHookEx(h: isize) -> i32;
-        fn CallNextHookEx(h: isize, code: i32, w: usize, l: isize) -> isize;
-        fn GetMessageW(msg: *mut Msg, hwnd: Hwnd, min: u32, max: u32) -> i32;
-        fn PostThreadMessageW(tid: u32, msg: u32, w: usize, l: isize) -> i32;
         fn GetAsyncKeyState(vk: i32) -> i16;
         fn GetForegroundWindow() -> Hwnd;
         fn GetWindowThreadProcessId(hwnd: Hwnd, pid: *mut u32) -> u32;
@@ -735,7 +710,6 @@ mod platform {
     }
     #[link(name = "kernel32")]
     extern "system" {
-        fn GetCurrentThreadId() -> u32;
         fn GetSystemPowerStatus(s: *mut PowerStatus) -> i32;
         fn OpenProcess(access: u32, inherit: i32, pid: u32) -> isize;
         fn QueryFullProcessImageNameW(h: isize, flags: u32, buf: *mut u16, len: *mut u32) -> i32;
@@ -746,7 +720,10 @@ mod platform {
     // ---- state shared with the hook procs (lock-free on the hot path) ----
     static POS: AtomicI64 = AtomicI64::new(i64::MIN);
     static MOVES: AtomicU32 = AtomicU32::new(0);
-    static HOOK_TID: AtomicU32 = AtomicU32::new(0);
+    /// The effects engine holds its claims on the input service (`input.rs`).
+    static HOOKS_ON: AtomicBool = AtomicBool::new(false);
+    /// Where the input handlers send clicks, wheel turns and keys (the engine thread reads it).
+    static HOOK_TX: Mutex<Option<Sender<RawInput>>> = Mutex::new(None);
     static OVERLAY: AtomicIsize = AtomicIsize::new(0);
     static STARTED: AtomicBool = AtomicBool::new(false);
     static STOPPING: AtomicBool = AtomicBool::new(false);
@@ -757,11 +734,6 @@ mod platform {
     }
     static SHARED: OnceLock<Shared> = OnceLock::new();
 
-    thread_local! {
-        static HOOK_TX: RefCell<Option<Sender<RawInput>>> = const { RefCell::new(None) };
-        static MODS: RefCell<u8> = const { RefCell::new(0) };
-    }
-
     fn pack(x: i32, y: i32) -> i64 {
         ((x as i64) << 32) | (y as u32 as i64)
     }
@@ -769,61 +741,44 @@ mod platform {
         ((v >> 32) as i32, v as i32)
     }
 
-    unsafe extern "system" fn mouse_proc(code: i32, w: usize, l: isize) -> isize {
-        if code >= 0 && l != 0 {
-            let m = &*(l as *const MsllHook);
-            match classify_mouse(w as u32) {
-                MouseKind::Move => {
-                    // Hot path: two atomic stores, nothing else.
-                    POS.store(pack(m.pt.x, m.pt.y), Ordering::Relaxed);
-                    MOVES.fetch_add(1, Ordering::Relaxed);
-                }
-                MouseKind::Down(b) => {
-                    POS.store(pack(m.pt.x, m.pt.y), Ordering::Relaxed);
-                    HOOK_TX.with(|t| {
-                        if let Some(tx) = t.borrow().as_ref() {
-                            let _ = tx.send(RawInput::Down(b, m.pt.x, m.pt.y));
-                        }
-                    });
-                }
-                MouseKind::Wheel => {
-                    let delta = (m.mouse_data >> 16) as u16 as i16 as i32;
-                    HOOK_TX.with(|t| {
-                        if let Some(tx) = t.borrow().as_ref() {
-                            let _ = tx.send(RawInput::Wheel(delta));
-                        }
-                    });
-                }
-                MouseKind::Ignore => {}
+    /// Hands one event to the engine thread without ever waiting (busy = dropped).
+    fn send_raw(ev: RawInput) {
+        if let Ok(guard) = HOOK_TX.try_lock() {
+            if let Some(tx) = guard.as_ref() {
+                let _ = tx.send(ev);
             }
         }
-        // Never swallow: always pass the event on.
-        CallNextHookEx(0, code, w, l)
     }
 
-    unsafe extern "system" fn key_proc(code: i32, w: usize, l: isize) -> isize {
-        if code >= 0 && l != 0 {
-            let k = &*(l as *const KbdllHook);
-            let down = w as u32 == WM_KEYDOWN || w as u32 == WM_SYSKEYDOWN;
-            if let Some(bit) = modifier_bit(k.vk) {
-                MODS.with(|m| {
-                    let mut m = m.borrow_mut();
-                    if down {
-                        *m |= bit;
-                    } else {
-                        *m &= !bit;
-                    }
-                });
-            } else if down && k.flags & LLKHF_INJECTED == 0 {
-                let mods = MODS.with(|m| *m.borrow());
-                HOOK_TX.with(|t| {
-                    if let Some(tx) = t.borrow().as_ref() {
-                        let _ = tx.send(RawInput::Key(k.vk, mods));
-                    }
-                });
+    /// Mouse handler for the input service. Never swallows.
+    pub fn on_mouse(m: &crate::input::MouseEvent) -> bool {
+        match classify_mouse(m.msg) {
+            MouseKind::Move => {
+                // Hot path: two atomic stores, nothing else.
+                POS.store(pack(m.x, m.y), Ordering::Relaxed);
+                MOVES.fetch_add(1, Ordering::Relaxed);
             }
+            MouseKind::Down(b) => {
+                POS.store(pack(m.x, m.y), Ordering::Relaxed);
+                send_raw(RawInput::Down(b, m.x, m.y));
+            }
+            MouseKind::Wheel => {
+                let delta = (m.mouse_data >> 16) as u16 as i16 as i32;
+                send_raw(RawInput::Wheel(delta));
+            }
+            MouseKind::Ignore => {}
         }
-        CallNextHookEx(0, code, w, l)
+        false
+    }
+
+    /// Keyboard handler for the input service (claimed only while the keystroke visualiser or
+    /// spotlight is on). Never swallows.
+    pub fn on_key(k: &crate::input::KeyEvent) -> bool {
+        let down = k.msg == WM_KEYDOWN || k.msg == WM_SYSKEYDOWN;
+        if down && !k.injected() && modifier_bit(k.vk).is_none() {
+            send_raw(RawInput::Key(k.vk, current_mods()));
+        }
+        false
     }
 
     fn current_mods() -> u8 {
@@ -845,56 +800,39 @@ mod platform {
         m
     }
 
-    /// Runs the hooks on a fresh thread with its own message loop until `stop_hooks`.
+    /// Claims the mouse (and, if asked, the keyboard) from the input service.
     fn start_hooks(tx: Sender<RawInput>, keyboard: bool) {
-        if HOOK_TID.load(Ordering::SeqCst) != 0 {
+        if HOOKS_ON.swap(true, Ordering::SeqCst) {
             return;
         }
-        std::thread::Builder::new()
-            .name("lens-cursorfx-hook".into())
-            .spawn(move || unsafe {
-                HOOK_TX.with(|t| *t.borrow_mut() = Some(tx));
-                MODS.with(|m| *m.borrow_mut() = current_mods());
-                HOOK_TID.store(GetCurrentThreadId(), Ordering::SeqCst);
-                let mh = SetWindowsHookExW(WH_MOUSE_LL, mouse_proc, 0, 0);
-                let kh = if keyboard {
-                    SetWindowsHookExW(WH_KEYBOARD_LL, key_proc, 0, 0)
-                } else {
-                    0
-                };
-                if mh == 0 {
-                    eprintln!("[Lens cursor fx] WH_MOUSE_LL hook failed");
-                }
-                let mut msg: Msg = std::mem::zeroed();
-                while GetMessageW(&mut msg, 0, 0, 0) > 0 {}
-                if mh != 0 {
-                    UnhookWindowsHookEx(mh);
-                }
-                if kh != 0 {
-                    UnhookWindowsHookEx(kh);
-                }
-                HOOK_TX.with(|t| *t.borrow_mut() = None);
-                HOOK_TID.store(0, Ordering::SeqCst);
-            })
-            .ok();
+        if let Ok(mut guard) = HOOK_TX.lock() {
+            *guard = Some(tx);
+        }
+        crate::input::claim_mouse(crate::input::Feature::CursorFx);
+        if keyboard {
+            crate::input::claim_keyboard(crate::input::Feature::CursorFx);
+        }
     }
 
+    /// Gives the claims back. Never blocks (also runs from the panic hook).
     fn stop_hooks() {
-        let tid = HOOK_TID.load(Ordering::SeqCst);
-        if tid != 0 {
-            unsafe {
-                PostThreadMessageW(tid, WM_QUIT, 0, 0);
-            }
-            // Wait briefly so a restart sees a clean slate.
-            let until = Instant::now() + Duration::from_millis(500);
-            while HOOK_TID.load(Ordering::SeqCst) != 0 && Instant::now() < until {
-                std::thread::sleep(Duration::from_millis(5));
-            }
+        if !HOOKS_ON.swap(false, Ordering::SeqCst) {
+            return;
+        }
+        crate::input::release_keyboard(crate::input::Feature::CursorFx);
+        crate::input::release_mouse(crate::input::Feature::CursorFx);
+        if let Ok(mut guard) = HOOK_TX.try_lock() {
+            *guard = None;
         }
     }
 
     fn monitors() -> Vec<Rect> {
         unsafe extern "system" fn cb(_m: isize, _dc: isize, r: *mut WinRect, data: isize) -> i32 {
+            // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+            crate::failsafe::guard::ffi_guard("cursor_fx.cb", 1, || cb_guarded(_m, _dc, r, data))
+        }
+
+        unsafe fn cb_guarded(_m: isize, _dc: isize, r: *mut WinRect, data: isize) -> i32 {
             let v = &mut *(data as *mut Vec<Rect>);
             let r = &*r;
             v.push(Rect {

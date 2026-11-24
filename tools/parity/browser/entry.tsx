@@ -217,8 +217,65 @@ const aiStatusMock = {
   privacy: "ask_each_time",
 } as any;
 
+const hist = (url: string, title: string, agoMin: number, visits: number) => ({ url, title, lastVisitMs: NOW - agoMin * 60_000, visits });
+const historySeed = [
+  hist("https://tables.example/harbor-vine/reserve", "Harbor & Vine · Tables", 1, 4),
+  hist("https://news.ycombinator.com/", "Hacker News", 14, 41),
+  hist("https://github.com/orionopenwow/LensUI/pulls", "Pull requests · LensUI", 32, 28),
+  hist("https://dashboard.stripe.example/payments", "Payments – Stripe", 95, 17),
+  hist("https://open.spotify.example/", "Spotify", 180, 22),
+  hist("https://mail.example/inbox", "Inbox (3) – Mail", 26 * 60, 63),
+  hist("https://calendar.example/week", "This week – Calendar", 27 * 60, 35),
+  hist("https://www.figma.example/file/sidebar-v4", "Sidebar v4 – Figma", 29 * 60, 12),
+  hist("https://harborkitchen.example/menu", "Menu — Harbour Kitchen", 30 * 60, 2),
+  hist("https://docs.rs/tauri/latest/tauri/", "tauri - Rust", 3 * 24 * 60, 9),
+  hist("https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API", "Navigation API - MDN", 3 * 24 * 60 + 40, 6),
+];
+const closedSeed = [
+  { tab: t("c1", "https://www.wikipedia.org/wiki/Dithering", "Dither - Wikipedia"), closedMs: NOW - 9 * 60_000 },
+  { tab: t("c2", "https://weather.example/lisbon", "Lisbon · 10-day forecast"), closedMs: NOW - 4 * 60_000 },
+];
+const withState = (patch: Partial<BrowserView["state"]>, top: Partial<BrowserView> = {}): BrowserView => ({ ...view, ...top, state: { ...view.state, ...patch } });
+const downloadsSeed = [
+  { id: 4, url: "https://releases.example/lens-setup-1.9.0.exe", path: "C:\\Users\\sen\\Downloads\\lens-setup-1.9.0.exe", state: "downloading" as const, startedMs: NOW - 42_000 },
+  { id: 3, url: "https://tables.example/receipt/8841.pdf", path: "C:\\Users\\sen\\Downloads\\Harbor-Vine-receipt.pdf", state: "done" as const, startedMs: NOW - 11 * 60_000 },
+  { id: 2, url: "https://www.figma.example/export/sidebar-v4.zip", path: "C:\\Users\\sen\\Downloads\\sidebar-v4.zip", state: "failed" as const, startedMs: NOW - 3 * 3600_000 },
+  { id: 1, url: "https://docs.example/Lease%202026.docx", path: "D:\\Documents\\Lease 2026.docx", state: "done" as const, startedMs: NOW - 26 * 3600_000 },
+];
+const importItemsSeed = {
+  truncated: false,
+  defaults: { searchName: "Google", searchUrl: "https://www.google.com/search?q={q}", homepage: "https://start.example/" },
+  bookmarks: [
+    { url: "https://mail.example/", title: "Mail", folder: "Bookmarks bar", pinned: false },
+    { url: "https://calendar.example/", title: "Calendar", folder: "Bookmarks bar", pinned: false },
+    { url: "https://recipes.example/fish-pie", title: "Fish pie, the long way", folder: "Bookmarks bar / Recipes", pinned: false },
+    { url: "https://recipes.example/dal", title: "Weeknight dal", folder: "Bookmarks bar / Recipes", pinned: false },
+    { url: "https://oldjob.example/wiki", title: "Team wiki (old job)", folder: "Other bookmarks / Work", pinned: false },
+    { url: "https://oldjob.example/payroll", title: "Payroll", folder: "Other bookmarks / Work", pinned: false },
+    { url: "https://github.com/", title: "GitHub", folder: "Bookmarks bar / Dev", pinned: false },
+  ],
+  tabs: [
+    { url: "https://mail.example/inbox", title: "Inbox", folder: "", pinned: true },
+    { url: "https://news.ycombinator.com/", title: "Hacker News", folder: "", pinned: false },
+  ],
+};
+const receiptsSeed = [{ id: "imp-1", label: "Microsoft Edge", atMs: NOW - 2 * 86_400_000, bookmarks: 86, tabs: 12, spaces: 1, history: 4210, searchChanged: true }];
+const back = { canBack: true };
+
 const scenes: Record<string, BrowserInitial> = {
-  frame: { view, panel: null, chats, mockPage: <MockPage />, now: NOW },
+  // ---- AAA pass ----
+  newtab: { view: withState({ closed: closedSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, start: true, history: historySeed, nav: back },
+  "newtab-empty": { view: withState({ tabs: [], activeTab: null, bookmarks: [] }, { live: [], bookmarked: false }), panel: null, chats: [], now: NOW, history: [] },
+  suggest: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, address: "har", selected: 1, nav: back, suggestions: [historySeed[0], historySeed[8], hist("https://maps.example/harbor-road", "Harbor Road – Maps", 4000, 1)] },
+  loading: { view: withState({ tabs: view.state.tabs.map((x) => (x.id === "t3" ? { ...x, zoom: 1.25 } : x)) }, { downloads: downloadsSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { canBack: true, canForward: true, loading: true }, find: "harbor", findTotal: 6 },
+  "error-dns": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { canBack: true, error: "ERR_NAME_NOT_RESOLVED" } },
+  "error-cert": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { canBack: true, error: "ERR_CERT_DATE_INVALID" } },
+  "error-offline": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { error: "ERR_INTERNET_DISCONNECTED" } },
+  history: { view, panel: "history", chats, mockPage: <MockPage />, now: NOW, history: historySeed, nav: back },
+  downloads: { view: { ...view, downloads: downloadsSeed }, panel: "downloads", chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "downloads-empty": { view, panel: "downloads", chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "import-pick": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, nav: back, importSeed: { sources: importSources, pick: { browser: "chrome", profile: "Default" }, counts: { bookmarks: 7, history: 18_204, openTabs: 2, pinnedTabs: 1, spaces: 0, notes: [] }, items: importItemsSeed, receipts: receiptsSeed, open: "bookmarks", skip: ["https://oldjob.example/wiki", "https://oldjob.example/payroll"], now: NOW } },
+  frame: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
   agent: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems, startedAt: NOW - 196_000, actions: 23, running: false } },
   approval: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems.slice(0, 3), startedAt: NOW - 196_000, actions: 23, running: true, pending } },
   transcript: {

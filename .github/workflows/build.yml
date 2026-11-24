@@ -9,8 +9,26 @@ name: build
 on:
   push:
     branches: ["**"]
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
     tags: ["v*"]
   pull_request:
+    paths-ignore:
+      - "docs/site/**"
+      - "docs/media/**"
+      - "docs/brand/**"
+      - "docs/brain/**"
+      - "tools/site/**"
+      - "tools/media/**"
+      - "README.md"
+      - "*.bat"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -112,6 +130,10 @@ jobs:
       - name: Generated IPC types are up to date
         run: python3 tools/gen-types/gen_types.py --check
 
+      # Every registry, settings and hook writer has an undo in src-tauri/src/changes.rs.
+      - name: Change registry covers every OS writer
+        run: node tools/changes/check.mjs
+
       - uses: oven-sh/setup-bun@v2
 
       - name: Install frontend dependencies
@@ -120,6 +142,11 @@ jobs:
       # bun's built-in runner (bun:test): no extra devDependency, so the lockfile is unchanged.
       - name: Frontend unit tests
         run: bun run test
+
+      # docs/SMOOTHNESS.md: animations that tear (layout properties, timers standing in for an
+      # animation's end, native window resizes from a page). Counts per file may only go down.
+      - name: Motion lint (ratchet)
+        run: node tools/polish/motion-lint.mjs
 
   parity:
     name: Visual parity (headless render)

@@ -125,7 +125,7 @@ wrong format versions, invalid JSON), atomic write, date formatting.
   Explorer Shell Icons override, shell mode, Run key, tray host, taskbar + desktop icons, window styling,
   Lens's Windhawk mod file. Clears the matching config flags so a restart doesn't re-apply them.
   `delete_lens_data()` is separate and refuses any folder not named `LensUI`.
-  Leaves the Windows accent colour and "accent colour on title bars" alone (originals were never recorded).
+  Puts the Windows accent colour and "accent colour on title bars" back from the record taken before Lens first changed them. Apps installed through Lens Apps stay installed.
 * `Uninstall-Lens-UI.bat`: works with Lens not running. Same steps in PowerShell, including the folder-backup
   lookup (same FNV-1a hash as `win_folders.rs`; test vector `C:\x` → `7f89e591ebb8e85c`), turns taskbar
   auto-hide back off, offers to restart Explorer and to delete `%APPDATA%\LensUI`. Only removes a Shell value
@@ -133,8 +133,10 @@ wrong format versions, invalid JSON), atomic write, date formatting.
 
 ## 5. Crash-safety audit
 
-Release builds use `panic = "abort"`: **any** panic kills the whole shell (the panic hook does restore the
-taskbar). Mutex poisoning can therefore only happen in dev builds; the real risks are panics and data loss.
+Release builds used `panic = "abort"` when this audit was written: any panic killed the whole shell (the
+panic hook restored the taskbar first). Since the failsafe pass (docs/FAILSAFE.md) release builds unwind so
+that a panic inside an OS callback is caught at its guard and the event passed on; a panic outside a guard
+still ends the process after the same restore. The risks below were found under the old rule.
 
 | # | Risk | Severity |
 | :--- | :--- | :--- |

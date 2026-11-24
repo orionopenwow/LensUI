@@ -45,7 +45,7 @@ export function packVars(p) {
 const PACK_KEYS = ["--pack-bg", "--pack-card", "--pack-sunk", "--pack-hue", "--pack-link", "--fg-2", "--fg-3"];
 function apply() {
   const sys = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  const mode = prefs.mode || "dark"; // dark by default; Auto follows the system
+  const mode = prefs.mode || "auto"; // follows Windows/macOS light or dark until the visitor picks one
   PACK_KEYS.forEach((k) => root.style.removeProperty(k));
   let scheme = mode === "auto" ? sys : mode;
   if (prefs.accent === "pack" && prefs.pack) {
@@ -76,6 +76,7 @@ function buildNotch() {
   notch = document.createElement("div");
   notch.className = "appear";
   notch.innerHTML = `
+  <button class="mode-switch" type="button" role="switch" aria-checked="false" aria-label="Light mode"><span class="ms-track"><span class="ms-thumb"></span></span><span class="ms-sun">${ICON.light}</span><span class="ms-moon">${ICON.dark}</span><span class="ms-lbl">Dark</span></button>
   <button class="appear-btn" type="button" aria-expanded="false" aria-controls="appear-panel" aria-haspopup="dialog"><span class="mi"></span><span class="adot" aria-hidden="true"></span></button>
   <div class="appear-panel" id="appear-panel" role="dialog" aria-label="Site appearance" hidden>
     <div class="row"><span class="label" id="n-mode">Mode</span><div class="seg" role="group" aria-labelledby="n-mode" data-k="mode">${["dark", "light", "auto"].map((m) => `<button type="button" data-v="${m}">${ICON[m]}${m === "auto" ? "System" : m[0].toUpperCase() + m.slice(1)}</button>`).join("")}</div></div>
@@ -87,6 +88,8 @@ function buildNotch() {
   (document.getElementById("theme-slot") ?? document.body).append(notch);
   pill = notch.querySelector(".appear-btn");
   panel = notch.querySelector(".appear-panel");
+  const sw = notch.querySelector(".mode-switch");
+  sw.addEventListener("click", () => set({ mode: root.dataset.scheme === "light" ? "dark" : "light", ...(prefs.accent === "pack" ? { accent: "rainbow", pack: null } : {}) }));
   pill.addEventListener("click", () => (panel.hidden ? open() : close()));
   panel.addEventListener("click", (e) => {
     const s = e.target.closest("[data-k] button[data-v]");
@@ -141,12 +144,14 @@ function close(restore = true) {
 }
 function renderNotch() {
   if (!notch) return;
-  const mode = prefs.mode || "dark";
+  const mode = prefs.mode || "auto";
   const shown = prefs.accent === "pack" ? root.dataset.scheme : mode;
   const acc = prefs.accent === "pack" ? prefs.pack?.label ?? "pack" : HUES.find(([id]) => id === (prefs.accent || "rainbow"))?.[1] ?? "Rainbow";
   pill.querySelector(".mi").innerHTML = ICON[shown] ?? ICON.auto;
+  const sw = notch.querySelector(".mode-switch"); const isLight = root.dataset.scheme === "light";
+  sw.setAttribute("aria-checked", String(isLight)); sw.querySelector(".ms-lbl").textContent = isLight ? "Light" : "Dark"; sw.title = "";
   pill.setAttribute("aria-label", `Site appearance: ${shown === "auto" ? "system" : shown}, ${acc}`);
-  panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || ({ mode: "dark" }[g.dataset.k] ?? "auto"))))));
+  panel.querySelectorAll("[data-k]").forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (prefs[g.dataset.k] || "auto")))));
   panel.querySelectorAll("button[data-hue]").forEach((b) => b.setAttribute("aria-pressed", String(prefs.accent !== "pack" && b.dataset.hue === (prefs.accent || "rainbow"))));
   panel.querySelector("#n-pack").value = prefs.accent === "pack" ? prefs.pack?.id ?? "" : "";
 }
@@ -192,10 +197,12 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && nav?.classList.co
 
 // ---- highlight a section reached by #hash (the Guide's "Show me") ------------------------------
 export function flash(id) {
-  if (id.startsWith("scene/")) return true; // js/home.js plays the scene
-  if (id === "features" && document.getElementById("stage")) {
-    document.getElementById("stage").scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-    document.getElementById("features").focus({ preventScroll: true });
+  if (id.startsWith("scene/") || id.startsWith("tour/")) return true; // js/home.js opens the tour
+  if (id === "features" && document.getElementById("sc-tabs")) {
+    // The tours under the hero desk are the feature index.
+    const tabs = document.getElementById("sc-tabs"), head = document.getElementById("bar")?.offsetHeight ?? 60;
+    scrollTo({ top: scrollY + tabs.getBoundingClientRect().top - head - 8, behavior: reducedMotion() ? "auto" : "smooth" });
+    tabs.querySelector("[role=tab]")?.focus({ preventScroll: true });
     return true;
   }
   const el = document.getElementById(id);

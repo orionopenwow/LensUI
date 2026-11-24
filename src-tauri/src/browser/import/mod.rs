@@ -10,6 +10,7 @@
 
 pub mod lz4;
 pub mod parse;
+pub mod receipt;
 pub mod sqlite;
 
 use std::path::{Path, PathBuf};
@@ -22,6 +23,9 @@ pub const ALLOWED: &[&str] = &[
     "History",
     "Local State",
     "places.sqlite",
+    // Chromium settings. Only the default search engine and home page are read from it
+    // (receipt::chromium_defaults); it holds no passwords, cookies or cards.
+    "Preferences",
     "recovery.jsonlz4",
     "sessionstore.jsonlz4",
     "StorableSidebar.json",
@@ -317,6 +321,25 @@ pub fn read_profile(source: &Source, profile: &Profile, kinds: &Kinds) -> Import
     out
 }
 
+/// Which of the other browser's defaults can carry over (search engine, home page).
+pub fn read_defaults(source: &Source, profile: &Profile) -> receipt::Defaults {
+    let mut d = match source.engine {
+        Engine::Chromium | Engine::Arc => {
+            let dir = if source.engine == Engine::Arc { profile.dir.join("User Data").join("Default") } else { profile.dir.clone() };
+            read(&dir.join("Preferences"), &source.label).map(|b| receipt::chromium_defaults(&b)).unwrap_or_default()
+        }
+        // Firefox keeps its engine choice in a compressed store Lens doesn't open.
+        Engine::Firefox => receipt::Defaults::default(),
+    };
+    if d.search_url.is_none() {
+        if let Some((name, url)) = receipt::builtin_search(&source.browser) {
+            d.search_name = Some(name.to_string());
+            d.search_url = Some(url.to_string());
+        }
+    }
+    d
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Applied {
@@ -424,6 +447,8 @@ mod tests {
         assert!(!readable(Path::new("C:/x/Default/Login Data-journal")));
         assert!(!readable(Path::new("C:/x/profile/logins-backup.json")));
         assert!(readable(Path::new("C:/x/Default/Bookmarks")));
+        assert!(readable(Path::new("C:/x/Default/Preferences")));
+        assert!(!readable(Path::new("C:/x/Default/Secure Preferences")));
         assert!(readable(Path::new("C:/x/Default/Sessions/Session_13370000000000000")));
         assert!(!readable(Path::new("C:/x/Default/Other/Session_1")));
         assert!(read(Path::new("C:/x/Default/Cookies"), "Chrome").is_err());

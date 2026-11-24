@@ -564,7 +564,19 @@ fn release_prepare_blocking(handle: &AppHandle, app_id: &str) -> Result<Prepared
     Ok(prep)
 }
 
+/// Asks PowerShell for the file's Authenticode signature. PowerShell can hang; after 30 s the
+/// signature counts as unknown, which the install flow already treats as "not verified".
 fn signature_of(path: &std::path::Path) -> github::SignatureInfo {
+    let owned = path.to_path_buf();
+    crate::failsafe::call::os_read(
+        "The signature check",
+        std::time::Duration::from_secs(30),
+        github::SignatureInfo { status: "UnknownError".into(), subject: String::new() },
+        move || signature_of_now(&owned),
+    )
+}
+
+fn signature_of_now(path: &std::path::Path) -> github::SignatureInfo {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -840,6 +852,38 @@ pub(crate) fn apps_recipe_revert(handle: AppHandle, app_id: String) -> Result<In
     log("recipe-revert", &app_id, "recipe", if errors.is_empty() { "ok" } else { "failed" }, &errors.join("; "));
     let _ = handle.emit(INTEGRATIONS_EVENT, &host.0);
     Ok(host.0)
+}
+
+/// "Remove all Lens changes": reverts every setup recipe that was applied, in app-id order, and
+/// returns the changed integration state for the caller to announce (B-08). Apps the person
+/// installed through Lens Apps are theirs and stay installed.
+pub(crate) fn revert_all_recipes() -> Result<(String, Integrations), String> {
+    let mut js: Journals = read_json("journals.json");
+    let mut host = FileHost(read_json("integrations.json"));
+    if js.0.is_empty() {
+        return Ok(("No app setup was applied.".to_string(), host.0));
+    }
+    let mut ids: Vec<String> = js.0.keys().cloned().collect();
+    ids.sort();
+    let mut errors: Vec<String> = Vec::new();
+    for id in &ids {
+        let entries = js.0.remove(id).unwrap_or_default();
+        let steps = find_app(id).map(parse_steps).unwrap_or_default();
+        let journal: Vec<recipe::JournalEntry> = entries
+            .into_iter()
+            .filter_map(|(i, previous, changed)| Some(recipe::JournalEntry { step: steps.get(i)?.clone(), previous, changed }))
+            .collect();
+        let errs = recipe::revert(&mut host, id, &journal);
+        log("recipe-revert", id, "recipe", if errs.is_empty() { "ok" } else { "failed" }, &errs.join("; "));
+        errors.extend(errs.into_iter().map(|e| format!("{id}: {e}")));
+    }
+    write_json("integrations.json", &host.0)?;
+    write_json("journals.json", &js)?;
+    if errors.is_empty() {
+        Ok((format!("Setup undone for {} app(s).", ids.len()), host.0))
+    } else {
+        Err(format!("Setup undone for {} app(s); problems: {}", ids.len(), errors.join("; ")))
+    }
 }
 
 // ---------------------------------------------------------------------------------------------

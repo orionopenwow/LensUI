@@ -1,7 +1,7 @@
 // Draws one "Lens at work" scene: orb, accent ring, click ripple, typing/setting chip, window
 // ghost and caption. Pure: the overlay animates `progress`; the parity gallery renders frames.
 import type { CSSProperties } from "react";
-import { ORB_URL } from "./orb";
+import { LensCloud } from "./LensCloud";
 import { ORB_SIZE, pathAt, type Pt, type Scene } from "./model";
 import type { LRect } from "./types";
 import "./presence.css";
@@ -47,12 +47,12 @@ export function PresenceView({ scene, progress, still, onOrbClick }: PresenceVie
       {scene.orb ? (
         <button
           type="button"
-          className="pr-orb"
+          className="pr-orb is-billowing"
           aria-label="Stop Lens"
           onClick={onOrbClick}
           style={{ left: orb.x - ORB_SIZE / 2, top: orb.y - ORB_SIZE / 2, width: ORB_SIZE, height: ORB_SIZE, opacity: fade }}
         >
-          <img src={ORB_URL} alt="" draggable={false} />
+          <LensCloud />
         </button>
       ) : null}
       {scene.chip && chipAt && arrived ? (
