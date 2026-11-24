@@ -287,19 +287,32 @@ const SCENARIOS = [
       await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 8000 }).catch(async () => {
         throw new Error(`the opening text never reached Command; input is "${await box.inputValue()}"; link: ${JSON.stringify(await invoke(dock, "command_link_status_cmd").catch((e) => String(e)))}`);
       });
+      // Keys only reach a page whose window has the keyboard. The first CI trace of B-12b had the
+      // textarea focused in the DOM but no keydown at all, so wait until the window really has
+      // focus (the backend moves WebView2 focus into the page when Command opens) before typing.
+      const focusedAt = Date.now();
+      await cmd.waitForFunction(() => document.hasFocus() && document.visibilityState === "visible" && !!document.documentElement.dataset.commandKeysReady, null, { timeout: 8000 }).catch(async () => {
+        throw new Error(`Command never got the keyboard: ${JSON.stringify(await cmd.evaluate(() => ({ hasFocus: document.hasFocus(), visible: document.visibilityState, activeEl: document.activeElement?.tagName })))}`);
+      });
+      const focusWaitMs = Date.now() - focusedAt;
       await box.press("Enter");
       const answered = () =>
         cmd
           .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 8000 })
           .then(() => true, () => false);
+      // B-12b: once an Enter reaches the page it always runs (the handler, the queue and the
+      // handshake are fixed). What is left (B-12c) is delivery: on some cold starts the very first
+      // key sent over DevTools to a just-shown WebView2 window never reaches the page at all
+      // (commandEnterSeen stays 0), although the window is focused and has painted. Only in that
+      // case is Enter sent once more; an Enter that arrived and did nothing still fails here.
       let ok = await answered();
       if (!ok) {
-        // B-12 is not fully closed: on rare cold starts the first Enter still does nothing. Print
-        // the trace so the cause can be pinned down, then try once more so unrelated PRs aren't blocked.
-        const trace = await cmd.evaluate(() => ({ ...document.documentElement.dataset, activeEl: document.activeElement?.tagName, input: document.querySelector("textarea")?.value, hasFocus: document.hasFocus(), visible: document.visibilityState, disabled: document.querySelector("textarea")?.disabled, readOnly: document.querySelector("textarea")?.readOnly }));
-        console.log(`WARN lens-command: first Enter did nothing (B-12 trace): ${JSON.stringify(trace)}`);
-        await box.press("Enter");
-        ok = await answered();
+        const seen = await cmd.evaluate(() => Number(document.documentElement.dataset.commandEnterSeen || 0));
+        if (seen === 0) {
+          console.log("WARN lens-command: the first Enter never reached the page (B-12c); sending it once more");
+          await box.press("Enter");
+          ok = await answered();
+        }
       }
       if (!ok) {
         const link = await invoke(dock, "command_link_status_cmd").catch((e) => String(e));
@@ -310,6 +323,7 @@ const SCENARIOS = [
           enters: document.documentElement.dataset.commandEnter,
           queued: document.documentElement.dataset.commandEnterQueued,
           runs: document.documentElement.dataset.commandRun,
+          enterSeen: document.documentElement.dataset.commandEnterSeen,
           active: document.documentElement.dataset.commandActive,
           activeEl: document.activeElement?.tagName,
           open: document.documentElement.dataset.commandOpen,
@@ -317,7 +331,7 @@ const SCENARIOS = [
           focused: document.hasFocus(),
           text: document.getElementById("root").innerText.slice(0, 600),
         }));
-        throw new Error(`no answer or action card for "dark mode"; link ${JSON.stringify(link)}; page ${JSON.stringify(page)}`);
+        throw new Error(`no answer or action card for "dark mode" (waited ${focusWaitMs} ms for focus); link ${JSON.stringify(link)}; page ${JSON.stringify(page)}`);
       }
       await shot(cmd, "command-dark-mode");
       const errs = take();

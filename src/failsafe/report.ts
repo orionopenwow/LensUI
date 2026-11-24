@@ -25,6 +25,18 @@ export function writeRecord(surface: string, record: FailureRecord | null): void
   }
 }
 
+/**
+ * Records that the surface's crash notice was put on screen (sessionStorage survives the
+ * automatic reload, so the end-to-end test can check it afterwards: B-31).
+ */
+export function noteNoticeShown(surface: string, text: string): void {
+  try {
+    window.sessionStorage.setItem(`${key(surface)}.notice`, JSON.stringify({ text, at: Date.now() }));
+  } catch {
+    /* storage can be unavailable */
+  }
+}
+
 /** The surface crashed and its boundary caught it. */
 export function reportCrash(surface: string, error: unknown, disabled: boolean): void {
   const { message, stack } = describeError(error);

@@ -5,6 +5,7 @@ pub(crate) mod tray;
 pub(crate) mod integration;
 pub(crate) mod watcher;
 pub(crate) mod loadguard;
+pub(crate) mod renderer;
 pub(crate) mod autostart_guard;
 pub(crate) mod theme_apply;
 pub(crate) mod command_link;
