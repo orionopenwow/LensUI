@@ -71,7 +71,7 @@ Paths are under `src/browser/` (UI) and `src-tauri/src/browser/` (core) unless t
 | Preview with counts | `ImportPanel.tsx` | works | works |
 | Choose item by item | `import/receipt.rs` `Imported::skip`, `ImportPanel.tsx` | missing | works for bookmarks and open tabs (history is chosen as a whole) |
 | Never passwords or cookies | `import/mod.rs` `ALLOWED` / `NEVER` | works, tested | works; `Preferences` is added to the allow-list and only four keys are read from it |
-| Which defaults carry over | `import/receipt.rs` `Defaults` | missing | works: search engine (adopted on request), home page (kept as a bookmark), selection highlight and smooth scrolling (already identical: same engine) |
+| Which defaults carry over | `import/receipt.rs` `Defaults` | missing | works: search engine (adopted on request, undone with the import), home page (shown, so it can be bookmarked), selection highlight and smooth scrolling (already identical: same engine) |
 | Remove an import in one step | `import/receipt.rs` `Receipt`, `browser_import_undo` | missing | works: every import leaves a receipt; "Remove" deletes exactly what it added and puts the search engine back |
 
 ### Fits the desktop
