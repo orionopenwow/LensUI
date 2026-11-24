@@ -8,6 +8,7 @@ import { STAGE_LABEL, type Jobs } from "./jobs";
 import { traySummary, type QueueItem, type QueueState } from "./queue";
 import type { CatalogApp, RecipeStepView } from "./types";
 import { AppIcon } from "./visuals";
+import { fillStyle } from "../ui/motion";
 
 /** Steps ticked by default: everything except switching Lens AI's model provider, which changes a
  *  setting the user may have chosen deliberately. */
@@ -104,7 +105,7 @@ export function DownloadTray({ queue, jobs, apps, recipes, onCancel, onRun, onDi
                     <span className="la-mono la-muted la-tray-status">{statusLine(item, jobs)}</span>
                     {item.status === "running" && (
                       <div className="la-bar la-bar-thin">
-                        <span style={{ width: `${j?.overall ?? 3}%` }} />
+                        <span style={fillStyle((j?.overall ?? 3) / 100)} />
                       </div>
                     )}
                   </div>

@@ -565,7 +565,10 @@ select.ca-input option {
   height: 100%;
   border-radius: inherit;
   background: var(--lens-fg);
-  transition: width 0.4s ease;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform 0.4s ease;
 }
 .ca-meter.tone-ok span {
   background: var(--lens-positive);

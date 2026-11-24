@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { formatDuration, usePolled, type BatteryStatus } from "./SystemModuleShared";
+import { fillStyle } from "../ui/motion";
 
 export function BatteryIcon({ s, size = 16 }: { s: BatteryStatus; size?: number }) {
   const p = { size, strokeWidth: 2.3 };
@@ -75,7 +76,7 @@ export const BatteryModule: React.FC = () => {
           <div className="sysmod-meter" aria-hidden="true">
             <div
               className={`sysmod-meter-fill ${pct <= 10 ? "is-critical" : pct <= 20 ? "is-low" : ""}`}
-              style={{ width: `${Math.max(2, pct)}%` }}
+              style={fillStyle(Math.max(2, pct) / 100)}
             />
           </div>
         </>

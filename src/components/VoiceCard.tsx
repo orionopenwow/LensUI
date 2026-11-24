@@ -26,6 +26,7 @@ import {
 } from "../voice/contract";
 import { filterCommands } from "../voice/hudState";
 import "./VoiceCard.css";
+import { fillStyle } from "../ui/motion";
 
 const LANGS: [string, string][] = [
   ["en", "English"],
@@ -268,7 +269,7 @@ export function VoiceCard({ initialStatus }: VoiceCardProps) {
         </Row>
         {testing && (
           <div className="lvc-meter" role="meter" aria-label="Microphone level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(level * 100)}>
-            <span style={{ width: `${Math.round(level * 100)}%` }} />
+            <span style={fillStyle(level)} />
           </div>
         )}
         <Row label="Language">

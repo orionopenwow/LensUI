@@ -1,0 +1,6 @@
+/* Focus-dim preview (FocusDimSurface.tsx). Colour and glow ease; the ring's thickness snaps, since
+   animating it would re-lay out the preview every frame. */
+.fd-dim { transition: background var(--lens-dur-fast) var(--lens-ease-out); }
+.fd-focus { transition: box-shadow var(--lens-dur-fast) var(--lens-ease-out); }
+@media (prefers-reduced-motion: reduce) { .fd-dim, .fd-focus { transition: none; } }
+:root[data-motion="reduce"] :is(.fd-dim, .fd-focus) { transition: none; }

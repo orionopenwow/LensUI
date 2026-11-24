@@ -41,7 +41,7 @@ export const OverviewSurface: React.FC = () => {
   const running = useRunningWindows(1000);
   const [query, setQuery] = useState("");
   const [selectedHwnd, setSelectedHwnd] = useState<number | null>(null);
-  const [closing, setClosing] = useState<Set<number>>(new Set());
+  const [closeRequested, setCloseRequested] = useState<Set<number>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const armed = useRef(true);
@@ -98,7 +98,7 @@ export const OverviewSurface: React.FC = () => {
     for (const w of running) {
       const proc = w.processName.toLowerCase();
       if (proc === "lens-ui.exe" || proc === "lens-ui") continue;
-      if (closing.has(w.hwnd)) continue;
+      if (closeRequested.has(w.hwnd)) continue;
       if (wsActive && wsFilter !== null && wsOf(w.hwnd) !== wsFilter) continue;
       if (q && !w.title.toLowerCase().includes(q) && !proc.includes(q)) continue;
       let g = map.get(proc);
@@ -110,7 +110,7 @@ export const OverviewSurface: React.FC = () => {
       g.windows.push(w);
     }
     return [...map.values()];
-  }, [running, query, closing, wsActive, wsFilter, wsOf]);
+  }, [running, query, closeRequested, wsActive, wsFilter, wsOf]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.windows), [groups]);
 
@@ -127,9 +127,9 @@ export const OverviewSurface: React.FC = () => {
   const cycleOrder = useMemo(() => {
     return running.filter((w) => {
       const proc = w.processName.toLowerCase();
-      return proc !== "lens-ui.exe" && proc !== "lens-ui" && !closing.has(w.hwnd);
+      return proc !== "lens-ui.exe" && proc !== "lens-ui" && !closeRequested.has(w.hwnd);
     });
-  }, [running, closing]);
+  }, [running, closeRequested]);
   const cycleOrderRef = useRef<RunningWindow[]>(cycleOrder);
   cycleOrderRef.current = cycleOrder;
 
@@ -137,7 +137,7 @@ export const OverviewSurface: React.FC = () => {
   useEffect(() => {
     const reset = () => {
       setQuery("");
-      setClosing(new Set());
+      setCloseRequested(new Set());
       setWsFilter(null);
       setWsNote("");
       setDragHwnd(null);
@@ -245,11 +245,11 @@ export const OverviewSurface: React.FC = () => {
   }, [hide, switchTo]);
 
   const closeWindow = useCallback((hwnd: number) => {
-    setClosing((prev) => new Set(prev).add(hwnd));
+    setCloseRequested((prev) => new Set(prev).add(hwnd));
     invoke("window_action_cmd", { hwnd, action: "close" }).catch(() => {});
     // If the app refuses to close (unsaved changes), show it again.
     window.setTimeout(() => {
-      setClosing((prev) => {
+      setCloseRequested((prev) => {
         const next = new Set(prev);
         next.delete(hwnd);
         return next;

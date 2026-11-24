@@ -26,7 +26,7 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
-const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.03, 0.05], ["notes", 0.58, 0.12]] });
+const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.03, 0.03], ["notes", 0.58, 0.03]] });
 // The desk is the visitor's: nothing plays on its own. Tabs below it start a guided tour that moves
 // one step at a time, only when the visitor presses Next (or does the highlighted thing).
 const scTabs = $("#sc-tabs");

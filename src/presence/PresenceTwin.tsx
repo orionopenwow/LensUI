@@ -86,7 +86,7 @@ export function PresenceTwin({ still = false }: { still?: boolean }) {
   return (
     <div className={`pr-twin${still ? " is-still" : ""}`} aria-hidden="true">
       {st.ring ? <div className="pr-twin-ring" style={{ left: st.ring.x, top: st.ring.y, width: st.ring.w, height: st.ring.h }} /> : null}
-      <div className="pr-twin-orb is-billowing" style={{ left: st.x, top: st.y, opacity: st.visible ? 1 : 0 }}>
+      <div className="pr-twin-orb is-billowing" style={{ transform: `translate(${st.x}px, ${st.y}px)`, opacity: st.visible ? 1 : 0 }}>
         <LensCloud />
       </div>
       {st.ring && st.visible ? (
