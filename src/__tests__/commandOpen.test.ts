@@ -58,7 +58,12 @@ describe("Command ready handshake (B-12)", () => {
 
   test("one Enter, no retry (B-12b): the backend gives the page the keyboard when Command opens", () => {
     const e2e = readFileSync(join(import.meta.dir, "..", "..", "tests", "e2e", "run.mjs"), "utf8");
-    expect(e2e.match(/box\.press\("Enter"\)/g)?.length).toBe(1);
+    // One Enter decides the result; the second press only runs after a failure, to diagnose it.
+    const firstPress = e2e.indexOf('await box.press("Enter")');
+    const answeredAt = e2e.indexOf("const ok = await answered()");
+    expect(firstPress).toBeGreaterThan(0);
+    expect(e2e.slice(firstPress + 10, answeredAt)).not.toMatch(/box\.press/);
+    expect(e2e).toMatch(/commandKeysReady/);
     expect(e2e).toMatch(/enterSeen/);
     const rust = (f: string) => readFileSync(join(import.meta.dir, "..", "..", "src-tauri", "src", ...f.split("/")), "utf8");
     expect(rust("app/integration.rs")).toMatch(/fn show_command[\s\S]*?focus_page\(&win\)/);

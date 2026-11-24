@@ -291,7 +291,7 @@ const SCENARIOS = [
       // textarea focused in the DOM but no keydown at all, so wait until the window really has
       // focus (the backend moves WebView2 focus into the page when Command opens) before typing.
       const focusedAt = Date.now();
-      await cmd.waitForFunction(() => document.hasFocus() && document.visibilityState === "visible", null, { timeout: 8000 }).catch(async () => {
+      await cmd.waitForFunction(() => document.hasFocus() && document.visibilityState === "visible" && !!document.documentElement.dataset.commandKeysReady, null, { timeout: 8000 }).catch(async () => {
         throw new Error(`Command never got the keyboard: ${JSON.stringify(await cmd.evaluate(() => ({ hasFocus: document.hasFocus(), visible: document.visibilityState, activeEl: document.activeElement?.tagName })))}`);
       });
       const focusWaitMs = Date.now() - focusedAt;
@@ -303,6 +303,12 @@ const SCENARIOS = [
       // B-12b is fixed (Command gives its page the keyboard when it opens): one Enter, no retry.
       const ok = await answered();
       if (!ok) {
+        // Diagnosis only (the scenario still fails): does a second Enter reach the page?
+        const seenBefore = await cmd.evaluate(() => document.documentElement.dataset.commandEnterSeen || "0");
+        await box.press("Enter");
+        await sleep(500);
+        const seenAfter = await cmd.evaluate(() => document.documentElement.dataset.commandEnterSeen || "0");
+        console.log(`B-12b diagnosis: Enter keydowns seen before a second press ${seenBefore}, after ${seenAfter}`);
         const link = await invoke(dock, "command_link_status_cmd").catch((e) => String(e));
         const page = await cmd.evaluate(() => ({
           input: document.querySelector("textarea")?.value,

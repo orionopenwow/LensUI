@@ -625,6 +625,10 @@
   transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
+.dock-ctx-item > svg {
+  flex-shrink: 0;
+}
+
 .dock-ctx-item:hover {
   background: rgb(var(--lens-ink) / 0.09);
 }
@@ -1684,6 +1688,28 @@
   border-radius: 4px;
 }
 
+/* Windows does not lift or glow a taskbar button: hover is a flat translucent plate, and the
+   focused app keeps a slightly stronger plate with a hairline edge. Colour only, no layout. */
+.dock-stage.dock-style-taskbar.is-bar .dock-item:hover {
+  transform: none;
+  background: rgb(var(--lens-ink) / 0.06);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.dock-stage.dock-style-taskbar.is-bar .dock-item.is-focused {
+  background: rgb(var(--lens-ink) / 0.09);
+  border-color: rgb(var(--lens-ink) / 0.08);
+}
+
+.dock-stage.dock-style-taskbar.is-bar .dock-item.is-focused:hover {
+  background: rgb(var(--lens-ink) / 0.12);
+}
+
+.dock-stage.dock-style-taskbar.is-bar .dock-item:active {
+  background: rgb(var(--lens-ink) / 0.04);
+}
+
 /* Top edge bar. */
 .dock-stage.is-bar.dock-edge-top .dock-pill {
   padding: 0 8px;
@@ -2050,4 +2076,12 @@
   color: var(--lens-on-fg);
   font-variant-numeric: tabular-nums;
   right: -8px;
+}
+
+.dock-ctx-hint {
+  margin-left: auto;
+  padding-left: 12px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: rgb(var(--lens-ink) / 0.5);
 }

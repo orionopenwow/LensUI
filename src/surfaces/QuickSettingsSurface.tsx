@@ -470,7 +470,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    aria-label="Mute Master Audio"
+                    role="switch"
+                    aria-checked={!qs.muted}
+                    aria-label="Sound on"
                     className={`qs-switch ${!qs.muted ? "on" : ""}`}
                     onClick={toggleMute}
                   >
@@ -663,10 +665,13 @@ export const QuickSettingsSurface: React.FC = () => {
                 <div className="qs-row">
                   <div>
                     <div className="qs-row-title">Traffic Light Controls</div>
-                    <div className="qs-row-sub">Green · Yellow · Red across all windows</div>
+                    <div className="qs-row-sub">Yellow · Green · Red across all windows</div>
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.windowControls.enabled)}
+                    aria-label="Traffic Light Controls"
                     className={`qs-switch ${config.windowControls.enabled ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -712,6 +717,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.topBar.autoHide === "overlap")}
+                    aria-label="Top Bar Auto-Hide"
                     className={`qs-switch ${config.topBar.autoHide === "overlap" ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -734,6 +742,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.topBar.floating)}
+                    aria-label="Floating Top Bar"
                     className={`qs-switch ${config.topBar.floating ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -753,6 +764,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.func.hideNativeTaskbar)}
+                    aria-label="Hide Native Taskbar"
                     className={`qs-switch ${config.func.hideNativeTaskbar ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -775,6 +789,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.func.runOnStartup)}
+                    aria-label="Run on Startup"
                     className={`qs-switch ${config.func.runOnStartup ? "on" : ""}`}
                     aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
