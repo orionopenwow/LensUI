@@ -1,6 +1,6 @@
-// The home page: the hero desk with its guided tours and dock rail, the Theme lab desk, the
-// bring-your-own-agent panel, the open-source apps and the feature chips. Desks come from js/desk.js,
-// guided tours from js/showcases.js, the actions both use from js/actions.js. Nothing touches your system.
+// The home page: the hero desk with its guided tours and dock rail, and the Theme lab desk. Desks come
+// from js/desk.js (the app's real surfaces), tours from js/showcases.js, and the sections' exhibits
+// from js/exhibits.js. Nothing touches your system.
 import { reducedMotion } from "./site.js";
 import { createDesk, getPacks, iconUrl } from "./desk.js";
 import { createShowcases } from "./showcases.js";
@@ -234,54 +234,8 @@ new IntersectionObserver(([e], ob) => {
 // ---- the rest loads when it comes near ------------------------------------------------------------
 const lazy = (sel, f) => { const el = $(sel); if (!el) return; new IntersectionObserver(([e], ob) => { if (e.isIntersecting) { ob.disconnect(); f(el); } }, { rootMargin: "500px" }).observe(el); };
 lazy("#themes", (el) => import("./themelab.js").then((m) => m.init(el)));
-lazy("#apps", () => import("./getflow.js").then((m) => m.init()));
+import("./exhibits.js").then((m) => m.init());
+// "Get" opens the real Lens Apps on the desk; a core app's picture opens that app there.
+document.querySelectorAll("[data-get]").forEach((b) => b.addEventListener("click", () => playScene("apps")));
+document.querySelectorAll("[data-open-app]").forEach((b) => b.addEventListener("click", () => { if (shows.current) shows.exit(); bringIntoView(); desk.open(b.dataset.openApp); }));
 
-// Feature chips jump to their scene in the hero desk.
-document.querySelectorAll(".feat-chips [data-scene-id]").forEach((b) => b.addEventListener("click", () => playScene(b.dataset.sceneId)));
-
-// BYO agent tabs.
-const tabs = $("#byo-tabs");
-tabs?.addEventListener("click", (e) => {
-  const t = e.target.closest("[role=tab]");
-  if (!t) return;
-  tabs.querySelectorAll("[role=tab]").forEach((x) => { const on = x === t; x.setAttribute("aria-selected", String(on)); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute("aria-controls")).hidden = !on; });
-});
-tabs?.addEventListener("keydown", (e) => {
-  const ts = [...tabs.querySelectorAll("[role=tab]")], i = ts.indexOf(document.activeElement);
-  const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  if (d && i >= 0) { e.preventDefault(); const n = ts[(i + d + ts.length) % ts.length]; n.focus(); n.click(); }
-});
-void iconUrl;
-
-// ---- slides (ArtCraft suite, core apps): the visitor drives; a slow pan only while visible -------
-document.querySelectorAll("[data-slides]").forEach((box) => {
-  const track = box.querySelector(".sl-track"), items = [...track.children], count = box.querySelector(".sl-count");
-  const idx = () => Math.round(track.scrollLeft / Math.max(1, items[0].offsetWidth + 14));
-  const go = (i) => { const n = (i + items.length) % items.length; track.scrollTo({ left: items[n].offsetLeft - track.offsetLeft, behavior: reducedMotion() ? "auto" : "smooth" }); };
-  const upd = () => { count.textContent = `${Math.min(items.length, idx() + 1)} / ${items.length}`; };
-  box.querySelector("[data-sl-prev]").addEventListener("click", () => { hold(); go(idx() - 1); });
-  box.querySelector("[data-sl-next]").addEventListener("click", () => { hold(); go(idx() + 1); });
-  track.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { e.preventDefault(); hold(); go(idx() + 1); } else if (e.key === "ArrowLeft") { e.preventDefault(); hold(); go(idx() - 1); } });
-  track.addEventListener("scroll", upd, { passive: true }); upd();
-  let timer = 0, held = false, seen = false;
-  const hold = () => { held = true; clearInterval(timer); };
-  const run = () => { clearInterval(timer); if (!held && seen && !reducedMotion()) timer = setInterval(() => go(idx() + 1), 4500); };
-  ["pointerenter", "focusin", "touchstart"].forEach((ev) => box.addEventListener(ev, () => clearInterval(timer), { passive: true }));
-  ["pointerleave", "focusout"].forEach((ev) => box.addEventListener(ev, run));
-  new IntersectionObserver(([e]) => { seen = e.isIntersecting; run(); }, { threshold: 0.4 }).observe(box);
-});
-
-// ---- the mini Lens Browser: tabs switch, the Lens button opens the AI side panel -----------------
-document.querySelectorAll("[data-minibr]").forEach((br) => {
-  const url = br.querySelector("[data-mb-url]"), page = br.querySelector("[data-mb-page]"), side = br.querySelector("[data-mb-side]"), lens = br.querySelector("[data-mb-lens]");
-  const PAGES = [["lens.dev/release-notes", "Lens 0.9", "Nine dock styles, 89 themes and a desktop where look, apps and AI work as one.", ["Lens 0.9 ships nine dock styles.", "89 themes, including living ones.", "Every change undoes."]], ["youtube.com/watch?v=lens-tour", "Lens in 90 seconds", "A short tour of the dock, themes, the magic right-click and Claude on the desktop.", ["0:00 The dock and its nine styles", "0:25 Themes and living wallpapers", "0:50 Magic right-click", "1:10 Claude on the desktop, with approvals"]]];
-  const list = br.querySelector("[data-mb-list]"), hero = br.querySelector("[data-mb-hero]"), hint = br.querySelector("[data-mb-hint]");
-  br.querySelectorAll("[data-mb-tab]").forEach((t) => t.addEventListener("click", () => {
-    br.querySelectorAll("[data-mb-tab]").forEach((x) => x.classList.toggle("on", x === t));
-    const [u, h, p, pts] = PAGES[+t.dataset.mbTab];
-    list.innerHTML = pts.map((x) => `<li>${x}</li>`).join(""); hero.classList.toggle("is-video", +t.dataset.mbTab === 1);
-    url.textContent = u; page.querySelector(".mb-h").textContent = h; page.querySelector("p").textContent = p;
-    side.querySelector(".mb-q").textContent = +t.dataset.mbTab ? "Get the transcript" : "Summarise this page";
-  }));
-  lens.addEventListener("click", () => { const on = side.hidden; side.hidden = !on; lens.setAttribute("aria-pressed", String(on)); hint?.remove(); });
-});

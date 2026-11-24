@@ -148,7 +148,7 @@ const chainPlugin = {
     });
   },
 };
-export const APP_SURFACES = ["shell", "browser", "command", "cleaner", "coreapps", "music", "approval", "magic"];
+export const APP_SURFACES = ["shell", "browser", "command", "cleaner", "coreapps", "music", "approval", "magic", "presence"];
 export async function buildApp(outRoot = join(root, "docs/site/live")) {
   const out = fresh(join(outRoot, "app"));
   const entryPoints = Object.fromEntries(APP_SURFACES.map((n) => [n, join(here, "surfaces", existsSync(join(here, "surfaces", `${n}.tsx`)) ? `${n}.tsx` : `${n}.ts`)]));

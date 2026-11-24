@@ -20,23 +20,31 @@ export const getPacks = () => (packsP ??= fetch(new URL("data/packs.json", SITE)
  * Pinned order matches tools/site/live/site-core.ts. Every entry is a surface that exists in Lens.
  */
 export const APPS = {
-  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 540, marker: "lb-root" },
-  notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 440, marker: "ca-app-notes" },
-  music: { name: "Lens Music", icon: "lens-music", src: "music.html?scene=np-expanded", w: 820, h: 520, marker: "np-root" },
-  monitor: { name: "Monitor", icon: "lens-monitor", src: "coreapps.html?app=monitor", w: 720, h: 500, marker: "ca-app-monitor" },
-  timer: { name: "Timer", icon: "lens-timer", src: "coreapps.html?app=timer", w: 420, h: 500, marker: "ca-app-timer" },
-  cleaner: { name: "Lens Cleaner", icon: "lens-cleaner", src: "cleaner.html?scene=cleanup", w: 860, h: 560, marker: "cl-app" },
-  store: { name: "Lens Apps", icon: "lens-apps", src: "shell.html?surface=apps", w: 900, h: 580, marker: "lens-glass" },
-  settings: { name: "Settings", icon: "lens-settings", src: "shell.html?surface=settings&settingsMode=simple", w: 900, h: 580, marker: "cc-shell" },
-  approval: { name: "Needs your OK", icon: "lens-command", src: "approval.html?scene=window", w: 440, h: 520, marker: "ap-card", glass: true },
+  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 540, marker: ".lb-root" },
+  notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 440, marker: ".ca-app-notes" },
+  music: { name: "Lens Music", icon: "lens-music", src: "music.html?scene=np-expanded", w: 820, h: 520, marker: ".lm-np" },
+  monitor: { name: "Monitor", icon: "lens-monitor", src: "coreapps.html?app=monitor", w: 720, h: 500, marker: ".ca-app-monitor" },
+  timer: { name: "Timer", icon: "lens-timer", src: "coreapps.html?app=timer", w: 420, h: 500, marker: ".ca-app-timer" },
+  cleaner: { name: "Lens Cleaner", icon: "lens-cleaner", src: "cleaner.html?scene=cleanup", w: 860, h: 560, marker: ".cl-app" },
+  store: { name: "Lens Apps", icon: "lens-apps", src: "shell.html?surface=apps", w: 900, h: 580, marker: ".lens-glass" },
+  settings: { name: "Settings", icon: "lens-settings", src: "shell.html?surface=settings&settingsMode=simple", w: 900, h: 580, marker: ".cc-shell" },
+  // Not pinned to the dock: opened from the core apps grid, Command, or a tour.
+  calculator: { name: "Calculator", icon: "lens-calculator", src: "coreapps.html?app=calculator", w: 380, h: 560, marker: ".ca-app-calculator" },
+  color: { name: "Color", icon: "lens-color", src: "coreapps.html?app=color", w: 520, h: 520, marker: ".ca-app-color" },
+  power: { name: "Power", icon: "lens-power", src: "coreapps.html?app=power", w: 600, h: 500, marker: ".ca-app-power" },
+  network: { name: "Network", icon: "lens-network", src: "coreapps.html?app=network", w: 680, h: 500, marker: ".ca-app-network" },
+  clipboard: { name: "Clipboard", icon: "lens-clipboard", src: "coreapps.html?app=clipboard", w: 520, h: 540, marker: ".ca-app-clipboard" },
+  startup: { name: "Startup", icon: "lens-startup", src: "coreapps.html?app=startup", w: 720, h: 520, marker: ".ca-app-startup" },
+  approval: { name: "Needs your OK", icon: "lens-command", src: "approval.html?scene=window&drag=0", w: 440, h: 520, marker: "[class^='ap-']", glass: true },
 };
 /** Real surfaces that float over the desk instead of living in a window. */
 const OVER = {
-  qs: { src: "shell.html?surface=quicksettings&esc=1&drag=0", w: 400, h: 600, label: "Quick Settings", marker: "qs-shell" },
-  cmd: { src: "command.html?scene=compact&esc=1&drag=0", w: 720, h: 470, label: "Lens Command", marker: "cmd-root" },
-  magic: { src: "magic.html?esc=1&drag=0&magic=0", w: 360, h: 440, label: "Magic right-click", marker: "mg-root" },
+  qs: { src: "shell.html?surface=quicksettings&esc=1&drag=0", w: 400, h: 600, label: "Quick Settings", marker: ".qs-shell" },
+  cmd: { src: "command.html?scene=compact&esc=1&drag=0", w: 720, h: 470, label: "Lens Command", marker: ".cmd-root" },
+  magic: { src: "magic.html?esc=1&drag=0&magic=0", w: 360, h: 440, label: "Magic right-click", marker: "[class^='magic-']" },
 };
-const appUrl = (src, preset) => new URL(`live/app/${src}${src.includes("?") ? "&" : "?"}preset=${encodeURIComponent(preset || "obsidian")}`, SITE).href;
+export const OVERS = OVER;
+export const appUrl = (src, preset) => new URL(`live/app/${src}${src.includes("?") ? "&" : "?"}preset=${encodeURIComponent(preset || "obsidian")}`, SITE).href;
 const TOP = 34;          // the real top bar's height (config.topBar.height)
 const DOCK_H = 132;      // the dock frame's resting height: the dock, its lift and tooltips
 const WORK_BOTTOM = 96;  // windows tile above the dock
