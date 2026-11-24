@@ -8,13 +8,17 @@
 //! * `store`   — load/save of the sealed history file.
 //! * `win`     — the Windows capture listener and paste (SendInput Ctrl+V after the user picks).
 //!
-//! Nothing here runs until the user turns clipboard history on. The legacy in-memory history in
-//! `win_clipboard.rs` keeps working unchanged; `docs/SHELF.md` says how to retire it.
+//! * `compat`  — the Widget Drawer pane's commands, as thin callers of `service`.
+//!
+//! This is the only clipboard history in Lens. It records in two modes: the saved history (opt-in,
+//! sealed on disk) and the session history (Functions › Clipboard history: the last 50 texts, in
+//! memory only). Nothing here runs until one of them is on.
 
 // Some helpers are used only by tests or by one platform's capture layer.
 #![allow(dead_code)]
 
 pub mod appctx;
+pub mod compat;
 pub mod dib;
 pub mod history;
 pub mod paste;

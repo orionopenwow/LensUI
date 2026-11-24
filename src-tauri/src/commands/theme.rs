@@ -235,6 +235,9 @@ pub(crate) fn save_config_cmd(
     }
     if new_config.func.clipboard_history && !prev_config.func.clipboard_history {
         start_clipboard_with_events(&app);
+    } else if !new_config.func.clipboard_history && prev_config.func.clipboard_history {
+        // Stops the session history recording at once (the saved history has its own switch).
+        crate::clip::service::set_session(false);
     }
 
     #[cfg(windows)]

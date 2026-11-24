@@ -27,9 +27,10 @@ pub fn init(app: &AppHandle) {
     let handle = app.clone();
     service::set_on_change(move || {
         let _ = handle.emit(EVT_CLIP_CHANGED, ());
+        let _ = handle.emit(crate::clip::compat::EVT_CLIPBOARD_CHANGED, ());
     });
     #[cfg(windows)]
-    if service::is_enabled() {
+    if service::capturing() {
         crate::clip::win::ensure_started();
     }
     apply_policy(app);
@@ -49,6 +50,7 @@ fn status() -> ClipStatus {
 fn changed(app: &AppHandle) {
     service::schedule_save();
     let _ = app.emit(EVT_CLIP_CHANGED, ());
+    let _ = app.emit(crate::clip::compat::EVT_CLIPBOARD_CHANGED, ());
 }
 
 /// Also wires events on first use, so the Command window works even before setup calls `init`.
@@ -67,17 +69,9 @@ pub(crate) fn clip_set_settings(app: AppHandle, settings: ClipSettings) -> Resul
     s.max_total_bytes = s.max_total_bytes.clamp(1 << 20, 1 << 30);
     s.max_item_bytes = s.max_item_bytes.clamp(4 << 10, 64 << 20);
     service::save_settings(&s)?;
-    let was = service::with(|h, cur| {
-        let was = cur.enabled;
-        *cur = s.clone();
-        h.prune(cur, service::now_ms());
-        was
-    });
+    // Turning it off stops saving immediately; the saved history stays on disk until cleared.
+    service::replace_settings(s);
     init(&app);
-    if was && !s.enabled {
-        // Turning it off stops capture immediately; the saved history stays until cleared.
-        service::save_now();
-    }
     changed(&app);
     Ok(status())
 }
