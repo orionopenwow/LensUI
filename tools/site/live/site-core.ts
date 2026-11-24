@@ -9,23 +9,18 @@ export { calls, convertFileSrc, isTauri } from "../../parity/mock/core";
 const I = (id: string) => `../../media/icons/${id}.svg`;
 const A = (file: string) => `../../media/apps/${file}`;
 
-/** The desk's apps, pinned in this order. `id` is the desk app id the page opens. */
+/** The desk's apps, pinned in this order: every one opens a real Lens surface. `id` is the desk app id the
+ * page opens. Monitor and Settings aren't pinned: the dock has its own buttons for them. */
 export const APPS = [
   { id: "browser", name: "Lens Browser", path: "lens://browser", icon: I("lens-browser") },
-  { id: "files", name: "Files", path: "lens://files", icon: I("explorer") },
   { id: "notes", name: "Notes", path: "lens://notes", icon: I("lens-notes") },
   { id: "music", name: "Lens Music", path: "lens://music", icon: I("lens-music") },
-  { id: "monitor", name: "Monitor", path: "lens://monitor", icon: I("lens-monitor") },
   { id: "timer", name: "Timer", path: "lens://timer", icon: I("lens-timer") },
   { id: "cleaner", name: "Lens Cleaner", path: "lens://cleaner", icon: I("lens-cleaner") },
-  { id: "terminal", name: "Terminal", path: "lens://terminal", icon: I("terminal") },
-  { id: "code", name: "VSCodium", path: "lens://code", icon: I("vscodium") },
-  { id: "chat", name: "Discord", path: "lens://chat", icon: I("discord") },
   { id: "store", name: "Lens Apps", path: "lens://store", icon: I("lens-apps") },
-  { id: "settings", name: "Settings", path: "lens://settings", icon: I("lens-settings") },
 ];
 /** The short set used by the dock-style rail (?mini=1). */
-export const MINI = ["browser", "files", "notes", "music", "code", "settings"];
+export const MINI = ["browser", "notes", "music", "timer", "cleaner", "store"];
 const EXTRA = [
   { name: "Krita", path: "lens://store/krita", icon: A("krita-icon.webp") },
   { name: "Blender", path: "lens://store/blender", icon: A("blender-icon.svg") },
@@ -39,8 +34,8 @@ const ICON: Record<string, string> = Object.fromEntries([...APPS, ...EXTRA].map(
 let running: any[] = [];
 /** The page's open windows, in the dock's RunningWindow shape. */
 export function setRunning(list: { hwnd: number; app: string; title: string; focused: boolean; min: boolean }[]) {
-  running = list.map((w) => {
-    const a = APPS.find((x) => x.id === w.app) ?? APPS[0];
+  running = list.filter((w) => APPS.some((x) => x.id === w.app)).map((w) => {
+    const a = APPS.find((x) => x.id === w.app)!;
     return { hwnd: w.hwnd, title: w.title, processName: a.path.split("/").pop(), exePath: a.path, isFocused: w.focused, isMinimized: w.min, isMaximized: false, iconDataUrl: a.icon };
   });
   return running;
@@ -52,7 +47,9 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   if (cmd === "get_icon_for_path") return (ICON[String(args?.path ?? "").toLowerCase()] ?? null) as T;
   if (cmd === "get_running_windows") return running as T;
   if (cmd === "scan_installed_apps_cmd") return INSTALLED as T;
-  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd") { toPage(cmd, args); return null as T; }
+  // The dock's own Monitor and Settings buttons, Now Playing and the rest ask the backend for a surface:
+  // on the site the page's desk opens the real one.
+  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd" || cmd === "open_dock_popout_tab_cmd" || cmd === "toggle_settings_docked" || cmd === "open_surface" || cmd === "toggle_surface") { toPage(cmd, args); return null as T; }
   if (cmd === "get_launcher_home_cmd") {
     return {
       recentFiles: [
@@ -60,8 +57,8 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
         { name: "release-notes.html", path: "lens://browser", extension: "html", modifiedMinutesAgo: 25 },
       ],
       folders: [
-        { name: "Downloads", path: "lens://files", color: "cobalt", itemCount: 6 },
-        { name: "Projects", path: "lens://files", color: "amber", itemCount: 9 },
+        { name: "Downloads", path: "lens://cleaner", color: "cobalt", itemCount: 6 },
+        { name: "Projects", path: "lens://notes", color: "amber", itemCount: 9 },
       ],
     } as T;
   }
