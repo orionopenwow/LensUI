@@ -23,12 +23,35 @@ const PATTERNS: [InjectionFlag["kind"], RegExp][] = [
   ["hidden", /\b(ai assistants?|language models?|llms?|chatbots?|claude|gpt|gemini|copilot)\b[^.\n]{0,40}\b(should|must|please|reading this)\b/i],
 ];
 
-/** Finds text in a page that tries to instruct an AI. Returns at most 8 flags. */
+// Same idea as `discussed` in agentsafe/hidden_text.rs: text that talks *about* prompt injection
+// (an article quoting "ignore previous instructions") is prose, unless it speaks to the AI.
+const DISCUSSION = /prompt[- ]injection|injection attack|jailbreak|for example|for instance|e\.g\.|such as|phrases? like|attackers?\b|malicious|researchers|known as|a classic/i;
+const SPEAKS_TO_AI = /\b(dear|attention|hey|note to|message to)\s+(the\s+)?(ai|assistant|agent|llm|model|claude|chatgpt|gpt|copilot|gemini|bot)s?\b|\b(ai|assistant|agent|llm|model)s?\s+reading this\b/i;
+
+/** True when a discussion marker is within 200 characters of `at..at+len` and the line does not
+ *  address the AI directly. */
+export function isDiscussion(text: string, at: number, len: number, line: string): boolean {
+  if (SPEAKS_TO_AI.test(line)) return false;
+  const around = text.slice(Math.max(0, at - 200), at) + " " + text.slice(at + len, at + len + 200);
+  return DISCUSSION.test(around) || DISCUSSION.test(line.replace(/["“”'‘’«»].*?["“”'‘’«»]/g, " "));
+}
+
+/** Finds text in a page that tries to instruct an AI. Returns at most 8 flags. Phrases quoted in
+ *  a discussion of prompt injection are not flagged; the same words aimed at the AI still are. */
 export function scanForInjection(text: string): InjectionFlag[] {
   const out: InjectionFlag[] = [];
   const seen = new Set<string>();
-  const lines = text.split(/\n+|(?<=[.!?])\s+/).map((l) => l.trim()).filter((l) => l.length > 8);
-  for (const line of lines) {
+  const raw = text.split(/\n+|(?<=[.!?])\s+/);
+  let cursor = 0;
+  const lines: { line: string; at: number }[] = [];
+  for (const r of raw) {
+    const at = text.indexOf(r, cursor);
+    if (at >= 0) cursor = at + r.length;
+    const line = r.trim();
+    if (line.length > 8) lines.push({ line, at: Math.max(0, at) });
+  }
+  for (const { line, at } of lines) {
+    if (isDiscussion(text, at, line.length, line)) continue;
     for (const [kind, re] of PATTERNS) {
       if (re.test(line)) {
         const excerpt = line.length > 160 ? `${line.slice(0, 157)}…` : line;

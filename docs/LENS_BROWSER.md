@@ -86,6 +86,11 @@ These figures are not measured yet: this branch was built in a Linux sandbox wit
    elements), scans it for text aimed at AI assistants (`src/browser/guard.ts`) and shows any it
    finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source
    of intent.
+   Text that only *discusses* prompt injection (an article quoting "ignore previous instructions"
+   near words like "attackers", "such as", "prompt injection") is noted at Low and left in the
+   text, both here and in `agentsafe/hidden_text.rs`, so it no longer makes every step ask or
+   blocks the page. The same words aimed at the AI ("dear AI agent…"), hidden, smuggled as a tool
+   call, or sent from a tool still count in full, and every step keeps its own approval rules.
 3. The model replies with a small JSON plan. `parsePlan` keeps only known actions, web URLs and
    at most 8 steps; there is no field that can approve anything.
 4. Each step goes through `browser_agent_act`. The host **re-describes the element from the page
@@ -105,6 +110,18 @@ The "This task can" toggles only make it stricter. The card shows the target ele
 details (secrets masked), money/irreversibility lines found on the page ("$25 per person
 no-show fee"), Deny, and a hold-to-approve button (900 ms; Enter or Space held also works). The
 tab gets an "approve" pill and the top bar an "Approve N actions" pill until you decide.
+
+## Site permissions
+
+Camera, microphone, location, notifications, reading the clipboard and several downloads at once.
+A page that asks gets a Lens bar under the address bar: **Block** (Esc), **Allow once**, **Allow
+on this site** (Enter). "On this site" and "Block" are kept per origin in `state.json`
+(`sitePermissions`); the site button beside the bookmark star shows them for the current site,
+and Settings › AI & Command › Lens Browser lists every site, each with Forget. No answer in 60
+seconds is a Block; requests from non-web pages, unknown kinds, or a tab the agent acted on in the
+last 10 seconds are denied without asking. Rules: `src-tauri/src/browser/permissions.rs` (pure,
+tested); WebView2 wiring: its `win` module (`PermissionRequested` + a deferral). Not yet run on a
+real PC; see docs/BROWSER_AAA.md 2.1.
 
 ## Right-click menu (in pages)
 

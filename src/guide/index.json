@@ -4163,7 +4163,7 @@
    "id": "card.ai.browsercard",
    "kind": "card",
    "title": "Lens Browser",
-   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages. Browser. Settings › AI & Command › Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages · Site permissions. Browser. Settings › AI & Command › Lens Browser",
    "path": [
     "Settings",
     "AI & Command",
@@ -4294,6 +4294,26 @@
     "tab": "ai",
     "card": "BrowserCard",
     "label": "Lens buttons on pages",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.site-permissions",
+   "kind": "setting",
+   "title": "Site permissions",
+   "text": "Camera, microphone, location, notifications, clipboard and several downloads at once. Sites ask first; forget an answer and the site asks again.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Site permissions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Site permissions",
     "section": "browser"
    },
    "source": "src/components/BrowserCard.tsx"

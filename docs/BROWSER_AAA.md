@@ -48,7 +48,7 @@ Paths are under `src/browser/` (UI) and `src-tauri/src/browser/` (core) unless t
 
 | Feature | Before | After | Note |
 |---|---|---|---|
-| Camera, microphone, location, notifications prompt | missing (WebView2's own grey prompt shows) | **waits** | Needs `ICoreWebView2::add_PermissionRequested` through `webview2-com`, which this repo does not depend on directly. See 2.1 |
+| Camera, microphone, location, notifications prompt | missing (WebView2's own grey prompt shows) | **partly**: built, not yet run on a real PC | Wave 4b: a Lens bar under the address bar (Allow once / Allow on this site / Block), answers per origin, forgettable from the site button and Settings › AI & Command › Lens Browser. Also covers clipboard read and several downloads. Default deny after 60 s; denied without asking while the agent works on the tab. See 2.1 |
 | Passwords, passkeys | not handled, by design | not handled | Passkeys go through Windows Hello's own dialog, which WebView2 raises itself. Lens never sees or stores a credential |
 | Tracker blocking (top-level) | works | works | — |
 | Agent profile stays signed out | works | works | Untouched this pass |
@@ -94,16 +94,22 @@ Counting the rows above (39 features):
 |---|---|---|---|---|
 | Before | 20 | 10 | 1 | 8 |
 | After | 33 | 5 | 0 | 1 (permission prompts) |
+| Wave 4b | 33 | 6 (permission prompts: built, unverified on hardware) | 0 | 0 |
 
 ## 2. What waits, and why
 
 ### 2.1 Lens-styled permission prompts
 
-WebView2 raises `PermissionRequested` on the COM interface. Tauri 2.12 does not surface it, so it
-needs `webview2-com` as a direct dependency and a `with_webview` handler per tab. That is unsafe
-COM code that cannot be compiled or exercised outside Windows, and a wrong handler silently grants
-or denies camera access. It waits for a session with a Windows machine in the loop. Until then
-WebView2's own prompt shows, which is safe (it asks every time per site and profile).
+**Built in wave 4b; compiled on the Windows CI runner, not yet run on a real PC.**
+`src-tauri/src/browser/permissions.rs` holds the rules (pure, unit-tested) and, behind
+`cfg(windows)`, one `PermissionRequested` handler per tab webview through `webview2-com` (the same
+version Tauri uses). A request Lens has no answer for is held with a deferral on the UI thread and
+the browser shows its bar; an answer, a 60-second timeout (deny) or a closed tab settles it.
+Lens keeps the answers itself (`state.json` → `sitePermissions`) and tells WebView2 not to save
+them in the profile, so "Forget" takes effect. Unknown kinds, non-web pages and requests on a tab
+the agent acted on in the last 10 seconds are denied without asking.
+
+To verify on hardware: open a camera test page, answer each way, restart Lens, forget the site.
 
 ### 2.2 Download progress in bytes
 
@@ -175,7 +181,7 @@ Short findings, each with its source.
 | 10 | Import: per item, defaults, one-step removal | high | medium | yes |
 | 11 | Motion and accessibility pass | medium | medium | yes |
 | 12 | Duplicate tab, horizontal strip parity | low | low | yes |
-| 13 | Permission prompts | high | high, unsafe without Windows | waits |
+| 13 | Permission prompts | high | high, unsafe without Windows | built (wave 4b); verify on hardware |
 | 14 | Split view | high | medium, changes layout | waits |
 | 15 | Real favicons | medium | medium | waits |
 | 16 | Byte progress, core error signal | medium | high | waits |

@@ -5,6 +5,7 @@
 //! * `filter` — a small top-level navigation block list (pure).
 //! * `store`  — files under %APPDATA%\LensUI\browser\.
 //! * `host`   — the frame window, WebView2 child webviews and the page agent bridge.
+//! * `permissions` — site permissions (camera, microphone, location…) and their prompt.
 //! * `import` — bookmarks, history, tabs and Arc spaces from other browsers (never passwords).
 
 pub mod filter;
@@ -12,6 +13,7 @@ pub mod gating;
 pub mod host;
 pub mod import;
 pub mod model;
+pub mod permissions;
 pub mod store;
 
 #[cfg(test)]

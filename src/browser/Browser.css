@@ -866,3 +866,4 @@
 /* Six panel tabs don't fit as words: the open one keeps its name, the rest are icons (each is labelled). */
 .lb-panel-head.is-tight .lb-ptab:not(.is-on) > span { display: none; }
 .lb-panel-head.is-tight .lb-ptab:not(.is-on) { padding: 0 9px; }
+

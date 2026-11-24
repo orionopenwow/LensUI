@@ -266,6 +266,9 @@ pub struct BrowserState {
     /// Recently closed tabs, newest last (Ctrl+Shift+T).
     #[serde(default)]
     pub closed: Vec<ClosedTab>,
+    /// Site permissions answered "on this site" or "Block": origin → kind → allowed.
+    #[serde(default)]
+    pub site_permissions: std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>>,
 }
 
 impl Default for BrowserState {
@@ -281,6 +284,7 @@ impl Default for BrowserState {
             settings: BrowserSettings::default(),
             next_id: 1,
             closed: vec![],
+            site_permissions: Default::default(),
         };
         let id = s.add_space("Personal");
         s.active_space = id;
@@ -840,6 +844,7 @@ impl BrowserState {
         self.closed.retain(|c| is_web_url(&c.tab.url));
         let cap = self.closed.len().saturating_sub(CLOSED_CAP);
         self.closed.drain(..cap);
+        super::permissions::repair(&mut self.site_permissions);
         self.repair_settings();
     }
 
