@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { magicOpenFor } from "../magic/contract";
 import { emit, listen } from "@tauri-apps/api/event";
 import { Bell, Calendar, Timer, Monitor, Sparkles, X } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
@@ -105,6 +106,11 @@ export const NotificationOverlaySurface: React.FC = () => {
           className="nt-toast"
           onMouseEnter={() => hoveredRef.current.add(n.id)}
           onMouseLeave={() => hoveredRef.current.delete(n.id)}
+          onContextMenu={(e) => {
+            // Right-click a notification: the magic window, with this notification as its target.
+            e.preventDefault();
+            magicOpenFor("notification", n.id, `${n.appName}: ${n.title}`);
+          }}
           onClick={() => {
             if (n.category === "windows") {
               invoke("open_windows_setting_cmd", { uri: "ms-settings:notifications" }).catch(() => {});

@@ -54,6 +54,7 @@ import {
   SeparatorVertical,
   LayoutGrid,
 } from "lucide-react";
+import { magicOpenFor } from "../magic/contract";
 import { useLensState, useRunningWindows } from "../hooks/useLensState";
 import {
   executeNaturalLanguagePlan,
@@ -499,15 +500,47 @@ export const DockSurface: React.FC = () => {
   const menuLinger = useLingering(ctxMenu, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownMenu = menuLinger.value;
 
+  // Keyboard: the element that opened the menu gets focus back when it closes.
+  const menuOpenerRef = useRef<HTMLElement | null>(null);
   const closeMenu = () => {
     setCtxMenu(null);
     invoke("set_dock_menu_open", { open: false }).catch(() => {});
+    const opener = menuOpenerRef.current;
+    menuOpenerRef.current = null;
+    if (opener && opener.isConnected && document.activeElement && opener.ownerDocument.activeElement?.closest(".dock-ctx-menu")) opener.focus({ preventScroll: true });
   };
 
   const openMenu = (menu: DockContextMenu) => {
     setHoverCard(null);
+    menuOpenerRef.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     setCtxMenu(menu);
     invoke("set_dock_menu_open", { open: true }).catch(() => {});
+  };
+
+  // Opened from the keyboard (context-menu key or Shift+F10 on a focused icon): focus goes into the
+  // menu so arrows and Enter work at once. With the mouse nothing visible changes (:focus-visible).
+  useEffect(() => {
+    if (!ctxMenu || !menuOpenerRef.current) return;
+    const id = requestAnimationFrame(() => {
+      menuLinger.ref.current?.querySelector<HTMLButtonElement>(".dock-ctx-item:not(:disabled)")?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [ctxMenu]);
+
+  /** Up/Down/Home/End move between menu rows, like a native context menu. */
+  const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>(".dock-ctx-item:not(:disabled)"));
+    if (!items.length) return;
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    let next = -1;
+    if (e.key === "ArrowDown") next = i < 0 ? 0 : (i + 1) % items.length;
+    else if (e.key === "ArrowUp") next = i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = items.length - 1;
+    if (next >= 0) {
+      e.preventDefault();
+      items[next].focus({ preventScroll: true });
+    }
   };
 
   const cancelHoverClose = () => {
@@ -1306,6 +1339,7 @@ export const DockSurface: React.FC = () => {
             ref={menuLinger.ref}
             inert={menuLinger.leaving}
             className={`dock-ctx-menu dock-ctx-edge-${edge}`}
+            onKeyDown={onMenuKeyDown}
             style={
               edge === "left"
                 ? { left: (pillRef.current?.getBoundingClientRect().right ?? 60) + 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
@@ -1432,6 +1466,20 @@ export const DockSurface: React.FC = () => {
                     </button>
                   </>
                 )}
+
+                <button
+                  type="button"
+                  className="dock-ctx-item"
+                  onClick={() => {
+                    const id = shownMenu.pinnedApp?.id ?? (shownMenu.windows[0] ? `win-${shownMenu.windows[0].hwnd}` : shownMenu.launchPath);
+                    magicOpenFor("dockItem", id, shownMenu.pinnedApp?.name ?? shownMenu.title, shownMenu.launchPath || null);
+                    closeMenu();
+                  }}
+                >
+                  <Sparkles size={14} strokeWidth={2.4} aria-hidden />
+                  <span>Magic menu</span>
+                  <span className="dock-ctx-hint">Alt+right-click</span>
+                </button>
 
                 <button
                   type="button"
@@ -2368,6 +2416,10 @@ export const DockSurface: React.FC = () => {
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  if (e.altKey) {
+                    magicOpenFor("dockItem", app.id, app.name, primaryWin?.exePath || app.path);
+                    return;
+                  }
                   const r = e.currentTarget.getBoundingClientRect();
                   openMenu({
                     kind: "app",
@@ -2468,6 +2520,10 @@ export const DockSurface: React.FC = () => {
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  if (e.altKey) {
+                    magicOpenFor("dockItem", `win-${primaryWin.hwnd}`, primaryWin.title, primaryWin.exePath || null);
+                    return;
+                  }
                   const r = e.currentTarget.getBoundingClientRect();
                   openMenu({
                     kind: "app",

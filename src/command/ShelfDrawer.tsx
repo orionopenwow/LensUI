@@ -1,6 +1,7 @@
 // The Shelf drawer: named shelves of context items. Tick items to use them as context; drag text
 // or files in; drag items out into other apps; drag to reorder.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { magicOpenFor } from "../magic/contract";
 import { Archive, Check, Download, FileText, Globe, Image as ImageIcon, MessageSquare, Pin, Plus, Trash2, Captions, TextSelect, File } from "lucide-react";
 import {
   DEFAULT_SHELF, formatTokens, onShelfChanged, shelfAdd, shelfClear, shelfCreate, shelfDelete, shelfExport,
@@ -150,6 +151,11 @@ export function ShelfDrawer({
                 e.dataTransfer.effectAllowed = "copyMove";
               }}
               onDragEnd={() => setDragId(null)}
+              onContextMenu={(e) => {
+                // Right-click a Shelf item: the magic window, with this item as its target.
+                e.preventDefault();
+                magicOpenFor("shelfItem", it.id, it.title, it.path || it.url || null);
+              }}
               onDragOver={(e) => dragId && dragId !== it.id && e.preventDefault()}
               onDrop={(e) => {
                 if (!dragId || dragId === it.id) return;
