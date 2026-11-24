@@ -22,11 +22,6 @@ fn dead() -> &'static Mutex<HashSet<String>> {
     SET.get_or_init(|| Mutex::new(HashSet::new()))
 }
 
-fn watched() -> &'static Mutex<HashSet<String>> {
-    static SET: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
-    SET.get_or_init(|| Mutex::new(HashSet::new()))
-}
-
 /// What a `ProcessFailed` of this kind means for the page. Kinds are WebView2's
 /// `COREWEBVIEW2_PROCESS_FAILED_KIND` values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,13 +62,23 @@ pub(crate) fn on_failure(label: &str, kind: i32) -> bool {
 }
 
 /// Starts watching the renderer behind `webview`. Called from the app-wide page-load hook, so
-/// every Lens webview is covered, including windows created later; each is registered once.
+/// every Lens webview is covered, including windows created later.
+///
+/// Each webview is registered once. The dedupe is per webview, not per label: a window that is
+/// closed and created again under the same label (the Dock after a layout change, for example)
+/// gets a new WebView2 controller, and that one must be watched too. A label-keyed set left the
+/// recreated Dock unwatched, so killing its renderer went unnoticed (`webview-killed` E2E).
 pub(crate) fn watch<R: tauri::Runtime>(webview: &tauri::Webview<R>) {
-    let label = webview.label().to_string();
-    if !watched().lock().unwrap_or_else(|e| e.into_inner()).insert(label.clone()) {
-        return;
-    }
-    register(webview, label);
+    register(webview, webview.label().to_string());
+}
+
+#[cfg(windows)]
+thread_local! {
+    /// The controller each label is currently watched on. Holding the COM reference keeps the old
+    /// controller's address from being reused until it is replaced, so comparing is safe. Only
+    /// touched inside `with_webview` callbacks, which all run on the main thread.
+    static WATCHED: std::cell::RefCell<std::collections::HashMap<String, webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Controller>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
 #[cfg(windows)]
@@ -82,17 +87,22 @@ fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String) {
         use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_PROCESS_FAILED_KIND;
         use webview2_com::ProcessFailedEventHandler;
         crate::failsafe::guard::ffi_guard("renderer-register", (), || unsafe {
-            let Ok(core) = pw.controller().CoreWebView2() else {
+            let controller = pw.controller();
+            if WATCHED.with(|w| w.borrow().get(&label).is_some_and(|c| c == &controller)) {
+                return;
+            }
+            let Ok(core) = controller.CoreWebView2() else {
+                // Not ready yet: the next page-load event for this webview tries again.
                 return;
             };
-            let label = label.clone();
+            let for_handler = label.clone();
             let handler = ProcessFailedEventHandler::create(Box::new(move |sender, args| {
                 crate::failsafe::guard::ffi_guard("renderer-failed", (), || {
                     let mut kind = COREWEBVIEW2_PROCESS_FAILED_KIND(0);
                     if let Some(args) = args.as_ref() {
                         let _ = args.ProcessFailedKind(&mut kind);
                     }
-                    if on_failure(&label, kind.0) {
+                    if on_failure(&for_handler, kind.0) {
                         if let Some(view) = sender.as_ref() {
                             let _ = view.Reload();
                         }
@@ -101,7 +111,9 @@ fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String) {
                 Ok(())
             }));
             let mut token = 0i64;
-            let _ = core.add_ProcessFailed(&handler, &mut token);
+            if core.add_ProcessFailed(&handler, &mut token).is_ok() {
+                WATCHED.with(|w| w.borrow_mut().insert(label.clone(), controller));
+            }
         });
     });
 }
