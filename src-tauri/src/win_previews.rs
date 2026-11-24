@@ -551,7 +551,7 @@ mod sys {
         fn IsWindowVisible(hwnd: Hwnd) -> i32;
         fn GetWindowRect(hwnd: Hwnd, rect: *mut Rect) -> i32;
         fn GetCursorPos(point: *mut Point) -> i32;
-        fn SetTimer(hwnd: Hwnd, id: usize, ms: u32, func: *const c_void) -> usize;
+        fn SetTimer(hwnd: isize, id: usize, elapse_ms: u32, timer_proc: isize) -> usize;
         fn KillTimer(hwnd: Hwnd, id: usize) -> i32;
     }
 
@@ -659,7 +659,7 @@ mod sys {
                 if any_live {
                     // Every tile is watched: it follows its owner and goes when the owner hides or
                     // the pointer leaves, even if the page that asked never says "hide".
-                    SetTimer(hwnd, WATCH_TIMER, PREVIEW_WATCH_MS, std::ptr::null());
+                    SetTimer(hwnd, WATCH_TIMER, PREVIEW_WATCH_MS, 0);
                 } else {
                     KillTimer(hwnd, WATCH_TIMER);
                 }
