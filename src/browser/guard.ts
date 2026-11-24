@@ -25,7 +25,7 @@ const PATTERNS: [InjectionFlag["kind"], RegExp][] = [
 
 // Same idea as `discussed` in agentsafe/hidden_text.rs: text that talks *about* prompt injection
 // (an article quoting "ignore previous instructions") is prose, unless it speaks to the AI.
-const DISCUSSION = /prompt[- ]injection|injection attack|jailbreak|for example|for instance|e\.g\.|such as|phrases? like|attackers?\b|malicious|researchers|known as|a classic/i;
+const DISCUSSION = /prompt[- ]injection|injection attacks?|jailbreaks?/i;
 const SPEAKS_TO_AI = /\b(dear|attention|hey|note to|message to)\s+(the\s+)?(ai|assistant|agent|llm|model|claude|chatgpt|gpt|copilot|gemini|bot)s?\b|\b(ai|assistant|agent|llm|model)s?\s+reading this\b/i;
 
 /** True when a discussion marker is within 200 characters of `at..at+len` and the line does not

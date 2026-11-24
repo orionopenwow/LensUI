@@ -223,11 +223,10 @@ const INSTRUCTION_PATTERNS: &[Pattern] = &[
 
 const SPEAKS_TO_AI: &str = "speaks directly to the AI";
 
-/// Words that mark text as discussing prompt injection rather than doing it.
-const DISCUSSION_MARKERS: &[&str] = &[
-    "prompt injection", "prompt-injection", "injection attack", "jailbreak", "for example", "for instance", "e.g.", "such as",
-    "phrases like", "phrase like", "attacker", "attackers", "malicious", "researchers", "known as", "a classic",
-];
+/// Words that mark text as discussing prompt injection rather than doing it. Deliberately narrow:
+/// everyday phrases ("such as", "for example") are not enough, or an attacker could add one next
+/// to an instruction to get it downgraded.
+const DISCUSSION_MARKERS: &[&str] = &["prompt injection", "prompt-injection", "injection attack", "injection attacks", "jailbreak", "jailbreaks"];
 
 /// True when a discussion marker sits within 200 bytes of the span (outside the span itself).
 fn discussed(text: &str, start: usize, end: usize) -> bool {
@@ -517,9 +516,11 @@ pub fn scan(nodes: &[TextNode]) -> ScanReport {
         // smuggled or role-marker text never gets this, and the per-step gate still applies.
         let plain_sight = !unseen && !zw_split && matches!(n.source, Source::Dom | Source::File | Source::Transcript);
         let speaks_to_ai = node_hits.iter().any(|h| h.3 == SPEAKS_TO_AI);
+        // A line that also tries to move data or call tools is never treated as mere discussion.
+        let moves_data = node_hits.iter().any(|h| matches!(h.2, FindingKind::Exfiltration | FindingKind::ToolCall));
         for (a, b, kind, detail, strong) in &node_hits {
             let (oa, ob) = to_orig(*a, *b);
-            if plain_sight && !speaks_to_ai && *kind != FindingKind::ToolCall && discussed(text, oa, ob) {
+            if plain_sight && !speaks_to_ai && !moves_data && *kind == FindingKind::Instruction && discussed(text, oa, ob) {
                 findings.push(Finding { node: n.id, start: oa, end: ob, kind: *kind, severity: Severity::Low, detail: format!("{detail} (quoted in a discussion)"), quarantine: false });
                 continue;
             }

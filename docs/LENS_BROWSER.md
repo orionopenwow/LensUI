@@ -87,10 +87,12 @@ These figures are not measured yet: this branch was built in a Linux sandbox wit
    finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source
    of intent.
    Text that only *discusses* prompt injection (an article quoting "ignore previous instructions"
-   near words like "attackers", "such as", "prompt injection") is noted at Low and left in the
-   text, both here and in `agentsafe/hidden_text.rs`, so it no longer makes every step ask or
-   blocks the page. The same words aimed at the AI ("dear AI agent…"), hidden, smuggled as a tool
-   call, or sent from a tool still count in full, and every step keeps its own approval rules.
+   within 200 characters of "prompt injection", "injection attack" or "jailbreak") is noted at Low
+   and left in the text, both here and in `agentsafe/hidden_text.rs`, so it no longer makes every
+   step ask or blocks the page. Everyday words like "such as" or "for example" are not enough. The
+   same words aimed at the AI ("dear AI agent…"), any line that also asks to send data or call a
+   tool, hidden or smuggled text, and text from a tool still count in full, and every step keeps
+   its own approval rules.
 3. The model replies with a small JSON plan. `parsePlan` keeps only known actions, web URLs and
    at most 8 steps; there is no field that can approve anything.
 4. Each step goes through `browser_agent_act`. The host **re-describes the element from the page
