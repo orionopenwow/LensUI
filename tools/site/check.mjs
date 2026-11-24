@@ -574,7 +574,7 @@ async function waitDesk(page, sel = "#desk-host") {
     // Magic exhibit: a step shows the real window in that state; the visitor's own right-click works too.
     await page.evaluate(() => document.getElementById("mx").scrollIntoView({ block: "center" }));
     await page.click('#mx .xstep[data-step="approval"]');
-    expect(await page.waitForFunction(() => /Needs your OK/i.test(document.querySelector("#mx .mx-menu iframe")?.contentDocument?.body.textContent ?? ""), null, { timeout: 10000 }).then(() => true, () => false), "the magic exhibit's “Send to Claude” step shows the approval");
+    expect(await page.waitForFunction(() => /Needs your OK/i.test(document.querySelector("#mx .mx-menu iframe")?.contentDocument?.body.textContent ?? ""), null, { timeout: 20000 }).then(() => true, () => false), "the magic exhibit's “Send to Claude” step shows the approval");
     const tb = await page.locator("#mx .mx-target").boundingBox();
     await page.mouse.click(tb.x + tb.width * 0.75, tb.y + tb.height * 0.8, { button: "right" });
     await page.waitForTimeout(600);

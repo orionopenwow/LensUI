@@ -72,7 +72,7 @@ export const SHOWCASES = [
     look: { pack: "dracula-glass", dock: "floating" },
     steps: [
       { cap: "Lens Browser: tabs down the side, one slim bar on top, and your theme all the way through.", target: (d) => winEl(d, "browser") },
-      { cap: "The address bar is also the command bar: sites, tabs and actions in one list.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=address") },
+      { cap: "One box: open tabs, bookmarks, history and search in one list.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=suggest") },
       { cap: "The AI panel sits beside the page and reads only what you point it at.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
       { cap: "On a video, it makes a transcript you can search and jump through.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=transcript") },
       { cap: "When an agent wants to click or type for you, it asks first.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=approval") },

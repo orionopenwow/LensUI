@@ -20,19 +20,20 @@ const MAGIC_STEPS = [
 // Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx).
 const BROWSER_STEPS = [
   ["agent", "AI beside the page", "It works; you watch each step"],
-  ["frame", "One slim bar", "Tabs at the side, the page gets the room"],
-  ["address", "One box", "Sites, tabs and actions together"],
+  ["newtab", "New tab", "Search, most visited, recently closed"],
+  ["suggest", "One box", "Open tabs, bookmarks, history, search"],
+  ["import-pick", "Bring your browser", "Item by item. Never passwords"],
   ["transcript", "Transcripts", "Search a video like a page"],
   ["approval", "Needs your OK", "Before it submits or sends"],
 ];
 const S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-// What is on main today (docs/LENS_BROWSER.md, src/browser).
+// What works on main today (docs/BROWSER_AAA.md, "works" rows only).
 const WHY_BROWSER = [
-  [S('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>'), "One slim bar", "Tabs and spaces live in the sidebar. The page gets the room."],
-  [S('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>'), "AI beside the page", "A side panel with your own model. Turn AI off and it's off."],
-  [S('<path d="M4 6h16M4 12h10M4 18h13"/>'), "Transcripts", "Any YouTube video becomes text you can search and jump through."],
-  [S('<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>'), "Your theme", "It wears the same colours, glass and corners as your desktop."],
-  [S('<path d="M5 3l14 9-6 1.5L10 20z"/>'), "Lens in the page", "Right-click in any page for the Lens menu: summarise, translate, save."],
+  [S('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'), "One box that knows your tabs", "Open tabs, bookmarks, history and search in one list. It switches to a tab you already have instead of opening a copy."],
+  [S('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'), "A new tab worth opening", "Search, most visited, bookmarks and recently closed tabs. Themed, and it loads nothing from the network."],
+  [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Import you can undo", "From Chrome, Edge, Brave, Vivaldi, Opera, Firefox or Arc. Pick item by item, never passwords or cookies, remove it in one step."],
+  [S('<path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/>'), "Tabs come back", "After a crash every tab is back in place, asleep until you need it. One hung tab never takes the others with it."],
+  [S('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>'), "AI beside the page", "A side panel with your own model, and transcripts for videos. Turn AI off and it's off."],
   [S('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'), "Approvals for agents", "Reading runs. Submitting or sending asks first. Paying and passwords: never."],
 ];
 const CORE = [["monitor", "Monitor", "What's slowing your PC"], ["timer", "Timer", "Timers, pomodoro, alarms"], ["notes", "Notes", "Checklists and stickies"], ["calculator", "Calculator", "Units and history"], ["color", "Color", "Pick any pixel"], ["power", "Power", "Battery health"], ["network", "Network", "Who's using the network"], ["clipboard", "Clipboard", "History, pins"], ["startup", "Startup", "What runs at sign-in"]];
