@@ -685,6 +685,28 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
 
   runActiveRef.current = runActive;
 
+  // B-12b: the page marks when it has painted twice while visible and focused. Chromium does not
+  // deliver input to a page that was hidden until it has produced frames again, so a key sent in
+  // the first few milliseconds after Command is shown can be lost before any script sees it.
+  useEffect(() => {
+    let raf = 0;
+    const arm = () => {
+      if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(() => bump("commandKeysReady"));
+      });
+    };
+    arm();
+    window.addEventListener("focus", arm);
+    document.addEventListener("visibilitychange", arm);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("focus", arm);
+      document.removeEventListener("visibilitychange", arm);
+    };
+  }, []);
+
   // B-12b trace: counts every Enter keydown the page receives at all (capture phase, before
   // React), so a dropped Enter can be told apart from one the handler skipped.
   useEffect(() => {

@@ -482,6 +482,7 @@ pub(crate) fn show_command(app: &AppHandle, payload: serde_json::Value) {
     if let Some(win) = crate::app::setup::ensure_window(app, "command", move |a| show_command(&a, retry_payload)) {
         let _ = win.show();
         let _ = win.set_focus();
+        crate::app::renderer::focus_page(&win);
         if opened.send {
             let _ = app.emit("lens://command/open", opened.payload);
         }

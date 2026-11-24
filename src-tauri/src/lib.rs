@@ -217,6 +217,8 @@ pub fn run() {
     let bg_topbar_search_open = topbar_search_open_state.clone();
 
     tauri::Builder::default()
+        // One renderer watchdog for every webview, including windows created later (B-31).
+        .on_page_load(|webview, _payload| crate::app::renderer::watch(webview))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
