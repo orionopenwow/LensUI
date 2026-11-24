@@ -287,6 +287,14 @@ const SCENARIOS = [
       await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dark mode", null, { timeout: 8000 }).catch(async () => {
         throw new Error(`the opening text never reached Command; input is "${await box.inputValue()}"; link: ${JSON.stringify(await invoke(dock, "command_link_status_cmd").catch((e) => String(e)))}`);
       });
+      // Keys only reach a page whose window has the keyboard. The first CI trace of B-12b had the
+      // textarea focused in the DOM but no keydown at all, so wait until the window really has
+      // focus (the backend moves WebView2 focus into the page when Command opens) before typing.
+      const focusedAt = Date.now();
+      await cmd.waitForFunction(() => document.hasFocus() && document.visibilityState === "visible", null, { timeout: 8000 }).catch(async () => {
+        throw new Error(`Command never got the keyboard: ${JSON.stringify(await cmd.evaluate(() => ({ hasFocus: document.hasFocus(), visible: document.visibilityState, activeEl: document.activeElement?.tagName })))}`);
+      });
+      const focusWaitMs = Date.now() - focusedAt;
       await box.press("Enter");
       const answered = () =>
         cmd
@@ -311,7 +319,7 @@ const SCENARIOS = [
           focused: document.hasFocus(),
           text: document.getElementById("root").innerText.slice(0, 600),
         }));
-        throw new Error(`no answer or action card for "dark mode"; link ${JSON.stringify(link)}; page ${JSON.stringify(page)}`);
+        throw new Error(`no answer or action card for "dark mode" (waited ${focusWaitMs} ms for focus); link ${JSON.stringify(link)}; page ${JSON.stringify(page)}`);
       }
       await shot(cmd, "command-dark-mode");
       const errs = take();
