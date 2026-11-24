@@ -104,22 +104,19 @@ machine (see the last section).
 ### Experimental / not yet verified at runtime
 These parts are compile-checked and unit-tested where possible, but have not been exercised in a running
 Lens build on Windows yet:
-- Crash reporting, the updater and the plugin-frame command are not wired into `lib.rs` in this
-  change (see `docs/RELEASING.md` → "Wiring pending"). Until they are, the new cards show empty or
-  "unavailable" states, and **plugins will not run** because the stricter CSP blocks the old inline
-  fallback. Wire them in the same release.
+- Crash reporting, the updater and the plugin-frame command were wired into `lib.rs` before
+  0.3.0.
 - The CSP was proven in a headless Chromium harness with mocked Tauri APIs (0 violations across all
   11 surfaces and the 4 example plugins), not inside WebView2.
 - Grant signing and verification are unit-tested (HMAC test vectors, tamper cases); creating and
   reading the DPAPI-protected key on a real profile has no automated test.
-- The release workflow has not been run against a real tag; no signing key exists for the
-  repository yet.
+- v0.3.0 is the first tag the release workflow runs against.
 - Installers are not Authenticode-signed, so SmartScreen will warn on first run.
 
 ## [0.1.0]
 
 - Initial import of Lens UI.
 
-[Unreleased]: https://github.com/orionopenwow/lensui/compare/v0.2.0...HEAD
-[0.2.0-beta]: https://github.com/orionopenwow/lensui/releases/tag/v0.2.0
-[0.1.0]: https://github.com/orionopenwow/lensui/commit/ad52a44
+[Unreleased]: https://github.com/orionopenwow/LensUI/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/orionopenwow/LensUI/releases/tag/v0.3.0
+[0.1.0]: https://github.com/orionopenwow/LensUI/commit/ad52a44
