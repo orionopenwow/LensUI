@@ -21,6 +21,7 @@ pub(crate) fn command_ready_cmd(app: AppHandle) -> Option<serde_json::Value> {
         if let Some(win) = app.get_webview_window("command") {
             let _ = win.show();
             let _ = win.set_focus();
+            crate::app::renderer::focus_page(&win);
         }
     }
     pending
@@ -28,8 +29,14 @@ pub(crate) fn command_ready_cmd(app: AppHandle) -> Option<serde_json::Value> {
 
 /// The Command page applied the open with this `seq` and its submit handler sees that state.
 #[tauri::command]
-pub(crate) fn command_open_applied_cmd(seq: u64) {
+pub(crate) fn command_open_applied_cmd(app: AppHandle, seq: u64) {
     crate::app::integration::command_link().lock().unwrap_or_else(|e| e.into_inner()).applied(seq);
+    // The page now shows what was opened: give it the keyboard, so the first Enter lands (B-12b).
+    if let Some(win) = app.get_webview_window("command") {
+        if win.is_visible().unwrap_or(false) {
+            crate::app::renderer::focus_page(&win);
+        }
+    }
 }
 
 /// Where the ready handshake stands (Tester Hub and the end-to-end tests).

@@ -124,7 +124,26 @@ fn recover(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>, 
     hide(app, label);
     eprintln!("[Lens UI] The {label} page {what}; keeping it hidden and retrying.");
     crate::tester::log("error", "loadguard", &format!("{label} page {what}"));
+    retry(app, label, original)
+}
 
+/// A renderer that exited is not a page that fails to load: reload it straight away, and only
+/// fall back to the backoff retries if that first reload does not come up.
+fn recover_now(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>, what: &str) -> bool {
+    set_failed(label, true);
+    hide(app, label);
+    eprintln!("[Lens UI] The {label} page {what}; reloading it.");
+    crate::tester::log("error", "loadguard", &format!("{label} page {what}"));
+    if let (Some(win), Some(url)) = (app.get_webview_window(label), original) {
+        let _ = win.navigate(url.clone());
+    }
+    if wait_ready(label, READY_TIMEOUT) {
+        return shown_again(app, label);
+    }
+    retry(app, label, original)
+}
+
+fn retry(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>) -> bool {
     for secs in RETRY_BACKOFF_SECS {
         thread::sleep(Duration::from_secs(secs));
         if is_ready(label) {
@@ -150,6 +169,10 @@ fn recover(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>, 
     if !is_ready(label) {
         return false;
     }
+    shown_again(app, label)
+}
+
+fn shown_again(app: &AppHandle, label: &'static str) -> bool {
     set_failed(label, false);
     if let Some(win) = app.get_webview_window(label) {
         let _ = win.set_ignore_cursor_events(false);
@@ -241,7 +264,32 @@ fn keep_alive(app: &AppHandle, label: &'static str, original: Option<&tauri::Url
     let mut revives = 0u32;
     loop {
         let before = Instant::now();
-        thread::sleep(check);
+        // Look every quarter second for a renderer that WebView2 reported as gone (app::renderer);
+        // that is reloaded at once, whether the window is visible or not. The heartbeat below
+        // stays as the backstop for a page that hangs without its process exiting.
+        let mut renderer_gone = false;
+        while before.elapsed() < check {
+            if crate::app::renderer::take_dead(label) {
+                renderer_gone = true;
+                break;
+            }
+            thread::sleep(Duration::from_millis(250));
+        }
+        if renderer_gone {
+            if revives >= MAX_REVIVES {
+                give_up();
+                return;
+            }
+            revives += 1;
+            misses = 0;
+            surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+            if !recover_now(app, label, original, "stopped answering (its renderer exited)") {
+                give_up();
+                return;
+            }
+            beat(label);
+            continue;
+        }
         let late = before.elapsed() > check * 3;
         if late {
             // Coming back from sleep: give the page a fresh start before judging it again.
