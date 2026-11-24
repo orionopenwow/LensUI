@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { runBackdropSlash } from "../studio/backdrop/command";
+import { runWallpaperAction } from "../wallpapers/command";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { resolveTarget } from "../settings/registry";
@@ -131,6 +132,10 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
           runBackdropSlash(typeof args.prompt === "string" ? args.prompt : "");
           return;
         }
+        case "next_wallpaper":
+          // "Lens, next wallpaper": the Wallpaper Switcher steps through your library.
+          runWallpaperAction("next").then((line) => notify("Wallpaper", line));
+          return;
         case "show_desktop":
           invoke("test_corner_action_cmd", { action: "show-desktop" }).catch(() => {});
           return;

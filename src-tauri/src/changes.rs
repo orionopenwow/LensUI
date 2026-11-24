@@ -72,6 +72,14 @@ pub const CHANGES: &[Change] = &[
         undo: undo_workspaces,
     },
     Change {
+        id: "wallpaper-switcher",
+        label: "Wallpaper Switcher",
+        scope: Scope::LensData,
+        writes: &[],
+        sources: &["wallpapers/mod.rs", "commands/wallpapers.rs"],
+        undo: undo_wallpaper_switcher,
+    },
+    Change {
         id: "wallpaper",
         label: "Live wallpaper",
         scope: Scope::Session,
@@ -361,6 +369,13 @@ pub fn remove_all(config: &mut LensConfig) -> Vec<UninstallStep> {
 fn undo_workspaces(_: &mut LensConfig) -> Result<String, String> {
     crate::win_workspaces::restore_all_windows();
     Ok("Windows hidden on other workspaces are shown again.".to_string())
+}
+
+/// The switcher never writes the Windows wallpaper: it only chooses what the Lens host shows.
+/// Undo stops automatic changes and puts back what the host showed before its first change;
+/// the `wallpaper` row right after this one detaches the host.
+fn undo_wallpaper_switcher(_: &mut LensConfig) -> Result<String, String> {
+    crate::wallpapers::undo()
 }
 
 fn undo_wallpaper(_: &mut LensConfig) -> Result<String, String> {

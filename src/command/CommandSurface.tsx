@@ -35,6 +35,7 @@ import { isNewOpen, pendingOpen } from "./openSeq";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
+import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -142,7 +143,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
           .map(([id, sp]) => ({ id, name: sp.name, description: sp.name, template: sp.template, provider: "local", input: "selection", options: [], output: "thread", builtin: true, enabled: true }));
         // Lens core apps as `/timer`, `/monitor`… (docs/CORE_APPS.md); ids Command already uses win.
         const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
-        setTemplates([...withApps, ...backdropTemplate(withApps)]);
+        const withBackdrop = [...withApps, ...backdropTemplate(withApps)];
+        setTemplates([...withBackdrop, ...wallpaperTemplate(withBackdrop)]);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -421,6 +423,14 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       if (isBackdropStub(template)) {
         runBackdropSlash(arg);
         hide();
+        return setText("");
+      }
+      if (isWallpaperStub(template)) {
+        // "/wallpaper next" changes it in place and says which one; on its own it opens the picker.
+        const opening = parseWallpaperSlash(arg) === "open";
+        const done = runWallpaperSlash(arg);
+        if (opening) hide();
+        else done.then((line) => flash(line, line.startsWith("Showing")));
         return setText("");
       }
       switch (template.id) {

@@ -1,0 +1,675 @@
+/* Wallpaper Switcher: the picker (Lens Studio window) and its Settings card.
+   Chrome stays monochrome per DESIGN.md; the colour is the wallpapers' own. The fan moves with
+   transform and opacity only, on motion tokens (src/styles/motion.css). */
+
+@property --wsw-c1 { syntax: "<color>"; inherits: true; initial-value: #101014; }
+@property --wsw-c2 { syntax: "<color>"; inherits: true; initial-value: #17171d; }
+@property --wsw-c3 { syntax: "<color>"; inherits: true; initial-value: #22222b; }
+@property --wsw-c4 { syntax: "<color>"; inherits: true; initial-value: #2e2e3a; }
+@property --wsw-c5 { syntax: "<color>"; inherits: true; initial-value: #3b3b4a; }
+
+.wsw {
+  --wsw-card-w: min(34vw, 62vh, 600px);
+  --wsw-card-h: calc(var(--wsw-card-w) * 0.625);
+  position: relative;
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr) auto 38px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: #fafafa;
+  font-family: "Arial Rounded MT Bold", "Arial Rounded", "Segoe UI Variable", system-ui, sans-serif;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition:
+    --wsw-c1 var(--lens-dur-slower) var(--lens-ease-out),
+    --wsw-c2 var(--lens-dur-slower) var(--lens-ease-out),
+    --wsw-c3 var(--lens-dur-slower) var(--lens-ease-out),
+    --wsw-c4 var(--lens-dur-slower) var(--lens-ease-out),
+    --wsw-c5 var(--lens-dur-slower) var(--lens-ease-out);
+}
+
+/* The colour-matched backdrop: the focused wallpaper's five colours as wide soft lights over a
+   near-black floor, so text on top always reads. */
+.wsw-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 80% at 12% 8%, color-mix(in oklab, var(--wsw-c4) 62%, transparent), transparent 70%),
+    radial-gradient(60% 70% at 92% 14%, color-mix(in oklab, var(--wsw-c5) 46%, transparent), transparent 68%),
+    radial-gradient(80% 70% at 78% 96%, color-mix(in oklab, var(--wsw-c3) 66%, transparent), transparent 70%),
+    radial-gradient(70% 70% at 8% 94%, color-mix(in oklab, var(--wsw-c2) 72%, transparent), transparent 70%),
+    color-mix(in oklab, var(--wsw-c1) 38%, #050507);
+}
+.wsw-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(5 5 7 / 0.5), rgb(5 5 7 / 0.18) 30%, rgb(5 5 7 / 0.32) 68%, rgb(5 5 7 / 0.72));
+}
+
+/* ── top bar ── */
+.wsw-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 16px;
+  min-width: 0;
+}
+.wsw-title {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+.wsw-title span {
+  color: rgb(250 250 250 / 0.6);
+  font-weight: 500;
+}
+.wsw-search {
+  flex: 1;
+  min-width: 120px;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid rgb(250 250 250 / 0.14);
+  background: rgb(9 9 11 / 0.42);
+  color: rgb(250 250 250 / 0.7);
+}
+.wsw-search:focus-within {
+  border-color: rgb(250 250 250 / 0.5);
+}
+.wsw-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fafafa;
+  font: inherit;
+  font-size: 12.5px;
+}
+.wsw-search input::placeholder {
+  color: rgb(250 250 250 / 0.5);
+}
+.wsw-sources {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 2;
+}
+.wsw-sources {
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+.wsw-sources::-webkit-scrollbar {
+  display: none;
+}
+.wsw-src {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgb(250 250 250 / 0.72);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.wsw-src:hover {
+  background: rgb(250 250 250 / 0.08);
+  color: #fafafa;
+}
+.wsw-src.on {
+  background: rgb(250 250 250 / 0.16);
+  border-color: rgb(250 250 250 / 0.22);
+  color: #fafafa;
+}
+.wsw-src small {
+  font-size: 10.5px;
+  color: rgb(250 250 250 / 0.55);
+}
+.wsw-top-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.wsw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgb(250 250 250 / 0.14);
+  background: rgb(9 9 11 / 0.38);
+  color: #fafafa;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-instant) var(--lens-ease-out);
+}
+.wsw-btn:hover {
+  background: rgb(250 250 250 / 0.14);
+}
+.wsw-btn:active {
+  transform: scale(var(--lens-press-scale));
+}
+.wsw-btn:focus-visible,
+.wsw-src:focus-visible,
+.wsw-card:focus-visible {
+  outline: 2px solid #fafafa;
+  outline-offset: 2px;
+}
+.wsw-btn.on {
+  background: rgb(250 250 250 / 0.2);
+  border-color: rgb(250 250 250 / 0.36);
+}
+.wsw-btn.primary {
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #09090b;
+}
+.wsw-btn.primary:hover {
+  background: #fff;
+}
+.wsw-btn.danger {
+  border-color: rgb(255 110 100 / 0.6);
+  color: #ffb4ad;
+}
+.wsw-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+.wsw-top .bd-winbtns {
+  border-left-color: rgb(250 250 250 / 0.16);
+}
+.wsw-top .bd-icon-btn {
+  color: #fafafa;
+}
+
+/* ── the fan ── */
+.wsw-stage {
+  position: relative;
+  min-height: 0;
+  perspective: 1500px;
+  perspective-origin: 50% 46%;
+  outline: none;
+}
+.wsw-fan {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.wsw-card {
+  --x: 0;
+  --z: 0;
+  --turn: 0;
+  --scale: 1;
+  --o: 1;
+  --dim: 0;
+  position: absolute;
+  left: calc(50% - var(--wsw-card-w) / 2);
+  top: calc(50% - var(--wsw-card-h) / 2 - 6px);
+  width: var(--wsw-card-w);
+  height: var(--wsw-card-h);
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: #0d0d11;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: var(--o);
+  transform: translate3d(calc(var(--x) * var(--wsw-card-w)), 0, calc(var(--z) * var(--wsw-card-w))) rotateY(calc(var(--turn) * 1deg)) scale(var(--scale));
+  transform-origin: 50% 60%;
+  box-shadow: 0 30px 70px -28px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(250 250 250 / 0.1);
+  transition: transform var(--lens-dur-slower) var(--lens-ease-out), opacity var(--lens-dur-slow) var(--lens-ease-out);
+  will-change: transform;
+}
+/* Distance dims a card instead of making it see-through. */
+.wsw-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background: #050507;
+  opacity: var(--dim, 0);
+  pointer-events: none;
+  transition: opacity var(--lens-dur-slow) var(--lens-ease-out);
+}
+.wsw-card.is-focus {
+  cursor: default;
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(250 250 250 / 0.22);
+}
+.wsw-card.is-current::after {
+  content: "On your desktop";
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  top: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(9 9 11 / 0.72);
+  color: #fafafa;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.wsw-art,
+.wsw-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+.wsw-art {
+  background: var(--art, #17171d);
+}
+.wsw-img.wsw-full {
+  opacity: 0;
+  transition: opacity var(--lens-dur-slow) var(--lens-ease-out);
+}
+.wsw-img.wsw-full.is-ready {
+  opacity: 1;
+}
+.wsw-badges {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  gap: 6px;
+}
+.wsw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(9 9 11 / 0.72);
+  color: #fafafa;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.wsw-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 36px 14px 12px;
+  border-radius: 0 0 16px 16px;
+  background: linear-gradient(180deg, transparent, rgb(5 5 7 / 0.78));
+}
+.wsw-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+}
+.wsw-chips {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+.wsw-chip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sw, #444);
+  box-shadow: 0 0 0 1.5px rgb(250 250 250 / 0.85), 0 2px 6px rgb(0 0 0 / 0.5);
+}
+
+/* Nothing to show yet */
+.wsw-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+.wsw-empty h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.wsw-empty p {
+  margin: 0;
+  max-width: 460px;
+  color: rgb(250 250 250 / 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.wsw-empty-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ── the focused wallpaper: what it is, and what you can do ── */
+.wsw-info {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 0 16px 12px;
+  min-width: 0;
+}
+.wsw-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  color: rgb(250 250 250 / 0.72);
+  font-size: 12px;
+}
+.wsw-meta b {
+  color: #fafafa;
+  font-weight: 700;
+}
+.wsw-labels {
+  display: inline-flex;
+  gap: 4px;
+}
+.wsw-label {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgb(250 250 250 / 0.14);
+  color: #fafafa;
+  font-size: 11px;
+  font-weight: 600;
+}
+.wsw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ── keyboard bar ── */
+.wsw-keys {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 14px;
+  border-top: 1px solid rgb(250 250 250 / 0.1);
+  background: rgb(5 5 7 / 0.4);
+  color: rgb(250 250 250 / 0.74);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.wsw-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.wsw-key kbd {
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid rgb(250 250 250 / 0.26);
+  background: rgb(250 250 250 / 0.1);
+  color: #fafafa;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+}
+.wsw-progress {
+  margin-left: auto;
+  color: rgb(250 250 250 / 0.6);
+}
+
+/* ── side panel (folders, schedule, labels, delete) ── */
+.wsw-panel {
+  position: absolute;
+  right: 12px;
+  top: 56px;
+  bottom: 50px;
+  width: min(360px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgb(250 250 250 / 0.16);
+  background: rgb(9 9 11 / 0.9);
+  box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+  overflow-y: auto;
+  z-index: 200;
+}
+.wsw-panel h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.wsw-panel p {
+  margin: 0;
+  color: rgb(250 250 250 / 0.72);
+  line-height: 1.5;
+}
+.wsw-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wsw-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wsw-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgb(250 250 250 / 0.06);
+}
+.wsw-list li span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+.wsw-list li.is-missing span {
+  color: #ffb4ad;
+}
+.wsw-row {
+  display: flex;
+  gap: 6px;
+}
+.wsw-input,
+.wsw-select {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgb(250 250 250 / 0.18);
+  background: rgb(250 250 250 / 0.06);
+  color: #fafafa;
+  font: inherit;
+  outline: 0;
+}
+.wsw-input:focus,
+.wsw-select:focus {
+  border-color: rgb(250 250 250 / 0.6);
+}
+.wsw-select option {
+  background: #121216;
+  color: #fafafa;
+}
+.wsw-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── auto-change controls (shared by the panel and Settings) ── */
+.wsa {
+  display: grid;
+  gap: 10px;
+}
+.wsa-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+}
+.wsa-line > span {
+  min-width: 0;
+}
+.wsa-line small {
+  display: block;
+  opacity: 0.68;
+  font-size: 11px;
+  font-weight: 500;
+}
+.wsa-select {
+  height: 30px;
+  max-width: 190px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--lens-border, rgb(250 250 250 / 0.18));
+  background: rgb(var(--lens-ink, 250 250 250) / 0.06);
+  color: inherit;
+  font: inherit;
+}
+.wsa-select option {
+  background: var(--lens-pack-base, #121216);
+  color: var(--lens-fg, #fafafa);
+}
+.wsa.is-off .wsa-more {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.wsa-more {
+  display: grid;
+  gap: 10px;
+  transition: opacity var(--lens-dur-base) var(--lens-ease-out);
+}
+
+/* ── Settings card ── */
+.wsc {
+  display: grid;
+  gap: 12px;
+}
+.wsc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.wsc-open {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 84px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--lens-border, rgb(250 250 250 / 0.14));
+  background:
+    radial-gradient(80% 120% at 85% 0%, color-mix(in oklab, var(--lens-accent, #fafafa) 34%, transparent), transparent 70%),
+    linear-gradient(135deg, rgb(var(--lens-ink, 250 250 250) / 0.1), rgb(var(--lens-ink, 250 250 250) / 0.03));
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-instant) var(--lens-ease-out);
+}
+.wsc-open:hover {
+  border-color: var(--lens-border-strong, rgb(250 250 250 / 0.4));
+}
+.wsc-open:active {
+  transform: scale(var(--lens-press-scale));
+}
+.wsc-open small {
+  display: block;
+  margin-top: 2px;
+  opacity: 0.7;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.wsc-fan {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  display: flex;
+}
+.wsc-fan i {
+  width: 46px;
+  height: 30px;
+  margin-left: -18px;
+  border-radius: 6px;
+  background: var(--art, rgb(var(--lens-ink, 250 250 250) / 0.2));
+  box-shadow: 0 6px 14px -6px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(250 250 250 / 0.16);
+  transform: rotate(var(--tilt, 0deg)) translateY(var(--lift, 0px));
+}
+.wsc-note {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.wsc-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 1040px) {
+  .wsw-keys .wsw-key.is-extra {
+    display: none;
+  }
+}

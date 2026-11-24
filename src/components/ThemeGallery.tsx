@@ -7,6 +7,7 @@ import { CLAUDE_COLLECTION } from "../themes/community/claude";
 import "../themes/community/community.css";
 import { dockStyleLabel } from "../dock/styles";
 import { AmbientPreview, packPalette } from "../playground/ambient/controls";
+import { FEEL_LABEL, FONT_LABEL, familyOf, featuredLook, featuredPacks, isFeatured } from "../themes/featured";
 
 interface Props {
   config: LensConfig;
@@ -20,9 +21,10 @@ interface Props {
 
 const TIER_ORDER: ThemePack["tier"][] = ["Core", "Linux Suite", "Studio", "Light", "Living", "Community", "Custom"];
 
-type FilterId = "all" | "dark" | "light" | "linux" | "studio" | "living" | "claude" | "custom";
+type FilterId = "all" | "featured" | "dark" | "light" | "linux" | "studio" | "living" | "claude" | "custom";
 const FILTERS: { id: FilterId; label: string; test: (p: ThemePack) => boolean }[] = [
   { id: "all", label: "All", test: () => true },
+  { id: "featured", label: "Featured", test: (p) => isFeatured(p.id) },
   { id: "dark", label: "Dark", test: (p) => p.scheme !== "light" },
   { id: "light", label: "Light", test: (p) => p.scheme === "light" },
   { id: "linux", label: "Linux classics", test: (p) => p.tier === "Linux Suite" },
@@ -57,17 +59,13 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
   const pill = pack.controlStyle === "accent-pills";
   const compact = height < 64;
   const dockStyle = pack.dockStyle ?? "floating";
-  const dockIcons = [accent, "#60a5fa", "#34d399", "#fbbf24"];
+  const dockIcons = [accent, "#60a5fa", "#34d399", "#fbbf24", "#f472b6"];
   const iconRadius = pack.iconShape === "circle" ? 4 : pack.iconShape === "rounded" ? 2 : 2.5;
 
-  const dockBox: React.CSSProperties =
-    dockStyle === "taskbar"
-      ? { left: 0, right: 0, bottom: 0, justifyContent: "center", borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none" }
-      : dockStyle === "minimal"
-        ? { left: "50%", bottom: 3, transform: "translateX(-50%)", background: "transparent", border: "none" }
-        : dockStyle === "slim"
-          ? { left: "50%", bottom: 3, transform: "translateX(-50%)", padding: "2px 4px", borderRadius: 4 }
-          : { left: "50%", bottom: 3, transform: "translateX(-50%)", borderRadius: radius };
+  const dockGroups =
+    dockStyle === "islands" || dockStyle === "split"
+      ? [dockIcons.slice(0, 3), dockIcons.slice(3)]
+      : [dockIcons];
 
   return (
     <div
@@ -133,28 +131,22 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
         <span style={{ width: 16, height: compact ? 4 : 5, borderRadius: 3, background: accent }} />
       </div>
 
-      {/* dock, drawn in the pack's own dock style */}
-      <div
-        style={{
-          position: "absolute",
-          display: "flex",
-          gap: 3,
-          padding: "3px 6px",
-          background: elevated,
-          border: `1px solid rgb(${ink} / 0.12)`,
-          ...dockBox,
-        }}
-      >
-        {dockIcons.map((c, i) => (
-          <span
-            key={i}
-            style={{
-              width: dockStyle === "slim" ? 5 : compact ? 6 : 7,
-              height: dockStyle === "slim" ? 5 : compact ? 6 : 7,
-              borderRadius: iconRadius,
-              background: c,
-            }}
-          />
+      {/* dock, drawn in the pack's own dock style: islands and split are two pills, studio carries labels */}
+      <div className={`tux-pv-dock tux-pv-dock-${dockStyle}`}>
+        {dockGroups.map((group, g) => (
+          <span key={g} className="tux-pv-pill" ref={(el) => {
+            el?.style.setProperty("--pv-elev", elevated);
+            el?.style.setProperty("--pv-ink", ink);
+            el?.style.setProperty("--pv-radius", `${dockStyle === "taskbar" ? 0 : dockStyle === "slim" ? 4 : dockStyle === "islands" ? 9 : radius}px`);
+          }}>
+            {group.map((c, i) => (
+              <span key={i} className="tux-pv-icon" ref={(el) => {
+                el?.style.setProperty("--pv-c", c);
+                el?.style.setProperty("--pv-ir", `${iconRadius}px`);
+              }} />
+            ))}
+            {dockStyle === "studio" && g === 0 && <span className="tux-pv-label" />}
+          </span>
         ))}
       </div>
     </div>
@@ -162,20 +154,25 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
 };
 
 /** One selectable pack card. `size="small"` is the compact recommended-row card. */
-export const PackCard: React.FC<{
+const PackCardBase: React.FC<{
   pack: ThemePack;
   active: boolean;
   accent: string;
   size?: "small" | "large";
   /** Show the Recommended / Light / Dock badges (large cards only). */
   meta?: boolean;
+  /** "Like <featured look>": the family a pack under More themes is filed under. */
+  family?: string;
+  /** Small cards only: show the one-line description under the name (Simple mode's featured looks). */
+  describe?: boolean;
   onApply: (id: string) => void;
-}> = ({ pack, active, accent, size = "large", meta = true, onApply }) => {
+}> = ({ pack, active, accent, size = "large", meta = true, family, describe, onApply }) => {
   const small = size === "small";
+  const look = featuredLook(pack.id);
   const card = (
     <button
       type="button"
-      className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""}`}
+      className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""} ${small && describe && pack.description ? "has-desc" : ""}`}
       aria-pressed={active}
       aria-label={`${pack.label} theme${pack.description ? `. ${pack.description}` : ""}`}
       onClick={() => onApply(pack.id)}
@@ -185,16 +182,20 @@ export const PackCard: React.FC<{
         <span className="tux-pack-label">{pack.label}</span>
         {active && <span className="tux-pack-dot" />}
       </span>
-      {!small && pack.description && <span className="tux-pack-desc">{pack.description}</span>}
+      {(!small || describe) && pack.description && <span className="tux-pack-desc">{pack.description}</span>}
       {!small && meta && (
         <span className="tux-pack-meta">
-          {pack.recommended && (
+          {look ? (
             <span className="tux-badge">
-              <Star size={10} strokeWidth={2.4} /> Recommended
+              <Star size={10} strokeWidth={2.4} /> Featured
             </span>
+          ) : (
+            family && <span className="tux-badge muted">Like {family}</span>
           )}
-          <span className="tux-badge muted">{pack.scheme === "light" ? "Light" : "Dark"}</span>
+          <span className="tux-badge muted">{pack.tier === "Living" ? "Light by day" : pack.scheme === "light" ? "Light" : "Dark"}</span>
           {pack.dockStyle && <span className="tux-badge muted">{dockStyleLabel(pack.dockStyle)} dock</span>}
+          {look && <span className="tux-badge muted">{FONT_LABEL[look.font]}</span>}
+          {look && <span className="tux-badge muted">{FEEL_LABEL[look.feel]}</span>}
         </span>
       )}
     </button>
@@ -222,11 +223,25 @@ export const PackCard: React.FC<{
 };
 
 /**
+ * Memoised: a theme row is a dozen cards (the gallery, 89), and their parents re-render for
+ * unrelated state (sliders, the wallpaper state arriving). Pass a stable `onApply`.
+ */
+export const PackCard = React.memo(PackCardBase);
+
+/**
  * Every theme pack (built-in and custom) with filters and search. Opened from "Browse all" under
  * the recommended row on the Theme & Look tab.
  */
 export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, onClose }) => {
-  const packs = allPacks();
+  // Featured looks lead (with their own Dock style and one-line character); everything else follows
+  // under More themes, tagged with the featured look it resembles.
+  const packs = useMemo(() => {
+    const featured = featuredPacks();
+    const ids = new Set(featured.map((p) => p.id));
+    return [...featured, ...allPacks().filter((p) => !ids.has(p.id))];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPacks().length]);
+  const families = useMemo(() => new Map(packs.filter((p) => !isFeatured(p.id)).map((p) => [p.id, familyOf(p).label])), [packs]);
   const [filter, setFilter] = useState<FilterId>("all");
   const [query, setQuery] = useState("");
 
@@ -241,9 +256,10 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
           p.label.toLowerCase().includes(q) ||
           (p.description ?? "").toLowerCase().includes(q) ||
           p.aliases.some((a) => a.includes(q)) ||
+          (families.get(p.id) ?? "").toLowerCase().includes(q) ||
           (p.source ? `${p.source.name} ${p.source.author}`.toLowerCase().includes(q) : false),
       )
-      .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+      .sort((a, b) => Number(isFeatured(b.id)) - Number(isFeatured(a.id)) || (isFeatured(a.id) ? 0 : TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packs.length, filter, query]);
 
@@ -259,7 +275,7 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
         <div>
           <div className="cc-label">All themes</div>
           <div className="cc-desc">
-            {packs.length} themes. One click changes colours, icons, folders and window frames together.
+            {packs.length} themes: {featuredPacks().length} featured looks, each unmistakably its own, then the rest by family.
           </div>
         </div>
         {onClose && (
@@ -314,17 +330,32 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
               Community themes from the Claude Code ecosystem · unofficial · links to originals
             </div>
           )}
-          <div className="tux-pack-grid">
-            {shown.map((pack) => (
-              <PackCard
-                key={pack.id}
-                pack={pack}
-                active={config.theme.preset === pack.id}
-                accent={pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent}
-                onApply={onApply}
-              />
+          {[
+            { id: "featured", title: "Featured", note: "A whole look in one click: colours, Dock, corners, font, backdrop and motion.", list: shown.filter((p) => isFeatured(p.id)) },
+            { id: "more", title: "More themes", note: "Variations, filed under the featured look each one resembles.", list: shown.filter((p) => !isFeatured(p.id)) },
+          ]
+            .filter((sec) => sec.list.length > 0)
+            .map((sec) => (
+              <section key={sec.id} className="tux-gallery-sec" aria-label={sec.title} data-section={sec.id}>
+                <div className="tux-gallery-sec-head">
+                  <span className="tux-h3">{sec.title}</span>
+                  <span className="tux-num">{sec.list.length}</span>
+                  <span className="cc-desc">{sec.note}</span>
+                </div>
+                <div className="tux-pack-grid">
+                  {sec.list.map((pack) => (
+                    <PackCard
+                      key={pack.id}
+                      pack={pack}
+                      family={families.get(pack.id)}
+                      active={config.theme.preset === pack.id}
+                      accent={pack.accentMode === "windows" ? (windowsAccent ?? pack.accent) : pack.accent}
+                      onApply={onApply}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
-          </div>
         </>
       )}
     </div>
