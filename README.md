@@ -13,7 +13,7 @@
 
 <p align="center"><img src="./docs/media/dock-magnify.gif" alt="The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches" width="720"></p>
 
-> **Status: beta, not yet tested on many real machines.** Everything compiles and runs its tests on Windows in CI, and every surface renders in automated screenshot tests, but most features have only been tried on a few PCs. There is no signed installer yet. New features are off by default. Keep [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat) handy while you try it.
+> **Status: beta, not yet tested on many real machines.** Everything compiles and runs its tests on Windows in CI, and every surface renders in automated screenshot tests, but most features have only been tried on a few PCs. The installers are not yet code-signed. New features are off by default. Keep [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat) handy while you try it.
 >
 > The clips in this README are rendered from the real Lens interface in a headless browser; the Windows side (other apps, the real desktop) is simulated in them. Recordings from real Windows machines will replace them.
 
@@ -39,7 +39,7 @@ More: [DOCK_STYLES.md](./docs/DOCK_STYLES.md)
 
 ### Themes & look
 
-Eighteen theme packs that restyle the dock, bar, panels and app window frames together.
+Twenty-one theme packs that restyle the dock, bar, panels and app window frames together.
 
 <p align="center"><img src="./docs/media/themes.gif" alt="Theme packs restyle every surface at once" width="720"></p>
 
@@ -95,25 +95,19 @@ One place for context: a standing clipboard, a pocket command bar and the same r
 - The Shelf keeps selections, pages, files and transcripts. Clipboard history is encrypted and skips password managers.
 - Right-click in the browser and File Explorer: summarise, translate, add to Shelf or pack it as context for Claude.
 
-_Context packs, micro-saves and the shared action catalogue are in pull request #19._
-
 More: [COMMAND.md](./docs/COMMAND.md) · [SHELF.md](./docs/SHELF.md) · [BROWSER_BRIDGE.md](./docs/BROWSER_BRIDGE.md)
 
 ### Voice
-
-> **In development** — in [pull request #23](https://github.com/orionopenwow/LensUI/pull/23), not in a build yet.
 
 "Lens, minimise this." Push-to-talk by default, recognised on your PC.
 
 <p align="center"><img src="./docs/media/voice.gif" alt="Voice: &quot;Lens, minimise this&quot; with live transcript, confirm and undo" width="720"></p>
 
 - Windows, apps, workspaces, themes, volume, timers, the Shelf and questions, with confirm and undo.
-- Speech is recognised locally with whisper.cpp. Audio is never saved or sent anywhere.
+- Speech is recognised locally with whisper.cpp. Audio is never saved or sent anywhere. One-click setup of the speech model stays off until its download checksums are pinned.
 - "Hey Lens" is opt-in and pauses in calls, games, full-screen apps and on the lock screen.
 
 ### Lens Browser
-
-> **In development** — in [pull request #20](https://github.com/orionopenwow/LensUI/pull/20), not in a build yet.
 
 A light WebView2 browser with spaces, vertical tabs and an agent that stops for your OK.
 
@@ -133,13 +127,9 @@ Off until you turn it on. Local first, Claude when you choose, and nothing happe
 - Every cloud request shows exactly what it would send. The usage log never stores your text.
 - Risky steps show a Needs your OK card: what it will click, the details, Deny or hold to approve.
 
-_The unified approval card and Claude control over every setting are in pull request #21._
-
 More: [AI.md](./docs/AI.md) · [AI_SURFACES.md](./docs/AI_SURFACES.md) · [MCP.md](./docs/MCP.md)
 
 ### Lens Snip
-
-> **In development** — in [pull request #24](https://github.com/orionopenwow/LensUI/pull/24), not in a build yet.
 
 Capture, then do the useful part before anything is saved.
 
@@ -151,11 +141,9 @@ Capture, then do the useful part before anything is saved.
 
 ### Ask Lens
 
-> **In development** — in [pull request #18](https://github.com/orionopenwow/LensUI/pull/18), not in a build yet.
-
 "How do I…?" answered from Lens's own settings, with Show me.
 
-<p align="center"><img src="./docs/media/guide.gif" alt="Lens answers &quot;how do I…&quot; and shows you where" width="720"></p>
+<p align="center"><img src="./docs/media/guide.gif" alt="Lens Guide answers &quot;how do I…&quot; and shows you where" width="720"></p>
 
 - An offline index of every setting, theme, dock style, command and shortcut. It only knows things that exist.
 - Show me opens the right Settings tab and highlights the setting.
@@ -177,9 +165,9 @@ More: [TESTER_HUB.md](./docs/TESTER_HUB.md)
 
 - **Off until you turn it on.** New features ship disabled. Your desktop only changes when you ask it to.
 - **Every change can be undone.** Lens records what it changes and puts it back. Remove all Lens changes is one button.
-- **Games are left alone.** No injection into other processes. Overlays and hooks pause for full-screen apps and anti-cheat games.
+- **Games are left alone.** By default Lens loads nothing into other apps, and its overlays pause for full-screen apps and anti-cheat games. Two optional window-styling extras (the experimental styling hook and the Windhawk mod) do load into other apps; both stay off until you turn them on and skip known anti-cheat games. Leave them off if you play online games with anti-cheat.
 - **Local first.** The command engine and Guide work offline. Cloud AI is opt-in and shows what it would send.
-- **Open source.** MIT licensed. Releases are signed, and you can build every part yourself.
+- **Open source.** MIT licensed, and you can build every part yourself. Updates are signed; the installers are not yet code-signed, so Windows SmartScreen warns the first time you run one.
 
 Restore scripts work even when Lens isn't running: [`Restore-Windows-Taskbar.bat`](./Restore-Windows-Taskbar.bat), [`Restore-Windows-Shell.bat`](./Restore-Windows-Shell.bat) and [`Uninstall-Lens-UI.bat`](./Uninstall-Lens-UI.bat). No telemetry and no account.
 
@@ -199,7 +187,9 @@ Expected support, based on the Windows features each part uses; real-machine tes
 
 ## Install
 
-There is no signed release yet. Until there is, build from source.
+Starting with 0.3.0, the installers (`.exe` and `.msi`) are on [GitHub Releases](https://github.com/orionopenwow/LensUI/releases). They are not yet code-signed, so Windows SmartScreen warns the first time you run one; choose **More info › Run anyway**. Lens updates itself from there, and every update is signed. winget and a portable `.zip` come later.
+
+### Build from source
 
 Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
 
