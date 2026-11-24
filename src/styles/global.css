@@ -467,7 +467,7 @@ button {
   height: 100%;
   transform: translateX(calc((var(--fill, 0) - 1) * 100%));
   transition: transform var(--lens-dur-slow) var(--lens-ease-out);
-  will-change: transform;
+  /* No will-change: a history chart has dozens of fills, and a layer each costs more than it saves. */
 }
 /* Upright bars (a history chart): the fill rises from the bottom edge. */
 .lens-meter-fill.is-upright {
