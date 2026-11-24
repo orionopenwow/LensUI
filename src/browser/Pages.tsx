@@ -42,7 +42,7 @@ export function StartPage(p: StartProps) {
   const closed = [...p.closed].reverse().slice(0, 4);
   const empty = sites.length === 0 && marks.length === 0;
   return (
-    <div className="lb-start lb-newtab lens-dither lens-dither-vignette" role="region" aria-label="New tab">
+    <div className="lb-start lb-newtab lb-glow" role="region" aria-label="New tab">
       <div className="lb-newtab-col">
         <h1>Lens Browser</h1>
         <form
@@ -139,7 +139,7 @@ export function ErrorPage(p: ErrorProps) {
   const Icon = info.kind === "offline" ? CloudOff : info.kind === "cert" ? ShieldAlert : TriangleAlert;
   const host = hostOf(p.url);
   return (
-    <div className="lb-start lb-error lens-dither lens-dither-vignette" role="alert">
+    <div className="lb-start lb-error lb-glow lb-glow-quiet" role="alert">
       <Icon size={24} className={info.unsafe ? "lb-never" : "lb-dim"} />
       <h1>{info.title}</h1>
       <p className="lb-error-body">{info.body}</p>
