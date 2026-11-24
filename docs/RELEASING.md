@@ -39,14 +39,14 @@ into the repository.
 1. Update the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`
    (all three must match; the workflow refuses a tag that disagrees with `tauri.conf.json`).
 2. Move the `Unreleased` notes in `CHANGELOG.md` under the new version.
-3. Merge to `main`, then tag and push: `git tag v0.2.0 && git push origin v0.2.0`.
+3. Merge to `main`, then tag and push: `git tag v0.3.0 && git push origin v0.3.0`.
 4. `.github/workflows/release.yml` runs on `windows-latest`:
    - rebuilds `lens_dwm_hook.dll` from source,
    - runs `tauri build --bundles nsis,msi` with `createUpdaterArtifacts` on and the public key
      injected, signing with `TAURI_SIGNING_PRIVATE_KEY`,
    - collects the `.exe`, `.msi`, their `.sig` files, a `latest.json` pointing at the NSIS
      installer, and `SHA256SUMS.txt`,
-   - creates a **draft** release named `Lens v0.2.0` with those files (re-running uploads with
+   - creates a **draft** release named `Lens v0.3.0` with those files (re-running uploads with
      `--clobber` onto the existing release).
 5. Open the draft, paste the CHANGELOG section, test the installer on a clean Windows 11 VM, then
    publish. Installed copies only see the update after publishing, because the updater reads
@@ -180,106 +180,8 @@ every surface in two themes, 0 CSP violations; the four example plugins render a
 Limit: a program running as the same Windows user can decrypt DPAPI data too, so it could re-sign
 grants. This stops plugins and casual edits from escalating, not malware already running as you.
 
-## Wiring pending
+## Release wiring
 
-These pieces are written and unit-tested but not registered in `src-tauri/src/lib.rs`, because
-`lib.rs` is being split in a parallel change. Add them in one commit; until then plugins don't run
-under the new CSP.
-
-```rust
-// top of lib.rs, with the other modules
-mod win_crash;
-mod win_update;
-```
-
-```rust
-// in run(), before install_exit_restore_handler():
-win_crash::install_log_capture();
-
-// first line inside the existing std::panic::set_hook closure:
-win_crash::write_crash_report(info);
-```
-
-```rust
-// builder, next to the global-shortcut plugin:
-.plugin(tauri_plugin_updater::Builder::new().build())
-
-// in .setup(), after `let handle = app.handle().clone();`
-win_crash::set_feature_flags(&initial_config);
-win_update::start_background_check(handle.clone());
-```
-
-```rust
-// in save_config_cmd, after save_config(&new_config)?;
-win_crash::set_feature_flags(&new_config);
-```
-
-```rust
-// new commands
-#[tauri::command]
-fn write_plugin_frame_cmd(id: String, html: String) -> Result<String, String> {
-    win_plugins::write_plugin_frame(&id, &html)
-}
-
-#[tauri::command]
-fn list_crash_reports_cmd() -> Vec<win_crash::CrashReportInfo> {
-    win_crash::list_crash_reports()
-}
-
-#[tauri::command]
-fn read_crash_report_cmd(name: String) -> Result<String, String> {
-    win_crash::read_crash_report(&name)
-}
-
-#[tauri::command]
-fn open_crashes_folder_cmd() -> Result<(), String> {
-    let dir = win_crash::crashes_dir();
-    let _ = std::fs::create_dir_all(&dir);
-    launch_path(&dir.to_string_lossy())
-}
-
-#[tauri::command]
-fn get_update_settings_cmd() -> win_update::UpdateSettings {
-    win_update::load_settings()
-}
-
-#[tauri::command]
-fn set_update_settings_cmd(settings: win_update::UpdateSettings) -> Result<win_update::UpdateSettings, String> {
-    win_update::save_settings(settings)
-}
-
-#[tauri::command]
-async fn check_for_update_cmd(app: AppHandle) -> win_update::UpdateStatus {
-    win_update::check(&app).await
-}
-
-#[tauri::command]
-async fn install_update_cmd(app: AppHandle) -> Result<String, String> {
-    win_update::install(&app).await
-}
-```
-
-```rust
-// add to tauri::generate_handler![ ... ]
-write_plugin_frame_cmd,
-list_crash_reports_cmd,
-read_crash_report_cmd,
-open_crashes_folder_cmd,
-get_update_settings_cmd,
-set_update_settings_cmd,
-check_for_update_cmd,
-install_update_cmd,
-```
-
-Capabilities: none needed. The cards call Lens's own commands; `"updater:default"` would only be
-needed in `src-tauri/capabilities/default.json` if the JS updater API were used later.
-
-Control Center (`src/surfaces/ControlCenterSurface.tsx`, next to `<BackupRestoreCard />` around line 2674):
-
-```tsx
-import { CrashReportsCard } from "./CrashReportsCard";
-import { UpdatesCard } from "./UpdatesCard";
-// …
-<UpdatesCard />
-<CrashReportsCard />
-```
+Crash reports (`win_crash`), the updater (`tauri_plugin_updater` and
+`win_update::start_background_check`, started from `app/integration.rs`) and the plugin-frame
+and crash-report commands (`commands/release.rs`) are registered in `src-tauri/src/lib.rs`.
