@@ -7,6 +7,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
+  Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;
+  ← or Esc pans back. Picking one runs it in the Magic window. Alt+right-click still opens the
+  Magic window directly.
+- Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›.
+- The File Explorer "Lens ›" menu (off until you add it in Settings › Connections) now also
+  appears inside folders and on drives. Existing installs see **Update…** to add the new places.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,

@@ -1,11 +1,14 @@
 // Magic right-click window scenes on a mock desktop: ?scene=<name>&preset=<pack>
 // Scenes: selection link image file window desktop dockItem ask approval confirm flip card
+//         lensMenu lensRowFocus lensPanned (the "Lens ›" row in a Lens right-click menu)
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
 import "../../../src/styles/global.css";
 import { MagicSurface, type MagicInitial } from "../../../src/magic/MagicSurface";
 import { MagicCard } from "../../../src/components/MagicCard";
+import { LensContextMenu } from "../../../src/magic/LensContextMenu";
+import { Check, ClipboardCopy, Pin, Trash2 } from "lucide-react";
 import { previewOpen } from "../../../src/magic/previews";
 import { DEFAULT_MAGIC } from "../../../src/magic/contract";
 import type { AiRunState } from "../../../src/ai/contract";
@@ -85,7 +88,27 @@ function Desktop({ children, cursor, box }: { children: React.ReactNode; cursor:
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
-if (scene === "card") {
+const lensScenes = ["lensMenu", "lensRowFocus", "lensPanned"];
+if (lensScenes.includes(scene)) {
+  const icon = (I: typeof Check) => <I size={14} strokeWidth={2.4} aria-hidden />;
+  root.render(
+    <Desktop cursor={[400, 92]} box={[408, 100]}>
+      <LensContextMenu
+        at={{ x: 408, y: 100 }}
+        item={{ kind: "shelfItem", id: "s1", label: "Calm technology — principles", path: null }}
+        initialPanned={scene === "lensPanned"}
+        onClose={() => {}}
+        actions={[
+          { id: "use", label: "Use as context", icon: icon(Check), onSelect: () => {} },
+          { id: "copy", label: "Copy", icon: icon(ClipboardCopy), onSelect: () => {} },
+          { id: "pin", label: "Pin", icon: icon(Pin), onSelect: () => {} },
+          { id: "remove", label: "Remove", danger: true, icon: icon(Trash2), onSelect: () => {} },
+        ]}
+      />
+    </Desktop>,
+  );
+  if (scene === "lensRowFocus") setTimeout(() => document.querySelector<HTMLElement>(".lens-pan-row")?.focus(), 50);
+} else if (scene === "card") {
   root.render(
     <div style={{ padding: 16, background: "var(--lens-bg-base)", minHeight: "100%" }}>
       <div style={{ width: 640 }}>
