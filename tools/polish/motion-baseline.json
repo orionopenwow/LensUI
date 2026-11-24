@@ -11,18 +11,13 @@
     "layout-transition": 1
   },
   "src/command/mini/EdgeShelfSurface.tsx": {
-    "native-resize": 2,
-    "timer-animation": 2
+    "native-resize": 1
   },
   "src/command/mini/edge.css": {
     "backdrop-filter": 1
   },
   "src/command/mini/mini.css": {
     "backdrop-filter": 1
-  },
-  "src/components/PlaygroundCard.tsx": {
-    "inline-animation": 1,
-    "layout-transition": 1
   },
   "src/components/SystemModules.css": {
     "layout-transition": 1
@@ -45,14 +40,10 @@
     "layout-transition": 1
   },
   "src/guide/guide.css": {
-    "layout-transition": 2
+    "layout-transition": 1
   },
   "src/magic/magic.css": {
     "backdrop-filter": 1
-  },
-  "src/media/TranscriptionCard.tsx": {
-    "inline-animation": 1,
-    "layout-transition": 1
   },
   "src/music/music.css": {
     "backdrop-filter": 3
@@ -79,19 +70,12 @@
   "src/surfaces/ControlCenterSurface.css": {
     "backdrop-filter": 1
   },
-  "src/surfaces/ControlCenterSurface.tsx": {
-    "inline-animation": 2,
-    "layout-transition": 2
-  },
   "src/surfaces/DesktopFolderSurface.tsx": {
     "backdrop-filter": 2,
-    "inline-animation": 1,
-    "layout-transition": 1,
-    "native-resize": 4
+    "native-resize": 1
   },
   "src/surfaces/DockSurface.css": {
-    "backdrop-filter": 1,
-    "layout-transition": 2
+    "backdrop-filter": 1
   },
   "src/surfaces/FocusDimSurface.tsx": {
     "inline-animation": 2,
@@ -107,12 +91,7 @@
     "timer-animation": 1
   },
   "src/surfaces/TopBarSurface.css": {
-    "backdrop-filter": 1,
-    "layout-transition": 4
-  },
-  "src/surfaces/WidgetDrawerSurface.tsx": {
-    "inline-animation": 2,
-    "layout-transition": 2
+    "backdrop-filter": 1
   },
   "src/tester/TesterHub.css": {
     "layout-transition": 1

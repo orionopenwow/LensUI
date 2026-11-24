@@ -319,6 +319,16 @@ mod rt {
         _rc: *mut RECT,
         data: LPARAM,
     ) -> BOOL {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("hotcorners.enum_proc", BOOL(1), || enum_proc_guarded(hmon, _hdc, _rc, data))
+    }
+
+    unsafe fn enum_proc_guarded(
+        hmon: HMONITOR,
+        _hdc: HDC,
+        _rc: *mut RECT,
+        data: LPARAM,
+    ) -> BOOL {
         let out = &mut *(data.0 as *mut Vec<(MonRect, bool)>);
         let mut mi = MONITORINFO {
             cbSize: std::mem::size_of::<MONITORINFO>() as u32,

@@ -50,6 +50,7 @@ pub(crate) async fn set_power_mode_cmd(mode: String) -> Result<win_system_module
 
 #[tauri::command]
 pub(crate) fn quit_lens(app: AppHandle) {
+    crate::app::safe_start::mark_started(); // a clean quit is never a failed start
     crate::app::integration::shutdown(Some(&app));
     win_mcp::stop_server();
     win_previews::hide_previews();

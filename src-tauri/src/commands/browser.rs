@@ -139,6 +139,16 @@ pub async fn browser_tab_close(app: AppHandle, id: String) -> Result<BrowserView
     .await
 }
 
+/// Opens a copy of a tab next to it.
+#[tauri::command]
+pub async fn browser_tab_duplicate(app: AppHandle, id: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.duplicate_tab(&id, host::now())?;
+        changed(&app)
+    })
+    .await
+}
+
 #[tauri::command]
 pub async fn browser_tab_move(app: AppHandle, id: String, index: usize, folder: Option<String>) -> Result<BrowserView, String> {
     blocking(move || {
@@ -181,14 +191,14 @@ pub async fn browser_tab_sleep(app: AppHandle, id: String) -> Result<BrowserView
     .await
 }
 
-/// back | forward | reload
+/// back | forward | reload | stop
 #[tauri::command]
 pub async fn browser_history_nav(app: AppHandle, action: String) -> Result<(), String> {
     blocking(move || {
         let (_, view) = host::view_for(None)?;
         match action.as_str() {
             "reload" => view.reload().map_err(|e| e.to_string())?,
-            "back" | "forward" => {
+            "back" | "forward" | "stop" => {
                 host::eval_op(&view, json!({ "op": action }), Duration::from_secs(2))?;
             }
             _ => return Err("Unknown action.".into()),
@@ -206,8 +216,14 @@ pub async fn browser_zoom(app: AppHandle, zoom: f64) -> Result<f64, String> {
         let z = (zoom * 100.0).round().clamp(25.0, 500.0) / 100.0;
         let (id, view) = host::view_for(None)?;
         view.set_zoom(z).map_err(|e| e.to_string())?;
-        if let Some(t) = rt().state.tab_mut(&id) {
-            t.zoom = z;
+        {
+            let mut r = rt();
+            let url = r.state.tab(&id).map(|t| t.url.clone()).unwrap_or_default();
+            if let Some(t) = r.state.tab_mut(&id) {
+                t.zoom = z;
+            }
+            // Remembered for the whole site, so the next visit opens at this size.
+            r.state.remember_zoom(&url, z);
         }
         host::save(&rt());
         host::emit_state(&app);
@@ -314,9 +330,34 @@ pub fn browser_history_clear(since_ms: u64) -> Result<(), String> {
     crate::browser::store::save_history_to(&crate::browser::store::history_path(), &r.history)
 }
 
+/// Forgets one page from history.
+#[tauri::command]
+pub fn browser_history_remove(url: String) -> Result<(), String> {
+    let mut r = rt();
+    if r.history.remove(&url) {
+        crate::browser::store::save_history_to(&crate::browser::store::history_path(), &r.history)?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn browser_downloads() -> Vec<Download> {
     rt().downloads.clone()
+}
+
+/// Clears finished and failed downloads from the list (files stay where they are). With `id`,
+/// removes just that one.
+#[tauri::command]
+pub fn browser_downloads_clear(app: AppHandle, id: Option<u64>) -> Vec<Download> {
+    use tauri::Emitter;
+    let list = {
+        let mut r = rt();
+        r.downloads.retain(|d| d.state == "downloading" || id.is_some_and(|want| d.id != want));
+        host::save_downloads(&r);
+        r.downloads.clone()
+    };
+    let _ = app.emit(host::EVT_DOWNLOADS, list.clone());
+    list
 }
 
 #[tauri::command]
@@ -633,15 +674,58 @@ pub async fn browser_import_preview(browser: String, profile: String, kinds: cra
     .await
 }
 
-/// Imports the chosen kinds, one step at a time, reporting progress on `lens://browser/import`.
+/// Reads one profile after the user agreed and returns its bookmarks and tabs as rows to tick,
+/// plus which of that browser's defaults can carry over. Nothing is imported.
 #[tauri::command]
-pub async fn browser_import_run(app: AppHandle, browser: String, profile: String, kinds: crate::browser::import::Kinds) -> Result<crate::browser::import::Applied, String> {
-    use crate::browser::import::{apply, find, read_profile, Applied, Kinds};
+pub async fn browser_import_items(browser: String, profile: String) -> Result<crate::browser::import::receipt::Items, String> {
+    use crate::browser::import::{find, read_defaults, read_profile, Kinds};
+    blocking(move || {
+        let (src, prof) = find(&browser, &profile)?;
+        let data = read_profile(&src, &prof, &Kinds { bookmarks: true, history: false, tabs: true, spaces: true });
+        let mut items = data.items();
+        items.defaults = read_defaults(&src, &prof);
+        Ok(items)
+    })
+    .await
+}
+
+fn load_receipts() -> Vec<crate::browser::import::receipt::Receipt> {
+    std::fs::read(crate::browser::store::receipts_path()).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+}
+
+fn save_receipts(list: &[crate::browser::import::receipt::Receipt]) -> Result<(), String> {
+    let path = crate::browser::store::receipts_path();
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, serde_json::to_vec(list).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+}
+
+/// Imports the chosen kinds, one step at a time, reporting progress on `lens://browser/import`.
+/// `skip` holds the URLs of bookmarks and tabs the person unticked; `adopt_search` also switches
+/// Lens to the other browser's search engine. Every import leaves a receipt (`browser_import_undo`).
+#[tauri::command]
+pub async fn browser_import_run(
+    app: AppHandle,
+    browser: String,
+    profile: String,
+    kinds: crate::browser::import::Kinds,
+    skip: Option<Vec<String>>,
+    adopt_search: Option<bool>,
+) -> Result<crate::browser::import::Applied, String> {
+    use crate::browser::import::{apply, find, read_defaults, read_profile, receipt, Applied, Kinds};
     use tauri::Emitter;
     blocking(move || {
         let (src, prof) = find(&browser, &profile)?;
+        let skip: std::collections::HashSet<String> = skip.unwrap_or_default().into_iter().collect();
         let emit = |step: &str, state: &str, count: usize, note: Option<String>| {
             let _ = app.emit(EVT_IMPORT, ImportProgress { browser: browser.clone(), step: step.into(), state: state.into(), count, note });
+        };
+        let before = {
+            let r = rt();
+            receipt::snapshot(&r.state, &r.history)
         };
         let mut total = Applied::default();
         let steps: [(&str, bool, Kinds); 4] = [
@@ -656,7 +740,8 @@ pub async fn browser_import_run(app: AppHandle, browser: String, profile: String
                 continue;
             }
             emit(step, "running", 0, None);
-            let data = read_profile(&src, &prof, &only);
+            let mut data = read_profile(&src, &prof, &only);
+            data.skip(&skip);
             let a = {
                 let mut r = rt();
                 let r = &mut *r;
@@ -670,14 +755,60 @@ pub async fn browser_import_run(app: AppHandle, browser: String, profile: String
             let note = data.notes.first().cloned();
             emit(step, if note.is_some() && count == 0 { "failed" } else { "done" }, count, note);
         }
+        if adopt_search == Some(true) {
+            if let Some(url) = read_defaults(&src, &prof).search_url {
+                let mut r = rt();
+                r.state.settings.search_url = url;
+                r.state.repair_settings();
+            }
+        }
         {
             let r = rt();
             host::save(&r);
             let _ = crate::browser::store::save_history_to(&crate::browser::store::history_path(), &r.history);
+            let made = receipt::receipt(&before, &r.state, &r.history, &src.label, host::now());
+            if !made.is_empty() {
+                let mut all = load_receipts();
+                all.insert(0, made);
+                all.truncate(receipt::RECEIPTS_CAP);
+                let _ = save_receipts(&all);
+            }
         }
         emit("done", "done", 0, None);
         host::emit_state(&app);
         Ok(total)
+    })
+    .await
+}
+
+/// Past imports, newest first, as counts.
+#[tauri::command]
+pub fn browser_import_receipts() -> Vec<crate::browser::import::receipt::ReceiptSummary> {
+    load_receipts().iter().map(|r| r.summary()).collect()
+}
+
+/// Removes everything one import added (bookmarks, tabs, spaces, history pages) and puts the
+/// search engine back if that import changed it.
+#[tauri::command]
+pub async fn browser_import_undo(app: AppHandle, id: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        let mut all = load_receipts();
+        let at = all.iter().position(|r| r.id == id).ok_or("That import was already removed.")?;
+        let receipt = all.remove(at);
+        let closed = {
+            let mut r = rt();
+            let r = &mut *r;
+            crate::browser::import::receipt::undo(&mut r.state, &mut r.history, &receipt)
+        };
+        for tab in &closed {
+            host::close_view(tab);
+        }
+        {
+            let r = rt();
+            let _ = crate::browser::store::save_history_to(&crate::browser::store::history_path(), &r.history);
+        }
+        save_receipts(&all)?;
+        changed(&app)
     })
     .await
 }

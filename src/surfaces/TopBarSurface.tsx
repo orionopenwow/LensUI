@@ -3,7 +3,8 @@ import { searchStep, isExpanded, type SearchPhase, type SearchEvent } from "../t
 import { MiniPlayer } from "../music/MiniPlayer";
 import { useMiniPlacement } from "../music/useMiniPlacement";
 import { PendingPill, useApprovalHotkey, usePendingApprovals } from "../approval";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { captureFlip, type FlipCapture } from "../ui/motion";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -50,8 +51,19 @@ export const TopBarSurface: React.FC = () => {
   const [searchPhase, setSearchPhase] = useState<SearchPhase>("closed");
   const searchOpen = isExpanded(searchPhase);
   const searchPhaseRef = React.useRef<SearchPhase>("closed");
+  // Search opens and closes by FLIP (docs/SMOOTHNESS.md, G-11): the right-hand group takes its
+  // new layout in one frame, then each item glides from where it was and the search field is
+  // revealed by a clip. Nothing animates width, max-width or padding, and the window never moves.
+  const barRef = React.useRef<HTMLElement>(null);
+  const searchFlip = React.useRef<FlipCapture | null>(null);
   const searchDo = (ev: SearchEvent, query = "") => {
     const r = searchStep(searchPhaseRef.current, ev);
+    if (isExpanded(r.phase) !== isExpanded(searchPhaseRef.current)) {
+      // Opening: the field is revealed from its small box. Closing: it is simply small again
+      // (a clip cannot show more than the small box), and only its neighbours glide back.
+      const items = isExpanded(r.phase) ? ".topbar-right > *" : ".topbar-right > *:not(.topbar-search-well)";
+      searchFlip.current = captureFlip(barRef.current?.querySelectorAll(items));
+    }
     searchPhaseRef.current = r.phase;
     setSearchPhase(r.phase);
     if (r.effect === "sync-open") invoke("sync_topbar_search_cmd", { query, open: true }).catch(() => {});
@@ -64,6 +76,11 @@ export const TopBarSurface: React.FC = () => {
   const topSearchInputRef = React.useRef<HTMLInputElement>(null);
   const searchOpenRef = React.useRef(false);
   searchOpenRef.current = searchOpen;
+  useLayoutEffect(() => {
+    const flip = searchFlip.current;
+    searchFlip.current = null;
+    flip?.play({ mode: (el) => (el.classList.contains("topbar-search-well") ? "clip" : "move") });
+  }, [searchOpen]);
 
   // With Lens Music on, its mini player replaces the older media controls (docs/MUSIC.md §3),
   // and the 2-second media poll stops.
@@ -126,7 +143,7 @@ export const TopBarSurface: React.FC = () => {
 
   return (
     <div className={`topbar-wrapper ${!visible ? "is-hidden" : ""} ${isFloating ? "is-floating" : ""}`}>
-      <header data-guide-id="topbar" className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
+      <header ref={barRef} data-guide-id="topbar" className={`topbar ${searchOpen ? "is-search-expanded" : ""}`} style={{ height: barHeight }}>
       <div className="topbar-left">
         <button
           type="button"

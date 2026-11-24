@@ -980,6 +980,11 @@ mod win {
     }
 
     unsafe extern "system" fn mgr_proc(hwnd: HWND, msg: u32, w: WPARAM, l: LPARAM) -> LRESULT {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard_else("focus_dim.mgr_proc", || DefWindowProcW(hwnd, msg, w, l), || mgr_proc_guarded(hwnd, msg, w, l))
+    }
+
+    unsafe fn mgr_proc_guarded(hwnd: HWND, msg: u32, w: WPARAM, l: LPARAM) -> LRESULT {
         match msg {
             WM_LENS_REFRESH => {
                 guarded(|| refresh());
@@ -1024,6 +1029,19 @@ mod win {
     }
 
     unsafe extern "system" fn location_cb(
+        _hook: HWINEVENTHOOK,
+        event: u32,
+        hwnd: HWND,
+        id_object: i32,
+        _id_child: i32,
+        _thread: u32,
+        _time: u32,
+    ) {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("focus_dim.location_cb", (), || location_cb_guarded(_hook, event, hwnd, id_object, _id_child, _thread, _time))
+    }
+
+    unsafe fn location_cb_guarded(
         _hook: HWINEVENTHOOK,
         event: u32,
         hwnd: HWND,
@@ -1095,6 +1113,11 @@ mod win {
 
     fn monitors() -> Vec<Bounds> {
         unsafe extern "system" fn cb(_m: HMONITOR, _dc: HDC, rc: *mut RECT, data: LPARAM) -> BOOL {
+            // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+            crate::failsafe::guard::ffi_guard("focus_dim.cb", BOOL(1), || cb_guarded(_m, _dc, rc, data))
+        }
+
+        unsafe fn cb_guarded(_m: HMONITOR, _dc: HDC, rc: *mut RECT, data: LPARAM) -> BOOL {
             let list = &mut *(data.0 as *mut Vec<Bounds>);
             if !rc.is_null() && list.len() < 8 {
                 list.push(rect_to_bounds(*rc));

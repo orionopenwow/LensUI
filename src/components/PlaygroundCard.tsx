@@ -207,9 +207,10 @@ function BudgetMeter({ stats, label }: { stats: Stats | null; label: string }) {
       </div>
       <div
         aria-hidden="true"
-        style={{ width: 92, height: 8, borderRadius: 8, background: "rgb(var(--lens-ink) / 0.1)", overflow: "hidden", flexShrink: 0 }}
+        className="lens-meter"
+        style={{ width: 92, height: 8, borderRadius: 8, background: "rgb(var(--lens-ink) / 0.1)", flexShrink: 0 }}
       >
-        <div style={{ width: `${Math.max(3, pct)}%`, height: "100%", background: tone, transition: "width 400ms ease" }} />
+        <div className="lens-meter-fill" style={{ "--fill": Math.max(3, Math.min(100, pct)) / 100, background: tone } as React.CSSProperties} />
       </div>
     </div>
   );

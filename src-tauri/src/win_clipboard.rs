@@ -423,6 +423,11 @@ mod sys {
     }
 
     unsafe extern "system" fn wnd_proc(hwnd: isize, msg: u32, w_param: usize, l_param: isize) -> isize {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard_else("clipboard.wnd_proc", || DefWindowProcW(hwnd, msg, w_param, l_param), || wnd_proc_guarded(hwnd, msg, w_param, l_param))
+    }
+
+    unsafe fn wnd_proc_guarded(hwnd: isize, msg: u32, w_param: usize, l_param: isize) -> isize {
         match msg {
             WM_CLIPBOARDUPDATE => {
                 on_clipboard_update(hwnd);

@@ -50,6 +50,7 @@ mod win_desktop_input;
 mod win_keyhook;
 mod input;
 mod changes;
+mod failsafe;
 mod win_update;
 mod tester;
 mod smooth;
@@ -81,7 +82,7 @@ mod studio;
 #[path = "tests/robustness/mod.rs"]
 mod robustness_tests;
 
-use config::{load_config, save_config, LensConfig};
+use config::{save_config, LensConfig};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -170,6 +171,14 @@ pub fn run() {
     install_exit_restore_handler();
     let default_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        // A panic inside a guard (an OS callback, a timed call) is caught there and the event is
+        // passed on (docs/FAILSAFE.md §3): keep a report of the first few and tear nothing down.
+        if failsafe::guard::in_guard() {
+            if failsafe::guard::report_budget() {
+                win_crash::write_crash_report(info);
+            }
+            return;
+        }
         win_crash::write_crash_report(info);
         crate::tester::log("error", "panic", &info.to_string());
         crate::app::integration::panic_shutdown();
@@ -182,9 +191,20 @@ pub fn run() {
         restore_taskbar_if_hidden();
         win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
         default_panic(info);
+        // Release builds unwind (so guards can catch), but a panic outside a guard is still the
+        // end of the process, exactly as before: everything was just handed back to Windows, and
+        // a half-torn-down Lens must not keep running.
+        #[cfg(not(debug_assertions))]
+        std::process::abort();
     }));
 
-    let initial_config = load_config();
+    // Crash-loop guard: two starts that never reached "the UI is up" within five minutes lead to
+    // the Safe Mode question, before the config is loaded or anything is switched on.
+    if let Some(code) = app::safe_start::begin() {
+        std::process::exit(code);
+    }
+
+    let initial_config = config::load_config_for_run();
     let shared_config = Arc::new(Mutex::new(initial_config.clone()));
     let dock_pill_width = Arc::new(Mutex::new(640.0f64));
     let dock_menu_open = Arc::new(Mutex::new(false));
@@ -208,6 +228,14 @@ pub fn run() {
             topbar_search_open: topbar_search_open_state,
         })
         .setup(move |app| {
+            {
+                // A feature paused after repeated failures tells the Dock window, which shows
+                // one toast with "Turn back on".
+                let notice_handle = app.handle().clone();
+                failsafe::breaker::set_listener(move |_tripped| {
+                    let _ = notice_handle.emit(commands::failsafe::NOTICE_EVENT, ());
+                });
+            }
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
             commands::coreapps::init_timers(app.handle());
@@ -320,6 +348,7 @@ pub fn run() {
             commands::browser::browser_tab_activate,
             commands::browser::browser_tab_close,
             commands::browser::browser_tab_move,
+            commands::browser::browser_tab_duplicate,
             commands::browser::browser_tab_pin,
             commands::browser::browser_tab_mute,
             commands::browser::browser_tab_sleep,
@@ -335,7 +364,9 @@ pub fn run() {
             commands::browser::browser_bookmark_toggle,
             commands::browser::browser_history_search,
             commands::browser::browser_history_clear,
+            commands::browser::browser_history_remove,
             commands::browser::browser_downloads,
+            commands::browser::browser_downloads_clear,
             commands::browser::browser_settings_set,
             commands::browser::browser_page,
             commands::browser::browser_events,
@@ -350,6 +381,9 @@ pub fn run() {
             commands::browser::browser_import_detect,
             commands::browser::browser_import_preview,
             commands::browser::browser_import_run,
+            commands::browser::browser_import_items,
+            commands::browser::browser_import_receipts,
+            commands::browser::browser_import_undo,
             commands::browser::browser_reopen_closed,
             commands::browser::browser_tidy,
             commands::browser::browser_archived,
@@ -636,6 +670,8 @@ pub fn run() {
             commands::plugins::open_plugins_folder_cmd,
             commands::theme::save_lenstheme_dialog_cmd,
             commands::surfaces::surface_ready_cmd,
+            commands::surfaces::surface_alive_cmd,
+            commands::surfaces::place_surface_cmd,
             app::autostart_guard::startup_block_reason_cmd,
             commands::misc::run_self_test_cmd,
             commands::mcp::get_mcp_status_cmd,
@@ -873,11 +909,18 @@ pub fn run() {
             commands::agentsafe::agentsafe_quarantine_clear,
             commands::tester::tester_reveal_report,
             commands::tester::tester_open_issue,
+            commands::failsafe::failsafe_status,
+            commands::failsafe::failsafe_take_notices,
+            commands::failsafe::failsafe_reset_feature,
+            commands::failsafe::failsafe_safe_mode_next,
+            commands::failsafe::failsafe_ui_crash,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Lens UI")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
+                // A clean exit is never a failed start.
+                crate::app::safe_start::mark_started();
                 crate::app::integration::shutdown(Some(_app_handle));
                 voice::shutdown();
                 win_dwm_engine::revert_dwm_theme();

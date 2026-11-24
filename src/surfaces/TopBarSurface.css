@@ -38,7 +38,7 @@
     0 1px 0 rgb(0 0 0 / calc(0.55 * var(--lens-shade-k)));
   backdrop-filter: blur(var(--lens-blur)) saturate(1.3);
   font-size: 12px;
-  transition: border-radius var(--lens-dur-base) var(--lens-ease-out), width var(--lens-dur-base) var(--lens-ease-out), box-shadow var(--lens-dur-base) var(--lens-ease-out);
+  transition: border-radius var(--lens-dur-base) var(--lens-ease-out), box-shadow var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .topbar-wrapper.is-floating .topbar {
@@ -175,11 +175,11 @@
      pushed the search box below the visible bar. */
   white-space: nowrap;
   flex-wrap: nowrap;
+  /* Collapsing for search is a layout snap plus a fade and slide (G-11); the neighbours glide
+     into place by FLIP in TopBarSurface.tsx. */
   transition:
-    max-width var(--lens-dur-slow) var(--lens-ease-out),
     opacity var(--lens-dur-fast) var(--lens-ease-out),
-    transform var(--lens-dur-slow) var(--lens-ease-out),
-    padding var(--lens-dur-base) var(--lens-ease-out);
+    transform var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .topbar-search-well {
@@ -199,9 +199,8 @@
   color: rgb(var(--lens-ink) / 0.88);
   cursor: text;
   overflow: hidden;
-  will-change: width;
+  /* The width changes in one frame; the reveal is a clip driven by FLIP (G-11). */
   transition:
-    width var(--lens-dur-slow) var(--lens-ease-out),
     background var(--lens-dur-fast) var(--lens-ease-out),
     box-shadow var(--lens-dur-fast) var(--lens-ease-out),
     color var(--lens-dur-fast) var(--lens-ease-out);
@@ -312,7 +311,7 @@
   border-radius: 7px;
   color: var(--lens-fg-secondary);
   font-weight: 500;
-  transition: max-width var(--lens-dur-slow) var(--lens-ease-out), opacity var(--lens-dur-base) var(--lens-ease-out), transform var(--lens-dur-slow) var(--lens-ease-out);
+  transition: opacity var(--lens-dur-base) var(--lens-ease-out), transform var(--lens-dur-slow) var(--lens-ease-out);
 }
 
 .topbar-clock {

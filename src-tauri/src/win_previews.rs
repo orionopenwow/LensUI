@@ -491,6 +491,16 @@ mod sys {
         wparam: usize,
         lparam: isize,
     ) -> isize {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard_else("previews.control_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || control_proc_guarded(hwnd, msg, wparam, lparam))
+    }
+
+    unsafe fn control_proc_guarded(
+        hwnd: Hwnd,
+        msg: u32,
+        wparam: usize,
+        lparam: isize,
+    ) -> isize {
         match msg {
             WM_APP_SHOW => {
                 let req = Box::from_raw(lparam as *mut ShowRequest);
