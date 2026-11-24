@@ -54,7 +54,11 @@ export const OS_ICON = {
 };
 export const fmtStars = (n) => (n == null ? "" : n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n));
 
-export function home({ visionHref, apps = {}, packs = [], stars = null }) {
+export function home(o) {
+  // A stage reserves its room before its frames load (no layout shift).
+  return homeHtml(o).replace(/data-w="(\d+)" data-h="(\d+)"/g, (m, w, h) => `${m} style="aspect-ratio:${w}/${h}"`);
+}
+function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
   void packs;
   return `
 <section class="hero" aria-labelledby="hero-h">
@@ -98,8 +102,8 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
     <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic right-click</p><h2 id="f-magic-h">Right-click anything.</h2><p>A small Lens window opens right where you clicked. It knows what the thing is, and what it can do with it.</p></div>
     <div class="mx" id="mx" data-exhibit="magic">
       <div class="xstage" data-w="1180" data-h="640">
-        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-xf-magic="1" data-marker="lb-root" role="img" aria-label="Lens Browser, the real app, with a page open. Right-click it."></div>
-        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="mg-" data-eager="1" role="img" aria-label="The Lens magic window"></div></div>
+        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-xf-magic="1" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open. Right-click it."></div>
+        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens magic window"></div></div>
       </div>
       <div class="xsteps" role="tablist" aria-label="What right-click can do">
         ${MAGIC_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
@@ -127,15 +131,15 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
       <li class="st">
         <p class="st-n"><i>2</i>It proposes</p>
         <h3>You see the plan first.</h3>
-        <div class="xstage st-stage" data-w="470" data-h="500"><div class="xf" data-xf="approval.html?scene=window&amp;drag=0&amp;magic=0" data-marker="ap-" role="img" aria-label="The real “Needs your OK” card: who is asking, what it will do, a preview, Deny and Approve"></div></div>
+        <div class="xstage st-stage" data-w="470" data-h="500"><div class="xf" data-xf="approval.html?scene=window&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card: who is asking, what it will do, a preview, Deny and Approve"></div></div>
         <p class="st-line">Who is asking, what it will do, and a preview.</p>
       </li>
       <li class="st">
         <p class="st-n"><i>3</i>You approve</p>
         <h3>It acts where you can watch.</h3>
         <div class="xstage st-stage" data-w="700" data-h="500">
-          <div class="xf" data-xf="coreapps.html?app=notes&amp;drag=0&amp;magic=0" data-marker="ca-app-notes" role="img" aria-label="Lens Notes, the real app, with the agent's orb ticking an item"></div>
-          <div class="xf st-orb" data-xf="presence.html?drag=0&amp;magic=0" data-marker="" data-presence="1" aria-hidden="true"></div>
+          <div class="xf" data-xf="coreapps.html?app=notes&amp;drag=0&amp;magic=0" data-marker=".ca-app-notes" role="img" aria-label="Lens Notes, the real app, with the agent's orb ticking an item"></div>
+          <div class="xf st-orb" data-xf="presence.html?drag=0&amp;magic=0" data-marker="[data-presence]" data-presence="1" aria-hidden="true"></div>
         </div>
         <p class="st-line">The orb shows each step. Esc stops it. One Undo puts it all back. <button type="button" class="link-btn" data-replay>Replay</button></p>
       </li>
@@ -148,7 +152,7 @@ export function home({ visionHref, apps = {}, packs = [], stars = null }) {
   <div class="inner">
     <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">A browser that asks before it acts.</h2><p>One slim bar, your theme, and an AI panel beside the page that only reads what you point it at.</p></div>
     <div class="bx" data-exhibit="browser">
-      <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=agent" data-marker="lb-root" role="img" aria-label="Lens Browser, the real app: tabs in the sidebar, one slim bar, the AI panel beside the page"></div></div>
+      <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=agent" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app: tabs in the sidebar, one slim bar, the AI panel beside the page"></div></div>
       <div class="xsteps" role="tablist" aria-label="Lens Browser views">
         ${BROWSER_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
       </div>

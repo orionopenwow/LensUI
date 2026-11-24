@@ -2,7 +2,7 @@
 // from js/desk.js (the app's real surfaces), tours from js/showcases.js, and the sections' exhibits
 // from js/exhibits.js. Nothing touches your system.
 import { reducedMotion } from "./site.js";
-import { createDesk, getPacks, iconUrl } from "./desk.js";
+import { createDesk, getPacks, iconUrl, APPS, OVERS } from "./desk.js";
 import { createShowcases } from "./showcases.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -126,7 +126,7 @@ addEventListener("hashchange", () => {
 });
 // A small compatibility surface for the Guide and the checks: "scenes" never autoplay any more.
 const scenes = { get playing() { return false; }, play: () => playScene("desktop"), pause() {}, stop: () => shows.exit(), go: (i) => shows.start(shows.list[i]?.id ?? "desktop"), goId: playScene, get current() { return shows.current; } };
-window.lensSite = { desk, scenes, shows, playScene, detectOS };
+window.lensSite = { desk, scenes, shows, playScene, detectOS, APPS, OVERS };
 addEventListener("lens-play-scene", (e) => playScene(e.detail));
 document.querySelectorAll("[data-play-scene]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); playScene(b.dataset.playScene); }));
 

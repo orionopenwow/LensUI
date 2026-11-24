@@ -9,19 +9,18 @@ export { calls, convertFileSrc, isTauri } from "../../parity/mock/core";
 const I = (id: string) => `../../media/icons/${id}.svg`;
 const A = (file: string) => `../../media/apps/${file}`;
 
-/** The desk's apps, pinned in this order: every one opens a real Lens surface. `id` is the desk app id the page opens. */
+/** The desk's apps, pinned in this order: every one opens a real Lens surface. `id` is the desk app id the
+ * page opens. Monitor and Settings aren't pinned: the dock has its own buttons for them. */
 export const APPS = [
   { id: "browser", name: "Lens Browser", path: "lens://browser", icon: I("lens-browser") },
   { id: "notes", name: "Notes", path: "lens://notes", icon: I("lens-notes") },
   { id: "music", name: "Lens Music", path: "lens://music", icon: I("lens-music") },
-  { id: "monitor", name: "Monitor", path: "lens://monitor", icon: I("lens-monitor") },
   { id: "timer", name: "Timer", path: "lens://timer", icon: I("lens-timer") },
   { id: "cleaner", name: "Lens Cleaner", path: "lens://cleaner", icon: I("lens-cleaner") },
   { id: "store", name: "Lens Apps", path: "lens://store", icon: I("lens-apps") },
-  { id: "settings", name: "Settings", path: "lens://settings", icon: I("lens-settings") },
 ];
 /** The short set used by the dock-style rail (?mini=1). */
-export const MINI = ["browser", "notes", "music", "monitor", "cleaner", "settings"];
+export const MINI = ["browser", "notes", "music", "timer", "cleaner", "store"];
 const EXTRA = [
   { name: "Krita", path: "lens://store/krita", icon: A("krita-icon.webp") },
   { name: "Blender", path: "lens://store/blender", icon: A("blender-icon.svg") },
@@ -48,7 +47,9 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   if (cmd === "get_icon_for_path") return (ICON[String(args?.path ?? "").toLowerCase()] ?? null) as T;
   if (cmd === "get_running_windows") return running as T;
   if (cmd === "scan_installed_apps_cmd") return INSTALLED as T;
-  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd") { toPage(cmd, args); return null as T; }
+  // The dock's own Monitor and Settings buttons, Now Playing and the rest ask the backend for a surface:
+  // on the site the page's desk opens the real one.
+  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd" || cmd === "open_dock_popout_tab_cmd" || cmd === "toggle_settings_docked" || cmd === "open_surface" || cmd === "toggle_surface") { toPage(cmd, args); return null as T; }
   if (cmd === "get_launcher_home_cmd") {
     return {
       recentFiles: [

@@ -394,6 +394,9 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) return; if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
     else if (cmd === "window_action_cmd") { const w = wins.get(args.hwnd); if (!w) return; ({ minimize: () => minimize(w.id), close: () => close(w.id), maximize: () => snap(w.id, "max"), restore: () => restore(w.id) })[args.action]?.(); }
     else if (cmd === "open_quicksettings_tab_cmd") openOver("qs", { toggle: true });
+    // The dock's own Monitor and Settings buttons.
+    else if (cmd === "open_dock_popout_tab_cmd") open(args.tab === "monitor" ? "monitor" : "settings");
+    else if (cmd === "toggle_settings_docked") { const ws = [api.byApp("settings"), api.byApp("monitor")].filter(Boolean); ws.length ? ws.forEach((w) => close(w.id)) : open("settings"); }
     else if (cmd === "show_command_cmd") openCmd();
     else if (cmd === "browser_open") open("browser");
     else if (cmd === "open_surface" || cmd === "toggle_surface") {

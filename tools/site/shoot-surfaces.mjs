@@ -20,14 +20,15 @@ const srv = createServer(async (q, r) => {
 const base = `http://localhost:${srv.address().port}/live/app/`;
 const CORE = ["monitor", "timer", "notes", "calculator", "color", "power", "network", "clipboard", "startup"];
 const SHOTS = [
-  ...CORE.map((a) => [`core-${a}`, `coreapps.html?app=${a}&preset=obsidian`, 760, 520]),
-  ["surface-music", "music.html?scene=np-expanded&preset=obsidian", 1100, 660],
-  ["surface-cleaner", "cleaner.html?scene=cleanup&preset=obsidian", 1100, 660],
+  // [name, page, width, height, device scale]: the grid shows core apps at about half this width.
+  ...CORE.map((a) => [`core-${a}`, `coreapps.html?app=${a}&preset=obsidian`, 760, 520, 1]),
+  ["surface-music", "music.html?scene=np-expanded&preset=obsidian", 1100, 660, 1.25],
+  ["surface-cleaner", "cleaner.html?scene=cleanup&preset=obsidian", 1100, 660, 1.25],
 ];
 const tmp = await mkdtemp(join(tmpdir(), "lens-shots-"));
 const browser = await chromium.launch();
-for (const [name, url, width, height] of SHOTS) {
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2, colorScheme: "dark" });
+for (const [name, url, width, height, scale] of SHOTS) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale, colorScheme: "dark" });
   await page.goto(base + url);
   await page.waitForFunction(() => !!document.getElementById("root")?.firstElementChild);
   await page.waitForTimeout(900);
@@ -36,7 +37,7 @@ for (const [name, url, width, height] of SHOTS) {
   const png = join(tmp, `${name}.png`);
   await page.screenshot({ path: png });
   await page.close();
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", png, "-quality", "84", join(root, "docs/media", `${name}.webp`)]);
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", png, "-quality", "78", join(root, "docs/media", `${name}.webp`)]);
   console.log(`[shots] docs/media/${name}.webp`);
 }
 await browser.close();

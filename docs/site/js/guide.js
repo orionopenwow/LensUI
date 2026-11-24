@@ -204,6 +204,25 @@ async function ask(q) {
     if (sceneHit.id === "agent") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
     return;
   }
+  // Two things the desk itself can do (the windows on it are the real app's): tile, and light or dark.
+  if (onHome() && /\btile\b/.test(ql)) {
+    await say("lens", "On the desk: I'll put the open windows side by side.", { stream: true });
+    const st = steps(["Scroll to the desk", "Tile the open windows"]);
+    st.tick(0, "doing");
+    if (L.shows.current) L.shows.exit();
+    await flyTo(document.getElementById("stage"));
+    st.tick(0, "done"); st.tick(1, "doing");
+    L.desk.tileAll();
+    st.tick(1, "done"); st.end("Done · drag a window off its side to undo");
+    return;
+  }
+  if (onHome() && /\b(dark|light)\b/.test(ql) && /\b(make|mode|theme|turn|switch)\b/.test(ql)) {
+    const m = /\blight\b/.test(ql) ? "light" : "dark";
+    await L.desk.setMode(m);
+    await say("lens", `The desk is in ${m} mode now: every window on it re-themed, like in Lens.`, { stream: true });
+    await flyTo(document.getElementById("stage"));
+    return;
+  }
   if (/\bopen.?source\b/.test(ql)) {
     await say("lens", `Lens itself is open source (MIT), and Lens Apps installs free and open-source tools like ArtCraft, Concat, Krita and Blender from their official releases.`, { stream: true });
     if (onHome()) await flyTo(document.getElementById("apps"));
