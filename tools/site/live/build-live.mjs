@@ -6,7 +6,7 @@
 // Run directly (`node tools/site/live/build-live.mjs`) or via tools/site/build.mjs.
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync, readdirSync, statSync, readFileSync } from "node:fs";
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -128,6 +128,75 @@ export async function buildGuide(outRoot = join(root, "docs/site/live")) {
   return { out, source: existsSync(real) ? "src/guide/search.ts" : "tools/site/vendor/guide/search.ts" };
 }
 
+
+// ---- the real app surfaces for the demo ---------------------------------------------------------------
+// One build with code splitting: React, the tokens and the mock backend land in shared chunks, and
+// each surface is its own entry that loads only when its demo window opens.
+//   live/app/shell.html?surface=…   src/main.tsx (Settings, Quick Settings, top bar, Lens Apps, …)
+//   live/app/<gallery>.html?scene=… the parity galleries, which render the real components with
+//                                   scripted demo data (browser, command, cleaner, coreapps, music, approval)
+//   live/app/magic.html?scene=…     the real magic right-click window on its own
+const CHAIN = ["cleaner", "music", "command", "browser", "apps"];
+const chainPlugin = {
+  name: "lens-mock-chain",
+  setup(b) {
+    b.onResolve({ filter: /^\.\.\/mock\/core$/ }, (a) => {
+      const i = CHAIN.findIndex((g) => a.importer === join(root, "tools/parity", g, "mockCore.ts"));
+      if (i < 0) return undefined;
+      const next = CHAIN[i + 1];
+      return { path: next ? join(root, "tools/parity", next, "mockCore.ts") : join(root, "tools/parity/mock/core.ts") };
+    });
+    // The browser gallery reads its captions fixture as text (its own build loads .json as text).
+    b.onLoad({ filter: /__tests__[\\/]fixtures[\\/].*\.json$/ }, (a) => ({ contents: readFileSync(a.path, "utf8"), loader: "text" }));
+  },
+};
+export const APP_SURFACES = ["shell", "browser", "command", "cleaner", "coreapps", "music", "approval", "magic", "presence"];
+export async function buildApp(outRoot = join(root, "docs/site/live")) {
+  const out = fresh(join(outRoot, "app"));
+  const entryPoints = Object.fromEntries(APP_SURFACES.map((n) => [n, join(here, "surfaces", existsSync(join(here, "surfaces", `${n}.tsx`)) ? `${n}.tsx` : `${n}.ts`)]));
+  const r = await build({
+    ...common,
+    plugins: [chainPlugin, vendorPlugin],
+    entryPoints,
+    outdir: out,
+    splitting: true,
+    metafile: true,
+    chunkNames: "c/[name]-[hash]",
+    loader: { ...common.loader, ".json": "json", ".woff2": "dataurl", ".html": "text" },
+    define: { ...common.define, __LENS_MEDIA_CACHE__: "false" },
+    alias: { "@tauri-apps/api/core": join(here, "app-core.ts"), "@tauri-apps/api/event": mocks["@tauri-apps/api/event"], "@tauri-apps/api/window": join(here, "app-window.ts") },
+  });
+  // CSS: an entry's own stylesheet. The shell loads its surfaces lazily and esbuild doesn't inject a
+  // lazy chunk's stylesheet, so shell.html links just the sheets the requested surface needs: the
+  // chunk main.tsx imports for ?surface=…, and anything that chunk imports lazily in turn.
+  const outs = r.metafile.outputs, rel = (f) => relative(out, join(root, f)).replaceAll("\\", "/");
+  const byEntry = Object.fromEntries(Object.entries(outs).filter(([, o]) => o.entryPoint).map(([f, o]) => [o.entryPoint.replaceAll("\\", "/"), f]));
+  const cssOf = (start) => {
+    const seen = new Set(), css = new Set();
+    const walk = (f) => { if (seen.has(f) || !outs[f]) return; seen.add(f); if (outs[f].cssBundle) css.add(rel(outs[f].cssBundle)); for (const i of outs[f].imports) if (i.kind === "import-statement" || i.kind === "dynamic-import") walk(i.path); };
+    walk(start);
+    return [...css];
+  };
+  const routes = {};
+  for (const m of readFileSync(join(root, "src/main.tsx"), "utf8").matchAll(/(\w+): lazy\(\(\) =>\s*import\("\.\/([^"]+)"\)/g)) {
+    const hit = Object.keys(byEntry).find((e) => e.startsWith(`src/${m[2]}.`));
+    if (hit) routes[m[1]] = cssOf(byEntry[hit]);
+  }
+  const sizes = {};
+  for (const n of APP_SURFACES) {
+    const css = existsSync(join(out, `${n}.css`)) ? [`${n}.css`] : [];
+    const pick = n === "shell" ? `<script>(function(){var m=${JSON.stringify(routes)},s=new URLSearchParams(location.search).get("surface")||"dock";(m[s]||[]).forEach(function(c){document.write('<link rel="stylesheet" href="'+c+'">')})})()</script>` : "";
+    writeFileSync(join(out, `${n}.html`), `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lens (live demo)</title>${css.map((c) => `<link rel="stylesheet" href="${c}">`).join("")}${pick}</head><body><div id="root"></div><script type="module" src="${n}.js"></script></body></html>`);
+    // What a first visit to this surface downloads: its entry and every chunk it imports statically.
+    const seen = new Set();
+    const walk = (f) => { if (seen.has(f) || !outs[f]) return; seen.add(f); for (const i of outs[f].imports) if (i.kind === "import-statement") walk(i.path); };
+    walk(Object.keys(outs).find((f) => outs[f].entryPoint && f.endsWith(`/${n}.js`)));
+    sizes[n] = [...seen];
+  }
+  writeFileSync(join(out, "manifest.json"), JSON.stringify(Object.fromEntries(Object.entries(sizes).map(([n, fs]) => [n, fs.map(rel)])), null, 1));
+  return out;
+}
+
 const kb = (dir) => Math.round(readdirSync(dir).reduce((n, f) => n + statSync(join(dir, f)).size, 0) / 1024);
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -135,5 +204,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const p = await buildPlayground();
   const g = await buildGuide();
   const t = await buildThemes();
+  const a = await buildApp();
   console.log(`[live] dock (${dockRoot().from}) ${kb(d)} KB · playground ${kb(p)} KB · themes ${kb(t)} KB · guide ${kb(g.out)} KB (${g.source})`);
 }

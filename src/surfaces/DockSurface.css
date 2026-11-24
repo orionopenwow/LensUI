@@ -1648,6 +1648,42 @@
   bottom: calc(100% + 12px);
 }
 
+/* Taskbar on a horizontal edge: the Windows 11 taskbar's proportions at 100% scale. A 48 px bar,
+   40 px buttons with 4 px corners and 4 px between them, 24 px icons, and the running / active
+   marks inside the button's bottom edge (6 px running, 16 px accent when active). */
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill {
+  height: 48px;
+  padding: 0 12px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) > :is(img, svg) {
+  width: 24px;
+  height: 24px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-icons-row {
+  gap: 4px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar.dock-edge-bottom .dock-indicator {
+  bottom: 1px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar.dock-edge-top .dock-indicator {
+  top: 1px;
+}
+
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-sys-btn {
+  height: 40px;
+  border-radius: 4px;
+}
+
 /* Top edge bar. */
 .dock-stage.is-bar.dock-edge-top .dock-pill {
   padding: 0 8px;

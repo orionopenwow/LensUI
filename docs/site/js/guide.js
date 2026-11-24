@@ -3,7 +3,7 @@
 // (src/guide/search.ts → live/guide/search.js) over the Guide index and this site's pages: no
 // network, no model, no keys. When a question is about something on the page, the Guide does it:
 // the orb flies to the target, the page scrolls there, and the step list ticks off as Lens works,
-// using the site's one action engine (js/actions.js) and scene engine (js/scenes.js).
+// and starts the home page's tours (js/showcases.js), which run on the app's real surfaces.
 import { reducedMotion } from "./site.js";
 
 const SITE = new URL("../", import.meta.url);
@@ -178,8 +178,9 @@ async function ask(q) {
     return;
   }
   // A scene by name ("show me the magic right-click", "how do I connect Claude?").
-  const SC = (await import("./scenes.js")).SCENES;
-  const sceneHit = SC.find((s) => ql.includes(s.id.replace(/-/g, " ")) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "claude") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic-right-click") : null);
+  // A tour by name ("show me the magic right-click", "how do I connect Claude?"). The tours live with the home page's desk.
+  const SC = (await import("./showcases.js")).SHOWCASES;
+  const sceneHit = SC.find((s) => ql.includes(s.id) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "agent") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic") : null);
   if (/\bdocks?\b/.test(ql) && !/\bdark|tile\b/.test(ql)) {
     if (!onHome()) return goHome("#docks");
     await say("lens", "Lens has nine dock styles. These are the real docks, live. I'll put Islands on the desk.", { stream: true });
@@ -200,24 +201,27 @@ async function ask(q) {
     await say("lens", `${esc(sceneHit.line)} I've opened that tour on the desk: press Next to go step by step.`, { stream: true });
     await flyTo(document.getElementById("stage"));
     L.playScene(sceneHit.id);
-    if (sceneHit.id === "claude") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
+    if (sceneHit.id === "agent") say("lens", `To connect for real: in Lens, Settings › AI › Claude, then add Lens to Claude Desktop's MCP config (<a href="${new URL("docs/", SITE)}">docs</a>). Every risky action still asks you first.`);
     return;
   }
-  if (onHome()) {
-    const A = await import("./actions.js");
-    const desk = L.desk;
-    const plan = await A.plan(q, desk);
-    if (plan.length) {
-      await say("lens", `On it. I'll do it on the desk; press Esc or click anywhere to stop me.`, { stream: true });
-      L.scenes.pause();
-      await flyTo(document.getElementById("stage"));
-      const st = steps(plan.map((s) => s.say));
-      const o = A.orbFor(desk);
-      busy = { stop: () => o.stop() };
-      try { await A.run(desk, plan, { onStep: (i, _s, state) => st.tick(i, state) }); st.end("Done · every change undoes"); } catch { st.end("Stopped"); }
-      busy = null;
-      return;
-    }
+  // Two things the desk itself can do (the windows on it are the real app's): tile, and light or dark.
+  if (onHome() && /\btile\b/.test(ql)) {
+    await say("lens", "On the desk: I'll put the open windows side by side.", { stream: true });
+    const st = steps(["Scroll to the desk", "Tile the open windows"]);
+    st.tick(0, "doing");
+    if (L.shows.current) L.shows.exit();
+    await flyTo(document.getElementById("stage"));
+    st.tick(0, "done"); st.tick(1, "doing");
+    L.desk.tileAll();
+    st.tick(1, "done"); st.end("Done · drag a window off its side to undo");
+    return;
+  }
+  if (onHome() && /\b(dark|light)\b/.test(ql) && /\b(make|mode|theme|turn|switch)\b/.test(ql)) {
+    const m = /\blight\b/.test(ql) ? "light" : "dark";
+    await L.desk.setMode(m);
+    await say("lens", `The desk is in ${m} mode now: every window on it re-themed, like in Lens.`, { stream: true });
+    await flyTo(document.getElementById("stage"));
+    return;
   }
   if (/\bopen.?source\b/.test(ql)) {
     await say("lens", `Lens itself is open source (MIT), and Lens Apps installs free and open-source tools like ArtCraft, Concat, Krita and Blender from their official releases.`, { stream: true });
