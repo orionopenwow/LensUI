@@ -400,6 +400,11 @@ mod ffi {
 #[cfg(windows)]
 pub fn monitor_handles() -> Vec<(isize, String)> {
     unsafe extern "system" fn collect(hmon: isize, _hdc: isize, _rect: *mut ffi::Rect, lparam: isize) -> i32 {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("monitors.collect", 1, || collect_guarded(hmon, _hdc, _rect, lparam))
+    }
+
+    unsafe fn collect_guarded(hmon: isize, _hdc: isize, _rect: *mut ffi::Rect, lparam: isize) -> i32 {
         let out = &mut *(lparam as *mut Vec<(isize, String)>);
         let mut info = ffi::MonitorInfoExW::default();
         if ffi::GetMonitorInfoW(hmon, &mut info as *mut ffi::MonitorInfoExW as *mut crate::ffi::MonitorInfo) == 0 {
@@ -425,6 +430,16 @@ pub fn monitor_handles() -> Vec<(isize, String)> {
 #[cfg(windows)]
 pub fn list_monitors() -> Vec<MonitorInfo> {
     unsafe extern "system" fn collect(
+        hmon: isize,
+        _hdc: isize,
+        _rect: *mut ffi::Rect,
+        lparam: isize,
+    ) -> i32 {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("monitors.collect", 1, || collect_guarded(hmon, _hdc, _rect, lparam))
+    }
+
+    unsafe fn collect_guarded(
         hmon: isize,
         _hdc: isize,
         _rect: *mut ffi::Rect,

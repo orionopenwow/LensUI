@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import "./DesktopFolderSurface.css";
+import { glideIn, glideOut } from "../ui/motion";
 import type { LensConfig } from "../types/lens";
 import {
   arrangeDesktop,
@@ -88,13 +89,18 @@ export const DesktopFolderSurface: React.FC = () => {
       .catch(() => {});
   };
 
+  // The drawer and its window (docs/SMOOTHNESS.md, G-10). The window changes size in one native
+  // step, and never while anything is moving: opening grows the window first and then glides the
+  // drawer in; closing glides the drawer out first and then shrinks the window around the tab.
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const closingRef = useRef(false);
+  const setNativeExpanded = (open: boolean) => invoke("set_desktop_folder_expanded_cmd", { expanded: open }).catch(() => {});
+  const collapseRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     refresh();
     const timer = window.setInterval(refresh, 5000);
-    const unlistenCollapse = listen("lens://desktopfolder-collapse", () => {
-      setExpanded(false);
-      invoke("set_desktop_folder_expanded_cmd", { expanded: false }).catch(() => {});
-    });
+    const unlistenCollapse = listen("lens://desktopfolder-collapse", () => collapseRef.current());
     return () => {
       window.clearInterval(timer);
       unlistenCollapse.then((fn) => fn());
@@ -125,15 +131,26 @@ export const DesktopFolderSurface: React.FC = () => {
 
   const openDrawer = () => {
     refresh();
-    setExpanded(true);
     setQuery("");
-    invoke("set_desktop_folder_expanded_cmd", { expanded: true }).catch(() => {});
+    closingRef.current = false;
+    void setNativeExpanded(true).then(() => setExpanded(true));
   };
 
   const collapse = () => {
-    setExpanded(false);
-    invoke("set_desktop_folder_expanded_cmd", { expanded: false }).catch(() => {});
+    if (closingRef.current) return;
+    closingRef.current = true;
+    void glideOut(drawerRef.current, { x: -10, opacity: 0 }).finished.then(() => {
+      closingRef.current = false;
+      setExpanded(false);
+      void setNativeExpanded(false);
+    });
   };
+  collapseRef.current = collapse;
+
+  // Entry pose first, in the same frame the drawer mounts, then the glide.
+  useLayoutEffect(() => {
+    if (expanded) glideIn(drawerRef.current, { x: -12, opacity: 0 });
+  }, [expanded]);
 
   const toggleNativeIcons = () => {
     const next = !iconsHidden;
@@ -141,7 +158,7 @@ export const DesktopFolderSurface: React.FC = () => {
     invoke<boolean>("set_desktop_icons_hidden_cmd", { hide: next })
       .then(setIconsHidden)
       .catch(() => {});
-    invoke("set_desktop_folder_expanded_cmd", { expanded: false }).catch(() => {});
+    void setNativeExpanded(false);
   };
 
   /** "Quick hide all": fold every group and tuck the native desktop icons away. */
@@ -212,36 +229,23 @@ export const DesktopFolderSurface: React.FC = () => {
             openDrawer();
           }}
           aria-label={iconsHidden ? "Reveal Arranged Desktop Icons" : "Condense Desktop Icons"}
-          style={{
-            width: 78,
-            height: 60,
-            padding: "0 6px 0 10px",
-            borderRadius: "0 var(--lens-radius, 12px) var(--lens-radius, 12px) 0",
-            background: "var(--lens-bg-surface)",
-            backdropFilter: "blur(var(--lens-blur, 20px)) saturate(1.3)",
-            border: iconsHidden
-              ? "1px solid var(--lens-border)"
-              : "1px solid rgb(56 189 248 / 0.45)",
-            borderLeft: "none",
-            boxShadow: "0 8px 24px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 4,
-            cursor: "pointer",
-            fontFamily: ROUNDED_ARIAL,
-            transition: "width 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.width = "82px";
-            e.currentTarget.style.borderColor = "rgb(var(--lens-ink) / 0.28)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.width = "78px";
-            e.currentTarget.style.borderColor = iconsHidden
-              ? "var(--lens-border)"
-              : "rgb(56 189 248 / 0.45)";
-          }}
+          className="df-tab"
+          style={
+            {
+              "--df-tab-border": iconsHidden ? "var(--lens-border)" : "rgb(56 189 248 / 0.45)",
+              height: 60,
+              borderRadius: "0 var(--lens-radius, 12px) var(--lens-radius, 12px) 0",
+              background: "var(--lens-bg-surface)",
+              backdropFilter: "blur(var(--lens-blur, 20px)) saturate(1.3)",
+              boxShadow: "0 8px 24px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 4,
+              cursor: "pointer",
+              fontFamily: ROUNDED_ARIAL,
+            } as React.CSSProperties
+          }
         >
           <div
             style={{
@@ -301,6 +305,7 @@ export const DesktopFolderSurface: React.FC = () => {
 
   return (
     <div
+      ref={drawerRef}
       style={{
         width: "100%",
         height: "100%",

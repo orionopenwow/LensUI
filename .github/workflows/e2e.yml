@@ -51,6 +51,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # The crash-loop guard asks its question in a message box; an unattended run answers "start
+  # normally" (docs/FAILSAFE.md §6). tests/e2e/failsafe.mjs sets its own answer per start.
+  LENS_SAFE_MODE_CHOICE: normal
   # Goldens and budgets are recorded with this exact Chromium; bump them together.
   PLAYWRIGHT_VERSION: "1.63.0"
 
@@ -203,6 +206,14 @@ jobs:
         if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
         shell: pwsh
         run: node tests/e2e/remove-all.mjs
+
+      # Failsafe chaos (docs/FAILSAFE.md §8): damaged and unreadable config, a kill switch, a crash
+      # loop into Safe Mode, a window made to crash, every WebView renderer killed, a registry key
+      # that refuses writes. Lens must keep the desktop usable through each one.
+      - name: Failsafe chaos (the desktop stays usable)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/failsafe.mjs
 
       - name: Collect Lens logs
         if: always()

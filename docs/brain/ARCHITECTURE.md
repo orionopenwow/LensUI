@@ -189,9 +189,22 @@ Frontend listeners: 126 `listen(` call sites; `DockSurface.tsx` alone has 9.
 | `lens-browser-maint` | browser | Tab sleep and store maintenance | — |
 | `lens-idle-monitor` | app | Idle → Playground idle scene | — |
 | bridge IPC, MCP stdio | bridge/ipc, win_mcp | Native messaging and MCP | — |
-| Panic hook | win_crash | Writes a scrubbed crash report | — |
+| Panic hook | win_crash, lib.rs | Writes a scrubbed crash report, restores the taskbar, aborts. A panic inside a guard is caught there instead | `failsafe::guard` |
+| `lens-call` (short-lived workers) | failsafe/call | One per OS call that can hang (volume, brightness, radios, PowerShell) | Time limit; at most two stuck per kind |
+| Load guard, one thread per always-on window | app/loadguard | Keeps the Dock, Top Bar and desktop tab hidden until their page is ready; reloads a page whose heartbeat stops | Backoff; three revives per run |
 
 About 41 files spawn threads. Both low-level hooks live on one dedicated thread with a message loop (`input.rs`), so a slow WebView never stalls input and there is one place that decides when Lens must keep its hands off the keyboard and mouse.
+
+### Failsafe (`src-tauri/src/failsafe/`, docs/FAILSAFE.md)
+
+- **guard**: every `extern "system"` callback body runs in `ffi_guard`; a panic is caught, counted and the event passed on. Release builds unwind for this.
+- **call**: `with_timeout`, `retry`, `os_call`, `os_read` for OS calls that can hang; typed `CallError`.
+- **breaker**: three faults in a minute pause a feature for the session (one notice, "Turn back on").
+- **features**: `features.json` kill switches and Safe Mode hold config switches off in memory only; saves keep the stored choice. Safe Mode also refuses every `input::claim`.
+- **boot** + `app/safe_start.rs`: the crash-loop guard. Two unfinished starts in five minutes bring the taskbar back and ask (native box) before the config is loaded.
+- **config_check**: a damaged `config.json` loses only its damaged values or sections.
+- `app/surface_state.rs`: one show/hide state machine per surface window, with its own generation.
+- Frontend: `src/failsafe/` (`SurfaceBoundary` around every surface in `main.tsx`, the reporter, notices) and the Safety net card in Settings › About & Testing.
 
 ### Input service (`src-tauri/src/input.rs`)
 

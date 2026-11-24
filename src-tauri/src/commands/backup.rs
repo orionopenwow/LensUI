@@ -25,7 +25,7 @@ pub(crate) fn import_backup_cmd(
     if let Some(dnd) = report.dnd {
         win_notifications::set_dnd(dnd);
     }
-    let cfg = config::load_config();
+    let cfg = config::load_config_for_run();
     *state.config.lock().unwrap_or_else(|e| e.into_inner()) = cfg.clone();
     apply_theme_to_system(&cfg, true);
     position_dock_and_bars(&app, &cfg);
@@ -51,6 +51,8 @@ pub(crate) fn remove_all_lens_changes_cmd(
             detail: res.unwrap_or_else(|e| e),
         });
     } else {
+        // Remove all switches features off for good: write those values as they are.
+        crate::failsafe::features::release_overrides();
         let _ = save_config(&cfg);
     }
     *state.config.lock().unwrap_or_else(|e| e.into_inner()) = cfg.clone();

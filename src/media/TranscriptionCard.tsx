@@ -207,8 +207,8 @@ export const TranscriptionCard: React.FC = () => {
                     {j.txtPath ? ` · ${j.txtPath}` : ""}
                   </div>
                   {j.state === "running" && (
-                    <div role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ height: 4, borderRadius: 2, background: "rgb(var(--lens-ink) / 0.08)", marginTop: 4 }}>
-                      <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "var(--lens-fg)", transition: "width 200ms" }} />
+                    <div role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} className="lens-meter" style={{ height: 4, borderRadius: 2, background: "rgb(var(--lens-ink) / 0.08)", marginTop: 4 }}>
+                      <div className="lens-meter-fill" style={{ "--fill": Math.max(0, Math.min(100, pct)) / 100, borderRadius: 2, background: "var(--lens-fg)" } as React.CSSProperties} />
                     </div>
                   )}
                 </div>

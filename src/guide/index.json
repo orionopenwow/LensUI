@@ -4199,6 +4199,105 @@
    "source": "src/components/CrashReportsCard.tsx"
   },
   {
+   "id": "card.about.failsafecard",
+   "kind": "card",
+   "title": "Safety net",
+   "text": "It stopped answering several times in a row. Last problem. Safety net · is paused · Held off by features.json · Settings repaired at start-up · Errors contained. Failsafe. Safety net card. Shows what Lens switched off to protect the desktop: Safe Mode, features paused after repeated failures (with \"Turn back on\"), features held off by features.json, settings that were repaired at start-up, and errors that were caught and contained. Backend: src-tauri/src/failsafe (doc",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Safety net",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.is-paused",
+   "kind": "setting",
+   "title": "is paused",
+   "text": "It stopped answering several times in a row. Last problem",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "is paused"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "is paused",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.held-off-by-features-json",
+   "kind": "setting",
+   "title": "Held off by features.json",
+   "text": ". Remove them from features.json in the Lens data folder and restart Lens to use them again.",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Held off by features.json"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Held off by features.json",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.settings-repaired-at-start-up",
+   "kind": "setting",
+   "title": "Settings repaired at start-up",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Settings repaired at start-up"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Settings repaired at start-up",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
+   "id": "setting.about.failsafecard.errors-contained",
+   "kind": "setting",
+   "title": "Errors contained",
+   "text": "",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Errors contained"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "FailsafeCard",
+    "label": "Errors contained",
+    "section": "safety"
+   },
+   "source": "src/components/FailsafeCard.tsx"
+  },
+  {
    "id": "card.about.backuprestorecard",
    "kind": "card",
    "title": "Back Up & Restore",
@@ -9284,6 +9383,158 @@
    "source": "docs/DOCK_STYLES.md"
   },
   {
+   "id": "doc.failsafe.0",
+   "kind": "doc",
+   "title": "Failsafe engineering",
+   "text": "One fault must never break the desktop. Lens sits where the taskbar, the Start key and Alt+Tab used to be, so a bug in one feature cannot be allowed to take the others, or Windows itself, down with it. This page lists every guard, what it does when it fires, and how it is tested. The rule behind all of them: contain the fault, hand the event back to Windows, tell the person once, and keep the rest running. § Guard Where What happens when it fires --- --- --- --- 1 Surface isolation src/failsafe/ , src/main.tsx , app/loadguard.rs The crashed window shows one line and reloads itself; three failures in a row switch that window off for the session. A window whose page dies is reloaded. 2 Window state machine app/surface state.rs , commands/surfaces.rs A stale or repeated show or hide is ignored. 3 No panic across FFI failsafe/guard.rs , every OS callback The panic is caught and counted, the ",
+   "path": [
+    "Docs",
+    "Failsafe engineering"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Failsafe engineering"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.1",
+   "kind": "doc",
+   "title": "Failsafe engineering: 1. Surface isolation",
+   "text": "Every surface (Dock, Top Bar, Settings, each flyout and overlay) is its own WebView2 window and renders inside one error boundary, SurfaceBoundary in src/main.tsx . When a surface throws while rendering: 1. The crash is reported ( failsafe ui crash ): the session log and lens.log get the message and the top of the stack, with the user name and profile path removed. 2. First failure: the window says \"This part of Lens hit a problem. Reloading…\" and reloads itself after 0.8 s. 3. Second failure in a row (within a minute): a window offers a Reload button and waits for it. An overlay, which has nothing to click, waits 4 s and reloads once more. 4. Third failure in a row: the surface is off until Lens restarts. A window says so and offers Try again ; the person is told once by a Lens notification. Overlay surfaces (wallpaper, pointer effects, focus dimming, the notification stack, the snip ov",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "1. Surface isolation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "1. Surface isolation"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.2",
+   "kind": "doc",
+   "title": "Failsafe engineering: 2. Window state machine",
+   "text": "app/surface state.rs owns show and hide for every surface window: Each window has its own phase and its own generation. Every accepted show or hide takes a new generation, and the acknowledgement that finishes a hide (the page's \"exit done\" or the fallback timer) must quote it. So: a show always wins: a hide still in flight can no longer hide a window that was just reopened; a second hide while closing does nothing; a late or repeated acknowledgement is ignored; a window shown or hidden by another path is settled from what the native window reports. Before this, every window that was not on a short list shared one counter, so a show for one window could cancel another window's hide. glide show surface , glide hide surface and surface exit done cmd now all go through the machine. The phases are listed in failsafe status for the Tester Hub.",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "2. Window state machine"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "2. Window state machine"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.3",
+   "kind": "doc",
+   "title": "Failsafe engineering: 3. No panic across FFI",
+   "text": "A panic inside an extern \"system\" callback cannot unwind into Windows; Rust aborts the process, with the keyboard hook installed and the taskbar possibly hidden. Every callback body now runs inside failsafe::guard::ffi guard : the low-level keyboard and mouse hooks ( input.rs ): a panicking handler passes the event to the next hook and the feature that was running is left out of dispatch for a minute, the same as a handler that stalled; window procedures (caption buttons, tray host, clipboard listeners, previews, focus dimming): the message goes to DefWindowProcW ; WinEvent callbacks (window events, tiler, caption engine, focus dimming): the event is dropped; enumeration callbacks (windows, monitors): enumeration continues; the console control handler. Release builds now use panic = \"unwind\" so the guards can catch. A panic outside a guard is still the end of the process, exactly as befo",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "3. No panic across FFI"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "3. No panic across FFI"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.4",
+   "kind": "doc",
+   "title": "Failsafe engineering: 4. Timeouts and retries",
+   "text": "failsafe::call is the one way to make an OS call that can hang (COM, WMI, DDC/CI monitors, the radio stack, PowerShell): with timeout(what, limit, f) runs f on a worker thread and waits at most limit . The error is typed: TimedOut , Failed , Busy or Crashed , each with one sentence for the person. A call that never returns leaves its thread parked. At most two such threads exist per kind of call; after that new calls are refused at once ( Busy ) instead of piling up. Calls that are merely running at the same time (a slider being dragged) are never refused. retry(what, policy, f) is a bounded retry with backoff ( Retry::QUICK : three tries, 150 ms then 450 ms; Retry::ONCE MORE : two tries 80 ms apart, for sliders). os call(feature, label, what, limit, f) adds the feature's circuit breaker (§5). An honest \"can't\" from Windows (no such device, access refused) is passed through unchanged and",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "4. Timeouts and retries"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "4. Timeouts and retries"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.5",
+   "kind": "doc",
+   "title": "Failsafe engineering: 5. Circuit breakers, kill switches and Safe Mode",
+   "text": "Circuit breaker. Three faults (timeouts, crashes, stuck calls) from one feature inside a minute pause that feature for the session. Further calls are refused with a sentence that says so, one Lens notification is shown, and Settings › About & Testing › Safety net lists the feature with Turn back on . A success in between starts the count again. Kill switches. %APPDATA%\\LensUI\\features.json switches named features off at startup, whatever the settings say: Name Feature --- --- taskbar Hiding the Windows taskbar windowHook Window styling hook keyboard Win key, Alt+Tab, Dock number and tiling shortcuts tray Tray icons in the Top Bar clipboard Clipboard history windowButtons Lens window buttons and frames tiling , workspaces , hotCorners , altDrag , appSummon As named mcp Connections from AI apps ai , command Lens AI, Lens Command Unknown names are ignored. The file is read once, at launch. ",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "5. Circuit breakers, kill switches and Safe Mode"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "5. Circuit breakers, kill switches and Safe Mode"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.6",
+   "kind": "doc",
+   "title": "Failsafe engineering: 6. Crash-loop guard",
+   "text": "Every start is written to %APPDATA%\\LensUI\\boot-guard.json before the config is loaded or anything is switched on. A start is marked good when a surface page has reported ready and Lens has been up for 20 s, when Lens quits cleanly, or when its console is closed. Two starts inside five minutes that never got that mark mean Lens is failing on launch. The next start then, before anything else: 1. brings the Windows taskbar back; 2. asks once, in a native message box (not a Lens window: the WebView may be what is failing): Yes starts normally, No starts in Safe Mode, Cancel does not start Lens and opens the crash reports folder so a report can be sent. Answering forgets the earlier failures; the start in progress still has to prove itself, so a Lens that keeps failing keeps asking. Development runs ( tauri dev ), which are killed on every code change, are not counted. LENS SAFE MODE CHOICE=",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "6. Crash-loop guard"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "6. Crash-loop guard"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.7",
+   "kind": "doc",
+   "title": "Failsafe engineering: 7. Config validation",
+   "text": "load config never fails and never panics: 1. A file that loads is used as written. 2. Otherwise a copy is kept ( config.json.unreadable-<time ), and values whose JSON type differs from the default's are replaced, path by path ( theme.borderRadius , dock ). 3. If the document still does not load, each top-level section is tried on top of the defaults and the ones that fail are replaced whole. 4. Only a file that is not JSON at all, or was written by a newer Lens, falls back to full defaults. The person is told once what was reset, and the list stays in Settings › About & Testing › Safety net until Lens restarts.",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "7. Config validation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "7. Config validation"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.9",
+   "kind": "doc",
+   "title": "Failsafe engineering: Needs a real PC",
+   "text": "CI has no GPU session, no second monitor, no real DDC/CI screen and no sleep. Before a release, check on hardware: Safe Mode question on a real sign-in (Lens set to start with Windows), all three answers. A hung DDC/CI monitor or a disabled audio service: the control is paused after three timeouts and Turn back on works. Sleep and resume, and a display unplugged, with the Dock visible: the liveness check must not reload a healthy page. Killing msedgewebview2.exe (the GPU process and the browser process, not only a renderer). A fullscreen game in front while a hook handler is benched: input must be unaffected. Release build size and start-up time after the move from panic = \"abort\" to \"unwind\" .",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Needs a real PC"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Needs a real PC"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
    "id": "doc.feeds.0",
    "kind": "doc",
    "title": "Lens Feeds",
@@ -12393,7 +12644,7 @@
    "id": "doc.smoothness.8",
    "kind": "doc",
    "title": "Smoothness: Still open",
-   "text": "- Dock window sizing (done in wave 2). The Dock is placed with place window . Its depth now follows the measured pill plus flyout room; win previews::DockSizer only lets the native window change size after the Dock has been still for 500 ms, never during a glide (D3). - Top Bar search well and clock (G-11). Wait for PR #60, then use captureFlip as the Dock does. - Desktop folder (G-10) , Command edge shelf (G-12) , Guide spotlight (G-13) , meters (G-14), Dock indicator (G-15). - After PR #60 merges, useSurfaceGlide can become a thin alias of useSurfaceTransition , which already understands the \"pre\" state. - Run the smoothness check on a real PC and attach the report; the verdicts decide the next pass.",
+   "text": "- Dock window sizing (done in wave 2). The Dock is placed with place window . Its depth now follows the measured pill plus flyout room; win previews::DockSizer only lets the native window change size after the Dock has been still for 500 ms, never during a glide (D3). - Desktop tab and Command edge shelf as fixed-size windows (G-10, G-12). Both now resize in one step with nothing moving. Keeping the window at its largest size all the time needs a hit region ( SetWindowRgn ) so the see-through part does not eat clicks; try it on a real desktop. - The 16 layout transitions left were not reviewed in R4. They are in the AI dock, voice, Lens Apps, Cleaner, Lens Command ( Command.css:30 ), the context menu, presence, Core Apps, Backdrop Lab, the Tester Hub, one Guide rule and the focus-dimming preview ( node tools/polish/motion-lint.mjs --list ). - After PR #60 merges, useSurfaceGlide can beco",
    "path": [
     "Docs",
     "Smoothness",
