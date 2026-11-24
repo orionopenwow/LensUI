@@ -91,3 +91,30 @@ and what each costs, not timings:
 4. Dock on the top edge with auto-hide: click a Dock icon, move away; the Dock hides within about
    half a second (4 s at most if the Dock kept focus).
 5. Open Search or Quick Settings, click into an app: the bar and Dock hide again after ~1.5 s.
+
+### Apps asking for attention
+
+Windows flashes a taskbar button orange when an app calls `FlashWindowEx` (a chat message, a
+dialog waiting behind other windows). The Lens Dock showed nothing.
+
+`src-tauri/src/attention.rs` registers the same shell hook Explorer uses
+(`RegisterShellHookWindow`, `HSHELL_FLASH`) on its own thread and keeps one record per flashing
+window, grouped by executable the way the Dock groups windows. A request ends when the window is
+activated (`HSHELL_WINDOWACTIVATED`, `HSHELL_RUDEAPPACTIVATED`), comes to the front, or is
+destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own
+windows never count.
+
+For the Dock page:
+
+- **Event** `lens://dock-attention`, sent whole after every change:
+  `{ version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] }`, oldest first.
+  Match `exePath` case-insensitively against `get_running_windows` / pinned app paths.
+- **Command** `get_dock_attention` returns the same snapshot (call it on load and after a reload).
+
+Not used: `EVENT_OBJECT_STATECHANGE`. Windows doesn't report a taskbar flash through it, so it
+can't stand in for the shell hook; if the hook can't be registered (rare: another shell owns it),
+Lens logs that once and the Dock simply shows no attention state.
+
+To check on a real PC: in PowerShell, start `notepad`, click elsewhere, then flash it with
+`FlashWindowEx` (or get a message in Teams/Discord while it's in the background). The event
+arrives once; clicking the app clears it.

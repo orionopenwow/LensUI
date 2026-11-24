@@ -9726,6 +9726,23 @@
    "source": "docs/DOCK_SMOOTHNESS.md"
   },
   {
+   "id": "doc.dock-smoothness.7",
+   "kind": "doc",
+   "title": "Dock smoothness: Apps asking for attention",
+   "text": "Windows flashes a taskbar button orange when an app calls FlashWindowEx (a chat message, a dialog waiting behind other windows). The Lens Dock showed nothing. src-tauri/src/attention.rs registers the same shell hook Explorer uses ( RegisterShellHookWindow , HSHELL FLASH ) on its own thread and keeps one record per flashing window, grouped by executable the way the Dock groups windows. A request ends when the window is activated ( HSHELL WINDOWACTIVATED , HSHELL RUDEAPPACTIVATED ), comes to the front, or is destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own windows never count. For the Dock page: - Event lens://dock-attention , sent whole after every change: { version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] } , oldest first. Match exePath case-insensitively against get running windows / pinned app paths. - Command get doc",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Apps asking for attention"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Apps asking for attention"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
    "id": "doc.dock-styles.0",
    "kind": "doc",
    "title": "Dock styles and Dock options",
