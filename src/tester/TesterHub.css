@@ -49,12 +49,15 @@
   height: 8px;
   border-radius: 4px;
   background: rgb(var(--lens-ink) / 0.1);
-  display: flex;
+  position: relative;
   overflow: hidden;
 }
 .th-progress-bar span {
-  height: 100%;
-  transition: width var(--lens-dur-base) var(--lens-ease-out);
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: translateX(calc(var(--fill-o, 0) * 100%)) scaleX(var(--fill, 0));
+  transition: transform var(--lens-dur-base) var(--lens-ease-out);
 }
 .th-progress-pass {
   background: #22c55e;

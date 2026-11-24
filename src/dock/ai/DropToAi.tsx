@@ -14,6 +14,7 @@ import { AI_EVENTS, transcribeFile, type AiContext, type TranscribeDone, type Tr
 import { shelfAdd } from "../../ai/shelfLink";
 import "../../ai/AskPanel.css";
 import "./aiDock.css";
+import { fillStyle } from "../../ui/motion";
 
 export const DropSparkle: React.FC<{ active: boolean; onClick?: () => void; label?: string }> = ({ active, onClick, label = "Ask AI" }) => (
   <button type="button" data-guide-id="dock.sparkle" className={`ai-sparkle ${active ? "is-drop" : ""}`} aria-label={active ? "Drop files to use them with AI" : label} onClick={onClick}>
@@ -115,7 +116,7 @@ export const DropToAiMenu: React.FC<DropToAiMenuProps> = ({ paths, onClose, onAs
             <div className="ai-drop-err">{job.error}</div>
           ) : (
             <div className="ai-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(job.pct)}>
-              <span style={{ width: `${Math.max(3, job.pct)}%` }} />
+              <span style={fillStyle(Math.max(3, job.pct) / 100)} />
             </div>
           )}
           <div className="ai-drop-note">Runs on this PC. The audio never leaves it.</div>

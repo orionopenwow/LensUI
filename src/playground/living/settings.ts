@@ -147,12 +147,20 @@ export function locationFromTimeZone(zone: string | undefined, offsetMinutesEast
   return { latitude: south ? -30 : 40, longitude: Math.max(-180, Math.min(180, offsetMinutesEast / 4)) };
 }
 
-export function systemTimeZone(): string | undefined {
+// Building an Intl.DateTimeFormat costs about a millisecond, and the sky previews ask for the zone
+// on every frame. The zone only changes when the person moves the clock, so it is read at most
+// once a minute.
+let zoneCache: { zone: string | undefined; at: number } | null = null;
+export function systemTimeZone(now = Date.now()): string | undefined {
+  if (zoneCache && now - zoneCache.at < 60_000 && now >= zoneCache.at) return zoneCache.zone;
+  let zone: string | undefined;
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   } catch {
-    return undefined;
+    zone = undefined;
   }
+  zoneCache = { zone, at: now };
+  return zone;
 }
 
 /** Where the Living Themes think you are. */

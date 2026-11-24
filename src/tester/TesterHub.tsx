@@ -38,6 +38,7 @@ import {
   type StepStatus,
 } from "./model";
 import "./TesterHub.css";
+import { fillStyle } from "../ui/motion";
 
 // Loaded only when its tab is opened (docs/SMOOTHNESS.md).
 const SmoothnessPanel = lazy(() => import("../smooth/SmoothnessPanel").then((m) => ({ default: m.SmoothnessPanel })));
@@ -135,9 +136,9 @@ export function TesterHub({ info = defaultBuildInfo, initialTab = "new" }: { inf
         <div className="th-progress" aria-label={`Checklist ${progress.pct}% done`}>
           <div className="th-progress-num">{steps.length ? `${progress.done}/${progress.total}` : "—"}</div>
           <div className="th-progress-bar" aria-hidden>
-            <span className="th-progress-pass" style={{ width: `${steps.length ? (progress.pass / steps.length) * 100 : 0}%` }} />
-            <span className="th-progress-fail" style={{ width: `${steps.length ? (progress.fail / steps.length) * 100 : 0}%` }} />
-            <span className="th-progress-skip" style={{ width: `${steps.length ? (progress.skip / steps.length) * 100 : 0}%` }} />
+            <span className="th-progress-pass" style={fillStyle(steps.length ? progress.pass / steps.length : 0, 0)} />
+            <span className="th-progress-fail" style={fillStyle(steps.length ? progress.fail / steps.length : 0, steps.length ? progress.pass / steps.length : 0)} />
+            <span className="th-progress-skip" style={fillStyle(steps.length ? progress.skip / steps.length : 0, steps.length ? (progress.pass + progress.fail) / steps.length : 0)} />
           </div>
         </div>
       </header>

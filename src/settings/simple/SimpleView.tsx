@@ -22,9 +22,9 @@ const ACCENTS_DARK = ["#FAFAFA", "#60A5FA", "#818CF8", "#C084FC", "#F472B6", "#F
 const ACCENTS_LIGHT = ["#18181B", "#2563EB", "#4F46E5", "#9333EA", "#DB2777", "#DC2626", "#C2410C", "#047857"];
 
 const ORDERS = [
-  { id: "yellow-green-red", label: "Windows order", dots: ["y", "g", "r"] },
-  { id: "green-yellow-red", label: "Green first", dots: ["g", "y", "r"] },
-  { id: "red-yellow-green", label: "Mac order", dots: ["r", "y", "g"] },
+  { id: "yellow-green-red", label: "Yellow · Green · Red", dots: ["y", "g", "r"] },
+  { id: "green-yellow-red", label: "Green · Yellow · Red", dots: ["g", "y", "r"] },
+  { id: "red-yellow-green", label: "Red · Yellow · Green (Mac)", dots: ["r", "y", "g"] },
 ] as const;
 
 export interface SimpleProps {
@@ -255,7 +255,7 @@ const Keys: React.FC<SimpleProps> = ({ config, updateConfig }) => {
   const drag = config.altDrag;
   return (
     <div className="ss-grid">
-      <Card title="Window buttons" desc="The minimise, maximise and close buttons Lens draws on windows." wide>
+      <Card title="Window buttons" desc="Minimise, maximise and close, in the order you like." wide>
         <div className="ss-orders" role="radiogroup" aria-label="Window button order">
           {ORDERS.map((o) => (
             <button

@@ -93,6 +93,7 @@ import { Section, WinLink } from "../settings/ui/primitives";
 const FeedsCard = React.lazy(() => import("../components/FeedsCard").then((m) => ({ default: m.FeedsCard })));
 const MessagesCard = React.lazy(() => import("../components/MessagesCard").then((m) => ({ default: m.MessagesCard })));
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
+import { systemTimeZone } from "../playground/living/settings";
 
 
 interface ProcessEntry {
@@ -132,6 +133,14 @@ export const ControlCenterSurface: React.FC = () => {
   const [moreToggled, setMoreToggled] = useState<{ key: string; open: boolean } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  // The first time-zone lookup loads the browser's locale data (tens of milliseconds on a slow PC).
+  // Do it while Settings is idle, not in the click that opens Appearance.
+  useEffect(() => {
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (!w.requestIdleCallback) return;
+    const id = w.requestIdleCallback(() => void systemTimeZone());
+    return () => w.cancelIdleCallback?.(id);
+  }, []);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
