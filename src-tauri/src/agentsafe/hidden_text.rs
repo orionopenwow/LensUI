@@ -209,7 +209,7 @@ const INSTRUCTION_PATTERNS: &[Pattern] = &[
     Pattern { words: &[&["from"], &["now"], &["on"]], gap: 0, kind: FindingKind::Instruction, detail: "tries to change how the AI behaves", strong: false },
     Pattern { words: &[&["new", "updated", "hidden", "secret", "revised"], &["instructions", "instruction", "directive", "directives", "orders"]], gap: 1, kind: FindingKind::Instruction, detail: "claims to give the AI new instructions", strong: true },
     Pattern { words: &[&["system", "developer", "admin", "administrator"], &["prompt", "message", "override", "mode", "note", "instruction"]], gap: 1, kind: FindingKind::Instruction, detail: "pretends to be a system message", strong: true },
-    Pattern { words: &[&["dear", "attention", "hey", "note", "message", "instructions"], &["ai", "assistant", "agent", "llm", "model", "claude", "chatgpt", "gpt", "copilot", "gemini", "bot"]], gap: 1, kind: FindingKind::Instruction, detail: "speaks directly to the AI", strong: true },
+    Pattern { words: &[&["dear", "attention", "hey", "note", "message", "instructions"], &["ai", "assistant", "agent", "llm", "model", "claude", "chatgpt", "gpt", "copilot", "gemini", "bot"]], gap: 1, kind: FindingKind::Instruction, detail: SPEAKS_TO_AI, strong: true },
     Pattern { words: &[&["ai", "assistant", "agent", "llm", "model", "claude", "chatgpt", "gpt", "copilot", "gemini"], &["must", "should", "will", "needs", "has", "please", "always", "do", "now", "instead", "shall"]], gap: 1, kind: FindingKind::Instruction, detail: "tells the AI what to do", strong: false },
     Pattern { words: &[&["do", "don't", "dont", "never"], &["not"], &["tell", "inform", "mention", "alert", "show", "reveal"], &["the", "user", "human", "them"]], gap: 1, kind: FindingKind::Instruction, detail: "asks the AI to hide something from you", strong: true },
     Pattern { words: &[&["don't", "dont", "never", "without"], &["tell", "telling", "inform", "informing", "asking", "ask", "mention", "mentioning", "notifying", "confirm", "confirming"], &["the", "user", "human", "them", "anyone"]], gap: 1, kind: FindingKind::Instruction, detail: "asks the AI to act without telling you", strong: true },
@@ -220,6 +220,23 @@ const INSTRUCTION_PATTERNS: &[Pattern] = &[
     Pattern { words: &[&["run", "execute", "call", "invoke", "use"], &["the", "this", "a"], &["tool", "function", "command", "script", "powershell", "terminal", "shell"]], gap: 1, kind: FindingKind::Instruction, detail: "tells the AI to run a tool or command", strong: false },
     Pattern { words: &[&["approve", "confirm", "accept", "grant", "allow", "authorize", "authorise"], &["all", "every", "any", "the", "this", "these"], &["actions", "action", "requests", "request", "permissions", "permission", "access", "prompts", "transaction", "payment", "transfer"]], gap: 2, kind: FindingKind::Instruction, detail: "tells the AI to approve things for you", strong: true },
 ];
+
+const SPEAKS_TO_AI: &str = "speaks directly to the AI";
+
+/// Words that mark text as discussing prompt injection rather than doing it. Deliberately narrow:
+/// everyday phrases ("such as", "for example") are not enough, or an attacker could add one next
+/// to an instruction to get it downgraded.
+const DISCUSSION_MARKERS: &[&str] = &["prompt injection", "prompt-injection", "injection attack", "injection attacks", "jailbreak", "jailbreaks"];
+
+/// True when a discussion marker sits within 200 bytes of the span (outside the span itself).
+fn discussed(text: &str, start: usize, end: usize) -> bool {
+    let a = floor_boundary(text, start.saturating_sub(200));
+    let s = floor_boundary(text, start);
+    let e = ceil_boundary(text, end);
+    let b = ceil_boundary(text, end.saturating_add(200));
+    let around = format!("{} {}", &text[a..s], &text[e..b]).to_lowercase();
+    DISCUSSION_MARKERS.iter().any(|m| around.contains(m))
+}
 
 const DATA_WORDS: &[&str] = &[
     "password", "passwords", "passcode", "otp", "one-time", "2fa", "mfa", "code", "codes", "token", "tokens", "api", "key", "keys", "secret", "secrets",
@@ -493,8 +510,20 @@ pub fn scan(nodes: &[TextNode]) -> ScanReport {
         let zw_split = zw > 0 && !node_hits.is_empty();
         let _ = &zw_split;
 
+        // Text that talks *about* injection (an article quoting "ignore previous instructions") is
+        // prose, not an attack: in plain sight, with a discussion marker near the phrase and no
+        // line that speaks to the AI directly, a hit is noted at Low and left in the text. Hidden,
+        // smuggled or role-marker text never gets this, and the per-step gate still applies.
+        let plain_sight = !unseen && !zw_split && matches!(n.source, Source::Dom | Source::File | Source::Transcript);
+        let speaks_to_ai = node_hits.iter().any(|h| h.3 == SPEAKS_TO_AI);
+        // A line that also tries to move data or call tools is never treated as mere discussion.
+        let moves_data = node_hits.iter().any(|h| matches!(h.2, FindingKind::Exfiltration | FindingKind::ToolCall));
         for (a, b, kind, detail, strong) in &node_hits {
             let (oa, ob) = to_orig(*a, *b);
+            if plain_sight && !speaks_to_ai && !moves_data && *kind == FindingKind::Instruction && discussed(text, oa, ob) {
+                findings.push(Finding { node: n.id, start: oa, end: ob, kind: *kind, severity: Severity::Low, detail: format!("{detail} (quoted in a discussion)"), quarantine: false });
+                continue;
+            }
             let addressed = node_hits.iter().any(|h| h.4);
             let sev = match kind {
                 FindingKind::Exfiltration | FindingKind::ToolCall if unseen || zw_split || addressed || n.source != Source::Dom => Severity::High,

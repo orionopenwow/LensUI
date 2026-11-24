@@ -373,6 +373,9 @@ const SCENARIOS = [
       const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal" });
       try {
         const dock = await waitForSurface(s, "dock");
+        // Diagnostics for the "two Settings pages" failure: how many existed before Settings was opened.
+        const before = await settingsTargets();
+        const t0 = Date.now();
         await invoke(dock, "open_surface", { label: "settings" });
         let settings = await waitForSurface(s, "settings");
         await sleep(1500);
@@ -381,6 +384,21 @@ const SCENARIOS = [
         // the crash, so a second page with the same URL can never be read by mistake (B-31: the
         // earlier versions of this check could not tell which page they were reading).
         const targets = await settingsTargets();
+        if (targets.length !== 1) {
+          // Show every DevTools target so the extra page can be identified from the CI log.
+          const all = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json().catch(() => []);
+          console.log(`  /json/list (${all.length} targets):\n${all.map((t) => `    ${t.type} | ${t.id} | ${t.title} | ${t.url}`).join("\n")}`);
+          // Which window and webview each Settings page belongs to, and when it started.
+          for (const t of targets) {
+            const who = await cdpEvalTarget(t, "JSON.stringify({ win: window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label, view: window.__TAURI_INTERNALS__?.metadata?.currentWebview?.label, vis: document.visibilityState, age: Math.round(performance.now()), root: document.getElementById('root')?.innerHTML.length || 0, nav: performance.getEntriesByType('navigation')[0]?.type })");
+            console.log(`    settings target ${t.id}: ${who}`);
+          }
+          console.log(`    before open_surface (${Date.now() - t0} ms ago): ${before.map((t) => t.id).join(", ") || "none"}`);
+          const tauriViews = await cdpEvalTarget(targets[0], "window.__TAURI_INTERNALS__.invoke('plugin:webview|get_all_webviews').then((v) => JSON.stringify(v)).catch((e) => 'error: ' + e)");
+          console.log(`    Tauri webviews: ${tauriViews}`);
+          const log = await invoke(dock, "tester_log_get", { after: null, limit: 80 }).catch((e) => [{ area: "e2e", message: String(e) }]);
+          console.log(`    session log (last ${log.length}):\n${log.map((l) => `      ${l.level || ""} ${l.area}: ${String(l.message).slice(0, 200)}`).join("\n")}`);
+        }
         expect(problems, targets.length === 1, `expected one Settings page, found ${targets.length}`);
         const target = targets[0];
         await cdpEvalTarget(target, "window.__beforeCrash = true; window.dispatchEvent(new Event('lens:test-crash')); true");

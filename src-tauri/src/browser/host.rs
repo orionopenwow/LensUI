@@ -75,8 +75,10 @@ static RT: OnceLock<Mutex<Runtime>> = OnceLock::new();
 
 pub fn rt() -> MutexGuard<'static, Runtime> {
     RT.get_or_init(|| {
+        let state = store::load_state_from(&store::state_path());
+        super::permissions::publish(&state.site_permissions);
         Mutex::new(Runtime {
-            state: store::load_state_from(&store::state_path()),
+            state,
             history: store::load_history_from(&store::history_path()),
             history_dirty: false,
             views: HashMap::new(),
@@ -260,6 +262,9 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
         });
     let (pos, size) = if hidden { (LogicalPosition::new(-20000.0, 0.0), LogicalSize::new(vp.w.max(1.0), vp.h.max(1.0))) } else { (LogicalPosition::new(vp.x, vp.y), LogicalSize::new(vp.w.max(1.0), vp.h.max(1.0))) };
     let view = window.add_child(builder, pos, size).map_err(|e| e.to_string())?;
+    // Camera, microphone, location…: Lens asks under the address bar instead of WebView2's prompt.
+    #[cfg(windows)]
+    super::permissions::win::attach(app, &view, tab_id.clone());
     if (tab.zoom - 1.0).abs() > 0.001 {
         let _ = view.set_zoom(tab.zoom);
     }

@@ -35,7 +35,7 @@ pub struct Injection {
 
 impl Injection {
     pub fn from_report(r: &ScanReport) -> Self {
-        Injection { high: r.high, medium: r.medium, exfiltration: r.findings.iter().any(|f| f.kind == FindingKind::Exfiltration) }
+        Injection { high: r.high, medium: r.medium, exfiltration: r.findings.iter().any(|f| f.kind == FindingKind::Exfiltration && f.severity >= Severity::Medium) }
     }
     pub fn merge(self, o: Injection) -> Injection {
         Injection { high: self.high + o.high, medium: self.medium + o.medium, exfiltration: self.exfiltration || o.exfiltration }

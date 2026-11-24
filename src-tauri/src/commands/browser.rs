@@ -482,6 +482,8 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
         }
         let caps = req.caps.unwrap_or_default();
         let (tab_id, view) = host::view_for(req.tab.as_deref())?;
+        // While the agent works on a tab, that tab's permission requests are denied unasked.
+        crate::browser::permissions::note_agent_step(&tab_id, host::now());
         let mut action = req.action;
         if let Some(el) = req.element {
             let d = host::eval_op(&view, json!({ "op": "describe", "ref": el }), Duration::from_secs(3))?;
@@ -1077,4 +1079,55 @@ pub async fn browser_focus_page() -> Result<(), String> {
         view.set_focus().map_err(|e| e.to_string())
     })
     .await
+}
+
+// ---- Site permissions (camera, microphone, location, notifications, clipboard, downloads) ----
+
+/// Answers the bar under the address bar: "once", "site" (remember allow) or "block" (remember).
+#[tauri::command]
+pub fn browser_permission_answer(app: AppHandle, id: u64, answer: String) -> Result<(), String> {
+    use crate::browser::permissions::{self, Answer, AnswerSink};
+    let answer = Answer::parse(&answer).ok_or("Unknown answer.")?;
+    let Some(ask) = AnswerSink::take(id) else { return Ok(()) };
+    if answer.remembered() {
+        let mut r = rt();
+        if permissions::remember(&mut r.state.site_permissions, &ask.origin, &ask.kind, answer) {
+            permissions::publish(&r.state.site_permissions);
+            host::save(&r);
+        }
+    }
+    let allow = answer.allows();
+    let _ = &app;
+    #[cfg(windows)]
+    {
+        let _ = app.run_on_main_thread(move || {
+            permissions::win::settle(id, allow);
+        });
+    }
+    #[cfg(not(windows))]
+    let _ = allow;
+    Ok(())
+}
+
+/// Requests still waiting for an answer (for a browser window that opens after they arrived).
+#[tauri::command]
+pub fn browser_permissions_waiting() -> Vec<crate::browser::permissions::PermissionAsk> {
+    crate::browser::permissions::AnswerSink::waiting()
+}
+
+/// Every remembered answer: origin → kind → allowed.
+#[tauri::command]
+pub fn browser_permissions_list() -> std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>> {
+    rt().state.site_permissions.clone()
+}
+
+/// Forgets one kind for a site, or the whole site when `kind` is null. The site asks again next time.
+#[tauri::command]
+pub fn browser_permission_forget(origin: String, kind: Option<String>) -> std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>> {
+    use crate::browser::permissions;
+    let mut r = rt();
+    permissions::forget(&mut r.state.site_permissions, &origin, kind.as_deref());
+    permissions::publish(&r.state.site_permissions);
+    host::save(&r);
+    r.state.site_permissions.clone()
 }

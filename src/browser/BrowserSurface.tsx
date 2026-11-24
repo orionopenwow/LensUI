@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { listen } from "@tauri-apps/api/event";
 import {
   ArrowLeft, ArrowRight, Bookmark as BookmarkIcon, BookOpen, Captions, ChevronDown, ChevronUp, Download, ExternalLink, Fingerprint, Globe, History as HistoryIcon, Lock,
-  Minus, NotebookPen, PanelLeft, PanelRight, PictureInPicture2, Plus, RotateCw, Search, Sparkles, Star, X,
+  Minus, NotebookPen, PanelLeft, PanelRight, PictureInPicture2, Plus, RotateCw, Search, SlidersHorizontal, Sparkles, Star, X,
 } from "lucide-react";
 import { glideIn, useLingering, usePresence, type Pose } from "../ui/motion";
 import { useLensState } from "../hooks/useLensState";
@@ -14,7 +14,10 @@ import {
   folderToggle, glance, historyNav, historySearch, navigate, notesGet, notesSet, openBackground, pageEvents, pageRead, pip, reopenClosed, setOverlay,
   settingsSet, setViewport, setZoom, spaceAdd, spaceLock, spaceSwitch, tabActivate, tabClose, tabDuplicate, tabMove, tabMute, tabPin, tidy, unarchive,
   type Appearance, type ArchivedTab, type BrowserAi, type BrowserView, type Download as Dl, type HistoryEntry, type ImportSource, type MenuEvent,
+  EVT_BROWSER_PERMISSION, EVT_BROWSER_PERMISSION_DONE, permissionAnswer, permissionForget, permissionsList, permissionsWaiting,
+  type PermissionAnswer, type PermissionAsk, type PermissionKind, type SitePermissions,
 } from "./api";
+import { askFor, PermissionBar, SiteStrip } from "./SitePermissions";
 import { AgentPanel, type AgentSeed, type QuickAsk } from "./AgentPanel";
 import { AiPanel } from "./AiPanel";
 import { Key } from "./ApprovalCard";
@@ -55,6 +58,31 @@ export interface BrowserInitial {
   history?: HistoryEntry[];
   /** Parity: which suggestion row is highlighted. */
   selected?: number;
+  /** Parity: site permission requests waiting, and remembered answers. */
+  asks?: PermissionAsk[];
+  perms?: SitePermissions;
+}
+
+/** `https://host[:port]` of a web page, or "" (mirrors `permissions::origin_of`). */
+function originOf(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.origin : "";
+  } catch {
+    return "";
+  }
+}
+
+function forgetLocal(p: SitePermissions, origin: string, kind: PermissionKind | null): SitePermissions {
+  const next = { ...p };
+  if (!kind) delete next[origin];
+  else {
+    const m = { ...(next[origin] ?? {}) };
+    delete m[kind];
+    if (Object.keys(m).length) next[origin] = m;
+    else delete next[origin];
+  }
+  return next;
 }
 
 const SUGGEST_ICON: Record<Suggestion["kind"], React.ComponentType<{ size?: number; className?: string }>> = {
@@ -141,6 +169,10 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const [sel, setSel] = useState(initial?.selected ?? 0);
   const [arch, setArch] = useState<ArchivedTab[]>([]);
   const [crashed, setCrashed] = useState(false);
+  // Site permissions: requests waiting for an answer, remembered answers, and the site strip.
+  const [asks, setAsks] = useState<PermissionAsk[]>(initial?.asks ?? []);
+  const [perms, setPerms] = useState<SitePermissions>(initial?.perms ?? {});
+  const [siteOpen, setSiteOpen] = useState(!!initial?.perms && !initial?.asks?.length);
   const [notes, setNotes] = useState("");
   const [glanceSummary, setGlanceSummary] = useState<string | null>(initial?.glanceSummary ?? null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -158,6 +190,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const space = s?.spaces.find((x) => x.id === s.activeSpace);
   const locked = !!space?.locked && !(view?.unlocked ?? []).includes(space.id);
 
+  const origin = originOf(url);
+  const ask = askFor(asks, tab?.id);
+  const answer = (a: PermissionAsk, how: PermissionAnswer) => {
+    setAsks((xs) => xs.filter((x) => x.id !== a.id));
+    if (how !== "once") setPerms((p) => ({ ...p, [a.origin]: { ...(p[a.origin] ?? {}), [a.kind]: how === "site" } }));
+    if (live) void permissionAnswer(a.id, how).catch((e) => flash(String(e)));
+  };
   const flash = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
@@ -198,9 +237,15 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     browserState().then(setView).catch(() => {});
     const un1 = listen<BrowserView>(EVT_BROWSER_STATE, (e) => setView(e.payload));
     const un2 = listen<Dl[]>(EVT_BROWSER_DOWNLOADS, (e) => setDownloads(e.payload));
+    permissionsWaiting().then(setAsks).catch(() => {});
+    permissionsList().then(setPerms).catch(() => {});
+    const un3 = listen<PermissionAsk>(EVT_BROWSER_PERMISSION, (e) => setAsks((xs) => [...xs.filter((x) => x.id !== e.payload.id), e.payload]));
+    const un4 = listen<{ id: number }>(EVT_BROWSER_PERMISSION_DONE, (e) => setAsks((xs) => xs.filter((x) => x.id !== e.payload.id)));
     return () => {
       un1.then((u) => u());
       un2.then((u) => u());
+      un3.then((u) => u());
+      un4.then((u) => u());
     };
   }, [live]);
 
@@ -630,6 +675,11 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                 </span>
               </button>
             )}
+            {!editing && tab && origin ? (
+              <button className={`lb-icon-btn sm${siteOpen ? " is-on" : ""}`} aria-label={`Site permissions for ${hostOf(url)}`} aria-expanded={siteOpen} onClick={() => setSiteOpen((o) => !o)}>
+                <SlidersHorizontal size={13} />
+              </button>
+            ) : null}
             {!editing && tab ? (
               <button className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
                 <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
@@ -756,6 +806,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             <button className="lb-btn lb-btn-sm" onClick={() => { setGlanceSummary(null); void glance("close").catch(() => {}); }}>Close <Key k="Esc" /></button>
             {glanceSummary ? <p className="lb-glance-sum">{glanceSummary}</p> : null}
           </div>
+        ) : null}
+
+        {ask ? (
+          <div onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); answer(ask, "block"); } }}>
+            <PermissionBar ask={ask} more={asks.length - 1} onAnswer={(a) => answer(ask, a)} />
+          </div>
+        ) : siteOpen && origin ? (
+          <SiteStrip
+            origin={origin}
+            saved={perms}
+            onClose={() => setSiteOpen(false)}
+            onForget={(k) => void (live ? permissionForget(origin, k).then(setPerms) : Promise.resolve(forgetLocal(perms, origin, k)).then(setPerms)).catch((e) => flash(String(e)))}
+          />
         ) : null}
 
         <div className="lb-page" ref={pageRef}>

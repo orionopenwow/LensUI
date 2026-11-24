@@ -96,6 +96,8 @@ export interface BrowserState {
   nextId: number;
   /** Recently closed tabs, newest last (Ctrl+Shift+T reopens the last). */
   closed?: { tab: Tab; closedMs: number }[];
+  /** Site permissions answered "on this site" or "Block". */
+  sitePermissions?: SitePermissions;
 }
 
 export interface Download {
@@ -227,6 +229,25 @@ export interface MenuEvent {
 
 export const EVT_BROWSER_STATE = "lens://browser/state";
 export const EVT_BROWSER_DOWNLOADS = "lens://browser/downloads";
+export const EVT_BROWSER_PERMISSION = "lens://browser/permission";
+export const EVT_BROWSER_PERMISSION_DONE = "lens://browser/permission-done";
+
+/** A site permission Lens asks about (see browser/permissions.rs). */
+export type PermissionKind = "camera" | "microphone" | "location" | "notifications" | "clipboard" | "downloads";
+export const PERMISSION_KINDS: PermissionKind[] = ["camera", "microphone", "location", "notifications", "clipboard", "downloads"];
+/** Remembered answers: origin → kind → allowed. */
+export type SitePermissions = Record<string, Partial<Record<PermissionKind, boolean>>>;
+export interface PermissionAsk {
+  id: number;
+  tab: string;
+  origin: string;
+  kind: PermissionKind;
+}
+export type PermissionAnswer = "once" | "site" | "block";
+export const permissionAnswer = (id: number, answer: PermissionAnswer) => invoke<void>("browser_permission_answer", { id, answer });
+export const permissionsWaiting = () => invoke<PermissionAsk[]>("browser_permissions_waiting");
+export const permissionsList = () => invoke<SitePermissions>("browser_permissions_list");
+export const permissionForget = (origin: string, kind: PermissionKind | null) => invoke<SitePermissions>("browser_permission_forget", { origin, kind });
 
 export const browserOpen = (url?: string) => invoke<BrowserView>("browser_open", { url: url ?? null });
 export const browserState = () => invoke<BrowserView>("browser_state");

@@ -25,9 +25,11 @@ sysinfo = "0.33"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 
 [target.'cfg(windows)'.dependencies]
-# The WebView2 COM types behind Tauri's webviews: Lens listens for a renderer that exits
-# (app::renderer). Same version Tauri already links, so nothing new is downloaded.
+# The WebView2 COM types behind Tauri's webviews (same versions Tauri links, nothing new is
+# downloaded): app::renderer listens for a renderer that exits; Lens Browser handles site
+# permission requests.
 webview2-com = "0.39"
+windows-core = "0.62"
 windows = { version = "0.58", features = [
     "ApplicationModel",
     "ApplicationModel_DataTransfer",

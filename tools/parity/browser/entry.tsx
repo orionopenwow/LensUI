@@ -276,6 +276,9 @@ const scenes: Record<string, BrowserInitial> = {
   "downloads-empty": { view, panel: "downloads", chats, mockPage: <MockPage />, now: NOW, nav: back },
   "import-pick": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, nav: back, importSeed: { sources: importSources, pick: { browser: "chrome", profile: "Default" }, counts: { bookmarks: 7, history: 18_204, openTabs: 2, pinnedTabs: 1, spaces: 0, notes: [] }, items: importItemsSeed, receipts: receiptsSeed, open: "bookmarks", skip: ["https://oldjob.example/wiki", "https://oldjob.example/payroll"], now: NOW } },
   frame: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  // Site permissions: a page asks for the camera; the site strip with remembered answers.
+  permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
+  "permission-site": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, perms: { [new URL(activeUrl).origin]: { location: true, notifications: false } } },
   agent: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems, startedAt: NOW - 196_000, actions: 23, running: false } },
   approval: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems.slice(0, 3), startedAt: NOW - 196_000, actions: 23, running: true, pending } },
   transcript: {
