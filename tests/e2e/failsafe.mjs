@@ -342,11 +342,21 @@ const SCENARIOS = [
         let settings = await waitForSurface(s, "settings");
         await sleep(1500);
         settings = await waitForSurface(s, "settings");
-        await settings.evaluate(() => window.dispatchEvent(new Event("lens:test-crash")));
-        await sleep(300);
-        const text = await settings.evaluate(() => document.querySelector(".fs-problem-text")?.textContent || "").catch(() => "");
-        expect(problems, /Reloading/.test(text), `the crashed window does not say it is reloading ("${text}")`);
-        await sleep(3000);
+        // The notice can be on screen for well under 300 ms before the page reloads itself, so it is
+        // recorded as it appears (sessionStorage survives the reload) instead of sampled once.
+        await settings.evaluate(() => {
+          const note = () => {
+            const t = document.querySelector(".fs-problem-text")?.textContent;
+            if (t) sessionStorage.setItem("lens-test-crash-notice", t);
+          };
+          new MutationObserver(note).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+          window.dispatchEvent(new Event("lens:test-crash"));
+          note();
+        });
+        await sleep(3500);
+        settings = await waitForSurface(s, "settings");
+        const text = await settings.evaluate(() => sessionStorage.getItem("lens-test-crash-notice") || document.querySelector(".fs-problem-text")?.textContent || "").catch(() => "");
+        expect(problems, /Reloading/.test(text), `the crashed window never said it is reloading ("${text}")`);
         settings = await waitForSurface(s, "settings");
         const back = await settings.evaluate(() => !document.querySelector(".fs-problem") && (document.getElementById("root")?.innerHTML.length || 0) > 0);
         expect(problems, back, "the window did not come back after its automatic reload");
