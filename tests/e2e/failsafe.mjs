@@ -385,6 +385,11 @@ const SCENARIOS = [
           // Show every DevTools target so the extra page can be identified from the CI log.
           const all = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json().catch(() => []);
           console.log(`  /json/list (${all.length} targets):\n${all.map((t) => `    ${t.type} | ${t.id} | ${t.title} | ${t.url}`).join("\n")}`);
+          // Which window and webview each Settings page belongs to, and when it started.
+          for (const t of targets) {
+            const who = await cdpEvalTarget(t, "JSON.stringify({ win: window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label, view: window.__TAURI_INTERNALS__?.metadata?.currentWebview?.label, vis: document.visibilityState, age: Math.round(performance.now()), root: document.getElementById('root')?.innerHTML.length || 0, nav: performance.getEntriesByType('navigation')[0]?.type })");
+            console.log(`    settings target ${t.id}: ${who}`);
+          }
         }
         expect(problems, targets.length === 1, `expected one Settings page, found ${targets.length}`);
         const target = targets[0];
