@@ -6,6 +6,7 @@ import { AmbientPreview, packPalette } from "../../playground/ambient/controls";
 import { packById } from "../../themes/packs";
 import type { LensConfig } from "../../types/generated";
 import { useShape } from "./hooks";
+import { fillStyle } from "../../ui/motion";
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -92,7 +93,7 @@ export const Meter: React.FC<{ value: number; max?: number; label: string; tone?
   const p = Math.max(0, Math.min(100, (value / (max || 1)) * 100));
   return (
     <div className={cx("ca-meter", tone && `tone-${tone}`)} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.round(value)}>
-      <span style={{ width: `${p}%` }} />
+      <span style={fillStyle(p / 100)} />
     </div>
   );
 };

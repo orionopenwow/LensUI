@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Square, X } from "lucide-react";
 import { auroraBars, formatElapsed, isSpoken, statusLabel, words, type ConvState } from "./convoState";
 import "./Conversation.css";
+import { fillStyle } from "../ui/motion";
 
 export interface ConversationProps {
   state: ConvState;
@@ -47,7 +48,7 @@ export function Aurora({ status, levels, reducedMotion, frozenT }: { status: Con
       <div className="lc-aurora-glow" />
       <div className="lc-aurora-bars">
         {bars.map((v, i) => (
-          <i key={i} style={{ height: `${Math.round(6 + v * 94)}%`, ["--i" as string]: i / (BARS - 1) } as React.CSSProperties} />
+          <i key={i} style={{ ...fillStyle((6 + v * 94) / 100), ["--i" as string]: i / (BARS - 1) } as React.CSSProperties} />
         ))}
       </div>
     </div>

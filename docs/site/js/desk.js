@@ -20,8 +20,8 @@ export const getPacks = () => (packsP ??= fetch(new URL("data/packs.json", SITE)
  * Pinned order matches tools/site/live/site-core.ts. Every entry is a surface that exists in Lens.
  */
 export const APPS = {
-  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 540, marker: ".lb-root" },
-  notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 440, marker: ".ca-app-notes" },
+  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 600, marker: ".lb-root" },
+  notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 560, marker: ".ca-app-notes" },
   music: { name: "Lens Music", icon: "lens-music", src: "music.html?scene=np-expanded", w: 820, h: 520, marker: ".lm-np" },
   monitor: { name: "Monitor", icon: "lens-monitor", src: "coreapps.html?app=monitor", w: 720, h: 500, marker: ".ca-app-monitor" },
   timer: { name: "Timer", icon: "lens-timer", src: "coreapps.html?app=timer", w: 420, h: 500, marker: ".ca-app-timer" },
@@ -131,8 +131,9 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = { id: ++hw, app: id, el, frame: el.querySelector("iframe"), src: a.src, w: Math.min(a.w, W - 24), h: Math.min(a.h, wk.h - 12), x: 0, y: 0, min: false, max: false, prev: null, tile: null, ready: false };
     w.x = at ? at[0] * W : Math.round(W * 0.14 + (cnt % 5) * 36);
     w.y = at ? TOP + at[1] * wk.h : Math.round(TOP + 24 + (cnt % 5) * 30);
-    // Keep a new window's bottom edge (and its resize corner) clear of the dock on shorter desks.
-    w.h = Math.max(240, Math.min(w.h, H - DOCK_H - w.y - 8));
+    // Keep a new window's bottom edge (and its resize corner) clear of the dock on shorter desks:
+    // above the resting dock (WORK_BOTTOM), not its lift-and-tooltip frame, so windows get the room.
+    w.h = Math.max(240, Math.min(w.h, H - WORK_BOTTOM - w.y - 8));
     clampWin(w);
     wins.set(w.id, w);
     paint(w);

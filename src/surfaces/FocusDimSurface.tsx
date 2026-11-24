@@ -4,6 +4,7 @@ import type * as Gen from "../types/generated";
 import {
   DEFAULT_CAPS, DEFAULT_STYLING, effectiveBorder, normalizeStyling, previewRadius, type StylingCaps, type WindowStyling,
 } from "../utils/windowStyling";
+import "./FocusDimSurface.css";
 
 /**
  * A small live picture of focus dimming and the active border: a desktop with two windows in
@@ -85,8 +86,9 @@ export const FocusDimPreview: React.FC<{ styling: WindowStyling; caps?: StylingC
         <Lines n={4} />
       </div>
       {/* The dim layer sits under the focused window, exactly like the real overlay. */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 2, background: `rgb(0 0 0 / ${dim})`, transition: "background 160ms ease" }} />
+      <div className="fd-dim" style={{ position: "absolute", inset: 0, zIndex: 2, background: `rgb(0 0 0 / ${dim})` }} />
       <div
+        className="fd-focus"
         style={{
           position: "absolute",
           left: "24%",
@@ -99,7 +101,6 @@ export const FocusDimPreview: React.FC<{ styling: WindowStyling; caps?: StylingC
           borderRadius: radius ? radius + ring - 1 : 0,
           background: border ? border.background : "transparent",
           boxShadow: border && border.glow > 0 ? `0 0 ${border.glow * 1.6}px ${border.glow / 3}px ${styling.activeBorder.colors[0]}88` : "none",
-          transition: "box-shadow 160ms ease, padding 160ms ease",
         }}
       >
         <div style={{ ...win("0", "0", "100%", "100%", 3), position: "relative", boxShadow: "0 10px 26px rgb(0 0 0 / 0.38)" }}>

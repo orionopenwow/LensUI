@@ -212,7 +212,10 @@
   border-radius: 4px 4px 0 0;
   background: linear-gradient(to top, transparent, color-mix(in srgb, var(--c2) calc((1 - var(--i)) * 100%), var(--c4)), color-mix(in srgb, var(--c1) calc((1 - var(--i)) * 100%), var(--c3)), color-mix(in srgb, var(--c3) 60%, #fff));
   opacity: 0.9;
-  transition: height var(--lens-dur-instant) linear;
+  height: 100%;
+  transform-origin: center bottom;
+  transform: scaleY(var(--fill, 0.06));
+  transition: transform var(--lens-dur-instant) linear;
 }
 
 .lc-aurora.still .lc-aurora-bars i {

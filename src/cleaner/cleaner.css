@@ -464,7 +464,10 @@
   inset: 0 auto 0 0;
   border-radius: inherit;
   background: var(--lens-fg);
-  transition: width var(--cl-t-slow) var(--cl-ease-move), background var(--cl-t-base);
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--cl-t-slow) var(--cl-ease-move), background var(--cl-t-base);
 }
 .cl-bar.is-danger .cl-bar-fill {
   background: var(--cl-danger);
@@ -1865,6 +1868,10 @@
 }
 :root[data-shape="dotmatrix"] .cl-bar-fill {
   background: radial-gradient(circle, var(--lens-fg) 2.2px, transparent 2.6px) 0 50% / 7px 7px repeat-x;
+  /* Dots must not stretch: reveal the fill with a clip instead of scaling it. */
+  transform: none;
+  clip-path: inset(0 calc((1 - var(--fill, 0)) * 100%) 0 0);
+  transition: clip-path var(--cl-t-slow) var(--cl-ease-move);
 }
 :root[data-shape="dotmatrix"] .cl-bar.is-danger .cl-bar-fill {
   background-image: radial-gradient(circle, var(--cl-danger) 2.2px, transparent 2.6px);

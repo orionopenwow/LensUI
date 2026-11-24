@@ -13,6 +13,7 @@ import { didYouKnow, suggestedQuestions, tipOfTheDay, type Tip } from "./tips";
 import type { GuideEntry, GuideIndex, GuideProgress, GuideState, Lesson } from "./types";
 import { EMPTY_PROGRESS } from "./types";
 import "./guide.css";
+import { fillStyle } from "../ui/motion";
 
 export interface GuideContext {
   surface?: string;
@@ -518,7 +519,7 @@ const LessonView: React.FC<{
         <div className="guide-lesson-name">{lesson.title}</div>
         <div className="guide-lesson-sub">{lesson.summary}</div>
         <div className="guide-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Lesson progress">
-          <span style={{ width: `${pct}%` }} />
+          <span style={fillStyle(pct / 100)} />
         </div>
       </div>
 

@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { countAt, fmtSize } from "./model";
+import { fillStyle } from "../ui/motion";
 
 export function prefersReducedMotion(): boolean {
   if (typeof document === "undefined") return true;
@@ -73,7 +74,7 @@ export const FillBar: React.FC<{ value: number; max: number; tone?: "ink" | "dan
   const p = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className={`cl-bar cl-bar-${size} is-${tone}`} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p)} aria-label={label}>
-      <div className="cl-bar-fill" style={{ width: `${p}%` }} />
+      <div className="cl-bar-fill" style={fillStyle(p / 100)} />
     </div>
   );
 };
