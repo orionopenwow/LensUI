@@ -25,7 +25,7 @@ export const FEATURES = [
   {
     id: "themes",
     title: "Themes & look",
-    lede: "Eighteen theme packs that restyle the dock, bar, panels and app window frames together.",
+    lede: "Twenty-one theme packs that restyle the dock, bar, panels and app window frames together.",
     status: "built",
     clips: ["themes"],
     bullets: [
@@ -91,18 +91,16 @@ export const FEATURES = [
     ],
     docs: ["docs/COMMAND.md", "docs/SHELF.md", "docs/BROWSER_BRIDGE.md"],
     lesson: "command-and-shelf",
-    note: "Context packs, micro-saves and the shared action catalogue are in pull request #19.",
   },
   {
     id: "voice",
     title: "Voice",
     lede: "\"Lens, minimise this.\" Push-to-talk by default, recognised on your PC.",
-    status: "dev",
-    pr: 23,
+    status: "built",
     clips: ["voice"],
     bullets: [
       "Windows, apps, workspaces, themes, volume, timers, the Shelf and questions, with confirm and undo.",
-      "Speech is recognised locally with whisper.cpp. Audio is never saved or sent anywhere.",
+      "Speech is recognised locally with whisper.cpp. Audio is never saved or sent anywhere. One-click setup of the speech model stays off until its download checksums are pinned.",
       "\"Hey Lens\" is opt-in and pauses in calls, games, full-screen apps and on the lock screen.",
     ],
     docs: [],
@@ -112,8 +110,7 @@ export const FEATURES = [
     id: "browser",
     title: "Lens Browser",
     lede: "A light WebView2 browser with spaces, vertical tabs and an agent that stops for your OK.",
-    status: "dev",
-    pr: 20,
+    status: "built",
     clips: ["browser-agent", "youtube-transcript"],
     bullets: [
       "Spaces with their own profiles, vertical tabs that sleep when idle, reader view and picture-in-picture.",
@@ -136,14 +133,12 @@ export const FEATURES = [
     ],
     docs: ["docs/AI.md", "docs/AI_SURFACES.md", "docs/MCP.md"],
     lesson: "ai-privacy",
-    note: "The unified approval card and Claude control over every setting are in pull request #21.",
   },
   {
     id: "snip",
     title: "Lens Snip",
     lede: "Capture, then do the useful part before anything is saved.",
-    status: "dev",
-    pr: 24,
+    status: "built",
     clips: ["snip"],
     bullets: [
       "Region, window or screen, with a loupe. Annotate, blur and number steps before you save.",
@@ -156,8 +151,7 @@ export const FEATURES = [
     id: "guide",
     title: "Ask Lens",
     lede: "\"How do I…?\" answered from Lens's own settings, with Show me.",
-    status: "dev",
-    pr: 18,
+    status: "built",
     clips: ["guide"],
     bullets: [
       "An offline index of every setting, theme, dock style, command and shortcut. It only knows things that exist.",
@@ -184,9 +178,9 @@ export const FEATURES = [
 export const TRUST = [
   ["Off until you turn it on", "New features ship disabled. Your desktop only changes when you ask it to."],
   ["Every change can be undone", "Lens records what it changes and puts it back. Remove all Lens changes is one button."],
-  ["Games are left alone", "No injection into other processes. Overlays and hooks pause for full-screen apps and anti-cheat games."],
+  ["Games are left alone", "By default Lens loads nothing into other apps, and its overlays pause for full-screen apps and anti-cheat games. Two optional window-styling extras (the experimental styling hook and the Windhawk mod) do load into other apps; both stay off until you turn them on and skip known anti-cheat games. Leave them off if you play online games with anti-cheat."],
   ["Local first", "The command engine and Guide work offline. Cloud AI is opt-in and shows what it would send."],
-  ["Open source", "MIT licensed. Releases are signed, and you can build every part yourself."],
+  ["Open source", "MIT licensed, and you can build every part yourself. Updates are signed; the installers are not yet code-signed, so Windows SmartScreen warns the first time you run one."],
 ];
 
 export const WORKS_ON = [

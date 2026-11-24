@@ -41,7 +41,7 @@ const readme = `<!-- The feature tour below is generated from tools/site/content
 
 <p align="center">${gif(HERO_CLIP, "The Lens dock on a dark desktop: icons grow under the pointer and an app bounces as it launches")}</p>
 
-> **Status: beta, not yet tested on many real machines.** Everything compiles and runs its tests on Windows in CI, and every surface renders in automated screenshot tests, but most features have only been tried on a few PCs. There is no signed installer yet. New features are off by default. Keep [\`Restore-Windows-Taskbar.bat\`](./Restore-Windows-Taskbar.bat) handy while you try it.
+> **Status: beta, not yet tested on many real machines.** Everything compiles and runs its tests on Windows in CI, and every surface renders in automated screenshot tests, but most features have only been tried on a few PCs. The installers are not yet code-signed. New features are off by default. Keep [\`Restore-Windows-Taskbar.bat\`](./Restore-Windows-Taskbar.bat) handy while you try it.
 >
 > The clips in this README are rendered from the real Lens interface in a headless browser; the Windows side (other apps, the real desktop) is simulated in them. Recordings from real Windows machines will replace them.
 
@@ -72,7 +72,9 @@ Expected support, based on the Windows features each part uses; real-machine tes
 
 ## Install
 
-There is no signed release yet. Until there is, build from source.
+Starting with 0.3.0, the installers (\`.exe\` and \`.msi\`) are on [GitHub Releases](${REPO}/releases). They are not yet code-signed, so Windows SmartScreen warns the first time you run one; choose **More info › Run anyway**. Lens updates itself from there, and every update is signed. winget and a portable \`.zip\` come later.
+
+### Build from source
 
 Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
 

@@ -71,8 +71,8 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
       <a class="btn primary hero-dl" data-dl href="download.html">${OS_ICON.windows}<span class="lbl">Download for Windows</span></a>
       <a class="btn ghost hero-gh" href="${REPO}">${GH}<span>View on GitHub</span>${stars != null ? `<span class="stars" aria-label="${stars} stars">★ ${fmtStars(stars)}</span>` : ""}</a>
     </div>
-    <p class="dl-more" aria-label="Other ways to install"><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming with the first signed release">winget</span><span class="soon">Portable .zip</span><span class="soon">Installer .msi</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
-    <p class="dl-fine">Windows 10 &amp; 11 · free and open source · winget, .zip and .msi arrive with the first signed release</p>
+    <p class="dl-more" aria-label="Other ways to install"><a href="${REPO}/releases">Installer .exe &amp; .msi</a><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming later">winget</span><span class="soon">Portable .zip</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
+    <p class="dl-fine">Windows 10 &amp; 11 · free and open source · installers from 0.3.0 on GitHub Releases · winget and .zip later</p>
   </div>
   <div class="stage-wrap">
     <div class="stage" id="stage">
@@ -236,7 +236,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <ul class="trust">
       <li><strong>Off until you turn it on</strong>New features ship disabled.</li>
       <li><strong>Every change undoes</strong>One button puts Windows back, even if Lens isn't running.</li>
-      <li><strong>Games are left alone</strong>Overlays pause for full-screen apps and games.</li>
+      <li><strong>Games are left alone</strong>Overlays pause for full-screen apps and games. Nothing loads into other apps unless you turn on an optional styling extra.</li>
       <li><strong>Local first</strong>AI is opt-in and shows what it would send. No telemetry, no account.</li>
     </ul>
     <p class="vision-line">One app instead of a dozen utilities: dock, launcher, themes, browser, apps and an AI co-pilot that works across all of them. <a href="${visionHref}">Read the vision</a></p>
@@ -271,7 +271,7 @@ export function download({ log, stars = null }) {
 <section class="hero dl-hero" aria-labelledby="dl-h">
   <div class="inner">
     <h1 id="dl-h">Get the <span class="lens-rainbow">everything</span> desktop.</h1>
-    <p class="lede">Lens is a shell for Windows 10 and 11. It's in beta: there's no signed installer yet, so for now you build it from source in a few minutes.</p>
+    <p class="lede">Lens is a shell for Windows 10 and 11. It's in beta. Starting with 0.3.0, download the installer from GitHub Releases, or build it from source in a few minutes.</p>
   </div>
 </section>
 <section id="platforms" class="sec tight" aria-labelledby="pl-h">
@@ -280,12 +280,13 @@ export function download({ log, stars = null }) {
     <div class="platforms">
       <article class="plat on">
         <div class="plat-h">${OS_ICON.windows}<h3>Windows 10 &amp; 11</h3><span class="tag ok">Beta</span></div>
-        <p>Windows 10 (1809 or newer) or 11. You need <a href="https://www.rust-lang.org/tools/install">Rust</a> and <a href="https://bun.sh">Bun</a>.</p>
+        <p>Windows 10 (1809 or newer) or 11. <a class="btn small" href="${REPO}/releases/latest">Installer on GitHub Releases</a> (from 0.3.0). The installers are not yet code-signed, so SmartScreen warns the first time: choose <b>More info › Run anyway</b>. Updates are signed.</p>
+        <p>To build from source you need <a href="https://www.rust-lang.org/tools/install">Rust</a> and <a href="https://bun.sh">Bun</a>.</p>
         <pre><code>git clone ${REPO.toLowerCase()}
 cd lensui
 bun install
 bun run tauri dev</code></pre>
-        <p class="fine">Or double-click <code>Build-Lens-UI.bat</code> for a standalone build. If anything looks wrong, run <code>Restore-Windows-Taskbar.bat</code>. Signed installers and a winget package will appear on <a href="${REPO}/releases">GitHub Releases</a>.</p>
+        <p class="fine">Or double-click <code>Build-Lens-UI.bat</code> for a standalone build. If anything looks wrong, run <code>Restore-Windows-Taskbar.bat</code>. A winget package comes later.</p>
       </article>
       <article class="plat">
         <div class="plat-h">${OS_ICON.mac}<h3>macOS</h3><span class="tag">On the roadmap</span></div>
