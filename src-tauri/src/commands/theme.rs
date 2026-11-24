@@ -119,7 +119,7 @@ pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool) {
     let windhawk_border = if c.border_hex == "none" { c.caption_hex.clone() } else { c.border_hex.clone() };
     let key = format!("{}|{}|{}", c.caption_hex, windhawk_border, cfg.theme.border_radius);
     if crate::app::theme_apply::changed("windhawk", &key) {
-        let _ = sync_lens_windhawk_mod(&c.caption_hex, &windhawk_border, cfg.theme.border_radius);
+        let _ = sync_lens_windhawk_mod(&c.caption_hex, &windhawk_border, cfg.theme.border_radius, false);
     }
 }
 
@@ -294,7 +294,8 @@ pub(crate) fn sync_windhawk_mod_cmd(
     border_hex: String,
     border_radius: u32,
 ) -> Result<String, String> {
-    let out = sync_lens_windhawk_mod(&caption_hex, &border_hex, border_radius)?;
+    // The person's own click: the only path that puts the mod into Windhawk's folder.
+    let out = sync_lens_windhawk_mod(&caption_hex, &border_hex, border_radius, true)?;
     if let Some(exe) = win_windhawk::find_windhawk_exe() {
         let _ = launch_path(&exe.to_string_lossy());
     } else if let Some(parent) = std::path::Path::new(&out).parent() {

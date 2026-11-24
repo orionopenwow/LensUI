@@ -777,3 +777,25 @@ fn memory_policy_never_remember_banks_private_spaces() {
     assert!(m.may_remember("https://mybank.example", None));
     assert_eq!(site_of("HTTPS://user@WWW.Reserve.Example:8443/a?b#c"), "reserve.example");
 }
+
+/// `lens::run_internal` treats an "ask" gate as approved, because the in-app assistant's tool
+/// proposal was the approval. That is only true while every tool that changes something is
+/// "confirm" for the assistant. The two exceptions are deliberate: adding a note to the Shelf and
+/// saving a named look change nothing on the desktop.
+#[test]
+fn every_mutating_lens_tool_needs_confirmation_in_app() {
+    const LOW_ON_PURPOSE: &[&str] = &["lens_shelf", "lens_snapshot_save"];
+    for t in tools::TOOLS {
+        let risk = tools::internal_risk(t.name).expect("every tool has a risk");
+        if t.read_only {
+            assert_eq!(risk, Risk::Low, "{} is read-only", t.name);
+        } else if LOW_ON_PURPOSE.contains(&t.name) {
+            assert_eq!(risk, Risk::Low, "{} is a documented exception", t.name);
+        } else {
+            assert_eq!(risk, Risk::Confirm, "{} changes something, so the assistant must ask", t.name);
+        }
+    }
+    for name in LOW_ON_PURPOSE {
+        assert!(tools::spec(name).is_some(), "{name} no longer exists: drop it from the exceptions");
+    }
+}

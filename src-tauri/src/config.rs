@@ -170,7 +170,7 @@ fn default_dock_position() -> String {
 #[serde(rename_all = "camelCase")]
 pub struct FuncConfig {
     pub hide_native_taskbar: bool, // OFF by default
-    pub run_on_startup: bool,      // ON by default
+    pub run_on_startup: bool,      // OFF by default: the person turns it on (setup wizard, Quick settings)
     pub palette_hotkey: String,
     pub widgets_hotkey: String,
     pub gaming_pause: bool,
@@ -470,7 +470,7 @@ impl Default for LensConfig {
             top_bar: TopBarConfig::default(),
             func: FuncConfig {
                 hide_native_taskbar: true,
-                run_on_startup: true,
+                run_on_startup: false,
                 palette_hotkey: "Alt+Space".into(),
                 widgets_hotkey: "Alt+W".into(),
                 gaming_pause: true,

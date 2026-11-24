@@ -2,17 +2,52 @@
 // @id              lens-window-style
 // @name            Lens Native Window Style
 // @description     Retroactively applies Lens dark obsidian titlebars, custom border colors, and corner roundness natively in-process across Windows 11 apps via DwmSetWindowAttribute.
-// @version         1.0.0
+// @version         1.1.0
 // @author          Lens
 // @include         *
-// @exclude         *EasyAntiCheat*
-// @exclude         *BEService*
-// @exclude         *vgc.exe
-// @exclude         *vgtray.exe
-// @exclude         *VALORANT*
-// @exclude         *cs2.exe
-// @exclude         *FortniteClient*
-// @exclude         *lens-ui.exe
+// @exclude         *easyanticheat*
+// @exclude         *eac_launcher*
+// @exclude         *eaanticheat*
+// @exclude         *beservice*
+// @exclude         *battleye*
+// @exclude         *bedaisy*
+// @exclude         *vgc.exe*
+// @exclude         *vgtray.exe*
+// @exclude         *vanguard*
+// @exclude         *faceit*
+// @exclude         *eseaclient*
+// @exclude         *punkbuster*
+// @exclude         *pnkbstr*
+// @exclude         *xigncode*
+// @exclude         *gameguard*
+// @exclude         *gamemon*
+// @exclude         *mhyprot*
+// @exclude         *hoyokprotect*
+// @exclude         *anticheatexpert*
+// @exclude         *ricochet*
+// @exclude         *valorant*
+// @exclude         *riotclientservices*
+// @exclude         *leagueclient*
+// @exclude         *league of legends.exe*
+// @exclude         *cs2.exe*
+// @exclude         *csgo.exe*
+// @exclude         *fortnite*
+// @exclude         *cod.exe*
+// @exclude         *modernwarfare*
+// @exclude         *r5apex*
+// @exclude         *tslgame*
+// @exclude         *rainbowsix*
+// @exclude         *destiny2.exe*
+// @exclude         *overwatch.exe*
+// @exclude         *eldenring.exe*
+// @exclude         *rustclient.exe*
+// @exclude         *escapefromtarkov*
+// @exclude         *dayz*
+// @exclude         *deadbydaylight*
+// @exclude         *rocketleague.exe*
+// @exclude         *genshinimpact.exe*
+// @exclude         *starrail.exe*
+// @exclude         *lens-ui.exe*
 // @compilerOptions -ldwmapi -luser32
 // ==/WindhawkMod==
 
