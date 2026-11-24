@@ -2,10 +2,13 @@
 // settings people use most. Everything else on the page is under "More options" (MoreOptions.tsx),
 // which expands in place. Each card shows what it changes: a real pack preview, a real mini Dock,
 // the actual window-button dots, an illustration of the corner or drag.
-import React from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig, WindowsThemeInfo } from "../../types/lens";
-import { applyThemePack, packById, recommendedPacks } from "../../themes/packs";
+import { applyThemePack, packById } from "../../themes/packs";
+import { applyFeaturedLook, featuredPacks } from "../../themes/featured";
+import { SwitcherCard } from "../../wallpapers/SwitcherCard";
+import { matchLookPointer } from "../../themes/featuredPointer";
 import { readSchedule } from "../../themes/schedule";
 import { PackCard } from "../../components/ThemeGallery";
 import { DOCK_STYLES, DockScenePreview, dockStyleOf, dockAlignmentOf, withDock } from "../../dock/styles";
@@ -58,7 +61,9 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
   const light = pack?.scheme === "light";
   const schedule = readSchedule(config);
   const appearance = schedule.enabled ? "auto" : light ? "light" : "dark";
-  const packs = recommendedPacks().slice(0, 8);
+  const packs = featuredPacks();
+  // The config before the last theme click: one press on Undo puts the whole look back.
+  const [undo, setUndo] = useState<LensConfig | null>(null);
   const swatches = light ? ACCENTS_LIGHT : ACCENTS_DARK;
 
   const setAppearance = (next: "light" | "dark" | "auto") => {
@@ -72,9 +77,18 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
     onApplyConfig(out);
   };
 
+  // One function for the life of the page, so the memoised theme cards skip unrelated re-renders.
+  const applyRef = useRef<(id: string) => void>(() => {});
+  applyRef.current = (id: string) => {
+    setUndo(config);
+    onApplyConfig(applyFeaturedLook(config, id));
+    void matchLookPointer(id);
+  };
+  const applyLook = useCallback((id: string) => applyRef.current(id), []);
+
   return (
     <div className="ss-grid">
-      <Card title="Theme" desc="Restyles the Dock, the top bar, Settings and app frames." wide>
+      <Card title="Theme" desc="Twelve whole looks: colours, Dock, corners, font, backdrop and motion change together." wide>
         <div className="ss-packs" role="radiogroup" aria-label="Theme">
           {packs.map((p) => (
             <PackCard
@@ -82,15 +96,31 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
               pack={p}
               size="small"
               meta={false}
+              describe
               active={config.theme.preset === p.id}
               accent={p.accentMode === "windows" ? winTheme.accentHex : p.accent}
-              onApply={(id) => onApplyConfig(applyThemePack(config, id))}
+              onApply={applyLook}
             />
           ))}
         </div>
-        <button type="button" className="ss-link" onClick={() => onMore("choose")}>
-          All themes ›
-        </button>
+        <div className="ss-theme-foot">
+          <button type="button" className="ss-link" onClick={() => onMore("choose")}>
+            More themes ›
+          </button>
+          {undo && (
+            <button
+              type="button"
+              className="ss-link"
+              data-undo-theme
+              onClick={() => {
+                onApplyConfig(undo);
+                setUndo(null);
+              }}
+            >
+              Undo
+            </button>
+          )}
+        </div>
       </Card>
       <Card title="Light or dark" desc={appearance === "auto" ? "Follows sunrise and sunset." : "Switches between your light and dark themes."}>
         <Segmented
@@ -123,6 +153,9 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
             );
           })}
         </div>
+      </Card>
+      <Card title="Wallpaper" desc="Pick from your own pictures, or let Lens change it for you." wide>
+        <SwitcherCard simple />
       </Card>
       <Card title="Living wallpaper" desc="Animated backdrops, the real sky, or your own gradient.">
         <button type="button" className="ss-living" onClick={() => onMore("creator")}>

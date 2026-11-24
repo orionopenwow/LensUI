@@ -285,3 +285,5 @@
   .ss-pill-thumb, .ss-more-chev, .ss-swatch, .ss-ah-dock, .ss-size-icon { transition: none; }
   .ss-view, .ss-hint, .ss-nav-extra, .ss-living-art, .ss-corner-dot, .ss-ad-win { animation: none; }
 }
+/* Theme card foot: More themes on the left, Undo for the last applied look on the right. */
+.ss-theme-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
