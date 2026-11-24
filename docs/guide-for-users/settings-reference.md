@@ -4,38 +4,11 @@
 
 Every card and option in Lens Settings, grouped by tab. Each line is where to find it: open Settings (the gear in the dock or top bar), pick the tab, then the card.
 
-## Windows & Quick
-
-- **Back Up & Restore** — Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out.
-  Options: Include workflow recordings and training data, Remove All Lens Changes.
-- **Shell Mode (advanced)** — Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only.
-- **Start Key & Alt+Tab** — Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher.
-  Options: Win Key Opens Lens Launcher, Alt+Tab Opens Lens Overview.
-- **Monitor** — One display connected — the Dock and Top Bar are on it.
-  Options: Top Bar on Every Monitor.
-- **Hot Corners** — Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off.
-  Options: Every Monitor.
-- **Drag Windows** — Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched.
-  Options: Hold, Never Move, Right-Drag Resizes, Bring to Front, Drag Maximised Windows Out.
-- **App Hotkeys** — One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal.
-- **Per-App Window Rules** — Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely.
-  Options: Add a rule, Focus & Borders, Dim inactive windows, Leave fullscreen apps alone, Never decorate, Pin a window on top.
-- **Updates** — From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page.
-- **Crash Reports** — Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded.
-- Also here: Display & Eye Care, Sound & App Mixer, Quick Desktop & Shell Actions, Self-Test, Run Lens UI on Windows Startup, Auto-Pause Overlays in Fullscreen Games / Video, Legacy In-App Window Styling, Create Rarely Used Windows on Demand, System Tray in Top Bar (experimental), Clipboard History, Keyboard Tiling Shortcuts, Alt+1–9 Opens Dock Apps, Global Shortcuts.
-
-## Stats & Tasks
-
-- Also here: Uptime.
-
-## Messages
-
-- **Messaging hub**
-
-## Theme & Look
+## Appearance
 
 - **Day & Night Themes** — Switch packs automatically. A pack you pick by hand stays until the next switch.
   Options: Day, Night, Switch at.
+- **Switcher** — Switcher. Settings › Appearance › Wallpaper: the Wallpaper
 - **Lens Wallpaper** — Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off.
   Options: Wallpapers, Fit, Pause when a window fills the screen, Pause on battery, Wallpaper Accent, Follow wallpaper accent, Accent from my Windows wallpaper.
 - **Accessibility & Language** — Accessibility & Language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module
@@ -45,15 +18,11 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 - **Share Themes** — Export your current look to a .lenstheme file, or open one someone sent you.
 - Also here: Accent colour, Choose a theme, Customise.
 
-## Dock & Top Bar
+## Dock & Bar
 
 - Also here: Dock style, Size, Hide the Windows taskbar, Live window previews, Lock the Dock, Suggest apps you usually open now, Enable Top Bar, Auto-Hide Mode, Bar Style.
 
-## Folder Icons
-
-- Also here: Choose Folder Theme, Replace ALL Windows Explorer Default Folders, Style All Core User Folders, Style Any Specific Folder.
-
-## Desktops & Widgets
+## Desktop
 
 - **Playground** — Living wallpapers behind your icons. Hand-marked scenes react to your cursor on the empty desktop; icons and windows work as usual.
   Options: Calm, Sand canvas, Frame rate, Click ripples, Scene per workspace, Idle mode, Idle scene, Budget.
@@ -66,6 +35,23 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
   Options: Sort new items automatically, Show "Everything else".
 - **Plugins** — Small widgets for the Top Bar, Dock and Widget Drawer. Each runs in a sealed sandbox with no internet, files or system access, and can only use the permissions listed under it.
   Options: wants to.
+- Also here: Choose Folder Theme, Replace ALL Windows Explorer Default Folders, Style All Core User Folders, Style Any Specific Folder.
+
+## Windows & Keys
+
+- **Start Key & Alt+Tab** — Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher.
+  Options: Win Key Opens Lens Launcher, Alt+Tab Opens Lens Overview.
+- **Monitor** — One display connected — the Dock and Top Bar are on it.
+  Options: Top Bar on Every Monitor.
+- **Hot Corners** — Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off.
+  Options: Every Monitor.
+- **Drag Windows** — Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched.
+  Options: Hold, Never Move, Right-Drag Resizes, Bring to Front, Drag Maximised Windows Out.
+- **App Hotkeys** — One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal.
+- **Per-App Window Rules** — Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely.
+  Options: Add a rule, Focus & Borders, Dim inactive windows, Leave fullscreen apps alone, Never decorate, Pin a window on top.
+- **Shell Mode (advanced)** — Start Lens instead of the Windows taskbar and desktop when you sign in. This account only.
+- Also here: Run Lens on Windows Startup, Legacy In-App Window Styling (experimental), Create Rarely Used Windows on Demand, System Tray in Top Bar (experimental), Clipboard History, Keyboard Tiling Shortcuts, Alt+1–9 Opens Dock Apps, Global Shortcuts.
 
 ## AI & Command
 
@@ -82,9 +68,58 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
   Options: Your tools, Save next to the original file, Transcribe web links, Live captions (experimental), Transcribe a file.
 - **AI Apps (MCP)** — Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here.
   Options: Allow AI apps to connect, Ask me before every change, Waiting for you, Connect Claude Desktop, Recent activity.
-
-## Agents
-
+- **Presence**
+- **Always listening** — First press starts listening, second press sends.
+  Options: Voice control, Hold to talk, Press twice instead of holding, Require “Lens” first, Require Lens first, Mute key, Wake phrase, Sensitivity, Microphone, Language, Speech engine, Pause during calls, Pause in fullscreen, Answer by voice, Typing by voice, Sounds, Read answers aloud, Voice, Conversation view, Where the voice card appears.
+- **Magic Right-Click** — One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone.
+  Options: Open With, Starts In, Leave These Apps Alone, Preview, Window Actions, AI in This Window, Frequent First.
+- **Right-click menu** — One menu everywhere: your browser, Lens Browser, File Explorer, the Shelf, the Dock and Lens Mini. The first show right away; the rest sit under More. Anything sent to Claude asks first.
+  Options: Learn from use, New action.
+- **Clipper** — Turn a page or selection into a Markdown note with a template, and save it straight into a folder you choose, such as your Obsidian vault. "Clip to notes" in the browser uses the first template.
+  Options: Folders Lens may save notes into.
+- **Before you save** — Recording uses ffmpeg. Set it up under Transcription, or install ffmpeg and restart Lens.
+  Options: Saving and sharing, Recording, Lens Snip, Shortcut, Use the Print Screen key, Start in, After a capture, Include the pointer, Suggest what to hide, Text language, Frame, Save to, File name, Recent apps, Show recent apps, Pins, Format, Quality, Frames per second, Microphone, Keep a history, Keep for.
+- **Lens Browser** — Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs.
+  Options: Sleep tabs after, Tabs awake at most, Search with, Block known ad and tracker sites, Lens right-click menu on pages, Lens buttons on pages.
+- **Permissions** — Permissions. AI & Command ›
+- **Agent safety** — Checks every step an AI agent takes, from Lens, voice or Claude, before it runs. It works on this PC and sends nothing anywhere.
+- **Guide** — Ask "how do I…" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC.
+  Options: Tip of the day, Lessons.
 - **Connected Agents & MCP Servers** — Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools.
   Options: AGENTS.md — Global Agent Safety & Consistency Rules.
+
+## Music
+
+- **Mini player** — Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, "More by" and saving songs.
+  Options: Now Playing window, Connect Spotify (optional), Spotify theme for Spicetify (optional), Music, Dither texture, Sources, Theme follows the music, Strength, Back to your accent after, Synced lyrics, Use LRCLIB, Your .lrc folder, Timing, Now Playing wallpaper moves to the music, Audio-reactive scene, Recently played in Lens, Recently played, Scrobble to Last.fm.
+
+## Apps
+
+- **Apps**
+
+## Storage
+
+- **Cleaner**
+
+## System & Tasks
+
+- Also here: Uptime.
+
+## Notifications
+
+- **Messaging hub**
+- **Feeds** — One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC.
+  Options: Sources, Mute words, Quiet hours, Refresh every, AI digest, OPML.
+- **Messages** — One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count.
+  Options: Mirror notifications, Show previews, Badges on Dock icons, VIPs, Alert keywords, Matrix (advanced).
+
+## About & Testing
+
+- **Updates** — From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page.
+- **Crash Reports** — Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded.
+- **Safety net** — It stopped answering several times in a row. Last problem.
+  Options: is paused, Held off by features.json, Settings repaired at start-up, Errors contained.
+- **Back Up & Restore** — Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out.
+  Options: Include workflow recordings and training data, Remove All Lens Changes.
+- **Tester hub**
 

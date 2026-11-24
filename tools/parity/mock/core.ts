@@ -39,11 +39,11 @@ let config: any = JSON.parse(JSON.stringify(base));
 const now = Date.now();
 const note = (id: string, title: string, body: string, appName: string, mins: number) => ({ id, title, body, appName, category: "system", tsMs: now - mins * 60000, source: "lens" });
 const notes = [
-  note("n1", "Build finished", "Lens UI built in 2 min 14 s.", "Terminal", 2),
+  note("n1", "Build finished", "Lens built in 2 min 14 s.", "Terminal", 2),
   note("n2", "Tests passed", "86 tests, 0 failures.", "Terminal", 5),
   note("n3", "Pushed", "feature/productivity-input", "Terminal", 9),
   note("n4", "Deploy queued", "Pages will update shortly.", "Terminal", 14),
-  note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
+  note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens", 30),
 ];
 config.theme.preset = preset;
 // Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.

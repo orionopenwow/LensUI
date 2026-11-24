@@ -6,19 +6,19 @@ Every change Lens makes to Windows can be reversed. About 2 minutes.
 
 ## 1. Back up your settings
 
-**Where:** Settings › Windows & Quick › Back up & restore
+**Where:** Settings › About & Testing › Back up & restore
 
 Save a backup of your Lens settings before big changes. Restore brings everything back in one click.
 
 ## 2. Restore Windows' own look
 
-**Where:** Settings › Windows & Quick
+**Where:** Settings › Windows & Keys
 
 Pointers, window frames, the taskbar and Explorer right-click entries each have their own restore. Quitting Lens also reverts window styling and unpins anything Lens pinned.
 
 ## 3. Remove all Lens changes
 
-**Where:** Settings › Windows & Quick
+**Where:** Settings › Windows & Keys
 
 "Remove all Lens changes" undoes every Windows change Lens made. Outside Lens, Restore-Windows-Shell.bat and Restore-Windows-Taskbar.bat do the same.
 

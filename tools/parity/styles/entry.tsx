@@ -164,7 +164,7 @@ const Desktop = () => {
         </div>
         <div style={{ padding: 16, fontFamily: "Consolas, monospace", fontSize: 13, color: "var(--lens-fg-2)", lineHeight: 1.7 }}>
           <div>$ lens --version</div>
-          <div>Lens UI 0.3.0</div>
+          <div>Lens 0.3.0</div>
           <div>$ _</div>
         </div>
       </div>

@@ -6,13 +6,13 @@ Find your way around: Settings, the dock, the top bar and how to get back to nor
 
 ## 1. Open Settings
 
-**Where:** Settings › Windows & Quick
+**Where:** Settings › Windows & Keys
 
 Lens keeps every option in one place: Settings (the Control Center). Open it from the gear in the dock or the top bar. The tabs on the left group everything by area.
 
 ## 2. Look around the tabs
 
-**Where:** Settings › Theme & Look
+**Where:** Settings › Appearance
 
 Pick the Theme & Look tab. Every tab follows the same pattern: the main control first, then options below it.
 
@@ -32,7 +32,7 @@ Press Alt+Space to open the palette. Type an app, a file or a command like "dark
 
 ## 5. Know your escape hatch
 
-**Where:** Settings › Windows & Quick › Remove all Lens changes
+**Where:** Settings › About & Testing › Remove all Lens changes
 
 Everything Lens changes can be undone. If anything ever looks wrong, the Windows & Quick tab has a one-click restore, and Restore-Windows-Shell.bat in the Lens folder does the same from outside Lens.
 

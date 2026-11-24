@@ -405,8 +405,7 @@
     "surface": "settings",
     "tab": "theme",
     "card": "ThemeTab",
-    "label": "Accent colour",
-    "section": "messages"
+    "label": "Accent colour"
    },
    "source": "src/themeux/ThemeTab.tsx"
   },
@@ -424,8 +423,7 @@
     "surface": "settings",
     "tab": "theme",
     "card": "ThemeTab",
-    "label": "Choose a theme",
-    "section": "messages"
+    "label": "Choose a theme"
    },
    "source": "src/themeux/ThemeTab.tsx"
   },
@@ -443,8 +441,7 @@
     "surface": "settings",
     "tab": "theme",
     "card": "ThemeTab",
-    "label": "Customise",
-    "section": "messages"
+    "label": "Customise"
    },
    "source": "src/themeux/ThemeTab.tsx"
   },
@@ -1131,8 +1128,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Dock style",
-    "section": "messages"
+    "label": "Dock style"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1150,8 +1146,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Size",
-    "section": "messages"
+    "label": "Size"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1169,8 +1164,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Hide the Windows taskbar",
-    "section": "messages"
+    "label": "Hide the Windows taskbar"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1188,8 +1182,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Live window previews",
-    "section": "messages"
+    "label": "Live window previews"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1207,8 +1200,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Lock the Dock",
-    "section": "messages"
+    "label": "Lock the Dock"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1226,8 +1218,7 @@
     "surface": "settings",
     "tab": "dock",
     "card": "DockTab",
-    "label": "Suggest apps you usually open now",
-    "section": "messages"
+    "label": "Suggest apps you usually open now"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1246,8 +1237,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Playground",
-    "section": "messages"
+    "label": "Playground"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1267,8 +1257,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Calm",
-    "section": "messages"
+    "label": "Calm"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1288,8 +1277,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Sand canvas",
-    "section": "messages"
+    "label": "Sand canvas"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1309,8 +1297,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Frame rate",
-    "section": "messages"
+    "label": "Frame rate"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1330,8 +1317,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Click ripples",
-    "section": "messages"
+    "label": "Click ripples"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1351,8 +1337,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Scene per workspace",
-    "section": "messages"
+    "label": "Scene per workspace"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1372,8 +1357,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Idle mode",
-    "section": "messages"
+    "label": "Idle mode"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1393,8 +1377,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Idle scene",
-    "section": "messages"
+    "label": "Idle scene"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1414,8 +1397,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PlaygroundCard",
-    "label": "Budget",
-    "section": "messages"
+    "label": "Budget"
    },
    "source": "src/components/PlaygroundCard.tsx"
   },
@@ -1434,8 +1416,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Automatic Tiling",
-    "section": "messages"
+    "label": "Automatic Tiling"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1455,8 +1436,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Default Layout",
-    "section": "messages"
+    "label": "Default Layout"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1476,8 +1456,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "New Windows Open",
-    "section": "messages"
+    "label": "New Windows Open"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1497,8 +1476,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Always Float",
-    "section": "messages"
+    "label": "Always Float"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1518,8 +1496,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Tiling Shortcuts",
-    "section": "messages"
+    "label": "Tiling Shortcuts"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1538,8 +1515,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Workspaces",
-    "section": "messages"
+    "label": "Workspaces"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
@@ -1559,8 +1535,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Built On",
-    "section": "messages"
+    "label": "Built On"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
@@ -1580,8 +1555,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Follow Apps To Their Workspace",
-    "section": "messages"
+    "label": "Follow Apps To Their Workspace"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
@@ -1600,8 +1574,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "SessionRestoreCard",
-    "label": "Session Restore",
-    "section": "messages"
+    "label": "Session Restore"
    },
    "source": "src/components/SessionRestoreCard.tsx"
   },
@@ -1620,8 +1593,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "DesktopGroupsCard",
-    "label": "Desktop Groups",
-    "section": "messages"
+    "label": "Desktop Groups"
    },
    "source": "src/components/DesktopGroupsCard.tsx"
   },
@@ -1641,8 +1613,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "DesktopGroupsCard",
-    "label": "Sort new items automatically",
-    "section": "messages"
+    "label": "Sort new items automatically"
    },
    "source": "src/components/DesktopGroupsCard.tsx"
   },
@@ -1662,8 +1633,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "DesktopGroupsCard",
-    "label": "Show \"Everything else\"",
-    "section": "messages"
+    "label": "Show \"Everything else\""
    },
    "source": "src/components/DesktopGroupsCard.tsx"
   },
@@ -1682,8 +1652,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PluginManagerCard",
-    "label": "Plugins",
-    "section": "messages"
+    "label": "Plugins"
    },
    "source": "src/components/PluginManagerCard.tsx"
   },
@@ -1703,8 +1672,7 @@
     "surface": "settings",
     "tab": "sessions",
     "card": "PluginManagerCard",
-    "label": "wants to",
-    "section": "messages"
+    "label": "wants to"
    },
    "source": "src/components/PluginManagerCard.tsx"
   },
@@ -1723,8 +1691,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Start Key & Alt+Tab",
-    "section": "messages"
+    "label": "Start Key & Alt+Tab"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
@@ -1744,8 +1711,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Win Key Opens Lens Launcher",
-    "section": "messages"
+    "label": "Win Key Opens Lens Launcher"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
@@ -1765,8 +1731,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Alt+Tab Opens Lens Overview",
-    "section": "messages"
+    "label": "Alt+Tab Opens Lens Overview"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
@@ -1785,8 +1750,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "MonitorPickerCard",
-    "label": "Monitor",
-    "section": "messages"
+    "label": "Monitor"
    },
    "source": "src/components/MonitorPickerCard.tsx"
   },
@@ -1806,8 +1770,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "MonitorPickerCard",
-    "label": "Top Bar on Every Monitor",
-    "section": "messages"
+    "label": "Top Bar on Every Monitor"
    },
    "source": "src/components/MonitorPickerCard.tsx"
   },
@@ -1826,8 +1789,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Hot Corners",
-    "section": "messages"
+    "label": "Hot Corners"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
@@ -1847,8 +1809,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Every Monitor",
-    "section": "messages"
+    "label": "Every Monitor"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
@@ -1867,8 +1828,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Drag Windows",
-    "section": "messages"
+    "label": "Drag Windows"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1888,8 +1848,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Hold",
-    "section": "messages"
+    "label": "Hold"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1909,8 +1868,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Never Move",
-    "section": "messages"
+    "label": "Never Move"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1930,8 +1888,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Right-Drag Resizes",
-    "section": "messages"
+    "label": "Right-Drag Resizes"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1951,8 +1908,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Bring to Front",
-    "section": "messages"
+    "label": "Bring to Front"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1972,8 +1928,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Drag Maximised Windows Out",
-    "section": "messages"
+    "label": "Drag Maximised Windows Out"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -1992,8 +1947,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "AppSummonCard",
-    "label": "App Hotkeys",
-    "section": "messages"
+    "label": "App Hotkeys"
    },
    "source": "src/components/AppSummonCard.tsx"
   },
@@ -2012,8 +1966,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Per-App Window Rules",
-    "section": "messages"
+    "label": "Per-App Window Rules"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2033,8 +1986,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Add a rule",
-    "section": "messages"
+    "label": "Add a rule"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2054,8 +2006,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Focus & Borders",
-    "section": "messages"
+    "label": "Focus & Borders"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2075,8 +2026,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Dim inactive windows",
-    "section": "messages"
+    "label": "Dim inactive windows"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2096,8 +2046,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Leave fullscreen apps alone",
-    "section": "messages"
+    "label": "Leave fullscreen apps alone"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2117,8 +2066,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Never decorate",
-    "section": "messages"
+    "label": "Never decorate"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2138,8 +2086,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Pin a window on top",
-    "section": "messages"
+    "label": "Pin a window on top"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2158,8 +2105,7 @@
     "surface": "settings",
     "tab": "system",
     "card": "ShellModeCard",
-    "label": "Shell Mode (advanced)",
-    "section": "messages"
+    "label": "Shell Mode (advanced)"
    },
    "source": "src/components/ShellModeCard.tsx"
   },

@@ -157,7 +157,7 @@ pub fn url_scheme_plan(exe: &str) -> RegPlan {
     let mut p = RegPlan::default();
     let root = "Software\\Classes\\lens";
     p.root(root);
-    p.set(root, None, "URL:Lens UI");
+    p.set(root, None, "URL:Lens");
     p.set(root, Some("URL Protocol"), "");
     p.set(&format!("{}\\DefaultIcon", root), None, &format!("{},0", quoted(exe)));
     p.set(&format!("{}\\shell\\open\\command", root), None, &format!("{} --url \"%1\"", quoted(exe)));
