@@ -381,6 +381,11 @@ const SCENARIOS = [
         // the crash, so a second page with the same URL can never be read by mistake (B-31: the
         // earlier versions of this check could not tell which page they were reading).
         const targets = await settingsTargets();
+        if (targets.length !== 1) {
+          // Show every DevTools target so the extra page can be identified from the CI log.
+          const all = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json().catch(() => []);
+          console.log(`  /json/list (${all.length} targets):\n${all.map((t) => `    ${t.type} | ${t.id} | ${t.title} | ${t.url}`).join("\n")}`);
+        }
         expect(problems, targets.length === 1, `expected one Settings page, found ${targets.length}`);
         const target = targets[0];
         await cdpEvalTarget(target, "window.__beforeCrash = true; window.dispatchEvent(new Event('lens:test-crash')); true");
