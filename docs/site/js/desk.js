@@ -282,9 +282,28 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function startDrag(w, mode, p, id) {
     dragging = { w, mode, start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id };
     root.classList.add("is-dragging");
+    calm(true);
     root.classList.toggle("is-pagedrag", id !== "frame"); // frames stay live while their own title bar drags
     play?.setStill(true); // the window gets the frames while it moves
     emit("user", "drag");
+  }
+  /** While a window moves, the embedded surfaces hold still and drop their glass blur: every blur
+   *  over a moving window would otherwise be recomputed each frame. Restored on drop. */
+  function calm(on) {
+    document.documentElement.classList.toggle("is-calm", on); // the page's own ambient loops pause too
+    for (const f of document.querySelectorAll("iframe")) {
+      try {
+        const doc = f.contentDocument;
+        if (!doc?.documentElement) continue;
+        if (on && !doc.getElementById("site-calm")) {
+          const st = doc.createElement("style");
+          st.id = "site-calm";
+          st.textContent = ".site-calm *, .site-calm *::before, .site-calm *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation-play-state: paused !important; }";
+          doc.head.appendChild(st);
+        }
+        doc.documentElement.classList.toggle("site-calm", on);
+      } catch { /* not ready yet */ }
+    }
   }
   let raf = 0, pending = null;
   function move(p) {
@@ -333,6 +352,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     pending = null;
     dragging = null;
     root.classList.remove("is-dragging", "is-pagedrag");
+    calm(false);
     play?.setStill(still());
     showSnap(null);
     const w = d.w;
