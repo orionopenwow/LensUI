@@ -102,6 +102,10 @@ jobs:
         if: always()
         run: node tools/robust/dock-layout.mjs
 
+      - name: Dock pop-outs carry the shared close button
+        if: always()
+        run: node tools/robust/flyout-close.mjs
+
       - name: Accessibility (axe-core)
         if: always()
         run: node tools/a11y/run.mjs

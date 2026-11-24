@@ -48,6 +48,8 @@ function measure() {
   const search = document.querySelector(".dock-search-inline");
   const input = document.querySelector(".dock-search-glide-input");
   const drawer = document.querySelector(".dock-launcher-drawer");
+  const close = document.querySelector(".dock-launcher-drawer > .lens-flyout-close");
+  const esc = document.querySelector(".dock-search-esc");
   const icons = [...document.querySelectorAll(".dock-pill .dock-item-wrap[data-dock-pinned='true'] > .dock-item, .dock-pill .dock-item-wrap[data-dock-pinned='true'] .dock-item")]
     .filter((el, i, a) => a.indexOf(el) === i);
   // Anything that clips the Dock row: an ancestor with overflow other than visible.
@@ -75,6 +77,9 @@ function measure() {
     searchClip: clipped(search),
     input: r(input),
     drawer: r(drawer),
+    close: r(close),
+    closeName: close?.getAttribute("aria-label") ?? "",
+    esc: r(esc),
     inputClip: clipped(input),
     inputFocused: document.activeElement === input,
     icons: icons.map(r),
@@ -113,6 +118,13 @@ function check(m, ctx) {
       if (m.inputClip) p.push(`search field clipped by .${m.inputClip}`);
     }
     if (!m.inputFocused) p.push("search field did not take focus");
+    // The shared × of the results panel: on screen, named, clear of the field and its ESC chip.
+    if (!onScreen(m.close, m)) p.push(`panel close button missing or off screen ${JSON.stringify(m.close)}`);
+    else {
+      if (m.closeName !== "Close") p.push(`panel close button named "${m.closeName}"`);
+      if (overlap(m.close, m.input) || overlap(m.close, m.esc)) p.push("panel close button covers the search field");
+      if (m.close.w < 20 || m.close.h < 20) p.push("panel close button smaller than 20 px");
+    }
   }
   // App icons must not overlap each other (a broken flex/grid squeezes them on top of one another).
   for (let i = 1; i < m.icons.length; i++) if (overlap(m.icons[i - 1], m.icons[i], 2)) { p.push(`app icons ${i - 1} and ${i} overlap`); break; }

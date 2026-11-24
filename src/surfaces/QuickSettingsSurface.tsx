@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
 import { THEME_PACKS, applyThemePack, packSwatch } from "../themes/packs";
@@ -262,10 +263,11 @@ export const QuickSettingsSurface: React.FC = () => {
 
   return (
     <div className={`qs-shell ${anchorMode === "bottom-right" ? "is-bottom-right" : ""}`}>
-      <div className={`qs-panel ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+      <div className={`qs-panel lens-flyout-host ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+        <FlyoutClose onClose={() => invoke("hide_surface", { label: "quicksettings" }).catch(() => {})} />
         {/* Usable Flick Switcher only in Quick / Theme / All — zero title bar or header strip in dedicated popouts! */}
         {!isDedicatedArea && (
-          <div className="qs-header" style={{ padding: "8px 10px 8px 10px" }}>
+          <div className="qs-header" style={{ padding: "8px 40px 8px 10px" }}>
             <div
               ref={flickRef}
               className="qs-flick-track"

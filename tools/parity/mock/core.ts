@@ -249,8 +249,12 @@ const handlers: Record<string, (a: any) => any> = {
 };
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
+/** Commands with their arguments, for checks that care which window a call names. */
+export const callLog: { cmd: string; args: any }[] = [];
+(W as any).__lensCallLog = callLog;
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   calls.push(cmd);
+  callLog.push({ cmd, args: args ?? {} });
   const h = handlers[cmd];
   return (h ? h(args ?? {}) : null) as T;
 }

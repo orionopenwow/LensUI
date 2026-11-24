@@ -1372,6 +1372,19 @@
   margin-left: -1px;
 }
 
+/* Never wider than the Dock window beside the Dock (the panel's × must stay on screen). */
+.dock-edge-left .dock-launcher-drawer,
+.dock-edge-right .dock-launcher-drawer {
+  max-width: calc(100vw - var(--dock-full-icon-size, 40px) - 40px);
+}
+
+/* On the left/right edges the search field runs across the panel's top: the × sits on the
+ * filter row below it instead of covering the field. */
+.dock-edge-left .dock-launcher-drawer > .lens-flyout-close,
+.dock-edge-right .dock-launcher-drawer > .lens-flyout-close {
+  top: calc(var(--dock-full-icon-size, 40px) + 26px);
+}
+
 .dock-edge-right .dock-launcher-drawer {
   left: auto;
   right: 100%;

@@ -18,6 +18,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { captureFlip, glideOut, useLingering, type FlipCapture } from "../ui/motion";
 import { attentionFor, useAttention } from "../dock/attention";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import {
   Search,
   Folder,
@@ -2086,7 +2087,8 @@ export const DockSurface: React.FC = () => {
         {/* TIER 1: In-Dock Expanded Launcher Drawer (Directly above the single unified Dock row!) */}
         {dockSearchOpen && askMode.mode !== "ask" && (
           <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
-            <div className="pal-filter-bar" style={{ padding: "4px 6px 6px 6px" }}>
+            <FlyoutClose onClose={closeInDockLauncher} />
+            <div className="pal-filter-bar" style={{ padding: "4px 36px 6px 6px" }}>
               {(
                 [
                   { id: "all", label: "Overview", count: null, color: "#38BDF8", icon: Sparkles },
