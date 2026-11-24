@@ -639,3 +639,15 @@
   flex-wrap: wrap;
   gap: 4px 8px;
 }
+
+/* Feeds and Messages: one slim column centred in the window. */
+.ca-column {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  height: 100%;
+}
+.ca-column > * {
+  width: 100% !important;
+  max-width: 420px;
+}

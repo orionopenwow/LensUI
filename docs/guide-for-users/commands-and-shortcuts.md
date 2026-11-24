@@ -15,31 +15,49 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | Close an app | `close notepad`, `quit spotify`, `close this window` |
 | Convert units | `5 km in miles`, `convert 100 f to c`, `how many cm in 3 feet`, `10 lb to kg` |
 | Make a note | `take a note: buy milk`, `note call the dentist` |
+| Lock screen | `lock the screen` |
+| Make backdrop | `make me a calm blue aurora backdrop`, `create a pink gradient`, `backdrop warm sunset` |
+| Move window | `move this to the next monitor`, `send this window to the other screen`, `move this window to workspace 2`, `move it to desktop three` |
+| Next wallpaper | `next wallpaper` |
 | Open an app | `open spotify`, `Open Spotify please`, `launch visual studio code`, `can you start discord` |
+| Open overview | `show all windows` |
 | Open a settings page | `open display settings`, `bluetooth settings`, `open dock settings`, `show me the theme settings` |
 | Search files | `find budget.xlsx`, `search for tax return`, `where is my resume` |
+| Set accent | `accent purple`, `change the accent colour to teal` |
 | Set brightness | `brightness`, `brightness 60`, `set brightness to 5` |
+| Set calm mode | `calm mode`, `calm mode off` |
 | Dark or light mode | `dark mode`, `switch to light mode`, `Turn on dark mode.`, `make it light` |
-| Do Not Disturb | `do not disturb`, `turn off do not disturb`, `dnd on for 30 minutes`, `mute notifications` |
+| Do Not Disturb | `do not disturb`, `turn off do not disturb`, `dnd on for 30 minutes`, `do not disturb for 45 minutes` |
+| Set dock style | `make the dock slim`, `switch the dock to taskbar`, `use the minimal dock` |
 | Focus mode | `focus mode on`, `turn off focus mode`, `help me focus` |
 | Mute | `mute`, `unmute` |
 | Night light | `night light on`, `turn off the night light` |
 | Switch theme pack | `apply tokyo night`, `use the nord theme`, `switch theme to rose pine`, `dracula theme` |
 | Set volume | `volume`, `volume 40`, `set volume to 75%`, `turn the volume to max` |
+| Set wallpaper scene | `show the aurora scene`, `falling sand` |
 | Show the desktop | `show desktop` |
 | Snap the window | `snap left`, `tile this to the right`, `move window to the top left`, `maximize` |
 | Start a timer | `timer 5 minutes`, `set a timer for 90 seconds`, `10 minute timer`, `remind me in 20 minutes to stretch` |
 | Switch to an app | `switch to chrome`, `go to slack`, `focus on firefox`, `bring up outlook` |
 | Switch workspace | `workspace 3`, `go to desktop two`, `next workspace`, `previous workspace` |
+| Window action | `minimize this`, `minimise chrome`, `restore`, `pin this on top` |
 
 ## Keyboard shortcuts
 
 | Keys | What it does |
 | :--- | :--- |
+| `Ctrl+Z` | cool↔warm, minimal↔rich) and locks, Undo/Redo ( / Ctrl+Shift+Z), Save S (to Mine), |
+| `Ctrl+Shift+Z` | cool↔warm, minimal↔rich) and locks, Undo/Redo (Ctrl+Z / ), Save S (to Mine), |
 | `Alt+Shift+L` | Open Lens Command with the selection |
 | `Alt+Shift+S` | Add the selection, or the page, to the Shelf |
+| `Ctrl+Alt+Y` | global hotkey Lens registered for the approval window: the first free one of , |
+| `Ctrl+Alt+Shift+Y` | and Ctrl+Alt+Shift+O (presence::esc::registerapprovalhotkey, read with |
+| `Ctrl+Alt+Shift+O` | Ctrl+Alt+Shift+Y and  (presence::esc::registerapprovalhotkey, read with |
+| `Ctrl+Alt+J` | , which this page once suggested, is the tiler's "snap |
+| `Ctrl+Enter` | Smart Clean () runs the SAFE, pre-ticked categories and nothing else. |
+| `Ctrl+A` | Keyboard Space toggles,  all safe, Enter cleans, Ctrl+Enter Smart Clean, Ctrl+R rescan, ↑/↓ rows, →/← expand, Esc back, Backspace up (map) ✓ (keyAction tested) |
+| `Ctrl+R` | Keyboard Space toggles, Ctrl+A all safe, Enter cleans, Ctrl+Enter Smart Clean,  rescan, ↑/↓ rows, →/← expand, Esc back, Backspace up (map) ✓ (keyAction tested) |
 | `Shift+Tab` | - Modes, cycled with Tab and , or by clicking the pill: |
-| `Ctrl+Enter` | Every answer can be pasted (), copied, sent to the Shelf or retried. |
 | `Ctrl+B` | - Shelf drawer (): |
 | `Shift+Enter` | adds a new line in Ask, or pastes plain text in Clipboard. |
 | `Ctrl+S` | - In Clipboard mode:  sends to the Shelf, Ctrl+P pins, Delete removes, Ctrl+Enter attaches as context. |
@@ -47,8 +65,19 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | `Ctrl+Alt+Space` | Use the configured hotkey, default . |
 | `Ctrl+C` | It never uses  or the clipboard. |
 | `Ctrl+Alt+S` | (e) "Add selection to Shelf" hotkey (suggested ). |
+| `Ctrl+Shift+U` | Pin to desktop opens an always-on-top sticky (coreapp-sticky-) with a click-through toggle;  in Notes makes every sticky clickable again. |
 | `Ctrl+Shift+F8` | Toggle with Ctrl + Shift + F8 (no Alt, so AltGr layouts never trigger it). |
 | `Alt+Tab` | WSEXAPPWINDOW: click-through, never focused, never in  or the taskbar. |
+| `Alt+L` | Docs / Notion / Google Docs Selection button and  (their pages draw text on canvas) Send to Claude, Save as note, Summarise |
+| `Ctrl+L` | Keyboard shortcuts (, Ctrl+T, Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has |
+| `Ctrl+T` | Keyboard shortcuts (Ctrl+L, , Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has |
+| `Ctrl+W` | Keyboard shortcuts (Ctrl+L, Ctrl+T, , Ctrl+F, Ctrl+J) work when the Lens frame has |
+| `Ctrl+F` | Keyboard shortcuts (Ctrl+L, Ctrl+T, Ctrl+W, , Ctrl+J) work when the Lens frame has |
+| `Ctrl+J` | Keyboard shortcuts (Ctrl+L, Ctrl+T, Ctrl+W, Ctrl+F, ) work when the Lens frame has |
+| `Ctrl+Shift+T` | Sessions Done: state is saved atomically on every change (crash-safe);  reopens the last 25 closed tabs. |
+| `Ctrl+Alt+Q` | Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. |
+| `Ctrl+Alt+Shift+S` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L,  and Ctrl+Alt+M are Lens shortcuts. |
+| `Ctrl+Alt+M` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and  are Lens shortcuts. |
 | `Shift+1` | Overview: move windows between workspaces OverviewSurface.tsx Shown only when Lens workspaces are on in groups mode, with 2 or more workspaces Drag a tile onto a workspace, or press Shift + ← / →, or Shift + 1–9. |
 | `Ctrl+V` | clippaste(id, mode?) Hides Command, then sends  to the window you came from. |
 | `Win+E` | Win key shortcuts (, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them |
@@ -56,6 +85,9 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | `Win+D` | Win key shortcuts (Win+E, Win+R, , Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them |
 | `Win+Tab` | Win key shortcuts (Win+E, Win+R, Win+D, , snap layouts…) Mostly unavailable; Explorer handles them |
 | `Ctrl+Shift+Esc` | Task Manager. Press  → Run new task → type the full path to |
-| `Ctrl+Alt+Shift+E` | , and quitting Lens UI — all three bring Explorer's desktop back immediately. |
+| `Ctrl+Alt+Shift+E` | , and quitting Lens — all three bring Explorer's desktop back immediately. |
+| `Ctrl+Shift+C` | Actions bar 1 Copy · 2 Copy text · 3 Save · 4 Pin · 5 Shelf · 6 Paste to Claude · 7 Ask · 8 Translate · 9 Share · 0 Send to…, plus Ctrl+C /  / Ctrl+S, arrows + Enter, Esc. |
+| `Ctrl+0` | Pins Always-on-top windows: drag to move, Ctrl+wheel zoom,  reset, opacity, click-through (turn off from the card: "Make pins clickable"), copy, Esc / double-click to close. |
+| `Win+Shift+T` | PowerToys Text Extractor , drag a region, the text lands on the clipboard. |
 
 Shortcuts that would take keys away from other apps are off until you turn them on in Settings.

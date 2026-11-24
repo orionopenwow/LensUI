@@ -286,7 +286,7 @@ fn message_box(msg: &str) {
         fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, flags: u32) -> i32;
     }
     let text: Vec<u16> = msg.encode_utf16().chain(Some(0)).collect();
-    let cap: Vec<u16> = "Lens UI".encode_utf16().chain(Some(0)).collect();
+    let cap: Vec<u16> = "Lens".encode_utf16().chain(Some(0)).collect();
     // MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND
     unsafe {
         MessageBoxW(0, text.as_ptr(), cap.as_ptr(), 0x0000_0040 | 0x0001_0000);

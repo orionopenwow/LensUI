@@ -1,4 +1,4 @@
-//! "Remove all Lens changes": puts Windows back the way it was before Lens UI touched it.
+//! "Remove all Lens changes": puts Windows back the way it was before Lens touched it.
 //!
 //! Every step is independent and reported separately, so one failure never stops the rest.
 //! It only undoes things Lens itself did. What those are, and how each is undone, is one table:

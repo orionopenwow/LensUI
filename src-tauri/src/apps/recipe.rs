@@ -23,7 +23,7 @@ pub enum Step {
     McpServer { name: String, command: String, args: Vec<String> },
     /// Voice phrases that open or control the app.
     VoiceVerbs { phrases: Vec<String> },
-    /// A short Lens Guide lesson for the app.
+    /// A short Guide lesson for the app.
     GuideLesson { lesson: String },
 }
 

@@ -85,7 +85,7 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
         <div className="cc-row">
           <div>
             <div className="cc-label">Top Bar on Every Monitor</div>
-            <div className="cc-desc">Show a Top Bar on each display. Applies after restarting Lens UI.</div>
+            <div className="cc-desc">Show a Top Bar on each display. Applies after restarting Lens.</div>
           </div>
           <button
             type="button"

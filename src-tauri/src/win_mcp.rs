@@ -1,10 +1,10 @@
-//! Lens UI as an MCP (Model Context Protocol) server.
+//! Lens as an MCP (Model Context Protocol) server.
 //!
 //! Design (see docs/MCP.md):
 //! * AI apps such as Claude Desktop launch `lens-ui.exe --mcp-stdio` and talk MCP over stdio.
 //!   That process does not start the shell: it is a thin bridge that forwards each JSON-RPC
-//!   line to the running Lens UI over a loopback TCP socket.
-//! * The running Lens UI listens on 127.0.0.1 (random port) only while the user has switched MCP
+//!   line to the running Lens over a loopback TCP socket.
+//! * The running Lens listens on 127.0.0.1 (random port) only while the user has switched MCP
 //!   on in Control Center. The port and a random 256-bit token are written to
 //!   %APPDATA%\LensUI\mcp-endpoint.json; a connection must present the token first.
 //! * Everything protocol-related (JSON-RPC, tools, validation, rate limits, approvals, audit log)
@@ -12,7 +12,7 @@
 //!
 //! Safety model: read-only tools run directly; reversible settings tools run directly unless the
 //! user chose "ask me for every action"; `run_action` (natural language, can do many things) is
-//! ALWAYS queued for the user to approve inside Lens UI. Nothing here can run shell commands,
+//! ALWAYS queued for the user to approve inside Lens. Nothing here can run shell commands,
 //! touch files, close or kill windows/processes, or change Windows system settings beyond
 //! volume, brightness and the Lens night light.
 
@@ -45,7 +45,7 @@ const PENDING_TTL_MS: u64 = 10 * 60 * 1000;
 const MAX_CONNECTIONS: usize = 4;
 const AUDIT_MAX_BYTES: u64 = 512 * 1024;
 
-const INSTRUCTIONS: &str = "Lens UI is the user's Windows desktop shell. Lens Control tools (lens_*) reach every \
+const INSTRUCTIONS: &str = "Lens is the user's Windows desktop shell. Lens Control tools (lens_*) reach every \
 Lens setting and desktop detail: find settings with lens_list_settings, read them with lens_get, change several at \
 once with lens_set (one approval, one undo), act on windows from lens_windows with lens_window_action, apply looks \
 with lens_apply_preset, and reverse anything with lens_undo. The user decides per app what you may do without \
@@ -67,7 +67,7 @@ pub struct McpConfig {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Host: what the running Lens UI provides (implemented in `lens_host` below)
+// Host: what the running Lens provides (implemented in `lens_host` below)
 // ---------------------------------------------------------------------------------------------
 
 /// What Lens Control decided for a `lens_*` call (see `crate::control::grants`).
@@ -115,7 +115,7 @@ pub trait McpHost: Send + Sync {
     fn resolve_local(&self, _action: &PendingAction, _approve: bool) -> Result<(), String> {
         Err(OFFLINE.into())
     }
-    /// False only for the bridge's stand-in when Lens UI can't be reached.
+    /// False only for the bridge's stand-in when Lens can't be reached.
     fn available(&self) -> bool {
         true
     }
@@ -125,10 +125,10 @@ pub trait McpHost: Send + Sync {
     }
 }
 
-/// Used by the stdio bridge when Lens UI is not reachable: every tool explains why.
+/// Used by the stdio bridge when Lens is not reachable: every tool explains why.
 pub struct OfflineHost;
 
-const OFFLINE: &str = "Lens UI isn't running, or its MCP server is switched off (Lens Control Center > Agents & MCP).";
+const OFFLINE: &str = "Lens isn't running, or its MCP server is switched off (Lens Control Center > Agents & MCP).";
 
 impl McpHost for OfflineHost {
     fn list_windows(&self) -> Result<Value, String> {
@@ -248,7 +248,7 @@ pub fn tool_defs() -> Vec<Value> {
         json!({
             "name": "apply_theme_pack",
             "title": "Apply a theme pack",
-            "description": format!("Restyles Lens UI and app windows with a theme pack. Built-in packs: {}. Custom packs start with 'custom-'.", BUILTIN_PACKS.join(", ")),
+            "description": format!("Restyles Lens and app windows with a theme pack. Built-in packs: {}. Custom packs start with 'custom-'.", BUILTIN_PACKS.join(", ")),
             "inputSchema": {
                 "type": "object",
                 "properties": { "id": { "type": "string", "pattern": "^[a-z0-9-]{1,48}$" } },
@@ -323,7 +323,7 @@ pub fn tool_defs() -> Vec<Value> {
         json!({
             "name": "run_action",
             "title": "Ask Lens to do something",
-            "description": "Sends a plain-language desktop request to Lens UI's action router, e.g. 'mute chrome, 40% brightness, tile split'. Always waits for the user to approve it inside Lens UI; returns a request id for get_action_status.",
+            "description": "Sends a plain-language desktop request to Lens's action router, e.g. 'mute chrome, 40% brightness, tile split'. Always waits for the user to approve it inside Lens; returns a request id for get_action_status.",
             "inputSchema": {
                 "type": "object",
                 "properties": { "request": { "type": "string", "minLength": 3, "maxLength": 300 } },
@@ -860,7 +860,7 @@ fn capabilities() -> Value {
 }
 
 fn server_info() -> Value {
-    json!({ "name": SERVER_NAME, "title": "Lens UI", "version": env!("CARGO_PKG_VERSION") })
+    json!({ "name": SERVER_NAME, "title": "Lens", "version": env!("CARGO_PKG_VERSION") })
 }
 
 /// Handles one incoming JSON-RPC message. Returns the response, or None for notifications.
@@ -954,7 +954,7 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                 append_audit(&audit_line(&client, name, "rate-limited", false, "", 0));
                 return Some(rpc_result(
                     id,
-                    text_result("Too many requests; wait a minute before calling Lens UI again.", None, true),
+                    text_result("Too many requests; wait a minute before calling Lens again.", None, true),
                     modern,
                 ));
             }
@@ -1008,7 +1008,7 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                         append_audit(&audit_line(&client, call.name(), "queued", true, &call.audit_args(), 0));
                         text_result(
                             &format!(
-                                "Waiting for the user to approve this in Lens UI (request id {}). Call get_action_status with that id to see the outcome.",
+                                "Waiting for the user to approve this in Lens (request id {}). Call get_action_status with that id to see the outcome.",
                                 a.id
                             ),
                             Some(json!({ "status": a.status, "id": a.id })),
@@ -1111,7 +1111,7 @@ pub fn recent_audit(limit: usize) -> Vec<Value> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Loopback endpoint inside Lens UI
+// Loopback endpoint inside Lens
 // ---------------------------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1403,7 +1403,7 @@ pub fn run_stdio_bridge() -> i32 {
 
 // LENS-HOST-BEGIN
 // ---------------------------------------------------------------------------------------------
-// The real host: the running Lens UI (uses crate-private helpers from lib.rs)
+// The real host: the running Lens (uses crate-private helpers from lib.rs)
 // ---------------------------------------------------------------------------------------------
 
 pub mod lens_host {
@@ -1469,7 +1469,7 @@ pub mod lens_host {
             self.app
                 .emit("lens://mcp-apply-pack", id.to_string())
                 .map_err(|e| e.to_string())?;
-            Ok(format!("Asked Lens UI to apply the \"{}\" theme pack.", id))
+            Ok(format!("Asked Lens to apply the \"{}\" theme pack.", id))
         }
 
         fn set_volume(&self, level: u32) -> Result<String, String> {
@@ -1579,7 +1579,7 @@ pub mod lens_host {
             if action.status == "pending" {
                 crate::push_notification_cmd(
                     self.app.clone(),
-                    "An AI app is asking Lens UI".into(),
+                    "An AI app is asking Lens".into(),
                     format!("{} — approve or decline in Control Center › Agents & MCP.", action.text),
                     Some(if action.client.is_empty() { "MCP".into() } else { action.client.clone() }),
                     Some("agent".into()),

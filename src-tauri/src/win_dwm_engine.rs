@@ -155,7 +155,7 @@ fn styleable_process_path(hwnd: windows::Win32::Foundation::HWND) -> Option<Stri
     }
 }
 
-/// Applies live Lens UI DWM dark titlebar, border, corner roundness, and window opacity
+/// Applies live Lens DWM dark titlebar, border, corner roundness, and window opacity
 /// directly to a third-party top-level window (including conhost/cmd.exe windows!).
 #[cfg(windows)]
 pub fn apply_opacity_to_hwnd(hwnd: windows::Win32::Foundation::HWND) {

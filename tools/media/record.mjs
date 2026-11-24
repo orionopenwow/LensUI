@@ -231,7 +231,7 @@ export const CLIPS = [
     size: [560, 860], scenes: ["element", "look", "window", "hold", "done"].map((s) => `?scene=${s}&preset=obsidian`),
   },
   {
-    id: "guide", title: "Lens Guide answers \"how do I…\" and shows you where", gallery: "guide", kind: "frames",
+    id: "guide", title: "Lens answers \"how do I…\" and shows you where", gallery: "guide", kind: "frames",
     size: [1100, 760], scenes: ["drawer", "coach"].map((s) => `?scene=${s}&preset=obsidian&tab=${s === "coach" ? "system" : "theme"}`),
   },
   {

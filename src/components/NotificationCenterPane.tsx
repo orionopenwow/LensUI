@@ -451,7 +451,7 @@ export const NotificationCenterPane: React.FC = () => {
                 Windows notifications unavailable
               </div>
               <div className="qs-row-sub">
-                {windowsInfo.reason || "Lens UI can't read notifications from other apps yet."}
+                {windowsInfo.reason || "Lens can't read notifications from other apps yet."}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// Real-Windows end-to-end tests (docs/TESTING.md › End-to-end). Starts the built Lens UI app and
+// Real-Windows end-to-end tests (docs/TESTING.md › End-to-end). Starts the built Lens app and
 // drives its WebView2 windows over the Chrome DevTools Protocol with Playwright.
 //
 // Why CDP and not tauri-driver/msedgedriver: wry passes its own AdditionalBrowserArguments to

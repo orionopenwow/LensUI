@@ -3,7 +3,7 @@ import { CLAUDE_PACKS } from "./community/claude";
 import { LIVING_PACKS } from "./living/packs";
 
 /**
- * Lens UI Theme Pack registry — the single source of truth for every built-in theme.
+ * Lens Theme Pack registry — the single source of truth for every built-in theme.
  * Control Center, Quick Settings, the Setup Wizard and the natural-language router all
  * read from here, so a pack looks and behaves the same no matter where it is applied.
  *

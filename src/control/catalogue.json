@@ -2775,9 +2775,9 @@
     {
       "capability": "change_settings",
       "category": "Widgets",
-      "default": "Welcome to Lens UI.\nPress Alt+Space for Command Palette.",
+      "default": "Welcome to Lens.\nPress Alt+Space for Command Palette.",
       "description": "Sets the notes option under Widgets.",
-      "example": "{\"args\":{\"changes\":{\"widgets.notes\":\"Welcome to Lens UI.\\nPress Alt+Space for Command Palette.\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"widgets.notes\":\"Welcome to Lens.\\nPress Alt+Space for Command Palette.\"}},\"tool\":\"lens_set\"}",
       "label": "Notes",
       "path": "widgets.notes",
       "reversible": true,

@@ -1,10 +1,10 @@
 @echo off
 rem ============================================================================
-rem  Uninstall-Lens-UI.bat - removes every change Lens UI made to Windows.
-rem  Works with Lens UI not running (or not even starting). Safe to run twice.
+rem  Uninstall-Lens-UI.bat - removes every change Lens made to Windows.
+rem  Works with Lens not running (or not even starting). Safe to run twice.
 rem  The PowerShell part below the #PS_BEGIN line does the work.
 rem ============================================================================
-title Remove Lens UI changes
+title Remove Lens changes
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$s = Get-Content -Raw -LiteralPath '%~f0'; $i = $s.IndexOf('#PS_' + 'BEGIN'); & ([scriptblock]::Create($s.Substring($i)))"
 echo.
 pause
@@ -15,7 +15,7 @@ function Say($t) { Write-Host "  $t" }
 function Step($t) { Write-Host ""; Write-Host "== $t" -ForegroundColor Cyan }
 
 Write-Host ""
-Write-Host "This removes the changes Lens UI made to Windows:" -ForegroundColor White
+Write-Host "This removes the changes Lens made to Windows:" -ForegroundColor White
 Say "folder icons, Explorer folder-icon override, shell mode, start-with-Windows,"
 Say "the hidden taskbar, and Lens' Windhawk mod. Your files are not touched."
 $go = Read-Host "Continue? (Y/N)"
@@ -23,7 +23,7 @@ if ($go -notmatch '^[Yy]') { Say "Nothing changed."; return }
 
 $data = Join-Path $env:APPDATA 'LensUI'
 
-Step "Stopping Lens UI"
+Step "Stopping Lens"
 Get-Process -Name 'lens-ui' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 600
 Say "Done."
@@ -34,7 +34,7 @@ $shell = (Get-ItemProperty -Path $winlogon -Name Shell -ErrorAction SilentlyCont
 if ($shell -and $shell -match 'lens') {
   Remove-ItemProperty -Path $winlogon -Name Shell -ErrorAction SilentlyContinue
   Say "Windows Explorer is the shell again from the next sign-in."
-} elseif ($shell) { Say "Left alone (points at something other than Lens UI: $shell)." }
+} elseif ($shell) { Say "Left alone (points at something other than Lens: $shell)." }
 else { Say "Was not enabled." }
 
 Step "Start with Windows"
@@ -144,8 +144,8 @@ if ($r -match '^[Yy]') {
 }
 
 if (Test-Path -LiteralPath $data) {
-  $d = Read-Host "Also delete Lens UI's settings, themes and training data in $data ? (Y/N)"
+  $d = Read-Host "Also delete Lens's settings, themes and training data in $data ? (Y/N)"
   if ($d -match '^[Yy]') { Remove-Item -LiteralPath $data -Recurse -Force; Say "Deleted." } else { Say "Kept." }
 }
 Write-Host ""
-Write-Host "Lens UI's changes have been removed. You can now delete the Lens UI folder or uninstall the app." -ForegroundColor Green
+Write-Host "Lens's changes have been removed. You can now delete the Lens folder or uninstall the app." -ForegroundColor Green

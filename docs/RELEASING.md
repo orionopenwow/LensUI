@@ -1,4 +1,4 @@
-# Releasing Lens UI
+# Releasing Lens
 
 This covers how a version gets from `main` to an installer people can download, how updates are
 signed, and what is still left to wire. Keep it current when the workflow changes.
@@ -46,7 +46,7 @@ into the repository.
      injected, signing with `TAURI_SIGNING_PRIVATE_KEY`,
    - collects the `.exe`, `.msi`, their `.sig` files, a `latest.json` pointing at the NSIS
      installer, and `SHA256SUMS.txt`,
-   - creates a **draft** release named `Lens UI v0.2.0` with those files (re-running uploads with
+   - creates a **draft** release named `Lens v0.2.0` with those files (re-running uploads with
      `--clobber` onto the existing release).
 5. Open the draft, paste the CHANGELOG section, test the installer on a clean Windows 11 VM, then
    publish. Installed copies only see the update after publishing, because the updater reads

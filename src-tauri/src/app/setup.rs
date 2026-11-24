@@ -341,7 +341,7 @@ pub(crate) fn run_setup(
         start_clipboard_with_events(&handle);
     }
 
-    // Show Control Center on launch so the user can immediately customize Lens UI
+    // Show Control Center on launch so the user can immediately customize Lens
     if let Some(settings_win) = handle.get_webview_window("settings") {
         let _ = settings_win.show();
         let _ = settings_win.set_focus();

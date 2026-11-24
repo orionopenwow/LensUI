@@ -139,7 +139,7 @@ Add these to `src-tauri/src/ai/intent.rs` (owned by the voice/AI packages) with 
 
 `win_backup.rs`: include `music.json` and `music\history.json` (not the sealed `.bin` files — they're bound to the Windows account). `win_uninstall.rs` ("Remove all Lens changes"): delete `%APPDATA%\LensUI\music\` and, if it exists and was written by Lens, `%APPDATA%\spicetify\Themes\Lens` — after telling the user to run `spicetify restore` first if they applied it.
 
-### 8. Lens Guide
+### 8. Guide
 
 Anchor ids for coach marks: `data-guide-id="music.card"`, `music.lyrics`, `music.spotify`, `music.spicetify`, `nowplaying.queue`, `nowplaying.sleep`.
 

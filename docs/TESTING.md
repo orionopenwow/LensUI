@@ -1,4 +1,4 @@
-# Testing Lens UI for robustness and fluidity
+# Testing Lens for robustness and fluidity
 
 Lens replaces parts of the Windows shell, so it has to be steady under any input, smooth on slow
 machines, and leave Windows exactly as it found it. This document covers the suites that check
@@ -56,7 +56,7 @@ node tests/e2e/run.mjs                               # E2E_ONLY=palette,theme-sw
 pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
 ```
 
-The end-to-end run starts the real Lens UI: it will hide the taskbar and restyle windows while it
+The end-to-end run starts the real Lens: it will hide the taskbar and restyle windows while it
 runs, exactly as Lens does. Run it on a test machine or VM, not in the middle of your work. The
 probe then checks that quitting put everything back.
 

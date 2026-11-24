@@ -170,7 +170,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
     {
       id: "welcome",
       role: "assistant",
-      text: "Ready. Ask me to adjust Lens UI (e.g. \"sharper corners\", \"85% opacity\", \"midnight theme\", \"red yellow green buttons\", \"hide taskbar\", \"test notification\") or enable Ollama / custom MCP agents in Integrations.",
+      text: "Ready. Ask me to adjust Lens (e.g. \"sharper corners\", \"85% opacity\", \"midnight theme\", \"red yellow green buttons\", \"hide taskbar\", \"test notification\") or enable Ollama / custom MCP agents in Integrations.",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -532,7 +532,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
     if (opacityMatch) {
       const pct = Math.min(100, Math.max(40, parseInt(opacityMatch[1], 10)));
       onUpdateConfig({ ...config, theme: { ...config.theme, glassOpacity: pct / 100 } });
-      return `Set Window Opacity to ${pct}% across Lens UI and open Windows apps.`;
+      return `Set Window Opacity to ${pct}% across Lens and open Windows apps.`;
     }
     if (p.includes("more transparent") || p.includes("more glass")) {
       const next = Math.max(0.55, Number((config.theme.glassOpacity - 0.12).toFixed(2)));
@@ -541,7 +541,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
     }
     if (p.includes("sharp") || p.includes("square corner") || p.includes("0px")) {
       onUpdateConfig({ ...config, theme: { ...config.theme, borderRadius: 0 } });
-      return "Applied 0px sharp tiling corners across Lens UI and DWM windows.";
+      return "Applied 0px sharp tiling corners across Lens and DWM windows.";
     }
     if (p.includes("round") && p.includes("reset")) {
       onUpdateConfig({ ...config, theme: { ...config.theme, borderRadius: 8 } });
@@ -647,7 +647,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
             messages: [
               {
                 role: "system",
-                content: `You are an assistant integrated into Lens UI on Windows. Follow these safety rules strictly:\n${agentsMd}`,
+                content: `You are an assistant integrated into Lens on Windows. Follow these safety rules strictly:\n${agentsMd}`,
               },
               { role: "user", content: text },
             ],

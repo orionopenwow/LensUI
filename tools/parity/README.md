@@ -1,6 +1,6 @@
 # Parity harness
 
-Renders the real Lens UI frontend in a headless browser with the Tauri APIs mocked (`mock/`), so every
+Renders the real Lens frontend in a headless browser with the Tauri APIs mocked (`mock/`), so every
 surface can be screenshotted and checked for crashes without Windows.
 
 ```

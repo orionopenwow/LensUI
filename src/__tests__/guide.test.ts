@@ -1,4 +1,4 @@
-// Lens Guide: index freshness and completeness, search accuracy on 40 golden questions, lessons,
+// The Guide: index freshness and completeness, search accuracy on 40 golden questions, lessons,
 // conditions, grounding (no invented settings), progress and tips.
 import { describe, expect, mock, test } from "bun:test";
 import { readFileSync, readdirSync, existsSync } from "node:fs";

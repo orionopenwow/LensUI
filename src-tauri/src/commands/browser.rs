@@ -454,7 +454,7 @@ pub struct ActRequest {
     pub action: PageAction,
     #[serde(default)]
     pub caps: Option<Capabilities>,
-    /// Set only by the Lens UI after the user held "approve" on the card.
+    /// Set only by the Lens after the user held "approve" on the card.
     #[serde(default)]
     pub approved: bool,
 }

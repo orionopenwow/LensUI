@@ -58,7 +58,7 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
   root.style.setProperty("--dock-hover-scale", String(cfg.dock.hoverScale));
   root.style.setProperty("--dock-hover-lift", `${cfg.dock.hoverLift}px`);
 
-  // Live Font Family across all Lens UI surfaces
+  // Live Font Family across all Lens surfaces
   const fontMap: Record<string, string> = {
     "rounded-arial": '"Arial Rounded MT Bold", "Arial Rounded", "Segoe UI Variable", system-ui, sans-serif',
     "inter-sans": '"Segoe UI Variable Display", "Inter", system-ui, -apple-system, sans-serif',

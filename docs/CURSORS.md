@@ -1,6 +1,6 @@
 # Cursor Suite
 
-Mouse pointer themes, pointer behaviour and pointer effects for Lens UI.
+Mouse pointer themes, pointer behaviour and pointer effects for Lens.
 
 | Part | Where | What it touches |
 | --- | --- | --- |

@@ -234,7 +234,7 @@ pub fn install_log_capture() {
         unsafe {
             lens_set_std_handle(STD_ERROR_HANDLE, handle as *mut std::ffi::c_void);
         }
-        eprintln!("---- Lens UI {} started ----", env!("CARGO_PKG_VERSION"));
+        eprintln!("---- Lens {} started ----", env!("CARGO_PKG_VERSION"));
     }
     #[cfg(not(windows))]
     {
@@ -257,7 +257,7 @@ pub fn build_report(
     log_tail: &[String],
 ) -> String {
     let mut r = String::new();
-    r.push_str("Lens UI crash report\n");
+    r.push_str("Lens crash report\n");
     r.push_str("====================\n");
     r.push_str(&format!("Lens version:  {}\n", version));
     r.push_str(&format!("Windows build: {}\n", windows));

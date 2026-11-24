@@ -172,7 +172,7 @@ export const PAGES: PageDef[] = [
       { id: "browser", label: "Lens Browser", keywords: ["browser", "tabs", "spaces", "import bookmarks", "agent"] },
       { id: "permissions", label: "Permissions", keywords: ["grants", "allowed", "ask first", "blocked", "audit log"] },
       { id: "safety", label: "Agent safety", keywords: ["scam", "phishing", "prompt injection", "sandbox"] },
-      { id: "guide", label: "Lens Guide", keywords: ["lessons", "help", "tutorial", "how do i"] },
+      { id: "guide", label: "Guide", keywords: ["lessons", "help", "tutorial", "how do i"] },
     ],
   },
   {
@@ -390,9 +390,12 @@ export const PAGES: PageDef[] = [
     description: "Messages and notification history.",
     icon: "message",
     color: "#60A5FA",
-    controls: ["Notification history"],
-    keywords: ["messages", "notifications", "history", "inbox"],
-    sections: [],
+    controls: ["Notification history", "Feeds", "Messages"],
+    keywords: ["messages", "notifications", "history", "inbox", "feeds", "rss", "news", "bluesky", "mastodon", "matrix"],
+    sections: [
+      { id: "feeds", label: "Feeds", keywords: ["rss", "news", "bluesky", "mastodon", "github", "sources", "quiet hours", "opml"] },
+      { id: "messages", label: "Messages", keywords: ["messengers", "discord", "slack", "matrix", "unread", "focus", "vip"] },
+    ],
   },
   {
     id: "about",

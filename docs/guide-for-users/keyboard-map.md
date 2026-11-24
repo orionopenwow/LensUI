@@ -12,13 +12,13 @@ Alt+Space opens the palette. The Windows key opens the Lens Launcher when Shell 
 
 ## 2. Windows
 
-**Where:** Settings › Windows & Quick › Drag Windows
+**Where:** Settings › Windows & Keys › Drag Windows
 
 Hold Alt and drag to move a window; Alt+right-drag to resize. In Overview, Shift+←/→ or Shift+1–9 moves the selected window to another workspace.
 
 ## 3. Pointer and effects
 
-**Where:** Settings › Theme & Look › Mouse pointer
+**Where:** Settings › Appearance › Mouse pointer
 
 Ctrl+Shift+F8 toggles the pointer spotlight when pointer effects are on.
 

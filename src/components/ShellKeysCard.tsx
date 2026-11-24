@@ -53,7 +53,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     else if (status.active) state = "Active.";
     else state = "Starting…";
   } else if (anyOn) {
-    state = "Needs a newer Lens backend — restart Lens UI after updating.";
+    state = "Needs a newer Lens backend — restart Lens after updating.";
   }
 
   return (

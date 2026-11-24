@@ -105,7 +105,7 @@ pub fn chromium_manifest(exe: &str, extra_ids: &[String]) -> Result<String, Stri
     let origins: Vec<String> = ids.iter().map(|id| format!("chrome-extension://{}/", id)).collect();
     serde_json::to_string_pretty(&json!({
         "name": HOST_NAME,
-        "description": "Lens UI browser bridge",
+        "description": "Lens browser bridge",
         "path": exe,
         "type": "stdio",
         "allowed_origins": origins,
@@ -125,7 +125,7 @@ pub fn firefox_manifest(exe: &str, extra_ids: &[String]) -> Result<String, Strin
     }
     serde_json::to_string_pretty(&json!({
         "name": HOST_NAME,
-        "description": "Lens UI browser bridge",
+        "description": "Lens browser bridge",
         "path": exe,
         "type": "stdio",
         "allowed_extensions": ids,
@@ -157,7 +157,7 @@ pub fn url_scheme_plan(exe: &str) -> RegPlan {
     let mut p = RegPlan::default();
     let root = "Software\\Classes\\lens";
     p.root(root);
-    p.set(root, None, "URL:Lens UI");
+    p.set(root, None, "URL:Lens");
     p.set(root, Some("URL Protocol"), "");
     p.set(&format!("{}\\DefaultIcon", root), None, &format!("{},0", quoted(exe)));
     p.set(&format!("{}\\shell\\open\\command", root), None, &format!("{} --url \"%1\"", quoted(exe)));

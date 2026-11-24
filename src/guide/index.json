@@ -114,6 +114,284 @@
    "source": "src/components/MessagingHubPane.tsx"
   },
   {
+   "id": "card.messages.feedscard",
+   "kind": "card",
+   "title": "Feeds",
+   "text": "One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC. Feeds · Sources · Mute words · Quiet hours · Refresh every · AI digest · OPML. Feeds. Settings › Feeds. Credentials go straight to the sealed vault; this card never reads them back",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Feeds",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.sources",
+   "kind": "setting",
+   "title": "Sources",
+   "text": "",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Sources"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Sources",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.mute-words",
+   "kind": "setting",
+   "title": "Mute words",
+   "text": "Words, @handles, or source:reddit — one per line. Muted posts are hidden everywhere, including the digest.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Mute words"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Mute words",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.quiet-hours",
+   "kind": "setting",
+   "title": "Quiet hours",
+   "text": "No refreshes and no \"new\" pill between these times.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Quiet hours"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Quiet hours",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.refresh-every",
+   "kind": "setting",
+   "title": "Refresh every",
+   "text": "Each network also has its own polite rate limit.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Refresh every"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Refresh every",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.ai-digest",
+   "kind": "setting",
+   "title": "AI digest",
+   "text": "Five bullets with sources. Runs on your local model unless your AI privacy setting allows cloud.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "AI digest"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "AI digest",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.opml",
+   "kind": "setting",
+   "title": "OPML",
+   "text": "Bring your subscriptions from Feedly, Inoreader, NetNewsWire or any reader.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "OPML"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "OPML",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "card.messages.messagescard",
+   "kind": "card",
+   "title": "Messages",
+   "text": "One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count. Messages · Mirror notifications · Show previews · Badges on Dock icons · VIPs · Alert keywords · Matrix (advanced). Messages. Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens reads only the unread badge. Matrix is the one place Lens can read and send (with approval)",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Messages",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.mirror-notifications",
+   "kind": "setting",
+   "title": "Mirror notifications",
+   "text": "Use Windows notifications from these apps for badges and mention alerts. Needs notification access for Lens.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Mirror notifications"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Mirror notifications",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.show-previews",
+   "kind": "setting",
+   "title": "Show previews",
+   "text": "Show the first line of new messages in the inbox where the source provides it.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Show previews"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Show previews",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.badges-on-dock-icons",
+   "kind": "setting",
+   "title": "Badges on Dock icons",
+   "text": "Conversation names that always get through Focus, separated by commas.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Badges on Dock icons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Badges on Dock icons",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.vips",
+   "kind": "setting",
+   "title": "VIPs",
+   "text": "Conversation names that always get through Focus, separated by commas.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "VIPs"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "VIPs",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.alert-keywords",
+   "kind": "setting",
+   "title": "Alert keywords",
+   "text": "Your name, project names — a message containing one counts as a mention.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Alert keywords"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Alert keywords",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.matrix-advanced",
+   "kind": "setting",
+   "title": "Matrix (advanced)",
+   "text": "Connect your own Matrix homeserver — including bridges you run yourself — to read rooms and reply from Lens. Every reply shows you the exact text and waits for you to hold Send.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Matrix (advanced)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Matrix (advanced)",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
    "id": "setting.theme.themetab.accent-colour",
    "kind": "setting",
    "title": "Accent colour",
@@ -1206,7 +1484,7 @@
    "id": "setting.sessions.tilingcard.tiling-shortcuts",
    "kind": "setting",
    "title": "Tiling Shortcuts",
-   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens UI.",
+   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens.",
    "path": [
     "Settings",
     "Desktop",
@@ -1480,7 +1758,7 @@
    "id": "setting.system.monitorpickercard.top-bar-on-every-monitor",
    "kind": "setting",
    "title": "Top Bar on Every Monitor",
-   "text": "Show a Top Bar on each display. Applies after restarting Lens UI.",
+   "text": "Show a Top Bar on each display. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1816,7 +2094,7 @@
    "id": "card.system.shellmodecard",
    "kind": "card",
    "title": "Shell Mode (advanced)",
-   "text": "Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens UI instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -2551,7 +2829,7 @@
    "id": "card.ai.mcpcard",
    "kind": "card",
    "title": "AI Apps (MCP)",
-   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens UI. Off by default. Requests that need approval show here with Approve / Decline",
+   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens. Off by default. Requests that need approval show here with Approve / Decline",
    "path": [
     "Settings",
     "AI & Command",
@@ -4061,18 +4339,18 @@
   {
    "id": "card.ai.guidecard",
    "kind": "card",
-   "title": "Lens Guide",
-   "text": "Ask \"how do I…\" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC. Lens Guide · Tip of the day · Lessons. Guide. Lens Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and \"Show me\". Off until turned on; works offline; AI answers are optional",
+   "title": "Guide",
+   "text": "Ask \"how do I…\" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC. Guide · Tip of the day · Lessons. Guide. Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and \"Show me\". Off until turned on; works offline; AI answers are optional",
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide"
+    "Guide"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "GuideCard",
-    "label": "Lens Guide",
+    "label": "Guide",
     "section": "guide"
    },
    "source": "src/components/GuideCard.tsx"
@@ -4085,7 +4363,7 @@
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide",
+    "Guide",
     "Tip of the day"
    ],
    "target": {
@@ -4105,7 +4383,7 @@
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide",
+    "Guide",
     "Lessons"
    ],
    "target": {
@@ -4903,20 +5181,20 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.run-lens-ui-on-windows-startup",
+   "id": "setting.system.inline.run-lens-on-windows-startup",
    "kind": "setting",
-   "title": "Run Lens UI on Windows Startup",
+   "title": "Run Lens on Windows Startup",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Run Lens UI on Windows Startup"
+    "Run Lens on Windows Startup"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Run Lens UI on Windows Startup"
+    "label": "Run Lens on Windows Startup"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -4942,7 +5220,7 @@
    "id": "setting.system.inline.create-rarely-used-windows-on-demand",
    "kind": "setting",
    "title": "Create Rarely Used Windows on Demand",
-   "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.",
+   "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -4996,7 +5274,7 @@
    "id": "setting.system.inline.keyboard-tiling-shortcuts",
    "kind": "setting",
    "title": "Keyboard Tiling Shortcuts",
-   "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.",
+   "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -5014,7 +5292,7 @@
    "id": "setting.system.inline.alt-1-9-opens-dock-apps",
    "kind": "setting",
    "title": "Alt+1–9 Opens Dock Apps",
-   "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.",
+   "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -7260,7 +7538,7 @@
    "id": "hotkey.ctrl-alt-shift-e",
    "kind": "hotkey",
    "title": "Ctrl+Alt+Shift+E",
-   "text": "Ctrl+Alt+Shift+E, and quitting Lens UI — all three bring Explorer's desktop back immediately.",
+   "text": "Ctrl+Alt+Shift+E, and quitting Lens — all three bring Explorer's desktop back immediately.",
    "path": [
     "Keyboard",
     "Ctrl+Alt+Shift+E"
@@ -9077,7 +9355,7 @@
    "id": "doc.cursors.0",
    "kind": "doc",
    "title": "Cursor Suite",
-   "text": "Mouse pointer themes, pointer behaviour and pointer effects for Lens UI. Part Where What it touches --- --- --- Look src-tauri/src/win cursors.rs Writes .cur / .ani files under %APPDATA%\\LensUI\\cursors\\sets\\ and points HKCU\\Control Panel\\Cursors at them. Behaviour src-tauri/src/win cursors.rs SystemParametersInfoW pointer settings. Effects src-tauri/src/win cursor fx.rs , src/surfaces/CursorFxSurface. , src/cursors/effects.ts A click-through overlay window ( cursorfx ) fed by a WH MOUSE LL hook. UI src/components/CursorSuiteCard.tsx , src/cursors/ Control Center card with Look / Behaviour / Effects tabs. Nothing here is wired into the app yet. The steps are in Wiring below.",
+   "text": "Mouse pointer themes, pointer behaviour and pointer effects for Lens. Part Where What it touches --- --- --- Look src-tauri/src/win cursors.rs Writes .cur / .ani files under %APPDATA%\\LensUI\\cursors\\sets\\ and points HKCU\\Control Panel\\Cursors at them. Behaviour src-tauri/src/win cursors.rs SystemParametersInfoW pointer settings. Effects src-tauri/src/win cursor fx.rs , src/surfaces/CursorFxSurface. , src/cursors/effects.ts A click-through overlay window ( cursorfx ) fed by a WH MOUSE LL hook. UI src/components/CursorSuiteCard.tsx , src/cursors/ Control Center card with Look / Behaviour / Effects tabs. Nothing here is wired into the app yet. The steps are in Wiring below.",
    "path": [
     "Docs",
     "Cursor Suite"
@@ -9969,17 +10247,17 @@
   {
    "id": "doc.lens-apps.12",
    "kind": "doc",
-   "title": "Lens Apps: §7 Lens Guide (feature/lens-guide)",
+   "title": "Lens Apps: §7 Guide (feature/lens-guide)",
    "text": "Index catalog.json (name, pitch, why, category, replaces) so \"what tool should I use for slides?\" answers from the catalogue. The ready-made logic is parseAppsIntent → recommend . Lesson stubs come from integrations.guide .",
    "path": [
     "Docs",
     "Lens Apps",
-    "§7 Lens Guide (feature/lens-guide)"
+    "§7 Guide (feature/lens-guide)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/LENS_APPS.md",
-    "heading": "§7 Lens Guide (feature/lens-guide)"
+    "heading": "§7 Guide (feature/lens-guide)"
    },
    "source": "docs/LENS_APPS.md"
   },
@@ -10578,27 +10856,27 @@
   {
    "id": "doc.mcp.0",
    "kind": "doc",
-   "title": "Lens UI as an MCP server",
-   "text": "Lens UI can let AI apps (Claude Desktop and other Model Context Protocol clients) see your open windows and make a small set of reversible desktop changes. It is off by default : Control Center › Agents & MCP › \"Allow AI apps to connect\".",
+   "title": "Lens as an MCP server",
+   "text": "Lens can let AI apps (Claude Desktop and other Model Context Protocol clients) see your open windows and make a small set of reversible desktop changes. It is off by default : Control Center › Agents & MCP › \"Allow AI apps to connect\".",
    "path": [
     "Docs",
-    "Lens UI as an MCP server"
+    "Lens as an MCP server"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/MCP.md",
-    "heading": "Lens UI as an MCP server"
+    "heading": "Lens as an MCP server"
    },
    "source": "docs/MCP.md"
   },
   {
    "id": "doc.mcp.1",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: How it works",
-   "text": "The AI app launches lens-ui.exe --mcp-stdio . With that flag Lens does not start the shell; the process is a thin bridge that forwards each JSON-RPC line to the running Lens UI and exits when stdin closes. While MCP is switched on, Lens UI listens on 127.0.0.1 on a random port and writes the port plus a random 256-bit token to %APPDATA%\\LensUI\\mcp-endpoint.json . Every connection must present the token first. Switching MCP off (or quitting) closes the port and deletes the file. If Lens UI is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool returns \"Lens UI isn't running, or its MCP server is switched off\". Why stdio + loopback instead of only HTTP: stdio is what every MCP client supports for local servers and needs no new crates; the loopback hop is plain std::net with no async runtime. All protocol logic is in src-tauri/src/win mcp.rs .",
+   "title": "Lens as an MCP server: How it works",
+   "text": "The AI app launches lens-ui.exe --mcp-stdio . With that flag Lens does not start the shell; the process is a thin bridge that forwards each JSON-RPC line to the running Lens and exits when stdin closes. While MCP is switched on, Lens listens on 127.0.0.1 on a random port and writes the port plus a random 256-bit token to %APPDATA%\\LensUI\\mcp-endpoint.json . Every connection must present the token first. Switching MCP off (or quitting) closes the port and deletes the file. If Lens is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool returns \"Lens isn't running, or its MCP server is switched off\". Why stdio + loopback instead of only HTTP: stdio is what every MCP client supports for local servers and needs no new crates; the loopback hop is plain std::net with no async runtime. All protocol logic is in src-tauri/src/win mcp.rs .",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "How it works"
    ],
    "target": {
@@ -10611,11 +10889,11 @@
   {
    "id": "doc.mcp.2",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Protocol support",
+   "title": "Lens as an MCP server: Protocol support",
    "text": "Legacy handshake revisions via initialize : 2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05 (an unknown requested version gets 2025-11-25). Modern stateless revision 2026-07-28: server/discover , per-request meta protocol version, UnsupportedProtocolVersionError (-32022) for unknown versions, resultType: \"complete\" on results. Tools only (no resources or prompts). tools/list is static and ordered.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Protocol support"
    ],
    "target": {
@@ -10628,11 +10906,11 @@
   {
    "id": "doc.mcp.3",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Tools",
+   "title": "Lens as an MCP server: Tools",
    "text": "Tool What it does Runs :--- :--- :--- list windows Open app windows: hwnd, title, app, focused/minimized/maximized Directly (read-only) search Installed apps and indexed file names/paths (never contents) Directly (read-only) get action status Outcome of a queued request Directly (read-only) focus window Focus a window Lens itself lists Directly tile windows focus-stack, split, thirds, grid, smart-group Directly apply theme pack Any built-in or custom theme pack Directly set volume 0–100 Directly set brightness 10–100 Directly toggle night light On, off, or toggle Directly switch workspace Number, name, next/prev (needs Lens workspaces) Directly run action Plain-language request through Lens' action router Always waits for your approval \\ With \"Ask me before every change\" on, these also wait for approval. Approvals appear in the MCP card and as a Lens notification. Requests expire after 1",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Tools"
    ],
    "target": {
@@ -10645,11 +10923,11 @@
   {
    "id": "doc.mcp.4",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Security model",
+   "title": "Lens as an MCP server: Security model",
    "text": "Off by default, loopback only, token-gated. The port binds to 127.0.0.1; a connection without the token from the endpoint file is closed before any message is read. The token file is in your user profile, so other programs running as you can read it — the same trust level as any app you run. No dangerous capabilities exist. There is no tool that runs commands or scripts, opens or deletes files, closes windows, kills processes, changes accounts or Windows settings beyond volume/brightness/night light. run action goes through the same router as Dock search and only after you click Approve. Validated input. Every argument is type- and range-checked (unknown tools are a protocol error); text is stripped of control characters and length-capped; window ids must belong to a window Lens currently lists. Rate-limited. 40 tool calls per minute per connection, 4 connections at once, 256 KB per mess",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Security model"
    ],
    "target": {
@@ -10662,11 +10940,11 @@
   {
    "id": "doc.mcp.5",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Connect Claude Desktop",
+   "title": "Lens as an MCP server: Connect Claude Desktop",
    "text": "The card shows a ready-made snippet with the real path. It looks like:",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Connect Claude Desktop"
    ],
    "target": {
@@ -10679,11 +10957,11 @@
   {
    "id": "doc.mcp.6",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Windows 11 agent registry (not wired yet)",
+   "title": "Lens as an MCP server: Windows 11 agent registry (not wired yet)",
    "text": "Windows 11 (build 26220.7262+, pre-release) has an On-device Agent Registry; local servers are added with odr.exe mcp add <mcpb-manifest.json , and unpackaged apps are expected to ship an MCP bundle (MCPB) manifest (Microsoft docs). Lens does not register itself yet. A manifest would point its stdio command at lens-ui.exe with --mcp-stdio ; check the MCPB schema (github.com/anthropics/mcpb) before shipping one — not verified here.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Windows 11 agent registry (not wired yet)"
    ],
    "target": {
@@ -10696,11 +10974,11 @@
   {
    "id": "doc.mcp.7",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Known limits",
+   "title": "Lens as an MCP server: Known limits",
    "text": "apply theme pack is applied by the Dock window (theme packs live in the frontend); if the Dock window isn't running the call reports success but nothing changes. search for apps is a simple name match; the Launcher's fuzzy ranking runs in the frontend. Night light toggling reads Lens' own night-light state, not Windows' built-in Night light.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Known limits"
    ],
    "target": {
@@ -11034,17 +11312,17 @@
   {
    "id": "doc.music.13",
    "kind": "doc",
-   "title": "Lens Music: 8. Lens Guide",
+   "title": "Lens Music: 8. Guide",
    "text": "Anchor ids for coach marks: data-guide-id=\"music.card\" , music.lyrics , music.spotify , music.spicetify , nowplaying.queue , nowplaying.sleep .",
    "path": [
     "Docs",
     "Lens Music",
-    "8. Lens Guide"
+    "8. Guide"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/MUSIC.md",
-    "heading": "8. Lens Guide"
+    "heading": "8. Guide"
    },
    "source": "docs/MUSIC.md"
   },
@@ -11473,27 +11751,27 @@
   {
    "id": "doc.plugins.0",
    "kind": "doc",
-   "title": "Lens UI Plugins",
+   "title": "Lens Plugins",
    "text": "Plugins are small HTML widgets for the Top Bar, the Dock and the Widget Drawer. They are off until you turn them on in Control Center → Plugins, and each one runs in a sealed sandbox: no internet, no files, no system access, only the permissions it lists.",
    "path": [
     "Docs",
-    "Lens UI Plugins"
+    "Lens Plugins"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/PLUGINS.md",
-    "heading": "Lens UI Plugins"
+    "heading": "Lens Plugins"
    },
    "source": "docs/PLUGINS.md"
   },
   {
    "id": "doc.plugins.1",
    "kind": "doc",
-   "title": "Lens UI Plugins: Where they live",
+   "title": "Lens Plugins: Where they live",
    "text": "Four examples are copied there on first run, all switched off: Clock , CPU & Memory , Weather (placeholder) and Pomodoro .",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Where they live"
    ],
    "target": {
@@ -11506,11 +11784,11 @@
   {
    "id": "doc.plugins.2",
    "kind": "doc",
-   "title": "Lens UI Plugins: Manifest — `lensplugin.json`",
+   "title": "Lens Plugins: Manifest — `lensplugin.json`",
    "text": "The entry file must be self-contained. Put CSS in <style and JS in <script ; images as data: URLs. External files, links, frames, forms, <base and <meta http-equiv are removed before the plugin runs.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Manifest — `lensplugin.json`"
    ],
    "target": {
@@ -11523,11 +11801,11 @@
   {
    "id": "doc.plugins.3",
    "kind": "doc",
-   "title": "Lens UI Plugins: Permissions",
+   "title": "Lens Plugins: Permissions",
    "text": "Permission What it allows :--- :--- (none) Time and theme colours only. telemetry Read CPU %, memory %, used/total GB, uptime. media Read the now-playing title, artist, album, app and artwork. storage Keep up to 64 values / 32 KB of its own data. notifications Show a Lens notification (title ≤ 80, body ≤ 200 chars, at most one per 10 s). launch-apps Start a Start-menu app by name — each app only after you approve it once . open-urls Open an https:// link in your browser — each site only after you approve it once . Approvals appear in Control Center → Plugins (and inline on Widget Drawer plugins). You can reset a plugin's approvals at any time.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Permissions"
    ],
    "target": {
@@ -11540,11 +11818,11 @@
   {
    "id": "doc.plugins.4",
    "kind": "doc",
-   "title": "Lens UI Plugins: API inside a plugin",
+   "title": "Lens Plugins: API inside a plugin",
    "text": "Failed requests reject with one of: permission-denied , approval-required , rate-limited , unknown-method , bad-params , unavailable , timeout . CSS variables available: --lens-fg , --lens-fg-secondary , --lens-fg-muted , --lens-on-fg , --lens-ink (use as rgb(var(--lens-ink) / 0.1) ), --lens-accent , --lens-accent-safe (the accent, or the text colour when the accent would be unreadable), --lens-radius , --font-sans , --lens-scheme ( dark / light ).",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "API inside a plugin"
    ],
    "target": {
@@ -11557,11 +11835,11 @@
   {
    "id": "doc.plugins.5",
    "kind": "doc",
-   "title": "Lens UI Plugins: Security model",
+   "title": "Lens Plugins: Security model",
    "text": "- Sandbox: <iframe sandbox=\"allow-scripts\" srcdoc — an opaque origin: no cookies, storage, parent DOM, Tauri invoke() , popups, top navigation, forms, dialogs or downloads. Camera, microphone, clipboard, USB and similar features are denied with allow . - No network: a CSP at the top of every plugin document allows only inline script/style and data: images/fonts ( connect-src , frame-src , worker-src , object-src are 'none' ). WebRTC constructors are removed. The host window adds frame-src 'none' , so a plugin cannot navigate its own frame to a web page to carry data out in the URL. - Bridge: the only way out is postMessage . The host accepts messages only from that plugin's own frame, caps them at 16 KB, rate-limits to 20/s (burst 40), and stops a plugin after 50 violations. Every method is checked against the manifest's permissions. - Approvals: launch-apps and open-urls also need a per",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Security model"
    ],
    "target": {
@@ -11574,11 +11852,11 @@
   {
    "id": "doc.plugins.6",
    "kind": "doc",
-   "title": "Lens UI Plugins: Theme sharing",
+   "title": "Lens Plugins: Theme sharing",
    "text": "Control Center → Share Themes : - Export to file… saves the current look as a .lenstheme wherever you choose. - Import file… applies a .lenstheme someone sent you and adds it to your saved themes. Every field is validated and clamped (opacity 40–100%, corners 0–20 px); custom CSS is never imported. - Open gallery… reads a gallery index file (below). Lens does not download anything yet, so only entries that carry their theme inline can be applied; previews must be data: images.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Theme sharing"
    ],
    "target": {
@@ -11591,11 +11869,11 @@
   {
    "id": "doc.plugins.7",
    "kind": "doc",
-   "title": "Lens UI Plugins: Gallery index format",
+   "title": "Lens Plugins: Gallery index format",
    "text": "A future website can host this file; when downloads are added, Lens should fetch url only over https and refuse any file whose SHA-256 differs from sha256 .",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Gallery index format"
    ],
    "target": {
@@ -12520,27 +12798,27 @@
   {
    "id": "doc.shell-mode.0",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode",
-   "text": "Shell Mode makes Lens UI the Windows shell for your user account : at sign-in Windows starts Lens UI instead of Explorer's desktop and taskbar. It is off by default and never required. Without it, Lens UI runs as an overlay on top of Explorer, exactly as before. Status: written but not yet run on a real machine. Try it on a spare account or a virtual machine first, and keep Restore-Windows-Shell.bat somewhere you can find it.",
+   "title": "Lens — Shell Mode",
+   "text": "Shell Mode makes Lens the Windows shell for your user account : at sign-in Windows starts Lens instead of Explorer's desktop and taskbar. It is off by default and never required. Without it, Lens runs as an overlay on top of Explorer, exactly as before. Status: written but not yet run on a real machine. Try it on a spare account or a virtual machine first, and keep Restore-Windows-Shell.bat somewhere you can find it.",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode"
+    "Lens — Shell Mode"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/SHELL_MODE.md",
-    "heading": "Lens UI — Shell Mode"
+    "heading": "Lens — Shell Mode"
    },
    "source": "docs/SHELL_MODE.md"
   },
   {
    "id": "doc.shell-mode.1",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: What it changes",
+   "title": "Lens — Shell Mode: What it changes",
    "text": "One registry value, for the current user only: Nothing machine-wide ( HKLM ) is ever written. Deleting that one value puts Windows back on Explorer. Other user accounts on the PC are not affected. Shell Mode can only be enabled from a release build. A development build ( bun run tauri dev ) refuses, because its program path is not stable.",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "What it changes"
    ],
    "target": {
@@ -12553,11 +12831,11 @@
   {
    "id": "doc.shell-mode.2",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: What you lose without Explorer",
-   "text": "Explorer is more than file windows. While Lens UI is the shell, these are absent unless Lens provides them: Explorer feature In Shell Mode :--- :--- Taskbar and Start menu Replaced by the Lens Dock, Top Bar and search System tray icons Only what Lens hosts itself; the \"peek native taskbar\" chevron has nothing to show Desktop icons Lens desktop folder only Wallpaper May be a plain background — Explorer normally draws it Windows notification toasts and Action Center Lens notifications only Win key shortcuts ( Win+E , Win+R , Win+D , Win+Tab , snap layouts…) Mostly unavailable; Explorer handles them Alt+Tab Falls back to the basic Windows switcher Startup apps Lens starts your per-user Run entries and Startup-folder items once per sign-in, respecting Task Manager's on/off switches. Machine-wide startup entries and RunOnce are not run Store / UWP apps May start slowly or not at all; they rel",
+   "title": "Lens — Shell Mode: What you lose without Explorer",
+   "text": "Explorer is more than file windows. While Lens is the shell, these are absent unless Lens provides them: Explorer feature In Shell Mode :--- :--- Taskbar and Start menu Replaced by the Lens Dock, Top Bar and search System tray icons Only what Lens hosts itself; the \"peek native taskbar\" chevron has nothing to show Desktop icons Lens desktop folder only Wallpaper May be a plain background — Explorer normally draws it Windows notification toasts and Action Center Lens notifications only Win key shortcuts ( Win+E , Win+R , Win+D , Win+Tab , snap layouts…) Mostly unavailable; Explorer handles them Alt+Tab Falls back to the basic Windows switcher Startup apps Lens starts your per-user Run entries and Startup-folder items once per sign-in, respecting Task Manager's on/off switches. Machine-wide startup entries and RunOnce are not run Store / UWP apps May start slowly or not at all; they rely o",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "What you lose without Explorer"
    ],
    "target": {
@@ -12570,11 +12848,11 @@
   {
    "id": "doc.shell-mode.3",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: Three ways back to the normal desktop",
-   "text": "1. Restore-Windows-Shell.bat (in the Lens UI folder). Removes the registry value and starts Explorer. Works even if Lens UI will not start. 2. Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to Restore-Windows-Shell.bat → OK. This keyboard shortcut works with no shell running at all. If you only type explorer there, you get a file window but not the taskbar, because Windows still thinks Lens is the shell — run the bat, or first run: reg delete \"HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Shell /f and then explorer . 3. The automatic boot guard. Each time Lens starts as the shell it counts the attempt, and clears the count once the desktop has been up for about 20 seconds. If the next start finds the count still set, the previous one never reached a working desktop: Lens switches Shell Mode off, starts Explorer, and shows the reason in Control Cen",
+   "title": "Lens — Shell Mode: Three ways back to the normal desktop",
+   "text": "1. Restore-Windows-Shell.bat (in the Lens folder). Removes the registry value and starts Explorer. Works even if Lens will not start. 2. Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to Restore-Windows-Shell.bat → OK. This keyboard shortcut works with no shell running at all. If you only type explorer there, you get a file window but not the taskbar, because Windows still thinks Lens is the shell — run the bat, or first run: reg delete \"HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Shell /f and then explorer . 3. The automatic boot guard. Each time Lens starts as the shell it counts the attempt, and clears the count once the desktop has been up for about 20 seconds. If the next start finds the count still set, the previous one never reached a working desktop: Lens switches Shell Mode off, starts Explorer, and shows the reason in Control Center. O",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "Three ways back to the normal desktop"
    ],
    "target": {
@@ -13551,7 +13829,7 @@
    "id": "doc.third-party-notices.0",
    "kind": "doc",
    "title": "Third-party notices",
-   "text": "Lens UI credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.",
+   "text": "Lens credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.",
    "path": [
     "Docs",
     "Third-party notices"
@@ -13786,7 +14064,7 @@
    "id": "doc.vision.3",
    "kind": "doc",
    "title": "Lens vision: one desktop, not a pile of apps: What exists today",
-   "text": "Area Status --- --- Dock styles, themes, window styling, cursors, Playground, productivity (hot corners, Alt+drag), shell keys Integrated AI core (script → local → Claude), AI surfaces, browser extension bridge, transcription Integrated Lens Command, Lens Mini, Shelf, clipboard history, edge Shelf, selection bubble Integrated Tester Hub, master plan Integrated Lens Guide In PR #18 Right-click everything, micro-saves, context packs, YouTube transcripts In PR #19 Lens Browser (vertical tabs, Spaces, agent mode with approvals) In PR #20 Claude control (Desktop State API, capability grants, unified approval card) In PR #21 Robustness and fluidity test suites In PR #22 Voice control and conversation mode In PR #23 Lens Snip In PR #24 The unified object model, Spaces across browser and desktop, dock ↔ browser fusion, phone companion Planned (this folder)",
+   "text": "Area Status --- --- Dock styles, themes, window styling, cursors, Playground, productivity (hot corners, Alt+drag), shell keys Integrated AI core (script → local → Claude), AI surfaces, browser extension bridge, transcription Integrated Lens Command, Lens Mini, Shelf, clipboard history, edge Shelf, selection bubble Integrated Tester Hub, master plan Integrated Guide In PR #18 Right-click everything, micro-saves, context packs, YouTube transcripts In PR #19 Lens Browser (vertical tabs, Spaces, agent mode with approvals) In PR #20 Claude control (Desktop State API, capability grants, unified approval card) In PR #21 Robustness and fluidity test suites In PR #22 Voice control and conversation mode In PR #23 Lens Snip In PR #24 The unified object model, Spaces across browser and desktop, dock ↔ browser fusion, phone companion Planned (this folder)",
    "path": [
     "Docs",
     "Lens vision: one desktop, not a pile of apps",

@@ -1,4 +1,4 @@
-//! Lens Guide commands: read and write local lesson progress (see `crate::guide`).
+//! The Guide commands: read and write local lesson progress (see `crate::guide`).
 
 use crate::guide::{self, GuideProgress};
 

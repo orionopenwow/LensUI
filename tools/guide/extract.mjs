@@ -1,4 +1,4 @@
-// Builds the Lens Guide knowledge index from the repository itself, so the Guide can only ever
+// Builds the Guide knowledge index from the repository itself, so the Guide can only ever
 // point at settings, commands and docs that really exist. Used by build-index.mjs (writes
 // src/guide/index.json) and by the bun tests (completeness checks). Plain JS on purpose: it runs
 // under Node in the prebuild step and under bun in tests, with no TypeScript loader.
@@ -153,10 +153,14 @@ export function extractMounts(root, file = CC, inherited = null) {
       if (blk) {
         tabs = [blk[1], ...[...blk[2].matchAll(/tab === "([a-z-]+)"/g)].map((x) => x[1])].map(legacy);
         section = null;
+        sectionId = null;
       }
     }
     const sec = line.match(/className="(?:cc-section-title|tux-section-title)">([^<{]+)</);
-    if (sec) section = clean(sec[1]);
+    if (sec) {
+      section = clean(sec[1]);
+      sectionId = null;
+    }
     const secComp = line.match(/<Section\b[^>]*\bid="([a-z0-9-]+)"[^>]*?\btitle="([^"]+)"/) ?? null;
     if (secComp) {
       section = clean(secComp[2]);

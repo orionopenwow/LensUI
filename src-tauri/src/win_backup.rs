@@ -97,7 +97,7 @@ pub fn migrate_config_value(mut v: Value) -> Result<(Value, u32), String> {
     let from = config_version_of(&v);
     if from > CURRENT_CONFIG_VERSION {
         return Err(format!(
-            "This config was written by a newer Lens UI (config version {}; this build understands {}).",
+            "This config was written by a newer Lens (config version {}; this build understands {}).",
             from, CURRENT_CONFIG_VERSION
         ));
     }
@@ -317,13 +317,13 @@ pub fn restore_backup(dir: &Path, text: &str, restore_training: bool) -> Result<
     if text.len() > MAX_BACKUP_BYTES {
         return Err("Backup file is too large.".into());
     }
-    let doc: Value = serde_json::from_str(text).map_err(|e| format!("Not a Lens UI backup: {}", e))?;
+    let doc: Value = serde_json::from_str(text).map_err(|e| format!("Not a Lens backup: {}", e))?;
     let format = doc.get("lensbackup").and_then(Value::as_u64).unwrap_or(0);
     if format == 0 {
-        return Err("Not a Lens UI backup (missing \"lensbackup\").".into());
+        return Err("Not a Lens backup (missing \"lensbackup\").".into());
     }
     if format > BACKUP_FORMAT as u64 {
-        return Err("This backup was made by a newer Lens UI.".into());
+        return Err("This backup was made by a newer Lens.".into());
     }
     let files = doc
         .get("files")

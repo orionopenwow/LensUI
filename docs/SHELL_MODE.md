@@ -1,8 +1,8 @@
-# Lens UI — Shell Mode
+# Lens — Shell Mode
 
-Shell Mode makes Lens UI the Windows shell for **your user account**: at sign-in Windows starts
-Lens UI instead of Explorer's desktop and taskbar. It is off by default and never required.
-Without it, Lens UI runs as an overlay on top of Explorer, exactly as before.
+Shell Mode makes Lens the Windows shell for **your user account**: at sign-in Windows starts
+Lens instead of Explorer's desktop and taskbar. It is off by default and never required.
+Without it, Lens runs as an overlay on top of Explorer, exactly as before.
 
 > Status: written but not yet run on a real machine. Try it on a spare account or a virtual
 > machine first, and keep `Restore-Windows-Shell.bat` somewhere you can find it.
@@ -24,7 +24,7 @@ refuses, because its program path is not stable.
 
 ## What you lose without Explorer
 
-Explorer is more than file windows. While Lens UI is the shell, these are absent unless Lens provides them:
+Explorer is more than file windows. While Lens is the shell, these are absent unless Lens provides them:
 
 | Explorer feature | In Shell Mode |
 | :--- | :--- |
@@ -42,8 +42,8 @@ File Explorer windows still work: opening a folder starts `explorer.exe` as an o
 
 ## Three ways back to the normal desktop
 
-1. **`Restore-Windows-Shell.bat`** (in the Lens UI folder). Removes the registry value and starts
-   Explorer. Works even if Lens UI will not start.
+1. **`Restore-Windows-Shell.bat`** (in the Lens folder). Removes the registry value and starts
+   Explorer. Works even if Lens will not start.
 2. **Task Manager.** Press `Ctrl+Shift+Esc` → *Run new task* → type the full path to
    `Restore-Windows-Shell.bat` → OK. This keyboard shortcut works with no shell running at all.
    If you only type `explorer` there, you get a file window but not the taskbar, because Windows still
@@ -56,9 +56,9 @@ File Explorer windows still work: opening a folder starts `explorer.exe` as an o
    Explorer, and shows the reason in Control Center. One failed start is enough to trigger it.
    Signing out within the first 20 seconds counts as a failed start too — that is deliberate.
 
-Inside Lens UI there are also: **Start Explorer now** in Control Center, the emergency hotkey
-`Ctrl+Alt+Shift+E`, and quitting Lens UI — all three bring Explorer's desktop back immediately.
-A crash inside Lens UI switches Shell Mode off and starts Explorer by itself.
+Inside Lens there are also: **Start Explorer now** in Control Center, the emergency hotkey
+`Ctrl+Alt+Shift+E`, and quitting Lens — all three bring Explorer's desktop back immediately.
+A crash inside Lens switches Shell Mode off and starts Explorer by itself.
 
 `Ctrl+Alt+Del` always works as well (sign out, Task Manager, power).
 
@@ -66,7 +66,7 @@ A crash inside Lens UI switches Shell Mode off and starts Explorer by itself.
 
 In `%APPDATA%\LensUI`:
 
-- `shell-mode.marker` — Shell Mode was enabled from this copy of Lens UI.
+- `shell-mode.marker` — Shell Mode was enabled from this copy of Lens.
 - `shell-boot-attempts` — the boot guard's counter (absent after a good start).
 - `shell-last-boot.txt` — outcome of the last start as the shell, shown in Control Center.
 

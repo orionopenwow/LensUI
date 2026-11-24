@@ -16,7 +16,7 @@ interface ShellModeStatus {
 const CONFIRM_WORD = "REPLACE";
 
 /**
- * Control Center card for opt-in Shell Mode (Lens UI instead of Explorer as the Windows shell).
+ * Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell).
  * Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md.
  */
 export const ShellModeCard: React.FC = () => {
@@ -62,10 +62,10 @@ export const ShellModeCard: React.FC = () => {
   const stateLabel = !status
     ? "Unavailable"
     : status.isShellSession
-      ? "Lens UI is your Windows shell right now"
+      ? "Lens is your Windows shell right now"
       : status.enabled
         ? "On — starts at your next sign-in"
-        : "Off — Lens UI runs on top of Explorer";
+        : "Off — Lens runs on top of Explorer";
 
   const dotColor = !status ? "var(--lens-fg-muted)" : status.enabled ? "#34D399" : "var(--lens-fg-muted)";
 
@@ -75,7 +75,7 @@ export const ShellModeCard: React.FC = () => {
         <div>
           <div className="cc-label">Shell Mode (advanced)</div>
           <div className="cc-desc">
-            Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only.
+            Start Lens instead of the Windows taskbar and desktop when you sign in. This account only.
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
@@ -88,7 +88,7 @@ export const ShellModeCard: React.FC = () => {
 
       <div className="cc-desc">
         Without Explorer you lose its taskbar, Start menu, tray icons, desktop icons, Windows notifications
-        and most Win-key shortcuts. Lens UI starts your own startup apps. If Lens UI fails to reach the
+        and most Win-key shortcuts. Lens starts your own startup apps. If Lens fails to reach the
         desktop once, it switches this off by itself and brings Explorer back. You can also get back any
         time with Restore-Windows-Shell.bat, or Ctrl+Shift+Esc, Run new task, and that file.
       </div>

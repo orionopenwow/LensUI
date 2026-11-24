@@ -99,7 +99,7 @@ pub fn launch_windhawk_installer() -> Result<(), String> {
             .args([
                 "/C",
                 "start",
-                "Installing Windhawk for Lens UI",
+                "Installing Windhawk for Lens",
                 "winget",
                 "install",
                 "RamenSoftware.Windhawk",

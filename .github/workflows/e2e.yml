@@ -1,4 +1,4 @@
-# Lens UI robustness and fluidity (docs/TESTING.md)
+# Lens robustness and fluidity (docs/TESTING.md)
 #  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
 #                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
 #  * windows-e2e  — every PR: builds the real app and drives its WebView2 windows on Windows over
@@ -174,7 +174,7 @@ jobs:
 
       # A debug build of the real app with the frontend embedded (custom protocol, no dev server),
       # plus a config overlay that opens a DevTools port on every webview (tests/e2e/tauri-config.mjs).
-      - name: Build Lens UI (debug, no installer, DevTools port)
+      - name: Build Lens (debug, no installer, DevTools port)
         run: |
           node tests/e2e/tauri-config.mjs
           bun run tauri build --debug --no-bundle --config tests/e2e/out/tauri.e2e.json

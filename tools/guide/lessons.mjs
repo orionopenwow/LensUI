@@ -1,4 +1,4 @@
-// Parser for Lens Guide lessons (guide/*.md). Format:
+// Parser for Guide lessons (guide/*.md). Format:
 //
 //   ---
 //   id: first-5-minutes

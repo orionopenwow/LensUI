@@ -1,4 +1,4 @@
-// Screenshots Lens Guide scenes × presets, fails on page/console errors, and writes a contact sheet
+// Screenshots Guide scenes × presets, fails on page/console errors, and writes a contact sheet
 // per preset. Env: PARITY_PRESETS, PARITY_CHROME, PARITY_PLAYWRIGHT (as in tools/parity/shoot.mjs).
 import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";

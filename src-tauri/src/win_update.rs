@@ -135,9 +135,9 @@ pub async fn check(app: &AppHandle) -> UpdateStatus {
             current_version: update.current_version.clone(),
             new_version: Some(update.version.clone()),
             notes: update.body.clone(),
-            message: format!("Lens UI {} is available.", update.version),
+            message: format!("Lens {} is available.", update.version),
         },
-        Ok(None) => status("up-to-date", "Lens UI is up to date."),
+        Ok(None) => status("up-to-date", "Lens is up to date."),
         Err(e) => status("error", &format!("Couldn't check for updates: {}", e)),
     }
 }
@@ -153,7 +153,7 @@ pub async fn install(app: &AppHandle) -> Result<String, String> {
         .check()
         .await
         .map_err(|e| e.to_string())?
-        .ok_or("Lens UI is already up to date.")?;
+        .ok_or("Lens is already up to date.")?;
     let version = update.version.clone();
     update
         .download_and_install(|_chunk, _total| {}, || {})

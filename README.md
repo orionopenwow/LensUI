@@ -155,7 +155,7 @@ Capture, then do the useful part before anything is saved.
 
 "How do I…?" answered from Lens's own settings, with Show me.
 
-<p align="center"><img src="./docs/media/guide.gif" alt="Lens Guide answers &quot;how do I…&quot; and shows you where" width="720"></p>
+<p align="center"><img src="./docs/media/guide.gif" alt="Lens answers &quot;how do I…&quot; and shows you where" width="720"></p>
 
 - An offline index of every setting, theme, dock style, command and shortcut. It only knows things that exist.
 - Show me opens the right Settings tab and highlights the setting.

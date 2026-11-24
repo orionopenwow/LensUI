@@ -1,9 +1,9 @@
 // ==WindhawkMod==
 // @id              lens-window-style
-// @name            Lens UI Native Window Style
-// @description     Retroactively applies Lens UI dark obsidian titlebars, custom border colors, and corner roundness natively in-process across Windows 11 apps via DwmSetWindowAttribute.
+// @name            Lens Native Window Style
+// @description     Retroactively applies Lens dark obsidian titlebars, custom border colors, and corner roundness natively in-process across Windows 11 apps via DwmSetWindowAttribute.
 // @version         1.0.0
-// @author          Lens UI
+// @author          Lens
 // @include         *
 // @exclude         *EasyAntiCheat*
 // @exclude         *BEService*
@@ -18,8 +18,8 @@
 
 // ==WindhawkModReadme==
 /*
-# Lens UI Native Window Style
-Bundled companion mod for **Lens UI**. Runs safely inside Windhawk to apply real,
+# Lens Native Window Style
+Bundled companion mod for **Lens**. Runs safely inside Windhawk to apply real,
 in-process Windows 11 DWM styling retroactively to existing and newly opened windows:
 - Matte obsidian dark titlebars (`DWMWA_CAPTION_COLOR`)
 - Custom hairline or accent window borders (`DWMWA_BORDER_COLOR`)

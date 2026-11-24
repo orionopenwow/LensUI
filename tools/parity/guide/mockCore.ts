@@ -1,4 +1,4 @@
-// Parity mock for Lens Guide: the base harness mock plus Guide progress.
+// Parity mock for Guide: the base harness mock plus Guide progress.
 import { invoke as baseInvoke } from "../mock/core";
 export { convertFileSrc, isTauri } from "../mock/core";
 

@@ -3,7 +3,7 @@
   "name": "Lens for Browsers",
   "short_name": "Lens",
   "version": "0.1.0",
-  "description": "Send pages, selections, links and videos to Lens UI on this PC: ask, summarise, translate, add to your Shelf.",
+  "description": "Send pages, selections, links and videos to Lens on this PC: ask, summarise, translate, add to your Shelf.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

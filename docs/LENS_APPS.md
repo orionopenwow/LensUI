@@ -148,7 +148,7 @@ On `lens://apps/integrations`, add any new `dock` ids as pins using the Start-me
 
 When `integrations.localProvider` is `"ollama"` or `"lmstudio"`, call `ai_set_config` with that provider as the local engine, restoring the previous value on revert. The MCP entries in `integrations.mcp` go into the MCP client list with per-tool approval.
 
-### §7 Lens Guide (feature/lens-guide)
+### §7 Guide (feature/lens-guide)
 
 Index `catalog.json` (name, pitch, why, category, replaces) so "what tool should I use for slides?" answers from the catalogue. The ready-made logic is `parseAppsIntent` → `recommend`. Lesson stubs come from `integrations.guide`.
 

@@ -21,7 +21,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         MenuItem::with_id(app, "next_wallpaper", "Next wallpaper", true, None::<&str>)?;
     let open_tester =
         MenuItem::with_id(app, "open_tester_hub", "Tester Hub…", true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit Lens UI", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit Lens", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
         &[&open_settings, &open_palette, &open_widgets, &next_wallpaper, &open_tester, &quit_item],
@@ -33,7 +33,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         tray_builder = tray_builder.icon(icon);
     }
     let _tray = tray_builder
-        .tooltip("Lens UI")
+        .tooltip("Lens")
         .menu(&menu)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "open_settings" => {

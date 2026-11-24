@@ -111,7 +111,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
               <Sparkles size={22} />
             </span>
             <h1 id="wiz-heading" ref={headingRef} tabIndex={-1} className="wiz-h1">
-              Welcome to Lens UI
+              Welcome to Lens
             </h1>
             <p className="wiz-lead">
               A glass Dock, Top Bar and Control Center for Windows 10 and 11. Three quick choices and you are done.

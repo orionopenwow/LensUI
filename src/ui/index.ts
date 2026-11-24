@@ -1,4 +1,4 @@
-// Lens UI primitives (Wave A, docs/polish/AAA_WAVE_PLAN.md). Token-only, named by construction.
+// Lens primitives (Wave A, docs/polish/AAA_WAVE_PLAN.md). Token-only, named by construction.
 export { Button, IconButton } from "./Button";
 export type { ButtonVariant, ButtonSize, IconButtonProps } from "./Button";
 export { Toggle } from "./Toggle";

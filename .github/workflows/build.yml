@@ -1,4 +1,4 @@
-# Lens UI CI
+# Lens CI
 #  * windows  — the real build: frontend type-check + bundle, Rust check / clippy / unit tests,
 #               hook DLL rebuilt from source, and a full installer build on version tags.
 #  * contract — generated IPC types are in sync with the Rust commands; frontend unit tests.
@@ -194,7 +194,7 @@ jobs:
 
       - name: Render Tester Hub
         run: node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs
-      - name: Render Lens Guide scenes
+      - name: Render Guide scenes
         run: node tools/parity/guide/build.mjs && node tools/parity/guide/shoot.mjs
       - name: Magic right-click window gallery
         run: node tools/parity/magic/build.mjs && node tools/parity/magic/shoot.mjs

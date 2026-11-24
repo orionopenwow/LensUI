@@ -95,7 +95,7 @@ const dict: Record<string, string> = {
   "qs.hide_native_taskbar": "Hide Native Taskbar",
   "qs.auto_restores_safely_on_exit": "Auto-restores safely on exit",
   "qs.run_on_startup": "Run on Startup",
-  "qs.launch_lens_ui_automatically_with_window": "Launch Lens UI automatically with Windows",
+  "qs.launch_lens_ui_automatically_with_window": "Launch Lens automatically with Windows",
   "qs.folder_icon_theme": "Folder Icon Theme",
   "qs.open_full_lens_control_center": "Open Full Lens Control Center",
   "qs.live_system_telemetry": "Live System Telemetry",

@@ -1,4 +1,4 @@
-//! Opt-in shell-replacement mode: Lens UI runs *instead of* Explorer as the Windows shell.
+//! Opt-in shell-replacement mode: Lens runs *instead of* Explorer as the Windows shell.
 //!
 //! Safety model — the user must never be left without a desktop:
 //!   * Per-user only. Only `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell`
@@ -44,7 +44,7 @@ const SESSION_MARKER_KEY: &str = "Software\\LensUI\\ShellSessionVolatile";
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ShellModeStatus {
-    /// The HKCU Shell override exists and points at Lens UI.
+    /// The HKCU Shell override exists and points at Lens.
     pub enabled: bool,
     /// Raw HKCU Shell value ("" when not set).
     pub shell_value: String,
@@ -52,7 +52,7 @@ pub struct ShellModeStatus {
     pub exe_path: String,
     /// Explorer's desktop shell (taskbar / Progman) is currently running.
     pub explorer_running_as_shell: bool,
-    /// Lens UI is the shell right now.
+    /// Lens is the shell right now.
     pub is_shell_session: bool,
     /// The last shell boot reached the "UI is up" mark (true when there is no record yet).
     pub last_boot_ok: bool,
@@ -239,7 +239,7 @@ fn enable_blocked_reason(exe: &str) -> String {
         return "This is a development build. Build the release version first (Build-Lens-UI.bat) — a dev build's path is not stable enough to register as the Windows shell.".into();
     }
     if exe.is_empty() || !Path::new(exe).is_file() {
-        return "Lens UI could not find its own program file.".into();
+        return "Lens could not find its own program file.".into();
     }
     let lower = exe.to_lowercase();
     if lower.contains("\\target\\debug\\") {
@@ -571,7 +571,7 @@ fn spawn_explorer() -> Result<(), String> {
 // Public API
 // ---------------------------------------------------------------------------------------------
 
-/// Lens UI is the Windows shell right now: launched with `--shell` and Explorer's shell is absent.
+/// Lens is the Windows shell right now: launched with `--shell` and Explorer's shell is absent.
 pub fn is_shell_session() -> bool {
     launched_with_shell_arg() && !explorer_shell_present()
 }
@@ -583,7 +583,7 @@ pub fn get_shell_mode_status() -> ShellModeStatus {
     let (last_boot_ok, last_boot_note) = read_last_boot(&config_dir());
     let blocked_reason = enable_blocked_reason(&exe_path);
     let explorer = explorer_shell_present();
-    // "Enabled" means the override launches Lens UI (this copy, or another copy with --shell).
+    // "Enabled" means the override launches Lens (this copy, or another copy with --shell).
     let enabled = shell_value_points_at(&shell_value, &exe_path)
         || shell_value.to_lowercase().contains(SHELL_ARG);
     ShellModeStatus {
@@ -615,7 +615,7 @@ pub fn get_shell_mode_status() -> ShellModeStatus {
     }
 }
 
-/// Registers Lens UI as this user's Windows shell (takes effect at the next sign-in).
+/// Registers Lens as this user's Windows shell (takes effect at the next sign-in).
 #[cfg(windows)]
 pub fn enable_shell_mode() -> Result<ShellModeStatus, String> {
     let exe = current_exe_string();
@@ -634,7 +634,7 @@ pub fn enable_shell_mode() -> Result<ShellModeStatus, String> {
     let value = shell_value_for(&exe);
     if let Err(e) = write_hkcu_string(WINLOGON_KEY, "Shell", &value) {
         let _ = fs::remove_file(marker_path());
-        return Err(format!("Could not register Lens UI as the shell: {}", e));
+        return Err(format!("Could not register Lens as the shell: {}", e));
     }
     // Confirm what Windows will actually read at the next sign-in.
     let stored = read_hkcu_string(WINLOGON_KEY, "Shell").unwrap_or_default();
@@ -731,7 +731,7 @@ pub fn start_explorer_as_shell(_keep_enabled: bool, _wait: bool) -> Result<(), S
 pub enum ShellStartup {
     /// Normal overlay on top of Explorer.
     Overlay,
-    /// Lens UI is the shell for this session.
+    /// Lens is the shell for this session.
     Shell,
     /// Launched as the shell, but the boot-loop guard switched shell mode off and started
     /// Explorer. Carry on as a normal overlay.
@@ -770,7 +770,7 @@ pub fn mark_shell_boot_ok() {
     }
 }
 
-/// Panic / fatal-error path: if Lens UI is the shell, switch shell mode off and start Explorer
+/// Panic / fatal-error path: if Lens is the shell, switch shell mode off and start Explorer
 /// so the user has a desktop. Does nothing when Explorer is already the shell.
 pub fn emergency_restore_explorer(reason: &str) {
     if !is_shell_session() {
@@ -784,7 +784,7 @@ pub fn emergency_restore_explorer(reason: &str) {
     );
 }
 
-/// Quit path: if Lens UI is the shell, bring Explorer back before the process exits
+/// Quit path: if Lens is the shell, bring Explorer back before the process exits
 /// (blocks up to ~12 s). Shell mode stays enabled for the next sign-in when Explorer came up.
 pub fn on_quit_restore_desktop() {
     if !is_shell_session() {
