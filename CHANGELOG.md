@@ -1,13 +1,68 @@
 # Changelog
 
-All notable changes to Lens UI are recorded here. The format follows
+All notable changes to Lens are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Pre-1.0 releases may change settings formats; Lens backs
 up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
-## [0.2.0-beta] - Unreleased
+## [0.3.0] - 2026-11-24
+
+First release built by the release workflow. It includes everything listed under 0.2.0-beta,
+which was never released on its own. Parts that need a real Windows PC to confirm are listed at
+the end.
+
+### Added
+- **Lens Browser, rebuilt:** one box for tabs, bookmarks, history and search; a new tab page;
+  item-by-item import from your old browser that you can undo; tabs that come back after a
+  restart; the AI beside the page with every step shown; video transcripts you can search.
+- **Site permissions in Lens Browser:** a bar under the address bar for camera, microphone,
+  location, notifications, clipboard and multiple downloads (Block / Allow once / Allow on this
+  site), remembered per site and removable from the site button or Settings. No answer means no.
+- **Failsafe:** a window that crashes says so and reloads itself, and gives up politely after three
+  failures in a row; a dead browser engine process is detected and its window reloaded; a Lens
+  that crashes twice at start offers Safe Mode; damaged settings lose only the damaged values.
+- **Agent safety wired everywhere:** Command plans, voice, MCP tools, the browser agent, Snip and
+  the AI runner all pass through one check for risky links, hidden instructions and data leaks.
+- **Themes:** 12 featured looks and the Wallpaper Switcher in the customizer.
+- **Backdrop Lab, Living Skies, Lens Cleaner, core apps** (Monitor, Timer, Notes and more), and
+  **Lens Feeds and Lens Messages**, now reachable from Command, the Launcher and the dock.
+- **Settings Simple / Advanced** with grouped Quick settings.
+- **Magic right-click menu** from dock apps (Alt+right-click or "Magic menu"), Shelf items and
+  notifications.
+- **In-page Lens buttons** next to videos, posts and media in the browser extension.
+
+### Changed
+- The product and its AI are now called **Lens** everywhere you see a name. The install folder,
+  `%APPDATA%\LensUI` and the app ID are unchanged, so settings carry over.
+- Window buttons default to Yellow · Green · Red.
+- The Taskbar dock matches Windows 11: 48 px bar, 24 px icons, flat hover and focus plates, and
+  pinned apps in the same order as the Windows taskbar.
+- Smoother motion: windows, flyouts, meters and bars move on the compositor instead of resizing;
+  Settings switches tabs with fewer stalls.
+- One clipboard history and one place that writes your settings (safely, refusing settings Lens
+  could not load back).
+- Command takes keyboard focus as soon as it opens, so the first Enter runs.
+
+### Fixed
+- Docks that forgot to hide; clicking outside an open dock area now closes it.
+- Themes that froze the desktop; buttons that stayed lit after a press.
+- A development build that could start at sign-in and cover the desktop.
+- "Remove all Lens changes" now also removes the presence pause hotkey (Ctrl+Alt+Pause), the Claude
+  Desktop entry and the Spicetify theme, and never deletes folder contents it cannot restore.
+- Accessibility: named switches and icon buttons, keyboard focus in the dock menu.
+
+### Not yet confirmed on a real PC
+- Site permission prompts in Lens Browser, the Magic menu over dock items, and keyboard focus in
+  the dock menu were tested in CI's Windows runner and headless harness, not by hand.
+- A first keypress in Command right after it opens may still be lost in rare cases (B-12c).
+- One-click transcription setup stays off until its download checksums are pinned (B-07).
+- Installers are not Authenticode-signed, so SmartScreen warns on first run.
+
+## [0.2.0-beta] - Not released
+
+Never published on its own; everything below ships in 0.3.0.
 
 The version number in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` is
 `0.2.0`; this entry is labelled beta because parts of it have not yet been run on a real Windows
