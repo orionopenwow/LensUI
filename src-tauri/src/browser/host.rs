@@ -43,7 +43,7 @@ pub struct Viewport {
     pub h: f64,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Download {
     pub id: u64,
@@ -83,12 +83,13 @@ pub fn rt() -> MutexGuard<'static, Runtime> {
             window: None,
             viewport: Viewport { x: 264.0, y: 52.0, w: 900.0, h: 700.0 },
             overlay: false,
-            downloads: vec![],
+            downloads: store::load_downloads_from(&store::downloads_path()),
             extra_block: vec![],
             glance: None,
             unlocked: Default::default(),
             next_nonce: 1,
-            next_download: 1,
+            // Ids keep counting past the downloads restored from disk.
+            next_download: store::load_downloads_from(&store::downloads_path()).iter().map(|d| d.id).max().unwrap_or(0) + 1,
         })
     })
     .lock()
@@ -132,6 +133,11 @@ pub fn emit_state(app: &AppHandle) {
 
 pub fn save(r: &Runtime) {
     let _ = store::save_state_to(&store::state_path(), &r.state);
+}
+
+/// Writes the downloads list so it is still there after a restart.
+pub fn save_downloads(r: &Runtime) {
+    let _ = store::save_downloads_to(&store::downloads_path(), &r.downloads);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -235,6 +241,7 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
                 let path = Some(destination.display().to_string());
                 r.downloads.insert(0, Download { id, url: url.to_string(), path, state: "downloading".into(), started_ms: now() });
                 r.downloads.truncate(50);
+                save_downloads(&r);
                 drop(r);
                 let _ = app_dl.emit(EVT_DOWNLOADS, rt().downloads.clone());
             } else if let DownloadEvent::Finished { url, path, success } = event {
@@ -245,6 +252,7 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
                         d.path = Some(p.display().to_string());
                     }
                 }
+                save_downloads(&r);
                 drop(r);
                 let _ = app_dl.emit(EVT_DOWNLOADS, rt().downloads.clone());
             }
@@ -264,13 +272,22 @@ fn after_load(app: &AppHandle, tab_id: &str, url: &str, view: Webview) {
     let title = status.get("title").and_then(Value::as_str).unwrap_or("").to_string();
     let favicon = status.get("favicon").and_then(Value::as_str).filter(|f| f.starts_with("https://") || f.starts_with("http://")).map(str::to_string);
     let url = status.get("url").and_then(Value::as_str).filter(|u| super::model::is_web_url(u)).unwrap_or(url).to_string();
+    let mut apply_zoom: Option<f64> = None;
     let restore_scroll = {
         let mut r = rt();
+        let default_zoom = r.state.settings.default_zoom;
         let t = now();
         r.history.visit(&url, &title, t);
         r.history_dirty = true;
         let mut y = 0.0;
+        let site_zoom = r.state.zoom_for(&url);
         if let Some(tab) = r.state.tab_mut(tab_id) {
+            // A site opens at the size it was last given; other sites fall back to the default.
+            let want = site_zoom.unwrap_or(default_zoom);
+            if (tab.zoom - want).abs() > 0.001 {
+                tab.zoom = want;
+                apply_zoom = Some(want);
+            }
             if tab.scroll_y > 0.0 && tab.url == url {
                 y = tab.scroll_y;
             }
@@ -282,6 +299,9 @@ fn after_load(app: &AppHandle, tab_id: &str, url: &str, view: Webview) {
         save(&r);
         y
     };
+    if let Some(z) = apply_zoom {
+        let _ = view.set_zoom(z);
+    }
     if restore_scroll > 0.0 {
         let _ = eval_op(&view, json!({ "op": "scrollTo", "y": restore_scroll }), Duration::from_secs(2));
     }

@@ -61,6 +61,29 @@ pub fn save_history_to(path: &Path, h: &History) -> Result<(), String> {
     write_atomic(path, &serde_json::to_vec(h).map_err(|e| e.to_string())?)
 }
 
+/// Downloads from earlier sessions. Anything still marked "downloading" was cut off by the
+/// restart, so it comes back as "failed" (shown as interrupted).
+pub fn load_downloads_from(path: &Path) -> Vec<super::host::Download> {
+    let mut list: Vec<super::host::Download> = read_or_quarantine(path);
+    for d in list.iter_mut().filter(|d| d.state == "downloading") {
+        d.state = "failed".into();
+    }
+    list.truncate(50);
+    list
+}
+
+pub fn save_downloads_to(path: &Path, list: &[super::host::Download]) -> Result<(), String> {
+    write_atomic(path, &serde_json::to_vec(list).map_err(|e| e.to_string())?)
+}
+
+pub fn downloads_path() -> PathBuf {
+    dir().join("downloads.json")
+}
+
+pub fn receipts_path() -> PathBuf {
+    dir().join("imports.json")
+}
+
 pub fn state_path() -> PathBuf {
     dir().join("state.json")
 }
@@ -106,6 +129,24 @@ mod tests {
         assert_eq!(s.spaces.len(), 1);
         assert!(!p.exists());
         assert!(fs::read_dir(&d).unwrap().any(|e| e.unwrap().file_name().to_string_lossy().contains("unreadable")));
+        let _ = fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn downloads_survive_a_restart_and_running_ones_come_back_interrupted() {
+        use super::super::host::Download;
+        let d = tmp("dl");
+        let p = d.join("downloads.json");
+        let list = vec![
+            Download { id: 2, url: "https://a.test/big.zip".into(), path: Some("C:/dl/big.zip".into()), state: "downloading".into(), started_ms: 20 },
+            Download { id: 1, url: "https://a.test/a.pdf".into(), path: Some("C:/dl/a.pdf".into()), state: "done".into(), started_ms: 10 },
+        ];
+        save_downloads_to(&p, &list).unwrap();
+        let back = load_downloads_from(&p);
+        assert_eq!(back.len(), 2);
+        assert_eq!(back[0].state, "failed");
+        assert_eq!(back[1].state, "done");
+        assert!(load_downloads_from(&d.join("missing.json")).is_empty());
         let _ = fs::remove_dir_all(d);
     }
 

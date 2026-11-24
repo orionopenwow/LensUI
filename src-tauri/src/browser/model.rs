@@ -216,7 +216,13 @@ pub struct BrowserSettings {
     /// downloads (docs/IN_PAGE_LENS.md). Off until the person turns it on.
     #[serde(default)]
     pub page_marks: bool,
+    /// Zoom remembered per site (host → factor). A site opens at the size it was last set to.
+    #[serde(default)]
+    pub site_zoom: std::collections::BTreeMap<String, f64>,
 }
+
+/// Most sites whose zoom is remembered; the map is cleared of defaults as it goes.
+pub const SITE_ZOOM_CAP: usize = 500;
 
 fn fourteen() -> u32 {
     14
@@ -236,6 +242,7 @@ impl Default for BrowserSettings {
             archive_after_days: 14,
             download_rules: vec![],
             page_marks: false,
+            site_zoom: Default::default(),
         }
     }
 }
@@ -474,6 +481,33 @@ impl BrowserState {
         self.active_space = space;
         self.active_tab = Some(id.clone());
         Ok(id)
+    }
+
+    /// Opens a copy of a tab right after it (same space and folder) and makes it active.
+    pub fn duplicate_tab(&mut self, id: &str, now: u64) -> Result<String, String> {
+        let (url, space, title, zoom) = self.tab(id).map(|t| (t.url.clone(), t.space_id.clone(), t.title.clone(), t.zoom)).ok_or("Unknown tab.")?;
+        let new_id = self.open_tab(&url, Some(&space), Some(id), now)?;
+        if let Some(t) = self.tab_mut(&new_id) {
+            t.title = title;
+            t.zoom = zoom;
+        }
+        Ok(new_id)
+    }
+
+    /// Remembers `zoom` for the site of `url` (100% forgets it). Returns the host it was filed under.
+    pub fn remember_zoom(&mut self, url: &str, zoom: f64) -> Option<String> {
+        let host = super::filter::host_of(url)?;
+        if (zoom - 1.0).abs() < 0.001 {
+            self.settings.site_zoom.remove(&host);
+        } else if self.settings.site_zoom.len() < SITE_ZOOM_CAP || self.settings.site_zoom.contains_key(&host) {
+            self.settings.site_zoom.insert(host.clone(), zoom.clamp(0.25, 5.0));
+        }
+        Some(host)
+    }
+
+    /// The zoom remembered for the site of `url`, if any.
+    pub fn zoom_for(&self, url: &str) -> Option<f64> {
+        super::filter::host_of(url).and_then(|h| self.settings.site_zoom.get(&h).copied())
     }
 
     /// Closes a tab; returns the tab that should become active (most recently used in the space).
@@ -823,6 +857,11 @@ impl BrowserState {
         s.archive_after_days = s.archive_after_days.min(365);
         s.download_rules.retain(|r| !r.ext.trim().is_empty() && !r.folder.trim().is_empty() && r.ext.len() <= 16);
         s.download_rules.truncate(40);
+        s.site_zoom.retain(|host, z| !host.is_empty() && host.len() <= 255 && (0.25..=5.0).contains(z) && (*z - 1.0).abs() > 0.001);
+        while s.site_zoom.len() > SITE_ZOOM_CAP {
+            let Some(first) = s.site_zoom.keys().next().cloned() else { break };
+            s.site_zoom.remove(&first);
+        }
         let a = &mut s.appearance;
         let d = Appearance::default();
         if !["auto", "light", "dark"].contains(&a.scheme.as_str()) {
@@ -919,5 +958,13 @@ impl History {
 
     pub fn clear_since(&mut self, since_ms: u64) {
         self.entries.retain(|e| e.last_visit_ms < since_ms);
+    }
+
+    /// Forgets one page. Returns true if it was there.
+    pub fn remove(&mut self, url: &str) -> bool {
+        let key = url.split('#').next().unwrap_or(url);
+        let before = self.entries.len();
+        self.entries.retain(|e| e.url != key);
+        self.entries.len() != before
     }
 }

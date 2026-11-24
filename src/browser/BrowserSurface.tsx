@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
-  ArrowLeft, ArrowRight, Bookmark as BookmarkIcon, BookOpen, Captions, Download, ExternalLink, Fingerprint, History as HistoryIcon, Lock, NotebookPen, PanelLeft,
-  PanelRight, PictureInPicture2, Plus, RotateCw, Search, Sparkles, Star, X, ZoomIn,
+  ArrowLeft, ArrowRight, Bookmark as BookmarkIcon, BookOpen, Captions, ChevronDown, ChevronUp, Download, ExternalLink, Fingerprint, Globe, History as HistoryIcon, Lock,
+  Minus, NotebookPen, PanelLeft, PanelRight, PictureInPicture2, Plus, RotateCw, Search, Sparkles, Star, X,
 } from "lucide-react";
+import { glideIn, useLingering, usePresence, type Pose } from "../ui/motion";
 import { useLensState } from "../hooks/useLensState";
 import { shelfAdd } from "../shelf/contract";
 import { applyDither } from "../style/dither";
@@ -12,7 +12,7 @@ import "../style/dither.css";
 import {
   archived as listArchived, bookmarkToggle, browserState, DEFAULT_APPEARANCE, DEFAULT_BROWSER_AI, EVT_BROWSER_DOWNLOADS, EVT_BROWSER_STATE, findInPage, folderAdd,
   folderToggle, glance, historyNav, historySearch, navigate, notesGet, notesSet, openBackground, pageEvents, pageRead, pip, reopenClosed, setOverlay,
-  settingsSet, setViewport, setZoom, spaceAdd, spaceLock, spaceSwitch, tabActivate, tabClose, tabMove, tabMute, tabPin, tidy, unarchive,
+  settingsSet, setViewport, setZoom, spaceAdd, spaceLock, spaceSwitch, tabActivate, tabClose, tabDuplicate, tabMove, tabMute, tabPin, tidy, unarchive,
   type Appearance, type ArchivedTab, type BrowserAi, type BrowserView, type Download as Dl, type HistoryEntry, type ImportSource, type MenuEvent,
 } from "./api";
 import { AgentPanel, type AgentSeed, type QuickAsk } from "./AgentPanel";
@@ -21,7 +21,10 @@ import { Key } from "./ApprovalCard";
 import { BookmarksPanel } from "./BookmarksPanel";
 import { CustomisePanel } from "./CustomisePanel";
 import { ImportPanel, type ImportSeed } from "./ImportPanel";
-import { breadcrumb, classifyAddress, dropIndex, hostOf, relTime } from "./model";
+import { DownloadsPanel, HistoryPanel } from "./Lists";
+import { breadcrumb, classifyAddress, dropIndex, hostOf } from "./model";
+import { cycleTab, IDLE_NAV, navFromStatus, suggestions, tabAt, zoomStep, type NavState, type PageStatus, type Suggestion } from "./nav";
+import { ErrorPage, StartPage } from "./Pages";
 import { Avatar, Sidebar, type ChatRef } from "./Sidebar";
 import { TranscriptPanel, type TranscriptSeed } from "./TranscriptPanel";
 import "./Browser.css";
@@ -44,6 +47,33 @@ export interface BrowserInitial {
   find?: string;
   findTotal?: number;
   glanceSummary?: string;
+  /** Parity: toolbar state (back/forward, loading, a load error) the live app reads from the page. */
+  nav?: Partial<NavState>;
+  /** Parity: show the new-tab page. */
+  start?: boolean;
+  /** Parity: history for the start page and the History panel. */
+  history?: HistoryEntry[];
+  /** Parity: which suggestion row is highlighted. */
+  selected?: number;
+}
+
+const SUGGEST_ICON: Record<Suggestion["kind"], React.ComponentType<{ size?: number; className?: string }>> = {
+  tab: PanelRight, bookmark: Star, history: HistoryIcon, url: Globe, search: Search, ask: Sparkles,
+};
+/** Shortcuts the frame handles itself (the page agent forwards the same set while a page has focus). */
+const FRAME_KEYS = new Set([
+  "ctrl+l", "ctrl+t", "ctrl+w", "ctrl+f", "ctrl+j", "ctrl+shift+t", "ctrl+d", "ctrl+shift+k", "ctrl+tab", "ctrl+shift+tab", "ctrl+h", "ctrl+r",
+  "ctrl+=", "ctrl++", "ctrl+shift++", "ctrl+shift+=", "ctrl+-", "ctrl+shift+_", "ctrl+0", "ctrl+1", "ctrl+2", "ctrl+3", "ctrl+4", "ctrl+5", "ctrl+6", "ctrl+7", "ctrl+8", "ctrl+9",
+]);
+
+/** Glides an element in when `on` turns true (suggestions, the find bar). */
+function useEnter<T extends HTMLElement>(on: boolean, from: Pose = { y: -4, opacity: 0 }) {
+  const ref = useRef<T>(null);
+  useLayoutEffect(() => {
+    if (on) glideIn(ref.current, from, { duration: "fast" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on]);
+  return ref;
 }
 
 const QUICK: Record<string, string> = {
@@ -105,7 +135,10 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const [awaiting, setAwaiting] = useState(initial?.agent?.pending ? 1 : 0);
   const [toast, setToast] = useState<string | null>(null);
   const [downloads, setDownloads] = useState<Dl[]>(initial?.view.downloads ?? []);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [recent, setRecent] = useState<HistoryEntry[]>(initial?.history ?? []);
+  const [nav, setNav] = useState<NavState>({ ...IDLE_NAV, ...(initial?.nav ?? {}) });
+  const [startOpen, setStartOpen] = useState(!!initial?.start);
+  const [sel, setSel] = useState(initial?.selected ?? 0);
   const [arch, setArch] = useState<ArchivedTab[]>([]);
   const [crashed, setCrashed] = useState(false);
   const [notes, setNotes] = useState("");
@@ -129,6 +162,24 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
   };
+
+  // The side panel slides; it stays mounted until it has left, then the page gets the room back
+  // in one step (the native page view is never resized mid-animation).
+  const panelP = usePresence<HTMLElement>(!!panel, {
+    enter: { x: 24, opacity: 0 }, exit: { x: 24, opacity: 0 }, enterOptions: { duration: "base", ease: "drawer" }, exitOptions: { duration: "exit", ease: "exit" }, initial: false,
+  });
+  const lastPanel = useRef<Panel>(panel);
+  if (panel) lastPanel.current = panel;
+  const shown: Panel = panel ?? (panelP.mounted ? lastPanel.current : null);
+  const toastP = useLingering<string>(toast, { enter: { y: 8, opacity: 0 }, exit: { y: 8, opacity: 0 }, enterOptions: { additive: true }, exitOptions: { additive: true } });
+
+  const rows: Suggestion[] =
+    editing && s && address.trim() !== url
+      ? suggestions(address, { tabs: s.tabs.filter((t) => t.spaceId === s.activeSpace), bookmarks: s.bookmarks, history: suggest, activeTab: s.activeTab, ask: aiOn && ai.askInAddressBar })
+      : [];
+  const suggestRef = useEnter<HTMLUListElement>(rows.length > 0);
+  const findRef = useEnter<HTMLDivElement>(find !== null);
+  const tabLive = !!tab && !!view?.live.includes(tab.id);
   const apply = useCallback((p: Promise<BrowserView>) => p.then(setView).catch((e) => flash(String(e))), []);
   const saveSettings = (patch: Partial<NonNullable<typeof s>["settings"]>) => {
     if (!s) return;
@@ -170,10 +221,11 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     ro.observe(el);
     send();
     return () => ro.disconnect();
-  }, [live, panel, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary]);
+  }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary]);
 
-  // The page draws above the frame UI, so hide it while the address suggestions are open.
-  const overlay = (editing && suggest.length > 0) || crashed;
+  // The page draws above the frame UI, so hide it while suggestions, the new-tab page or an
+  // error page are showing.
+  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error;
   useEffect(() => {
     if (live) void setOverlay(overlay).catch(() => {});
   }, [overlay, live]);
@@ -186,12 +238,54 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
 
   useEffect(() => {
     if (!live) return;
-    if (panel === "history") {
-      historySearch("", 60).then(setHistory).catch(() => {});
-      listArchived().then(setArch).catch(() => {});
-    }
+    if (panel === "history") listArchived().then(setArch).catch(() => {});
     if (panel === "notes" && url) notesGet(url).then(setNotes).catch(() => {});
   }, [panel, live, view, url]);
+
+  // Keep the highlighted suggestion inside the list as it changes.
+  useEffect(() => {
+    if (!initial) setSel(0);
+  }, [address, initial]);
+
+  // The new-tab page lists the sites used most.
+  const showStart = startOpen || (!!view && !tab);
+  useEffect(() => {
+    if (live && showStart) historySearch("", 80).then(setRecent).catch(() => {});
+  }, [live, showStart]);
+
+  // Toolbar truth: ask the active page whether it can go back or forward, whether it is still
+  // loading, and whether it is the engine's error page.
+  const tabId = tab?.id;
+  useEffect(() => {
+    if (!live) return;
+    setNav(IDLE_NAV);
+    if (!tabId || !tabLive) return;
+    let gone = false;
+    const read = () => {
+      if (document.visibilityState !== "visible") return;
+      pageRead<PageStatus>("status", tabId)
+        .then((st) => {
+          if (gone) return;
+          const next = navFromStatus(st);
+          setNav((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
+        })
+        .catch(() => {});
+    };
+    read();
+    const id = window.setInterval(read, 600);
+    return () => {
+      gone = true;
+      window.clearInterval(id);
+    };
+  }, [live, tabId, tabLive]);
+
+  const zoomTo = useCallback((z: number) => {
+    if (live) void setZoom(z).catch((e) => flash(String(e)));
+  }, [live]);
+  const reload = useCallback(() => {
+    setNav((n) => ({ ...n, loading: true, error: "" }));
+    void historyNav("reload").catch(() => {});
+  }, []);
 
   const openGlance = useCallback(async (u: string) => {
     setGlanceSummary(null);
@@ -211,8 +305,44 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           break;
         case "ctrl+t":
           setAddress("");
+          setStartOpen(true);
           setEditing(true);
           window.setTimeout(() => addrRef.current?.focus(), 0);
+          break;
+        case "ctrl+tab":
+        case "ctrl+shift+tab": {
+          const next = s ? cycleTab(s, k === "ctrl+tab" ? 1 : -1) : null;
+          if (next) { setStartOpen(false); void apply(tabActivate(next)); }
+          break;
+        }
+        case "ctrl+h":
+          setPanel((p) => (p === "history" ? null : "history"));
+          break;
+        case "ctrl+r":
+          reload();
+          break;
+        case "alt+left":
+          void historyNav("back").catch(() => {});
+          break;
+        case "alt+right":
+          void historyNav("forward").catch(() => {});
+          break;
+        case "esc":
+          if (startOpen && tab) setStartOpen(false);
+          else if (nav.loading) void historyNav("stop").then(() => setNav((n) => ({ ...n, loading: false }))).catch(() => {});
+          break;
+        case "ctrl+=":
+        case "ctrl++":
+        case "ctrl+shift++":
+        case "ctrl+shift+=":
+          zoomTo(zoomStep(tab?.zoom ?? 1, 1));
+          break;
+        case "ctrl+-":
+        case "ctrl+shift+_":
+          zoomTo(zoomStep(tab?.zoom ?? 1, -1));
+          break;
+        case "ctrl+0":
+          zoomTo(1);
           break;
         case "ctrl+w":
           if (tab) void apply(tabClose(tab.id));
@@ -232,9 +362,14 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         case "ctrl+shift+k":
           void tidy().then((r) => flash(`Tidied: ${r.duplicatesClosed} duplicates closed, ${r.archived} archived`)).catch(() => {});
           break;
+        default: {
+          const n = /^ctrl\+([1-9])$/.exec(k);
+          const id = n && s ? tabAt(s, Number(n[1])) : null;
+          if (id) { setStartOpen(false); void apply(tabActivate(id)); }
+        }
       }
     },
-    [tab, apply, aiOn]
+    [tab, apply, aiOn, s, startOpen, nav.loading, zoomTo, reload]
   );
 
   const onMenu = useCallback(
@@ -325,9 +460,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement;
+      if (e.key === "F5") {
+        e.preventDefault();
+        return combo("ctrl+r");
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        e.preventDefault();
+        return combo(e.key === "ArrowLeft" ? "alt+left" : "alt+right");
+      }
+      if (e.key === "Escape" && !typing) return combo("esc");
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
       const c = `ctrl+${e.shiftKey ? "shift+" : ""}${e.key.toLowerCase()}`;
-      if (["ctrl+l", "ctrl+t", "ctrl+w", "ctrl+f", "ctrl+j", "ctrl+shift+t", "ctrl+d", "ctrl+shift+k"].includes(c)) {
+      if (FRAME_KEYS.has(c)) {
         e.preventDefault();
         combo(c);
       }
@@ -337,11 +482,14 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   }, [combo]);
 
   const go = async (input: string, newTab = false) => {
+    const fresh = newTab || (startOpen && !!tab);
     setEditing(false);
     setSuggest([]);
+    setStartOpen(false);
     if (!live) return;
+    setNav((n) => ({ ...n, loading: true, error: "" }));
     try {
-      const r = await navigate(input, newTab);
+      const r = await navigate(input, fresh);
       if (r.ask) {
         setPanel("ask");
         setQuick({ prompt: r.ask, url, page: true });
@@ -354,6 +502,17 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   if (!view || !s) return <div className="lb-root lb-loading" />;
   const kind = classifyAddress(address);
   const showKind = kind && (kind.kind !== "ask" || (aiOn && ai.askInAddressBar)) ? kind : kind?.kind === "ask" ? { kind: "search" as const, value: kind.value } : kind;
+  const pick = (r: Suggestion, newTab = false) => {
+    if (r.kind !== "tab") return void go(r.value, newTab);
+    setEditing(false);
+    setSuggest([]);
+    setStartOpen(false);
+    void apply(tabActivate(r.value));
+  };
+  const active = rows[Math.min(sel, rows.length - 1)];
+  const running = downloads.filter((d) => d.state === "downloading").length;
+  const zoomPct = Math.round((tab?.zoom ?? 1) * 100);
+  const findStep = (back: boolean) => find && void findInPage(find, back).then(setFindInfo).catch(() => {});
   const crumbs = breadcrumb(url);
   const zoom = tab?.zoom ?? 1;
   const pagePanels = PAGE_PANELS.filter(([id]) => (id === "ask" ? aiOn : id === "transcript" ? aiOn && ai.transcripts : true));
@@ -374,7 +533,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     <div
       ref={rootRef}
       data-guide-id="browser"
-      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${panel ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}`}
+      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${shown ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}`}
       style={rootStyle}
       data-lb-scheme={appearance.scheme}
     >
@@ -395,6 +554,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           onClose={(id) => void apply(tabClose(id))}
           onMute={(id, on) => void apply(tabMute(id, on))}
           onPin={(id, on) => void apply(tabPin(id, on))}
+          onDuplicate={(id) => void apply(tabDuplicate(id))}
+          loading={nav.loading}
           onToggleFolder={(id) => void apply(folderToggle(id))}
           onDrop={(id, before, folder) => {
             const d = dropIndex(s, before, folder);
@@ -416,9 +577,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               <PanelLeft size={16} />
             </button>
           )}
-          <button className="lb-icon-btn" aria-label="Back" onClick={() => void historyNav("back").catch(() => {})}><ArrowLeft size={16} /></button>
-          <button className="lb-icon-btn" aria-label="Forward" onClick={() => void historyNav("forward").catch(() => {})}><ArrowRight size={16} /></button>
-          <button className="lb-icon-btn" aria-label="Reload" onClick={() => void historyNav("reload").catch(() => {})}><RotateCw size={15} /></button>
+          <button className="lb-icon-btn" aria-label="Back" disabled={!nav.canBack} onClick={() => combo("alt+left")}><ArrowLeft size={16} /></button>
+          <button className="lb-icon-btn" aria-label="Forward" disabled={!nav.canForward} onClick={() => combo("alt+right")}><ArrowRight size={16} /></button>
+          {nav.loading ? (
+            <button className="lb-icon-btn" aria-label="Stop loading" onClick={() => combo("esc")}><X size={15} /></button>
+          ) : (
+            <button className="lb-icon-btn" aria-label="Reload" disabled={!tab} onClick={reload}><RotateCw size={15} /></button>
+          )}
 
           <div className={`lb-addr${editing ? " is-editing" : ""}`}>
             {editing ? (
@@ -430,11 +595,24 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                   onChange={(e) => setAddress(e.target.value)}
                   onBlur={() => window.setTimeout(() => { setEditing(false); setSuggest([]); }, 120)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") void go(address, e.altKey || e.ctrlKey);
-                    if (e.key === "Escape") { setEditing(false); setSuggest([]); }
+                    if (e.key === "Enter") {
+                      if (active && sel > 0) pick(active, e.altKey || e.ctrlKey);
+                      else void go(address, e.altKey || e.ctrlKey);
+                    }
+                    if (e.key === "ArrowDown" && rows.length) { e.preventDefault(); setSel((i) => (i + 1) % rows.length); }
+                    if (e.key === "ArrowUp" && rows.length) { e.preventDefault(); setSel((i) => (i - 1 + rows.length) % rows.length); }
+                    if (e.key === "Tab" && !e.shiftKey && active?.url && sel > 0) { e.preventDefault(); setAddress(active.url); }
+                    if (e.key === "Escape") { setEditing(false); setSuggest([]); if (tab) setStartOpen(false); }
                   }}
                   placeholder={aiOn && ai.askInAddressBar ? "Search, enter an address, or start with ask" : "Search or enter an address"}
                   aria-label="Address"
+                  role="combobox"
+                  aria-expanded={rows.length > 0}
+                  aria-controls="lb-suggest"
+                  aria-autocomplete="list"
+                  aria-activedescendant={active ? `lb-sg-${rows.indexOf(active)}` : undefined}
+                  autoComplete="off"
+                  spellCheck={false}
                   autoFocus
                 />
                 {showKind ? <Key k={showKind.kind === "ask" ? "Ask ⏎" : showKind.kind === "url" ? "Go ⏎" : "Search ⏎"} /> : null}
@@ -457,26 +635,43 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                 <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
               </button>
             ) : null}
-            {editing && suggest.length ? (
-              <ul className="lb-suggest" role="listbox">
-                {suggest.map((h) => (
-                  <li key={h.url} role="option" aria-selected={false} onMouseDown={() => void go(h.url)}>
-                    <Avatar url={h.url} title={h.title} size={14} />
-                    <span className="lb-tab-title">{h.title || hostOf(h.url)}</span>
-                    <span className="lb-mono lb-dim">{hostOf(h.url)}</span>
-                  </li>
-                ))}
+            {rows.length ? (
+              <ul className="lb-suggest" role="listbox" id="lb-suggest" aria-label="Suggestions" ref={suggestRef}>
+                {rows.map((r, i) => {
+                  const Icon = SUGGEST_ICON[r.kind];
+                  const on = r === active;
+                  return (
+                    <li key={r.key} id={`lb-sg-${i}`} role="option" aria-selected={on} className={on ? "is-on" : undefined} onMouseEnter={() => setSel(i)} onMouseDown={(e) => { e.preventDefault(); pick(r, e.ctrlKey || e.metaKey); }}>
+                      {r.url && r.kind !== "url" ? <Avatar url={r.url} title={r.title} size={14} /> : <Icon size={14} className="lb-dim" />}
+                      <span className="lb-tab-title">{r.title}</span>
+                      <span className="lb-mono lb-dim">{r.detail}</span>
+                      {on ? <Key k={r.kind === "tab" ? "Switch ⏎" : r.kind === "ask" ? "Ask ⏎" : r.kind === "search" ? "Search ⏎" : "Go ⏎"} /> : null}
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
           </div>
 
-          {Math.abs(zoom - 1) > 0.01 ? <button className="lb-chip" onClick={() => void setZoom(1)}><ZoomIn size={12} /> {Math.round(zoom * 100)}%</button> : null}
+          {Math.abs(zoom - 1) > 0.01 ? (
+            <span className="lb-zoom" role="group" aria-label="Zoom">
+              <button className="lb-icon-btn sm" aria-label="Zoom out" onClick={() => zoomTo(zoomStep(zoom, -1))}><Minus size={12} /></button>
+              <button className="lb-zoom-val lb-mono" aria-label={`Zoom ${zoomPct}%. Reset to 100%`} onClick={() => zoomTo(1)}>{zoomPct}%</button>
+              <button className="lb-icon-btn sm" aria-label="Zoom in" onClick={() => zoomTo(zoomStep(zoom, 1))}><Plus size={12} /></button>
+            </span>
+          ) : null}
+          {downloads.length ? (
+            <button className={`lb-icon-btn lb-tray${panel === "downloads" ? " is-on" : ""}`} aria-label={running ? `Downloads: ${running} running` : "Downloads"} onClick={() => setPanel(panel === "downloads" ? null : "downloads")}>
+              <Download size={15} />
+              {running ? <span className="lb-tray-n" aria-hidden>{running}</span> : null}
+            </button>
+          ) : null}
           {aiOn && ai.pageSummaries ? (
             <button className="lb-icon-btn" aria-label="Reader view" onClick={() => { setPanel("ask"); setQuick({ prompt: "Show this page as a clean reader view in Markdown, keeping headings and links", url, page: true }); }}>
               <BookOpen size={15} />
             </button>
           ) : null}
-          <button className="lb-icon-btn" aria-label="Picture in picture" onClick={() => void pip().catch(() => {})}><PictureInPicture2 size={15} /></button>
+          <button className="lb-icon-btn" aria-label={live && !nav.hasVideo ? "Picture in picture (no video on this page)" : "Picture in picture"} disabled={live && !nav.hasVideo} onClick={() => void pip().then((ok) => { if (!ok) flash("This page doesn't allow picture in picture"); }).catch(() => {})}><PictureInPicture2 size={15} /></button>
           {aiOn && awaiting ? (
             <button className="lb-approve-pill" onClick={() => setPanel("ask")}>
               <Sparkles size={12} /> Approve {awaiting} action{awaiting > 1 ? "s" : ""} <Key k="Ctrl J" />
@@ -485,23 +680,40 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           <button className={`lb-icon-btn${panel ? " is-on" : ""}`} aria-label={panel ? "Hide side panel" : "Show side panel"} onClick={() => setPanel(panel ? null : aiOn ? "ask" : "bookmarks")}>
             <PanelRight size={15} />
           </button>
+          {nav.loading ? <span className="lb-loadbar" role="status" aria-label="Loading page" /> : null}
         </header>
 
         {horizontal ? (
           <div className="lb-hstrip" role="tablist" aria-label="Tabs">
             {spaceTabs.map((t) => (
-              <button key={t.id} role="tab" aria-selected={t.id === s.activeTab} className={`lb-htab${t.id === s.activeTab ? " is-active" : ""}${t.life === "sleeping" ? " is-sleeping" : ""}`} onClick={() => void apply(tabActivate(t.id))} onAuxClick={(e) => e.button === 1 && void apply(tabClose(t.id))}>
+              <div
+                key={t.id}
+                role="tab"
+                tabIndex={t.id === s.activeTab ? 0 : -1}
+                aria-selected={t.id === s.activeTab}
+                className={`lb-htab${t.id === s.activeTab ? " is-active" : ""}${t.life === "sleeping" ? " is-sleeping" : ""}`}
+                onClick={() => void apply(tabActivate(t.id))}
+                onAuxClick={(e) => e.button === 1 && void apply(tabClose(t.id))}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void apply(tabActivate(t.id)); }
+                  if (e.key === "Delete") void apply(tabClose(t.id));
+                  const to = e.key === "ArrowRight" ? e.currentTarget.nextElementSibling : e.key === "ArrowLeft" ? e.currentTarget.previousElementSibling : null;
+                  if (to instanceof HTMLElement && to.getAttribute("role") === "tab") to.focus();
+                }}
+              >
                 <Avatar url={t.url} title={t.title} size={14} />
                 <span className="lb-tab-title">{t.title || hostOf(t.url)}</span>
                 {t.badge === "approve" && aiOn ? <span className="lb-pill">approve</span> : null}
-              </button>
+                <button className="lb-icon-btn sm lb-tab-x" aria-label={`Close ${t.title || hostOf(t.url)}`} onClick={(e) => { e.stopPropagation(); void apply(tabClose(t.id)); }}><X size={11} /></button>
+              </div>
             ))}
             <button className="lb-icon-btn sm" aria-label="New tab" onClick={() => combo("ctrl+t")}><Plus size={13} /></button>
           </div>
         ) : null}
 
         {find !== null ? (
-          <div className="lb-find">
+          <div className="lb-find" ref={findRef} role="search">
             <Search size={14} className="lb-dim" />
             <input
               autoFocus
@@ -510,7 +722,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               aria-label="Find on page"
               onChange={(e) => { setFind(e.target.value); void findInPage(e.target.value).then(setFindInfo).catch(() => {}); }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void findInPage(find, e.shiftKey).then(setFindInfo).catch(() => {});
+                if (e.key === "Enter") findStep(e.shiftKey);
                 if (e.key === "Escape") { setFind(null); setFindInfo(null); }
               }}
             />
@@ -524,8 +736,10 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                 ) : null}
               </>
             ) : (
-              <span className="lb-mono lb-dim">{findInfo ? `${findInfo.total} found` : ""}</span>
+              <span className="lb-mono lb-dim" aria-live="polite">{find && findInfo ? `${findInfo.total} found` : ""}</span>
             )}
+            <button className="lb-icon-btn sm" aria-label="Previous match" disabled={!find || !findInfo?.total} onClick={() => findStep(true)}><ChevronUp size={13} /></button>
+            <button className="lb-icon-btn sm" aria-label="Next match" disabled={!find || !findInfo?.total} onClick={() => findStep(false)}><ChevronDown size={13} /></button>
             <button className="lb-icon-btn sm" aria-label="Close find" onClick={() => { setFind(null); setFindInfo(null); }}><X size={12} /></button>
           </div>
         ) : null}
@@ -562,38 +776,47 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                 <RotateCw size={14} /> Reload <Key k="⏎" />
               </button>
             </div>
+          ) : nav.error && tab ? (
+            <ErrorPage
+              code={nav.error}
+              url={url}
+              online={typeof navigator === "undefined" ? true : navigator.onLine}
+              canBack={nav.canBack}
+              onRetry={reload}
+              onBack={() => combo("alt+left")}
+              onSearch={(q) => void go(q)}
+            />
+          ) : showStart ? (
+            <StartPage
+              history={recent}
+              bookmarks={s.bookmarks}
+              closed={s.closed ?? []}
+              ask={aiOn}
+              now={initial?.now}
+              onGo={(q) => void go(q, !!tab)}
+              onAsk={(prompt) => { setPanel("ask"); setQuick({ prompt, page: false }); }}
+              onReopen={() => { setStartOpen(false); void apply(reopenClosed()); }}
+              onImport={() => setPanel("import")}
+              onHistory={() => setPanel("history")}
+            />
           ) : (
-            initial?.mockPage ??
-            (tab ? null : (
-              <div className="lb-start lens-dither lens-dither-vignette">
-                <h1>Lens Browser</h1>
-                <p className="lb-dim">Type an address or a search{aiOn && ai.askInAddressBar ? ", or start with ask to ask about a page" : ""}.</p>
-                {aiOn && ai.agentInNewTabs ? (
-                  <form className="lb-compose lb-start-ask" onSubmit={(e) => { e.preventDefault(); const q = new FormData(e.currentTarget).get("q"); if (q) { setPanel("ask"); setQuick({ prompt: String(q), page: false }); } }}>
-                    <Sparkles size={14} className="lb-dim" />
-                    <input name="q" placeholder="Ask anything, or give me a task" aria-label="Ask" />
-                    <Key k="⏎" />
-                  </form>
-                ) : null}
-                <p className="lb-mono lb-dim">Ctrl L address · Ctrl T new tab · Ctrl Shift T reopen · Ctrl Shift K tidy</p>
-              </div>
-            ))
+            initial?.mockPage ?? null
           )}
         </div>
       </main>
 
-      {panel ? (
-        <aside className="lb-panel" aria-label={panelTabs.find((p) => p[0] === panel)?.[1]}>
-          <div className="lb-panel-head" role="tablist" aria-label="Side panel">
+      {shown ? (
+        <aside className="lb-panel" ref={panelP.ref} aria-label={panelTabs.find((p) => p[0] === shown)?.[1]} aria-hidden={panel ? undefined : true}>
+          <div className={`lb-panel-head${panelTabs.length > 4 ? " is-tight" : ""}`} role="tablist" aria-label="Side panel">
             {panelTabs.map(([id, label, Icon]) => (
-              <button key={id} role="tab" aria-selected={panel === id} className={`lb-ptab${panel === id ? " is-on" : ""}`} onClick={() => setPanel(id)}>
+              <button key={id} role="tab" aria-selected={shown === id} aria-label={label} className={`lb-ptab${shown === id ? " is-on" : ""}`} onClick={() => setPanel(id)}>
                 <Icon size={13} />
                 <span>{label}</span>
               </button>
             ))}
           </div>
           {aiOn ? (
-            <div className="lb-panel-body" style={{ display: panel === "ask" ? undefined : "none" }}>
+            <div className="lb-panel-body" hidden={shown !== "ask"}>
               <AgentPanel
                 seed={initial?.agent}
                 quick={quick}
@@ -604,17 +827,17 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               />
             </div>
           ) : null}
-          {panel === "transcript" && aiOn ? (
+          {shown === "transcript" && aiOn ? (
             <div className="lb-panel-body">
               <TranscriptPanel url={url} seed={initial?.transcript} onAsk={(prompt, text) => { setPanel("ask"); setQuick({ prompt, selection: text, url }); }} />
             </div>
           ) : null}
-          {panel === "bookmarks" ? (
+          {shown === "bookmarks" ? (
             <div className="lb-panel-body">
               <BookmarksPanel view={view} onView={setView} onOpen={(u, bg) => (bg ? void apply(openBackground(u)) : void go(u, true))} live={live} />
             </div>
           ) : null}
-          {panel === "notes" ? (
+          {shown === "notes" ? (
             <div className="lb-panel-body lb-notes">
               <p className="lb-dim">Notes for {hostOf(url) || "this page"}, kept on this PC. Works on PDFs too.</p>
               <textarea
@@ -627,50 +850,36 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               />
             </div>
           ) : null}
-          {panel === "downloads" ? (
-            <div className="lb-panel-body lb-list">
-              {downloads.length === 0 ? <div className="lb-empty"><p className="lb-dim">Nothing downloaded yet.</p></div> : null}
-              {downloads.map((d) => (
-                <div key={d.id} className="lb-row">
-                  <Download size={14} className={d.state === "failed" ? "lb-never" : "lb-dim"} />
-                  <span className="lb-tab-title">{(d.path || d.url).split(/[\\/]/).pop()}</span>
-                  <span className="lb-mono lb-dim">{d.state === "downloading" ? "…" : d.state === "done" ? relTime(d.startedMs, initial?.now) : "failed"}</span>
-                  {d.path && d.state === "done" ? <button className="lb-chip" onClick={() => void invoke("browser_download_reveal", { id: d.id }).catch((e) => flash(String(e)))}>Show in folder <Key k="⏎" /></button> : null}
-                </div>
-              ))}
-              <p className="lb-mono lb-dim lb-note">Rules by file type live in Settings › Lens Browser.</p>
+          {shown === "downloads" ? (
+            <div className="lb-panel-body">
+              <DownloadsPanel items={downloads} live={live} now={initial?.now} onChange={setDownloads} onRetry={(u) => void go(u, true)} onError={flash} />
             </div>
           ) : null}
-          {panel === "history" ? (
-            <div className="lb-panel-body lb-list">
-              {history.map((h) => (
-                <button key={h.url} className="lb-row" onClick={() => void go(h.url)}>
-                  <Avatar url={h.url} title={h.title} size={14} />
-                  <span className="lb-tab-title">{h.title || h.url}</span>
-                  <span className="lb-mono lb-dim">{relTime(h.lastVisitMs, initial?.now)}</span>
-                </button>
-              ))}
-              {arch.length ? <div className="lb-head"><span>Archived tabs</span><span className="lb-mono lb-head-right">{arch.length}</span></div> : null}
-              {arch.map((a) => (
-                <button key={a.id} className="lb-row" onClick={() => void apply(unarchive(a.id))}>
-                  <Avatar url={a.url} title={a.title} size={14} />
-                  <span className="lb-tab-title">{a.title || a.url}</span>
-                  <span className="lb-mono lb-dim">{a.space}</span>
-                </button>
-              ))}
+          {shown === "history" ? (
+            <div className="lb-panel-body">
+              <HistoryPanel
+                live={live}
+                now={initial?.now}
+                seed={initial?.history}
+                stamp={view}
+                archived={arch}
+                onOpen={(u, bg) => (bg ? void apply(openBackground(u)) : void go(u, true))}
+                onUnarchive={(id) => void apply(unarchive(id))}
+                onError={flash}
+              />
             </div>
           ) : null}
-          {panel === "customise" ? (
+          {shown === "customise" ? (
             <div className="lb-panel-body lb-scroll-y">
               <CustomisePanel value={appearance} onChange={(a) => saveSettings({ appearance: a })} />
             </div>
           ) : null}
-          {panel === "import" ? (
+          {shown === "import" ? (
             <div className="lb-panel-body lb-scroll-y">
-              <ImportPanel seed={initial?.importSeed} />
+              <ImportPanel seed={initial?.importSeed} searchUrl={s.settings.searchUrl} onChanged={() => live && void browserState().then(setView).catch(() => {})} />
             </div>
           ) : null}
-          {panel === "ai" ? (
+          {shown === "ai" ? (
             <div className="lb-panel-body lb-scroll-y">
               <AiPanel value={ai} onChange={(v) => saveSettings({ ai: v })} status={initial ? initial.aiStatus ?? null : undefined} />
             </div>
@@ -678,7 +887,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         </aside>
       ) : null}
 
-      {toast ? <div className="lb-toast" role="status">{toast}</div> : null}
+      {toastP.mounted ? <div className="lb-toast" role="status" ref={toastP.ref}>{toastP.value}</div> : null}
     </div>
   );
 }
