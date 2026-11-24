@@ -40,7 +40,7 @@ Signal counts (`generated/patterns.md`): 425 `.catch(() => {})` (errors silently
 
 | # | Overlap | Where | Plan |
 |---|---|---|---|
-| 1 | **Two clipboard histories** | v1 `win_clipboard.rs` + `ClipboardPane.tsx` (widget drawer, `clipboard_*_cmd` in `commands/system.rs`); v2 `clip/` (encrypted, source app, 24 `clip_*` commands, used by Command and Shelf) | Point `ClipboardPane` at `clip_*`; migrate v1 pins on first run; delete `win_clipboard.rs` and the six `clipboard_*_cmd`s. One listener, one setting. |
+| 1 | **Two clipboard histories** | v1 `win_clipboard.rs` + `ClipboardPane.tsx` (widget drawer, `clipboard_*_cmd` in `commands/system.rs`); v2 `clip/` (encrypted, source app, 24 `clip_*` commands, used by Command and Shelf) | **Done (wave 3):** `win_clipboard.rs` deleted; the six `clipboard_*_cmd`s are thin callers of `clip/` via `clip/compat.rs`. One store, one listener. v1 kept its pins in memory only, so there was nothing on disk to migrate. |
 | 2 | **Several approval cards** | Shared `approval/` surface; local confirm UIs in Command plans, AI dock tool proposals (`ai_confirm_tool`), bridge inbox (`bridge_confirm/decline`), Lens Apps release card, plugin approvals | Every caller produces a `PendingAction` and calls the shared card (`fromPendingAction` already exists). Keep inline previews, move the decision to one component and one audit path. |
 | 3 | **Several ways to change a setting** | Settings hub pages, legacy Control Center tabs, Theme tab, Quick Settings, Command/voice intents, Control registry (`control_apply`), `save_config_cmd` | Make `control/` the only writer: hub pages, Quick Settings and intents call `control_apply`, which does undo, audit and presence. `save_config_cmd` becomes internal. |
 | 4 | **Two command palettes** | `palette` (CommandPaletteSurface) and `command` (Lens Command) | Retire `palette` once Command covers its launcher results (it already does search). |
@@ -65,7 +65,7 @@ Frontend modules nobody imports (11 source files, ~1.2k lines, plus one stray te
 | `src/dock/islands/IslandParts.tsx` | 79 | Dead. |
 | `src/playground/tests/sim.test.ts` | 221 | A test, not dead: runs under `bun test src` (CI) but not `bun run test` (`src/__tests__` only). Move it into `src/__tests__`. |
 
-Rust: `win_clipboard.rs` becomes dead after dup #1; `win_sessions.rs`, `win_training.rs`, `win_windhawk.rs` have no module docs and thin use — review.
+Rust: `win_sessions.rs`, `win_training.rs`, `win_windhawk.rs` have no module docs and thin use — review.
 
 ## 5. Risky areas
 

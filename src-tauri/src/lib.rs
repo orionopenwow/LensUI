@@ -17,7 +17,6 @@ mod win_brightness;
 mod win_sessions;
 mod win_taskbar;
 mod win_theme;
-mod win_clipboard;
 mod win_notifications;
 mod win_previews;
 mod win_rules;

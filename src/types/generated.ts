@@ -738,9 +738,8 @@ export interface CleanerSettings {
 }
 
 /**
- * What the UI sees: a short preview, never the full text (that stays in the backend until
- * the user copies the entry back).
- * Rust: `win_clipboard::ClipEntryView`
+ * What the pane sees: a short preview, never the full text.
+ * Rust: `clip::compat::ClipEntryView`
  */
 export interface ClipEntryView {
   id: number;
@@ -806,7 +805,7 @@ export interface ClipView {
 
 /**
  * Everything the Clipboard pane needs in one call.
- * Rust: `win_clipboard::ClipboardSnapshot`
+ * Rust: `clip::compat::ClipboardSnapshot`
  */
 export interface ClipboardSnapshot {
   entries: ClipEntryView[];
