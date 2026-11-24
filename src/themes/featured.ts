@@ -71,8 +71,12 @@ export function lookPack(look: FeaturedLook): ThemePack {
 }
 
 /** The featured packs in display order. */
+let featuredCache: ThemePack[] | null = null;
+
+/** The twelve featured packs, in display order. Built once: they are all built-in packs. */
 export function featuredPacks(): ThemePack[] {
-  return FEATURED_LOOKS.map(lookPack);
+  if (!featuredCache) featuredCache = FEATURED_LOOKS.map(lookPack);
+  return featuredCache;
 }
 
 /** Everything that is not featured, in registry order. */
@@ -82,7 +86,7 @@ export function morePacks(): ThemePack[] {
 
 /** The featured look a pack most resembles (itself when it is featured). */
 export function familyOf(pack: ThemePack): ThemePack {
-  if (LOOK_BY_ID.has(pack.id)) return lookPack(LOOK_BY_ID.get(pack.id)!);
+  if (LOOK_BY_ID.has(pack.id)) return featuredPacks().find((p) => p.id === pack.id) ?? lookPack(LOOK_BY_ID.get(pack.id)!);
   return nearest(pack, featuredPacks())?.pack ?? featuredPacks()[0];
 }
 

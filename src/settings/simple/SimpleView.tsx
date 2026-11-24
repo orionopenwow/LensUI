@@ -2,7 +2,7 @@
 // settings people use most. Everything else on the page is under "More options" (MoreOptions.tsx),
 // which expands in place. Each card shows what it changes: a real pack preview, a real mini Dock,
 // the actual window-button dots, an illustration of the corner or drag.
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig, WindowsThemeInfo } from "../../types/lens";
 import { applyThemePack, packById } from "../../themes/packs";
@@ -77,6 +77,15 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
     onApplyConfig(out);
   };
 
+  // One function for the life of the page, so the memoised theme cards skip unrelated re-renders.
+  const applyRef = useRef<(id: string) => void>(() => {});
+  applyRef.current = (id: string) => {
+    setUndo(config);
+    onApplyConfig(applyFeaturedLook(config, id));
+    void matchLookPointer(id);
+  };
+  const applyLook = useCallback((id: string) => applyRef.current(id), []);
+
   return (
     <div className="ss-grid">
       <Card title="Theme" desc="Twelve whole looks: colours, Dock, corners, font, backdrop and motion change together." wide>
@@ -90,11 +99,7 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
               describe
               active={config.theme.preset === p.id}
               accent={p.accentMode === "windows" ? winTheme.accentHex : p.accent}
-              onApply={(id) => {
-                setUndo(config);
-                onApplyConfig(applyFeaturedLook(config, id));
-                void matchLookPointer(id);
-              }}
+              onApply={applyLook}
             />
           ))}
         </div>

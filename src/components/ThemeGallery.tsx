@@ -154,7 +154,7 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
 };
 
 /** One selectable pack card. `size="small"` is the compact recommended-row card. */
-export const PackCard: React.FC<{
+const PackCardBase: React.FC<{
   pack: ThemePack;
   active: boolean;
   accent: string;
@@ -221,6 +221,12 @@ export const PackCard: React.FC<{
     </div>
   );
 };
+
+/**
+ * Memoised: a theme row is a dozen cards (the gallery, 89), and their parents re-render for
+ * unrelated state (sliders, the wallpaper state arriving). Pass a stable `onApply`.
+ */
+export const PackCard = React.memo(PackCardBase);
 
 /**
  * Every theme pack (built-in and custom) with filters and search. Opened from "Browse all" under

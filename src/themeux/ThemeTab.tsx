@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ChevronDown, Check, RotateCcw, Pipette } from "lucide-react";
 import type { LensConfig, WindowsThemeInfo } from "../types/lens";
@@ -293,6 +293,11 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
     if (isFeatured(packId)) void matchLookPointer(packId);
   };
 
+  // One function for the life of the tab, so the memoised theme cards skip unrelated re-renders.
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  const applyStable = useCallback((packId: string) => applyRef.current(packId), []);
+
   const setTheme = (patch: Partial<LensConfig["theme"]>) => updateConfig({ ...config, theme: { ...config.theme, ...patch } });
 
   // Light / Dark / Auto: switch between the user's light and dark packs, remembering the one they leave.
@@ -480,7 +485,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
           </button>
         </div>
         {browseAll ? (
-          <ThemeGallery config={config} onApply={apply} windowsAccent={winTheme.accentHex} onClose={() => setBrowseAll(false)} />
+          <ThemeGallery config={config} onApply={applyStable} windowsAccent={winTheme.accentHex} onClose={() => setBrowseAll(false)} />
         ) : (
           <div className="tux-rec-row">
             {featured.map((p) => (
@@ -490,7 +495,7 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
                 size="small"
                 active={config.theme.preset === p.id}
                 accent={p.accentMode === "windows" ? winTheme.accentHex : p.accent}
-                onApply={apply}
+                onApply={applyStable}
               />
             ))}
           </div>
