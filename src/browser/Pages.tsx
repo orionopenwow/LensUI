@@ -18,6 +18,7 @@ export const SHORTCUTS: [string, string][] = [
   ["Ctrl F", "Find"],
   ["Ctrl H", "History"],
   ["Ctrl + / −", "Zoom"],
+  ["Ctrl Shift A", "Find a tab"],
   ["Ctrl Shift K", "Tidy"],
 ];
 
