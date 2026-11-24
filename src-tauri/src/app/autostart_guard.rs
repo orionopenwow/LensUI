@@ -68,7 +68,7 @@ pub(crate) fn startup_block_reason_for(exe: &str, debug_build: bool) -> Option<S
         return Some(DEV_BUILD_MESSAGE.to_string());
     }
     if exe.trim().is_empty() {
-        return Some("Lens UI could not find its own program file.".to_string());
+        return Some("Lens could not find its own program file.".to_string());
     }
     None
 }
@@ -201,7 +201,7 @@ pub(crate) fn dev_server_exit_code() -> Option<i32> {
         return None;
     }
     let message = format!(
-        "This is a development build of Lens UI, and its dev server (http://localhost:{}) is not \
+        "This is a development build of Lens, and its dev server (http://localhost:{}) is not \
 running, so Lens can't load its windows.\n\nStart it with Launch-Lens-UI.bat, or build the \
 standalone version with Build-Lens-UI.bat.",
         dev_port()

@@ -1,4 +1,4 @@
-# Lens UI release
+# Lens release
 #  Push a tag like v0.2.0 -> builds the NSIS (.exe) and MSI installers on windows-latest, signs the
 #  updater artifacts with the TAURI_SIGNING_PRIVATE_KEY secret, writes latest.json for the in-app
 #  updater, and creates a DRAFT GitHub Release with everything attached. A human publishes it.
@@ -139,5 +139,5 @@ jobs:
           if ($LASTEXITCODE -eq 0) {
             gh release upload $env:TAG (Get-ChildItem release/*).FullName --clobber
           } else {
-            gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --title "Lens UI $env:TAG" --notes "Draft. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn."
+            gh release create $env:TAG (Get-ChildItem release/*).FullName --draft --title "Lens $env:TAG" --notes "Draft. Paste the CHANGELOG section for $env:TAG here, then publish. Installers are not Authenticode-signed yet; Windows SmartScreen will warn."
           }

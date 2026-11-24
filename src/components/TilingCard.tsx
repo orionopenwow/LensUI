@@ -224,7 +224,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
       <div className="cc-row">
         <div>
           <div className="cc-label">Tiling Shortcuts</div>
-          <div className="cc-desc">Work after turning on Keyboard Tiling Shortcuts and restarting Lens UI.</div>
+          <div className="cc-desc">Work after turning on Keyboard Tiling Shortcuts and restarting Lens.</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0, whiteSpace: "nowrap" }}>
           <button

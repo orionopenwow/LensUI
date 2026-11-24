@@ -195,7 +195,7 @@ pub struct FuncConfig {
     #[serde(default)]
     pub target_monitor: String,
     /// Create Control Center, Palette, Widgets, Quick Settings, Launcher and Overview only when first
-    /// opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens UI.
+    /// opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens.
     #[serde(default)]
     pub lazy_windows: bool,
     /// Tap the Win key to open the Lens Launcher. OFF by default.
@@ -533,7 +533,7 @@ impl Default for LensConfig {
                     "notes".into(),
                     "quick-actions".into(),
                 ],
-                notes: "Welcome to Lens UI.\nPress Alt+Space for Command Palette.".into(),
+                notes: "Welcome to Lens.\nPress Alt+Space for Command Palette.".into(),
             },
             styled_folders: vec![],
             onboarding_completed: false,

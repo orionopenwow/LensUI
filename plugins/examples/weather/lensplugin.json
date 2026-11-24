@@ -2,7 +2,7 @@
   "id": "weather",
   "name": "Weather (placeholder)",
   "version": "1.0.0",
-  "author": "Lens UI",
+  "author": "Lens",
   "description": "Shows how a widget looks. Real weather needs network access, which plugins do not have yet.",
   "slot": "widgets",
   "entry": "index.html",

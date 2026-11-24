@@ -184,7 +184,7 @@ onContextMenu={(e) => {
 
 **6. Voice** (`feature/voice`): add an intent "what's under my pointer" / "Lens, this" → `magic_open(null)`.
 
-**7. Lens Guide**: add anchors `data-guide-id="magic.card"` on the card root and a lesson step "Ctrl+Alt+right-click anything".
+**7. Guide**: add anchors `data-guide-id="magic.card"` on the card root and a lesson step "Ctrl+Alt+right-click anything".
 
 **8. Backup / Remove all Lens changes**: include `%APPDATA%\LensUI\magic.json`. Nothing else is written; the feature changes no Windows settings.
 

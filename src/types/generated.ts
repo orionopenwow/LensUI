@@ -28,7 +28,7 @@ export interface ActRequest {
   element: number | null;
   action: PageAction;
   caps: Capabilities | null;
-  /** Set only by the Lens UI after the user held "approve" on the card. */
+  /** Set only by the Lens after the user held "approve" on the card. */
   approved: boolean;
 }
 
@@ -1372,7 +1372,7 @@ export interface FuncConfig {
   targetMonitor: string;
   /**
    * Create Control Center, Palette, Widgets, Quick Settings, Launcher and Overview only when first
-   * opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens UI.
+   * opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens.
    */
   lazyWindows: boolean;
   /** Tap the Win key to open the Lens Launcher. OFF by default. */
@@ -1399,7 +1399,7 @@ export interface Growth {
 
 /** Rust: `guide::GuideProgress` */
 export interface GuideProgress {
-  /** Lens Guide is off until the user turns it on. */
+  /** The Guide is off until the user turns it on. */
   enabled: boolean;
   /** Lesson id → completed step numbers. */
   steps: Record<string, number[]>;
@@ -3266,7 +3266,7 @@ export type ShelfKind =
 
 /** Rust: `win_shell::ShellModeStatus` */
 export interface ShellModeStatus {
-  /** The HKCU Shell override exists and points at Lens UI. */
+  /** The HKCU Shell override exists and points at Lens. */
   enabled: boolean;
   /** Raw HKCU Shell value ("" when not set). */
   shellValue: string;
@@ -3274,7 +3274,7 @@ export interface ShellModeStatus {
   exePath: string;
   /** Explorer's desktop shell (taskbar / Progman) is currently running. */
   explorerRunningAsShell: boolean;
-  /** Lens UI is the shell right now. */
+  /** Lens is the shell right now. */
   isShellSession: boolean;
   /** The last shell boot reached the "UI is up" mark (true when there is no record yet). */
   lastBootOk: boolean;

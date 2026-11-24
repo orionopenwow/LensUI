@@ -276,8 +276,8 @@ fn give_up() {
         return;
     }
     crate::tester::log("error", "loadguard", "gave up; native taskbar restored");
-    let message = "Lens UI could not load its dock or top bar, so it hid them and brought back the \
-Windows taskbar.\n\nRestart Lens UI. If this keeps happening, run Fix-My-Desktop.bat in the Lens UI folder.";
+    let message = "Lens could not load its dock or top bar, so it hid them and brought back the \
+Windows taskbar.\n\nRestart Lens. If this keeps happening, run Fix-My-Desktop.bat in the Lens folder.";
     thread::spawn(move || notify(message));
 }
 
@@ -290,7 +290,7 @@ pub(crate) fn notify(message: &str) {
     // MB_OK | MB_ICONWARNING | MB_SETFOREGROUND | MB_TOPMOST
     const FLAGS: u32 = 0x0000_0030 | 0x0001_0000 | 0x0004_0000;
     let text: Vec<u16> = message.encode_utf16().chain(std::iter::once(0)).collect();
-    let title: Vec<u16> = "Lens UI".encode_utf16().chain(std::iter::once(0)).collect();
+    let title: Vec<u16> = "Lens".encode_utf16().chain(std::iter::once(0)).collect();
     unsafe {
         MessageBoxW(0, text.as_ptr(), title.as_ptr(), FLAGS);
     }

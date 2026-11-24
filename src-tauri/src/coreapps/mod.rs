@@ -101,6 +101,22 @@ pub const APPS: &[CoreApp] = &[
         glyph: "M9 3h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h6",
         tint: ("#14B8A6", "#134E4A"),
     },
+    CoreApp {
+        id: "feeds",
+        title: "Lens Feeds",
+        names: &["lens feeds", "feeds", "news feed", "my feeds"],
+        size: (440.0, 720.0),
+        glyph: "M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14M6 18h0",
+        tint: ("#F59E0B", "#78350F"),
+    },
+    CoreApp {
+        id: "messages",
+        title: "Lens Messages",
+        names: &["lens messages", "lens inbox", "unified inbox"],
+        size: (440.0, 720.0),
+        glyph: "M4 5h16v11H9l-5 4z",
+        tint: ("#6366F1", "#312E81"),
+    },
 ];
 
 /// Dock pins for core apps use this pseudo-path ("lens-app:timer"); `launch_app_cmd` opens the

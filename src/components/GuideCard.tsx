@@ -1,4 +1,4 @@
-/** Control Center card: Lens Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and "Show me". Off until turned on; works offline; AI answers are optional. */
+/** Control Center card: Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and "Show me". Off until turned on; works offline; AI answers are optional. */
 import React, { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
 import { loadProgress, saveProgress } from "../guide/progress";
@@ -32,7 +32,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Lens Guide</div>
+          <div className="cc-label">Guide</div>
           <div className="cc-desc">
             Ask "how do I…" and get the exact setting with a Show me button, or follow short interactive lessons. Works
             offline; nothing about what you use leaves this PC.
@@ -42,7 +42,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ lessonCount = 11, initialP
           type="button"
           role="switch"
           aria-checked={p.enabled}
-          aria-label="Lens Guide"
+          aria-label="Guide"
           className={`cc-toggle ${p.enabled ? "on" : ""}`}
           onClick={() => save({ enabled: !p.enabled })}
         />

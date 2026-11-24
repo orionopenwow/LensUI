@@ -2,7 +2,7 @@
   "id": "pomodoro",
   "name": "Pomodoro",
   "version": "1.0.0",
-  "author": "Lens UI",
+  "author": "Lens",
   "description": "25/5 focus timer. Remembers where it was and notifies you when a session ends.",
   "slot": "widgets",
   "entry": "index.html",

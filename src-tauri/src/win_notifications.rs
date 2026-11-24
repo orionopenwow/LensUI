@@ -313,7 +313,7 @@ pub fn record_notification(
         app_name: {
             let name = truncate_chars(app_name, MAX_NAME_CHARS);
             if name.is_empty() {
-                "Lens UI".to_string()
+                "Lens".to_string()
             } else {
                 name
             }
@@ -459,7 +459,7 @@ mod toasts {
     use windows::UI::Notifications::{KnownNotificationBindings, NotificationKinds, UserNotification};
 
     const NO_LISTENER: &str =
-        "Windows did not give Lens UI a notification listener. This usually needs an installed (packaged) build.";
+        "Windows did not give Lens a notification listener. This usually needs an installed (packaged) build.";
 
     fn listener() -> Result<UserNotificationListener, WindowsToastResult> {
         UserNotificationListener::Current().map_err(|e| {
@@ -474,10 +474,10 @@ mod toasts {
         } else if status == UserNotificationListenerAccessStatus::Denied {
             (
                 "denied",
-                "Notification access is turned off for Lens UI in Windows Settings (Privacy & security, Notifications).",
+                "Notification access is turned off for Lens in Windows Settings (Privacy & security, Notifications).",
             )
         } else {
-            ("needs-access", "Lens UI has not been given access to Windows notifications yet.")
+            ("needs-access", "Lens has not been given access to Windows notifications yet.")
         }
     }
 
@@ -633,7 +633,7 @@ pub fn fetch_windows_toasts() -> WindowsToastResult {
     toasts::fetch()
 }
 
-/// Asks Windows to let Lens UI read notifications (may show a consent prompt). Blocks.
+/// Asks Windows to let Lens read notifications (may show a consent prompt). Blocks.
 #[cfg(windows)]
 pub fn request_windows_toast_access() -> WindowsToastResult {
     toasts::request_access()

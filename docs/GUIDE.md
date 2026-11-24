@@ -1,8 +1,8 @@
-# Lens Guide
+# Guide
 
-Lens Guide is the built-in helper that teaches Lens: Settings, the dock, Command, the browser
+The Guide is the built-in helper that teaches Lens: Settings, the dock, Command, the browser
 bridge and Windows basics. It is **off until the user turns it on** (Settings › Windows & Quick ›
-Lens Guide card, or the first time someone opens it). It works fully offline. When Lens AI is on,
+Guide card, or the first time someone opens it). It works fully offline. When Lens AI is on,
 it can also answer in plain sentences, but only from Lens's own help text.
 
 ## What it does
@@ -118,7 +118,7 @@ import { openGuide } from "../guide/coach";
 <GuideDrawer config={config} context={{ surface: "settings", tab }} aiEnabled={!!config?.ai?.enabled} />
 
 // "?" button in the Control Center header (anchor settings.help):
-<button type="button" className="cc-chip" data-guide-id="settings.help" aria-label="Lens Guide" onClick={() => void openGuide()}>?</button>
+<button type="button" className="cc-chip" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>?</button>
 ```
 
 **2. Nav anchors** (same file, nav buttons). This is optional, because label matching already

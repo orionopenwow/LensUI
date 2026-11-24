@@ -73,7 +73,7 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     <Section id="safety" title="Agent safety" summary="Sandbox profile, scam and injection guards" defaultOpen={section === "safety"} forceOpen={section === "safety"}>
       <AgentSafetyCard />
     </Section>
-    <Section id="guide" title="Lens Guide" summary="Lessons and “how do I…” help" defaultOpen={section === "guide"} forceOpen={section === "guide"}>
+    <Section id="guide" title="Guide" summary="Lessons and “how do I…” help" defaultOpen={section === "guide"} forceOpen={section === "guide"}>
       <GuideCard />
     </Section>
     <Section id="agents" title="Agents" summary="Automations and macros" defaultOpen={section === "agents"} forceOpen={section === "agents"}>

@@ -3,7 +3,7 @@
 use crate::*;
 use std::sync::atomic::AtomicBool;
 
-/// The monitor Lens UI's bars and flyouts live on.
+/// The monitor Lens's bars and flyouts live on.
 /// With the default preference ("primary") this is exactly `app.primary_monitor()`.
 pub(crate) fn lens_monitor(app: &AppHandle, preference: &str) -> tauri::Result<Option<tauri::window::Monitor>> {
     let pref = preference.trim();

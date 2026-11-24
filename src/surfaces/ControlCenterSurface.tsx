@@ -89,7 +89,9 @@ const SimpleView = React.lazy(() => import("../settings/simple/SimpleView").then
 import { MoreOptions } from "../settings/simple/MoreOptions";
 import { ModeHint } from "../settings/simple/ModePill";
 import { effectiveMode, hasSimpleCards, modeUnchosen, moreStartsOpen, moreSummary, SIMPLE_RESETS, type SettingsMode } from "../settings/simple/mode";
-import { WinLink } from "../settings/ui/primitives";
+import { Section, WinLink } from "../settings/ui/primitives";
+const FeedsCard = React.lazy(() => import("../components/FeedsCard").then((m) => ({ default: m.FeedsCard })));
+const MessagesCard = React.lazy(() => import("../components/MessagesCard").then((m) => ({ default: m.MessagesCard })));
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
 
 
@@ -355,7 +357,7 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="sh-pagehead-desc">{pageDef.description}</div>
             </div>
             {pageDef.winUri && <WinLink uri={pageDef.winUri} label="Windows Settings" compact />}
-            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>
               ?
             </button>
           </header>
@@ -672,7 +674,17 @@ export const ControlCenterSurface: React.FC = () => {
           )}
 
           {tab === "notifications" && (
-            <MessagingHubPane runningWindows={runningWindows} />
+            <>
+              <MessagingHubPane runningWindows={runningWindows} />
+              <Suspense fallback={null}>
+                <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
+                  <FeedsCard />
+                </Section>
+                <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
+                  <MessagesCard />
+                </Section>
+              </Suspense>
+            </>
           )}
 
           {tab === "appearance" && (
@@ -1157,12 +1169,12 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="cc-card">
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Run Lens UI on Windows Startup</div>
+                    <div className="cc-label">Run Lens on Windows Startup</div>
                     <div className="cc-desc">{startupBlock ?? "Starts Lens when you sign in to Windows"}</div>
                   </div>
                   <button
                     type="button"
-                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens UI on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
                     aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
                       (!startupBlock || config.func.runOnStartup) &&
@@ -1200,7 +1212,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Create Rarely Used Windows on Demand</div>
-                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"
@@ -1251,7 +1263,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Keyboard Tiling Shortcuts</div>
-                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"
@@ -1268,7 +1280,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Alt+1–9 Opens Dock Apps</div>
-                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"

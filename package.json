@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "description": "Lens UI — a calm, themeable desktop shell for Windows 10 and 11",
+  "description": "Lens — a calm, themeable desktop shell for Windows 10 and 11",
   "scripts": {
     "dev": "vite",
     "prebuild": "node tools/changelog/gen.mjs",

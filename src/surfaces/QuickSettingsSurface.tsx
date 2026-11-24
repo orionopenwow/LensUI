@@ -771,7 +771,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 <div className="qs-row">
                   <div>
                     <div className="qs-row-title">Run on Startup</div>
-                    <div className="qs-row-sub">{startupBlock ?? "Launch Lens UI automatically with Windows"}</div>
+                    <div className="qs-row-sub">{startupBlock ?? "Launch Lens automatically with Windows"}</div>
                   </div>
                   <button
                     type="button"

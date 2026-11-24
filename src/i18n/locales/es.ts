@@ -95,7 +95,7 @@ const dict: Record<string, string> = {
   "qs.hide_native_taskbar": "Ocultar barra de tareas nativa",
   "qs.auto_restores_safely_on_exit": "Se restaura de forma segura al salir",
   "qs.run_on_startup": "Iniciar con Windows",
-  "qs.launch_lens_ui_automatically_with_window": "Iniciar Lens UI automáticamente con Windows",
+  "qs.launch_lens_ui_automatically_with_window": "Iniciar Lens automáticamente con Windows",
   "qs.folder_icon_theme": "Tema de iconos de carpeta",
   "qs.open_full_lens_control_center": "Abrir el Centro de control de Lens",
   "qs.live_system_telemetry": "Telemetría del sistema en vivo",

@@ -189,7 +189,7 @@ pub fn run() {
         win_wallpaper::detach_wallpaper_window();
         win_focus_dim::shutdown();
         restore_taskbar_if_hidden();
-        win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
+        win_shell::emergency_restore_explorer("Lens crashed while it was the Windows shell.");
         default_panic(info);
         // Release builds unwind (so guards can catch), but a panic outside a guard is still the
         // end of the process, exactly as before: everything was just handed back to Windows, and
@@ -916,7 +916,7 @@ pub fn run() {
             commands::failsafe::failsafe_ui_crash,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Lens UI")
+        .expect("error while building Lens")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
                 // A clean exit is never a failed start.

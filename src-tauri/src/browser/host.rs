@@ -1,4 +1,4 @@
-//! The live side of Lens Browser: one frame window ("browser") whose Lens UI webview
+//! The live side of Lens Browser: one frame window ("browser") whose Lens webview
 //! ("browser-ui") draws the sidebar, top bar and panels, plus one WebView2 child webview per
 //! live tab, positioned over the content area the UI reports.
 //!

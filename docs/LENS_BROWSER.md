@@ -11,7 +11,7 @@ only to the provider your AI privacy setting allows (local by default).
 
 ```
 Lens Browser window ("browser")                    one native window
- ├─ browser-ui   Lens UI webview (React)           sidebar · top bar · side panel · approval card
+ ├─ browser-ui   Lens webview (React)           sidebar · top bar · side panel · approval card
  └─ tab-<id>     one WebView2 child per live tab   the web page, placed over the content area
 ```
 

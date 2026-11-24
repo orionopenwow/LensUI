@@ -54,7 +54,7 @@ export const UpdatesCard: React.FC = () => {
     setBusy(true);
     try {
       const v = await invoke<string>("install_update_cmd");
-      setStatus({ state: "up-to-date", currentVersion: v, newVersion: null, notes: null, message: `Installed ${v}. Lens UI will restart.` });
+      setStatus({ state: "up-to-date", currentVersion: v, newVersion: null, notes: null, message: `Installed ${v}. Lens will restart.` });
     } catch (e) {
       setStatus({ state: "error", currentVersion: "", newVersion: null, notes: null, message: String(e) });
     } finally {

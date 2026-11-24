@@ -102,7 +102,7 @@ pub(crate) async fn run_self_test_cmd(app: AppHandle) -> serde_json::Value {
         let mut problems: Vec<String> = Vec::new();
         let mut row = |k: &str, v: String| lines.push(format!("{:<28}{}", format!("{}:", k), v));
 
-        row("Lens UI", env!("CARGO_PKG_VERSION").to_string());
+        row("Lens", env!("CARGO_PKG_VERSION").to_string());
         row("Windows", windows_build_string());
         row(
             "WebView2",

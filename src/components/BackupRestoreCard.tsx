@@ -214,7 +214,7 @@ export const BackupRestoreCard: React.FC = () => {
           ))}
           <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
             <button type="button" className="cc-btn" onClick={() => invoke("quit_lens").catch(() => {})}>
-              Quit Lens UI
+              Quit Lens
             </button>
           </div>
         </div>

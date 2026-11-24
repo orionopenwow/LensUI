@@ -3,7 +3,7 @@
 // them in step.
 import { invoke } from "@tauri-apps/api/core";
 
-export type CoreAppId = "monitor" | "startup" | "timer" | "calculator" | "color" | "notes" | "power" | "network" | "clipboard";
+export type CoreAppId = "monitor" | "startup" | "timer" | "calculator" | "color" | "notes" | "power" | "network" | "clipboard" | "feeds" | "messages";
 
 export interface CoreAppInfo {
   id: CoreAppId;
@@ -108,6 +108,26 @@ export const CORE_APPS: CoreAppInfo[] = [
     glyph: "M9 3h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h6",
     tint: ["#14B8A6", "#134E4A"],
   },
+  {
+    id: "feeds",
+    title: "Lens Feeds",
+    short: "Feeds",
+    blurb: "News and the people you follow in one slim column, with a digest.",
+    keywords: "feeds rss news bluesky mastodon github youtube reddit social timeline digest",
+    glyph: "M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14M6 18h0",
+    tint: ["#F59E0B", "#78350F"],
+    settingsTab: "notifications#feeds",
+  },
+  {
+    id: "messages",
+    title: "Lens Messages",
+    short: "Messages",
+    blurb: "One inbox over the messengers you already use. Lens reads unread counts only.",
+    keywords: "messages inbox chat unread discord slack telegram whatsapp matrix signal teams",
+    glyph: "M4 5h16v11H9l-5 4z",
+    tint: ["#6366F1", "#312E81"],
+    settingsTab: "notifications#messages",
+  },
 ];
 
 export const PIN_PREFIX = "lens-app:";
@@ -147,6 +167,8 @@ export const SLASH: Record<string, CoreAppId> = {
   battery: "power",
   network: "network",
   clipboard: "clipboard",
+  feeds: "feeds",
+  inbox: "messages",
 };
 
 /** The view a slash word opens ("/stopwatch" → Timer › Stopwatch). */

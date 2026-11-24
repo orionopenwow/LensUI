@@ -229,7 +229,7 @@ export const SettingsNav: React.FC<{
         </button>
         <button type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(() => {})}>
           <Power size={15} strokeWidth={2.1} aria-hidden />
-          <span>Quit Lens UI</span>
+          <span>Quit Lens</span>
         </button>
       </div>
     </aside>

@@ -10,7 +10,7 @@ pub(crate) fn push_notification_cmd(
     app_name: Option<String>,
     category: Option<String>,
 ) {
-    let app_name = app_name.unwrap_or_else(|| "Lens UI".into());
+    let app_name = app_name.unwrap_or_else(|| "Lens".into());
     let category = category.unwrap_or_else(|| "system".into());
     // Always keep it in the Notification Center; only pop up when Do Not Disturb allows.
     let item = win_notifications::record_notification(&title, &body, &app_name, &category);

@@ -1,4 +1,4 @@
-# Lens UI Plugins
+# Lens Plugins
 
 Plugins are small HTML widgets for the Top Bar, the Dock and the Widget Drawer. They are
 **off until you turn them on** in Control Center → Plugins, and each one runs in a sealed

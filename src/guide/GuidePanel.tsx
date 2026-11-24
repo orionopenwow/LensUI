@@ -1,4 +1,4 @@
-// Lens Guide panel: search, suggested questions, "Did you know?", lessons with live progress, and
+// The Guide panel: search, suggested questions, "Did you know?", lessons with live progress, and
 // answers with "Show me". Works with no AI at all; with AI on, answers are grounded only in the
 // Lens index and every citation is checked against it.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -125,7 +125,7 @@ export const GuidePanel: React.FC<GuidePanelProps> = (props) => {
   }
 
   return (
-    <div className={`guide-panel ${compact ? "compact" : ""}`} role="region" aria-label="Lens Guide">
+    <div className={`guide-panel ${compact ? "compact" : ""}`} role="region" aria-label="Guide">
       <header className="guide-head">
         {view.kind !== "home" ? (
           <button type="button" className="guide-icon-btn" aria-label="Back" onClick={() => setView({ kind: "home" })}>
@@ -134,7 +134,7 @@ export const GuidePanel: React.FC<GuidePanelProps> = (props) => {
         ) : (
           <Compass size={16} strokeWidth={2.2} className="guide-head-icon" aria-hidden="true" />
         )}
-        <div className="guide-head-title">Lens Guide</div>
+        <div className="guide-head-title">Guide</div>
         <span className={`guide-badge ${aiEnabled ? "ai" : ""}`}>{aiEnabled ? "AI on" : "Offline"}</span>
         {onClose && (
           <button type="button" className="guide-icon-btn" aria-label="Close guide" onClick={onClose}>

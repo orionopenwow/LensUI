@@ -147,7 +147,7 @@ export const CoachMarkLayer: React.FC<CoachMarkLayerProps> = ({ initial, sticky 
   return (
     <div className="guide-coach" aria-live="polite">
       <div className="guide-coach-ring" style={ringStyle} aria-hidden="true" />
-      <div className="guide-coach-tip" role="dialog" aria-label="Lens Guide" style={{ top: tipTop, left: tipLeft, width: tipW }}>
+      <div className="guide-coach-tip" role="dialog" aria-label="Guide" style={{ top: tipTop, left: tipLeft, width: tipW }}>
         {req.title && <div className="guide-coach-title">{req.title}</div>}
         {req.note && <div className="guide-coach-note">{req.note}</div>}
         <div className="guide-coach-actions">

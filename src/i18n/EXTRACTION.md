@@ -100,7 +100,7 @@ Line numbers drift as files change; search for the English text.
 | `qs.hide_native_taskbar` | QuickSettingsSurface.tsx:872 | text | Hide Native Taskbar |
 | `qs.auto_restores_safely_on_exit` | QuickSettingsSurface.tsx:873 | text | Auto-restores safely on exit |
 | `qs.run_on_startup` | QuickSettingsSurface.tsx:894 | text | Run on Startup |
-| `qs.launch_lens_ui_automatically_with_window` | QuickSettingsSurface.tsx:895 | text | Launch Lens UI automatically with Windows |
+| `qs.launch_lens_ui_automatically_with_window` | QuickSettingsSurface.tsx:895 | text | Launch Lens automatically with Windows |
 | `qs.folder_icon_theme` | QuickSettingsSurface.tsx:912 | text | Folder Icon Theme |
 | `qs.open_full_lens_control_center` | QuickSettingsSurface.tsx:953 | text | Open Full Lens Control Center |
 | `qs.live_system_telemetry` | QuickSettingsSurface.tsx:965 | text | Live System Telemetry |

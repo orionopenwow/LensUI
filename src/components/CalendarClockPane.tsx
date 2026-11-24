@@ -671,7 +671,7 @@ export const CalendarClockPane: React.FC = () => {
               invoke("push_notification_cmd", {
                 title: "Lens Notifications Ready",
                 body: "Calendar reminders, focus timers, and Windows alerts appear cleanly here.",
-                appName: "Lens UI",
+                appName: "Lens",
                 category: "calendar",
               })
             }

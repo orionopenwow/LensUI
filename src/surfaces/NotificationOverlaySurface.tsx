@@ -65,7 +65,7 @@ export const NotificationOverlaySurface: React.FC = () => {
         id: e.payload.id || `n-${Date.now()}`,
         title: e.payload.title,
         body: e.payload.body,
-        appName: e.payload.appName || "Lens UI",
+        appName: e.payload.appName || "Lens",
         category: e.payload.category || "system",
         timeStr: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };

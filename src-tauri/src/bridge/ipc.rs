@@ -608,7 +608,7 @@ fn serve(stream: TcpStream, token: &str) -> std::io::Result<()> {
 // Client (native host, `--ask`, `--action`, `--url`)
 // ---------------------------------------------------------------------------------------------
 
-pub const OFFLINE: &str = "Lens UI isn't running. Start Lens and try again.";
+pub const OFFLINE: &str = "Lens isn't running. Start Lens and try again.";
 
 pub fn send(origin: Origin, request: &Value) -> Result<Value, String> {
     let file: EndpointFile = std::fs::read_to_string(endpoint_path())

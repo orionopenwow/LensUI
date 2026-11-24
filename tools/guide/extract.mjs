@@ -1,4 +1,4 @@
-// Builds the Lens Guide knowledge index from the repository itself, so the Guide can only ever
+// Builds the Guide knowledge index from the repository itself, so the Guide can only ever
 // point at settings, commands and docs that really exist. Used by build-index.mjs (writes
 // src/guide/index.json) and by the bun tests (completeness checks). Plain JS on purpose: it runs
 // under Node in the prebuild step and under bun in tests, with no TypeScript loader.

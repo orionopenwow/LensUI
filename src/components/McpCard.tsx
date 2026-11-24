@@ -73,7 +73,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 /**
- * Control Center card: let AI apps (Claude Desktop and other MCP clients) control Lens UI.
+ * Control Center card: let AI apps (Claude Desktop and other MCP clients) control Lens.
  * Off by default. Requests that need approval show here with Approve / Decline.
  */
 export const McpCard: React.FC<Props> = ({ config, onUpdateConfig }) => {

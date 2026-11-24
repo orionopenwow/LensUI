@@ -1,10 +1,10 @@
-# Lens UI — Where It Stands and Where It Can Go
+# Lens — Where It Stands and Where It Can Go
 
 _Last updated: 2026-11-21_
 
-## What Lens UI is today
+## What Lens is today
 
-Lens UI is a **shell overlay**, not yet a shell replacement. Windows Explorer (`explorer.exe`) is still
+Lens is a **shell overlay**, not yet a shell replacement. Windows Explorer (`explorer.exe`) is still
 running underneath: Lens hides the native taskbar and desktop icons, then draws its own Dock, Top Bar,
 Quick Settings, Command Palette, Widgets and notifications as eight transparent Tauri (WebView2) windows.
 A Rust/Win32 backend handles the parts a web view cannot: DWM titlebar colors, traffic-light caption

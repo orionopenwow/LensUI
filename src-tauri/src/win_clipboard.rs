@@ -2,7 +2,7 @@
 //!
 //! A hidden message-only window listens for WM_CLIPBOARDUPDATE and keeps the last 50 unique
 //! text entries **in memory only** — nothing here is ever written to disk, and the history is
-//! gone when Lens UI exits. Only plain text (CF_UNICODETEXT) is captured. Entries that the
+//! gone when Lens exits. Only plain text (CF_UNICODETEXT) is captured. Entries that the
 //! source app marks as private (password managers set "ExcludeClipboardContentFromMonitorProcessing",
 //! "CanIncludeInClipboardHistory" = 0 or "Clipboard Viewer Ignore") are skipped.
 //!
