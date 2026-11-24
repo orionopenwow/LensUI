@@ -9,6 +9,9 @@ interface Props {
   iconUrl?: string | null;
   onFocus: (hwnd: number) => void;
   onClose: (hwnd: number) => void;
+  /** False while the hover card is leaving: the native thumbnails go at once instead of hanging
+   *  on screen until the card's exit animation has finished. */
+  active?: boolean;
 }
 
 const MAX_TILES = 4;
@@ -18,7 +21,8 @@ const MAX_TILES = 4;
  * places a native DWM thumbnail exactly over it (click-through, so clicks land here). Windows the
  * backend can't preview (minimized, closed, refused) show their icon and title instead.
  */
-export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, onClose }) => {
+export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, onClose, active = true }) => {
+  const rootRef = useRef<HTMLDivElement>(null);
   const shown = windows.slice(0, MAX_TILES);
   const shotRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [failed, setFailed] = useState<Set<number>>(new Set());
@@ -57,18 +61,26 @@ export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, o
   const key = shown.map((w) => w.hwnd).join(",");
 
   useEffect(() => {
+    if (!active) {
+      invoke("dock_preview_hide_cmd").catch(() => {});
+      return;
+    }
     let cancelled = false;
-    // Wait for the hover card's entrance animation to settle so the measured rects are final.
-    const t = window.setTimeout(() => {
+    let sent = "";
+    const send = () => {
       if (cancelled) return;
       const tiles = shown
         .map((w) => {
           const el = shotRefs.current.get(w.hwnd);
           if (!el) return null;
           const r = el.getBoundingClientRect();
-          return { hwnd: w.hwnd, x: r.left, y: r.top, w: r.width, h: r.height };
+          return { hwnd: w.hwnd, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
         })
-        .filter((t): t is { hwnd: number; x: number; y: number; w: number; h: number } => t !== null);
+        .filter((t): t is { hwnd: number; x: number; y: number; w: number; h: number } => t !== null && t.w > 0 && t.h > 0);
+      // Same rectangles as last time: nothing for the backend to move.
+      const sig = JSON.stringify(tiles);
+      if (sig === sent) return;
+      sent = sig;
       const background =
         getComputedStyle(document.documentElement).getPropertyValue("--lens-pack-base").trim() ||
         "#141418";
@@ -79,17 +91,29 @@ export const DockPreviewStrip: React.FC<Props> = ({ windows, iconUrl, onFocus, o
         .catch(() => {
           if (!cancelled) setFailed(new Set(shown.map((w) => w.hwnd)));
         });
-    }, 170);
+    };
+    // Measure only once the hover card has stopped moving: rectangles taken during its entrance
+    // (scaled, offset) put the native thumbnails in the wrong place for a moment. Wait for every
+    // running animation on the card, capped so a stuck animation can't hold previews back.
+    const card = rootRef.current?.closest(".dock-hover-card") ?? rootRef.current;
+    const settled = Promise.all((card?.getAnimations?.({ subtree: true }) ?? []).map((a) => a.finished.catch(() => undefined)));
+    const cap = new Promise((r) => window.setTimeout(r, 260));
+    Promise.race([settled, cap]).then(() => requestAnimationFrame(send));
+    // The card can still move or resize (a window closes, labels wrap): follow it.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => requestAnimationFrame(send)) : null;
+    if (ro && rootRef.current) ro.observe(rootRef.current);
+    window.addEventListener("resize", send);
     return () => {
       cancelled = true;
-      window.clearTimeout(t);
+      ro?.disconnect();
+      window.removeEventListener("resize", send);
       invoke("dock_preview_hide_cmd").catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, active]);
 
   return (
-    <div className="dock-preview-strip">
+    <div className="dock-preview-strip" ref={rootRef}>
       {shown.map((w) => {
         const icon = w.iconDataUrl || iconUrl;
         const title = w.title || w.processName.replace(/\.exe$/i, "");

@@ -1605,7 +1605,9 @@
 }
 
 /* Results panel: centred above a centred Taskbar, above the icons on a left-aligned bar. */
-.dock-stage.is-bar.dock-align-left .dock-launcher-drawer {
+/* Horizontal edges only: on the left/right edges the panel sits beside the bar (Studio is always
+ * left-aligned, and this rule used to push its panel off screen on the right edge). */
+.dock-stage.is-bar.dock-align-left:is(.dock-edge-bottom, .dock-edge-top) .dock-launcher-drawer {
   left: 8px;
   translate: 0 0;
 }
@@ -1850,8 +1852,10 @@
   transform: none;
 }
 
+/* Tooltips ride above the grown icon by translate, not by changing bottom/top/left/right (which
+ * re-laid them out on every pointer move). */
 .dock-stage.mag-on .dock-tooltip {
-  bottom: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: 0 calc((1 - var(--mag-s, 1)) * var(--dock-effective-icon-size, 40px));
 }
 
 .dock-stage.mag-on.dock-edge-top .dock-icons-row > .dock-item-wrap > .dock-item {
@@ -1859,8 +1863,7 @@
 }
 
 .dock-stage.mag-on.dock-edge-top .dock-tooltip {
-  top: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
-  bottom: auto;
+  translate: 0 calc((var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
 }
 
 .dock-stage.mag-on.dock-edge-left .dock-icons-row > *,
@@ -1877,11 +1880,11 @@
 }
 
 .dock-stage.mag-on.dock-edge-left .dock-tooltip {
-  left: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: calc((var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px)) 0;
 }
 
 .dock-stage.mag-on.dock-edge-right .dock-tooltip {
-  right: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: calc((1 - var(--mag-s, 1)) * var(--dock-effective-icon-size, 40px)) 0;
 }
 
 /* ---------- Launch animations (dock.launchAnimation; "lift" = the rule above) ---------- */

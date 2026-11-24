@@ -98,6 +98,10 @@ jobs:
           VISUAL_EMIT_B64: "1"
         run: node tools/visual/run.mjs
 
+      - name: Dock layout, every style × edge × icon size (search open and closed)
+        if: always()
+        run: node tools/robust/dock-layout.mjs
+
       - name: Accessibility (axe-core)
         if: always()
         run: node tools/a11y/run.mjs
@@ -131,6 +135,7 @@ jobs:
             tools/a11y/out/
             tools/visual/out/report.json
             tools/visual/out/diff/
+            tools/robust/out-layout/
           if-no-files-found: warn
 
       - name: Upload new goldens
