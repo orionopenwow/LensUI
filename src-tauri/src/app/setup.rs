@@ -51,6 +51,12 @@ pub(crate) const LAZY_LABELS: [&str; 10] = [
     "studio",
 ];
 
+/// Labels `run_setup` is building right now (a subset of `lazy_building`).
+fn setup_building() -> &'static Mutex<std::collections::HashSet<String>> {
+    static SET: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> = std::sync::OnceLock::new();
+    SET.get_or_init(|| Mutex::new(std::collections::HashSet::new()))
+}
+
 pub(crate) fn lazy_building() -> &'static Mutex<std::collections::HashSet<String>> {
     static SET: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> =
         std::sync::OnceLock::new();
@@ -149,7 +155,25 @@ where
         return None;
     }
     if !lazy_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()) {
-        return None; // already being built; that build's retry will open it
+        // Already being built. A first-use build runs this caller's action itself when it is done;
+        // a start-up build has no caller to run, so wait for that window here and run it then.
+        if setup_building().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
+            let app2 = app.clone();
+            let label2 = label.to_string();
+            thread::spawn(move || {
+                let started = std::time::Instant::now();
+                while started.elapsed() < Duration::from_millis(15_000) {
+                    if app2.get_webview_window(&label2).is_some()
+                        && !setup_building().lock().unwrap_or_else(|e| e.into_inner()).contains(&label2)
+                    {
+                        retry(app2);
+                        return;
+                    }
+                    thread::sleep(Duration::from_millis(50));
+                }
+            });
+        }
+        return None;
     }
     let app2 = app.clone();
     let label2 = label.to_string();
@@ -203,8 +227,17 @@ pub(crate) fn run_setup(
             && label != "studio"
             && (!initial_config.func.lazy_windows
                 || (label == "settings" && !initial_config.onboarding_completed));
-        if needed_now && handle.get_webview_window(label).is_none() {
+        // Claim the label first: a first-use build (`ensure_window`) started from another thread at
+        // the same moment would otherwise build a second window under the same label, leaving an
+        // orphaned page Tauri no longer knows about (seen in CI as two Settings pages).
+        if needed_now
+            && handle.get_webview_window(label).is_none()
+            && lazy_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string())
+        {
+            setup_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string());
             let _ = build_window_from_config(&handle, label);
+            setup_building().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+            lazy_building().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
         }
     }
 

@@ -69,30 +69,41 @@ pub(crate) fn on_failure(label: &str, kind: i32) -> bool {
 /// gets a new WebView2 controller, and that one must be watched too. A label-keyed set left the
 /// recreated Dock unwatched, so killing its renderer went unnoticed (`webview-killed` E2E).
 pub(crate) fn watch<R: tauri::Runtime>(webview: &tauri::Webview<R>) {
-    register(webview, webview.label().to_string());
+    register(webview, webview.label().to_string(), 0);
 }
 
 #[cfg(windows)]
 thread_local! {
-    /// The controller each label is currently watched on. Holding the COM reference keeps the old
-    /// controller's address from being reused until it is replaced, so comparing is safe. Only
-    /// touched inside `with_webview` callbacks, which all run on the main thread.
-    static WATCHED: std::cell::RefCell<std::collections::HashMap<String, webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Controller>> =
+    /// The controller (by address) each label is currently watched on. Only the address is kept,
+    /// never a COM reference: holding the controller would keep a closed window's page alive.
+    /// Only touched inside `with_webview` callbacks, which all run on the main thread.
+    static WATCHED: std::cell::RefCell<std::collections::HashMap<String, usize>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
 #[cfg(windows)]
-fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String) {
+fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String, attempt: u32) {
+    let again = webview.clone();
     let _ = webview.with_webview(move |pw| {
         use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_PROCESS_FAILED_KIND;
         use webview2_com::ProcessFailedEventHandler;
         crate::failsafe::guard::ffi_guard("renderer-register", (), || unsafe {
+            use windows_core::Interface;
             let controller = pw.controller();
-            if WATCHED.with(|w| w.borrow().get(&label).is_some_and(|c| c == &controller)) {
+            let addr = controller.as_raw() as usize;
+            if WATCHED.with(|w| w.borrow().get(&label) == Some(&addr)) {
                 return;
             }
             let Ok(core) = controller.CoreWebView2() else {
-                // Not ready yet: the next page-load event for this webview tries again.
+                // Not ready yet. A page that loads only once (the Dock) gets no second page-load
+                // event, so try again shortly instead of waiting for one.
+                if attempt < 20 {
+                    let label = label.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(250));
+                        register(&again, label, attempt + 1);
+                    });
+                }
                 return;
             };
             let for_handler = label.clone();
@@ -112,14 +123,14 @@ fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String) {
             }));
             let mut token = 0i64;
             if core.add_ProcessFailed(&handler, &mut token).is_ok() {
-                WATCHED.with(|w| w.borrow_mut().insert(label.clone(), controller));
+                WATCHED.with(|w| w.borrow_mut().insert(label.clone(), addr));
             }
         });
     });
 }
 
 #[cfg(not(windows))]
-fn register<R: tauri::Runtime>(_webview: &tauri::Webview<R>, _label: String) {}
+fn register<R: tauri::Runtime>(_webview: &tauri::Webview<R>, _label: String, _attempt: u32) {}
 
 /// Puts keyboard focus inside the page of `win`, not just on its native window (B-12b).
 ///
