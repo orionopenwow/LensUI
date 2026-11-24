@@ -228,7 +228,11 @@
   const busy = () => dirty || [...D.querySelectorAll('input[type="file"]')].some((f) => f.files && f.files.length > 0);
 
   // ---- Lens shortcuts while the page has focus (only Lens's own combos) ----
-  const LENS_KEYS = { "ctrl+l": 1, "ctrl+t": 1, "ctrl+w": 1, "ctrl+f": 1, "ctrl+j": 1, "ctrl+shift+t": 1, "ctrl+shift+k": 1, "ctrl+d": 1 };
+  const LENS_KEYS = {
+    "ctrl+l": 1, "ctrl+t": 1, "ctrl+w": 1, "ctrl+f": 1, "ctrl+j": 1, "ctrl+shift+t": 1, "ctrl+shift+k": 1, "ctrl+d": 1,
+    "ctrl+tab": 1, "ctrl+shift+tab": 1, "ctrl+h": 1, "ctrl+=": 1, "ctrl++": 1, "ctrl+shift++": 1, "ctrl+-": 1, "ctrl+0": 1,
+    "ctrl+1": 1, "ctrl+2": 1, "ctrl+3": 1, "ctrl+4": 1, "ctrl+5": 1, "ctrl+6": 1, "ctrl+7": 1, "ctrl+8": 1, "ctrl+9": 1,
+  };
   addEventListener("keydown", (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
     const combo = `ctrl+${e.shiftKey ? "shift+" : ""}${(e.key || "").toLowerCase()}`;
@@ -260,9 +264,27 @@
   const media = () => [...D.querySelectorAll("video,audio")];
   function applyMute() { for (const m of media()) m.muted = muted || m.muted; }
   new MutationObserver(() => { if (muted) applyMute(); }).observe(D, { childList: true, subtree: true });
+  // Chromium's built-in error page ("This site can't be reached"): report its code so Lens can
+  // draw its own page instead. Empty on every normal page.
+  function netError() {
+    try {
+      const body = D.body;
+      const onErrorPage = location.protocol === "chrome-error:" || !!(body && body.classList && body.classList.contains("neterror"));
+      if (!onErrorPage) return "";
+      const code = D.querySelector(".error-code");
+      return ((code && code.textContent) || "ERR_FAILED").trim().slice(0, 60);
+    } catch (_) {
+      return "";
+    }
+  }
   function status() {
     const icon = D.querySelector('link[rel~="icon"]');
+    const nav = W.navigation;
     return {
+      canBack: nav && typeof nav.canGoBack === "boolean" ? nav.canGoBack : history.length > 1,
+      canForward: nav && typeof nav.canGoForward === "boolean" ? nav.canGoForward : false,
+      ready: D.readyState,
+      error: netError(),
       url: location.href,
       title: D.title,
       favicon: icon ? icon.href : "",
@@ -381,6 +403,7 @@
     scrollTo: (c) => { W.scrollTo(0, Number(c.y) || 0); return { ok: true }; },
     back: () => { history.back(); return { ok: true }; },
     forward: () => { history.forward(); return { ok: true }; },
+    stop: () => { W.stop(); return { ok: true }; },
   };
 
   const agent = Object.freeze({
