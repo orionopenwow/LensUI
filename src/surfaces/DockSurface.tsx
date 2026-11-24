@@ -17,6 +17,7 @@ import { toDockResults } from "../search/dockAdapter";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { captureFlip, glideOut, useLingering, type FlipCapture } from "../ui/motion";
+import { attentionFor, useAttention } from "../dock/attention";
 import {
   Search,
   Folder,
@@ -335,6 +336,8 @@ export const DockSurface: React.FC = () => {
   // Day/night theme schedule runs from the Dock only, so exactly one window applies it.
   useThemeSchedule(config, updateConfig, true);
   const runningWindows = useRunningWindows(900);
+  // Apps asking for attention (taskbar flash): urgent colour, one bounce, highlight until activated.
+  const attention = useAttention(runningWindows);
   const [pinnedIcons, setPinnedIcons] = useState<Record<string, string | null>>({});
   const [dockVisible, setDockVisible] = useState(true);
   // Voice: the Dock becomes the voice module while you talk (docs/VOICE.md).
@@ -2508,10 +2511,12 @@ export const DockSurface: React.FC = () => {
             wins.some((w) => w.processName.toLowerCase().includes("spotify"));
           const hasHoverCard = isSpotify || wins.length > 0;
           const unread = notifBadgeFor(app.name, primaryWin?.processName, app.path.split(/[\\/]/).pop());
+          const urgent = attentionFor(attention, app.path, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName));
           return (
             <React.Fragment key={app.id}>
             <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""}`}
+              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
+              data-attention={urgent ? urgent.since.toFixed(0) : undefined}
               data-dock-drag-key={itemKey}
               data-dock-pinned="true"
               data-dock-pinned-id={app.id}
@@ -2592,15 +2597,18 @@ export const DockSurface: React.FC = () => {
                   <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
+                ) : urgent && urgent.count > 1 ? (
+                  <span className="dock-notif-badge dock-attention-badge" aria-hidden="true">{urgent.count > 99 ? "99+" : urgent.count}</span>
                 ) : (
                   wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name}</span>}
               </button>
               {showLabels && !isBar && <span className="dock-label">{app.name}</span>}
-              {wins.length > 0 && (
-                <span className={`dock-indicator ${primaryWin?.isFocused ? "focused" : ""}`} />
+              {(wins.length > 0 || urgent) && (
+                <span className={`dock-indicator ${primaryWin?.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
               )}
+              {urgent && <span className="dock-attention-sr">{app.name} needs your attention</span>}
             </div>
             {separatorsAfter.includes(app.id) && <div className="dock-divider dock-user-sep" />}
             </React.Fragment>
@@ -2614,9 +2622,11 @@ export const DockSurface: React.FC = () => {
           const isSpotify = primaryWin.processName.toLowerCase().includes("spotify");
           const cleanLabel = primaryWin.processName.replace(/\.exe$/i, "");
           const unread = notifBadgeFor(cleanLabel, primaryWin.title);
+          const urgent = attentionFor(attention, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName));
           return (
             <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""}`}
+              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
+              data-attention={urgent ? urgent.since.toFixed(0) : undefined}
               key={key}
               data-dock-drag-key={itemKey}
               data-dock-pinned="false"
@@ -2690,13 +2700,16 @@ export const DockSurface: React.FC = () => {
                   <span className="dock-notif-badge" aria-hidden="true">
                     {unread > 99 ? "99+" : unread}
                   </span>
+                ) : urgent && urgent.count > 1 ? (
+                  <span className="dock-notif-badge dock-attention-badge" aria-hidden="true">{urgent.count > 99 ? "99+" : urgent.count}</span>
                 ) : (
                   wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
                 )}
                 {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
               </button>
               {showLabels && !isBar && <span className="dock-label">{cleanLabel}</span>}
-              <span className={`dock-indicator ${primaryWin.isFocused ? "focused" : ""}`} />
+              <span className={`dock-indicator ${primaryWin.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
+              {urgent && <span className="dock-attention-sr">{cleanLabel} needs your attention</span>}
             </div>
           );
         })}

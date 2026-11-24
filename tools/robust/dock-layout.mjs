@@ -158,6 +158,48 @@ for (const variant of VARIANTS) for (const style of STYLES) {
       if (process.env.DOCK_LAYOUT_VERBOSE === "1") console.log(`  ${problems.length ? "FAIL" : "ok  "} ${name}`);
       if (open) await page.keyboard.press("Escape");
     }
+    // Attention (an app flashing its taskbar button): every style shows the urgent colour on that
+    // app's indicator, a count badge inside the Dock, and drops it when the request ends.
+    if (!variant.id) {
+      await page.waitForTimeout(350);
+      await page.evaluate(() => window.__lensEmit("dock:attention", { appId: "notepad.exe", active: true, count: 3 }));
+      await page.waitForTimeout(900);
+      const a = await page.evaluate(() => {
+        const wrap = document.querySelector(".dock-item-wrap.is-attention");
+        const ind = wrap?.querySelector(".dock-indicator.attention");
+        const badge = wrap?.querySelector(".dock-attention-badge");
+        const pill = document.querySelector(".dock-pill")?.getBoundingClientRect();
+        const b = badge?.getBoundingClientRect();
+        const ib = ind?.getBoundingClientRect();
+        return {
+          wraps: document.querySelectorAll(".dock-item-wrap.is-attention").length,
+          colour: ind ? getComputedStyle(ind).backgroundColor : "",
+          indVisible: !!ib && ib.width > 2 && ib.height > 1 && getComputedStyle(ind).opacity !== "0",
+          badge: badge?.textContent ?? "",
+          badgeOnScreen: !!b && b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight,
+          pillOk: !!pill,
+          sr: wrap?.querySelector(".dock-attention-sr")?.textContent ?? "",
+        };
+      });
+      const name = `${style}-${edge}-attention`;
+      const ap = [];
+      if (a.wraps !== 1) ap.push(`expected 1 app asking for attention, found ${a.wraps}`);
+      if (!/247,\s*99,\s*12/.test(a.colour)) ap.push(`indicator not in the urgent colour (${a.colour || "no indicator"})`);
+      if (!a.indVisible) ap.push("urgent indicator not visible");
+      if (a.badge !== "3") ap.push(`count badge shows "${a.badge}"`);
+      else if (!a.badgeOnScreen) ap.push("count badge off screen");
+      if (!/needs your attention/.test(a.sr)) ap.push("no screen-reader text");
+      if (SHOTS || ap.length) {
+        mkdirSync(outDir, { recursive: true });
+        writeFileSync(join(outDir, `${name}.png`), await page.screenshot());
+      }
+      await page.evaluate(() => window.__lensEmit("dock:attention", { appId: "notepad.exe", active: false }));
+      await page.waitForTimeout(250);
+      if (await page.locator(".dock-item-wrap.is-attention").count()) ap.push("still urgent after the request ended");
+      runs++;
+      if (ap.length) failures.push(`${name}: ${ap.join("; ")}`);
+      if (process.env.DOCK_LAYOUT_VERBOSE === "1") console.log(`  ${ap.length ? "FAIL" : "ok  "} ${name}`);
+    }
     const errs = page.problems.errors.filter((e) => !/favicon/.test(e));
     if (errs.length) failures.push(`${style}-${edge}${variant.id}: ${errs.length} page errors: ${errs[0]}`);
     await page.context().close();
