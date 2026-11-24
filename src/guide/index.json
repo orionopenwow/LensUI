@@ -9990,6 +9990,23 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
+   "id": "doc.lens-browser.19",
+   "kind": "doc",
+   "title": "Lens Browser: AAA pass",
+   "text": "The feature map, what waits and why, and the real-hardware test list are in BROWSER AAA.md. In short, this pass added: Tab switching by keyboard, duplicate tab, a close button and arrow keys on the horizontal strip. Address suggestions from open tabs, bookmarks, history and search, with arrow keys. Back and forward that are only enabled when there is somewhere to go; a loading mark and Stop. Zoom in, out and reset, remembered per site. Find with previous and next. A new-tab page (most visited, bookmarks, recently closed) and Lens's own page when a site fails to load. History with search, days, remove one and clear; downloads that survive a restart. Import item by item, with a receipt so an import can be removed in one step. New commands: browser tab duplicate , browser history remove , browser downloads clear , browser import items , browser import receipts , browser import undo . browse",
+   "path": [
+    "Docs",
+    "Lens Browser",
+    "AAA pass"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md",
+    "heading": "AAA pass"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
    "id": "doc.living-themes.0",
    "kind": "doc",
    "title": "Living Themes",

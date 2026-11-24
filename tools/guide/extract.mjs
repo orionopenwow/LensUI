@@ -494,7 +494,7 @@ export function extractHotkeys(root) {
 // ---------------------------------------------------------------------------------------------
 
 // Developer-only docs (plans, research, integration notes) are not user help.
-const DEV_DOCS = /^(INTEGRATION_NOTES|DESIGN_AUDIT|PERF_REPORT|BUG_REPORT|NEXT_STEPS|CORE_PATCH_PLAN|COMPETITIVE_STRATEGY|FEATURE_RESEARCH|COMMAND_RESEARCH|VOICE_RESEARCH|ROBUSTNESS|RELEASING|ROADMAP|THEMES_ROADMAP|KEYHOOK|TESTING|MASTERPLAN|AI_SURFACES|GUIDE)\.md$/;
+const DEV_DOCS = /^(BROWSER_AAA|INTEGRATION_NOTES|DESIGN_AUDIT|PERF_REPORT|BUG_REPORT|NEXT_STEPS|CORE_PATCH_PLAN|COMPETITIVE_STRATEGY|FEATURE_RESEARCH|COMMAND_RESEARCH|VOICE_RESEARCH|ROBUSTNESS|RELEASING|ROADMAP|THEMES_ROADMAP|KEYHOOK|TESTING|MASTERPLAN|AI_SURFACES|GUIDE)\.md$/;
 // Sections inside user docs that are for developers.
 const DEV_HEADING = /wiring|integrat|snippet|\btests?\b|\bci\b|files|build|commands? \(backend\)|ipc|contract|implementation|architecture|for developers|internals|verification|known gaps|todo/i;
 export function docFiles(root) {

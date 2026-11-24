@@ -24,20 +24,20 @@ Paths are under `src/browser/` (UI) and `src-tauri/src/browser/` (core) unless t
 | Open, close a tab | `Sidebar.tsx`, `model.rs` | + button, Ctrl+T, Ctrl+W, middle-click | works | works | Closing picks the most recent tab, never an empty frame |
 | Reopen closed tab | `model.rs` `reopen_closed` | Ctrl+Shift+T, start page list | works (last 25) | works | Start page lists them so they can be found by eye |
 | Drag to reorder, into folders | `Sidebar.tsx`, `model.ts` `dropIndex` | drag | works, no motion | works, tabs glide (FLIP) | Nothing jumps; the drop target is obvious |
-| Pin a tab | `Sidebar.tsx` | pin button, tab menu | works | works | Pinned tabs stay first and survive restart |
-| Duplicate a tab | `commands/browser.rs` `browser_tab_duplicate` | tab menu, Ctrl+Shift+D is taken so: Alt+Shift+D | missing | works | Copy opens next to the original |
+| Pin a tab | `Sidebar.tsx` | button on the tab row (hover or focus) | partly: the command existed, no control showed it | works | Pinned tabs stay first and survive restart |
+| Duplicate a tab | `commands/browser.rs` `browser_tab_duplicate` | button on the tab row (hover or focus) | missing | works | Copy opens next to the original, in the same folder |
 | Switch tabs by keyboard | `BrowserSurface.tsx` `combo`, `page_agent.js` | Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1…8, Ctrl+9 (last) | missing | works | Same keys as every browser, also while the page has focus |
 | Address bar | `BrowserSurface.tsx`, `model.ts` `suggestions` | Ctrl+L, click | partly: history only, no keyboard | works: open tabs, bookmarks, history, search; arrows, Enter, Tab | First row is what Enter does; switching to an open tab beats opening a copy |
 | Back, forward | `page_agent.js` (Navigation API), `nav.ts` | buttons, Alt+Left/Right | partly: always enabled | works: disabled when there is nowhere to go | Buttons never lie |
 | Reload and stop | `commands/browser.rs` `browser_history_nav` | button, Ctrl+R, F5, Esc | partly: reload only, no loading state | works: spinner in the tab, button turns into Stop while loading | Loading is visible within 300 ms |
 | Find in page | `page_agent.js` `find` | Ctrl+F, Enter, Shift+Enter | partly: no previous/next buttons | works | Count, previous, next, "ask instead" when nothing matches |
 | Zoom | `commands/browser.rs` `browser_zoom` | Ctrl +, Ctrl −, Ctrl 0, toolbar chip | partly: reset only, per tab | works: in/out/reset, remembered per site | A site stays at the size you chose |
-| Downloads | `host.rs` `on_download`, `store.rs` | Ctrl+Shift+J is taken by the page so: toolbar tray, panel | partly: list only, lost on restart | partly: tray with running count, elapsed time, show in folder, clear, survives restart. No byte progress (see 2.2) | Progress bar with bytes and speed |
-| History | `model.rs` `History` | Ctrl+H, panel | partly: last 60, no search | works: search, grouped by day, remove one, clear last hour / all | Finds a page from a word in its title |
+| Downloads | `host.rs` `on_download`, `store.rs`, `Lists.tsx` | toolbar tray (appears with the first download), panel | partly: list only, lost on restart | partly: tray with running count, elapsed time, show in folder, clear, survives restart. No byte progress (see 2.2) | Progress bar with bytes and speed |
+| History | `model.rs` `History`, `Lists.tsx` | Ctrl+H, panel | partly: last 60, no search | works: search, grouped by day, remove one, clear last hour / all | Finds a page from a word in its title |
 | Session restore | `store.rs` atomic `state.json` | automatic | works | works | After a crash every tab is back, asleep, in place |
-| New tab page | `StartPage.tsx` | Ctrl+T, last tab closed | stub: one line of text | works: search, most visited, bookmarks, recently closed, shortcuts | Useful in one glance, themed, no network |
+| New tab page | `Pages.tsx` `StartPage` | Ctrl+T, last tab closed | stub: one line of text | works: search, most visited, bookmarks, recently closed, shortcuts | Useful in one glance, themed, no network |
 | Titles and favicons | `host.rs` `after_load`, `Sidebar.tsx` `Avatar` | automatic | partly: letter avatars only (the frame never loads remote images, by design) | partly: unchanged | Real icons, fetched by the core and cached, never by the frame |
-| Loading and error pages | `nav.ts`, `ErrorPage.tsx`, `page_agent.js` `status` | automatic | missing: raw Edge error page | partly: Lens page for offline, DNS, refused, timed out, certificate, blocked. Detection reads Chromium's error page from inside it (see 2.3) | The core reports the failure itself |
+| Loading and error pages | `nav.ts`, `Pages.tsx` `ErrorPage`, `page_agent.js` `status` | automatic | missing: raw Edge error page | partly: Lens page for offline, DNS, refused, timed out, certificate, blocked. Detection reads Chromium's error page from inside it (see 2.3) | The core reports the failure itself |
 | Crashed or hung tab | `BrowserSurface.tsx` | automatic | works: per tab, after 8 silent polls | works | Other tabs never notice |
 | Sleeping tabs, tidy, archive | `model.rs` | automatic, Ctrl+Shift+K | works | works | — |
 | Spaces (separate profiles), locked spaces | `model.rs`, `commands/browser.rs` | sidebar | works | works | — |
@@ -92,7 +92,7 @@ Counting the rows above (39 features):
 
 | | works | partly | stub | missing |
 |---|---|---|---|---|
-| Before | 21 | 9 | 1 | 8 |
+| Before | 20 | 10 | 1 | 8 |
 | After | 33 | 5 | 0 | 1 (permission prompts) |
 
 ## 2. What waits, and why
@@ -190,7 +190,7 @@ Short findings, each with its source.
 | Ctrl+Tab / Ctrl+Shift+Tab | Next, previous tab |
 | Ctrl+1…8 / Ctrl+9 | Tab by position / last tab |
 | Alt+Left / Alt+Right | Back, forward |
-| Ctrl+R, F5 / Esc | Reload / stop loading |
+| Ctrl+R, F5 / Esc | Reload / stop loading (Esc only while the Lens frame has focus, so pages keep their own Esc) |
 | Ctrl+F | Find in page (Enter next, Shift+Enter previous) |
 | Ctrl++ / Ctrl+− / Ctrl+0 | Zoom in, out, reset |
 | Ctrl+H | History |

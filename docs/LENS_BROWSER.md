@@ -327,3 +327,22 @@ without that switch, and sign-ins stay blocked.
 | Downloads | Partial: rules by file type (`downloadRules`: ext → existing folder). "Ask where to save" needs a native save dialog in the download callback; not done. |
 | Shortcuts while a page has focus | Done via an injected key bridge for Lens's own combos only (Ctrl+L/T/W/F/J/D, Ctrl+Shift+T/K); the page agent queues them and the UI polls every 300 ms. The native `AcceleratorKeyPressed` handler remains the better fix (native extras). |
 | AI off means off | Done (see above). |
+
+## AAA pass
+
+The feature map, what waits and why, and the real-hardware test list are in
+[BROWSER_AAA.md](BROWSER_AAA.md). In short, this pass added:
+
+* Tab switching by keyboard, duplicate tab, a close button and arrow keys on the horizontal strip.
+* Address suggestions from open tabs, bookmarks, history and search, with arrow keys.
+* Back and forward that are only enabled when there is somewhere to go; a loading mark and Stop.
+* Zoom in, out and reset, remembered per site.
+* Find with previous and next.
+* A new-tab page (most visited, bookmarks, recently closed) and Lens's own page when a site fails
+  to load.
+* History with search, days, remove one and clear; downloads that survive a restart.
+* Import item by item, with a receipt so an import can be removed in one step.
+
+New commands: `browser_tab_duplicate`, `browser_history_remove`, `browser_downloads_clear`,
+`browser_import_items`, `browser_import_receipts`, `browser_import_undo`. `browser_history_nav`
+also takes `stop`; `browser_import_run` also takes `skip` and `adoptSearch`.
