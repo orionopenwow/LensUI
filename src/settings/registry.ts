@@ -404,10 +404,11 @@ export const PAGES: PageDef[] = [
     description: "Lens updates, crash reports, the safety net, self-test, backups and the Tester Hub.",
     icon: "flask",
     color: "#FBBF24",
-    controls: ["Check for updates", "Run self-test", "Back up settings"],
-    keywords: ["about", "version", "update lens", "crash reports", "safe mode", "safety net", "self test", "backup", "restore", "tester", "remove all lens changes", "uninstall"],
+    controls: ["Check for updates", "Run setup", "Run self-test", "Back up settings"],
+    keywords: ["about", "version", "setup", "run setup", "update lens", "crash reports", "safe mode", "safety net", "self test", "backup", "restore", "tester", "remove all lens changes", "uninstall"],
     sections: [
       { id: "updates", label: "Updates & crash reports" },
+      { id: "setup", label: "Setup", keywords: ["setup", "welcome", "first run", "wizard", "what's new", "onboarding"] },
       { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch"] },
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },

@@ -17,7 +17,9 @@
     "gen:catalogue": "node -e \"require('child_process').execSync('cargo test --lib export_catalogue',{cwd:'src-tauri',stdio:'inherit',env:{...process.env,LENS_WRITE_CATALOGUE:'1'}})\"",
     "ext:build": "node extensions/browser/build.mjs",
     "ext:check": "node extensions/browser/build.mjs --check",
-    "parity:tester": "node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs"
+    "parity:tester": "node tools/parity/tester/build.mjs && node tools/parity/tester/shoot.mjs",
+    "parity:setup": "node tools/parity/build.mjs && node tools/parity/setup/shoot.mjs",
+    "gen:whatsnew": "node tools/setup/whats-new.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0",

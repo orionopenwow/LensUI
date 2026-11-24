@@ -7,6 +7,14 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Lens setup on the first launch and after every new version:** pick a Dock (floating is the
+  default), colours and optional extras, or read what's new after an update. Nothing changes
+  until Finish, and Skip keeps everything as it is. Run it again from Settings › About & Testing
+  or by typing "setup" in Command (docs/SETUP.md).
+- **Launch-Lens-UI.bat** says "Lens", installs dependencies only when `bun.lock` changed, offers
+  the dev build or your last built Lens, and opens the setup once after the folder was updated.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,
