@@ -4,7 +4,7 @@
 import React from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { HEALTHY_AFTER_MS, isDisabled, isOverlay, nextRecord, problemText, stepFor, type Step } from "./policy";
-import { readRecord, reportCrash, writeRecord } from "./report";
+import { noteNoticeShown, readRecord, reportCrash, writeRecord } from "./report";
 import "./failsafe.css";
 
 interface Props {
@@ -56,12 +56,16 @@ export class SurfaceBoundary extends React.Component<Props, State> {
     const step = stepFor(record.count, isOverlay(surface));
     reportCrash(surface, error, step.kind === "disabled");
     this.hideIfOverlay();
-    this.setState({ step });
-    if (step.kind !== "reload") this.showCard();
-    if (step.kind === "reload") {
-      window.clearTimeout(this.reloadTimer);
-      this.reloadTimer = window.setTimeout(() => window.location.reload(), step.afterMs);
-    }
+    // The reload is timed from the moment the notice is on screen, not from the catch, so a busy
+    // page cannot reload before the person (or the test) could read it.
+    this.setState({ step }, () => {
+      if (!isOverlay(surface)) noteNoticeShown(surface, problemText(step));
+      if (step.kind !== "reload") this.showCard();
+      if (step.kind === "reload") {
+        window.clearTimeout(this.reloadTimer);
+        this.reloadTimer = window.setTimeout(() => window.location.reload(), step.afterMs);
+      }
+    });
   }
 
   /** A crashed overlay must not stay on screen as an invisible sheet over the desktop. */

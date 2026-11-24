@@ -13,7 +13,7 @@
 //   surface-crash    a window is made to throw while rendering: it reports, reloads itself and
 //                    the rest of Lens carries on.
 //   webview-killed   every WebView2 renderer of Lens is killed: the Lens process survives, and
-//                    the Dock page is reloaded once its heartbeat has been missing long enough.
+//                    the Dock page is reloaded within seconds (WebView2 reports the dead renderer).
 //   registry-denied  the HKCU Run key is made read-only, then "start with Windows" is switched
 //                    on: the command reports the failure, Lens keeps running.
 //
@@ -154,6 +154,41 @@ async function cdpEval(surface, expression, timeoutMs = 6000) {
   } catch {
     return undefined;
   }
+}
+
+/** The DevTools targets that show the Settings page. */
+async function settingsTargets() {
+  try {
+    const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
+    return targets.filter((t) => t.type === "page" && t.webSocketDebuggerUrl && String(t.url).includes("surface=settings"));
+  } catch {
+    return [];
+  }
+}
+
+/** Like cdpEval, but for one fixed target (its id survives a reload of the page). */
+async function cdpEvalTarget(target, expression, timeoutMs = 6000) {
+  return new Promise((done) => {
+    let ws;
+    const finish = (v) => {
+      clearTimeout(timer);
+      try { ws?.close(); } catch {}
+      done(v);
+    };
+    const timer = setTimeout(() => finish(undefined), timeoutMs);
+    try {
+      ws = new WebSocket(target.webSocketDebuggerUrl);
+    } catch {
+      finish(undefined);
+      return;
+    }
+    ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression, awaitPromise: true, returnByValue: true } }));
+    ws.onmessage = (m) => {
+      const msg = JSON.parse(String(m.data));
+      if (msg.id === 1) finish(msg.result?.result?.value);
+    };
+    ws.onerror = () => finish(undefined);
+  });
 }
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -342,29 +377,22 @@ const SCENARIOS = [
         let settings = await waitForSurface(s, "settings");
         await sleep(1500);
         settings = await waitForSurface(s, "settings");
-        // Hard checks: the crash is logged, the page really reloads (a marker on `window` is gone) and
-        // comes back. The "Reloading…" notice is sampled every 40 ms and only warned about: on the CI
-        // runner it is sometimes never seen (B-31), and its wording is unit-tested in policy.test.ts.
-        await settings.evaluate(() => {
-          window.__beforeCrash = true;
-          window.dispatchEvent(new Event("lens:test-crash"));
-        });
-        const seen = [];
+        // Everything below talks to one DevTools target (the Settings window's page), fixed before
+        // the crash, so a second page with the same URL can never be read by mistake (B-31: the
+        // earlier versions of this check could not tell which page they were reading).
+        const targets = await settingsTargets();
+        expect(problems, targets.length === 1, `expected one Settings page, found ${targets.length}`);
+        const target = targets[0];
+        await cdpEvalTarget(target, "window.__beforeCrash = true; window.dispatchEvent(new Event('lens:test-crash')); true");
         let reloaded = false;
-        for (const t0 = Date.now(); Date.now() - t0 < 6000 && !reloaded; await sleep(40)) {
-          const page = surfaces(s).settings;
-          const snap = page && (await page.evaluate(() => ({
-            marker: !!window.__beforeCrash,
-            text: document.querySelector(".fs-problem-text")?.textContent || "",
-            root: document.getElementById("root")?.innerHTML.length || 0,
-            vis: document.visibilityState,
-          })).catch(() => null));
-          if (!snap) continue;
-          if (!snap.marker) reloaded = true;
-          else if (!seen.length || seen[seen.length - 1].text !== snap.text || seen[seen.length - 1].root !== snap.root) seen.push({ at: Date.now() - t0, ...snap });
+        for (const t0 = Date.now(); Date.now() - t0 < 8000 && !reloaded; await sleep(100)) {
+          const marker = await cdpEvalTarget(target, "!!window.__beforeCrash && (document.getElementById('root') ? 1 : 0)", 1500);
+          if (marker === false) reloaded = true;
         }
-        expect(problems, reloaded, `the crashed window did not reload itself within 6 s (${JSON.stringify(seen)})`);
-        if (!seen.some((x) => /Reloading/.test(x.text))) console.log(`WARN surface-crash: the "Reloading…" notice was never seen (B-31 trace): ${JSON.stringify(seen)}`);
+        expect(problems, reloaded, "the crashed window did not reload itself within 8 s");
+        // The boundary records the notice when it is on screen (sessionStorage survives the reload).
+        const notice = await cdpEvalTarget(target, "sessionStorage.getItem('lens.failsafe.settings.notice') || ''");
+        expect(problems, /Reloading/.test(String(notice)), `the crashed window never showed "Reloading…" (recorded: ${JSON.stringify(notice)})`);
         settings = await waitForSurface(s, "settings");
         const back = await settings.evaluate(() => !document.querySelector(".fs-problem") && (document.getElementById("root")?.innerHTML.length || 0) > 0);
         expect(problems, back, "the window did not come back after its automatic reload");
@@ -384,7 +412,7 @@ const SCENARIOS = [
       const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal", LENS_ALIVE_STALE_SECS: "12" });
       try {
         await waitForSurface(s, "dock");
-        await sleep(6000); // at least one heartbeat
+        await sleep(6000); // at least one heartbeat, and the renderer watchdog is registered
         await s.browser.close().catch(() => {});
         const killed = ps(
           "$n = 0; Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match '--type=renderer' -and $_.CommandLine -match 'lens-ui' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n"
@@ -392,13 +420,14 @@ const SCENARIOS = [
         expect(problems, Number(killed) > 0, "found no Lens WebView2 renderer to kill");
         await sleep(2000);
         expect(problems, lensProcessCount() > 0, "Lens went down with its WebView renderers");
-        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself. Playwright cannot
-        // follow targets through a renderer crash, so from here the page is asked directly
-        // over its DevTools socket (cdpEval), with no client-side state to go stale.
+        // WebView2 reports the dead renderer (ProcessFailed) and the load guard reloads the Dock
+        // within about a second of noticing; the heartbeat (12 s here) is only the backstop. The
+        // page is polled every second until it is back. Playwright cannot follow targets through a
+        // renderer crash, so the page is asked directly over its DevTools socket (cdpEval).
         let revived = false;
         const t0 = Date.now();
-        while (Date.now() - t0 < 150000 && !revived) {
-          await sleep(5000);
+        while (Date.now() - t0 < 90000 && !revived) {
+          await sleep(1000);
           const alive = await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0");
           if (alive !== true) continue;
           const hasDock = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('get_config').then((c) => !!c && !!c.dock)");
@@ -408,7 +437,7 @@ const SCENARIOS = [
           revived = true;
         }
         if (!revived) {
-          const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe/i.test(l)).slice(-12);
+          const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer/i.test(l)).slice(-12);
           problems.push(`the Dock page was not reloaded after its renderer was killed. Lens said:\n        ${said.join("\n        ") || "(nothing)"}`);
         }
         expect(problems, lensProcessCount() > 0, "Lens exited while recovering");

@@ -292,15 +292,8 @@ const SCENARIOS = [
         cmd
           .waitForFunction(() => /dark mode/i.test(document.getElementById("root").innerText) && document.querySelectorAll("[class*=card], [class*=thread] > *").length > 0, null, { timeout: 8000 })
           .then(() => true, () => false);
-      let ok = await answered();
-      if (!ok) {
-        // B-12 is not fully closed: on rare cold starts the first Enter still does nothing. Print
-        // the trace so the cause can be pinned down, then try once more so unrelated PRs aren't blocked.
-        const trace = await cmd.evaluate(() => ({ ...document.documentElement.dataset, activeEl: document.activeElement?.tagName, input: document.querySelector("textarea")?.value, hasFocus: document.hasFocus(), visible: document.visibilityState, disabled: document.querySelector("textarea")?.disabled, readOnly: document.querySelector("textarea")?.readOnly }));
-        console.log(`WARN lens-command: first Enter did nothing (B-12 trace): ${JSON.stringify(trace)}`);
-        await box.press("Enter");
-        ok = await answered();
-      }
+      // B-12b is fixed (Command gives its page the keyboard when it opens): one Enter, no retry.
+      const ok = await answered();
       if (!ok) {
         const link = await invoke(dock, "command_link_status_cmd").catch((e) => String(e));
         const page = await cmd.evaluate(() => ({
@@ -310,6 +303,7 @@ const SCENARIOS = [
           enters: document.documentElement.dataset.commandEnter,
           queued: document.documentElement.dataset.commandEnterQueued,
           runs: document.documentElement.dataset.commandRun,
+          enterSeen: document.documentElement.dataset.commandEnterSeen,
           active: document.documentElement.dataset.commandActive,
           activeEl: document.activeElement?.tagName,
           open: document.documentElement.dataset.commandOpen,
