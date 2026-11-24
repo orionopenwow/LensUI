@@ -9625,6 +9625,107 @@
    "source": "docs/DITHER.md"
   },
   {
+   "id": "doc.dock-smoothness.0",
+   "kind": "doc",
+   "title": "Dock smoothness",
+   "text": "What keeps the Dock fast and steady. Two halves: the native window side (its own section, from the native Dock PR) and the page side (styles, motion, search bar, hover, attention), below.",
+   "path": [
+    "Docs",
+    "Dock smoothness"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Dock smoothness"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.2",
+   "kind": "doc",
+   "title": "Dock smoothness: What good docks do for perceived latency",
+   "text": "These are the techniques behind the docks and taskbars people call \"smooth\", reduced to what a web-rendered Dock can copy. - Input-to-photon first. macOS's Dock magnification and the Windows 11 taskbar both respond in the next frame after the pointer moves, and never wait on layout. The rule for a page is the same: a pointer move does arithmetic and writes transforms. It does not read layout, re-render a component tree, or cross a process boundary. - One update per frame. Mice report at 125–1000 Hz, displays refresh at 60–240 Hz. Work done per event rather than per frame is wasted, and it delays the frame that matters. Coalesce with requestAnimationFrame . - Hover intent. Neither macOS nor Windows pops a preview for every icon the pointer crosses. Windows shows taskbar thumbnails after a short rest (a few hundred ms by default, shorter once one is showing). macOS tooltips go \"warm\": afte",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "What good docks do for perceived latency"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "What good docks do for perceived latency"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.3",
+   "kind": "doc",
+   "title": "Dock smoothness: What the Lens Dock did, and what changed",
+   "text": "Area Before Now --- --- --- Styles × edges No check covered the seven styles at four edges. Islands on the left/right squeezed its apps island into a 56 px strip and pushed the top icons off screen. Studio on the right edge opened its search panel off screen (a left-aligned rule beat the right-edge rule). tools/robust/dock-layout.mjs renders every style × edge, plus icon sizes 34 and 52 and a 14-pin Dock, with search closed and open. It checks that the Settings gear and the search control are whole, on screen, inside the Dock, not overlapping each other or any icon, reachable with Tab, and that the field is wide enough to type in. 140+ renders, and it runs in the robustness job. Both bugs are fixed. Search in compact styles The Dock held its width and shrank every icon to fit a 200 px slot. The text field ended up ~77 px wide and the Settings gear tiny; with many pins, icons dropped to 2",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "What the Lens Dock did, and what changed"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "What the Lens Dock did, and what changed"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.4",
+   "kind": "doc",
+   "title": "Dock smoothness: Apps asking for attention",
+   "text": "Windows marks an app that calls FlashWindowEx (a chat message, a dialog behind other windows) by flashing its taskbar button. The Dock shows the same, in every style and at every edge: - Colour: the icon and its indicator take the urgent colour, --lens-attention . It defaults to Windows' orange ( #f7630c ), and a theme pack can override it. - Bounce: one bounce when the request starts, toward the screen centre for the Dock's edge. It uses translate only, and is dropped with reduced motion. - Highlight: a steady highlight and a full-length indicator stay until the app is activated. - Count: a count badge when there is more than one request. - Screen readers: the text \"<app needs your attention\". src/dock/attention.ts accepts the native snapshot, the event lens://dock-attention / command get dock attention , with this shape: { version, apps: [{ exePath, processName, hwnds, count, sinceMs }",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Apps asking for attention"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Apps asking for attention"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.5",
+   "kind": "doc",
+   "title": "Dock smoothness: Further ideas, ranked (frontend only)",
+   "text": "1. View transitions for style and edge changes. Wrap the config update that changes dock.style or dock.position in document.startViewTransition , which WebView2 supports. The old and new Dock then crossfade on the compositor instead of jumping (CLS 0.30 today). This needs the switch to happen inside the Dock page rather than arriving as a config event. 2. Split DockSurface.tsx (2,700 lines) into memoised DockItem s. A hover or badge change then re-renders one item instead of the whole Dock. Today's per-move work bypasses React, but a card opening still re-renders every icon. 3. Card-settled signal to the backend. Send dock preview show cmd from the card's animationend , and drop the remaining 260 ms cap. Native can then reuse tile windows between hovers, as the native section suggests. 4. Predictive preview prefetch. When the pointer decelerates toward an icon with windows, ask the backe",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Further ideas, ranked (frontend only)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Further ideas, ranked (frontend only)"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.6",
+   "kind": "doc",
+   "title": "Dock smoothness: To check on a real PC",
+   "text": "1. Each style at each edge, from the Dock's right-click menu: the Settings gear and the search icon are always visible and clickable. Open search: the field is wide enough to type a sentence, and nothing overlaps. 2. Magnification on, sweep fast and slowly: icons follow without lag and settle without jitter. 3. Sweep the pointer along the Dock: no hover cards flash past. Rest on an app with windows: its card opens, and moving to a neighbour switches at once. 4. Drag an app to a new place, on a bottom and on a left Dock, including a fast flick off the Dock: the order is kept, and the Dock never stays in its dragging look. 5. Get a Teams or Discord message with the app in the background: its icon turns orange and bounces once, then stays highlighted until you click it. 6. Every pop-out from the Dock shows a small × at its top-right when you point at it, and the × closes it like Esc does.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "To check on a real PC"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "To check on a real PC"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
    "id": "doc.dock-styles.0",
    "kind": "doc",
    "title": "Dock styles and Dock options",
@@ -9644,7 +9745,7 @@
    "id": "doc.dock-styles.1",
    "kind": "doc",
    "title": "Dock styles and Dock options: Settings (`DockConfig`)",
-   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (existing) m",
+   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split, islands floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (ex",
    "path": [
     "Docs",
     "Dock styles and Dock options",

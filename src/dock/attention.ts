@@ -3,9 +3,11 @@
  * contract. The backend emits one event per change; this module keeps the current set and tells
  * Dock and Top Bar renderers which app keys are urgent.
  *
- * Contract (docs/DOCK_SMOOTHNESS.md › Attention):
- *   event   "dock:attention"
- *   payload { appId: string; active: boolean; count?: number; hwnd?: number }
+ * Two backend shapes are accepted (docs/DOCK_SMOOTHNESS.md › Apps asking for attention):
+ *   snapshot  event "lens://dock-attention" and command "get_dock_attention" (src-tauri/src/attention.rs):
+ *             { version, apps: [{ exePath, processName, hwnds, count, sinceMs }] } — the whole set
+ *   change    event "dock:attention"
+ *             { appId: string; active: boolean; count?: number; hwnd?: number }
  *     appId   lower-case executable name ("discord.exe") or full exe path; either matches.
  *     active  true when the app starts asking, false when it stops (or its window is activated).
  *     count   optional number of pending requests (shown as a badge when > 1).
@@ -15,8 +17,16 @@
  */
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 export const ATTENTION_EVENT = "dock:attention";
+export const ATTENTION_SNAPSHOT_EVENT = "lens://dock-attention";
+export const ATTENTION_SNAPSHOT_CMD = "get_dock_attention";
+
+export interface AttentionSnapshot {
+  version?: number;
+  apps?: { exePath?: string; processName?: string; hwnds?: number[]; count?: number; sinceMs?: number }[];
+}
 
 export interface AttentionPayload {
   appId: string;
@@ -64,6 +74,25 @@ export function applyAttention(map: AttentionMap, p: AttentionPayload, now: numb
   return next;
 }
 
+/** Replaces the set with a backend snapshot. Apps already urgent keep their start time, so a
+ *  repeated snapshot never bounces an icon twice. */
+export function applySnapshot(map: AttentionMap, snap: AttentionSnapshot | null | undefined, now: number): Map<string, AttentionEntry> {
+  const next = new Map<string, AttentionEntry>();
+  for (const a of snap?.apps ?? []) {
+    const key = attentionKey(a.exePath) || attentionKey(a.processName);
+    if (!key) continue;
+    const prev = map.get(key) ?? next.get(key);
+    const hwnds = [...(prev?.hwnds ?? []), ...(a.hwnds ?? [])].filter((h, i, all) => typeof h === "number" && all.indexOf(h) === i);
+    next.set(key, { count: Math.max(1, Math.floor(a.count ?? 1)), since: map.get(key)?.since ?? now, hwnds });
+  }
+  // Nothing changed: hand back the same map (no re-render).
+  if (next.size === map.size && [...next].every(([k, e]) => {
+    const o = map.get(k);
+    return o && o.count === e.count && o.hwnds.length === e.hwnds.length;
+  })) return map as Map<string, AttentionEntry>;
+  return next;
+}
+
 /** Clears every app whose window is now focused (activation ends the request, as on Windows). */
 export function clearFocused(map: AttentionMap, focused: { processName?: string; exePath?: string; hwnd?: number }[]): Map<string, AttentionEntry> {
   if (!map.size || !focused.length) return map as Map<string, AttentionEntry>;
@@ -101,17 +130,21 @@ export function attentionFor(map: AttentionMap, ...names: (string | undefined | 
 export function useAttention(focusedWindows: { processName?: string; exePath?: string; hwnd?: number; isFocused?: boolean }[]): AttentionMap {
   const [map, setMap] = useState<Map<string, AttentionEntry>>(() => new Map());
   useEffect(() => {
-    let off: (() => void) | undefined;
+    const offs: (() => void)[] = [];
     let alive = true;
-    listen<AttentionPayload>(ATTENTION_EVENT, (e) => setMap((m) => applyAttention(m, e.payload, performance.now())))
-      .then((fn) => {
-        if (alive) off = fn;
-        else fn();
+    const keep = (p: Promise<() => void>) =>
+      p.then((fn) => (alive ? offs.push(fn) : fn())).catch(() => {});
+    keep(listen<AttentionPayload>(ATTENTION_EVENT, (e) => setMap((m) => applyAttention(m, e.payload, performance.now()))));
+    keep(listen<AttentionSnapshot>(ATTENTION_SNAPSHOT_EVENT, (e) => setMap((m) => applySnapshot(m, e.payload, performance.now()))));
+    // After a reload the page asks for the current set (a backend without the command: no-op).
+    invoke<AttentionSnapshot>(ATTENTION_SNAPSHOT_CMD)
+      .then((snap) => {
+        if (alive && snap) setMap((m) => applySnapshot(m, snap, performance.now()));
       })
       .catch(() => {});
     return () => {
       alive = false;
-      off?.();
+      offs.forEach((f) => f());
     };
   }, []);
   const focusSig = focusedWindows.filter((w) => w.isFocused).map((w) => `${w.hwnd}:${w.processName}`).join("|");

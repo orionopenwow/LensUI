@@ -208,6 +208,13 @@ for (const variant of VARIANTS) for (const style of STYLES) {
       await page.evaluate(() => window.__lensEmit("dock:attention", { appId: "notepad.exe", active: false }));
       await page.waitForTimeout(250);
       if (await page.locator(".dock-item-wrap.is-attention").count()) ap.push("still urgent after the request ended");
+      // The backend's snapshot shape (lens://dock-attention) drives the same state.
+      await page.evaluate(() => window.__lensEmit("lens://dock-attention", { version: 1, apps: [{ exePath: "notepad.exe", processName: "notepad.exe", hwnds: [], count: 1, sinceMs: 0 }] }));
+      await page.waitForTimeout(250);
+      if ((await page.locator(".dock-item-wrap.is-attention").count()) !== 1) ap.push("snapshot event did not mark the app");
+      await page.evaluate(() => window.__lensEmit("lens://dock-attention", { version: 2, apps: [] }));
+      await page.waitForTimeout(250);
+      if (await page.locator(".dock-item-wrap.is-attention").count()) ap.push("empty snapshot did not clear it");
       runs++;
       if (ap.length) failures.push(`${name}: ${ap.join("; ")}`);
       if (process.env.DOCK_LAYOUT_VERBOSE === "1") console.log(`  ${ap.length ? "FAIL" : "ok  "} ${name}`);

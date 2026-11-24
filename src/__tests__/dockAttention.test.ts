@@ -45,3 +45,22 @@ describe("dock attention", () => {
     expect(clearFocused(m, [{ processName: "z.exe" }])).toBe(m);
   });
 });
+
+describe("dock attention snapshots (lens://dock-attention)", () => {
+  const { applySnapshot } = require("../dock/attention");
+  test("a snapshot replaces the set and keeps start times", () => {
+    let m = applySnapshot(new Map(), { version: 1, apps: [{ exePath: "C:\\x\\Teams.exe", processName: "Teams.exe", hwnds: [5], count: 2, sinceMs: 1 }] }, 10);
+    expect(attentionFor(m, "teams.exe")).toEqual({ count: 2, since: 10, hwnds: [5] });
+    m = applySnapshot(m, { apps: [{ exePath: "C:\\x\\Teams.exe", hwnds: [5, 6], count: 3 }, { processName: "slack.exe" }] }, 99);
+    expect(attentionFor(m, "teams")?.since).toBe(10);
+    expect(attentionFor(m, "teams")?.count).toBe(3);
+    expect(attentionFor(m, "slack.exe")?.since).toBe(99);
+    m = applySnapshot(m, { apps: [] }, 120);
+    expect(m.size).toBe(0);
+  });
+  test("an unchanged snapshot hands back the same map", () => {
+    const snap = { apps: [{ exePath: "a.exe", hwnds: [1], count: 1 }] };
+    const m = applySnapshot(new Map(), snap, 1);
+    expect(applySnapshot(m, snap, 2)).toBe(m);
+  });
+});
