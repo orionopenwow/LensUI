@@ -129,6 +129,33 @@ async function quitLens(s) {
   if (lensProcessCount() > 0) killLens();
 }
 
+/** Evaluates `expression` in the page of one surface through its own DevTools socket.
+ *  Returns the value, or undefined if the page is not there or does not answer in time. */
+async function cdpEval(surface, expression, timeoutMs = 6000) {
+  try {
+    const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
+    const target = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl && String(t.url).includes(`surface=${surface}`));
+    if (!target) return undefined;
+    return await new Promise((done) => {
+      const ws = new WebSocket(target.webSocketDebuggerUrl);
+      const finish = (v) => {
+        clearTimeout(timer);
+        try { ws.close(); } catch {}
+        done(v);
+      };
+      const timer = setTimeout(() => finish(undefined), timeoutMs);
+      ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression, awaitPromise: true, returnByValue: true } }));
+      ws.onmessage = (m) => {
+        const msg = JSON.parse(String(m.data));
+        if (msg.id === 1) finish(msg.result?.result?.value);
+      };
+      ws.onerror = () => finish(undefined);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const unreadableCopies = () => (existsSync(DATA) ? readdirSync(DATA).filter((f) => f.startsWith("config.json.unreadable-")) : []);
 function expect(problems, ok, what) {
@@ -340,45 +367,27 @@ const SCENARIOS = [
       try {
         await waitForSurface(s, "dock");
         await sleep(6000); // at least one heartbeat
+        await s.browser.close().catch(() => {});
         const killed = ps(
           "$n = 0; Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match '--type=renderer' -and $_.CommandLine -match 'lens-ui' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n"
         );
         expect(problems, Number(killed) > 0, "found no Lens WebView2 renderer to kill");
         await sleep(2000);
         expect(problems, lensProcessCount() > 0, "Lens went down with its WebView renderers");
-        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself. The pages this
-        // DevTools connection knew are gone for good (a crashed target does not come back to
-        // the client that saw it crash), so each look uses a fresh connection.
-        await s.browser.close().catch(() => {});
+        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself. Playwright cannot
+        // follow targets through a renderer crash, so from here the page is asked directly
+        // over its DevTools socket (cdpEval), with no client-side state to go stale.
         let revived = false;
         const t0 = Date.now();
         while (Date.now() - t0 < 150000 && !revived) {
           await sleep(5000);
-          let fresh = null;
-          try {
-            fresh = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 15000 });
-            const probe = { browser: fresh };
-            const p = surfaces(probe).dock;
-            const alive = p
-              ? await Promise.race([
-                  p.evaluate(() => !!window.__TAURI_INTERNALS__ && (document.getElementById("root")?.innerHTML.length || 0) > 0).catch(() => false),
-                  sleep(4000).then(() => false),
-                ])
-              : false;
-            if (alive) {
-              const cfg = await invoke(p, "get_config").catch(() => null);
-              expect(problems, !!cfg && !!cfg.dock, "the reloaded Dock page cannot reach the backend");
-              const log = await invoke(p, "tester_log_get", { after: null, limit: 500 }).catch(() => []);
-              expect(problems, log.some((l) => l.area === "loadguard" && /stopped answering/.test(l.message)), "the session log does not say the Dock page was reloaded by the load guard");
-              revived = true;
-              s.browser = fresh; // quitLens uses it
-              fresh = null;
-            }
-          } catch {
-            /* the DevTools endpoint can be busy while pages are being rebuilt */
-          } finally {
-            if (fresh) await fresh.close().catch(() => {});
-          }
+          const alive = await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0");
+          if (alive !== true) continue;
+          const hasDock = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('get_config').then((c) => !!c && !!c.dock)");
+          expect(problems, hasDock === true, "the reloaded Dock page cannot reach the backend");
+          const logged = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('tester_log_get', { after: null, limit: 500 }).then((l) => l.some((x) => x.area === 'loadguard' && /stopped answering/.test(x.message)))");
+          expect(problems, logged === true, "the session log does not say the Dock page was reloaded by the load guard");
+          revived = true;
         }
         if (!revived) {
           const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe/i.test(l)).slice(-12);
@@ -386,7 +395,9 @@ const SCENARIOS = [
         }
         expect(problems, lensProcessCount() > 0, "Lens exited while recovering");
       } finally {
-        await quitLens(s);
+        await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('quit_lens').catch(() => {}); true");
+        for (let i = 0; i < 30 && lensProcessCount() > 0; i++) await sleep(500);
+        if (lensProcessCount() > 0) killLens();
       }
     },
   },
@@ -431,6 +442,10 @@ const SCENARIOS = [
 // ---------------------------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------------------------
+
+// A DevTools client can throw from its own internals while pages are being torn down; that must
+// not end the run before Lens' data folder has been put back.
+process.on("uncaughtException", (e) => console.log(`      (ignored: ${String(e && e.message ? e.message : e).slice(0, 200)})`));
 
 if (process.platform !== "win32") {
   console.log("[failsafe] Windows only; nothing to do here.");
