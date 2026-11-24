@@ -439,7 +439,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.waitForFunction(() => window.lensSite.desk.byApp("browser")?.ready, null, { timeout: 15000 }).catch(() => {});
   const magicText = async () => {
     await page.waitForFunction(() => { const o = window.lensSite.desk.overs.magic; return !o.el.hidden && o.el.classList.contains("is-ready") && o.frame.contentDocument?.querySelector(window.lensSite.OVERS.magic.marker); }, null, { timeout: 8000 }).catch(() => {});
-    return D(() => { const o = window.lensSite.desk.overs.magic; return o.el.hidden ? "" : (o.frame.contentDocument?.body.textContent ?? ""); });
+    return D(() => { const o = window.lensSite.desk.overs.magic; return o.el.hidden ? "" : (o.frame.contentDocument?.body?.textContent ?? ""); });
   };
   {
     const fr = await D(() => { const r = window.lensSite.desk.byApp("browser").frame.getBoundingClientRect(); return { x: r.left + r.width * 0.6, y: r.top + r.height * 0.5 }; });
@@ -574,7 +574,7 @@ async function waitDesk(page, sel = "#desk-host") {
     // Magic exhibit: a step shows the real window in that state; the visitor's own right-click works too.
     await page.evaluate(() => document.getElementById("mx").scrollIntoView({ block: "center" }));
     await page.click('#mx .xstep[data-step="approval"]');
-    expect(await page.waitForFunction(() => /Needs your OK/i.test(document.querySelector("#mx .mx-menu iframe")?.contentDocument?.body.textContent ?? ""), null, { timeout: 20000 }).then(() => true, () => false), "the magic exhibit's “Send to Claude” step shows the approval");
+    expect(await page.waitForFunction(() => /Needs your OK/i.test(document.querySelector("#mx .mx-menu iframe")?.contentDocument?.body?.textContent ?? ""), null, { timeout: 20000 }).then(() => true, () => false), "the magic exhibit's “Send to Claude” step shows the approval");
     const tb = await page.locator("#mx .mx-target").boundingBox();
     await page.mouse.click(tb.x + tb.width * 0.75, tb.y + tb.height * 0.8, { button: "right" });
     await page.waitForTimeout(600);
