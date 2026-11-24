@@ -83,7 +83,7 @@ flowchart TB
 - `win_tiler` tiling and snap layouts; `win_workspaces` workspaces/virtual desktops; `win_monitors` monitor math; `win_summon` app-summon hotkeys; `win_altdrag` Alt+drag move/resize; `win_hotcorners` hot corners (polling thread); `win_keyhook` Win key → launcher, Alt+Tab → overview; `win_events` out-of-process window event tracker; `win_windows` window/app helpers; `win_previews` dock thumbnails (DWM thumbnails in a host window).
 - `win_wallpaper` wallpaper engine and Playground blobs; `win_desktop_input` desktop input for living wallpapers; `win_cursors` code-drawn cursor themes and pointer settings; `win_cursor_fx` pointer effects overlay.
 - `win_folders` folder icons (`desktop.ini`, Shell Icons override); `win_themes` `.lenstheme` files; `win_windhawk` optional Windhawk mod sync.
-- `win_notifications` notification center and DND; `win_quick_settings` gamma night light etc.; `win_system_modules` battery, Wi-Fi, Bluetooth, audio, brightness; `win_media` media session thread; `win_clipboard` clipboard history v1; `win_search` file index, ranking, user scripts.
+- `win_notifications` notification center and DND; `win_quick_settings` gamma night light etc.; `win_system_modules` battery, Wi-Fi, Bluetooth, audio, brightness; `win_media` media session thread; `win_search` file index, ranking, user scripts.
 - `win_mcp` MCP server (stdio) and agents registry; `win_plugins` HTML widget plugins with grants; `win_update` updater; `win_crash` crash reports and log capture; `win_backup` `.lensbackup` and config migration; `win_uninstall` Remove all Lens changes; `win_training` local training data (DPO pairs, macros); `win_sessions` session helpers.
 - `sys_telemetry.rs` shared `sysinfo::System` for CPU/RAM.
 

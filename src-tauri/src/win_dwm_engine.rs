@@ -448,7 +448,12 @@ fn broadcast_refresh() {
         EnumWindows, IsWindowVisible, SendMessageTimeoutW, SMTO_ABORTIFHUNG, WM_NULL,
     };
 
-    unsafe extern "system" fn enum_apply_cb(hwnd: HWND, _lparam: LPARAM) -> BOOL {
+    unsafe extern "system" fn enum_apply_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3); the walk carries on.
+        crate::failsafe::guard::ffi_guard("dwm_engine.enum_apply_cb", BOOL(1), || enum_apply_cb_guarded(hwnd, lparam))
+    }
+
+    unsafe fn enum_apply_cb_guarded(hwnd: HWND, _lparam: LPARAM) -> BOOL {
         // Apply live styling + opacity FIRST (instant non-blocking Win32 calls); skipped,
         // excluded and rule-excluded windows are not messaged at all.
         if IsWindowVisible(hwnd).as_bool() && style_hwnd(hwnd) {
@@ -508,8 +513,11 @@ fn nudge_unload() {
     use windows::Win32::Foundation::{BOOL, HWND, LPARAM, WPARAM};
     use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, SendMessageTimeoutW, SMTO_ABORTIFHUNG, WM_NULL};
     unsafe extern "system" fn cb(hwnd: HWND, _l: LPARAM) -> BOOL {
-        let _ = SendMessageTimeoutW(hwnd, WM_NULL, WPARAM(0), LPARAM(0), SMTO_ABORTIFHUNG, 25, None);
-        BOOL(1)
+        // A panic must not cross into Windows (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard("dwm_engine.nudge_cb", BOOL(1), || {
+            let _ = SendMessageTimeoutW(hwnd, WM_NULL, WPARAM(0), LPARAM(0), SMTO_ABORTIFHUNG, 25, None);
+            BOOL(1)
+        })
     }
     unsafe {
         let _ = EnumWindows(Some(cb), LPARAM(0));

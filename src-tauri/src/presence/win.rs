@@ -33,6 +33,9 @@ static ORB_X: AtomicI32 = AtomicI32::new(i32::MIN);
 static ORB_Y: AtomicI32 = AtomicI32::new(i32::MIN);
 static ORB_R: AtomicI32 = AtomicI32::new(0);
 static HOTKEY: OnceLock<Mutex<Option<Shortcut>>> = OnceLock::new();
+/// The app the pause hotkey was registered with, so "Remove all Lens changes" (which has no
+/// handle of its own) can unregister it: `release_hotkey`, called from changes.rs › agent-keys.
+static HOTKEY_APP: OnceLock<AppHandle> = OnceLock::new();
 
 pub fn last() -> Option<PresenceEvent> {
     LAST.get_or_init(|| Mutex::new(None)).lock().unwrap_or_else(|e| e.into_inner()).clone()
@@ -333,8 +336,22 @@ pub fn sync_hotkey(app: &AppHandle, text: &str) -> bool {
         .is_ok();
     if ok {
         *cur = Some(sc);
+        let _ = HOTKEY_APP.set(app.clone());
     }
     ok
+}
+
+/// Unregisters the pause hotkey (Remove all Lens changes). It comes back the next time the
+/// presence settings are applied, i.e. when the person turns Lens back on or saves them.
+pub fn release_hotkey() -> bool {
+    let taken = HOTKEY.get().and_then(|m| m.lock().unwrap_or_else(|e| e.into_inner()).take());
+    match (taken, HOTKEY_APP.get()) {
+        (Some(s), Some(app)) => {
+            let _ = app.global_shortcut().unregister(s);
+            true
+        }
+        _ => false,
+    }
 }
 
 pub fn hotkey_ok() -> bool {

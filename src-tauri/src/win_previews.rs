@@ -482,7 +482,8 @@ mod sys {
         wparam: usize,
         lparam: isize,
     ) -> isize {
-        DefWindowProcW(hwnd, msg, wparam, lparam)
+        // Nothing here can panic today; guarded like every window procedure (docs/FAILSAFE.md §3).
+        crate::failsafe::guard::ffi_guard_else("previews.tile_proc", || DefWindowProcW(hwnd, msg, wparam, lparam), || DefWindowProcW(hwnd, msg, wparam, lparam))
     }
 
     unsafe extern "system" fn control_proc(
