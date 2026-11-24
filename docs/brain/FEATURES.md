@@ -62,7 +62,7 @@ Entry points: **UI** = where you click; **Key** = default hotkey (most are off b
 | Lens Apps (catalogue, winget, recipes) | Shipped | Dock › Apps; Cmd: "install VLC" | `apps/`, `commands/apps.rs`, `src/apps/*`, `docs/LENS_APPS.md` | `apps` 34, `apps.test.ts` | Applied recipes are not reverted by Remove all (by design: installed apps stay; recipes listed as follow-up, B-08) |
 | Feeds | Shipped | Settings › Feeds; widget | `feeds/`, `src/feeds/*`, `docs/FEEDS.md` | `feeds` 25, `feeds.test.ts` | Cards/topbar pill not mounted (B-09) |
 | Messages | Shipped | Top bar › messages | `messages/`, `docs/MESSAGES.md` | `messages` 5 | Thin test coverage |
-| Clipboard history | Shipped twice | Top bar › clipboard; Cmd | `win_clipboard.rs` (v1), `clip/` (v2, encrypted) | `clip` 40, `tests/win_clipboard.rs` | Two histories (SCOPE dup #1) |
+| Clipboard history | Shipped | Top bar › clipboard; Cmd; Widget Drawer | `clip/` (one store and listener; session and saved modes; `clip/compat.rs` for the pane) | `clip` tests incl. `compat` | One history since wave 3 (SCOPE dup #1 closed) |
 | Search (files, scripts, ranking) | Shipped | Launcher, Command | `win_search.rs`, `src/search/*` | `search.test.ts` | — |
 | Tester Hub | Shipped | Key: Ctrl+Alt+M (mark); tray | `tester/`, `src/tester/*`, `docs/TESTER_HUB.md` | `tester` 15, `tester.test.ts` | — |
 | Site (lens site, demos, docs) | Shipped v1; **v2 in PR #30** | — | `tools/site/*`, `docs/site/*`, `pages.yml` | parity | Command demo skips 24 phrases |

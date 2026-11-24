@@ -155,4 +155,44 @@ mod tests {
         assert_eq!(ffi_guard_else("t.else", || 1, || 2), 2);
         assert_eq!(ffi_guard_else("t.else", || 1, || -> i32 { panic!("x") }), 1);
     }
+
+    /// Every `extern "system"` callback in the app crate runs its body inside a guard (B-29). A
+    /// new callback without one fails here, so the rule cannot quietly erode.
+    #[test]
+    fn every_windows_callback_is_guarded() {
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            for e in std::fs::read_dir(dir).unwrap().flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    walk(&p, out);
+                } else if p.extension().is_some_and(|x| x == "rs") {
+                    out.push(p);
+                }
+            }
+        }
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        walk(&root, &mut files);
+        let mut unguarded = Vec::new();
+        for f in &files {
+            let text = std::fs::read_to_string(f).unwrap_or_default();
+            let lines: Vec<&str> = text.lines().collect();
+            for (i, l) in lines.iter().enumerate() {
+                let code = l.split("//").next().unwrap_or("");
+                // A callback definition, not a function-pointer type (`extern "system" fn(`).
+                let Some(rest) = code.split("extern \"system\" fn ").nth(1) else { continue };
+                if rest.starts_with('(') {
+                    continue;
+                }
+                // The guard call sits in the first lines of the body.
+                let body = lines[i..(i + 14).min(lines.len())].join("\n");
+                if !body.contains("ffi_guard") {
+                    let rel = f.strip_prefix(&root).unwrap_or(f).display().to_string();
+                    unguarded.push(format!("{rel}:{}: {}", i + 1, l.trim()));
+                }
+            }
+        }
+        assert!(files.len() > 100, "the scan found the sources");
+        assert!(unguarded.is_empty(), "wrap these callbacks in failsafe::guard::ffi_guard:\n{}", unguarded.join("\n"));
+    }
 }

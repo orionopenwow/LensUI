@@ -203,10 +203,9 @@ unsafe fn on_update(hwnd: isize) {
     if SELF_WRITE.swap(false, Ordering::SeqCst) {
         return;
     }
-    let (enabled, settings) = service::with(|_, s| (s.enabled, s.clone()));
-    if !enabled {
+    let Some(settings) = service::capture_settings() else {
         return;
-    }
+    };
     // The owner can be read without opening the clipboard; check exclusions before reading data.
     let app = source_app();
     if let Some(a) = &app {
@@ -325,8 +324,8 @@ unsafe fn wnd_proc_guarded(hwnd: isize, msg: u32, w: usize, l: isize) -> isize {
     }
 }
 
-/// Starts the listener once. Capture still checks `settings.enabled` on every change, so turning
-/// the feature off stops recording immediately.
+/// Starts the listener once. Capture asks `service::capture_settings` on every change, so turning
+/// both histories off stops recording immediately.
 pub fn ensure_started() {
     if STARTED.swap(true, Ordering::SeqCst) {
         return;

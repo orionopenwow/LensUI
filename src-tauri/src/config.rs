@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn default_font_family() -> String {
     "rounded-arial".into()
@@ -788,7 +788,34 @@ pub fn save_config(cfg: &LensConfig) -> Result<(), String> {
     } else {
         serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?
     };
-    crate::win_backup::write_atomic(&config_path(), json.as_bytes())
+    write_config_file(&config_path(), json.as_bytes())
+}
+
+/// **The one place `config.json` is written.** Everything that changes the stored settings ends
+/// here: [`save_config`] (every command, the control plane, plugins) and restoring a backup.
+/// `src-tauri/src/tests/config_writer.rs` fails the build if another module writes the file itself.
+///
+/// * The text is checked first (docs/FAILSAFE.md §7): it must be a JSON object that Lens can read
+///   back as settings. Something Lens could not load is refused, never written.
+/// * One writer at a time, so two saves cannot share the temporary file.
+/// * Written beside the target and renamed over it, so a crash mid-write leaves the old file.
+pub fn write_config_file(path: &Path, json: &[u8]) -> Result<(), String> {
+    static WRITING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let doc: serde_json::Value = serde_json::from_slice(json).map_err(|e| format!("Settings were not saved: not valid JSON ({e})."))?;
+    if !doc.is_object() {
+        return Err("Settings were not saved: not a settings object.".into());
+    }
+    // Same test as loading: readable as written, or after the per-setting repair. (A restored
+    // backup may hold a value this version no longer accepts; loading repairs exactly that.)
+    let defaults = serde_json::to_value(LensConfig::default()).unwrap_or(serde_json::Value::Null);
+    if crate::failsafe::config_check::load_repaired::<LensConfig>(doc, &defaults).is_none() {
+        return Err("Settings were not saved: Lens could not read them back.".into());
+    }
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let _one_at_a_time = WRITING.lock().unwrap_or_else(|p| p.into_inner());
+    crate::win_backup::write_atomic(path, json)
 }
 
 impl LensConfig {
@@ -814,3 +841,7 @@ pub struct TesterConfig {
     /// Shows the "TEST BUILD <sha>" badge and enables the Mark-moment hotkey.
     pub enabled: bool,
 }
+
+#[cfg(test)]
+#[path = "tests/config_writer.rs"]
+mod config_writer_tests;

@@ -438,7 +438,12 @@ pub fn restore_backup(dir: &Path, text: &str, restore_training: bool) -> Result<
         if let Some(p) = target.parent() {
             fs::create_dir_all(p).map_err(|e| e.to_string())?;
         }
-        write_atomic(&target, &bytes)?;
+        if name == "config.json" {
+            // Settings have one writer, with its own checks (config::write_config_file).
+            crate::config::write_config_file(&target, &bytes)?;
+        } else {
+            write_atomic(&target, &bytes)?;
+        }
         restored.push(name);
     }
 

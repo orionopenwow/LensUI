@@ -200,41 +200,40 @@ pub(crate) async fn scan_installed_apps_cmd() -> Vec<InstalledApp> {
 }
 
 pub(crate) fn start_clipboard_with_events(app: &AppHandle) {
-    let h = app.clone();
-    win_clipboard::start_clipboard_history(move || {
-        let _ = h.emit("lens://clipboard-changed", ());
-    });
+    // The session history: same store and listener as the saved one (clip::service).
+    crate::clip::service::set_session(true);
+    crate::commands::clip::init(app);
 }
 
 // ===== Clipboard history =====
 #[tauri::command]
-pub(crate) fn clipboard_list_cmd(query: String) -> win_clipboard::ClipboardSnapshot {
-    win_clipboard::clipboard_snapshot(&query)
+pub(crate) fn clipboard_list_cmd(query: String) -> crate::clip::compat::ClipboardSnapshot {
+    crate::clip::compat::snapshot(&query)
 }
 
 #[tauri::command]
 pub(crate) fn clipboard_copy_cmd(id: u64) -> Result<(), String> {
-    win_clipboard::clipboard_copy(id)
+    crate::clip::compat::copy(id)
 }
 
 #[tauri::command]
 pub(crate) fn clipboard_delete_cmd(id: u64) {
-    win_clipboard::clipboard_delete(id);
+    crate::clip::compat::delete(id);
 }
 
 #[tauri::command]
 pub(crate) fn clipboard_clear_cmd() {
-    win_clipboard::clipboard_clear();
+    crate::clip::compat::clear();
 }
 
 #[tauri::command]
 pub(crate) fn clipboard_pin_cmd(id: u64, pinned: bool) -> Result<(), String> {
-    win_clipboard::clipboard_set_pinned(id, pinned)
+    crate::clip::compat::set_pinned(id, pinned)
 }
 
 #[tauri::command]
 pub(crate) fn clipboard_pause_cmd(paused: bool) {
-    win_clipboard::clipboard_set_paused(paused);
+    crate::clip::compat::set_paused(paused);
 }
 #[tauri::command]
 pub(crate) async fn get_wifi_cmd() -> win_system_modules::WifiState {

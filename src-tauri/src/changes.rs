@@ -209,10 +209,10 @@ pub const CHANGES: &[Change] = &[
     },
     Change {
         id: "agent-keys",
-        label: "Agent stop key and approval hotkey",
+        label: "Agent stop key, approval hotkey and pause hotkey",
         scope: Scope::Session,
         writes: &[],
-        sources: &["presence/esc.rs"],
+        sources: &["presence/esc.rs", "presence/win.rs"],
         undo: undo_agent_keys,
     },
     Change {
@@ -484,10 +484,12 @@ fn undo_focus_overlays(_: &mut LensConfig) -> Result<String, String> {
 }
 
 fn undo_agent_keys(_: &mut LensConfig) -> Result<String, String> {
-    // The Esc claim on the input service (held only while an agent runs) and the global hotkey
-    // that opens the approval window.
+    // The Esc claim on the input service (held only while an agent runs), the global hotkey that
+    // opens the approval window, and the presence pause hotkey (Ctrl+Alt+Pause by default).
     crate::presence::esc::undo();
-    Ok("Esc watcher released and the approval hotkey unregistered.".to_string())
+    #[cfg(windows)]
+    crate::presence::win::release_hotkey();
+    Ok("Esc watcher released; the approval and pause hotkeys unregistered.".to_string())
 }
 
 fn undo_input_hooks(config: &mut LensConfig) -> Result<String, String> {
