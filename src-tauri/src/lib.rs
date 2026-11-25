@@ -59,6 +59,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod thumbdesk;
 mod cleaner;
 mod bridge;
 mod browser;
@@ -865,6 +866,9 @@ pub fn run() {
             commands::apps::apps_release_run,
             commands::apps::apps_release_discard,
             commands::apps::apps_open,
+            commands::apps::apps_portable_remove,
+            commands::thumbdesk::thumbdesk_info,
+            commands::thumbdesk::thumbdesk_open,
             commands::apps::apps_open_link,
             commands::apps::apps_recipe_preview,
             commands::apps::apps_integrations,

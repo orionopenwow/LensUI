@@ -7,6 +7,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **ThumbDesk in Lens:** the controller companion from the makers of Lens (use the whole PC from an
+  Xbox or PlayStation controller) is in Lens Apps under "From the makers of Lens", with a "Use a
+  controller" card in Settings › Gaming and Accessibility, `/thumbdesk` in Command, and a small
+  "Voice"/"Paused" badge on its Dock icon. Lens keeps it as a verified portable program in its own
+  apps folder and only reads its status.
+- Lens Apps supports portable apps (`"portable": true`): kept in Lens's apps folder, removed by
+  deleting that folder.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,

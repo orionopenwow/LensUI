@@ -176,17 +176,30 @@ export const SLASH_VIEW: Record<string, string> = { stopwatch: "stopwatch", pomo
 
 const STUBS = new WeakSet<object>();
 
+/** Slash words for companion apps that aren't core apps ("/thumbdesk", "/controller"). */
+export const COMPANION_SLASH: Record<string, { name: string; description: string; command: string }> = {
+  thumbdesk: { name: "ThumbDesk", description: "Open ThumbDesk: use the PC from a controller", command: "thumbdesk_open" },
+  controller: { name: "Controller mode", description: "Open ThumbDesk: use the PC from a controller", command: "thumbdesk_open" },
+};
+
 /** Command template stubs for the `/` suggestions. `template: ""` makes them actions. */
 export function coreAppTemplates(taken: { id: string }[]) {
   const ids = new Set(taken.map((t) => t.id));
-  return Object.entries(SLASH)
+  const stub = (id: string, name: string, description: string) => {
+    const t = { id, name, description, template: "", provider: "local", input: "none", options: [] as string[], output: "action", builtin: true, enabled: true };
+    STUBS.add(t);
+    return t;
+  };
+  const core = Object.entries(SLASH)
     .filter(([word]) => !ids.has(word))
     .map(([word, id]) => {
       const a = coreApp(id)!;
-      const t = { id: word, name: a.title, description: `Open ${a.title}`, template: "", provider: "local", input: "none", options: [] as string[], output: "action", builtin: true, enabled: true };
-      STUBS.add(t);
-      return t;
+      return stub(word, a.title, `Open ${a.title}`);
     });
+  const companions = Object.entries(COMPANION_SLASH)
+    .filter(([word]) => !ids.has(word))
+    .map(([word, c]) => stub(word, c.name, c.description));
+  return [...core, ...companions];
 }
 
 /** True for the stubs above (so a user template that happens to share a word is never hijacked). */
@@ -194,6 +207,12 @@ export const isCoreAppStub = (t: object | null | undefined) => !!t && STUBS.has(
 
 /** Opens the core app behind a slash word; false when the word isn't one. */
 export function runCoreAppSlash(word: string): boolean {
+  const companion = COMPANION_SLASH[word];
+  if (companion) {
+    // Opens ThumbDesk if it's installed; otherwise Settings › Gaming › Use a controller offers it.
+    invoke(companion.command).catch(() => invoke("open_dock_popout_tab_cmd", { tab: "gaming#controller" }).catch(() => {}));
+    return true;
+  }
   const id = SLASH[word];
   if (!id) return false;
   openCoreApp(id, SLASH_VIEW[word]).catch(() => {});
