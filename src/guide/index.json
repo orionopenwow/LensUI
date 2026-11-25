@@ -5751,7 +5751,7 @@
    "id": "pack.windows-mesh",
    "kind": "pack",
    "title": "Windows Mesh",
-   "text": "Follows your Windows accent colour, with a familiar full-width taskbar. Theme pack (Core).",
+   "text": "Follows your Windows accent colour on a familiar Windows-dark base. Theme pack (Core).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5823,7 +5823,7 @@
    "id": "pack.tokyo-night",
    "kind": "pack",
    "title": "Tokyo Night",
-   "text": "Deep navy with neon-city blue. Apps and folders sit in separate pills. Theme pack (Linux Suite).",
+   "text": "Deep navy with neon-city blue. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5877,7 +5877,7 @@
    "id": "pack.gruvbox-warm",
    "kind": "pack",
    "title": "Gruvbox Warm",
-   "text": "Retro warm grey with orange. Squarer corners, taskbar layout. Theme pack (Linux Suite).",
+   "text": "Retro warm grey with orange and squarer corners. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5949,7 +5949,7 @@
    "id": "pack.hyprland-neon",
    "kind": "pack",
    "title": "Hyprland Neon",
-   "text": "Tiling-desktop look: glowing cyan borders and split dock pills. Theme pack (Linux Suite).",
+   "text": "Tiling-desktop look with glowing cyan borders. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6003,7 +6003,7 @@
    "id": "pack.solarized-matte",
    "kind": "pack",
    "title": "Solarized Matte",
-   "text": "Classic teal-blue Solarized with a labelled studio dock. Theme pack (Studio).",
+   "text": "Classic teal-blue Solarized, matte. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6021,7 +6021,7 @@
    "id": "pack.lens-expressive",
    "kind": "pack",
    "title": "Lens Expressive",
-   "text": "Obsidian colours with soft, playful shapes: pill tiles, a scalloped clock and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours with soft, playful shapes: pill tiles and a scalloped clock. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6039,7 +6039,7 @@
    "id": "pack.lens-dot-matrix",
    "kind": "pack",
    "title": "Lens Dot Matrix",
-   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6075,7 +6075,7 @@
    "id": "pack.lens-expressive-light",
    "kind": "pack",
    "title": "Lens Expressive Light",
-   "text": "Alabaster daylight colours with the Expressive shapes and an islands dock. Theme pack (Light).",
+   "text": "Alabaster daylight colours with the Expressive shapes. Theme pack (Light).",
    "path": [
     "Settings",
     "Theme & Look",
