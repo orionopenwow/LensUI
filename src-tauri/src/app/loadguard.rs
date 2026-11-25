@@ -101,6 +101,7 @@ fn tick(label: &str, what: &'static str) {
     ticks().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), Instant::now());
     doing().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), what);
 }
+#[cfg_attr(test, allow(dead_code))]
 fn busy_with(label: &str) -> &'static str {
     doing().lock().unwrap_or_else(|e| e.into_inner()).get(label).copied().unwrap_or("?")
 }
@@ -131,6 +132,7 @@ pub(crate) fn start(app: &AppHandle) {
 /// A guarded page's renderer exited (app::renderer). Its watch thread picks that up within a
 /// quarter second; if no watch thread is running for it (it ended, or never started), one is
 /// started now so the page is still reloaded.
+#[cfg_attr(test, allow(dead_code))]
 pub(crate) fn kick(label: &str) {
     let Some(label) = GUARDED.iter().copied().find(|l| *l == label) else {
         return;
