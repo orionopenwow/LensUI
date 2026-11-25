@@ -162,9 +162,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
                 Pick a Dock
               </h1>
               <p className="wiz-sub">
-                {pack?.dockStyle
-                  ? `${pack.label} is designed around the ${dockStyleLabel(pack.dockStyle)} Dock, but any of these works.`
-                  : "Choose how your apps sit along the bottom of the screen."}
+                Choose how your apps sit along the bottom of the screen.
               </p>
             </div>
             <div className="wiz-dock-grid" role="radiogroup" aria-label="Dock style">
@@ -183,7 +181,6 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ config, winTheme, onUp
                     <span className="tux-pack-name">
                       <span className="tux-pack-label">
                         {d.label}
-                        {pack?.dockStyle === d.id && <span className="tux-badge muted wiz-match">Matches theme</span>}
                       </span>
                       {on && <span className="tux-pack-dot" />}
                     </span>

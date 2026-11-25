@@ -7,6 +7,16 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Changed
+- **Themes change colours only.** Applying a theme or featured look no longer changes the Dock's
+  style, size, motion or position; the look's font and shape style come along only when "Also use
+  the look's font and shape" is ticked. Theme descriptions no longer promise a Dock layout.
+- **Settings and the Dock search keep their own size** on every Dock style (Slim and Minimal no
+  longer squeeze them, Taskbar no longer stretches them across the screen). With the Taskbar
+  style they open like the Windows 11 Start menu and Search: above the bar with Windows' gap,
+  centred or at the start side, not fused to the bar.
+- Picking Dock styles quickly restyles the Dock once, when the clicks stop.
+
 ### Added
 - **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
   and you get one notification. "Get it ready" mode downloads (and verifies) in the background;

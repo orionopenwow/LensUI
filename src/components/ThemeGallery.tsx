@@ -5,7 +5,6 @@ import type { LensConfig } from "../types/lens";
 import { allPacks, lighten, type ThemePack } from "../themes/packs";
 import { CLAUDE_COLLECTION } from "../themes/community/claude";
 import "../themes/community/community.css";
-import { dockStyleLabel } from "../dock/styles";
 import { AmbientPreview, packPalette } from "../playground/ambient/controls";
 import { FEEL_LABEL, FONT_LABEL, familyOf, featuredLook, featuredPacks, isFeatured } from "../themes/featured";
 
@@ -58,7 +57,8 @@ export const PackPreview: React.FC<{ pack: ThemePack; accent: string; height?: n
   const dots = TRAFFIC[pack.controlStyle] ?? TRAFFIC["traffic-classic"];
   const pill = pack.controlStyle === "accent-pills";
   const compact = height < 64;
-  const dockStyle = pack.dockStyle ?? "floating";
+  // Themes never change the Dock, so every preview shows the default floating Dock.
+  const dockStyle: string = "floating";
   const dockIcons = [accent, "#60a5fa", "#34d399", "#fbbf24", "#f472b6"];
   const iconRadius = pack.iconShape === "circle" ? 4 : pack.iconShape === "rounded" ? 2 : 2.5;
 
@@ -193,7 +193,6 @@ const PackCardBase: React.FC<{
             family && <span className="tux-badge muted">Like {family}</span>
           )}
           <span className="tux-badge muted">{pack.tier === "Living" ? "Light by day" : pack.scheme === "light" ? "Light" : "Dark"}</span>
-          {pack.dockStyle && <span className="tux-badge muted">{dockStyleLabel(pack.dockStyle)} dock</span>}
           {look && <span className="tux-badge muted">{FONT_LABEL[look.font]}</span>}
           {look && <span className="tux-badge muted">{FEEL_LABEL[look.feel]}</span>}
         </span>
