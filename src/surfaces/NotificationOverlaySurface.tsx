@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { magicOpenFor } from "../magic/contract";
 import { emit, listen } from "@tauri-apps/api/event";
-import { Bell, Calendar, Timer, Monitor, Sparkles, X } from "lucide-react";
+import { Bell, Calendar, Timer, Monitor, Sparkles, RotateCw, X } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import { PresenceList, duration } from "../ui/motion";
 import "./NotificationOverlaySurface.css";
@@ -26,6 +26,8 @@ function CategoryIcon({ category }: { category: string }) {
       return <Monitor size={16} strokeWidth={2.3} color="#60A5FA" />;
     case "theme":
       return <Sparkles size={16} strokeWidth={2.3} color="#A78BFA" />;
+    case "update":
+      return <RotateCw size={16} strokeWidth={2.3} color="#34D399" />;
     default:
       return <Bell size={16} strokeWidth={2.3} color="#38BDF8" />;
   }
@@ -116,6 +118,12 @@ export const NotificationOverlaySurface: React.FC = () => {
               invoke("open_windows_setting_cmd", { uri: "ms-settings:notifications" }).catch(() => {});
             } else if (n.category === "calendar" || n.category === "timer") {
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" }).catch(() => {});
+            } else if (n.category === "update") {
+              // "Lens 0.3.1 is ready": Settings › About & Testing › Updates has what's new and
+              // Restart to update.
+              invoke("open_surface", { label: "settings" })
+                .then(() => emit("lens://settings-tab", "about#updates"))
+                .catch(() => {});
             } else if (n.category === "failsafe") {
               // Lens paused or repaired something: Settings › About & Testing › Safety net has
               // the details and "Turn back on".

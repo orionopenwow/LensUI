@@ -66,6 +66,9 @@ From the desktop side, [KDE Activities](https://blogs.kde.org/2026/01/17/streaml
 
 ## Read next
 
+- [Identity](brain/IDENTITY.md): mission, brand, design philosophy and the promises Lens keeps (start here).
+- [Features](brain/FEATURES.md): everything Lens does and every suggested feature, with status.
+
 - [Unified model](vision/unified-model.md): the objects, verbs, context, runs and Spaces everything shares.
 - [Dock × Browser](vision/dock-browser.md): tabs, web apps, agents, media and downloads on the dock.
 - [One AI helper](vision/ai-helper.md): many faces, one memory, one threat model.

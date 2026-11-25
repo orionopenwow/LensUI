@@ -38,10 +38,61 @@ pub(crate) fn set_update_settings_cmd(
 
 #[tauri::command]
 pub(crate) async fn check_for_update_cmd(app: AppHandle) -> win_update::UpdateStatus {
-    win_update::check(&app).await
+    win_update::check_and_publish(&app).await
+}
+
+/// What every window should show right now (also broadcast as `lens://update-state`).
+#[tauri::command]
+pub(crate) fn get_update_state_cmd() -> win_update::UpdateStatus {
+    win_update::current()
+}
+
+/// Downloads and verifies the update without installing it.
+#[tauri::command]
+pub(crate) async fn download_update_cmd(app: AppHandle) -> Result<win_update::UpdateStatus, String> {
+    win_update::download(&app).await
+}
+
+/// "Restart to update": the one click that installs. Downloads first if needed.
+#[tauri::command]
+pub(crate) async fn restart_to_update_cmd(app: AppHandle) -> Result<String, String> {
+    win_update::restart_to_update(&app).await
 }
 
 #[tauri::command]
 pub(crate) async fn install_update_cmd(app: AppHandle) -> Result<String, String> {
     win_update::install(&app).await
+}
+
+// ------------------------------------------------------------------------- Report a problem
+
+/// What the report preview shows: exactly the text that will be shared, already redacted.
+#[tauri::command]
+pub(crate) async fn bug_report_preview(app: AppHandle, req: crate::report::ReportRequest) -> crate::report::ReportPreview {
+    let self_test = if req.include_self_test {
+        crate::commands::misc::run_self_test_cmd(app).await.get("text").and_then(|v| v.as_str()).map(str::to_string)
+    } else {
+        None
+    };
+    tauri::async_runtime::spawn_blocking(move || crate::report::preview(&req, &crate::report::gather(&req, self_test)))
+        .await
+        .unwrap_or_default()
+}
+
+/// Opens the prefilled GitHub issue in the default browser. Nothing is uploaded by Lens.
+#[tauri::command]
+pub(crate) fn bug_report_open_issue(url: String) -> Result<(), String> {
+    if !crate::report::is_issue_url(&url) {
+        return Err("Not a Lens issue link.".into());
+    }
+    launch_path(&url)
+}
+
+/// Saves the report as a Markdown file in Downloads and shows it in Explorer.
+#[tauri::command]
+pub(crate) fn bug_report_save(text: String) -> Result<String, String> {
+    let path = crate::report::save(&text)?;
+    let shown = path.to_string_lossy().into_owned();
+    let _ = crate::win_windows::launch_path_advanced(&shown, "reveal");
+    Ok(crate::tester::redact_text(&shown, crate::tester::user_profile().as_deref()))
 }

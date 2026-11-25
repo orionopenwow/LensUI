@@ -1,6 +1,7 @@
 # Lens robustness and fluidity (docs/TESTING.md)
 #  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
-#                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
+#                   theme switching (tools/robust/theme-switch.mjs), a short soak + chaos pass.
+#                   Headless Chromium on the real frontend, Tauri mocked.
 #  * windows-e2e  — every PR: builds the real app and drives its WebView2 windows on Windows over
 #                   CDP, then checks Windows was put back the way it was (tools/e2e/probe.ps1), then
 #                   proves "Remove all Lens changes" leaves nothing behind (tests/e2e/remove-all.mjs).
@@ -112,6 +113,12 @@ jobs:
         if: always()
         run: node tools/a11y/run.mjs
 
+      - name: Theme switching (no flash, no layout jump, quick, Settings still works)
+        if: always()
+        # Every featured look on the Appearance page, Simple mode, and switches made by another
+        # window; the nightly run goes through every pack (tools/robust/theme-switch.mjs).
+        run: node tools/robust/theme-switch.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
+
       - name: Soak + chaos (short)
         if: always() && github.event_name != 'schedule'
         env:
@@ -139,6 +146,7 @@ jobs:
             tools/perf/budgets.json
             tools/soak/out/
             tools/a11y/out/
+            tools/robust/out/theme-rig/
             tools/visual/out/report.json
             tools/visual/out/diff/
           if-no-files-found: warn

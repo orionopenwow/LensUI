@@ -57,14 +57,24 @@ workflow is the one that publishes.
 
 ## Updates inside the app
 
-Control Center → Updates. Modes (stored in `%APPDATA%\LensUI\updates.json`):
+Settings › About & Testing › Updates sets the mode (stored in `%APPDATA%\LensUI\updates.json`):
 
-- **Off**: never contacts GitHub.
-- **Tell me** (default): checks at most once a day, a minute after start-up, and shows the new
-  version and notes. Nothing downloads until you press Install.
-- **Install**: downloads and installs signed updates in the background, then asks to restart.
+- **Off:** never contacts the network.
+- **Tell me** (default): checks at most once a day. When a newer signed release exists, the Top
+  Bar shows a "Lens 0.x.y available" pill and one notification. Download, then Restart to update.
+- **Get it ready:** checks once a day and downloads the update in the background. The download
+  is verified against the updater key before Lens keeps it.
 
-Every download is checked against the public key before the installer runs; a bad signature aborts.
+Nothing installs until the person chooses **Restart to update**: the Top Bar pill, the "Lens
+0.x.y is ready" notification (opens the Updates card), the Updates card, or `/update` in Command.
+Restart to update puts the desktop back the way Lens found it (the same steps as Quit: hooks off,
+taskbar back, Explorer back if Lens is the shell), runs the verified installer, and the installer
+starts Lens again. If installing fails, Lens starts again on the old version. "Check for
+updates…" in the tray menu opens the Updates card and checks.
+
+The Updates card shows the release notes (the `notes` in `latest.json`, from the CHANGELOG
+section pasted into the release) under "What's new". Every window gets the same state from
+`win_update` through `lens://update-state` (`src/update/useLensUpdate.ts`).
 
 ### Rollback
 
