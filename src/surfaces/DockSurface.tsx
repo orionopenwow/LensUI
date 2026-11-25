@@ -326,6 +326,12 @@ function dockBadgeLabel(unread: number, windows: number): string {
   return "";
 }
 
+/** Resolves when an animation finishes, or after `ms` if it never does (a window hidden mid-glide
+ *  stops its animations): a failsafe, not the animation's clock. */
+function finishedOrGiveUp(finished: Promise<unknown>, ms: number): Promise<unknown> {
+  return Promise.race([finished, new Promise((resolve) => window.setTimeout(resolve, ms))]);
+}
+
 export const DockSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
   // Lens Intelligence in the Dock (all off until AI is turned on; docs/AI_SURFACES.md §3).
@@ -529,9 +535,7 @@ export const DockSurface: React.FC = () => {
     // The results panel glides out first; then the row collapses in one frame and the icons glide back.
     const drawer = pillRef.current?.querySelector(".dock-launcher-drawer");
     // A glide that never finishes (window hidden mid-animation) must not leave search half-open.
-    const glide = glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished;
-    const cap = new Promise((r) => window.setTimeout(r, 400));
-    Promise.race([glide, cap]).then(() => {
+    finishedOrGiveUp(glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished, 400).then(() => {
       if (gen !== searchGenRef.current) return; // reopened meanwhile
       captureSearchFlip();
       setDockSearchOpen(false);
