@@ -43,6 +43,10 @@ Paths are under `src/browser/` (UI) and `src-tauri/src/browser/` (core) unless t
 | Spaces (separate profiles), locked spaces | `model.rs`, `commands/browser.rs` | sidebar | works | works | — |
 | Glance (peek a link) | `host.rs` | Alt+click | works | works | — |
 | Horizontal tab strip | `BrowserSurface.tsx` | Make it yours | partly: no close, no keyboard | works: close button, arrow keys, loading mark | Parity with the sidebar |
+| Simpler sidebar | `Sidebar.tsx`, `tabAi.ts` `tabSections` | always | boxed folder groups at the top, loose tabs below | works in the parity harness, not yet run on a real PC: open tabs first in quiet Today / Earlier (or by-site) sections, pinned tabs and favourite bookmarks as icon tiles, folders one line each at the bottom (drop a tab on one to file it), chats collapsed, sleep/audio/pin on hover | Tabs read at a glance; structure comes from type and spacing, not boxes |
+| Find a tab | `Sidebar.tsx` | Ctrl+Shift+A, the field under the space name | missing | works in the parity harness: filters tabs and folders as you type, Enter opens the first match, ↓ moves into the list | One key, one field, no menus |
+| Icon stack, side, width | `Sidebar.tsx`, `CustomisePanel.tsx`, `model.rs` `SidebarPrefs` | « button, Make it yours › Sidebar | missing | works in the parity harness: full or icons only, left or right, 200–380 px, show or hide chats / now playing / spaces; saved with the browser settings | The sidebar takes the room you give it |
+| Lens on your tabs | `Sidebar.tsx` `LensRow`, `tabAi.ts` | Lens row, Ctrl+Shift+K | Tidy ran at once | works in the parity harness: Tidy, Close duplicates, Group by site show their plan first and change nothing until Apply; Summarise opens Ask with tab titles and hosts only. Group by task (model-made groups) is not built | Lens suggests, you decide |
 
 ### Permissions and privacy
 

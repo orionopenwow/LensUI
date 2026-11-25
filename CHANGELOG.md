@@ -17,7 +17,27 @@ up and migrates `%APPDATA%\LensUI` where it can.
   centred or at the start side, not fused to the bar.
 - Picking Dock styles quickly restyles the Dock once, when the clicks stop.
 
+- **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
+  site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
+  one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
+- **Make it yours › Sidebar:** full or icons only, left or right, width, grouping, and whether
+  chats, now playing and spaces show.
+- **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
+  show what they will change and wait for Apply; Summarise asks about your open tabs.
 ### Added
+- **Lens setup on the first launch and after every new version:** pick a Dock (floating is the
+  default), colours and optional extras, or read what's new after an update. Nothing changes
+  until Finish, and Skip keeps everything as it is. Run it again from Settings › About & Testing
+  or by typing "setup" in Command (docs/SETUP.md).
+- **Launch-Lens-UI.bat** says "Lens", installs dependencies only when `bun.lock` changed, offers
+  the dev build or your last built Lens, and opens the setup once after the folder was updated.
+- **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
+  Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;
+  ← or Esc pans back. Picking one runs it in the Magic window. Alt+right-click still opens the
+  Magic window directly.
+- Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›.
+- The File Explorer "Lens ›" menu (off until you add it in Settings › Connections) now also
+  appears inside folders and on drives. Existing installs see **Update…** to add the new places.
 - **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
   and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
   nothing installs until you choose Restart to update, which puts the desktop back, installs and

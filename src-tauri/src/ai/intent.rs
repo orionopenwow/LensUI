@@ -195,6 +195,8 @@ pub const SETTINGS_PAGES: &[(&[&str], &str)] = &[
     // Lens Cleaner (docs/CLEANER.md): opens the Lens Cleaner window, never cleans by itself.
     (&["cleaner", "lens cleaner", "disk cleanup", "cleanup", "clean up"], "cleaner"),
     (&["recycle bin"], "cleaner-bin"),
+    // Lens setup (docs/SETUP.md): opens the setup over Control Center; nothing changes until Finish.
+    (&["setup", "lens setup", "setup wizard", "welcome"], "setup"),
     (&["lens", "control center", "settings"], "home"),
 ];
 
@@ -347,6 +349,15 @@ pub fn parse(text: &str) -> Option<RawIntent> {
         return None;
     }
     let t = t.as_str();
+
+    // --- Lens setup (docs/SETUP.md): exact phrases only, before anything that could read "run …"
+    if matches!(
+        t,
+        "setup" | "set up lens" | "setup lens" | "lens setup" | "run setup" | "run setup again" | "run the setup" | "open setup"
+            | "setup wizard" | "what's new in lens" | "whats new in lens"
+    ) {
+        return Some(RawIntent::new("open_settings_page", 0.95, "Open Lens setup").s("page", "setup"));
+    }
 
     // --- maths and units first: "5 km in miles" must not become "open ..."
     if let Some(i) = parse_math(t) {
@@ -1109,6 +1120,8 @@ mod tests {
         ("open dock settings", "open_settings_page", "page=dock"),
         ("show me the theme settings", "open_settings_page", "page=theme"),
         ("open settings", "open_settings_page", "page=home"),
+        ("run setup again", "open_settings_page", "page=setup"),
+        ("setup", "open_settings_page", "page=setup"),
         ("free up space", "open_settings_page", "page=cleaner"),
         ("what's taking up space", "open_settings_page", "page=cleaner"),
         ("empty the recycle bin", "open_settings_page", "page=cleaner-bin"),

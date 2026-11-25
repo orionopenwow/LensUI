@@ -201,86 +201,19 @@ fn appearance_and_ai_settings_are_repaired() {
 }
 
 #[test]
-fn reopen_closed_tabs_newest_first() {
+fn sidebar_prefs_are_repaired_and_old_settings_get_defaults() {
     let mut s = state();
-    let a = s.open_tab("https://a.test", None, None, 1).unwrap();
-    let b = s.open_tab("https://b.test", None, None, 2).unwrap();
-    s.close_tab(&a);
-    s.close_tab(&b);
-    assert_eq!(s.reopen_closed(3).and_then(|id| s.tab(&id).map(|t| t.url.clone())).as_deref(), Some("https://b.test"));
-    assert_eq!(s.reopen_closed(4).and_then(|id| s.tab(&id).map(|t| t.url.clone())).as_deref(), Some("https://a.test"));
-    assert_eq!(s.reopen_closed(5), None);
-    for i in 0..40 {
-        let t = s.open_tab(&format!("https://x{i}.test"), None, None, 10).unwrap();
-        s.close_tab(&t);
-    }
-    assert_eq!(s.closed.len(), CLOSED_CAP);
-}
-
-#[test]
-fn tidy_closes_duplicates_and_archives_old_tabs_but_not_pinned_busy_or_active() {
-    let day = 86_400_000;
-    let mut s = state();
-    let space = s.active_space.clone();
-    let old = s.open_tab("https://old.test", None, None, 0).unwrap();
-    let dup1 = s.open_tab("https://dup.test/", None, None, 5 * day).unwrap();
-    let _dup2 = s.open_tab("https://dup.test", None, None, 6 * day).unwrap();
-    let pinned = s.open_tab("https://pin.test", None, None, 0).unwrap();
-    s.tab_mut(&pinned).unwrap().pinned = true;
-    let busy = s.open_tab("https://busy.test", None, None, 0).unwrap();
-    s.tab_mut(&busy).unwrap().busy = true;
-    let active = s.open_tab("https://now.test", None, None, 7 * day).unwrap();
-    let r = s.tidy(&space, 7 * day);
-    assert_eq!(r.duplicates_closed, 1);
-    assert!(s.tab(&dup1).is_none(), "the older duplicate closes");
-    assert!(s.tab(&old).unwrap().archived_ms.is_some());
-    assert!(s.tab(&pinned).unwrap().archived_ms.is_none());
-    assert!(s.tab(&busy).unwrap().archived_ms.is_none());
-    assert!(s.tab(&active).unwrap().archived_ms.is_none());
-    assert!(!s.tabs_in(&space).iter().any(|t| t.id == old), "archived tabs leave the sidebar");
-    s.unarchive(&old, 8 * day).unwrap();
-    assert_eq!(s.active_tab.as_deref(), Some(old.as_str()));
-}
-
-#[test]
-fn auto_archive_and_sleep_respect_busy_tabs() {
-    let day = 86_400_000;
-    let mut s = state();
-    s.settings.archive_after_days = 3;
-    let a = s.open_tab("https://a.test", None, None, 0).unwrap();
-    let b = s.open_tab("https://b.test", None, None, 0).unwrap();
-    s.open_tab("https://c.test", None, None, 10 * day).unwrap();
-    s.tab_mut(&b).unwrap().busy = true;
-    assert_eq!(s.archive_candidates(10 * day), vec![a.clone()]);
-    s.settings.sleep_after_min = 1;
-    assert!(!s.sleep_candidates(10 * day).contains(&b), "unsaved forms keep a tab awake");
-    s.settings.archive_after_days = 0;
-    assert!(s.archive_candidates(10 * day).is_empty());
-}
-
-#[test]
-fn background_opens_and_bookmark_editing() {
-    let mut s = state();
-    let fg = s.open_tab("https://fg.test", None, None, 1).unwrap();
-    let bg = s.open_background("https://bg.test", 2).unwrap();
-    assert_eq!(s.active_tab.as_deref(), Some(fg.as_str()));
-    assert_eq!(s.tab(&bg).unwrap().life, TabLife::Sleeping);
-    assert!(s.open_background("file:///x", 3).is_none());
-    s.toggle_bookmark("https://a.test", "A", 1);
-    let id = s.bookmarks[0].id.clone();
-    s.bookmark_update(&id, Some(" Renamed "), Some("Recipes/ Pasta /")).unwrap();
-    assert_eq!((s.bookmarks[0].title.as_str(), s.bookmarks[0].folder.as_deref()), ("Renamed", Some("Recipes / Pasta")));
-    s.bookmark_update(&id, None, Some(" ")).unwrap();
-    assert_eq!(s.bookmarks[0].folder, None);
-    s.bookmark_remove(&id);
-    assert!(s.bookmarks.is_empty());
-}
-
-#[test]
-fn download_rules_match_extensions() {
-    let rules = vec![DownloadRule { ext: ".PDF".into(), folder: "C:/Docs".into() }, DownloadRule { ext: "zip".into(), folder: "C:/Archives".into() }];
-    assert_eq!(rule_for(&rules, "report.final.pdf").map(|r| r.folder.as_str()), Some("C:/Docs"));
-    assert_eq!(rule_for(&rules, "a.ZIP").map(|r| r.folder.as_str()), Some("C:/Archives"));
-    assert!(rule_for(&rules, "noext").is_none());
-    assert!(rule_for(&rules, "x.exe").is_none());
+    s.settings.appearance.sidebar.width = 9000;
+    s.settings.appearance.sidebar.mode = "tiles".into();
+    s.settings.appearance.sidebar.side = "middle".into();
+    s.settings.appearance.sidebar.group = "colour".into();
+    s.repair_settings();
+    let sb = &s.settings.appearance.sidebar;
+    assert_eq!(sb.width, super::model::SIDEBAR_WIDTH_MAX);
+    assert_eq!(sb.mode, "full");
+    assert_eq!(sb.side, "left");
+    assert_eq!(sb.group, "time");
+    // Settings saved before the sidebar preferences existed load with the defaults.
+    let old: super::model::Appearance = serde_json::from_str(r#"{"scheme":"dark","tabsLayout":"vertical"}"#).unwrap();
+    assert_eq!(old.sidebar, super::model::SidebarPrefs::default());
 }

@@ -55,6 +55,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { magicOpenFor } from "../magic/contract";
+import { LensMenuRow, LensPan } from "../magic/LensPan";
 import { useLensState, useRunningWindows } from "../hooks/useLensState";
 import {
   executeNaturalLanguagePlan,
@@ -1355,7 +1356,16 @@ export const DockSurface: React.FC = () => {
             }
           >
             {shownMenu.kind === "app" && (
-              <>
+              <LensPan
+                item={{
+                  kind: "dockItem",
+                  id: shownMenu.pinnedApp?.id ?? (shownMenu.windows[0] ? `win-${shownMenu.windows[0].hwnd}` : shownMenu.launchPath),
+                  label: shownMenu.pinnedApp?.name ?? shownMenu.title,
+                  path: shownMenu.launchPath || null,
+                }}
+                itemClassName="dock-ctx-item"
+                onClose={closeMenu}
+              >
                 {shownMenu.windows.length > 0 ? (
                   <>
                     {shownMenu.windows.slice(0, 3).map((w) => (
@@ -1471,19 +1481,7 @@ export const DockSurface: React.FC = () => {
                   </>
                 )}
 
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    const id = shownMenu.pinnedApp?.id ?? (shownMenu.windows[0] ? `win-${shownMenu.windows[0].hwnd}` : shownMenu.launchPath);
-                    magicOpenFor("dockItem", id, shownMenu.pinnedApp?.name ?? shownMenu.title, shownMenu.launchPath || null);
-                    closeMenu();
-                  }}
-                >
-                  <Sparkles size={14} strokeWidth={2.4} aria-hidden />
-                  <span>Magic menu</span>
-                  <span className="dock-ctx-hint">Alt+right-click</span>
-                </button>
+                <LensMenuRow className="dock-ctx-item" />
 
                 <button
                   type="button"
@@ -1564,7 +1562,7 @@ export const DockSurface: React.FC = () => {
                     </button>
                   </>
                 )}
-              </>
+              </LensPan>
             )}
 
             {shownMenu.kind === "folder" && (
@@ -1603,8 +1601,8 @@ export const DockSurface: React.FC = () => {
                   className="dock-ctx-item"
                   onClick={() => {
                     setSettingsOpen(true);
-                    setActiveSettingsTab("system");
-                    invoke("open_dock_popout_tab_cmd", { tab: "system" });
+                    setActiveSettingsTab("quick");
+                    invoke("open_dock_popout_tab_cmd", { tab: "quick" });
                     closeMenu();
                   }}
                 >
@@ -2606,8 +2604,9 @@ export const DockSurface: React.FC = () => {
                 invoke("toggle_settings_docked");
               } else {
                 setSettingsOpen(true);
-                setActiveSettingsTab("system");
-                invoke("open_dock_popout_tab_cmd", { tab: "system" });
+                // The gear always opens on Quick settings, never on the page used last.
+                setActiveSettingsTab("quick");
+                invoke("open_dock_popout_tab_cmd", { tab: "quick" });
               }
             }}
           >

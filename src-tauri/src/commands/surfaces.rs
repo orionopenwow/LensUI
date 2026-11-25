@@ -572,6 +572,8 @@ pub(crate) fn toggle_settings_docked(app: AppHandle, state: State<AppState>) {
 
     dismiss_other_surfaces(&app, "settings");
     let _ = app.emit("lens://settings-open", true);
+    // The settings wheel always opens on Quick settings; it doesn't reopen the page used last.
+    let _ = app.emit("lens://settings-tab", "quick");
 
     let cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
     let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());

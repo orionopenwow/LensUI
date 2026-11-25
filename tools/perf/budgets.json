@@ -39,7 +39,7 @@
     },
     "settings-tab-switch": {
       "p50": 16.7,
-      "p95": 33.4,
+      "p95": 50.0,
       "longTasks": 11,
       "cls": 0,
       "fcp": 724

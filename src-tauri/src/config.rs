@@ -348,6 +348,10 @@ pub struct LensConfig {
     pub styled_folders: Vec<StyledFolderRecord>,
     #[serde(default)]
     pub onboarding_completed: bool,
+    /// The Lens version whose setup / "What's new" the person last saw or skipped ("" = none yet).
+    /// A different running version shows the setup once (docs/SETUP.md).
+    #[serde(default)]
+    pub setup_seen_version: String,
     /// Settings hub detail level: "simple" (core settings with visual previews) or "advanced"
     /// (everything). Empty until chosen: new users start Simple, existing users Advanced.
     #[serde(default)]
@@ -537,6 +541,7 @@ impl Default for LensConfig {
             },
             styled_folders: vec![],
             onboarding_completed: false,
+            setup_seen_version: String::new(),
             settings_mode: String::new(),
             theme_schedule: None,
             tiling: Default::default(),
