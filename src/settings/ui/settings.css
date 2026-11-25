@@ -236,11 +236,34 @@
   gap: 8px;
   min-width: 0;
 }
+/* The icon sits in a small matte chip: a touch of depth (a faint top highlight and hairline) so the
+   tiles read richer without gloss. On, the chip fills with the accent and the icon takes the
+   on-accent colour; the rest of the tile stays quiet. */
 .sh-hero-icon {
   display: grid;
   place-items: center;
-  color: var(--lens-fg-secondary);
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--lens-fg);
+  background:
+    linear-gradient(180deg, rgb(var(--lens-ink) / 0.07), rgb(var(--lens-ink) / 0.03));
+  box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.07), inset 0 1px 0 rgb(var(--lens-ink) / 0.06);
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
+.sh-hero-icon svg { stroke-width: 2.1; }
+.sh-hero-tile.clickable:hover .sh-hero-icon {
+  background: linear-gradient(180deg, rgb(var(--lens-ink) / 0.1), rgb(var(--lens-ink) / 0.05));
+}
+.sh-hero-tile.active .sh-hero-icon {
+  color: var(--lens-on-accent, var(--lens-bg-base));
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--cc-accent, var(--lens-accent)) 90%, #fff),
+    var(--cc-accent, var(--lens-accent)));
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 6px color-mix(in srgb, var(--cc-accent, var(--lens-accent)) 30%, transparent);
+}
+.sh-hero-tile.disabled .sh-hero-icon { box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.05); background: transparent; }
 .sh-hero-label {
   font-size: 12px;
   font-weight: 600;
@@ -1017,3 +1040,6 @@
   font-size: 12px;
   animation: lens-tab-glide-in var(--lens-dur-fast) var(--lens-ease-out);
 }
+
+/* Sound: the "Other apps" heading sits inside the Playing now block, a step quieter than it. */
+.sh-mix-subhead { margin-top: 6px; opacity: 0.8; }
