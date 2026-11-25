@@ -331,18 +331,28 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
 
         let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
         let (pal_w, pal_h, x, y) = if anchor == "bottom-dock" {
-            // Exact live dock length, positioned strictly 0px flush directly ABOVE the dock pill!
-            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
-            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-            let w = (dock_w.max(680.0) * scale).round() as u32;
-            let h = (412.0 * scale) as u32;
-            (
-                w,
-                h,
-                pos.x + ((size.width as i32 - w as i32) / 2),
-                (bottom_edge - dock_pill_h - margin_bottom - h as i32 + 1)
-                    .max(pos.y + bar_h + 6),
-            )
+            // The search tray has its own width (app/flyout_geom.rs): a narrow Dock style never
+            // squeezes it and the Taskbar style opens it where Windows Search opens.
+            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
+            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
+            let r = crate::app::flyout_geom::search_rect_bottom(
+                &crate::app::flyout_geom::Monitor {
+                    x: pos.x,
+                    w: size.width as i32,
+                    bottom: bottom_edge,
+                    top: pos.y + bar_h + (6.0 * scale) as i32,
+                    scale,
+                },
+                &crate::app::flyout_geom::DockInput {
+                    style: &cfg.dock.style,
+                    alignment: &cfg.dock.alignment,
+                    pill_w_logical: dock_w,
+                    pill_h: dock_pill_h,
+                    margin_bottom,
+                },
+                412.0,
+            );
+            (r.w, r.h, r.x, r.y)
         } else {
             // "top-right" flush directly beneath Top Bar at the top-right corner (0px gap!)
             let w = (520.0 * scale) as u32;
