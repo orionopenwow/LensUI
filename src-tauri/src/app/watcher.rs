@@ -432,6 +432,8 @@ pub(crate) fn spawn_watcher(
         loop {
             thread::sleep(Duration::from_millis(65));
             tick = tick.wrapping_add(1);
+            // Sampled once per pass: the "pressed since last check" bit is consumed by the read.
+            let clicked = mouse_button_down();
 
             // Every ~2s check Windows DWM Accent / Personalize Registry
             if tick % 30 == 0 {
@@ -571,7 +573,7 @@ pub(crate) fn spawn_watcher(
                                     palette_focused: pal_focused,
                                     bar_focused,
                                     pointer_inside: pointer_in,
-                                    click_outside: !pointer_in && mouse_button_down(),
+                                    click_outside: !pointer_in && clicked,
                                 },
                                 &mut search_idle_since,
                                 Instant::now(),
@@ -824,7 +826,7 @@ pub(crate) fn spawn_watcher(
                             .and_then(|w| w.is_focused().ok())
                             .unwrap_or(false),
                         palette_visible: palette_in_use,
-                        click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
+                        click_outside: !cursor_over_dock_window && !cursor_over_pill && clicked,
                     }, &mut menu_idle_since, &mut settings_unfocused_since);
                     if guard.clear_stale_menu {
                         *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
@@ -1208,10 +1210,17 @@ mod dock_guard_tests {
 #[cfg(windows)]
 pub(crate) fn mouse_button_down() -> bool {
     use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON};
+    // Held now (0x8000), or pressed since the previous check (0x0001). The watcher looks every
+    // 65 ms, and a quick click can go down and up between two looks: reading only the "held" bit
+    // missed it, so a click outside Search never closed it (B-42). Read every button each time so
+    // each one's "since last check" bit is consumed.
     unsafe {
-        [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON]
-            .iter()
-            .any(|vk| (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0)
+        let mut any = false;
+        for vk in [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON] {
+            let state = GetAsyncKeyState(vk.0 as i32) as u16;
+            any |= state & 0x8001 != 0;
+        }
+        any
     }
 }
 
