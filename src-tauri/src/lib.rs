@@ -21,6 +21,7 @@ mod win_taskbar;
 mod win_theme;
 mod win_notifications;
 mod win_previews;
+mod attention;
 mod win_rules;
 mod win_shell;
 mod win_pin_order;
@@ -494,6 +495,7 @@ pub fn run() {
             commands::theme::get_windows_theme,
             commands::theme::legacy_hook_status,
             commands::dock::get_running_windows,
+            attention::get_dock_attention,
             commands::dock::get_icon_for_path,
             commands::dock::focus_window_cmd,
             commands::dock::window_action_cmd,
