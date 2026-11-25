@@ -365,6 +365,8 @@ export const DockSurface: React.FC = () => {
   /** Dock app currently under a file drag (key = data-dock-drag-key). */
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Settings can be dragged off the Dock: the fused top edge follows where it actually is.
+  const [settingsDocked, setSettingsDocked] = useState(true);
   const [activeSettingsTab, setActiveSettingsTab] = useState<string>("system");
   const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<DockContextMenu | null>(null);
@@ -628,6 +630,7 @@ export const DockSurface: React.FC = () => {
         closeInDockLauncher();
       }
     });
+    const unlistenSettingsDocked = listen<boolean>("lens://settings-docked", (e) => setSettingsDocked(e.payload));
     const unlistenSettingsTab = listen<string>("lens://settings-tab", (e) => {
       if (e.payload) setActiveSettingsTab(e.payload);
     });
@@ -675,6 +678,7 @@ export const DockSurface: React.FC = () => {
       unlistenSearch.then((fn) => fn());
       unlistenSettings.then((fn) => fn());
       unlistenSettingsTab.then((fn) => fn());
+      unlistenSettingsDocked.then((fn) => fn());
       unlistenDismiss.then((fn) => fn());
       document.removeEventListener("mouseout", onDocLeave);
       window.removeEventListener("keydown", onKey);
@@ -1915,7 +1919,7 @@ export const DockSurface: React.FC = () => {
 
       <nav
         ref={pillRef}
-        className={`dock-pill ${locked ? "is-locked" : ""} ${!dockVisible ? "is-hidden" : ""} ${settingsOpen ? "is-fused-top" : ""} ${dockSearchOpen ? "is-expanded-launcher" : ""} ${ctxMenu ? "is-menu-open" : ""}`}
+        className={`dock-pill ${locked ? "is-locked" : ""} ${!dockVisible ? "is-hidden" : ""} ${settingsOpen && settingsDocked ? "is-fused-top" : ""} ${dockSearchOpen ? "is-expanded-launcher" : ""} ${ctxMenu ? "is-menu-open" : ""}`}
         style={
           isBar
             ? dockSearchOpen && lockedRowOffset !== null && !isVertical

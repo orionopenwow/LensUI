@@ -1,0 +1,38 @@
+/* Settings › About & Testing › Report a problem. */
+.rp-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rp-text {
+  width: 100%;
+  resize: vertical;
+  min-height: 52px;
+  font: inherit;
+  line-height: 1.45;
+}
+.rp-attach {
+  display: flex;
+  flex-direction: column;
+}
+.rp-pre {
+  margin: 6px 0 0;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+  user-select: text;
+}
+.rp-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rp-hint {
+  opacity: 0.8;
+}
