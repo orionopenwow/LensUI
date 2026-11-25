@@ -28,8 +28,7 @@ export const ATTENTION_SNAPSHOT_CMD = "get_dock_attention";
  *  read defensively below, so an older backend or a partial payload can't break the Dock. */
 export type AttentionSnapshot = Partial<Omit<GeneratedAttentionSnapshot, "apps">> & {
   apps?: Partial<GeneratedAttentionApp>[];
-};[];
-}
+};
 
 export interface AttentionPayload {
   appId: string;
