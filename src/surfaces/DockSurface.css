@@ -2278,3 +2278,16 @@
   border-right-color: transparent;
   clip-path: inset(-48px 0 -48px -48px);
 }
+
+/* Text contrast in the search panel (axe, 4.5:1). The panel used to be a gradient, which axe can't
+ * measure, so its muted text (~3:1 on this fill) went unnoticed; on the flat joined fill it's
+ * measured. Inside the panel, muted text uses the secondary text colour. */
+.dock-launcher-drawer {
+  --lens-fg-muted: var(--lens-fg-secondary);
+}
+.dock-launcher-drawer .pal-filter-count {
+  color: var(--lens-fg);
+}
+:root[data-scheme="light"] .dock-launcher-drawer .pal-recent-age {
+  color: #065f46;
+}
