@@ -50,15 +50,24 @@ pub(crate) async fn set_power_mode_cmd(mode: String) -> Result<win_system_module
 
 #[tauri::command]
 pub(crate) fn quit_lens(app: AppHandle) {
-    crate::app::safe_start::mark_started(); // a clean quit is never a failed start
-    crate::app::integration::shutdown(Some(&app));
+    restore_before_exit(&app);
+    app.exit(0);
+}
+
+/// Everything Lens puts back before it exits: hooks and overlays off, windows restored, the
+/// wallpaper host detached, the tray host gone, window styling reverted, the taskbar shown and,
+/// if Lens is the shell, Explorer back. One list for Quit (here and in the tray menu) and for
+/// "Restart to update" (win_update).
+pub(crate) fn restore_before_exit(app: &AppHandle) {
+    crate::app::safe_start::mark_started(); // a clean exit is never a failed start
+    crate::app::integration::shutdown(Some(app));
     win_mcp::stop_server();
     win_previews::hide_previews();
+    win_altdrag::stop_alt_drag();
     win_workspaces::restore_all_windows();
     win_wallpaper::detach_wallpaper_window();
     win_tray::stop_tray_host();
     win_dwm_engine::revert_dwm_theme();
     restore_taskbar_if_hidden();
     win_shell::on_quit_restore_desktop(); // if Lens is the shell: bring Explorer back first
-    app.exit(0);
 }
