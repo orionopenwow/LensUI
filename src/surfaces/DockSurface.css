@@ -2192,3 +2192,86 @@
     animation: none;
   }
 }
+
+/* ---------- One shape while searching (docs/DOCK_SMOOTHNESS.md › Seamless join) ----------
+ * The results panel and the Dock read as one window: on the joined edge neither draws a border,
+ * a shadow or its own gradient, and both use the same fill (the same token Settings uses when it
+ * sits on the Dock), so no line or step in colour shows where they meet. Only outer corners stay
+ * round: a Dock narrower than the panel squares its joined corners, a bar wider than the panel
+ * squares the panel's. Checked pixel by pixel in tools/robust/dock-layout.mjs. */
+.dock-stage:not(.dock-style-islands) .dock-pill.is-expanded-launcher,
+.dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  background: var(--lens-bg-surface);
+}
+/* The Dock's own shadow carries a 1 px inset highlight along its top: that was the bright line
+ * under the panel (and under Settings, see .is-fused-top). While joined, the panel's shadow
+ * outlines the combined shape. */
+.dock-stage:not(.dock-style-islands) .dock-pill.is-expanded-launcher {
+  box-shadow: none;
+}
+
+/* Bottom edge: the panel sits on the Dock's top. */
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher {
+  border-top-color: transparent;
+}
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  /* Sit on the Dock's outer edge, not over its (now transparent) 1 px border: two translucent
+   * fills overlapping made a dark line. */
+  bottom: calc(100% + 1px);
+  margin-bottom: 0;
+  border-bottom-color: transparent;
+  /* Its shadow must not fall across the Dock below it. */
+  clip-path: inset(-48px -48px 0 -48px);
+}
+/* data-join (set by the Dock after it opens): which of the two is wider along the joint. The
+ * narrower one keeps its joined corners square; equal widths square both. */
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher:is([data-join="drawer-wider"], [data-join="flush"]) {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher:is([data-join="pill-wider"], [data-join="flush"]) > .dock-launcher-drawer {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Top edge: the panel hangs below the Dock. */
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher {
+  border-bottom-color: transparent;
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  /* The panel's shadow token draws a 1 px highlight just inside its (1 px) top border, which is
+   * the joint here: the panel starts 2 px up, under the Dock's last rows, and those two rows are
+   * clipped away, so the first painted row continues straight from the Dock. */
+  top: calc(100% - 1px);
+  margin-top: 0;
+  border-top-color: transparent;
+  clip-path: inset(2px -48px -48px -48px);
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher:is([data-join="drawer-wider"], [data-join="flush"]) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher:is([data-join="pill-wider"], [data-join="flush"]) > .dock-launcher-drawer {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Left / right edges: the panel sits beside the Dock. */
+.dock-stage.dock-edge-left .dock-pill.is-expanded-launcher {
+  border-right-color: transparent;
+}
+.dock-stage.dock-edge-left .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  left: calc(100% + 1px);
+  margin-left: 0;
+  border-left-color: transparent;
+  clip-path: inset(-48px -48px -48px 0);
+}
+.dock-stage.dock-edge-right .dock-pill.is-expanded-launcher {
+  border-left-color: transparent;
+}
+.dock-stage.dock-edge-right .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  right: calc(100% + 1px);
+  margin-right: 0;
+  border-right-color: transparent;
+  clip-path: inset(-48px 0 -48px -48px);
+}

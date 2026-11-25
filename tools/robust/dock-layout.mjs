@@ -84,6 +84,21 @@ function measure() {
     inputFocused: document.activeElement === input,
     icons: icons.map(r),
     stageClass: document.querySelector(".dock-stage")?.className || "",
+    // Where the open results panel meets the Dock: a short strip across the join, inside both shapes
+    // and clear of icons (the Dock's padding next to the panel's edge).
+    join: (() => {
+      if (!drawer || !pill) return null;
+      const d = drawer.getBoundingClientRect();
+      const p = pill.getBoundingClientRect();
+      const stage = document.querySelector(".dock-stage")?.className || "";
+      const edge = /dock-edge-(top|left|right)/.exec(stage)?.[1] || "bottom";
+      const lo = Math.max(d.left, p.left), hi = Math.min(d.right, p.right);
+      const top = Math.max(d.top, p.top), bot = Math.min(d.bottom, p.bottom);
+      if (edge === "bottom") return { axis: "y", at: Math.round(p.top), x: Math.round(lo + 3), lo, hi };
+      if (edge === "top") return { axis: "y", at: Math.round(p.bottom), x: Math.round(lo + 3), lo, hi };
+      if (edge === "left") return { axis: "x", at: Math.round(p.right), y: Math.round(Math.min(bot - 8, Math.max(top, d.top + 140) + 3)), lo: top, hi: bot };
+      return { axis: "x", at: Math.round(p.left), y: Math.round(Math.min(bot - 8, Math.max(top, d.top + 140) + 3)), lo: top, hi: bot };
+    })(),
   };
 }
 
@@ -133,6 +148,33 @@ function check(m, ctx) {
 
 const server = await serve();
 const browser = await launch();
+const decoder = await (await browser.newContext()).newPage();
+
+/** Samples a strip across the panel/Dock join (9 px, centred on it) and fails when the pixels on
+ * the joint differ from the fill on both sides: a border, a shadow line or a gap. */
+async function seam(page, j) {
+  const pad = 4;
+  const clip = j.axis === "y" ? { x: j.x, y: j.at - pad, width: 1, height: pad * 2 + 1 } : { x: j.at - pad, y: j.y, width: pad * 2 + 1, height: 1 };
+  if (clip.x < 0 || clip.y < 0) return [];
+  const png = (await page.screenshot({ clip, animations: "disabled" })).toString("base64");
+  const px = await decoder.evaluate(async (b64) => {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = "data:image/png;base64," + b64; });
+    const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+    const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+    const d = x.getImageData(0, 0, img.width, img.height).data;
+    const out = [];
+    for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
+    return out;
+  }, png);
+  const ref = [px[0], px[1], px[px.length - 2], px[px.length - 1]];
+  const avg = [0, 1, 2].map((k) => ref.reduce((a, p) => a + p[k], 0) / ref.length);
+  const sideGap = Math.max(...[0, 1, 2].map((k) => Math.abs(px[0][k] - px[px.length - 1][k])));
+  const worst = Math.max(...px.slice(2, -2).map((p) => Math.max(...[0, 1, 2].map((k) => Math.abs(p[k] - avg[k])))));
+  const out = [];
+  if (worst > 10) out.push(`seam at the panel/Dock join (a pixel on the joint is ${Math.round(worst)} off the fill)`);
+  if (sideGap > 10) out.push(`panel and Dock fills differ by ${Math.round(sideGap)} across the join`);
+  return out;
+}
 const failures = [];
 let runs = 0;
 for (const variant of VARIANTS) for (const style of STYLES) {
@@ -160,6 +202,7 @@ for (const variant of VARIANTS) for (const style of STYLES) {
       }
       const m = await page.evaluate(measure);
       const problems = check(m, { open, vertical: edge === "left" || edge === "right" });
+      if (open && m.join && style !== "islands") problems.push(...(await seam(page, m.join)));
       runs++;
       const name = `${style}-${edge}${variant.id}-${open ? "search" : "rest"}`;
       if (SHOTS || problems.length) {

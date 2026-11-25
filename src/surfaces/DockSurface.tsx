@@ -419,6 +419,7 @@ export const DockSurface: React.FC = () => {
     written: string[];
   }>({ raf: 0, pos: null, kids: [], centres: [], eligible: [], written: [] });
   useEffect(() => () => { if (magRef.current.raf) cancelAnimationFrame(magRef.current.raf); }, []);
+  const isVerticalRef = useRef(false);
   /** Latest config for handlers created earlier (pointer drags). */
   const configRef = useRef(config as NonNullable<typeof config>);
   if (config) configRef.current = config;
@@ -520,6 +521,24 @@ export const DockSurface: React.FC = () => {
       invoke("set_dock_search_expanded_cmd", { expanded: false }).catch(() => {});
     });
   };
+
+  // Which shape is wider along the panel/Dock joint (see DockSurface.css › One shape while
+  // searching): the narrower one squares its joined corners so the two read as one outline.
+  useLayoutEffect(() => {
+    const pill = pillRef.current;
+    if (!pill) return;
+    if (!dockSearchOpen) {
+      delete pill.dataset.join;
+      return;
+    }
+    const drawer = pill.querySelector(".dock-launcher-drawer");
+    if (!drawer) return;
+    const p = pill.getBoundingClientRect();
+    const d = drawer.getBoundingClientRect();
+    const vertical = isVerticalRef.current;
+    const diff = vertical ? d.height - p.height : d.width - p.width;
+    pill.dataset.join = Math.abs(diff) <= 3 ? "flush" : diff > 0 ? "drawer-wider" : "pill-wider";
+  });
 
   useLayoutEffect(() => {
     searchFlip.current?.play({
@@ -988,6 +1007,7 @@ export const DockSurface: React.FC = () => {
   const dockExtras = config.dock as typeof config.dock & DockExtras;
   const edge = normalizeEdge(dockExtras.position);
   const isVertical = edge === "left" || edge === "right";
+  isVerticalRef.current = isVertical;
   const locked = dockExtras.locked === true;
   const separatorsAfter = dockExtras.separatorsAfter ?? [];
   const livePreviews = dockExtras.livePreviews === true;
