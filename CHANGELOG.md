@@ -14,6 +14,16 @@ up and migrates `%APPDATA%\LensUI` where it can.
   or by typing "setup" in Command (docs/SETUP.md).
 - **Launch-Lens-UI.bat** says "Lens", installs dependencies only when `bun.lock` changed, offers
   the dev build or your last built Lens, and opens the setup once after the folder was updated.
+- **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
+  and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
+  nothing installs until you choose Restart to update, which puts the desktop back, installs and
+  starts Lens again. What's new is shown in Settings › About & Testing › Updates. Also `/update`
+  in Command and "Check for updates…" in the tray menu.
+- **Report a problem:** Settings › About & Testing, the tray menu, `/report` in Command and the
+  card a crashed window shows. Choose what to attach (versions, recent log, latest crash report,
+  self-test, which features are on), see exactly what will be shared with user names, e-mail
+  addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
+  uploads nothing itself.
 
 ## [0.3.0] - 2026-11-24
 

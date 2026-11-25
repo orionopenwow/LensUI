@@ -540,6 +540,9 @@ pub(crate) fn run_setup(
     // updates, the browser bridge adapters, clipboard history v2 and Lens Command hotkeys.
     crate::app::integration::setup(app, &initial_config);
 
+    // Apps asking for attention (FlashWindowEx): the Dock shows them like the taskbar would.
+    crate::attention::start(handle.clone());
+
     // Background thread: theme sync, Top Bar / Dock auto-hide, click-through, desktop tab.
     crate::app::watcher::spawn_watcher(
         handle.clone(),

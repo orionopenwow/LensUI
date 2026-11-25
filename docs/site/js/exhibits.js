@@ -70,6 +70,9 @@ function steps(box, onStep, { auto = 0 } = {}) {
 function magic(ex) {
   const st = stage(ex.querySelector(".xstage"));
   const target = ex.querySelector(".mx-target"), menu = ex.querySelector(".mx-menu"), menuHolder = menu.querySelector(".xf");
+  // Right-click is the star here: the page dims and softens around the clicked spot and its menu.
+  const dim = ex.querySelector(".mx-dim");
+  const spotlight = (x, y) => { if (!dim) return; dim.style.setProperty("--x", `${Math.round(x)}px`); dim.style.setProperty("--y", `${Math.round(y)}px`); dim.hidden = false; };
   // Where each step's right-click lands on the page (design px), and which page it lands on.
   const AT = { link: [470, 150], summary: [470, 150], transcript: [520, 190], shelf: [360, 210], ask: [430, 170], approval: [430, 170] };
   const PAGE = { transcript: "browser.html?scene=transcript" };
@@ -78,6 +81,7 @@ function magic(ex) {
     mount(target, PAGE[scene] ?? "browser.html?scene=frame");
     mount(menuHolder, `magic.html?scene=${scene}&drag=0&magic=0`);
     place(...at);
+    spotlight(...at);
     menu.hidden = false;
     if (!reducedMotion()) menu.animate([{ opacity: 0, transform: `${menu.style.transform} scale(.96)` }, { opacity: 1, transform: menu.style.transform }], { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" });
   };
@@ -90,36 +94,16 @@ function magic(ex) {
     ex.querySelectorAll(".xstep").forEach((t) => t.setAttribute("aria-selected", "false"));
     mount(menuHolder, `magic.html?scene=${m.kind || "window"}&drag=0&magic=0`);
     place(m.x + 4, m.y + 4);
+    spotlight(m.x, m.y);
     menu.hidden = false;
   });
   show("link", AT.link);
 }
 
-// ---- bring your own agent: the approval card, then the orb at work on a real surface ----------------
+// ---- bring your own agent: the real “Needs your OK” card --------------------------------------------
 function agent(ex) {
-  ex.querySelectorAll(".xstage").forEach((s) => stage(s));
-  const holders = [...ex.querySelectorAll(".xf")];
-  holders.forEach((h) => mount(h));
-  const orb = ex.querySelector("[data-presence]"), orbFrame = () => orb.querySelector("iframe");
-  const notes = holders.find((h) => !h.dataset.presence && h.dataset.xf.startsWith("coreapps"));
-  /** The next unticked item in the real Notes checklist: that is where the orb goes. */
-  const targetRect = () => {
-    try {
-      const d = notes.querySelector("iframe").contentDocument;
-      const box = [...d.querySelectorAll('input[type="checkbox"]')].find((c) => !c.checked);
-      const r = (box?.closest("label, li") ?? box)?.getBoundingClientRect();
-      if (r?.width) return { x: r.left, y: r.top, w: Math.min(r.width, 220), h: r.height, label: (box.closest("label, li")?.textContent ?? "").trim() };
-    } catch { /* not ready */ }
-    return null;
-  };
-  const play = () => {
-    const t = targetRect() ?? { x: 158, y: 158, w: 150, h: 18, label: "the next item" };
-    const st = orb.closest(".xstage");
-    try { orbFrame().contentWindow.postMessage({ lens: "go", from: [+st.dataset.w - 70, +st.dataset.h - 70], target: { x: t.x, y: t.y, w: t.w, h: t.h }, kind: "click", label: `Tick “${t.label}”`, actor: "Claude", index: 2, total: 3 }, location.origin); } catch { /* frame gone */ }
-  };
-  orb.addEventListener("xf-ready", () => setTimeout(play, 500), { once: true });
-  ex.closest("section").querySelector("[data-replay]")?.addEventListener("click", play);
-  new IntersectionObserver(([e]) => { if (e.isIntersecting && orb.classList.contains("is-ready")) play(); }, { threshold: 0.6 }).observe(orb);
+  ex.querySelectorAll(".xstage").forEach((st) => stage(st));
+  ex.querySelectorAll(".xf").forEach((h) => mount(h));
 }
 
 // ---- Lens Browser: the real BrowserSurface, a few of its states --------------------------------------

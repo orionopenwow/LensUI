@@ -2,6 +2,7 @@ import { openGuide } from "../guide/coach";
 import { searchStep, isExpanded, type SearchPhase, type SearchEvent } from "../topbar/searchMachine";
 import { MiniPlayer } from "../music/MiniPlayer";
 import { useMiniPlacement } from "../music/useMiniPlacement";
+import { UpdatePill } from "../update/UpdatePill";
 import { PendingPill, useApprovalHotkey, usePendingApprovals } from "../approval";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { captureFlip, type FlipCapture } from "../ui/motion";
@@ -286,6 +287,8 @@ export const TopBarSurface: React.FC = () => {
         )}
         {/* "C: · 9.6 GB left" (only with Lens Cleaner's low-space alert on; docs/CLEANER.md). */}
         <LowSpacePill />
+        {/* "Restart to update" (only while a Lens update is available or ready; docs/RELEASING.md). */}
+        <UpdatePill />
         <button type="button" className="topbar-icon-btn" data-guide-id="topbar.help" aria-label="Ask Lens" onClick={() => void openGuide()}>
           ?
         </button>
