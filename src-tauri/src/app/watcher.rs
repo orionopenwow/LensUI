@@ -245,20 +245,29 @@ pub(crate) fn position_settings_docked_with_height(
         // Exact bottom dock pill height (padding-top 8 + padding-bottom 10 + icon_size + 1px bottom border)
         let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
         let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
-        // Exact live dock width so Control Center aligns pixel-for-pixel with the Dock's left and right edges!
-        let unified_w = dock_pill_w.max(580.0);
-        let target_w = (unified_w * scale)
-            .min(size.width as f64 - 24.0 * scale)
-            .round() as u32;
-        // Fluid content-driven height so the user NEVER has to scroll when space is available on screen!
-        let max_h = ((bottom_edge - dock_pill_h - margin_bottom) - (pos.y + bar_h + (8.0 * scale) as i32))
-            .max((420.0 * scale) as i32) as u32;
-        let desired_h = ((desired_logical_h.unwrap_or(SETTINGS_LOGICAL_H) + 28.0).max(400.0) * scale).round() as u32;
-        let target_h = desired_h.min(max_h);
-        let x = pos.x + ((size.width as i32 - target_w as i32) / 2);
-        // Strictly flush (+1px overlap eliminates any hairline seam between Control Center and the fused Dock!)
-        let y = (bottom_edge - dock_pill_h - margin_bottom - target_h as i32 + 1)
-            .max(pos.y + bar_h + (4.0 * scale) as i32);
+        // Settings has its own size (app/flyout_geom.rs): a Dock style never makes it narrow or
+        // full-screen wide, and the Taskbar style opens it like the Windows 11 Start menu.
+        let geom_mon = crate::app::flyout_geom::Monitor {
+            x: pos.x,
+            w: size.width as i32,
+            bottom: bottom_edge,
+            top: pos.y + bar_h + (4.0 * scale) as i32,
+            scale,
+        };
+        let geom_dock = crate::app::flyout_geom::DockInput {
+            style: &cfg.dock.style,
+            alignment: &cfg.dock.alignment,
+            pill_w_logical: dock_pill_w,
+            pill_h: dock_pill_h,
+            margin_bottom,
+        };
+        let r = crate::app::flyout_geom::settings_rect_bottom(
+            &geom_mon,
+            &geom_dock,
+            desired_logical_h.unwrap_or(SETTINGS_LOGICAL_H) + 28.0,
+        );
+        let (target_w, target_h) = (r.w, r.h);
+        let (x, y) = (r.x, r.y);
         let (x, y) = crate::app::integration::side_dock_flyout(
             cfg, scale, bar_h, bottom_edge, target_w, target_h,
             win_monitors::FlyoutAlign::Center,
@@ -765,7 +774,9 @@ pub(crate) fn spawn_watcher(
                                     let l = dp.x + (px as f64 * scale) as i32;
                                     let t = dp.y + (py as f64 * scale) as i32;
                                     let pill = (l, t, l + (pw as f64 * scale) as i32, t + (ph as f64 * scale) as i32);
-                                    settings_is_docked(&cfg.dock.position, srect, pill, (12.0 * scale) as i32)
+                                    // The Taskbar style opens Settings like the Start menu, never fused.
+                                    !crate::app::flyout_geom::opens_like_windows(&cfg.dock.style)
+                                        && settings_is_docked(&cfg.dock.position, srect, pill, (12.0 * scale) as i32)
                                 } else {
                                     true
                                 }

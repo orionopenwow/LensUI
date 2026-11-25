@@ -278,8 +278,19 @@ pub(crate) struct InstalledState {
 /// Installed versions of catalogue winget apps (one `winget list` call).
 #[tauri::command]
 pub(crate) fn apps_installed() -> Result<HashMap<String, InstalledState>, String> {
-    let text = winget_capture(&winget::list_all_args())?;
     let mut out = HashMap::new();
+    // Portable apps Lens keeps itself count as installed whether or not winget is available.
+    for app in catalogue()["apps"].as_array().into_iter().flatten() {
+        let id = app["id"].as_str().unwrap_or_default();
+        if app["install"]["portable"].as_bool() == Some(true) && portable_program(id).is_some() {
+            out.insert(id.to_string(), InstalledState { version: app["lastRelease"].as_str().unwrap_or("installed").trim_start_matches('v').to_string(), available: None });
+        }
+    }
+    let text = match winget_capture(&winget::list_all_args()) {
+        Ok(t) => t,
+        Err(e) if out.is_empty() => return Err(e),
+        Err(_) => return Ok(out),
+    };
     for app in catalogue()["apps"].as_array().into_iter().flatten() {
         if let Ok(InstallSpec::Winget { id }) = install_spec(app) {
             if let Some((version, available)) = winget::parse_list_version(&text, &id) {
@@ -611,6 +622,18 @@ pub(crate) fn apps_release_run(token: String) -> Result<(), String> {
         return Err("The installer changed after it was checked, so Lens deleted it.".into());
     }
     let lower = prep.file_name.to_ascii_lowercase();
+    // A portable app (one program file, no installer): Lens keeps the verified file in its own
+    // data folder instead of running it as an installer. Nothing outside that folder is written.
+    let portable = find_app(&prep.app_id).ok().and_then(|a| a["install"]["portable"].as_bool()).unwrap_or(false);
+    if portable && lower.ends_with(".exe") {
+        let r = install_portable(&prep.app_id, &prep.file_name, &path);
+        let _ = std::fs::remove_file(&path);
+        log("release-run", &prep.app_id, "githubRelease", if r.is_ok() { "ok" } else { "failed" }, &format!("portable {}", prep.file_name));
+        if r.is_ok() {
+            mark_installed(&prep.app_id, true);
+        }
+        return r.map(|_| ());
+    }
     let r = if lower.ends_with(".msi") {
         #[cfg(windows)]
         {
@@ -628,6 +651,38 @@ pub(crate) fn apps_release_run(token: String) -> Result<(), String> {
         mark_installed(&prep.app_id, true);
     }
     r
+}
+
+/// Copies a verified portable program into `apps\\portable\\<id>`, replacing an older copy.
+fn install_portable(app_id: &str, file_name: &str, src: &std::path::Path) -> Result<PathBuf, String> {
+    let dir = apps::portable_dir(crate::config::config_dir(), app_id).ok_or("invalid app id")?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    // An update replaces the old program file; anything else in the folder (the app's own
+    // settings, if it keeps them beside itself) stays.
+    if let Some(old) = apps::portable_exe(&dir) {
+        let _ = std::fs::remove_file(old);
+    }
+    let dest = dir.join(github::safe_file_name(file_name));
+    std::fs::copy(src, &dest).map_err(|e| format!("couldn't keep {file_name}: {e}"))?;
+    Ok(dest)
+}
+
+/// The installed program file of a portable app, if Lens keeps one.
+pub(crate) fn portable_program(app_id: &str) -> Option<PathBuf> {
+    apps::portable_dir(crate::config::config_dir(), app_id).and_then(|d| apps::portable_exe(&d))
+}
+
+/// Removes a portable app Lens keeps in its own data folder (the whole `apps\\portable\\<id>`
+/// folder). Apps installed by an installer are removed through Windows instead.
+#[tauri::command]
+pub(crate) fn apps_portable_remove(app_id: String) -> Result<(), String> {
+    let dir = apps::portable_dir(crate::config::config_dir(), &app_id).ok_or("invalid app id")?;
+    if dir.exists() {
+        std::fs::remove_dir_all(&dir).map_err(|e| format!("couldn't remove it (is it still open?): {e}"))?;
+    }
+    mark_installed(&app_id, false);
+    log("portable-remove", &app_id, "githubRelease", "ok", "");
+    Ok(())
 }
 
 /// Deletes a prepared download the user decided not to run.
@@ -680,6 +735,9 @@ pub(crate) fn apps_open(app_id: String) -> Result<(), String> {
     let app = find_app(&app_id)?;
     if let Ok(InstallSpec::Web { url }) = install_spec(app) {
         return crate::win_windows::launch_path(&url);
+    }
+    if let Some(exe) = portable_program(&app_id) {
+        return crate::win_windows::launch_path(&exe.to_string_lossy());
     }
     let name = app["name"].as_str().unwrap_or_default();
     let shortcuts = start_menu_shortcuts();
@@ -992,6 +1050,9 @@ fn media_blocking(app_id: &str, url: &str) -> Result<String, String> {
 #[tauri::command]
 pub(crate) fn apps_installed_icon(app_id: String) -> Option<String> {
     let app = find_app(&app_id).ok()?;
+    if let Some(exe) = portable_program(&app_id) {
+        return crate::win_windows::extract_icon_for_path(&exe.to_string_lossy());
+    }
     let name = app["name"].as_str()?;
     let shortcuts = start_menu_shortcuts();
     let stems: Vec<String> = shortcuts.iter().map(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default()).collect();

@@ -2130,6 +2130,46 @@
    "source": "src/components/CleanerCard.tsx"
   },
   {
+   "id": "card.accessibility.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Accessibility",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "accessibility",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
+   "id": "card.gaming.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Gaming",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "gaming",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
    "id": "card.ai.bridgeinbox",
    "kind": "card",
    "title": "From your browser and files",
@@ -2650,7 +2690,7 @@
    "id": "setting.ai.connectionscard.file-explorer-right-click",
    "kind": "setting",
    "title": "File Explorer right-click",
-   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
+   "text": "",
    "path": [
     "Settings",
     "AI & Command",
@@ -5711,7 +5751,7 @@
    "id": "pack.windows-mesh",
    "kind": "pack",
    "title": "Windows Mesh",
-   "text": "Follows your Windows accent colour, with a familiar full-width taskbar. Theme pack (Core).",
+   "text": "Follows your Windows accent colour on a familiar Windows-dark base. Theme pack (Core).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5783,7 +5823,7 @@
    "id": "pack.tokyo-night",
    "kind": "pack",
    "title": "Tokyo Night",
-   "text": "Deep navy with neon-city blue. Apps and folders sit in separate pills. Theme pack (Linux Suite).",
+   "text": "Deep navy with neon-city blue. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5837,7 +5877,7 @@
    "id": "pack.gruvbox-warm",
    "kind": "pack",
    "title": "Gruvbox Warm",
-   "text": "Retro warm grey with orange. Squarer corners, taskbar layout. Theme pack (Linux Suite).",
+   "text": "Retro warm grey with orange and squarer corners. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5909,7 +5949,7 @@
    "id": "pack.hyprland-neon",
    "kind": "pack",
    "title": "Hyprland Neon",
-   "text": "Tiling-desktop look: glowing cyan borders and split dock pills. Theme pack (Linux Suite).",
+   "text": "Tiling-desktop look with glowing cyan borders. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5963,7 +6003,7 @@
    "id": "pack.solarized-matte",
    "kind": "pack",
    "title": "Solarized Matte",
-   "text": "Classic teal-blue Solarized with a labelled studio dock. Theme pack (Studio).",
+   "text": "Classic teal-blue Solarized, matte. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5981,7 +6021,7 @@
    "id": "pack.lens-expressive",
    "kind": "pack",
    "title": "Lens Expressive",
-   "text": "Obsidian colours with soft, playful shapes: pill tiles, a scalloped clock and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours with soft, playful shapes: pill tiles and a scalloped clock. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5999,7 +6039,7 @@
    "id": "pack.lens-dot-matrix",
    "kind": "pack",
    "title": "Lens Dot Matrix",
-   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6035,7 +6075,7 @@
    "id": "pack.lens-expressive-light",
    "kind": "pack",
    "title": "Lens Expressive Light",
-   "text": "Alabaster daylight colours with the Expressive shapes and an islands dock. Theme pack (Light).",
+   "text": "Alabaster daylight colours with the Expressive shapes. Theme pack (Light).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -7463,6 +7503,21 @@
     "doc": "docs/PRODUCTIVITY.md"
    },
    "source": "docs/PRODUCTIVITY.md"
+  },
+  {
+   "id": "hotkey.shift-f10",
+   "kind": "hotkey",
+   "title": "Shift+F10",
+   "text": "Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (Shift+F10).",
+   "path": [
+    "Keyboard",
+    "Shift+F10"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md"
+   },
+   "source": "docs/RIGHTCLICK.md"
   },
   {
    "id": "hotkey.ctrl-v",
@@ -10535,7 +10590,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.15",
+   "id": "doc.lens-apps.14",
+   "kind": "doc",
+   "title": "Lens Apps: Portable apps and ThumbDesk",
+   "text": "A GitHub-release app can set \"portable\": true in its install object when the release ships one program file instead of an installer. Lens then keeps the verified file in %APPDATA%\\LensUI\\apps\\portable\\<id \\ (nothing is written outside Lens's data folder), Open runs it, and Uninstall deletes the folder ( apps portable remove ). ThumbDesk, the controller companion from the makers of Lens, is the first: see docs/apps/THUMBDESK.md.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Portable apps and ThumbDesk"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Portable apps and ThumbDesk"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.16",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
@@ -10860,7 +10932,7 @@
    "id": "doc.lens-browser.19",
    "kind": "doc",
    "title": "Lens Browser: Delta items (docs/research/BROWSER_DELTA.md)",
-   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. Ask-on-Find Done: no matches → \"Ask about this page\". PDF annotation + Ask this PDF Partial: pag",
+   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop",
    "path": [
     "Docs",
     "Lens Browser",
@@ -11028,7 +11100,7 @@
    "id": "doc.magic.1",
    "kind": "doc",
    "title": "Magic right-click window: How you open it",
-   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and Ctrl+Alt+M are Lens shortcuts. - Plain right-click belongs to apps. - Shift+right-click is Explorer's \"extended menu\". - Ctrl+right-click is used by some editors. Ctrl+A",
+   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Lens › in Lens's own menus ✓ Dock app and Shelf item menus end with a \"Lens ›\" row that pans into these actions (docs/RIGHTCLICK.md, \"Lens in every menu\"). Works even when the global trigger is off. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Sh",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -12615,7 +12687,7 @@
    "id": "doc.rightclick.11",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Explorer and desktop",
-   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses MultiSelectModel=Player . Explorer starts one process per selected item, and the bridge merges ask files requests that arrive within 1.5 s into one pending request ( ipc::coalesce files , capped at 100 files). BridgeContext.files carries all of them. Browsers can never name files. Hidden actions. Explorer leave",
+   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Inside a folder (empty space) The folder verbs on the open folder ( \"%V\" ), without \"Ask about these folders\" Drives The folder verbs on the drive root, without \"Ask about these folders\". A drive root reaches Lens as C:\" (Windows reads \"C:\\\" as an escaped quote); bridge::cli::detect turns it back into C:\\ Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses Multi",
    "path": [
     "Docs",
     "Right-click everywhere, micro-saves and context packs",
@@ -12629,7 +12701,24 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.15",
+   "id": "doc.rightclick.12",
+   "kind": "doc",
+   "title": "Right-click everywhere, micro-saves and context packs: Lens in every menu (\"Lens ›\")",
+   "text": "Lens's own right-click menus end with one Lens › row (the small Lens logo). Hovering it for 160 ms, clicking it, or pressing → / Enter pans the menu sideways into the Magic actions for the same item; ← / Esc / Backspace pan back. Picking an action opens the Magic window for that item and runs it there (answers, confirmations and undo look the same as everywhere else); the last row, More in Lens… , opens the Magic window without running anything. Where Its own rows Then --- --- --- Dock app windows, Min · Max · Top, New Window, Run as Admin, File Location, Unpin… Lens › Shelf item Use as context, Copy, Pin/Unpin, Remove Lens › Notification (no menu of its own) right-click opens the Magic window directly - One component. src/magic/LensPan.tsx ( LensPan wraps a menu's rows; LensMenuRow is the row) and src/magic/LensContextMenu.tsx for items that had no menu. The panel's rows use the host me",
+   "path": [
+    "Docs",
+    "Right-click everywhere, micro-saves and context packs",
+    "Lens in every menu (\"Lens ›\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md",
+    "heading": "Lens in every menu (\"Lens ›\")"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
+   "id": "doc.rightclick.16",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 3. Lens Command: auto-attach the active pack",
    "text": "In src/command/CommandSurface.tsx , where the context chips are built:",
@@ -12646,7 +12735,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.16",
+   "id": "doc.rightclick.17",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 4. Control Center mounts",
    "text": "Mount these in the AI & Command tab, after ClipboardCard : Mount the micro-save toast once in a surface that is always present, such as the notifications surface or TopBarSurface :",
@@ -12663,7 +12752,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.17",
+   "id": "doc.rightclick.18",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 5. MCP: packs as resources and prompts (`src-tauri/src/win_mcp.rs`, owned by the claude-control package)",
    "text": "Replace \"resources/list\" \"prompts/list\" = rpc error(…) with the code below. Also advertise \"resources\": {}, \"prompts\": {} in initialize capabilities. Two rules for this snippet: - Approval. Reading a pack is read-only, but it is user content. Gate resources/read behind the same \"Allow AI apps to connect\" approval the tools use. - Local-only packs. Never serve a pack whose items are local-only ( PackView.local only ).",
@@ -12680,7 +12769,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.18",
+   "id": "doc.rightclick.19",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 6. Lens Browser (`src/browser/*`)",
    "text": "YouTube in Lens Browser can reuse extensions/browser/src/youtube.js (pure) and content/ytPage.js (inject into the page).",
@@ -12697,7 +12786,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.19",
+   "id": "doc.rightclick.20",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 7. Dock, Lens Mini, Shelf, clipboard and notifications",
    "text": "Build each right-click menu with menuFor({ kind, surface }) : Place Call --- --- Shelf item { kind: \"shelf\", surface: \"shelf\" } Clipboard row ( ClipboardPane.tsx ) { kind: \"clipboard\", surface: \"clipboard\" } Notification ( NotificationCenterPane.tsx ) { kind: \"notification\", surface: \"notification\" } Dock app { kind: \"app\", surface: \"dock\" } Lens Mini tiles { kind: \"selection\", surface: \"mini\" } Run actions as follows: - AI actions: ai ask with the bridge's prompt wording ( bridge/prompt.rs ), or expandPrompt for custom actions. - micro save : shelfMicroSave({ text, title, url, source app }) . - pack add : open the pack picker ( packList + packAddItems ). - send claude : claudeRequest(...) . Notification and clipboard rows get three entries first: Add to Shelf , Summarise and Ask . Those are the first three applicable catalogue actions with the default prefs.",
@@ -12714,7 +12803,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.23",
+   "id": "doc.rightclick.24",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clean copy",
    "text": "The rules. src/context/cleanCopy.rules.json holds the tracking parameters ( utm , fbclid , gclid , mc , igshid , HubSpot, Matomo/Piwik, Bing, Amazon and others), per-host parameters, and the \"Read more at…\" markers. Some parameters are stripped only on particular hosts. For example, si and feature are removed on YouTube and Spotify but kept everywhere else. Where the rules are used. Code Function --- --- Lens src/context/cleanCopy.ts : cleanUrl , cleanLinksInText , stripHijack Extension extensions/browser/src/cleanUrl.js . Same logic; the rules are copied into catalog.gen.js , and a test checks both produce identical results on a table of cases. In the browser. - A new Copy clean link item (catalogue id copy link ). - Copy as Markdown now cleans every link it writes. - Clip to notes sends the cleaned URL. Copy guard. In the extension settings, \"Stop sites changing what I copy\" is off by ",
@@ -12731,7 +12820,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.24",
+   "id": "doc.rightclick.25",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Page archive (\"Save page offline\")",
    "text": "The extension builds the snapshot with src/content/snapshot.js . This is our own approach; SingleFile (AGPL) is not used. 1. Clone the live DOM. 2. Remove scripts, frames, objects, on handlers, javascript: URLs and meta refresh. 3. Make all URLs absolute and add <base . 4. Inline same-origin stylesheets. 5. Inline images that are already loaded and same-origin, smallest first, through a canvas as WebP, while the file stays under the cap. Other images keep absolute URLs. 6. Add a script-blocking CSP and a lens-archive provenance meta tag. The snapshot makes no network requests. Size caps. MAX ARCHIVE BYTES is 420 KB, so one message carries the HTML plus up to 48 KB of readable text. What Lens does with it. 1. The bridge action archive save is accepted only from the browser, and only from this action. 2. shelf::archive::harden html strips scripts, frames, handlers and javascript: again, an",
@@ -12748,7 +12837,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.25",
+   "id": "doc.rightclick.26",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clipper templates",
    "text": "The syntax follows Obsidian Web Clipper (MIT, © Obsidian), credited in docs/THIRD PARTY NOTICES.md . The parser is our own: src/context/templates/parser.ts . Variables: title url domain author description published site date time selection highlights content tags keywords Filters: lower upper title trim slug safe name date:\"YYYY-MM-DD\" default:\"…\" replace:\"a\",\"b\" truncate:n join:\", \" split first last blockquote list wikilink link:\"text\" hashtags yaml list yaml string lint reports unknown variables, unknown filters and unclosed tags. Built-in templates ( templates.ts ): - \"Note with source\", with YAML front matter; - \"Highlights only\"; - \"Reading list line\". Writing. Rust shelf::clipper stores clipper.json with the approved folders and the templates. - clipper folder approve(folder, confirm) first returns a question. It approves only on confirm: true , and refuses system folders and folde",
@@ -12765,7 +12854,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.26",
+   "id": "doc.rightclick.27",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Double-click to define or translate",
    "text": "The extension setting \"Define or translate on double-click\" is off by default. When on, it covers all sites minus \"Never\" and the built-in sensitive list. It has a \"Show first\" choice (definition or translation) and a \"Translate into\" language. src/content/define.js only triggers when: - the double-clicked text is a single word, 1–40 letters ( defineWordOk ); - it is not in a sensitive field; - the site is not denied. The bubble is in a closed Shadow DOM. The request is the bridge action define with localOnly: true . Lens refuses it outright when there is no local engine. It never waits for a cloud confirmation and never falls back to Claude. No offline dictionary. None is bundled. WordNet is redistributable but about 30 MB, so that is left as a decision. Without a local model, the bubble says so.",
@@ -13016,6 +13105,107 @@
     "heading": "Visual-aid audit"
    },
    "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.setup.0",
+   "kind": "doc",
+   "title": "Lens setup",
+   "text": "The setup opens over Control Center: on the first launch after installing or downloading Lens; once after every new version (Lens compares the running version with setupSeenVersion in its config); and when Launch-Lens-UI.bat sees that the folder was updated since the last launch (it sets LENS SHOW SETUP=1 ). You can also open it from Settings › About & Testing › Setup or by typing setup in Command.",
+   "path": [
+    "Docs",
+    "Lens setup"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Lens setup"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.1",
+   "kind": "doc",
+   "title": "Lens setup: Nothing changes until Finish",
+   "text": "Every choice is a draft. The previews draw from it, and only Finish writes, through the one settings writer. It writes only what you picked ( applyChoices in src/setup/flow.ts ): Skip setup (or Esc) on any page writes only onboardingCompleted and setupSeenVersion , so the setup doesn't come back for this version. A new install keeps its defaults: the floating Dock and the default theme. Skip this step forgets what you picked on that page. A colour look never changes the Dock. The Dock changes only if you picked one on the Dock page. Anything that touches Windows (Start with Windows, hiding the taskbar) goes through the same config switches as Settings, so Remove all Lens changes undoes it.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Nothing changes until Finish"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Nothing changes until Finish"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.2",
+   "kind": "doc",
+   "title": "Lens setup: Pages",
+   "text": "First launch / Run setup again After an update --- --- Welcome What's new in version (from CHANGELOG.md ) Dock: Floating, Slim, Taskbar, Split, and the screen edge Extras added since the last setup that are still off (page skipped when there are none) Colour: Dark / Light / Day & night, the featured looks, the accent Done Optional extras (all off), plus where to set up Windhawk styling and voice transcription Done: exactly what Finish will change \"Day & night\" turns on the theme schedule: a light look from 7:00, a dark look from 19:00.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Pages"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Pages"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.3",
+   "kind": "doc",
+   "title": "Lens setup: Adding an extra",
+   "text": "Add it to EXTRAS in src/setup/flow.ts with since set to the version it first ships in. People who update see it once on the extras page of that version's setup; new installs see every extra. Handle it in extraIsOn and applyChoices , and add a test.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Adding an extra"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Adding an extra"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.4",
+   "kind": "doc",
+   "title": "Lens setup: What's new",
+   "text": "src/setup/whatsNew.ts is generated from CHANGELOG.md by node tools/setup/whats-new.mjs ( bun run gen:whatsnew ). src/ tests /setupFlow.test.ts fails when it is out of date. Each line is the first sentence of a changelog bullet, so write the bullets with a plain first sentence.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "What's new"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "What's new"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.5",
+   "kind": "doc",
+   "title": "Lens setup: Checks",
+   "text": "bun test src/ tests /setupFlow.test.ts : when the setup opens; Skip changes only the seen markers; Finish writes only the chosen keys; a look doesn't move the Dock. bun run parity:setup : screenshots every page of both flows in a dark and a light theme and fails on a page error or a page that doesn't render (CI: the Visual parity job). Rust: commands::setup flow tests when the setup is due.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Checks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Checks"
+   },
+   "source": "docs/SETUP.md"
   },
   {
    "id": "doc.shelf.0",

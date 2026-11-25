@@ -5,7 +5,7 @@ import { aiStatus, type AiStatus } from "../ai/client";
 import { DEFAULT_BROWSER_AI, type BrowserAi } from "./api";
 import { Key } from "./ApprovalCard";
 
-function Toggle({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange(v: boolean): void }) {
+export function Toggle({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange(v: boolean): void }) {
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} className={`lb-switch${on ? " is-on" : ""}`} onClick={() => onChange(!on)}>
       <span />

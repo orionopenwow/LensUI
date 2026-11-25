@@ -1,8 +1,8 @@
 // The Shelf drawer: named shelves of context items. Tick items to use them as context; drag text
 // or files in; drag items out into other apps; drag to reorder.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { magicOpenFor } from "../magic/contract";
-import { Archive, Check, Download, FileText, Globe, Image as ImageIcon, MessageSquare, Pin, Plus, Trash2, Captions, TextSelect, File } from "lucide-react";
+import { LensContextMenu, type MenuAt } from "../magic/LensContextMenu";
+import { Archive, Check, ClipboardCopy, Download, FileText, Globe, Image as ImageIcon, MessageSquare, Pin, Plus, Trash2, Captions, TextSelect, File } from "lucide-react";
 import {
   DEFAULT_SHELF, formatTokens, onShelfChanged, shelfAdd, shelfClear, shelfCreate, shelfDelete, shelfExport,
   shelfList, shelfPin, shelfRemove, shelfReorder, shelvesList, type ShelfInfo, type ShelfItem, type ShelfKind,
@@ -49,6 +49,8 @@ export function ShelfDrawer({
   const [naming, setNaming] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | "clear" | "delete">(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ at: MenuAt; item: ShelfItem } | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
   const [over, setOver] = useState(false);
   const info = shelves.find((s) => s.id === shelf);
   const pickedTokens = useMemo(() => items.filter((i) => picked.has(i.id)).reduce((n, i) => n + i.approx_tokens, 0), [items, picked]);
@@ -152,9 +154,9 @@ export function ShelfDrawer({
               }}
               onDragEnd={() => setDragId(null)}
               onContextMenu={(e) => {
-                // Right-click a Shelf item: the magic window, with this item as its target.
+                // Right-click a Shelf item: its own actions, then "Lens ›" for the Magic actions.
                 e.preventDefault();
-                magicOpenFor("shelfItem", it.id, it.title, it.path || it.url || null);
+                setMenu({ at: { x: e.clientX, y: e.clientY }, item: it });
               }}
               onDragOver={(e) => dragId && dragId !== it.id && e.preventDefault()}
               onDrop={(e) => {
@@ -222,6 +224,40 @@ export function ShelfDrawer({
           </>
         )}
       </footer>
+      {menu ? (
+        <LensContextMenu
+          at={menu.at}
+          item={{ kind: "shelfItem", id: menu.item.id, label: menu.item.title, path: menu.item.path || menu.item.url || null }}
+          onClose={closeMenu}
+          actions={[
+            {
+              id: "use",
+              label: picked.has(menu.item.id) ? "Don't use as context" : "Use as context",
+              icon: <Check size={14} strokeWidth={2.4} aria-hidden />,
+              onSelect: () => togglePick(menu.item.id),
+            },
+            {
+              id: "copy",
+              label: "Copy",
+              icon: <ClipboardCopy size={14} strokeWidth={2.4} aria-hidden />,
+              onSelect: () => void navigator.clipboard.writeText(menu.item.text || menu.item.url || menu.item.path || menu.item.title).catch(() => {}),
+            },
+            {
+              id: "pin",
+              label: menu.item.pinned ? "Unpin" : "Pin",
+              icon: <Pin size={14} strokeWidth={2.4} aria-hidden />,
+              onSelect: () => void shelfPin(menu.item.id, !menu.item.pinned).catch((err) => onNotice(String(err), false)),
+            },
+            {
+              id: "remove",
+              label: "Remove",
+              danger: true,
+              icon: <Trash2 size={14} strokeWidth={2.4} aria-hidden />,
+              onSelect: () => void shelfRemove(menu.item.id).catch((err) => onNotice(String(err), false)),
+            },
+          ]}
+        />
+      ) : null}
     </aside>
   );
 }

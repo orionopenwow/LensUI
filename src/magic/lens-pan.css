@@ -1,0 +1,145 @@
+/* "Lens ›" in Lens's own right-click menus (src/magic/LensPan.tsx). The host menu's own row class
+   styles the rows; these rules only add what the Lens row and the panel need. Motion: the panel
+   glides in with transform + opacity and the box reveals by clip (src/ui/motion), never layout. */
+
+.lens-pan {
+  /* The pan wraps the menu's rows; the menu keeps its own padding and background. */
+  display: block;
+  min-width: 0;
+}
+
+.lens-pan-pane {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+}
+
+.lens-pan-panel {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  min-width: 0;
+}
+
+.lens-pan-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+.lens-pan-item:hover,
+.lens-pan-item:focus-visible {
+  background: rgb(var(--lens-ink) / 0.09);
+}
+
+/* The small Lens logo: the rainbow cloud in a 14 px circle, still until the row is hovered. */
+.lens-pan-mark {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  --lc-bezel: 0.75px;
+  --lc-blur: 0.5px;
+}
+
+.lens-pan-mark .lens-cloud,
+.lens-pan-mark .lens-cloud i {
+  animation-play-state: paused;
+}
+
+.lens-pan-row:hover .lens-pan-mark .lens-cloud,
+.lens-pan-row:hover .lens-pan-mark .lens-cloud i,
+.lens-pan-row:focus-visible .lens-pan-mark .lens-cloud,
+.lens-pan-row:focus-visible .lens-pan-mark .lens-cloud i,
+.lens-pan-back .lens-pan-mark .lens-cloud,
+.lens-pan-back .lens-pan-mark .lens-cloud i {
+  animation-play-state: running;
+}
+
+.lens-pan-label,
+.lens-pan-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lens-pan-title {
+  font-weight: 700;
+}
+
+.lens-pan-hint {
+  flex-shrink: 0;
+  font-family: var(--lens-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--lens-fg-tertiary, var(--lens-fg-secondary));
+}
+
+.lens-pan-chev {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+.lens-pan-row:hover .lens-pan-chev,
+.lens-pan-row:focus-visible .lens-pan-chev {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.lens-pan-sep {
+  height: 1px;
+  background: rgb(var(--lens-ink) / 0.08);
+  margin: 3px 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-pan-chev {
+    transition: none;
+  }
+}
+
+/* The stand-alone menu (LensContextMenu): Shelf items. */
+.lens-ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.lens-ctx-menu {
+  position: fixed;
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 220px;
+  padding: 5px;
+  border-radius: 12px;
+  background: var(--lens-pack-base, #0b0b0e);
+  border: 1px solid rgb(var(--lens-ink) / 0.14);
+  box-shadow: 0 14px 36px rgb(0 0 0 / calc(0.76 * var(--lens-shade-k, 0.5)));
+  transform-origin: top left;
+}
+
+.lens-pan-item.is-danger {
+  color: var(--lens-danger);
+}
+
+.lens-pan-item.is-danger:hover,
+.lens-pan-item.is-danger:focus-visible {
+  background: rgb(244 63 94 / 0.16);
+}

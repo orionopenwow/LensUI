@@ -21,10 +21,10 @@ on:
       - "tools/media/**"
       - "README.md"
       - "*.bat"
-  # Every branch too (like build.yml), so a branch's own commit is tested and not only its merge
-  # with a base that may be mid-change.
+  # Pushes to main only: a branch with a pull request is tested once, through the pull request
+  # (running both doubled the queue on the shared Windows runners).
   push:
-    branches: ["**"]
+    branches: ["main"]
     paths-ignore:
       - "docs/site/**"
       - "docs/media/**"

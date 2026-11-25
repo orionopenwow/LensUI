@@ -10,7 +10,7 @@ import { shelfAdd } from "../shelf/contract";
 import { applyDither } from "../style/dither";
 import "../style/dither.css";
 import {
-  archived as listArchived, bookmarkToggle, browserState, DEFAULT_APPEARANCE, DEFAULT_BROWSER_AI, EVT_BROWSER_DOWNLOADS, EVT_BROWSER_STATE, findInPage, folderAdd,
+  archived as listArchived, bookmarkToggle, browserState, DEFAULT_APPEARANCE, DEFAULT_BROWSER_AI, DEFAULT_SIDEBAR, SIDEBAR_WIDTH, EVT_BROWSER_DOWNLOADS, EVT_BROWSER_STATE, findInPage, folderAdd,
   folderToggle, glance, historyNav, historySearch, navigate, notesGet, notesSet, openBackground, pageEvents, pageRead, pip, reopenClosed, setOverlay,
   settingsSet, setViewport, setZoom, spaceAdd, spaceLock, spaceSwitch, tabActivate, tabClose, tabDuplicate, tabMove, tabMute, tabPin, tidy, unarchive,
   type Appearance, type ArchivedTab, type BrowserAi, type BrowserView, type Download as Dl, type HistoryEntry, type ImportSource, type MenuEvent,
@@ -29,6 +29,7 @@ import { breadcrumb, classifyAddress, dropIndex, hostOf } from "./model";
 import { cycleTab, IDLE_NAV, navFromStatus, suggestions, tabAt, zoomStep, type NavState, type PageStatus, type Suggestion } from "./nav";
 import { ErrorPage, StartPage } from "./Pages";
 import { Avatar, Sidebar, type ChatRef } from "./Sidebar";
+import { applyProposal, propose, summarisePrompt, sidebarPrefs, type TabActionKind, type TabProposal } from "./tabAi";
 import { TranscriptPanel, type TranscriptSeed } from "./TranscriptPanel";
 import "./Browser.css";
 
@@ -61,6 +62,8 @@ export interface BrowserInitial {
   /** Parity: site permission requests waiting, and remembered answers. */
   asks?: PermissionAsk[];
   perms?: SitePermissions;
+  /** Parity: a Lens plan waiting in the sidebar. */
+  proposal?: TabProposal;
 }
 
 /** `https://host[:port]` of a web page, or "" (mirrors `permissions::origin_of`). */
@@ -90,7 +93,7 @@ const SUGGEST_ICON: Record<Suggestion["kind"], React.ComponentType<{ size?: numb
 };
 /** Shortcuts the frame handles itself (the page agent forwards the same set while a page has focus). */
 const FRAME_KEYS = new Set([
-  "ctrl+l", "ctrl+t", "ctrl+w", "ctrl+f", "ctrl+j", "ctrl+shift+t", "ctrl+d", "ctrl+shift+k", "ctrl+tab", "ctrl+shift+tab", "ctrl+h", "ctrl+r",
+  "ctrl+l", "ctrl+t", "ctrl+w", "ctrl+f", "ctrl+j", "ctrl+shift+t", "ctrl+d", "ctrl+shift+k", "ctrl+shift+a", "ctrl+tab", "ctrl+shift+tab", "ctrl+h", "ctrl+r",
   "ctrl+=", "ctrl++", "ctrl+shift++", "ctrl+shift+=", "ctrl+-", "ctrl+shift+_", "ctrl+0", "ctrl+1", "ctrl+2", "ctrl+3", "ctrl+4", "ctrl+5", "ctrl+6", "ctrl+7", "ctrl+8", "ctrl+9",
 ]);
 
@@ -154,6 +157,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const [view, setView] = useState<BrowserView | null>(initial?.view ?? null);
   const [panel, setPanel] = useState<Panel>(initial?.panel === undefined ? "ask" : initial.panel);
   const [sideOpen, setSideOpen] = useState(true);
+  const [proposal, setProposal] = useState<TabProposal | null>(initial?.proposal ?? null);
+  const [findSignal, setFindSignal] = useState(0);
   const [address, setAddress] = useState(initial?.address ?? "");
   const [editing, setEditing] = useState(!!initial?.address);
   const [suggest, setSuggest] = useState<HistoryEntry[]>(initial?.suggestions ?? []);
@@ -227,6 +232,65 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     if (live) void settingsSet(settings).then(setView).catch((e) => flash(String(e)));
   };
 
+  // The sidebar's look, and Lens acting on tabs: every plan is shown in the sidebar first and only
+  // applied from its Apply button (Summarise changes nothing, it opens the Ask panel).
+  const sidePrefs = sidebarPrefs(appearance.sidebar, DEFAULT_SIDEBAR, SIDEBAR_WIDTH);
+  const proposeRef = useRef<(k: TabActionKind) => void>(() => {});
+  proposeRef.current = (k) => {
+    if (!s) return;
+    if (k === "summarise") {
+      setProposal(null);
+      if (!aiOn) return;
+      setPanel("ask");
+      setQuick({ prompt: summarisePrompt(s), page: false });
+      return;
+    }
+    const plan = propose(k, s, initial?.now ?? Date.now());
+    if (!plan) {
+      setProposal(null);
+      flash(k === "duplicates" ? "No duplicate tabs" : k === "tidy" ? "Nothing to tidy" : "No site has two loose tabs");
+      return;
+    }
+    setProposal(plan);
+  };
+  const applyPlan = async () => {
+    const plan = proposal;
+    setProposal(null);
+    if (!plan || !s) return;
+    if (!live) return flash(`Applied: ${plan.title}`);
+    let cur = s;
+    const take = (v: BrowserView) => {
+      cur = v.state;
+      setView(v);
+      return v;
+    };
+    try {
+      await applyProposal(plan, true, {
+        tidy: () => tidy().then((r) => flash(`Tidied: ${r.duplicatesClosed} duplicates closed, ${r.archived} archived`)),
+        closeTab: (id) => tabClose(id).then(take),
+        addFolder: async (name) => {
+          const before = new Set(cur.folders.map((f) => f.id));
+          const v = take(await folderAdd(cur.activeSpace, name));
+          return v.state.folders.find((f) => !before.has(f.id))?.id ?? null;
+        },
+        moveToFolder: async (id, folderId) => {
+          const d = dropIndex(cur, null, folderId);
+          take(await tabMove(id, d.index, d.folder));
+        },
+      });
+      if (plan.kind !== "tidy") flash(`Done: ${plan.title}`);
+    } catch (e) {
+      flash(String(e));
+    }
+    void browserState().then(setView).catch(() => {});
+  };
+  // A plan is for the tabs as they were: switching space drops it.
+  const planSpace = useRef(s?.activeSpace);
+  useEffect(() => {
+    if (planSpace.current !== s?.activeSpace) setProposal(null);
+    planSpace.current = s?.activeSpace;
+  }, [s?.activeSpace]);
+
   // AI off: nothing AI-related stays open.
   useEffect(() => {
     if (!aiOn && (panel === "ask" || panel === "transcript")) setPanel(null);
@@ -266,11 +330,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     ro.observe(el);
     send();
     return () => ro.disconnect();
-  }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary]);
+  }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary, sidePrefs.side, sidePrefs.mode, sidePrefs.width]);
 
   // The page draws above the frame UI, so hide it while suggestions, the new-tab page or an
   // error page are showing.
-  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error;
+  // The icon stack's Lens menu and plan float over the page, so the page hides while they show.
+  const [stackPop, setStackPop] = useState(false);
+  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
   useEffect(() => {
     if (live) void setOverlay(overlay).catch(() => {});
   }, [overlay, live]);
@@ -405,7 +471,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           if (aiOn) setPanel((p) => (p === "ask" ? null : "ask"));
           break;
         case "ctrl+shift+k":
-          void tidy().then((r) => flash(`Tidied: ${r.duplicatesClosed} duplicates closed, ${r.archived} archived`)).catch(() => {});
+          // Tidy shows its plan in the sidebar first; nothing changes until Apply.
+          setSideOpen(true);
+          proposeRef.current("tidy");
+          break;
+        case "ctrl+shift+a":
+          setSideOpen(true);
+          setFindSignal((n) => n + 1);
           break;
         default: {
           const n = /^ctrl\+([1-9])$/.exec(k);
@@ -569,6 +641,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     ...schemeVars,
     ...(appearance.accent ? { "--lens-accent": appearance.accent } : {}),
     ...(TYPEFACES[appearance.typeface] ? { "--lens-font": TYPEFACES[appearance.typeface] } : {}),
+    "--lb-side": `${sidePrefs.mode === "stack" ? 56 : sidePrefs.width}px`,
   } as React.CSSProperties;
   const sleeping = s.tabs.filter((t) => t.life === "sleeping" && !t.archivedMs).length;
   const audible = s.tabs.find((t) => t.audible && t.spaceId === s.activeSpace && t.id !== s.activeTab);
@@ -578,7 +651,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     <div
       ref={rootRef}
       data-guide-id="browser"
-      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${shown ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}`}
+      className={`lb-root${sideOpen && !horizontal ? "" : " no-side"}${shown ? " has-panel" : ""} lb-${appearance.density}${appearance.scheme === "auto" ? "" : ` lb-scheme-${appearance.scheme}`}${sidePrefs.side === "right" ? " lb-side-right" : ""}${sidePrefs.mode === "stack" ? " lb-side-stack" : ""}`}
       style={rootStyle}
       data-lb-scheme={appearance.scheme}
     >
@@ -609,7 +682,15 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           onOpenUrl={(u, bg) => (bg ? void apply(openBackground(u)) : void go(u, true))}
           onChat={() => setPanel("ask")}
           onCollapse={() => setSideOpen(false)}
-          onTidy={() => void tidy().then((r) => flash(`Tidied: ${r.duplicatesClosed} duplicates closed, ${r.archived} archived`)).catch((e) => flash(String(e)))}
+          prefs={sidePrefs}
+          onPrefs={(patch) => saveSettings({ appearance: { ...appearance, sidebar: { ...sidePrefs, ...patch } } })}
+          ai={aiOn}
+          proposal={proposal}
+          onPropose={(k) => proposeRef.current(k)}
+          onCancelProposal={() => setProposal(null)}
+          onApplyProposal={() => void applyPlan()}
+          findSignal={findSignal}
+          onPopover={setStackPop}
           onLock={() => space && void spaceLock(space.id, !space.locked).then(() => browserState().then(setView)).catch((e) => flash(String(e)))}
           onSettings={() => setPanel(inSettings ? null : "customise")}
         />

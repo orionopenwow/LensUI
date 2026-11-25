@@ -76,7 +76,7 @@
     "Dock": 25,
     "Hot corners": 8,
     "Icons & folders": 4,
-    "Internal": 5,
+    "Internal": 6,
     "Pointer effects": 11,
     "Quick settings": 5,
     "Sessions": 2,
@@ -91,7 +91,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 182,
+  "count": 183,
   "entries": [
     {
       "capability": "change_settings",
@@ -1892,6 +1892,22 @@
           "simple",
           "advanced"
         ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "destructive",
+      "category": "Internal",
+      "default": "",
+      "description": "Sets the setup seen version option under Internal.",
+      "example": "{\"args\":{\"changes\":{\"setupSeenVersion\":\"\"}},\"tool\":\"lens_set\"}",
+      "label": "Setup seen version",
+      "path": "setupSeenVersion",
+      "reversible": true,
+      "risk": "blocked",
+      "schema": {
         "maxLength": 400,
         "type": "string"
       },

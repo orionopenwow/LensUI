@@ -33,7 +33,7 @@
           "install": {
             "oneOf": [
               { "type": "object", "required": ["method", "wingetId", "wingetVerified"], "properties": { "method": { "const": "winget" }, "wingetId": { "type": "string", "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)+$" }, "wingetVerified": { "type": "boolean" } } },
-              { "type": "object", "required": ["method", "repo", "hints"], "properties": { "method": { "const": "githubRelease" }, "repo": { "type": "string" }, "hints": { "type": "array" }, "fallbackUrl": { "type": "string", "pattern": "^https://" } } },
+              { "type": "object", "required": ["method", "repo", "hints"], "properties": { "method": { "const": "githubRelease" }, "repo": { "type": "string" }, "hints": { "type": "array" }, "portable": { "type": "boolean", "description": "The release ships one program file, not an installer: Lens keeps it in apps\\portable\\<id>." }, "fallbackUrl": { "type": "string", "pattern": "^https://" } } },
               { "type": "object", "required": ["method", "via"], "properties": { "method": { "const": "via" }, "via": { "type": "string" }, "fallbackUrl": { "type": "string", "pattern": "^https://" } } },
               { "type": "object", "required": ["method", "url"], "properties": { "method": { "enum": ["officialSite", "web"] }, "url": { "type": "string", "pattern": "^https://" } } }
             ]

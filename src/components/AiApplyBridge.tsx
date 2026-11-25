@@ -105,6 +105,16 @@ export function AiApplyBridge({ config, updateConfig }: Props) {
         case "open_settings_page": {
           const asked = String(args.page ?? "home");
           if (openCleanerFor(asked)) return;
+          if (asked === "setup") {
+            // Lens setup opens over Control Center (docs/SETUP.md); sent again once the window has built.
+            invoke("open_surface", { label: "settings" })
+              .then(() => {
+                emit("lens://setup-open", true).catch(() => {});
+                window.setTimeout(() => emit("lens://setup-open", true).catch(() => {}), 1500);
+              })
+              .catch(() => {});
+            return;
+          }
           // Any Settings hub page id or alias works; older names map through SETTINGS_TABS.
           const tab = resolveTarget(asked) ? asked : SETTINGS_TABS[asked] ?? "keys";
           invoke("open_surface", { label: "settings" })

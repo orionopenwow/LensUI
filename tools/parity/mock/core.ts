@@ -77,6 +77,17 @@ const wsStatus = () =>
     : { enabled: false, active: "1", workspaces: [] };
 config.dndSchedule = { enabled: true, ranges: [{ startMin: 1320, endMin: 420, days: [0, 1, 2, 3, 4, 5, 6] }, { startMin: 540, endMin: 720, days: [1, 2, 3, 4, 5] }], autoFullscreen: true };
 const handlers: Record<string, (a: any) => any> = {
+  // ThumbDesk (Settings › Gaming › Use a controller). ?thumbdesk=off shows the "Get ThumbDesk" state.
+  thumbdesk_info: () =>
+    params.get("thumbdesk") === "off"
+      ? { installed: false, path: null, running: false, status: null, pinned: false }
+      : {
+          installed: true,
+          path: "C:\\Users\\you\\AppData\\Roaming\\LensUI\\apps\\portable\\thumbdesk\\ThumbDesk.exe",
+          running: true,
+          pinned: true,
+          status: { version: "2.3.0", connected: true, controller: "DualSense Wireless Controller", runtimeEnabled: true, guardSuspended: false, voiceListening: false },
+        },
   // Wave 4–6 cards (integration): enough realistic data for every Control Center tab.
   list_monitors_cmd: () => [
     { id: "\\\\.\\DISPLAY1", name: "DELL U2723QE", x: 0, y: 0, width: 2560, height: 1440, workX: 0, workY: 0, workWidth: 2560, workHeight: 1392, scale: 1.5, primary: true },
@@ -247,6 +258,13 @@ const handlers: Record<string, (a: any) => any> = {
   clipboard_list_cmd: () => ({ entries: [], paused: false }),
   get_training_stats_cmd: () => ({ pairCount: 0, filePath: "", fileSizeBytes: 0, recentPairs: [], macros: [] }),
   get_windhawk_status_cmd: () => ({ installed: false, exePath: null, modSourcePath: "", modInstalledInWindhawk: false }),
+  // Lens setup scenes: ?setup=first shows the first-launch setup, ?setup=update the "What's new" path.
+  setup_status_cmd: () =>
+    params.get("setup") === "first"
+      ? { version: "0.3.0", seenVersion: "", onboardingCompleted: false, forced: false }
+      : params.get("setup") === "update"
+        ? { version: "0.3.0", seenVersion: "", onboardingCompleted: true, forced: false }
+        : { version: "0.3.0", seenVersion: "0.3.0", onboardingCompleted: true, forced: false },
 };
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
