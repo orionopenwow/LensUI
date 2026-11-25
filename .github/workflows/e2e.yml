@@ -119,6 +119,12 @@ jobs:
         # window; the nightly run goes through every pack (tools/robust/theme-switch.mjs).
         run: node tools/robust/theme-switch.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
 
+      # Hyper suite (tools/hyper/run.mjs, docs/TESTING.md): every Settings switch and choice, every
+      # surface, and the cross-cutting rules, with a coverage report of every inventoried feature.
+      # Fails only on failures not listed in tools/hyper/known.json; nightly runs the full tier.
+      - name: Hyper suite (every control, every surface, the rules)
+        run: node tools/hyper/run.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
+
       - name: Soak + chaos (short)
         if: always() && github.event_name != 'schedule'
         env:
@@ -147,6 +153,7 @@ jobs:
             tools/soak/out/
             tools/a11y/out/
             tools/robust/out/theme-rig/
+            tools/hyper/out/
             tools/visual/out/report.json
             tools/visual/out/diff/
           if-no-files-found: warn
@@ -240,6 +247,13 @@ jobs:
         if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
         shell: pwsh
         run: node tests/e2e/autohide.mjs
+
+      # Command intents (tests/e2e/intents.mjs): every action the offline engine knows previews
+      # from its own phrasing; dark ↔ light mode is run and put back.
+      - name: Command intents (preview every action)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/intents.mjs
 
       - name: Collect Lens logs
         if: always()

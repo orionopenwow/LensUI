@@ -35,7 +35,8 @@ const base = {
   // `?settingsMode=simple|advanced` shows Settings in that mode (docs/SETTINGS_SIMPLE.md).
   settingsMode: params.get("settingsMode") ?? "advanced",
 };
-let config: any = JSON.parse(JSON.stringify(base));
+// The hyper suite (tools/hyper) seeds a saved config before a reload, to check settings survive it.
+let config: any = JSON.parse(JSON.stringify(W.__lensSeedConfig ?? base));
 const now = Date.now();
 const note = (id: string, title: string, body: string, appName: string, mins: number) => ({ id, title, body, appName, category: "system", tsMs: now - mins * 60000, source: "lens" });
 const notes = [
