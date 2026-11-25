@@ -226,7 +226,7 @@ pub(crate) fn run_setup(
             && label != "testerhub"
             && label != "studio"
             && (!initial_config.func.lazy_windows
-                || (label == "settings" && !initial_config.onboarding_completed));
+                || (label == "settings" && crate::commands::setup_flow::setup_due(&initial_config)));
         // Claim the label first: a first-use build (`ensure_window`) started from another thread at
         // the same moment would otherwise build a second window under the same label, leaving an
         // orphaned page Tauri no longer knows about (seen in CI as two Settings pages).
