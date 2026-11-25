@@ -2,6 +2,7 @@
 // Download. Text lives here and in content/features.mjs; theme values come from the real packs.
 import { esc } from "./lib/markdown.mjs";
 import { WORKS_ON } from "./content/features.mjs";
+import { thumbdeskSection } from "./content/thumbdesk.mjs";
 import { REPO } from "./lib/layout.mjs";
 
 
@@ -32,9 +33,10 @@ const WHY_BROWSER = [
 ];
 const CORE = [["monitor", "Monitor", "What's slowing your PC"], ["timer", "Timer", "Timers, pomodoro, alarms"], ["notes", "Notes", "Checklists and stickies"], ["calculator", "Calculator", "Units and history"], ["color", "Color", "Pick any pixel"], ["power", "Power", "Battery health"], ["network", "Network", "Who's using the network"], ["clipboard", "Clipboard", "History, pins"], ["startup", "Startup", "What runs at sign-in"]];
 const SUITE = ["artcraft", "wordcraft", "deckcraft", "gridcraft"];
-const PICKS = ["concat", "degenview", "ollama", "obs-studio", "krita", "blender", "affine", "excalidraw"];
+const PICKS = ["thumbdesk", "concat", "degenview", "ollama", "obs-studio", "krita", "blender", "affine"];
 const LINES = {
   artcraft: "Image and video, with controllable AI", wordcraft: "Documents", deckcraft: "Slides", gridcraft: "Spreadsheets",
+  thumbdesk: "The whole PC from a controller. From the makers of Lens",
   concat: "A local-first video editor with AI captions", degenview: "Charting in Rust. Charts and paper trading only", ollama: "Run AI models on your PC", "obs-studio": "Record and stream",
   krita: "Digital painting", blender: "3D, animation, video", affine: "Notes, docs and whiteboards", excalidraw: "Hand-drawn diagrams",
 };
@@ -184,6 +186,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
   </div>
 </section>
+${thumbdeskSection()}
 
 <section id="more" class="sec" aria-labelledby="more-h">
   <div class="inner">

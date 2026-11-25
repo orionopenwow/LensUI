@@ -2130,6 +2130,46 @@
    "source": "src/components/CleanerCard.tsx"
   },
   {
+   "id": "card.accessibility.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Accessibility",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "accessibility",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
+   "id": "card.gaming.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Gaming",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "gaming",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
    "id": "card.ai.bridgeinbox",
    "kind": "card",
    "title": "From your browser and files",
@@ -10550,7 +10590,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.15",
+   "id": "doc.lens-apps.14",
+   "kind": "doc",
+   "title": "Lens Apps: Portable apps and ThumbDesk",
+   "text": "A GitHub-release app can set \"portable\": true in its install object when the release ships one program file instead of an installer. Lens then keeps the verified file in %APPDATA%\\LensUI\\apps\\portable\\<id \\ (nothing is written outside Lens's data folder), Open runs it, and Uninstall deletes the folder ( apps portable remove ). ThumbDesk, the controller companion from the makers of Lens, is the first: see docs/apps/THUMBDESK.md.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Portable apps and ThumbDesk"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Portable apps and ThumbDesk"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.16",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",

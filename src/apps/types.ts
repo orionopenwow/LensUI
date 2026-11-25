@@ -4,7 +4,7 @@ export type InstallMethod = "winget" | "githubRelease" | "via" | "officialSite" 
 
 export type InstallSpec =
   | { method: "winget"; wingetId: string; wingetVerified: boolean }
-  | { method: "githubRelease"; repo: string; hints: string[]; fallbackUrl?: string }
+  | { method: "githubRelease"; repo: string; hints: string[]; fallbackUrl?: string; portable?: boolean }
   | { method: "via"; via: string; fallbackUrl?: string }
   | { method: "officialSite"; url: string }
   | { method: "web"; url: string };

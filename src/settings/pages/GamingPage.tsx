@@ -3,6 +3,7 @@ import { Gamepad2, ShieldOff } from "lucide-react";
 import { Hero, HeroTile, LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import { useResource } from "../useResource";
 import type { PageProps } from "./common";
+import { ControllerCard } from "../../components/ControllerCard";
 
 export const GamingPage: React.FC<PageProps> = ({ section, config, updateConfig }) => {
   const g = useResource<{ gameMode: boolean | null }>("sys_gaming_cmd");
@@ -28,6 +29,9 @@ export const GamingPage: React.FC<PageProps> = ({ section, config, updateConfig 
           <WinLink uri="ms-settings:gaming-gamebar" label="Game Bar" />
           <WinLink uri="ms-settings:gaming-gamedvr" label="Captures" />
         </LinkRow>
+      </Section>
+      <Section id="controller" title="Use a controller" summary="ThumbDesk: the whole PC from a gamepad" forceOpen={section === "controller"}>
+        <ControllerCard config={config} updateConfig={updateConfig} />
       </Section>
     </>
   );

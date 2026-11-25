@@ -356,6 +356,7 @@ export const PAGES: PageDef[] = [
     sections: [
       { id: "vision", label: "Vision", keywords: ["text size", "contrast", "magnifier"] },
       { id: "motion", label: "Motion", keywords: ["animations"] },
+      { id: "controller", label: "Use a controller", keywords: ["controller", "gamepad", "xbox", "playstation", "thumbdesk", "mouse alternative"] },
     ],
     winUri: "ms-settings:easeofaccess",
   },
@@ -363,12 +364,15 @@ export const PAGES: PageDef[] = [
     id: "gaming",
     group: "windows",
     label: "Gaming",
-    description: "Game Mode and how Lens steps aside while you play.",
+    description: "Game Mode, how Lens steps aside while you play, and using the PC from a controller.",
     icon: "gamepad",
     color: "#22D3EE",
-    controls: ["Game Mode", "Pause Lens in games"],
-    keywords: ["gaming", "game mode", "game bar", "captures", "fullscreen", "anti-cheat"],
-    sections: [{ id: "lens", label: "Lens while gaming" }],
+    controls: ["Game Mode", "Pause Lens in games", "Use a controller"],
+    keywords: ["gaming", "game mode", "game bar", "captures", "fullscreen", "anti-cheat", "controller", "gamepad", "thumbdesk"],
+    sections: [
+      { id: "lens", label: "Lens while gaming" },
+      { id: "controller", label: "Use a controller", keywords: ["controller", "gamepad", "xbox", "playstation", "dualsense", "thumbdesk"] },
+    ],
     winUri: "ms-settings:gaming-gamemode",
   },
   // ---------------- Status
