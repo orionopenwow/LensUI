@@ -5,16 +5,20 @@ import { CrashReportsCard } from "../../components/CrashReportsCard";
 import { FailsafeCard } from "../../components/FailsafeCard";
 import { BackupRestoreCard } from "../../components/BackupRestoreCard";
 import { TesterHubCard } from "../../tester/TesterHubCard";
+import { ReportProblem } from "../../report/ReportProblem";
 import { LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import type { PageProps } from "./common";
 
-/** Status › About & Testing: Lens updates, crash reports, self-test, backups, Tester Hub. */
+/** Status › About & Testing: report a problem, Lens updates, crash reports, self-test, backups, Tester Hub. */
 export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }) => {
   const [selfTest, setSelfTest] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
   return (
     <>
+      <Section id="report" title="Report a problem" summary="See everything before it's shared" defaultOpen={section === "report"} forceOpen={section === "report"}>
+        <ReportProblem />
+      </Section>
       <Section id="updates" title="Updates & crash reports" summary="Lens updates are signed" forceOpen={section === "updates"}>
         <UpdatesCard />
         <CrashReportsCard />
@@ -23,7 +27,7 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
         <FailsafeCard />
       </Section>
       <Section id="selftest" title="Self-test" summary="Checks Lens without changing anything" forceOpen={section === "selftest"}>
-        <Row label="Run self-test" desc="Copy the report into a bug report.">
+        <Row label="Run self-test" desc="Report a problem (above) can attach it for you.">
           <button
             type="button"
             className="cc-btn"

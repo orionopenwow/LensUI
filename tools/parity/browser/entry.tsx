@@ -265,6 +265,8 @@ const back = { canBack: true };
 const scenes: Record<string, BrowserInitial> = {
   // ---- AAA pass ----
   newtab: { view: withState({ closed: closedSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, start: true, history: historySeed, nav: back },
+  // A fresh window on the new tab page: the tabs are there, none is open, the box is empty (the site's default).
+  home: { view: withState({ activeTab: null, closed: closedSeed }), panel: null, chats, now: NOW, history: historySeed },
   "newtab-empty": { view: withState({ tabs: [], activeTab: null, bookmarks: [] }, { live: [], bookmarked: false }), panel: null, chats: [], now: NOW, history: [] },
   suggest: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, address: "har", selected: 1, nav: back, suggestions: [historySeed[0], historySeed[8], hist("https://maps.example/harbor-road", "Harbor Road – Maps", 4000, 1)] },
   loading: { view: withState({ tabs: view.state.tabs.map((x) => (x.id === "t3" ? { ...x, zoom: 1.25 } : x)) }, { downloads: downloadsSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { canBack: true, canForward: true, loading: true }, find: "harbor", findTotal: 6 },

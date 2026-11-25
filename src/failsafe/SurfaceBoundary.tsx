@@ -3,6 +3,7 @@
 // and gives up politely after three failures in a row.
 import React from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import { HEALTHY_AFTER_MS, isDisabled, isOverlay, nextRecord, problemText, stepFor, type Step } from "./policy";
 import { noteNoticeShown, readRecord, reportCrash, writeRecord } from "./report";
 import "./failsafe.css";
@@ -79,6 +80,13 @@ export class SurfaceBoundary extends React.Component<Props, State> {
     if (!isOverlay(this.props.surface)) invoke("surface_ready_cmd", { label: this.props.surface }).catch(() => {});
   }
 
+  /** Settings › About & Testing › Report a problem, with the crash report attached by default. */
+  private report = (): void => {
+    invoke("open_surface", { label: "settings" })
+      .then(() => emit("lens://settings-tab", "about#report"))
+      .catch(() => {});
+  };
+
   private reload = (): void => {
     // "Try again" after giving up is the person's decision: start counting from zero.
     if (this.state.step?.kind === "disabled") writeRecord(this.props.surface, null);
@@ -96,6 +104,11 @@ export class SurfaceBoundary extends React.Component<Props, State> {
           {step.kind !== "reload" ? (
             <button type="button" className="fs-problem-btn" onClick={this.reload}>
               {step.kind === "disabled" ? "Try again" : "Reload"}
+            </button>
+          ) : null}
+          {step.kind !== "reload" ? (
+            <button type="button" className="fs-problem-btn fs-problem-link" onClick={this.report}>
+              Report a problem
             </button>
           ) : null}
         </div>

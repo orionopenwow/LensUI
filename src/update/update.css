@@ -1,0 +1,59 @@
+/* Lens updates: the Top Bar pill and the "What's new" sheet in Settings › About & Testing. */
+.lu-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lens-accent, #60a5fa), transparent 84%);
+  color: var(--lens-fg, #fafafa);
+  font: 700 11px/1 var(--font-sans, system-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, opacity 160ms ease;
+}
+.lu-pill.is-ready {
+  background: var(--lens-accent, #60a5fa);
+  color: var(--lens-on-accent, var(--lens-on-fg, #09090b));
+}
+.lu-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lens-accent, #60a5fa), transparent 70%);
+}
+.lu-pill.is-ready:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lens-accent, #60a5fa), white 12%);
+}
+.lu-pill:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.lu-pill:focus-visible {
+  outline: 2px solid var(--lens-accent, #60a5fa);
+  outline-offset: 2px;
+}
+
+.lu-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lu-notes {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow: auto;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lens-fg, #fafafa), transparent 95%);
+  font-size: 12px;
+  line-height: 1.5;
+  user-select: text;
+}
+.lu-notes p {
+  margin: 0;
+  min-height: 0.75em;
+}
+.lu-state {
+  font-size: 12px;
+  opacity: 0.85;
+}
