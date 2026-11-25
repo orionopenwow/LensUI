@@ -403,7 +403,6 @@ pub(crate) fn spawn_watcher(
         let mut last_theme = read_windows_theme();
         let mut tick: u64 = 0;
 
-        let mut topbar_visible = true;
         let mut topbar_edge_since: Option<Instant> = None;
         let mut topbar_leave_since: Option<Instant> = None;
 
@@ -522,7 +521,7 @@ pub(crate) fn spawn_watcher(
                     // One owner of "shown": the shared flag. Other paths (opening Search, a settings
                     // save) may show the bar by setting it; the watcher adopts that here, so it can
                     // still hide the bar later instead of believing it is already hidden.
-                    topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
+                    let mut topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
                     if cfg.top_bar.enabled && cfg.dock.show_top_bar {
                         let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
