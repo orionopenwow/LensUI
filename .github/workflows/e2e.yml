@@ -102,6 +102,10 @@ jobs:
         if: always()
         run: node tools/robust/dock-layout.mjs
 
+      - name: Dock search and docked Settings never stay open
+        if: always()
+        run: node tools/robust/dock-dismiss.mjs
+
       - name: Dock auto-hide slides (no one-frame jumps)
         if: always()
         run: node tools/robust/dock-slide.mjs

@@ -369,6 +369,8 @@ export const DockSurface: React.FC = () => {
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<string>("system");
+  const settingsOpenRef = useRef(false);
+  settingsOpenRef.current = settingsOpen;
   const [launchingId, setLaunchingId] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<DockContextMenu | null>(null);
   const [hoverCard, setHoverCard] = useState<{
@@ -450,10 +452,20 @@ export const DockSurface: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchOpenedAtRef = useRef<number>(0);
   const dockSearchOpenRef = useRef<boolean>(false);
-  dockSearchOpenRef.current = dockSearchOpen;
+  // The ref is the one owner of "search is open" (set by open/close themselves), so a press in the
+  // same frame as a previous one sees the latest intent; React state follows it.
 
+  /** Bumped by every open and close: a close whose glide finishes after a newer open does nothing
+   *  (fast double-clicks, open during the hide glide). */
+  const searchGenRef = useRef(0);
   const openInDockLauncher = () => {
+    searchGenRef.current++;
     searchOpenedAtRef.current = performance.now();
+    // One pop-out at a time: docked Settings goes when search opens.
+    if (settingsOpenRef.current) {
+      invoke("hide_surface", { label: "settings" }).catch(() => {});
+      setSettingsOpen(false);
+    }
     const searchEdge = normalizeEdge((config?.dock as DockExtras | undefined)?.position);
     const horizontalDock = searchEdge === "bottom" || searchEdge === "top";
     const searchStyle = normalizeDockStyle((config?.dock as DockExtras | undefined)?.style);
@@ -492,7 +504,10 @@ export const DockSurface: React.FC = () => {
       setLockedDockWidth(Math.min(maxW, Math.max(startW, needW)));
       setSearchIconSize(icon);
     }
-    if (!dockSearchOpenRef.current) captureSearchFlip();
+    const wasOpen = dockSearchOpenRef.current;
+    if (!wasOpen) captureSearchFlip();
+    // Known open at once, not at the next render: a second press in the same frame closes.
+    dockSearchOpenRef.current = true;
     setDockSearchQuery("");
     setDockFilterTab("all");
     setDockSelectedIdx(0);
@@ -507,10 +522,15 @@ export const DockSurface: React.FC = () => {
   const closeInDockLauncher = () => {
     if (!dockSearchOpenRef.current) return;
     dockSearchOpenRef.current = false;
+    const gen = ++searchGenRef.current;
     setDockSearchClosing(true);
     // The results panel glides out first; then the row collapses in one frame and the icons glide back.
     const drawer = pillRef.current?.querySelector(".dock-launcher-drawer");
-    glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished.then(() => {
+    // A glide that never finishes (window hidden mid-animation) must not leave search half-open.
+    const glide = glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished;
+    const cap = new Promise((r) => window.setTimeout(r, 400));
+    Promise.race([glide, cap]).then(() => {
+      if (gen !== searchGenRef.current) return; // reopened meanwhile
       captureSearchFlip();
       setDockSearchOpen(false);
       setDockSearchClosing(false);
@@ -529,10 +549,17 @@ export const DockSurface: React.FC = () => {
     if (!pill) return;
     if (!dockSearchOpen) {
       delete pill.dataset.join;
+      pill.style.removeProperty("min-width");
+      pill.style.removeProperty("min-height");
       return;
     }
     const drawer = pill.querySelector(".dock-launcher-drawer");
     if (!drawer) return;
+    // The joint must land on a whole pixel: a fractional edge is anti-aliased in both shapes and a
+    // faint light line shows through between them. Round the Dock's depth up while joined.
+    const r0 = pill.getBoundingClientRect();
+    if (isVerticalRef.current && r0.width % 1) pill.style.minWidth = `${Math.ceil(r0.width)}px`;
+    if (!isVerticalRef.current && r0.height % 1) pill.style.minHeight = `${Math.ceil(r0.height)}px`;
     const p = pill.getBoundingClientRect();
     const d = drawer.getBoundingClientRect();
     const vertical = isVerticalRef.current;
@@ -702,6 +729,16 @@ export const DockSurface: React.FC = () => {
     const t2 = window.setTimeout(syncSettingsVis, 1000);
     const unlisten = listen<boolean>("lens://dock-visible", (e) => {
       setDockVisible(e.payload);
+      // Nothing stays open on a hidden Dock.
+      if (!e.payload) {
+        setHoverCard(null);
+        closeMenu();
+        closeInDockLauncher();
+        if (settingsOpenRef.current) {
+          invoke("hide_surface", { label: "settings" }).catch(() => {});
+          setSettingsOpen(false);
+        }
+      }
     });
     const unlistenSearch = listen<boolean>("lens://dock-search-open", (e) => {
       if (!e.payload) {
@@ -744,14 +781,34 @@ export const DockSurface: React.FC = () => {
     const onBlur = () => {
       setHoverCard(null);
       closeMenu();
-      window.setTimeout(() => {
-        // Ignore transient Win32 focus handoff right after expanding the dock window
-        if (performance.now() - searchOpenedAtRef.current < 500) return;
-        if (!document.hasFocus()) {
-          closeInDockLauncher();
+      // Ignore the transient Win32 focus handoff right after expanding the Dock window, but check
+      // again once it is over: focus that really went to another app still closes search.
+      const check = () => {
+        const young = performance.now() - searchOpenedAtRef.current;
+        if (young < 500) {
+          window.setTimeout(check, 520 - young);
+          return;
         }
-      }, 160);
+        if (!document.hasFocus()) closeInDockLauncher();
+      };
+      window.setTimeout(check, 160);
     };
+    // A click on the Dock window outside the Dock and its panel (the transparent area around it).
+    const onOutside = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (!t || t.closest(".dock-pill, .dock-split-pill, .dock-ctx-menu, .dock-hover-card, .dock-launcher-drawer, [role=dialog]")) return;
+      closeInDockLauncher();
+    };
+    document.addEventListener("pointerdown", onOutside, true);
+    // Settings' real visibility wins over what the page last heard (a missed event, a crash).
+    const reconcile = window.setInterval(() => {
+      if (document.hidden) return;
+      invoke<boolean>("is_surface_visible_cmd", { label: "settings" })
+        .then((vis) => {
+          if (typeof vis === "boolean" && vis !== settingsOpenRef.current) setSettingsOpen(vis);
+        })
+        .catch(() => {});
+    }, 1500);
     window.addEventListener("keydown", onKey);
     window.addEventListener("blur", onBlur);
     return () => {
@@ -765,6 +822,8 @@ export const DockSurface: React.FC = () => {
       document.removeEventListener("mouseout", onDocLeave);
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener("pointerdown", onOutside, true);
+      window.clearInterval(reconcile);
     };
   }, []);
 
@@ -2394,7 +2453,7 @@ export const DockSurface: React.FC = () => {
                 aria-label="Toggle Lens Search"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (dockSearchOpen) {
+                  if (dockSearchOpenRef.current) {
                     closeInDockLauncher();
                   } else {
                     openInDockLauncher();

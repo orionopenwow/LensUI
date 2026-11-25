@@ -507,6 +507,41 @@ const SCENARIOS = [
     },
   },
   {
+    id: "dock-search-dismiss",
+    title: "Dock search closes on a click outside and when another app takes focus",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const isOpen = () => dock.locator(".dock-search-glide-input").count().then((n) => n > 0);
+      const openSearch = async () => {
+        if (!(await isOpen())) await domClick(dock.locator(".dock-search-mag-btn").first());
+        for (let i = 0; i < 20 && !(await isOpen()); i++) await sleep(100);
+        if (!(await isOpen())) throw new Error("Dock search did not open");
+        await sleep(700); // past the focus-handoff grace period
+      };
+      const waitClosed = async (why) => {
+        for (let i = 0; i < 40 && (await isOpen()); i++) await sleep(100);
+        if (await isOpen()) {
+          await shot(dock, `dock-search-stuck-${why}`);
+          throw new Error(`Dock search stayed open after ${why}`);
+        }
+      };
+      const ps = (cmd) => execFileSync("powershell", ["-NoProfile", "-Command", cmd], { encoding: "utf8" });
+      // 1. Another app takes focus.
+      await openSearch();
+      ps("$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null");
+      await waitClosed("focus moved to Notepad");
+      ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
+      // 2. A real click on the desktop, far from the Dock.
+      await openSearch();
+      ps(`Add-Type -Namespace W -Name U -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,uint x,uint y,uint d,System.UIntPtr e);'; [W.U]::SetCursorPos(160,160); Start-Sleep -Milliseconds 120; [W.U]::mouse_event(2,0,0,0,[System.UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[System.UIntPtr]::Zero)`);
+      await waitClosed("a click on the desktop");
+      // 3. Esc and a second press still work after all that.
+      await openSearch();
+      await domClick(dock.locator(".dock-search-mag-btn").first());
+      await waitClosed("a second press");
+    },
+  },
+  {
     id: "quit-clean",
     title: "quitting leaves no Lens process behind",
     async run(s) {

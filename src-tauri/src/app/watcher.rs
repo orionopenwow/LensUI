@@ -244,9 +244,22 @@ pub(crate) fn position_settings_docked_with_height(
         let desired_h = ((desired_logical_h.unwrap_or(SETTINGS_LOGICAL_H) + 28.0).max(400.0) * scale).round() as u32;
         let target_h = desired_h.min(max_h);
         let x = pos.x + ((size.width as i32 - target_w as i32) / 2);
-        // Strictly flush (+1px overlap eliminates any hairline seam between Control Center and the fused Dock!)
-        let y = (bottom_edge - dock_pill_h - margin_bottom - target_h as i32 + 1)
-            .max(pos.y + bar_h + (4.0 * scale) as i32);
+        // Where the pill really starts: the Dock reports its rect (CSS px in its window), which
+        // is right for every style; the icon-size estimate only fits Floating and left a gap or
+        // an overlap (the seam) on the others.
+        // (With magnification the report includes the icons' grow headroom above the pill.)
+        let measured_top = (cfg.dock.magnification == "off" || cfg.dock.magnification.is_empty())
+            .then(|| app.get_webview_window("dock"))
+            .flatten()
+            .and_then(|dock| {
+            let origin = dock.inner_position().ok()?;
+            let inner = dock.inner_size().ok()?;
+            let (_, py, _, ph) = win_previews::pill_rect_css();
+            settings_join_top(origin.y, inner.height, scale, py, ph)
+        });
+        let pill_top = measured_top.unwrap_or(bottom_edge - dock_pill_h - margin_bottom);
+        // Flush, 1 physical px tucked under the Dock so no rounding can open a hairline gap.
+        let y = (pill_top - target_h as i32 + 1).max(pos.y + bar_h + (4.0 * scale) as i32);
         let (x, y) = crate::app::integration::side_dock_flyout(
             cfg, scale, bar_h, bottom_edge, target_w, target_h,
             win_monitors::FlyoutAlign::Center,
@@ -257,6 +270,22 @@ pub(crate) fn position_settings_docked_with_height(
             let _ = app.emit("lens://settings-open", true);
         }
     }
+}
+
+/// Top of the Dock pill in physical screen px, from the rect the Dock reports (CSS px in its own
+/// window). Rounded the same way the compositor snaps the pill's top edge (floor of the scaled
+/// CSS position). None when the report is missing or the pill is outside its window (sliding
+/// off screen), so the caller falls back to its estimate.
+pub(crate) fn settings_join_top(win_y: i32, win_h_phys: u32, scale: f64, pill_y_css: i32, pill_h_css: i32) -> Option<i32> {
+    if pill_h_css <= 0 || scale <= 0.0 || pill_y_css < 0 {
+        return None;
+    }
+    let top = (pill_y_css as f64 * scale).floor() as i64;
+    let bottom = ((pill_y_css + pill_h_css) as f64 * scale).ceil() as i64;
+    if bottom > win_h_phys as i64 + 1 {
+        return None;
+    }
+    Some(win_y + top as i32)
 }
 
 /// Settings keeps one height while it is open (docs/SMOOTHNESS.md, G-01): resizing the native
@@ -1110,5 +1139,29 @@ mod search_guard_tests {
         assert!(search_should_close(idle, &mut s, t0 + Duration::from_millis(1300)));
         let mut s2 = None;
         assert!(search_should_close(SearchGuardInput { bar_focused: true, click_outside: true, ..Default::default() }, &mut s2, t0));
+    }
+}
+
+#[cfg(test)]
+mod settings_join_tests {
+    use super::settings_join_top;
+
+    #[test]
+    fn join_lands_on_the_pill_top_at_common_scales() {
+        // Dock window at y=1020 (physical), 60 CSS px tall pill at y=0 in a 60 px window.
+        assert_eq!(settings_join_top(1020, 60, 1.0, 0, 60), Some(1020));
+        // 125 %: pill at CSS y=13 → 16.25 px → snaps to 16.
+        assert_eq!(settings_join_top(900, 100, 1.25, 13, 60), Some(916));
+        // 150 % and 175 %: fractional tops floor, never leaving a gap above the pill.
+        assert_eq!(settings_join_top(0, 200, 1.5, 21, 56), Some(31));
+        assert_eq!(settings_join_top(0, 200, 1.75, 21, 56), Some(36));
+    }
+
+    #[test]
+    fn falls_back_when_the_report_is_unusable() {
+        assert_eq!(settings_join_top(0, 100, 1.0, 0, 0), None); // nothing reported yet
+        assert_eq!(settings_join_top(0, 60, 1.0, 50, 60), None); // sliding off its window
+        assert_eq!(settings_join_top(0, 60, 0.0, 0, 60), None);
+        assert_eq!(settings_join_top(0, 60, 1.0, -4, 60), None);
     }
 }
