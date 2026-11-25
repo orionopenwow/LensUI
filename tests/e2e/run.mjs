@@ -531,8 +531,11 @@ const SCENARIOS = [
       await openSearch();
       const hadFocus = await dock.evaluate(() => document.hasFocus());
       if (!hadFocus) console.log("note  dock-search-dismiss: the Dock never had focus on this runner; the focus-loss step checks the no-focus path");
-      ps("$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null");
-      await waitClosed("focus moved to Notepad");
+      const fg = ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null; Start-Sleep -Milliseconds 300; Add-Type -Namespace W -Name F -MemberDefinition '[DllImport("user32.dll")] public static extern System.IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);'; $id = 0; [W.F]::GetWindowThreadProcessId([W.F]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      if (/notepad/i.test(fg)) await waitClosed("focus moved to Notepad");
+      else console.log(`note  dock-search-dismiss: Windows kept "${fg}" in front (foreground lock), so focus never left the Dock; step skipped`);
+      await domClick(dock.locator(".dock-search-mag-btn").first()).catch(() => {});
+      for (let i = 0; i < 10 && (await isOpen()); i++) await sleep(100);
       ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
       // 2. A real click on the desktop, far from the Dock.
       await openSearch();
