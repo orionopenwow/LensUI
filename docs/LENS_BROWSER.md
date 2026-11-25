@@ -332,7 +332,7 @@ without that switch, and sign-ins stay blocked.
 |---|---|
 | Steer, pause, take over | Done (pause stops before the next step; take over focuses the page; steer adds a note). |
 | Glance link previews | Done: Alt+click (or long-press) a link → a preview fills the content area with "Open as tab ⏎ / Close Esc"; optional ≤5 s local summary (provider `local`). |
-| Tidy and auto-archive | Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for `archiveAfterDays` (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. |
+| Tidy and auto-archive | Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for `archiveAfterDays` (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. |
 | Space lock with Windows Hello | Done: `UserConsentVerifier`; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. |
 | Ask-on-Find | Done: no matches → "Ask about this page". |
 | PDF annotation + Ask this PDF | Partial: page notes (any page, PDFs included) saved locally. Highlights inside WebView2's PDF viewer and "Ask this PDF" need native access to the viewer (or bundling pdf.js); not done. |
@@ -340,7 +340,9 @@ without that switch, and sign-ins stay blocked.
 | Tab sleep | Done: "N awake · N asleep · ~X GB saved" (estimate, 80 MB per sleeping tab); tabs with edited fields or a chosen upload never sleep (amber dot). |
 | Sessions | Done: state is saved atomically on every change (crash-safe); Ctrl+Shift+T reopens the last 25 closed tabs. Reopening a closed window is the same as reopening Lens Browser; a removed space can't be reopened yet. |
 | Split controls | Skipped (no split view yet). |
-| Media mini-player | Done: the sidebar shows a background tab that's playing, with play/pause and mute. |
+| Media mini-player | Done: the sidebar shows a background tab that's playing, with play/pause and mute (can be hidden in Make it yours › Sidebar). |
+| Sidebar | Done (parity harness; not yet run on a real PC): tabs first, grouped Today / Earlier, by site or not at all; pinned tabs and favourite bookmarks as tiles; folders one quiet line each at the bottom; chats collapsed; Find a tab (Ctrl+Shift+A); full or icon stack, left or right, 200–380 px. |
+| Lens row | Done (parity harness): Tidy, Close duplicates and Group by site show a plan and wait for Apply; Summarise sends tab titles and hosts (never page text) to Ask. Group by task is not built. |
 | Bookmarks editing | Done: Bookmarks panel with nested folders ("A / B"), rename, move, remove. |
 | Background opens, crashed tab | Done: Ctrl/middle-click on bookmarks and pinned sites opens asleep in the background; a tab that stops answering shows "This tab stopped responding · Reload". |
 | Downloads | Partial: rules by file type (`downloadRules`: ext → existing folder). "Ask where to save" needs a native save dialog in the download callback; not done. |
