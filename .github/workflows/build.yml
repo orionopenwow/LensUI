@@ -7,8 +7,9 @@
 name: build
 
 on:
+  # Pushes to main and tags only: branches are tested once, through their pull request.
   push:
-    branches: ["**"]
+    branches: ["main"]
     paths-ignore:
       - "docs/site/**"
       - "docs/media/**"

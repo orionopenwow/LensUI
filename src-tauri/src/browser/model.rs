@@ -130,11 +130,49 @@ pub struct Appearance {
     pub density: String,
     /// "lens" | "system" | "mono" | "serif"
     pub typeface: String,
+    /// How the vertical tab sidebar looks.
+    pub sidebar: SidebarPrefs,
 }
 
 impl Default for Appearance {
     fn default() -> Self {
-        Self { scheme: "auto".into(), accent: None, dither: 40, grain: 20, tabs_layout: "vertical".into(), density: "comfortable".into(), typeface: "lens".into() }
+        Self {
+            scheme: "auto".into(),
+            accent: None,
+            dither: 40,
+            grain: 20,
+            tabs_layout: "vertical".into(),
+            density: "comfortable".into(),
+            typeface: "lens".into(),
+            sidebar: SidebarPrefs::default(),
+        }
+    }
+}
+
+/// The vertical tab sidebar: width, full or icon "stack", which side, how tabs are grouped, and
+/// which of the lighter sections show.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SidebarPrefs {
+    /// 200–380 px (full mode).
+    pub width: u16,
+    /// "full" | "stack" (favicons only)
+    pub mode: String,
+    /// "left" | "right"
+    pub side: String,
+    /// "time" (Today / Earlier) | "site" | "none"
+    pub group: String,
+    pub show_chats: bool,
+    pub show_media: bool,
+    pub show_spaces: bool,
+}
+
+pub const SIDEBAR_WIDTH_MIN: u16 = 200;
+pub const SIDEBAR_WIDTH_MAX: u16 = 380;
+
+impl Default for SidebarPrefs {
+    fn default() -> Self {
+        Self { width: 248, mode: "full".into(), side: "left".into(), group: "time".into(), show_chats: true, show_media: true, show_spaces: true }
     }
 }
 
@@ -885,6 +923,18 @@ impl BrowserState {
         }
         if !["lens", "system", "mono", "serif"].contains(&a.typeface.as_str()) {
             a.typeface = d.typeface;
+        }
+        let sb = &mut a.sidebar;
+        let sd = SidebarPrefs::default();
+        sb.width = sb.width.clamp(SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX);
+        if !["full", "stack"].contains(&sb.mode.as_str()) {
+            sb.mode = sd.mode;
+        }
+        if !["left", "right"].contains(&sb.side.as_str()) {
+            sb.side = sd.side;
+        }
+        if !["time", "site", "none"].contains(&sb.group.as_str()) {
+            sb.group = sd.group;
         }
     }
 }

@@ -201,12 +201,18 @@ export const ConnectionsCard: React.FC = () => {
         <div>
           <div className="cc-label">File Explorer right-click</div>
           <div className="cc-desc">
-            “Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video.
-            On Windows 11 it's under “Show more options”. {status?.explorerVerbsInstalled ? "On." : "Off."}
+            “Lens ›” with the Lens icon on files, folders, inside folders and on drives: Ask, Summarise, Add to Shelf, Copy path into
+            context; “Transcribe with Lens” on audio and video. On Windows 11 it appears under “Show more options”.{" "}
+            {status?.explorerVerbsInstalled ? (status.explorerVerbsOutdated ? "On, without the newer places: Update adds them." : "On.") : "Off."}
           </div>
         </div>
         {status?.explorerVerbsInstalled ? (
-          <button type="button" className="cc-btn-ghost" disabled={busy} onClick={() => uninstall("explorer_verbs_uninstall")}>Remove</button>
+          <div style={row}>
+            {status.explorerVerbsOutdated ? (
+              <button type="button" className="cc-btn" disabled={busy} onClick={() => previewInstall("explorer")}>Update…</button>
+            ) : null}
+            <button type="button" className="cc-btn-ghost" disabled={busy} onClick={() => uninstall("explorer_verbs_uninstall")}>Remove</button>
+          </div>
         ) : (
           <button type="button" className="cc-btn" disabled={busy} onClick={() => previewInstall("explorer")}>Add…</button>
         )}

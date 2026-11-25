@@ -447,8 +447,23 @@ fn config_defaults_and_sanitize() {
 
 #[test]
 fn lens_inputs_map_to_facts() {
-    let i = LensTargetInput { kind: "shelfItem".into(), id: "s1".into(), label: "Notes".into(), path: None };
+    let i = LensTargetInput { kind: "shelfItem".into(), id: "s1".into(), label: "Notes".into(), path: None, run: None };
     assert_eq!(i.to_fact().unwrap().kind, LensKind::ShelfItem);
     let bad = LensTargetInput { kind: "window".into(), ..i };
     assert!(bad.to_fact().is_none(), "the frontend can't fake non-Lens targets");
+}
+
+#[test]
+fn a_pre_chosen_row_must_look_like_a_row_id() {
+    let mut i = LensTargetInput { kind: "dockItem".into(), id: "a".into(), label: "App".into(), path: None, run: Some("summarize".into()) };
+    assert_eq!(i.run_id().as_deref(), Some("summarize"));
+    i.run = Some("snap:left".into());
+    assert_eq!(i.run_id().as_deref(), Some("snap:left"));
+    for bad in ["", "rm -rf", "a\\b", "x".repeat(65).as_str(), "<script>"] {
+        i.run = Some(bad.into());
+        assert_eq!(i.run_id(), None, "{bad:?} must be refused");
+    }
+    // Older frontends send no `run`: it defaults to none.
+    let j: LensTargetInput = serde_json::from_str(r#"{"kind":"shelfItem","id":"s","label":"x","path":null}"#).unwrap();
+    assert_eq!(j.run, None);
 }
