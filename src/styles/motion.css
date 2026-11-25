@@ -108,14 +108,6 @@
   animation: lens-fade-in var(--lens-dur-fast) var(--lens-ease-out) both;
 }
 
-/* ── Theme cross-fade (C4) ───────────────────────────────────────────────────────────────────────
-   document.startViewTransition snapshots the old theme; the new one fades in over it. No white frame. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--lens-dur-base);
-  animation-timing-function: var(--lens-ease-out);
-}
-
 /* ── Numbers ─────────────────────────────────────────────────────────────────────────────────────
    Anything that changes value uses tabular numerals so it doesn't jitter (AAA audit #10). Explicit
    class names, not [class*=...] substring selectors: those are matched against every element on
