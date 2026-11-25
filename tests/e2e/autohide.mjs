@@ -169,8 +169,9 @@ const SCENARIOS = [
     async run(s) {
       await setConfig(s, topBarCfg("always"));
       const bar = await page(s, "topbar");
-      await d(`move ${mid()[0]} 10`);
+      await d(`move ${mid()[0]} 0`);
       await expectWithin("reveal", () => barState(s), true, 1500);
+      await d(`move ${mid()[0]} 10`);
       await invoke(bar, "sync_topbar_search_cmd", { query: "", open: true });
       await sleep(600);
       await d(`move ${mid().join(" ")}`);
@@ -191,8 +192,9 @@ const SCENARIOS = [
       await setConfig(s, topBarCfg("always"));
       const bar = await page(s, "topbar");
       for (const how of ["click-outside", "esc", "focus-other", "other-flyout"]) {
-        await d(`move ${mid()[0]} 10`);
+        await d(`move ${mid()[0]} 0`);
         await expectWithin(`${how}: reveal`, () => barState(s), true, 1500);
+        await d(`move ${mid()[0]} 10`);
         await invoke(bar, "open_quicksettings_tab_cmd", { tab: "quick", section: "quick" });
         await sleep(700);
         if (how === "click-outside") {
@@ -221,6 +223,11 @@ const SCENARIOS = [
     title: "Top Bar (smart dodge): a maximised window hides it; the top edge reveals it; leaving hides it",
     async run(s) {
       await setConfig(s, topBarCfg("overlap"));
+      await d(`move ${mid().join(" ")}`);
+      await sleep(1500);
+      // Something else on this machine may already cover the top of the screen; the bar must come
+      // back to whatever state it had before Notepad opened.
+      const baseline = (await barState(s)).shown;
       await d("notepad max");
       await d(`move ${mid().join(" ")}`);
       await expectWithin("maximised", () => barState(s), false, 3000);
@@ -229,7 +236,7 @@ const SCENARIOS = [
       await expectNoFlicker("leave", () => d(`move ${mid().join(" ")}`));
       await expectWithin("leave", () => barState(s), false, 2000);
       await d("notepad close");
-      await expectWithin("no overlap any more", () => barState(s), true, 3000);
+      await expectWithin("Notepad closed: back to how it was", () => barState(s), baseline, 3000);
     },
   },
   {
@@ -274,6 +281,11 @@ try {
   await page(s, "dock");
   await page(s, "topbar");
   await sleep(2000);
+  // A fresh profile opens the first-run setup in Settings; a focused Settings window (rightly)
+  // holds the Dock up, so finish it and close every flyout before measuring auto-hide.
+  await setConfig(s, (c) => { c.onboardingCompleted = true; });
+  for (const f of ["settings", ...FLYOUTS]) await invoke(surfaces(s).dock, "hide_surface", { label: f }).catch(() => {});
+  await sleep(800);
   const original = await invoke(surfaces(s).dock, "get_config");
   for (const sc of SCENARIOS) {
     if (ONLY.length && !ONLY.includes(sc.id)) continue;
@@ -289,6 +301,7 @@ try {
     } finally {
       await d("notepad close").catch(() => {});
       await invoke(surfaces(s).dock, "save_config_cmd", { newConfig: original }).catch(() => {});
+      for (const f of FLYOUTS) await invoke(surfaces(s).dock, "hide_surface", { label: f }).catch(() => {});
       await sleep(600);
     }
   }
