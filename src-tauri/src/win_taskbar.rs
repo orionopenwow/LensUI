@@ -225,15 +225,22 @@ pub fn set_run_on_startup(enabled: bool) -> Result<(), String> {
 
     unsafe {
         let mut hkey = HKEY::default();
-        RegOpenKeyExW(
+        let rc = RegOpenKeyExW(
             HKEY_CURRENT_USER,
             PCWSTR(subkey.as_ptr()),
             0,
             KEY_SET_VALUE,
             &mut hkey,
-        )
-        .ok()
-        .map_err(|e| e.to_string())?;
+        );
+        if rc != windows::Win32::Foundation::ERROR_SUCCESS {
+            // No Run key at all (a fresh profile) means there is nothing to remove: turning
+            // startup off succeeds. Turning it on still needs the key and reports the error.
+            if !enabled && rc == windows::Win32::Foundation::ERROR_FILE_NOT_FOUND {
+                crate::app::autostart_guard::remove_run_entry();
+                return Ok(());
+            }
+            return rc.ok().map_err(|e| e.to_string());
+        }
 
         let result = if enabled {
             let exe = std::env::current_exe().map_err(|e| e.to_string())?;
