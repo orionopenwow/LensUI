@@ -21,10 +21,10 @@
   opacity: 0;
   scale: 0.9;
   transition:
-    opacity var(--lens-dur-fast, 140ms) var(--lens-ease-out, ease-out),
-    scale var(--lens-dur-fast, 140ms) var(--lens-ease-out, ease-out),
-    background var(--lens-dur-fast, 140ms) var(--lens-ease-out, ease-out),
-    color var(--lens-dur-fast, 140ms) var(--lens-ease-out, ease-out);
+    opacity var(--lens-dur-fast) var(--lens-ease-out),
+    scale var(--lens-dur-fast) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 /* Shown while the panel is pointed at or holds focus. */

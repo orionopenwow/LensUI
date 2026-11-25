@@ -478,7 +478,7 @@ export const DockSurface: React.FC = () => {
       const dividerCount = others.length - iconCount;
       const slim = searchStyle === "slim";
       // The whole search slot: glass + field + Ask toggle + ESC. 280 px leaves ~170 px to type in.
-      const MIN_FIELD = slim ? 240 : 280;
+      const MIN_FIELD = slim ? 256 : 280;
       const chrome = slim ? 22 : 30; // pill padding + border while open
       const gap = slim ? 4 : 6;
       const dividerW = slim ? 5 : 9;
