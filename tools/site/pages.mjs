@@ -70,7 +70,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
       <div class="sc-bar" id="sc-bar">
-        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or pick a tour and go step by step.</span></div>
+        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or start with the docks below and go step by step.</span></div>
         <div class="sc-ctl">
           <span class="sc-dots" aria-hidden="true"></span>
           <button type="button" class="sb-btn sc-b" data-back disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Back</span></button>
