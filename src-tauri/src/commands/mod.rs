@@ -46,3 +46,4 @@ pub(crate) mod syssettings;
 pub(crate) mod presence;
 pub(crate) mod coreapps;
 pub(crate) mod failsafe;
+pub(crate) mod setup_flow;

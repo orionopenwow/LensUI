@@ -176,6 +176,8 @@ export interface LensConfig {
   widgets: WidgetsConfig;
   styledFolders: StyledFolderRecord[];
   onboardingCompleted?: boolean;
+  /** Lens version whose setup / "What's new" was last seen or skipped ("" = none); docs/SETUP.md. */
+  setupSeenVersion?: string;
   /** Settings hub detail level; "" until chosen (new users start Simple, existing users Advanced). */
   settingsMode?: "simple" | "advanced" | "";
   themeSchedule?: Partial<import("../themes/schedule").ThemeSchedule> | null;

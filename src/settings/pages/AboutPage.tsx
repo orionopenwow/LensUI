@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import { UpdatesCard } from "../../components/UpdatesCard";
 import { CrashReportsCard } from "../../components/CrashReportsCard";
 import { FailsafeCard } from "../../components/FailsafeCard";
@@ -22,6 +23,13 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
       <Section id="updates" title="Updates & crash reports" summary="Lens updates are signed" forceOpen={section === "updates"}>
         <UpdatesCard />
         <CrashReportsCard />
+      </Section>
+      <Section id="setup" title="Setup" summary="Dock, colours and extras, nothing changes until Finish" forceOpen={section === "setup"}>
+        <Row label="Run setup again" desc="Pick a Dock, colours and optional extras. Skipping keeps everything as it is.">
+          <button type="button" className="cc-btn" data-setup-open onClick={() => void emit("lens://setup-open", true)}>
+            Run setup
+          </button>
+        </Row>
       </Section>
       <Section id="safety" title="Safety net" summary="Safe Mode and paused features" forceOpen={section === "safety"}>
         <FailsafeCard />

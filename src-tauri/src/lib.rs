@@ -760,6 +760,7 @@ pub fn run() {
             commands::release::write_plugin_frame_cmd,
             commands::release::list_crash_reports_cmd,
             commands::release::read_crash_report_cmd,
+            commands::setup_flow::setup_status_cmd,
             commands::release::open_crashes_folder_cmd,
             commands::release::get_update_settings_cmd,
             commands::release::set_update_settings_cmd,

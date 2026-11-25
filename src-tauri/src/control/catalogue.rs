@@ -75,6 +75,7 @@ pub const RULES: &[Rule] = &[
     r("styledFolders", "Internal", C::Destructive, B),
     r("configVersion", "Internal", C::Destructive, B),
     r("onboardingCompleted", "Internal", C::Destructive, B),
+    r("setupSeenVersion", "Internal", C::Destructive, B),
     // Other stores
     r("wallpaper", "Wallpaper & Playground", C::ChangeLook, L),
     r("wallpaper.accentHex", "Internal", C::Destructive, B),
