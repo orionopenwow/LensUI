@@ -18,14 +18,17 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import type { AttentionApp as GeneratedAttentionApp, AttentionSnapshot as GeneratedAttentionSnapshot } from "../types/generated";
 
 export const ATTENTION_EVENT = "dock:attention";
 export const ATTENTION_SNAPSHOT_EVENT = "lens://dock-attention";
 export const ATTENTION_SNAPSHOT_CMD = "get_dock_attention";
 
-export interface AttentionSnapshot {
-  version?: number;
-  apps?: { exePath?: string; processName?: string; hwnds?: number[]; count?: number; sinceMs?: number }[];
+/** The native snapshot (src-tauri/src/attention.rs), from the generated IPC types. Fields are
+ *  read defensively below, so an older backend or a partial payload can't break the Dock. */
+export type AttentionSnapshot = Partial<Omit<GeneratedAttentionSnapshot, "apps">> & {
+  apps?: Partial<GeneratedAttentionApp>[];
+};[];
 }
 
 export interface AttentionPayload {
