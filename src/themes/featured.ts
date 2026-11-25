@@ -9,7 +9,7 @@
 // Applying a look is one config change (`applyFeaturedLook`), so it goes through the same
 // non-blocking apply path as any pack and is undone by re-applying the previous config.
 import type { LensConfig } from "../types/lens";
-import { allPacks, applyThemePack, packById, type ThemePack } from "./packs";
+import { allPacks, applyThemePack, packById, type ApplyPackOptions, type ThemePack } from "./packs";
 import { nearest, packDistance, packScene } from "./distance";
 
 export type LookFont = "rounded-arial" | "inter-sans" | "tech-mono" | "editorial-serif";
@@ -48,13 +48,13 @@ export const FEATURED_LOOKS: FeaturedLook[] = [
   { id: "alabaster-daylight", character: "Bright daylight, white cards and one clear blue.", font: "inter-sans", glass: 0.98, blur: 16, dock: { style: "floating", magnification: "subtle", launch: "lift" }, feel: "crisp", cursor: "outline" },
   { id: "living-sky", character: "The real sky, live. Light by day, dark at night.", font: "inter-sans", glass: 0.8, blur: 28, dock: { style: "floating", magnification: "subtle", launch: "lift" }, feel: "calm", cursor: "glass" },
   { id: "catppuccin-mocha", character: "Cosy pastel mauve. Round, soft and bouncy.", font: "rounded-arial", glass: 0.92, blur: 24, dock: { style: "floating", magnification: "classic", launch: "bounce" }, feel: "playful", cursor: "accent" },
-  { id: "hyprland-neon", character: "Tiling-rig neon: glowing cyan borders and split pills.", font: "tech-mono", glass: 0.78, blur: 30, dock: { style: "split", magnification: "off", launch: "none" }, feel: "crisp", cursor: "accent" },
-  { id: "cyberpunk-amber", character: "Hard corners and electric yellow on a full-width bar.", font: "tech-mono", glass: 1, blur: 0, dock: { style: "taskbar", magnification: "off", launch: "none" }, feel: "crisp", cursor: "retro" },
+  { id: "hyprland-neon", character: "Tiling-rig neon: glowing cyan borders on near-black.", font: "tech-mono", glass: 0.78, blur: 30, dock: { style: "split", magnification: "off", launch: "none" }, feel: "crisp", cursor: "accent" },
+  { id: "cyberpunk-amber", character: "Hard corners and electric yellow on black.", font: "tech-mono", glass: 1, blur: 0, dock: { style: "taskbar", magnification: "off", launch: "none" }, feel: "crisp", cursor: "retro" },
   { id: "paper-minimal", character: "Warm paper and terracotta ink. Borderless and bookish.", font: "editorial-serif", glass: 1, blur: 0, dock: { style: "slim", magnification: "off", launch: "lift" }, feel: "calm", cursor: "outline" },
-  { id: "lens-expressive", character: "Playful shapes: pill tiles, a scalloped clock, dock islands.", font: "rounded-arial", glass: 0.94, blur: 22, dock: { style: "islands", magnification: "classic", launch: "jelly" }, feel: "playful", cursor: "dot" },
+  { id: "lens-expressive", character: "Playful colour with pill tiles and a scalloped clock.", font: "rounded-arial", glass: 0.94, blur: 22, dock: { style: "islands", magnification: "classic", launch: "jelly" }, feel: "playful", cursor: "dot" },
   { id: "lens-dot-matrix", character: "LED-dot numerals and flat monochrome tiles.", font: "tech-mono", glass: 1, blur: 0, dock: { style: "islands", magnification: "off", launch: "none" }, feel: "crisp", cursor: "dot" },
   { id: "everforest-dark", character: "Forest green-grey with moss highlights. Quiet chrome.", font: "inter-sans", glass: 0.95, blur: 18, dock: { style: "minimal", magnification: "off", launch: "lift" }, feel: "calm", cursor: "obsidian" },
-  { id: "solarized-matte", character: "Classic teal Solarized, matte, with a labelled studio dock.", font: "inter-sans", glass: 1, blur: 0, dock: { style: "studio", magnification: "off", launch: "lift" }, feel: "crisp", cursor: "outline" },
+  { id: "solarized-matte", character: "Classic teal Solarized, matte.", font: "inter-sans", glass: 1, blur: 0, dock: { style: "studio", magnification: "off", launch: "lift" }, feel: "crisp", cursor: "outline" },
   { id: "gruvbox-warm", character: "Retro warm grey and orange with squared corners.", font: "rounded-arial", glass: 0.97, blur: 12, dock: { style: "taskbar", magnification: "subtle", launch: "lift" }, feel: "calm", cursor: "retro" },
 ];
 
@@ -105,18 +105,23 @@ export function lookDistance(a: FeaturedLook, b: FeaturedLook): number {
 export const lookScene = (look: FeaturedLook): string => packScene(lookPack(look));
 
 /**
- * A new config with the whole look applied: the pack (colours, radius, icons, folders, frame,
- * buttons, shape style), then the font, glass, blur, Dock style and Dock motion.
+ * A new config with the look's colours and materials applied: the pack (colours, radius, icons,
+ * folders, frame, buttons), then glass and blur. The look's font and shape style come along only
+ * with `withFontAndShape`. A look never changes the Dock's style, size, motion or position.
  * Packs that are not featured fall back to `applyThemePack`.
  */
-export function applyFeaturedLook(config: LensConfig, id: string): LensConfig {
+export function applyFeaturedLook(config: LensConfig, id: string, options: ApplyPackOptions = {}): LensConfig {
   const look = LOOK_BY_ID.get(id);
-  if (!look) return applyThemePack(config, id);
-  const next = applyThemePack(config, id);
+  if (!look) return applyThemePack(config, id, options);
+  const next = applyThemePack(config, id, options);
   return {
     ...next,
-    theme: { ...next.theme, fontFamily: look.font, glassOpacity: look.glass, blurPx: look.blur },
-    dock: { ...next.dock, style: look.dock.style, magnification: look.dock.magnification, launchAnimation: look.dock.launch },
+    theme: {
+      ...next.theme,
+      ...(options.withFontAndShape ? { fontFamily: look.font } : {}),
+      glassOpacity: look.glass,
+      blurPx: look.blur,
+    },
   };
 }
 
@@ -125,9 +130,7 @@ export function lookApplied(config: LensConfig, id: string): boolean {
   const look = LOOK_BY_ID.get(id);
   if (!look || config.theme.preset !== id) return false;
   return (
-    (config.theme.fontFamily ?? "rounded-arial") === look.font &&
     Math.abs(config.theme.glassOpacity - look.glass) < 0.005 &&
-    config.theme.blurPx === look.blur &&
-    (config.dock.style ?? "floating") === look.dock.style
+    config.theme.blurPx === look.blur
   );
 }

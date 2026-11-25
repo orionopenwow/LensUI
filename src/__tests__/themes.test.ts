@@ -75,12 +75,19 @@ describe("theme packs", () => {
     expect(rec.length).toBe(6);
     expect(rec.some((p) => p.scheme === "light")).toBe(true);
   });
-  test("applyThemePack changes the Dock style only when asked", () => {
+  test("applying any pack or featured look never changes the Dock", async () => {
+    const { applyFeaturedLook } = await import("../themes/featured");
     const cfg = sampleConfig();
-    const kept = packs.applyThemePack(cfg, "tokyo-night") as { dock: { style?: string } };
-    expect(kept.dock.style).toBe((cfg.dock as { style?: string }).style);
-    const changed = packs.applyThemePack(cfg, "tokyo-night", { applyDockStyle: true }) as { dock: { style?: string } };
-    expect(changed.dock.style).toBe("split");
+    const before = JSON.stringify(cfg.dock);
+    for (const p of packs.allPacks()) {
+      for (const opts of [{}, { withFontAndShape: true }]) {
+        expect(JSON.stringify(packs.applyThemePack(cfg, p.id, opts).dock.style)).toBe(JSON.stringify(cfg.dock.style));
+        const next = applyFeaturedLook(cfg, p.id, opts);
+        const { pinnedFolders: _a, ...restNext } = next.dock;
+        const { pinnedFolders: _b, ...restBefore } = JSON.parse(before);
+        expect(JSON.stringify(restNext)).toBe(JSON.stringify(restBefore));
+      }
+    }
   });
   test("lighten and swatch", () => {
     expect(packs.lighten("#000000", 0.5)).toBe("#808080");
@@ -212,5 +219,16 @@ describe("schedule", () => {
     expect(Math.abs(set - (20 * 60 + 21))).toBeLessThan(10);
     expect(schedule.sunTimes(new Date(Date.UTC(2026, 5, 21, 12)), 80, 0).polar).toBe("day");
     expect(schedule.sunTimes(new Date(Date.UTC(2026, 11, 21, 12)), 80, 0).polar).toBe("night");
+  });
+});
+
+describe("dock style picker", () => {
+  test("a pick changes only the style and its icon size", async () => {
+    const { configForStyle } = await import("../dock/useStylePick");
+    const cfg = sampleConfig();
+    const next = configForStyle(cfg, "slim");
+    expect(next.dock.style).toBe("slim");
+    expect(next.theme).toEqual(cfg.theme);
+    expect(configForStyle(cfg, "no-such-style")).toBe(cfg);
   });
 });

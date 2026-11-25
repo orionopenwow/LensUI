@@ -1433,3 +1433,4 @@
   line-height: 14px;
   min-height: 28px;
 }
+.tux-undo.is-empty { visibility: hidden; }

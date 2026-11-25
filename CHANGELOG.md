@@ -8,6 +8,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Changed
+- **Themes change colours only.** Applying a theme or featured look no longer changes the Dock's
+  style, size, motion or position; the look's font and shape style come along only when "Also use
+  the look's font and shape" is ticked. Theme descriptions no longer promise a Dock layout.
+- **Settings and the Dock search keep their own size** on every Dock style (Slim and Minimal no
+  longer squeeze them, Taskbar no longer stretches them across the screen). With the Taskbar
+  style they open like the Windows 11 Start menu and Search: above the bar with Windows' gap,
+  centred or at the start side, not fused to the bar.
+- Picking Dock styles quickly restyles the Dock once, when the clicks stop.
+
 - **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
   site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
   one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
