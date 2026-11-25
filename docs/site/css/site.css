@@ -729,6 +729,15 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .lx-over { position: absolute; left: 0; top: 0; z-index: 50; border-radius: 16px; }
 .lx-over[data-over="cmd"] { z-index: 60; }
 .lx-over[hidden] { display: none; }
+/* The right-click spotlight: everything but the clicked spot (and the menu above it) dims. */
+/* No backdrop blur here: blurring over the dock's own glass made Chrome paint a mirrored copy of the
+   windows into the dock strip. A deeper dim does the job. */
+.lx-dim { position: absolute; inset: 0; z-index: 45; pointer-events: none; background: rgb(6 6 10 / .62);
+  -webkit-mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 0 70px, #000 150px); mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 0 70px, #000 150px);
+  animation: dim-in .22s var(--lens-ease-out, ease-out) both; }
+.lx-dim[hidden] { display: none; }
+@keyframes dim-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lx-dim { animation: none; } }
 
 /* ---- sections: one idea each, a big real exhibit, few words ---------------------------------------- */
 .head.center { margin-inline: auto; text-align: center; max-width: 720px; margin-bottom: 36px; }
@@ -755,25 +764,28 @@ footer.site .fine a { text-decoration: underline; text-underline-offset: 2px; }
 .mx-target { inset: 24px 24px 24px 24px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgb(255 255 255 / .08), 0 24px 60px -20px rgb(0 0 0 / .6); }
 .mx-menu { position: absolute; left: 0; top: 0; width: 360px; height: 440px; z-index: 2; filter: drop-shadow(0 24px 40px rgb(0 0 0 / .45)); }
 .mx-menu[hidden] { display: none; }
+/* Right-click spotlight in the exhibit: the page dims and blurs around the clicked spot and its menu. */
+.mx-dim { position: absolute; inset: 24px; z-index: 1; border-radius: 12px; pointer-events: none; background: rgb(6 6 10 / .5); -webkit-backdrop-filter: blur(3px) saturate(.8); backdrop-filter: blur(3px) saturate(.8);
+  -webkit-mask-image: radial-gradient(circle at calc(var(--x, 50%) - 24px) calc(var(--y, 50%) - 24px), transparent 0 60px, #000 130px); mask-image: radial-gradient(circle at calc(var(--x, 50%) - 24px) calc(var(--y, 50%) - 24px), transparent 0 60px, #000 130px);
+  animation: dim-in .22s ease-out both; }
+.mx-dim[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .mx-dim { animation: none; } }
+/* Your agent: three small steps beside the real approval card. */
+.agent-x { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 470px); gap: 28px; align-items: center; max-width: 1000px; margin: 0 auto; }
+.agent-flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: f; }
+.agent-flow li { display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; row-gap: 2px; align-items: center; padding: 14px 16px; border-radius: 16px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.agent-flow .byo-ic { grid-row: span 2; width: 40px; height: 40px; margin: 0; border-radius: 12px; font-size: 1.1rem; vertical-align: 0; }
+.agent-flow .byo-ic svg { width: 20px; height: 20px; }
+.agent-flow b { font-size: 1.02rem; } .agent-flow li > span:last-child { color: var(--fg-2); font-size: 0.92rem; }
+.agent-stage { border-radius: 14px; box-shadow: 0 0 0 1px var(--line); }
+@media (max-width: 900px) { .agent-x { grid-template-columns: 1fr; } }
+.feature .why { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 28px; }
+.feature .why li { grid-template-columns: 1fr; }
+.feature .why-ic { grid-row: auto; margin-bottom: 8px; }
+@media (max-width: 1100px) { .feature .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .feature .why { grid-template-columns: 1fr; } }
 /* bring your own agent: three steps */
-.story { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 20fr) minmax(0, 27fr) minmax(0, 38fr); gap: 18px; align-items: stretch; }
-.st { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 22px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
-.st-n { margin: 0; display: flex; align-items: center; gap: 10px; font: 600 0.86rem var(--sans); color: var(--fg-3); }
-.st-n i { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--fg); color: var(--bg); font-style: normal; font-weight: 700; }
-.st h3 { margin: 0; font-size: 1.45rem; line-height: 1.15; letter-spacing: -0.01em; }
-.st-line { margin: auto 0 0; color: var(--fg-2); font-size: 0.98rem; }
-.st-stage { border-radius: 14px; box-shadow: 0 0 0 1px var(--line); }
-.st-orb { pointer-events: none; z-index: 2; }
-.st-agents { display: grid; gap: 8px; }
-.ag { display: grid; grid-template-columns: 44px 1fr; column-gap: 12px; align-items: center; padding: 12px; border-radius: 14px; background: var(--sunk); }
-.ag .byo-ic { grid-row: span 2; width: 44px; height: 44px; margin: 0; border-radius: 12px; font-size: 1.2rem; vertical-align: 0; }
-.ag .byo-ic svg { width: 24px; height: 24px; }
-.ag b { font-size: 1.02rem; } .ag span:last-child { color: var(--fg-3); font-size: 0.86rem; }
-.st-how summary { cursor: pointer; color: var(--fg-2); font-size: 0.9rem; }
-.st-how pre { margin: 10px 0 8px; font-size: 0.74rem; white-space: pre-wrap; word-break: break-all; }
-.st-how p { margin: 0; color: var(--fg-3); font-size: 0.86rem; }
-@media (max-width: 1000px) { .story { grid-template-columns: 1fr; } }
-/* Lens Browser: why it's different */
+@media (max-width: 1000px) { /* Lens Browser: why it's different */
 .why-h { margin: 40px 0 16px; text-align: center; font-size: 1.3rem; }
 .why { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .why li { display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; row-gap: 2px; padding: 16px; border-radius: 16px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }

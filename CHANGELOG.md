@@ -15,6 +15,25 @@ up and migrates `%APPDATA%\LensUI` where it can.
   apps folder and only reads its status.
 - Lens Apps supports portable apps (`"portable": true`): kept in Lens's apps folder, removed by
   deleting that folder.
+### Changed
+- **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
+  site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
+  one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
+- **Make it yours › Sidebar:** full or icons only, left or right, width, grouping, and whether
+  chats, now playing and spaces show.
+- **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
+  show what they will change and wait for Apply; Summarise asks about your open tabs.
+### Added
+- **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
+  and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
+  nothing installs until you choose Restart to update, which puts the desktop back, installs and
+  starts Lens again. What's new is shown in Settings › About & Testing › Updates. Also `/update`
+  in Command and "Check for updates…" in the tray menu.
+- **Report a problem:** Settings › About & Testing, the tray menu, `/report` in Command and the
+  card a crashed window shows. Choose what to attach (versions, recent log, latest crash report,
+  self-test, which features are on), see exactly what will be shared with user names, e-mail
+  addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
+  uploads nothing itself.
 
 ## [0.3.0] - 2026-11-24
 

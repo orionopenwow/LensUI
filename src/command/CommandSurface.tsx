@@ -36,6 +36,7 @@ import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
+import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -144,7 +145,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         // Lens core apps as `/timer`, `/monitor`… (docs/CORE_APPS.md); ids Command already uses win.
         const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
         const withBackdrop = [...withApps, ...backdropTemplate(withApps)];
-        setTemplates([...withBackdrop, ...wallpaperTemplate(withBackdrop)]);
+        const withWallpaper = [...withBackdrop, ...wallpaperTemplate(withBackdrop)];
+        setTemplates([...withWallpaper, ...lensAppTemplates(withWallpaper)]);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -423,6 +425,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       if (isBackdropStub(template)) {
         runBackdropSlash(arg);
         hide();
+        return setText("");
+      }
+      if (isLensAppStub(template)) {
+        // /report opens Report a problem; /update checks, or restarts into an update that's ready.
+        hide();
+        void runLensAppSlash(template.id).catch(() => {});
         return setText("");
       }
       if (isWallpaperStub(template)) {

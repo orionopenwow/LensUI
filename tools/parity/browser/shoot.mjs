@@ -11,7 +11,7 @@ const shots = join(here, "shots");
 await mkdir(shots, { recursive: true });
 const { chromium } = await import(process.env.PARITY_PLAYWRIGHT ? pathToFileURL(process.env.PARITY_PLAYWRIGHT).href : "playwright");
 const AAA = ["newtab", "newtab-empty", "suggest", "loading", "error-dns", "error-cert", "error-offline", "history", "downloads", "downloads-empty", "import-pick"];
-const SCENES = ["frame", "agent", "approval", "transcript", "address", "customise", "import", "ai", "timeline", "results", "aioff", "horizontal", "locked", "presentation", ...AAA];
+const SCENES = ["sidebar", "sidebar-stack", "sidebar-many", "sidebar-plan", "sidebar-stack-plan", "sidebar-right", "frame", "agent", "approval", "transcript", "address", "customise", "import", "ai", "timeline", "results", "aioff", "horizontal", "locked", "presentation", ...AAA];
 const SIZES = { presentation: [1440, 1720] };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png" };
