@@ -404,7 +404,7 @@ export const PAGES: PageDef[] = [
     description: "Report a problem, Lens updates, crash reports, the safety net, self-test, backups and the Tester Hub.",
     icon: "flask",
     color: "#FBBF24",
-    controls: ["Report a problem", "Check for updates", "Run setup", "Run self-test", "Back up settings"],
+    controls: ["Report a problem", "Check for updates", "Run setup", "Run self-test"],
     keywords: ["about", "version", "setup", "run setup", "update lens", "restart to update", "what's new", "report a bug", "report a problem", "bug report", "feedback", "github issue", "crash reports", "safe mode", "safety net", "self test", "backup", "restore", "tester", "remove all lens changes", "uninstall"],
     sections: [
       { id: "report", label: "Report a problem", keywords: ["bug", "report a bug", "feedback", "issue", "something broke"] },
