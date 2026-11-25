@@ -48,6 +48,8 @@ export const discardRelease = (token: string) => invoke("apps_release_discard", 
 export const openApp = (appId: string) => invoke("apps_open", { appId });
 export const openLink = (appId: string, url: string) => invoke("apps_open_link", { appId, url });
 export const revealApp = (appId: string) => invoke("apps_reveal", { appId });
+/** Removes a portable app Lens keeps in its own apps folder (no Windows uninstaller involved). */
+export const removePortable = (appId: string) => invoke("apps_portable_remove", { appId });
 export const recipePreview = (appId: string) => invoke<RecipeStepView[]>("apps_recipe_preview", { appId });
 export const applyRecipe = (appId: string, chosen: number[]) => invoke("apps_recipe_apply", { appId, chosen });
 export const revertRecipe = (appId: string) => invoke("apps_recipe_revert", { appId });

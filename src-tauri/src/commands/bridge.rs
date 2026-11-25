@@ -119,6 +119,8 @@ pub(crate) struct BridgeStatus {
     hosts: Vec<BrowserHostStatus>,
     url_scheme_installed: bool,
     explorer_verbs_installed: bool,
+    /// On, but installed before Lens added some places (inside folders, drives): "Update" adds them.
+    explorer_verbs_outdated: bool,
     chromium_extension_id: String,
     firefox_extension_id: String,
     extra_extension_ids: Vec<String>,
@@ -148,7 +150,9 @@ fn status() -> BridgeStatus {
             })
             .collect(),
         url_scheme_installed: reg::is_installed(&manifest::url_scheme_plan(&exe)),
-        explorer_verbs_installed: reg::is_installed(&manifest::explorer_plan_with(&exe, &bridge::actions::load_state().hidden())),
+        explorer_verbs_installed: reg::is_owned(manifest::FILE_ROOT),
+        explorer_verbs_outdated: reg::is_owned(manifest::FILE_ROOT)
+            && !reg::is_installed(&manifest::explorer_plan_with(&exe, &bridge::actions::load_state().hidden())),
         chromium_extension_id: manifest::DEFAULT_CHROMIUM_ID.into(),
         firefox_extension_id: manifest::DEFAULT_FIREFOX_ID.into(),
         extra_extension_ids: s.extra_extension_ids,

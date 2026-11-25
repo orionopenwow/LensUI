@@ -7,8 +7,9 @@
 name: build
 
 on:
+  # Pushes to main and tags only: branches are tested once, through their pull request.
   push:
-    branches: ["**"]
+    branches: ["main"]
     paths-ignore:
       - "docs/site/**"
       - "docs/media/**"
@@ -175,6 +176,9 @@ jobs:
       - name: Render every surface
         run: node tools/parity/shoot.mjs
 
+      - name: Render every Lens setup page (first launch and What's new, dark and light)
+        run: node tools/parity/setup/shoot.mjs
+
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
       - name: Approval card gallery (Needs your OK)
@@ -235,6 +239,7 @@ jobs:
           name: parity-screenshots
           path: |
             tools/parity/shots/
+            tools/parity/setup/shots/
             tools/parity/command/shots/
             tools/parity/browser/shots/
             tools/parity/snip/shots/

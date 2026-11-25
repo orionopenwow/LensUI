@@ -18,6 +18,7 @@ Answers and approvals appear inline. It is **off by default**, and turning it of
 | Ctrl + middle-click |  | Browsers use this to open links in a background tab; the card warns about it. |
 | Hotkey only |  | No mouse hook at all. |
 | **Ctrl + Alt + Q** hotkey | ✓ | Works in every mode and opens at the pointer. Registered only while the feature is on. |
+| **Lens ›** in Lens's own menus | ✓ | Dock app and Shelf item menus end with a "Lens ›" row that pans into these actions (docs/RIGHTCLICK.md, "Lens in every menu"). Works even when the global trigger is off. |
 
 **Why Ctrl+Alt+right-click is the default.** The other options each clash with something:
 

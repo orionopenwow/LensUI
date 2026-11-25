@@ -11,8 +11,10 @@ export function approvalReference(appId: string, mode: PopoverMode): string {
   return `app:${appId}:${mode}`;
 }
 
-export function approvalText(app: Pick<CatalogApp, "name">, mode: PopoverMode): string {
-  return mode === "run" ? `Run the installer for ${app.name}` : `${VERB[mode]} ${app.name}`;
+export function approvalText(app: Pick<CatalogApp, "name"> & { install?: CatalogApp["install"] }, mode: PopoverMode): string {
+  const portable = !!(app.install as { portable?: boolean } | undefined)?.portable;
+  if (mode === "run") return portable ? `Keep ${app.name} in Lens's apps folder` : `Run the installer for ${app.name}`;
+  return `${VERB[mode]} ${app.name}`;
 }
 
 /** The card for a Lens Apps confirmation. `target` is the app that is actually installed
@@ -38,11 +40,15 @@ export function appApprovalPreview(target: CatalogApp, mode: PopoverMode, prepar
     question: `${approvalText(target, mode)}?`,
     reason:
       mode === "uninstall"
-        ? "Runs the app's own uninstaller."
+        ? (target.install as { portable?: boolean }).portable
+          ? "Deletes the copy Lens keeps in its apps folder."
+          : "Runs the app's own uninstaller."
         : mode === "run"
-          ? "Downloaded from its GitHub release and checked. Nothing runs until you say so."
+          ? (target.install as { portable?: boolean }).portable
+            ? "Downloaded from its GitHub release and checked. Lens keeps it in its own apps folder; nothing runs until you open it."
+            : "Downloaded from its GitHub release and checked. Nothing runs until you say so."
           : "Installs from the source below after it is checked.",
-    verb: VERB[mode],
+    verb: mode === "run" && (target.install as { portable?: boolean }).portable ? "Keep it" : VERB[mode],
     denyLabel: "Cancel",
     kind: "none",
     details,

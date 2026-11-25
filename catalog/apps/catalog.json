@@ -22,6 +22,11 @@
       "id": "essentials",
       "title": "Essentials",
       "subtitle": "Free tools almost everyone wants"
+    },
+    {
+      "id": "lens-family",
+      "title": "From the makers of Lens",
+      "subtitle": "Companion apps that work with Lens"
     }
   ],
   "categories": [
@@ -3832,6 +3837,83 @@
             ".wav",
             ".mp3",
             ".mp4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thumbdesk",
+      "name": "ThumbDesk",
+      "category": "utilities",
+      "collections": [
+        "lens-family",
+        "essentials"
+      ],
+      "status": "stable",
+      "pitch": "Use your whole PC from an Xbox or PlayStation controller: cursor, clicks, shortcuts, voice and scripts.",
+      "why": "From the makers of Lens. A 120 Hz dual-stick cursor, modifier layers, voice commands, a radial menu and DualSense gyro, with an anti-cheat guard that pauses itself in protected and Steam games. One portable program, no drivers.",
+      "replaces": [
+        "Steam Desktop Configuration",
+        "Gopher360"
+      ],
+      "openSource": true,
+      "license": "MIT",
+      "licenseVerified": true,
+      "publisher": "orionopenwow",
+      "homepage": "https://orionopenwow.github.io/ThumbDesk/",
+      "repo": "https://github.com/orionopenwow/ThumbDesk",
+      "install": {
+        "method": "githubRelease",
+        "repo": "orionopenwow/ThumbDesk",
+        "hints": [
+          "thumbdesk.exe"
+        ],
+        "portable": true,
+        "fallbackUrl": "https://github.com/orionopenwow/ThumbDesk/releases/latest"
+      },
+      "media": {
+        "icon": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/logo.png",
+        "screenshots": [
+          "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_ui_screenshot.png",
+          "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_radial_menu.png",
+          "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_lab_gyro.png"
+        ],
+        "loop": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_demo.gif",
+        "credit": "github.com/orionopenwow/ThumbDesk",
+        "sourceUrl": "https://github.com/orionopenwow/ThumbDesk",
+        "noMedia": null,
+        "iconPlate": false
+      },
+      "integration": {
+        "fileTypes": [],
+        "mcp": false,
+        "cli": null,
+        "voice": [
+          "open thumbdesk",
+          "controller mode",
+          "use my controller"
+        ],
+        "urlScheme": null
+      },
+      "lastRelease": "v2.3.0",
+      "notes": "Lens keeps ThumbDesk in its own apps folder and reads its status from ThumbDesk's local API (127.0.0.1:49152, read-only) to badge its Dock icon. Lens never sends input for it.",
+      "sources": [
+        "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/HEAD/README.md"
+      ],
+      "stars": null,
+      "size": null,
+      "platforms": [
+        "windows"
+      ],
+      "recipe": [
+        {
+          "kind": "addToDock"
+        },
+        {
+          "kind": "voiceVerbs",
+          "phrases": [
+            "open thumbdesk",
+            "controller mode"
           ]
         }
       ]

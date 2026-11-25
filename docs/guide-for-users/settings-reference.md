@@ -80,7 +80,7 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 - **Before you save** — Recording uses ffmpeg. Set it up under Transcription, or install ffmpeg and restart Lens.
   Options: Saving and sharing, Recording, Lens Snip, Shortcut, Use the Print Screen key, Start in, After a capture, Include the pointer, Suggest what to hide, Text language, Frame, Save to, File name, Recent apps, Show recent apps, Pins, Format, Quality, Frames per second, Microphone, Keep a history, Keep for.
 - **Lens Browser** — Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs.
-  Options: Sleep tabs after, Tabs awake at most, Search with, Block known ad and tracker sites, Lens right-click menu on pages, Lens buttons on pages.
+  Options: Sleep tabs after, Tabs awake at most, Search with, Block known ad and tracker sites, Lens right-click menu on pages, Lens buttons on pages, Site permissions.
 - **Permissions** — Permissions. AI & Command ›
 - **Agent safety** — Checks every step an AI agent takes, from Lens, voice or Claude, before it runs. It works on this PC and sends nothing anywhere.
 - **Guide** — Ask "how do I…" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC.
@@ -101,6 +101,14 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 
 - **Cleaner**
 
+## Accessibility
+
+- **Controller**
+
+## Gaming
+
+- **Controller**
+
 ## System & Tasks
 
 - Also here: Uptime.
@@ -115,7 +123,7 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 
 ## About & Testing
 
-- **Updates** — From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page.
+- **Updates** — From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to update. To roll back, run the previous installer from the Releases page.
 - **Crash Reports** — Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded.
 - **Safety net** — It stopped answering several times in a row. Last problem.
   Options: is paused, Held off by features.json, Settings repaired at start-up, Errors contained.

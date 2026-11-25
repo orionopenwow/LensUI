@@ -25,6 +25,25 @@ pub fn data_dir(config_dir: PathBuf) -> PathBuf {
     config_dir.join("apps")
 }
 
+/// Folder for a portable app Lens keeps itself (`apps\portable\<id>`): a release that ships one
+/// program file rather than an installer. Removing the app deletes this folder; nothing outside
+/// Lens's own data folder is written.
+pub fn portable_dir(config_dir: PathBuf, app_id: &str) -> Option<PathBuf> {
+    catalog::is_valid_app_id(app_id).then(|| data_dir(config_dir).join("portable").join(app_id))
+}
+
+/// The program file inside a portable app's folder: the first `.exe` it holds.
+pub fn portable_exe(dir: &std::path::Path) -> Option<PathBuf> {
+    let mut exes: Vec<PathBuf> = std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file() && p.extension().is_some_and(|x| x.eq_ignore_ascii_case("exe")))
+        .collect();
+    exes.sort();
+    exes.into_iter().next()
+}
+
 /// Temp folder for release downloads; cleared after each install.
 pub fn download_dir() -> PathBuf {
     std::env::temp_dir().join("LensUI-apps")
@@ -145,5 +164,30 @@ mod tests {
             rest = &rest[end..];
         }
         assert!(count >= 30, "only {count} catalogue entries");
+    }
+}
+
+#[cfg(test)]
+mod portable_tests {
+    use super::*;
+
+    #[test]
+    fn portable_dir_is_inside_lens_data_and_rejects_bad_ids() {
+        let base = PathBuf::from("C:/Users/x/AppData/Roaming/LensUI");
+        assert_eq!(portable_dir(base.clone(), "thumbdesk").unwrap(), base.join("apps").join("portable").join("thumbdesk"));
+        assert!(portable_dir(base.clone(), "../evil").is_none());
+        assert!(portable_dir(base, "").is_none());
+    }
+
+    #[test]
+    fn portable_exe_finds_the_program_file() {
+        let dir = std::env::temp_dir().join(format!("lens-portable-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(portable_exe(&dir).is_none());
+        std::fs::write(dir.join("readme.txt"), b"x").unwrap();
+        std::fs::write(dir.join("ThumbDesk.exe"), b"MZ").unwrap();
+        assert_eq!(portable_exe(&dir).unwrap().file_name().unwrap(), "ThumbDesk.exe");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

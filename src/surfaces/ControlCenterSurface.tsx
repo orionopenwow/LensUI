@@ -72,6 +72,7 @@ import { TrafficLights } from "../components/TrafficLights";
 import { RotaryDial } from "../components/RotaryDial";
 import { PillFillBar } from "../components/PillFillBar";
 import { SetupWizard } from "../components/SetupWizard";
+import { setupReason, type SetupStatus } from "../setup/flow";
 import { ThemeTab } from "../themeux/ThemeTab";
 // Backdrop Lab embed (src/studio/backdrop): loads only once scrolled into view (CreatorSlot).
 import { CreatorSlot } from "../studio/backdrop/ui/CreatorSlot";
@@ -156,6 +157,27 @@ export const ControlCenterSurface: React.FC = () => {
   // Sticky page header gets a hairline once the page scrolls.
   const [stuck, setStuck] = useState(false);
   const [showWizardManual, setShowWizardManual] = useState(false);
+  // Lens setup (docs/SETUP.md): first launch, once per new version, or when the launcher asks.
+  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
+  const [setupDismissed, setSetupDismissed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    invoke<SetupStatus>("setup_status_cmd")
+      .then((st) => alive && setSetupStatus(st))
+      .catch(() => {});
+    const un = listen("lens://setup-open", () => setShowWizardManual(true));
+    return () => {
+      alive = false;
+      un.then((f) => f()).catch(() => {});
+    };
+  }, []);
+  const autoReason = setupDismissed
+    ? null
+    : setupStatus
+      ? setupReason(setupStatus)
+      : config?.onboardingCompleted === false
+        ? "first"
+        : null;
   const [topProcesses, setTopProcesses] = useState<ProcessEntry[]>([]);
   const [cpuHistory, setCpuHistory] = useState<number[]>([18, 22, 20, 26, 24, 29, 25, 21, 24, 28, 26, 23]);
   const [monitorMode, setMonitorMode] = useState<"windows" | "processes">("windows");
@@ -338,13 +360,19 @@ export const ControlCenterSurface: React.FC = () => {
 
   return (
     <div className={`cc-shell lens-glass lens-glide-dock ${glidePhase}`}>
-      {(showWizardManual || config.onboardingCompleted === false) && (
+      {(showWizardManual || autoReason) && (
         <SetupWizard
           config={config}
           winTheme={winTheme}
+          reason={showWizardManual ? "first" : autoReason ?? "first"}
+          version={setupStatus?.version ?? ""}
+          seenVersion={setupStatus?.seenVersion ?? config?.setupSeenVersion ?? ""}
           onUpdateConfig={updateConfig}
           onApplyMasterTheme={applyMasterTheme}
-          onFinish={() => setShowWizardManual(false)}
+          onFinish={() => {
+            setShowWizardManual(false);
+            setSetupDismissed(true);
+          }}
         />
       )}
       <div className="cc-body">

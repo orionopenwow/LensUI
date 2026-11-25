@@ -11,7 +11,8 @@ import { SwitcherCard } from "../../wallpapers/SwitcherCard";
 import { matchLookPointer } from "../../themes/featuredPointer";
 import { readSchedule } from "../../themes/schedule";
 import { PackCard } from "../../components/ThemeGallery";
-import { DOCK_STYLES, DockScenePreview, dockStyleOf, dockAlignmentOf, withDock } from "../../dock/styles";
+import { useStylePick } from "../../dock/useStylePick";
+import { DOCK_STYLES, DockScenePreview, dockAlignmentOf } from "../../dock/styles";
 import { DEFAULT_AI_CONFIG } from "../../ai/contract";
 import { Segmented, Toggle } from "../../ui";
 import { useStartupBlock } from "../../hooks/useStartupBlock";
@@ -168,7 +169,7 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
 };
 
 const Dock: React.FC<SimpleProps> = ({ config, accent, updateConfig }) => {
-  const style = dockStyleOf(config);
+  const [style, pickStyle] = useStylePick(config, updateConfig);
   const alignment = dockAlignmentOf(config);
   const dock = config.dock;
   const setDock = (patch: Partial<LensConfig["dock"]>) => updateConfig({ ...config, dock: { ...dock, ...patch } });
@@ -184,7 +185,7 @@ const Dock: React.FC<SimpleProps> = ({ config, accent, updateConfig }) => {
               role="radio"
               aria-checked={style === d.id}
               className={`ss-dock ${style === d.id ? "on" : ""}`}
-              onClick={() => updateConfig(withDock({ ...config, dock: { ...dock, iconSize: d.recommendedIconSize } }, { style: d.id }))}
+              onClick={() => pickStyle(d.id)}
             >
               <DockScenePreview styleId={d.id} accent={accent} alignment={alignment} height={52} />
               <span className="ss-dock-name">{d.label}</span>

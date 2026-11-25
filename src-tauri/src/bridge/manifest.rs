@@ -204,10 +204,28 @@ pub const MEDIA_EXTENSIONS: &[&str] = &[
 pub const EXPLORER_ACTIONS: &[&str] = &["ask", "summarize", "transcribe", "shelf_add", "context_add", "micro_save", "pack_add", "ask_files"];
 
 fn verb_command(exe: &str, action: &str) -> String {
-    format!("{} --action {} \"%1\"", quoted(exe), action)
+    verb_command_for(exe, action, "%1")
 }
 
+/// `%1` is the clicked item; `%V` is the open folder when you right-click its empty background.
+fn verb_command_for(exe: &str, action: &str, arg: &str) -> String {
+    format!("{} --action {} \"{}\"", quoted(exe), action, arg)
+}
+
+/// "Lens ▸" inside a folder (right-click the empty space) and on drives: the folder verbs, on the
+/// open folder or the drive root. Multi-select doesn't apply to either.
+/// The first root Lens ever installed: present means the person turned the Explorer menu on.
+pub const FILE_ROOT: &str = "Software\\Classes\\*\\shell\\LensUI";
+pub const BACKGROUND_ROOT: &str = "Software\\Classes\\Directory\\Background\\shell\\LensUI";
+pub const DRIVE_ROOT: &str = "Software\\Classes\\Drive\\shell\\LensUI";
+
 fn submenu(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)], hidden: &[String]) {
+    submenu_with(p, root, exe, verbs, hidden, "%1", true);
+}
+
+/// `multi`: offer the verbs that take several selected items (not inside a folder or on a drive,
+/// where there is only ever one target).
+fn submenu_with(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)], hidden: &[String], arg: &str, multi: bool) {
     p.root(root);
     p.set(root, Some("MUIVerb"), "Lens");
     p.set(root, Some("Icon"), &format!("{},0", quoted(exe)));
@@ -217,12 +235,16 @@ fn submenu(p: &mut RegPlan, root: &str, exe: &str, verbs: &[(&str, &str, &str)],
         if hidden.iter().any(|h| h == action) {
             continue;
         }
+        let takes_many = MULTI_SELECT_ACTIONS.contains(action);
+        if takes_many && !multi {
+            continue;
+        }
         let vk = format!("{}\\shell\\{}", root, key);
         p.set(&vk, Some("MUIVerb"), label);
-        if MULTI_SELECT_ACTIONS.contains(action) {
+        if takes_many {
             p.set(&vk, Some("MultiSelectModel"), "Player");
         }
-        p.set(&format!("{}\\command", vk), None, &verb_command(exe, action));
+        p.set(&format!("{}\\command", vk), None, &verb_command_for(exe, action, arg));
     }
 }
 
@@ -236,8 +258,10 @@ pub fn explorer_plan(exe: &str) -> RegPlan {
 /// Adds "Get transcript with Lens" on audio/video types and "Lens Command here" on the desktop.
 pub fn explorer_plan_with(exe: &str, hidden: &[String]) -> RegPlan {
     let mut p = RegPlan::default();
-    submenu(&mut p, "Software\\Classes\\*\\shell\\LensUI", exe, FILE_VERBS, hidden);
+    submenu(&mut p, FILE_ROOT, exe, FILE_VERBS, hidden);
     submenu(&mut p, "Software\\Classes\\Directory\\shell\\LensUI", exe, FOLDER_VERBS, hidden);
+    submenu_with(&mut p, BACKGROUND_ROOT, exe, FOLDER_VERBS, hidden, "%V", false);
+    submenu_with(&mut p, DRIVE_ROOT, exe, FOLDER_VERBS, hidden, "%1", false);
     if !hidden.iter().any(|h| h == "transcribe") {
         for ext in MEDIA_EXTENSIONS {
             let root = format!("Software\\Classes\\SystemFileAssociations\\{}\\shell\\LensUI.Transcribe", ext);
@@ -325,7 +349,7 @@ mod tests {
     #[test]
     fn explorer_plan_covers_files_folders_and_media() {
         let p = explorer_plan(EXE);
-        assert_eq!(p.roots.len(), 3 + MEDIA_EXTENSIONS.len());
+        assert_eq!(p.roots.len(), 5 + MEDIA_EXTENSIONS.len());
         let file_cmds: Vec<&RegValue> = p.values.iter().filter(|v| v.key.starts_with("Software\\Classes\\*\\") && v.key.ends_with("\\command")).collect();
         assert_eq!(file_cmds.len(), FILE_VERBS.len());
         assert!(file_cmds.iter().all(|v| v.value.starts_with(&format!("\"{}\" --action ", EXE)) && v.value.ends_with(" \"%1\"")));
@@ -363,13 +387,33 @@ mod tests {
     }
 
     #[test]
+    fn lens_submenu_inside_folders_and_on_drives() {
+        let p = explorer_plan(EXE);
+        for root in [BACKGROUND_ROOT, DRIVE_ROOT] {
+            assert!(p.roots.contains(&root.to_string()), "{root} is installed and removed with the rest");
+            assert!(p.values.iter().any(|v| v.key == root && v.name.as_deref() == Some(OWNED_MARKER)));
+            assert!(p.values.iter().any(|v| v.key == root && v.name.as_deref() == Some("SubCommands") && v.value.is_empty()));
+            assert!(p.values.iter().any(|v| v.key == root && v.name.as_deref() == Some("Icon")));
+            // One target only: no "Ask about these folders".
+            assert!(!p.values.iter().any(|v| v.key.starts_with(root) && v.value.contains("--action ask_files")));
+            assert!(!p.values.iter().any(|v| v.key.starts_with(root) && v.name.as_deref() == Some("MultiSelectModel")));
+        }
+        // Inside a folder the target is the open folder (%V); on a drive it is the drive (%1).
+        let cmd = |root: &str| p.values.iter().find(|v| v.key == format!("{root}\\shell\\10ask\\command")).map(|v| v.value.clone()).unwrap();
+        assert_eq!(cmd(BACKGROUND_ROOT), format!("\"{}\" --action ask \"%V\"", EXE));
+        assert_eq!(cmd(DRIVE_ROOT), format!("\"{}\" --action ask \"%1\"", EXE));
+        // Never Lens Cleaner's own drive verb.
+        assert!(!p.roots.iter().any(|r| r.contains("Drive\\shell\\") && !r.ends_with("\\LensUI")));
+    }
+
+    #[test]
     fn hidden_actions_are_left_out_of_explorer() {
         let hidden = vec!["micro_save".to_string(), "transcribe".to_string(), "command_here".to_string()];
         let p = explorer_plan_with(EXE, &hidden);
         assert!(!p.values.iter().any(|v| v.value.contains("--action micro_save")));
         assert!(!p.values.iter().any(|v| v.key.contains("LensUI.Transcribe")));
         assert!(!p.roots.contains(&DESKTOP_ROOT.to_string()));
-        assert_eq!(p.roots.len(), 2);
+        assert_eq!(p.roots.len(), 4);
         // Removing what was installed must cover every root the full plan can create.
         let full = explorer_plan(EXE);
         assert!(p.roots.iter().all(|r| full.roots.contains(r)));

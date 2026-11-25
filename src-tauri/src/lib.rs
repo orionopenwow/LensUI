@@ -61,6 +61,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod thumbdesk;
 mod cleaner;
 mod bridge;
 mod browser;
@@ -759,6 +760,7 @@ pub fn run() {
             commands::release::write_plugin_frame_cmd,
             commands::release::list_crash_reports_cmd,
             commands::release::read_crash_report_cmd,
+            commands::setup_flow::setup_status_cmd,
             commands::release::open_crashes_folder_cmd,
             commands::release::get_update_settings_cmd,
             commands::release::set_update_settings_cmd,
@@ -874,6 +876,9 @@ pub fn run() {
             commands::apps::apps_release_run,
             commands::apps::apps_release_discard,
             commands::apps::apps_open,
+            commands::apps::apps_portable_remove,
+            commands::thumbdesk::thumbdesk_info,
+            commands::thumbdesk::thumbdesk_open,
             commands::apps::apps_open_link,
             commands::apps::apps_recipe_preview,
             commands::apps::apps_integrations,

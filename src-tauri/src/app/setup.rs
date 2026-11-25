@@ -226,7 +226,7 @@ pub(crate) fn run_setup(
             && label != "testerhub"
             && label != "studio"
             && (!initial_config.func.lazy_windows
-                || (label == "settings" && !initial_config.onboarding_completed));
+                || (label == "settings" && crate::commands::setup_flow::setup_due(&initial_config)));
         // Claim the label first: a first-use build (`ensure_window`) started from another thread at
         // the same moment would otherwise build a second window under the same label, leaving an
         // orphaned page Tauri no longer knows about (seen in CI as two Settings pages).
@@ -325,6 +325,8 @@ pub(crate) fn run_setup(
     crate::app::safe_start::mark_started_when_up();
     // Lens Cleaner: snapshot / low-space alert / weekly SAFE clean, each off until turned on.
     crate::commands::cleaner::start_background(handle.clone());
+    // ThumbDesk: the badge on its Dock icon (idle unless it's installed and pinned).
+    crate::commands::thumbdesk::start_badge(handle.clone());
 
     // Auto-tiling + workspaces (both default off; inert until enabled)
     {

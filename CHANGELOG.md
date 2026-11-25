@@ -8,6 +8,44 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **ThumbDesk in Lens:** the controller companion from the makers of Lens (use the whole PC from an
+  Xbox or PlayStation controller) is in Lens Apps under "From the makers of Lens", with a "Use a
+  controller" card in Settings › Gaming and Accessibility, `/thumbdesk` in Command, and a small
+  "Voice"/"Paused" badge on its Dock icon. Lens keeps it as a verified portable program in its own
+  apps folder and only reads its status.
+- Lens Apps supports portable apps (`"portable": true`): kept in Lens's apps folder, removed by
+  deleting that folder.
+### Changed
+- **Themes change colours only.** Applying a theme or featured look no longer changes the Dock's
+  style, size, motion or position; the look's font and shape style come along only when "Also use
+  the look's font and shape" is ticked. Theme descriptions no longer promise a Dock layout.
+- **Settings and the Dock search keep their own size** on every Dock style (Slim and Minimal no
+  longer squeeze them, Taskbar no longer stretches them across the screen). With the Taskbar
+  style they open like the Windows 11 Start menu and Search: above the bar with Windows' gap,
+  centred or at the start side, not fused to the bar.
+- Picking Dock styles quickly restyles the Dock once, when the clicks stop.
+
+- **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
+  site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
+  one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
+- **Make it yours › Sidebar:** full or icons only, left or right, width, grouping, and whether
+  chats, now playing and spaces show.
+- **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
+  show what they will change and wait for Apply; Summarise asks about your open tabs.
+### Added
+- **Lens setup on the first launch and after every new version:** pick a Dock (floating is the
+  default), colours and optional extras, or read what's new after an update. Nothing changes
+  until Finish, and Skip keeps everything as it is. Run it again from Settings › About & Testing
+  or by typing "setup" in Command (docs/SETUP.md).
+- **Launch-Lens-UI.bat** says "Lens", installs dependencies only when `bun.lock` changed, offers
+  the dev build or your last built Lens, and opens the setup once after the folder was updated.
+- **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
+  Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;
+  ← or Esc pans back. Picking one runs it in the Magic window. Alt+right-click still opens the
+  Magic window directly.
+- Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›.
+- The File Explorer "Lens ›" menu (off until you add it in Settings › Connections) now also
+  appears inside folders and on drives. Existing installs see **Update…** to add the new places.
 - **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
   and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
   nothing installs until you choose Restart to update, which puts the desktop back, installs and
