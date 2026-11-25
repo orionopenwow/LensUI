@@ -79,6 +79,13 @@ pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
     crate::app::place::place_window(&dock, x, y, w, h);
 }
 
+/// Whether the auto-hide watcher currently has the Top Bar shown (the shared one-owner flag).
+pub(crate) fn topbar_shown_state(app: &AppHandle) -> bool {
+    app.try_state::<AppState>()
+        .map(|s| s.topbar_visible.load(std::sync::atomic::Ordering::Relaxed))
+        .unwrap_or(true)
+}
+
 pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
     if let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) {
         let size = monitor.size();
@@ -118,11 +125,16 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
             crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
-            let _ = topbar.set_ignore_cursor_events(false);
             if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
+                // Repositioning (every settings save, theme change or reload) keeps the bar in the
+                // state the auto-hide watcher has it in. Forcing "shown" here used to pop an
+                // auto-hidden bar back up behind the watcher's back, where it stayed stuck until
+                // the pointer touched the top edge.
+                let shown = topbar_shown_state(app);
+                let _ = topbar.set_ignore_cursor_events(!shown);
                 let _ = topbar.unminimize();
                 let _ = topbar.show();
-                let _ = app.emit("lens://topbar-visible", true);
+                let _ = app.emit("lens://topbar-visible", shown);
             } else {
                 let _ = topbar.hide();
             }
@@ -505,6 +517,10 @@ pub(crate) fn spawn_watcher(
                     .get_webview_window("topbar")
                     .filter(|_| crate::app::loadguard::may_show("topbar"))
                 {
+                    // One owner of "shown": the shared flag. Other paths (opening Search, a settings
+                    // save) may show the bar by setting it; the watcher adopts that here, so it can
+                    // still hide the bar later instead of believing it is already hidden.
+                    topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
                     if cfg.top_bar.enabled && cfg.dock.show_top_bar {
                         let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
@@ -650,6 +666,12 @@ pub(crate) fn spawn_watcher(
                             let _ = topbar_win.unminimize();
                             let _ = topbar_win.show();
                             let _ = watcher_handle.emit("lens://topbar-visible", true);
+                        } else if tick % 30 == 0 {
+                            // About every 2 s, restate the current state to the bar only, so a page
+                            // that missed an event (it reloaded, an emit was dropped) cannot stay
+                            // drawn while Lens has it hidden, or the reverse.
+                            let _ = topbar_win.set_ignore_cursor_events(!topbar_visible);
+                            let _ = watcher_handle.emit_to("topbar", "lens://topbar-visible", topbar_visible);
                         }
                     }
                 }
