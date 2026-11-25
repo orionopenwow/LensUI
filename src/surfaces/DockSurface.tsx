@@ -548,6 +548,22 @@ export const DockSurface: React.FC = () => {
     });
   };
 
+  // Focus can leave without a blur event reaching the page (Win32 focus handoffs, another app
+  // stealing the foreground): while search is open, check focus twice a second as well, and close
+  // after two misses in a row unless the pointer is still on the Dock.
+  useEffect(() => {
+    if (!dockSearchOpen) return;
+    let misses = 0;
+    const id = window.setInterval(() => {
+      if (performance.now() - searchOpenedAtRef.current < 600) return;
+      const pointerOnDock = !!pillRef.current?.matches(":hover");
+      misses = !document.hasFocus() && !pointerOnDock ? misses + 1 : 0;
+      if (misses >= 2) closeInDockLauncher();
+    }, 400);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dockSearchOpen]);
+
   // Which shape is wider along the panel/Dock joint (see DockSurface.css › One shape while
   // searching): the narrower one squares its joined corners so the two read as one outline.
   useLayoutEffect(() => {

@@ -526,8 +526,11 @@ const SCENARIOS = [
         }
       };
       const ps = (cmd) => execFileSync("powershell", ["-NoProfile", "-Command", cmd], { encoding: "utf8" });
-      // 1. Another app takes focus.
+      // 1. Another app takes focus. (Only meaningful if the Dock had focus: a runner that never
+      // gives it the foreground can't take it away.)
       await openSearch();
+      const hadFocus = await dock.evaluate(() => document.hasFocus());
+      if (!hadFocus) console.log("note  dock-search-dismiss: the Dock never had focus on this runner; the focus-loss step checks the no-focus path");
       ps("$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null");
       await waitClosed("focus moved to Notepad");
       ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
