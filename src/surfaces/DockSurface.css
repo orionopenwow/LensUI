@@ -2199,9 +2199,12 @@
  * sits on the Dock), so no line or step in colour shows where they meet. Only outer corners stay
  * round: a Dock narrower than the panel squares its joined corners, a bar wider than the panel
  * squares the panel's. Checked pixel by pixel in tools/robust/dock-layout.mjs. */
+/* Both use the panel's lighter (elevated) fill, flat: identical across the joint on every edge,
+ * and at least as light as any point of the panel's old gradient, so its muted text keeps its
+ * contrast. */
 .dock-stage:not(.dock-style-islands) .dock-pill.is-expanded-launcher,
 .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
-  background: var(--lens-bg-surface);
+  background: color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent);
 }
 /* The Dock's own shadow carries a 1 px inset highlight along its top: that was the bright line
  * under the panel (and under Settings, see .is-fused-top). While joined, the panel's shadow
