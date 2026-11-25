@@ -245,6 +245,8 @@ pub const CHANGES: &[Change] = &[
         writes: &[
             "HKCU\\Software\\Classes\\*",
             "HKCU\\Software\\Classes\\Directory\\shell",
+            "HKCU\\Software\\Classes\\Directory\\Background\\shell",
+            "HKCU\\Software\\Classes\\Drive\\shell\\LensUI",
             "HKCU\\Software\\Classes\\DesktopBackground",
             "HKCU\\Software\\Classes\\SystemFileAssociations",
         ],

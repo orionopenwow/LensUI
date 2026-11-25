@@ -12,6 +12,7 @@ import { useAiRequest } from "../ai/client";
 import { INITIAL_RUN, pendingApprovals, type AiRunState, type AiToolStep } from "../ai/contract";
 import { MarkdownLite } from "../ai/MarkdownLite";
 import { ActionIcon } from "../context/ActionIcon";
+import { shouldRun } from "./lensPanModel";
 import { DEFAULT_PREFS, type MenuPrefs, type UsageCounts } from "../context/actions";
 import { contextMenuGet, contextMenuRecordUse, shelfMicroSave } from "../context/contract";
 import {
@@ -178,8 +179,14 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       .catch(() => {});
   }, [preview]);
 
+  // A row already picked in a Lens menu's "Lens ›" panel (src/magic/LensPan.tsx): run it once
+  // the rows for this open are known. Dropped if it doesn't turn up within two seconds.
+  const pendingRun = useRef<{ id: string; seq: number; until: number } | null>(null);
+
   const accept = useCallback(
     (p: MagicOpen) => {
+      const run = shouldRun(p, Date.now());
+      pendingRun.current = run ? { id: run, seq: p.seq, until: Date.now() + 2000 } : null;
       setOpen(p);
       setResult(null);
       ai.reset();
@@ -289,6 +296,20 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       note(String(e), false);
     }
   };
+
+  useEffect(() => {
+    const p = pendingRun.current;
+    if (!p || !t || open?.seq !== p.seq) return;
+    if (Date.now() > p.until) {
+      pendingRun.current = null;
+      return;
+    }
+    const row = [...set.top, ...set.more].find((r) => r.id === p.id);
+    if (!row) return;
+    pendingRun.current = null;
+    void runRow(row);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, set, t]);
 
   const ask = async (question: string, title = "Ask") => {
     if (!t || preview) return;

@@ -57,7 +57,8 @@ fn now_ms() -> u64 {
 }
 
 /// Places, fills and shows the window for these targets at the cursor.
-fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, resolve_ms: u32, at_ms: u64) -> Result<(), String> {
+#[allow(clippy::too_many_arguments)]
+fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, resolve_ms: u32, at_ms: u64, run: Option<String>) -> Result<(), String> {
     let win = ensure_window(app)?;
     let ms = magic::monitors();
     let p = placement::place(&ms, (x, y), magic::WINDOW_W, magic::WINDOW_H);
@@ -72,6 +73,7 @@ fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, r
         via: via.into(),
         resolve_ms,
         at_ms,
+        run,
     };
     if let Ok(mut l) = last().lock() {
         *l = Some(payload.clone());
@@ -99,7 +101,8 @@ fn open_at(app: &AppHandle, x: i32, y: i32, lens: Option<LensTargetInput>, via: 
         magic::target::resolve(&facts)
     };
     let resolve_ms = started.elapsed().as_millis().min(u32::MAX as u128) as u32;
-    show(app, x, y, targets.into_iter().map(Into::into).collect(), via, resolve_ms, at_ms)
+    let run = lens.as_ref().and_then(|l| l.run_id());
+    show(app, x, y, targets.into_iter().map(Into::into).collect(), via, resolve_ms, at_ms, run)
 }
 
 fn cursor() -> (i32, i32) {

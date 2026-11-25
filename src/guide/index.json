@@ -2650,7 +2650,7 @@
    "id": "setting.ai.connectionscard.file-explorer-right-click",
    "kind": "setting",
    "title": "File Explorer right-click",
-   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
+   "text": "",
    "path": [
     "Settings",
     "AI & Command",
@@ -7465,6 +7465,21 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "hotkey.shift-f10",
+   "kind": "hotkey",
+   "title": "Shift+F10",
+   "text": "Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (Shift+F10).",
+   "path": [
+    "Keyboard",
+    "Shift+F10"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
    "id": "hotkey.ctrl-v",
    "kind": "hotkey",
    "title": "Ctrl+V",
@@ -11028,7 +11043,7 @@
    "id": "doc.magic.1",
    "kind": "doc",
    "title": "Magic right-click window: How you open it",
-   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and Ctrl+Alt+M are Lens shortcuts. - Plain right-click belongs to apps. - Shift+right-click is Explorer's \"extended menu\". - Ctrl+right-click is used by some editors. Ctrl+A",
+   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Lens › in Lens's own menus ✓ Dock app and Shelf item menus end with a \"Lens ›\" row that pans into these actions (docs/RIGHTCLICK.md, \"Lens in every menu\"). Works even when the global trigger is off. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Sh",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -12615,7 +12630,7 @@
    "id": "doc.rightclick.11",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Explorer and desktop",
-   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses MultiSelectModel=Player . Explorer starts one process per selected item, and the bridge merges ask files requests that arrive within 1.5 s into one pending request ( ipc::coalesce files , capped at 100 files). BridgeContext.files carries all of them. Browsers can never name files. Hidden actions. Explorer leave",
+   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Inside a folder (empty space) The folder verbs on the open folder ( \"%V\" ), without \"Ask about these folders\" Drives The folder verbs on the drive root, without \"Ask about these folders\". A drive root reaches Lens as C:\" (Windows reads \"C:\\\" as an escaped quote); bridge::cli::detect turns it back into C:\\ Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses Multi",
    "path": [
     "Docs",
     "Right-click everywhere, micro-saves and context packs",
@@ -12629,7 +12644,24 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.15",
+   "id": "doc.rightclick.12",
+   "kind": "doc",
+   "title": "Right-click everywhere, micro-saves and context packs: Lens in every menu (\"Lens ›\")",
+   "text": "Lens's own right-click menus end with one Lens › row (the small Lens logo). Hovering it for 160 ms, clicking it, or pressing → / Enter pans the menu sideways into the Magic actions for the same item; ← / Esc / Backspace pan back. Picking an action opens the Magic window for that item and runs it there (answers, confirmations and undo look the same as everywhere else); the last row, More in Lens… , opens the Magic window without running anything. Where Its own rows Then --- --- --- Dock app windows, Min · Max · Top, New Window, Run as Admin, File Location, Unpin… Lens › Shelf item Use as context, Copy, Pin/Unpin, Remove Lens › Notification (no menu of its own) right-click opens the Magic window directly - One component. src/magic/LensPan.tsx ( LensPan wraps a menu's rows; LensMenuRow is the row) and src/magic/LensContextMenu.tsx for items that had no menu. The panel's rows use the host me",
+   "path": [
+    "Docs",
+    "Right-click everywhere, micro-saves and context packs",
+    "Lens in every menu (\"Lens ›\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md",
+    "heading": "Lens in every menu (\"Lens ›\")"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
+   "id": "doc.rightclick.16",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 3. Lens Command: auto-attach the active pack",
    "text": "In src/command/CommandSurface.tsx , where the context chips are built:",
@@ -12646,7 +12678,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.16",
+   "id": "doc.rightclick.17",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 4. Control Center mounts",
    "text": "Mount these in the AI & Command tab, after ClipboardCard : Mount the micro-save toast once in a surface that is always present, such as the notifications surface or TopBarSurface :",
@@ -12663,7 +12695,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.17",
+   "id": "doc.rightclick.18",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 5. MCP: packs as resources and prompts (`src-tauri/src/win_mcp.rs`, owned by the claude-control package)",
    "text": "Replace \"resources/list\" \"prompts/list\" = rpc error(…) with the code below. Also advertise \"resources\": {}, \"prompts\": {} in initialize capabilities. Two rules for this snippet: - Approval. Reading a pack is read-only, but it is user content. Gate resources/read behind the same \"Allow AI apps to connect\" approval the tools use. - Local-only packs. Never serve a pack whose items are local-only ( PackView.local only ).",
@@ -12680,7 +12712,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.18",
+   "id": "doc.rightclick.19",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 6. Lens Browser (`src/browser/*`)",
    "text": "YouTube in Lens Browser can reuse extensions/browser/src/youtube.js (pure) and content/ytPage.js (inject into the page).",
@@ -12697,7 +12729,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.19",
+   "id": "doc.rightclick.20",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 7. Dock, Lens Mini, Shelf, clipboard and notifications",
    "text": "Build each right-click menu with menuFor({ kind, surface }) : Place Call --- --- Shelf item { kind: \"shelf\", surface: \"shelf\" } Clipboard row ( ClipboardPane.tsx ) { kind: \"clipboard\", surface: \"clipboard\" } Notification ( NotificationCenterPane.tsx ) { kind: \"notification\", surface: \"notification\" } Dock app { kind: \"app\", surface: \"dock\" } Lens Mini tiles { kind: \"selection\", surface: \"mini\" } Run actions as follows: - AI actions: ai ask with the bridge's prompt wording ( bridge/prompt.rs ), or expandPrompt for custom actions. - micro save : shelfMicroSave({ text, title, url, source app }) . - pack add : open the pack picker ( packList + packAddItems ). - send claude : claudeRequest(...) . Notification and clipboard rows get three entries first: Add to Shelf , Summarise and Ask . Those are the first three applicable catalogue actions with the default prefs.",
@@ -12714,7 +12746,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.23",
+   "id": "doc.rightclick.24",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clean copy",
    "text": "The rules. src/context/cleanCopy.rules.json holds the tracking parameters ( utm , fbclid , gclid , mc , igshid , HubSpot, Matomo/Piwik, Bing, Amazon and others), per-host parameters, and the \"Read more at…\" markers. Some parameters are stripped only on particular hosts. For example, si and feature are removed on YouTube and Spotify but kept everywhere else. Where the rules are used. Code Function --- --- Lens src/context/cleanCopy.ts : cleanUrl , cleanLinksInText , stripHijack Extension extensions/browser/src/cleanUrl.js . Same logic; the rules are copied into catalog.gen.js , and a test checks both produce identical results on a table of cases. In the browser. - A new Copy clean link item (catalogue id copy link ). - Copy as Markdown now cleans every link it writes. - Clip to notes sends the cleaned URL. Copy guard. In the extension settings, \"Stop sites changing what I copy\" is off by ",
@@ -12731,7 +12763,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.24",
+   "id": "doc.rightclick.25",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Page archive (\"Save page offline\")",
    "text": "The extension builds the snapshot with src/content/snapshot.js . This is our own approach; SingleFile (AGPL) is not used. 1. Clone the live DOM. 2. Remove scripts, frames, objects, on handlers, javascript: URLs and meta refresh. 3. Make all URLs absolute and add <base . 4. Inline same-origin stylesheets. 5. Inline images that are already loaded and same-origin, smallest first, through a canvas as WebP, while the file stays under the cap. Other images keep absolute URLs. 6. Add a script-blocking CSP and a lens-archive provenance meta tag. The snapshot makes no network requests. Size caps. MAX ARCHIVE BYTES is 420 KB, so one message carries the HTML plus up to 48 KB of readable text. What Lens does with it. 1. The bridge action archive save is accepted only from the browser, and only from this action. 2. shelf::archive::harden html strips scripts, frames, handlers and javascript: again, an",
@@ -12748,7 +12780,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.25",
+   "id": "doc.rightclick.26",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clipper templates",
    "text": "The syntax follows Obsidian Web Clipper (MIT, © Obsidian), credited in docs/THIRD PARTY NOTICES.md . The parser is our own: src/context/templates/parser.ts . Variables: title url domain author description published site date time selection highlights content tags keywords Filters: lower upper title trim slug safe name date:\"YYYY-MM-DD\" default:\"…\" replace:\"a\",\"b\" truncate:n join:\", \" split first last blockquote list wikilink link:\"text\" hashtags yaml list yaml string lint reports unknown variables, unknown filters and unclosed tags. Built-in templates ( templates.ts ): - \"Note with source\", with YAML front matter; - \"Highlights only\"; - \"Reading list line\". Writing. Rust shelf::clipper stores clipper.json with the approved folders and the templates. - clipper folder approve(folder, confirm) first returns a question. It approves only on confirm: true , and refuses system folders and folde",
@@ -12765,7 +12797,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.26",
+   "id": "doc.rightclick.27",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Double-click to define or translate",
    "text": "The extension setting \"Define or translate on double-click\" is off by default. When on, it covers all sites minus \"Never\" and the built-in sensitive list. It has a \"Show first\" choice (definition or translation) and a \"Translate into\" language. src/content/define.js only triggers when: - the double-clicked text is a single word, 1–40 letters ( defineWordOk ); - it is not in a sensitive field; - the site is not denied. The bubble is in a closed Shadow DOM. The request is the bridge action define with localOnly: true . Lens refuses it outright when there is no local engine. It never waits for a cloud confirmation and never falls back to Claude. No offline dictionary. None is bundled. WordNet is redistributable but about 30 MB, so that is left as a decision. Without a local model, the bubble says so.",

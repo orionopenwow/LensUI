@@ -538,6 +538,8 @@ export interface BridgeStatus {
   hosts: BrowserHostStatus[];
   urlSchemeInstalled: boolean;
   explorerVerbsInstalled: boolean;
+  /** On, but installed before Lens added some places (inside folders, drives): "Update" adds them. */
+  explorerVerbsOutdated: boolean;
   chromiumExtensionId: string;
   firefoxExtensionId: string;
   extraExtensionIds: string[];
@@ -1786,6 +1788,11 @@ export interface LensTargetInput {
   id: string;
   label: string;
   path: string | null;
+  /**
+   * A row the person already chose in the Lens panel of a right-click menu ("Lens ›"): the
+   * window opens and runs it at once. Catalogue or window-action row id, at most 64 chars.
+   */
+  run: string | null;
 }
 
 /** Rust: `wallpapers::LibraryItem` */
@@ -1897,6 +1904,8 @@ export interface MagicOpen {
   resolveMs: number;
   /** Monotonic-ish wall clock of the trigger, ms since epoch (the surface measures paint). */
   atMs: number;
+  /** Row to run straight away (chosen in a Lens right-click menu's "Lens ›" panel). */
+  run: string | null;
 }
 
 /** Rust: `magic::MagicStatus` */

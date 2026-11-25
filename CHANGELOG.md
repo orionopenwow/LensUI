@@ -16,6 +16,13 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
   show what they will change and wait for Apply; Summarise asks about your open tabs.
 ### Added
+- **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
+  Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;
+  ← or Esc pans back. Picking one runs it in the Magic window. Alt+right-click still opens the
+  Magic window directly.
+- Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›.
+- The File Explorer "Lens ›" menu (off until you add it in Settings › Connections) now also
+  appears inside folders and on drives. Existing installs see **Update…** to add the new places.
 - **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
   and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
   nothing installs until you choose Restart to update, which puts the desktop back, installs and
