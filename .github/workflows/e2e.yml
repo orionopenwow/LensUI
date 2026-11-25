@@ -102,6 +102,10 @@ jobs:
         if: always()
         run: node tools/robust/dock-layout.mjs
 
+      - name: Dock auto-hide slides (no one-frame jumps)
+        if: always()
+        run: node tools/robust/dock-slide.mjs
+
       - name: Dock pop-outs carry the shared close button
         if: always()
         run: node tools/robust/flyout-close.mjs

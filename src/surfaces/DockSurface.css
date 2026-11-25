@@ -41,6 +41,34 @@
   pointer-events: none;
 }
 
+/* Auto-hide is a visible slide (docs/DOCK_SMOOTHNESS.md › Slide): the shared ease-out moved ~70 %
+ * of the way in the first quarter of the time, so hiding read as a snap. Hiding uses the on-screen
+ * move curve (ease-in-out) for ~200 ms and only fades at the very end; revealing is a touch faster.
+ * A transition reverses from where it is, so an interrupted hide slides straight back. Reduced
+ * motion collapses the tokens to 1 ms (instant). */
+.dock-stage {
+  --dock-hide-dur: calc(var(--lens-dur-base) * 1.15);
+  --dock-reveal-dur: calc(var(--lens-dur-fast) * 1.15);
+}
+.dock-stage .dock-pill.is-hidden,
+.dock-stage .dock-split-pill.is-hidden {
+  transition:
+    transform var(--dock-hide-dur) var(--lens-ease-in-out),
+    opacity var(--lens-dur-instant) linear calc(var(--dock-hide-dur) - var(--lens-dur-instant)),
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out),
+    box-shadow var(--lens-dur-slow) var(--lens-ease-out);
+}
+.dock-stage .dock-pill:not(.is-hidden),
+.dock-stage .dock-split-pill:not(.is-hidden) {
+  transition:
+    transform var(--dock-reveal-dur) var(--lens-ease-in-out),
+    opacity var(--lens-dur-instant) linear,
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out),
+    box-shadow var(--lens-dur-slow) var(--lens-ease-out);
+}
+
 .dock-pill.is-fused-top {
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
