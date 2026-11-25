@@ -4460,7 +4460,7 @@
    "id": "card.about.updatescard",
    "kind": "card",
    "title": "Updates",
-   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page. Updates. Updates. update mode and a manual check. Updates come from GitHub Releases and are signature-checked before installing. Backend: win_update.rs",
+   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to update. To roll back, run the previous installer from the Releases page. Updates. Updates. Settings › About & Testing › Updates: update mode, \"Check now\", what's new, and \"Restart to update\". Updates come from GitHub Releases and are signature-checked before anything installs. Backend: win_update.rs. The Top Bar pill and `/update` in Command use the same state",
    "path": [
     "Settings",
     "About & Testing",
@@ -8561,6 +8561,124 @@
    "source": "docs/BROWSER_BRIDGE.md"
   },
   {
+   "id": "doc.browser-research.0",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+   "text": "Research for the site's Lens Browser section, November 2026. Every claim about Lens Browser below is checked against BROWSER AAA.md and LENS BROWSER.md; nothing here describes a feature that isn't built.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "AI browsers: what people praise, what they complain about, and where Lens Browser stands"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.1",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: The browsers people talk about",
+   "text": "Browser What it's known for What people push back on --- --- --- ChatGPT Atlas (OpenAI) ChatGPT in every tab, memory, the most aggressive agent mode Cloud-dependent; security experts warn about prompt injection; slow, janky agent runs in reviews Perplexity Comet Agentic browsing (shopping, scheduling, forms), citations, model choice Agent needs a paid plan; uses your logged-in sessions; Brave showed hidden text in images steering it Dia (The Browser Company) Reusable AI \"skills\", memory scoped to tabs macOS first; paid AI tiers; AI requests go through its servers Arc Vertical sidebar, spaces, command bar, keyboard workflow Narrower AI; uncertain roadmap Chrome with Gemini Familiar Chrome plus AI; \"auto browse\" Auto browse needs a paid Google AI plan, region-limited Edge with Copilot Microsoft 365 and Windows integration, admin policies Agent mode tied to a paid plan; inherits signed-in s",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "The browsers people talk about"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "The browsers people talk about"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.2",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What people complain about",
+   "text": "1. Agents that act without asking , using logged-in sessions to buy, send or post. Security researchers and OpenAI's own CISO call prompt injection unsolved. 2. Hidden instructions : text in a page, or near-invisible text in an image, that the agent obeys. 3. Privacy : history and page content going to an AI company's servers. 4. Speed and weight : agent tasks that are slow; AI features that raise CPU and memory use. 5. Paywalls : the agent part of most AI browsers needs a $15–20/month plan. 6. Usefulness : long prompts for simple tasks, wrong results, more novelty than help.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What people complain about"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What people complain about"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.3",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What people ask browsers for",
+   "text": "Vertical tabs (Chrome only added them in April 2026), tab search, workspaces, split view, a clean reader, transcripts for videos, control over what each site may use, an easy import from the old browser, and low memory use.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What people ask browsers for"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What people ask browsers for"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.4",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What Lens Browser does differently (true today)",
+   "text": "- It asks before it acts. Reading runs. Booking, paying, sending and submitting wait for the person, with the exact button and details shown. Passwords are never handled by the agent. - AI beside the page, not instead of it. The page stays the person's; the panel lists every click and every word typed, and Esc stops the run. - Hidden instructions are flagged, not obeyed. Text aimed at the AI, including hidden or near-invisible text, is shown to the person and left out of what the model acts on. - Site permissions are the person's call. Camera, microphone, location, notifications, clipboard and multiple downloads ask under the address bar: block, allow once, or allow for that site, and can be taken back. (Built; still to be run on a real PC, per BROWSER AAA.md.) - Light, and easy to come to. Vertical tabs, one box for tabs, bookmarks, history and search, transcripts, and an import from Ch",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What Lens Browser does differently (true today)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What Lens Browser does differently (true today)"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.5",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What the site does with this",
+   "text": "The home page leads with the browser after the docks: one headline (\"The light browser with an AI that asks first\"), one line, the real browser stepping through new tab → AI beside the page → Needs your OK → results → site permissions, and the five points above. The hero tour walks the same flow on the desk, one step per Next, with the permission bar and the injection flag as optional last stops.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What the site does with this"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What the site does with this"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.6",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: Sources",
+   "text": "- AI Browser Landscape 2026: Atlas vs Comet vs Arc vs Dia, Digital Applied - 5 Best AI Browsers for 2026, TechRepublic - The glaring security risks with AI browser agents, TechCrunch - Agentic AI browsers pose security risks, says Brave report, Digit - 5 reasons why you should not switch to an AI browser, SlashGear - AI-powered browsers are failing, Futurism - Chrome is finally getting vertical tabs, TechCrunch",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "Sources"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
    "id": "doc.claude-control.0",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail",
@@ -9628,7 +9746,7 @@
    "id": "doc.dock-smoothness.0",
    "kind": "doc",
    "title": "Dock smoothness",
-   "text": "What keeps the Dock fast and steady. Two halves: the native window side (its own section, from the native Dock PR) and the page side (styles, motion, search bar, hover, attention), below.",
+   "text": "What keeps the Dock fast and steady. Two halves: the native window side (this section) and the page side (styles, motion, search bar), which has its own section.",
    "path": [
     "Docs",
     "Dock smoothness"
@@ -9642,6 +9760,108 @@
   },
   {
    "id": "doc.dock-smoothness.2",
+   "kind": "doc",
+   "title": "Dock smoothness: Live previews (\"screens\")",
+   "text": "Symptom. Window previews could sit in the bottom-right corner of the screen and stay there, instead of appearing in the Dock's hover card and going away when the pointer left. Causes. - Previews are native DWM thumbnail windows (topmost, click-through) drawn over boxes the page measures. They were only removed when the page said \"hide\". A page that never said it (hover card closed through click-through glass, the Dock or Quick Settings hidden while the page kept running, a reload) left them on screen indefinitely. - Quick Settings' \"Open windows\" row re-requests previews every 4 s while its page is mounted. Its panel sits at the right of the screen, and a hidden panel's page still reports itself as visible, so previews kept reappearing there. - Tiles were converted to screen pixels with the asking window's origin at that moment. A window that was sliding, being resized or parked off scre",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Live previews (\"screens\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Live previews (\"screens\")"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.3",
+   "kind": "doc",
+   "title": "Dock smoothness: Bright bar on the Dock while Settings moves",
+   "text": "Causes. - The Dock drew its \"fused\" top edge (flat, joined to Settings) whenever Settings was open , even after Settings had been dragged elsewhere, leaving a bare bright seam on top of the pill. - The Dock reports its width on every frame of a width animation. Each report resized and moved the Settings window, and every native resize of a see-through WebView window can show an unpainted strip for a frame next to the Dock. Now. - The watcher emits lens://settings-docked (true only while Settings' edge sits on the pill, for every Dock edge; settings is docked , unit-tested). The Dock's fused edge follows it. - Settings follows the Dock's width only after the width has stood still for 140 ms ( SETTINGS FOLLOW MS ): one resize per change instead of one per animation frame.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Bright bar on the Dock while Settings moves"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Bright bar on the Dock while Settings moves"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.4",
+   "kind": "doc",
+   "title": "Dock smoothness: Auto-hide that sticks (\"the top Dock doesn't re-hide\")",
+   "text": "The watcher (65 ms loop, real pointer position each pass) is the single owner of \"shown\". It only stays up while something is in use , and three blockers could stay \"in use\" forever: Blocker Before Now --- --- --- Dock has keyboard focus Counted forever. Clicking an icon whose app doesn't take the foreground left the Dock focused, which also kept any stale menu flag alive. Counts for 4 s after the pointer was last on the Dock ( DOCK FOCUS GRACE MS ). Search palette visible Kept the Dock up as long as the palette window existed. Only while focused, plus 1.5 s ( FLYOUT IDLE MS ). Quick Settings visible Kept the Top Bar up as long as the panel existed. Only while focused or under the pointer (panel or bar), plus 1.5 s. PR #52's guards (stale menu after 1.2 s, click outside closes menus, visibility re-sent every ~2 s) are unchanged.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.5",
+   "kind": "doc",
+   "title": "Dock smoothness: Latency",
+   "text": "Measured on CI's Windows runner is not representative of a real desktop, so these are the paths and what each costs, not timings: - Hover → preview. The page waits 170 ms for the card's entrance, then one command; the native side creates one small window and one DWM thumbnail per tile on a dedicated thread (no COM, nothing on the UI thread). The watchdog adds one GetWindowRect , one IsWindowVisible and one GetCursorPos per 60 ms while previews are shown, and nothing otherwise. - Settings following the Dock. Was up to ~60 resizes per second during a Dock width animation; now one, 140 ms after the width settles. - Next steps. Reuse tile windows and thumbnail registrations between hovers instead of recreating them (saves a window create/destroy per tile per hover); move the 170 ms entrance wait to a measured \"card settled\" signal from the page.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Latency"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Latency"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.6",
+   "kind": "doc",
+   "title": "Dock smoothness: To check on a real PC",
+   "text": "1. Hover a Dock app with several windows: previews appear inside the card, follow the Dock as it slides, and are gone ~¼ s after the pointer leaves, including on a quick flick off the screen edge. 2. Open Quick Settings, then close it or click an app: no previews remain at the right of the screen. 3. Open Settings from the Dock and drag it away: the Dock's top edge rounds back immediately and nothing flashes on the Dock while dragging or while the Dock changes width. 4. Dock on the top edge with auto-hide: click a Dock icon, move away; the Dock hides within about half a second (4 s at most if the Dock kept focus). 5. Open Search or Quick Settings, click into an app: the bar and Dock hide again after ~1.5 s.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "To check on a real PC"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "To check on a real PC"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.7",
+   "kind": "doc",
+   "title": "Dock smoothness: Apps asking for attention",
+   "text": "Windows flashes a taskbar button orange when an app calls FlashWindowEx (a chat message, a dialog waiting behind other windows). The Lens Dock showed nothing. src-tauri/src/attention.rs registers the same shell hook Explorer uses ( RegisterShellHookWindow , HSHELL FLASH ) on its own thread and keeps one record per flashing window, grouped by executable the way the Dock groups windows. A request ends when the window is activated ( HSHELL WINDOWACTIVATED , HSHELL RUDEAPPACTIVATED ), comes to the front, or is destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own windows never count. For the Dock page: - Event lens://dock-attention , sent whole after every change: { version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] } , oldest first. Match exePath case-insensitively against get running windows / pinned app paths. - Command get doc",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Apps asking for attention"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Apps asking for attention"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.9",
    "kind": "doc",
    "title": "Dock smoothness: What good docks do for perceived latency",
    "text": "These are the techniques behind the docks and taskbars people call \"smooth\", reduced to what a web-rendered Dock can copy. - Input-to-photon first. macOS's Dock magnification and the Windows 11 taskbar both respond in the next frame after the pointer moves, and never wait on layout. The rule for a page is the same: a pointer move does arithmetic and writes transforms. It does not read layout, re-render a component tree, or cross a process boundary. - One update per frame. Mice report at 125–1000 Hz, displays refresh at 60–240 Hz. Work done per event rather than per frame is wasted, and it delays the frame that matters. Coalesce with requestAnimationFrame . - Hover intent. Neither macOS nor Windows pops a preview for every icon the pointer crosses. Windows shows taskbar thumbnails after a short rest (a few hundred ms by default, shorter once one is showing). macOS tooltips go \"warm\": afte",
@@ -9658,7 +9878,7 @@
    "source": "docs/DOCK_SMOOTHNESS.md"
   },
   {
-   "id": "doc.dock-smoothness.3",
+   "id": "doc.dock-smoothness.10",
    "kind": "doc",
    "title": "Dock smoothness: What the Lens Dock did, and what changed",
    "text": "Area Before Now --- --- --- Styles × edges No check covered the seven styles at four edges. Islands on the left/right squeezed its apps island into a 56 px strip and pushed the top icons off screen. Studio on the right edge opened its search panel off screen (a left-aligned rule beat the right-edge rule). tools/robust/dock-layout.mjs renders every style × edge, plus icon sizes 34 and 52 and a 14-pin Dock, with search closed and open. It checks that the Settings gear and the search control are whole, on screen, inside the Dock, not overlapping each other or any icon, reachable with Tab, and that the field is wide enough to type in. 140+ renders, and it runs in the robustness job. Both bugs are fixed. Search in compact styles The Dock held its width and shrank every icon to fit a 200 px slot. The text field ended up ~77 px wide and the Settings gear tiny; with many pins, icons dropped to 2",
@@ -9675,7 +9895,7 @@
    "source": "docs/DOCK_SMOOTHNESS.md"
   },
   {
-   "id": "doc.dock-smoothness.4",
+   "id": "doc.dock-smoothness.11",
    "kind": "doc",
    "title": "Dock smoothness: Apps asking for attention",
    "text": "Windows marks an app that calls FlashWindowEx (a chat message, a dialog behind other windows) by flashing its taskbar button. The Dock shows the same, in every style and at every edge: - Colour: the icon and its indicator take the urgent colour, --lens-attention . It defaults to Windows' orange ( #f7630c ), and a theme pack can override it. - Bounce: one bounce when the request starts, toward the screen centre for the Dock's edge. It uses translate only, and is dropped with reduced motion. - Highlight: a steady highlight and a full-length indicator stay until the app is activated. - Count: a count badge when there is more than one request. - Screen readers: the text \"<app needs your attention\". src/dock/attention.ts accepts the native snapshot, the event lens://dock-attention / command get dock attention , with this shape: { version, apps: [{ exePath, processName, hwnds, count, sinceMs }",
@@ -9692,7 +9912,58 @@
    "source": "docs/DOCK_SMOOTHNESS.md"
   },
   {
-   "id": "doc.dock-smoothness.5",
+   "id": "doc.dock-smoothness.12",
+   "kind": "doc",
+   "title": "Dock smoothness: Dismissal (search tray and docked Settings)",
+   "text": "Both close on: Esc, a second press of their button, the panel's ×, a click anywhere outside (on the Dock window's empty area here; on the desktop and other apps through the native watcher), focus moving to another app, the Dock auto-hiding, and another pop-out opening. Nothing stays open on a hidden Dock. Races end in one consistent state: - One owner of \"open\". A ref is set by open and close themselves, and React state follows it. A second press in the same frame sees the first one. - Stale closes do nothing. A generation counter means a close whose exit glide finishes after a newer open does nothing. - Glides are capped. A glide that never finishes (the window was hidden mid-animation) is capped at 400 ms. - Late focus loss still counts. Focus lost during the 500 ms handoff grace is checked again once the grace ends. - The real window wins. Settings' state is reconciled with the real w",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Dismissal (search tray and docked Settings)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Dismissal (search tray and docked Settings)"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.13",
+   "kind": "doc",
+   "title": "Dock smoothness: Seamless join (search panel and Settings on the Dock)",
+   "text": "While joined, the two shapes use the same fill ( --lens-bg-surface ). Neither draws a border, shadow or inset highlight on the joined edge. Only the narrower shape squares its joined corners ( data-join ). The joint lands on a whole pixel. The Dock's depth is rounded up while search is open, because a fractional edge is anti-aliased in both shapes and the background shows through as a faint line. Docked Settings is placed from the Dock's reported pill rect ( watcher::settings join top , unit-tested at 100–175 % scaling) and tucked 1 physical px under it. It used to be placed from an icon-size estimate that only fits Floating. With magnification on, the reported rect includes the icons' headroom, so placement falls back to the estimate. dock-layout.mjs samples a 9 px strip across the join for every style × edge × icon size, and fails on a pixel more than 10 levels off the fill or on a ste",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Seamless join (search panel and Settings on the Dock)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Seamless join (search panel and Settings on the Dock)"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.14",
+   "kind": "doc",
+   "title": "Dock smoothness: Slide (auto-hide)",
+   "text": "Hiding was the shared ease-out, which moved ~70 % of the way in the first quarter of the time while fading over the same span, so it read as a snap. Now: - Hide: ease-in-out over ~200 ms ( --lens-dur-base × 1.15), fading only in the last frames. - Reveal: a touch faster. - Interrupted: a transition reverses from where it is, so an interrupted hide slides back. - Reduced motion: instant. The native side never hides the Dock window for auto-hide (the watcher only sends lens://dock-visible ), so nothing cuts the slide short. tools/robust/dock-slide.mjs samples the pill every frame for 10 style/edge cases (hide, reveal, interrupted). It fails on a frame that covers more than 35 % of the way, on a slide under 8 frames, or when the Dock doesn't return to its start. With reduced motion the hide must be instant. Before → after on Floating: max step 29 % → 22 %, frames 9 → 11.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Slide (auto-hide)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Slide (auto-hide)"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.15",
    "kind": "doc",
    "title": "Dock smoothness: Further ideas, ranked (frontend only)",
    "text": "1. View transitions for style and edge changes. Wrap the config update that changes dock.style or dock.position in document.startViewTransition , which WebView2 supports. The old and new Dock then crossfade on the compositor instead of jumping (CLS 0.30 today). This needs the switch to happen inside the Dock page rather than arriving as a config event. 2. Split DockSurface.tsx (2,700 lines) into memoised DockItem s. A hover or badge change then re-renders one item instead of the whole Dock. Today's per-move work bypasses React, but a card opening still re-renders every icon. 3. Card-settled signal to the backend. Send dock preview show cmd from the card's animationend , and drop the remaining 260 ms cap. Native can then reuse tile windows between hovers, as the native section suggests. 4. Predictive preview prefetch. When the pointer decelerates toward an icon with windows, ask the backe",
@@ -9709,7 +9980,7 @@
    "source": "docs/DOCK_SMOOTHNESS.md"
   },
   {
-   "id": "doc.dock-smoothness.6",
+   "id": "doc.dock-smoothness.16",
    "kind": "doc",
    "title": "Dock smoothness: To check on a real PC",
    "text": "1. Each style at each edge, from the Dock's right-click menu: the Settings gear and the search icon are always visible and clickable. Open search: the field is wide enough to type a sentence, and nothing overlaps. 2. Magnification on, sweep fast and slowly: icons follow without lag and settle without jitter. 3. Sweep the pointer along the Dock: no hover cards flash past. Rest on an app with windows: its card opens, and moving to a neighbour switches at once. 4. Drag an app to a new place, on a bottom and on a left Dock, including a fast flick off the Dock: the order is kept, and the Dock never stays in its dragging look. 5. Get a Teams or Discord message with the app in the background: its icon turns orange and bounces once, then stays highlighted until you click it. 6. Every pop-out from the Dock shows a small × at its top-right when you point at it, and the × closes it like Esc does.",
@@ -12275,6 +12546,22 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "doc.reporting.0",
+   "kind": "doc",
+   "title": "Reporting a problem",
+   "text": "Where: Settings › About & Testing › Report a problem. Also: the tray menu (\"Report a problem…\"), /report in Command, and the \"Report a problem\" button on the card a crashed window shows. What the person fills in: what happened (required, a few words) and, optionally, the steps. What can be attached (each a switch, defaults in brackets): Attachment Default Source --- --- --- Lens and Windows versions on report::system text (Lens, Windows build, WebView2) Recent log on last 200 lines of the session log ( tester::ring ) Latest crash report on newest file in %APPDATA%\\LensUI\\crashes Self-test off the read-only run self test cmd Which features are on off config.json reduced to switches and short choices ( report::settings summary ): no free text, paths, names, lists, or anything secret-looking Privacy: the report is built and redacted in Rust ( src-tauri/src/report.rs ) with the Tester Hub's ",
+   "path": [
+    "Docs",
+    "Reporting a problem"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/REPORTING.md",
+    "heading": "Reporting a problem"
+   },
+   "source": "docs/REPORTING.md"
+  },
+  {
    "id": "doc.rightclick.0",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs",
@@ -14219,7 +14506,7 @@
    "id": "doc.vision.4",
    "kind": "doc",
    "title": "Lens vision: one desktop, not a pile of apps: Read next",
-   "text": "- Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
+   "text": "- Identity: mission, brand, design philosophy and the promises Lens keeps (start here). - Features: everything Lens does and every suggested feature, with status. - Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
    "path": [
     "Docs",
     "Lens vision: one desktop, not a pile of apps",
@@ -14537,6 +14824,192 @@
    "source": "docs/WALLPAPER_SWITCHER.md"
   },
   {
+   "id": "doc.windhawk-replacement.0",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own",
+   "text": "Status: research and plan, nothing built . Written 24 November 2026 against main after #81. Owner: the maintainer. This decides how Lens can style other apps' windows without asking people to install Windhawk, and without breaking the promises in brain/IDENTITY.md (off by default, reversible, games and anti-cheat left alone).",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Replacing Windhawk with something of our own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.1",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 1. What Windhawk does for Lens today",
+   "text": "Windhawk is a third-party, open-source mod engine. Lens ships one mod for it: windhawk/lens-window-style.wh.cpp (v1.1.0). Since #76 it is written into C:\\ProgramData\\Windhawk\\ModsSource only when the person clicks Install in Windhawk , and it excludes every name on Lens's anti-cheat list (42, kept in sync by a test). Inside every process it is allowed into, the mod: 1. reads five settings from Lens (caption colour, border colour, text colour, corner mode, dark mode); 2. calls DwmSetWindowAttribute on each top-level window: DWMWA USE IMMERSIVE DARK MODE (20), DWMWA WINDOW CORNER PREFERENCE (33), DWMWA BORDER COLOR (34), DWMWA CAPTION COLOR (35), DWMWA TEXT COLOR (36); 3. re-applies them when a window is shown (an in-process SetWinEventHook ). That is all. It doesn't paint, hook APIs, or change behaviour; it sets five documented DWM attributes from inside the app.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "1. What Windhawk does for Lens today"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "1. What Windhawk does for Lens today"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.2",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 2. What Lens already has of its own",
+   "text": "Piece What it does Where --- --- --- Out-of-process DWM engine Sets the same five attributes on other apps' windows from Lens's own process , on a refresh worker; tracks which windows it styled so an exclude rule can hand them back src-tauri/src/win dwm engine.rs Caption engine Draws Lens's window buttons as overlay windows over other apps' title bars, colour-matched row by row (#80) src-tauri/src/win caption engine.rs , caption paint.rs In-process hook (experimental, off) A Lens-built DLL loaded with a global WH CALLWNDPROC hook that applies the same five attributes from inside each process src-tauri/lens-dwm-hook/ , win dwm engine.rs Anti-cheat list and rules Process names never touched; per-app rules win rules.rs ( ANTI CHEAT FRAGMENTS ), win hook guard.rs Windhawk sync Finds Windhawk, installs/refreshes the mod on opt-in, removes it on Remove all win windhawk.rs , changes.rs So Lens ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "2. What Lens already has of its own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "2. What Lens already has of its own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.3",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 3. Why an out-of-process call can fall short",
+   "text": "These are the known or likely gaps, to be confirmed by the phase 0 spike (§6): - Integrity level (UIPI). An unelevated Lens can't change windows of elevated apps (Task Manager, admin terminals, installers). Windhawk reaches them only when it runs elevated too. - Apps that re-assert their own frame. Some apps set their own DWM attributes or redraw the caption on activate/theme change, overwriting Lens until the next refresh. In-process code can apply right after the app does; out of process, Lens must notice and re-apply. - Custom-drawn title bars (Chrome, Edge, VS Code, Electron, UWP/WinUI). Caption and text colour do nothing where the app draws its own title bar; neither approach changes that without app-specific hacks. Border colour and corners still work. - Timing. A window can flash its default colours between creation and Lens's first pass. - Win 10. Caption, border and text colour ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "3. Why an out-of-process call can fall short"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "3. Why an out-of-process call can fall short"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.5",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (a) Out-of-process only (no injection)",
+   "text": "Lens styles every window from its own process: - an out-of-context WinEvent hook ( WINEVENT OUTOFCONTEXT , no DLL is loaded into anyone) for EVENT OBJECT CREATE / SHOW / EVENT SYSTEM FOREGROUND / EVENT OBJECT LOCATIONCHANGE , so new and re-activated windows are styled within a frame or two, and windows that reset their frame are re-applied after activation (the caption engine already uses settle-and-recheck reads; reuse that); - the five DWM attributes plus DWMWA SYSTEMBACKDROP TYPE (Mica/Acrylic, Windows 11 22H2+) where the app allows it; - the caption engine for Lens window buttons; overlays for active-window borders and focus dim (already shipped); - per-app rules and the anti-cheat list exactly as today; nothing ever enters a game's process. Reproduces: all five mod effects on unelevated apps with system-drawn title bars; borders and corners on custom title bars. Not: elevated window",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(a) Out-of-process only (no injection)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(a) Out-of-process only (no injection)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.6",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (b) Our own signed injection engine",
+   "text": "A Lens-built engine like Windhawk's: inject a signed DLL into chosen processes and apply styling from inside. How Windhawk does it, for reference: it allocates memory in the target and starts a remote thread (or queues an APC for processes that haven't started) to load its engine DLL, hooks process creation to follow child processes, uses MinHook for API hooks, and keeps exclusion lists for critical system processes and many games. It needs administrator rights for elevated targets, special file permissions for UWP apps, and can't load into processes that require signed images. Reproduces: everything (a) does, plus elevated windows (if the engine runs elevated) and styling from the first frame. Could later reach custom title bars by hooking the app's drawing, which Lens has ruled out (FEATURES › Dropped). Effort: large (injector, x64/x86/ARM64 builds, child-process following, safe unload",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(b) Our own signed injection engine"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(b) Our own signed injection engine"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.7",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (c) Hybrid",
+   "text": "(a) by default for everyone; an opt-in \"deep styling\" mode for the few cases (a) can't cover, implemented by the existing lens-dwm-hook (already Lens-built, already anti-cheat-excluded, off by default), rebuilt from source and signed in releases, with a strict per-app allowlist instead of \"every process\", and fixed to refuse loading into excluded processes (B-05). Reproduces: everything, with injection only where the person chose it, per app. Effort: medium. Risk: medium, contained to the apps someone opted in.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(c) Hybrid"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(c) Hybrid"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.8",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 5. Recommendation",
+   "text": "Go with (a) now and keep (c) as the escape hatch; don't build (b). 1. The Windhawk mod only sets five documented DWM attributes, and Lens already sets the same five from its own process. The gap is timing, apps that reset their frame, and elevated windows; it isn't about capability. 2. An out-of-context WinEvent hook plus re-apply-after-activate closes most of the timing gap with no code inside other apps. 3. Injection is where the risk lives (anti-cheat, antivirus, crashes in other apps, maintenance), and it contradicts Lens's own trust promise. A general injection engine would make Lens look like the thing antivirus tools are built to stop. 4. For the remaining cases, the opt-in, allowlisted lens-dwm-hook (c) is enough, and Windhawk can stay as an optional path for people who already use it. 5. Result: Lens needs no third-party install for window styling. Windhawk becomes optional, the",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "5. Recommendation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "5. Recommendation"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.9",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 6. Phased plan",
+   "text": "Phase What Exit criteria --- --- --- 0 · Spike (days) Run tools/spikes/dwm-foreign-window.ps1 on Windows 11 23H2 and 24H2, and on Windows 10 22H2: set the five attributes plus Mica on Notepad, Explorer, Settings, Paint, Task Manager (elevated), Chrome, VS Code, Terminal, Calculator from an unelevated process. Record per app: which sets succeed, whether they survive activation, theme change, maximise. A table per app and attribute in this doc. Confirms or corrects §3. 1 · Out-of-process engine v2 (1–2 weeks) Out-of-context WinEvent hook; style on create/show; re-apply after activation and on WM THEMECHANGED -equivalent events (settle-and-recheck, like #80); Mica option; one owner of \"styled windows\"; Remove all restores defaults on every styled window. Parity rig extended (like the caption rig) for the attribute logic. On the spike's app list, every unelevated app with a system title bar ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "6. Phased plan"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "6. Phased plan"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.10",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 7. How others do it (for comparison)",
+   "text": "- Mica For Everyone : a standalone app that applies backdrop and title-bar settings to other apps' windows through rules; its FAQ lists apps that need flags or don't work (Chromium's custom title bar, Firefox after 115). - ExplorerPatcher / StartAllBack : change the Windows shell itself by loading code into Explorer only, a narrower and different job from styling every app. - WindowBlinds : full skinning by injection; the most complete look and the most compatibility and anti-cheat friction. - Windhawk : general mod engine, global injection with exclusion lists; powerful, and flagged by some antivirus and anti-cheat tools for exactly that reason.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "7. How others do it (for comparison)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "7. How others do it (for comparison)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.11",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: Sources",
+   "text": "- DwmSetWindowAttribute (Microsoft Learn) and DWMWINDOWATTRIBUTE - Implementing Global Injection and Hooking in Windows (Windhawk's author) - Windhawk wiki: Injection targets and critical system processes - Is Windhawk safe? Mods, injection and antivirus alerts (Gridinsoft) - Mica For Everyone FAQ - ExplorerPatcher wiki: using it as a shell extension",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Sources"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
    "id": "doc.window-styling.0",
    "kind": "doc",
    "title": "Window styling 2.0",
@@ -14617,6 +15090,23 @@
     "surface": "doc",
     "doc": "docs/WINDOW_STYLING.md",
     "heading": "The legacy in-app hook (experimental, off by default)"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.8",
+   "kind": "doc",
+   "title": "Window styling 2.0: Window buttons blend into every title bar",
+   "text": "Lens's coloured window buttons on other apps' windows are drawn by win caption engine.rs : a small layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque (the native buttons are underneath), so it only blends if every pixel that is not one of the three dots is exactly the title bar's colour on that row. The pixels come from src-tauri/src/caption paint.rs , which is pure and tested on any machine. Why a strip used to show (the \"new window options don't blend\" report): - One colour for the whole overlay. The old engine read five pixels and painted their median everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows, apps with a thin caption) or title text near the sample points left a visible box. - Read once, too early. Colours were re-read only at activation and at the end of a move. DWM fades the caption be",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "Window buttons blend into every title bar"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "Window buttons blend into every title bar"
    },
    "source": "docs/WINDOW_STYLING.md"
   },

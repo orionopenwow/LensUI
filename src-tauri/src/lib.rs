@@ -1,9 +1,11 @@
 mod ai;
 mod config;
+mod report;
 mod voice;
 #[cfg(windows)]
 mod ffi;
 mod sys_telemetry;
+mod caption_paint;
 mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
@@ -19,6 +21,7 @@ mod win_taskbar;
 mod win_theme;
 mod win_notifications;
 mod win_previews;
+mod attention;
 mod win_rules;
 mod win_shell;
 mod win_pin_order;
@@ -492,6 +495,7 @@ pub fn run() {
             commands::theme::get_windows_theme,
             commands::theme::legacy_hook_status,
             commands::dock::get_running_windows,
+            attention::get_dock_attention,
             commands::dock::get_icon_for_path,
             commands::dock::focus_window_cmd,
             commands::dock::window_action_cmd,
@@ -760,6 +764,12 @@ pub fn run() {
             commands::release::set_update_settings_cmd,
             commands::release::check_for_update_cmd,
             commands::release::install_update_cmd,
+            commands::release::get_update_state_cmd,
+            commands::release::download_update_cmd,
+            commands::release::restart_to_update_cmd,
+            commands::release::bug_report_preview,
+            commands::release::bug_report_open_issue,
+            commands::release::bug_report_save,
             commands::playground::save_playground_state_cmd,
             commands::playground::load_playground_state_cmd,
             commands::playground::clear_playground_state_cmd,

@@ -1,10 +1,10 @@
 # Lens project brain
 
-This folder is the fastest way to understand Lens as it stands on `main`. Read it before you change anything. It was written on 22 November 2026 against `main` at `5a4a5b2` ("Lens at work", #39). The tables under `generated/` are rebuilt by `node tools/brain/refresh.mjs`, and a weekly workflow (`.github/workflows/brain.yml`) opens a PR when they drift.
+**This folder is living.** Read [IDENTITY.md](IDENTITY.md) first. This folder is the fastest way to understand Lens as it stands on `main`. Read it before you change anything. It was written on 22 November 2026 against `main` at `5a4a5b2` ("Lens at work", #39). The tables under `generated/` are rebuilt by `node tools/brain/refresh.mjs`, and a weekly workflow (`.github/workflows/brain.yml`) opens a PR when they drift.
 
 ## What Lens is
 
-Lens UI is a Windows 11 desktop layer: a dock, a top bar, a launcher, quick settings, notifications, wallpapers and cursors that sit on top of (or replace) Explorer's shell. Around that core it has grown an AI layer: a Command palette that can do things on the PC, push-to-talk voice, a Shelf for gathering context, Snip, a magic menu, a built-in browser with an agent, Claude Desktop and Claude Code control over MCP, and an approval/safety system that keeps every agent action visible and reversible. The visual language is "Obsidian Monochrome" (see `DESIGN.md`), and the safety contract for every agent is `AGENTS.md`.
+Lens is a Windows 10/11 desktop layer: a dock, a top bar, a launcher, quick settings, notifications, wallpapers and cursors that sit on top of (or replace) Explorer's shell. Around that core it has grown an AI layer: a Command palette that can do things on the PC, push-to-talk voice, a Shelf for gathering context, Snip, a magic menu, a built-in browser with an agent, Claude Desktop and Claude Code control over MCP, and an approval/safety system that keeps every agent action visible and reversible. The visual language is "Obsidian Monochrome" (see `DESIGN.md`), and the safety contract for every agent is `AGENTS.md`.
 
 It is a Tauri v2 app: Rust (windows 0.58 crate) in `src-tauri/`, React 19 + Vite + TypeScript in `src/`, built and tested with bun. Nothing else runs on the user's machine: no services, no drivers. Everything Lens changes in Windows is recorded and undone by **Settings › About › Remove all Lens changes**.
 
@@ -60,11 +60,13 @@ Three things to hold in your head:
 
 | File | Read it when |
 |---|---|
+| [IDENTITY.md](IDENTITY.md) | Always first: the mission (free, open source, local-first, reversible), naming, brand and aesthetic, motion and copy rules, and the safety contract on one page. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | You need to know where something lives, which thread runs it, which window shows it, or what it writes to disk. |
-| [FEATURES.md](FEATURES.md) | You need the status, entry points, files, tests and known issues of a feature. |
+| [FEATURES.md](FEATURES.md) | The all-time catalogue: every feature on `main` or in a PR with its status, the modern-rewrite foundations, and every suggested feature from reviews and research with a one-line why. |
 | [SCOPE.md](SCOPE.md) | You are planning work: size, hotspots, duplicates to merge, dead code, risks, and the 1.0 bar. |
 | [BUGS.md](BUGS.md) | Before fixing anything: what is known, what this pass fixed, what is open and who owns it. |
 | [FLOWS.md](FLOWS.md) | You are changing UX: 12 end-to-end flows with their friction points and fixes. |
+| [../WINDHAWK_REPLACEMENT.md](../WINDHAWK_REPLACEMENT.md) | You touch window styling: how Lens can drop the Windhawk dependency (recommendation: out-of-process first, opt-in allowlisted hook only if needed). |
 | [LANDSCAPE.md](LANDSCAPE.md) | You need to know what Seelen, Raycast, PowerToys, Windhawk, Dia, Comet, Beeper, Wallpaper Engine and Windows itself did lately, and what Lens should do about it. |
 | [FABLE_NEXT.md](FABLE_NEXT.md) | You are the next big pass. Paste-ready prompt, waves, gates and a first-30-minutes checklist. |
 | `generated/*.md` | Machine-made inventories: commands, windows/routes, LOC, bug-pattern counts, open PRs. |

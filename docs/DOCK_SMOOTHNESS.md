@@ -1,7 +1,123 @@
 # Dock smoothness
 
-What keeps the Dock fast and steady. Two halves: the native window side (its own section, from the
-native Dock PR) and the page side (styles, motion, search bar, hover, attention), below.
+What keeps the Dock fast and steady. Two halves: the native window side (this section) and the
+page side (styles, motion, search bar), which has its own section.
+
+## Native
+
+### Live previews ("screens")
+
+**Symptom.** Window previews could sit in the bottom-right corner of the screen and stay there,
+instead of appearing in the Dock's hover card and going away when the pointer left.
+
+**Causes.**
+- Previews are native DWM thumbnail windows (topmost, click-through) drawn over boxes the page
+  measures. They were only removed when the page said "hide". A page that never said it (hover
+  card closed through click-through glass, the Dock or Quick Settings hidden while the page kept
+  running, a reload) left them on screen indefinitely.
+- Quick Settings' "Open windows" row re-requests previews every 4 s while its page is mounted.
+  Its panel sits at the right of the screen, and a hidden panel's page still reports itself as
+  visible, so previews kept reappearing there.
+- Tiles were converted to screen pixels with the asking window's origin at that moment. A window
+  that was sliding, being resized or parked off screen put them somewhere unrelated.
+
+**Now.** `win_previews::show_previews` takes the owner window:
+- Tiles that don't lie inside the owner window are refused; the page shows its icon fallback for
+  them. Previews for a hidden or minimized owner are refused outright.
+- While tiles are shown, the preview thread checks every 60 ms (`PREVIEW_WATCH_MS`):
+  - the owner is gone, hidden or minimized → all tiles removed;
+  - the owner moved → tiles move by the same amount (they follow the Dock's slide instead of
+    being left behind);
+  - Dock previews only: the pointer has been outside the hover card, pill and tiles for 260 ms
+    (`PREVIEW_LEAVE_GRACE_MS`) → removed. The grace covers crossing from an icon to its card.
+- The watcher removes previews the moment the Dock auto-hides.
+
+The decision logic is pure (`tiles_inside_owner`, `preview_keep_zone`, `preview_tick`) and
+unit-tested; the Windows part only reads the owner's rect, visibility and the pointer.
+
+### Bright bar on the Dock while Settings moves
+
+**Causes.**
+- The Dock drew its "fused" top edge (flat, joined to Settings) whenever Settings was *open*, even
+  after Settings had been dragged elsewhere, leaving a bare bright seam on top of the pill.
+- The Dock reports its width on every frame of a width animation. Each report resized and moved
+  the Settings window, and every native resize of a see-through WebView window can show an
+  unpainted strip for a frame next to the Dock.
+
+**Now.**
+- The watcher emits `lens://settings-docked` (true only while Settings' edge sits on the pill,
+  for every Dock edge; `settings_is_docked`, unit-tested). The Dock's fused edge follows it.
+- Settings follows the Dock's width only after the width has stood still for 140 ms
+  (`SETTINGS_FOLLOW_MS`): one resize per change instead of one per animation frame.
+
+### Auto-hide that sticks ("the top Dock doesn't re-hide")
+
+The watcher (65 ms loop, real pointer position each pass) is the single owner of "shown". It only
+stays up while something is *in use*, and three blockers could stay "in use" forever:
+
+| Blocker | Before | Now |
+|---|---|---|
+| Dock has keyboard focus | Counted forever. Clicking an icon whose app doesn't take the foreground left the Dock focused, which also kept any stale menu flag alive. | Counts for 4 s after the pointer was last on the Dock (`DOCK_FOCUS_GRACE_MS`). |
+| Search palette visible | Kept the Dock up as long as the palette window existed. | Only while focused, plus 1.5 s (`FLYOUT_IDLE_MS`). |
+| Quick Settings visible | Kept the Top Bar up as long as the panel existed. | Only while focused or under the pointer (panel or bar), plus 1.5 s. |
+
+PR #52's guards (stale menu after 1.2 s, click outside closes menus, visibility re-sent every
+~2 s) are unchanged.
+
+### Latency
+
+Measured on CI's Windows runner is not representative of a real desktop, so these are the paths
+and what each costs, not timings:
+
+- **Hover → preview.** The page waits 170 ms for the card's entrance, then one command; the
+  native side creates one small window and one DWM thumbnail per tile on a dedicated thread (no
+  COM, nothing on the UI thread). The watchdog adds one `GetWindowRect`, one `IsWindowVisible` and
+  one `GetCursorPos` per 60 ms while previews are shown, and nothing otherwise.
+- **Settings following the Dock.** Was up to ~60 resizes per second during a Dock width
+  animation; now one, 140 ms after the width settles.
+- **Next steps.** Reuse tile windows and thumbnail registrations between hovers instead of
+  recreating them (saves a window create/destroy per tile per hover); move the 170 ms entrance
+  wait to a measured "card settled" signal from the page.
+
+### To check on a real PC
+
+1. Hover a Dock app with several windows: previews appear inside the card, follow the Dock as it
+   slides, and are gone ~¼ s after the pointer leaves, including on a quick flick off the screen
+   edge.
+2. Open Quick Settings, then close it or click an app: no previews remain at the right of the
+   screen.
+3. Open Settings from the Dock and drag it away: the Dock's top edge rounds back immediately and
+   nothing flashes on the Dock while dragging or while the Dock changes width.
+4. Dock on the top edge with auto-hide: click a Dock icon, move away; the Dock hides within about
+   half a second (4 s at most if the Dock kept focus).
+5. Open Search or Quick Settings, click into an app: the bar and Dock hide again after ~1.5 s.
+
+### Apps asking for attention
+
+Windows flashes a taskbar button orange when an app calls `FlashWindowEx` (a chat message, a
+dialog waiting behind other windows). The Lens Dock showed nothing.
+
+`src-tauri/src/attention.rs` registers the same shell hook Explorer uses
+(`RegisterShellHookWindow`, `HSHELL_FLASH`) on its own thread and keeps one record per flashing
+window, grouped by executable the way the Dock groups windows. A request ends when the window is
+activated (`HSHELL_WINDOWACTIVATED`, `HSHELL_RUDEAPPACTIVATED`), comes to the front, or is
+destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own
+windows never count.
+
+For the Dock page:
+
+- **Event** `lens://dock-attention`, sent whole after every change:
+  `{ version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] }`, oldest first.
+  Match `exePath` case-insensitively against `get_running_windows` / pinned app paths.
+- **Command** `get_dock_attention` returns the same snapshot (call it on load and after a reload).
+
+Not used: `EVENT_OBJECT_STATECHANGE`. Windows doesn't report a taskbar flash through it, so it
+can't stand in for the shell hook; if the hook can't be registered (rare: another shell owns it),
+Lens logs that once and the Dock simply shows no attention state.
+
+To check on a real PC: in PowerShell, start `notepad`, click elsewhere, then flash it with
+`FlashWindowEx` (or get a message in Teams/Discord while it's in the background). The event
+arrives once; clicking the app clears it.
 
 ## Frontend
 
@@ -89,6 +205,65 @@ The page also clears an app as soon as one of its windows is focused, so a misse
 never leave an icon urgent. The Top Bar lists no apps, so it has nothing to mark.
 `dock-layout.mjs` checks the state on every style and edge: colour, visibility, badge, screen
 reader text, and clearing through both event shapes.
+
+### Dismissal (search tray and docked Settings)
+
+Both close on: Esc, a second press of their button, the panel's ×, a click anywhere outside
+(on the Dock window's empty area here; on the desktop and other apps through the native
+watcher), focus moving to another app, the Dock auto-hiding, and another pop-out opening.
+Nothing stays open on a hidden Dock.
+
+Races end in one consistent state:
+- **One owner of "open".** A ref is set by open and close themselves, and React state follows
+  it. A second press in the same frame sees the first one.
+- **Stale closes do nothing.** A generation counter means a close whose exit glide finishes
+  after a newer open does nothing.
+- **Glides are capped.** A glide that never finishes (the window was hidden mid-animation) is
+  capped at 400 ms.
+- **Late focus loss still counts.** Focus lost during the 500 ms handoff grace is checked again
+  once the grace ends.
+- **The real window wins.** Settings' state is reconciled with the real window
+  (`is_surface_visible_cmd`) every 1.5 s, so the Dock's indicator and fused look can't drift.
+
+Checks:
+- `tools/robust/dock-dismiss.mjs` (headless, in the robustness job): 10 search close paths,
+  3 open/close races and 4 Settings paths. It asserts the final DOM, the fused look, the
+  indicator and the hide commands sent.
+- `tests/e2e/run.mjs › dock-search-dismiss` (Windows): real focus loss to Notepad and a real
+  desktop click.
+
+### Seamless join (search panel and Settings on the Dock)
+
+While joined, the two shapes use the same fill (`--lens-bg-surface`). Neither draws a border,
+shadow or inset highlight on the joined edge. Only the narrower shape squares its joined
+corners (`data-join`).
+
+The joint lands on a whole pixel. The Dock's depth is rounded up while search is open, because
+a fractional edge is anti-aliased in both shapes and the background shows through as a faint
+line. Docked Settings is placed from the Dock's reported pill rect
+(`watcher::settings_join_top`, unit-tested at 100–175 % scaling) and tucked 1 physical px under
+it. It used to be placed from an icon-size estimate that only fits Floating. With magnification
+on, the reported rect includes the icons' headroom, so placement falls back to the estimate.
+
+`dock-layout.mjs` samples a 9 px strip across the join for every style × edge × icon size, and
+fails on a pixel more than 10 levels off the fill or on a step in fill.
+
+### Slide (auto-hide)
+
+Hiding was the shared ease-out, which moved ~70 % of the way in the first quarter of the time
+while fading over the same span, so it read as a snap. Now:
+- **Hide:** ease-in-out over ~200 ms (`--lens-dur-base` × 1.15), fading only in the last frames.
+- **Reveal:** a touch faster.
+- **Interrupted:** a transition reverses from where it is, so an interrupted hide slides back.
+- **Reduced motion:** instant.
+
+The native side never hides the Dock window for auto-hide (the watcher only sends
+`lens://dock-visible`), so nothing cuts the slide short.
+
+`tools/robust/dock-slide.mjs` samples the pill every frame for 10 style/edge cases (hide,
+reveal, interrupted). It fails on a frame that covers more than 35 % of the way, on a slide
+under 8 frames, or when the Dock doesn't return to its start. With reduced motion the hide must
+be instant. Before → after on Floating: max step 29 % → 22 %, frames 9 → 11.
 
 ### Further ideas, ranked (frontend only)
 
