@@ -152,9 +152,19 @@ pub(crate) fn kick(label: &str) {
         let Some(_running) = Running::claim(label) else {
             return;
         };
-        let original = app.get_webview_window(label).and_then(|w| w.url().ok());
+        let original = app.get_webview_window(label).and_then(|w| page_url(&w, Duration::from_secs(2)));
         keep_alive(&app, label, original.as_ref());
     });
+}
+
+/// The address of the page in `win`, or None if the main thread does not answer within `limit`.
+fn page_url(win: &tauri::WebviewWindow, limit: Duration) -> Option<tauri::Url> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let win = win.clone();
+    thread::spawn(move || {
+        let _ = tx.send(win.url().ok());
+    });
+    rx.recv_timeout(limit).ok().flatten()
 }
 
 fn hide(app: &AppHandle, label: &str) {
@@ -183,7 +193,12 @@ fn watch(app: AppHandle, label: &'static str) {
         eprintln!("[Lens UI] The load guard found no {label} window.");
         return;
     };
-    let original = win.url().ok();
+    // The page address is only needed to load a page that never came up. Reading it is a call the
+    // main thread answers; at start-up that answer sometimes never came, and this thread then sat
+    // here for good, so a Dock whose renderer died was never reloaded (B-31). Read it with a time
+    // limit instead.
+    tick(label, "reading the page address");
+    let original = page_url(&win, Duration::from_secs(2));
     tick(label, "waiting for the first load");
     if wait_ready(label, READY_TIMEOUT) {
         tick(label, "showing");
@@ -212,8 +227,9 @@ fn recover_now(app: &AppHandle, label: &'static str, original: Option<&tauri::Ur
     hide(app, label);
     eprintln!("[Lens UI] The {label} page {what}; reloading it.");
     crate::tester::log("error", "loadguard", &format!("{label} page {what}"));
-    if let (Some(win), Some(url)) = (app.get_webview_window(label), original) {
-        let _ = win.navigate(url.clone());
+    // Reload through WebView2 (works on a dead renderer, needs no address).
+    if let Some(win) = app.get_webview_window(label) {
+        crate::app::renderer::reload_page(&win);
     }
     if wait_ready(label, READY_TIMEOUT) {
         return shown_again(app, label);
@@ -234,9 +250,14 @@ fn retry(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>) ->
         {
             continue;
         }
-        if let (Some(win), Some(url)) = (app.get_webview_window(label), original) {
+        if let Some(win) = app.get_webview_window(label) {
             surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
-            let _ = win.navigate(url.clone());
+            match original {
+                Some(url) => {
+                    let _ = win.navigate(url.clone());
+                }
+                None => crate::app::renderer::reload_page(&win),
+            }
         }
         if wait_ready(label, READY_TIMEOUT) {
             break;

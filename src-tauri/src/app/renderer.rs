@@ -178,6 +178,22 @@ fn register<W: HostsWebview>(webview: &W, label: String, attempt: u32) {
 #[cfg(not(windows))]
 fn register<W: HostsWebview>(_webview: &W, _label: String, _attempt: u32) {}
 
+/// Reloads the page behind `win` through WebView2 itself. Works when the page's renderer has
+/// exited (that is what `Reload` is for), and needs no page address: asking a webview for its URL
+/// is a call the main thread has to answer, and the load guard must never wait on that (B-31).
+pub(crate) fn reload_page<R: tauri::Runtime>(win: &tauri::WebviewWindow<R>) {
+    #[cfg(windows)]
+    let _ = win.with_webview(|pw| {
+        crate::failsafe::guard::ffi_guard("renderer-reload", (), || unsafe {
+            if let Ok(core) = pw.controller().CoreWebView2() {
+                let _ = core.Reload();
+            }
+        });
+    });
+    #[cfg(not(windows))]
+    let _ = win.eval("location.reload()");
+}
+
 /// Puts keyboard focus inside the page of `win`, not just on its native window (B-12b).
 ///
 /// `set_focus()` activates the window, but WebView2 only routes keys to the page once its
