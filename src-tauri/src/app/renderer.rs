@@ -55,6 +55,7 @@ pub(crate) fn on_failure(label: &str, kind: i32) -> bool {
     eprintln!("[Lens UI] The {label} page's renderer exited (kind {kind}).");
     if crate::app::loadguard::GUARDED.contains(&label) {
         dead().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string());
+        crate::app::loadguard::kick(label);
         false
     } else {
         true

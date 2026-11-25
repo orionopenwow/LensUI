@@ -469,12 +469,13 @@ const SCENARIOS = [
         if (revived) {
           const how = s.logs.join("").match(reloadLine)?.[1] ?? "?";
           console.log(`      webview-killed: Dock back ${Date.now() - killedAt} ms after the kill (${how}); watched before the kill: ${watched}`);
+          for (const l of s.logs.join("").split(/\r?\n/).filter((x) => /load guard|No load guard/.test(x))) console.log(`        ${l.trim()}`);
           const hasDock = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('get_config').then((c) => !!c && !!c.dock)");
           expect(problems, hasDock === true, "the reloaded Dock page cannot reach the backend");
           const logged = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('tester_log_get', { after: null, limit: 500 }).then((l) => l.some((x) => x.area === 'loadguard' && /stopped answering/.test(x.message)))");
           expect(problems, logged === true, "the session log does not say the Dock page was reloaded by the load guard");
         } else {
-          const lines = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer/i.test(l)).slice(-40);
+          const lines = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer|panick|thread/i.test(l) && !/Watching the (?!dock)/.test(l)).slice(-40);
           let targets = "";
           try {
             targets = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).map((t) => `${t.type} ${t.url}`).join("\n        ");

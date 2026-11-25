@@ -77,12 +77,84 @@ fn wait_ready(label: &str, timeout: Duration) -> bool {
     is_ready(label)
 }
 
+fn app_handle() -> &'static OnceLock<AppHandle> {
+    static APP: OnceLock<AppHandle> = OnceLock::new();
+    &APP
+}
+
+/// Labels whose watch thread is running (it removes itself on any exit, see [`Running`]).
+fn running() -> &'static Mutex<HashSet<String>> {
+    static SET: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    SET.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+/// When each watch thread last looked, and what it is doing now (diagnostics for B-31).
+fn ticks() -> &'static Mutex<std::collections::HashMap<String, Instant>> {
+    static MAP: OnceLock<Mutex<std::collections::HashMap<String, Instant>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
+fn doing() -> &'static Mutex<std::collections::HashMap<String, &'static str>> {
+    static MAP: OnceLock<Mutex<std::collections::HashMap<String, &'static str>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
+fn tick(label: &str, what: &'static str) {
+    ticks().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), Instant::now());
+    doing().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), what);
+}
+fn busy_with(label: &str) -> &'static str {
+    doing().lock().unwrap_or_else(|e| e.into_inner()).get(label).copied().unwrap_or("?")
+}
+
+/// Marks a watch thread as running for its whole life, whichever way it ends.
+struct Running(&'static str);
+impl Running {
+    fn claim(label: &'static str) -> Option<Self> {
+        running().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()).then_some(Running(label))
+    }
+}
+impl Drop for Running {
+    fn drop(&mut self) {
+        running().lock().unwrap_or_else(|e| e.into_inner()).remove(self.0);
+        eprintln!("[Lens UI] The load guard stopped watching the {} page.", self.0);
+    }
+}
+
 /// Starts one watch thread per guarded surface. Call once from setup, after the windows exist.
 pub(crate) fn start(app: &AppHandle) {
+    let _ = app_handle().set(app.clone());
     for label in GUARDED {
         let app = app.clone();
         thread::spawn(move || watch(app, label));
     }
+}
+
+/// A guarded page's renderer exited (app::renderer). Its watch thread picks that up within a
+/// quarter second; if no watch thread is running for it (it ended, or never started), one is
+/// started now so the page is still reloaded.
+pub(crate) fn kick(label: &str) {
+    let Some(label) = GUARDED.iter().copied().find(|l| *l == label) else {
+        return;
+    };
+    if running().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
+        // Diagnostic (B-31): a running watch thread polls every quarter second.
+        let idle = ticks().lock().unwrap_or_else(|e| e.into_inner()).get(label).map(|t| t.elapsed());
+        if let Some(idle) = idle.filter(|d| *d > Duration::from_secs(2)) {
+            eprintln!("[Lens UI] The load guard for the {label} page has not looked for {}ms (busy: {}).", idle.as_millis(), busy_with(label));
+        }
+        return;
+    }
+    let Some(app) = app_handle().get().cloned() else {
+        return;
+    };
+    eprintln!("[Lens UI] No load guard was watching the {label} page; starting one to reload it.");
+    crate::tester::log("warn", "loadguard", &format!("no watch thread for {label}; restarted"));
+    thread::spawn(move || {
+        let Some(_running) = Running::claim(label) else {
+            return;
+        };
+        let original = app.get_webview_window(label).and_then(|w| w.url().ok());
+        keep_alive(&app, label, original.as_ref());
+    });
 }
 
 fn hide(app: &AppHandle, label: &str) {
@@ -104,11 +176,17 @@ fn show_now(app: &AppHandle) {
 }
 
 fn watch(app: AppHandle, label: &'static str) {
+    let Some(_running) = Running::claim(label) else {
+        return;
+    };
     let Some(win) = app.get_webview_window(label) else {
+        eprintln!("[Lens UI] The load guard found no {label} window.");
         return;
     };
     let original = win.url().ok();
+    tick(label, "waiting for the first load");
     if wait_ready(label, READY_TIMEOUT) {
+        tick(label, "showing");
         show_now(&app);
     } else if !recover(&app, label, original.as_ref(), "did not load") {
         give_up();
@@ -271,12 +349,14 @@ fn keep_alive(app: &AppHandle, label: &'static str, original: Option<&tauri::Url
     let (check, probe_wait) = alive_timing();
     let mut revives = 0u32;
     crate::app::renderer::watch_window(app, label);
+    eprintln!("[Lens UI] The load guard is watching the {label} page (check every {}s).", check.as_secs());
     loop {
         let before = Instant::now();
         // Look every quarter second for a renderer that WebView2 reported as gone (app::renderer);
         // that is reloaded at once, whether the window is visible or not.
         let mut gone = None;
         while before.elapsed() < check {
+            tick(label, "waiting");
             if crate::app::renderer::take_dead(label) {
                 gone = Some("stopped answering (its renderer exited)");
                 break;
@@ -290,8 +370,10 @@ fn keep_alive(app: &AppHandle, label: &'static str, original: Option<&tauri::Url
             continue;
         }
         if app.get_webview_window(label).is_none() {
+            eprintln!("[Lens UI] The {label} window is gone; the load guard stops.");
             return;
         }
+        tick(label, "probing");
         if gone.is_none() && needs_probe(beat_age(label), check, false) && !answers_probe(app, label, probe_wait) {
             gone = Some("stopped answering (no heartbeat, no answer to a direct probe)");
         }
@@ -301,6 +383,7 @@ fn keep_alive(app: &AppHandle, label: &'static str, original: Option<&tauri::Url
             return;
         }
         revives += 1;
+        tick(label, "reloading");
         surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
         if !recover_now(app, label, original, what) {
             give_up();
