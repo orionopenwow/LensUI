@@ -321,6 +321,9 @@ async function waitDesk(page, sel = "#desk-host") {
   // Tours: a tab starts one; Next and Back step it; each step's target exists; Exit leaves free play.
   const tourIds = await D(() => window.lensSite.shows.list.map((s) => s.id));
   expect(tourIds.length >= 6, "there are showcase tabs", tourIds.join(","));
+  expect(tourIds[0] === "docks" && tourIds[1] === "browser", "the tours start with the docks, then Lens Browser", tourIds.join(","));
+  expect(!tourIds.some((t) => ["music", "cleaner", "core", "apps"].includes(t)), "Music, Cleaner, Lens Apps and the core apps are page sections, not hero tours", tourIds.join(","));
+  expect(await D(() => /scene=home/.test(window.lensSite.desk.byApp("browser")?.frame?.src ?? "")), "the desk's Lens Browser opens on its new tab page");
   await page.click('#sc-tabs [data-sc="desktop"]');
   await page.waitForFunction(() => window.lensSite.shows.current?.id === "desktop" && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
   expect((await D(() => window.lensSite.shows.index)) === 0, "a tab starts its tour at step 1");
@@ -464,6 +467,7 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.mouse.move(bare.x, bare.y - 20, { steps: 4 }); await page.waitForTimeout(700);
   await page.mouse.click(bare.x, bare.y, { button: "right" });
   expect(/desktop/i.test(await magicText()), "desktop right-click opens the real magic window on the desktop");
+  expect(await D(() => { const d = document.querySelector("#desk-host .lx-dim"); return !!d && !d.hidden; }), "right-click on the desk dims and softens everything but the clicked spot and its menu");
   await D(() => window.lensSite.desk.hideMenu());
   // Lens Command: Ctrl+Space opens the real CommandSurface; Esc closes it.
   await page.focus("#desk-host .lx");
@@ -580,16 +584,17 @@ async function waitDesk(page, sel = "#desk-host") {
     await page.waitForTimeout(600);
     const moved = await D(() => { const m = document.querySelector("#mx .mx-menu").getBoundingClientRect(), t = document.querySelector("#mx .mx-target").getBoundingClientRect(); return (m.left - t.left) / t.width; });
     expect(moved > 0.4, "right-clicking the exhibit opens the magic window there", String(moved));
-    // The agent story: three steps, the real approval card, the real orb.
-    expect((await page.locator("#byo .story > .st").count()) === 3, "bring your own agent is three steps");
-    await page.evaluate(() => document.getElementById("byo").scrollIntoView({ block: "center" }));
-    await page.click("#byo [data-replay]").catch(() => {});
-    expect(await page.waitForFunction(() => document.querySelector("#byo [data-presence] iframe")?.contentDocument?.querySelector(".pr-orb"), null, { timeout: 10000 }).then(() => true, () => false), "the agent's orb is the real presence orb");
+    expect(await D(() => !document.querySelector("#mx .mx-dim").hidden), "the right-click exhibit dims everything but the clicked spot and its menu");
+    // Your agent: one line of three steps beside the real approval card.
+    expect((await page.locator("#byo .agent-flow > li").count()) === 3, "your agent is three short steps");
+    expect((await page.locator("#byo .xf").count()) === 1, "your agent has one exhibit: the real approval card");
     // Lens Browser: the steps are states of the real BrowserSurface.
     await page.evaluate(() => document.getElementById("f-browser").scrollIntoView({ block: "center" }));
-    await page.click('#f-browser .xstep[data-step="transcript"]');
-    expect(await page.waitForFunction(() => { const h = document.querySelector("#f-browser .xf"); return h.classList.contains("is-ready") && h.querySelector("iframe").contentDocument?.querySelector(".lb-root") && /transcript/i.test(h.querySelector("iframe").src); }, null, { timeout: 10000 }).then(() => true, () => false), "the browser exhibit steps through the real browser");
-    expect((await page.locator("#f-browser .why li").count()) === 6, "“Why it's different” lists six things");
+    await page.click('#f-browser .xstep[data-step="approval"]');
+    expect(await page.waitForFunction(() => { const h = document.querySelector("#f-browser .xf"); return h.classList.contains("is-ready") && h.querySelector("iframe").contentDocument?.querySelector(".lb-root") && /scene=approval/.test(h.querySelector("iframe").src); }, null, { timeout: 10000 }).then(() => true, () => false), "the browser exhibit steps through the real browser");
+    expect((await page.locator("#f-browser .why li").count()) === 5, "Lens Browser lists five things it does differently");
+    const order = await D(() => [...document.querySelectorAll("main section[id]")].map((x) => x.id));
+    expect(order.indexOf("f-browser") < order.indexOf("f-magic") && order.indexOf("f-magic") < order.indexOf("overlays"), "Lens Browser comes first after the hero; the small apps come later", order.join(","));
   }
   // The Guide: the orb opens it, / too; a chip acts on the desk; Esc collapses it.
   await page.click("#guide-orb");
