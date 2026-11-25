@@ -11,16 +11,36 @@ pub(crate) fn set_dock_pill_width(app: AppHandle, state: State<AppState>, width:
         *guard = clamped;
         old
     };
-    // Keep Control Center width fused 1:1 with the Dock if it's currently open
+    // Keep Control Center width fused 1:1 with the Dock if it's currently open. The Dock reports
+    // its width on every frame of a width animation; resizing Settings on each report made its
+    // WebView repaint strips next to the Dock (a flashing bar). Only the settled width is applied:
+    // the last report that stands for SETTINGS_FOLLOW_MS.
     if (prev - clamped).abs() > 2.0 {
-        if let Some(win) = app.get_webview_window("settings") {
-            if win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false) {
-                let cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
-                position_settings_docked(&app, &cfg, clamped);
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static GEN: AtomicU64 = AtomicU64::new(0);
+        let gen = GEN.fetch_add(1, Ordering::SeqCst) + 1;
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(SETTINGS_FOLLOW_MS));
+            if GEN.load(Ordering::SeqCst) != gen {
+                return;
             }
-        }
+            let Some(win) = app.get_webview_window("settings") else {
+                return;
+            };
+            if win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false) {
+                let Some(state) = app.try_state::<AppState>() else {
+                    return;
+                };
+                let cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                let width = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
+                position_settings_docked(&app, &cfg, width);
+            }
+        });
     }
 }
+
+/// How long the Dock's width must stand still before Settings is resized to match it.
+pub(crate) const SETTINGS_FOLLOW_MS: u64 = 140;
 
 #[tauri::command]
 pub(crate) fn set_dock_search_expanded_cmd(app: AppHandle, state: State<AppState>, expanded: bool) {
@@ -162,8 +182,15 @@ pub(crate) async fn dock_preview_show_cmd(
     let Some(dock) = app.get_webview_window(label) else {
         return tiles.iter().map(|t| t.hwnd).collect();
     };
+    // A hidden or minimized window has nothing to anchor previews to: they would float wherever it
+    // was parked (that is how previews ended up stuck in a screen corner).
+    if !dock.is_visible().unwrap_or(false) || dock.is_minimized().unwrap_or(false) {
+        win_previews::hide_previews();
+        return tiles.iter().map(|t| t.hwnd).collect();
+    }
     let origin = dock.inner_position().unwrap_or(PhysicalPosition::new(0, 0));
     let scale = dock.scale_factor().unwrap_or(1.0);
+    let size = dock.inner_size().map(|s| (s.width as i32, s.height as i32)).unwrap_or((0, 0));
     let tiles: Vec<win_previews::PreviewTile> = tiles
         .iter()
         .map(|t| win_previews::PreviewTile {
@@ -174,7 +201,35 @@ pub(crate) async fn dock_preview_show_cmd(
             h: (t.h * scale).round() as i32,
         })
         .collect();
-    tauri::async_runtime::spawn_blocking(move || win_previews::show_previews(tiles, &background))
+    // The Dock's previews live in its hover card: they stay while the pointer is on the card or
+    // the pill and go shortly after it leaves. Quick Settings' previews live as long as its panel.
+    let keep = (label == "dock").then(|| {
+        let to_screen = |(x, y, w, h): (i32, i32, i32, i32)| {
+            let l = origin.x + (x as f64 * scale).round() as i32;
+            let t = origin.y + (y as f64 * scale).round() as i32;
+            (l, t, l + (w as f64 * scale).round() as i32, t + (h as f64 * scale).round() as i32)
+        };
+        let card = win_previews::flyout_rect_css();
+        let pill = win_previews::pill_rect_css();
+        let card = (card.2 > 0 && card.3 > 0).then(|| to_screen(card));
+        let pill = (pill.2 > 0 && pill.3 > 0).then(|| to_screen(pill));
+        let both = match (card, pill) {
+            (Some(c), Some(p)) => Some((c.0.min(p.0), c.1.min(p.1), c.2.max(p.2), c.3.max(p.3))),
+            (c, p) => c.or(p),
+        };
+        win_previews::preview_keep_zone(&tiles, both, (10.0 * scale).round() as i32)
+    }).flatten();
+    #[cfg(windows)]
+    let hwnd = dock.hwnd().map(|h| h.0 as isize).unwrap_or(0);
+    #[cfg(not(windows))]
+    let hwnd = 0isize;
+    let owner = win_previews::PreviewOwner {
+        hwnd,
+        origin: (origin.x, origin.y),
+        rect: (origin.x, origin.y, origin.x + size.0, origin.y + size.1),
+        keep,
+    };
+    tauri::async_runtime::spawn_blocking(move || win_previews::show_previews(tiles, &background, Some(owner)))
         .await
         .unwrap_or_default()
 }

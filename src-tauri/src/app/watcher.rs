@@ -412,6 +412,10 @@ pub(crate) fn spawn_watcher(
         let mut menu_idle_since: Option<Instant> = None;
         let mut settings_unfocused_since: Option<Instant> = None;
         let mut search_idle_since: Option<Instant> = None;
+        let mut qs_idle_since: Option<Instant> = None;
+        let mut palette_idle_since: Option<Instant> = None;
+        let mut dock_pointer_seen: Option<Instant> = None;
+        let mut last_settings_docked = false;
 
         loop {
             thread::sleep(Duration::from_millis(65));
@@ -565,7 +569,25 @@ pub(crate) fn spawn_watcher(
                         } else {
                             search_idle_since = None;
                         }
-                        let flyout_open = palette_vis || qs_vis;
+                        // Quick Settings only holds the bar up while it is used: focused, or the
+                        // pointer on it or on the bar (plus a short grace). A panel left open behind
+                        // an app no longer pins the bar forever.
+                        let qs_in_use = qs_vis && {
+                            let qs = watcher_handle.get_webview_window("quicksettings");
+                            let focused = qs.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
+                            let over = |w: &tauri::WebviewWindow| match (w.outer_position(), w.outer_size(), cursor) {
+                                (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                    cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                }
+                                _ => false,
+                            };
+                            let pointer_on = qs.as_ref().map(over).unwrap_or(false) || cursor_inside_bar;
+                            active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), FLYOUT_IDLE_MS)
+                        };
+                        if !qs_vis {
+                            qs_idle_since = None;
+                        }
+                        let flyout_open = palette_vis || qs_in_use;
 
                         let should_hide_when_idle = if flyout_open {
                             false
@@ -702,6 +724,35 @@ pub(crate) fn spawn_watcher(
                         last_settings_vis = settings_now_vis;
                         let _ = watcher_handle.emit("lens://settings-open", settings_now_vis);
                     }
+                    // Settings can be dragged off the Dock. The Dock's fused top edge follows where
+                    // Settings actually is, not just whether it is open (it showed as a bright bar
+                    // on the Dock while Settings was dragged around).
+                    let settings_docked = settings_now_vis
+                        && match (
+                            watcher_handle.get_webview_window("settings").and_then(|w| {
+                                let p = w.outer_position().ok()?;
+                                let sz = w.outer_size().ok()?;
+                                Some((p.x, p.y, p.x + sz.width as i32, p.y + sz.height as i32))
+                            }),
+                            dock_win.outer_position().ok(),
+                        ) {
+                            (Some(srect), Some(dp)) => {
+                                let (px, py, pw, ph) = win_previews::pill_rect_css();
+                                if pw > 0 && ph > 0 {
+                                    let l = dp.x + (px as f64 * scale) as i32;
+                                    let t = dp.y + (py as f64 * scale) as i32;
+                                    let pill = (l, t, l + (pw as f64 * scale) as i32, t + (ph as f64 * scale) as i32);
+                                    settings_is_docked(&cfg.dock.position, srect, pill, (12.0 * scale) as i32)
+                                } else {
+                                    true
+                                }
+                            }
+                            _ => true,
+                        };
+                    if settings_docked != last_settings_docked || (settings_now_vis && tick % 15 == 0) {
+                        last_settings_docked = settings_docked;
+                        let _ = watcher_handle.emit("lens://settings-docked", settings_docked);
+                    }
 
                     // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is
                     // in use. "In use" is checked here rather than trusted: see DockGuard below.
@@ -723,6 +774,23 @@ pub(crate) fn spawn_watcher(
                         }
                         _ => false,
                     };
+                    if cursor_over_pill || cursor_over_dock_window {
+                        dock_pointer_seen = Some(Instant::now());
+                    }
+                    let dock_focused = dock_focused
+                        && dock_pointer_seen
+                            .map(|t| t.elapsed().as_millis() < DOCK_FOCUS_GRACE_MS)
+                            .unwrap_or(false);
+                    let palette_in_use = palette_vis_now && {
+                        let focused = watcher_handle
+                            .get_webview_window("palette")
+                            .and_then(|w| w.is_focused().ok())
+                            .unwrap_or(false);
+                        active_within(focused, &mut palette_idle_since, Instant::now(), FLYOUT_IDLE_MS)
+                    };
+                    if !palette_vis_now {
+                        palette_idle_since = None;
+                    }
                     let guard = dock_guard(DockGuardInput {
                         menu_open,
                         dock_focused,
@@ -733,7 +801,7 @@ pub(crate) fn spawn_watcher(
                             .get_webview_window("settings")
                             .and_then(|w| w.is_focused().ok())
                             .unwrap_or(false),
-                        palette_visible: palette_vis_now,
+                        palette_visible: palette_in_use,
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
                     }, &mut menu_idle_since, &mut settings_unfocused_since);
                     if guard.clear_stale_menu {
@@ -795,6 +863,10 @@ pub(crate) fn spawn_watcher(
                     if next_dock_vis != dock_visible {
                         dock_vis_changed_at = Instant::now();
                         dock_visible = next_dock_vis;
+                        if !dock_visible {
+                            // A hidden Dock has no hover card: its live previews go with it.
+                            win_previews::hide_previews();
+                        }
                         let _ = watcher_handle.emit("lens://dock-visible", dock_visible);
                     } else if tick % 30 == 0 && cfg.dock.auto_hide != "never" {
                         // Re-send the state every ~2 s so a Dock page that missed an event (reload,
@@ -904,6 +976,40 @@ pub(crate) fn spawn_watcher(
 pub(crate) const STALE_MENU_MS: u128 = 1200;
 /// How long a visible but unfocused Control Center may keep the Dock up.
 pub(crate) const SETTINGS_UNFOCUSED_MS: u128 = 1500;
+/// How long a focused Dock counts as "in use" after the pointer last touched it. Keyboard focus
+/// alone used to pin the Dock (and a stale menu) forever: clicking a Dock icon leaves the Dock
+/// focused whenever the app it opened doesn't take the foreground.
+pub(crate) const DOCK_FOCUS_GRACE_MS: u128 = 4000;
+/// How long Search or Quick Settings may stay up while nobody uses it (unfocused, pointer away)
+/// and still keep the Top Bar or the Dock from hiding.
+pub(crate) const FLYOUT_IDLE_MS: u128 = 1500;
+
+/// Pure: `active` now, or within `grace_ms` of the last time it was. Tracks the moment it stopped.
+pub(crate) fn active_within(active: bool, idle_since: &mut Option<std::time::Instant>, now: std::time::Instant, grace_ms: u128) -> bool {
+    if active {
+        *idle_since = None;
+        return true;
+    }
+    let since = *idle_since.get_or_insert(now);
+    now.duration_since(since).as_millis() < grace_ms
+}
+
+/// Pure: is Settings sitting fused on the Dock (its bottom edge on the pill's top edge and the
+/// two overlapping across)? Once it is dragged away, the Dock must drop its fused top edge.
+pub(crate) fn settings_is_docked(edge: &str, settings: (i32, i32, i32, i32), pill: (i32, i32, i32, i32), tolerance: i32) -> bool {
+    let (sl, st, sr, sb) = settings;
+    let (pl, pt, pr, pb) = pill;
+    if sr <= sl || sb <= st || pr <= pl || pb <= pt {
+        return false;
+    }
+    let across = |a0: i32, a1: i32, b0: i32, b1: i32| a0 < b1 && b0 < a1;
+    match edge {
+        "top" => across(sl, sr, pl, pr) && (st - pb).abs() <= tolerance,
+        "left" => across(st, sb, pt, pb) && (sl - pr).abs() <= tolerance,
+        "right" => across(st, sb, pt, pb) && (pl - sr).abs() <= tolerance,
+        _ => across(sl, sr, pl, pr) && (pt - sb).abs() <= tolerance,
+    }
+}
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct DockGuardInput {
@@ -981,6 +1087,47 @@ pub(crate) fn dock_guard_at(
         false
     };
     DockGuard { blocks_hide: menu_blocks || settings_blocks || i.palette_visible, clear_stale_menu }
+}
+
+#[cfg(test)]
+mod hide_robustness_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn idle_flyouts_stop_holding_bars_up() {
+        let t0 = Instant::now();
+        let mut since = None;
+        assert!(active_within(true, &mut since, t0, FLYOUT_IDLE_MS));
+        assert!(active_within(false, &mut since, t0 + Duration::from_millis(10), FLYOUT_IDLE_MS));
+        assert!(active_within(false, &mut since, t0 + Duration::from_millis(1400), FLYOUT_IDLE_MS));
+        assert!(!active_within(false, &mut since, t0 + Duration::from_millis(1600), FLYOUT_IDLE_MS));
+        // Used again: counts again at once.
+        assert!(active_within(true, &mut since, t0 + Duration::from_millis(5000), FLYOUT_IDLE_MS));
+        assert_eq!(since, None);
+    }
+
+    #[test]
+    fn settings_docked_only_where_it_sits_on_the_dock() {
+        let pill = (600, 1000, 1320, 1064);
+        // Bottom Dock: Settings directly above the pill.
+        assert!(settings_is_docked("bottom", (600, 280, 1320, 1001), pill, 12));
+        // Dragged up and away, or off to the side: not docked.
+        assert!(!settings_is_docked("bottom", (600, 100, 1320, 820), pill, 12));
+        assert!(!settings_is_docked("bottom", (1400, 280, 2100, 1001), pill, 12));
+        // Top Dock: Settings hangs below the pill.
+        let top = (600, 0, 1320, 64);
+        assert!(settings_is_docked("top", (600, 64, 1320, 780), top, 12));
+        assert!(!settings_is_docked("top", (600, 300, 1320, 1000), top, 12));
+        // Side Docks.
+        let left = (0, 200, 64, 900);
+        assert!(settings_is_docked("left", (62, 150, 780, 900), left, 12));
+        assert!(!settings_is_docked("left", (400, 150, 1100, 900), left, 12));
+        let right = (1856, 200, 1920, 900);
+        assert!(settings_is_docked("right", (1140, 150, 1858, 900), right, 12));
+        // Broken rects never count as docked.
+        assert!(!settings_is_docked("bottom", (0, 0, 0, 0), pill, 12));
+    }
 }
 
 #[cfg(test)]

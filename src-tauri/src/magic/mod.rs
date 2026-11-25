@@ -198,9 +198,21 @@ pub struct LensTargetInput {
     pub id: String,
     pub label: String,
     pub path: Option<String>,
+    /// A row the person already chose in the Lens panel of a right-click menu ("Lens ›"): the
+    /// window opens and runs it at once. Catalogue or window-action row id, at most 64 chars.
+    #[serde(default)]
+    pub run: Option<String>,
 }
 
 impl LensTargetInput {
+    /// The pre-chosen row id, if it looks like one (letters, digits, `_`, `-`, `:`).
+    pub fn run_id(&self) -> Option<String> {
+        self.run
+            .as_deref()
+            .filter(|r| !r.is_empty() && r.len() <= 64 && r.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':')))
+            .map(str::to_string)
+    }
+
     pub fn to_fact(&self) -> Option<target::LensFact> {
         let kind = match self.kind.as_str() {
             "dockItem" => target::LensKind::DockItem,
@@ -236,6 +248,9 @@ pub struct MagicOpen {
     pub resolve_ms: u32,
     /// Monotonic-ish wall clock of the trigger, ms since epoch (the surface measures paint).
     pub at_ms: u64,
+    /// Row to run straight away (chosen in a Lens right-click menu's "Lens ›" panel).
+    #[serde(default)]
+    pub run: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]

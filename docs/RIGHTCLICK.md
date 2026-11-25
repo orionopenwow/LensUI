@@ -147,6 +147,8 @@ These are additive changes under HKCU, reversible, and every root carries the `L
 |---|---|
 | Files | Ask Lens about this file · **Ask about these files** · Summarise · **Micro-save file** · Add to Shelf · **Add to pack…** · Copy path into context |
 | Folders | Ask · **Ask about these folders** · **Micro-save folder** · Add to Shelf · **Add to pack…** · Copy path into context |
+| Inside a folder (empty space) | The folder verbs on the open folder (`"%V"`), without "Ask about these folders" |
+| Drives | The folder verbs on the drive root, without "Ask about these folders". A drive root reaches Lens as `C:"` (Windows reads `"C:\"` as an escaped quote); `bridge::cli::detect` turns it back into `C:\` |
 | Audio/video types | **Get transcript with Lens** (whisper) |
 | Desktop background | **Lens Command here** (`--url "lens://command"`) |
 
@@ -154,7 +156,27 @@ These are additive changes under HKCU, reversible, and every root carries the `L
 
 **Hidden actions.** Explorer leaves out actions the user hid. Installing reads the preferences, and uninstalling always removes every root Lens owns.
 
-**Existing installs.** The new desktop root means `explorer_verbs_installed` reads false until the user reinstalls once from Connections → File Explorer.
+**Existing installs.** `explorerVerbsInstalled` means the menu is on (the file root is Lens's). When an older install lacks a newer place (inside folders, drives), `explorerVerbsOutdated` is true and Connections → File Explorer shows **Update…**, which previews and writes only what is missing; nothing changes until the person confirms.
+
+**Windows 11's compact menu.** Everything above is the classic registry menu, so on Windows 11 it appears under **Show more options** (Shift+F10). A top-level entry in the compact menu needs an `IExplorerCommand` COM handler registered through an app identity: a sparse MSIX package (signed, with `<desktop4:FileExplorerContextMenus>` and `<com:ComServer>` pointing at a small in-process DLL that forwards to `lens-ui.exe --action …`). That needs Authenticode signing, which Lens doesn't have yet (docs/RELEASING.md). Plan, once signing exists: ship the handler DLL and the sparse package with the installer, register it per user on first run when the person turns the Explorer menu on, list it in the change registry, and keep the classic verbs for Windows 10. Until then Settings says where to find it.
+
+## Lens in every menu ("Lens ›")
+
+Lens's own right-click menus end with one **Lens ›** row (the small Lens logo). Hovering it for 160 ms, clicking it, or pressing → / Enter pans the menu sideways into the Magic actions for the same item; ← / Esc / Backspace pan back. Picking an action opens the Magic window for that item and runs it there (answers, confirmations and undo look the same as everywhere else); the last row, **More in Lens…**, opens the Magic window without running anything.
+
+| Where | Its own rows | Then |
+|---|---|---|
+| Dock app | windows, Min · Max · Top, New Window, Run as Admin, File Location, Unpin… | Lens › |
+| Shelf item | Use as context, Copy, Pin/Unpin, Remove | Lens › |
+| Notification | (no menu of its own) | right-click opens the Magic window directly |
+
+- **One component.** `src/magic/LensPan.tsx` (`LensPan` wraps a menu's rows; `LensMenuRow` is the row) and `src/magic/LensContextMenu.tsx` for items that had no menu. The panel's rows use the host menu's row class, so they look and navigate like the rest of the menu. Only one panel is in the page at a time.
+- **Same rows as the Magic window.** `src/magic/lensPanModel.ts` builds the item's target exactly as `magic::target::resolve` does and lists the window's first six rows (`rowsFor`), honouring your right-click order, hidden actions and Magic's AI setting.
+- **Running the pick.** `magic_open({ lens: { …, run } })` carries the row id; the backend accepts only an id-shaped value (`LensTargetInput::run_id`) and passes it in `MagicOpen.run`. The window runs it only when the open came from a Lens menu, is under 5 s old and targets a Lens item (`shouldRun`), so a late `magic_last` can never replay it.
+- **Motion.** The panel glides in with transform and opacity, and the menu's box reveals by clip (`captureFlip` "clip"), never layout. Reduced motion makes it instant.
+- **Keyboard and screen readers.** The row is a `menuitem` with `aria-haspopup="menu"` and `aria-expanded`; the panel is a `menu`. Focus moves to the first action when it pans in and back to the row when it pans out; the focus ring shows only for keyboard pans.
+- **Shortcuts kept.** Alt+right-click on a Dock app still opens the Magic window straight away, and the global Magic trigger (off by default) is unchanged.
+- **Parity.** `tools/parity/magic` scenes `lensMenu`, `lensRowFocus`, `lensPanned` in every preset.
 
 ## Snippets for other packages
 

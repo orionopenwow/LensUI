@@ -55,7 +55,25 @@ export interface Appearance {
   tabsLayout: "vertical" | "horizontal";
   density: "compact" | "comfortable";
   typeface: "lens" | "system" | "mono" | "serif";
+  /** The vertical tab sidebar (missing in settings saved before it existed). */
+  sidebar?: SidebarPrefs;
 }
+
+export interface SidebarPrefs {
+  /** 200–380 px, full mode only. */
+  width: number;
+  /** Full list, or a narrow stack of icons. */
+  mode: "full" | "stack";
+  side: "left" | "right";
+  /** Today / Earlier, by site, or one list. */
+  group: "time" | "site" | "none";
+  showChats: boolean;
+  showMedia: boolean;
+  showSpaces: boolean;
+}
+
+export const DEFAULT_SIDEBAR: SidebarPrefs = { width: 248, mode: "full", side: "left", group: "time", showChats: true, showMedia: true, showSpaces: true };
+export const SIDEBAR_WIDTH = { min: 200, max: 380 } as const;
 
 export interface BrowserAi {
   enabled: boolean;
@@ -65,7 +83,7 @@ export interface BrowserAi {
   transcripts: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens" };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR };
 export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
 
 export interface BrowserSettings {

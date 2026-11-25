@@ -246,6 +246,13 @@ const handlers: Record<string, (a: any) => any> = {
   clipboard_list_cmd: () => ({ entries: [], paused: false }),
   get_training_stats_cmd: () => ({ pairCount: 0, filePath: "", fileSizeBytes: 0, recentPairs: [], macros: [] }),
   get_windhawk_status_cmd: () => ({ installed: false, exePath: null, modSourcePath: "", modInstalledInWindhawk: false }),
+  // Lens setup scenes: ?setup=first shows the first-launch setup, ?setup=update the "What's new" path.
+  setup_status_cmd: () =>
+    params.get("setup") === "first"
+      ? { version: "0.3.0", seenVersion: "", onboardingCompleted: false, forced: false }
+      : params.get("setup") === "update"
+        ? { version: "0.3.0", seenVersion: "", onboardingCompleted: true, forced: false }
+        : { version: "0.3.0", seenVersion: "0.3.0", onboardingCompleted: true, forced: false },
 };
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;

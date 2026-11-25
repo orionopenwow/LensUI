@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Volume2, VolumeX, Volume1, Mic, MicOff, Speaker, Headphones, ArrowLeftRight, ChevronDown, Check } from "lucide-react";
+import { Volume2, VolumeX, Volume1, Mic, MicOff, Speaker, Headphones, ArrowLeftRight, Check } from "lucide-react";
 import type { AudioAppSession, AudioDeviceList, QuickSettingsState } from "../../types/generated";
 import { LinkRow, Section, Select, StateNote, WinLink } from "../ui/primitives";
 import { BarButton, FillSlider, LevelDot } from "../ui/FillSlider";
@@ -51,7 +51,6 @@ export const SoundPage: React.FC<PageProps> = ({ section }) => {
   const apps = useResource<AudioAppSession[]>("list_audio_sessions_cmd");
   const levels = useResource<AudioLevels>("sys_audio_levels_cmd");
   const [err, setErr] = useState<string | null>(null);
-  const [showOthers, setShowOthers] = useState(false);
   const [mix, setMix] = useState<MixState>(emptyMix);
   const [lastOutputs, setLastOutputs] = useState<string[]>(readLast);
 
@@ -207,11 +206,12 @@ export const SoundPage: React.FC<PageProps> = ({ section }) => {
           {playing.map(appRow)}
           {others.length > 0 && (
             <>
-              <button type="button" className="sh-mix-more" aria-expanded={showOthers} onClick={() => setShowOthers((v) => !v)}>
-                <ChevronDown size={13} className={showOthers ? "open" : ""} aria-hidden />
-                Other apps ({others.length})
-              </button>
-              {showOthers && others.map(appRow)}
+              {/* Other apps are listed right away: no dropdown to open first. */}
+              <div className="sh-mix-head sh-mix-subhead">
+                <span>Other apps</span>
+                <span className="sh-mix-count">{others.length}</span>
+              </div>
+              {others.map(appRow)}
             </>
           )}
         </div>

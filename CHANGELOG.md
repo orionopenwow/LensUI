@@ -7,6 +7,39 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Changed
+- **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
+  site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
+  one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
+- **Make it yours › Sidebar:** full or icons only, left or right, width, grouping, and whether
+  chats, now playing and spaces show.
+- **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
+  show what they will change and wait for Apply; Summarise asks about your open tabs.
+### Added
+- **Lens setup on the first launch and after every new version:** pick a Dock (floating is the
+  default), colours and optional extras, or read what's new after an update. Nothing changes
+  until Finish, and Skip keeps everything as it is. Run it again from Settings › About & Testing
+  or by typing "setup" in Command (docs/SETUP.md).
+- **Launch-Lens-UI.bat** says "Lens", installs dependencies only when `bun.lock` changed, offers
+  the dev build or your last built Lens, and opens the setup once after the folder was updated.
+- **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
+  Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;
+  ← or Esc pans back. Picking one runs it in the Magic window. Alt+right-click still opens the
+  Magic window directly.
+- Shelf items have a right-click menu: Use as context, Copy, Pin, Remove, and Lens ›.
+- The File Explorer "Lens ›" menu (off until you add it in Settings › Connections) now also
+  appears inside folders and on drives. Existing installs see **Update…** to add the new places.
+- **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
+  and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
+  nothing installs until you choose Restart to update, which puts the desktop back, installs and
+  starts Lens again. What's new is shown in Settings › About & Testing › Updates. Also `/update`
+  in Command and "Check for updates…" in the tray menu.
+- **Report a problem:** Settings › About & Testing, the tray menu, `/report` in Command and the
+  card a crashed window shows. Choose what to attach (versions, recent log, latest crash report,
+  self-test, which features are on), see exactly what will be shared with user names, e-mail
+  addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
+  uploads nothing itself.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,

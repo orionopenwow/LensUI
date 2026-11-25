@@ -2650,7 +2650,7 @@
    "id": "setting.ai.connectionscard.file-explorer-right-click",
    "kind": "setting",
    "title": "File Explorer right-click",
-   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
+   "text": "",
    "path": [
     "Settings",
     "AI & Command",
@@ -4460,7 +4460,7 @@
    "id": "card.about.updatescard",
    "kind": "card",
    "title": "Updates",
-   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page. Updates. Updates. update mode and a manual check. Updates come from GitHub Releases and are signature-checked before installing. Backend: win_update.rs",
+   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to update. To roll back, run the previous installer from the Releases page. Updates. Updates. Settings › About & Testing › Updates: update mode, \"Check now\", what's new, and \"Restart to update\". Updates come from GitHub Releases and are signature-checked before anything installs. Backend: win_update.rs. The Top Bar pill and `/update` in Command use the same state",
    "path": [
     "Settings",
     "About & Testing",
@@ -7465,6 +7465,21 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "hotkey.shift-f10",
+   "kind": "hotkey",
+   "title": "Shift+F10",
+   "text": "Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (Shift+F10).",
+   "path": [
+    "Keyboard",
+    "Shift+F10"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
    "id": "hotkey.ctrl-v",
    "kind": "hotkey",
    "title": "Ctrl+V",
@@ -9743,6 +9758,124 @@
    "source": "docs/DITHER.md"
   },
   {
+   "id": "doc.dock-smoothness.0",
+   "kind": "doc",
+   "title": "Dock smoothness",
+   "text": "What keeps the Dock fast and steady. Two halves: the native window side (this section) and the page side (styles, motion, search bar), which has its own section.",
+   "path": [
+    "Docs",
+    "Dock smoothness"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Dock smoothness"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.2",
+   "kind": "doc",
+   "title": "Dock smoothness: Live previews (\"screens\")",
+   "text": "Symptom. Window previews could sit in the bottom-right corner of the screen and stay there, instead of appearing in the Dock's hover card and going away when the pointer left. Causes. - Previews are native DWM thumbnail windows (topmost, click-through) drawn over boxes the page measures. They were only removed when the page said \"hide\". A page that never said it (hover card closed through click-through glass, the Dock or Quick Settings hidden while the page kept running, a reload) left them on screen indefinitely. - Quick Settings' \"Open windows\" row re-requests previews every 4 s while its page is mounted. Its panel sits at the right of the screen, and a hidden panel's page still reports itself as visible, so previews kept reappearing there. - Tiles were converted to screen pixels with the asking window's origin at that moment. A window that was sliding, being resized or parked off scre",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Live previews (\"screens\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Live previews (\"screens\")"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.3",
+   "kind": "doc",
+   "title": "Dock smoothness: Bright bar on the Dock while Settings moves",
+   "text": "Causes. - The Dock drew its \"fused\" top edge (flat, joined to Settings) whenever Settings was open , even after Settings had been dragged elsewhere, leaving a bare bright seam on top of the pill. - The Dock reports its width on every frame of a width animation. Each report resized and moved the Settings window, and every native resize of a see-through WebView window can show an unpainted strip for a frame next to the Dock. Now. - The watcher emits lens://settings-docked (true only while Settings' edge sits on the pill, for every Dock edge; settings is docked , unit-tested). The Dock's fused edge follows it. - Settings follows the Dock's width only after the width has stood still for 140 ms ( SETTINGS FOLLOW MS ): one resize per change instead of one per animation frame.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Bright bar on the Dock while Settings moves"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Bright bar on the Dock while Settings moves"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.4",
+   "kind": "doc",
+   "title": "Dock smoothness: Auto-hide that sticks (\"the top Dock doesn't re-hide\")",
+   "text": "The watcher (65 ms loop, real pointer position each pass) is the single owner of \"shown\". It only stays up while something is in use , and three blockers could stay \"in use\" forever: Blocker Before Now --- --- --- Dock has keyboard focus Counted forever. Clicking an icon whose app doesn't take the foreground left the Dock focused, which also kept any stale menu flag alive. Counts for 4 s after the pointer was last on the Dock ( DOCK FOCUS GRACE MS ). Search palette visible Kept the Dock up as long as the palette window existed. Only while focused, plus 1.5 s ( FLYOUT IDLE MS ). Quick Settings visible Kept the Top Bar up as long as the panel existed. Only while focused or under the pointer (panel or bar), plus 1.5 s. PR #52's guards (stale menu after 1.2 s, click outside closes menus, visibility re-sent every ~2 s) are unchanged.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.5",
+   "kind": "doc",
+   "title": "Dock smoothness: Latency",
+   "text": "Measured on CI's Windows runner is not representative of a real desktop, so these are the paths and what each costs, not timings: - Hover → preview. The page waits 170 ms for the card's entrance, then one command; the native side creates one small window and one DWM thumbnail per tile on a dedicated thread (no COM, nothing on the UI thread). The watchdog adds one GetWindowRect , one IsWindowVisible and one GetCursorPos per 60 ms while previews are shown, and nothing otherwise. - Settings following the Dock. Was up to ~60 resizes per second during a Dock width animation; now one, 140 ms after the width settles. - Next steps. Reuse tile windows and thumbnail registrations between hovers instead of recreating them (saves a window create/destroy per tile per hover); move the 170 ms entrance wait to a measured \"card settled\" signal from the page.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Latency"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Latency"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.6",
+   "kind": "doc",
+   "title": "Dock smoothness: To check on a real PC",
+   "text": "1. Hover a Dock app with several windows: previews appear inside the card, follow the Dock as it slides, and are gone ~¼ s after the pointer leaves, including on a quick flick off the screen edge. 2. Open Quick Settings, then close it or click an app: no previews remain at the right of the screen. 3. Open Settings from the Dock and drag it away: the Dock's top edge rounds back immediately and nothing flashes on the Dock while dragging or while the Dock changes width. 4. Dock on the top edge with auto-hide: click a Dock icon, move away; the Dock hides within about half a second (4 s at most if the Dock kept focus). 5. Open Search or Quick Settings, click into an app: the bar and Dock hide again after ~1.5 s.",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "To check on a real PC"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "To check on a real PC"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
+   "id": "doc.dock-smoothness.7",
+   "kind": "doc",
+   "title": "Dock smoothness: Apps asking for attention",
+   "text": "Windows flashes a taskbar button orange when an app calls FlashWindowEx (a chat message, a dialog waiting behind other windows). The Lens Dock showed nothing. src-tauri/src/attention.rs registers the same shell hook Explorer uses ( RegisterShellHookWindow , HSHELL FLASH ) on its own thread and keeps one record per flashing window, grouped by executable the way the Dock groups windows. A request ends when the window is activated ( HSHELL WINDOWACTIVATED , HSHELL RUDEAPPACTIVATED ), comes to the front, or is destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own windows never count. For the Dock page: - Event lens://dock-attention , sent whole after every change: { version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] } , oldest first. Match exePath case-insensitively against get running windows / pinned app paths. - Command get doc",
+   "path": [
+    "Docs",
+    "Dock smoothness",
+    "Apps asking for attention"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DOCK_SMOOTHNESS.md",
+    "heading": "Apps asking for attention"
+   },
+   "source": "docs/DOCK_SMOOTHNESS.md"
+  },
+  {
    "id": "doc.dock-styles.0",
    "kind": "doc",
    "title": "Dock styles and Dock options",
@@ -10742,7 +10875,7 @@
    "id": "doc.lens-browser.19",
    "kind": "doc",
    "title": "Lens Browser: Delta items (docs/research/BROWSER_DELTA.md)",
-   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. Ask-on-Find Done: no matches → \"Ask about this page\". PDF annotation + Ask this PDF Partial: pag",
+   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop",
    "path": [
     "Docs",
     "Lens Browser",
@@ -10910,7 +11043,7 @@
    "id": "doc.magic.1",
    "kind": "doc",
    "title": "Magic right-click window: How you open it",
-   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and Ctrl+Alt+M are Lens shortcuts. - Plain right-click belongs to apps. - Shift+right-click is Explorer's \"extended menu\". - Ctrl+right-click is used by some editors. Ctrl+A",
+   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Lens › in Lens's own menus ✓ Dock app and Shelf item menus end with a \"Lens ›\" row that pans into these actions (docs/RIGHTCLICK.md, \"Lens in every menu\"). Works even when the global trigger is off. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Sh",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -12292,6 +12425,22 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "doc.reporting.0",
+   "kind": "doc",
+   "title": "Reporting a problem",
+   "text": "Where: Settings › About & Testing › Report a problem. Also: the tray menu (\"Report a problem…\"), /report in Command, and the \"Report a problem\" button on the card a crashed window shows. What the person fills in: what happened (required, a few words) and, optionally, the steps. What can be attached (each a switch, defaults in brackets): Attachment Default Source --- --- --- Lens and Windows versions on report::system text (Lens, Windows build, WebView2) Recent log on last 200 lines of the session log ( tester::ring ) Latest crash report on newest file in %APPDATA%\\LensUI\\crashes Self-test off the read-only run self test cmd Which features are on off config.json reduced to switches and short choices ( report::settings summary ): no free text, paths, names, lists, or anything secret-looking Privacy: the report is built and redacted in Rust ( src-tauri/src/report.rs ) with the Tester Hub's ",
+   "path": [
+    "Docs",
+    "Reporting a problem"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/REPORTING.md",
+    "heading": "Reporting a problem"
+   },
+   "source": "docs/REPORTING.md"
+  },
+  {
    "id": "doc.rightclick.0",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs",
@@ -12481,7 +12630,7 @@
    "id": "doc.rightclick.11",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Explorer and desktop",
-   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses MultiSelectModel=Player . Explorer starts one process per selected item, and the bridge merges ask files requests that arrive within 1.5 s into one pending request ( ipc::coalesce files , capped at 100 files). BridgeContext.files carries all of them. Browsers can never name files. Hidden actions. Explorer leave",
+   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Inside a folder (empty space) The folder verbs on the open folder ( \"%V\" ), without \"Ask about these folders\" Drives The folder verbs on the drive root, without \"Ask about these folders\". A drive root reaches Lens as C:\" (Windows reads \"C:\\\" as an escaped quote); bridge::cli::detect turns it back into C:\\ Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses Multi",
    "path": [
     "Docs",
     "Right-click everywhere, micro-saves and context packs",
@@ -12495,7 +12644,24 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.15",
+   "id": "doc.rightclick.12",
+   "kind": "doc",
+   "title": "Right-click everywhere, micro-saves and context packs: Lens in every menu (\"Lens ›\")",
+   "text": "Lens's own right-click menus end with one Lens › row (the small Lens logo). Hovering it for 160 ms, clicking it, or pressing → / Enter pans the menu sideways into the Magic actions for the same item; ← / Esc / Backspace pan back. Picking an action opens the Magic window for that item and runs it there (answers, confirmations and undo look the same as everywhere else); the last row, More in Lens… , opens the Magic window without running anything. Where Its own rows Then --- --- --- Dock app windows, Min · Max · Top, New Window, Run as Admin, File Location, Unpin… Lens › Shelf item Use as context, Copy, Pin/Unpin, Remove Lens › Notification (no menu of its own) right-click opens the Magic window directly - One component. src/magic/LensPan.tsx ( LensPan wraps a menu's rows; LensMenuRow is the row) and src/magic/LensContextMenu.tsx for items that had no menu. The panel's rows use the host me",
+   "path": [
+    "Docs",
+    "Right-click everywhere, micro-saves and context packs",
+    "Lens in every menu (\"Lens ›\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md",
+    "heading": "Lens in every menu (\"Lens ›\")"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
+   "id": "doc.rightclick.16",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 3. Lens Command: auto-attach the active pack",
    "text": "In src/command/CommandSurface.tsx , where the context chips are built:",
@@ -12512,7 +12678,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.16",
+   "id": "doc.rightclick.17",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 4. Control Center mounts",
    "text": "Mount these in the AI & Command tab, after ClipboardCard : Mount the micro-save toast once in a surface that is always present, such as the notifications surface or TopBarSurface :",
@@ -12529,7 +12695,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.17",
+   "id": "doc.rightclick.18",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 5. MCP: packs as resources and prompts (`src-tauri/src/win_mcp.rs`, owned by the claude-control package)",
    "text": "Replace \"resources/list\" \"prompts/list\" = rpc error(…) with the code below. Also advertise \"resources\": {}, \"prompts\": {} in initialize capabilities. Two rules for this snippet: - Approval. Reading a pack is read-only, but it is user content. Gate resources/read behind the same \"Allow AI apps to connect\" approval the tools use. - Local-only packs. Never serve a pack whose items are local-only ( PackView.local only ).",
@@ -12546,7 +12712,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.18",
+   "id": "doc.rightclick.19",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 6. Lens Browser (`src/browser/*`)",
    "text": "YouTube in Lens Browser can reuse extensions/browser/src/youtube.js (pure) and content/ytPage.js (inject into the page).",
@@ -12563,7 +12729,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.19",
+   "id": "doc.rightclick.20",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 7. Dock, Lens Mini, Shelf, clipboard and notifications",
    "text": "Build each right-click menu with menuFor({ kind, surface }) : Place Call --- --- Shelf item { kind: \"shelf\", surface: \"shelf\" } Clipboard row ( ClipboardPane.tsx ) { kind: \"clipboard\", surface: \"clipboard\" } Notification ( NotificationCenterPane.tsx ) { kind: \"notification\", surface: \"notification\" } Dock app { kind: \"app\", surface: \"dock\" } Lens Mini tiles { kind: \"selection\", surface: \"mini\" } Run actions as follows: - AI actions: ai ask with the bridge's prompt wording ( bridge/prompt.rs ), or expandPrompt for custom actions. - micro save : shelfMicroSave({ text, title, url, source app }) . - pack add : open the pack picker ( packList + packAddItems ). - send claude : claudeRequest(...) . Notification and clipboard rows get three entries first: Add to Shelf , Summarise and Ask . Those are the first three applicable catalogue actions with the default prefs.",
@@ -12580,7 +12746,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.23",
+   "id": "doc.rightclick.24",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clean copy",
    "text": "The rules. src/context/cleanCopy.rules.json holds the tracking parameters ( utm , fbclid , gclid , mc , igshid , HubSpot, Matomo/Piwik, Bing, Amazon and others), per-host parameters, and the \"Read more at…\" markers. Some parameters are stripped only on particular hosts. For example, si and feature are removed on YouTube and Spotify but kept everywhere else. Where the rules are used. Code Function --- --- Lens src/context/cleanCopy.ts : cleanUrl , cleanLinksInText , stripHijack Extension extensions/browser/src/cleanUrl.js . Same logic; the rules are copied into catalog.gen.js , and a test checks both produce identical results on a table of cases. In the browser. - A new Copy clean link item (catalogue id copy link ). - Copy as Markdown now cleans every link it writes. - Clip to notes sends the cleaned URL. Copy guard. In the extension settings, \"Stop sites changing what I copy\" is off by ",
@@ -12597,7 +12763,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.24",
+   "id": "doc.rightclick.25",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Page archive (\"Save page offline\")",
    "text": "The extension builds the snapshot with src/content/snapshot.js . This is our own approach; SingleFile (AGPL) is not used. 1. Clone the live DOM. 2. Remove scripts, frames, objects, on handlers, javascript: URLs and meta refresh. 3. Make all URLs absolute and add <base . 4. Inline same-origin stylesheets. 5. Inline images that are already loaded and same-origin, smallest first, through a canvas as WebP, while the file stays under the cap. Other images keep absolute URLs. 6. Add a script-blocking CSP and a lens-archive provenance meta tag. The snapshot makes no network requests. Size caps. MAX ARCHIVE BYTES is 420 KB, so one message carries the HTML plus up to 48 KB of readable text. What Lens does with it. 1. The bridge action archive save is accepted only from the browser, and only from this action. 2. shelf::archive::harden html strips scripts, frames, handlers and javascript: again, an",
@@ -12614,7 +12780,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.25",
+   "id": "doc.rightclick.26",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clipper templates",
    "text": "The syntax follows Obsidian Web Clipper (MIT, © Obsidian), credited in docs/THIRD PARTY NOTICES.md . The parser is our own: src/context/templates/parser.ts . Variables: title url domain author description published site date time selection highlights content tags keywords Filters: lower upper title trim slug safe name date:\"YYYY-MM-DD\" default:\"…\" replace:\"a\",\"b\" truncate:n join:\", \" split first last blockquote list wikilink link:\"text\" hashtags yaml list yaml string lint reports unknown variables, unknown filters and unclosed tags. Built-in templates ( templates.ts ): - \"Note with source\", with YAML front matter; - \"Highlights only\"; - \"Reading list line\". Writing. Rust shelf::clipper stores clipper.json with the approved folders and the templates. - clipper folder approve(folder, confirm) first returns a question. It approves only on confirm: true , and refuses system folders and folde",
@@ -12631,7 +12797,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.26",
+   "id": "doc.rightclick.27",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Double-click to define or translate",
    "text": "The extension setting \"Define or translate on double-click\" is off by default. When on, it covers all sites minus \"Never\" and the built-in sensitive list. It has a \"Show first\" choice (definition or translation) and a \"Translate into\" language. src/content/define.js only triggers when: - the double-clicked text is a single word, 1–40 letters ( defineWordOk ); - it is not in a sensitive field; - the site is not denied. The bubble is in a closed Shadow DOM. The request is the bridge action define with localOnly: true . Lens refuses it outright when there is no local engine. It never waits for a cloud confirmation and never falls back to Claude. No offline dictionary. None is bundled. WordNet is redistributable but about 30 MB, so that is left as a decision. Without a local model, the bubble says so.",
@@ -12882,6 +13048,107 @@
     "heading": "Visual-aid audit"
    },
    "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.setup.0",
+   "kind": "doc",
+   "title": "Lens setup",
+   "text": "The setup opens over Control Center: on the first launch after installing or downloading Lens; once after every new version (Lens compares the running version with setupSeenVersion in its config); and when Launch-Lens-UI.bat sees that the folder was updated since the last launch (it sets LENS SHOW SETUP=1 ). You can also open it from Settings › About & Testing › Setup or by typing setup in Command.",
+   "path": [
+    "Docs",
+    "Lens setup"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Lens setup"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.1",
+   "kind": "doc",
+   "title": "Lens setup: Nothing changes until Finish",
+   "text": "Every choice is a draft. The previews draw from it, and only Finish writes, through the one settings writer. It writes only what you picked ( applyChoices in src/setup/flow.ts ): Skip setup (or Esc) on any page writes only onboardingCompleted and setupSeenVersion , so the setup doesn't come back for this version. A new install keeps its defaults: the floating Dock and the default theme. Skip this step forgets what you picked on that page. A colour look never changes the Dock. The Dock changes only if you picked one on the Dock page. Anything that touches Windows (Start with Windows, hiding the taskbar) goes through the same config switches as Settings, so Remove all Lens changes undoes it.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Nothing changes until Finish"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Nothing changes until Finish"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.2",
+   "kind": "doc",
+   "title": "Lens setup: Pages",
+   "text": "First launch / Run setup again After an update --- --- Welcome What's new in version (from CHANGELOG.md ) Dock: Floating, Slim, Taskbar, Split, and the screen edge Extras added since the last setup that are still off (page skipped when there are none) Colour: Dark / Light / Day & night, the featured looks, the accent Done Optional extras (all off), plus where to set up Windhawk styling and voice transcription Done: exactly what Finish will change \"Day & night\" turns on the theme schedule: a light look from 7:00, a dark look from 19:00.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Pages"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Pages"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.3",
+   "kind": "doc",
+   "title": "Lens setup: Adding an extra",
+   "text": "Add it to EXTRAS in src/setup/flow.ts with since set to the version it first ships in. People who update see it once on the extras page of that version's setup; new installs see every extra. Handle it in extraIsOn and applyChoices , and add a test.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Adding an extra"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Adding an extra"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.4",
+   "kind": "doc",
+   "title": "Lens setup: What's new",
+   "text": "src/setup/whatsNew.ts is generated from CHANGELOG.md by node tools/setup/whats-new.mjs ( bun run gen:whatsnew ). src/ tests /setupFlow.test.ts fails when it is out of date. Each line is the first sentence of a changelog bullet, so write the bullets with a plain first sentence.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "What's new"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "What's new"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.5",
+   "kind": "doc",
+   "title": "Lens setup: Checks",
+   "text": "bun test src/ tests /setupFlow.test.ts : when the setup opens; Skip changes only the seen markers; Finish writes only the chosen keys; a look doesn't move the Dock. bun run parity:setup : screenshots every page of both flows in a dark and a light theme and fails on a page error or a page that doesn't render (CI: the Visual parity job). Rust: commands::setup flow tests when the setup is due.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Checks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Checks"
+   },
+   "source": "docs/SETUP.md"
   },
   {
    "id": "doc.shelf.0",
@@ -14236,7 +14503,7 @@
    "id": "doc.vision.4",
    "kind": "doc",
    "title": "Lens vision: one desktop, not a pile of apps: Read next",
-   "text": "- Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
+   "text": "- Identity: mission, brand, design philosophy and the promises Lens keeps (start here). - Features: everything Lens does and every suggested feature, with status. - Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
    "path": [
     "Docs",
     "Lens vision: one desktop, not a pile of apps",
@@ -14552,6 +14819,192 @@
     "heading": "Code"
    },
    "source": "docs/WALLPAPER_SWITCHER.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.0",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own",
+   "text": "Status: research and plan, nothing built . Written 24 November 2026 against main after #81. Owner: the maintainer. This decides how Lens can style other apps' windows without asking people to install Windhawk, and without breaking the promises in brain/IDENTITY.md (off by default, reversible, games and anti-cheat left alone).",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Replacing Windhawk with something of our own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.1",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 1. What Windhawk does for Lens today",
+   "text": "Windhawk is a third-party, open-source mod engine. Lens ships one mod for it: windhawk/lens-window-style.wh.cpp (v1.1.0). Since #76 it is written into C:\\ProgramData\\Windhawk\\ModsSource only when the person clicks Install in Windhawk , and it excludes every name on Lens's anti-cheat list (42, kept in sync by a test). Inside every process it is allowed into, the mod: 1. reads five settings from Lens (caption colour, border colour, text colour, corner mode, dark mode); 2. calls DwmSetWindowAttribute on each top-level window: DWMWA USE IMMERSIVE DARK MODE (20), DWMWA WINDOW CORNER PREFERENCE (33), DWMWA BORDER COLOR (34), DWMWA CAPTION COLOR (35), DWMWA TEXT COLOR (36); 3. re-applies them when a window is shown (an in-process SetWinEventHook ). That is all. It doesn't paint, hook APIs, or change behaviour; it sets five documented DWM attributes from inside the app.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "1. What Windhawk does for Lens today"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "1. What Windhawk does for Lens today"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.2",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 2. What Lens already has of its own",
+   "text": "Piece What it does Where --- --- --- Out-of-process DWM engine Sets the same five attributes on other apps' windows from Lens's own process , on a refresh worker; tracks which windows it styled so an exclude rule can hand them back src-tauri/src/win dwm engine.rs Caption engine Draws Lens's window buttons as overlay windows over other apps' title bars, colour-matched row by row (#80) src-tauri/src/win caption engine.rs , caption paint.rs In-process hook (experimental, off) A Lens-built DLL loaded with a global WH CALLWNDPROC hook that applies the same five attributes from inside each process src-tauri/lens-dwm-hook/ , win dwm engine.rs Anti-cheat list and rules Process names never touched; per-app rules win rules.rs ( ANTI CHEAT FRAGMENTS ), win hook guard.rs Windhawk sync Finds Windhawk, installs/refreshes the mod on opt-in, removes it on Remove all win windhawk.rs , changes.rs So Lens ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "2. What Lens already has of its own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "2. What Lens already has of its own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.3",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 3. Why an out-of-process call can fall short",
+   "text": "These are the known or likely gaps, to be confirmed by the phase 0 spike (§6): - Integrity level (UIPI). An unelevated Lens can't change windows of elevated apps (Task Manager, admin terminals, installers). Windhawk reaches them only when it runs elevated too. - Apps that re-assert their own frame. Some apps set their own DWM attributes or redraw the caption on activate/theme change, overwriting Lens until the next refresh. In-process code can apply right after the app does; out of process, Lens must notice and re-apply. - Custom-drawn title bars (Chrome, Edge, VS Code, Electron, UWP/WinUI). Caption and text colour do nothing where the app draws its own title bar; neither approach changes that without app-specific hacks. Border colour and corners still work. - Timing. A window can flash its default colours between creation and Lens's first pass. - Win 10. Caption, border and text colour ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "3. Why an out-of-process call can fall short"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "3. Why an out-of-process call can fall short"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.5",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (a) Out-of-process only (no injection)",
+   "text": "Lens styles every window from its own process: - an out-of-context WinEvent hook ( WINEVENT OUTOFCONTEXT , no DLL is loaded into anyone) for EVENT OBJECT CREATE / SHOW / EVENT SYSTEM FOREGROUND / EVENT OBJECT LOCATIONCHANGE , so new and re-activated windows are styled within a frame or two, and windows that reset their frame are re-applied after activation (the caption engine already uses settle-and-recheck reads; reuse that); - the five DWM attributes plus DWMWA SYSTEMBACKDROP TYPE (Mica/Acrylic, Windows 11 22H2+) where the app allows it; - the caption engine for Lens window buttons; overlays for active-window borders and focus dim (already shipped); - per-app rules and the anti-cheat list exactly as today; nothing ever enters a game's process. Reproduces: all five mod effects on unelevated apps with system-drawn title bars; borders and corners on custom title bars. Not: elevated window",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(a) Out-of-process only (no injection)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(a) Out-of-process only (no injection)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.6",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (b) Our own signed injection engine",
+   "text": "A Lens-built engine like Windhawk's: inject a signed DLL into chosen processes and apply styling from inside. How Windhawk does it, for reference: it allocates memory in the target and starts a remote thread (or queues an APC for processes that haven't started) to load its engine DLL, hooks process creation to follow child processes, uses MinHook for API hooks, and keeps exclusion lists for critical system processes and many games. It needs administrator rights for elevated targets, special file permissions for UWP apps, and can't load into processes that require signed images. Reproduces: everything (a) does, plus elevated windows (if the engine runs elevated) and styling from the first frame. Could later reach custom title bars by hooking the app's drawing, which Lens has ruled out (FEATURES › Dropped). Effort: large (injector, x64/x86/ARM64 builds, child-process following, safe unload",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(b) Our own signed injection engine"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(b) Our own signed injection engine"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.7",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (c) Hybrid",
+   "text": "(a) by default for everyone; an opt-in \"deep styling\" mode for the few cases (a) can't cover, implemented by the existing lens-dwm-hook (already Lens-built, already anti-cheat-excluded, off by default), rebuilt from source and signed in releases, with a strict per-app allowlist instead of \"every process\", and fixed to refuse loading into excluded processes (B-05). Reproduces: everything, with injection only where the person chose it, per app. Effort: medium. Risk: medium, contained to the apps someone opted in.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(c) Hybrid"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(c) Hybrid"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.8",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 5. Recommendation",
+   "text": "Go with (a) now and keep (c) as the escape hatch; don't build (b). 1. The Windhawk mod only sets five documented DWM attributes, and Lens already sets the same five from its own process. The gap is timing, apps that reset their frame, and elevated windows; it isn't about capability. 2. An out-of-context WinEvent hook plus re-apply-after-activate closes most of the timing gap with no code inside other apps. 3. Injection is where the risk lives (anti-cheat, antivirus, crashes in other apps, maintenance), and it contradicts Lens's own trust promise. A general injection engine would make Lens look like the thing antivirus tools are built to stop. 4. For the remaining cases, the opt-in, allowlisted lens-dwm-hook (c) is enough, and Windhawk can stay as an optional path for people who already use it. 5. Result: Lens needs no third-party install for window styling. Windhawk becomes optional, the",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "5. Recommendation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "5. Recommendation"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.9",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 6. Phased plan",
+   "text": "Phase What Exit criteria --- --- --- 0 · Spike (days) Run tools/spikes/dwm-foreign-window.ps1 on Windows 11 23H2 and 24H2, and on Windows 10 22H2: set the five attributes plus Mica on Notepad, Explorer, Settings, Paint, Task Manager (elevated), Chrome, VS Code, Terminal, Calculator from an unelevated process. Record per app: which sets succeed, whether they survive activation, theme change, maximise. A table per app and attribute in this doc. Confirms or corrects §3. 1 · Out-of-process engine v2 (1–2 weeks) Out-of-context WinEvent hook; style on create/show; re-apply after activation and on WM THEMECHANGED -equivalent events (settle-and-recheck, like #80); Mica option; one owner of \"styled windows\"; Remove all restores defaults on every styled window. Parity rig extended (like the caption rig) for the attribute logic. On the spike's app list, every unelevated app with a system title bar ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "6. Phased plan"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "6. Phased plan"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.10",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 7. How others do it (for comparison)",
+   "text": "- Mica For Everyone : a standalone app that applies backdrop and title-bar settings to other apps' windows through rules; its FAQ lists apps that need flags or don't work (Chromium's custom title bar, Firefox after 115). - ExplorerPatcher / StartAllBack : change the Windows shell itself by loading code into Explorer only, a narrower and different job from styling every app. - WindowBlinds : full skinning by injection; the most complete look and the most compatibility and anti-cheat friction. - Windhawk : general mod engine, global injection with exclusion lists; powerful, and flagged by some antivirus and anti-cheat tools for exactly that reason.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "7. How others do it (for comparison)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "7. How others do it (for comparison)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.11",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: Sources",
+   "text": "- DwmSetWindowAttribute (Microsoft Learn) and DWMWINDOWATTRIBUTE - Implementing Global Injection and Hooking in Windows (Windhawk's author) - Windhawk wiki: Injection targets and critical system processes - Is Windhawk safe? Mods, injection and antivirus alerts (Gridinsoft) - Mica For Everyone FAQ - ExplorerPatcher wiki: using it as a shell extension",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Sources"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
   },
   {
    "id": "doc.window-styling.0",

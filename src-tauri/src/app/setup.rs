@@ -226,7 +226,7 @@ pub(crate) fn run_setup(
             && label != "testerhub"
             && label != "studio"
             && (!initial_config.func.lazy_windows
-                || (label == "settings" && !initial_config.onboarding_completed));
+                || (label == "settings" && crate::commands::setup_flow::setup_due(&initial_config)));
         // Claim the label first: a first-use build (`ensure_window`) started from another thread at
         // the same moment would otherwise build a second window under the same label, leaving an
         // orphaned page Tauri no longer knows about (seen in CI as two Settings pages).
@@ -539,6 +539,9 @@ pub(crate) fn run_setup(
     // Wave 4–6 features: shell keys, pointer effects, Playground idle mode, crash reports and
     // updates, the browser bridge adapters, clipboard history v2 and Lens Command hotkeys.
     crate::app::integration::setup(app, &initial_config);
+
+    // Apps asking for attention (FlashWindowEx): the Dock shows them like the taskbar would.
+    crate::attention::start(handle.clone());
 
     // Background thread: theme sync, Top Bar / Dock auto-hide, click-through, desktop tab.
     crate::app::watcher::spawn_watcher(
