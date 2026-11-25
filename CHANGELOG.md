@@ -7,6 +7,14 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Changed
+- **Lens Browser sidebar, simpler:** open tabs come first in quiet Today / Earlier sections (or by
+  site, or one list); pinned tabs and favourite bookmarks are icon tiles; folders sit at the bottom,
+  one line each; chats fold away; sleep, audio and pin show on hover. Find a tab with Ctrl+Shift+A.
+- **Make it yours › Sidebar:** full or icons only, left or right, width, grouping, and whether
+  chats, now playing and spaces show.
+- **Lens row in the sidebar:** Tidy (also Ctrl+Shift+K), Close duplicates and Group by site now
+  show what they will change and wait for Apply; Summarise asks about your open tabs.
 ### Added
 - **Lens › in right-click menus.** Dock app and Shelf item menus end with a "Lens ›" row with the
   Lens logo. Hover it, click it or press → to pan the menu into the Magic actions for that item;

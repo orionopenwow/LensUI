@@ -1601,8 +1601,8 @@ export const DockSurface: React.FC = () => {
                   className="dock-ctx-item"
                   onClick={() => {
                     setSettingsOpen(true);
-                    setActiveSettingsTab("system");
-                    invoke("open_dock_popout_tab_cmd", { tab: "system" });
+                    setActiveSettingsTab("quick");
+                    invoke("open_dock_popout_tab_cmd", { tab: "quick" });
                     closeMenu();
                   }}
                 >
@@ -2604,8 +2604,9 @@ export const DockSurface: React.FC = () => {
                 invoke("toggle_settings_docked");
               } else {
                 setSettingsOpen(true);
-                setActiveSettingsTab("system");
-                invoke("open_dock_popout_tab_cmd", { tab: "system" });
+                // The gear always opens on Quick settings, never on the page used last.
+                setActiveSettingsTab("quick");
+                invoke("open_dock_popout_tab_cmd", { tab: "quick" });
               }
             }}
           >
