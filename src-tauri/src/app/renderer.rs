@@ -55,6 +55,9 @@ pub(crate) fn on_failure(label: &str, kind: i32) -> bool {
     eprintln!("[Lens UI] The {label} page's renderer exited (kind {kind}).");
     if crate::app::loadguard::GUARDED.contains(&label) {
         dead().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string());
+        // Not in unit tests: reaching the load guard from a test pulls window code into the test
+        // binary, which then needs the app manifest to start (STATUS_ENTRYPOINT_NOT_FOUND).
+        #[cfg(not(test))]
         crate::app::loadguard::kick(label);
         false
     } else {
