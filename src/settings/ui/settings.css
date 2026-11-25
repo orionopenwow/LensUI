@@ -250,7 +250,7 @@
   background:
     linear-gradient(180deg, rgb(var(--lens-ink) / 0.07), rgb(var(--lens-ink) / 0.03));
   box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.07), inset 0 1px 0 rgb(var(--lens-ink) / 0.06);
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition: background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), box-shadow var(--lens-dur-fast) var(--lens-ease-out);
 }
 .sh-hero-icon svg { stroke-width: 2.1; }
 .sh-hero-tile.clickable:hover .sh-hero-icon {
