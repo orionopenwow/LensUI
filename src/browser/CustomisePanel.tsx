@@ -1,7 +1,9 @@
 import React, { useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Monitor, Moon, Palette, Sun } from "lucide-react";
-import { DEFAULT_APPEARANCE, type Appearance } from "./api";
+import { DEFAULT_APPEARANCE, DEFAULT_SIDEBAR, SIDEBAR_WIDTH, type Appearance, type SidebarPrefs } from "./api";
+import { Toggle } from "./AiPanel";
+import { sidebarPrefs } from "./tabAi";
 import { Key } from "./ApprovalCard";
 
 /** hsl → #rrggbb */
@@ -58,13 +60,13 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
   );
 }
 
-function Slider({ label, value, onChange, dithered }: { label: string; value: number; onChange(v: number): void; dithered?: boolean }) {
+function Slider({ label, value, onChange, dithered, min = 0, max = 100 }: { label: string; value: number; onChange(v: number): void; dithered?: boolean; min?: number; max?: number }) {
   return (
     <label className="lb-slider">
       <span>{label}</span>
       <span className={`lb-slider-track${dithered ? " is-dither" : ""}`}>
-        <input type="range" min={0} max={100} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
-        <span className="lb-slider-fill" style={{ width: `${value}%` }} aria-hidden />
+        <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
+        <span className="lb-slider-fill" style={{ width: `${((value - min) / (max - min)) * 100}%` }} aria-hidden />
       </span>
       <span className="lb-mono lb-dim lb-slider-val">{value}</span>
     </label>
@@ -78,6 +80,8 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
   const [hue, light] = hexHueLight(a.accent ?? "#7c8cf8");
   const knob = { left: `${(hue / 360) * 100}%`, top: `${Math.max(0, Math.min(1, (0.68 - light) / 0.42)) * 100}%` };
   const set = (patch: Partial<Appearance>) => onChange({ ...a, ...patch });
+  const sb = sidebarPrefs(a.sidebar, DEFAULT_SIDEBAR, SIDEBAR_WIDTH);
+  const setSb = (patch: Partial<SidebarPrefs>) => set({ sidebar: { ...sb, ...patch } });
   const pick = (e: React.PointerEvent) => {
     const r = field.current!.getBoundingClientRect();
     set({ accent: fieldColor((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height) });
@@ -155,6 +159,28 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
           <span className="lb-label">Type</span>
           <Seg label="Typeface" value={a.typeface} onChange={(typeface) => set({ typeface })} options={[["lens", "Lens"], ["system", "System"], ["mono", "Mono"], ["serif", "Serif"]]} />
         </div>
+        <div className="lb-rule" />
+        <div className="lb-make-row">
+          <span className="lb-label">Sidebar</span>
+          <Seg label="Sidebar" value={sb.mode} onChange={(mode) => setSb({ mode })} options={[["full", "Full"], ["stack", "Icons"]]} />
+        </div>
+        <div className="lb-make-row">
+          <span className="lb-label">Side</span>
+          <Seg label="Sidebar side" value={sb.side} onChange={(side) => setSb({ side })} options={[["left", "Left"], ["right", "Right"]]} />
+        </div>
+        <div className="lb-make-row">
+          <span className="lb-label">Group</span>
+          <Seg label="Group tabs" value={sb.group} onChange={(group) => setSb({ group })} options={[["time", "By time"], ["site", "By site"], ["none", "Off"]]} />
+        </div>
+        {sb.mode === "full" ? <Slider label="Width" value={sb.width} min={SIDEBAR_WIDTH.min} max={SIDEBAR_WIDTH.max} onChange={(width) => setSb({ width })} /> : null}
+        <div className="lb-make-toggles">
+          {([["showChats", "Chats"], ["showMedia", "Now playing"], ["showSpaces", "Spaces"]] as [keyof SidebarPrefs, string][]).map(([k, label]) => (
+            <label key={k} className="lb-make-toggle">
+              <span>{label}</span>
+              <Toggle on={sb[k] as boolean} label={`Show ${label.toLowerCase()} in the sidebar`} onChange={(v) => setSb({ [k]: v } as Partial<SidebarPrefs>)} />
+            </label>
+          ))}
+        </div>
         <footer className="lb-make-foot">
           <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => onChange(DEFAULT_APPEARANCE)}>Reset <Key k="R" /></button>
           <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(() => {})}>
@@ -162,7 +188,7 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
           </button>
         </footer>
       </section>
-      <p className="lb-hint">Change tabs, density, theme and type. Don't like the dither? Slide it to 0.</p>
+      <p className="lb-hint">Change tabs, the sidebar, density, theme and type. Don't like the dither? Slide it to 0.</p>
     </div>
   );
 }
