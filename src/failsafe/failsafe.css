@@ -47,3 +47,7 @@
   outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, #fff);
   outline-offset: 2px;
 }
+.fs-problem-link {
+  border-color: transparent;
+  background: transparent;
+}

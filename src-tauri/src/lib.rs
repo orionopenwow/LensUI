@@ -1,5 +1,6 @@
 mod ai;
 mod config;
+mod report;
 mod voice;
 #[cfg(windows)]
 mod ffi;
@@ -763,6 +764,12 @@ pub fn run() {
             commands::release::set_update_settings_cmd,
             commands::release::check_for_update_cmd,
             commands::release::install_update_cmd,
+            commands::release::get_update_state_cmd,
+            commands::release::download_update_cmd,
+            commands::release::restart_to_update_cmd,
+            commands::release::bug_report_preview,
+            commands::release::bug_report_open_issue,
+            commands::release::bug_report_save,
             commands::playground::save_playground_state_cmd,
             commands::playground::load_playground_state_cmd,
             commands::playground::clear_playground_state_cmd,

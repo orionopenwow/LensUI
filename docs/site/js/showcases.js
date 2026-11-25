@@ -15,111 +15,106 @@ const pointIn = (desk, app, fx, fy) => { const w = desk.byApp(app); return w ? {
 
 /** Window layouts as fractions of the work area: [app, x, y, w, h, scene?]. */
 const LAYOUT = {
-  desktop: [["browser", 0.02, 0.04, 0.56, 0.84, "browser.html?scene=frame"], ["notes", 0.6, 0.1, 0.38, 0.66, "coreapps.html?app=notes"]],
-  magic: [["browser", 0.02, 0.04, 0.6, 0.88, "browser.html?scene=frame"]],
-  agent: [["browser", 0.02, 0.04, 0.62, 0.88, "browser.html?scene=frame"]],
-  browser: [["browser", 0.05, 0.03, 0.9, 0.92, "browser.html?scene=frame"]],
-  apps: [["store", 0.12, 0.03, 0.76, 0.92, "shell.html?surface=apps"]],
-  music: [["music", 0.14, 0.05, 0.72, 0.86, "music.html?scene=np-expanded"]],
-  cleaner: [["cleaner", 0.12, 0.03, 0.76, 0.92, "cleaner.html?scene=home"]],
-  core: [["monitor", 0.02, 0.04, 0.56, 0.8, "coreapps.html?app=monitor"], ["timer", 0.62, 0.08, 0.34, 0.78, "coreapps.html?app=timer"]],
-  settings: [["settings", 0.1, 0.03, 0.72, 0.92, "shell.html?surface=settings&settingsMode=simple"]],
+  docks: [["browser", 0.04, 0.04, 0.56, 0.8, "browser.html?scene=home"], ["notes", 0.62, 0.1, 0.34, 0.66, "coreapps.html?app=notes"]],
+  browser: [["browser", 0.05, 0.03, 0.9, 0.94, "browser.html?scene=home"]],
+  themes: [["browser", 0.04, 0.04, 0.56, 0.8, "browser.html?scene=home"], ["notes", 0.62, 0.1, 0.34, 0.66, "coreapps.html?app=notes"]],
+  magic: [["browser", 0.02, 0.04, 0.6, 0.9, "browser.html?scene=frame"]],
+  agent: [["browser", 0.02, 0.04, 0.62, 0.9, "browser.html?scene=agent"]],
+  desktop: [["browser", 0.02, 0.04, 0.56, 0.84, "browser.html?scene=home"], ["notes", 0.6, 0.1, 0.38, 0.66, "coreapps.html?app=notes"]],
 };
+
+/** Every dock style, in the order the tour shows them: [style, name, line, shape?, pack?]. */
+const DOCK_TOUR = [
+  ["floating", "Floating", "the default: a glass pill above your windows", null, "obsidian"],
+  ["taskbar", "Taskbar", "full width with Windows 11 proportions", null, "obsidian"],
+  ["slim", "Slim", "the same dock, thinner and quieter", null, "obsidian"],
+  ["studio", "Studio", "labels and room to breathe on big screens", null, "obsidian"],
+  ["minimal", "Minimal", "just the icons, nothing else", null, "obsidian"],
+  ["split", "Split", "apps on one side, status on the other", null, "obsidian"],
+  ["islands", "Islands", "grouped pills", null, "catppuccin-mocha"],
+  ["islands", "Expressive", "soft, bold shapes with its own pack", "expressive", "lens-expressive"],
+  ["islands", "Dot Matrix", "drawn in dots, with its own pack", "dotmatrix", "lens-dot-matrix"],
+];
+const setPack = async (d, id) => { const p = (await getPacks()).find((x) => x.id === id); if (p && d.pack?.id !== p.id) d.setPack(p); };
+const dockStep = ([style, name, line, shape, pack], k) => ({
+  cap: k === 0 ? `Pick your dock. ${name}: ${line}. Press Next to try the others on this desk.` : `${name}: ${line}.`,
+  target: (d) => d.frame,
+  run: async (d) => { const nx = DOCK_TOUR[k + 1]; if (!nx) return; await setPack(d, nx[4]); d.dockStyle(nx[0], nx[3] ?? "classic"); },
+});
+
+/** Theme tour stops: [pack, line]. */
+const THEME_TOUR = [
+  ["catppuccin-mocha", "Catppuccin Mocha: soft pastels on dark."],
+  ["alabaster-daylight", "Alabaster Daylight: a light look for bright rooms."],
+  ["living-sky", "Living Sky: the wallpaper follows the time of day."],
+  ["lens-expressive", "Lens Expressive: bold shapes, its own dock."],
+];
 
 /**
  * step: { cap, target?(desk) → element (may be inside a surface), run(desk) }
  * `run` must be quick to replay (Back replays earlier steps with no pauses).
+ * Order follows the page: docks first, then Lens Browser, then themes and the rest.
  */
 export const SHOWCASES = [
   {
-    id: "desktop", title: "Desktop", line: "Real windows, the dock, Quick Settings and Command.",
+    id: "docks", title: "Docks", line: "Nine styles. Floating by default.",
+    look: { pack: "obsidian", dock: "floating" },
+    steps: [...DOCK_TOUR.map(dockStep), { cap: "Keep the one you like in Settings › Dock. Floating stays the default.", target: (d) => d.frame }].map((st, k, all) => (k === all.length - 2 ? { ...st, run: undefined } : st)),
+  },
+  {
+    id: "browser", title: "Lens Browser", line: "Light, with an AI that asks first.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: "This is Lens: the top bar, your windows and the dock. Every window here is the app's real one. Drag Lens Browser by its top strip.", target: (d) => winEl(d, "browser") },
-      { cap: "Snap Lens Browser to the left half. (Dragging it to the left edge does the same.)", target: (d) => winEl(d, "browser"), run: (d) => d.snap(d.byApp("browser")?.id, "left") },
-      { cap: "And Notes to the right.", target: (d) => winEl(d, "notes"), run: (d) => d.snap(d.byApp("notes")?.id, "right") },
-      { cap: "Quick Settings opens from the top bar: Wi-Fi, sound, battery, theme.", target: (d) => d.overs.qs.el, run: (d) => d.openFly() },
-      { cap: "Ctrl+Space opens Lens Command: one box to ask, search and run things.", target: (d) => d.overs.cmd.el, run: (d) => d.openCmd("compact") },
-      { cap: "Answers stay in one thread, with what it used and where it ran.", target: (d) => d.overs.cmd.el, run: (d) => d.openCmd("thread") },
-      { cap: "That's the everyday desk. Close Command and play, or pick another tour below.", run: (d) => d.closeCmd() },
+      { cap: "Lens Browser opens on one box: search, an address, or a question. Most visited and recently closed sit underneath.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=suggest") },
+      { cap: "Typing searches your open tabs, bookmarks and history as you go.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
+      { cap: "Ask it to do something, and the AI works beside the page, not instead of it. Every click and every word it types is listed.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=approval") },
+      { cap: "Anything that books, pays or sends waits for you. Here a $25 no-show fee: you see the exact button and the details, then hold to approve.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=results") },
+      { cap: "Then it shows what it found: a map, a table and its pick, with why.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=permission") },
+      { cap: "Optional stop: a site that wants your camera or location asks under the address bar. Block, allow once, or allow for that site.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
+      { cap: "Optional stop: text hidden in a page that tries to steer the AI is flagged in the log, not obeyed. Look for “Flagged” in the panel.", target: (d) => winEl(d, "browser") },
     ],
   },
   {
-    id: "magic", title: "Magic right-click", line: "Right-click anything; Lens knows what it is.",
+    id: "themes", title: "Themes", line: "Every surface follows one look.",
+    look: { pack: "obsidian", dock: "floating" },
+    steps: [
+      ...THEME_TOUR.map(([id, line], k) => ({
+        cap: k === 0 ? "One theme colours everything: the top bar, the dock, every window. Press Next to switch." : THEME_TOUR[k - 1][1],
+        target: (d) => d.topbar,
+        run: async (d) => { await setPack(d, id); if (id === "lens-expressive") d.dockStyle("islands", "expressive"); },
+      })),
+      { cap: `${THEME_TOUR.at(-1)[1]} The Theme lab further down has all of them.`, target: (d) => d.topbar },
+    ],
+  },
+  {
+    id: "magic", title: "Right-click", line: "Right-click anything; Lens knows what it is.",
     look: { pack: "tokyo-night", dock: "floating" },
     steps: [
       { cap: "Right-click a link in Lens Browser.", target: (d) => winEl(d, "browser"), run: (d) => d.openMagic("link", pointIn(d, "browser", 0.42, 0.3)) },
-      { cap: "Pick Summarise. The answer appears in the same window, made on this PC.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("summary", pointIn(d, "browser", 0.42, 0.3)) },
+      { cap: "The Lens menu opens right where you clicked. Pick Summarise: the answer appears in the same window.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("summary", pointIn(d, "browser", 0.42, 0.3)) },
       { cap: "On a video page, the same menu gets the transcript.", target: (d) => d.overs.magic.el, run: (d) => { d.scene("browser", "browser.html?scene=transcript"); d.openMagic("transcript", pointIn(d, "browser", 0.42, 0.3)); } },
       { cap: "Right-click an image and save it to your Shelf. Undo is right there.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("shelf", pointIn(d, "browser", 0.3, 0.42)) },
-      { cap: "Select text and ask Lens about it.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("ask", pointIn(d, "browser", 0.36, 0.36)) },
-      { cap: "Send it to Claude: anything that would change your PC waits for your OK.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("approval", pointIn(d, "browser", 0.36, 0.36)) },
+      { cap: "Anything that would change your PC waits for your OK.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("approval", pointIn(d, "browser", 0.36, 0.36)) },
       { cap: "Now try it yourself: right-click anywhere on the desk or in a window.", run: (d) => d.hideMenu() },
     ],
   },
   {
-    id: "agent", title: "Bring your own agent", line: "It proposes. You approve. Everything undoes.",
+    id: "agent", title: "Your agent", line: "Claude or your own, across your apps.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: "Connect Claude, a local model or any MCP agent. It works in your real windows: here it has opened a page in Lens Browser.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
-      { cap: "Before anything changes, Lens shows “Needs your OK”: who is asking, what it will do, and a preview.", target: (d) => winEl(d, "approval"), run: (d) => { const w = d.open("approval"); if (w) d.setRect(w, { x: d.W - 470, y: d.TOP + 40, w: 440, h: Math.min(520, d.H - d.TOP - 150) }); } },
-      { cap: "In the browser, the agent's step waits on the same card. Deny, or hold to approve.", target: (d) => winEl(d, "browser"), run: (d) => { const a = d.byApp("approval"); if (a) d.close(a.id); d.scene("browser", "browser.html?scene=approval"); } },
-      { cap: "It does exactly what it showed, and one Undo puts it back. In beta: approval cards and the activity log are in; automatic checks for hidden instructions are still being wired into every agent path." },
+      { cap: "Connect Claude Desktop, a local model or any MCP agent. It can use Lens's tools in your apps: here, Lens Browser.", target: (d) => winEl(d, "browser"), run: (d) => { const w = d.open("approval"); if (w) d.setRect(w, { x: d.W - 470, y: d.TOP + 40, w: 440, h: Math.min(520, d.H - d.TOP - 150) }); } },
+      { cap: "Before anything changes, Lens shows “Needs your OK”: who is asking, what it will do, and a preview.", target: (d) => winEl(d, "approval") },
     ],
   },
   {
-    id: "browser", title: "Lens Browser", line: "One slim bar, AI beside the page, themed.",
-    look: { pack: "dracula-glass", dock: "floating" },
-    steps: [
-      { cap: "Lens Browser: tabs down the side, one slim bar on top, and your theme all the way through.", target: (d) => winEl(d, "browser") },
-      { cap: "One box: open tabs, bookmarks, history and search in one list.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=suggest") },
-      { cap: "The AI panel sits beside the page and reads only what you point it at.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
-      { cap: "On a video, it makes a transcript you can search and jump through.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=transcript") },
-      { cap: "When an agent wants to click or type for you, it asks first.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=approval") },
-    ],
-  },
-  {
-    id: "apps", title: "Lens Apps", line: "Free and open-source apps, one click.",
-    look: { pack: "catppuccin-mocha", dock: "studio" },
-    steps: [
-      { cap: "Lens Apps lists free and open-source apps, each with what it replaces and its licence.", target: (d) => winEl(d, "store") },
-      { cap: "Get installs from the app's official release and checks the download. Try the search box or a category." },
-    ],
-  },
-  {
-    id: "music", title: "Lens Music", line: "Now Playing for any app, in your colours.",
-    look: { pack: "lens-expressive", dock: "taskbar", shape: "expressive" },
-    steps: [
-      { cap: "Lens Music shows what's playing in any app, with lyrics and what's next.", target: (d) => winEl(d, "music") },
-      { cap: "Compact view keeps it small.", target: (d) => winEl(d, "music"), run: (d) => d.scene("music", "music.html?scene=np-compact") },
-      { cap: "Back to the full view. The colours come from the album art.", target: (d) => winEl(d, "music"), run: (d) => d.scene("music", "music.html?scene=np-expanded") },
-    ],
-  },
-  {
-    id: "cleaner", title: "Lens Cleaner", line: "See what's taking space; clean safely.",
+    id: "desktop", title: "Desktop", line: "Windows, Quick Settings and Command.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: "Lens Cleaner starts with a plain summary of your drive.", target: (d) => winEl(d, "cleaner") },
-      { cap: "A scan sorts what it finds by how safe it is to remove.", target: (d) => winEl(d, "cleaner"), run: (d) => d.scene("cleaner", "cleaner.html?scene=cleanup") },
-      { cap: "The space map shows where the big things are.", target: (d) => winEl(d, "cleaner"), run: (d) => d.scene("cleaner", "cleaner.html?scene=treemap") },
-      { cap: "Cleaning moves things to the Recycle Bin, so you can put them back.", target: (d) => winEl(d, "cleaner"), run: (d) => d.scene("cleaner", "cleaner.html?scene=done") },
-    ],
-  },
-  {
-    id: "core", title: "Core apps", line: "Monitor, Timer, Notes and six more.",
-    look: { pack: "obsidian", dock: "floating" },
-    steps: [
-      { cap: "Monitor says what's slowing your PC in plain words. Timer keeps running with its window closed.", target: (d) => winEl(d, "monitor") },
-      { cap: "Notes has checklists and stickies you can pin to the desktop.", target: (d) => winEl(d, "notes"), run: (d) => { const t = d.byApp("timer"); if (t) d.close(t.id); const w = d.open("notes"); if (w) d.setRect(w, { x: d.W * 0.56, y: d.TOP + 50, w: d.W * 0.4, h: d.H * 0.56 }); } },
-      { cap: "Open the rest from the dock or Lens Command. Each one is small, fast and themed." },
-    ],
-  },
-  {
-    id: "settings", title: "Settings", line: "The few settings most people change, first.",
-    look: { pack: "obsidian", dock: "floating" },
-    steps: [
-      { cap: "Settings opens in Simple mode: the handful of things most people change. Try a theme.", target: (d) => winEl(d, "settings") },
-      { cap: "Advanced has everything else, searchable. Switch with the toggle at the top left." },
+      { cap: "Every window here is the app's real one. Snap Lens Browser to the left half.", target: (d) => winEl(d, "browser"), run: (d) => d.snap(d.byApp("browser")?.id, "left") },
+      { cap: "And Notes to the right.", target: (d) => winEl(d, "notes"), run: (d) => d.snap(d.byApp("notes")?.id, "right") },
+      { cap: "Quick Settings opens from the top bar: Wi-Fi, sound, battery, theme.", target: (d) => d.overs.qs.el, run: (d) => d.openFly() },
+      { cap: "Ctrl+Space opens Lens Command: one box to ask, search and run things.", target: (d) => d.overs.cmd.el, run: (d) => d.openCmd("compact") },
+      { cap: "That's the everyday desk. Close Command and play.", run: (d) => d.closeCmd() },
     ],
   },
 ];

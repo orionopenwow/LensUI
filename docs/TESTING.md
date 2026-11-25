@@ -42,6 +42,7 @@ node tools/perf/run.mjs                 # fluidity budgets
 node tools/perf/reduced-motion.mjs      # no motion when motion is off
 node tools/visual/run.mjs               # golden images
 node tools/a11y/run.mjs                 # axe-core
+node tools/robust/theme-switch.mjs      # theme switching in Settings (--full: every pack)
 SOAK_SCALE=0.2 node tools/soak/run.mjs  # quick soak + chaos (1.0 = full)
 ```
 
@@ -66,7 +67,7 @@ probe then checks that quitting put everything back.
 |---|---|---|
 | `build.yml` › Windows build | Rust property tests (default cases) | — |
 | `portability.yml` | Rust property tests on Linux and macOS | — |
-| `e2e.yml` › robustness | perf, reduced motion, visual, a11y, soak at 30 % | soak at 100 %, Playground scenes 15 s each |
+| `e2e.yml` › robustness | perf, reduced motion, visual, a11y, theme switching (featured looks), soak at 30 % | soak at 100 %, Playground scenes 15 s each, theme switching through every pack |
 | `e2e.yml` › windows-e2e | all scenarios + Windows-restored probe | + start → quit × 10 restart loop |
 | `e2e.yml` › nightly-properties | — | Rust property tests × 16 cases |
 
@@ -215,6 +216,34 @@ Known exceptions live in `tools/a11y/allowlist.json`. Each entry has a rule, a s
 selector substring and a reason, and the reason links to a finding below when it is a real defect.
 Entries that no longer match anything are reported, so the list can only shrink.
 
+### Theme switching
+
+`tools/robust/theme-switch.mjs` drives the real Settings window through theme changes the way
+people make them and checks each one as a person would see it. Report and contact sheets:
+`tools/robust/out/theme-rig/` (`report.md`, `report.json`, one PNG per failing switch plus a few
+samples; uploaded with the robustness reports).
+
+Scenarios:
+- **Advanced › Appearance:** clicking every featured look card in turn (`--full`: every pack in
+  "Browse all"), then Dark → Light → Dark with the hero's control.
+- **Simple mode:** the Quick settings theme chips and the Dark mode tile.
+- **Another window changed it:** the backend's config broadcast while Settings shows Dock & Bar and
+  Accessibility (`--full`: five pages), and high contrast on and off.
+- **Settings still works afterwards:** a tab opens, "Enable Top Bar" toggles, search lists the page.
+
+Each switch fails when:
+
+| Check | Rule |
+|---|---|
+| Flash | A screencast frame during the switch is brighter or darker than both the old and the new theme (mean luminance ±10 of 255, or near-white share +0.08): a washed-out, white or black frame. |
+| Layout | A sidebar button, page header, card, row, theme card or the hero moves or resizes more than 1 px. A change of font family or shape style (Expressive, Dot Matrix) reflows on purpose and is listed, not failed. |
+| Growth | Any of those boxes grows more than 2 px beyond both its start and end size while the switch runs (sampled every frame). |
+| Latency | The new theme is not applied and fully on screen within 250 ms of the click or broadcast (clock started in the page; a view transition counts until it finishes). |
+| Shift / errors | Layout shift above 0.02 without a font change; any console error. |
+
+Long tasks are reported, not failed (software rendering on CI). The tolerances are at the top of
+the script.
+
 ### Soak and chaos
 
 `tools/soak/run.mjs` runs three passes (the third, `failsafe`, is described in docs/FAILSAFE.md §8:
@@ -358,6 +387,34 @@ marker together with the fix.
 * **Repro:** `PERF_ONLY=theme-switch node tools/perf/run.mjs`. Or open Theme & Look and click through the recommended packs.
 * **Suggested fix:** reserve two lines for the description (`min-height: calc(2 * line-height)` on the description in the Theme hero), or clamp it to two lines.
 * **Marker:** the `theme-switch` CLS baseline in `tools/perf/budgets.json` is raised to 0.055, with a `_findings` note. Lower it with the fix.
+
+### F9: switching themes in Settings flashed, lagged and showed two fonts at once (fixed)
+
+* **Found by:** the theme-switch rig (`tools/robust/theme-switch.mjs`), after reports that themes
+  "grow and glitch" in the Settings window.
+* **What happened:**
+  1. *Lag.* A click on a theme card started a View Transition of the whole window. It held the
+     old picture on screen until the cross-fade finished: median **443 ms**, up to **721 ms**,
+     from click to the new theme. For that time the window showed the new content in the old
+     colours.
+  2. *Washed-out frames.* Settings is a see-through window. Half-way through the cross-fade both
+     pictures were half transparent, so the frame went pale, or white over a light desktop.
+     6 of the 30 switches had such a frame.
+  3. *Two fonts at once.* Looks that change the font cross-faded two layouts on top of each other,
+     so text looked doubled and boxes looked like they grew.
+  4. *Patchy fades.* Every switch started ~230 CSS transitions (hover and colour transitions on
+     buttons, cards and rows), so parts of the window faded at different speeds, and each frame
+     re-styled and re-painted the page.
+* **Fix:** `src/hooks/useLensState.ts` applies the theme in the layout effect, before paint, in the
+  same frame as the re-render, with no View Transition (the `::view-transition` rules are gone from
+  `motion.css`). For the two frames of a switch, `data-theme-switch` on the root turns transitions
+  off (`tokens.css`), so the whole window changes at once. Windows that get the change by broadcast
+  use the same path.
+* **After:** median **48 ms** from click to the new theme (max 188 ms on the CI-class sandbox). No
+  flash frames; 30/30 checks clean, and 122/122 through every pack (`--full`). Broadcast switches
+  were and are ~20 ms.
+* **Still true by design:** a look that changes the font or the shape style (Expressive, Dot Matrix)
+  reflows the page. The rig lists those switches but does not fail them.
 
 ## Change log: waves 7–8 integration (`integration/waves-7-8`)
 

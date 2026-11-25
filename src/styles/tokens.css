@@ -172,3 +172,13 @@
   --lens-fg-secondary: #c4c4cc;
   --lens-fg-muted: #a8a8b0;
 }
+
+/* Theme switch (src/hooks/useLensState.ts holdTransitions): for the two frames in which a theme
+   changes, nothing transitions, so the whole window takes its new colours, font and shapes in one
+   frame instead of ~230 elements fading at different speeds. Animations (spinners, ambient scenes)
+   keep running. */
+:root[data-theme-switch] *,
+:root[data-theme-switch] *::before,
+:root[data-theme-switch] *::after {
+  transition: none !important;
+}

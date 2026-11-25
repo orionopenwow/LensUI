@@ -1,0 +1,33 @@
+name: Report a problem
+description: Something in Lens didn't work. Lens › Settings › About & Testing › Report a problem fills this in for you.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The quickest way: in Lens, open **Settings › About & Testing › Report a problem** (or type `/report` in Command, or use the tray menu). It fills in this form, removes your user name, e-mail addresses and keys, and shows you everything before you send it.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what Lens did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen again
+      placeholder: |
+        1. Open Settings
+        2. Drag it to the left
+  - type: input
+    id: version
+    attributes:
+      label: Lens and Windows versions
+      description: Settings › About & Testing shows both. Example — Lens 0.3.0, Windows 11 26100.
+  - type: textarea
+    id: log
+    attributes:
+      label: Log, crash report or self-test (optional)
+      description: Paste what Report a problem attached. Please check it for anything personal first.
+      render: text

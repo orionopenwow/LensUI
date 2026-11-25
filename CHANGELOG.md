@@ -7,6 +7,18 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Restart to update:** when a Lens update is available or downloaded, the Top Bar shows a pill
+  and you get one notification. "Get it ready" mode downloads (and verifies) in the background;
+  nothing installs until you choose Restart to update, which puts the desktop back, installs and
+  starts Lens again. What's new is shown in Settings › About & Testing › Updates. Also `/update`
+  in Command and "Check for updates…" in the tray menu.
+- **Report a problem:** Settings › About & Testing, the tray menu, `/report` in Command and the
+  card a crashed window shows. Choose what to attach (versions, recent log, latest crash report,
+  self-test, which features are on), see exactly what will be shared with user names, e-mail
+  addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
+  uploads nothing itself.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,

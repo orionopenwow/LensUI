@@ -20,7 +20,7 @@ export const getPacks = () => (packsP ??= fetch(new URL("data/packs.json", SITE)
  * Pinned order matches tools/site/live/site-core.ts. Every entry is a surface that exists in Lens.
  */
 export const APPS = {
-  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=frame", w: 860, h: 600, marker: ".lb-root" },
+  browser: { name: "Lens Browser", icon: "lens-browser", src: "browser.html?scene=home", w: 860, h: 600, marker: ".lb-root" },
   notes: { name: "Notes", icon: "lens-notes", src: "coreapps.html?app=notes", w: 600, h: 560, marker: ".ca-app-notes" },
   music: { name: "Lens Music", icon: "lens-music", src: "music.html?scene=np-expanded", w: 820, h: 520, marker: ".lm-np" },
   monitor: { name: "Monitor", icon: "lens-monitor", src: "coreapps.html?app=monitor", w: 720, h: 500, marker: ".ca-app-monitor" },
@@ -47,7 +47,7 @@ export const OVERS = OVER;
 export const appUrl = (src, preset) => new URL(`live/app/${src}${src.includes("?") ? "&" : "?"}preset=${encodeURIComponent(preset || "obsidian")}`, SITE).href;
 const TOP = 34;          // the real top bar's height (config.topBar.height)
 const DOCK_H = 132;      // the dock frame's resting height: the dock, its lift and tooltips
-const WORK_BOTTOM = 96;  // windows tile above the dock
+const WORK_BOTTOM = 112; // windows tile above the dock (the tallest resting dock, plus a gap)
 
 let uid = 0;
 /**
@@ -66,6 +66,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       <iframe class="lx-dock" title="Lens dock (live): click an app to open or focus it, right-click for its menu" loading="lazy"></iframe>
       <div class="lx-over" data-over="qs" role="dialog" aria-label="Quick Settings" hidden></div>
       <div class="lx-over" data-over="cmd" role="dialog" aria-label="Lens Command" hidden></div>
+      <div class="lx-dim" aria-hidden="true" hidden></div>
       <div class="lx-over" data-over="magic" role="dialog" aria-label="Magic right-click" hidden></div>
     </div>
     <p class="sr" id="lx-help-${n}">A live demo of the Lens desktop, made of the app's real windows. Tab to a window. With a window focused: Ctrl+Alt+Arrow keys snap or maximise it, Ctrl+Alt+M minimises, Delete closes. Ctrl+Space opens Lens Command. Right-click for the Lens menu. Nothing here touches your computer.</p>
@@ -76,6 +77,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   const snapEl = cv.querySelector(".lx-snap");
   const frame = cv.querySelector(".lx-dock");
   const topbar = cv.querySelector(".lx-topbar");
+  const dimEl = cv.querySelector(".lx-dim");
   const listeners = {};
   const emit = (ev, d) => (listeners[ev] ?? []).forEach((f) => f(d));
   const on = (ev, f) => ((listeners[ev] ??= []).push(f), () => (listeners[ev] = listeners[ev].filter((x) => x !== f)));
@@ -474,13 +476,20 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     emit("over", { which, open: true });
     return o;
   }
-  function closeOver(which) { const o = overs[which]; if (!o || o.el.hidden) return; o.el.hidden = true; emit("over", { which, open: false }); if (which === "cmd") emit("cmd", false); }
+  function closeOver(which) { if (which === "magic") dimEl.hidden = true; const o = overs[which]; if (!o || o.el.hidden) return; o.el.hidden = true; emit("over", { which, open: false }); if (which === "cmd") emit("cmd", false); }
   const closeFly = () => closeOver("qs");
   const hideMenu = () => closeOver("magic");
   /** The real magic right-click window, opened at a desk point on a kind of thing (or a result step). */
   function openMagic(kindOrScene, at, over = {}) {
     const qs2 = new URLSearchParams({ scene: kindOrScene, ...over }).toString();
-    return openOver("magic", { src: `${OVER.magic.src}&${qs2}`, at });
+    const o = openOver("magic", { src: `${OVER.magic.src}&${qs2}`, at });
+    // Right-click is the star of its moment: everything but the clicked spot and the menu that came
+    // off it dims and softens, so the eye goes straight there.
+    const p = at ?? { x: W / 2, y: H / 2 };
+    dimEl.style.setProperty("--x", `${Math.round(p.x)}px`);
+    dimEl.style.setProperty("--y", `${Math.round(p.y)}px`);
+    dimEl.hidden = false;
+    return o;
   }
   function openCmd(sceneId = "compact") { closeFly(); hideMenu(); const o = openOver("cmd", { src: `command.html?scene=${sceneId}&esc=1&drag=0` }); emit("cmd", true); return o; }
   const closeCmd = () => closeOver("cmd");
