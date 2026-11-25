@@ -233,6 +233,15 @@ jobs:
         shell: pwsh
         run: node tests/e2e/failsafe.mjs
 
+      # TEMPORARY (fix/webview-killed): sample the Dock renderer recovery ten times.
+      - name: webview-killed x10 (temporary)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        env:
+          FAILSAFE_ONLY: webview-killed
+          FAILSAFE_REPEAT: "10"
+        run: node tests/e2e/failsafe.mjs
+
       - name: Collect Lens logs
         if: always()
         shell: pwsh
