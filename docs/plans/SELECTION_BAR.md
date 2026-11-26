@@ -111,7 +111,7 @@ Lens's own answer to "Ask Gemini" and similar: sleeker and faster, and on any se
   - Web search and AI use only what you've enabled. The panel shows which provider answered and lists every source.
   - The selection is sent to a cloud service only when the answer comes from one, which the panel states.
   - Nothing runs in the background before you press Magic Search.
-- **Also reachable from** Command ("magic search …"), Magic, the Lens › right-click item, voice ("search that"), and its own global hotkey (default proposal: Ctrl+Alt+Space is taken by Command, so Ctrl+Alt+S is suggested, checked for conflicts first).
+- **Also reachable from** Command ("magic search …"), Magic, the Lens › right-click item, voice ("search that"), and its own global hotkey (none by default; Ctrl+Alt+Space is Command and Ctrl+Alt+S is a tiling key, so the person picks one and the conflict checker vets it).
 
 ## 4. Customisation (Settings › Magic › Selection bar)
 
