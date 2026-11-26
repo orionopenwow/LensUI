@@ -1,8 +1,8 @@
 // The home page's exhibits: each one is a real Lens surface (a frame from live/app/, the same
 // components the app ships) shown at its true size and scaled to fit, loaded when it comes near the
-// screen. The magic right-click exhibit lays the real magic window over a real Lens Browser and
-// steps through what it can do; the visitor can right-click the page instead. Nothing autoplays with
-// reduced motion, and anything that advances by itself stops for good once the visitor takes over.
+// screen. Each plays three steps slowly, on repeat (see loop): it holds while pointed at or focused, has
+// a Pause button, and stays still with reduced motion. The magic right-click exhibit lays the real magic
+// window over a real Lens Browser; the visitor can right-click the page instead.
 import { reducedMotion, isLight } from "./site.js";
 import { appUrl } from "./desk.js";
 
@@ -44,27 +44,41 @@ addEventListener("message", (e) => {
 });
 void frames;
 
-/** Tabs that pick a step; optionally advance by themselves until the visitor takes over. */
-function steps(box, onStep, { auto = 0 } = {}) {
-  const tabs = [...box.querySelectorAll(".xstep")];
-  let i = 0, timer = 0, taken = false, seen = false, hover = false;
-  const go = (n, user = false) => {
-    i = (n + tabs.length) % tabs.length;
-    tabs.forEach((t, k) => { t.setAttribute("aria-selected", String(k === i)); t.tabIndex = k === i ? 0 : -1; });
-    if (user) { taken = true; clearInterval(timer); tabs[i].focus({ preventScroll: true }); }
-    onStep(tabs[i].dataset.step, i);
+/**
+ * The calm loop under an exhibit: three steps, each held ~5 s, on repeat. It waits until the exhibit is
+ * on screen, holds while the pointer or focus is inside, and stops on Pause (or for good once the visitor
+ * takes over, e.g. by right-clicking). With reduced motion it shows step one, still.
+ */
+export const STEP_MS = 5200;
+function loop(ex, n, onStep, caps = []) {
+  const cap = ex.querySelector(".xcap"), dots = [...ex.querySelectorAll(".xdots i")], pause = ex.querySelector("[data-xpause]");
+  let i = 0, timer = 0, seen = false, held = false, paused = false, taken = false;
+  const show = (k) => {
+    i = (k + n) % n;
+    dots.forEach((d, j) => d.classList.toggle("on", j === i));
+    if (cap && caps[i] != null) {
+      if (reducedMotion()) cap.textContent = caps[i];
+      else { cap.classList.add("is-fade"); setTimeout(() => { cap.textContent = caps[i]; cap.classList.remove("is-fade"); }, 260); }
+    }
+    onStep(i);
   };
-  const run = () => { clearInterval(timer); if (auto && !taken && seen && !hover && !reducedMotion()) timer = setInterval(() => go(i + 1), auto); };
-  tabs.forEach((t, k) => t.addEventListener("click", () => go(k, true)));
-  box.addEventListener("keydown", (e) => { const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key]; if (d && e.target.closest(".xstep")) { e.preventDefault(); go(i + d, true); } });
-  const ex = box.closest("[data-exhibit]") ?? box;
-  ex.addEventListener("pointerenter", () => { hover = true; clearInterval(timer); });
-  ex.addEventListener("pointerleave", () => { hover = false; run(); });
-  ex.addEventListener("focusin", () => { hover = true; clearInterval(timer); });
-  ex.addEventListener("focusout", () => { hover = false; run(); });
+  const run = () => { clearTimeout(timer); if (seen && !held && !paused && !taken && !reducedMotion()) timer = setTimeout(() => { show(i + 1); run(); }, STEP_MS); };
+  const hold = (on) => { held = on; run(); };
+  ex.addEventListener("pointerenter", () => hold(true));
+  ex.addEventListener("pointerleave", () => hold(false));
+  ex.addEventListener("focusin", () => hold(true));
+  ex.addEventListener("focusout", (e) => { if (!ex.contains(e.relatedTarget)) hold(false); });
+  pause?.addEventListener("click", () => {
+    paused = !paused; taken = false;
+    pause.setAttribute("aria-pressed", String(paused));
+    const sr = pause.querySelector(".sr"); if (sr) sr.textContent = sr.textContent.replace(/^(Pause|Play)/, paused ? "Play" : "Pause");
+    run();
+  });
   new IntersectionObserver(([e]) => { seen = e.isIntersecting; run(); }, { threshold: 0.35 }).observe(ex);
-  return { go, take: () => { taken = true; clearInterval(timer); }, get index() { return i; } };
+  show(0);
+  return { show, take: () => { taken = true; clearTimeout(timer); }, get index() { return i; }, get playing() { return seen && !held && !paused && !taken && !reducedMotion(); } };
 }
+const data = (ex) => { try { return JSON.parse(ex.querySelector(".xdata")?.textContent ?? "[]"); } catch { return []; } };
 
 // ---- magic right-click: the real magic window, off the thing it was opened on ------------------------
 function magic(ex) {
@@ -85,33 +99,48 @@ function magic(ex) {
     menu.hidden = false;
     if (!reducedMotion()) menu.animate([{ opacity: 0, transform: `${menu.style.transform} scale(.96)` }, { opacity: 1, transform: menu.style.transform }], { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" });
   };
-  const ctl = steps(ex.querySelector(".xsteps"), (id) => show(id, AT[id]), { auto: 5200 });
+  const st3 = data(ex);
+  const ctl = loop(ex, st3.length || 3, (k) => { const id = st3[k]?.[0] ?? "link"; show(id, AT[id]); }, st3.map((x) => x[1]));
   // The visitor's own right-click: the frame says what was under the pointer, the real window opens there.
   target.addEventListener("xf-msg", (e) => {
     const m = e.detail;
     if (m.a !== "magic") return;
     ctl.take();
-    ex.querySelectorAll(".xstep").forEach((t) => t.setAttribute("aria-selected", "false"));
+    const c = ex.querySelector(".xcap"); if (c) c.textContent = "Your right-click: the menu knows what's under the pointer. Press Pause, then Play, to restart the loop.";
     mount(menuHolder, `magic.html?scene=${m.kind || "window"}&drag=0&magic=0`);
     place(m.x + 4, m.y + 4);
     spotlight(m.x, m.y);
     menu.hidden = false;
   });
-  show("link", AT.link);
 }
 
-// ---- bring your own agent: the real “Needs your OK” card --------------------------------------------
+// ---- agentic desktop: Claude Code's dinner plan in Lens Browser, and the real card for the risky step ---
 function agent(ex) {
   ex.querySelectorAll(".xstage").forEach((st) => stage(st));
-  ex.querySelectorAll(".xf").forEach((h) => mount(h));
+  const browserH = ex.querySelector(".ag-browser"), card = ex.querySelector(".ag-card"), cardH = card.querySelector(".xf");
+  const plan = [...ex.querySelectorAll(".ag-plan li")];
+  const mark = (done, now) => plan.forEach((li, k) => { li.classList.toggle("is-done", done.includes(k)); li.classList.toggle("is-now", now.includes(k)); });
+  mount(cardH);
+  const STEPS = [
+    ["dinner-plan", false, [], [0, 1], "Claude Code asks for dinner. Lens Browser searches and picks a place: reading runs on its own."],
+    ["dinner", false, [0, 1], [2], "Booking has a $25 no-show fee, so step 3 stops in the AI panel and waits for you."],
+    ["dinner", true, [0, 1], [2, 3, 4], "The real “Needs your OK” card: the form it will submit, what each step may do, and Deny or hold to Book."],
+  ];
+  loop(ex, 3, (k) => {
+    const [scene, showCard, done, now] = STEPS[k];
+    mount(browserH, `browser.html?scene=${scene}`);
+    mark(done, now);
+    card.hidden = !showCard;
+    if (showCard && !reducedMotion()) card.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 360, easing: "cubic-bezier(.2,.8,.2,1)" });
+  }, STEPS.map((x) => x[4]));
 }
 
-// ---- Lens Browser: the real BrowserSurface, a few of its states --------------------------------------
+// ---- Lens Browser: the real BrowserSurface, three of its states --------------------------------------
 function browser(ex) {
   stage(ex.querySelector(".xstage"));
   const holder = ex.querySelector(".xf");
-  steps(ex.querySelector(".xsteps"), (id) => mount(holder, `browser.html?scene=${id}`));
-  mount(holder);
+  const st3 = data(ex);
+  loop(ex, st3.length || 3, (k) => mount(holder, `browser.html?scene=${st3[k]?.[0] ?? "home"}`), st3.map((x) => x[1]));
 }
 
 const KINDS = { magic, agent, browser };
