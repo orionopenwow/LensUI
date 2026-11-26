@@ -1910,6 +1910,8 @@ export interface MagicMouseStatus {
   holds: number;
   grabs: number;
   last: string;
+  /** The last problem applying or removing the pointer ("" = none). */
+  warning: string;
 }
 
 /**

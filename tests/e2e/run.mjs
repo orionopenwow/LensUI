@@ -723,6 +723,10 @@ const SCENARIOS = [
       if (on.steppedAside) console.log("note  magic-mouse: stepped aside on this runner (fullscreen/busy)");
       const applied = arrow();
       if (!/arrow\.ani$/i.test(applied)) throw new Error(`Arrow pointer is "${applied}", expected the Magic .ani`);
+      if (on.warning) console.log(`note  magic-mouse: ${on.warning}`);
+      // Windows itself must accept the generated files (RIFF/ACON .ani, multi-size .cur).
+      const loads = ps(`Add-Type -Namespace W -Name C -MemberDefinition '[DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern System.IntPtr LoadCursorFromFileW(string p);'; $k = Get-ItemProperty 'HKCU:\\Control Panel\\Cursors'; foreach ($n in 'Arrow','AppStarting','Wait','IBeam','SizeAll') { $p = $k.$n; '{0}={1}' -f $n, ([W.C]::LoadCursorFromFileW($p) -ne [System.IntPtr]::Zero) }`).trim();
+      if (/=False/.test(loads)) throw new Error(`Windows could not load a Magic pointer file: ${loads.replace(/\s+/g, " ")}`);
       // A target that is not Lens: Notepad, maximised, with the drag in the middle of it.
       const W = `Add-Type -Namespace W -Name M -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,int x,int y,uint d,System.UIntPtr e); [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);'; $cx=[int]([W.M]::GetSystemMetrics(0)/2); $cy=[int]([W.M]::GetSystemMetrics(1)/2); $z=[System.UIntPtr]::Zero;`;
       try {

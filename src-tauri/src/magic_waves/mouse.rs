@@ -148,11 +148,18 @@ pub fn apply_magic_with(
         .collect();
     let st = load_state(root);
     let size = if st.applied { Some(st.size) } else { None };
-    for (key, name, val) in apply_plan(&as_str, size) {
-        reg.write(key, &name, val.as_ref())?;
+    // Marked before the first registry write, so a crash half-way is undone at the next start.
+    save_mode(root, MouseMode { applied: true })?;
+    let res = apply_plan(&as_str, size)
+        .into_iter()
+        .try_for_each(|(key, name, val)| reg.write(key, &name, val.as_ref()))
+        .and_then(|_| reg.reload_cursors());
+    if let Err(e) = res {
+        // Never leave a half-applied set behind: put the person's pointers back.
+        let _ = magic_off_with(root, reg, appdata);
+        return Err(e);
     }
-    reg.reload_cursors()?;
-    save_mode(root, MouseMode { applied: true })
+    Ok(())
 }
 
 /// Turns the Magic pointer off: back to the Lens pointers the person chose in Look, or to their
@@ -184,4 +191,49 @@ pub fn run_with(
         CursorAction::None => return Ok(mode),
     }
     Ok(after(mode, action))
+}
+
+/// Wraps a registry so a failed "reload the pointers now" (`SPI_SETCURSORS`) is remembered
+/// instead of failing the change: the registry values are what Windows uses from the next
+/// reload or sign-in on, and a restore must still finish (delete the backup, clear the mark)
+/// when only the live reload failed.
+pub struct SoftReload<'a> {
+    pub inner: &'a mut dyn Registry,
+    pub reload_error: Option<String>,
+}
+
+impl Registry for SoftReload<'_> {
+    fn read(&self, subkey: &str, name: &str) -> Option<win_cursors::RegVal> {
+        self.inner.read(subkey, name)
+    }
+    fn write(
+        &mut self,
+        subkey: &str,
+        name: &str,
+        value: Option<&win_cursors::RegVal>,
+    ) -> Result<(), String> {
+        self.inner.write(subkey, name, value)
+    }
+    fn reload_cursors(&mut self) -> Result<(), String> {
+        if let Err(e) = self.inner.reload_cursors() {
+            self.reload_error = Some(e);
+        }
+        Ok(())
+    }
+}
+
+/// `run_with` through [`SoftReload`]: returns the new mode and the reload problem, if any.
+pub fn run_soft(
+    root: &Path,
+    reg: &mut dyn Registry,
+    appdata: &str,
+    action: CursorAction,
+    hc: bool,
+) -> Result<(MouseMode, Option<String>), String> {
+    let mut soft = SoftReload {
+        inner: reg,
+        reload_error: None,
+    };
+    let mode = run_with(root, &mut soft, appdata, action, hc)?;
+    Ok((mode, soft.reload_error))
 }

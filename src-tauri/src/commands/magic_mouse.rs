@@ -23,6 +23,8 @@ static WANTED: AtomicBool = AtomicBool::new(false);
 static WATCHER: AtomicBool = AtomicBool::new(false);
 /// One registry change at a time (settings, watcher and exit can race).
 static BUSY: Mutex<()> = Mutex::new(());
+/// The last problem applying or removing the pointer ("" = none), for the status command.
+static WARNING: Mutex<String> = Mutex::new(String::new());
 
 fn high_contrast() -> bool {
     #[cfg(windows)]
@@ -38,11 +40,17 @@ fn high_contrast() -> bool {
 fn run(action: CursorAction) {
     let _one = BUSY.lock().unwrap_or_else(|e| e.into_inner());
     let hc = high_contrast();
-    let res = win_cursors::with_real_registry(|root, reg, appdata| mouse::run_with(root, reg, appdata, action, hc));
-    if let Err(e) = res {
-        crate::tester::log("warn", "magic-mouse", &format!("{action:?} failed: {e}"));
-    } else if action != CursorAction::None {
-        crate::tester::log("info", "magic-mouse", &format!("pointer {action:?}"));
+    let res = win_cursors::with_real_registry(|root, reg, appdata| mouse::run_soft(root, reg, appdata, action, hc));
+    let warning = match res {
+        Err(e) => format!("{action:?} failed: {e}"),
+        Ok((_, Some(e))) => format!("{action:?}: pointers written, but Windows did not reload them yet ({e})"),
+        Ok((_, None)) => String::new(),
+    };
+    if action != CursorAction::None {
+        let level = if warning.is_empty() { "info" } else { "warn" };
+        let msg = if warning.is_empty() { format!("pointer {action:?}") } else { warning.clone() };
+        let _ = crate::tester::log(level, "magic-mouse", &msg);
+        *WARNING.lock().unwrap_or_else(|e| e.into_inner()) = warning;
     }
 }
 
@@ -188,6 +196,8 @@ pub(crate) struct MagicMouseStatus {
     pub holds: u32,
     pub grabs: u32,
     pub last: String,
+    /// The last problem applying or removing the pointer ("" = none).
+    pub warning: String,
 }
 
 #[tauri::command]
@@ -205,6 +215,7 @@ pub(crate) fn magic_mouse_status() -> MagicMouseStatus {
         holds,
         grabs,
         last,
+        warning: WARNING.lock().map(|w| w.clone()).unwrap_or_default(),
     }
 }
 

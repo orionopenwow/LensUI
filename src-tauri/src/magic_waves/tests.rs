@@ -457,12 +457,19 @@ mod m3 {
     struct FakeReg {
         m: HashMap<(String, String), RegVal>,
         reloads: u32,
+        fail_reload: bool,
+        fail_write_at: Option<usize>,
+        writes: usize,
     }
     impl Registry for FakeReg {
         fn read(&self, s: &str, n: &str) -> Option<RegVal> {
             self.m.get(&(s.to_string(), n.to_string())).cloned()
         }
         fn write(&mut self, s: &str, n: &str, v: Option<&RegVal>) -> Result<(), String> {
+            self.writes += 1;
+            if self.fail_write_at == Some(self.writes) {
+                return Err("access denied".into());
+            }
             match v {
                 Some(v) => {
                     self.m.insert((s.into(), n.into()), v.clone());
@@ -475,8 +482,41 @@ mod m3 {
         }
         fn reload_cursors(&mut self) -> Result<(), String> {
             self.reloads += 1;
+            if self.fail_reload {
+                return Err("SystemParametersInfo(SPI_SETCURSORS) failed".into());
+            }
             Ok(())
         }
+    }
+
+    #[test]
+    fn a_failed_write_rolls_back_and_a_failed_reload_still_finishes() {
+        // A write that fails half-way: the person's pointers are put back, nothing is marked.
+        let root = tmp("rollback");
+        let mut reg = windows_defaults();
+        let before = reg.m.clone();
+        // The sixth write (a pointer path) fails once; the roll-back's own writes go through.
+        reg.writes = 0;
+        reg.fail_write_at = Some(6);
+        assert!(apply_magic_with(&root, &mut reg, "", false).is_err());
+        assert!(!load_mode(&root).applied);
+        assert_eq!(reg.m, before);
+
+        // Windows refusing the live reload: values still written, mark set, and turning it off
+        // still restores exactly and clears the backup (Remove all must not fail on it).
+        let root = tmp("soft");
+        let mut reg = windows_defaults();
+        let before = reg.m.clone();
+        reg.fail_reload = true;
+        let (m, warn) =
+            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Apply, false).unwrap();
+        assert!(m.applied && load_mode(&root).applied && warn.is_some());
+        assert!(matches!(reg.read(CURSORS_KEY, "Arrow"), Some(RegVal::ExpandSz(p)) if p.ends_with("arrow.ani")));
+        let (m, warn) =
+            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Restore, false).unwrap();
+        assert!(!m.applied && warn.is_some());
+        assert_eq!(reg.m, before);
+        assert!(!root.join("backup.json").exists());
     }
 
     fn tmp(tag: &str) -> PathBuf {
