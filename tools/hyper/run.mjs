@@ -184,7 +184,7 @@ for (const mode of FULL ? ["advanced", "simple"] : ["advanced"]) {
 //    never the Dock, the Top Bar or behaviour.
 // ------------------------------------------------------------------------------------------------
 {
-  const LAYOUT = /^(dock\.(style|iconSize|position|autoHide|showTopBar|groundedMarginBottom|hoverScale|hoverLift)|topBar\.(enabled|autoHide|height|floating|revealDelayMs|hideDelayMs)|func\.)/;
+  const LAYOUT = /^(dock\.(style|iconSize|position|autoHide|groundedMarginBottom|hoverScale|hoverLift)|topBar\.(enabled|autoHide|height|floating|revealDelayMs|hideDelayMs)|func\.)/;
   const page = await openSurface(browser, server.base, { surface: "settings", query: "tab=theme", settle: 1500 });
   if (FULL && (await page.locator("[data-browse-all]").count())) await page.locator("[data-browse-all]").first().click().catch(() => {});
   const cards = page.locator("button.tux-pack");

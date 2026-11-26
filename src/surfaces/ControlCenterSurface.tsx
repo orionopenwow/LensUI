@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { topBarEnabled, withTopBarEnabled } from "../topbar/enabled";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { HookStatus } from "../components/HookStatus";
 import { useStartupBlock } from "../hooks/useStartupBlock";
@@ -768,14 +769,9 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    role="switch" aria-checked={!!(config.topBar?.enabled && config.dock.showTopBar)} aria-label="Enable Top Bar" className={`cc-toggle ${config.topBar?.enabled && config.dock.showTopBar ? "on" : ""}`}
+                    role="switch" aria-checked={topBarEnabled(config)} aria-label="Enable Top Bar" className={`cc-toggle ${topBarEnabled(config) ? "on" : ""}`}
                     onClick={() => {
-                      const next = !(config.topBar?.enabled && config.dock.showTopBar);
-                      updateConfig({
-                        ...config,
-                        dock: { ...config.dock, showTopBar: next },
-                        topBar: { ...(config.topBar ?? { enabled: true, autoHide: "overlap", revealDelayMs: 100, hideDelayMs: 350, height: 34, floating: false }), enabled: next },
-                      });
+                      updateConfig(withTopBarEnabled(config, !topBarEnabled(config)));
                     }}
                   />
                 </div>

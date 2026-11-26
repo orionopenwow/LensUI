@@ -100,7 +100,10 @@ export function resolveDockAlignment(style: DockStyleId, raw?: string | null): D
 interface DockLike {
   style?: string;
   systemArea?: string;
-  showTopBar?: boolean;
+}
+
+interface TopBarLike {
+  enabled?: boolean;
 }
 
 /**
@@ -109,12 +112,12 @@ interface DockLike {
  * If the Top Bar is turned off, the system icons fall back into the Dock for any style
  * that has a place for them (so they never disappear entirely).
  */
-export function resolveSystemArea(dock?: DockLike | null): "dock" | "topbar" {
+export function resolveSystemArea(dock?: DockLike | null, topBar?: TopBarLike | null): "dock" | "topbar" {
   const style = normalizeDockStyle(dock?.style);
   const info = dockStyleInfo(style);
   const mode = dock?.systemArea;
   if (mode === "dock") return "dock";
-  if (mode === "topbar") return dock?.showTopBar === false && info.systemInDockByDefault ? "dock" : "topbar";
+  if (mode === "topbar") return topBar?.enabled === false && info.systemInDockByDefault ? "dock" : "topbar";
   if (info.systemInDockByDefault) return "dock";
   return "topbar";
 }

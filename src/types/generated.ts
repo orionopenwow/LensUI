@@ -1111,7 +1111,6 @@ export interface DockConfig {
   hoverScale: number;
   hoverLift: number;
   autoHide: string;
-  showTopBar: boolean;
   pinnedApps: PinnedApp[];
   pinnedFolders: PinnedFolder[];
   /** Screen edge: "bottom" (default) | "top" | "left" | "right" */
@@ -4138,6 +4137,10 @@ export interface ToolStatus {
 
 /** Rust: `config::TopBarConfig` */
 export interface TopBarConfig {
+  /**
+   * The one switch for the Top Bar (config v4). `dock.showTopBar` used to be a second one;
+   * `win_backup::fold_legacy_top_bar_flag` folds it in here on load.
+   */
   enabled: boolean;
   autoHide: string;
   revealDelayMs: number;

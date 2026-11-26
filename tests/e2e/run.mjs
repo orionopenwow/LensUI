@@ -162,7 +162,7 @@ const SCENARIOS = [
       const dock = await waitForSurface(s, "dock", 40000);
       await shot(dock, "startup-dock");
       const cfg = await invoke(dock, "get_config");
-      if (cfg.dock?.showTopBar !== false && cfg.topBar?.enabled !== false) await shot(await waitForSurface(s, "topbar"), "startup-topbar");
+      if (cfg.topBar?.enabled !== false) await shot(await waitForSurface(s, "topbar"), "startup-topbar");
     },
   },
   {

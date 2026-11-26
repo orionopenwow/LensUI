@@ -100,7 +100,7 @@ fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), botto
         let dock_h = (depth_css * scale) as u32;
         return (pos.0, bottom_edge - dock_h as i32 - margin_bottom, size.0, dock_h);
     }
-    let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+    let top_inset = if cfg.top_bar.enabled {
         ((cfg.top_bar.height as f64) * scale) as i32 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
     } else {
         0
@@ -184,7 +184,7 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
             crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
-            if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
+            if cfg.top_bar.enabled && crate::app::loadguard::may_show("topbar") {
                 // Repositioning (every settings save, theme change or reload) keeps the bar in the
                 // state the auto-hide watcher has it in. Forcing "shown" here used to pop an
                 // auto-hidden bar back up behind the watcher's back, where it stayed stuck until
@@ -660,7 +660,7 @@ pub(crate) fn spawn_watcher(
                     // save) may show the bar by setting it; the watcher adopts that here, so it can
                     // still hide the bar later instead of believing it is already hidden.
                     let mut topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
-                        if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+                        if cfg.top_bar.enabled {
                             let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
                             let cursor_in_mon_x = cursor
@@ -1011,7 +1011,7 @@ pub(crate) fn spawn_watcher(
                         }
                     // Without the Top Bar nothing above closes an abandoned Search: same rule here
                     // (another app has the foreground and the pointer is away, or a click outside).
-                    if palette_vis_now && !(cfg.top_bar.enabled && cfg.dock.show_top_bar) {
+                    if palette_vis_now && !(cfg.top_bar.enabled) {
                         if let Some(pal) = watcher_handle.get_webview_window("palette") {
                             let pointer_in = match (pal.outer_position(), pal.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {

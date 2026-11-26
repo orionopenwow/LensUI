@@ -45,7 +45,6 @@ export interface DockConfig {
   hoverScale: number;
   hoverLift: number;
   autoHide: "never" | "smart" | "always" | string;
-  showTopBar: boolean;
   pinnedApps: PinnedApp[];
   pinnedFolders: PinnedFolder[];
   /** Screen edge the Dock sits on. */
