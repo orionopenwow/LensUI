@@ -15,6 +15,7 @@ import {
   BUDGET_PRESETS, autoTrim, budgetLevel, claudeRequest, formatTokens, meterPercent, summarisePrompt, trimmedTotal,
 } from "./packs";
 import "./context.css";
+import { fillStyle } from "../ui/motion";
 
 interface Props {
   /** Open on this pack. */
@@ -135,7 +136,7 @@ export const PackEditor: React.FC<Props> = ({ packId, demo }) => {
           <div className="rc-meter-row">
             <div className={`rc-meter is-${level}`} role="meter" aria-valuemin={0} aria-valuemax={view.pack.budget_tokens}
               aria-valuenow={trimmedTotal(view)} aria-label="Token budget">
-              <span style={{ width: `${meterPercent(trimmedTotal(view), view.pack.budget_tokens)}%` }} />
+              <span style={fillStyle(meterPercent(trimmedTotal(view), view.pack.budget_tokens) / 100)} />
             </div>
             <span className="rc-meter-text">
               {formatTokens(trimmedTotal(view))} / {formatTokens(view.pack.budget_tokens)} tok

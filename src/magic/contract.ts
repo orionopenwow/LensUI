@@ -27,6 +27,17 @@ export const magicCheck = (cfg: MagicConfig, o: { altDragEnabled: boolean; altDr
   invoke<ConflictDto[]>("magic_check", { cfg, ...o });
 /** Opens at the cursor; Lens surfaces pass their own item. */
 export const magicOpen = (lens?: LensTargetInput) => invoke<void>("magic_open", { lens: lens ?? null });
+/** Opens the magic window for an item inside a Lens surface (a dock app, a Shelf item, a
+ *  notification). Works even when the global trigger is off: the person asked for it on that item. */
+export function magicOpenFor(
+  kind: "dockItem" | "shelfItem" | "notification",
+  id: string,
+  label: string,
+  path: string | null = null,
+  run: string | null = null,
+): Promise<void> {
+  return magicOpen({ kind, id, label, path, run }).catch(() => {});
+}
 export const magicLast = () => invoke<MagicOpen | null>("magic_last");
 export const magicHide = () => invoke<void>("magic_hide");
 export const magicWindowAction = (hwnd: number, action: string) => invoke<string>("magic_window_action", { hwnd, action });

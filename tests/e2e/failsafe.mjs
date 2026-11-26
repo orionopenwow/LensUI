@@ -13,7 +13,7 @@
 //   surface-crash    a window is made to throw while rendering: it reports, reloads itself and
 //                    the rest of Lens carries on.
 //   webview-killed   every WebView2 renderer of Lens is killed: the Lens process survives, and
-//                    the Dock page is reloaded once its heartbeat has been missing long enough.
+//                    the Dock page is reloaded within seconds (WebView2 reports the dead renderer).
 //   registry-denied  the HKCU Run key is made read-only, then "start with Windows" is switched
 //                    on: the command reports the failure, Lens keeps running.
 //
@@ -32,6 +32,8 @@ mkdirSync(outDir, { recursive: true });
 const EXE = resolve(process.env.LENS_EXE || join(root, "src-tauri/target/debug/lens-ui.exe"));
 const PORT = Number(process.env.E2E_CDP_PORT || 9222);
 const ONLY = (process.env.FAILSAFE_ONLY || "").split(",").filter(Boolean);
+// Runs every selected scenario this many times (to measure a flaky one: FAILSAFE_REPEAT=10).
+const REPEAT = Math.max(1, Number(process.env.FAILSAFE_REPEAT || 1));
 const DATA = join(process.env.APPDATA || "", "LensUI");
 const CONFIG = join(DATA, "config.json");
 const FEATURES = join(DATA, "features.json");
@@ -58,16 +60,16 @@ function killLens() {
   } catch {}
 }
 
-function spawnLens(env = {}) {
+function spawnLens(env = {}, args = []) {
   const logs = [];
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, ...env } });
+  const proc = spawn(EXE, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, ...env } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   return { proc, logs };
 }
 
-async function startLens(env = {}, timeoutMs = 60000) {
-  const { proc, logs } = spawnLens(env);
+async function startLens(env = {}, timeoutMs = 60000, args = []) {
+  const { proc, logs } = spawnLens(env, args);
   const t0 = Date.now();
   let up = false;
   while (Date.now() - t0 < timeoutMs) {
@@ -94,6 +96,18 @@ function surfaces(s) {
     } catch {}
   }
   return map;
+}
+
+/** Polls `check` (sync or async) every 250 ms until it is truthy or `ms` passes. */
+async function waitFor(check, ms) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    try {
+      if (await check()) return true;
+    } catch {}
+    await sleep(250);
+  }
+  return false;
 }
 
 async function waitForSurface(s, name, ms = 40000) {
@@ -156,6 +170,41 @@ async function cdpEval(surface, expression, timeoutMs = 6000) {
   }
 }
 
+/** The DevTools targets that show the Settings page. */
+async function settingsTargets() {
+  try {
+    const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
+    return targets.filter((t) => t.type === "page" && t.webSocketDebuggerUrl && String(t.url).includes("surface=settings"));
+  } catch {
+    return [];
+  }
+}
+
+/** Like cdpEval, but for one fixed target (its id survives a reload of the page). */
+async function cdpEvalTarget(target, expression, timeoutMs = 6000) {
+  return new Promise((done) => {
+    let ws;
+    const finish = (v) => {
+      clearTimeout(timer);
+      try { ws?.close(); } catch {}
+      done(v);
+    };
+    const timer = setTimeout(() => finish(undefined), timeoutMs);
+    try {
+      ws = new WebSocket(target.webSocketDebuggerUrl);
+    } catch {
+      finish(undefined);
+      return;
+    }
+    ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression, awaitPromise: true, returnByValue: true } }));
+    ws.onmessage = (m) => {
+      const msg = JSON.parse(String(m.data));
+      if (msg.id === 1) finish(msg.result?.result?.value);
+    };
+    ws.onerror = () => finish(undefined);
+  });
+}
+
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const unreadableCopies = () => (existsSync(DATA) ? readdirSync(DATA).filter((f) => f.startsWith("config.json.unreadable-")) : []);
 function expect(problems, ok, what) {
@@ -176,7 +225,56 @@ async function cleanStart() {
 // Scenarios
 // ---------------------------------------------------------------------------------------------
 
+const WINLOGON = "HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon";
+const shellOverride = () => ps(`(Get-ItemProperty -Path '${WINLOGON}' -Name Shell -ErrorAction SilentlyContinue).Shell`);
+
 const SCENARIOS = [
+  {
+    id: "signin-gate",
+    title: "a sign-in start (--autostart) waits for the desktop, then starts normally",
+    async run(problems) {
+      const t0 = Date.now();
+      const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal", LENS_E2E_ALLOW_AUTOSTART: "1" }, 150000, ["--autostart"]);
+      try {
+        await waitForSurface(s, "dock");
+        const said = s.logs.join("");
+        expect(problems, /Sign-in: the desktop is ready after \d+ ms/.test(said), `the sign-in gate did not report the desktop ready:\n${said.slice(-800)}`);
+        const waited = Number((said.match(/ready after (\d+) ms/) || [])[1] || 0);
+        expect(problems, waited >= 2900, `windows came up before the desktop had been ready for 3 s (${waited} ms)`);
+        console.log(`  signin-gate: desktop ready after ${waited} ms, dock up after ${Date.now() - t0} ms`);
+      } finally {
+        await quitLens(s);
+      }
+    },
+  },
+  {
+    id: "shell-override-healed",
+    title: "a Shell Mode override left behind without Tester mode is removed at start-up",
+    async run(problems) {
+      const before = shellOverride();
+      ps(`Set-ItemProperty -Path '${WINLOGON}' -Name Shell -Value '"${EXE}" --shell'`);
+      expect(problems, /--shell/.test(shellOverride()), "could not plant the test override (registry not writable?)");
+      const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal" });
+      try {
+        await waitForSurface(s, "dock");
+        const now = shellOverride();
+        expect(problems, !/lens-ui|--shell/i.test(now), `the Shell Mode override is still there: "${now}"`);
+        const status = await invoke(surfaces(s).dock, "get_shell_mode_status_cmd");
+        expect(problems, status.enabled === false, "Shell Mode still reports enabled");
+        let refused = "";
+        try {
+          await invoke(surfaces(s).dock, "enable_shell_mode_cmd");
+        } catch (e) {
+          refused = String(e);
+        }
+        expect(problems, /Tester mode/.test(refused), `enabling Shell Mode without Tester mode was not refused (${refused || "it was allowed"})`);
+      } finally {
+        await quitLens(s);
+        if (/lens-ui|--shell/i.test(shellOverride())) ps(`Remove-ItemProperty -Path '${WINLOGON}' -Name Shell -ErrorAction SilentlyContinue`);
+        if (before && !/lens-ui|--shell/i.test(before)) ps(`Set-ItemProperty -Path '${WINLOGON}' -Name Shell -Value '${before}'`);
+      }
+    },
+  },
   {
     id: "config-damaged",
     title: "wrong-typed values in config.json fall back alone; the rest survives",
@@ -338,15 +436,44 @@ const SCENARIOS = [
       const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal" });
       try {
         const dock = await waitForSurface(s, "dock");
+        // Diagnostics for the "two Settings pages" failure: how many existed before Settings was opened.
+        const before = await settingsTargets();
+        const t0 = Date.now();
         await invoke(dock, "open_surface", { label: "settings" });
         let settings = await waitForSurface(s, "settings");
         await sleep(1500);
         settings = await waitForSurface(s, "settings");
-        await settings.evaluate(() => window.dispatchEvent(new Event("lens:test-crash")));
-        await sleep(300);
-        const text = await settings.evaluate(() => document.querySelector(".fs-problem-text")?.textContent || "").catch(() => "");
-        expect(problems, /Reloading/.test(text), `the crashed window does not say it is reloading ("${text}")`);
-        await sleep(3000);
+        // Everything below talks to one DevTools target (the Settings window's page), fixed before
+        // the crash, so a second page with the same URL can never be read by mistake (B-31: the
+        // earlier versions of this check could not tell which page they were reading).
+        const targets = await settingsTargets();
+        if (targets.length !== 1) {
+          // Show every DevTools target so the extra page can be identified from the CI log.
+          const all = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json().catch(() => []);
+          console.log(`  /json/list (${all.length} targets):\n${all.map((t) => `    ${t.type} | ${t.id} | ${t.title} | ${t.url}`).join("\n")}`);
+          // Which window and webview each Settings page belongs to, and when it started.
+          for (const t of targets) {
+            const who = await cdpEvalTarget(t, "JSON.stringify({ win: window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label, view: window.__TAURI_INTERNALS__?.metadata?.currentWebview?.label, vis: document.visibilityState, age: Math.round(performance.now()), root: document.getElementById('root')?.innerHTML.length || 0, nav: performance.getEntriesByType('navigation')[0]?.type })");
+            console.log(`    settings target ${t.id}: ${who}`);
+          }
+          console.log(`    before open_surface (${Date.now() - t0} ms ago): ${before.map((t) => t.id).join(", ") || "none"}`);
+          const tauriViews = await cdpEvalTarget(targets[0], "window.__TAURI_INTERNALS__.invoke('plugin:webview|get_all_webviews').then((v) => JSON.stringify(v)).catch((e) => 'error: ' + e)");
+          console.log(`    Tauri webviews: ${tauriViews}`);
+          const log = await invoke(dock, "tester_log_get", { after: null, limit: 80 }).catch((e) => [{ area: "e2e", message: String(e) }]);
+          console.log(`    session log (last ${log.length}):\n${log.map((l) => `      ${l.level || ""} ${l.area}: ${String(l.message).slice(0, 200)}`).join("\n")}`);
+        }
+        expect(problems, targets.length === 1, `expected one Settings page, found ${targets.length}`);
+        const target = targets[0];
+        await cdpEvalTarget(target, "window.__beforeCrash = true; window.dispatchEvent(new Event('lens:test-crash')); true");
+        let reloaded = false;
+        for (const t0 = Date.now(); Date.now() - t0 < 8000 && !reloaded; await sleep(100)) {
+          const marker = await cdpEvalTarget(target, "!!window.__beforeCrash && (document.getElementById('root') ? 1 : 0)", 1500);
+          if (marker === false) reloaded = true;
+        }
+        expect(problems, reloaded, "the crashed window did not reload itself within 8 s");
+        // The boundary records the notice when it is on screen (sessionStorage survives the reload).
+        const notice = await cdpEvalTarget(target, "sessionStorage.getItem('lens.failsafe.settings.notice') || ''");
+        expect(problems, /Reloading/.test(String(notice)), `the crashed window never showed "Reloading…" (recorded: ${JSON.stringify(notice)})`);
         settings = await waitForSurface(s, "settings");
         const back = await settings.evaluate(() => !document.querySelector(".fs-problem") && (document.getElementById("root")?.innerHTML.length || 0) > 0);
         expect(problems, back, "the window did not come back after its automatic reload");
@@ -366,32 +493,48 @@ const SCENARIOS = [
       const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal", LENS_ALIVE_STALE_SECS: "12" });
       try {
         await waitForSurface(s, "dock");
-        await sleep(6000); // at least one heartbeat
+        // Wait for the signal that the Dock's renderer is watched (app::renderer logs it), not a
+        // fixed time. Without it the heartbeat probe still has to bring the Dock back.
+        const watched = await waitFor(() => s.logs.join("").includes("Watching the dock page's renderer"), 20000);
+        if (!watched) console.log("      WARN webview-killed: the Dock's renderer was never reported as watched (B-31 trace)");
+        // Kill only once the start-up windows are built. WebView2 creates each window on the main
+        // thread; a renderer killed in the middle of such a build can keep the main thread busy for
+        // a long time, and then nothing can reload anything (B-31b, a separate case).
+        const built = await waitFor(() => s.logs.join("").includes("Start-up windows built."), 90000);
+        if (!built) console.log("      WARN webview-killed: start-up windows were still being built at the kill (B-31b)");
+        await sleep(1500); // one heartbeat
         await s.browser.close().catch(() => {});
         const killed = ps(
           "$n = 0; Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match '--type=renderer' -and $_.CommandLine -match 'lens-ui' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n"
         );
         expect(problems, Number(killed) > 0, "found no Lens WebView2 renderer to kill");
-        await sleep(2000);
+        const killedAt = Date.now();
+        await sleep(1000);
         expect(problems, lensProcessCount() > 0, "Lens went down with its WebView renderers");
-        // 12 s missing + 3 checks of 4 s + 3 s backoff + the reload itself. Playwright cannot
-        // follow targets through a renderer crash, so from here the page is asked directly
-        // over its DevTools socket (cdpEval), with no client-side state to go stale.
+        // Deterministic: wait for Lens to say it reloaded the Dock (either path), then for the
+        // reloaded page to answer. Playwright cannot follow targets through a renderer crash, so
+        // the page is asked directly over its DevTools socket (cdpEval).
+        const reloadLine = /The dock page stopped answering \(([^)]*)\)/;
+        const said = await waitFor(() => reloadLine.test(s.logs.join("")), 45000);
         let revived = false;
-        const t0 = Date.now();
-        while (Date.now() - t0 < 150000 && !revived) {
-          await sleep(5000);
-          const alive = await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0");
-          if (alive !== true) continue;
+        if (said) {
+          revived = await waitFor(async () => (await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0")) === true, 30000);
+        }
+        if (revived) {
+          const how = s.logs.join("").match(reloadLine)?.[1] ?? "?";
+          console.log(`      webview-killed: Dock back ${Date.now() - killedAt} ms after the kill (${how}); watched before the kill: ${watched}`);
+          for (const l of s.logs.join("").split(/\r?\n/).filter((x) => /load guard|No load guard/.test(x))) console.log(`        ${l.trim()}`);
           const hasDock = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('get_config').then((c) => !!c && !!c.dock)");
           expect(problems, hasDock === true, "the reloaded Dock page cannot reach the backend");
           const logged = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('tester_log_get', { after: null, limit: 500 }).then((l) => l.some((x) => x.area === 'loadguard' && /stopped answering/.test(x.message)))");
           expect(problems, logged === true, "the session log does not say the Dock page was reloaded by the load guard");
-          revived = true;
-        }
-        if (!revived) {
-          const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe/i.test(l)).slice(-12);
-          problems.push(`the Dock page was not reloaded after its renderer was killed. Lens said:\n        ${said.join("\n        ") || "(nothing)"}`);
+        } else {
+          const lines = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer|panick|thread/i.test(l) && !/Watching the (?!dock)/.test(l)).slice(-40);
+          let targets = "";
+          try {
+            targets = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).map((t) => `${t.type} ${t.url}`).join("\n        ");
+          } catch {}
+          problems.push(`the Dock page was not reloaded after its renderer was killed (Lens ${said ? "said it reloaded it, but the page never answered" : "never said it reloaded it"}; watched before the kill: ${watched}). Lens said:\n        ${lines.join("\n        ") || "(nothing)"}\n      DevTools targets:\n        ${targets || "(none)"}`);
         }
         expect(problems, lensProcessCount() > 0, "Lens exited while recovering");
       } finally {
@@ -471,7 +614,7 @@ if (hadData) cpSync(DATA, backup, { recursive: true });
 
 const results = [];
 try {
-  for (const sc of SCENARIOS) {
+  for (const sc of SCENARIOS.flatMap((x) => Array.from({ length: REPEAT }, () => x))) {
     if (ONLY.length && !ONLY.includes(sc.id)) continue;
     const problems = [];
     const t0 = Date.now();

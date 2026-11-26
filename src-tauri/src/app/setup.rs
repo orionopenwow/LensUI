@@ -51,6 +51,12 @@ pub(crate) const LAZY_LABELS: [&str; 10] = [
     "studio",
 ];
 
+/// Labels `run_setup` is building right now (a subset of `lazy_building`).
+fn setup_building() -> &'static Mutex<std::collections::HashSet<String>> {
+    static SET: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> = std::sync::OnceLock::new();
+    SET.get_or_init(|| Mutex::new(std::collections::HashSet::new()))
+}
+
 pub(crate) fn lazy_building() -> &'static Mutex<std::collections::HashSet<String>> {
     static SET: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> =
         std::sync::OnceLock::new();
@@ -67,8 +73,18 @@ pub(crate) fn build_window_from_config(app: &AppHandle, label: &str) -> Option<t
         .iter()
         .find(|w| w.label == label)?
         .clone();
+    crate::tester::log("info", "surface", &format!("building the {label} window (already registered: {})", app.get_webview_window(label).is_some()));
     match tauri::WebviewWindowBuilder::from_config(app, &entry).and_then(|b| b.build()) {
-        Ok(win) => Some(win),
+        Ok(win) => {
+            crate::tester::log("info", "surface", &format!("built the {label} window"));
+            let l = label.to_string();
+            win.on_window_event(move |e| {
+                if matches!(e, tauri::WindowEvent::Destroyed) {
+                    crate::tester::log("info", "surface", &format!("the {l} window was destroyed"));
+                }
+            });
+            Some(win)
+        }
         Err(e) => {
             eprintln!("[Lens UI] Could not create '{}' window: {:?}", label, e);
             None
@@ -139,7 +155,25 @@ where
         return None;
     }
     if !lazy_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()) {
-        return None; // already being built; that build's retry will open it
+        // Already being built. A first-use build runs this caller's action itself when it is done;
+        // a start-up build has no caller to run, so wait for that window here and run it then.
+        if setup_building().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
+            let app2 = app.clone();
+            let label2 = label.to_string();
+            thread::spawn(move || {
+                let started = std::time::Instant::now();
+                while started.elapsed() < Duration::from_millis(15_000) {
+                    if app2.get_webview_window(&label2).is_some()
+                        && !setup_building().lock().unwrap_or_else(|e| e.into_inner()).contains(&label2)
+                    {
+                        retry(app2);
+                        return;
+                    }
+                    thread::sleep(Duration::from_millis(50));
+                }
+            });
+        }
+        return None;
     }
     let app2 = app.clone();
     let label2 = label.to_string();
@@ -156,6 +190,9 @@ where
                 }
                 thread::sleep(Duration::from_millis(25));
             }
+            if !surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).contains(&label2) {
+                crate::tester::log("warn", "surface", &format!("the {label2} page did not report ready within 4 s (registered: {})", app2.get_webview_window(&label2).is_some()));
+            }
             lazy_building().lock().unwrap_or_else(|e| e.into_inner()).remove(&label2);
             retry(app2);
         } else {
@@ -163,6 +200,63 @@ where
         }
     });
     None
+}
+
+/// How long one start-up window build may take before the next one is started anyway.
+const LAZY_BUILD_LIMIT: Duration = Duration::from_secs(20);
+
+/// Shows Control Center on launch (once), whichever of setup and the start-up window thread gets
+/// there first.
+fn show_settings_on_launch(handle: &AppHandle) {
+    static SHOWN: AtomicBool = AtomicBool::new(false);
+    let Some(win) = handle.get_webview_window("settings") else {
+        return;
+    };
+    if SHOWN.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    let _ = win.show();
+    let _ = win.set_focus();
+    let _ = handle.emit("lens://settings-open", true);
+}
+
+/// Builds the start-up windows in `labels`, one at a time, off the main thread.
+fn build_lazy_windows(handle: &AppHandle, labels: &[&'static str]) {
+    let mut all_built = true;
+    for &label in labels {
+        // Claim the label first: a first-use build (`ensure_window`) started from another thread at
+        // the same moment would otherwise build a second window under the same label, leaving an
+        // orphaned page Tauri no longer knows about (seen in CI as two Settings pages).
+        if handle.get_webview_window(label).is_some()
+            || !lazy_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string())
+        {
+            continue;
+        }
+        setup_building().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string());
+        let (tx, rx) = std::sync::mpsc::channel();
+        let h = handle.clone();
+        thread::spawn(move || {
+            let _ = build_window_from_config(&h, label);
+            setup_building().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+            lazy_building().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+            let _ = tx.send(());
+        });
+        let built = rx.recv_timeout(LAZY_BUILD_LIMIT).is_ok();
+        if built && label == "settings" {
+            show_settings_on_launch(handle);
+        }
+        if !built {
+            all_built = false;
+            eprintln!("[Lens UI] Building the {label} window took more than {}s; carrying on without waiting.", LAZY_BUILD_LIMIT.as_secs());
+            crate::tester::log("warn", "setup", &format!("{label} window build is slow"));
+        }
+    }
+    // Signal for the failsafe E2E (webview-killed): the main thread is no longer building windows.
+    if all_built {
+        eprintln!("[Lens UI] Start-up windows built.");
+    } else {
+        eprintln!("[Lens UI] Start-up windows: a build is still running.");
+    }
 }
 
 /// Everything `tauri::Builder::setup` does once the app exists: lazy windows, system integration,
@@ -180,20 +274,31 @@ pub(crate) fn run_setup(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle().clone();
 
-    // Windows marked "create": false in tauri.conf.json: build them now unless on-demand
-    // windows are enabled. (No-op for any window Tauri already created.)
-    for label in LAZY_LABELS {
-        // Lens Command and Lens Cleaner are always built on first use.
-        let needed_now = label != "command"
-            && label != "cleaner"
-            && label != "testerhub"
-            && label != "studio"
-            && (!initial_config.func.lazy_windows
-                || (label == "settings" && !initial_config.onboarding_completed));
-        if needed_now && handle.get_webview_window(label).is_none() {
-            let _ = build_window_from_config(&handle, label);
-        }
-    }
+    // The Dock, Top Bar and desktop tab exist from tauri.conf.json; watch them from the start, so
+    // nothing later in setup can keep them from being guarded (B-31).
+    crate::app::loadguard::start(&handle);
+
+    // Windows marked "create": false in tauri.conf.json: build them now unless on-demand windows
+    // are enabled. They are built on a background thread, one after the other, never inside
+    // setup: on CI one of these builds sometimes never finished (its page stayed on about:blank),
+    // and while it was being built on the main thread, setup never got past it, so the load
+    // guard, the caption engine, the tray and the hotkeys never started (B-31). A build that takes
+    // longer than LAZY_BUILD_LIMIT is reported and the next window is built anyway.
+    let lazy: Vec<&'static str> = LAZY_LABELS
+        .iter()
+        .copied()
+        .filter(|&label| {
+            // Lens Command and Lens Cleaner are always built on first use.
+            label != "command"
+                && label != "cleaner"
+                && label != "testerhub"
+                && label != "studio"
+                && (!initial_config.func.lazy_windows
+                    || (label == "settings" && crate::commands::setup_flow::setup_due(&initial_config)))
+        })
+        .collect();
+    let lazy_handle = handle.clone();
+    thread::spawn(move || build_lazy_windows(&lazy_handle, &lazy));
 
     // Apply initial taskbar preference (OFF by default) & condense native desktop icons into the Left-Middle Folder
     set_native_taskbar_hidden(initial_config.func.hide_native_taskbar);
@@ -245,11 +350,12 @@ pub(crate) fn run_setup(
         win_caption_engine::start_caption_engine();
     }
 
-    // Auto-sync bundled Windhawk native window style mod on startup if Windhawk is also present
+    // Refresh the Windhawk mod only if the person installed it earlier (never installs it).
     let _ = sync_lens_windhawk_mod(
         "#0C0C0F",
         "#27272C",
         initial_config.theme.border_radius,
+        false,
     );
 
     // Auto-register startup in release builds when enabled
@@ -258,8 +364,8 @@ pub(crate) fn run_setup(
         let _ = set_run_on_startup(true);
     }
 
-    // Dock, top bar and desktop tab stay hidden until their pages report ready (B-21).
-    crate::app::loadguard::start(&handle);
+    // Dock, top bar and desktop tab stay hidden until their pages report ready (B-21); the load
+    // guard watching them was started at the top of setup.
     position_dock_and_bars(&handle, &initial_config);
 
     // Shell mode: start the user's startup apps, then mark the boot good after ~20 s.
@@ -278,6 +384,8 @@ pub(crate) fn run_setup(
     crate::app::safe_start::mark_started_when_up();
     // Lens Cleaner: snapshot / low-space alert / weekly SAFE clean, each off until turned on.
     crate::commands::cleaner::start_background(handle.clone());
+    // ThumbDesk: the badge on its Dock icon (idle unless it's installed and pinned).
+    crate::commands::thumbdesk::start_badge(handle.clone());
 
     // Auto-tiling + workspaces (both default off; inert until enabled)
     {
@@ -341,17 +449,16 @@ pub(crate) fn run_setup(
         start_clipboard_with_events(&handle);
     }
 
-    // Show Control Center on launch so the user can immediately customize Lens UI
-    if let Some(settings_win) = handle.get_webview_window("settings") {
-        let _ = settings_win.show();
-        let _ = settings_win.set_focus();
-        let _ = handle.emit("lens://settings-open", true);
+    // Show Control Center on launch so the user can immediately customize Lens. It is built on
+    // the start-up window thread (see above), so it is shown from there once it exists.
+    if handle.get_webview_window("settings").is_some() {
+        show_settings_on_launch(&handle);
     }
     eprintln!("[Lens UI] Setup complete!");
 
     crate::app::tray::build_tray(app)?;
 
-    // Global Hotkeys: Alt+Space (Command Palette), Alt+W (Widget Drawer)
+    // Global Hotkeys: the Command Palette and Widget Drawer keys from config.func (Alt+Space, Ctrl+Alt+W by default)
     let palette_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
     let widgets_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyW);
     let h_pal = handle.clone();
@@ -492,6 +599,9 @@ pub(crate) fn run_setup(
     // Wave 4–6 features: shell keys, pointer effects, Playground idle mode, crash reports and
     // updates, the browser bridge adapters, clipboard history v2 and Lens Command hotkeys.
     crate::app::integration::setup(app, &initial_config);
+
+    // Apps asking for attention (FlashWindowEx): the Dock shows them like the taskbar would.
+    crate::attention::start(handle.clone());
 
     // Background thread: theme sync, Top Bar / Dock auto-hide, click-through, desktop tab.
     crate::app::watcher::spawn_watcher(

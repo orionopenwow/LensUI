@@ -68,7 +68,7 @@
   "categories": {
     "AI access": 13,
     "Alt+drag": 6,
-    "Behaviour": 16,
+    "Behaviour": 17,
     "Clipboard": 10,
     "Command & Shelf": 1,
     "Desktop": 1,
@@ -76,13 +76,14 @@
     "Dock": 25,
     "Hot corners": 8,
     "Icons & folders": 4,
-    "Internal": 5,
+    "Internal": 6,
+    "Magic (preview)": 8,
     "Pointer effects": 11,
     "Quick settings": 5,
     "Sessions": 2,
     "Summon keys": 2,
     "Testing": 1,
-    "Theme": 14,
+    "Theme": 15,
     "Theme schedule": 1,
     "Top bar": 7,
     "Wallpaper & Playground": 19,
@@ -91,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 182,
+  "count": 193,
   "entries": [
     {
       "capability": "change_settings",
@@ -573,9 +574,9 @@
     {
       "capability": "destructive",
       "category": "Internal",
-      "default": 2,
+      "default": 3,
       "description": "Sets the config version option under Internal.",
-      "example": "{\"args\":{\"changes\":{\"configVersion\":3}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"configVersion\":4}},\"tool\":\"lens_set\"}",
       "label": "Config version",
       "path": "configVersion",
       "reversible": true,
@@ -991,9 +992,9 @@
     {
       "capability": "change_look",
       "category": "Dock",
-      "default": false,
+      "default": true,
       "description": "Sets the live previews option under Dock.",
-      "example": "{\"args\":{\"changes\":{\"dock.livePreviews\":true}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"dock.livePreviews\":false}},\"tool\":\"lens_set\"}",
       "label": "Live previews",
       "path": "dock.livePreviews",
       "reversible": true,
@@ -1319,6 +1320,21 @@
     },
     {
       "capability": "change_settings",
+      "category": "Behaviour",
+      "default": true,
+      "description": "Sets the auto close popouts option under Behaviour.",
+      "example": "{\"args\":{\"changes\":{\"func.autoClosePopouts\":false}},\"tool\":\"lens_set\"}",
+      "label": "Auto close popouts",
+      "path": "func.autoClosePopouts",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
       "category": "Clipboard",
       "default": false,
       "description": "Keeps a private clipboard history on this PC.",
@@ -1456,9 +1472,9 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
-      "default": true,
+      "default": false,
       "description": "Starts Lens when you sign in.",
-      "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":false}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":true}},\"tool\":\"lens_set\"}",
       "label": "Start with Windows",
       "path": "func.runOnStartup",
       "reversible": true,
@@ -1517,9 +1533,9 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
-      "default": "Alt+W",
+      "default": "Ctrl+Alt+W",
       "description": "Sets the widgets hotkey option under Behaviour.",
-      "example": "{\"args\":{\"changes\":{\"func.widgetsHotkey\":\"Alt+W\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"func.widgetsHotkey\":\"Ctrl+Alt+W\"}},\"tool\":\"lens_set\"}",
       "label": "Widgets hotkey",
       "path": "func.widgetsHotkey",
       "reversible": true,
@@ -1794,6 +1810,128 @@
       "store": "live"
     },
     {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on the Magic Dashboard, opened from a Top Bar button and Command.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.dashboard\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic Dashboard",
+      "path": "magicWaves.dashboard",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Lets the Dashboard reorder cards from how you use it, on this PC only, with a reason on each.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.learn\":true}},\"tool\":\"lens_set\"}",
+      "label": "Learned ordering",
+      "path": "magicWaves.learn",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on Magic Mouse: the Lens pointer and hold-then-drag to grab part of the screen.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.mouse\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic Mouse",
+      "path": "magicWaves.mouse",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": 400,
+      "description": "How long to hold the left button before a drag becomes a Magic grab, in milliseconds.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.mouseHoldMs\":700}},\"tool\":\"lens_set\"}",
+      "label": "Magic Mouse hold time",
+      "path": "magicWaves.mouseHoldMs",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 1200,
+        "minimum": 200,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on making a note from the Shelf and exporting it.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.shelfNotes\":true}},\"tool\":\"lens_set\"}",
+      "label": "Shelf to Notes",
+      "path": "magicWaves.shelfNotes",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Makes a Windows-key tap open Lens Magic Start; Ctrl+Esc still opens Windows Start.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.startButton\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic button",
+      "path": "magicWaves.startButton",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on the new Dock, Theme and Desktop studio with undo.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.studioV2\":true}},\"tool\":\"lens_set\"}",
+      "label": "Lens Studio v2",
+      "path": "magicWaves.studioV2",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Shows the Widgets lane on the Magic Dashboard; Lens fetches only sources you approve.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.widgets\":true}},\"tool\":\"lens_set\"}",
+      "label": "Dashboard widgets",
+      "path": "magicWaves.widgets",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
       "capability": "destructive",
       "category": "AI access",
       "default": false,
@@ -1892,6 +2030,22 @@
           "simple",
           "advanced"
         ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "destructive",
+      "category": "Internal",
+      "default": "",
+      "description": "Sets the setup seen version option under Internal.",
+      "example": "{\"args\":{\"changes\":{\"setupSeenVersion\":\"\"}},\"tool\":\"lens_set\"}",
+      "label": "Setup seen version",
+      "path": "setupSeenVersion",
+      "reversible": true,
+      "risk": "blocked",
+      "schema": {
         "maxLength": 400,
         "type": "string"
       },
@@ -2192,6 +2346,21 @@
         "maximum": 150,
         "minimum": 80,
         "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Theme",
+      "default": false,
+      "description": "Sets the write windows accent option under Theme.",
+      "example": "{\"args\":{\"changes\":{\"theme.writeWindowsAccent\":true}},\"tool\":\"lens_set\"}",
+      "label": "Write windows accent",
+      "path": "theme.writeWindowsAccent",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
       },
       "store": "config"
     },
@@ -2775,9 +2944,9 @@
     {
       "capability": "change_settings",
       "category": "Widgets",
-      "default": "Welcome to Lens UI.\nPress Alt+Space for Command Palette.",
+      "default": "Welcome to Lens.\nPress Alt+Space for Command Palette.",
       "description": "Sets the notes option under Widgets.",
-      "example": "{\"args\":{\"changes\":{\"widgets.notes\":\"Welcome to Lens UI.\\nPress Alt+Space for Command Palette.\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"widgets.notes\":\"Welcome to Lens.\\nPress Alt+Space for Command Palette.\"}},\"tool\":\"lens_set\"}",
       "label": "Notes",
       "path": "widgets.notes",
       "reversible": true,

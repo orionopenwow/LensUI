@@ -11,7 +11,7 @@ only to the provider your AI privacy setting allows (local by default).
 
 ```
 Lens Browser window ("browser")                    one native window
- ├─ browser-ui   Lens UI webview (React)           sidebar · top bar · side panel · approval card
+ ├─ browser-ui   Lens webview (React)           sidebar · top bar · side panel · approval card
  └─ tab-<id>     one WebView2 child per live tab   the web page, placed over the content area
 ```
 
@@ -86,6 +86,13 @@ These figures are not measured yet: this branch was built in a Linux sandbox wit
    elements), scans it for text aimed at AI assistants (`src/browser/guard.ts`) and shows any it
    finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source
    of intent.
+   Text that only *discusses* prompt injection (an article quoting "ignore previous instructions"
+   within 200 characters of "prompt injection", "injection attack" or "jailbreak") is noted at Low
+   and left in the text, both here and in `agentsafe/hidden_text.rs`, so it no longer makes every
+   step ask or blocks the page. Everyday words like "such as" or "for example" are not enough. The
+   same words aimed at the AI ("dear AI agent…"), any line that also asks to send data or call a
+   tool, hidden or smuggled text, and text from a tool still count in full, and every step keeps
+   its own approval rules.
 3. The model replies with a small JSON plan. `parsePlan` keeps only known actions, web URLs and
    at most 8 steps; there is no field that can approve anything.
 4. Each step goes through `browser_agent_act`. The host **re-describes the element from the page
@@ -105,6 +112,18 @@ The "This task can" toggles only make it stricter. The card shows the target ele
 details (secrets masked), money/irreversibility lines found on the page ("$25 per person
 no-show fee"), Deny, and a hold-to-approve button (900 ms; Enter or Space held also works). The
 tab gets an "approve" pill and the top bar an "Approve N actions" pill until you decide.
+
+## Site permissions
+
+Camera, microphone, location, notifications, reading the clipboard and several downloads at once.
+A page that asks gets a Lens bar under the address bar: **Block** (Esc), **Allow once**, **Allow
+on this site** (Enter). "On this site" and "Block" are kept per origin in `state.json`
+(`sitePermissions`); the site button beside the bookmark star shows them for the current site,
+and Settings › AI & Command › Lens Browser lists every site, each with Forget. No answer in 60
+seconds is a Block; requests from non-web pages, unknown kinds, or a tab the agent acted on in the
+last 10 seconds are denied without asking. Rules: `src-tauri/src/browser/permissions.rs` (pure,
+tested); WebView2 wiring: its `win` module (`PermissionRequested` + a deferral). Not yet run on a
+real PC; see docs/BROWSER_AAA.md 2.1.
 
 ## Right-click menu (in pages)
 
@@ -313,7 +332,7 @@ without that switch, and sign-ins stay blocked.
 |---|---|
 | Steer, pause, take over | Done (pause stops before the next step; take over focuses the page; steer adds a note). |
 | Glance link previews | Done: Alt+click (or long-press) a link → a preview fills the content area with "Open as tab ⏎ / Close Esc"; optional ≤5 s local summary (provider `local`). |
-| Tidy and auto-archive | Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for `archiveAfterDays` (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. |
+| Tidy and auto-archive | Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for `archiveAfterDays` (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. |
 | Space lock with Windows Hello | Done: `UserConsentVerifier`; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. |
 | Ask-on-Find | Done: no matches → "Ask about this page". |
 | PDF annotation + Ask this PDF | Partial: page notes (any page, PDFs included) saved locally. Highlights inside WebView2's PDF viewer and "Ask this PDF" need native access to the viewer (or bundling pdf.js); not done. |
@@ -321,7 +340,9 @@ without that switch, and sign-ins stay blocked.
 | Tab sleep | Done: "N awake · N asleep · ~X GB saved" (estimate, 80 MB per sleeping tab); tabs with edited fields or a chosen upload never sleep (amber dot). |
 | Sessions | Done: state is saved atomically on every change (crash-safe); Ctrl+Shift+T reopens the last 25 closed tabs. Reopening a closed window is the same as reopening Lens Browser; a removed space can't be reopened yet. |
 | Split controls | Skipped (no split view yet). |
-| Media mini-player | Done: the sidebar shows a background tab that's playing, with play/pause and mute. |
+| Media mini-player | Done: the sidebar shows a background tab that's playing, with play/pause and mute (can be hidden in Make it yours › Sidebar). |
+| Sidebar | Done (parity harness; not yet run on a real PC): tabs first, grouped Today / Earlier, by site or not at all; pinned tabs and favourite bookmarks as tiles; folders one quiet line each at the bottom; chats collapsed; Find a tab (Ctrl+Shift+A); full or icon stack, left or right, 200–380 px. |
+| Lens row | Done (parity harness): Tidy, Close duplicates and Group by site show a plan and wait for Apply; Summarise sends tab titles and hosts (never page text) to Ask. Group by task is not built. |
 | Bookmarks editing | Done: Bookmarks panel with nested folders ("A / B"), rename, move, remove. |
 | Background opens, crashed tab | Done: Ctrl/middle-click on bookmarks and pinned sites opens asleep in the background; a tab that stops answering shows "This tab stopped responding · Reload". |
 | Downloads | Partial: rules by file type (`downloadRules`: ext → existing folder). "Ask where to save" needs a native save dialog in the download callback; not done. |

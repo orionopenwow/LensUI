@@ -1,6 +1,7 @@
-# Lens UI robustness and fluidity (docs/TESTING.md)
+# Lens robustness and fluidity (docs/TESTING.md)
 #  * robustness   — every PR: perf budgets, reduced-motion check, visual regression, accessibility,
-#                   a short soak + chaos pass. Headless Chromium on the real frontend, Tauri mocked.
+#                   theme switching (tools/robust/theme-switch.mjs), a short soak + chaos pass.
+#                   Headless Chromium on the real frontend, Tauri mocked.
 #  * windows-e2e  — every PR: builds the real app and drives its WebView2 windows on Windows over
 #                   CDP, then checks Windows was put back the way it was (tools/e2e/probe.ps1), then
 #                   proves "Remove all Lens changes" leaves nothing behind (tests/e2e/remove-all.mjs).
@@ -20,10 +21,10 @@ on:
       - "tools/media/**"
       - "README.md"
       - "*.bat"
-  # Every branch too (like build.yml), so a branch's own commit is tested and not only its merge
-  # with a base that may be mid-change.
+  # Pushes to main only: a branch with a pull request is tested once, through the pull request
+  # (running both doubled the queue on the shared Windows runners).
   push:
-    branches: ["**"]
+    branches: ["main"]
     paths-ignore:
       - "docs/site/**"
       - "docs/media/**"
@@ -89,6 +90,16 @@ jobs:
         if: always()
         run: node tools/perf/reduced-motion.mjs
 
+      - name: Window buttons blend into every title bar (caption parity)
+        if: always()
+        # Lens's real overlay code (src-tauri/src/caption_paint.rs) over every theme pack, Windows'
+        # own light/dark/accent/Mica title bars, active and inactive, normal and maximised, all three
+        # button orders and 100–250 % scaling. Fails if any pixel outside the buttons differs from
+        # the title bar. rustc is on the runner image; no crates are needed.
+        env:
+          CAPTION_SHOTS: "0"
+        run: node tools/parity/caption/run.mjs
+
       - name: Visual regression
         if: always()
         # Fails on any changed image; missing goldens are recorded to the visual-new artifact.
@@ -98,9 +109,43 @@ jobs:
           VISUAL_EMIT_B64: "1"
         run: node tools/visual/run.mjs
 
+      - name: Dock layout, every style × edge × icon size (search open and closed)
+        if: always()
+        run: node tools/robust/dock-layout.mjs
+
+      - name: Dock search and docked Settings never stay open
+        if: always()
+        run: node tools/robust/dock-dismiss.mjs
+
+      - name: Dock auto-hide slides (no one-frame jumps)
+        if: always()
+        run: node tools/robust/dock-slide.mjs
+
+      - name: Dock pop-outs carry the shared close button
+        if: always()
+        run: node tools/robust/flyout-close.mjs
+
       - name: Accessibility (axe-core)
         if: always()
         run: node tools/a11y/run.mjs
+
+      - name: Theme switching (no flash, no layout jump, quick, Settings still works)
+        if: always()
+        # Every featured look on the Appearance page, Simple mode, and switches made by another
+        # window; the nightly run goes through every pack (tools/robust/theme-switch.mjs).
+        run: node tools/robust/theme-switch.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
+
+      - name: Dock flash (no bright line or band while search opens/closes or the style changes)
+        if: always()
+        # Frame by frame over a dark desktop, with a control line that must be caught
+        # (tools/robust/dock-flash.mjs).
+        run: node tools/robust/dock-flash.mjs
+
+      # Hyper suite (tools/hyper/run.mjs, docs/TESTING.md): every Settings switch and choice, every
+      # surface, and the cross-cutting rules, with a coverage report of every inventoried feature.
+      # Fails only on failures not listed in tools/hyper/known.json; nightly runs the full tier.
+      - name: Hyper suite (every control, every surface, the rules)
+        run: node tools/hyper/run.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
 
       - name: Soak + chaos (short)
         if: always() && github.event_name != 'schedule'
@@ -129,8 +174,11 @@ jobs:
             tools/perf/budgets.json
             tools/soak/out/
             tools/a11y/out/
+            tools/robust/out/theme-rig/
+            tools/hyper/out/
             tools/visual/out/report.json
             tools/visual/out/diff/
+            tools/robust/out-layout/
           if-no-files-found: warn
 
       - name: Upload new goldens
@@ -174,7 +222,7 @@ jobs:
 
       # A debug build of the real app with the frontend embedded (custom protocol, no dev server),
       # plus a config overlay that opens a DevTools port on every webview (tests/e2e/tauri-config.mjs).
-      - name: Build Lens UI (debug, no installer, DevTools port)
+      - name: Build Lens (debug, no installer, DevTools port)
         run: |
           node tests/e2e/tauri-config.mjs
           bun run tauri build --debug --no-bundle --config tests/e2e/out/tauri.e2e.json
@@ -214,6 +262,21 @@ jobs:
         if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
         shell: pwsh
         run: node tests/e2e/failsafe.mjs
+
+      # Auto-hide on a real desktop (tests/e2e/autohide.mjs): moves the real cursor through the Top
+      # Bar and Dock edges, opens and dismisses flyouts every way, and checks the real window state
+      # after each step: no stuck-open bar, no flicker, no flyout left behind.
+      - name: Auto-hide (Top Bar and Dock, real cursor)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/autohide.mjs
+
+      # Command intents (tests/e2e/intents.mjs): every action the offline engine knows previews
+      # from its own phrasing; dark ↔ light mode is run and put back.
+      - name: Command intents (preview every action)
+        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
+        shell: pwsh
+        run: node tests/e2e/intents.mjs
 
       - name: Collect Lens logs
         if: always()

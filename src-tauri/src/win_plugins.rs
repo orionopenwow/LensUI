@@ -1,4 +1,4 @@
-//! Lens UI plugins: small, self-contained HTML widgets that live in
+//! Lens plugins: small, self-contained HTML widgets that live in
 //! %APPDATA%\LensUI\plugins\<id>\ next to a `lensplugin.json` manifest.
 //!
 //! Security model (see docs/PLUGINS.md):

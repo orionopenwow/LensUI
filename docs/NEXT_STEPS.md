@@ -19,9 +19,8 @@
    - Desktop-wide Spaces
    - Routines
 8. **Performance**: theme switch p95 (83 ms) and Settings tab long tasks; finish moving the six inline Settings pages into `src/settings/pages/`.
-9. **Site command demo**: port the newer app intents (window, move, overview, lock, calm, wallpaper, accent, dock style, DND minutes) to `docs/site/js/intent.js` and drop them from `APP_ONLY` in the site test.
-10. **Lens Apps v2** (real thumbnails, one-click pill, de-duplicated home) and verify the remaining winget ids.
-11. **Distribution**: code signing, Microsoft Store, winget and Scoop manifests; real Windows screen recordings to replace the site's UI-preview clips.
+9. **Lens Apps v2** (real thumbnails, one-click pill, de-duplicated home) and verify the remaining winget ids.
+10. **Distribution**: code signing, Microsoft Store, winget and Scoop manifests; real Windows screen recordings to replace the site's UI-preview clips.
 
 ## Later
 

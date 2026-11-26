@@ -3,8 +3,8 @@ import { pendingLabel } from "./model";
 import "./ApprovalCard.css";
 
 /** "Approve 1 action" — mount in the top bar and the Dock (docs/CLAUDE_CONTROL.md). Hidden at 0.
- *  Pass `shortcut` only once a global hotkey for the approval window is registered: Ctrl+Alt+J,
- *  which the docs suggested, is the tiling "snap bottom-left" shortcut (win_tiler.rs). */
+ *  `shortcut` is the global hotkey Lens registered for the approval window (`useApprovalHotkey`,
+ *  usually "Ctrl Alt Y"; Ctrl+Alt+J, which the docs once suggested, is the tiler's). */
 export const PendingPill: React.FC<{ count: number; onOpen: () => void; shortcut?: string }> = ({ count, onOpen, shortcut }) => {
   if (count <= 0) return null;
   const label = pendingLabel(count);

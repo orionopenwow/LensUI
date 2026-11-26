@@ -20,6 +20,8 @@ export interface ThemeConfig {
   locale?: string;
   /** "classic" | "expressive" | "dotmatrix" — shape style layer on top of the colour pack. */
   shapeStyle?: string;
+  /** Also write a custom accent into Windows' own accent colour. Off by default. */
+  writeWindowsAccent?: boolean;
 }
 
 export interface PinnedApp {
@@ -176,6 +178,8 @@ export interface LensConfig {
   widgets: WidgetsConfig;
   styledFolders: StyledFolderRecord[];
   onboardingCompleted?: boolean;
+  /** Lens version whose setup / "What's new" was last seen or skipped ("" = none); docs/SETUP.md. */
+  setupSeenVersion?: string;
   /** Settings hub detail level; "" until chosen (new users start Simple, existing users Advanced). */
   settingsMode?: "simple" | "advanced" | "";
   themeSchedule?: Partial<import("../themes/schedule").ThemeSchedule> | null;
@@ -194,6 +198,8 @@ export interface LensConfig {
   command?: Partial<import("../command/settings").CommandSettings>;
   /** Tester mode: TEST BUILD badge and Ctrl+Alt+M to mark a moment in the log. */
   tester?: { enabled: boolean };
+  /** Magic waves feature flags (docs/plans/MAGIC_WAVES.md); all off by default. */
+  magicWaves?: Gen.MagicWavesConfig;
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */

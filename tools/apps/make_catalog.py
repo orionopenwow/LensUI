@@ -11,8 +11,10 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 def W(id, verified):
     return {"method": "winget", "wingetId": id, "wingetVerified": verified}
 
-def GH(repo, hints=None, fallback=None):
+def GH(repo, hints=None, fallback=None, portable=False):
     d = {"method": "githubRelease", "repo": repo, "hints": hints or []}
+    if portable:
+        d["portable"] = True
     if fallback:
         d["fallbackUrl"] = fallback
     return d
@@ -335,11 +337,27 @@ APPS += [
        notes="Lens Settings › AI & Command › Transcription sets it up with a pinned, checksum-verified download.", sources=["https://github.com/ggml-org/whisper.cpp"]),
 ]
 
+# From the makers of Lens.
+APPS += [
+  dict(id="thumbdesk", name="ThumbDesk", category="utilities", collections=["lens-family", "essentials"], status="stable",
+       pitch="Use your whole PC from an Xbox or PlayStation controller: cursor, clicks, shortcuts, voice and scripts.",
+       why="From the makers of Lens. A 120 Hz dual-stick cursor, modifier layers, voice commands, a radial menu and DualSense gyro, with an anti-cheat guard that pauses itself in protected and Steam games. One portable program, no drivers.",
+       replaces=["Steam Desktop Configuration", "Gopher360"], openSource=True, license="MIT", licenseVerified=True,
+       publisher="orionopenwow", homepage="https://orionopenwow.github.io/ThumbDesk/", repo="https://github.com/orionopenwow/ThumbDesk",
+       install=GH("orionopenwow/ThumbDesk", ["thumbdesk.exe"], "https://github.com/orionopenwow/ThumbDesk/releases/latest", portable=True),
+       media={"images": [], "video": None, "credit": "orionopenwow/ThumbDesk"},
+       integration={"fileTypes": [], "mcp": False, "cli": None, "voice": ["open thumbdesk", "controller mode", "use my controller"]},
+       lastRelease="v2.3.0",
+       notes="Lens keeps ThumbDesk in its own apps folder and reads its status from ThumbDesk's local API (127.0.0.1:49152, read-only) to badge its Dock icon. Lens never sends input for it.",
+       sources=["https://raw.githubusercontent.com/orionopenwow/ThumbDesk/HEAD/README.md"]),
+]
+
 RECIPES = {
     "ollama": [{"kind": "addToDock"}, {"kind": "localModelProvider", "provider": "ollama"}, {"kind": "voiceVerbs", "phrases": ["open ollama"]}, {"kind": "guideLesson", "lesson": "Use a local model with Lens"}],
     "lm-studio": [{"kind": "addToDock"}, {"kind": "localModelProvider", "provider": "lmstudio"}, {"kind": "guideLesson", "lesson": "Use a local model with Lens"}],
     "concat": [{"kind": "addToDock"}, {"kind": "openWith", "extensions": [".mp4", ".mov", ".mkv", ".webm"]}, {"kind": "rightClick", "actions": ["open_in_app"]}, {"kind": "voiceVerbs", "phrases": ["open concat", "edit this video in concat"]}, {"kind": "guideLesson", "lesson": "Edit a video with Concat"}],
     "artcraft": [{"kind": "addToDock"}, {"kind": "openWith", "extensions": [".png", ".jpg", ".webp"]}, {"kind": "voiceVerbs", "phrases": ["open artcraft"]}],
+    "thumbdesk": [{"kind": "addToDock"}, {"kind": "voiceVerbs", "phrases": ["open thumbdesk", "controller mode"]}],
     "degenview": [{"kind": "addToDock"}, {"kind": "voiceVerbs", "phrases": ["open the charting app"]}],
     "obsidian": [{"kind": "addToDock"}, {"kind": "openWith", "extensions": [".md"]}, {"kind": "voiceVerbs", "phrases": ["open obsidian"]}],
 }
@@ -403,6 +421,7 @@ CATALOG = {
         {"id": "artcraft-suite", "title": "The ArtCraft suite", "subtitle": "17 native creative and office apps, one launcher"},
         {"id": "ai", "title": "AI on your PC", "subtitle": "Local models, generation and transcription"},
         {"id": "essentials", "title": "Essentials", "subtitle": "Free tools almost everyone wants"},
+        {"id": "lens-family", "title": "From the makers of Lens", "subtitle": "Companion apps that work with Lens"},
     ],
     "categories": [
         {"id": "create", "title": "Create"}, {"id": "docs", "title": "Write & docs"}, {"id": "slides", "title": "Slides"},

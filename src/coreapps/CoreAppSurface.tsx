@@ -17,6 +17,8 @@ const APPS: Record<CoreAppId, React.LazyExoticComponent<React.ComponentType<any>
   power: lazy(() => import("./apps/Power").then((m) => ({ default: m.Power }))),
   network: lazy(() => import("./apps/Network").then((m) => ({ default: m.Network }))),
   clipboard: lazy(() => import("./apps/Clipboard").then((m) => ({ default: m.Clipboard }))),
+  feeds: lazy(() => import("./apps/Feeds").then((m) => ({ default: m.Feeds }))),
+  messages: lazy(() => import("./apps/Messages").then((m) => ({ default: m.Messages }))),
 };
 const Sticky = lazy(() => import("./apps/Notes").then((m) => ({ default: m.Sticky })));
 

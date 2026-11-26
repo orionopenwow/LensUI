@@ -12,7 +12,8 @@ import { DEFAULT_APPEARANCE, DEFAULT_BROWSER_AI } from "../../../src/browser/api
 import { applyDither } from "../../../src/style/dither";
 import "../../../src/style/dither.css";
 import "../../../src/browser/Browser.css";
-import type { BrowserView, Tab } from "../../../src/browser/api";
+import { DEFAULT_APPEARANCE, DEFAULT_SIDEBAR, type BrowserView, type SidebarPrefs, type Tab } from "../../../src/browser/api";
+import { propose } from "../../../src/browser/tabAi";
 import type { AgentItem, PendingOk } from "../../../src/browser/agent";
 import captionsBody from "../../../src/__tests__/fixtures/yt-captions.json3.json";
 
@@ -39,11 +40,11 @@ const view: BrowserView = {
     ],
     folders: [
       { id: "f1", spaceId: "s1", name: "Errands", collapsed: false },
-      { id: "f2", spaceId: "s1", name: "Daily", collapsed: false },
+      { id: "f2", spaceId: "s1", name: "Daily", collapsed: true },
     ],
     tabs: [
       t("t1", "https://dashboard.stripe.example/payments", "Payments – Stripe", { order: 0 }),
-      t("t2", "https://news.ycombinator.com/", "Hacker News", { order: 1 }),
+      t("t2", "https://news.ycombinator.com/", "Hacker News", { order: 1, lastActiveMs: NOW - 2 * 86_400_000 }),
       t("t3", activeUrl, youtube ? "Fish & chips at home — YouTube" : "Harbor & Vine · Tables", { order: 2, folderId: youtube ? "f2" : "f1", badge: scene === "approval" ? "approve" : null }),
       t("t4", "https://www.hulu.example/account", "Hulu · Account", { order: 3, folderId: "f1", life: "sleeping" }),
       t("t5", "https://returns.everlane.example/", "Everlane · Returns", { order: 4, folderId: "f1" }),
@@ -51,7 +52,7 @@ const view: BrowserView = {
       t("t7", "https://www.google.com/", "Google", { order: 6, folderId: "f2", life: "sleeping" }),
       t("t8", "https://open.spotify.example/", "Spotify", { order: 7, folderId: "f2", audible: true }),
       t("t9", "https://github.com/orionopenwow/LensUI/pulls", "Pull requests · LensUI", { order: 8 }),
-      t("t10", "https://www.figma.example/file/sidebar-v4", "Sidebar v4 – Figma", { order: 9, life: "sleeping" }),
+      t("t10", "https://www.figma.example/file/sidebar-v4", "Sidebar v4 – Figma", { order: 9, life: "sleeping", lastActiveMs: NOW - 3 * 86_400_000 }),
     ],
     activeSpace: "s1",
     activeTab: "t3",
@@ -262,9 +263,34 @@ const importItemsSeed = {
 const receiptsSeed = [{ id: "imp-1", label: "Microsoft Edge", atMs: NOW - 2 * 86_400_000, bookmarks: 86, tabs: 12, spaces: 1, history: 4210, searchChanged: true }];
 const back = { canBack: true };
 
+// ---- Sidebar ----
+const withSidebar = (sb: Partial<SidebarPrefs>, patch: Partial<BrowserView["state"]> = {}): BrowserView =>
+  withState({ ...patch, settings: { ...view.state.settings, appearance: { ...DEFAULT_APPEARANCE, sidebar: { ...DEFAULT_SIDEBAR, ...sb } } } });
+const manyTabs: Tab[] = [
+  ...view.state.tabs,
+  t("m1", "https://docs.rs/tokio/latest/tokio/", "tokio - Rust", { order: 10 }),
+  t("m2", "https://docs.rs/serde/latest/serde/", "serde - Rust", { order: 11, lastActiveMs: NOW - 86_400_000 * 2 }),
+  t("m3", "https://news.ycombinator.com/item?id=1", "Show HN: a tiny shell", { order: 12 }),
+  t("m4", "https://github.com/tauri-apps/tauri/issues", "Issues · tauri-apps/tauri", { order: 13 }),
+  t("m5", "https://github.com/orionopenwow/LensUI/pull/81", "Lens glow · Pull request #81", { order: 14, badge: "approve" }),
+  t("m6", "https://www.youtube.com/watch?v=x", "Live coding — YouTube", { order: 15, audible: true }),
+  t("m7", "https://maps.example/harbor-road", "Harbor Road – Maps", { order: 16, life: "sleeping" }),
+  t("m8", "https://news.ycombinator.com/", "Hacker News", { order: 17, lastActiveMs: NOW - 4 * 86_400_000 }),
+];
+const dupState = withState({ tabs: manyTabs }).state;
+const planSeed = propose("tidy", dupState, NOW) ?? undefined;
+
 const scenes: Record<string, BrowserInitial> = {
+  sidebar: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "sidebar-stack": { view: withSidebar({ mode: "stack" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "sidebar-many": { view: withSidebar({ group: "site" }, { tabs: manyTabs, folders: view.state.folders.map((f) => ({ ...f, collapsed: false })) }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "sidebar-plan": { view: withState({ tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
+  "sidebar-stack-plan": { view: withSidebar({ mode: "stack" }, { tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
+  "sidebar-right": { view: withSidebar({ side: "right", width: 300 }), panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: [], startedAt: NOW, actions: 0, running: false } },
   // ---- AAA pass ----
   newtab: { view: withState({ closed: closedSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, start: true, history: historySeed, nav: back },
+  // A fresh window on the new tab page: the tabs are there, none is open, the box is empty (the site's default).
+  home: { view: withState({ activeTab: null, closed: closedSeed }), panel: null, chats, now: NOW, history: historySeed },
   "newtab-empty": { view: withState({ tabs: [], activeTab: null, bookmarks: [] }, { live: [], bookmarked: false }), panel: null, chats: [], now: NOW, history: [] },
   suggest: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, address: "har", selected: 1, nav: back, suggestions: [historySeed[0], historySeed[8], hist("https://maps.example/harbor-road", "Harbor Road – Maps", 4000, 1)] },
   loading: { view: withState({ tabs: view.state.tabs.map((x) => (x.id === "t3" ? { ...x, zoom: 1.25 } : x)) }, { downloads: downloadsSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: { canBack: true, canForward: true, loading: true }, find: "harbor", findTotal: 6 },
@@ -276,6 +302,9 @@ const scenes: Record<string, BrowserInitial> = {
   "downloads-empty": { view, panel: "downloads", chats, mockPage: <MockPage />, now: NOW, nav: back },
   "import-pick": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, nav: back, importSeed: { sources: importSources, pick: { browser: "chrome", profile: "Default" }, counts: { bookmarks: 7, history: 18_204, openTabs: 2, pinnedTabs: 1, spaces: 0, notes: [] }, items: importItemsSeed, receipts: receiptsSeed, open: "bookmarks", skip: ["https://oldjob.example/wiki", "https://oldjob.example/payroll"], now: NOW } },
   frame: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  // Site permissions: a page asks for the camera; the site strip with remembered answers.
+  permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
+  "permission-site": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, perms: { [new URL(activeUrl).origin]: { location: true, notifications: false } } },
   agent: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems, startedAt: NOW - 196_000, actions: 23, running: false } },
   approval: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems.slice(0, 3), startedAt: NOW - 196_000, actions: 23, running: true, pending } },
   transcript: {

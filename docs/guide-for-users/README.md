@@ -17,6 +17,7 @@ Short, practical how-tos. They are generated from the same data the in-app Guide
 - [AI privacy explained](./ai-privacy.md) — What Lens AI can see, where it goes, and how to keep it all on this PC.
 - [Undo anything](./undo-anything.md) — Every change Lens makes to Windows can be reversed.
 - [Keyboard map](./keyboard-map.md) — The shortcuts worth remembering.
+- [Free up space safely](./free-up-space.md) — Find what's taking up room on your drive and clean it without losing anything you care about.
 
 ## Reference
 

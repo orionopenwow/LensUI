@@ -147,8 +147,10 @@
   position: absolute;
   width: 20px;
   height: 20px;
+  left: 0;
+  top: 0;
   margin: -10px 0 0 -10px;
-  transition: left var(--lens-dur-slower) var(--lens-ease-in-out), top var(--lens-dur-slower) var(--lens-ease-in-out), opacity var(--lens-dur-base) var(--lens-ease-out);
+  transition: transform var(--lens-dur-slower) var(--lens-ease-in-out), opacity var(--lens-dur-base) var(--lens-ease-out);
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--lens-accent, #8b9cff) 60%, transparent));
 }
 .pr-twin-orb .lens-cloud { --lc-bezel: 1.5px; --lc-blur: 0.6px; }

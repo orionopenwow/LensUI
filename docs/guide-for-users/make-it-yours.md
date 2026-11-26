@@ -6,7 +6,7 @@ Pick a theme pack, an accent colour, a dock style and a mouse pointer that fit t
 
 ## 1. Choose a theme pack
 
-**Where:** Settings › Theme & Look › Choose a theme
+**Where:** Settings › Appearance › Choose a theme
 
 The six recommended packs sit in one row. "Browse all" opens every pack with filters. A pack restyles surfaces, accents, icons, folders and window frames together.
 
@@ -14,19 +14,19 @@ _You'll know it worked when:_ New look applied. You can always return with "Rese
 
 ## 2. Set an accent colour
 
-**Where:** Settings › Theme & Look
+**Where:** Settings › Appearance
 
 Click a swatch, or open the colour wheel for any colour. "Windows" follows your Windows accent instead.
 
 ## 3. Pick a dock style
 
-**Where:** Settings › Dock & Top Bar › Dock style
+**Where:** Settings › Dock & Bar › Dock style
 
 Floating, Slim, Taskbar, Studio, Minimal or Split. Each keeps the same feel; Taskbar and Studio add a system area with the clock.
 
 ## 4. Choose a mouse pointer
 
-**Where:** Settings › Theme & Look › Mouse pointer
+**Where:** Settings › Appearance › Mouse pointer
 
 Open "Mouse pointer" in Customise. Pick a family; it follows your accent colour. "Restore my Windows pointers" puts your old ones back exactly.
 

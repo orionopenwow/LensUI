@@ -6,7 +6,7 @@ Playground scenes, click ripples, calm mode and idle mode. About 3 minutes.
 
 ## 1. Pick a Playground scene
 
-**Where:** Settings › Desktops & Widgets › Playground
+**Where:** Settings › Desktop › Playground
 
 Choose a scene in Desktops & Widgets › Living desktop. Falling Sand and Ink react to your pointer; Aurora, Rain on Glass and Starfield are calm.
 
@@ -16,13 +16,13 @@ With Falling Sand, move to empty desktop and paint. Right-drag erases and the wh
 
 ## 3. One click to Calm
 
-**Where:** Settings › Desktops & Widgets › Playground
+**Where:** Settings › Desktop › Playground
 
 Calm freezes the scene into a still picture and stops following the pointer. Scenes also pause on their own when a game or full-screen app is in front.
 
 ## 4. Idle mode
 
-**Where:** Settings › Desktops & Widgets › Playground
+**Where:** Settings › Desktop › Playground
 
 Idle mode shows a scene like a screensaver after a few minutes without input. It never starts over full-screen apps, games, presentations or calls.
 

@@ -1,25 +1,60 @@
 // ==WindhawkMod==
 // @id              lens-window-style
-// @name            Lens UI Native Window Style
-// @description     Retroactively applies Lens UI dark obsidian titlebars, custom border colors, and corner roundness natively in-process across Windows 11 apps via DwmSetWindowAttribute.
-// @version         1.0.0
-// @author          Lens UI
+// @name            Lens Native Window Style
+// @description     Retroactively applies Lens dark obsidian titlebars, custom border colors, and corner roundness natively in-process across Windows 11 apps via DwmSetWindowAttribute.
+// @version         1.1.0
+// @author          Lens
 // @include         *
-// @exclude         *EasyAntiCheat*
-// @exclude         *BEService*
-// @exclude         *vgc.exe
-// @exclude         *vgtray.exe
-// @exclude         *VALORANT*
-// @exclude         *cs2.exe
-// @exclude         *FortniteClient*
-// @exclude         *lens-ui.exe
+// @exclude         *easyanticheat*
+// @exclude         *eac_launcher*
+// @exclude         *eaanticheat*
+// @exclude         *beservice*
+// @exclude         *battleye*
+// @exclude         *bedaisy*
+// @exclude         *vgc.exe*
+// @exclude         *vgtray.exe*
+// @exclude         *vanguard*
+// @exclude         *faceit*
+// @exclude         *eseaclient*
+// @exclude         *punkbuster*
+// @exclude         *pnkbstr*
+// @exclude         *xigncode*
+// @exclude         *gameguard*
+// @exclude         *gamemon*
+// @exclude         *mhyprot*
+// @exclude         *hoyokprotect*
+// @exclude         *anticheatexpert*
+// @exclude         *ricochet*
+// @exclude         *valorant*
+// @exclude         *riotclientservices*
+// @exclude         *leagueclient*
+// @exclude         *league of legends.exe*
+// @exclude         *cs2.exe*
+// @exclude         *csgo.exe*
+// @exclude         *fortnite*
+// @exclude         *cod.exe*
+// @exclude         *modernwarfare*
+// @exclude         *r5apex*
+// @exclude         *tslgame*
+// @exclude         *rainbowsix*
+// @exclude         *destiny2.exe*
+// @exclude         *overwatch.exe*
+// @exclude         *eldenring.exe*
+// @exclude         *rustclient.exe*
+// @exclude         *escapefromtarkov*
+// @exclude         *dayz*
+// @exclude         *deadbydaylight*
+// @exclude         *rocketleague.exe*
+// @exclude         *genshinimpact.exe*
+// @exclude         *starrail.exe*
+// @exclude         *lens-ui.exe*
 // @compilerOptions -ldwmapi -luser32
 // ==/WindhawkMod==
 
 // ==WindhawkModReadme==
 /*
-# Lens UI Native Window Style
-Bundled companion mod for **Lens UI**. Runs safely inside Windhawk to apply real,
+# Lens Native Window Style
+Bundled companion mod for **Lens**. Runs safely inside Windhawk to apply real,
 in-process Windows 11 DWM styling retroactively to existing and newly opened windows:
 - Matte obsidian dark titlebars (`DWMWA_CAPTION_COLOR`)
 - Custom hairline or accent window borders (`DWMWA_BORDER_COLOR`)

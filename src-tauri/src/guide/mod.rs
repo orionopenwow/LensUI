@@ -1,4 +1,4 @@
-//! Lens Guide: lesson progress and Guide preferences, kept on this PC only in
+//! The Guide: lesson progress and Guide preferences, kept on this PC only in
 //! `%APPDATA%\LensUI\guide\progress.json`. No usage data ever leaves the machine; the "used
 //! features" list only powers local "Did you know?" tips.
 //!
@@ -20,7 +20,7 @@ const MAX_ID_LEN: usize = 80;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct GuideProgress {
-    /// Lens Guide is off until the user turns it on.
+    /// The Guide is off until the user turns it on.
     pub enabled: bool,
     /// Lesson id → completed step numbers.
     pub steps: BTreeMap<String, Vec<u32>>,

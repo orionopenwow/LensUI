@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { browserOpen, browserState, historyClear, settingsSet, type BrowserSettings } from "../browser/api";
+import { browserOpen, browserState, historyClear, permissionForget, permissionsList, settingsSet, type BrowserSettings, type SitePermissions } from "../browser/api";
+import { SitePermissionsList } from "../browser/SitePermissions";
 
 const ENGINES: [string, string][] = [
   ["https://duckduckgo.com/?q={q}", "DuckDuckGo"],
@@ -13,8 +14,10 @@ const ENGINES: [string, string][] = [
 export function BrowserCard() {
   const [s, setS] = useState<BrowserSettings | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [perms, setPerms] = useState<SitePermissions>({});
   useEffect(() => {
     browserState().then((v) => setS(v.state.settings)).catch(() => {});
+    permissionsList().then(setPerms).catch(() => {});
   }, []);
   const save = (patch: Partial<BrowserSettings>) => {
     if (!s) return;
@@ -84,6 +87,13 @@ export function BrowserCard() {
           <div className="cc-desc">A tiny Lens orb beside tweets, YouTube's player, videos, images, 3D models, code and downloads. Applies to tabs opened after you turn it on.</div>
         </div>
         {toggle(!!s.pageMarks, "Lens buttons on pages", "pageMarks")}
+      </div>
+      <div className="cc-row cc-row-gap">
+        <div>
+          <div className="cc-label">Site permissions</div>
+          <div className="cc-desc">Camera, microphone, location, notifications, clipboard and several downloads at once. Sites ask first; forget an answer and the site asks again.</div>
+          <SitePermissionsList saved={perms} onForget={(o, k) => void permissionForget(o, k).then(setPerms).catch((e) => setMsg(String(e)))} />
+        </div>
       </div>
       <div className="cc-row" style={{ marginTop: 12, justifyContent: "flex-start", gap: 8 }}>
         <button className="cc-btn-ghost" onClick={() => void historyClear(Date.now() - 3600_000).then(() => setMsg("Cleared the last hour of history.")).catch((e) => setMsg(String(e)))}>Clear last hour</button>

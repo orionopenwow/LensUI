@@ -114,6 +114,284 @@
    "source": "src/components/MessagingHubPane.tsx"
   },
   {
+   "id": "card.messages.feedscard",
+   "kind": "card",
+   "title": "Feeds",
+   "text": "One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC. Feeds · Sources · Mute words · Quiet hours · Refresh every · AI digest · OPML. Feeds. Settings › Feeds. Credentials go straight to the sealed vault; this card never reads them back",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Feeds",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.sources",
+   "kind": "setting",
+   "title": "Sources",
+   "text": "",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Sources"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Sources",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.mute-words",
+   "kind": "setting",
+   "title": "Mute words",
+   "text": "Words, @handles, or source:reddit — one per line. Muted posts are hidden everywhere, including the digest.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Mute words"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Mute words",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.quiet-hours",
+   "kind": "setting",
+   "title": "Quiet hours",
+   "text": "No refreshes and no \"new\" pill between these times.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Quiet hours"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Quiet hours",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.refresh-every",
+   "kind": "setting",
+   "title": "Refresh every",
+   "text": "Each network also has its own polite rate limit.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "Refresh every"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "Refresh every",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.ai-digest",
+   "kind": "setting",
+   "title": "AI digest",
+   "text": "Five bullets with sources. Runs on your local model unless your AI privacy setting allows cloud.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "AI digest"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "AI digest",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "setting.messages.feedscard.opml",
+   "kind": "setting",
+   "title": "OPML",
+   "text": "Bring your subscriptions from Feedly, Inoreader, NetNewsWire or any reader.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Feeds",
+    "OPML"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "FeedsCard",
+    "label": "OPML",
+    "section": "feeds"
+   },
+   "source": "src/components/FeedsCard.tsx"
+  },
+  {
+   "id": "card.messages.messagescard",
+   "kind": "card",
+   "title": "Messages",
+   "text": "One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count. Messages · Mirror notifications · Show previews · Badges on Dock icons · VIPs · Alert keywords · Matrix (advanced). Messages. Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens reads only the unread badge. Matrix is the one place Lens can read and send (with approval)",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Messages",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.mirror-notifications",
+   "kind": "setting",
+   "title": "Mirror notifications",
+   "text": "Use Windows notifications from these apps for badges and mention alerts. Needs notification access for Lens.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Mirror notifications"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Mirror notifications",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.show-previews",
+   "kind": "setting",
+   "title": "Show previews",
+   "text": "Show the first line of new messages in the inbox where the source provides it.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Show previews"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Show previews",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.badges-on-dock-icons",
+   "kind": "setting",
+   "title": "Badges on Dock icons",
+   "text": "Conversation names that always get through Focus, separated by commas.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Badges on Dock icons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Badges on Dock icons",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.vips",
+   "kind": "setting",
+   "title": "VIPs",
+   "text": "Conversation names that always get through Focus, separated by commas.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "VIPs"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "VIPs",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.alert-keywords",
+   "kind": "setting",
+   "title": "Alert keywords",
+   "text": "Your name, project names — a message containing one counts as a mention.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Alert keywords"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Alert keywords",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
+   "id": "setting.messages.messagescard.matrix-advanced",
+   "kind": "setting",
+   "title": "Matrix (advanced)",
+   "text": "Connect your own Matrix homeserver — including bridges you run yourself — to read rooms and reply from Lens. Every reply shows you the exact text and waits for you to hold Send.",
+   "path": [
+    "Settings",
+    "Notifications",
+    "Messages",
+    "Matrix (advanced)"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "messages",
+    "card": "MessagesCard",
+    "label": "Matrix (advanced)",
+    "section": "messages"
+   },
+   "source": "src/components/MessagesCard.tsx"
+  },
+  {
    "id": "setting.theme.themetab.accent-colour",
    "kind": "setting",
    "title": "Accent colour",
@@ -1206,7 +1484,7 @@
    "id": "setting.sessions.tilingcard.tiling-shortcuts",
    "kind": "setting",
    "title": "Tiling Shortcuts",
-   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens UI.",
+   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens.",
    "path": [
     "Settings",
     "Desktop",
@@ -1399,6 +1677,25 @@
    "source": "src/components/PluginManagerCard.tsx"
   },
   {
+   "id": "card.system.shortcutscard",
+   "kind": "card",
+   "title": "Keyboard shortcuts",
+   "text": "Everything Lens listens for. Windows' own keys (Win+L, Ctrl+Alt+Del, Alt+Tab) are never taken. Keyboard shortcuts. Shortcuts",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Windows integration & shortcuts",
+    "Keyboard shortcuts"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "ShortcutsCard",
+    "label": "Keyboard shortcuts"
+   },
+   "source": "src/components/ShortcutsCard.tsx"
+  },
+  {
    "id": "card.system.shellkeyscard",
    "kind": "card",
    "title": "Start Key & Alt+Tab",
@@ -1480,7 +1777,7 @@
    "id": "setting.system.monitorpickercard.top-bar-on-every-monitor",
    "kind": "setting",
    "title": "Top Bar on Every Monitor",
-   "text": "Show a Top Bar on each display. Applies after restarting Lens UI.",
+   "text": "Show a Top Bar on each display. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1816,7 +2113,7 @@
    "id": "card.system.shellmodecard",
    "kind": "card",
    "title": "Shell Mode (advanced)",
-   "text": "Start Lens UI instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens UI instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1850,6 +2147,46 @@
     "section": "cleaner"
    },
    "source": "src/components/CleanerCard.tsx"
+  },
+  {
+   "id": "card.accessibility.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Accessibility",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "accessibility",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
+   "id": "card.gaming.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Gaming",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "gaming",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
   },
   {
    "id": "card.ai.bridgeinbox",
@@ -2372,7 +2709,7 @@
    "id": "setting.ai.connectionscard.file-explorer-right-click",
    "kind": "setting",
    "title": "File Explorer right-click",
-   "text": "“Lens ›” on files and folders: Ask, Summarise, Add to Shelf, Copy path into context; “Transcribe with Lens” on audio and video. On Windows 11 it's under “Show more options”.",
+   "text": "",
    "path": [
     "Settings",
     "AI & Command",
@@ -2551,7 +2888,7 @@
    "id": "card.ai.mcpcard",
    "kind": "card",
    "title": "AI Apps (MCP)",
-   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens UI. Off by default. Requests that need approval show here with Approve / Decline",
+   "text": "Lets AI apps such as Claude Desktop see your open windows and change volume, brightness, night light, theme, tiling and workspaces. Plain-language requests always wait for your approval here. AI apps can't run commands, open files, or close apps through Lens. AI Apps (MCP) · Allow AI apps to connect · Ask me before every change · Waiting for you · Connect Claude Desktop · Recent activity. Mcp. let AI apps (Claude Desktop and other MCP clients) control Lens. Off by default. Requests that need approval show here with Approve / Decline",
    "path": [
     "Settings",
     "AI & Command",
@@ -3885,7 +4222,7 @@
    "id": "card.ai.browsercard",
    "kind": "card",
    "title": "Lens Browser",
-   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages. Browser. Settings › AI & Command › Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages · Site permissions. Browser. Settings › AI & Command › Lens Browser",
    "path": [
     "Settings",
     "AI & Command",
@@ -4021,6 +4358,26 @@
    "source": "src/components/BrowserCard.tsx"
   },
   {
+   "id": "setting.ai.browsercard.site-permissions",
+   "kind": "setting",
+   "title": "Site permissions",
+   "text": "Camera, microphone, location, notifications, clipboard and several downloads at once. Sites ask first; forget an answer and the site asks again.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Site permissions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Site permissions",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
    "id": "card.ai.permissionscard",
    "kind": "card",
    "title": "Permissions",
@@ -4061,18 +4418,18 @@
   {
    "id": "card.ai.guidecard",
    "kind": "card",
-   "title": "Lens Guide",
-   "text": "Ask \"how do I…\" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC. Lens Guide · Tip of the day · Lessons. Guide. Lens Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and \"Show me\". Off until turned on; works offline; AI answers are optional",
+   "title": "Guide",
+   "text": "Ask \"how do I…\" and get the exact setting with a Show me button, or follow short interactive lessons. Works offline; nothing about what you use leaves this PC. Guide · Tip of the day · Lessons. Guide. Guide, the built-in helper that teaches Lens, the browser and Windows with search, lessons and \"Show me\". Off until turned on; works offline; AI answers are optional",
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide"
+    "Guide"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "GuideCard",
-    "label": "Lens Guide",
+    "label": "Guide",
     "section": "guide"
    },
    "source": "src/components/GuideCard.tsx"
@@ -4085,7 +4442,7 @@
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide",
+    "Guide",
     "Tip of the day"
    ],
    "target": {
@@ -4105,7 +4462,7 @@
    "path": [
     "Settings",
     "AI & Command",
-    "Lens Guide",
+    "Guide",
     "Lessons"
    ],
    "target": {
@@ -4162,7 +4519,7 @@
    "id": "card.about.updatescard",
    "kind": "card",
    "title": "Updates",
-   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. To roll back, run the previous installer from the Releases page. Updates. Updates. update mode and a manual check. Updates come from GitHub Releases and are signature-checked before installing. Backend: win_update.rs",
+   "text": "From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to update. To roll back, run the previous installer from the Releases page. Updates. Updates. Settings › About & Testing › Updates: update mode, \"Check now\", what's new, and \"Restart to update\". Updates come from GitHub Releases and are signature-checked before anything installs. Backend: win_update.rs. The Top Bar pill and `/update` in Command use the same state",
    "path": [
     "Settings",
     "About & Testing",
@@ -4903,38 +5260,38 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.run-lens-ui-on-windows-startup",
+   "id": "setting.system.inline.run-lens-on-windows-startup",
    "kind": "setting",
-   "title": "Run Lens UI on Windows Startup",
+   "title": "Run Lens on Windows Startup",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Run Lens UI on Windows Startup"
+    "Run Lens on Windows Startup"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Run Lens UI on Windows Startup"
+    "label": "Run Lens on Windows Startup"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.legacy-in-app-window-styling",
+   "id": "setting.system.inline.legacy-in-app-window-styling-experimental",
    "kind": "setting",
-   "title": "Legacy In-App Window Styling",
-   "text": "Loads a helper into every app to restyle windows. Leave off unless a window keeps its old titlebar; turning it off takes effect after restarting Lens UI.",
+   "title": "Legacy In-App Window Styling (experimental)",
+   "text": "Off by default: Lens already styles windows from outside each app. This loads a small helper into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a fullscreen app or an anti-cheat protected game is running, and removes it the moment you switch this off, quit, or use Remove all.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Legacy In-App Window Styling"
+    "Legacy In-App Window Styling (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Legacy In-App Window Styling"
+    "label": "Legacy In-App Window Styling (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -4942,7 +5299,7 @@
    "id": "setting.system.inline.create-rarely-used-windows-on-demand",
    "kind": "setting",
    "title": "Create Rarely Used Windows on Demand",
-   "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.",
+   "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -4996,7 +5353,7 @@
    "id": "setting.system.inline.keyboard-tiling-shortcuts",
    "kind": "setting",
    "title": "Keyboard Tiling Shortcuts",
-   "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.",
+   "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -5014,7 +5371,7 @@
    "id": "setting.system.inline.alt-1-9-opens-dock-apps",
    "kind": "setting",
    "title": "Alt+1–9 Opens Dock Apps",
-   "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.",
+   "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -5032,7 +5389,7 @@
    "id": "setting.system.inline.global-shortcuts",
    "kind": "setting",
    "title": "Global Shortcuts",
-   "text": "Command Palette: Alt+Space · Widget Drawer: Alt+W",
+   "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -5413,7 +5770,7 @@
    "id": "pack.windows-mesh",
    "kind": "pack",
    "title": "Windows Mesh",
-   "text": "Follows your Windows accent colour, with a familiar full-width taskbar. Theme pack (Core).",
+   "text": "Follows your Windows accent colour on a familiar Windows-dark base. Theme pack (Core).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5485,7 +5842,7 @@
    "id": "pack.tokyo-night",
    "kind": "pack",
    "title": "Tokyo Night",
-   "text": "Deep navy with neon-city blue. Apps and folders sit in separate pills. Theme pack (Linux Suite).",
+   "text": "Deep navy with neon-city blue. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5539,7 +5896,7 @@
    "id": "pack.gruvbox-warm",
    "kind": "pack",
    "title": "Gruvbox Warm",
-   "text": "Retro warm grey with orange. Squarer corners, taskbar layout. Theme pack (Linux Suite).",
+   "text": "Retro warm grey with orange and squarer corners. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5611,7 +5968,7 @@
    "id": "pack.hyprland-neon",
    "kind": "pack",
    "title": "Hyprland Neon",
-   "text": "Tiling-desktop look: glowing cyan borders and split dock pills. Theme pack (Linux Suite).",
+   "text": "Tiling-desktop look with glowing cyan borders. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5665,7 +6022,7 @@
    "id": "pack.solarized-matte",
    "kind": "pack",
    "title": "Solarized Matte",
-   "text": "Classic teal-blue Solarized with a labelled studio dock. Theme pack (Studio).",
+   "text": "Classic teal-blue Solarized, matte. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5683,7 +6040,7 @@
    "id": "pack.lens-expressive",
    "kind": "pack",
    "title": "Lens Expressive",
-   "text": "Obsidian colours with soft, playful shapes: pill tiles, a scalloped clock and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours with soft, playful shapes: pill tiles and a scalloped clock. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5701,7 +6058,7 @@
    "id": "pack.lens-dot-matrix",
    "kind": "pack",
    "title": "Lens Dot Matrix",
-   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5737,7 +6094,7 @@
    "id": "pack.lens-expressive-light",
    "kind": "pack",
    "title": "Lens Expressive Light",
-   "text": "Alabaster daylight colours with the Expressive shapes and an islands dock. Theme pack (Light).",
+   "text": "Alabaster daylight colours with the Expressive shapes. Theme pack (Light).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6732,10 +7089,55 @@
    "source": "docs/BROWSER_BRIDGE.md"
   },
   {
+   "id": "hotkey.ctrl-alt-y",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Y",
+   "text": "global hotkey Lens registered for the approval window: the first free one of Ctrl+Alt+Y,",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Y"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
+   "id": "hotkey.ctrl-alt-shift-y",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Shift+Y",
+   "text": "Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O (presence::esc::registerapprovalhotkey, read with",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Shift+Y"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
+   "id": "hotkey.ctrl-alt-shift-o",
+   "kind": "hotkey",
+   "title": "Ctrl+Alt+Shift+O",
+   "text": "Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O (presence::esc::registerapprovalhotkey, read with",
+   "path": [
+    "Keyboard",
+    "Ctrl+Alt+Shift+O"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CLAUDE_CONTROL.md"
+   },
+   "source": "docs/CLAUDE_CONTROL.md"
+  },
+  {
    "id": "hotkey.ctrl-alt-j",
    "kind": "hotkey",
    "title": "Ctrl+Alt+J",
-   "text": "Ctrl+Alt+J; register that hotkey to show the approval window in app/setup.rs next to the other",
+   "text": "Ctrl+Alt+J, which this page once suggested, is the tiler's \"snap",
    "path": [
     "Keyboard",
     "Ctrl+Alt+J"
@@ -6957,6 +7359,96 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "hotkey.ctrl-shift-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-esc",
+   "kind": "hotkey",
+   "title": "Alt+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-f4",
+   "kind": "hotkey",
+   "title": "Alt+F4",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+F4"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-l",
+   "kind": "hotkey",
+   "title": "Win+L",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Win+L"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-d",
+   "kind": "hotkey",
+   "title": "Win+D",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+D"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-tab",
+   "kind": "hotkey",
+   "title": "Win+Tab",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+Tab"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
    "id": "hotkey.alt-l",
    "kind": "hotkey",
    "title": "Alt+L",
@@ -7122,6 +7614,21 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "hotkey.shift-f10",
+   "kind": "hotkey",
+   "title": "Shift+F10",
+   "text": "Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (Shift+F10).",
+   "path": [
+    "Keyboard",
+    "Shift+F10"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
    "id": "hotkey.ctrl-v",
    "kind": "hotkey",
    "title": "Ctrl+V",
@@ -7167,55 +7674,10 @@
    "source": "docs/SHELL_MODE.md"
   },
   {
-   "id": "hotkey.win-d",
-   "kind": "hotkey",
-   "title": "Win+D",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+D"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.win-tab",
-   "kind": "hotkey",
-   "title": "Win+Tab",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+Tab"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.ctrl-shift-esc",
-   "kind": "hotkey",
-   "title": "Ctrl+Shift+Esc",
-   "text": "Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to",
-   "path": [
-    "Keyboard",
-    "Ctrl+Shift+Esc"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
    "id": "hotkey.ctrl-alt-shift-e",
    "kind": "hotkey",
    "title": "Ctrl+Alt+Shift+E",
-   "text": "Ctrl+Alt+Shift+E, and quitting Lens UI — all three bring Explorer's desktop back immediately.",
+   "text": "Ctrl+Alt+Shift+E, and quitting Lens — all three bring Explorer's desktop back immediately.",
    "path": [
     "Keyboard",
     "Ctrl+Alt+Shift+E"
@@ -7322,7 +7784,24 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.4",
+   "id": "doc.agent-safety.3",
+   "kind": "doc",
+   "title": "Agent safety (W8-O): Where the check sits (Fable wave 1)",
+   "text": "Every agent path goes through one adapter, agentsafe::gate : Call What it answers --- --- gate::decide(&GateInput) May this client do this action now? Allow, ask (with reasons) or block (with reasons). gate::scan text(text, source, label) Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). gate::taint note / taint for Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. It is called from the two places every path already passes, so callers inherit it without doing anything: 1. Lens Control — control::lens::gate , preview and legacy decision , through control::safety (which maps a Call to the pipeline's action word). That covers every MCP client (Claude Desktop, Claude Code, others), every lens to",
+   "path": [
+    "Docs",
+    "Agent safety (W8-O)",
+    "Where the check sits (Fable wave 1)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_SAFETY.md",
+    "heading": "Where the check sits (Fable wave 1)"
+   },
+   "source": "docs/AGENT_SAFETY.md"
+  },
+  {
+   "id": "doc.agent-safety.5",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Browser (feature/lens-browser)",
    "text": "1. Agent profile. In src-tauri/src/browser/host.rs , where an agent run opens or reuses a tab webview, pick the data folder from the grants: When a run ends: call crate::commands::agentsafe::agentsafe run ended(run id) , close the agent webviews and delete profiles root.join(\"agent\") . Never navigate a signed-in webview to a different site than the grant's ( grant.site == registrable domain(new url) ); otherwise reopen in the sandbox. 2. Before each page action. In browser/gating.rs classify(action, caps) , after the existing capability decision: 3. Reading pages. Replace gating::untrusted block(url, text) with the collector plus scan: COLLECTOR JS is collectorScript() from src/agentsafe/collector.ts . Pass it from the UI once at start-up with browser set collector(js) , or build it into the binary with include str! of a generated file. 4. Banner. In the browser frame, above the page:",
@@ -7339,7 +7818,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.5",
+   "id": "doc.agent-safety.6",
    "kind": "doc",
    "title": "Agent safety (W8-O): Claude control (feature/claude-control)",
    "text": "1. Run the pipeline in control::lens::gate before the grant decision: 2. MCP tool and resource text is untrusted. Scan it with agentsafe scan(nodes, \"tool:<client \") before it reaches the internal model. 3. Approval card. In src/approval/ApprovalCard.tsx , under the one-line question: Use hold-to-confirm whenever holdToConfirm is true.",
@@ -7356,7 +7835,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.6",
+   "id": "doc.agent-safety.7",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Snip (feature/lens-snip)",
    "text": "Before Paste to Claude , Ask and Translate , scan the OCR text. Pass the OCR's own contrast estimate per line if it has one ( collectorHelpers.contrastRatio on the line's sampled text and background colours):",
@@ -7373,7 +7852,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.7",
+   "id": "doc.agent-safety.8",
    "kind": "doc",
    "title": "Agent safety (W8-O): Right-click and the extension (feature/rightclick-context, feature/ai-bridges)",
    "text": "- Page text from the extension ( page text , selections, YouTube transcripts) is untrusted. In the bridge's LensAi adapter, scan it first with agentsafe scan([{ id: 0, text, source: \"dom\" }], url) and pass wrapped as page text . - The content script can also run lensTextCollector(4000) ; bundle src/agentsafe/collector.ts into the content script. That gives full style facts instead of plain text. - The \"Copy page into context\" and \"Add to Shelf\" actions store the raw text, but mark the Shelf item source = page so packs re-scan it when sent to a model.",
@@ -7390,7 +7869,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.8",
+   "id": "doc.agent-safety.9",
    "kind": "doc",
    "title": "Agent safety (W8-O): Voice and the internal AI (feature/voice, feature/ai-core)",
    "text": "- Voice commands the user spoke are origin: \"user\" . - Steps an AI proposes after reading pages, files or tool output are origin: \"untrusted\" . - In ai/tools.rs 's runner, call agentsafe check with the tool's kind before executing.",
@@ -7407,7 +7886,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.9",
+   "id": "doc.agent-safety.10",
    "kind": "doc",
    "title": "Agent safety (W8-O): Control Center",
    "text": "Mount the card in AI & Command , below the approvals or permissions card:",
@@ -7424,7 +7903,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.11",
+   "id": "doc.agent-safety.12",
    "kind": "doc",
    "title": "Agent safety (W8-O): Third-party data",
    "text": "agentsafe/confusables.rs uses a hand-picked subset of the prototype mappings in Unicode's confusables.txt (UTS #39, \"Unicode Security Mechanisms\"). Copyright © 1991-2026 Unicode, Inc. Distributed under the Unicode License v3 (https://www.unicode.org/license.txt), which permits copying and modification provided the copyright and permission notice are included. The brand list, lure words and risky-TLD list were compiled by hand from public phishing-trend reporting. There is no third-party list.",
@@ -7441,7 +7920,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.12",
+   "id": "doc.agent-safety.13",
    "kind": "doc",
    "title": "Agent safety (W8-O): Privacy",
    "text": "- Grants and settings are saved under %APPDATA%\\LensUI\\agentsafe\\ . Grants are saved as site names and times only. - The set-aside viewer is in memory only, keeps the last 200 entries, and is never written to disk. - No check makes a network request.",
@@ -8201,6 +8680,124 @@
    "source": "docs/BROWSER_BRIDGE.md"
   },
   {
+   "id": "doc.browser-research.0",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+   "text": "Research for the site's Lens Browser section, November 2026. Every claim about Lens Browser below is checked against BROWSER AAA.md and LENS BROWSER.md; nothing here describes a feature that isn't built.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "AI browsers: what people praise, what they complain about, and where Lens Browser stands"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.1",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: The browsers people talk about",
+   "text": "Browser What it's known for What people push back on --- --- --- ChatGPT Atlas (OpenAI) ChatGPT in every tab, memory, the most aggressive agent mode Cloud-dependent; security experts warn about prompt injection; slow, janky agent runs in reviews Perplexity Comet Agentic browsing (shopping, scheduling, forms), citations, model choice Agent needs a paid plan; uses your logged-in sessions; Brave showed hidden text in images steering it Dia (The Browser Company) Reusable AI \"skills\", memory scoped to tabs macOS first; paid AI tiers; AI requests go through its servers Arc Vertical sidebar, spaces, command bar, keyboard workflow Narrower AI; uncertain roadmap Chrome with Gemini Familiar Chrome plus AI; \"auto browse\" Auto browse needs a paid Google AI plan, region-limited Edge with Copilot Microsoft 365 and Windows integration, admin policies Agent mode tied to a paid plan; inherits signed-in s",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "The browsers people talk about"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "The browsers people talk about"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.2",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What people complain about",
+   "text": "1. Agents that act without asking , using logged-in sessions to buy, send or post. Security researchers and OpenAI's own CISO call prompt injection unsolved. 2. Hidden instructions : text in a page, or near-invisible text in an image, that the agent obeys. 3. Privacy : history and page content going to an AI company's servers. 4. Speed and weight : agent tasks that are slow; AI features that raise CPU and memory use. 5. Paywalls : the agent part of most AI browsers needs a $15–20/month plan. 6. Usefulness : long prompts for simple tasks, wrong results, more novelty than help.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What people complain about"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What people complain about"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.3",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What people ask browsers for",
+   "text": "Vertical tabs (Chrome only added them in April 2026), tab search, workspaces, split view, a clean reader, transcripts for videos, control over what each site may use, an easy import from the old browser, and low memory use.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What people ask browsers for"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What people ask browsers for"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.4",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What Lens Browser does differently (true today)",
+   "text": "- It asks before it acts. Reading runs. Booking, paying, sending and submitting wait for the person, with the exact button and details shown. Passwords are never handled by the agent. - AI beside the page, not instead of it. The page stays the person's; the panel lists every click and every word typed, and Esc stops the run. - Hidden instructions are flagged, not obeyed. Text aimed at the AI, including hidden or near-invisible text, is shown to the person and left out of what the model acts on. - Site permissions are the person's call. Camera, microphone, location, notifications, clipboard and multiple downloads ask under the address bar: block, allow once, or allow for that site, and can be taken back. (Built; still to be run on a real PC, per BROWSER AAA.md.) - Light, and easy to come to. Vertical tabs, one box for tabs, bookmarks, history and search, transcripts, and an import from Ch",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What Lens Browser does differently (true today)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What Lens Browser does differently (true today)"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.5",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: What the site does with this",
+   "text": "The home page leads with the browser after the docks: one headline (\"The light browser with an AI that asks first\"), one line, the real browser stepping through new tab → AI beside the page → Needs your OK → results → site permissions, and the five points above. The hero tour walks the same flow on the desk, one step per Next, with the permission bar and the injection flag as optional last stops.",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "What the site does with this"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "What the site does with this"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
+   "id": "doc.browser-research.6",
+   "kind": "doc",
+   "title": "AI browsers: what people praise, what they complain about, and where Lens Browser stands: Sources",
+   "text": "- AI Browser Landscape 2026: Atlas vs Comet vs Arc vs Dia, Digital Applied - 5 Best AI Browsers for 2026, TechRepublic - The glaring security risks with AI browser agents, TechCrunch - Agentic AI browsers pose security risks, says Brave report, Digit - 5 reasons why you should not switch to an AI browser, SlashGear - AI-powered browsers are failing, Futurism - Chrome is finally getting vertical tabs, TechCrunch",
+   "path": [
+    "Docs",
+    "AI browsers: what people praise, what they complain about, and where Lens Browser stands",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/BROWSER_RESEARCH.md",
+    "heading": "Sources"
+   },
+   "source": "docs/BROWSER_RESEARCH.md"
+  },
+  {
    "id": "doc.claude-control.0",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail",
@@ -8407,7 +9004,7 @@
    "id": "doc.claude-control.15",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail: 3. Pending pill: top bar (`src/surfaces/TopBarSurface.tsx`) and Dock (`src/surfaces/DockSurface.tsx`)",
-   "text": "Use whichever \"show window\" command the surfaces already use. The pill's shortcut chip says Ctrl+Alt+J; register that hotkey to show the approval window in app/setup.rs next to the other global shortcuts.",
+   "text": "Use whichever \"show window\" command the surfaces already use. The pill's shortcut chip shows the global hotkey Lens registered for the approval window: the first free one of Ctrl+Alt+Y , Ctrl+Alt+Shift+Y and Ctrl+Alt+Shift+O ( presence::esc::register approval hotkey , read with useApprovalHotkey() ). Ctrl+Alt+J, which this page once suggested, is the tiler's \"snap bottom-left\". If Windows lets Lens register none of them, the chip is simply not shown. One queue for every confirmation (Fable wave 1). win mcp 's PendingAction queue also carries requests raised inside Lens: the assistant's steps ( kind: \"ai\" , from Lens Command, the AI dock and voice), bridge inbox requests ( \"bridge\" ) and Lens Apps confirmations ( \"app\" ). Each carries a reference (the id its owner knows it by) and a ready preview for the card. Approving or denying on the shared card hands the answer to the owner ( McpHost",
    "path": [
     "Docs",
     "Lens Control: Claude control over every desktop detail",
@@ -9015,7 +9612,7 @@
    "id": "doc.cursors.0",
    "kind": "doc",
    "title": "Cursor Suite",
-   "text": "Mouse pointer themes, pointer behaviour and pointer effects for Lens UI. Part Where What it touches --- --- --- Look src-tauri/src/win cursors.rs Writes .cur / .ani files under %APPDATA%\\LensUI\\cursors\\sets\\ and points HKCU\\Control Panel\\Cursors at them. Behaviour src-tauri/src/win cursors.rs SystemParametersInfoW pointer settings. Effects src-tauri/src/win cursor fx.rs , src/surfaces/CursorFxSurface. , src/cursors/effects.ts A click-through overlay window ( cursorfx ) fed by a WH MOUSE LL hook. UI src/components/CursorSuiteCard.tsx , src/cursors/ Control Center card with Look / Behaviour / Effects tabs. Nothing here is wired into the app yet. The steps are in Wiring below.",
+   "text": "Mouse pointer themes, pointer behaviour and pointer effects for Lens. Part Where What it touches --- --- --- Look src-tauri/src/win cursors.rs Writes .cur / .ani files under %APPDATA%\\LensUI\\cursors\\sets\\ and points HKCU\\Control Panel\\Cursors at them. Behaviour src-tauri/src/win cursors.rs SystemParametersInfoW pointer settings. Effects src-tauri/src/win cursor fx.rs , src/surfaces/CursorFxSurface. , src/cursors/effects.ts A click-through overlay window ( cursorfx ) fed by a WH MOUSE LL hook. UI src/components/CursorSuiteCard.tsx , src/cursors/ Control Center card with Look / Behaviour / Effects tabs. Nothing here is wired into the app yet. The steps are in Wiring below.",
    "path": [
     "Docs",
     "Cursor Suite"
@@ -9249,6 +9846,90 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "doc.dashboard.0",
+   "kind": "doc",
+   "title": "Magic Dashboard",
+   "text": "Status: scaffold (M0) , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
+   "path": [
+    "Docs",
+    "Magic Dashboard"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Magic Dashboard"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.1",
+   "kind": "doc",
+   "title": "Magic Dashboard: How it opens",
+   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). - Command: \"dashboard\". - No Dock icon and no new hotkey (owner decision).",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "How it opens"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "How it opens"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.2",
+   "kind": "doc",
+   "title": "Magic Dashboard: Privacy",
+   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Privacy"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.3",
+   "kind": "doc",
+   "title": "Magic Dashboard: Code",
+   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Code"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.4",
+   "kind": "doc",
+   "title": "Magic Dashboard: Next (M1)",
+   "text": "Register the Dashboard window and Command intent, mount the Top Bar button, fill Inbox/Feeds/Today/Shelf from Lens Messages, Feeds, connected calendars and the Shelf, and add hyper-suite inventory rows for every flag.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Next (M1)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Next (M1)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
    "id": "doc.dither.0",
    "kind": "doc",
    "title": "Lens dither material",
@@ -9284,7 +9965,7 @@
    "id": "doc.dock-styles.1",
    "kind": "doc",
    "title": "Dock styles and Dock options: Settings (`DockConfig`)",
-   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (existing) m",
+   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split, islands floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (ex",
    "path": [
     "Docs",
     "Dock styles and Dock options",
@@ -9531,6 +10212,40 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "Needs a real PC"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.10",
+   "kind": "doc",
+   "title": "Failsafe engineering: 9. Sign-in safety",
+   "text": "What Lens may do while Windows is signing you in, and what always gets you back to a working desktop. Added after a report that \"Start with Windows\" made it hard to get in. Sign-in gate ( app/signin gate.rs ). A Lens started by \"Start with Windows\" ( --autostart ) creates no window, installs no hook and leaves the taskbar alone until the desktop is ready: Explorer's taskbar window exists and the input desktop is the normal one (not the lock screen, the sign-in screen or a UAC prompt), both for 3 s in a row. If that never happens Lens starts anyway after two minutes, but never while the lock or sign-in screen is up. Hold Shift while signing in to skip Lens for that sign-in. A Lens started by hand does not wait. Keys that always reach Windows ( input::protected combo ). Whatever a Lens feature asks, these pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "9. Sign-in safety"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "9. Sign-in safety"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.11",
+   "kind": "doc",
+   "title": "Failsafe engineering: 10. Monitors and pop-outs",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "10. Monitors and pop-outs"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "10. Monitors and pop-outs"
    },
    "source": "docs/FAILSAFE.md"
   },
@@ -9907,17 +10622,17 @@
   {
    "id": "doc.lens-apps.12",
    "kind": "doc",
-   "title": "Lens Apps: §7 Lens Guide (feature/lens-guide)",
+   "title": "Lens Apps: §7 Guide (feature/lens-guide)",
    "text": "Index catalog.json (name, pitch, why, category, replaces) so \"what tool should I use for slides?\" answers from the catalogue. The ready-made logic is parseAppsIntent → recommend . Lesson stubs come from integrations.guide .",
    "path": [
     "Docs",
     "Lens Apps",
-    "§7 Lens Guide (feature/lens-guide)"
+    "§7 Guide (feature/lens-guide)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/LENS_APPS.md",
-    "heading": "§7 Lens Guide (feature/lens-guide)"
+    "heading": "§7 Guide (feature/lens-guide)"
    },
    "source": "docs/LENS_APPS.md"
   },
@@ -9939,7 +10654,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.15",
+   "id": "doc.lens-apps.14",
+   "kind": "doc",
+   "title": "Lens Apps: Portable apps and ThumbDesk",
+   "text": "A GitHub-release app can set \"portable\": true in its install object when the release ships one program file instead of an installer. Lens then keeps the verified file in %APPDATA%\\LensUI\\apps\\portable\\<id \\ (nothing is written outside Lens's data folder), Open runs it, and Uninstall deletes the folder ( apps portable remove ). ThumbDesk, the controller companion from the makers of Lens, is the first: see docs/apps/THUMBDESK.md.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Portable apps and ThumbDesk"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Portable apps and ThumbDesk"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.16",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
@@ -10026,7 +10758,7 @@
    "id": "doc.lens-browser.4",
    "kind": "doc",
    "title": "Lens Browser: Agent mode and approvals",
-   "text": "1. You give a goal (\"Book seafood for four on Friday, Maya is vegan\"). 2. Lens reads the page ( browser page snapshot : readable text plus numbered interactive elements), scans it for text aimed at AI assistants ( src/browser/guard.ts ) and shows any it finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source of intent. 3. The model replies with a small JSON plan. parsePlan keeps only known actions, web URLs and at most 8 steps; there is no field that can approve anything. 4. Each step goes through browser agent act . The host re-describes the element from the page right before acting and runs the rules in gating.rs on what the page says now, not on what the model claimed: Category Rule --- --- Read, scroll, open a link, search, type into an ordinary field Runs (shown in the timeline) Submit, book, send/post, delete/cancel, confirm in a form Ask fir",
+   "text": "1. You give a goal (\"Book seafood for four on Friday, Maya is vegan\"). 2. Lens reads the page ( browser page snapshot : readable text plus numbered interactive elements), scans it for text aimed at AI assistants ( src/browser/guard.ts ) and shows any it finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source of intent. Text that only discusses prompt injection (an article quoting \"ignore previous instructions\" within 200 characters of \"prompt injection\", \"injection attack\" or \"jailbreak\") is noted at Low and left in the text, both here and in agentsafe/hidden text.rs , so it no longer makes every step ask or blocks the page. Everyday words like \"such as\" or \"for example\" are not enough. The same words aimed at the AI (\"dear AI agent…\"), any line that also asks to send data or call a tool, hidden or smuggled text, and text from a tool still count in",
    "path": [
     "Docs",
     "Lens Browser",
@@ -10041,6 +10773,23 @@
   },
   {
    "id": "doc.lens-browser.5",
+   "kind": "doc",
+   "title": "Lens Browser: Site permissions",
+   "text": "Camera, microphone, location, notifications, reading the clipboard and several downloads at once. A page that asks gets a Lens bar under the address bar: Block (Esc), Allow once , Allow on this site (Enter). \"On this site\" and \"Block\" are kept per origin in state.json ( sitePermissions ); the site button beside the bookmark star shows them for the current site, and Settings › AI & Command › Lens Browser lists every site, each with Forget. No answer in 60 seconds is a Block; requests from non-web pages, unknown kinds, or a tab the agent acted on in the last 10 seconds are denied without asking. Rules: src-tauri/src/browser/permissions.rs (pure, tested); WebView2 wiring: its win module ( PermissionRequested + a deferral). Not yet run on a real PC; see docs/BROWSER AAA.md 2.1.",
+   "path": [
+    "Docs",
+    "Lens Browser",
+    "Site permissions"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md",
+    "heading": "Site permissions"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "doc.lens-browser.6",
    "kind": "doc",
    "title": "Lens Browser: Right-click menu (in pages)",
    "text": "Ask about this · Summarise · Explain simply · Translate · Rewrite · Extract… · Add to Shelf · Copy as Markdown · Copy into context · Transcribe video · YouTube transcript · Picture in picture. Items adapt to what you clicked. Shift+right-click (or a text field) shows the page's own menu. The menu can be turned off in Settings.",
@@ -10057,7 +10806,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.6",
+   "id": "doc.lens-browser.7",
    "kind": "doc",
    "title": "Lens Browser: YouTube transcripts",
    "text": "The page agent reads the caption track list the YouTube player itself loaded ( movie player.getPlayerResponse() or ytInitialPlayerResponse ) and fetches that track as json3 from the page (same origin). Tracks hosted anywhere but youtube.com are refused. The panel shows timestamped lines (click to seek), a find box, Summarise / Ask about it / Add to Shelf, and saves .txt , .srt or .md . With no captions it offers local whisper transcription through the existing transcribe url (needs yt-dlp set up by you, with a note about the site's terms).",
@@ -10074,7 +10823,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.7",
+   "id": "doc.lens-browser.8",
    "kind": "doc",
    "title": "Lens Browser: Commands",
    "text": "browser open(url?) , browser state , browser set viewport , browser set overlay , browser navigate(input, newTab) , browser tab {activate,close,move,pin,mute,sleep} , browser history nav(back forward reload) , browser zoom , browser find , browser space {add,remove,switch} , browser folder {add,remove,toggle} , browser bookmark toggle , browser history {search,clear} , browser downloads , browser download reveal , browser settings set , browser page(snapshot readable status) , browser events , browser agent {check,describe,act} , browser untrusted , browser captions , browser seek , browser pip . Events: lens://browser/state , lens://browser/downloads .",
@@ -10091,7 +10840,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.8",
+   "id": "doc.lens-browser.9",
    "kind": "doc",
    "title": "Lens Browser: Shared-file edits made on this branch",
    "text": "File Change --- --- src-tauri/Cargo.toml tauri gains the unstable feature (multi-webview). src-tauri/src/lib.rs mod browser; and 35 commands::browser:: registrations. src-tauri/src/commands/mod.rs pub(crate) mod browser; src-tauri/capabilities/browser.json New: capability for the browser-ui webview only. src/main.tsx browser surface route. .github/workflows/build.yml Parity job renders Lens Browser and runs the page-agent smoke test. .gitignore tools/parity/browser/{out,shots}/",
@@ -10108,7 +10857,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.10",
+   "id": "doc.lens-browser.11",
    "kind": "doc",
    "title": "Lens Browser: Native WebView2 extras (next step, `browser-native` feature)",
    "text": "Using Webview::with webview → controller().CoreWebView2() with webview2-com pinned to the version Tauri uses: ICoreWebView2Profile3::put PreferredTrackingPreventionLevel(STRICT) per space profile. ICoreWebView2 19::put MemoryUsageTargetLevel(LOW) for hidden live tabs, TrySuspend before sleeping instead of closing, Resume on activate. ICoreWebView2::CapturePreview → cropped PNG of the target element for the approval card. add ContextMenuRequested to put Lens items into the native menu (and drop the in-page one). add WebResourceRequested for a real sub-resource filter list. ICoreWebView2Controller::add AcceleratorKeyPressed so Ctrl+L/T/W/F/J work while a page has focus. ICoreWebView2 8::put IsMuted for true per-tab mute and IsDocumentPlayingAudio for the speaker badge.",
@@ -10125,7 +10874,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.11",
+   "id": "doc.lens-browser.12",
    "kind": "doc",
    "title": "Lens Browser: Research notes",
    "text": "Tauri 2.12: Webview exposes eval with callback , set bounds , with webview , hide/show , set zoom , navigate , reload ; the builder and add child sit behind the unstable feature (docs.rs: tauri::webview::Webview). WebView2: one environment per app is recommended; each extra user-data folder adds processes; MemoryUsageTargetLevel = Low and TrySuspend cut memory for hidden views (WebView2 performance). Tracking prevention is a per-profile level (ICoreWebView2Profile3). Extensions are supported unpacked only (ICoreWebView2Profile7). Agent approvals elsewhere: Perplexity's Comet stops for approval before logging in or buying, handles small steps on its own, and shows where it clicks with a stop button (Comet Assistant puts you in control). Lens goes further: payments and sign-ins are never done by the agent at all, and the rules run on the live element, not the model's description. Vertical ",
@@ -10142,7 +10891,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.12",
+   "id": "doc.lens-browser.13",
    "kind": "doc",
    "title": "Lens Browser: Style direction (v2)",
    "text": "Near-black canvas; the dither material (docs/DITHER.md) on backdrops and empty states only; cards with 1 px borders and 12–16 px radius; monospace for domains, timings, counts and captions (\"captured 3s ago\", \"Working · 1m 12s · 5 actions\"); small coloured status dots; a key chip on every button (⏎, Esc, hold ⏎); one light primary button per card.",
@@ -10159,7 +10908,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.13",
+   "id": "doc.lens-browser.14",
    "kind": "doc",
    "title": "Lens Browser: Make it yours",
    "text": "Settings › (gear in the sidebar) › Make it yours: a 2D accent field (x = hue, y = vivid → deep; arrow keys move it), Auto / Light / Dark, six two-tone presets, Dither and Grain (0–100), tabs vertical / horizontal, density compact / comfortable, typeface Lens / System / Mono / Serif, Reset, and Customise (opens Lens Theme & Look). Stored in settings.appearance .",
@@ -10176,7 +10925,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.14",
+   "id": "doc.lens-browser.15",
    "kind": "doc",
    "title": "Lens Browser: Bring everything with you (import)",
    "text": "Chrome, Edge, Brave, Vivaldi, Opera / Opera GX, Firefox and Arc. detect() only checks folders. After you click Look inside and Allow and count , Lens reads one profile and shows counts; Import then runs step by step with a progress checklist. What Chromium browsers Firefox Arc --- --- --- --- Bookmarks (with folders) Bookmarks JSON places.sqlite (moz bookmarks) its Chromium profile History History (SQLite) places.sqlite (moz places) its Chromium profile Open + pinned tabs newest Sessions/Session (SNSS) sessionstore-backups/recovery.jsonlz4 — Spaces, pinned tabs, folders — — StorableSidebar.json SQLite is read by a small built-in reader ( import/sqlite.rs : b-tree pages, overflow, record types, row-id aliases); -wal files are not read, so a browser that's still open may lose the last few minutes of history. A file the browser holds locked gets \"Close X and try again\". mozLz4 is decoded by",
@@ -10193,7 +10942,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.15",
+   "id": "doc.lens-browser.16",
    "kind": "doc",
    "title": "Lens Browser: AI only if you want it / Free, bring your own model",
    "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, reader view, Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
@@ -10210,7 +10959,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.16",
+   "id": "doc.lens-browser.17",
    "kind": "doc",
    "title": "Lens Browser: Agent run timeline",
    "text": "\"Working · 1m 12s ▾ · N actions\" (collapses the steps), Pause / Take over while running, grouped steps with an icon, a monospace sub-caption (\"search · sort · open ×6 · kept 3\") and a one-line why, a jump-to-tab chip, plain errors with Retry, an \"Acting in 1 tab\" card (\"+N kept, idle\"), \"Waiting for your OK to … · now\", then the approval card. Typing while a run is going steers it (the note joins the next turn's goal). Results render as cards: a comparison table with \"My pick\", a dithered map with numbered pins (no map tiles), and a place card with Add to calendar (downloads an .ics ) and Directions (an OpenStreetMap link).",
@@ -10227,7 +10976,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.17",
+   "id": "doc.lens-browser.18",
    "kind": "doc",
    "title": "Lens Browser: Approval cards",
    "text": "src/browser/approvalShape.ts builds a card model in the same shape as the shared approval model on feature/claude-control ( ApprovalRequest / ApprovalPreview , origin browser , kind element ), with four layouts: click/booking (element replica, details, \"I'll click this · captured 3s ago\"), delete (counts, \"Review all N\", Bin = undo, no hold), payment (amount in mono, card shown as last four only, warnings, always hold), send (TO recipient and the exact words, \"Don't send\"). When both branches merge, import the types from src/approval/model and delete the local copies. Payments are blocked by default. In \"This task can\", Pay or buy can be switched to \"Ask first\" for the current task by holding its chip; the agent then stops at the payment card and needs a hold to pay. Card numbers are never typed (field checks plus a Luhn check), with or without that switch, and sign-ins stay blocked.",
@@ -10244,10 +10993,10 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.18",
+   "id": "doc.lens-browser.19",
    "kind": "doc",
    "title": "Lens Browser: Delta items (docs/research/BROWSER_DELTA.md)",
-   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar ✦ or Ctrl+Shift+K) closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop. Ask-on-Find Done: no matches → \"Ask about this page\". PDF annotation + Ask this PDF Partial: pag",
+   "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop",
    "path": [
     "Docs",
     "Lens Browser",
@@ -10261,7 +11010,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.19",
+   "id": "doc.lens-browser.20",
    "kind": "doc",
    "title": "Lens Browser: AAA pass",
    "text": "The feature map, what waits and why, and the real-hardware test list are in BROWSER AAA.md. In short, this pass added: Tab switching by keyboard, duplicate tab, a close button and arrow keys on the horizontal strip. Address suggestions from open tabs, bookmarks, history and search, with arrow keys. Back and forward that are only enabled when there is somewhere to go; a loading mark and Stop. Zoom in, out and reset, remembered per site. Find with previous and next. A new-tab page (most visited, bookmarks, recently closed) and Lens's own page when a site fails to load. History with search, days, remove one and clear; downloads that survive a restart. Import item by item, with a receipt so an import can be removed in one step. New commands: browser tab duplicate , browser history remove , browser downloads clear , browser import items , browser import receipts , browser import undo . browse",
@@ -10415,7 +11164,7 @@
    "id": "doc.magic.1",
    "kind": "doc",
    "title": "Magic right-click window: How you open it",
-   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and Ctrl+Alt+M are Lens shortcuts. - Plain right-click belongs to apps. - Shift+right-click is Explorer's \"extended menu\". - Ctrl+right-click is used by some editors. Ctrl+A",
+   "text": "Trigger Default Notes --- --- --- Ctrl + Alt + right-click ✓ No other Lens binding uses it. Only this exact combination is swallowed. Hold right-click (350 ms, 200–1000) A shorter click is replayed to the app. Moving more than 6 px gives the press back, so right-drags still work. Ctrl + middle-click Browsers use this to open links in a background tab; the card warns about it. Hotkey only No mouse hook at all. Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. Registered only while the feature is on. Lens › in Lens's own menus ✓ Dock app and Shelf item menus end with a \"Lens ›\" row that pans into these actions (docs/RIGHTCLICK.md, \"Lens in every menu\"). Works even when the global trigger is off. Why Ctrl+Alt+right-click is the default. The other options each clash with something: - Alt+left-drag and Alt+right-drag belong to Alt+drag. - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Sh",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -10516,27 +11265,27 @@
   {
    "id": "doc.mcp.0",
    "kind": "doc",
-   "title": "Lens UI as an MCP server",
-   "text": "Lens UI can let AI apps (Claude Desktop and other Model Context Protocol clients) see your open windows and make a small set of reversible desktop changes. It is off by default : Control Center › Agents & MCP › \"Allow AI apps to connect\".",
+   "title": "Lens as an MCP server",
+   "text": "Lens can let AI apps (Claude Desktop and other Model Context Protocol clients) see your open windows and make a small set of reversible desktop changes. It is off by default : Control Center › Agents & MCP › \"Allow AI apps to connect\".",
    "path": [
     "Docs",
-    "Lens UI as an MCP server"
+    "Lens as an MCP server"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/MCP.md",
-    "heading": "Lens UI as an MCP server"
+    "heading": "Lens as an MCP server"
    },
    "source": "docs/MCP.md"
   },
   {
    "id": "doc.mcp.1",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: How it works",
-   "text": "The AI app launches lens-ui.exe --mcp-stdio . With that flag Lens does not start the shell; the process is a thin bridge that forwards each JSON-RPC line to the running Lens UI and exits when stdin closes. While MCP is switched on, Lens UI listens on 127.0.0.1 on a random port and writes the port plus a random 256-bit token to %APPDATA%\\LensUI\\mcp-endpoint.json . Every connection must present the token first. Switching MCP off (or quitting) closes the port and deletes the file. If Lens UI is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool returns \"Lens UI isn't running, or its MCP server is switched off\". Why stdio + loopback instead of only HTTP: stdio is what every MCP client supports for local servers and needs no new crates; the loopback hop is plain std::net with no async runtime. All protocol logic is in src-tauri/src/win mcp.rs .",
+   "title": "Lens as an MCP server: How it works",
+   "text": "The AI app launches lens-ui.exe --mcp-stdio . With that flag Lens does not start the shell; the process is a thin bridge that forwards each JSON-RPC line to the running Lens and exits when stdin closes. While MCP is switched on, Lens listens on 127.0.0.1 on a random port and writes the port plus a random 256-bit token to %APPDATA%\\LensUI\\mcp-endpoint.json . Every connection must present the token first. Switching MCP off (or quitting) closes the port and deletes the file. If Lens is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool returns \"Lens isn't running, or its MCP server is switched off\". Why stdio + loopback instead of only HTTP: stdio is what every MCP client supports for local servers and needs no new crates; the loopback hop is plain std::net with no async runtime. All protocol logic is in src-tauri/src/win mcp.rs .",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "How it works"
    ],
    "target": {
@@ -10549,11 +11298,11 @@
   {
    "id": "doc.mcp.2",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Protocol support",
+   "title": "Lens as an MCP server: Protocol support",
    "text": "Legacy handshake revisions via initialize : 2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05 (an unknown requested version gets 2025-11-25). Modern stateless revision 2026-07-28: server/discover , per-request meta protocol version, UnsupportedProtocolVersionError (-32022) for unknown versions, resultType: \"complete\" on results. Tools only (no resources or prompts). tools/list is static and ordered.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Protocol support"
    ],
    "target": {
@@ -10566,11 +11315,11 @@
   {
    "id": "doc.mcp.3",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Tools",
+   "title": "Lens as an MCP server: Tools",
    "text": "Tool What it does Runs :--- :--- :--- list windows Open app windows: hwnd, title, app, focused/minimized/maximized Directly (read-only) search Installed apps and indexed file names/paths (never contents) Directly (read-only) get action status Outcome of a queued request Directly (read-only) focus window Focus a window Lens itself lists Directly tile windows focus-stack, split, thirds, grid, smart-group Directly apply theme pack Any built-in or custom theme pack Directly set volume 0–100 Directly set brightness 10–100 Directly toggle night light On, off, or toggle Directly switch workspace Number, name, next/prev (needs Lens workspaces) Directly run action Plain-language request through Lens' action router Always waits for your approval \\ With \"Ask me before every change\" on, these also wait for approval. Approvals appear in the MCP card and as a Lens notification. Requests expire after 1",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Tools"
    ],
    "target": {
@@ -10583,11 +11332,11 @@
   {
    "id": "doc.mcp.4",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Security model",
+   "title": "Lens as an MCP server: Security model",
    "text": "Off by default, loopback only, token-gated. The port binds to 127.0.0.1; a connection without the token from the endpoint file is closed before any message is read. The token file is in your user profile, so other programs running as you can read it — the same trust level as any app you run. No dangerous capabilities exist. There is no tool that runs commands or scripts, opens or deletes files, closes windows, kills processes, changes accounts or Windows settings beyond volume/brightness/night light. run action goes through the same router as Dock search and only after you click Approve. Validated input. Every argument is type- and range-checked (unknown tools are a protocol error); text is stripped of control characters and length-capped; window ids must belong to a window Lens currently lists. Rate-limited. 40 tool calls per minute per connection, 4 connections at once, 256 KB per mess",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Security model"
    ],
    "target": {
@@ -10600,11 +11349,11 @@
   {
    "id": "doc.mcp.5",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Connect Claude Desktop",
+   "title": "Lens as an MCP server: Connect Claude Desktop",
    "text": "The card shows a ready-made snippet with the real path. It looks like:",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Connect Claude Desktop"
    ],
    "target": {
@@ -10617,11 +11366,11 @@
   {
    "id": "doc.mcp.6",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Windows 11 agent registry (not wired yet)",
+   "title": "Lens as an MCP server: Windows 11 agent registry (not wired yet)",
    "text": "Windows 11 (build 26220.7262+, pre-release) has an On-device Agent Registry; local servers are added with odr.exe mcp add <mcpb-manifest.json , and unpackaged apps are expected to ship an MCP bundle (MCPB) manifest (Microsoft docs). Lens does not register itself yet. A manifest would point its stdio command at lens-ui.exe with --mcp-stdio ; check the MCPB schema (github.com/anthropics/mcpb) before shipping one — not verified here.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Windows 11 agent registry (not wired yet)"
    ],
    "target": {
@@ -10634,11 +11383,11 @@
   {
    "id": "doc.mcp.7",
    "kind": "doc",
-   "title": "Lens UI as an MCP server: Known limits",
+   "title": "Lens as an MCP server: Known limits",
    "text": "apply theme pack is applied by the Dock window (theme packs live in the frontend); if the Dock window isn't running the call reports success but nothing changes. search for apps is a simple name match; the Launcher's fuzzy ranking runs in the frontend. Night light toggling reads Lens' own night-light state, not Windows' built-in Night light.",
    "path": [
     "Docs",
-    "Lens UI as an MCP server",
+    "Lens as an MCP server",
     "Known limits"
    ],
    "target": {
@@ -10972,17 +11721,17 @@
   {
    "id": "doc.music.13",
    "kind": "doc",
-   "title": "Lens Music: 8. Lens Guide",
+   "title": "Lens Music: 8. Guide",
    "text": "Anchor ids for coach marks: data-guide-id=\"music.card\" , music.lyrics , music.spotify , music.spicetify , nowplaying.queue , nowplaying.sleep .",
    "path": [
     "Docs",
     "Lens Music",
-    "8. Lens Guide"
+    "8. Guide"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/MUSIC.md",
-    "heading": "8. Lens Guide"
+    "heading": "8. Guide"
    },
    "source": "docs/MUSIC.md"
   },
@@ -11411,27 +12160,27 @@
   {
    "id": "doc.plugins.0",
    "kind": "doc",
-   "title": "Lens UI Plugins",
+   "title": "Lens Plugins",
    "text": "Plugins are small HTML widgets for the Top Bar, the Dock and the Widget Drawer. They are off until you turn them on in Control Center → Plugins, and each one runs in a sealed sandbox: no internet, no files, no system access, only the permissions it lists.",
    "path": [
     "Docs",
-    "Lens UI Plugins"
+    "Lens Plugins"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/PLUGINS.md",
-    "heading": "Lens UI Plugins"
+    "heading": "Lens Plugins"
    },
    "source": "docs/PLUGINS.md"
   },
   {
    "id": "doc.plugins.1",
    "kind": "doc",
-   "title": "Lens UI Plugins: Where they live",
+   "title": "Lens Plugins: Where they live",
    "text": "Four examples are copied there on first run, all switched off: Clock , CPU & Memory , Weather (placeholder) and Pomodoro .",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Where they live"
    ],
    "target": {
@@ -11444,11 +12193,11 @@
   {
    "id": "doc.plugins.2",
    "kind": "doc",
-   "title": "Lens UI Plugins: Manifest — `lensplugin.json`",
+   "title": "Lens Plugins: Manifest — `lensplugin.json`",
    "text": "The entry file must be self-contained. Put CSS in <style and JS in <script ; images as data: URLs. External files, links, frames, forms, <base and <meta http-equiv are removed before the plugin runs.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Manifest — `lensplugin.json`"
    ],
    "target": {
@@ -11461,11 +12210,11 @@
   {
    "id": "doc.plugins.3",
    "kind": "doc",
-   "title": "Lens UI Plugins: Permissions",
+   "title": "Lens Plugins: Permissions",
    "text": "Permission What it allows :--- :--- (none) Time and theme colours only. telemetry Read CPU %, memory %, used/total GB, uptime. media Read the now-playing title, artist, album, app and artwork. storage Keep up to 64 values / 32 KB of its own data. notifications Show a Lens notification (title ≤ 80, body ≤ 200 chars, at most one per 10 s). launch-apps Start a Start-menu app by name — each app only after you approve it once . open-urls Open an https:// link in your browser — each site only after you approve it once . Approvals appear in Control Center → Plugins (and inline on Widget Drawer plugins). You can reset a plugin's approvals at any time.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Permissions"
    ],
    "target": {
@@ -11478,11 +12227,11 @@
   {
    "id": "doc.plugins.4",
    "kind": "doc",
-   "title": "Lens UI Plugins: API inside a plugin",
+   "title": "Lens Plugins: API inside a plugin",
    "text": "Failed requests reject with one of: permission-denied , approval-required , rate-limited , unknown-method , bad-params , unavailable , timeout . CSS variables available: --lens-fg , --lens-fg-secondary , --lens-fg-muted , --lens-on-fg , --lens-ink (use as rgb(var(--lens-ink) / 0.1) ), --lens-accent , --lens-accent-safe (the accent, or the text colour when the accent would be unreadable), --lens-radius , --font-sans , --lens-scheme ( dark / light ).",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "API inside a plugin"
    ],
    "target": {
@@ -11495,11 +12244,11 @@
   {
    "id": "doc.plugins.5",
    "kind": "doc",
-   "title": "Lens UI Plugins: Security model",
+   "title": "Lens Plugins: Security model",
    "text": "- Sandbox: <iframe sandbox=\"allow-scripts\" srcdoc — an opaque origin: no cookies, storage, parent DOM, Tauri invoke() , popups, top navigation, forms, dialogs or downloads. Camera, microphone, clipboard, USB and similar features are denied with allow . - No network: a CSP at the top of every plugin document allows only inline script/style and data: images/fonts ( connect-src , frame-src , worker-src , object-src are 'none' ). WebRTC constructors are removed. The host window adds frame-src 'none' , so a plugin cannot navigate its own frame to a web page to carry data out in the URL. - Bridge: the only way out is postMessage . The host accepts messages only from that plugin's own frame, caps them at 16 KB, rate-limits to 20/s (burst 40), and stops a plugin after 50 violations. Every method is checked against the manifest's permissions. - Approvals: launch-apps and open-urls also need a per",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Security model"
    ],
    "target": {
@@ -11512,11 +12261,11 @@
   {
    "id": "doc.plugins.6",
    "kind": "doc",
-   "title": "Lens UI Plugins: Theme sharing",
+   "title": "Lens Plugins: Theme sharing",
    "text": "Control Center → Share Themes : - Export to file… saves the current look as a .lenstheme wherever you choose. - Import file… applies a .lenstheme someone sent you and adds it to your saved themes. Every field is validated and clamped (opacity 40–100%, corners 0–20 px); custom CSS is never imported. - Open gallery… reads a gallery index file (below). Lens does not download anything yet, so only entries that carry their theme inline can be applied; previews must be data: images.",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Theme sharing"
    ],
    "target": {
@@ -11529,11 +12278,11 @@
   {
    "id": "doc.plugins.7",
    "kind": "doc",
-   "title": "Lens UI Plugins: Gallery index format",
+   "title": "Lens Plugins: Gallery index format",
    "text": "A future website can host this file; when downloads are added, Lens should fetch url only over https and refuse any file whose SHA-256 differs from sha256 .",
    "path": [
     "Docs",
-    "Lens UI Plugins",
+    "Lens Plugins",
     "Gallery index format"
    ],
    "target": {
@@ -11797,6 +12546,22 @@
    "source": "docs/PRODUCTIVITY.md"
   },
   {
+   "id": "doc.reporting.0",
+   "kind": "doc",
+   "title": "Reporting a problem",
+   "text": "Where: Settings › About & Testing › Report a problem. Also: the tray menu (\"Report a problem…\"), /report in Command, and the \"Report a problem\" button on the card a crashed window shows. What the person fills in: what happened (required, a few words) and, optionally, the steps. What can be attached (each a switch, defaults in brackets): Attachment Default Source --- --- --- Lens and Windows versions on report::system text (Lens, Windows build, WebView2) Recent log on last 200 lines of the session log ( tester::ring ) Latest crash report on newest file in %APPDATA%\\LensUI\\crashes Self-test off the read-only run self test cmd Which features are on off config.json reduced to switches and short choices ( report::settings summary ): no free text, paths, names, lists, or anything secret-looking Privacy: the report is built and redacted in Rust ( src-tauri/src/report.rs ) with the Tester Hub's ",
+   "path": [
+    "Docs",
+    "Reporting a problem"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/REPORTING.md",
+    "heading": "Reporting a problem"
+   },
+   "source": "docs/REPORTING.md"
+  },
+  {
    "id": "doc.rightclick.0",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs",
@@ -11986,7 +12751,7 @@
    "id": "doc.rightclick.11",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Explorer and desktop",
-   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses MultiSelectModel=Player . Explorer starts one process per selected item, and the bridge merges ask files requests that arrive within 1.5 s into one pending request ( ipc::coalesce files , capped at 100 files). BridgeContext.files carries all of them. Browsers can never name files. Hidden actions. Explorer leave",
+   "text": "These are additive changes under HKCU, reversible, and every root carries the LensUIOwned marker. The plan is bridge::manifest::explorer plan with(exe, hidden) . Where Verb --- --- Files Ask Lens about this file · Ask about these files · Summarise · Micro-save file · Add to Shelf · Add to pack… · Copy path into context Folders Ask · Ask about these folders · Micro-save folder · Add to Shelf · Add to pack… · Copy path into context Inside a folder (empty space) The folder verbs on the open folder ( \"%V\" ), without \"Ask about these folders\" Drives The folder verbs on the drive root, without \"Ask about these folders\". A drive root reaches Lens as C:\" (Windows reads \"C:\\\" as an escaped quote); bridge::cli::detect turns it back into C:\\ Audio/video types Get transcript with Lens (whisper) Desktop background Lens Command here ( --url \"lens://command\" ) Ask about these files. The verb uses Multi",
    "path": [
     "Docs",
     "Right-click everywhere, micro-saves and context packs",
@@ -12000,7 +12765,24 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.15",
+   "id": "doc.rightclick.12",
+   "kind": "doc",
+   "title": "Right-click everywhere, micro-saves and context packs: Lens in every menu (\"Lens ›\")",
+   "text": "Lens's own right-click menus end with one Lens › row (the small Lens logo). Hovering it for 160 ms, clicking it, or pressing → / Enter pans the menu sideways into the Magic actions for the same item; ← / Esc / Backspace pan back. Picking an action opens the Magic window for that item and runs it there (answers, confirmations and undo look the same as everywhere else); the last row, More in Lens… , opens the Magic window without running anything. Where Its own rows Then --- --- --- Dock app windows, Min · Max · Top, New Window, Run as Admin, File Location, Unpin… Lens › Shelf item Use as context, Copy, Pin/Unpin, Remove Lens › Notification (no menu of its own) right-click opens the Magic window directly - One component. src/magic/LensPan.tsx ( LensPan wraps a menu's rows; LensMenuRow is the row) and src/magic/LensContextMenu.tsx for items that had no menu. The panel's rows use the host me",
+   "path": [
+    "Docs",
+    "Right-click everywhere, micro-saves and context packs",
+    "Lens in every menu (\"Lens ›\")"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/RIGHTCLICK.md",
+    "heading": "Lens in every menu (\"Lens ›\")"
+   },
+   "source": "docs/RIGHTCLICK.md"
+  },
+  {
+   "id": "doc.rightclick.16",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 3. Lens Command: auto-attach the active pack",
    "text": "In src/command/CommandSurface.tsx , where the context chips are built:",
@@ -12017,7 +12799,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.16",
+   "id": "doc.rightclick.17",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 4. Control Center mounts",
    "text": "Mount these in the AI & Command tab, after ClipboardCard : Mount the micro-save toast once in a surface that is always present, such as the notifications surface or TopBarSurface :",
@@ -12034,7 +12816,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.17",
+   "id": "doc.rightclick.18",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 5. MCP: packs as resources and prompts (`src-tauri/src/win_mcp.rs`, owned by the claude-control package)",
    "text": "Replace \"resources/list\" \"prompts/list\" = rpc error(…) with the code below. Also advertise \"resources\": {}, \"prompts\": {} in initialize capabilities. Two rules for this snippet: - Approval. Reading a pack is read-only, but it is user content. Gate resources/read behind the same \"Allow AI apps to connect\" approval the tools use. - Local-only packs. Never serve a pack whose items are local-only ( PackView.local only ).",
@@ -12051,7 +12833,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.18",
+   "id": "doc.rightclick.19",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 6. Lens Browser (`src/browser/*`)",
    "text": "YouTube in Lens Browser can reuse extensions/browser/src/youtube.js (pure) and content/ytPage.js (inject into the page).",
@@ -12068,7 +12850,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.19",
+   "id": "doc.rightclick.20",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: 7. Dock, Lens Mini, Shelf, clipboard and notifications",
    "text": "Build each right-click menu with menuFor({ kind, surface }) : Place Call --- --- Shelf item { kind: \"shelf\", surface: \"shelf\" } Clipboard row ( ClipboardPane.tsx ) { kind: \"clipboard\", surface: \"clipboard\" } Notification ( NotificationCenterPane.tsx ) { kind: \"notification\", surface: \"notification\" } Dock app { kind: \"app\", surface: \"dock\" } Lens Mini tiles { kind: \"selection\", surface: \"mini\" } Run actions as follows: - AI actions: ai ask with the bridge's prompt wording ( bridge/prompt.rs ), or expandPrompt for custom actions. - micro save : shelfMicroSave({ text, title, url, source app }) . - pack add : open the pack picker ( packList + packAddItems ). - send claude : claudeRequest(...) . Notification and clipboard rows get three entries first: Add to Shelf , Summarise and Ask . Those are the first three applicable catalogue actions with the default prefs.",
@@ -12085,7 +12867,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.23",
+   "id": "doc.rightclick.24",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clean copy",
    "text": "The rules. src/context/cleanCopy.rules.json holds the tracking parameters ( utm , fbclid , gclid , mc , igshid , HubSpot, Matomo/Piwik, Bing, Amazon and others), per-host parameters, and the \"Read more at…\" markers. Some parameters are stripped only on particular hosts. For example, si and feature are removed on YouTube and Spotify but kept everywhere else. Where the rules are used. Code Function --- --- Lens src/context/cleanCopy.ts : cleanUrl , cleanLinksInText , stripHijack Extension extensions/browser/src/cleanUrl.js . Same logic; the rules are copied into catalog.gen.js , and a test checks both produce identical results on a table of cases. In the browser. - A new Copy clean link item (catalogue id copy link ). - Copy as Markdown now cleans every link it writes. - Clip to notes sends the cleaned URL. Copy guard. In the extension settings, \"Stop sites changing what I copy\" is off by ",
@@ -12102,7 +12884,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.24",
+   "id": "doc.rightclick.25",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Page archive (\"Save page offline\")",
    "text": "The extension builds the snapshot with src/content/snapshot.js . This is our own approach; SingleFile (AGPL) is not used. 1. Clone the live DOM. 2. Remove scripts, frames, objects, on handlers, javascript: URLs and meta refresh. 3. Make all URLs absolute and add <base . 4. Inline same-origin stylesheets. 5. Inline images that are already loaded and same-origin, smallest first, through a canvas as WebP, while the file stays under the cap. Other images keep absolute URLs. 6. Add a script-blocking CSP and a lens-archive provenance meta tag. The snapshot makes no network requests. Size caps. MAX ARCHIVE BYTES is 420 KB, so one message carries the HTML plus up to 48 KB of readable text. What Lens does with it. 1. The bridge action archive save is accepted only from the browser, and only from this action. 2. shelf::archive::harden html strips scripts, frames, handlers and javascript: again, an",
@@ -12119,7 +12901,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.25",
+   "id": "doc.rightclick.26",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Clipper templates",
    "text": "The syntax follows Obsidian Web Clipper (MIT, © Obsidian), credited in docs/THIRD PARTY NOTICES.md . The parser is our own: src/context/templates/parser.ts . Variables: title url domain author description published site date time selection highlights content tags keywords Filters: lower upper title trim slug safe name date:\"YYYY-MM-DD\" default:\"…\" replace:\"a\",\"b\" truncate:n join:\", \" split first last blockquote list wikilink link:\"text\" hashtags yaml list yaml string lint reports unknown variables, unknown filters and unclosed tags. Built-in templates ( templates.ts ): - \"Note with source\", with YAML front matter; - \"Highlights only\"; - \"Reading list line\". Writing. Rust shelf::clipper stores clipper.json with the approved folders and the templates. - clipper folder approve(folder, confirm) first returns a question. It approves only on confirm: true , and refuses system folders and folde",
@@ -12136,7 +12918,7 @@
    "source": "docs/RIGHTCLICK.md"
   },
   {
-   "id": "doc.rightclick.26",
+   "id": "doc.rightclick.27",
    "kind": "doc",
    "title": "Right-click everywhere, micro-saves and context packs: Double-click to define or translate",
    "text": "The extension setting \"Define or translate on double-click\" is off by default. When on, it covers all sites minus \"Never\" and the built-in sensitive list. It has a \"Show first\" choice (definition or translation) and a \"Translate into\" language. src/content/define.js only triggers when: - the double-clicked text is a single word, 1–40 letters ( defineWordOk ); - it is not in a sensitive field; - the site is not denied. The bubble is in a closed Shadow DOM. The request is the bridge action define with localOnly: true . Lens refuses it outright when there is no local engine. It never waits for a cloud confirmation and never falls back to Claude. No offline dictionary. None is bundled. WordNet is redistributable but about 30 MB, so that is left as a decision. Without a local model, the bubble says so.",
@@ -12341,7 +13123,7 @@
    "id": "doc.settings-simple.2",
    "kind": "doc",
    "title": "Settings: Simple and Advanced: How it works",
-   "text": "- The pill: a Simple / Advanced pill sits at the top of the sidebar and again at its foot, so it's always in reach. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform. - Simple sidebar: Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under ··· More (N pages) . A folded page you open from search or a link still shows. - Card pages (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under More options , which reveals with a fade and slide (transform and opacity only). Nothing above it moves. - Pages left as they are: Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple. - Search always searches everything. In Simple mode, results that are ",
+   "text": "- The pill: one Simple / Advanced pill sits at the top of the sidebar. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform. - Simple sidebar: Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under ··· More (N pages) . A folded page you open from search or a link still shows. - Card pages (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under More options , which reveals with a fade and slide (transform and opacity only). Nothing above it moves. - Pages left as they are: Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple. - Search always searches everything. In Simple mode, results that are folded away or live under More options carry ",
    "path": [
     "Docs",
     "Settings: Simple and Advanced",
@@ -12387,6 +13169,107 @@
     "heading": "Visual-aid audit"
    },
    "source": "docs/SETTINGS_SIMPLE.md"
+  },
+  {
+   "id": "doc.setup.0",
+   "kind": "doc",
+   "title": "Lens setup",
+   "text": "The setup opens over Control Center: on the first launch after installing or downloading Lens; once after every new version (Lens compares the running version with setupSeenVersion in its config); and when Launch-Lens-UI.bat sees that the folder was updated since the last launch (it sets LENS SHOW SETUP=1 ). You can also open it from Settings › About & Testing › Setup or by typing setup in Command.",
+   "path": [
+    "Docs",
+    "Lens setup"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Lens setup"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.1",
+   "kind": "doc",
+   "title": "Lens setup: Nothing changes until Finish",
+   "text": "Every choice is a draft. The previews draw from it, and only Finish writes, through the one settings writer. It writes only what you picked ( applyChoices in src/setup/flow.ts ): Skip setup (or Esc) on any page writes only onboardingCompleted and setupSeenVersion , so the setup doesn't come back for this version. A new install keeps its defaults: the floating Dock and the default theme. Skip this step forgets what you picked on that page. A colour look never changes the Dock. The Dock changes only if you picked one on the Dock page. Anything that touches Windows (Start with Windows, hiding the taskbar) goes through the same config switches as Settings, so Remove all Lens changes undoes it.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Nothing changes until Finish"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Nothing changes until Finish"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.2",
+   "kind": "doc",
+   "title": "Lens setup: Pages",
+   "text": "First launch / Run setup again After an update --- --- Welcome What's new in version (from CHANGELOG.md ) Dock: Floating, Slim, Taskbar, Split, and the screen edge Extras added since the last setup that are still off (page skipped when there are none) Colour: Dark / Light / Day & night, the featured looks, the accent Done Optional extras (all off), plus where to set up Windhawk styling and voice transcription Done: exactly what Finish will change \"Day & night\" turns on the theme schedule: a light look from 7:00, a dark look from 19:00.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Pages"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Pages"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.3",
+   "kind": "doc",
+   "title": "Lens setup: Adding an extra",
+   "text": "Add it to EXTRAS in src/setup/flow.ts with since set to the version it first ships in. People who update see it once on the extras page of that version's setup; new installs see every extra. Handle it in extraIsOn and applyChoices , and add a test.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Adding an extra"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Adding an extra"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.4",
+   "kind": "doc",
+   "title": "Lens setup: What's new",
+   "text": "src/setup/whatsNew.ts is generated from CHANGELOG.md by node tools/setup/whats-new.mjs ( bun run gen:whatsnew ). src/ tests /setupFlow.test.ts fails when it is out of date. Each line is the first sentence of a changelog bullet, so write the bullets with a plain first sentence.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "What's new"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "What's new"
+   },
+   "source": "docs/SETUP.md"
+  },
+  {
+   "id": "doc.setup.5",
+   "kind": "doc",
+   "title": "Lens setup: Checks",
+   "text": "bun test src/ tests /setupFlow.test.ts : when the setup opens; Skip changes only the seen markers; Finish writes only the chosen keys; a look doesn't move the Dock. bun run parity:setup : screenshots every page of both flows in a dark and a light theme and fails on a page error or a page that doesn't render (CI: the Visual parity job). Rust: commands::setup flow tests when the setup is due.",
+   "path": [
+    "Docs",
+    "Lens setup",
+    "Checks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SETUP.md",
+    "heading": "Checks"
+   },
+   "source": "docs/SETUP.md"
   },
   {
    "id": "doc.shelf.0",
@@ -12458,27 +13341,27 @@
   {
    "id": "doc.shell-mode.0",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode",
-   "text": "Shell Mode makes Lens UI the Windows shell for your user account : at sign-in Windows starts Lens UI instead of Explorer's desktop and taskbar. It is off by default and never required. Without it, Lens UI runs as an overlay on top of Explorer, exactly as before. Status: written but not yet run on a real machine. Try it on a spare account or a virtual machine first, and keep Restore-Windows-Shell.bat somewhere you can find it.",
+   "title": "Lens — Shell Mode",
+   "text": "Shell Mode makes Lens the Windows shell for your user account : at sign-in Windows starts Lens instead of Explorer's desktop and taskbar. It is off by default and never required. Without it, Lens runs as an overlay on top of Explorer, exactly as before. Status: written but not yet run on a real machine. Try it on a spare account or a virtual machine first, and keep Restore-Windows-Shell.bat somewhere you can find it.",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode"
+    "Lens — Shell Mode"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/SHELL_MODE.md",
-    "heading": "Lens UI — Shell Mode"
+    "heading": "Lens — Shell Mode"
    },
    "source": "docs/SHELL_MODE.md"
   },
   {
    "id": "doc.shell-mode.1",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: What it changes",
+   "title": "Lens — Shell Mode: What it changes",
    "text": "One registry value, for the current user only: Nothing machine-wide ( HKLM ) is ever written. Deleting that one value puts Windows back on Explorer. Other user accounts on the PC are not affected. Shell Mode can only be enabled from a release build. A development build ( bun run tauri dev ) refuses, because its program path is not stable.",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "What it changes"
    ],
    "target": {
@@ -12491,11 +13374,11 @@
   {
    "id": "doc.shell-mode.2",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: What you lose without Explorer",
-   "text": "Explorer is more than file windows. While Lens UI is the shell, these are absent unless Lens provides them: Explorer feature In Shell Mode :--- :--- Taskbar and Start menu Replaced by the Lens Dock, Top Bar and search System tray icons Only what Lens hosts itself; the \"peek native taskbar\" chevron has nothing to show Desktop icons Lens desktop folder only Wallpaper May be a plain background — Explorer normally draws it Windows notification toasts and Action Center Lens notifications only Win key shortcuts ( Win+E , Win+R , Win+D , Win+Tab , snap layouts…) Mostly unavailable; Explorer handles them Alt+Tab Falls back to the basic Windows switcher Startup apps Lens starts your per-user Run entries and Startup-folder items once per sign-in, respecting Task Manager's on/off switches. Machine-wide startup entries and RunOnce are not run Store / UWP apps May start slowly or not at all; they rel",
+   "title": "Lens — Shell Mode: What you lose without Explorer",
+   "text": "Explorer is more than file windows. While Lens is the shell, these are absent unless Lens provides them: Explorer feature In Shell Mode :--- :--- Taskbar and Start menu Replaced by the Lens Dock, Top Bar and search System tray icons Only what Lens hosts itself; the \"peek native taskbar\" chevron has nothing to show Desktop icons Lens desktop folder only Wallpaper May be a plain background — Explorer normally draws it Windows notification toasts and Action Center Lens notifications only Win key shortcuts ( Win+E , Win+R , Win+D , Win+Tab , snap layouts…) Mostly unavailable; Explorer handles them Alt+Tab Falls back to the basic Windows switcher Startup apps Lens starts your per-user Run entries and Startup-folder items once per sign-in, respecting Task Manager's on/off switches. Machine-wide startup entries and RunOnce are not run Store / UWP apps May start slowly or not at all; they rely o",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "What you lose without Explorer"
    ],
    "target": {
@@ -12508,11 +13391,11 @@
   {
    "id": "doc.shell-mode.3",
    "kind": "doc",
-   "title": "Lens UI — Shell Mode: Three ways back to the normal desktop",
-   "text": "1. Restore-Windows-Shell.bat (in the Lens UI folder). Removes the registry value and starts Explorer. Works even if Lens UI will not start. 2. Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to Restore-Windows-Shell.bat → OK. This keyboard shortcut works with no shell running at all. If you only type explorer there, you get a file window but not the taskbar, because Windows still thinks Lens is the shell — run the bat, or first run: reg delete \"HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Shell /f and then explorer . 3. The automatic boot guard. Each time Lens starts as the shell it counts the attempt, and clears the count once the desktop has been up for about 20 seconds. If the next start finds the count still set, the previous one never reached a working desktop: Lens switches Shell Mode off, starts Explorer, and shows the reason in Control Cen",
+   "title": "Lens — Shell Mode: Three ways back to the normal desktop",
+   "text": "1. Restore-Windows-Shell.bat (in the Lens folder). Removes the registry value and starts Explorer. Works even if Lens will not start. 2. Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to Restore-Windows-Shell.bat → OK. This keyboard shortcut works with no shell running at all. If you only type explorer there, you get a file window but not the taskbar, because Windows still thinks Lens is the shell — run the bat, or first run: reg delete \"HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Shell /f and then explorer . 3. The automatic boot guard. Each time Lens starts as the shell it counts the attempt, and clears the count once the desktop has been up for about 20 seconds. If the next start finds the count still set, the previous one never reached a working desktop: Lens switches Shell Mode off, starts Explorer, and shows the reason in Control Center. O",
    "path": [
     "Docs",
-    "Lens UI — Shell Mode",
+    "Lens — Shell Mode",
     "Three ways back to the normal desktop"
    ],
    "target": {
@@ -13489,7 +14372,7 @@
    "id": "doc.third-party-notices.0",
    "kind": "doc",
    "title": "Third-party notices",
-   "text": "Lens UI credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.",
+   "text": "Lens credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.",
    "path": [
     "Docs",
     "Third-party notices"
@@ -13724,7 +14607,7 @@
    "id": "doc.vision.3",
    "kind": "doc",
    "title": "Lens vision: one desktop, not a pile of apps: What exists today",
-   "text": "Area Status --- --- Dock styles, themes, window styling, cursors, Playground, productivity (hot corners, Alt+drag), shell keys Integrated AI core (script → local → Claude), AI surfaces, browser extension bridge, transcription Integrated Lens Command, Lens Mini, Shelf, clipboard history, edge Shelf, selection bubble Integrated Tester Hub, master plan Integrated Lens Guide In PR #18 Right-click everything, micro-saves, context packs, YouTube transcripts In PR #19 Lens Browser (vertical tabs, Spaces, agent mode with approvals) In PR #20 Claude control (Desktop State API, capability grants, unified approval card) In PR #21 Robustness and fluidity test suites In PR #22 Voice control and conversation mode In PR #23 Lens Snip In PR #24 The unified object model, Spaces across browser and desktop, dock ↔ browser fusion, phone companion Planned (this folder)",
+   "text": "Area Status --- --- Dock styles, themes, window styling, cursors, Playground, productivity (hot corners, Alt+drag), shell keys Integrated AI core (script → local → Claude), AI surfaces, browser extension bridge, transcription Integrated Lens Command, Lens Mini, Shelf, clipboard history, edge Shelf, selection bubble Integrated Tester Hub, master plan Integrated Guide In PR #18 Right-click everything, micro-saves, context packs, YouTube transcripts In PR #19 Lens Browser (vertical tabs, Spaces, agent mode with approvals) In PR #20 Claude control (Desktop State API, capability grants, unified approval card) In PR #21 Robustness and fluidity test suites In PR #22 Voice control and conversation mode In PR #23 Lens Snip In PR #24 The unified object model, Spaces across browser and desktop, dock ↔ browser fusion, phone companion Planned (this folder)",
    "path": [
     "Docs",
     "Lens vision: one desktop, not a pile of apps",
@@ -13741,7 +14624,7 @@
    "id": "doc.vision.4",
    "kind": "doc",
    "title": "Lens vision: one desktop, not a pile of apps: Read next",
-   "text": "- Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
+   "text": "- Identity: mission, brand, design philosophy and the promises Lens keeps (start here). - Features: everything Lens does and every suggested feature, with status. - Unified model: the objects, verbs, context, runs and Spaces everything shares. - Dock × Browser: tabs, web apps, agents, media and downloads on the dock. - One AI helper: many faces, one memory, one threat model. - Workflows: 15 storyboards across surfaces. - Roadmap: W8+ packages, the phone companion and metrics. - Style: dither, mono metadata, cards, timelines, voice. - Research notes: the sources behind these choices.",
    "path": [
     "Docs",
     "Lens vision: one desktop, not a pile of apps",
@@ -14059,6 +14942,192 @@
    "source": "docs/WALLPAPER_SWITCHER.md"
   },
   {
+   "id": "doc.windhawk-replacement.0",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own",
+   "text": "Status: research and plan, nothing built . Written 24 November 2026 against main after #81. Owner: the maintainer. This decides how Lens can style other apps' windows without asking people to install Windhawk, and without breaking the promises in brain/IDENTITY.md (off by default, reversible, games and anti-cheat left alone).",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Replacing Windhawk with something of our own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.1",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 1. What Windhawk does for Lens today",
+   "text": "Windhawk is a third-party, open-source mod engine. Lens ships one mod for it: windhawk/lens-window-style.wh.cpp (v1.1.0). Since #76 it is written into C:\\ProgramData\\Windhawk\\ModsSource only when the person clicks Install in Windhawk , and it excludes every name on Lens's anti-cheat list (42, kept in sync by a test). Inside every process it is allowed into, the mod: 1. reads five settings from Lens (caption colour, border colour, text colour, corner mode, dark mode); 2. calls DwmSetWindowAttribute on each top-level window: DWMWA USE IMMERSIVE DARK MODE (20), DWMWA WINDOW CORNER PREFERENCE (33), DWMWA BORDER COLOR (34), DWMWA CAPTION COLOR (35), DWMWA TEXT COLOR (36); 3. re-applies them when a window is shown (an in-process SetWinEventHook ). That is all. It doesn't paint, hook APIs, or change behaviour; it sets five documented DWM attributes from inside the app.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "1. What Windhawk does for Lens today"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "1. What Windhawk does for Lens today"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.2",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 2. What Lens already has of its own",
+   "text": "Piece What it does Where --- --- --- Out-of-process DWM engine Sets the same five attributes on other apps' windows from Lens's own process , on a refresh worker; tracks which windows it styled so an exclude rule can hand them back src-tauri/src/win dwm engine.rs Caption engine Draws Lens's window buttons as overlay windows over other apps' title bars, colour-matched row by row (#80) src-tauri/src/win caption engine.rs , caption paint.rs In-process hook (experimental, off) A Lens-built DLL loaded with a global WH CALLWNDPROC hook that applies the same five attributes from inside each process src-tauri/lens-dwm-hook/ , win dwm engine.rs Anti-cheat list and rules Process names never touched; per-app rules win rules.rs ( ANTI CHEAT FRAGMENTS ), win hook guard.rs Windhawk sync Finds Windhawk, installs/refreshes the mod on opt-in, removes it on Remove all win windhawk.rs , changes.rs So Lens ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "2. What Lens already has of its own"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "2. What Lens already has of its own"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.3",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 3. Why an out-of-process call can fall short",
+   "text": "These are the known or likely gaps, to be confirmed by the phase 0 spike (§6): - Integrity level (UIPI). An unelevated Lens can't change windows of elevated apps (Task Manager, admin terminals, installers). Windhawk reaches them only when it runs elevated too. - Apps that re-assert their own frame. Some apps set their own DWM attributes or redraw the caption on activate/theme change, overwriting Lens until the next refresh. In-process code can apply right after the app does; out of process, Lens must notice and re-apply. - Custom-drawn title bars (Chrome, Edge, VS Code, Electron, UWP/WinUI). Caption and text colour do nothing where the app draws its own title bar; neither approach changes that without app-specific hacks. Border colour and corners still work. - Timing. A window can flash its default colours between creation and Lens's first pass. - Win 10. Caption, border and text colour ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "3. Why an out-of-process call can fall short"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "3. Why an out-of-process call can fall short"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.5",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (a) Out-of-process only (no injection)",
+   "text": "Lens styles every window from its own process: - an out-of-context WinEvent hook ( WINEVENT OUTOFCONTEXT , no DLL is loaded into anyone) for EVENT OBJECT CREATE / SHOW / EVENT SYSTEM FOREGROUND / EVENT OBJECT LOCATIONCHANGE , so new and re-activated windows are styled within a frame or two, and windows that reset their frame are re-applied after activation (the caption engine already uses settle-and-recheck reads; reuse that); - the five DWM attributes plus DWMWA SYSTEMBACKDROP TYPE (Mica/Acrylic, Windows 11 22H2+) where the app allows it; - the caption engine for Lens window buttons; overlays for active-window borders and focus dim (already shipped); - per-app rules and the anti-cheat list exactly as today; nothing ever enters a game's process. Reproduces: all five mod effects on unelevated apps with system-drawn title bars; borders and corners on custom title bars. Not: elevated window",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(a) Out-of-process only (no injection)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(a) Out-of-process only (no injection)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.6",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (b) Our own signed injection engine",
+   "text": "A Lens-built engine like Windhawk's: inject a signed DLL into chosen processes and apply styling from inside. How Windhawk does it, for reference: it allocates memory in the target and starts a remote thread (or queues an APC for processes that haven't started) to load its engine DLL, hooks process creation to follow child processes, uses MinHook for API hooks, and keeps exclusion lists for critical system processes and many games. It needs administrator rights for elevated targets, special file permissions for UWP apps, and can't load into processes that require signed images. Reproduces: everything (a) does, plus elevated windows (if the engine runs elevated) and styling from the first frame. Could later reach custom title bars by hooking the app's drawing, which Lens has ruled out (FEATURES › Dropped). Effort: large (injector, x64/x86/ARM64 builds, child-process following, safe unload",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(b) Our own signed injection engine"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(b) Our own signed injection engine"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.7",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: (c) Hybrid",
+   "text": "(a) by default for everyone; an opt-in \"deep styling\" mode for the few cases (a) can't cover, implemented by the existing lens-dwm-hook (already Lens-built, already anti-cheat-excluded, off by default), rebuilt from source and signed in releases, with a strict per-app allowlist instead of \"every process\", and fixed to refuse loading into excluded processes (B-05). Reproduces: everything, with injection only where the person chose it, per app. Effort: medium. Risk: medium, contained to the apps someone opted in.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "(c) Hybrid"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "(c) Hybrid"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.8",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 5. Recommendation",
+   "text": "Go with (a) now and keep (c) as the escape hatch; don't build (b). 1. The Windhawk mod only sets five documented DWM attributes, and Lens already sets the same five from its own process. The gap is timing, apps that reset their frame, and elevated windows; it isn't about capability. 2. An out-of-context WinEvent hook plus re-apply-after-activate closes most of the timing gap with no code inside other apps. 3. Injection is where the risk lives (anti-cheat, antivirus, crashes in other apps, maintenance), and it contradicts Lens's own trust promise. A general injection engine would make Lens look like the thing antivirus tools are built to stop. 4. For the remaining cases, the opt-in, allowlisted lens-dwm-hook (c) is enough, and Windhawk can stay as an optional path for people who already use it. 5. Result: Lens needs no third-party install for window styling. Windhawk becomes optional, the",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "5. Recommendation"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "5. Recommendation"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.9",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 6. Phased plan",
+   "text": "Phase What Exit criteria --- --- --- 0 · Spike (days) Run tools/spikes/dwm-foreign-window.ps1 on Windows 11 23H2 and 24H2, and on Windows 10 22H2: set the five attributes plus Mica on Notepad, Explorer, Settings, Paint, Task Manager (elevated), Chrome, VS Code, Terminal, Calculator from an unelevated process. Record per app: which sets succeed, whether they survive activation, theme change, maximise. A table per app and attribute in this doc. Confirms or corrects §3. 1 · Out-of-process engine v2 (1–2 weeks) Out-of-context WinEvent hook; style on create/show; re-apply after activation and on WM THEMECHANGED -equivalent events (settle-and-recheck, like #80); Mica option; one owner of \"styled windows\"; Remove all restores defaults on every styled window. Parity rig extended (like the caption rig) for the attribute logic. On the spike's app list, every unelevated app with a system title bar ",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "6. Phased plan"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "6. Phased plan"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.10",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: 7. How others do it (for comparison)",
+   "text": "- Mica For Everyone : a standalone app that applies backdrop and title-bar settings to other apps' windows through rules; its FAQ lists apps that need flags or don't work (Chromium's custom title bar, Firefox after 115). - ExplorerPatcher / StartAllBack : change the Windows shell itself by loading code into Explorer only, a narrower and different job from styling every app. - WindowBlinds : full skinning by injection; the most complete look and the most compatibility and anti-cheat friction. - Windhawk : general mod engine, global injection with exclusion lists; powerful, and flagged by some antivirus and anti-cheat tools for exactly that reason.",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "7. How others do it (for comparison)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "7. How others do it (for comparison)"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
+   "id": "doc.windhawk-replacement.11",
+   "kind": "doc",
+   "title": "Replacing Windhawk with something of our own: Sources",
+   "text": "- DwmSetWindowAttribute (Microsoft Learn) and DWMWINDOWATTRIBUTE - Implementing Global Injection and Hooking in Windows (Windhawk's author) - Windhawk wiki: Injection targets and critical system processes - Is Windhawk safe? Mods, injection and antivirus alerts (Gridinsoft) - Mica For Everyone FAQ - ExplorerPatcher wiki: using it as a shell extension",
+   "path": [
+    "Docs",
+    "Replacing Windhawk with something of our own",
+    "Sources"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDHAWK_REPLACEMENT.md",
+    "heading": "Sources"
+   },
+   "source": "docs/WINDHAWK_REPLACEMENT.md"
+  },
+  {
    "id": "doc.window-styling.0",
    "kind": "doc",
    "title": "Window styling 2.0",
@@ -14122,6 +15191,40 @@
     "surface": "doc",
     "doc": "docs/WINDOW_STYLING.md",
     "heading": "Shared-file edits made in this PR (minimal, needed to compile)"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.7",
+   "kind": "doc",
+   "title": "Window styling 2.0: The legacy in-app hook (experimental, off by default)",
+   "text": "Lens styles windows from outside their process. One optional extra, Legacy In-App Window Styling ( func.injectedHook ), installs a global WH CALLWNDPROC hook so a small DLL can restyle a window that keeps its old titlebar. Because Windows loads a global hook's DLL into every app with a window, this stays an explicit experimental switch and is fenced in ( win hook guard.rs , docs/brain/BUGS.md B-05, B-06): - Kept out when it could do harm. While the switch is on, the engine re-checks every 1.5 s. If an anti-cheat service or a protected game is running, or a fullscreen app is in front, the hook is removed at once; it returns only after about six clear seconds. - Removed, not abandoned. Switching it off, quitting, the tray's Exit and Remove all Lens changes all call stop dwm hook engine() : the hook is removed, apps are nudged to unload the DLL, and the thread ends. No restart needed. - The",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "The legacy in-app hook (experimental, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "The legacy in-app hook (experimental, off by default)"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.8",
+   "kind": "doc",
+   "title": "Window styling 2.0: Window buttons blend into every title bar",
+   "text": "Lens's coloured window buttons on other apps' windows are drawn by win caption engine.rs : a small layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque (the native buttons are underneath), so it only blends if every pixel that is not one of the three dots is exactly the title bar's colour on that row. The pixels come from src-tauri/src/caption paint.rs , which is pure and tested on any machine. Why a strip used to show (the \"new window options don't blend\" report): - One colour for the whole overlay. The old engine read five pixels and painted their median everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows, apps with a thin caption) or title text near the sample points left a visible box. - Read once, too early. Colours were re-read only at activation and at the end of a move. DWM fades the caption be",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "Window buttons blend into every title bar"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "Window buttons blend into every title bar"
    },
    "source": "docs/WINDOW_STYLING.md"
   },

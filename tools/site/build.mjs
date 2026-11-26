@@ -6,7 +6,7 @@
 //   node tools/site/build.mjs --no-live    skip re-bundling the live widgets (faster while editing)
 //
 // Inputs: tools/site/pages.mjs, docs/media/ (clips), docs/guide-for-users/*.md, the repository
-// docs, src/themes/packs.ts, the Lens Guide index and docs/tester/LATEST.json (or the
+// docs, src/themes/packs.ts, the Guide index and docs/tester/LATEST.json (or the
 // research/daily branch's copy). Outputs are git-ignored (docs/site/.gitignore); Pages builds them.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, copyFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve, basename } from "node:path";
@@ -114,16 +114,16 @@ const sections = (d, html) => {
 for (const d of userPages) {
   const html = render(stripComments(d.md));
   sections(d, html);
-  write(`docs/${d.slug}.html`, docPage(d, html + `<p class="src">Generated from <a href="${REPO}/blob/main/${d.src}">${d.src}</a>.</p>`, `Lens UI how-to: ${d.title}.`));
+  write(`docs/${d.slug}.html`, docPage(d, html + `<p class="src">Generated from <a href="${REPO}/blob/main/${d.src}">${d.src}</a>.</p>`, `Lens how-to: ${d.title}.`));
 }
 for (const d of REF) {
   const html = render(stripComments(read(d.src)));
   sections(d, html);
-  write(`docs/${d.slug}.html`, docPage(d, html + `<p class="src">Source: <a href="${REPO}/blob/main/${d.src}">${d.src}</a> (developer reference; some sections describe work in progress).</p>`, `Lens UI reference: ${d.title}.`));
+  write(`docs/${d.slug}.html`, docPage(d, html + `<p class="src">Source: <a href="${REPO}/blob/main/${d.src}">${d.src}</a> (developer reference; some sections describe work in progress).</p>`, `Lens reference: ${d.title}.`));
 }
 write("data/docs-index.json", JSON.stringify({ entries: searchDocs }));
 write("docs/index.html", page({
-  title: "Docs", desc: "Lens UI how-to guides and reference docs.", path: "docs/index.html", scripts: ["js/docs-search.js"],
+  title: "Docs", desc: "Lens how-to guides and reference docs.", path: "docs/index.html", scripts: ["js/docs-search.js"],
   body: `<div class="inner doc-layout">${docNav("index")}<article class="prose">
 <h1>Documentation</h1>
 <p class="lede">How to use the everything desktop: short how-tos generated from the same data as the in-app Guide, plus the developer reference.</p>
@@ -167,8 +167,8 @@ const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` :
 // The Apps pane reads the Lens Apps catalogue (feature/lens-apps; vendored until merged).
 const appsCat = read("catalog/apps/catalog.json") ? JSON.parse(read("catalog/apps/catalog.json")) : JSON.parse(read("tools/site/vendor/apps/catalog.json"));
 write("data/apps.json", JSON.stringify({ apps: (appsCat.apps ?? appsCat).map((a) => ({ name: a.name, category: a.category, pitch: a.pitch, openSource: a.openSource, license: a.license })) }));
-write("index.html", page({ title: "", desc: "Lens UI, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs, stars }), scripts: ["js/home.js"] }));
-write("download.html", page({ title: "Download", desc: "How to get Lens UI on Windows 10 and 11, where macOS and Linux stand, releases, and which Windows versions it works on.", path: "download.html", body: download({ log, stars }) }));
+write("index.html", page({ title: "", desc: "Lens, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs, stars }), scripts: ["js/home.js"] }));
+write("download.html", page({ title: "Download", desc: "How to get Lens on Windows 10 and 11, where macOS and Linux stand, releases, and which Windows versions it works on.", path: "download.html", body: download({ log, stars }) }));
 
 // Testers: today's checklist from the daily notes.
 let latestSrc = "research/daily";
@@ -179,7 +179,7 @@ let L = null;
 try { L = JSON.parse(latest); } catch {}
 const RISK = { high: "bad", med: "warn", low: "ok" };
 write("test.html", page({
-  title: "Testers", desc: "Today's Lens UI test checklist and how to report what you find.", path: "test.html",
+  title: "Testers", desc: "Today's Lens test checklist and how to report what you find.", path: "test.html",
   body: `<section class="hero" style="padding-top:56px"><div class="inner"><p class="eyebrow">For testers</p><h1>Today's test plan.</h1>
 <p class="lede">Lens is in beta. Testing on real Windows PCs is the most useful thing anyone can do for it right now.</p>
 ${latestSrc === "example" ? `<p class="note warn">No daily notes have been published yet, so this shows the example plan. The daily notes start once the research task's first run lands.</p>` : ""}

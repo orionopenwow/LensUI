@@ -18,3 +18,11 @@ fn folders_to_check_dedupes_case_and_trailing_slashes() {
         vec!["C:\\Users\\A\\Desktop\\", "D:\\Proj", "C:\\Users\\A\\Documents"]
     );
 }
+
+#[test]
+fn data_is_kept_when_an_undo_step_failed() {
+    let step = |name: &str, ok: bool| UninstallStep { step: name.into(), ok, detail: String::new() };
+    assert!(data_deletion_blocked(&[step("Cursors", true), step("Accent", true)]).is_none());
+    let why = data_deletion_blocked(&[step("Cursors", false), step("Accent", true), step("Folders", false)]).unwrap();
+    assert!(why.contains("Cursors, Folders") && why.starts_with("Kept"));
+}

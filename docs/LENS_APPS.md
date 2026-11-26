@@ -148,7 +148,7 @@ On `lens://apps/integrations`, add any new `dock` ids as pins using the Start-me
 
 When `integrations.localProvider` is `"ollama"` or `"lmstudio"`, call `ai_set_config` with that provider as the local engine, restoring the previous value on revert. The MCP entries in `integrations.mcp` go into the MCP client list with per-tool approval.
 
-### §7 Lens Guide (feature/lens-guide)
+### §7 Guide (feature/lens-guide)
 
 Index `catalog.json` (name, pitch, why, category, replaces) so "what tool should I use for slides?" answers from the catalogue. The ready-made logic is `parseAppsIntent` → `recommend`. Lesson stubs come from `integrations.guide`.
 
@@ -157,6 +157,14 @@ Index `catalog.json` (name, pitch, why, category, replaces) so "what tool should
 - Include `%APPDATA%\LensUI\apps\{settings,integrations,journals,installed}.json` in backups.
 - "Remove all Lens changes" should call `apps_recipe_revert` for each id in `journals.json`.
 - "Remove all Lens changes" does **not** uninstall apps; that is a separate, explicit button in AppsCard.
+
+## Portable apps and ThumbDesk
+
+A GitHub-release app can set `"portable": true` in its `install` object when the release ships one
+program file instead of an installer. Lens then keeps the verified file in
+`%APPDATA%\LensUI\apps\portable\<id>\` (nothing is written outside Lens's data folder), Open runs
+it, and Uninstall deletes the folder (`apps_portable_remove`). ThumbDesk, the controller companion from
+the makers of Lens, is the first: see [docs/apps/THUMBDESK.md](apps/THUMBDESK.md).
 
 ## Catalogue refresh (TODO)
 

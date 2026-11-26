@@ -150,7 +150,7 @@
 
 /* Light-scheme values for component colours that used to be hard-coded for dark (wave-2 polish). */
 :root[data-scheme="light"] {
-  --lens-badge-active: #047857;
+  --lens-badge-active: #065f46; /* 4.5:1 on the light search panel's green chip */
   --lens-badge-open: #1d4ed8;
   --lens-knob-a: #f4f4f5;
   --lens-knob-b: #ffffff;
@@ -171,4 +171,14 @@
   ):not([data-scheme="light"]) {
   --lens-fg-secondary: #c4c4cc;
   --lens-fg-muted: #a8a8b0;
+}
+
+/* Theme switch (src/hooks/useLensState.ts holdTransitions): for the two frames in which a theme
+   changes, nothing transitions, so the whole window takes its new colours, font and shapes in one
+   frame instead of ~230 elements fading at different speeds. Animations (spinners, ambient scenes)
+   keep running. */
+:root[data-theme-switch] *,
+:root[data-theme-switch] *::before,
+:root[data-theme-switch] *::after {
+  transition: none !important;
 }

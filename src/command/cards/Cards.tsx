@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import type { ThreadItem, ContextChip } from "../thread";
 import { Markdown } from "./Markdown";
+import { ProposalApproval } from "../../approval/LocalApproval";
+import { ReasonChips } from "../../agentsafe/ReasonChips";
 import "./cards.css";
 
 export interface CardHandlers {
@@ -96,6 +98,15 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
     }
     case "tool": {
       const p = item.proposal;
+      // A step that waits for the person is drawn by the one shared approval card (the same
+      // request is on the pill and in the approval window through the shared queue).
+      if (item.state === "pending" && p.risk === "confirm") {
+        return (
+          <article className="ct ct-tool ct-approval risk-confirm is-pending">
+            <ProposalApproval proposal={p} onDecide={(ok) => h.onTool(p.call_id, ok)} />
+          </article>
+        );
+      }
       return (
         <article className={`ct ct-tool risk-${p.risk} is-${item.state}`}>
           <header className="ct-head">
@@ -111,6 +122,7 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
               </React.Fragment>
             ))}
           </dl>
+          {p.safety?.length ? <ReasonChips reasons={p.safety} /> : null}
           {item.state === "pending" ? (
             <footer className="ct-actions is-latest">
               <Btn icon={Check} label="Do it" primary onClick={() => h.onTool(p.call_id, true)} kbd="↵" />

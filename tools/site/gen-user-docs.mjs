@@ -1,4 +1,4 @@
-// Writes docs/guide-for-users/*.md from the Lens Guide's own data, so the how-tos only mention
+// Writes docs/guide-for-users/*.md from the Guide's own data, so the how-tos only mention
 // settings, commands and shortcuts that exist:
 //   lessons   guide/*.md            (or tools/site/vendor/guide/lessons/ until the Guide is merged)
 //   settings  src/guide/index.json  (or tools/site/vendor/guide/index.json)

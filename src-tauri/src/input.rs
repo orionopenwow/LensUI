@@ -49,9 +49,12 @@ pub enum Feature {
     DesktopInput = 5,
     /// Pointer effects: ripples, trails, key chips (`win_cursor_fx`).
     CursorFx = 6,
+    /// Esc stops a running agent (`presence::esc`). Claimed only while a run is active; it
+    /// observes and never swallows.
+    AgentStop = 7,
 }
 
-pub const FEATURES: usize = 7;
+pub const FEATURES: usize = 8;
 
 impl Feature {
     pub const ALL: [Feature; FEATURES] = [
@@ -62,6 +65,7 @@ impl Feature {
         Feature::ClipBubble,
         Feature::DesktopInput,
         Feature::CursorFx,
+        Feature::AgentStop,
     ];
 
     pub fn name(self) -> &'static str {
@@ -73,6 +77,7 @@ impl Feature {
             Feature::ClipBubble => "Selection bubble",
             Feature::DesktopInput => "Desktop input",
             Feature::CursorFx => "Pointer effects",
+            Feature::AgentStop => "Esc stops an agent",
         }
     }
 }
@@ -168,6 +173,26 @@ pub fn dispatch<E>(slots: &[Slot<E>], ev: &E, paused: bool, mut on_enter: impl F
     false
 }
 
+/// Keys that always reach Windows, whatever a Lens feature asks: the ways out of a stuck desktop
+/// and the sign-in / lock keys. `vk` is the key going down; the flags say which modifiers are
+/// held. Alt+Tab is not on the list: the optional Lens Alt+Tab (off by default) takes it, and
+/// has its own fall-back to Windows when the Lens page does not answer (win_keyhook).
+pub fn protected_combo(vk: u32, ctrl: bool, alt: bool, shift: bool, win: bool) -> bool {
+    const VK_TAB: u32 = 0x09;
+    const VK_ESCAPE: u32 = 0x1B;
+    const VK_DELETE: u32 = 0x2E;
+    const VK_D: u32 = 0x44;
+    const VK_L: u32 = 0x4C;
+    const VK_F4: u32 = 0x73;
+    match vk {
+        VK_DELETE => ctrl && alt,                 // Ctrl+Alt+Del
+        VK_ESCAPE => (ctrl && shift) || alt,      // Ctrl+Shift+Esc (Task Manager), Alt+Esc
+        VK_F4 => alt,                             // Alt+F4 closes the window in front
+        VK_L | VK_D | VK_TAB => win,              // Win+L lock, Win+D desktop, Win+Tab
+        _ => false,
+    }
+}
+
 /// Does a device need its hook installed? Yes while any claimed feature would be called.
 pub fn hook_wanted(claims: &[(bool, WhenPaused)], paused: bool) -> bool {
     claims.iter().any(|&(claimed, when)| claimed && (!paused || when == WhenPaused::Observe))
@@ -229,7 +254,10 @@ mod rt {
     };
 
     /// Keyboard dispatch order. Only the Win key / Alt+Tab machine ever swallows a key.
-    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 3] = [
+    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 4] = [
+        // First, so it sees Esc whatever the others do. It observes only, also while paused:
+        // a run must be stoppable with a fullscreen app in front.
+        (Feature::AgentStop, crate::presence::esc::input_key, WhenPaused::Observe),
         (Feature::Keyhook, crate::win_keyhook::input_key, WhenPaused::Observe),
         (Feature::VoiceHold, crate::voice::keyhold::input_key, WhenPaused::Observe),
         (Feature::CursorFx, crate::win_cursor_fx::input_key, WhenPaused::Skip),
@@ -321,7 +349,7 @@ mod rt {
         BENCHED_UNTIL[f as usize].load(Ordering::Relaxed) > now
     }
 
-    fn key_slots(now: u64) -> [Slot<KeyEvent>; 3] {
+    fn key_slots(now: u64) -> [Slot<KeyEvent>; 4] {
         KEY_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (KEY_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
@@ -374,6 +402,13 @@ mod rt {
         CallNextHookEx(HHOOK::default(), code, wparam, lparam)
     }
 
+    /// [`super::protected_combo`] for a key going down now, with the real modifier state.
+    unsafe fn protected_now(vk: u32) -> bool {
+        use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
+        let held = |k: i32| (GetAsyncKeyState(k) as u16 & 0x8000) != 0;
+        super::protected_combo(vk, held(0x11), held(0x12), held(0x10), held(0x5B) || held(0x5C))
+    }
+
     /// The keyboard hook's work. True when a handler swallowed the event.
     unsafe fn key_event(code: i32, wparam: WPARAM, lparam: LPARAM) -> bool {
         if code >= 0 && lparam.0 != 0 && current_thread_is_live() {
@@ -395,6 +430,8 @@ mod rt {
             let swallow = dispatch(&slots, &ev, paused, |i| {
                 IN_PROC_FEATURE.store(KEY_TABLE[i].0 as usize + 1, Ordering::Relaxed)
             });
+            // Sign-in, lock and "get me out" keys always pass, whatever a handler said.
+            let swallow = swallow && !protected_now(ev.vk);
             if current_thread_is_live() {
                 IN_PROC_FEATURE.store(0, Ordering::Relaxed);
                 IN_PROC_SINCE.store(0, Ordering::Relaxed);

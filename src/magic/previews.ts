@@ -68,6 +68,7 @@ export function previewOpen(id: string, p: Partial<MagicOpen> = {}): MagicOpen {
     via: "mouse",
     resolveMs: 34,
     atMs: 0,
+    run: null,
     ...p,
   };
 }

@@ -1,17 +1,19 @@
-# Lens UI — Living Design Document
+# Lens — Living Design Document
 
-> **Purpose:** Single source of truth for Lens UI's visual language, motion physics, surface geometry, and interaction patterns. Every surface (`TopBar`, `Dock`, `QuickSettings`, `ControlCenter`, `CommandPalette`, `WidgetDrawer`, and native Win32 overlays) must follow this document so the shell feels unified, intentional, and cohesive.
+> **Mission, brand and design philosophy:** [`docs/brain/IDENTITY.md`](docs/brain/IDENTITY.md) is the top-level source (it wins on conflicts). This file holds the surface specs.
+
+> **Purpose:** Single source of truth for Lens's visual language, motion physics, surface geometry, and interaction patterns. Every surface (`TopBar`, `Dock`, `QuickSettings`, `ControlCenter`, `CommandPalette`, `WidgetDrawer`, and native Win32 overlays) must follow this document so the shell feels unified, intentional, and cohesive.
 
 ---
 
 ## 1. Core Aesthetic Philosophy
 
-- **Obsidian Monochrome Chrome:** Lens UI's own chrome is permanently monochrome Black & White (`#09090b` obsidian surfaces, `#fafafa` high-contrast foreground, `rgb(255 255 255 / 0.08–0.14)` hairline borders).
+- **Obsidian Monochrome Chrome:** Lens's own chrome is permanently monochrome Black & White (`#09090b` obsidian surfaces, `#fafafa` high-contrast foreground, `rgb(255 255 255 / 0.08–0.14)` hairline borders).
 - **Intentional Color:** Color is reserved strictly for:
   1. Full-color application icons in the Dock (**never** strip color or apply monochrome filters to app icons).
   2. Minimal semantic accents on active quick-control tiles and fill bars (Volume blue `#60A5FA`, Night Mode amber `#FBBF24`, Audio cyan `#38BDF8`, Power emerald `#34D399`).
   3. The user's live Windows DWM accent color (configured via the Color Wheel — drives Windows titlebars/borders/folders, never pollutes Control Center's own B&W chrome).
-  4. Traffic-light window controls (**Green `#28C840` · Yellow `#FEBC2E` · Red `#FF5F57`**).
+  4. Window buttons (**Yellow `#FEBC2E` · Green `#28C840` · Red `#FF5F57`** by default).
 - **Zero Visual Clutter:** Never wrap standalone utility icons in unnecessary pill boxes or double borders. Let bold pure-white iconography breathe directly on the obsidian glass.
 
 ---
@@ -62,13 +64,13 @@
 - **Slot Unification:** Running apps appear directly on their pinned slot (zero duplicates), with a subtle instance indicator and rich right-click context menu.
 
 ### 3.5 Window Controls (Traffic Lights)
-- Default order: **Green (Maximize) · Yellow (Minimize) · Red (Close)**, left-to-right.
+- Default order: **Yellow (Minimize) · Green (Maximize) · Red (Close)**, left-to-right. Options: Green · Yellow · Red, and Red · Yellow · Green (Mac). Buttons sit directly on the title bar, never on a strip of their own (#80).
 - Proportions: `11.5px–12px` diameter (`5.75px` radius) with `20px` center-to-center spacing (`8px` gap), scaled per-monitor by DPI, matching Control Center's own traffic lights.
-- Rendered natively on Lens UI windows and across **all visible third-party Windows apps** via the Multi-Window Z-Ordered Win32 Caption Pool (`win_caption_engine.rs`) with occlusion-safe titlebar pixel matching and true per-window Z-order (no bleed-through).
+- Rendered natively on Lens windows and across **all visible third-party Windows apps** via the Multi-Window Z-Ordered Win32 Caption Pool (`win_caption_engine.rs`) with occlusion-safe titlebar pixel matching and true per-window Z-order (no bleed-through).
 
 ### 3.6 Control Center & First-Run Setup Wizard
 - **Unified Theme Control Array:** Color Wheel sits on the left (`212px`), paired directly inside the same card with the 3 brushed-metal rotary knobs on top and the Icon Style & Icon Shape chips tucked right beneath a `1px` hairline divider — zero dead vertical whitespace.
-- **Obvious Left-Pane Navigation:** Plain-English, scannable labels (`Theme & Look`, `Bottom Dock`, `Top Bar`, `Window Buttons`, `Folder Icons`, `Virtual Desktops`, `Widgets & Stats`, `Taskbar & Startup`, plus `Setup Wizard` & `Quit Lens UI`).
+- **Obvious Left-Pane Navigation:** Plain-English, scannable labels (`Theme & Look`, `Bottom Dock`, `Top Bar`, `Window Buttons`, `Folder Icons`, `Virtual Desktops`, `Widgets & Stats`, `Taskbar & Startup`, plus `Setup Wizard` & `Quit Lens`).
 - **Startup Setup Wizard (`SetupWizard.tsx`):** Greets first-run users (`onboardingCompleted === false`) and is re-launchable anytime from the sidebar. 5 live-preview steps: *Welcome → Pick a look (6 recommended packs) → Pick a Dock (Floating, Slim, Taskbar, Split) → Work with Windows (hide taskbar, start with Windows) → Done (summary, self-test, where settings live)*. Every step can be skipped (skipping also undoes that step's changes), Back always works, Alt+←/→ change step and Esc leaves.
 - **Theme & Look tab:** top to bottom — *Current theme* hero (live preview, accent swatches + wheel, Dark/Light/Auto, glass opacity, roundness, blur, tint) → *Choose a theme* (6 recommended, "Browse all" with filters and search) → *Customise* collapsible sections that show a one-line summary when closed. Dock and shell options live in Dock & Top Bar.
 

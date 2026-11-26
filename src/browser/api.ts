@@ -55,7 +55,25 @@ export interface Appearance {
   tabsLayout: "vertical" | "horizontal";
   density: "compact" | "comfortable";
   typeface: "lens" | "system" | "mono" | "serif";
+  /** The vertical tab sidebar (missing in settings saved before it existed). */
+  sidebar?: SidebarPrefs;
 }
+
+export interface SidebarPrefs {
+  /** 200–380 px, full mode only. */
+  width: number;
+  /** Full list, or a narrow stack of icons. */
+  mode: "full" | "stack";
+  side: "left" | "right";
+  /** Today / Earlier, by site, or one list. */
+  group: "time" | "site" | "none";
+  showChats: boolean;
+  showMedia: boolean;
+  showSpaces: boolean;
+}
+
+export const DEFAULT_SIDEBAR: SidebarPrefs = { width: 248, mode: "full", side: "left", group: "time", showChats: true, showMedia: true, showSpaces: true };
+export const SIDEBAR_WIDTH = { min: 200, max: 380 } as const;
 
 export interface BrowserAi {
   enabled: boolean;
@@ -65,7 +83,7 @@ export interface BrowserAi {
   transcripts: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens" };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR };
 export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
 
 export interface BrowserSettings {
@@ -96,6 +114,8 @@ export interface BrowserState {
   nextId: number;
   /** Recently closed tabs, newest last (Ctrl+Shift+T reopens the last). */
   closed?: { tab: Tab; closedMs: number }[];
+  /** Site permissions answered "on this site" or "Block". */
+  sitePermissions?: SitePermissions;
 }
 
 export interface Download {
@@ -208,6 +228,8 @@ export interface ActResult {
   ran: boolean;
   needsOk: boolean;
   message: string;
+  /** Why the agent-safety gate made the step wait or refused it. */
+  safety?: { code: string; severity: string; detail: string }[];
 }
 
 export interface MenuEvent {
@@ -225,6 +247,25 @@ export interface MenuEvent {
 
 export const EVT_BROWSER_STATE = "lens://browser/state";
 export const EVT_BROWSER_DOWNLOADS = "lens://browser/downloads";
+export const EVT_BROWSER_PERMISSION = "lens://browser/permission";
+export const EVT_BROWSER_PERMISSION_DONE = "lens://browser/permission-done";
+
+/** A site permission Lens asks about (see browser/permissions.rs). */
+export type PermissionKind = "camera" | "microphone" | "location" | "notifications" | "clipboard" | "downloads";
+export const PERMISSION_KINDS: PermissionKind[] = ["camera", "microphone", "location", "notifications", "clipboard", "downloads"];
+/** Remembered answers: origin → kind → allowed. */
+export type SitePermissions = Record<string, Partial<Record<PermissionKind, boolean>>>;
+export interface PermissionAsk {
+  id: number;
+  tab: string;
+  origin: string;
+  kind: PermissionKind;
+}
+export type PermissionAnswer = "once" | "site" | "block";
+export const permissionAnswer = (id: number, answer: PermissionAnswer) => invoke<void>("browser_permission_answer", { id, answer });
+export const permissionsWaiting = () => invoke<PermissionAsk[]>("browser_permissions_waiting");
+export const permissionsList = () => invoke<SitePermissions>("browser_permissions_list");
+export const permissionForget = (origin: string, kind: PermissionKind | null) => invoke<SitePermissions>("browser_permission_forget", { origin, kind });
 
 export const browserOpen = (url?: string) => invoke<BrowserView>("browser_open", { url: url ?? null });
 export const browserState = () => invoke<BrowserView>("browser_state");
@@ -257,7 +298,8 @@ export const downloadsClear = (id?: number) => invoke<Download[]>("browser_downl
 export const settingsSet = (settings: BrowserSettings) => invoke<BrowserView>("browser_settings_set", { settings });
 export const pageRead = <T = PageSnapshot>(op: "snapshot" | "readable" | "status", tab?: string) => invoke<T>("browser_page", { op, tab: tab ?? null });
 export const pageEvents = () => invoke<MenuEvent[]>("browser_events");
-export const agentCheck = (action: PageAction, caps?: Capabilities) => invoke<Decision>("browser_agent_check", { action, caps: caps ?? null });
+export const agentCheck = (action: PageAction, caps?: Capabilities, url?: string) =>
+  invoke<Decision>("browser_agent_check", { action, caps: caps ?? null, url: url ?? null });
 export const agentDescribe = (element: number, tab?: string) => invoke<ElementDescription>("browser_agent_describe", { element, tab: tab ?? null });
 export const agentAct = (req: { tab?: string; element?: number; action: PageAction; caps?: Capabilities; approved?: boolean }) =>
   invoke<ActResult>("browser_agent_act", { req: { tab: req.tab ?? null, element: req.element ?? null, action: req.action, caps: req.caps ?? null, approved: !!req.approved } });

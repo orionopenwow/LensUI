@@ -1,4 +1,4 @@
-//! "Remove all Lens changes": puts Windows back the way it was before Lens UI touched it.
+//! "Remove all Lens changes": puts Windows back the way it was before Lens touched it.
 //!
 //! Every step is independent and reported separately, so one failure never stops the rest.
 //! It only undoes things Lens itself did. What those are, and how each is undone, is one table:
@@ -66,6 +66,20 @@ pub fn remove_all_lens_changes(config: &mut LensConfig) -> Vec<UninstallStep> {
 
 /// Deletes %APPDATA%\LensUI (settings, themes, backups of folder icons, training data).
 /// Only call after `remove_all_lens_changes`, and only when the person asked for it.
+/// Whether "Remove all" may also delete Lens's data folder. Not when an undo step failed: that
+/// folder holds the backups (cursors, accent, desktop.ini files) needed to try again.
+pub fn data_deletion_blocked(steps: &[UninstallStep]) -> Option<String> {
+    let failed: Vec<&str> = steps.iter().filter(|s| !s.ok).map(|s| s.step.as_str()).collect();
+    if failed.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "Kept, because {} could not be undone and its backup lives there. Fix that and run Remove all again to delete Lens's data.",
+            failed.join(", ")
+        ))
+    }
+}
+
 pub fn delete_lens_data() -> Result<String, String> {
     let dir = crate::config::config_dir();
     if !dir.ends_with("LensUI") {

@@ -2,10 +2,8 @@
 // Download. Text lives here and in content/features.mjs; theme values come from the real packs.
 import { esc } from "./lib/markdown.mjs";
 import { WORKS_ON } from "./content/features.mjs";
+import { thumbdeskSection } from "./content/thumbdesk.mjs";
 import { REPO } from "./lib/layout.mjs";
-import { readFileSync } from "node:fs";
-// Ollama's mark from Simple Icons (CC0), credited in THIRD_PARTY_NOTICES.md.
-const OLLAMA = readFileSync(new URL("./vendor/simple-icons/ollama.svg", import.meta.url), "utf8").replace(/<title>[^<]*<\/title>/, "").replace("<svg ", '<svg fill="currentColor" aria-hidden="true" ');
 
 
 // The magic right-click exhibit's steps: [scene of the real magic window, label, what it shows].
@@ -13,39 +11,35 @@ const MAGIC_STEPS = [
   ["link", "It knows what you clicked", "A link, so: link actions"],
   ["summary", "Summarise", "The answer, in the same window"],
   ["transcript", "Get the transcript", "From a video page"],
-  ["shelf", "Save to your Shelf", "With Undo"],
-  ["ask", "Ask Lens", "About the text you selected"],
   ["approval", "Send to Claude", "Waits for your OK"],
 ];
-// Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx).
+// Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx), in the order of a first visit.
 const BROWSER_STEPS = [
-  ["agent", "AI beside the page", "It works; you watch each step"],
-  ["newtab", "New tab", "Search, most visited, recently closed"],
-  ["suggest", "One box", "Open tabs, bookmarks, history, search"],
-  ["import-pick", "Bring your browser", "Item by item. Never passwords"],
-  ["transcript", "Transcripts", "Search a video like a page"],
-  ["approval", "Needs your OK", "Before it submits or sends"],
+  ["home", "One box", "Search, an address, or a question"],
+  ["agent", "AI beside the page", "Every step it takes, listed"],
+  ["approval", "Needs your OK", "Before it books, pays or sends"],
+  ["results", "What it found", "A map, a table, its pick"],
+  ["permission", "Site permissions", "Camera, mic, location: you decide"],
 ];
 const S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-// What works on main today (docs/BROWSER_AAA.md, "works" rows only).
+// What Lens Browser does differently, true on main today (docs/BROWSER_AAA.md, docs/LENS_BROWSER.md,
+// docs/BROWSER_RESEARCH.md for what other AI browsers do).
 const WHY_BROWSER = [
-  [S('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'), "One box that knows your tabs", "Open tabs, bookmarks, history and search in one list. It switches to a tab you already have instead of opening a copy."],
-  [S('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'), "A new tab worth opening", "Search, most visited, bookmarks and recently closed tabs. Themed, and it loads nothing from the network."],
-  [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Import you can undo", "From Chrome, Edge, Brave, Vivaldi, Opera, Firefox or Arc. Pick item by item, never passwords or cookies, remove it in one step."],
-  [S('<path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/>'), "Tabs come back", "After a crash every tab is back in place, asleep until you need it. One hung tab never takes the others with it."],
-  [S('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>'), "AI beside the page", "A side panel with your own model, and transcripts for videos. Turn AI off and it's off."],
-  [S('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'), "Approvals for agents", "Reading runs. Submitting or sending asks first. Paying and passwords: never."],
+  [S('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'), "It asks before it acts", "Reading runs. Booking, paying, sending and submitting wait for you. Passwords: never."],
+  [S('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/>'), "AI beside the page", "The page stays yours. The panel lists every click and word, and Esc stops it."],
+  [S('<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'), "Hidden instructions get flagged", "Text on a page that tries to steer the AI is shown to you, not obeyed."],
+  [S('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'), "You decide what sites get", "Camera, mic, location and notifications ask under the address bar, once or per site."],
+  [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Light, and easy to leave for", "Bring bookmarks and tabs from Chrome, Edge, Arc and more, item by item, never passwords. Undo in one step."],
 ];
 const CORE = [["monitor", "Monitor", "What's slowing your PC"], ["timer", "Timer", "Timers, pomodoro, alarms"], ["notes", "Notes", "Checklists and stickies"], ["calculator", "Calculator", "Units and history"], ["color", "Color", "Pick any pixel"], ["power", "Power", "Battery health"], ["network", "Network", "Who's using the network"], ["clipboard", "Clipboard", "History, pins"], ["startup", "Startup", "What runs at sign-in"]];
 const SUITE = ["artcraft", "wordcraft", "deckcraft", "gridcraft"];
-const PICKS = ["concat", "degenview", "ollama", "obs-studio", "krita", "blender", "affine", "excalidraw"];
+const PICKS = ["thumbdesk", "concat", "degenview", "ollama", "obs-studio", "krita", "blender", "affine"];
 const LINES = {
   artcraft: "Image and video, with controllable AI", wordcraft: "Documents", deckcraft: "Slides", gridcraft: "Spreadsheets",
+  thumbdesk: "The whole PC from a controller. From the makers of Lens",
   concat: "A local-first video editor with AI captions", degenview: "Charting in Rust. Charts and paper trading only", ollama: "Run AI models on your PC", "obs-studio": "Record and stream",
   krita: "Digital painting", blender: "3D, animation, video", affine: "Notes, docs and whiteboards", excalidraw: "Hand-drawn diagrams",
 };
-// True on main today. Update when automatic checks (PR #63) land on every agent path.
-const AGENT_NOTE = "In beta: approval cards and the activity log are in. Automatic checks for hidden instructions are still being wired into every agent path.";
 const GH = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.86v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>`;
 // Original OS glyphs (not the vendors' logos): a four-pane window, the ⌘ key, a penguin.
 export const OS_ICON = {
@@ -71,14 +65,14 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
       <a class="btn primary hero-dl" data-dl href="download.html">${OS_ICON.windows}<span class="lbl">Download for Windows</span></a>
       <a class="btn ghost hero-gh" href="${REPO}">${GH}<span>View on GitHub</span>${stars != null ? `<span class="stars" aria-label="${stars} stars">★ ${fmtStars(stars)}</span>` : ""}</a>
     </div>
-    <p class="dl-more" aria-label="Other ways to install"><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming with the first signed release">winget</span><span class="soon">Portable .zip</span><span class="soon">Installer .msi</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
-    <p class="dl-fine">Windows 10 &amp; 11 · free and open source · winget, .zip and .msi arrive with the first signed release</p>
+    <p class="dl-more" aria-label="Other ways to install"><a href="${REPO}/releases">Installer .exe &amp; .msi</a><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming later">winget</span><span class="soon">Portable .zip</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
+    <p class="dl-fine">Windows 10 &amp; 11 · free and open source · installers from 0.3.0 on GitHub Releases · winget and .zip later</p>
   </div>
   <div class="stage-wrap">
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
       <div class="sc-bar" id="sc-bar">
-        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or pick a tour and go step by step.</span></div>
+        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or start with the docks below and go step by step.</span></div>
         <div class="sc-ctl">
           <span class="sc-dots" aria-hidden="true"></span>
           <button type="button" class="sb-btn sc-b" data-back disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Back</span></button>
@@ -98,100 +92,41 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
   </div>
 </section>
 
+<section id="f-browser" class="sec xsec feature" aria-labelledby="f-browser-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">The light browser with an AI that asks first.</h2><p>Ask in the one box. The AI works beside the page, shows every step, and stops before anything that books, pays or sends.</p></div>
+    <div class="bx" data-exhibit="browser">
+      <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=home" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, on its new tab page: one box for search, addresses and questions"></div></div>
+      <div class="xsteps" role="tablist" aria-label="Lens Browser, step by step">
+        ${BROWSER_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
+      </div>
+    </div>
+    <ul class="why">
+      ${WHY_BROWSER.map(([ic, t, d]) => `<li><span class="why-ic">${ic}</span><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join("")}
+    </ul>
+    <p class="xnote"><button type="button" class="link-btn" data-play-scene="browser">Take the tour on the desk ↑</button></p>
+  </div>
+</section>
+
 <section id="f-magic" class="sec xsec" aria-labelledby="f-magic-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic right-click</p><h2 id="f-magic-h">Right-click anything.</h2><p>A small Lens window opens right where you clicked. It knows what the thing is, and what it can do with it.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Right-click</p><h2 id="f-magic-h">Right-click anything.</h2><p>The Lens menu opens right where you clicked, and knows what it is.</p></div>
     <div class="mx" id="mx" data-exhibit="magic">
       <div class="xstage" data-w="1180" data-h="640">
         <div class="xf mx-target" data-xf="browser.html?scene=frame" data-xf-magic="1" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open. Right-click it."></div>
+        <div class="mx-dim" aria-hidden="true" hidden></div>
         <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens magic window"></div></div>
       </div>
       <div class="xsteps" role="tablist" aria-label="What right-click can do">
         ${MAGIC_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
       </div>
-      <p class="xnote">This is the real Lens window on sample data. Right-click the page yourself, or <button type="button" class="link-btn" data-play-scene="magic">take the tour on the desk ↑</button></p>
     </div>
-  </div>
-</section>
-
-<section id="byo" class="sec xsec" aria-labelledby="byo-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Bring your own agent</p><h2 id="byo-h">It proposes. You approve. Everything undoes.</h2><p>Use the AI you already have. Lens lets it work on your desktop, and keeps you in charge of every change.</p></div>
-    <ol class="story" data-exhibit="agent">
-      <li class="st">
-        <p class="st-n"><i>1</i>Connect</p>
-        <h3>Pick your agent.</h3>
-        <div class="st-agents">
-          <div class="ag"><span class="byo-ic" style="--c:#d97757">C</span><b>Claude</b><span>Desktop or Code</span></div>
-          <div class="ag"><span class="byo-ic" style="--c:#34d399">${OLLAMA}</span><b>A local model</b><span>Ollama, LM Studio</span></div>
-          <div class="ag"><span class="byo-ic" style="--c:#818cf8"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 3v5M15 3v5M7 8h10v4a5 5 0 0 1-10 0zM12 17v4"/></svg></span><b>Any MCP agent</b><span>one command</span></div>
-        </div>
-        <p class="st-line">Settings › AI gives you one line to paste.</p>
-        <details class="st-how"><summary>Show the line</summary><pre><code>"lens-ui": { "command": "lens-ui.exe", "args": ["--mcp-stdio"] }</code></pre><p>Local models: Lens finds Ollama, LM Studio and llama.cpp on this PC by itself.</p></details>
-      </li>
-      <li class="st">
-        <p class="st-n"><i>2</i>It proposes</p>
-        <h3>You see the plan first.</h3>
-        <div class="xstage st-stage" data-w="470" data-h="500"><div class="xf" data-xf="approval.html?scene=window&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card: who is asking, what it will do, a preview, Deny and Approve"></div></div>
-        <p class="st-line">Who is asking, what it will do, and a preview.</p>
-      </li>
-      <li class="st">
-        <p class="st-n"><i>3</i>You approve</p>
-        <h3>It acts where you can watch.</h3>
-        <div class="xstage st-stage" data-w="700" data-h="500">
-          <div class="xf" data-xf="coreapps.html?app=notes&amp;drag=0&amp;magic=0" data-marker=".ca-app-notes" role="img" aria-label="Lens Notes, the real app, with the agent's orb ticking an item"></div>
-          <div class="xf st-orb" data-xf="presence.html?drag=0&amp;magic=0" data-marker="[data-presence]" data-presence="1" aria-hidden="true"></div>
-        </div>
-        <p class="st-line">The orb shows each step. Esc stops it. One Undo puts it all back. <button type="button" class="link-btn" data-replay>Replay</button></p>
-      </li>
-    </ol>
-    <p class="xnote">${esc(AGENT_NOTE)} <button type="button" class="link-btn" data-play-scene="agent">See it on the desk ↑</button></p>
-  </div>
-</section>
-
-<section id="f-browser" class="sec xsec" aria-labelledby="f-browser-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">A browser that asks before it acts.</h2><p>One slim bar, your theme, and an AI panel beside the page that only reads what you point it at.</p></div>
-    <div class="bx" data-exhibit="browser">
-      <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=agent" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app: tabs in the sidebar, one slim bar, the AI panel beside the page"></div></div>
-      <div class="xsteps" role="tablist" aria-label="Lens Browser views">
-        ${BROWSER_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
-      </div>
-    </div>
-    <h3 class="why-h">Why it's different</h3>
-    <ul class="why">
-      ${WHY_BROWSER.map(([ic, t, d]) => `<li><span class="why-ic">${ic}</span><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join("")}
-    </ul>
-  </div>
-</section>
-
-<section id="overlays" class="sec xsec" aria-labelledby="ov-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Core apps</p><h2 id="ov-h">Nine small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. These are real screenshots; click one to open it on the desk.</p></div>
-    <div class="core-grid" id="core-grid" data-cycle>
-      ${CORE.map(([id, t, d]) => `<button type="button" class="core" data-open-app="${id}"><img src="media/core-${id}.webp" alt="${esc(t)}: ${esc(d)}" loading="lazy" width="760" height="520"><span class="core-cap"><b>${esc(t)}</b><span>${esc(d)}</span></span></button>`).join("")}
-    </div>
-    <div class="ov-pair">
-      <article class="ov"><button type="button" class="ov-media" data-play-scene="music" aria-label="Open Lens Music on the desk"><img src="media/surface-music.webp" alt="Lens Music: now playing, lyrics and up next, coloured by the album art" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Music</h3><p>Now Playing for any app, coloured by the album art.</p></div></article>
-      <article class="ov"><button type="button" class="ov-media" data-play-scene="cleaner" aria-label="Open Lens Cleaner on the desk"><img src="media/surface-cleaner.webp" alt="Lens Cleaner: 32.5 GB safe to clean, sorted by how safe each item is" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Cleaner</h3><p>See what's taking space. Clean safely, undo in one click.</p></div></article>
-    </div>
-  </div>
-</section>
-
-<section id="apps" class="sec xsec" aria-labelledby="apps-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Lens Apps finds the official release, checks the download and installs it when you say so.</p></div>
-    <h3 class="apps-h">The ArtCraft suite</h3>
-    <div class="suite-row">${SUITE.map((id) => appTile(id, apps, true)).join("")}</div>
-    <h3 class="apps-h">More picks</h3>
-    <div class="app-grid">${PICKS.map((id) => appTile(id, apps, false)).join("")}</div>
-    <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects. <button type="button" class="link-btn" data-play-scene="apps">Open Lens Apps on the desk ↑</button></p>
   </div>
 </section>
 
 <section id="themes" class="sec extras-start" aria-labelledby="themes-h">
   <div class="inner">
-    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} packs, from Obsidian and the living Sky to the Claude Code community palettes. Point at one to preview it, click to keep it, drag an accent onto the desk, or press <kbd>T</kbd> to shuffle.</p></div>
+    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} looks. Point to preview, click to keep, or press <kbd>T</kbd> to shuffle.</p></div>
     <div class="lab">
       <div id="lab-desk" class="desk-host"></div>
       <aside class="lab-side" aria-label="Theme controls">
@@ -208,25 +143,60 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
       <h3>How themes work</h3>
       <ul>
         <li><b>One file</b><span>A <code>.lenstheme</code> carries the colours, glass, corners, dock style and backdrop.</span></li>
-        <li><b>Export and share</b><span>“Download .lenstheme” above saves the look on this desk. Import it in Settings › Appearance.</span></li>
-        <li><b>Coming</b><span>Packs that carry more: app overlays and what an agent may control.</span></li>
+        <li><b>Export and share</b><span>“Download .lenstheme” saves the look on this desk. Import it in Settings › Appearance.</span></li>
       </ul>
     </div>
   </div>
 </section>
 
+<section id="byo" class="sec xsec" aria-labelledby="byo-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Your agent</p><h2 id="byo-h">Bring Claude into your desktop.</h2><p>Connect Claude Desktop, a local model or any MCP agent. It can use Lens in all your apps, and asks before it changes anything.</p></div>
+    <div class="agent-x" data-exhibit="agent">
+      <ol class="agent-flow" aria-label="How it works">
+        <li><span class="byo-ic" style="--c:#d97757">C</span><b>Connect</b><span>Claude Desktop, a local model, or MCP</span></li>
+        <li><span class="byo-ic" style="--c:#818cf8">${IC.apps}</span><b>Lens in every app</b><span>Windows, browser, files, settings</span></li>
+        <li><span class="byo-ic" style="--c:#34d399">${IC.check}</span><b>Needs your OK</b><span>Who asks, what changes, a preview</span></li>
+      </ol>
+      <div class="xstage agent-stage" data-w="470" data-h="500"><div class="xf" data-xf="approval.html?scene=window&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card: who is asking, what it will do, a preview, Deny and Approve"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="overlays" class="sec xsec" aria-labelledby="ov-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Also in Lens</p><h2 id="ov-h">Small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. Click one to open it on the desk.</p></div>
+    <div class="ov-pair">
+      <article class="ov"><button type="button" class="ov-media" data-open-app="music" aria-label="Open Lens Music on the desk"><img src="media/surface-music.webp" alt="Lens Music: now playing, lyrics and up next, coloured by the album art" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Music</h3><p>Now Playing for any app, coloured by the album art.</p></div></article>
+      <article class="ov"><button type="button" class="ov-media" data-open-app="cleaner" aria-label="Open Lens Cleaner on the desk"><img src="media/surface-cleaner.webp" alt="Lens Cleaner: 32.5 GB safe to clean, sorted by how safe each item is" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Cleaner</h3><p>See what's taking space. Clean safely, undo in one click.</p></div></article>
+    </div>
+    <div class="core-grid" id="core-grid" data-cycle>
+      ${CORE.map(([id, t, d]) => `<button type="button" class="core" data-open-app="${id}"><img src="media/core-${id}.webp" alt="${esc(t)}: ${esc(d)}" loading="lazy" width="760" height="520"><span class="core-cap"><b>${esc(t)}</b><span>${esc(d)}</span></span></button>`).join("")}
+    </div>
+  </div>
+</section>
+
+<section id="apps" class="sec xsec" aria-labelledby="apps-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Official releases, checked before they install.</p></div>
+    <h3 class="apps-h">The ArtCraft suite</h3>
+    <div class="suite-row">${SUITE.map((id) => appTile(id, apps, true)).join("")}</div>
+    <h3 class="apps-h">More picks</h3>
+    <div class="app-grid">${PICKS.map((id) => appTile(id, apps, false)).join("")}</div>
+    <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
+  </div>
+</section>
+${thumbdeskSection()}
+
 <section id="more" class="sec" aria-labelledby="more-h">
   <div class="inner">
-    <div class="head center"><h2 id="more-h">And the extras.</h2><p>Short recordings of the real app. Press play.</p></div>
+    <div class="head center"><h2 id="more-h">And the extras.</h2></div>
     <div class="ex-grid">
-      ${extra("Backdrop Lab", "Make animated gradient wallpapers and set them live, or turn one into a theme.", { img: "shot-backdrop-lab.webp", alt: "Backdrop Lab with a gradient preview and its controls" })}
-      ${extra("Snip", "Capture, blur what's private, mark it up, then send it to Claude or a friend.", { clip: "snip" })}
-      ${extra("The Shelf", "A standing clipboard for everything you collect; send it as one context pack.", { clip: "shelf-packs" })}
-      ${extra("Voice", "Hold a key and say “Lens, tile my windows”. Recognised on your PC.", { clip: "voice" })}
-      ${extra("The AI dock", "Ask from the dock; it answers in place and asks before acting.", { clip: "ai-dock" })}
-      ${extra("Tester Hub", "What's new, a checklist, and a one-click report for testers.", { clip: "tester-hub" })}
+      ${extra("Backdrop Lab", "Animated gradient wallpapers, set live or saved as a theme.", { img: "shot-backdrop-lab.webp", alt: "Backdrop Lab with a gradient preview and its controls" })}
+      ${extra("Snip", "Capture, blur what's private, mark it up, send it.", { clip: "snip" })}
+      ${extra("The Shelf", "A clipboard for everything you collect.", { clip: "shelf-packs" })}
+      ${extra("Voice", "Hold a key and say “Lens, tile my windows”.", { clip: "voice" })}
     </div>
-    <p class="fine">Also in Lens: Living Sky wallpaper, a Settings hub for Lens and Windows, Lens Mini, Messages and feeds. Coming next: Peek, Split view, Spaces, Routines and a phone companion.</p>
   </div>
 </section>
 
@@ -236,7 +206,7 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <ul class="trust">
       <li><strong>Off until you turn it on</strong>New features ship disabled.</li>
       <li><strong>Every change undoes</strong>One button puts Windows back, even if Lens isn't running.</li>
-      <li><strong>Games are left alone</strong>Overlays pause for full-screen apps and games.</li>
+      <li><strong>Games are left alone</strong>Overlays pause for full-screen apps and games. Nothing loads into other apps unless you turn on an optional styling extra.</li>
       <li><strong>Local first</strong>AI is opt-in and shows what it would send. No telemetry, no account.</li>
     </ul>
     <p class="vision-line">One app instead of a dozen utilities: dock, launcher, themes, browser, apps and an AI co-pilot that works across all of them. <a href="${visionHref}">Read the vision</a></p>
@@ -271,7 +241,7 @@ export function download({ log, stars = null }) {
 <section class="hero dl-hero" aria-labelledby="dl-h">
   <div class="inner">
     <h1 id="dl-h">Get the <span class="lens-rainbow">everything</span> desktop.</h1>
-    <p class="lede">Lens is a shell for Windows 10 and 11. It's in beta: there's no signed installer yet, so for now you build it from source in a few minutes.</p>
+    <p class="lede">Lens is a shell for Windows 10 and 11. It's in beta. Starting with 0.3.0, download the installer from GitHub Releases, or build it from source in a few minutes.</p>
   </div>
 </section>
 <section id="platforms" class="sec tight" aria-labelledby="pl-h">
@@ -280,12 +250,13 @@ export function download({ log, stars = null }) {
     <div class="platforms">
       <article class="plat on">
         <div class="plat-h">${OS_ICON.windows}<h3>Windows 10 &amp; 11</h3><span class="tag ok">Beta</span></div>
-        <p>Windows 10 (1809 or newer) or 11. You need <a href="https://www.rust-lang.org/tools/install">Rust</a> and <a href="https://bun.sh">Bun</a>.</p>
+        <p>Windows 10 (1809 or newer) or 11. <a class="btn small" href="${REPO}/releases">Installer on GitHub Releases</a> (from 0.3.0). The installers are not yet code-signed, so SmartScreen warns the first time: choose <b>More info › Run anyway</b>. Updates are signed.</p>
+        <p>To build from source you need <a href="https://www.rust-lang.org/tools/install">Rust</a> and <a href="https://bun.sh">Bun</a>.</p>
         <pre><code>git clone ${REPO.toLowerCase()}
 cd lensui
 bun install
 bun run tauri dev</code></pre>
-        <p class="fine">Or double-click <code>Build-Lens-UI.bat</code> for a standalone build. If anything looks wrong, run <code>Restore-Windows-Taskbar.bat</code>. Signed installers and a winget package will appear on <a href="${REPO}/releases">GitHub Releases</a>.</p>
+        <p class="fine">Or double-click <code>Build-Lens-UI.bat</code> for a standalone build. If anything looks wrong, run <code>Restore-Windows-Taskbar.bat</code>. A winget package comes later.</p>
       </article>
       <article class="plat">
         <div class="plat-h">${OS_ICON.mac}<h3>macOS</h3><span class="tag">On the roadmap</span></div>

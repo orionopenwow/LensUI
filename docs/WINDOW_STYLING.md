@@ -37,7 +37,8 @@ Everything here is **off by default**. With the defaults, windows look exactly a
   `HWND_NOTOPMOST` back on quit. Windows that were already topmost are not recorded, so the app's own
   choice is never undone.
 - **Never decorated:**
-  - protected processes (`win_rules::PROTECTED_PROCESS_FRAGMENTS`: anti-cheat games, shell hosts, Lens);
+  - protected processes (`win_rules::SHELL_PROCESS_FRAGMENTS` — Lens and the Windows shell hosts —
+    and `win_rules::ANTI_CHEAT_FRAGMENTS` — anti-cheat services, their launchers and protected games);
   - the never-decorate list;
   - apps with a "Leave alone" rule;
   - fullscreen windows. A window counts as fullscreen when it covers its monitor and has no caption,
@@ -145,3 +146,90 @@ here only exists so this branch does not depend on #5.
   - the card in its default, styled, light and Windows 10 states;
   - the rules card with the new **Inactive** row;
   - the dim and border preview.
+
+
+## The legacy in-app hook (experimental, off by default)
+
+Lens styles windows from outside their process. One optional extra, **Legacy In-App Window Styling**
+(`func.injectedHook`), installs a global `WH_CALLWNDPROC` hook so a small DLL can restyle a window
+that keeps its old titlebar. Because Windows loads a global hook's DLL into every app with a window,
+this stays an explicit experimental switch and is fenced in (`win_hook_guard.rs`, docs/brain/BUGS.md
+B-05, B-06):
+
+- **Kept out when it could do harm.** While the switch is on, the engine re-checks every 1.5 s. If
+  an anti-cheat service or a protected game is running, or a fullscreen app is in front, the hook is
+  removed at once; it returns only after about six clear seconds.
+- **Removed, not abandoned.** Switching it off, quitting, the tray's Exit and Remove all Lens changes
+  all call `stop_dwm_hook_engine()`: the hook is removed, apps are nudged to unload the DLL, and the
+  thread ends. No restart needed.
+- **The DLL on disk is the one built into this Lens.** It is named by its content hash and compared
+  byte for byte before each load; a different, partial or altered copy is replaced, and nothing is
+  loaded if a matching copy can't be guaranteed.
+- **The DLL refuses excluded processes.** Its `DllMain` returns FALSE in shell hosts, anti-cheat
+  services and protected games, so nothing of Lens stays in them. Lens's own process loads it (to
+  install the hook) and does nothing with it. The committed `lens_dwm_hook.dll` predates this change;
+  release installers are rebuilt from source by CI.
+
+Settings shows whether the helper is in use right now or paused.
+
+## Window buttons blend into every title bar
+
+Lens's coloured window buttons on other apps' windows are drawn by `win_caption_engine.rs`: a small
+layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque
+(the native buttons are underneath), so it only blends if every pixel that is not one of the three
+dots is exactly the title bar's colour on that row. The pixels come from
+`src-tauri/src/caption_paint.rs`, which is pure and tested on any machine.
+
+Why a strip used to show (the "new window options don't blend" report):
+
+- **One colour for the whole overlay.** The old engine read five pixels and painted their median
+  everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows,
+  apps with a thin caption) or title text near the sample points left a visible box.
+- **Read once, too early.** Colours were re-read only at activation and at the end of a move.
+  DWM fades the caption between its active and inactive colours, a new window often paints its
+  caption after it first shows, and Lens's own frame restyle runs on a debounced worker after a
+  theme change, so the single read could catch a colour the title bar was only passing through
+  and keep it until the next activation.
+- **A fixed caption height** (31 px, 38 for Chromium) that ignored maximised windows.
+
+What is guaranteed now:
+
+- The colour is read **per row** from a strip just left of the overlay (one screen capture per
+  read; a row only counts where `WindowFromPoint` says the pixel belongs to that window), so
+  gradients, tab strips and a caption that ends above the overlay's bottom edge match row by row.
+- After a new window, activation, a move or resize, the colour is re-read on every 220 ms tick for
+  1.4 s; after a setting or theme change, for 2.5 s. One settled window is re-read per tick in
+  turn, so a caption that changes later is caught within a few seconds.
+- A new overlay stays hidden (the native buttons show) until two reads agree or 0.9 s passes, so it
+  never appears in a colour the title bar is passing through.
+- The caption height comes from DWM's caption-button bounds when they look like real buttons
+  (this follows maximised windows), else the known Chromium height, else 31 px.
+- `caption_paint` unit tests: every non-button pixel equals the row's title-bar colour (opaque)
+  for 6 DPIs × 3 caption heights × 3 orders × hover × 3 corner radii × 7 title-bar colours; the
+  feathered left edge and the rounded corner carry the same colour at partial alpha; each row of a
+  gradient gets its own colour; the median ignores title text and rows of other windows.
+- `tools/parity/caption/run.mjs` (robustness CI job): the real code over every theme pack's title
+  bar plus Windows' dark, light, accent, Mica-dark, Mica-light and Chromium title bars × active and
+  inactive × normal, maximised, maximised without DWM bounds and Chromium caption heights × all
+  three button orders × 100/125/150/200/250 % (hover on a subset), composited over a simulated
+  title bar with title text in the sampled strip. It fails if any pixel outside the buttons
+  differs by more than 2 per channel, and checks that the old single-colour overlay would have
+  failed. `node tools/parity/caption/run.mjs` writes before/after strips and per-scale contact
+  sheets to `tools/parity/caption/out/`.
+
+Lens's own windows don't use this overlay: their title-bar buttons sit on the surface itself
+(`.traffic-lights` has no background of its own).
+
+Only checkable on a real PC (the CI Windows runner has no visible desktop to read pixels from):
+
+1. Open a new Notepad, Explorer and Settings window in dark and light mode: the dots appear
+   within a second with no box around them.
+2. Click between two windows: active and inactive title bars both blend after the fade.
+3. Maximise and restore: no strip below a shorter maximised caption.
+4. Turn on Settings › Personalisation › Colours › "Show accent colour on title bars": the
+   accent title bar blends, active and inactive.
+5. Switch Lens theme packs with windows open: every title bar blends within about 3 s.
+6. Move a window between monitors at different scaling (100 % and 150 %): size and colour follow.
+7. Chrome, Edge, VS Code, Windows Terminal and a UWP app (Calculator): no strip; where an app
+   draws its own caption the dots sit on its tab strip without a box.
+8. Hover the dots: glyphs appear, the background does not change.

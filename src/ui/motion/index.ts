@@ -4,6 +4,7 @@
 //   usePresence / PresenceList   exits that finish before the element is removed
 //   useSurfaceTransition         whole-window enter/exit, in step with the backend
 //   springEasing                 springs as compositor-friendly linear() easings
+//   fillStyle                    bars, meters and level waves as transforms, never width/height
 export { glide, glideIn, glideOut, clearPose, poseKeyframe, poseTransform } from "./glide";
 export type { GlideHandle, GlideOptions, Pose } from "./glide";
 export { captureFlip, flipDelta } from "./flip";
@@ -16,3 +17,4 @@ export { springAt, springDuration, springEasing } from "./spring";
 export type { SpringOptions } from "./spring";
 export { duration, ease, reducedMotion, parseMs, DURATION_MS, EASE } from "./tokens";
 export type { DurationToken, EaseToken } from "./tokens";
+export { fillStyle } from "./fill";

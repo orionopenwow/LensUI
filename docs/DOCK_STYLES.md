@@ -23,7 +23,7 @@ All are optional with serde defaults, so old config files load unchanged.
 
 | Key (JSON)              | Values                                         | Default     |
 |-------------------------|------------------------------------------------|-------------|
-| `style`                 | floating, slim, taskbar, studio, minimal, split | `floating`  |
+| `style`                 | floating, slim, taskbar, studio, minimal, split, islands | `floating`  |
 | `alignment`             | center, left (Taskbar only; Studio is always left) | `center` |
 | `systemArea`            | auto, dock, topbar                             | `auto`      |
 | `magnification`         | off, subtle (×1.22), classic (×1.6)            | `off`       |
@@ -39,6 +39,11 @@ All are optional with serde defaults, so old config files load unchanged.
 `systemArea: "auto"` puts the clock and system icons in the Dock for Taskbar, Studio and Split,
 and leaves them in the Top Bar otherwise. `"dock"` puts them at the end of any Dock;
 `"topbar"` keeps them in the Top Bar (if the Top Bar is turned off, bar styles still show them).
+
+Search opens inside the Dock in every style. Compact styles shrink their icons to at most 80 % and
+widen the Dock when a usable field needs it; bars open the field in place. Islands at the left/right
+edges becomes a column of islands. `node tools/robust/dock-layout.mjs` checks Settings and search
+for every style × edge × icon size (docs/DOCK_SMOOTHNESS.md).
 
 Every animation honours `prefers-reduced-motion: reduce` (launch, pulse, magnification and
 show/hide transitions become instant).

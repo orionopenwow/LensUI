@@ -1,4 +1,4 @@
-/* Lens Guide — panel, lessons and coach marks. Token-based, 4 px grid, light and dark. */
+/* The Guide — panel, lessons and coach marks. Token-based, 4 px grid, light and dark. */
 
 .guide-panel {
   display: flex;
@@ -358,7 +358,10 @@
   display: block;
   height: 100%;
   background: var(--lens-fg, #fafafa);
-  transition: width 240ms ease;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform 240ms ease;
 }
 .guide-steps {
   list-style: none;

@@ -1,0 +1,12 @@
+/* Site permissions: the bar under the address bar, the site strip, and the Settings list. */
+.lb-perm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--lens-border); background: var(--lens-bg-surface); font-size: 13px; }
+.lb-perm-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; background: var(--lens-bg-hover); color: var(--lens-accent); }
+.lb-perm-text strong { font-weight: 600; }
+.lb-perm-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 9px; border: 1px solid var(--lens-border); border-radius: 8px; font-size: 12px; color: var(--lens-fg-muted, inherit); }
+.lb-perm-chip.is-on { color: var(--lens-fg); }
+.lb-perm-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.lb-perm-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lb-perm-site-name { font-weight: 600; margin-right: 4px; min-width: 120px; }
+.lb-perm-x { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.lb-perm-x:hover { background: var(--lens-bg-hover); }
+.lb-perm-x:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }

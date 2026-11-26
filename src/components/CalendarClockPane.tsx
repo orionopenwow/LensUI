@@ -510,6 +510,9 @@ export const CalendarClockPane: React.FC = () => {
               >
                 <button
                   type="button"
+                  role="checkbox"
+                  aria-checked={!!ev.done}
+                  aria-label={`Done: ${ev.title}`}
                   onClick={() =>
                     setEvents((prev) =>
                       prev.map((x) => (x.id === ev.id ? { ...x, done: !x.done } : x))
@@ -671,7 +674,7 @@ export const CalendarClockPane: React.FC = () => {
               invoke("push_notification_cmd", {
                 title: "Lens Notifications Ready",
                 body: "Calendar reminders, focus timers, and Windows alerts appear cleanly here.",
-                appName: "Lens UI",
+                appName: "Lens",
                 category: "calendar",
               })
             }

@@ -12,25 +12,25 @@ In Lens Command type "snap left", "snap right" or "arrange windows". Windows' ow
 
 ## 2. Move windows with Alt+drag
 
-**Where:** Settings › Windows & Quick › Drag Windows
+**Where:** Settings › Windows & Keys › Drag Windows
 
 Turn on Alt+drag. Then hold Alt and drag anywhere inside a window to move it, or Alt+right-drag to resize. Full-screen and admin windows are left alone.
 
 ## 3. Set a hot corner
 
-**Where:** Settings › Windows & Quick › Hot Corners
+**Where:** Settings › Windows & Keys › Hot Corners
 
 Give a screen corner an action, like Overview or Show desktop. Rest the pointer there to trigger it. Corners pause while a game or full-screen app is in front.
 
 ## 4. Use workspaces
 
-**Where:** Settings › Desktops & Widgets
+**Where:** Settings › Desktop
 
 Workspaces keep groups of windows apart. Switch with the workspace strip in Overview, or type "workspace 2" in Lens Command.
 
 ## 5. Summon an app with one key
 
-**Where:** Settings › Windows & Quick › App hotkeys
+**Where:** Settings › Windows & Keys › App hotkeys
 
 Pick an app and a key. That key shows it, hides it, or launches it if it isn't running, like a drop-down terminal.
 

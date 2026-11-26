@@ -35,15 +35,16 @@ const base = {
   // `?settingsMode=simple|advanced` shows Settings in that mode (docs/SETTINGS_SIMPLE.md).
   settingsMode: params.get("settingsMode") ?? "advanced",
 };
-let config: any = JSON.parse(JSON.stringify(base));
+// The hyper suite (tools/hyper) seeds a saved config before a reload, to check settings survive it.
+let config: any = JSON.parse(JSON.stringify(W.__lensSeedConfig ?? base));
 const now = Date.now();
 const note = (id: string, title: string, body: string, appName: string, mins: number) => ({ id, title, body, appName, category: "system", tsMs: now - mins * 60000, source: "lens" });
 const notes = [
-  note("n1", "Build finished", "Lens UI built in 2 min 14 s.", "Terminal", 2),
+  note("n1", "Build finished", "Lens built in 2 min 14 s.", "Terminal", 2),
   note("n2", "Tests passed", "86 tests, 0 failures.", "Terminal", 5),
   note("n3", "Pushed", "feature/productivity-input", "Terminal", 9),
   note("n4", "Deploy queued", "Pages will update shortly.", "Terminal", 14),
-  note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens UI", 30),
+  note("n5", "Theme switched", "Alabaster Daylight is on until sunset.", "Lens", 30),
 ];
 config.theme.preset = preset;
 // Community packs (cc-*): apply the whole pack, so the accent and surface match the gallery card.
@@ -53,6 +54,13 @@ if (params.get("look") && isFeatured(preset)) config = applyFeaturedLook(config,
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
+// ?magic=dashboard,studioV2,… turns on Magic preview flags (and Tester mode, which shows the
+// Settings › About › Magic (preview) section) for the Magic scaffold scenes.
+if (params.get("magic")) {
+  const on = Object.fromEntries((params.get("magic") || "").split(",").filter(Boolean).map((f) => [f, true]));
+  config.tester = { enabled: true };
+  config.magicWaves = { dashboard: false, widgets: false, mouse: false, mouseHoldMs: 400, startButton: false, shelfNotes: false, studioV2: false, learn: false, ...on };
+}
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });
@@ -76,6 +84,17 @@ const wsStatus = () =>
     : { enabled: false, active: "1", workspaces: [] };
 config.dndSchedule = { enabled: true, ranges: [{ startMin: 1320, endMin: 420, days: [0, 1, 2, 3, 4, 5, 6] }, { startMin: 540, endMin: 720, days: [1, 2, 3, 4, 5] }], autoFullscreen: true };
 const handlers: Record<string, (a: any) => any> = {
+  // ThumbDesk (Settings › Gaming › Use a controller). ?thumbdesk=off shows the "Get ThumbDesk" state.
+  thumbdesk_info: () =>
+    params.get("thumbdesk") === "off"
+      ? { installed: false, path: null, running: false, status: null, pinned: false }
+      : {
+          installed: true,
+          path: "C:\\Users\\you\\AppData\\Roaming\\LensUI\\apps\\portable\\thumbdesk\\ThumbDesk.exe",
+          running: true,
+          pinned: true,
+          status: { version: "2.3.0", connected: true, controller: "DualSense Wireless Controller", runtimeEnabled: true, guardSuspended: false, voiceListening: false },
+        },
   // Wave 4–6 cards (integration): enough realistic data for every Control Center tab.
   list_monitors_cmd: () => [
     { id: "\\\\.\\DISPLAY1", name: "DELL U2723QE", x: 0, y: 0, width: 2560, height: 1440, workX: 0, workY: 0, workWidth: 2560, workHeight: 1392, scale: 1.5, primary: true },
@@ -220,7 +239,9 @@ const handlers: Record<string, (a: any) => any> = {
   list_theme_files_cmd: () => [],
   list_tray_icons_cmd: () => [],
   get_topbar_visible_cmd: () => true,
-  is_surface_visible_cmd: () => false,
+  // Tests set window.__lensVisible = { settings: true } to play the real window's state.
+  is_surface_visible_cmd: (a: any) => !!((W as any).__lensVisible ?? {})[a?.label],
+  hide_surface: (a: any) => { const v = ((W as any).__lensVisible ??= {}); v[a?.label] = false; return null; },
   get_dnd_cmd: () => false,
   list_desktop_items_cmd: () => [],
   get_desktop_icons_hidden_cmd: () => true,
@@ -246,11 +267,22 @@ const handlers: Record<string, (a: any) => any> = {
   clipboard_list_cmd: () => ({ entries: [], paused: false }),
   get_training_stats_cmd: () => ({ pairCount: 0, filePath: "", fileSizeBytes: 0, recentPairs: [], macros: [] }),
   get_windhawk_status_cmd: () => ({ installed: false, exePath: null, modSourcePath: "", modInstalledInWindhawk: false }),
+  // Lens setup scenes: ?setup=first shows the first-launch setup, ?setup=update the "What's new" path.
+  setup_status_cmd: () =>
+    params.get("setup") === "first"
+      ? { version: "0.3.0", seenVersion: "", onboardingCompleted: false, forced: false }
+      : params.get("setup") === "update"
+        ? { version: "0.3.0", seenVersion: "", onboardingCompleted: true, forced: false }
+        : { version: "0.3.0", seenVersion: "0.3.0", onboardingCompleted: true, forced: false },
 };
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
+/** Commands with their arguments, for checks that care which window a call names. */
+export const callLog: { cmd: string; args: any }[] = [];
+(W as any).__lensCallLog = callLog;
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   calls.push(cmd);
+  callLog.push({ cmd, args: args ?? {} });
   const h = handlers[cmd];
   return (h ? h(args ?? {}) : null) as T;
 }

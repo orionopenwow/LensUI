@@ -58,7 +58,7 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
   root.style.setProperty("--dock-hover-scale", String(cfg.dock.hoverScale));
   root.style.setProperty("--dock-hover-lift", `${cfg.dock.hoverLift}px`);
 
-  // Live Font Family across all Lens UI surfaces
+  // Live Font Family across all Lens surfaces
   const fontMap: Record<string, string> = {
     "rounded-arial": '"Arial Rounded MT Bold", "Arial Rounded", "Segoe UI Variable", system-ui, sans-serif',
     "inter-sans": '"Segoe UI Variable Display", "Inter", system-ui, -apple-system, sans-serif',
@@ -88,43 +88,48 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
   if (styleEl.textContent !== css) styleEl.textContent = css;
 }
 
-let lastPreset: string | null = null;
-/** Set when this window itself changed the pack (the person clicked here). Only that window
- *  cross-fades; the other Lens windows, updated by broadcast and often hidden, switch instantly,
- *  so a theme change never costs every window a full-screen snapshot. */
-let localThemeChange = false;
-
-/** True when motion is allowed (Windows animation effects on, or Lens forces full motion). */
-function motionAllowed(): boolean {
-  const m = document.documentElement.dataset.motion;
-  if (m === "reduce") return false;
-  if (m === "full") return true;
-  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-}
 
 /**
- * Applies the theme. When the pack changes in a visible window, the switch is a cross-fade through
- * the View Transitions API (old view = snapshot, new view = live): no hard cut and no white frame
- * (AAA_WAVE_PLAN C4). The callback only writes CSS variables, so rendering is blocked for as short
- * a time as possible. Falls back to an instant switch without the API, with reduced motion, and in
- * windows that only received the change by broadcast.
+ * Applies the theme in the same frame as the re-rendered window (called from a layout effect, so it
+ * runs before the browser paints). There is deliberately no cross-fade: a View Transition of the
+ * whole window snapshotted it, held the old picture on screen for 0.5–1 s after a click, and in a
+ * see-through Lens window the cross-fade showed the desktop through both half-faded pictures (a
+ * washed-out flash), with two fonts overlaid mid-way when a look changed the font. Measured by
+ * tools/robust/theme-switch.mjs (docs/TESTING.md, F9).
  */
 export function applyThemeWithTransition(cfg: LensConfig, winTheme: WindowsThemeInfo) {
-  const changed = lastPreset !== null && lastPreset !== cfg.theme.preset;
-  lastPreset = cfg.theme.preset;
-  type VT = { startViewTransition?: (cb: () => void) => unknown };
-  const doc = document as Document & VT;
-  const local = localThemeChange;
-  localThemeChange = false;
-  if (changed && local && typeof doc.startViewTransition === "function" && document.visibilityState === "visible" && motionAllowed()) {
-    try {
-      doc.startViewTransition(() => applyThemeToDocument(cfg, winTheme));
-      return;
-    } catch {
-      /* fall through to the instant switch */
-    }
-  }
+  const key = themeKey(cfg, winTheme);
+  const switching = lastThemeKey !== null && key !== lastThemeKey;
+  lastThemeKey = key;
+  if (switching) holdTransitions();
   applyThemeToDocument(cfg, winTheme);
+}
+
+/** What a theme switch changes: when this differs, every colour on the page changes at once. */
+function themeKey(cfg: LensConfig, winTheme: WindowsThemeInfo): string {
+  const t = cfg.theme;
+  return [t.preset, t.accentMode, t.customAccent, winTheme.accentHex, t.contrast, t.fontFamily, t.shapeStyle, t.glassOpacity, t.blurPx, t.borderRadius, t.accentTintStrength].join("|");
+}
+let lastThemeKey: string | null = null;
+let releaseTimer: number | null = null;
+
+/**
+ * Hover and colour transitions are written for one element changing at a time. On a theme switch
+ * every element changes, and ~230 transitions started at once: parts of the window faded at
+ * different speeds (a patchy, glitchy switch) and each frame re-styled and re-painted the page.
+ * While `data-theme-switch` is set (tokens.css) transitions are off, so the switch lands in one
+ * frame; it is released two frames later, after the new colours have been painted.
+ */
+function holdTransitions() {
+  const root = document.documentElement;
+  root.dataset.themeSwitch = "";
+  if (releaseTimer !== null) cancelAnimationFrame(releaseTimer);
+  releaseTimer = requestAnimationFrame(() => {
+    releaseTimer = requestAnimationFrame(() => {
+      releaseTimer = null;
+      delete root.dataset.themeSwitch;
+    });
+  });
 }
 
 // Saves are coalesced: rapid changes (clicking through themes, dragging a slider) update this
@@ -197,7 +202,7 @@ export function useLensState() {
       if (!mounted) return;
       setConfig(cfg);
       if (theme) setWinTheme(theme);
-      lastPreset = cfg.theme.preset;
+      lastThemeKey = themeKey(cfg, theme ?? winTheme);
       applyThemeToDocument(cfg, theme ?? winTheme);
     })().catch(console.error);
 
@@ -236,7 +241,6 @@ export function useLensState() {
       (incoming.theme.surfaceHex ?? "") === surfaceHex
         ? incoming
         : { ...incoming, theme: { ...incoming.theme, surfaceHex } };
-    if (next.theme.preset !== lastPreset) localThemeChange = true;
     setConfig(next);
     await queueSave(next);
   }, []);

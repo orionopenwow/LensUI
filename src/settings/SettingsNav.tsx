@@ -130,7 +130,7 @@ export const SettingsNav: React.FC<{
 
   return (
     <aside className="cc-sidebar sh-sidebar" aria-label="Settings">
-      {onMode && <ModePill mode={mode} onChange={onMode} place="top" />}
+      {onMode && <ModePill mode={mode} onChange={onMode} />}
       <div className="sh-search" role="search">
         <Search size={13} aria-hidden />
         <input
@@ -222,14 +222,13 @@ export const SettingsNav: React.FC<{
       )}
 
       <div className="sh-nav-foot">
-        {onMode && <ModePill mode={mode} onChange={onMode} place="bottom" />}
         <button type="button" className="cc-nav-btn" onClick={onWizard}>
           <Sparkles size={15} strokeWidth={2.1} color="#F472B6" aria-hidden />
           <span>Setup Wizard</span>
         </button>
         <button type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(() => {})}>
           <Power size={15} strokeWidth={2.1} aria-hidden />
-          <span>Quit Lens UI</span>
+          <span>Quit Lens</span>
         </button>
       </div>
     </aside>

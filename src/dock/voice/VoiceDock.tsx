@@ -22,6 +22,7 @@ import {
 import { IDLE, reduceMorph, voiceDockLayout, type DockStyleId, type Edge, type MorphState } from "./dockMorph";
 import { HOLD0, holdCancel, holdPress, holdRelease, type HoldEffect, type HoldState } from "./holdButton";
 import "./VoiceDock.css";
+import { fillStyle } from "../../ui/motion";
 
 export interface VoiceDockViewProps {
   style: DockStyleId;
@@ -45,7 +46,7 @@ function Wave({ levels, length, vertical }: { levels: number[]; length: number; 
     <span className={`vdk-wave ${vertical ? "v" : ""}`} style={vertical ? { height: length } : { width: length }} aria-hidden="true">
       {Array.from({ length: n }, (_, i) => {
         const v = 0.12 + 0.88 * Math.pow(Math.min(1, Math.max(0, pick(i))), 0.7);
-        return <i key={i} style={vertical ? { width: `${Math.round(v * 100)}%` } : { height: `${Math.round(v * 100)}%` }} />;
+        return <i key={i} style={fillStyle(v)} />;
       })}
     </span>
   );

@@ -128,7 +128,7 @@ export const ExportSheet: React.FC<{ state: BackdropState; onClose: () => void; 
         )}
         {busy ? (
           <div className="bd-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(busy.p * 100)}>
-            <div className="bd-progress-bar bd-v-w" ref={vars({ "--bd-w": `${Math.round(busy.p * 100)}%` })} />
+            <div className="bd-progress-bar" ref={vars({ "--fill": String(Math.min(1, Math.max(0, busy.p))) })} />
             <span>
               {Math.round(busy.p * 100)}% · about {busy.eta}s left
             </span>

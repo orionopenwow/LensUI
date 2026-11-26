@@ -41,8 +41,10 @@ fn css_to_screen(win: &WebviewWindow, r: LRect) -> Option<presence::PRect> {
     Some(presence::geom::page_to_screen(r, (origin.x, origin.y), scale, (0.0, 0.0)))
 }
 
+/// Async on purpose: the first step creates the overlay window, and building a window from a
+/// synchronous command deadlocks the main thread on Windows (WebView2).
 #[tauri::command]
-pub fn presence_announce(app: AppHandle, window: WebviewWindow, input: AnnounceInput) -> AnnounceResult {
+pub async fn presence_announce(app: AppHandle, window: WebviewWindow, input: AnnounceInput) -> AnnounceResult {
     let mut step = input.step;
     if let Some(r) = input.target_css.and_then(|r| css_to_screen(&window, r)) {
         step.target = Some(r);
@@ -56,8 +58,9 @@ pub fn presence_announce(app: AppHandle, window: WebviewWindow, input: AnnounceI
     }
 }
 
+/// Async for the same reason as `presence_announce` (a Done step can be a run's first step).
 #[tauri::command]
-pub fn presence_done(app: AppHandle, actor: String, label: Option<String>) {
+pub async fn presence_done(app: AppHandle, actor: String, label: Option<String>) {
     presence::done(&app, &own_actor(&actor), label.as_deref().unwrap_or("Done"));
 }
 
@@ -129,13 +132,21 @@ pub fn startup(app: &AppHandle) {
         let c = presence::config();
         presence::win::sync_hotkey(app, &c.pause_hotkey);
     }
-    #[cfg(not(windows))]
-    let _ = app;
+    // The approval window's hotkey (shown on the "Approve N actions" pill once registered).
+    let _ = presence::esc::register_approval_hotkey(app);
+}
+
+/// The hotkey that opens the approval window, as shown on the pill ("Ctrl Alt Y"), or `None`
+/// when Windows wouldn't let Lens register one.
+#[tauri::command]
+pub fn approval_hotkey() -> Option<String> {
+    presence::esc::approval_hotkey()
 }
 
 pub fn shutdown(app: &AppHandle) {
     #[cfg(windows)]
     presence::win::shutdown(app);
+    presence::esc::undo();
     #[cfg(not(windows))]
     let _ = app;
 }

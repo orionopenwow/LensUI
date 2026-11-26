@@ -116,6 +116,8 @@ export interface AiToolProposalEvent {
   args: Record<string, unknown>;
   summary: string;
   risk: Risk;
+  /** Why the agent-safety gate made this step wait or refused it (absent when it had no say). */
+  safety?: { code: string; severity: string; detail: string }[];
 }
 
 export interface AiToolResultEvent {
@@ -132,6 +134,8 @@ export const AI_EVENTS = {
   toolResult: "lens://ai/tool-result",
   /** Backend → UI: run a UI-layer action ({ tool, args }); see docs/AI.md "Apply bridge". */
   apply: "lens://ai/apply",
+  /** The agent-safety gate found something or stopped a step (src/agentsafe/SafetyFlags.tsx). */
+  safetyFlag: "lens://agentsafe/flag",
 } as const;
 
 export const AI_COMMANDS = [

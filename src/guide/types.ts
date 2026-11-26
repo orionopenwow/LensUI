@@ -1,4 +1,4 @@
-// Lens Guide: shapes of the generated knowledge index (src/guide/index.json, built by
+// The Guide: shapes of the generated knowledge index (src/guide/index.json, built by
 // tools/guide/build-index.mjs) and of lesson progress.
 
 export type GuideKind =
@@ -72,7 +72,7 @@ export interface GuideIndex {
 
 /** Persisted in %APPDATA%\LensUI\guide\progress.json (Rust: guide::GuideProgress). */
 export interface GuideProgress {
-  /** Lens Guide is off until the user turns it on. */
+  /** The Guide is off until the user turns it on. */
   enabled: boolean;
   /** lesson id → completed step numbers */
   steps: Record<string, number[]>;

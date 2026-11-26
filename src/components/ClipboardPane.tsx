@@ -39,7 +39,7 @@ function ago(tsMs: number, now: number): string {
 
 /**
  * Clipboard history: the last 50 pieces of text you copied. Kept in memory only (never saved to
- * disk, gone when Lens UI exits); entries marked private by password managers are never recorded.
+ * disk, gone when Lens exits); entries marked private by password managers are never recorded.
  */
 export const ClipboardPane: React.FC<Props> = ({ compact = false, onCopied }) => {
   const [query, setQuery] = useState("");

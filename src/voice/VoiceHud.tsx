@@ -7,6 +7,7 @@ import { Check, CircleHelp, Mic, MicOff, ShieldAlert, Undo2, X } from "lucide-re
 import { hudView, waveHeights, type HudButton, type HudState } from "./hudState";
 import { VOICE_GROUPS, type VoiceCommandInfo } from "./contract";
 import "./VoiceHud.css";
+import { fillStyle } from "../ui/motion";
 
 export interface VoiceHudProps {
   state: HudState;
@@ -76,7 +77,7 @@ export function VoiceHud({ state, commands = [], onButton, onCloseHelp }: VoiceH
                 {v.showWave ? (
                   <span className="lv-wave" aria-hidden="true">
                     {heights.map((h, i) => (
-                      <i key={i} style={{ height: `${h}px` }} />
+                      <i key={i} style={fillStyle(h / 24)} />
                     ))}
                   </span>
                 ) : null}

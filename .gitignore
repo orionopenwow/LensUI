@@ -72,3 +72,6 @@ tools/parity/styles/shots/
 tools/parity/music/out/
 tools/parity/music/shots/
 tools/apps/.media-cache/
+.dev/
+tools/parity/setup/shots/
+tools/parity/magicwaves/shots/

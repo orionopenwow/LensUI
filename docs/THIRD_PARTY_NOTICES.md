@@ -1,6 +1,6 @@
 # Third-party notices
 
-Lens UI credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.
+Lens credits the projects whose ideas or formats it follows here. This includes projects it borrows only ideas or formats from, without bundling their code.
 
 ## Obsidian Web Clipper — template syntax
 

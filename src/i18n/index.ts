@@ -1,5 +1,5 @@
 /**
- * Lens UI i18n — deliberately tiny: flat string dictionaries (locales/*.ts), `{name}` interpolation, English fallback.
+ * Lens i18n — deliberately tiny: flat string dictionaries (locales/*.ts), `{name}` interpolation, English fallback.
  *
  *   import { useT } from "../i18n";
  *   const t = useT(config?.theme.locale);

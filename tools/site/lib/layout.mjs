@@ -1,6 +1,6 @@
 // Page shell shared by every generated page: the slim glass header (logo, centred nav with a sliding
 // indicator, the appearance popover built by js/site.js, GitHub with its stars, a Download button that
-// appears once the hero's scrolls away), the footer, the Lens Guide orb and meta tags.
+// appears once the hero's scrolls away), the footer, the Guide orb and meta tags.
 import { esc } from "./markdown.mjs";
 
 export const REPO = "https://github.com/orionopenwow/LensUI";

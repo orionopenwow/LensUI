@@ -2,6 +2,7 @@
 // "Recently played in Lens", and a floating player bar — over a frosted, artwork-tinted
 // background. Works with any app that publishes a Windows media session. docs/MUSIC.md.
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Disc3, Heart, ListMusic, Maximize2, Minimize2, Moon, MoreHorizontal, Mic2, Pause, Play, Repeat, Repeat1,
@@ -123,6 +124,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   if (!now || !now.hasSession) {
     return (
       <div className={`lm-np lm-mode-${mode} lm-empty`} style={{ ["--lm-hero" as string]: hero }}>
+        {onClose && <FlyoutClose onClose={onClose} />}
         <div className="lm-backdrop" aria-hidden><div className="lm-hero-wash" />{cfg?.dither !== false && <div className="lm-dither" />}</div>
         <div className="lm-empty-card">
           <Disc3 size={28} aria-hidden />
@@ -135,6 +137,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
 
   return (
     <div className={`lm-np lm-mode-${mode} ${showQueue ? "" : "lm-no-queue"}`} style={{ ["--lm-hero" as string]: hero }}>
+      {onClose && mode !== "fullscreen" && <FlyoutClose onClose={onClose} />}
       <div className="lm-backdrop" aria-hidden>
         <img src={art} alt="" className="lm-backdrop-art" />
         <div className="lm-hero-wash" />

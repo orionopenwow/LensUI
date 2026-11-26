@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
 import { THEME_PACKS, applyThemePack, packSwatch } from "../themes/packs";
@@ -262,10 +263,11 @@ export const QuickSettingsSurface: React.FC = () => {
 
   return (
     <div className={`qs-shell ${anchorMode === "bottom-right" ? "is-bottom-right" : ""}`}>
-      <div className={`qs-panel ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+      <div className={`qs-panel lens-flyout-host ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+        <FlyoutClose onClose={() => invoke("hide_surface", { label: "quicksettings" }).catch(() => {})} />
         {/* Usable Flick Switcher only in Quick / Theme / All — zero title bar or header strip in dedicated popouts! */}
         {!isDedicatedArea && (
-          <div className="qs-header" style={{ padding: "8px 10px 8px 10px" }}>
+          <div className="qs-header" style={{ padding: "8px 40px 8px 10px" }}>
             <div
               ref={flickRef}
               className="qs-flick-track"
@@ -470,7 +472,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    aria-label="Mute Master Audio"
+                    role="switch"
+                    aria-checked={!qs.muted}
+                    aria-label="Sound on"
                     className={`qs-switch ${!qs.muted ? "on" : ""}`}
                     onClick={toggleMute}
                   >
@@ -663,10 +667,13 @@ export const QuickSettingsSurface: React.FC = () => {
                 <div className="qs-row">
                   <div>
                     <div className="qs-row-title">Traffic Light Controls</div>
-                    <div className="qs-row-sub">Green · Yellow · Red across all windows</div>
+                    <div className="qs-row-sub">Yellow · Green · Red across all windows</div>
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.windowControls.enabled)}
+                    aria-label="Traffic Light Controls"
                     className={`qs-switch ${config.windowControls.enabled ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -712,6 +719,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.topBar.autoHide === "overlap")}
+                    aria-label="Top Bar Auto-Hide"
                     className={`qs-switch ${config.topBar.autoHide === "overlap" ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -734,6 +744,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.topBar.floating)}
+                    aria-label="Floating Top Bar"
                     className={`qs-switch ${config.topBar.floating ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -753,6 +766,9 @@ export const QuickSettingsSurface: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.func.hideNativeTaskbar)}
+                    aria-label="Hide Native Taskbar"
                     className={`qs-switch ${config.func.hideNativeTaskbar ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
@@ -771,10 +787,13 @@ export const QuickSettingsSurface: React.FC = () => {
                 <div className="qs-row">
                   <div>
                     <div className="qs-row-title">Run on Startup</div>
-                    <div className="qs-row-sub">{startupBlock ?? "Launch Lens UI automatically with Windows"}</div>
+                    <div className="qs-row-sub">{startupBlock ?? "Launch Lens automatically with Windows"}</div>
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!(config.func.runOnStartup)}
+                    aria-label="Run on Startup"
                     className={`qs-switch ${config.func.runOnStartup ? "on" : ""}`}
                     aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
@@ -907,7 +926,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   <Activity size={14} color="var(--lens-fg)" />
                   Open Full Widget Drawer
                 </span>
-                <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)" }}>Alt+W</span>
+                <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)" }}>{config?.func.widgetsHotkey || "Ctrl+Alt+W"}</span>
               </button>
 
               <button

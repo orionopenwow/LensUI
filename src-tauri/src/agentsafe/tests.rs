@@ -40,6 +40,12 @@ const PAGES: &[(&str, &str)] = &[
     ("clean-code-sample", include_str!("fixtures/pages/clean-code-sample.txt")),
     ("clean-recipe", include_str!("fixtures/pages/clean-recipe.txt")),
     ("clean-ocr-receipt", include_str!("fixtures/pages/clean-ocr-receipt.txt")),
+    ("clean-injection-article", include_str!("fixtures/pages/clean-injection-article.txt")),
+    ("visible-injection-dressed-as-example", include_str!("fixtures/pages/visible-injection-dressed-as-example.txt")),
+    ("hidden-injection-in-article", include_str!("fixtures/pages/hidden-injection-in-article.txt")),
+    ("exfil-near-discussion", include_str!("fixtures/pages/exfil-near-discussion.txt")),
+    ("instruction-with-such-as", include_str!("fixtures/pages/instruction-with-such-as.txt")),
+    ("article-with-concrete-exfil", include_str!("fixtures/pages/article-with-concrete-exfil.txt")),
 ];
 
 fn lines(s: &str) -> impl Iterator<Item = &str> {
@@ -369,4 +375,16 @@ fn fuzz_url_parser_and_punycode() {
         let _ = super::hidden_text::base64_decode(&s);
         let _ = super::profile::site_of(&s);
     }
+}
+
+#[test]
+fn an_article_about_injection_does_not_taint_the_agent() {
+    let report = scan(&page("clean-injection-article"));
+    let inj = super::gate::Injection::from_report(&report);
+    assert!(inj.is_clean(), "discussion of injection must not count against the agent: {:#?}", report.findings);
+    assert!(report.findings.iter().all(|f| !f.quarantine), "quoted phrases stay in the text the model sees");
+    // The same words aimed at the agent, or hidden, still count.
+    assert!(!super::gate::Injection::from_report(&scan(&page("visible-injection-dressed-as-example"))).is_clean());
+    let hidden = super::gate::Injection::from_report(&scan(&page("hidden-injection-in-article")));
+    assert!(hidden.high > 0 && hidden.exfiltration);
 }

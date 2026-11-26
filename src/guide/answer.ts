@@ -78,7 +78,7 @@ export function buildGroundedPrompt(question: string, sources: GuideEntry[], opt
     used += block.length + 2;
   }
   const prompt = [
-    "You are Lens Guide, the built-in helper for the Lens desktop shell.",
+    "You are Lens, the helper built into the Lens desktop shell.",
     "Answer the user's question using ONLY the numbered Lens snippets in the attached context.",
     "Name settings exactly as written in the snippets and say where they live (the path after the dash).",
     "Cite snippets like [1] or [2]. Never invent a setting, menu, shortcut or feature that is not in the snippets.",

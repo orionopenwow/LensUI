@@ -1,10 +1,10 @@
-//! Lens UI as an MCP (Model Context Protocol) server.
+//! Lens as an MCP (Model Context Protocol) server.
 //!
 //! Design (see docs/MCP.md):
 //! * AI apps such as Claude Desktop launch `lens-ui.exe --mcp-stdio` and talk MCP over stdio.
 //!   That process does not start the shell: it is a thin bridge that forwards each JSON-RPC
-//!   line to the running Lens UI over a loopback TCP socket.
-//! * The running Lens UI listens on 127.0.0.1 (random port) only while the user has switched MCP
+//!   line to the running Lens over a loopback TCP socket.
+//! * The running Lens listens on 127.0.0.1 (random port) only while the user has switched MCP
 //!   on in Control Center. The port and a random 256-bit token are written to
 //!   %APPDATA%\LensUI\mcp-endpoint.json; a connection must present the token first.
 //! * Everything protocol-related (JSON-RPC, tools, validation, rate limits, approvals, audit log)
@@ -12,7 +12,7 @@
 //!
 //! Safety model: read-only tools run directly; reversible settings tools run directly unless the
 //! user chose "ask me for every action"; `run_action` (natural language, can do many things) is
-//! ALWAYS queued for the user to approve inside Lens UI. Nothing here can run shell commands,
+//! ALWAYS queued for the user to approve inside Lens. Nothing here can run shell commands,
 //! touch files, close or kill windows/processes, or change Windows system settings beyond
 //! volume, brightness and the Lens night light.
 
@@ -45,7 +45,7 @@ const PENDING_TTL_MS: u64 = 10 * 60 * 1000;
 const MAX_CONNECTIONS: usize = 4;
 const AUDIT_MAX_BYTES: u64 = 512 * 1024;
 
-const INSTRUCTIONS: &str = "Lens UI is the user's Windows desktop shell. Lens Control tools (lens_*) reach every \
+const INSTRUCTIONS: &str = "Lens is the user's Windows desktop shell. Lens Control tools (lens_*) reach every \
 Lens setting and desktop detail: find settings with lens_list_settings, read them with lens_get, change several at \
 once with lens_set (one approval, one undo), act on windows from lens_windows with lens_window_action, apply looks \
 with lens_apply_preset, and reverse anything with lens_undo. The user decides per app what you may do without \
@@ -67,7 +67,7 @@ pub struct McpConfig {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Host: what the running Lens UI provides (implemented in `lens_host` below)
+// Host: what the running Lens provides (implemented in `lens_host` below)
 // ---------------------------------------------------------------------------------------------
 
 /// What Lens Control decided for a `lens_*` call (see `crate::control::grants`).
@@ -110,7 +110,12 @@ pub trait McpHost: Send + Sync {
     fn confirm_all(&self) -> bool;
     /// A request was queued for approval or changed state (show it to the user).
     fn pending_changed(&self, action: &PendingAction);
-    /// False only for the bridge's stand-in when Lens UI can't be reached.
+    /// Hands the person's answer for a local request (see [`LOCAL_KINDS`]) to the part of Lens
+    /// that raised it.
+    fn resolve_local(&self, _action: &PendingAction, _approve: bool) -> Result<(), String> {
+        Err(OFFLINE.into())
+    }
+    /// False only for the bridge's stand-in when Lens can't be reached.
     fn available(&self) -> bool {
         true
     }
@@ -120,10 +125,10 @@ pub trait McpHost: Send + Sync {
     }
 }
 
-/// Used by the stdio bridge when Lens UI is not reachable: every tool explains why.
+/// Used by the stdio bridge when Lens is not reachable: every tool explains why.
 pub struct OfflineHost;
 
-const OFFLINE: &str = "Lens UI isn't running, or its MCP server is switched off (Lens Control Center > Agents & MCP).";
+const OFFLINE: &str = "Lens isn't running, or its MCP server is switched off (Lens Control Center > Agents & MCP).";
 
 impl McpHost for OfflineHost {
     fn list_windows(&self) -> Result<Value, String> {
@@ -243,7 +248,7 @@ pub fn tool_defs() -> Vec<Value> {
         json!({
             "name": "apply_theme_pack",
             "title": "Apply a theme pack",
-            "description": format!("Restyles Lens UI and app windows with a theme pack. Built-in packs: {}. Custom packs start with 'custom-'.", BUILTIN_PACKS.join(", ")),
+            "description": format!("Restyles Lens and app windows with a theme pack. Built-in packs: {}. Custom packs start with 'custom-'.", BUILTIN_PACKS.join(", ")),
             "inputSchema": {
                 "type": "object",
                 "properties": { "id": { "type": "string", "pattern": "^[a-z0-9-]{1,48}$" } },
@@ -318,7 +323,7 @@ pub fn tool_defs() -> Vec<Value> {
         json!({
             "name": "run_action",
             "title": "Ask Lens to do something",
-            "description": "Sends a plain-language desktop request to Lens UI's action router, e.g. 'mute chrome, 40% brightness, tile split'. Always waits for the user to approve it inside Lens UI; returns a request id for get_action_status.",
+            "description": "Sends a plain-language desktop request to Lens's action router, e.g. 'mute chrome, 40% brightness, tile split'. Always waits for the user to approve it inside Lens; returns a request id for get_action_status.",
             "inputSchema": {
                 "type": "object",
                 "properties": { "request": { "type": "string", "minLength": 3, "maxLength": 300 } },
@@ -595,6 +600,24 @@ pub struct PendingAction {
     /// pending | approved | declined | done | failed | expired
     pub status: String,
     pub result: String,
+    /// For requests raised inside Lens (see [`LOCAL_KINDS`]): the id the owning part of Lens
+    /// knows the request by (the assistant's call id, a bridge message id, a Lens App release).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub reference: String,
+    /// A ready card for local requests (same shape as `control_preview`); null for MCP requests,
+    /// whose card is built on demand.
+    #[serde(default, skip_serializing_if = "Value::is_null")]
+    pub preview: Value,
+}
+
+/// Requests raised inside Lens rather than by an MCP client: the assistant ("ai": Lens Command,
+/// the AI dock, voice), the bridge inbox ("bridge") and Lens Apps ("app"). They ride the same
+/// queue so there is one approval card, one pill and one history, whoever is asking.
+pub const LOCAL_KINDS: [&str; 3] = ["ai", "bridge", "app"];
+const MAX_LOCAL_PENDING: usize = 12;
+
+pub fn is_local_kind(kind: &str) -> bool {
+    LOCAL_KINDS.contains(&kind)
 }
 
 fn queue() -> &'static Mutex<Vec<PendingAction>> {
@@ -633,7 +656,8 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
     if let Some(dup) = q.iter().find(|a| a.status == "pending" && a.text == text) {
         return Ok(dup.clone());
     }
-    if q.iter().filter(|a| a.status == "pending").count() >= MAX_PENDING {
+    // Requests raised inside Lens have their own limit; they never crowd an AI app out.
+    if q.iter().filter(|a| a.status == "pending" && !is_local_kind(&a.kind)).count() >= MAX_PENDING {
         return Err(format!("{} requests are already waiting for the user; try again after they answer.", MAX_PENDING));
     }
     let a = PendingAction {
@@ -646,9 +670,59 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
         created_ms: now,
         status: "pending".into(),
         result: String::new(),
+        reference: String::new(),
+        preview: Value::Null,
     };
     q.push(a.clone());
     Ok(a)
+}
+
+/// Queues a confirmation raised inside Lens. Asking twice for the same `reference` returns the
+/// request that is already waiting. The owner calls [`finish_local`] when it is settled.
+pub fn enqueue_local(kind: &str, reference: &str, tool: &str, args: &Value, text: &str, client: &str, preview: Value) -> Result<PendingAction, String> {
+    if !is_local_kind(kind) || reference.trim().is_empty() {
+        return Err("Not a local approval request.".into());
+    }
+    let mut q = queue().lock().unwrap_or_else(|e| e.into_inner());
+    let now = now_ms();
+    expire_old(&mut q, now);
+    if let Some(dup) = q.iter().find(|a| a.status == "pending" && a.kind == kind && a.reference == reference) {
+        return Ok(dup.clone());
+    }
+    if q.iter().filter(|a| a.status == "pending" && is_local_kind(&a.kind)).count() >= MAX_LOCAL_PENDING {
+        return Err("Too many requests are already waiting for you.".into());
+    }
+    let a = PendingAction {
+        id: format!("lens-{}-{}", now % 1_000_000_000, NEXT_ID.fetch_add(1, Ordering::SeqCst)),
+        kind: kind.into(),
+        tool: clean_text(tool, 60),
+        args: args.clone(),
+        text: clean_text(text, 300),
+        client: clean_text(client, 60),
+        created_ms: now,
+        status: "pending".into(),
+        result: String::new(),
+        reference: clean_text(reference, 120),
+        preview,
+    };
+    q.push(a.clone());
+    Ok(a)
+}
+
+/// The owner of a local request settled it (answered in its own surface, timed out, or ran it
+/// after an approval here). Returns the updated record, or `None` if nothing was waiting.
+pub fn finish_local(kind: &str, reference: &str, ok: bool, message: &str) -> Option<PendingAction> {
+    let mut q = queue().lock().unwrap_or_else(|e| e.into_inner());
+    expire_old(&mut q, now_ms());
+    let a = q.iter_mut().find(|a| a.kind == kind && a.reference == reference && matches!(a.status.as_str(), "pending" | "approved"))?;
+    a.status = match (a.status.as_str(), ok) {
+        (_, true) => "done",
+        ("pending", false) => "declined",
+        _ => "failed",
+    }
+    .into();
+    a.result = clean_text(message, 300);
+    Some(a.clone())
 }
 
 pub fn find_action(id: &str) -> Option<PendingAction> {
@@ -685,6 +759,16 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
         host.pending_changed(&a);
         return Ok(a);
     }
+    if is_local_kind(&a.kind) {
+        // The owner runs it and reports back through `finish_local`.
+        let a = match host.resolve_local(&a, true) {
+            Ok(()) => a,
+            Err(e) => set_status(id, &["approved"], "failed", &e)?,
+        };
+        host.pending_changed(&a);
+        append_audit(&audit_line(&a.client, &a.tool, "approved", a.status == "approved", &a.text, 0));
+        return Ok(a);
+    }
     let out = match parse_tool_call(&a.tool, &a.args) {
         Ok(mut call) => {
             if let ToolCall::Control { client, .. } = &mut call {
@@ -705,6 +789,9 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
 
 pub fn decline_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, String> {
     let a = set_status(id, &["pending"], "declined", "The user declined this request.")?;
+    if is_local_kind(&a.kind) {
+        let _ = host.resolve_local(&a, false);
+    }
     host.pending_changed(&a);
     append_audit(&audit_line(&a.client, &a.tool, "declined", true, &a.text, 0));
     Ok(a)
@@ -773,7 +860,7 @@ fn capabilities() -> Value {
 }
 
 fn server_info() -> Value {
-    json!({ "name": SERVER_NAME, "title": "Lens UI", "version": env!("CARGO_PKG_VERSION") })
+    json!({ "name": SERVER_NAME, "title": "Lens", "version": env!("CARGO_PKG_VERSION") })
 }
 
 /// Handles one incoming JSON-RPC message. Returns the response, or None for notifications.
@@ -867,7 +954,7 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                 append_audit(&audit_line(&client, name, "rate-limited", false, "", 0));
                 return Some(rpc_result(
                     id,
-                    text_result("Too many requests; wait a minute before calling Lens UI again.", None, true),
+                    text_result("Too many requests; wait a minute before calling Lens again.", None, true),
                     modern,
                 ));
             }
@@ -921,7 +1008,7 @@ pub fn handle_message(msg: &Value, sess: &mut Session, host: &dyn McpHost) -> Op
                         append_audit(&audit_line(&client, call.name(), "queued", true, &call.audit_args(), 0));
                         text_result(
                             &format!(
-                                "Waiting for the user to approve this in Lens UI (request id {}). Call get_action_status with that id to see the outcome.",
+                                "Waiting for the user to approve this in Lens (request id {}). Call get_action_status with that id to see the outcome.",
                                 a.id
                             ),
                             Some(json!({ "status": a.status, "id": a.id })),
@@ -1024,7 +1111,7 @@ pub fn recent_audit(limit: usize) -> Vec<Value> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Loopback endpoint inside Lens UI
+// Loopback endpoint inside Lens
 // ---------------------------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1316,7 +1403,7 @@ pub fn run_stdio_bridge() -> i32 {
 
 // LENS-HOST-BEGIN
 // ---------------------------------------------------------------------------------------------
-// The real host: the running Lens UI (uses crate-private helpers from lib.rs)
+// The real host: the running Lens (uses crate-private helpers from lib.rs)
 // ---------------------------------------------------------------------------------------------
 
 pub mod lens_host {
@@ -1382,7 +1469,7 @@ pub mod lens_host {
             self.app
                 .emit("lens://mcp-apply-pack", id.to_string())
                 .map_err(|e| e.to_string())?;
-            Ok(format!("Asked Lens UI to apply the \"{}\" theme pack.", id))
+            Ok(format!("Asked Lens to apply the \"{}\" theme pack.", id))
         }
 
         fn set_volume(&self, level: u32) -> Result<String, String> {
@@ -1466,8 +1553,23 @@ pub mod lens_host {
             crate::control::lens::read_resource(&self.app, client, uri)
         }
 
+        fn resolve_local(&self, action: &PendingAction, approve: bool) -> Result<(), String> {
+            match action.kind.as_str() {
+                "ai" => crate::ai::runtime().approvals.resolve(&action.reference, approve),
+                "bridge" => crate::commands::bridge::resolve_from_card(&self.app, &action.reference, approve),
+                // Lens Apps answer in their own window; it listens for `lens://mcp-changed`.
+                "app" => Ok(()),
+                _ => Err("Unknown request kind.".into()),
+            }
+        }
+
         fn pending_changed(&self, action: &PendingAction) {
             let _ = self.app.emit("lens://mcp-changed", ());
+            // A request raised inside Lens is already on screen in the surface that raised it
+            // (same card); the pill and the approval window pick it up from the event above.
+            if is_local_kind(&action.kind) {
+                return;
+            }
             if action.status == "pending" {
                 // The standalone "Needs your OK" window (docs/CLAUDE_CONTROL.md), when configured.
                 if let Some(w) = self.app.get_webview_window("approval") {
@@ -1477,7 +1579,7 @@ pub mod lens_host {
             if action.status == "pending" {
                 crate::push_notification_cmd(
                     self.app.clone(),
-                    "An AI app is asking Lens UI".into(),
+                    "An AI app is asking Lens".into(),
                     format!("{} — approve or decline in Control Center › Agents & MCP.", action.text),
                     Some(if action.client.is_empty() { "MCP".into() } else { action.client.clone() }),
                     Some("agent".into()),

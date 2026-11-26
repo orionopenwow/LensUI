@@ -18,6 +18,7 @@ Answers and approvals appear inline. It is **off by default**, and turning it of
 | Ctrl + middle-click |  | Browsers use this to open links in a background tab; the card warns about it. |
 | Hotkey only |  | No mouse hook at all. |
 | **Ctrl + Alt + Q** hotkey | ✓ | Works in every mode and opens at the pointer. Registered only while the feature is on. |
+| **Lens ›** in Lens's own menus | ✓ | Dock app and Shelf item menus end with a "Lens ›" row that pans into these actions (docs/RIGHTCLICK.md, "Lens in every menu"). Works even when the global trigger is off. |
 
 **Why Ctrl+Alt+right-click is the default.** The other options each clash with something:
 
@@ -184,7 +185,7 @@ onContextMenu={(e) => {
 
 **6. Voice** (`feature/voice`): add an intent "what's under my pointer" / "Lens, this" → `magic_open(null)`.
 
-**7. Lens Guide**: add anchors `data-guide-id="magic.card"` on the card root and a lesson step "Ctrl+Alt+right-click anything".
+**7. Guide**: add anchors `data-guide-id="magic.card"` on the card root and a lesson step "Ctrl+Alt+right-click anything".
 
 **8. Backup / Remove all Lens changes**: include `%APPDATA%\LensUI\magic.json`. Nothing else is written; the feature changes no Windows settings.
 

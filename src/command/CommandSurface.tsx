@@ -20,6 +20,7 @@ import { buildRequest, resolveProvider } from "./request";
 import { useCommandSettings } from "./settings";
 import { newKey, threadReducer, type BridgeRequest, type ContextChip, type ThreadItem } from "./thread";
 import { ThreadCard, type CardHandlers } from "./cards/Cards";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import { ShelfDrawer, useShelf, KIND_ICON } from "./ShelfDrawer";
 import { ClipList, useClips } from "./ClipList";
 import { MiniView } from "./mini/MiniView";
@@ -35,6 +36,7 @@ import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
+import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -143,7 +145,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         // Lens core apps as `/timer`, `/monitor`… (docs/CORE_APPS.md); ids Command already uses win.
         const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
         const withBackdrop = [...withApps, ...backdropTemplate(withApps)];
-        setTemplates([...withBackdrop, ...wallpaperTemplate(withBackdrop)]);
+        const withWallpaper = [...withBackdrop, ...wallpaperTemplate(withBackdrop)];
+        setTemplates([...withWallpaper, ...lensAppTemplates(withWallpaper)]);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -424,6 +427,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         hide();
         return setText("");
       }
+      if (isLensAppStub(template)) {
+        // /report opens Report a problem; /update checks, or restarts into an update that's ready.
+        hide();
+        void runLensAppSlash(template.id).catch(() => {});
+        return setText("");
+      }
       if (isWallpaperStub(template)) {
         // "/wallpaper next" changes it in place and says which one; on its own it opens the picker.
         const opening = parseWallpaperSlash(arg) === "open";
@@ -683,6 +692,38 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   };
 
   runActiveRef.current = runActive;
+
+  // B-12b: the page marks when it has painted twice while visible and focused. Chromium does not
+  // deliver input to a page that was hidden until it has produced frames again, so a key sent in
+  // the first few milliseconds after Command is shown can be lost before any script sees it.
+  useEffect(() => {
+    let raf = 0;
+    const arm = () => {
+      if (document.visibilityState !== "visible" || !document.hasFocus()) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(() => bump("commandKeysReady"));
+      });
+    };
+    arm();
+    window.addEventListener("focus", arm);
+    document.addEventListener("visibilitychange", arm);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("focus", arm);
+      document.removeEventListener("visibilitychange", arm);
+    };
+  }, []);
+
+  // B-12b trace: counts every Enter keydown the page receives at all (capture phase, before
+  // React), so a dropped Enter can be told apart from one the handler skipped.
+  useEffect(() => {
+    const seen = (e: KeyboardEvent) => {
+      if (e.key === "Enter") bump("commandEnterSeen");
+    };
+    window.addEventListener("keydown", seen, true);
+    return () => window.removeEventListener("keydown", seen, true);
+  }, []);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const ctrl = e.ctrlKey || e.metaKey;
@@ -956,6 +997,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
             </div>
           ) : null}
 
+          <SafetyFlagBanners sources={["context", "step", "snip", "control"]} />
           {expanded ? (
             <div className="cmd-body" ref={bodyRef}>
               {mode === "ask" ? (

@@ -88,12 +88,40 @@ pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
     surface_state::mark_shown(label, generation);
 }
 
+/// When each flyout last started hiding. A flyout's own button blurs it first (which hides it),
+/// then the click arrives and would open it again; a click that lands this soon after a hide is
+/// the person closing it, so it stays closed (docs/DOCK_SMOOTHNESS.md › Toggles).
+static LAST_HIDE: std::sync::Mutex<Option<std::collections::HashMap<String, std::time::Instant>>> =
+    std::sync::Mutex::new(None);
+pub(crate) const TOGGLE_CLOSE_MS: u128 = 400;
+
+pub(crate) fn note_hidden(label: &str) {
+    let mut g = LAST_HIDE.lock().unwrap_or_else(|e| e.into_inner());
+    g.get_or_insert_with(Default::default).insert(label.to_string(), std::time::Instant::now());
+}
+
+/// True when `label` started hiding within the last `TOGGLE_CLOSE_MS`.
+pub(crate) fn hidden_just_now(label: &str) -> bool {
+    let g = LAST_HIDE.lock().unwrap_or_else(|e| e.into_inner());
+    g.as_ref()
+        .and_then(|m| m.get(label))
+        .map(|t| toggle_counts_as_close(t.elapsed().as_millis()))
+        .unwrap_or(false)
+}
+
+pub(crate) fn toggle_counts_as_close(ms_since_hide: u128) -> bool {
+    ms_since_hide < TOGGLE_CLOSE_MS
+}
+
 pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
     use crate::app::surface_state::{self, Step};
     let Some(win) = app.get_webview_window(label) else {
         return;
     };
     let visible = win.is_visible().unwrap_or(false);
+    if visible {
+        note_hidden(label);
+    }
     let Step::BeginHide(gen) = surface_state::request_hide(label, visible) else {
         // Not visible, or already closing: one exit is enough.
         return;
@@ -119,7 +147,26 @@ fn finish_hide(app: &AppHandle, label: &str, generation: u64) {
     use crate::app::surface_state::{self, Step};
     if surface_state::acknowledge_hidden(label, generation) == Step::HideNow {
         if let Some(w) = app.get_webview_window(label) {
-            let _ = w.hide();
+            hide_window_really(&w);
+        }
+    }
+}
+
+/// Hides a window for certain. A window shown without activation goes through a raw
+/// `ShowWindow(SW_SHOWNOACTIVATE)` (see `glide_show_surface`), which Tauri doesn't see: Tauri
+/// still believes it is hidden, so its `hide()` changes nothing and the window stayed on screen
+/// (Search opened from the Top Bar never closed, and held the bar up). Hide it natively as well.
+pub(crate) fn hide_window_really(w: &tauri::WebviewWindow) {
+    let _ = w.hide();
+    #[cfg(windows)]
+    if let Ok(raw) = w.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{IsWindowVisible, ShowWindow, SW_HIDE};
+        unsafe {
+            let h = HWND(raw.0 as *mut _);
+            if IsWindowVisible(h).as_bool() {
+                let _ = ShowWindow(h, SW_HIDE);
+            }
         }
     }
 }
@@ -257,11 +304,16 @@ pub(crate) fn sync_topbar_search_cmd(app: AppHandle, state: State<AppState>, que
     let Some(win) = existing else {
         return;
     };
-    if let Some(tb) = app.get_webview_window("topbar") {
-        let _ = tb.set_ignore_cursor_events(false);
-        let _ = tb.show();
+    if open {
+        // Searching from the bar shows it. The shared flag says so too, so the auto-hide
+        // watcher (the one owner) can hide it again once Search closes and the pointer leaves.
+        state.topbar_visible.store(true, std::sync::atomic::Ordering::Relaxed);
+        if let Some(tb) = app.get_webview_window("topbar") {
+            let _ = tb.set_ignore_cursor_events(false);
+            let _ = tb.show();
+        }
+        let _ = app.emit("lens://topbar-visible", true);
     }
-    let _ = app.emit("lens://topbar-visible", true);
     if !open {
         glide_hide_surface(&app, "palette");
         let _ = app.emit("lens://topbar-search-open", false);
@@ -331,18 +383,28 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
 
         let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
         let (pal_w, pal_h, x, y) = if anchor == "bottom-dock" {
-            // Exact live dock length, positioned strictly 0px flush directly ABOVE the dock pill!
-            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
-            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-            let w = (dock_w.max(680.0) * scale).round() as u32;
-            let h = (412.0 * scale) as u32;
-            (
-                w,
-                h,
-                pos.x + ((size.width as i32 - w as i32) / 2),
-                (bottom_edge - dock_pill_h - margin_bottom - h as i32 + 1)
-                    .max(pos.y + bar_h + 6),
-            )
+            // The search tray has its own width (app/flyout_geom.rs): a narrow Dock style never
+            // squeezes it and the Taskbar style opens it where Windows Search opens.
+            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
+            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
+            let r = crate::app::flyout_geom::search_rect_bottom(
+                &crate::app::flyout_geom::Monitor {
+                    x: pos.x,
+                    w: size.width as i32,
+                    bottom: bottom_edge,
+                    top: pos.y + bar_h + (6.0 * scale) as i32,
+                    scale,
+                },
+                &crate::app::flyout_geom::DockInput {
+                    style: &cfg.dock.style,
+                    alignment: &cfg.dock.alignment,
+                    pill_w_logical: dock_w,
+                    pill_h: dock_pill_h,
+                    margin_bottom,
+                },
+                412.0,
+            );
+            (r.w, r.h, r.x, r.y)
         } else {
             // "top-right" flush directly beneath Top Bar at the top-right corner (0px gap!)
             let w = (520.0 * scale) as u32;
@@ -390,6 +452,8 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
     let _ = app.emit("lens://palette-anchor", &anchor);
 }
 
+static QS_LAST_TAB: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
 #[tauri::command]
 pub(crate) fn open_quicksettings_tab_cmd(
     app: AppHandle,
@@ -405,12 +469,20 @@ pub(crate) fn open_quicksettings_tab_cmd(
         let st = a.state::<AppState>();
         open_quicksettings_tab_cmd(a.clone(), st, retry_tab, retry_section, Some(retry_anchor))
     }) {
-        // If clicked from bottom-right dock gear while already visible in bottom-right mode, toggle closed
-        if anchor_mode == "bottom-right"
-            && qs.is_visible().unwrap_or(false)
-            && !qs.is_minimized().unwrap_or(false)
-        {
-            glide_hide_surface(&app, "quicksettings");
+        // A press on the button of an open panel closes it (any anchor): same tab → close, another
+        // tab → switch to it. A press right after the panel hid itself on blur (the same click)
+        // also counts as closing it, so it doesn't come straight back.
+        let qs_open = qs.is_visible().unwrap_or(false) && !qs.is_minimized().unwrap_or(false);
+        let same_tab = {
+            let mut last = QS_LAST_TAB.lock().unwrap_or_else(|e| e.into_inner());
+            let same = last.as_deref() == Some(tab.as_str());
+            *last = Some(tab.clone());
+            same
+        };
+        if (qs_open && (same_tab || anchor_mode == "bottom-right")) || (!qs_open && same_tab && hidden_just_now("quicksettings")) {
+            if qs_open {
+                glide_hide_surface(&app, "quicksettings");
+            }
             return;
         }
         dismiss_other_surfaces(&app, "quicksettings");
@@ -530,6 +602,12 @@ pub(crate) fn open_dock_popout_tab_cmd(app: AppHandle, state: State<AppState>, t
     }) else {
         return;
     };
+    // The gear's own click hid Settings on blur a moment ago: that click meant "close".
+    let shown = win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false);
+    if !shown && hidden_just_now("settings") {
+        let _ = app.emit("lens://settings-open", false);
+        return;
+    }
     dismiss_other_surfaces(&app, "settings");
     let _ = app.emit("lens://settings-open", true);
     let _ = app.emit("lens://settings-tab", &tab);
@@ -559,9 +637,16 @@ pub(crate) fn toggle_settings_docked(app: AppHandle, state: State<AppState>) {
         glide_hide_surface(&app, "settings");
         return;
     }
+    // The gear's own click hid Settings on blur a moment ago: that click meant "close".
+    if hidden_just_now("settings") {
+        let _ = app.emit("lens://settings-open", false);
+        return;
+    }
 
     dismiss_other_surfaces(&app, "settings");
     let _ = app.emit("lens://settings-open", true);
+    // The settings wheel always opens on Quick settings; it doesn't reopen the page used last.
+    let _ = app.emit("lens://settings-tab", "quick");
 
     let cfg = state.config.lock().unwrap_or_else(|e| e.into_inner()).clone();
     let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
@@ -646,5 +731,25 @@ mod glide_tests {
             assert!(!has_glide_page(label));
             assert_eq!(exit_fallback_ms(label), 185);
         }
+    }
+}
+
+#[cfg(test)]
+mod toggle_tests {
+    use super::*;
+
+    #[test]
+    fn a_click_right_after_a_blur_hide_counts_as_close() {
+        assert!(toggle_counts_as_close(0));
+        assert!(toggle_counts_as_close(TOGGLE_CLOSE_MS - 1));
+        assert!(!toggle_counts_as_close(TOGGLE_CLOSE_MS));
+        assert!(!toggle_counts_as_close(5_000));
+    }
+
+    #[test]
+    fn hidden_just_now_tracks_each_label() {
+        note_hidden("unit-test-flyout");
+        assert!(hidden_just_now("unit-test-flyout"));
+        assert!(!hidden_just_now("unit-test-other"));
     }
 }

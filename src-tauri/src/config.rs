@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn default_font_family() -> String {
     "rounded-arial".into()
@@ -40,6 +40,11 @@ pub struct ThemeConfig {
     /// "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack.
     #[serde(default = "default_shape_style")]
     pub shape_style: String,
+    /// Also write a custom Lens accent into Windows' own accent colour (title bars, Start, the
+    /// Windows taskbar). A system-wide change, so off unless the person turns it on; "Remove all
+    /// Lens changes" puts Windows' accent back.
+    #[serde(default)]
+    pub write_windows_accent: bool,
 }
 
 fn default_shape_style() -> String {
@@ -93,8 +98,8 @@ pub struct DockConfig {
     /// Pinned app ids followed by a user separator.
     #[serde(default)]
     pub separators_after: Vec<String>,
-    /// Live window thumbnails in the Dock hover card. Off by default.
-    #[serde(default)]
+    /// Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default.
+    #[serde(default = "default_true")]
     pub live_previews: bool,
     /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
     #[serde(default = "default_dock_style")]
@@ -170,7 +175,7 @@ fn default_dock_position() -> String {
 #[serde(rename_all = "camelCase")]
 pub struct FuncConfig {
     pub hide_native_taskbar: bool, // OFF by default
-    pub run_on_startup: bool,      // ON by default
+    pub run_on_startup: bool,      // OFF by default: the person turns it on (setup wizard, Quick settings)
     pub palette_hotkey: String,
     pub widgets_hotkey: String,
     pub gaming_pause: bool,
@@ -195,7 +200,7 @@ pub struct FuncConfig {
     #[serde(default)]
     pub target_monitor: String,
     /// Create Control Center, Palette, Widgets, Quick Settings, Launcher and Overview only when first
-    /// opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens UI.
+    /// opened (saves WebView2 memory). OFF by default; takes effect after restarting Lens.
     #[serde(default)]
     pub lazy_windows: bool,
     /// Tap the Win key to open the Lens Launcher. OFF by default.
@@ -207,6 +212,10 @@ pub struct FuncConfig {
     /// One Top Bar per monitor. OFF by default; applies after restart.
     #[serde(default)]
     pub per_monitor_bars: bool,
+    /// Pop-outs from the Dock and Top Bar (Quick Settings, Settings on the Dock) close by
+    /// themselves when the pointer has been away for a moment and they don't have keyboard focus.
+    #[serde(default = "default_true")]
+    pub auto_close_popouts: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -348,6 +357,10 @@ pub struct LensConfig {
     pub styled_folders: Vec<StyledFolderRecord>,
     #[serde(default)]
     pub onboarding_completed: bool,
+    /// The Lens version whose setup / "What's new" the person last saw or skipped ("" = none yet).
+    /// A different running version shows the setup once (docs/SETUP.md).
+    #[serde(default)]
+    pub setup_seen_version: String,
     /// Settings hub detail level: "simple" (core settings with visual previews) or "advanced"
     /// (everything). Empty until chosen: new users start Simple, existing users Advanced.
     #[serde(default)]
@@ -383,6 +396,11 @@ pub struct LensConfig {
     /// Tester mode: TEST BUILD badge and the Ctrl+Alt+M mark-moment hotkey. Off by default.
     #[serde(default)]
     pub tester: TesterConfig,
+    /// Magic Dashboard, Magic Mouse, the Magic button, Shelf → Notes and Lens Studio v2
+    /// (docs/plans/MAGIC_WAVES.md). Every flag is off by default; while off, nothing new is
+    /// shown, started, hooked or fetched.
+    #[serde(default)]
+    pub magic_waves: MagicWavesConfig,
 }
 
 impl Default for LensConfig {
@@ -405,6 +423,7 @@ impl Default for LensConfig {
                 contrast: "system".into(),
                 locale: "auto".into(),
                 shape_style: default_shape_style(),
+                write_windows_accent: false,
             },
             dock: DockConfig {
                 grounded_margin_bottom: 0,
@@ -452,7 +471,7 @@ impl Default for LensConfig {
                 position: "bottom".into(),
                 locked: false,
                 separators_after: vec![],
-                live_previews: false,
+                live_previews: true,
                 style: default_dock_style(),
                 alignment: default_dock_alignment(),
                 system_area: default_dock_system_area(),
@@ -470,9 +489,10 @@ impl Default for LensConfig {
             top_bar: TopBarConfig::default(),
             func: FuncConfig {
                 hide_native_taskbar: true,
-                run_on_startup: true,
+                run_on_startup: false,
                 palette_hotkey: "Alt+Space".into(),
-                widgets_hotkey: "Alt+W".into(),
+                // Ctrl+Alt+W, not Alt+W: Alt+W opens the Window menu in many apps.
+                widgets_hotkey: "Ctrl+Alt+W".into(),
                 gaming_pause: true,
                 middle_click_new_instance: true,
                 injected_hook: false,
@@ -485,6 +505,7 @@ impl Default for LensConfig {
                 win_key_launcher: false,
                 alt_tab_overview: false,
                 per_monitor_bars: false,
+                auto_close_popouts: true,
             },
             window_controls: WindowControlsConfig {
                 enabled: true,
@@ -533,10 +554,11 @@ impl Default for LensConfig {
                     "notes".into(),
                     "quick-actions".into(),
                 ],
-                notes: "Welcome to Lens UI.\nPress Alt+Space for Command Palette.".into(),
+                notes: "Welcome to Lens.\nPress Alt+Space for Command Palette.".into(),
             },
             styled_folders: vec![],
             onboarding_completed: false,
+            setup_seen_version: String::new(),
             settings_mode: String::new(),
             theme_schedule: None,
             tiling: Default::default(),
@@ -551,6 +573,7 @@ impl Default for LensConfig {
             ai: Default::default(),
             command: serde_json::Value::Null,
             tester: TesterConfig::default(),
+            magic_waves: MagicWavesConfig::default(),
         }
     }
 }
@@ -788,7 +811,34 @@ pub fn save_config(cfg: &LensConfig) -> Result<(), String> {
     } else {
         serde_json::to_string_pretty(cfg).map_err(|e| e.to_string())?
     };
-    crate::win_backup::write_atomic(&config_path(), json.as_bytes())
+    write_config_file(&config_path(), json.as_bytes())
+}
+
+/// **The one place `config.json` is written.** Everything that changes the stored settings ends
+/// here: [`save_config`] (every command, the control plane, plugins) and restoring a backup.
+/// `src-tauri/src/tests/config_writer.rs` fails the build if another module writes the file itself.
+///
+/// * The text is checked first (docs/FAILSAFE.md §7): it must be a JSON object that Lens can read
+///   back as settings. Something Lens could not load is refused, never written.
+/// * One writer at a time, so two saves cannot share the temporary file.
+/// * Written beside the target and renamed over it, so a crash mid-write leaves the old file.
+pub fn write_config_file(path: &Path, json: &[u8]) -> Result<(), String> {
+    static WRITING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let doc: serde_json::Value = serde_json::from_slice(json).map_err(|e| format!("Settings were not saved: not valid JSON ({e})."))?;
+    if !doc.is_object() {
+        return Err("Settings were not saved: not a settings object.".into());
+    }
+    // Same test as loading: readable as written, or after the per-setting repair. (A restored
+    // backup may hold a value this version no longer accepts; loading repairs exactly that.)
+    let defaults = serde_json::to_value(LensConfig::default()).unwrap_or(serde_json::Value::Null);
+    if crate::failsafe::config_check::load_repaired::<LensConfig>(doc, &defaults).is_none() {
+        return Err("Settings were not saved: Lens could not read them back.".into());
+    }
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    let _one_at_a_time = WRITING.lock().unwrap_or_else(|p| p.into_inner());
+    crate::win_backup::write_atomic(path, json)
 }
 
 impl LensConfig {
@@ -814,3 +864,60 @@ pub struct TesterConfig {
     /// Shows the "TEST BUILD <sha>" badge and enables the Mark-moment hotkey.
     pub enabled: bool,
 }
+
+/// Feature flags and options for the Magic waves (docs/plans/MAGIC_WAVES.md). All flags default
+/// to off. The scaffold only stores them; later waves read them.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MagicWavesConfig {
+    /// Magic Dashboard (opened from a Top Bar button and Command "dashboard").
+    pub dashboard: bool,
+    /// Widgets lane on the Dashboard (sandboxed widgets; Lens fetches approved sources only).
+    pub widgets: bool,
+    /// Magic Mouse mode: the Lens pointer set and hold-then-drag grab.
+    pub mouse: bool,
+    /// How long the left button is held before a drag becomes a Magic grab (ms).
+    pub mouse_hold_ms: u32,
+    /// Magic button: a Windows-key tap opens Lens Magic Start (Ctrl+Esc still opens Windows Start).
+    pub start_button: bool,
+    /// Shelf → Notes summary and export.
+    pub shelf_notes: bool,
+    /// Lens Studio v2 (Dock / Theme / Desktop workspaces with undo).
+    pub studio_v2: bool,
+    /// Learned ordering on the Dashboard (local only, with "Why this is here").
+    pub learn: bool,
+}
+
+impl Default for MagicWavesConfig {
+    fn default() -> Self {
+        Self {
+            dashboard: false,
+            widgets: false,
+            mouse: false,
+            mouse_hold_ms: 400,
+            start_button: false,
+            shelf_notes: false,
+            studio_v2: false,
+            learn: false,
+        }
+    }
+}
+
+// Used by the Magic waves from M1 on (and the scaffold tests today).
+#[cfg_attr(not(test), allow(dead_code))]
+impl MagicWavesConfig {
+    /// Clamp values that came from disk or an import into their allowed ranges.
+    pub fn sanitized(mut self) -> Self {
+        self.mouse_hold_ms = self.mouse_hold_ms.clamp(200, 1200);
+        self
+    }
+
+    /// True when any Magic feature is on (used to skip all Magic work when everything is off).
+    pub fn any_on(&self) -> bool {
+        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn
+    }
+}
+
+#[cfg(test)]
+#[path = "tests/config_writer.rs"]
+mod config_writer_tests;

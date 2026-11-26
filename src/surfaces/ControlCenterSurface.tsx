@@ -1,4 +1,6 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
+import { HookStatus } from "../components/HookStatus";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Skeleton, ToastHost } from "../ui";
 import { invoke } from "@tauri-apps/api/core";
@@ -9,6 +11,7 @@ import { WindowRulesCard } from "../components/WindowRulesCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
 import { TilingCard } from "../components/TilingCard";
+import { ShortcutsCard } from "../components/ShortcutsCard";
 import { WorkspacesCard } from "../components/WorkspacesCard";
 import { DesktopGroupsCard } from "../components/DesktopGroupsCard";
 import { BackupRestoreCard } from "../components/BackupRestoreCard";
@@ -71,6 +74,7 @@ import { TrafficLights } from "../components/TrafficLights";
 import { RotaryDial } from "../components/RotaryDial";
 import { PillFillBar } from "../components/PillFillBar";
 import { SetupWizard } from "../components/SetupWizard";
+import { setupReason, type SetupStatus } from "../setup/flow";
 import { ThemeTab } from "../themeux/ThemeTab";
 // Backdrop Lab embed (src/studio/backdrop): loads only once scrolled into view (CreatorSlot).
 import { CreatorSlot } from "../studio/backdrop/ui/CreatorSlot";
@@ -88,8 +92,11 @@ const SimpleView = React.lazy(() => import("../settings/simple/SimpleView").then
 import { MoreOptions } from "../settings/simple/MoreOptions";
 import { ModeHint } from "../settings/simple/ModePill";
 import { effectiveMode, hasSimpleCards, modeUnchosen, moreStartsOpen, moreSummary, SIMPLE_RESETS, type SettingsMode } from "../settings/simple/mode";
-import { WinLink } from "../settings/ui/primitives";
+import { Section, WinLink } from "../settings/ui/primitives";
+const FeedsCard = React.lazy(() => import("../components/FeedsCard").then((m) => ({ default: m.FeedsCard })));
+const MessagesCard = React.lazy(() => import("../components/MessagesCard").then((m) => ({ default: m.MessagesCard })));
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
+import { systemTimeZone } from "../playground/living/settings";
 
 
 interface ProcessEntry {
@@ -129,6 +136,14 @@ export const ControlCenterSurface: React.FC = () => {
   const [moreToggled, setMoreToggled] = useState<{ key: string; open: boolean } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  // The first time-zone lookup loads the browser's locale data (tens of milliseconds on a slow PC).
+  // Do it while Settings is idle, not in the click that opens Appearance.
+  useEffect(() => {
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (!w.requestIdleCallback) return;
+    const id = w.requestIdleCallback(() => void systemTimeZone());
+    return () => w.cancelIdleCallback?.(id);
+  }, []);
   // Each tab opens at the top instead of inheriting the previous tab's scroll position.
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -144,6 +159,27 @@ export const ControlCenterSurface: React.FC = () => {
   // Sticky page header gets a hairline once the page scrolls.
   const [stuck, setStuck] = useState(false);
   const [showWizardManual, setShowWizardManual] = useState(false);
+  // Lens setup (docs/SETUP.md): first launch, once per new version, or when the launcher asks.
+  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
+  const [setupDismissed, setSetupDismissed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    invoke<SetupStatus>("setup_status_cmd")
+      .then((st) => alive && setSetupStatus(st))
+      .catch(() => {});
+    const un = listen("lens://setup-open", () => setShowWizardManual(true));
+    return () => {
+      alive = false;
+      un.then((f) => f()).catch(() => {});
+    };
+  }, []);
+  const autoReason = setupDismissed
+    ? null
+    : setupStatus
+      ? setupReason(setupStatus)
+      : config?.onboardingCompleted === false
+        ? "first"
+        : null;
   const [topProcesses, setTopProcesses] = useState<ProcessEntry[]>([]);
   const [cpuHistory, setCpuHistory] = useState<number[]>([18, 22, 20, 26, 24, 29, 25, 21, 24, 28, 26, 23]);
   const [monitorMode, setMonitorMode] = useState<"windows" | "processes">("windows");
@@ -326,13 +362,19 @@ export const ControlCenterSurface: React.FC = () => {
 
   return (
     <div className={`cc-shell lens-glass lens-glide-dock ${glidePhase}`}>
-      {(showWizardManual || config.onboardingCompleted === false) && (
+      {(showWizardManual || autoReason) && (
         <SetupWizard
           config={config}
           winTheme={winTheme}
+          reason={showWizardManual ? "first" : autoReason ?? "first"}
+          version={setupStatus?.version ?? ""}
+          seenVersion={setupStatus?.seenVersion ?? config?.setupSeenVersion ?? ""}
           onUpdateConfig={updateConfig}
           onApplyMasterTheme={applyMasterTheme}
-          onFinish={() => setShowWizardManual(false)}
+          onFinish={() => {
+            setShowWizardManual(false);
+            setSetupDismissed(true);
+          }}
         />
       )}
       <div className="cc-body">
@@ -354,9 +396,10 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="sh-pagehead-desc">{pageDef.description}</div>
             </div>
             {pageDef.winUri && <WinLink uri={pageDef.winUri} label="Windows Settings" compact />}
-            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Lens Guide" onClick={() => void openGuide()}>
+            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>
               ?
             </button>
+            <FlyoutClose pinned inline label="Close Settings" onClose={() => invoke("hide_surface", { label: "settings" }).catch(() => {})} />
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
@@ -671,7 +714,17 @@ export const ControlCenterSurface: React.FC = () => {
           )}
 
           {tab === "notifications" && (
-            <MessagingHubPane runningWindows={runningWindows} />
+            <>
+              <MessagingHubPane runningWindows={runningWindows} />
+              <Suspense fallback={null}>
+                <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
+                  <FeedsCard />
+                </Section>
+                <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
+                  <MessagesCard />
+                </Section>
+              </Suspense>
+            </>
           )}
 
           {tab === "appearance" && (
@@ -1061,7 +1114,7 @@ export const ControlCenterSurface: React.FC = () => {
               <div id="sec-widgets" className="sh-anchor">
                 <div className="cc-section-title">Widget Access</div>
                 <div className="cc-section-sub">
-                  Toggle modular widgets in your Lens Widget Drawer (Alt+W).
+                  Toggle modular widgets in your Lens Widget Drawer ({config.func.widgetsHotkey || "Ctrl+Alt+W"}).
                 </div>
               </div>
 
@@ -1153,15 +1206,17 @@ export const ControlCenterSurface: React.FC = () => {
                 </div>
               </div>
 
+              <ShortcutsCard config={config} onUpdateConfig={updateConfig} />
+
               <div className="cc-card">
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Run Lens UI on Windows Startup</div>
+                    <div className="cc-label">Run Lens on Windows Startup</div>
                     <div className="cc-desc">{startupBlock ?? "Starts Lens when you sign in to Windows"}</div>
                   </div>
                   <button
                     type="button"
-                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens UI on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
                     aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
                       (!startupBlock || config.func.runOnStartup) &&
@@ -1175,11 +1230,14 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Legacy In-App Window Styling</div>
+                    <div className="cc-label">Legacy In-App Window Styling (experimental)</div>
                     <div className="cc-desc">
-                      Loads a helper into every app to restyle windows. Leave off unless a window keeps its
-                      old titlebar; turning it off takes effect after restarting Lens UI.
+                      Off by default: Lens already styles windows from outside each app. This loads a small helper
+                      into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a
+                      fullscreen app or an anti-cheat protected game is running, and removes it the moment you
+                      switch this off, quit, or use Remove all.
                     </div>
+                    <HookStatus enabled={!!config.func.injectedHook} />
                   </div>
                   <button
                     type="button"
@@ -1196,7 +1254,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Create Rarely Used Windows on Demand</div>
-                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"
@@ -1247,7 +1305,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Keyboard Tiling Shortcuts</div>
-                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"
@@ -1264,7 +1322,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Alt+1–9 Opens Dock Apps</div>
-                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens UI.</div>
+                    <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
                   <button
                     type="button"
@@ -1281,7 +1339,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Global Shortcuts</div>
-                    <div className="cc-desc">Command Palette: Alt+Space · Widget Drawer: Alt+W</div>
+                    <div className="cc-desc">Command Palette: {config.func.paletteHotkey || "Alt+Space"} · Widget Drawer: {config.func.widgetsHotkey || "Ctrl+Alt+W"}</div>
                   </div>
                   <span className="cc-chip active">Active</span>
                 </div>
@@ -1307,9 +1365,12 @@ export const ControlCenterSurface: React.FC = () => {
               </div>
               <WindowRulesCard />
 
-              <div id="sec-shell">
-                <ShellModeCard />
-              </div>
+              {/* Replacing Explorer as the shell is a Tester mode experiment only (docs/FAILSAFE.md §9). */}
+              {config.tester?.enabled && (
+                <div id="sec-shell">
+                  <ShellModeCard />
+                </div>
+              )}
             </>
           )}
           </PageErrorBoundary>

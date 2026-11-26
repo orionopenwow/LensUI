@@ -1,8 +1,8 @@
 [package]
 name = "lens-ui"
-version = "0.2.0"
-description = "Lens UI — a calm, themeable desktop shell for Windows 10 and 11"
-authors = ["Lens UI"]
+version = "0.3.0"
+description = "Lens — a calm, themeable desktop shell for Windows 10 and 11"
+authors = ["Lens"]
 edition = "2021"
 
 [lib]
@@ -25,6 +25,11 @@ sysinfo = "0.33"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 
 [target.'cfg(windows)'.dependencies]
+# The WebView2 COM types behind Tauri's webviews (same versions Tauri links, nothing new is
+# downloaded): app::renderer listens for a renderer that exits; Lens Browser handles site
+# permission requests.
+webview2-com = "0.39"
+windows-core = "0.62"
 windows = { version = "0.58", features = [
     "ApplicationModel",
     "ApplicationModel_DataTransfer",
@@ -54,6 +59,7 @@ windows = { version = "0.58", features = [
     "Win32_System_LibraryLoader",
     "Win32_System_Memory",
     "Win32_System_Registry",
+    "Win32_System_StationsAndDesktops",
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_UI_Accessibility",

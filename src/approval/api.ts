@@ -2,19 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { fromPendingAction, type ApprovalPreview, type ApprovalRequest } from "./model";
+import { fromPendingAction, isLocalKind, type ApprovalPreview, type ApprovalRequest, type PendingActionLike } from "./model";
 
-interface PendingAction {
-  id: string;
-  kind: string;
-  tool: string;
-  args: unknown;
-  text: string;
-  client: string;
-  createdMs: number;
-  status: string;
-  result: string;
-}
+type PendingAction = PendingActionLike & { kind: string; args: unknown; status: string; result: string };
 
 export async function previewFor(tool: string, args: unknown, client: string): Promise<ApprovalPreview | null> {
   try {
@@ -28,7 +18,8 @@ export async function pendingRequests(): Promise<ApprovalRequest[]> {
   const list = await invoke<PendingAction[]>("list_mcp_actions_cmd").catch(() => [] as PendingAction[]);
   const pending = (Array.isArray(list) ? list : []).filter((a) => a.status === "pending");
   return Promise.all(
-    pending.map(async (a) => fromPendingAction(a, a.kind === "tool" ? await previewFor(a.tool, a.args, a.client) : null))
+    // Requests raised inside Lens carry their card; MCP tool calls get theirs from Lens Control.
+    pending.map(async (a) => fromPendingAction(a, a.kind === "tool" && !isLocalKind(a.kind) ? await previewFor(a.tool, a.args, a.client) : null))
   );
 }
 
@@ -39,6 +30,48 @@ export async function approveMcp(id: string): Promise<boolean> {
 
 export function denyMcp(id: string): Promise<unknown> {
   return invoke("decline_mcp_action_cmd", { id }).catch(() => undefined);
+}
+
+/** Approves any request on the shared card. A bridge request that asked for the clipboard is
+ *  confirmed through the bridge itself, so this click is the one that reads the clipboard. */
+export async function approveRequest(req: ApprovalRequest): Promise<boolean> {
+  if (req.origin === "bridge" && req.wantsClipboard && req.reference) {
+    const clipboard = await navigator.clipboard.readText().catch(() => null);
+    await invoke("bridge_confirm", { id: req.reference, clipboard: clipboard || null });
+    return true;
+  }
+  return approveMcp(req.id);
+}
+
+/** Lens Apps: put a confirmation this surface is showing on the shared card too. */
+export function openLocalApproval(reference: string, tool: string, text: string, source: string, preview: ApprovalPreview): Promise<unknown> {
+  return invoke("approval_local_open", { reference, tool, text, source, preview }).catch(() => undefined);
+}
+
+export function closeLocalApproval(reference: string, ok: boolean, message?: string): Promise<unknown> {
+  return invoke("approval_local_close", { reference, ok, message: message ?? null }).catch(() => undefined);
+}
+
+/** Every queue record (any status) for a local request, newest first. */
+export async function localRecord(reference: string): Promise<{ id: string; status: string } | null> {
+  const list = await invoke<PendingAction[]>("list_mcp_actions_cmd").catch(() => [] as PendingAction[]);
+  const hit = (Array.isArray(list) ? list : []).find((a) => a.reference === reference);
+  return hit ? { id: hit.id, status: hit.status } : null;
+}
+
+/** The hotkey that opens the approval window, as shown on the pill, once Lens has registered one. */
+export function useApprovalHotkey(): string | undefined {
+  const [key, setKey] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    invoke<string | null>("approval_hotkey")
+      .then((k) => alive && setKey(k || undefined))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return key;
 }
 
 /** "Allow for this session" for a client's capabilities. */

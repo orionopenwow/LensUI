@@ -1,14 +1,17 @@
 mod ai;
 mod config;
+mod report;
 mod voice;
 #[cfg(windows)]
 mod ffi;
 mod sys_telemetry;
+mod caption_paint;
 mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
 mod win_events;
 mod win_focus_dim;
+mod win_hook_guard;
 mod win_folders;
 mod win_media;
 mod win_quick_settings;
@@ -16,9 +19,9 @@ mod win_brightness;
 mod win_sessions;
 mod win_taskbar;
 mod win_theme;
-mod win_clipboard;
 mod win_notifications;
 mod win_previews;
+mod attention;
 mod win_rules;
 mod win_shell;
 mod win_pin_order;
@@ -58,6 +61,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod thumbdesk;
 mod cleaner;
 mod bridge;
 mod browser;
@@ -76,6 +80,8 @@ mod guide;
 mod snip;
 // Lens Studio › Backdrop Lab exports (docs/BACKDROP_LAB.md).
 mod studio;
+// Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
+mod magic_waves;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]
@@ -165,6 +171,11 @@ pub fn run() {
     if let Some(code) = app::autostart_guard::dev_server_exit_code() {
         std::process::exit(code);
     }
+    // Started by "Start with Windows": wait until the desktop is really there (taskbar up, not
+    // on the lock or sign-in screen) before any window, hook or taskbar change. Shift skips.
+    if let Some(code) = app::signin_gate::wait_if_signin(running_as_shell) {
+        std::process::exit(code);
+    }
 
     win_crash::install_log_capture();
     install_exit_restore_handler();
@@ -188,7 +199,7 @@ pub fn run() {
         win_wallpaper::detach_wallpaper_window();
         win_focus_dim::shutdown();
         restore_taskbar_if_hidden();
-        win_shell::emergency_restore_explorer("Lens UI crashed while it was the Windows shell.");
+        win_shell::emergency_restore_explorer("Lens crashed while it was the Windows shell.");
         default_panic(info);
         // Release builds unwind (so guards can catch), but a panic outside a guard is still the
         // end of the process, exactly as before: everything was just handed back to Windows, and
@@ -204,6 +215,14 @@ pub fn run() {
     }
 
     let initial_config = config::load_config_for_run();
+    // Shell Mode is a Tester mode experiment. An override left behind without Tester mode (an
+    // older Lens, a copied config) is removed before it can take over the next sign-in.
+    if !running_as_shell && !initial_config.tester.enabled && win_shell::get_shell_mode_status().enabled {
+        match win_shell::disable_shell_mode() {
+            Ok(_) => eprintln!("[Lens] Removed a Shell Mode override (Shell Mode needs Tester mode)."),
+            Err(e) => eprintln!("[Lens] Could not remove the Shell Mode override: {e}"),
+        }
+    }
     let shared_config = Arc::new(Mutex::new(initial_config.clone()));
     let dock_pill_width = Arc::new(Mutex::new(640.0f64));
     let dock_menu_open = Arc::new(Mutex::new(false));
@@ -217,6 +236,8 @@ pub fn run() {
     let bg_topbar_search_open = topbar_search_open_state.clone();
 
     tauri::Builder::default()
+        // One renderer watchdog for every webview, including windows created later (B-31).
+        .on_page_load(|webview, _payload| crate::app::renderer::watch(webview))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
@@ -310,6 +331,7 @@ pub fn run() {
             commands::presence::presence_set_config,
             commands::presence::presence_last,
             commands::presence::presence_status,
+            commands::presence::approval_hotkey,
             commands::clip::clip_status,
             commands::clip::clip_set_settings,
             commands::clip::clip_list,
@@ -371,6 +393,10 @@ pub fn run() {
             commands::browser::browser_agent_check,
             commands::browser::browser_agent_describe,
             commands::browser::browser_agent_act,
+            commands::browser::browser_permission_answer,
+            commands::browser::browser_permissions_waiting,
+            commands::browser::browser_permissions_list,
+            commands::browser::browser_permission_forget,
             commands::browser::browser_untrusted,
             commands::browser::browser_captions,
             commands::browser::browser_seek,
@@ -477,13 +503,16 @@ pub fn run() {
             commands::theme::save_config_cmd,
             commands::dock::set_dock_pill_width,
             commands::dock::set_dock_pill_rect_cmd,
+            commands::dock::set_topbar_hit_rects_cmd,
             commands::dock::set_dock_flyout_rect_cmd,
             commands::dock::dock_preview_show_cmd,
             commands::dock::dock_preview_hide_cmd,
             commands::dock::set_dock_search_expanded_cmd,
             commands::dock::set_dock_menu_open,
             commands::theme::get_windows_theme,
+            commands::theme::legacy_hook_status,
             commands::dock::get_running_windows,
+            attention::get_dock_attention,
             commands::dock::get_icon_for_path,
             commands::dock::focus_window_cmd,
             commands::dock::window_action_cmd,
@@ -676,6 +705,8 @@ pub fn run() {
             commands::mcp::approve_mcp_action_cmd,
             commands::mcp::decline_mcp_action_cmd,
             commands::mcp::complete_mcp_action_cmd,
+            commands::mcp::approval_local_open,
+            commands::mcp::approval_local_close,
             commands::mcp::get_mcp_audit_cmd,
             commands::ai::ai_status,
             commands::ai::ai_set_config,
@@ -745,11 +776,18 @@ pub fn run() {
             commands::release::write_plugin_frame_cmd,
             commands::release::list_crash_reports_cmd,
             commands::release::read_crash_report_cmd,
+            commands::setup_flow::setup_status_cmd,
             commands::release::open_crashes_folder_cmd,
             commands::release::get_update_settings_cmd,
             commands::release::set_update_settings_cmd,
             commands::release::check_for_update_cmd,
             commands::release::install_update_cmd,
+            commands::release::get_update_state_cmd,
+            commands::release::download_update_cmd,
+            commands::release::restart_to_update_cmd,
+            commands::release::bug_report_preview,
+            commands::release::bug_report_open_issue,
+            commands::release::bug_report_save,
             commands::playground::save_playground_state_cmd,
             commands::playground::load_playground_state_cmd,
             commands::playground::clear_playground_state_cmd,
@@ -854,6 +892,9 @@ pub fn run() {
             commands::apps::apps_release_run,
             commands::apps::apps_release_discard,
             commands::apps::apps_open,
+            commands::apps::apps_portable_remove,
+            commands::thumbdesk::thumbdesk_info,
+            commands::thumbdesk::thumbdesk_open,
             commands::apps::apps_open_link,
             commands::apps::apps_recipe_preview,
             commands::apps::apps_integrations,
@@ -911,7 +952,7 @@ pub fn run() {
             commands::failsafe::failsafe_ui_crash,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Lens UI")
+        .expect("error while building Lens")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Exit = event {
                 // A clean exit is never a failed start.

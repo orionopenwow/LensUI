@@ -250,7 +250,7 @@ type Appearance = "dark" | "light" | "auto";
 
 export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onApplyPack, onOpenTab }) => {
   const [browseAll, setBrowseAll] = useState(false);
-  const [alsoDock, setAlsoDock] = useState(false);
+  const [alsoFont, setAlsoFont] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [wheelOpen, setWheelOpen] = useState(false);
   const [wallpaper, setWallpaper] = useState<WallpaperState | null>(null);
@@ -289,7 +289,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   // pack keeps the "Also change Dock style" choice.
   const apply = (packId: string) => {
     setUndo(config);
-    onApplyPack(isFeatured(packId) ? applyFeaturedLook(config, packId) : applyThemePack(config, packId, { applyDockStyle: alsoDock }));
+    // A theme changes colours and materials only; the Dock stays exactly as the person set it.
+    onApplyPack(isFeatured(packId) ? applyFeaturedLook(config, packId, { withFontAndShape: alsoFont }) : applyThemePack(config, packId, { withFontAndShape: alsoFont }));
     if (isFeatured(packId)) void matchLookPointer(packId);
   };
 
@@ -459,6 +460,20 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             </div>
           </div>
 
+          {config.theme.accentMode === "custom" && (
+            <label className="tux-check">
+              <input
+                type="checkbox"
+                checked={!!config.theme.writeWindowsAccent}
+                onChange={(e) => setTheme({ writeWindowsAccent: e.target.checked })}
+              />
+              <span>
+                Also use this accent in Windows
+                <span className="tux-help"> Colours Windows' title bars, Start and taskbar too. Turn it off to put Windows' own accent back.</span>
+              </span>
+            </label>
+          )}
+
           <div className="tux-sliders">
             <ValueSlider label="Glass opacity" value={Math.round(config.theme.glassOpacity * 100)} min={40} max={100} unit="%" onChange={(v) => setTheme({ glassOpacity: v / 100 })} />
             <ValueSlider label="Roundness" value={config.theme.borderRadius} min={0} max={20} unit="px" onChange={(v) => setTheme({ borderRadius: v })} />
@@ -500,27 +515,26 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             ))}
           </div>
         )}
-        {undo && (
-          <div className="tux-undo" role="status">
-            <span>Theme applied.</span>
-            <button
-              type="button"
-              className="cc-btn-ghost tux-small-btn"
-              data-undo-theme
-              onClick={() => {
-                onApplyPack(undo);
-                setUndo(null);
-              }}
-            >
-              Undo
-            </button>
-          </div>
-        )}
+        {/* The undo row always holds its place, so applying a theme never pushes the page down. */}
+        <div className={`tux-undo ${undo ? "" : "is-empty"}`} role="status" aria-hidden={!undo}>
+          <span>Theme applied.</span>
+          <button
+            type="button"
+            className="cc-btn-ghost tux-small-btn"
+            data-undo-theme
+            onClick={() => {
+              if (undo) onApplyPack(undo);
+              setUndo(null);
+            }}
+          >
+            Undo
+          </button>
+        </div>
         <label className="tux-check">
-          <input type="checkbox" checked={alsoDock} onChange={(e) => setAlsoDock(e.target.checked)} />
+          <input type="checkbox" checked={alsoFont} onChange={(e) => setAlsoFont(e.target.checked)} />
           <span>
-            Also change Dock style
-            <span className="tux-help"> Featured looks always bring their own Dock. For other themes, off keeps your current Dock ({dockStyleLabel(dockStyleOf(config))}).</span>
+            Also use the look's font and shape
+            <span className="tux-help"> Themes change colours only. Your Dock ({dockStyleLabel(dockStyleOf(config))}) stays as it is; change it under Dock &amp; Bar.</span>
           </span>
         </label>
       </section>

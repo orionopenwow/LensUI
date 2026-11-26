@@ -7,13 +7,13 @@ use std::thread;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{BOOL, COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
 use windows::Win32::Graphics::Dwm::{
-    DwmGetWindowAttribute, DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS,
+    DwmGetWindowAttribute, DWMWA_CAPTION_BUTTON_BOUNDS, DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS,
 };
 use windows::Win32::Graphics::Gdi::{
-    CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, GetDC, GetMonitorInfoW, GetPixel,
+    BitBlt, CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, GetDC, GetMonitorInfoW,
     MonitorFromWindow, ReleaseDC, SelectObject, AC_SRC_ALPHA, AC_SRC_OVER, BITMAPINFO,
     BITMAPINFOHEADER, BI_RGB, BLENDFUNCTION, DIB_RGB_COLORS, MONITORINFO,
-    MONITOR_DEFAULTTONEAREST,
+    MONITOR_DEFAULTTONEAREST, SRCCOPY,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Threading::{
@@ -21,12 +21,13 @@ use windows::Win32::System::Threading::{
 };
 use windows::Win32::UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK};
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
-use windows::Win32::UI::Input::KeyboardAndMouse::{TrackMouseEvent, TME_LEAVE, TRACKMOUSEEVENT};
+use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, TrackMouseEvent, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, TME_LEAVE, TRACKMOUSEEVENT};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, EnumWindows, GetAncestor,
     GetMessageW, GetWindow, GetWindowLongW, GetWindowRect, GetWindowThreadProcessId, IsIconic,
     IsWindow, IsWindowVisible, IsZoomed, LoadCursorW, PostMessageW, RegisterClassW, SetCursor,
-    SetTimer, SetWindowPos, TranslateMessage, UpdateLayeredWindow, WindowFromPoint, CS_HREDRAW,
+    GetForegroundWindow, KillTimer, SendMessageTimeoutW, SetTimer, SetWindowPos, ShowWindow, TranslateMessage,
+    SMTO_ABORTIFHUNG, SW_HIDE, WM_NCHITTEST, UpdateLayeredWindow, WindowFromPoint, CS_HREDRAW,
     CS_VREDRAW, EVENT_OBJECT_DESTROY, EVENT_OBJECT_HIDE, EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_OBJECT_SHOW, EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_MINIMIZEEND,
     EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MOVESIZEEND, GA_ROOT, GWL_EXSTYLE, GWL_STYLE,
@@ -40,37 +41,57 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 const WM_MOUSELEAVE: u32 = 0x02A3;
 const WM_APP_SYNC: u32 = WM_USER + 42;
-const BASE_W: i32 = 138;
-const BASE_H: i32 = 31;
 const MAX_POOL_SLOTS: usize = 12;
+
+use crate::caption_paint::{self as paint, BASE_H};
+use crate::caption_paint::{order_code, slot_buttons, ORDER_YGR};
 
 static ENGINE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ENGINE_ENABLED: AtomicBool = AtomicBool::new(true);
-/// Button order: ORDER_YGR (Windows' own minimise, maximise, close; the default),
-/// ORDER_GYR or ORDER_RYG (macOS-style, red first).
-pub(crate) const ORDER_YGR: u8 = 0;
-pub(crate) const ORDER_GYR: u8 = 1;
-pub(crate) const ORDER_RYG: u8 = 2;
+/// Button order (caption_paint::ORDER_*): Windows' own minimise, maximise, close by default.
 static ORDER: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(ORDER_YGR);
 
-pub(crate) fn order_code(order: &str) -> u8 {
-    match order {
-        "red-yellow-green" => ORDER_RYG,
-        "green-yellow-red" => ORDER_GYR,
-        _ => ORDER_YGR,
-    }
+/// How long after a change (a new window, activation, a move, a theme or setting change) its
+/// title-bar colour keeps being re-read. DWM fades the caption between its active and inactive
+/// colours, apps paint their caption after they first show, and Lens's own frame restyle runs on
+/// a debounced worker, so a single read at the moment of the event can catch an in-between
+/// colour (the "new windows don't blend" report). Reading again on every timer tick inside this
+/// window lets the overlay follow the caption until it settles.
+const SETTLE_AFTER_EVENT_MS: u64 = 1_400;
+const SETTLE_AFTER_CONFIG_MS: u64 = 2_500;
+/// A new overlay stays hidden (the native buttons show) until two reads agree or this passes.
+const SHOW_NEW_AFTER_MS: u64 = 900;
+
+fn now_ms() -> u64 {
+    static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+    START.get_or_init(std::time::Instant::now).elapsed().as_millis() as u64
 }
 
-/// Which button sits in each of the three slots, left to right: 0 maximise (green),
-/// 1 minimise (yellow), 2 close (red).
-pub(crate) fn slot_buttons(order: u8) -> [u8; 3] {
-    match order {
-        ORDER_RYG => [2, 1, 0],
-        ORDER_GYR => [0, 1, 2],
-        _ => [1, 0, 2],
+static CORNER_RADIUS_PX: AtomicI32 = AtomicI32::new(8);
+
+const VK_LWIN_CODE: u8 = 0x5B;
+const VK_Z_CODE: u8 = 0x5A;
+
+/// After a window changes size (a maximise, snap, restore or an interactive resize), its overlay
+/// stays hidden until this long after the last size change, then reappears once its caption
+/// colour has settled — so it never trails a window that is still animating or being dragged.
+const RESIZE_QUIET_MS: u64 = 260;
+/// Hovering the green (maximise) dot this long opens Windows' snap layouts (Win+Z), the way the
+/// native maximise button does on Windows 11.
+const SNAP_HOVER_MS: u32 = 650;
+const SNAP_TIMER_ID: usize = 7;
+
+/// Asks the window what is at a screen point (`WM_NCHITTEST`), giving up at once if it is hung.
+unsafe fn nc_hit(hwnd: HWND, x: i32, y: i32) -> u32 {
+    let mut res: usize = 0;
+    let lp = (((y as i16 as u16 as u32) << 16) | (x as i16 as u16 as u32)) as i32 as isize;
+    let ok = SendMessageTimeoutW(hwnd, WM_NCHITTEST, WPARAM(0), LPARAM(lp), SMTO_ABORTIFHUNG, 40, Some(&mut res));
+    if ok.0 == 0 {
+        0
+    } else {
+        res as u32
     }
 }
-static CORNER_RADIUS_PX: AtomicI32 = AtomicI32::new(8);
 static MANAGER_HWND: AtomicIsize = AtomicIsize::new(0);
 
 #[derive(Clone, Copy)]
@@ -80,17 +101,38 @@ struct CaptionSlot {
     y: i32,
     w: i32,
     h: i32,
-    bg_bgr: u32,
+    /// Median title-bar colour (0x00RRGGBB), kept for comparisons; the per-row colours are in ROWS.
+    bg_rgb: u32,
     hovered: bool,
     is_topmost: bool,
     order: u8,
     corner_r: i32,
+    created_ms: u64,
+    /// Re-read the title-bar colour on every tick until then.
+    settle_until_ms: u64,
+    /// The overlay has been shown (a new one waits for a stable read).
+    shown: bool,
+    /// The target window's size when last placed; a change means a maximise, snap or resize.
+    tw: i32,
+    th: i32,
+    /// Hidden while the target is still changing size, until then.
+    quiet_until_ms: u64,
 }
 
 thread_local! {
     static SLOTS: RefCell<HashMap<isize, CaptionSlot>> = RefCell::new(HashMap::new());
     static OVERLAY_TO_TARGET: RefCell<HashMap<isize, isize>> = RefCell::new(HashMap::new());
     static CLASS_NAME_W: RefCell<Vec<u16>> = const { RefCell::new(Vec::new()) };
+    /// One title-bar colour per overlay row, per target window.
+    static ROWS: RefCell<HashMap<isize, Vec<u32>>> = RefCell::new(HashMap::new());
+    /// Round-robin cursor: one settled window is re-read per tick, so a caption that changes
+    /// later (a theme switch, an app repainting) is caught within a few seconds.
+    static RR: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    /// The native caption buttons' size per window, keyed by the window's size and DPI (probing
+    /// asks the window a few dozen questions, so it runs once per size, not on every tick).
+    static PROBES: RefCell<HashMap<isize, (i32, i32, u32, Option<(i32, i32)>)>> = RefCell::new(HashMap::new());
+    /// Which slot (0..3) the pointer is over, per overlay, for the snap-layouts hover.
+    static HOVER_SLOT: RefCell<HashMap<isize, usize>> = RefCell::new(HashMap::new());
 }
 
 pub fn set_caption_engine_config(enabled: bool, order: &str, border_radius: u32) {
@@ -178,77 +220,24 @@ unsafe fn is_cloaked(hwnd: HWND) -> bool {
         && cloaked != 0
 }
 
-/// Samples multiple points just left of the native caption buttons, ONLY accepting pixels
-/// where `WindowFromPoint` confirms the pixel actually belongs to `target_hwnd` (so a window
-/// stacked in front never corrupts a background window's sampled titlebar color).
-unsafe fn sample_titlebar_bg(
-    target_hwnd: HWND,
-    rect: &RECT,
-    cap_w: i32,
-    cap_h: i32,
-    fallback: u32,
-) -> u32 {
-    let hdc = GetDC(None);
-    if hdc.is_invalid() {
-        return fallback;
-    }
-
-    let pts = [
-        ((rect.right - cap_w - 6).max(rect.left + 8), rect.top + 4),
-        ((rect.right - cap_w - 6).max(rect.left + 8), rect.top + cap_h / 2),
-        ((rect.right - cap_w - 14).max(rect.left + 8), rect.top + 4),
-        ((rect.right - cap_w - 14).max(rect.left + 8), rect.top + cap_h - 4),
-        ((rect.right - cap_w - 24).max(rect.left + 8), rect.top + 6),
-    ];
-
-    let mut samples: Vec<(u32, u32)> = Vec::with_capacity(5);
-    for (sx, sy) in pts {
-        let hit = WindowFromPoint(POINT { x: sx, y: sy });
-        if hit.0.is_null() {
-            continue;
-        }
-        let root = GetAncestor(hit, GA_ROOT);
-        if root != target_hwnd && hit != target_hwnd {
-            continue;
-        }
-        let c = GetPixel(hdc, sx, sy);
-        if c != COLORREF(0xFFFF_FFFF) {
-            let bgr = c.0 & 0x00FF_FFFF;
-            let r = bgr & 0xFF;
-            let g = (bgr >> 8) & 0xFF;
-            let b = (bgr >> 16) & 0xFF;
-            let lum = r * 3 + g * 6 + b;
-            samples.push((lum, bgr));
-        }
-    }
-    let _ = ReleaseDC(None, hdc);
-
-    if samples.is_empty() {
-        return fallback;
-    }
-    samples.sort_by_key(|s| s.0);
-    samples[samples.len() / 2].1
-}
-
-/// Renders a crisp, anti-aliased native layered bitmap matching the target window's exact titlebar color
-unsafe fn paint_layered_caption(
-    hwnd: HWND,
-    dst_x: i32,
-    dst_y: i32,
-    w: i32,
-    h: i32,
-    bg_bgr: u32,
-    hovered: bool,
-    order: u8,
-) {
+/// Reads the title bar's colour row by row from a thin strip just left of where the overlay sits
+/// (`caption_paint::sample_strip`), one screen capture per read. A row only counts where
+/// `WindowFromPoint` confirms the pixel belongs to `target_hwnd`, so a window stacked in front
+/// (or another overlay) never decides the colour. Returns 0x00RRGGBB per overlay row.
+unsafe fn sample_title_rows(target_hwnd: HWND, ov_x: i32, ov_y: i32, w: i32, h: i32, fallback: u32) -> Vec<u32> {
+    let (gap, cols) = paint::sample_strip(w);
+    let sx = ov_x - gap - cols;
+    let rows = h.max(1);
     let screen_dc = GetDC(None);
+    if screen_dc.is_invalid() {
+        return vec![fallback; rows as usize];
+    }
     let mem_dc = CreateCompatibleDC(screen_dc);
-
     let bmi = BITMAPINFO {
         bmiHeader: BITMAPINFOHEADER {
             biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-            biWidth: w,
-            biHeight: -h, // top-down
+            biWidth: cols,
+            biHeight: -rows,
             biPlanes: 1,
             biBitCount: 32,
             biCompression: BI_RGB.0,
@@ -256,7 +245,57 @@ unsafe fn paint_layered_caption(
         },
         ..Default::default()
     };
+    let mut bits_ptr: *mut core::ffi::c_void = std::ptr::null_mut();
+    let mut block: Vec<u32> = Vec::new();
+    if let Ok(hbmp) = CreateDIBSection(mem_dc, &bmi, DIB_RGB_COLORS, &mut bits_ptr, None, 0) {
+        if !bits_ptr.is_null() {
+            let old = SelectObject(mem_dc, hbmp);
+            if BitBlt(mem_dc, 0, 0, cols, rows, screen_dc, sx, ov_y, SRCCOPY).is_ok() {
+                // 32-bit DIB pixels are B, G, R, X bytes: as a little-endian u32 that is 0x00RRGGBB.
+                block = std::slice::from_raw_parts(bits_ptr as *const u32, (cols * rows) as usize).to_vec();
+            }
+            SelectObject(mem_dc, old);
+        }
+        let _ = DeleteObject(hbmp);
+    }
+    let _ = DeleteDC(mem_dc);
+    let _ = ReleaseDC(None, screen_dc);
 
+    let mid = sx + cols / 2;
+    let owned: Vec<bool> = (0..rows)
+        .map(|y| {
+            let hit = WindowFromPoint(POINT { x: mid, y: ov_y + y });
+            !hit.0.is_null() && (hit == target_hwnd || GetAncestor(hit, GA_ROOT) == target_hwnd)
+        })
+        .collect();
+    paint::row_backgrounds(&block, cols as usize, rows as usize, &owned, fallback)
+}
+
+/// Median of the row colours (for the slot's summary colour and the fallback of the next read).
+fn median_rgb(rows: &[u32]) -> u32 {
+    if rows.is_empty() {
+        return 0x0018_181B;
+    }
+    rows[rows.len() / 2]
+}
+
+/// Paints the overlay from `caption_paint::render`: every non-button pixel is the title bar's own
+/// colour on that row, so it blends by construction (tested in caption_paint).
+unsafe fn paint_layered_caption(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i32, rows: &[u32], hovered: bool, order: u8) {
+    let screen_dc = GetDC(None);
+    let mem_dc = CreateCompatibleDC(screen_dc);
+    let bmi = BITMAPINFO {
+        bmiHeader: BITMAPINFOHEADER {
+            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+            biWidth: w,
+            biHeight: -h,
+            biPlanes: 1,
+            biBitCount: 32,
+            biCompression: BI_RGB.0,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
     let mut bits_ptr: *mut core::ffi::c_void = std::ptr::null_mut();
     let Ok(hbmp) = CreateDIBSection(mem_dc, &bmi, DIB_RGB_COLORS, &mut bits_ptr, None, 0) else {
         let _ = DeleteDC(mem_dc);
@@ -269,110 +308,11 @@ unsafe fn paint_layered_caption(
         let _ = ReleaseDC(None, screen_dc);
         return;
     }
-
     let old = SelectObject(mem_dc, hbmp);
-    let pixels = std::slice::from_raw_parts_mut(bits_ptr as *mut u8, (w * h * 4) as usize);
-
-    let bg_r = (bg_bgr & 0xFF) as f32;
-    let bg_g = ((bg_bgr >> 8) & 0xFF) as f32;
-    let bg_b = ((bg_bgr >> 16) & 0xFF) as f32;
-
-    let scale = (w as f32) / (BASE_W as f32);
-    let cy = (h as f32) * 0.5;
-    let radius = 5.75 * scale;
-
-    let c1 = (w as f32) - (58.0 * scale);
-    let c2 = (w as f32) - (38.0 * scale);
-    let c3 = (w as f32) - (18.0 * scale);
-
-    let colour = |id: u8| match id {
-        0 => (40.0, 200.0, 64.0),  // Green Maximize
-        1 => (254.0, 188.0, 46.0), // Yellow Minimize
-        _ => (255.0, 95.0, 87.0),  // Red Close
-    };
-    let ids = slot_buttons(order);
-    let btns: [(f32, f32, f32, f32, f32, u8); 3] = [c1, c2, c3]
-        .iter()
-        .zip(ids)
-        .map(|(&cx, id)| {
-            let (r, g, b) = colour(id);
-            (cx, cy, r, g, b, id)
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap_or([(c1, cy, 254.0, 188.0, 46.0, 1), (c2, cy, 40.0, 200.0, 64.0, 0), (c3, cy, 255.0, 95.0, 87.0, 2)]);
-
-    let feather_px = (8.0 * scale).round().max(4.0) as i32;
-    let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * scale;
-
-    for y in 0..h {
-        for x in 0..w {
-            let mut r = bg_r;
-            let mut g = bg_g;
-            let mut b = bg_b;
-
-            // Smooth left-edge feather so it melts seamlessly into Chrome/Explorer/Antigravity titlebars
-            let mut alpha_scale = if x < feather_px {
-                (x as f32 + 1.0) / (feather_px as f32 + 1.0)
-            } else {
-                1.0
-            };
-
-            let fx = x as f32 + 0.5;
-            let fy = y as f32 + 0.5;
-
-            // Unified top-right corner SDF clip matching Windows 11 DWM rounded corner radius
-            if corner_r > 0.5 && fx > (w as f32 - corner_r) && fy < corner_r {
-                let cdx = fx - (w as f32 - corner_r);
-                let cdy = corner_r - fy;
-                let cdist = (cdx * cdx + cdy * cdy).sqrt();
-                let corner_cov = (corner_r + 0.5 - cdist).clamp(0.0, 1.0);
-                alpha_scale *= corner_cov;
-            }
-
-            for &(cx, bcy, cr, cg, cb, glyph) in &btns {
-                let dx = fx - cx;
-                let dy = fy - bcy;
-                let dist = (dx * dx + dy * dy).sqrt();
-                if dist <= radius + 1.0 {
-                    let cov = (radius + 0.5 - dist).clamp(0.0, 1.0);
-                    r = r * (1.0 - cov) + cr * cov;
-                    g = g * (1.0 - cov) + cg * cov;
-                    b = b * (1.0 - cov) + cb * cov;
-
-                    if hovered && dist < radius - (1.15 * scale) {
-                        let t = 0.72 * scale;
-                        let span = 2.6 * scale;
-                        let on_glyph = match glyph {
-                            0 => {
-                                (dx.abs() < t && dy.abs() < span)
-                                    || (dy.abs() < t && dx.abs() < span)
-                            }
-                            1 => dy.abs() < t && dx.abs() < span,
-                            _ => {
-                                ((dx - dy).abs() < t * 1.35 || (dx + dy).abs() < t * 1.35)
-                                    && dx.abs() < span * 0.9
-                                    && dy.abs() < span * 0.9
-                            }
-                        };
-                        if on_glyph {
-                            r *= 0.2;
-                            g *= 0.2;
-                            b *= 0.2;
-                        }
-                    }
-                }
-            }
-
-            let final_a = (255.0 * alpha_scale).clamp(0.0, 255.0);
-            let pm = final_a / 255.0;
-            let idx = ((y * w + x) * 4) as usize;
-            pixels[idx] = (b * pm) as u8;
-            pixels[idx + 1] = (g * pm) as u8;
-            pixels[idx + 2] = (r * pm) as u8;
-            pixels[idx + 3] = final_a as u8;
-        }
-    }
+    let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * paint::scale_for(w);
+    let src = paint::render(w, h, rows, hovered, order, corner_r);
+    let dst = std::slice::from_raw_parts_mut(bits_ptr as *mut u8, (w * h * 4) as usize);
+    dst.copy_from_slice(&src[..dst.len()]);
 
     let pt_dst = POINT { x: dst_x, y: dst_y };
     let pt_src = POINT { x: 0, y: 0 };
@@ -383,23 +323,16 @@ unsafe fn paint_layered_caption(
         SourceConstantAlpha: 255,
         AlphaFormat: AC_SRC_ALPHA as u8,
     };
-
-    let _ = UpdateLayeredWindow(
-        hwnd,
-        screen_dc,
-        Some(&pt_dst),
-        Some(&sz),
-        mem_dc,
-        Some(&pt_src),
-        COLORREF(0),
-        Some(&blend),
-        ULW_ALPHA,
-    );
+    let _ = UpdateLayeredWindow(hwnd, screen_dc, Some(&pt_dst), Some(&sz), mem_dc, Some(&pt_src), COLORREF(0), Some(&blend), ULW_ALPHA);
 
     SelectObject(mem_dc, old);
     let _ = DeleteObject(hbmp);
     let _ = DeleteDC(mem_dc);
     let _ = ReleaseDC(None, screen_dc);
+}
+
+fn rows_of(key: isize, h: i32, fallback: u32) -> Vec<u32> {
+    ROWS.with(|r| r.borrow().get(&key).cloned()).unwrap_or_else(|| vec![fallback; h.max(1) as usize])
 }
 
 struct EnumTarget {
@@ -482,17 +415,45 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         }
     }
 
-    let dpi = GetDpiForWindow(hwnd).max(96) as i32;
-    let base_h = if proc_lower == "chrome.exe"
-        || proc_lower == "msedge.exe"
-        || proc_lower == "brave.exe"
-    {
+    let dpi = GetDpiForWindow(hwnd).max(96);
+    let (win_w, win_h) = (rect.right - rect.left, rect.bottom - rect.top);
+    let key = hwnd.0 as isize;
+    let cached = PROBES.with(|p| p.borrow().get(&key).copied());
+    let probed = match cached {
+        Some((w, h, d, r)) if w == win_w && h == win_h && d == dpi => r,
+        _ => {
+            let r = paint::probe_caption_buttons(|x, y| nc_hit(hwnd, x, y), rect.right, rect.top, dpi as f32 / 96.0);
+            PROBES.with(|p| p.borrow_mut().insert(key, (win_w, win_h, dpi, r)));
+            r
+        }
+    };
+    // Caption height: Chromium browsers draw their own 38 px tab strip; otherwise DWM's own
+    // caption-button bounds when they look like real buttons (this follows maximised windows,
+    // whose caption is shorter); otherwise the standard 31 px. Per-row colour sampling keeps the
+    // overlay blending even where this height is off by a few pixels.
+    let base_h = if proc_lower == "chrome.exe" || proc_lower == "msedge.exe" || proc_lower == "brave.exe" {
         38
     } else {
-        BASE_H
+        let mut b = RECT::default();
+        let ok = DwmGetWindowAttribute(
+            hwnd,
+            DWMWA_CAPTION_BUTTON_BOUNDS,
+            &mut b as *mut RECT as *mut _,
+            std::mem::size_of::<RECT>() as u32,
+        )
+        .is_ok();
+        if ok {
+            paint::base_h_from_button_bounds(b.right - b.left, b.bottom - b.top, dpi).unwrap_or(BASE_H)
+        } else {
+            BASE_H
+        }
     };
-    let cap_w = (BASE_W * dpi + 48) / 96;
-    let cap_h = (base_h * dpi + 48) / 96;
+    let (cap_w, mut cap_h) = paint::overlay_size(dpi, base_h);
+    // The window's own answer wins: cover the native buttons' full height, in physical pixels,
+    // so no strip of them is left under the dots (tall tab captions, maximised windows).
+    if let Some((_, ph)) = probed {
+        cap_h = ph;
+    }
     let is_topmost = (ex & WS_EX_TOPMOST.0) != 0;
 
     targets.push(EnumTarget {
@@ -548,12 +509,14 @@ unsafe fn clear_all_slots() {
                 let _ = DestroyWindow(slot.overlay);
             }
             map.clear();
+            ROWS.with(|r| r.borrow_mut().clear());
+            PROBES.with(|p| p.borrow_mut().clear());
         });
     });
 }
 
 /// Ultra-fast O(1) drag path (0.015ms): moves a single window's caption overlay during window drag
-/// without running EnumWindows, GetPixel, CreateDIBSection, or UpdateLayeredWindow!
+/// without running EnumWindows, a colour read, CreateDIBSection, or UpdateLayeredWindow!
 unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
     let key = hwnd.0 as isize;
     let Some(mut slot) = SLOTS.with(|s| s.borrow().get(&key).copied()) else {
@@ -577,8 +540,30 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
         }
     }
 
-    let x = rect.right - slot.w - 1;
-    let y = rect.top + 1;
+    let (tw, th) = (rect.right - rect.left, rect.bottom - rect.top);
+    if slot.tw != 0 && (tw != slot.tw || th != slot.th) {
+        // A maximise, snap, restore or resize: the caption's height and colour may change and
+        // the window may still be animating. Hide now; the next sync after it has been still for
+        // a moment re-measures and shows it again.
+        if slot.shown {
+            let _ = ShowWindow(slot.overlay, SW_HIDE);
+        }
+        slot.shown = false;
+        slot.quiet_until_ms = now_ms() + RESIZE_QUIET_MS;
+        slot.tw = tw;
+        slot.th = th;
+        SLOTS.with(|s| {
+            s.borrow_mut().insert(key, slot);
+        });
+        let mgr = HWND(MANAGER_HWND.load(Ordering::Relaxed) as *mut _);
+        if !mgr.0.is_null() {
+            // A follow-up sync once the window has been still (a maximise has no move-size-end).
+            let _ = SetTimer(mgr, 2, RESIZE_QUIET_MS as u32 + 20, None);
+        }
+        return true;
+    }
+    let x = rect.right - slot.w;
+    let y = rect.top;
     if x != slot.x || y != slot.y {
         slot.x = x;
         slot.y = y;
@@ -598,10 +583,20 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
     true
 }
 
+/// When a sync re-reads title-bar colours.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Resample {
+    /// Every window now, and keep re-reading for `settle_ms` (activation, move/size end, a
+    /// setting or theme change).
+    All { settle_ms: u64 },
+    /// Only windows still settling, plus one settled window in turn (the periodic tick).
+    Settling,
+}
+
 /// Synchronizes the entire Z-ordered pool of layered caption overlays to all visible top-level windows.
 /// Each overlay sits immediately above its own target window in Z-order — never bleeding through
 /// windows stacked in front of it!
-unsafe fn sync_all_windows(resample_colors: bool) {
+unsafe fn sync_all_windows(mode: Resample) {
     if !ENGINE_ENABLED.load(Ordering::Relaxed) {
         clear_all_slots();
         return;
@@ -610,36 +605,68 @@ unsafe fn sync_all_windows(resample_colors: bool) {
     let mut targets: Vec<EnumTarget> = Vec::with_capacity(MAX_POOL_SLOTS);
     let _ = EnumWindows(Some(enum_targets_cb), LPARAM(&mut targets as *mut _ as isize));
 
-    let red_first: u8 = ORDER.load(Ordering::Relaxed);
+    let order: u8 = ORDER.load(Ordering::Relaxed);
     let cur_corner_r = CORNER_RADIUS_PX.load(Ordering::Relaxed);
     let active_keys: HashSet<isize> = targets.iter().map(|t| t.hwnd.0 as isize).collect();
+    let now = now_ms();
 
     // 1. Destroy overlays for windows that closed, minimized, or became hidden/cloaked
     SLOTS.with(|slots_cell| {
         OVERLAY_TO_TARGET.with(|map_cell| {
             let mut slots = slots_cell.borrow_mut();
             let mut map = map_cell.borrow_mut();
-            let stale: Vec<isize> = slots
-                .keys()
-                .copied()
-                .filter(|k| !active_keys.contains(k))
-                .collect();
+            let stale: Vec<isize> = slots.keys().copied().filter(|k| !active_keys.contains(k)).collect();
             for key in stale {
                 if let Some(slot) = slots.remove(&key) {
                     map.remove(&(slot.overlay.0 as isize));
                     let _ = DestroyWindow(slot.overlay);
                 }
+                ROWS.with(|r| r.borrow_mut().remove(&key));
+                PROBES.with(|p| p.borrow_mut().remove(&key));
             }
         });
     });
 
+    // One settled window is re-read per periodic tick.
+    let rr_key = if mode == Resample::Settling && !targets.is_empty() {
+        let n = RR.with(|c| {
+            let v = c.get().wrapping_add(1);
+            c.set(v);
+            v
+        });
+        Some(targets[n % targets.len()].hwnd.0 as isize)
+    } else {
+        None
+    };
+
     // 2. Sync each active window from bottom to top (reverse Z-order) so stacking settles cleanly
     for target in targets.iter().rev() {
         let key = target.hwnd.0 as isize;
-        let x = target.rect.right - target.cap_w - 1;
-        let y = target.rect.top + 1;
+        // Flush with the window's top-right corner: the native Close button reaches the very edge,
+        // and a 1 px gap let the pointer reach it there.
+        let x = target.rect.right - target.cap_w;
+        let y = target.rect.top;
 
         let existing = SLOTS.with(|s| s.borrow().get(&key).copied());
+
+        let fresh_slot = |ov: HWND, bg_rgb: u32| CaptionSlot {
+            overlay: ov,
+            x: i32::MIN,
+            y: i32::MIN,
+            w: target.cap_w,
+            h: target.cap_h,
+            bg_rgb,
+            hovered: false,
+            is_topmost: target.is_topmost,
+            order,
+            corner_r: cur_corner_r,
+            created_ms: now,
+            settle_until_ms: now + SETTLE_AFTER_EVENT_MS,
+            shown: false,
+            tw: target.rect.right - target.rect.left,
+            th: target.rect.bottom - target.rect.top,
+            quiet_until_ms: 0,
+        };
 
         // If topmost band changed on target, recreate overlay in the matching Z-band
         let mut slot = match existing {
@@ -652,22 +679,10 @@ unsafe fn sync_all_windows(resample_colors: bool) {
                     m.borrow_mut().remove(&(old.overlay.0 as isize));
                 });
                 let _ = DestroyWindow(old.overlay);
-                let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h)
-                else {
+                let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h) else {
                     continue;
                 };
-                let fresh = CaptionSlot {
-                    overlay: ov,
-                    x: i32::MIN,
-                    y: i32::MIN,
-                    w: target.cap_w,
-                    h: target.cap_h,
-                    bg_bgr: old.bg_bgr,
-                    hovered: false,
-                    is_topmost: target.is_topmost,
-                    order: red_first,
-                    corner_r: cur_corner_r,
-                };
+                let fresh = fresh_slot(ov, old.bg_rgb);
                 SLOTS.with(|s| {
                     s.borrow_mut().insert(key, fresh);
                 });
@@ -679,22 +694,10 @@ unsafe fn sync_all_windows(resample_colors: bool) {
             None => {
                 // Actively apply live window opacity to any newly opened top-level window
                 crate::win_dwm_engine::apply_opacity_to_hwnd(target.hwnd);
-                let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h)
-                else {
+                let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h) else {
                     continue;
                 };
-                let fresh = CaptionSlot {
-                    overlay: ov,
-                    x: i32::MIN,
-                    y: i32::MIN,
-                    w: target.cap_w,
-                    h: target.cap_h,
-                    bg_bgr: 0x0018_181B,
-                    hovered: false,
-                    is_topmost: target.is_topmost,
-                    order: red_first,
-                    corner_r: cur_corner_r,
-                };
+                let fresh = fresh_slot(ov, 0x0018_181B);
                 SLOTS.with(|s| {
                     s.borrow_mut().insert(key, fresh);
                 });
@@ -705,57 +708,60 @@ unsafe fn sync_all_windows(resample_colors: bool) {
             }
         };
 
+        if let Resample::All { settle_ms } = mode {
+            slot.settle_until_ms = slot.settle_until_ms.max(now + settle_ms);
+        }
         let is_new_slot = slot.x == i32::MIN;
-        let bg = if is_new_slot || resample_colors {
-            sample_titlebar_bg(
-                target.hwnd,
-                &target.rect,
-                target.cap_w,
-                target.cap_h,
-                slot.bg_bgr,
-            )
+        let size_changed = is_new_slot || slot.w != target.cap_w || slot.h != target.cap_h;
+        let read_now = is_new_slot
+            || size_changed
+            || matches!(mode, Resample::All { .. })
+            || now < slot.settle_until_ms
+            || rr_key == Some(key);
+
+        let old_rows = ROWS.with(|r| r.borrow().get(&key).cloned());
+        let rows = if read_now {
+            sample_title_rows(target.hwnd, x, y, target.cap_w, target.cap_h, slot.bg_rgb)
         } else {
-            slot.bg_bgr
+            old_rows.clone().unwrap_or_else(|| vec![slot.bg_rgb; target.cap_h.max(1) as usize])
         };
+        let rows_changed = old_rows.as_deref() != Some(rows.as_slice());
+        // A new overlay waits until two reads agree (the app has painted its caption) or a short
+        // time has passed, so it never appears in a colour the title bar is only passing through.
+        let quiet = now < slot.quiet_until_ms;
+        let show = !quiet && (slot.shown || (!is_new_slot && !rows_changed) || now >= slot.created_ms + SHOW_NEW_AFTER_MS);
+        if rows_changed {
+            ROWS.with(|r| r.borrow_mut().insert(key, rows.clone()));
+        }
 
         let pos_changed = slot.x != x || slot.y != y;
-        let size_changed = is_new_slot || slot.w != target.cap_w || slot.h != target.cap_h;
-        let visual_changed =
-            bg != slot.bg_bgr || slot.order != red_first || slot.corner_r != cur_corner_r;
+        let visual_changed = rows_changed || slot.order != order || slot.corner_r != cur_corner_r;
 
         // Check if overlay is already immediately above target_hwnd in Z-order
         let prev = GetWindow(target.hwnd, GW_HWNDPREV).unwrap_or(HWND(std::ptr::null_mut()));
         let z_ok = prev == slot.overlay;
+        let becomes_visible = show && !slot.shown;
 
-        if pos_changed || size_changed || visual_changed {
-            slot.x = x;
-            slot.y = y;
-            slot.w = target.cap_w;
-            slot.h = target.cap_h;
-            slot.bg_bgr = bg;
-            slot.order = red_first;
-            slot.corner_r = cur_corner_r;
-
-            SLOTS.with(|s| {
-                s.borrow_mut().insert(key, slot);
-            });
-        }
+        slot.x = x;
+        slot.y = y;
+        slot.w = target.cap_w;
+        slot.h = target.cap_h;
+        slot.bg_rgb = median_rgb(&rows);
+        slot.order = order;
+        slot.corner_r = cur_corner_r;
+        slot.shown = show;
+        slot.tw = target.rect.right - target.rect.left;
+        slot.th = target.rect.bottom - target.rect.top;
+        SLOTS.with(|s| {
+            s.borrow_mut().insert(key, slot);
+        });
 
         // Only re-render bitmap when size or visual properties changed — NEVER on mere (x, y) movement!
-        if size_changed || visual_changed {
-            paint_layered_caption(
-                slot.overlay,
-                x,
-                y,
-                target.cap_w,
-                target.cap_h,
-                bg,
-                slot.hovered,
-                red_first,
-            );
+        if size_changed || visual_changed || becomes_visible {
+            paint_layered_caption(slot.overlay, x, y, target.cap_w, target.cap_h, &rows, slot.hovered, order);
         }
 
-        if pos_changed || size_changed || !z_ok {
+        if show && (pos_changed || size_changed || !z_ok || becomes_visible) {
             let insert_after = if prev.0.is_null() || prev == slot.overlay {
                 if target.is_topmost {
                     HWND_TOPMOST
@@ -810,14 +816,25 @@ unsafe fn win_event_cb_guarded(
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }
+    if event == EVENT_SYSTEM_MINIMIZESTART {
+        // Hide before the minimise animation starts, so the dots never fly down with it.
+        if let Some(slot) = SLOTS.with(|s| s.borrow().get(&(hwnd.0 as isize)).copied()) {
+            let _ = ShowWindow(slot.overlay, SW_HIDE);
+        }
+    }
     if event == EVENT_OBJECT_LOCATIONCHANGE {
         // 0.015ms zero-lag drag path for tracked windows; falls back to full sync only if untracked/minimized
         if fast_move_single_slot(hwnd) {
             return;
         }
     }
-    let resample = event == EVENT_SYSTEM_FOREGROUND || event == EVENT_SYSTEM_MOVESIZEEND;
-    sync_all_windows(resample);
+    // Activation fades the caption between its active and inactive colours, and a move or resize
+    // can change what is painted there: re-read every window and keep re-reading while it settles.
+    if event == EVENT_SYSTEM_FOREGROUND || event == EVENT_SYSTEM_MOVESIZEEND {
+        sync_all_windows(Resample::All { settle_ms: SETTLE_AFTER_EVENT_MS });
+    } else {
+        sync_all_windows(Resample::Settling);
+    }
 }
 
 unsafe extern "system" fn manager_wnd_proc(
@@ -838,11 +855,19 @@ unsafe fn manager_wnd_proc_guarded(
 ) -> LRESULT {
     match msg {
         WM_APP_SYNC => {
-            sync_all_windows(true);
+            // A setting or theme change: Lens's frame restyle runs on a debounced worker, so the
+            // captions change a little after this message; keep re-reading until they settle.
+            sync_all_windows(Resample::All { settle_ms: SETTLE_AFTER_CONFIG_MS });
             LRESULT(0)
         }
         WM_TIMER => {
-            sync_all_windows(false);
+            if wparam.0 == 2 {
+                let _ = KillTimer(hwnd, 2);
+                // Some window just changed size: re-measure and re-read every caption.
+                sync_all_windows(Resample::All { settle_ms: SETTLE_AFTER_EVENT_MS });
+            } else {
+                sync_all_windows(Resample::Settling);
+            }
             LRESULT(0)
         }
         _ => DefWindowProcW(hwnd, msg, wparam, lparam),
@@ -878,6 +903,18 @@ unsafe fn caption_wnd_proc_guarded(
         WM_MOUSEMOVE => {
             let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
             if let Some(key) = target_key {
+                // Snap layouts: arm a timer while the pointer rests on the green (maximise) dot.
+                if let Some(slot) = SLOTS.with(|s| s.borrow().get(&key).copied()) {
+                    let mx = (lparam.0 & 0xFFFF) as i16 as i32;
+                    let si = paint::slot_at(slot.w, mx);
+                    let prev = HOVER_SLOT.with(|h| h.borrow_mut().insert(hwnd.0 as isize, si));
+                    if prev != Some(si) {
+                        let _ = KillTimer(hwnd, SNAP_TIMER_ID);
+                        if slot_buttons(ORDER.load(Ordering::Relaxed))[si] == 0 {
+                            let _ = SetTimer(hwnd, SNAP_TIMER_ID, SNAP_HOVER_MS, None);
+                        }
+                    }
+                }
                 let mut need_paint = None;
                 SLOTS.with(|s| {
                     if let Some(slot) = s.borrow_mut().get_mut(&key) {
@@ -895,21 +932,32 @@ unsafe fn caption_wnd_proc_guarded(
                         dwHoverTime: 0,
                     };
                     let _ = TrackMouseEvent(&mut tme);
-                    paint_layered_caption(
-                        hwnd,
-                        slot.x,
-                        slot.y,
-                        slot.w,
-                        slot.h,
-                        slot.bg_bgr,
-                        true,
-                        slot.order,
-                    );
+                    let rows = rows_of(key, slot.h, slot.bg_rgb);
+                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, true, slot.order);
+                }
+            }
+            LRESULT(0)
+        }
+        WM_TIMER if wparam.0 == SNAP_TIMER_ID => {
+            let _ = KillTimer(hwnd, SNAP_TIMER_ID);
+            let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
+            let on_green = HOVER_SLOT
+                .with(|h| h.borrow().get(&(hwnd.0 as isize)).copied())
+                .is_some_and(|si| slot_buttons(ORDER.load(Ordering::Relaxed))[si] == 0);
+            if let (Some(key), true) = (target_key, on_green) {
+                // Win+Z opens snap layouts for the window in front; only offer it for that window.
+                if GetForegroundWindow().0 as isize == key {
+                    keybd_event(VK_LWIN_CODE, 0, KEYBD_EVENT_FLAGS(0), 0);
+                    keybd_event(VK_Z_CODE, 0, KEYBD_EVENT_FLAGS(0), 0);
+                    keybd_event(VK_Z_CODE, 0, KEYEVENTF_KEYUP, 0);
+                    keybd_event(VK_LWIN_CODE, 0, KEYEVENTF_KEYUP, 0);
                 }
             }
             LRESULT(0)
         }
         WM_MOUSELEAVE => {
+            let _ = KillTimer(hwnd, SNAP_TIMER_ID);
+            HOVER_SLOT.with(|h| h.borrow_mut().remove(&(hwnd.0 as isize)));
             let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
             if let Some(key) = target_key {
                 let mut need_paint = None;
@@ -922,16 +970,8 @@ unsafe fn caption_wnd_proc_guarded(
                     }
                 });
                 if let Some(slot) = need_paint {
-                    paint_layered_caption(
-                        hwnd,
-                        slot.x,
-                        slot.y,
-                        slot.w,
-                        slot.h,
-                        slot.bg_bgr,
-                        false,
-                        slot.order,
-                    );
+                    let rows = rows_of(key, slot.h, slot.bg_rgb);
+                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, false, slot.order);
                 }
             }
             LRESULT(0)
@@ -943,12 +983,8 @@ unsafe fn caption_wnd_proc_guarded(
                 let slot_opt = SLOTS.with(|s| s.borrow().get(&key).copied());
                 if let Some(slot) = slot_opt {
                     let target = HWND(key as *mut _);
-                    let scale = (slot.w as f32) / (BASE_W as f32);
                     let red_first: u8 = ORDER.load(Ordering::Relaxed);
-                    let split1 = slot.w - (48.0 * scale) as i32;
-                    let split2 = slot.w - (28.0 * scale) as i32;
-
-                    let slot_i = if click_x < split1 { 0 } else if click_x < split2 { 1 } else { 2 };
+                    let slot_i = paint::slot_at(slot.w, click_x);
                     let action = match slot_buttons(red_first)[slot_i] {
                         0 => "maximize",
                         1 => "minimize",
@@ -1050,7 +1086,7 @@ pub fn start_caption_engine() {
         let _ = EVENT_OBJECT_HIDE;
 
         SetTimer(mgr_hwnd, 1, 220, None);
-        sync_all_windows(true);
+        sync_all_windows(Resample::All { settle_ms: SETTLE_AFTER_CONFIG_MS });
 
         let mut msg = MSG::default();
         while GetMessageW(&mut msg, None, 0, 0).as_bool() {
@@ -1068,14 +1104,4 @@ pub fn start_caption_engine() {
     });
 }
 
-#[cfg(test)]
-mod order_tests {
-    use super::*;
-    #[test]
-    fn default_is_windows_order() {
-        assert_eq!(slot_buttons(order_code("")), [1, 0, 2]);
-        assert_eq!(slot_buttons(order_code("yellow-green-red")), [1, 0, 2]);
-        assert_eq!(slot_buttons(order_code("green-yellow-red")), [0, 1, 2]);
-        assert_eq!(slot_buttons(order_code("red-yellow-green")), [2, 1, 0]);
-    }
-}
+

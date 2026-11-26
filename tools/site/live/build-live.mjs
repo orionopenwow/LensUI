@@ -1,7 +1,7 @@
 // Bundles the website's live widgets from the real Lens frontend source:
 //   docs/site/live/dock/        the real DockSurface on a mocked backend (iframe)
 //   docs/site/live/playground/  the real Playground scenes on a plain canvas (ES module)
-//   docs/site/live/guide/       the Lens Guide BM25 search (ES module)
+//   docs/site/live/guide/       the Guide BM25 search (ES module)
 //   docs/site/live/themes/      .lenstheme export/import and the pack registry (ES module)
 // Run directly (`node tools/site/live/build-live.mjs`) or via tools/site/build.mjs.
 import { build } from "esbuild";

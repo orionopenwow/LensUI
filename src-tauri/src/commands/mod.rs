@@ -1,6 +1,7 @@
 //! Every `#[tauri::command]`, grouped by area. `lib.rs` registers them in `generate_handler!`.
 
 pub(crate) mod theme;
+pub(crate) mod thumbdesk;
 pub(crate) mod dock;
 pub(crate) mod surfaces;
 pub(crate) mod system;
@@ -45,3 +46,4 @@ pub(crate) mod syssettings;
 pub(crate) mod presence;
 pub(crate) mod coreapps;
 pub(crate) mod failsafe;
+pub(crate) mod setup_flow;

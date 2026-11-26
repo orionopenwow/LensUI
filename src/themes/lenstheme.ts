@@ -2,7 +2,7 @@ import type { LensConfig } from "../types/lens";
 import { applyThemePack, customPackDefinition, packById, registerCustomPack } from "./packs";
 
 /**
- * `.lenstheme` — a small, shareable JSON snapshot of how Lens UI looks.
+ * `.lenstheme` — a small, shareable JSON snapshot of how Lens looks.
  * Files live in %APPDATA%\LensUI\themes (see win_themes.rs). Importing never trusts the file:
  * every field is type-checked and clamped to the same safe ranges the Control Center enforces
  * (opacity 40–100%, roundness 0–20px). Custom CSS is deliberately not part of the format.
@@ -123,7 +123,7 @@ function hex(v: unknown, fallback: string): string {
 /** Returns a new config with the theme file applied. Throws if the file is not a .lenstheme. */
 export function importLensTheme(config: LensConfig, raw: unknown): LensConfig {
   if (!isObj(raw) || raw.lenstheme !== 1 || !isObj(raw.theme)) {
-    throw new Error("Not a Lens UI theme file.");
+    throw new Error("Not a Lens theme file.");
   }
   const t = raw.theme;
   // A custom pack travels with the file. Register it first so its "custom-…" id resolves,

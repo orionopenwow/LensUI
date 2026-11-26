@@ -4,4 +4,5 @@ export { ApprovalSurface } from "./ApprovalSurface";
 export { NoSourceBadge, NoAccessNote } from "./NoSourceBadge";
 export { PermissionsCard, allowedLevels } from "./PermissionsCard";
 export * from "./model";
-export { usePendingApprovals, previewFor, approveMcp, denyMcp, allowForSession, undoChange, trustSimilar } from "./api";
+export { usePendingApprovals, previewFor, approveMcp, denyMcp, approveRequest, openLocalApproval, closeLocalApproval, localRecord, useApprovalHotkey, allowForSession, undoChange, trustSimilar } from "./api";
+export { ProposalApproval, useLocalApproval } from "./LocalApproval";

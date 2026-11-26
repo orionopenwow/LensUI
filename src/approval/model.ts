@@ -55,11 +55,27 @@ export interface ApprovalPreview {
   tone?: "trusted" | "danger" | "neutral";
   taskList?: TaskItem[];
   source?: { client: string; kind: string; label: string };
+  /** Why the agent-safety gate made this wait (chips on the card). */
+  safetyReasons?: SafetyReasonLike[];
+  /** Hide the "Undo available" line: sending or running something has no undo to offer. */
+  noUndoLine?: boolean;
+}
+
+/** One reason from the agent-safety gate (`agentsafe::Reason`). */
+export interface SafetyReasonLike {
+  code: string;
+  severity: string;
+  detail: string;
 }
 
 export interface ApprovalRequest {
   id: string;
-  origin: "mcp" | "ai" | "voice" | "browser";
+  origin: "mcp" | "ai" | "voice" | "browser" | "bridge" | "app";
+  /** For requests raised inside Lens: the id their owner knows them by (assistant call id,
+   *  bridge message id, Lens Apps popover). */
+  reference?: string;
+  /** Bridge requests that asked for the clipboard: the click that approves reads it. */
+  wantsClipboard?: boolean;
   /** Client or app name ("Claude Desktop", "Lens assistant", a site). */
   source: string;
   /** A website the action is on, when there is one. */
@@ -169,17 +185,75 @@ export function fallbackPreview(text: string, client: string, risk: Risk = "conf
   };
 }
 
-/** Pending MCP action (list_mcp_actions_cmd) → request. */
-export function fromPendingAction(
-  a: { id: string; tool: string; text: string; client: string; createdMs: number },
-  preview?: ApprovalPreview | null
-): ApprovalRequest {
+/** A queue record as `list_mcp_actions_cmd` returns it (win_mcp::PendingAction). */
+export interface PendingActionLike {
+  id: string;
+  /** "nl" | "tool" for MCP clients; "ai" | "bridge" | "app" for requests raised inside Lens. */
+  kind?: string;
+  tool: string;
+  args?: unknown;
+  text: string;
+  client: string;
+  createdMs: number;
+  status?: string;
+  reference?: string;
+  preview?: ApprovalPreview | null;
+}
+
+const LOCAL_ORIGIN: Record<string, ApprovalRequest["origin"]> = { ai: "ai", bridge: "bridge", app: "app" };
+
+export const isLocalKind = (kind?: string): boolean => !!kind && kind in LOCAL_ORIGIN;
+
+/** Pending action (list_mcp_actions_cmd) → request. Requests raised inside Lens carry their own
+ *  card; MCP requests get the Lens Control preview passed in (or the fallback card). */
+export function fromPendingAction(a: PendingActionLike, preview?: ApprovalPreview | null): ApprovalRequest {
+  const own = a.preview && typeof a.preview === "object" && typeof a.preview.question === "string" ? a.preview : null;
+  const pv = own ?? preview ?? null;
+  const local = isLocalKind(a.kind);
+  const args = a.args && typeof a.args === "object" ? (a.args as Record<string, unknown>) : {};
   return {
     id: a.id,
-    origin: "mcp",
-    source: preview?.source?.label ?? (a.client || "AI app"),
+    origin: local ? LOCAL_ORIGIN[a.kind as string] : "mcp",
+    source: pv?.source?.label ?? (a.client || (local ? "Lens" : "AI app")),
     createdMs: a.createdMs,
-    preview: preview ?? fallbackPreview(a.text, a.client),
+    preview: pv ?? fallbackPreview(a.text, a.client || (local ? "Lens" : ""), local ? "low" : "confirm"),
+    ...(a.reference ? { reference: a.reference } : {}),
+    ...(a.kind === "bridge" && args.useClipboard === true ? { wantsClipboard: true } : {}),
+  };
+}
+
+/** The card for a step the assistant proposed (Lens Command, the AI dock, voice) before, or
+ *  without, its queue record: same shape, so the surface never draws its own dialog. */
+export function requestForProposal(
+  p: { call_id: string; tool: string; args?: Record<string, unknown>; summary: string; risk: string; safety?: SafetyReasonLike[] },
+  now = Date.now()
+): ApprovalRequest {
+  const q = (p.summary || p.tool).trim().replace(/[.?!]*$/, "");
+  const consent = p.tool === "send_to_cloud";
+  const details = Object.entries(p.args ?? {})
+    .filter(([k]) => !consent || k === "label" || k === "model")
+    .slice(0, 4)
+    .map(([k, v]) => ({ label: k, value: typeof v === "string" ? v : JSON.stringify(v) }));
+  const safety = (p.safety ?? []).filter((r) => r && typeof r.detail === "string");
+  return {
+    id: `proposal-${p.call_id}`,
+    origin: "ai",
+    source: "Lens",
+    reference: p.call_id,
+    createdMs: now,
+    preview: {
+      question: `${q}?`,
+      verb: consent ? "Send" : "Allow",
+      ...(consent ? { denyLabel: "Don't send", noUndoLine: true } : {}),
+      kind: "none",
+      details,
+      reversible: true,
+      risk: p.risk === "blocked" ? "blocked" : "low",
+      holdToConfirm: false,
+      capabilities: [],
+      source: { client: "internal", kind: "internal", label: "Lens" },
+      ...(safety.length ? { safetyReasons: safety } : {}),
+    },
   };
 }
 

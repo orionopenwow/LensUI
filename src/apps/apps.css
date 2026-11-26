@@ -1014,7 +1014,10 @@ kbd {
   display: block;
   height: 100%;
   background: var(--lens-fg);
-  transition: width var(--lens-dur-slower) var(--lens-ease-out);
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--lens-dur-slower) var(--lens-ease-out);
 }
 .la-recipe {
   list-style: none;

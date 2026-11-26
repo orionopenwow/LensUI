@@ -1,4 +1,4 @@
-# Testing Lens UI for robustness and fluidity
+# Testing Lens for robustness and fluidity
 
 Lens replaces parts of the Windows shell, so it has to be steady under any input, smooth on slow
 machines, and leave Windows exactly as it found it. This document covers the suites that check
@@ -42,6 +42,7 @@ node tools/perf/run.mjs                 # fluidity budgets
 node tools/perf/reduced-motion.mjs      # no motion when motion is off
 node tools/visual/run.mjs               # golden images
 node tools/a11y/run.mjs                 # axe-core
+node tools/robust/theme-switch.mjs      # theme switching in Settings (--full: every pack)
 SOAK_SCALE=0.2 node tools/soak/run.mjs  # quick soak + chaos (1.0 = full)
 ```
 
@@ -56,7 +57,7 @@ node tests/e2e/run.mjs                               # E2E_ONLY=palette,theme-sw
 pwsh tools/e2e/probe.ps1 compare tests/e2e/out/before.json
 ```
 
-The end-to-end run starts the real Lens UI: it will hide the taskbar and restyle windows while it
+The end-to-end run starts the real Lens: it will hide the taskbar and restyle windows while it
 runs, exactly as Lens does. Run it on a test machine or VM, not in the middle of your work. The
 probe then checks that quitting put everything back.
 
@@ -66,7 +67,7 @@ probe then checks that quitting put everything back.
 |---|---|---|
 | `build.yml` › Windows build | Rust property tests (default cases) | — |
 | `portability.yml` | Rust property tests on Linux and macOS | — |
-| `e2e.yml` › robustness | perf, reduced motion, visual, a11y, soak at 30 % | soak at 100 %, Playground scenes 15 s each |
+| `e2e.yml` › robustness | perf, reduced motion, visual, a11y, theme switching (featured looks), soak at 30 % | soak at 100 %, Playground scenes 15 s each, theme switching through every pack |
 | `e2e.yml` › windows-e2e | all scenarios + Windows-restored probe | + start → quit × 10 restart loop |
 | `e2e.yml` › nightly-properties | — | Rust property tests × 16 cases |
 
@@ -215,6 +216,34 @@ Known exceptions live in `tools/a11y/allowlist.json`. Each entry has a rule, a s
 selector substring and a reason, and the reason links to a finding below when it is a real defect.
 Entries that no longer match anything are reported, so the list can only shrink.
 
+### Theme switching
+
+`tools/robust/theme-switch.mjs` drives the real Settings window through theme changes the way
+people make them and checks each one as a person would see it. Report and contact sheets:
+`tools/robust/out/theme-rig/` (`report.md`, `report.json`, one PNG per failing switch plus a few
+samples; uploaded with the robustness reports).
+
+Scenarios:
+- **Advanced › Appearance:** clicking every featured look card in turn (`--full`: every pack in
+  "Browse all"), then Dark → Light → Dark with the hero's control.
+- **Simple mode:** the Quick settings theme chips and the Dark mode tile.
+- **Another window changed it:** the backend's config broadcast while Settings shows Dock & Bar and
+  Accessibility (`--full`: five pages), and high contrast on and off.
+- **Settings still works afterwards:** a tab opens, "Enable Top Bar" toggles, search lists the page.
+
+Each switch fails when:
+
+| Check | Rule |
+|---|---|
+| Flash | A screencast frame during the switch is brighter or darker than both the old and the new theme (mean luminance ±10 of 255, or near-white share +0.08): a washed-out, white or black frame. |
+| Layout | A sidebar button, page header, card, row, theme card or the hero moves or resizes more than 1 px. A change of font family or shape style (Expressive, Dot Matrix) reflows on purpose and is listed, not failed. |
+| Growth | Any of those boxes grows more than 2 px beyond both its start and end size while the switch runs (sampled every frame). |
+| Latency | The new theme is not applied and fully on screen within 250 ms of the click or broadcast (clock started in the page; a view transition counts until it finishes). |
+| Shift / errors | Layout shift above 0.02 without a font change; any console error. |
+
+Long tasks are reported, not failed (software rendering on CI). The tolerances are at the top of
+the script.
+
 ### Soak and chaos
 
 `tools/soak/run.mjs` runs three passes (the third, `failsafe`, is described in docs/FAILSAFE.md §8:
@@ -236,6 +265,53 @@ promise rejections are counted per command and reported.
 
 Known defects are matched in `KNOWN` in `tools/soak/run.mjs` and reported as `fixme(Fn)` rather
 than failures.
+
+## Hyper suite (every control, every surface, the rules)
+
+`tools/hyper/run.mjs` builds an inventory of everything Lens has and tests as much of it as a
+headless browser can, then writes a coverage report that lists every item as pass, fail or untested
+(with the reason). Real-Windows parts are separate E2E files whose results it folds in.
+
+**Inventory** (`tools/hyper/inventory.mjs`, generated, never hand-written): every setting and tool in
+the control catalogue (`src/control/catalogue.json`), every Settings page (`src/settings/registry.ts`),
+every row the Guide indexes (`src/guide/index.json`), every Command intent and its first phrasing
+(`src-tauri/src/ai/intent.rs`), every window (`src-tauri/tauri.conf.json`) and every row of
+`docs/brain/FEATURES.md`. Adding a setting, page, intent or window adds it to the report; to make
+it tested, give it a Settings switch or choice (picked up automatically), or add a check to
+`run.mjs` / an E2E file with `inventoryId` set to its inventory id.
+
+**Checks (headless, parity mock backend):**
+- Every switch on every Settings page: flips when clicked, writes only its own setting (catalogue
+  path when known, otherwise a small change), flipping back restores the settings byte for byte,
+  no errors; one per page (every one with `--full`) survives a reload. A switch that changes no
+  setting and doesn't move drives Windows directly and is listed as untested, not passed.
+- Every choice group (Segmented): every option can be picked, going back restores the settings.
+- Themes change colour only: every look on Appearance (every pack with `--full`) leaves the Dock,
+  Top Bar and behaviour settings alone.
+- Every window renders without errors in dark and light (plus high contrast and reduced motion
+  with `--full`), has no critical axe findings, and Esc closes every flyout.
+- Source rules: the Top Bar has one owner of shown/hidden, every flyout show path dismisses the
+  others, the change registry covers every change (`tools/changes/check.mjs`), and only the settings
+  writer writes `config.json`.
+
+**Real Windows** (E2E job): `tests/e2e/autohide.mjs` moves the real cursor through the Top Bar and
+Dock edges (idle hide, reveal, fast and slow leave, far corners, settings saves while hidden, Search
+and Quick Settings dismissed by click outside / Esc / another window / another flyout, smart dodge
+over a maximised window, Dock on the bottom and top) and checks the real window state after every
+step, sampling every 16 ms for flicker. `tests/e2e/intents.mjs` previews every Command intent from
+its own phrasing and runs dark ↔ light mode end to end.
+
+**Gate:** CI fails only on failures not in `tools/hyper/known.json`; each known failure has a row in
+`docs/brain/BUGS.md` with steps. When one is fixed the report lists it under "now pass": remove it.
+
+```sh
+node tools/robust/build.mjs && node tools/hyper/run.mjs     # quick tier (~3 min, every PR)
+node tools/hyper/run.mjs --full                              # nightly: both Settings modes, every pack, every reload, all variants
+node tools/hyper/run.mjs --write-known                       # accept today's failures as known (log each in BUGS.md first)
+node tests/e2e/autohide.mjs; node tests/e2e/intents.mjs     # Windows, after the E2E build
+```
+
+Reports: `tools/hyper/out/coverage.md` and `coverage.json` (uploaded with the robustness reports).
 
 ## App-side test hooks (snippets, not applied)
 
@@ -358,6 +434,34 @@ marker together with the fix.
 * **Repro:** `PERF_ONLY=theme-switch node tools/perf/run.mjs`. Or open Theme & Look and click through the recommended packs.
 * **Suggested fix:** reserve two lines for the description (`min-height: calc(2 * line-height)` on the description in the Theme hero), or clamp it to two lines.
 * **Marker:** the `theme-switch` CLS baseline in `tools/perf/budgets.json` is raised to 0.055, with a `_findings` note. Lower it with the fix.
+
+### F9: switching themes in Settings flashed, lagged and showed two fonts at once (fixed)
+
+* **Found by:** the theme-switch rig (`tools/robust/theme-switch.mjs`), after reports that themes
+  "grow and glitch" in the Settings window.
+* **What happened:**
+  1. *Lag.* A click on a theme card started a View Transition of the whole window. It held the
+     old picture on screen until the cross-fade finished: median **443 ms**, up to **721 ms**,
+     from click to the new theme. For that time the window showed the new content in the old
+     colours.
+  2. *Washed-out frames.* Settings is a see-through window. Half-way through the cross-fade both
+     pictures were half transparent, so the frame went pale, or white over a light desktop.
+     6 of the 30 switches had such a frame.
+  3. *Two fonts at once.* Looks that change the font cross-faded two layouts on top of each other,
+     so text looked doubled and boxes looked like they grew.
+  4. *Patchy fades.* Every switch started ~230 CSS transitions (hover and colour transitions on
+     buttons, cards and rows), so parts of the window faded at different speeds, and each frame
+     re-styled and re-painted the page.
+* **Fix:** `src/hooks/useLensState.ts` applies the theme in the layout effect, before paint, in the
+  same frame as the re-render, with no View Transition (the `::view-transition` rules are gone from
+  `motion.css`). For the two frames of a switch, `data-theme-switch` on the root turns transitions
+  off (`tokens.css`), so the whole window changes at once. Windows that get the change by broadcast
+  use the same path.
+* **After:** median **48 ms** from click to the new theme (max 188 ms on the CI-class sandbox). No
+  flash frames; 30/30 checks clean, and 122/122 through every pack (`--full`). Broadcast switches
+  were and are ~20 ms.
+* **Still true by design:** a look that changes the font or the shape style (Expressive, Dot Matrix)
+  reflows the page. The rig lists those switches but does not fail them.
 
 ## Change log: waves 7–8 integration (`integration/waves-7-8`)
 

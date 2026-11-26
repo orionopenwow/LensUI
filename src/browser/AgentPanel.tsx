@@ -8,6 +8,7 @@ import { shelfAdd } from "../shelf/contract";
 import { agentAct, agentDescribe, DEFAULT_CAPS, focusPage, pageRead, tabActivate, type Capabilities, type PageSnapshot } from "./api";
 import { defaultGroupTitle, iconOf, plainError, stepToAction, summariseVerbs, verbOf, type AgentItem, type PendingOk, type StepIcon } from "./agent";
 import { ApprovalCard, Key, TaskCan } from "./ApprovalCard";
+import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import { cardModel } from "./approvalShape";
 import { agentPrompt, parsePlan, scanForInjection, wrapUntrusted, type PlanStep } from "./guard";
 import { elapsed, hostOf } from "./model";
@@ -406,6 +407,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           </div>
         ) : null}
 
+        <SafetyFlagBanners sources={["browser"]} />
         {pending ? <ApprovalCard pending={pending} now={now} onDeny={() => approveResolve.current?.(false)} onApprove={() => approveResolve.current?.(true)} /> : null}
 
         {running && ai.status === "running" && ai.text && mode.current === "quick" ? <div className="lb-msg lb-msg-answer">{ai.text}</div> : null}

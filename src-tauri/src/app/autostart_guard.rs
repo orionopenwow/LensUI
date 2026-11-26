@@ -68,7 +68,7 @@ pub(crate) fn startup_block_reason_for(exe: &str, debug_build: bool) -> Option<S
         return Some(DEV_BUILD_MESSAGE.to_string());
     }
     if exe.trim().is_empty() {
-        return Some("Lens UI could not find its own program file.".to_string());
+        return Some("Lens could not find its own program file.".to_string());
     }
     None
 }
@@ -128,6 +128,10 @@ pub(crate) fn dev_signin_exit_code(running_as_shell: bool) -> Option<i32> {
         return None;
     }
     if !(has_autostart_arg(std::env::args()) || running_as_shell) {
+        return None;
+    }
+    // The end-to-end test runs a debug build with --autostart to exercise the sign-in gate.
+    if !running_as_shell && std::env::var_os("LENS_E2E_ALLOW_AUTOSTART").is_some() {
         return None;
     }
     remove_run_entry();
@@ -201,7 +205,7 @@ pub(crate) fn dev_server_exit_code() -> Option<i32> {
         return None;
     }
     let message = format!(
-        "This is a development build of Lens UI, and its dev server (http://localhost:{}) is not \
+        "This is a development build of Lens, and its dev server (http://localhost:{}) is not \
 running, so Lens can't load its windows.\n\nStart it with Launch-Lens-UI.bat, or build the \
 standalone version with Build-Lens-UI.bat.",
         dev_port()

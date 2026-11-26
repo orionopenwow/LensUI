@@ -55,7 +55,7 @@ From the desktop side, [KDE Activities](https://blogs.kde.org/2026/01/17/streaml
 | AI core (script → local → Claude), AI surfaces, browser extension bridge, transcription | **Integrated** |
 | Lens Command, Lens Mini, Shelf, clipboard history, edge Shelf, selection bubble | **Integrated** |
 | Tester Hub, master plan | **Integrated** |
-| Lens Guide | **In PR #18** |
+| Guide | **In PR #18** |
 | Right-click everything, micro-saves, context packs, YouTube transcripts | **In PR #19** |
 | Lens Browser (vertical tabs, Spaces, agent mode with approvals) | **In PR #20** |
 | Claude control (Desktop State API, capability grants, unified approval card) | **In PR #21** |
@@ -65,6 +65,9 @@ From the desktop side, [KDE Activities](https://blogs.kde.org/2026/01/17/streaml
 | The unified object model, Spaces across browser and desktop, dock ↔ browser fusion, phone companion | **Planned** (this folder) |
 
 ## Read next
+
+- [Identity](brain/IDENTITY.md): mission, brand, design philosophy and the promises Lens keeps (start here).
+- [Features](brain/FEATURES.md): everything Lens does and every suggested feature, with status.
 
 - [Unified model](vision/unified-model.md): the objects, verbs, context, runs and Spaces everything shares.
 - [Dock × Browser](vision/dock-browser.md): tabs, web apps, agents, media and downloads on the dock.

@@ -208,6 +208,14 @@ pub const CHANGES: &[Change] = &[
         undo: undo_input_hooks,
     },
     Change {
+        id: "agent-keys",
+        label: "Agent stop key, approval hotkey and pause hotkey",
+        scope: Scope::Session,
+        writes: &[],
+        sources: &["presence/esc.rs", "presence/win.rs"],
+        undo: undo_agent_keys,
+    },
+    Change {
         id: "browser-bridge",
         label: "Browser extension bridge",
         scope: Scope::Persistent,
@@ -237,6 +245,8 @@ pub const CHANGES: &[Change] = &[
         writes: &[
             "HKCU\\Software\\Classes\\*",
             "HKCU\\Software\\Classes\\Directory\\shell",
+            "HKCU\\Software\\Classes\\Directory\\Background\\shell",
+            "HKCU\\Software\\Classes\\Drive\\shell\\LensUI",
             "HKCU\\Software\\Classes\\DesktopBackground",
             "HKCU\\Software\\Classes\\SystemFileAssociations",
         ],
@@ -434,9 +444,10 @@ fn undo_taskbar(config: &mut LensConfig) -> Result<String, String> {
 }
 
 fn undo_window_styling(config: &mut LensConfig) -> Result<String, String> {
+    // Also removes the experimental in-app hook and ends its thread (stop_dwm_hook_engine).
     crate::win_dwm_engine::revert_dwm_theme();
     config.func.injected_hook = false;
-    Ok("Open windows reset to Windows defaults.".to_string())
+    Ok("Open windows reset to Windows defaults; the in-app styling helper is removed.".to_string())
 }
 
 fn undo_windhawk_mod(_: &mut LensConfig) -> Result<String, String> {
@@ -472,6 +483,15 @@ fn undo_cursors(_: &mut LensConfig) -> Result<String, String> {
 fn undo_focus_overlays(_: &mut LensConfig) -> Result<String, String> {
     crate::win_focus_dim::shutdown();
     Ok("Unpinned windows Lens pinned and removed the dimming and border overlays.".to_string())
+}
+
+fn undo_agent_keys(_: &mut LensConfig) -> Result<String, String> {
+    // The Esc claim on the input service (held only while an agent runs), the global hotkey that
+    // opens the approval window, and the presence pause hotkey (Ctrl+Alt+Pause by default).
+    crate::presence::esc::undo();
+    #[cfg(windows)]
+    crate::presence::win::release_hotkey();
+    Ok("Esc watcher released; the approval and pause hotkeys unregistered.".to_string())
 }
 
 fn undo_input_hooks(config: &mut LensConfig) -> Result<String, String> {
@@ -520,7 +540,12 @@ fn undo_print_screen(_: &mut LensConfig) -> Result<String, String> {
 }
 
 fn undo_windows_accent(_: &mut LensConfig) -> Result<String, String> {
-    crate::win_theme::restore_windows_accent()
+    // A theme change made just before can still have its Windows accent write queued (theme
+    // writes wait for things to settle); cancel it so it can't land after the restore.
+    let _io = crate::app::theme_apply::cancel_accent_writes();
+    let r = crate::win_theme::restore_windows_accent();
+    crate::app::theme_apply::forget_written_accent();
+    r
 }
 
 fn undo_app_recipes(_: &mut LensConfig) -> Result<String, String> {

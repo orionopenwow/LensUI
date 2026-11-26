@@ -4,6 +4,7 @@ import { Type, Sparkles, Contrast, ZoomIn } from "lucide-react";
 import { Hero, HeroTile, LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import { optimistic, useResource } from "../useResource";
 import type { PageProps } from "./common";
+import { ControllerCard } from "../../components/ControllerCard";
 
 interface AccessState {
   animations: boolean | null;
@@ -11,7 +12,7 @@ interface AccessState {
   textScale: number | null;
 }
 
-export const AccessibilityPage: React.FC<PageProps> = ({ section }) => {
+export const AccessibilityPage: React.FC<PageProps> = ({ section, config, updateConfig }) => {
   const acc = useResource<AccessState>("sys_access_cmd");
   const [err, setErr] = useState<string | null>(null);
   const a = acc.data;
@@ -51,6 +52,10 @@ export const AccessibilityPage: React.FC<PageProps> = ({ section }) => {
         <LinkRow>
           <WinLink uri="ms-settings:easeofaccess-visualeffects" label="Visual effects" />
         </LinkRow>
+      </Section>
+
+      <Section id="controller" title="Use a controller" summary="Mouse and keyboard from a gamepad" defaultOpen={section === "controller"} forceOpen={section === "controller"}>
+        <ControllerCard config={config} updateConfig={updateConfig} />
       </Section>
     </>
   );

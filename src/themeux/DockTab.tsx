@@ -1,10 +1,10 @@
 import React from "react";
 import type { LensConfig } from "../types/lens";
+import { useStylePick } from "../dock/useStylePick";
 import {
   DOCK_STYLES,
   DockScenePreview,
   dockAlignmentOf,
-  dockStyleOf,
   dockSystemAreaOf,
   withDock,
   type DockAlignment,
@@ -52,7 +52,7 @@ const Toggle: React.FC<{ label: string; desc: string; on: boolean; onChange: (v:
 
 /** Dock & Top Bar tab, Dock half: style → position → size → auto-hide → system area. */
 export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
-  const style = dockStyleOf(config);
+  const [style, pickStyle] = useStylePick(config, updateConfig);
   const alignment = dockAlignmentOf(config);
   const systemArea = dockSystemAreaOf(config);
   const dock = config.dock;
@@ -80,7 +80,7 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
               aria-checked={style === d.id}
               data-dock-style={d.id}
               className={`tux-dock-card ${style === d.id ? "active" : ""}`}
-              onClick={() => updateConfig(withDock({ ...config, dock: { ...dock, iconSize: d.recommendedIconSize } }, { style: d.id }))}
+              onClick={() => pickStyle(d.id)}
             >
               <DockScenePreview styleId={d.id} accent={accent} alignment={alignment} height={56} />
               <span className="tux-pack-name">

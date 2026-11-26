@@ -107,19 +107,22 @@ pub(crate) fn apply_frames(cfg: &LensConfig) {
 
 /// The system-wide writes, each only when its value changed: the Windows accent (registry plus a
 /// settings broadcast every app repaints for) and the Windhawk mod (Windhawk recompiles on write).
-pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool) {
-    if write_win_accent
-        && cfg.theme.accent_mode == "custom"
-        && crate::app::theme_apply::changed("accent", &cfg.theme.custom_accent)
-    {
-        let _ = set_windows_accent_color(&cfg.theme.custom_accent);
+pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool, epoch: u64) {
+    if write_win_accent && cfg.theme.write_windows_accent && cfg.theme.accent_mode == "custom" {
+        // Under the accent lock, and only if no "Remove all" ran since this was queued.
+        let _io = crate::app::theme_apply::ACCENT_IO.lock().unwrap_or_else(|e| e.into_inner());
+        if crate::app::theme_apply::accent_write_current(epoch)
+            && crate::app::theme_apply::changed("accent", &cfg.theme.custom_accent)
+        {
+            let _ = set_windows_accent_color(&cfg.theme.custom_accent);
+        }
     }
     let c = frame_colors(cfg);
     // Windhawk's mod needs a real color; DWM accepts the borderless sentinel.
     let windhawk_border = if c.border_hex == "none" { c.caption_hex.clone() } else { c.border_hex.clone() };
     let key = format!("{}|{}|{}", c.caption_hex, windhawk_border, cfg.theme.border_radius);
     if crate::app::theme_apply::changed("windhawk", &key) {
-        let _ = sync_lens_windhawk_mod(&c.caption_hex, &windhawk_border, cfg.theme.border_radius);
+        let _ = sync_lens_windhawk_mod(&c.caption_hex, &windhawk_border, cfg.theme.border_radius, false);
     }
 }
 
@@ -179,7 +182,8 @@ pub(crate) fn save_config_cmd(
 
     // Only write Windows registry accent when accent color/mode actually changed
     let accent_changed = prev_config.theme.accent_mode != new_config.theme.accent_mode
-        || prev_config.theme.custom_accent != new_config.theme.custom_accent;
+        || prev_config.theme.custom_accent != new_config.theme.custom_accent
+        || prev_config.theme.write_windows_accent != new_config.theme.write_windows_accent;
 
     let dwm_changed = accent_changed
         || prev_config.theme.surface_hex != new_config.theme.surface_hex
@@ -191,12 +195,21 @@ pub(crate) fn save_config_cmd(
         || (prev_config.theme.accent_tint_strength - new_config.theme.accent_tint_strength).abs()
             > 0.005;
 
+    // "Also use this accent in Windows" turned off: put Windows' own accent back now.
+    if prev_config.theme.write_windows_accent && !new_config.theme.write_windows_accent {
+        let _io = crate::app::theme_apply::cancel_accent_writes();
+        let _ = crate::win_theme::restore_windows_accent();
+        crate::app::theme_apply::forget_written_accent();
+    }
     if dwm_changed {
         apply_theme_to_system(&new_config, accent_changed);
     }
-    // Turning the legacy in-process hook on takes effect immediately; turning it off needs a restart.
+    // The experimental in-app hook follows its switch at once, both ways: on installs it (when
+    // the guard says it is safe), off removes it from every app without a restart.
     if new_config.func.injected_hook && !prev_config.func.injected_hook {
         win_dwm_engine::start_dwm_hook_engine();
+    } else if !new_config.func.injected_hook && prev_config.func.injected_hook {
+        win_dwm_engine::stop_dwm_hook_engine();
     }
     if prev_config.workspaces != new_config.workspaces {
         win_workspaces::apply_workspaces_config(new_config.workspaces.clone());
@@ -232,6 +245,9 @@ pub(crate) fn save_config_cmd(
     }
     if new_config.func.clipboard_history && !prev_config.func.clipboard_history {
         start_clipboard_with_events(&app);
+    } else if !new_config.func.clipboard_history && prev_config.func.clipboard_history {
+        // Stops the session history recording at once (the saved history has its own switch).
+        crate::clip::service::set_session(false);
     }
 
     #[cfg(windows)]
@@ -252,6 +268,14 @@ pub(crate) fn save_config_cmd(
     }
     let _ = app.emit("lens://config-updated", &new_config);
     Ok(())
+}
+
+/// The experimental in-app styling hook: whether its switch is on and whether it is installed
+/// right now (it is kept out while a protected game or a fullscreen app is running).
+#[tauri::command]
+pub(crate) fn legacy_hook_status(state: State<AppState>) -> serde_json::Value {
+    let wanted = state.config.lock().unwrap_or_else(|e| e.into_inner()).func.injected_hook;
+    serde_json::json!({ "wanted": wanted, "installed": win_dwm_engine::hook_installed() })
 }
 
 #[tauri::command]
@@ -280,7 +304,8 @@ pub(crate) fn sync_windhawk_mod_cmd(
     border_hex: String,
     border_radius: u32,
 ) -> Result<String, String> {
-    let out = sync_lens_windhawk_mod(&caption_hex, &border_hex, border_radius)?;
+    // The person's own click: the only path that puts the mod into Windhawk's folder.
+    let out = sync_lens_windhawk_mod(&caption_hex, &border_hex, border_radius, true)?;
     if let Some(exe) = win_windhawk::find_windhawk_exe() {
         let _ = launch_path(&exe.to_string_lossy());
     } else if let Some(parent) = std::path::Path::new(&out).parent() {

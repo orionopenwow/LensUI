@@ -43,7 +43,14 @@ pub fn detect(args: &[String]) -> Option<Result<Invocation, String>> {
     }
     if let Some(i) = pos("--action") {
         let verb = args.get(i + 1).cloned().unwrap_or_default();
+        // A drive root reaches us as `"C:\"` on the command line, and Windows' argument rules read
+        // that backslash as escaping the closing quote: the argument arrives as `C:"`.
         let path = args.get(i + 2).cloned().unwrap_or_default();
+        let path = match path.strip_suffix('"') {
+            Some(p) if p.len() == 2 && p.ends_with(':') => format!("{}\\", p),
+            Some(p) => p.to_string(),
+            None => path,
+        };
         if !EXPLORER_ACTIONS.contains(&verb.as_str()) {
             return Some(Err(format!("Unknown action \"{}\".", verb)));
         }
@@ -286,7 +293,7 @@ fn message_box(msg: &str) {
         fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, flags: u32) -> i32;
     }
     let text: Vec<u16> = msg.encode_utf16().chain(Some(0)).collect();
-    let cap: Vec<u16> = "Lens UI".encode_utf16().chain(Some(0)).collect();
+    let cap: Vec<u16> = "Lens".encode_utf16().chain(Some(0)).collect();
     // MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND
     unsafe {
         MessageBoxW(0, text.as_ptr(), cap.as_ptr(), 0x0000_0040 | 0x0001_0000);
@@ -315,6 +322,11 @@ mod tests {
             Some(Ok(Invocation::Action { verb: "transcribe".into(), path: "C:\\v\\a.mp4".into() }))
         );
         assert!(matches!(detect(&s(&["--action", "format_c", "C:\\x"])), Some(Err(_))));
+        // A drive root from Explorer: `"C:\"` arrives as `C:"`.
+        assert_eq!(
+            detect(&s(&["--action", "ask", "D:\""])),
+            Some(Ok(Invocation::Action { verb: "ask".into(), path: "D:\\".into() }))
+        );
         assert!(matches!(detect(&s(&["--action", "ask"])), Some(Err(_))));
         match detect(&s(&["--ask", "-", "--do", "summarize", "--variant", "tldr", "--wait", "99999", "--local"])) {
             Some(Ok(Invocation::Ask(a))) => {

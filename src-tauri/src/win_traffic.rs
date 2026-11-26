@@ -14,7 +14,7 @@ pub struct ActiveWindowTarget {
     pub is_fullscreen: bool,
 }
 
-/// Returns the active foreground window target, or if Lens UI itself (e.g. Control Center)
+/// Returns the active foreground window target, or if Lens itself (e.g. Control Center)
 /// is focused, falls back to the top-most visible non-Lens window behind it so live previews keep working!
 #[allow(dead_code)]
 #[cfg(windows)]

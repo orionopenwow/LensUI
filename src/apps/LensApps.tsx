@@ -6,11 +6,14 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Skeleton } from "../ui";
 import { ActionPill, pillFor, type PillKind, type PopoverMode, type PopoverProps } from "./ActionPill";
+import { useLocalApproval } from "../approval/LocalApproval";
+import { appApprovalPreview, approvalReference, approvalText } from "./approval";
 import {
   applyRecipe,
   cancelJob,
   discardRelease,
   installedApps,
+  removePortable,
   loadCatalog,
   loadSettings,
   onProgress,
@@ -175,14 +178,40 @@ function useAppsController(catalog: Catalog | null, demo: LensAppsProps["demo"])
       const it = itemFor(queue, target.id);
       if (it?.token)
         runRelease(it.token).then(
-          () => dispatch({ type: "finished", appId: target.id, ok: true }),
+          () => {
+            dispatch({ type: "finished", appId: target.id, ok: true });
+            installedApps().then(setInstalled);
+          },
           (e) => dispatch({ type: "finished", appId: target.id, ok: false, message: String(e) }),
         );
+      return;
+    }
+    // Portable apps (one program file Lens keeps in its apps folder) are removed by deleting that
+    // folder; there is no Windows uninstaller to run.
+    if (popover.mode === "uninstall" && (target.install as { portable?: boolean }).portable) {
+      removePortable(target.id).then(
+        () => installedApps().then(setInstalled),
+        (e) => dispatch({ type: "finished", appId: target.id, ok: false, message: String(e) }),
+      );
       return;
     }
     const op: QueueOp = popover.mode === "update" ? "upgrade" : popover.mode === "uninstall" ? "uninstall" : "install";
     dispatch({ type: "enqueue", appId: target.id, op });
   }, [popover, byId, queue, viaOf]);
+
+  // One approval card: the open confirmation is also in the shared queue, so it shows on the
+  // pill and in the approval window; an answer given there lands here.
+  const asking = popover ? byId[popover.appId] : null;
+  const askingTarget = asking ? (viaOf(asking) ?? asking) : null;
+  const settleApproval = useLocalApproval({
+    reference: popover && askingTarget ? approvalReference(askingTarget.id, popover.mode) : null,
+    tool: popover ? `apps_${popover.mode}` : "",
+    text: popover && askingTarget ? approvalText(askingTarget, popover.mode) : "",
+    source: "Lens Apps",
+    preview: popover && askingTarget ? appApprovalPreview(askingTarget, popover.mode, prepared[askingTarget.id] ?? null) : null,
+    onApprove: confirm,
+    onDeny: () => setPopover(null),
+  });
 
   const cancelId = useCallback(
     (appId: string) => {
@@ -208,8 +237,14 @@ function useAppsController(catalog: Catalog | null, demo: LensAppsProps["demo"])
       show: s && !("error" in s) ? s : null,
       showError: s && "error" in s ? s.error : null,
       prepared: prepared[target.id] ?? null,
-      onConfirm: confirm,
-      onClose: () => setPopover(null),
+      onConfirm: () => {
+        settleApproval(true);
+        confirm();
+      },
+      onClose: () => {
+        settleApproval(false);
+        setPopover(null);
+      },
     };
   };
 

@@ -1,10 +1,10 @@
-# Lens UI — Where It Stands and Where It Can Go
+# Lens — Where It Stands and Where It Can Go
 
 _Last updated: 2026-11-21_
 
-## What Lens UI is today
+## What Lens is today
 
-Lens UI is a **shell overlay**, not yet a shell replacement. Windows Explorer (`explorer.exe`) is still
+Lens is a **shell overlay**, not yet a shell replacement. Windows Explorer (`explorer.exe`) is still
 running underneath: Lens hides the native taskbar and desktop icons, then draws its own Dock, Top Bar,
 Quick Settings, Command Palette, Widgets and notifications as eight transparent Tauri (WebView2) windows.
 A Rust/Win32 backend handles the parts a web view cannot: DWM titlebar colors, traffic-light caption
@@ -53,7 +53,7 @@ Anything that could break the working shell is behind a switch that is **off by 
 | System tray host | `win_tray.rs`, `TrayStrip.tsx` (Top Bar) | off — Control Center > "System Tray in Top Bar" | Whole module type-checked; message parser and icon encoder unit-tested. Payload offsets are from memory. |
 | Notification center | `win_notifications.rs`, `NotificationCenterPane.tsx` (bell in Top Bar) | on | History/Do-Not-Disturb logic unit-tested. Reading other apps' toasts probably needs a packaged install; the pane says so when unavailable. |
 | Shell replacement | `win_shell.rs`, `ShellModeCard.tsx`, `Restore-Windows-Shell.bat`, `docs/SHELL_MODE.md` | off — typed confirmation to enable | Boot-loop guard and startup-command parsing unit-tested. **Try in a VM first.** |
-| Clipboard history | `win_clipboard.rs`, `ClipboardPane.tsx` (Widget Drawer) | off | Ring buffer unit-tested; text only, memory only. |
+| Clipboard history | `clip/` (one store; `clip/compat.rs` serves the Widget Drawer pane), `ClipboardPane.tsx` | off | Session history: last 50 texts, memory only. Saved history: opt-in, sealed on disk. |
 | Window rules | `win_rules.rs`, `WindowRulesCard.tsx` | no rules | Matching/sanitizing unit-tested. |
 | Keyboard tiling | `win_tiler.rs` | off — restart to apply | Geometry unit-tested. |
 | Session save/restore | `sessions.ts`, `SessionRestoreCard.tsx` | — | Pure parts run in node. |

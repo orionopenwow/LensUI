@@ -1,22 +1,22 @@
-# Lens UI as an MCP server
+# Lens as an MCP server
 
-Lens UI can let AI apps (Claude Desktop and other [Model Context Protocol](https://modelcontextprotocol.io) clients)
+Lens can let AI apps (Claude Desktop and other [Model Context Protocol](https://modelcontextprotocol.io) clients)
 see your open windows and make a small set of reversible desktop changes. It is **off by default**:
 Control Center › Agents & MCP › "Allow AI apps to connect".
 
 ## How it works
 
 ```
-Claude Desktop ──stdio──▶ lens-ui.exe --mcp-stdio ──loopback TCP + token──▶ running Lens UI
+Claude Desktop ──stdio──▶ lens-ui.exe --mcp-stdio ──loopback TCP + token──▶ running Lens
 ```
 
 * The AI app launches `lens-ui.exe --mcp-stdio`. With that flag Lens does **not** start the shell; the process
-  is a thin bridge that forwards each JSON-RPC line to the running Lens UI and exits when stdin closes.
-* While MCP is switched on, Lens UI listens on `127.0.0.1` on a random port and writes the port plus a random
+  is a thin bridge that forwards each JSON-RPC line to the running Lens and exits when stdin closes.
+* While MCP is switched on, Lens listens on `127.0.0.1` on a random port and writes the port plus a random
   256-bit token to `%APPDATA%\LensUI\mcp-endpoint.json`. Every connection must present the token first.
   Switching MCP off (or quitting) closes the port and deletes the file.
-* If Lens UI is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool
-  returns "Lens UI isn't running, or its MCP server is switched off".
+* If Lens is not running or MCP is off, the bridge still answers (so the AI app doesn't hang): every tool
+  returns "Lens isn't running, or its MCP server is switched off".
 * Why stdio + loopback instead of only HTTP: stdio is what every MCP client supports for local servers and
   needs no new crates; the loopback hop is plain `std::net` with no async runtime. All protocol logic is in
   `src-tauri/src/win_mcp.rs`.

@@ -43,7 +43,9 @@ pub(crate) fn remove_all_lens_changes_cmd(
     // Workspaces, the live wallpaper and the input hooks are rows in the change registry too.
     let mut steps = win_uninstall::remove_all_lens_changes(&mut cfg);
     let _ = app.emit(crate::commands::apps::INTEGRATIONS_EVENT, crate::commands::apps::apps_integrations());
-    if delete_data {
+    // A failed undo step keeps the data folder: its backups are what a second try needs.
+    let blocked = if delete_data { win_uninstall::data_deletion_blocked(&steps) } else { None };
+    if delete_data && blocked.is_none() {
         let res = win_uninstall::delete_lens_data();
         steps.push(win_uninstall::UninstallStep {
             step: "Lens data".into(),
@@ -51,6 +53,9 @@ pub(crate) fn remove_all_lens_changes_cmd(
             detail: res.unwrap_or_else(|e| e),
         });
     } else {
+        if let Some(why) = blocked {
+            steps.push(win_uninstall::UninstallStep { step: "Lens data".into(), ok: false, detail: why });
+        }
         // Remove all switches features off for good: write those values as they are.
         crate::failsafe::features::release_overrides();
         let _ = save_config(&cfg);
