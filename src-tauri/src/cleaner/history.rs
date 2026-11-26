@@ -27,6 +27,27 @@ pub struct Growth {
     pub delta: i64,
 }
 
+/// One day on which a drive's used space rose a lot, with the folder that grew most across it
+/// (known only when the drive was mapped before and after).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Jump {
+    pub day: String,
+    pub delta: u64,
+    pub folder: Option<String>,
+    pub folder_delta: u64,
+}
+
+/// A day-to-day rise counts as a jump from 1 GB or 1% of the drive.
+pub fn is_jump(delta: u64, total: u64) -> bool {
+    delta >= 1_000_000_000 || (total > 0 && delta.saturating_mul(100) >= total)
+}
+
+fn under(path: &str, root: &str) -> bool {
+    let (p, r) = (path.to_ascii_lowercase(), root.to_ascii_lowercase());
+    p.starts_with(&r)
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct History {
     /// root → day → (total, free)
@@ -101,6 +122,39 @@ impl History {
         let Some(m) = self.drives.get(root) else { return vec![] };
         let v: Vec<Point> = m.iter().map(|(d, (t, f))| Point { day: d.clone(), used: t.saturating_sub(*f), free: *f }).collect();
         v[v.len().saturating_sub(days)..].to_vec()
+    }
+
+    /// The folder on `root` that grew most between its last snapshot up to `prev_day` and its
+    /// first snapshot from `day` on.
+    fn folder_across(&self, root: &str, prev_day: &str, day: &str) -> Option<(String, u64)> {
+        self.folders
+            .iter()
+            .filter(|(path, _)| under(path, root))
+            .filter_map(|(path, days)| {
+                let before = days.range(..=prev_day.to_string()).next_back().map(|(_, s)| *s)?;
+                let after = days.range(day.to_string()..).next().map(|(_, s)| *s)?;
+                (after > before).then(|| (path.clone(), after - before))
+            })
+            .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))
+    }
+
+    /// The biggest day-to-day rises in used space over the last `days` snapshots of a drive,
+    /// largest first, each labelled with the folder that grew most across it when known.
+    pub fn jumps(&self, root: &str, days: usize, total: u64, limit: usize) -> Vec<Jump> {
+        let series = self.series(root, days);
+        let mut v: Vec<Jump> = series
+            .windows(2)
+            .filter_map(|w| {
+                let delta = w[1].used.saturating_sub(w[0].used);
+                is_jump(delta, total).then(|| {
+                    let folder = self.folder_across(root, &w[0].day, &w[1].day);
+                    Jump { day: w[1].day.clone(), delta, folder_delta: folder.as_ref().map(|f| f.1).unwrap_or(0), folder: folder.map(|f| f.0) }
+                })
+            })
+            .collect();
+        v.sort_by(|a, b| b.delta.cmp(&a.delta).then_with(|| b.day.cmp(&a.day)));
+        v.truncate(limit);
+        v
     }
 
     /// Folders that grew most between the oldest snapshot on or after `since_day` and the latest.

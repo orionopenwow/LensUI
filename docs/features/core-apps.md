@@ -1,6 +1,6 @@
 # Core apps and Lens Apps — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/CORE_APPS.md`, `docs/FEEDS.md`,
+Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** the Messages title watcher is wired (S1 fixed), Cleaner hands uninstalls to Startup & Uninstall (quick win 1), the empty notification mirror says why (quick win 4) and Monitor copies a process line (quick win 5). Rust for these is compiled and tested by CI only; none of it is confirmed on a real PC yet. Sources: `docs/CORE_APPS.md`, `docs/FEEDS.md`,
 `docs/MESSAGES.md`, `docs/LENS_APPS.md`, `docs/apps/THUMBDESK.md`, `docs/brain/BUGS.md`, code below.
 
 ## 1. Rundown
@@ -56,7 +56,7 @@ Lens's look, keyboard map and safety rules.
   installed apps from HKLM/WOW6432Node/HKCU with size + last use (UserAssist); uninstall via the
   app's own uninstaller (`validate_uninstall`) or `winget uninstall --exact`, through ShellExecute
   (UAC); leftovers review-only → Recycle Bin.
-- Overlaps Cleaner's per-app storage (two uninstall entry points; see Polish).
+- The only place Lens starts an uninstaller: Cleaner's per-app "Uninstall…" opens this window on that app (Fable pass).
 
 ### 2.4 Timer — works
 - Timers, pomodoro (DND on, previous state restored), stopwatch, alarms (one-off/weekdays); run in
@@ -106,7 +106,7 @@ Lens's look, keyboard map and safety rules.
   "open in your Matrix app", quick reply with approval); focus modes + snooze; inbox order
   mentions/VIP → unread → recent.
 - **partly:** notification mirror needs package identity (sparse MSIX, signed) — returns nothing in
-  an unpackaged build. **broken:** the browser title hook is a documented snippet that was never wired — `messages_space_title` has no caller, so web-app unread badges don't update.
+  an unpackaged build. **fixed (Fable pass, not yet confirmed on a real PC):** every Lens Browser tab has a WebView2 title watcher (`browser/titles.rs`) that feeds `messages::spaces`; counts are per tab, summed per messenger, and drive the inbox and the Dock pin badge. An empty mirror now says why in Settings.
 - **not built:** Telegram via TDLib (documented, stubbed).
 
 ### 2.13 Lens Apps catalogue — works
@@ -131,12 +131,12 @@ Lens's look, keyboard map and safety rules.
 - Real controller/hardware run unverified.
 
 ## 3. Quick wins (≤ 1 day, ranked)
-1. **One uninstall path**: Startup & Uninstall and Cleaner's per-app storage both run uninstallers —
+1. **Done (Fable pass).** **One uninstall path**: Startup & Uninstall and Cleaner's per-app storage both run uninstallers —
    make Cleaner's "Uninstall…" open the core app's row (same `validate_uninstall`, one audit log).
 2. **Timer ↔ Notes**: "Remind me" on a to-do creates a Timer alarm (both backends exist).
 3. **Toasts for 25 swallowed errors** in `src/coreapps` + `src/apps`.
-4. **Messages: say why the mirror is empty** ("Needs the packaged build") instead of an empty list.
-5. **Monitor: copy a process line** (name, PID, path) for bug reports.
+4. **Done (Fable pass).** **Messages: say why the mirror is empty** ("Needs the packaged build") instead of an empty list.
+5. **Done (Fable pass; "Copy line" and Ctrl+C).** **Monitor: copy a process line** (name, PID, path) for bug reports.
 
 ## 4. Polish assessment
 - **Primitive drift:** core-app `ui.tsx` vs `src/settings/ui` vs `src/ui` — three families of
@@ -156,10 +156,10 @@ Lens's look, keyboard map and safety rules.
 | B-09 | — fixed | Feeds/Messages | were never mounted (#71) |
 | B-28 | — fixed | `commands/coreapps.rs`, `commands/apps.rs` | hung COM/WMI parked threads; bounded now |
 | B-08 | — fixed | `commands/apps.rs` | recipes now in Remove all |
-| S1 (confirmed) | Medium | `commands/messages.rs` `messages_space_title` | registered in `lib.rs:451` but called from nowhere (no Rust caller, only the generated TS type), so web-app unread badges never update from page titles |
+| S1 | — fixed (Fable pass) | `browser/titles.rs`, `messages/spaces.rs`, `commands/messages.rs` | `messages_space_title` had no caller; a WebView2 `DocumentTitleChanged` watcher on every tab now reports titles (count only). Tests: `messages/tests.rs`. Needs a real-PC check with signed-in Slack/Discord tabs |
 | Suspected S2 | Low | `coreapps/timers.rs` | alarms by weekday across DST changes / sleep: an alarm due while the PC sleeps — rings late or not at all? (tests cover time zones, not resume) |
 | Suspected S3 | Low | Notes stickies | click-through sticky + Ctrl+Shift+U only works with Notes focused; a sticky with no Notes window is unrecoverable without reopening Notes |
-| Suspected S4 | Low | `feeds/oauth.rs` loopback | port in use → connect fails silently (same pattern as Spotify loopback) |
+| S4 | — not a bug | `feeds/oauth.rs` loopback | checked in the Fable pass: Feeds binds port 0 (any free port) and reports a bind failure, so a busy port can't break it |
 | B-18 share | Low | `src/coreapps` + `src/apps` (25) | swallowed errors |
 
 ## 6. One idea to push to main

@@ -69,7 +69,7 @@ Command is Lens's "say what you want" surface: type or speak, Lens turns it into
 | B-12b | — | First Enter after cold start did nothing — handler side closed (wave 4c) | `docs/brain/BUGS.md:48` |
 | B-12c | Low | On some cold starts the very first key sent over DevTools never reaches the page; second Enter works. Maybe CDP-only | `docs/brain/BUGS.md:48` |
 | B-37 | — | Fixed | BUGS.md |
-| B-45 | — | Fixed (PR #115): Snip's default Ctrl+Shift+S took Save As away from every app | `docs/brain/BUGS.md` |
+| B-48 | — | Fixed (PR #115): Snip's default Ctrl+Shift+S took Save As away from every app | `docs/brain/BUGS.md` |
 | — | — | Fixed (PR #115): the Do-mode preview is announced (`role="status"`) | `CommandSurface.tsx` |
 
 ## One idea to push to main

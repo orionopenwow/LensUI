@@ -38,7 +38,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A running Lens with Playwright attached: { proc, browser, logs }. */
 async function startLens(timeoutMs = 60000) {
   const logs = [];
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false });
+  // LENS_E2E_ACCEPT_INJECTED: debug builds let the key hook see SendInput keys (magic-start's Win tap).
+  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_ACCEPT_INJECTED: "1" } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   const t0 = Date.now();
@@ -644,6 +645,101 @@ const SCENARIOS = [
     },
   },
   {
+    id: "magic-start",
+    title: "Magic button: off by default; a Win tap opens Magic Start when on; Ctrl+Esc still opens Windows Start; off restores Windows",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const visible = () => invoke(dock, "is_surface_visible_cmd", { label: "magicstart" });
+      const waitVisible = async (want, what, ms = 4000) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < ms) {
+          if ((await visible().catch(() => false)) === want) return;
+          await sleep(100);
+        }
+        throw new Error(`${what}: expected Magic Start to be ${want ? "showing" : "hidden"}`);
+      };
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" });
+      // Real key presses through SendInput's older twin (no Lens marker, so the hook treats them as the user's).
+      const KEYS = "Add-Type -Namespace W -Name K -MemberDefinition '[DllImport(\"user32.dll\")] public static extern void keybd_event(byte vk, byte scan, uint flags, System.UIntPtr extra); [DllImport(\"user32.dll\")] public static extern System.IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);';";
+      const down = (vk) => `[W.K]::keybd_event(${vk},0,1,[UIntPtr]::Zero);`; // KEYEVENTF_EXTENDEDKEY
+      const up = (vk) => `[W.K]::keybd_event(${vk},0,3,[UIntPtr]::Zero);`;
+      const winTap = () => ps(`${KEYS} ${down(0x5b)} Start-Sleep -Milliseconds 60; ${up(0x5b)}`);
+      const ctrlEsc = () => ps(`${KEYS} [W.K]::keybd_event(0x11,0,0,[UIntPtr]::Zero); [W.K]::keybd_event(0x1B,0,0,[UIntPtr]::Zero); Start-Sleep -Milliseconds 40; [W.K]::keybd_event(0x1B,0,2,[UIntPtr]::Zero); [W.K]::keybd_event(0x11,0,2,[UIntPtr]::Zero);`);
+      const foreground = () => ps(`${KEYS} Start-Sleep -Milliseconds 900; $id = 0; [W.K]::GetWindowThreadProcessId([W.K]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      const closeWindowsStart = () => ps(`${KEYS} [W.K]::keybd_event(0x1B,0,0,[UIntPtr]::Zero); [W.K]::keybd_event(0x1B,0,2,[UIntPtr]::Zero);`);
+      const isWindowsStart = (name) => /StartMenuExperienceHost|SearchHost|SearchApp|ShellExperienceHost/i.test(name);
+
+      // Off by default: nothing offered, the button refuses, no window.
+      if (await invoke(dock, "magic_start_available")) throw new Error("Magic Start is available with the Magic button off");
+      if (!(await invoke(dock, "toggle_magic_start").then(() => false, () => true))) throw new Error("toggle_magic_start opened with the Magic button off");
+      if (surfaces(s).magicstart) throw new Error("a Magic Start window exists with the Magic button off");
+
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), startButton: true };
+      });
+      await sleep(800);
+      if (!(await invoke(dock, "magic_start_available"))) throw new Error("Magic Start is not available after turning the Magic button on");
+
+      // The hook installs itself within ~40 ms of the flag; wait until it says it is live.
+      const hookStatus = () => invoke(dock, "get_keyhook_status_cmd").catch((e) => ({ error: String(e) }));
+      let st = await hookStatus();
+      for (let i = 0; i < 30 && !(st.active && st.winLauncher); i++) {
+        await sleep(100);
+        st = await hookStatus();
+      }
+      console.log(`note  magic-start: key hook before the tap ${JSON.stringify(st)}`);
+      // A Win tap opens Magic Start (the page acknowledges, so Windows Start stays shut).
+      winTap();
+      try {
+        await waitVisible(true, "after a Win tap", 6000);
+      } catch (e) {
+        const fg = foreground();
+        closeWindowsStart();
+        throw new Error(`${e.message} (foreground: ${fg}; key hook after: ${JSON.stringify(await hookStatus())})`);
+      }
+      const ms = await waitForSurface(s, "magicstart");
+      const take = watchErrors(ms);
+      await ms.waitForSelector(".mstart-window .mstart-search input", { timeout: 6000 });
+      if (!(await ms.locator(".mstart-actions .mstart-tile").count())) throw new Error("Magic Start shows no Magic actions");
+      await shot(ms, "magic-start");
+      // A second tap closes it; then Esc closes a fresh open.
+      await sleep(600);
+      winTap();
+      await waitVisible(false, "after a second Win tap");
+      await invoke(dock, "toggle_magic_start");
+      await waitVisible(true, "after the start button");
+      await sleep(600);
+      await ms.keyboard.press("Escape");
+      await waitVisible(false, "after Esc");
+
+      // Ctrl+Esc always opens Windows Start, never Magic Start.
+      ctrlEsc();
+      await sleep(500);
+      if (await visible()) throw new Error("Ctrl+Esc opened Magic Start");
+      const fg = foreground();
+      if (isWindowsStart(fg)) closeWindowsStart();
+      else console.log(`note  magic-start: after Ctrl+Esc the foreground was "${fg}" (Windows Start not detected on this runner)`);
+      await sleep(600);
+
+      // Turning it off: hidden, the button refuses again, and a Win tap leaves Magic Start shut.
+      await invoke(dock, "toggle_magic_start");
+      await waitVisible(true, "before turning it off");
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), startButton: false };
+      });
+      await waitVisible(false, "after turning the Magic button off");
+      if (!(await invoke(dock, "toggle_magic_start").then(() => false, () => true))) throw new Error("toggle_magic_start opened after the Magic button was turned off");
+      winTap();
+      await sleep(800);
+      if (await visible()) throw new Error("a Win tap opened Magic Start with the Magic button off");
+      const fg2 = foreground();
+      if (isWindowsStart(fg2)) closeWindowsStart();
+      await sleep(400);
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "magic-widgets",
     title: "Dashboard widgets: add one from the gallery after its consent screen, fetch rules hold, remove it",
     async run(s) {
@@ -788,7 +884,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart/i.test(l)).slice(-12);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }

@@ -1,6 +1,7 @@
 // Shelf → Notes (docs/plans/MAGIC_WAVES.md §4). A pure function that turns Shelf items into a
 // note, and plain-text exports. Local only: nothing here reads the network or the screen.
 import type { ShelfItem } from "./contract";
+import { notePdf } from "./pdf";
 
 export type NoteFormat = "md" | "txt" | "pdf";
 
@@ -81,18 +82,23 @@ export function noteToText(md: string): string {
 export interface ExportFile {
   name: string;
   mime: string;
+  /** Text for md/txt. */
   contents: string;
+  /** File bytes for pdf. */
+  bytes?: Uint8Array;
 }
 
 /** A safe file name from a note title. */
-export function fileNameFor(title: string, format: Exclude<NoteFormat, "pdf">): string {
+export function fileNameFor(title: string, format: NoteFormat): string {
   const base = oneLine(title).replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").slice(0, 80).trim() || "Note";
   return `${base}.${format}`;
 }
 
-/** Export as Markdown or plain text. PDF is a later wave (throws so callers show "coming soon"). */
+/** Export as Markdown, plain text or PDF (a local, text-only PDF; see ./pdf.ts). */
 export function exportNote(note: NoteDraft, format: NoteFormat): ExportFile {
-  if (format === "pdf") throw new Error("PDF export comes in a later update");
+  if (format === "pdf") {
+    return { name: fileNameFor(note.title, "pdf"), mime: "application/pdf", contents: "", bytes: notePdf(note.body, note.title) };
+  }
   if (format === "md") return { name: fileNameFor(note.title, "md"), mime: "text/markdown", contents: note.body };
   return { name: fileNameFor(note.title, "txt"), mime: "text/plain", contents: noteToText(note.body) };
 }

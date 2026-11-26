@@ -69,8 +69,8 @@ Lens restyles other apps' windows: the coloured caption buttons (close / minimis
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| B-43 | — | Fixed (PR #115): the caption engine's private anti-cheat list missed 38 of the 42 names; the tiler, key hook and pointer effects had their own short lists and Alt+drag could move a protected game that wasn't in front | `docs/brain/BUGS.md` |
-| B-44 | — | Fixed (PR #115): `excluded_processes`, `style` and `position` were ignored by the engine | `docs/brain/BUGS.md` |
+| B-46 | — | Fixed (PR #115): the caption engine's private anti-cheat list missed 38 of the 42 names; the tiler, key hook and pointer effects had their own short lists and Alt+drag could move a protected game that wasn't in front | `docs/brain/BUGS.md` |
+| B-47 | — | Fixed (PR #115): `excluded_processes`, `style` and `position` were ignored by the engine | `docs/brain/BUGS.md` |
 | open | Low | `position: top-left` not yet seen on a real PC (stacking of the two overlay windows, classic title bars) | `win_caption_engine.rs` |
 | B-29 | Low | Prebuilt hook DLL (`lens-dwm-hook/`) callbacks have no panic guard; app-crate callbacks are guarded | `docs/brain/BUGS.md:53` |
 | B-05 / B-06 | — | Fixed in wave 1 (hook guard; DLL by content hash; Remove all stops the hook) — keep the E2E | `docs/brain/BUGS.md:25-26` |

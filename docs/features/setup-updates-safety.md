@@ -81,8 +81,8 @@ Everything that gets Lens onto a PC, keeps it current, and makes sure it can alw
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| owner | **High (ship)** | No signing key and no release yet → no build can update. By design the key is never committed; the app now says so (B-46) | `docs/RELEASING.md` |
-| B-46 | — | Fixed (PR #115): the endpoint used a lower-case repository path (it resolved, GitHub ignores case; now canonical and pinned), and an unsigned build showed "Checks once a day" with a Check now button that could never find anything | `docs/brain/BUGS.md` |
+| owner | **High (ship)** | No signing key and no release yet → no build can update. By design the key is never committed; the app now says so (B-49) | `docs/RELEASING.md` |
+| B-49 | — | Fixed (PR #115): the endpoint used a lower-case repository path (it resolved, GitHub ignores case; now canonical and pinned), and an unsigned build showed "Checks once a day" with a Check now button that could never find anything | `docs/brain/BUGS.md` |
 | B-31b | Low | A renderer dying while a start-up window is built can block the main thread >45 s, so nothing reloads until the build ends | `docs/brain/BUGS.md:56` |
 | B-07 | Med | One-click transcription setup refuses to run: Whisper/ffmpeg/yt-dlp pins read `UNPINNED` (fails closed) | `src-tauri/src/media/setup.rs:197-241` |
 

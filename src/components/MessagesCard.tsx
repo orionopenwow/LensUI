@@ -10,6 +10,22 @@ export function MessagesCard() {
   const [apps, setApps] = useState<AppDto[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [pw, setPw] = useState("");
+  // Why the notification mirror shows nothing (for example: this build isn't packaged).
+  const [mirrorNote, setMirrorNote] = useState("");
+  const mirrorOn = !!s?.mirrorToasts;
+  useEffect(() => {
+    setMirrorNote("");
+    if (!mirrorOn) return;
+    let alive = true;
+    // After the switch has been saved, so Rust sees it as on.
+    const t = window.setTimeout(() => {
+      messagesApi.mirrorStatus().then((r) => alive && setMirrorNote(r.note)).catch(() => {});
+    }, 400);
+    return () => {
+      alive = false;
+      window.clearTimeout(t);
+    };
+  }, [mirrorOn]);
   useEffect(() => {
     messagesApi.settings().then(setS).catch(() => {});
     messagesApi.catalogue().then(setApps).catch(() => {});
@@ -60,6 +76,7 @@ export function MessagesCard() {
         </div>
         {toggle(s.mirrorToasts, "Mirror notifications", () => save({ mirrorToasts: !s.mirrorToasts }))}
       </div>
+      {s.mirrorToasts && mirrorNote && <div className="cc-desc" role="status">{mirrorNote}</div>}
       <div className="cc-row" style={{ marginTop: 12 }}>
         <div>
           <div className="cc-label">Show previews</div>
