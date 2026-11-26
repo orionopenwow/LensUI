@@ -287,3 +287,32 @@ restarts Explorer. It is safe to run at any time.
   with the pointer away and no keyboard focus in them; never under the pointer, never while a
   mouse button is held. Settings dragged off the Dock is a window and stays. The setting is
   `func.autoClosePopouts` (on by default).
+- A move onto a monitor with other scaling is checked and done again when Windows resized the
+  window on the way (B-62), and an idle Dock goes back to its place about every 2 s, also while
+  auto-hidden. Pop-outs from a side Dock open on the Dock's monitor, beside the pill (B-63), and
+  never taller than the room between the Top Bar and the Dock (B-64).
+- **Explorer restarting** (explorer.exe crashed or was restarted): the Dock, Top Bar and Lens's
+  hooks belong to Lens and stay; the attention shell hook registers again on Explorer's
+  `TaskbarCreated` (B-65); the Windows taskbar that comes back with Explorer is hidden again by the
+  watcher when "Hide the Windows taskbar" is on; the Dock is re-placed if the work area changed.
+  E2E: `explorer-restart` in `tests/e2e/autohide.mjs`.
+- **Refused calls.** Closing a pop-out, the Dock's click-through and its "menu closed" report are
+  tried once more and logged when Windows or Lens Core refuses them (`src/failsafe/calls.ts`,
+  `app/place.rs`); a refused click-through change is applied again on the next pass instead of
+  being remembered as done.
+
+### Stuck states: what closes each pop-out
+
+| Way out | Dock menus, hover card, search | Live previews | Quick Settings, Widgets, Search, Launcher, Overview | Settings on the Dock | Magic window, Dashboard |
+|---|---|---|---|---|---|
+| Focus to another app, Alt+Tab, Win key (Start takes focus) | watcher: other app in front → closed at once (`dock_guard`) | close 260 ms after the pointer leaves the card | page `blur` → hide (retried once) | 1.8 s away and unfocused (with "Close pop-outs when the pointer leaves") | focus change → hide |
+| Click outside | watcher click check | as above | page `blur`; watcher for Search | as above | focus change |
+| Display sleep / resume, monitor unplugged | re-placed with the bars; menus go stale after 1.2 s (no pointer) | owner hidden or pointer unknown → closed | `blur` when focus moves | pointer unknown → closes after 1.8 s | focus change |
+| Lock / unlock (Win+L) | no foreground and no pointer → stale after 1.2 s | pointer unknown → closed | `blur` | closes after 1.8 s | focus change |
+| Explorer restarts | unaffected (Lens windows) | unaffected | unaffected | unaffected | unaffected |
+| Dock hides | every Dock flyout and docked Settings close | closed with the Dock | — | closed | — |
+
+Lens Command is not a pop-out: it stays open when focus leaves it, because a run or an approval
+may be in progress; Esc or × closes it. The rows a browser can drive are hyper-suite checks
+(`stuck:*` in `tools/hyper/run.mjs`): focus loss closes each pop-out, a refused close is tried
+again, and the Dock closes its menus on blur, on the watcher's "stale" signal and when it hides.

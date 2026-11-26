@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { magicOpenFor } from "../magic/contract";
 import { emit, listen } from "@tauri-apps/api/event";
 import { Bell, Calendar, Timer, Monitor, Sparkles, RotateCw, X } from "lucide-react";
@@ -44,7 +45,7 @@ export const NotificationOverlaySurface: React.FC = () => {
       if (next.length === 0) {
         // The last toast glides out first (exit duration), then the window is hidden.
         window.setTimeout(() => {
-          invoke("hide_surface", { label: "notifications" }).catch(() => {});
+          void hideSurface("notifications");
         }, duration("exit") + 80);
       }
       return next;
@@ -61,7 +62,7 @@ export const NotificationOverlaySurface: React.FC = () => {
     }>("lens://notification", (e) => {
       const dnd = localStorage.getItem("lens_dnd") === "1";
       if (dnd && e.payload.category !== "timer") {
-        invoke("hide_surface", { label: "notifications" }).catch(() => {});
+        void hideSurface("notifications");
         return;
       }
       const n: LensNotification = {

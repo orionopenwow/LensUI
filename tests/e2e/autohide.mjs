@@ -5,6 +5,8 @@
 //
 // Run on Windows after the E2E build (same setup as tests/e2e/run.mjs):
 //   node tests/e2e/autohide.mjs                 # E2E_ONLY=topbar-reveal,dock-bottom for a subset
+//   dock-left / dock-right run every Dock style on that edge; explorer-restart restarts explorer.exe
+//   (last, and skipped when the session has no Explorer).
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { join, resolve } from "node:path";
@@ -90,6 +92,105 @@ async function noFlyoutOpen(s, label) {
     if (vis) open.push(f);
   }
   if (open.length) throw new Error(`${label}: flyout(s) left open: ${open.join(", ")}`);
+}
+
+
+// ---- Dock on a side edge (left/right) --------------------------------------------------------
+const DOCK_STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"];
+const SETTINGS = "Lens Control Center";
+const QUICK = "Lens Quick Settings";
+/** The pill(s) the Dock draws, in physical screen px (window rect + CSS rect × device pixel ratio). */
+async function pillOnScreen(s) {
+  const w = await d(`win ${DOCK}`);
+  const r = await surfaces(s).dock.evaluate(() => {
+    let l = Infinity, t = Infinity, rr = -Infinity, b = -Infinity;
+    for (const el of document.querySelectorAll(".dock-pill, .dock-split-pill")) {
+      const rc = el.getBoundingClientRect();
+      if (rc.width === 0 || rc.height === 0) continue;
+      l = Math.min(l, rc.left); t = Math.min(t, rc.top); rr = Math.max(rr, rc.right); b = Math.max(b, rc.bottom);
+    }
+    return Number.isFinite(l) ? { l, t, r: rr, b, dpr: window.devicePixelRatio || 1 } : null;
+  });
+  if (!w.found || !r) return null;
+  return { l: Math.round(w.x + r.l * r.dpr), t: Math.round(w.y + r.t * r.dpr), r: Math.round(w.x + r.r * r.dpr), b: Math.round(w.y + r.b * r.dpr), dpr: r.dpr, win: w };
+}
+/** Waits until the Dock window takes clicks (`want` false) or lets them through (`want` true). */
+async function expectClickThrough(label, want, ms) {
+  const t0 = Date.now();
+  let w;
+  while (Date.now() - t0 <= ms) {
+    w = await d(`win ${DOCK}`);
+    if (w.found && w.transparent === want) return;
+    await sleep(50);
+  }
+  throw new Error(`${label}: expected the Dock to ${want ? "let clicks through" : "take clicks"} within ${ms} ms, got ${JSON.stringify(w)}`);
+}
+/** `inner` lies inside `outer` (both {x,y,w,h}), with `slack` px of rounding. */
+function inside(inner, outer, slack = 2) {
+  return inner.x >= outer.x - slack && inner.y >= outer.y - slack && inner.x + inner.w <= outer.x + outer.w + slack && inner.y + inner.h <= outer.y + outer.h + slack;
+}
+async function popoutBeside(s, edge, label, title, open) {
+  await open();
+  await sleep(900);
+  const w = await d(`win ${title}`);
+  if (!w.found || !w.visible) throw new Error(`${label}: ${title} did not open (${JSON.stringify(w)})`);
+  const work = await d("work");
+  if (!inside(w, work)) throw new Error(`${label}: ${title} ${JSON.stringify(w)} is not inside the work area ${JSON.stringify(work)}`);
+  const pill = await pillOnScreen(s);
+  // Beside the pill on its inner side, never over it (a few px of overlap is the seamless join).
+  const join = Math.ceil(4 * (pill?.dpr || 1));
+  if (pill && edge === "left" && w.x < pill.r - join) throw new Error(`${label}: ${title} at x=${w.x} covers the pill (right edge ${pill.r})`);
+  if (pill && edge === "right" && w.x + w.w > pill.l + join) throw new Error(`${label}: ${title} ends at x=${w.x + w.w}, over the pill (left edge ${pill.l})`);
+  return w;
+}
+function sideDockScenario(edge) {
+  return {
+    id: `dock-${edge}`,
+    title: `Dock (${edge} edge, every style): shown, hit zone on the pill only, Settings and Quick Settings beside it inside the work area, auto-hide reveals and hides`,
+    async run(s) {
+      const dock = await page(s, "dock");
+      const edgeX = edge === "left" ? 0 : SCREEN.w - 1;
+      const notes = [];
+      for (const style of DOCK_STYLES) {
+        const label = `${edge}/${style}`;
+        await setConfig(s, (c) => { c.dock.position = edge; c.dock.style = style; c.dock.autoHide = "never"; });
+        await d(`move ${mid().join(" ")}`);
+        await expectWithin(`${label}: shown`, () => dockState(s), true, 3000);
+        // The window settles to its depth after ~0.5 s idle; give the page time to report its rect.
+        await sleep(1200);
+        const pill = await pillOnScreen(s);
+        if (!pill) throw new Error(`${label}: no pill on screen`);
+        const reach = Math.round(48 * pill.dpr);
+        const flush = edge === "left" ? pill.l - SCREEN.x : SCREEN.x + SCREEN.w - pill.r;
+        if (flush < -1 || flush > reach) throw new Error(`${label}: pill ${JSON.stringify(pill)} is ${flush} px from the ${edge} edge`);
+        if (pill.t < SCREEN.y - 1 || pill.b > SCREEN.y + SCREEN.h + 1 || pill.b - pill.t < 40) throw new Error(`${label}: pill ${JSON.stringify(pill)} is off the screen vertically`);
+        // Hit zone: the pill takes clicks, the middle of the screen does not.
+        const cx = Math.round((pill.l + pill.r) / 2), cy = Math.round((pill.t + pill.b) / 2);
+        await d(`move ${cx} ${cy}`);
+        await expectClickThrough(`${label}: over the pill`, false, 1500);
+        await d(`move ${mid().join(" ")}`);
+        await expectClickThrough(`${label}: away from the pill`, true, 1500);
+        // Pop-outs open beside the Dock, inside the work area, and close again.
+        await popoutBeside(s, edge, label, SETTINGS, () => invoke(dock, "toggle_settings_docked"));
+        await invoke(dock, "hide_surface", { label: "settings" }).catch(() => {});
+        await popoutBeside(s, edge, label, QUICK, () => invoke(dock, "open_quicksettings_tab_cmd", { tab: "quick", section: "quick", anchor: "bottom-right" }));
+        await invoke(dock, "hide_surface", { label: "quicksettings" }).catch(() => {});
+        await sleep(400);
+        await noFlyoutOpen(s, label);
+        // Auto-hide: hides with the pointer away, the screen edge brings it back, leaving hides it.
+        await setConfig(s, (c) => { c.dock.autoHide = "always"; });
+        await d(`move ${mid().join(" ")}`);
+        await expectWithin(`${label}: hides`, () => dockState(s), false, 3000);
+        await expectClickThrough(`${label}: hidden Dock lets clicks through`, true, 1000);
+        await d(`move ${edgeX} ${cy}`);
+        await expectWithin(`${label}: the ${edge} edge reveals it`, () => dockState(s), true, 1500);
+        await d(`move ${mid().join(" ")}`);
+        await expectWithin(`${label}: leaving hides it`, () => dockState(s), false, 2500);
+        notes.push(style);
+      }
+      await noFlyoutOpen(s, `dock-${edge}`);
+    },
+  };
 }
 
 // ---- scenarios ------------------------------------------------------------------------------
@@ -270,6 +371,36 @@ const SCENARIOS = [
       await d(`move ${mid().join(" ")}`);
       await expectWithin("leave", () => dockState(s), false, 2500);
       await noFlyoutOpen(s, "dock-top");
+    },
+  },
+  sideDockScenario("left"),
+  sideDockScenario("right"),
+  {
+    id: "explorer-restart",
+    title: "Explorer restarts while Lens runs: Lens stays up, the Dock stays shown where it belongs, the shell hook is registered again",
+    async run(s) {
+      await setConfig(s, (c) => { c.dock.autoHide = "never"; c.dock.position = "bottom"; });
+      await sleep(1500);
+      const before = await d("explorer count");
+      if (!before.before) {
+        console.log("      (no explorer.exe in this session: restart path not exercised)");
+        return;
+      }
+      const placed = await d(`win ${DOCK}`);
+      const logStart = s.logs.join("").length;
+      const r = await d("explorer restart");
+      if (!r.tray) throw new Error(`Explorer did not come back: ${JSON.stringify(r)}`);
+      await sleep(3000);
+      if (s.proc.exitCode !== null) throw new Error(`Lens exited with ${s.proc.exitCode} when Explorer restarted`);
+      await expectWithin("Dock after the restart", () => dockState(s), true, 3000);
+      const w = await d(`win ${DOCK}`);
+      if (!w.found || !w.visible) throw new Error(`Dock window not visible after the restart: ${JSON.stringify(w)}`);
+      // Same monitor and work area as before, so the same place (the watcher re-places it if not).
+      const work = await d("work");
+      if (w.y + w.h > work.y + work.h + 2 || w.x !== placed.x) throw new Error(`Dock moved: before ${JSON.stringify(placed)}, after ${JSON.stringify(w)}, work area ${JSON.stringify(work)}`);
+      const said = s.logs.join("").slice(logStart);
+      const hookless = /the shell hook is not available/.test(s.logs.join(""));
+      if (!hookless && !/shell hook registered again: true/.test(said)) throw new Error("the attention shell hook was not registered again after Explorer restarted");
     },
   },
 ];

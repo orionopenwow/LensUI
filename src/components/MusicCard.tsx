@@ -5,6 +5,7 @@ import { currentTokens, music, type LastfmStatus, type MusicConfig, type Spiceti
 import { openExternal } from "../ai/open";
 import { DEFAULT_REDIRECTS, RedirectList, useSpotifyConnect } from "../music/spotifyConnect";
 import "../music/music.css";
+import type { LensConfig } from "../types/lens";
 
 const DEFAULT: MusicConfig = {
   enabled: false,
@@ -25,6 +26,8 @@ const DEFAULT: MusicConfig = {
   sceneReactive: false,
   history: true,
   lastfm: false,
+  soundGlow: true,
+  levelMeter: true,
 };
 
 const Toggle: React.FC<{ on: boolean; label: string; onChange: (v: boolean) => void; disabled?: boolean }> = ({ on, label, onChange, disabled }) => (
@@ -41,7 +44,13 @@ const Row: React.FC<{ label: string; desc?: React.ReactNode; children: React.Rea
   </div>
 );
 
-export const MusicCard: React.FC = () => {
+interface Props {
+  /** Lens settings, for the "media controls in the Top Bar" switch (Settings › Music passes them). */
+  config?: LensConfig;
+  updateConfig?: (c: LensConfig) => void;
+}
+
+export const MusicCard: React.FC<Props> = ({ config, updateConfig }) => {
   const [cfg, setCfg] = useState<MusicConfig>(DEFAULT);
   const [error, setError] = useState<string | null>(null);
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
@@ -92,6 +101,21 @@ export const MusicCard: React.FC = () => {
           </button>
         ))}
       </div>
+
+      <div className="cc-label lm-settings-head">Dock music pop-out</div>
+      <div className="cc-desc">Hover Spotify in the Dock. These work even with Music off.</div>
+      <Row label="Sound glow" desc="A soft glow in the artwork's colours rises from the Dock and breathes with the music. Still when motion is reduced.">
+        <Toggle on={cfg.soundGlow} label="Sound glow" onChange={(v) => save({ soundGlow: v })} />
+      </Row>
+      <Row label="Level meter" desc="Five small bars beside the song title. Both read your speakers' volume level, a single number, only while the pop-out is open and music plays. No sound is recorded.">
+        <Toggle on={cfg.levelMeter} label="Level meter" onChange={(v) => save({ levelMeter: v })} />
+      </Row>
+      {config && updateConfig && (
+        <Row label="Media controls in the Top Bar" desc="Previous, play and next in the Top Bar when the mini player isn't there.">
+          <Toggle on={config.topBar?.showMediaControls ?? true} label="Media controls in the Top Bar"
+            onChange={(v) => updateConfig({ ...config, topBar: { ...config.topBar, showMediaControls: v } })} />
+        </Row>
+      )}
 
       <div className="cc-label" style={{ marginTop: 16 }}>Now Playing window</div>
       <div className="cc-chip-grid">

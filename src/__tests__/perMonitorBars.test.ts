@@ -28,7 +28,8 @@ describe("per-monitor Top Bars follow the main bar", () => {
     const integration = rust("app/integration.rs");
     const fn = integration.slice(integration.indexOf("pub(crate) fn place_extra_topbars"), integration.indexOf("fn build_extra_topbars"));
     expect(fn).toContain("if cfg.top_bar.enabled {");
-    expect(fn).toContain("win.hide()");
+    // Hidden through the checked helper (retried once and logged when Windows refuses, B-18).
+    expect(fn).toMatch(/hide_window\(&win\)|win\.hide\(\)/);
   });
 
   test("the Rust tests for the plan exist", () => {

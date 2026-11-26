@@ -19,6 +19,7 @@ import { WidgetsLane } from "../widgets/WidgetsLane";
 import { XLane } from "../widgets/XLane";
 import { EMPTY_STORE, WIDGETS_CHANGED, widgetsApi, type WidgetStore } from "../widgets/api";
 import { askText } from "./ask";
+import { logFail, quiet, retryOnce } from "../failsafe/calls";
 
 export const OPEN_EVENT = "lens://dashboard-open";
 const CALENDAR_KEY = "lens_calendar_events_v1";
@@ -40,23 +41,23 @@ export const lensReaders: Readers = {
   nowPlaying: () => invoke("get_media_now_playing_cmd"),
 };
 
-const hide = (reason: string) => invoke("dashboard_hide", { reason }).catch(() => {});
+const hide = (reason: string) => retryOnce(() => invoke("dashboard_hide", { reason }), "Dashboard", "close");
 
 
 /** What opening a card does. Every action stays inside Lens. */
 export function runCardAction(a: CardAction): void {
   switch (a.kind) {
     case "app":
-      void openCoreApp(a.app).catch(() => {});
+      void openCoreApp(a.app).catch(logFail("Dashboard", `open ${a.app}`));
       return hideSoon("opened an app");
     case "url":
-      void invoke("browser_open", { url: a.url }).catch(() => {});
+      void invoke("browser_open", { url: a.url }).catch(logFail("Dashboard", "open the link"));
       return hideSoon("opened a link");
     case "shelf":
-      void invoke("open_surface", { label: "command" }).catch(() => {});
+      void invoke("open_surface", { label: "command" }).catch(logFail("Dashboard", "open Lens Command"));
       return hideSoon("opened the Shelf");
     case "media":
-      void invoke("media_control_cmd", { action: "play_pause" }).catch(() => {});
+      void invoke("media_control_cmd", { action: "play_pause" }).catch(logFail("Dashboard", "play or pause"));
       return;
     case "none":
       return;
@@ -67,15 +68,15 @@ const hideSoon = (reason: string) => void setTimeout(() => void hide(reason), 60
 
 /** The empty lanes' buttons. Lanes without one keep a disabled button. */
 const EMPTY_ACTIONS: Partial<Record<LaneId, () => void>> = {
-  inbox: () => void invoke("open_dock_popout_tab_cmd", { tab: "messages#messages" }).catch(() => {}),
-  feeds: () => void openCoreApp("feeds").catch(() => {}),
-  today: () => void invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" }).catch(() => {}),
+  inbox: () => void invoke("open_dock_popout_tab_cmd", { tab: "messages#messages" }).catch(logFail("Dashboard", "open Messages")),
+  feeds: () => void openCoreApp("feeds").catch(logFail("Dashboard", "open Feeds")),
+  today: () => void invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" }).catch(logFail("Dashboard", "open the calendar")),
 };
 
 /** Widget changes from Lens (another Dashboard open, the kill switch from Settings). */
 const listenWidgets = (cb: (s: WidgetStore) => void) => {
   const un = listen<WidgetStore>(WIDGETS_CHANGED, (e) => cb(e.payload));
-  return () => void un.then((f) => f()).catch(() => {});
+  return () => void un.then((f) => f()).catch(quiet);
 };
 
 export const DashboardWindow: React.FC = () => {
@@ -164,7 +165,7 @@ export const DashboardWindow: React.FC = () => {
         if (!payload && blurCloses(Date.now(), openedAt.current, painted.current)) void hide("focus moved to another window");
       })
       .then((f) => (un = f))
-      .catch(() => {});
+      .catch(logFail("Dashboard", "watch for focus leaving the window"));
     return () => {
       window.removeEventListener("keydown", onKey);
       un?.();
@@ -192,7 +193,7 @@ export const DashboardWindow: React.FC = () => {
         onEmptyAction={(lane) => EMPTY_ACTIONS[lane]?.()}
         onCardAsk={(c) => {
           // Only this card's text goes to Ask, and Ask shows it first: nothing is sent until Enter.
-          void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: askText(c) } }).catch(() => {});
+          void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: askText(c) } }).catch(logFail("Dashboard", "ask Lens Command"));
           hideSoon("Ask about this");
         }}
         renderLane={(lane) =>

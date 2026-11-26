@@ -35,6 +35,8 @@ const MASK = [".topbar-clock", ".wp-idle-clock", "[data-live]"];
 const STATES = [
   { id: "dock", surface: "dock", sizes: [[1920, 760], [1366, 640]] },
   { id: "dock-hover", surface: "dock", hover: ".dock-item >> nth=3", sizes: [[1920, 760], [1366, 640]] },
+  // The Dock's music pop-out (hover Spotify): art row with level meter, progress, controls, sound glow.
+  { id: "dock-music", surface: "dock", hover: '.dock-item[aria-label^="Spotify"]', sizes: [[1920, 760], [1366, 640]] },
   { id: "dock-search", surface: "dock", click: ".dock-search-mag-btn", sizes: [[1920, 760], [1366, 640]] },
   { id: "dock-taskbar", surface: "dock", config: "c.dock.style = 'taskbar';", sizes: [[1920, 760], [1366, 640]] },
   { id: "topbar", surface: "topbar", sizes: [[1920, 34], [1366, 34]] },

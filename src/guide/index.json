@@ -4997,7 +4997,7 @@
    "id": "card.music.musiccard",
    "kind": "card",
    "title": "Mini player",
-   "text": "Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, \"More by\" and saving songs. It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Dither texture · Sources · Theme follows the music. Music",
+   "text": "Hover Spotify in the Dock. These work even with Music off. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Sound glow · Level meter · Media controls in the Top Bar. Music",
    "path": [
     "Settings",
     "Music",
@@ -5084,6 +5084,63 @@
     "tab": "music",
     "card": "MusicCard",
     "label": "Music"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.sound-glow",
+   "kind": "setting",
+   "title": "Sound glow",
+   "text": "A soft glow in the artwork's colours rises from the Dock and breathes with the music. Still when motion is reduced.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Sound glow"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Sound glow"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.level-meter",
+   "kind": "setting",
+   "title": "Level meter",
+   "text": "Five small bars beside the song title. Both read your speakers' volume level, a single number, only while the pop-out is open and music plays. No sound is recorded.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Level meter"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Level meter"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.media-controls-in-the-top-bar",
+   "kind": "setting",
+   "title": "Media controls in the Top Bar",
+   "text": "Previous, play and next in the Top Bar when the mini player isn't there.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Media controls in the Top Bar"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Media controls in the Top Bar"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -10646,7 +10703,7 @@
    "id": "doc.failsafe.11",
    "kind": "doc",
    "title": "Failsafe engineering: 10. Monitors and pop-outs",
-   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default). - A move onto a monitor with other scaling is checked and done again when Windows resized the window on the way (B-62), and an idle Dock goes back to its place about every 2 s, also while auto-hidden",
    "path": [
     "Docs",
     "Failsafe engineering",
@@ -10656,6 +10713,23 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "10. Monitors and pop-outs"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.12",
+   "kind": "doc",
+   "title": "Failsafe engineering: Stuck states: what closes each pop-out",
+   "text": "Way out Dock menus, hover card, search Live previews Quick Settings, Widgets, Search, Launcher, Overview Settings on the Dock Magic window, Dashboard --- --- --- --- --- --- Focus to another app, Alt+Tab, Win key (Start takes focus) watcher: other app in front → closed at once ( dock guard ) close 260 ms after the pointer leaves the card page blur → hide (retried once) 1.8 s away and unfocused (with \"Close pop-outs when the pointer leaves\") focus change → hide Click outside watcher click check as above page blur ; watcher for Search as above focus change Display sleep / resume, monitor unplugged re-placed with the bars; menus go stale after 1.2 s (no pointer) owner hidden or pointer unknown → closed blur when focus moves pointer unknown → closes after 1.8 s focus change Lock / unlock (Win+L) no foreground and no pointer → stale after 1.2 s pointer unknown → closed blur closes after 1.8 s",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Stuck states: what closes each pop-out"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Stuck states: what closes each pop-out"
    },
    "source": "docs/FAILSAFE.md"
   },
@@ -12115,7 +12189,7 @@
    "id": "doc.music.10",
    "kind": "doc",
    "title": "Lens Music: 5. Playground scene (src/playground/registry.ts)",
-   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on.",
+   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on. The Dock's music pop-out (hover Spotify; src/music/DockMusicCard.tsx ) reads the same peak through music glow level for its sound glow and level meter. It asks at most ~30 times a second, only while the pop-out is open, something is playing, one of the two is on (Settings → Music → Sound glow / Level meter, both on by default) and motion isn't reduced; the command returns 0 when both are off. It works with Music off, using Windows' media session directly ( get media now playing cmd , which now carries position, length and whether seeking works; media control cmd takes seek with a position in ms).",
    "path": [
     "Docs",
     "Lens Music",

@@ -248,6 +248,86 @@ for (const s of surfaceIds) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------
+// 3b. Stuck states (docs/FAILSAFE.md §10): every pop-out closes when focus leaves it (another app,
+//     the Win key, Alt+Tab, the lock screen all take focus away), a refused close is tried again,
+//     and the Dock closes its menus when it hides or the watcher says they went stale.
+// ------------------------------------------------------------------------------------------------
+{
+  const hidesOf = (page, label) => page.evaluate((l) => window.__lensCallLog.filter((c) => c.cmd === "hide_surface" && c.args?.label === l).length, label);
+  const loseFocus = (page) => page.evaluate(() => {
+    document.hasFocus = () => false;
+    window.dispatchEvent(new Event("blur"));
+  });
+  for (const s of ["quicksettings", "widgets", "launcher", "overview", "palette"]) {
+    const id = `stuck:${s}`;
+    try {
+      const page = await openSurface(browser, server.base, { surface: s, settle: 1100 });
+      const n0 = await hidesOf(page, s);
+      await loseFocus(page);
+      await page.waitForTimeout(500);
+      record(id, "closes when focus leaves it (another app, Win key, Alt+Tab, lock screen)", (await hidesOf(page, s)) > n0, "no hide_surface after blur");
+      if (s === "quicksettings" || s === "widgets" || s === "palette") {
+        // The close is refused once (window busy): it is tried again, so the pop-out still goes.
+        const n1 = await hidesOf(page, s);
+        await page.evaluate((l) => { window.__lensFailOnce.hide_surface = 1; }, s);
+        await loseFocus(page);
+        await page.waitForTimeout(700);
+        record(id, "a refused close is tried again", (await hidesOf(page, s)) - n1 >= 2, `${(await hidesOf(page, s)) - n1} hide call(s)`);
+      }
+      record(id, "no errors", page.problems.errors.length === 0, page.problems.errors.join(" | "));
+      await page.context().close();
+    } catch (e) {
+      record(id, "can be checked", false, e.message.split("\n")[0]);
+    }
+  }
+  {
+    const id = "stuck:dock";
+    try {
+      const page = await openSurface(browser, server.base, { surface: "dock", settle: 1400 });
+      const openMenu = async () => {
+        await page.locator(".dock-item").first().click({ button: "right", timeout: 2000 });
+        await page.waitForTimeout(250);
+        return (await page.locator(".dock-ctx-menu").count()) > 0;
+      };
+      const menuGone = async () => {
+        await page.waitForTimeout(350);
+        return (await page.locator(".dock-ctx-menu").count()) === 0;
+      };
+      const closedReports = () => page.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "set_dock_menu_open" && c.args?.open === false).length);
+      if (!(await openMenu())) throw new Error("the app menu did not open");
+      const r0 = await closedReports();
+      await page.evaluate(() => window.__lensEmit("lens://dock-dismiss-menus", null));
+      record(id, "a stale menu closes when the watcher says so", await menuGone(), "menu still open");
+      record(id, "closing a menu tells the watcher", (await closedReports()) > r0, "no set_dock_menu_open(false)");
+      await openMenu();
+      await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+      record(id, "the menu closes when focus leaves the Dock", await menuGone(), "menu still open");
+      await openMenu();
+      await page.evaluate(() => { window.__lensVisible = { ...(window.__lensVisible || {}), settings: true }; });
+      await page.evaluate(() => window.__lensEmit("lens://settings-open", true));
+      await page.waitForTimeout(200);
+      const s0 = await page.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "hide_surface" && c.args?.label === "settings").length);
+      await page.evaluate(() => window.__lensEmit("lens://dock-visible", false));
+      record(id, "nothing stays open on a hidden Dock (menu)", await menuGone(), "menu still open");
+      const s1 = await page.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "hide_surface" && c.args?.label === "settings").length);
+      record(id, "nothing stays open on a hidden Dock (Settings)", s1 > s0, "Settings was not closed");
+      await page.evaluate(() => window.__lensEmit("lens://dock-visible", true));
+      // A refused "menu closed" report is sent again, or the watcher would hold the Dock up.
+      await openMenu();
+      const r1 = await closedReports();
+      await page.evaluate(() => { window.__lensFailOnce.set_dock_menu_open = 1; });
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
+      record(id, "a refused \"menu closed\" report is sent again", (await closedReports()) - r1 >= 2, `${(await closedReports()) - r1} report(s)`);
+      record(id, "no errors", page.problems.errors.length === 0, page.problems.errors.join(" | "));
+      await page.context().close();
+    } catch (e) {
+      record(id, "can be checked", false, e.message.split("\n")[0]);
+    }
+  }
+}
+
 await browser.close();
 server.close();
 
