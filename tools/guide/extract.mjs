@@ -69,10 +69,10 @@ const LABEL_CLASSES = [
 ];
 
 /** Settings pages, in nav order: [{id,label}]. Since the Settings hub (src/settings/registry.ts)
- *  pages have new ids; the index keeps the older tab ids (theme, system, sessions, monitor,
- *  messages) so lesson and golden-query ids stay stable, and LEGACY_TABS in the registry maps them
+ *  pages have new ids; the index keeps the older tab ids (theme, system, sessions, monitor)
+ *  so lesson and golden-query ids stay stable, and LEGACY_TABS in the registry maps them
  *  back when a Show me opens Settings. */
-const PAGE_TO_LEGACY = { appearance: "theme", keys: "system", desktop: "sessions", tasks: "monitor", notifications: "messages" };
+const PAGE_TO_LEGACY = { appearance: "theme", keys: "system", desktop: "sessions", tasks: "monitor" };
 const legacy = (id) => PAGE_TO_LEGACY[id] ?? id;
 const REGISTRY = "src/settings/registry.ts";
 export function extractTabs(root) {

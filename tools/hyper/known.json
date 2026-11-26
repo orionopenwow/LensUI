@@ -1,15 +1,7 @@
 [
   {
-    "key": "row:quick:Theme pack · advanced: going back to the first choice restores the settings exactly",
-    "detail": "left changed: dock.pinnedFolders, folderStyle.theme"
-  },
-  {
     "key": "row:appearance:Animated backdrop · advanced: stays on the page when clicked",
     "detail": "the switch disappeared after one click"
-  },
-  {
-    "key": "row:appearance:Appearance · advanced: going back to the first choice restores the settings exactly",
-    "detail": "left changed: dock.pinnedFolders, folderStyle.theme, themeSchedule"
   },
   {
     "key": "row:keys:Corner to edit · advanced: can be used",
@@ -24,43 +16,7 @@
     "detail": "locator.click: Timeout 2000ms exceeded."
   },
   {
-    "key": "row:accessibility:Animation effects · advanced: can be clicked",
+    "key": "row:accessibility:Windows animation effects · advanced: can be clicked",
     "detail": "locator.click: Timeout 2000ms exceeded."
-  },
-  {
-    "key": "invariant:themes-colour-only:Obsidian · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Hyprland Neon · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Cyberpunk Amber · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Paper Minimal · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Lens Expressive · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Everforest · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Solarized Matte · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only:Gruvbox Warm · a theme changes colours only",
-    "detail": "changed layout: dock.style"
-  },
-  {
-    "key": "invariant:themes-colour-only · 12 looks checked",
-    "detail": "8 of 12 looks change the Dock, Top Bar or behaviour"
   }
 ]

@@ -20,7 +20,7 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 
 ## Dock & Bar
 
-- Also here: Dock style, Size, Hide the Windows taskbar, Live window previews, Lock the Dock, Suggest apps you usually open now, Enable Top Bar, Auto-Hide Mode, Bar Style.
+- Also here: Dock style, Size, Icon size for, Other styles with their own size, Dividers, Hide the Windows taskbar, Live window previews, Lock the Dock, Suggest apps you usually open now, Minimise pulse, Show app names, Scroll to switch windows, Drop files on apps, Middle-click opens a new window, Close pop-outs when the pointer leaves, Enable Top Bar, Auto-hide, Bar style, Media controls.
 
 ## Desktop
 
@@ -43,7 +43,7 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 - **Start Key & Alt+Tab** — Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher.
   Options: Win Key Opens Lens Launcher, Alt+Tab Opens Lens Overview.
 - **Monitor** — One display connected — the Dock and Top Bar are on it.
-  Options: Top Bar on Every Monitor.
+  Options: Top Bar on every monitor.
 - **Hot Corners** — Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off.
   Options: Every Monitor.
 - **Drag Windows** — Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched.
@@ -94,13 +94,21 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 - **Mini player** — Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, "More by" and saving songs.
   Options: Now Playing window, Connect Spotify (optional), Spotify theme for Spicetify (optional), Music, Dither texture, Sources, Theme follows the music, Strength, Back to your accent after, Synced lyrics, Use LRCLIB, Your .lrc folder, Timing, Now Playing wallpaper moves to the music, Audio-reactive scene, Recently played in Lens, Recently played, Scrobble to Last.fm.
 
-## Apps
+## Lens Apps
 
 - **Apps**
 
 ## Storage
 
 - **Cleaner**
+
+## Focus & Notifications
+
+- **Messaging hub**
+- **Feeds** — One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC.
+  Options: Sources, Mute words, Quiet hours, Refresh every, AI digest, OPML.
+- **Messages** — One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count.
+  Options: Mirror notifications, Show previews, Badges on Dock icons, VIPs, Alert keywords, Matrix (advanced).
 
 ## Accessibility
 
@@ -113,14 +121,6 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 ## System & Tasks
 
 - Also here: Uptime.
-
-## Notifications
-
-- **Messaging hub**
-- **Feeds** — One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC.
-  Options: Sources, Mute words, Quiet hours, Refresh every, AI digest, OPML.
-- **Messages** — One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count.
-  Options: Mirror notifications, Show previews, Badges on Dock icons, VIPs, Alert keywords, Matrix (advanced).
 
 ## About & Testing
 

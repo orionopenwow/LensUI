@@ -10,7 +10,7 @@ const preset = params.get("preset") || "obsidian";
 const W = (globalThis as any);
 const base = {
   theme: { preset: "obsidian", accentMode: "custom", customAccent: "#FAFAFA", glassOpacity: 0.96, blurPx: 20, borderRadius: 8, accentTintStrength: 0, customCss: "", fontFamily: "rounded-arial", uiScale: 100, surfaceHex: "" },
-  dock: { groundedMarginBottom: 0, iconSize: 40, hoverScale: 1.24, hoverLift: 8, autoHide: "never", showTopBar: true,
+  dock: { groundedMarginBottom: 0, iconSize: 40, hoverScale: 1.24, hoverLift: 8, autoHide: "never",
     pinnedApps: [
       { id: "explorer", name: "File Explorer", path: "C:\\Windows\\explorer.exe", iconHint: "folder" },
       { id: "terminal", name: "Terminal", path: "wt.exe", iconHint: "terminal" },

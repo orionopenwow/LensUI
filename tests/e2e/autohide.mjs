@@ -97,7 +97,6 @@ let SCREEN;
 const mid = () => [Math.round(SCREEN.w / 2), Math.round(SCREEN.h / 2)];
 const topBarCfg = (mode) => (c) => {
   c.topBar.enabled = true;
-  c.dock.showTopBar = true;
   c.topBar.autoHide = mode;
   c.topBar.revealDelayMs = 100;
   c.topBar.hideDelayMs = 350;
@@ -262,7 +261,7 @@ const SCENARIOS = [
     id: "dock-top",
     title: "Dock (top edge, always hide, no Top Bar): same behaviour at the top",
     async run(s) {
-      await setConfig(s, (c) => { c.dock.autoHide = "always"; c.dock.position = "top"; c.dock.showTopBar = false; });
+      await setConfig(s, (c) => { c.dock.autoHide = "always"; c.dock.position = "top"; c.topBar.enabled = false; });
       await sleep(1200);
       await d(`move ${mid().join(" ")}`);
       await expectWithin("idle", () => dockState(s), false, 3000);

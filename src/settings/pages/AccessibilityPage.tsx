@@ -46,8 +46,9 @@ export const AccessibilityPage: React.FC<PageProps> = ({ section, config, update
       </Section>
 
       <Section id="motion" title="Motion" summary={a?.animations === false ? "Reduced" : "Normal"} forceOpen={section === "motion"}>
-        <Row label="Animation effects" desc="Windows' own setting. Lens also calms its animations when this is off. Lens restores your original choice in Remove all Lens changes.">
-          <Toggle label="Animation effects" checked={!!a?.animations} disabled={a?.animations == null} onChange={setAnim} />
+        {/* Same Windows setting as the tile above; a different name so each switch can be told apart (B-40). */}
+        <Row label="Windows animation effects" desc="Windows' own setting. Lens also calms its animations when this is off. Lens restores your original choice in Remove all Lens changes.">
+          <Toggle label="Windows animation effects" checked={!!a?.animations} disabled={a?.animations == null} onChange={setAnim} />
         </Row>
         <LinkRow>
           <WinLink uri="ms-settings:easeofaccess-visualeffects" label="Visual effects" />

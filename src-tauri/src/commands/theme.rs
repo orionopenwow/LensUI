@@ -171,7 +171,6 @@ pub(crate) fn save_config_cmd(
         || prev_config.dock.grounded_margin_bottom != new_config.dock.grounded_margin_bottom
         || prev_config.dock.icon_size != new_config.dock.icon_size
         || prev_config.dock.position != new_config.dock.position
-        || prev_config.dock.show_top_bar != new_config.dock.show_top_bar
         || prev_config.top_bar.enabled != new_config.top_bar.enabled
         || prev_config.top_bar.height != new_config.top_bar.height
         || prev_config.top_bar.floating != new_config.top_bar.floating

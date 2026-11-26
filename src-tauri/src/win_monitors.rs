@@ -313,6 +313,32 @@ pub fn extra_topbar_labels(monitors: &[MonitorInfo], target: usize) -> Vec<Strin
         .collect()
 }
 
+/// Where every extra Top Bar window belongs when the main bars are on monitor `main`:
+/// `(window label, monitor index)`.
+///
+/// The extra bars are built once at start-up, one for every monitor except `home` (the monitor
+/// the main bar started on), and are labelled after the monitor they start on. With "Follow the
+/// pointer" the main bar can later move to another monitor. Leaving the extras where they were
+/// built would then put two bars on that monitor and none on the one the main bar left. So the
+/// one extra bar that sits where the main bar now is swaps to `home`; every other bar stays put.
+/// The result always covers each monitor exactly once (together with the main bar).
+///
+/// An out-of-range `home` or `main` (a monitor was unplugged) yields the start-up layout, where
+/// each extra bar sits on its own monitor; a label whose monitor is gone is left out.
+pub fn extra_topbar_plan(monitor_count: usize, home: usize, main: usize) -> Vec<(String, usize)> {
+    let moved = home < monitor_count && main < monitor_count && main != home;
+    (0..monitor_count)
+        .filter(|&i| i != home)
+        .map(|i| (format!("topbar-{}", i), if moved && i == main { home } else { i }))
+        .collect()
+}
+
+/// Index of the monitor whose top-left corner is at `(x, y)` (physical px), if any. This is how
+/// the watcher's monitor (a Tauri monitor) is matched to `list_monitors()`.
+pub fn monitor_index_at(monitors: &[MonitorInfo], x: i32, y: i32) -> Option<usize> {
+    monitors.iter().position(|m| m.x == x && m.y == y)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Watcher pacing (pure). See docs/CORE_PATCH_PLAN.md, patch W2.
 // ---------------------------------------------------------------------------------------------
@@ -669,5 +695,78 @@ mod shell_keys_tests {
         assert_eq!(extra_topbar_labels(&ms, 0), vec!["topbar-1", "topbar-2"]);
         assert_eq!(extra_topbar_labels(&ms, 1), vec!["topbar-0", "topbar-2"]);
         assert!(extra_topbar_labels(&ms[..1], 0).is_empty());
+    }
+
+    /// Per-monitor bars together with "Follow the pointer": wherever the main bar goes, every
+    /// monitor has exactly one Top Bar.
+    #[test]
+    fn extra_top_bars_cover_every_monitor_once_wherever_the_main_bar_is() {
+        for n in 1..=5usize {
+            for home in 0..n {
+                let labels: Vec<String> = (0..n).filter(|&i| i != home).map(|i| format!("topbar-{}", i)).collect();
+                for main in 0..n {
+                    let plan = extra_topbar_plan(n, home, main);
+                    // The same windows that were built at start-up, in the same order.
+                    assert_eq!(plan.iter().map(|(l, _)| l.clone()).collect::<Vec<_>>(), labels, "n={n} home={home} main={main}");
+                    // Main bar + extras = every monitor exactly once.
+                    let mut covered: Vec<usize> = plan.iter().map(|(_, i)| *i).collect();
+                    covered.push(main);
+                    covered.sort_unstable();
+                    assert_eq!(covered, (0..n).collect::<Vec<_>>(), "n={n} home={home} main={main}");
+                    // At most one extra bar moves, and only to the monitor the main bar left.
+                    let moved: Vec<&(String, usize)> = plan.iter().filter(|(l, i)| *l != format!("topbar-{}", i)).collect();
+                    if main == home {
+                        assert!(moved.is_empty());
+                    } else {
+                        assert_eq!(moved.len(), 1);
+                        assert_eq!(moved[0], &(format!("topbar-{}", main), home));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn extra_top_bars_follow_the_pointer_and_come_back() {
+        // Three monitors, bars start on 0. The pointer is pushed into monitor 2's edge, then 1's,
+        // then back to 0: the plan depends only on where the main bar is now, never on the path.
+        assert_eq!(extra_topbar_plan(3, 0, 0), vec![("topbar-1".to_string(), 1), ("topbar-2".to_string(), 2)]);
+        assert_eq!(extra_topbar_plan(3, 0, 2), vec![("topbar-1".to_string(), 1), ("topbar-2".to_string(), 0)]);
+        assert_eq!(extra_topbar_plan(3, 0, 1), vec![("topbar-1".to_string(), 0), ("topbar-2".to_string(), 2)]);
+        assert_eq!(extra_topbar_plan(3, 0, 0), vec![("topbar-1".to_string(), 1), ("topbar-2".to_string(), 2)]);
+    }
+
+    #[test]
+    fn extra_top_bars_survive_an_unplugged_monitor() {
+        // Built for three monitors with home 0; monitor 2 is unplugged while the main bar was on it.
+        assert_eq!(extra_topbar_plan(2, 0, 2), vec![("topbar-1".to_string(), 1)]);
+        // Home itself is gone (it was the last index): every remaining label keeps its own monitor.
+        assert_eq!(extra_topbar_plan(2, 2, 0), vec![("topbar-0".to_string(), 0), ("topbar-1".to_string(), 1)]);
+        assert!(extra_topbar_plan(0, 0, 0).is_empty());
+        assert!(extra_topbar_plan(1, 0, 0).is_empty());
+    }
+
+    #[test]
+    fn follow_the_pointer_with_per_monitor_bars_places_each_bar_on_its_monitor() {
+        // Mixed sizes and DPI, one monitor left of the primary (negative x).
+        let mut ms = vec![mon(0, 0, 1920, 1080, true), mon(1920, 0, 2560, 1440, false), mon(-1280, 0, 1280, 1024, false)];
+        ms[1].scale = 1.5;
+        let layout = BarLayout { hide_native_taskbar: false, grounded_margin_bottom: 0, top_bar_height: 34, top_bar_floating: false };
+        // The pointer starts on the primary; "cursor" picks it, so the extras are built around 0.
+        let home = pick_monitor(&ms, "cursor", Some((100, 100))).unwrap();
+        assert_eq!(home, 0);
+        assert_eq!(monitor_index_at(&ms, 1920, 0), Some(1));
+        assert_eq!(monitor_index_at(&ms, 7, 7), None);
+        for main in 0..ms.len() {
+            let mut rects: Vec<SurfaceRect> = extra_topbar_plan(ms.len(), home, main).iter().map(|(_, i)| topbar_rect(&ms[*i], &layout)).collect();
+            rects.push(topbar_rect(&ms[main], &layout));
+            // One bar per monitor: each at its monitor's top-left, as wide as it, none overlapping.
+            for m in &ms {
+                let on: Vec<&SurfaceRect> = rects.iter().filter(|r| r.x == m.x && r.y == m.y).collect();
+                assert_eq!(on.len(), 1, "main={main} monitor at {}", m.x);
+                assert_eq!(on[0].w, m.width);
+                assert_eq!(on[0].h, top_bar_px(m, &layout));
+            }
+        }
     }
 }

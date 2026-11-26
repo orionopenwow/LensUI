@@ -3,13 +3,16 @@
 // pack under the featured look it most resembles ("More themes").
 //
 // The palette terms are OKLab distances (perceptually even); the rest are small fixed costs for
-// each part of the look that differs. A distance under NEAR_DUPLICATE reads as "the same theme
+// each part of the look that differs. The Dock is not one of them: a theme changes colours and
+// materials only, so two packs that differ just in the Dock they were drawn with are the same. A distance under NEAR_DUPLICATE reads as "the same theme
 // with a tweak" on a preview card.
 import { hexToRgb, srgbToOklab } from "../studio/backdrop/engine/color";
 import { ambientFor } from "../playground/ambient/packMap";
 import type { ThemePack } from "./packs";
 
 export const NEAR_DUPLICATE = 0.3;
+/** Under this two packs are the same theme on screen: one of them is merged (`MERGED_PACKS`). */
+export const SAME_ON_SCREEN = 0.08;
 
 const lab = (hex: string) => srgbToOklab(hexToRgb(hex));
 const deltaE = (a: string, b: string) => {
@@ -31,7 +34,6 @@ export interface DistanceParts {
   accent: number;
   scheme: number;
   shape: number;
-  dock: number;
   chrome: number;
   backdrop: number;
 }
@@ -43,7 +45,6 @@ export function distanceParts(a: ThemePack, b: ThemePack): DistanceParts {
     accent: 1.3 * deltaE(a.accent, b.accent),
     scheme: differs(a.scheme ?? "dark", b.scheme ?? "dark", 0.12),
     shape: differs(a.shapeStyle ?? "classic", b.shapeStyle ?? "classic", 0.22) + (0.3 * Math.abs(a.radius - b.radius)) / 20,
-    dock: differs(a.dockStyle ?? "floating", b.dockStyle ?? "floating", 0.14),
     chrome:
       differs(a.frameStyle, b.frameStyle, 0.05) +
       differs(a.controlStyle, b.controlStyle, 0.03) +
@@ -55,7 +56,7 @@ export function distanceParts(a: ThemePack, b: ThemePack): DistanceParts {
 
 export function packDistance(a: ThemePack, b: ThemePack): number {
   const p = distanceParts(a, b);
-  return p.base + p.accent + p.scheme + p.shape + p.dock + p.chrome + p.backdrop;
+  return p.base + p.accent + p.scheme + p.shape + p.chrome + p.backdrop;
 }
 
 /** The pack in `among` closest to `pack`, with the distance. */
