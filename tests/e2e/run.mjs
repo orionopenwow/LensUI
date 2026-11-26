@@ -558,6 +558,10 @@ const SCENARIOS = [
         c.command = { ...(c.command || {}), enabled: true };
       });
       await sleep(800);
+      if (!(await invoke(dock, "dashboard_available"))) {
+        const back = await invoke(dock, "get_config");
+        throw new Error(`turning the flag on didn't reach Lens: get_config has magicWaves=${JSON.stringify(back.magicWaves)}`);
+      }
 
       // Open it from Command by typing "dashboard". Start from a closed Command so nothing left
       // from an earlier scenario (a safety card, a thread) is in the way.
@@ -576,7 +580,14 @@ const SCENARIOS = [
         await cmd.locator("textarea").first().press("Enter");
         opened = await waitVisible(true, "after Command (second Enter)").then(() => true, () => false);
       }
-      if (!opened) throw new Error(`"dashboard" in Command did not open the Dashboard; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 300)}`);
+      if (!opened) {
+        const trace = await cmd.evaluate(() => {
+          const d = document.documentElement.dataset;
+          return { enterSeen: d.commandEnterSeen, enter: d.commandEnter, queued: d.commandEnterQueued, run: d.commandRun, mode: document.querySelector("[data-mode]")?.getAttribute("data-mode") ?? null, text: document.querySelector("textarea")?.value ?? null };
+        });
+        const avail = await invoke(dock, "dashboard_available").catch((e) => `error: ${e}`);
+        throw new Error(`"dashboard" in Command did not open the Dashboard (available=${avail}; trace ${JSON.stringify(trace)}); Command ends with: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(-400)}`);
+      }
 
       const dash = await waitForSurface(s, "dashboard");
       const take = watchErrors(dash);

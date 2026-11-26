@@ -76,6 +76,7 @@ pub(crate) async fn open_dashboard(app: AppHandle) -> Result<(), String> {
 fn show_dashboard(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AppState>();
     if !enabled(&state) {
+        eprintln!("[Lens UI] dashboard: open refused (magicWaves.dashboard is off)");
         return Err("Turn on the Magic Dashboard first (Settings › About & Testing › Magic (preview)).".into());
     }
     let fresh = app.get_webview_window(LABEL).is_none();
