@@ -7,7 +7,7 @@ The plan for making Lens the desktop that brings the best of open source togethe
 | Owner | Campton (decisions); agents keep it current |
 | Started | 26 November 2026 |
 | Reviewed | Monthly (§10), plus whenever a horizon closes |
-| Related | [IDENTITY.md](IDENTITY.md) (mission, promises, look: wins on conflict), [FEATURES.md](FEATURES.md), [LANDSCAPE.md](LANDSCAPE.md), [SCOPE.md](SCOPE.md), [`docs/combinator/`](../combinator/) (catalogue and scan reports), `docs/MASTERPLAN.md` / the Project's MASTERPLAN (metrics, release train) |
+| Related | [IDENTITY.md](IDENTITY.md) (mission, promises, look: wins on conflict), [MODULES.md](MODULES.md) (Lens's own pieces as standalone editions and repos), [FEATURES.md](FEATURES.md), [LANDSCAPE.md](LANDSCAPE.md), [SCOPE.md](SCOPE.md), [`docs/combinator/`](../combinator/) (catalogue and scan reports), `docs/MASTERPLAN.md` / the Project's MASTERPLAN (metrics, release train) |
 
 Anything marked **open** is not decided. Don't present it as settled on the site or in the app.
 

@@ -62,6 +62,7 @@ Three things to hold in your head:
 |---|---|
 | [IDENTITY.md](IDENTITY.md) | Always first: the mission (free, open source, local-first, reversible), naming, brand and aesthetic, motion and copy rules, and the safety contract on one page. |
 | [COMBINATOR.md](COMBINATOR.md) | The long-running plan: Lens as the open-source combinator (link, bridge, rebuild light, learn), the licence rules, the Lens by Campton brand, the twice-weekly open-source scan and the horizons to 2027. Catalogue in [`docs/combinator/`](../combinator/). |
+| [MODULES.md](MODULES.md) | The deep plan for modular Lens: a mandatory kernel, modules with requires/adjacent/enhances links, editions (Lens Dock first) built from the monorepo, generated mirror repos, coexistence and upgrades, and the checks that keep full Lens unbroken at every phase. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | You need to know where something lives, which thread runs it, which window shows it, or what it writes to disk. |
 | [FEATURES.md](FEATURES.md) | The all-time catalogue: every feature on `main` or in a PR with its status, the modern-rewrite foundations, and every suggested feature from reviews and research with a one-line why. |
 | [SCOPE.md](SCOPE.md) | You are planning work: size, hotspots, duplicates to merge, dead code, risks, and the 1.0 bar. |
