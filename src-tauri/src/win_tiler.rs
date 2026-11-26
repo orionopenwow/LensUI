@@ -362,8 +362,9 @@ pub const TILING_HOTKEYS: [TilingHotkey; 18] = [
     TilingHotkey { keys: "Ctrl+Alt+K", action: "snap", arg: "bottom-right", label: "Snap to bottom-right quarter" },
     TilingHotkey { keys: "Ctrl+Alt+Enter", action: "snap", arg: "maximize", label: "Fill the work area" },
     TilingHotkey { keys: "Ctrl+Alt+C", action: "snap", arg: "center", label: "Center window" },
-    TilingHotkey { keys: "Ctrl+Alt+Space", action: "cycle", arg: "next", label: "Next tiling layout" },
-    TilingHotkey { keys: "Ctrl+Alt+Shift+Space", action: "cycle", arg: "prev", label: "Previous tiling layout" },
+    // Not Ctrl+Alt+Space: that opens Lens Command, and both were registered when tiling keys were on.
+    TilingHotkey { keys: "Ctrl+Alt+Shift+Right", action: "cycle", arg: "next", label: "Next tiling layout" },
+    TilingHotkey { keys: "Ctrl+Alt+Shift+Left", action: "cycle", arg: "prev", label: "Previous tiling layout" },
     TilingHotkey { keys: "Ctrl+Alt+T", action: "tile", arg: "focus-stack", label: "Tile: Master-Stack" },
     TilingHotkey { keys: "Ctrl+Alt+G", action: "tile", arg: "grid", label: "Tile: 2×2 Grid" },
 ];

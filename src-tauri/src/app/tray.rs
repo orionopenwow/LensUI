@@ -16,7 +16,7 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     let open_palette =
         MenuItem::with_id(app, "open_palette", "Command Palette (Alt+Space)", true, None::<&str>)?;
     let open_widgets =
-        MenuItem::with_id(app, "open_widgets", "Widget Drawer (Alt+W)", true, None::<&str>)?;
+        MenuItem::with_id(app, "open_widgets", "Widget Drawer", true, None::<&str>)?;
     let next_wallpaper =
         MenuItem::with_id(app, "next_wallpaper", "Next wallpaper", true, None::<&str>)?;
     let open_tester =

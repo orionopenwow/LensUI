@@ -485,6 +485,33 @@ const SCENARIOS = [
     },
   },
   {
+    id: "caption-overlay",
+    title: "Lens's window dots sit exactly over a real window's caption buttons through move, maximise, restore and snap",
+    async run(s) {
+      const np = spawn("notepad.exe", [], { stdio: "ignore", detached: true });
+      try {
+        await sleep(2500);
+        const probe = (action) =>
+          JSON.parse(
+            execFileSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(process.cwd(), "tools/e2e/caption-probe.ps1"), String(np.pid), action], {
+              encoding: "utf8",
+              timeout: 60000,
+            }).trim(),
+          );
+        const problems = [];
+        for (const action of ["none", "move", "maximize", "restore", "snap"]) {
+          const r = probe(action);
+          if (!r.overlay) problems.push(`${action}: no Lens dots on Notepad (window ${JSON.stringify(r.win)})`);
+          else if (r.buttonPoints && r.uncovered?.length) problems.push(`${action}: native caption buttons show at ${JSON.stringify(r.uncovered.slice(0, 4))} (overlay ${JSON.stringify(r.overlay)}, window ${JSON.stringify(r.win)})`);
+          else console.log(`  caption-overlay ${action}: ok (${r.buttonPoints} button points covered)`);
+        }
+        if (problems.length) throw new Error(problems.join("; "));
+      } finally {
+        try { execFileSync("taskkill", ["/IM", "notepad.exe", "/F"]); } catch {}
+      }
+    },
+  },
+  {
     id: "setup-wizard",
     title: "the setup wizard can be skipped and completed",
     async run(s) {

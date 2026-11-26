@@ -239,3 +239,81 @@ export function describeChoices(choices: SetupChoices, lookLabel: (id: string) =
   }
   return out;
 }
+
+
+// ── Starting from the person's own desktop ─────────────────────────────────────────────────────
+// First-run setup opens already looking like the person's Windows: light or dark as Windows is,
+// the accent from the wallpaper (or Windows' own accent when the wallpaper has no clear colour),
+// and the featured look closest to it pre-selected. It is only a starting point in the draft:
+// every option is still shown, and nothing is written until Finish. The wallpaper is read and
+// measured on this PC only (snapshot_windows_wallpaper_cmd + accentFromImage); nothing leaves it.
+
+export interface DesktopColours {
+  /** Windows' accent, "#rrggbb". */
+  windowsAccent: string;
+  /** The wallpaper's most prominent colour as a UI accent, or null (no clear colour / unreadable). */
+  wallpaperAccent: string | null;
+  /** Windows' app mode is light. */
+  lightApps: boolean;
+}
+
+export interface DesktopSuggestion {
+  scheme: ColourScheme;
+  look: string;
+  /** The accent to start from: the wallpaper's, else "windows" (follow Windows). */
+  accent: string;
+}
+
+function hexRgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** Hue (0–360) and saturation (0–1) of a colour. */
+export function hueSat(hex: string): { h: number; s: number } | null {
+  const c = hexRgb(hex);
+  if (!c) return null;
+  const [r, g, b] = c.map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  const l = (max + min) / 2;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = 60 * (((g - b) / d) % 6);
+    else if (max === g) h = 60 * ((b - r) / d + 2);
+    else h = 60 * ((r - g) / d + 4);
+  }
+  return { h: (h + 360) % 360, s };
+}
+
+/**
+ * The featured look and accent to start setup from. The look is the one of the person's scheme
+ * whose own accent is nearest in hue to the desktop's colour; a grey desktop colour picks the
+ * scheme's default look (Obsidian / Alabaster Daylight).
+ */
+export function suggestFromDesktop(d: DesktopColours, looks: { id: string; accent: string }[]): DesktopSuggestion {
+  const scheme: ColourScheme = d.lightApps ? "light" : "dark";
+  const accent = d.wallpaperAccent ?? "windows";
+  const target = hueSat(d.wallpaperAccent ?? d.windowsAccent);
+  const fallback = scheme === "light" ? DEFAULT_LIGHT_LOOK : DEFAULT_DARK_LOOK;
+  const pool = looks.filter((l) => (scheme === "light") === isLightLook(l.id));
+  if (!target || target.s < 0.18 || !pool.length) return { scheme, look: fallback, accent };
+  let best = fallback;
+  let bestD = Infinity;
+  for (const l of pool) {
+    const hs = hueSat(l.accent);
+    if (!hs || hs.s < 0.18) continue;
+    const dh = Math.min(Math.abs(hs.h - target.h), 360 - Math.abs(hs.h - target.h));
+    if (dh < bestD) {
+      bestD = dh;
+      best = l.id;
+    }
+  }
+  // Only take a coloured look when it is really close; otherwise the scheme's neutral default
+  // with the desktop's accent on it is the better match.
+  return { scheme, look: bestD <= 40 ? best : fallback, accent };
+}

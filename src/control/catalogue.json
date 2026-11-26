@@ -1532,9 +1532,9 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
-      "default": "Alt+W",
+      "default": "Ctrl+Alt+W",
       "description": "Sets the widgets hotkey option under Behaviour.",
-      "example": "{\"args\":{\"changes\":{\"func.widgetsHotkey\":\"Alt+W\"}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"func.widgetsHotkey\":\"Ctrl+Alt+W\"}},\"tool\":\"lens_set\"}",
       "label": "Widgets hotkey",
       "path": "func.widgetsHotkey",
       "reversible": true,
