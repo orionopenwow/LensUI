@@ -178,6 +178,7 @@ pub fn open_frame(app: &AppHandle) -> Result<Window, String> {
 fn on_frame_closed(app: &AppHandle) {
     let mut r = rt();
     r.window = None;
+    let closed: Vec<String> = r.views.keys().cloned().collect();
     r.views.clear();
     for t in r.state.tabs.iter_mut() {
         t.life = TabLife::Sleeping;
@@ -186,6 +187,9 @@ fn on_frame_closed(app: &AppHandle) {
     let _ = store::save_history_to(&store::history_path(), &r.history);
     r.history_dirty = false;
     drop(r);
+    for id in &closed {
+        super::titles::gone(id);
+    }
     emit_state(app);
 }
 
@@ -265,6 +269,8 @@ fn spawn_view(app: &AppHandle, window: &Window, tab: &Tab, profile: &str, vp: Vi
     // Camera, microphone, location…: Lens asks under the address bar instead of WebView2's prompt.
     #[cfg(windows)]
     super::permissions::win::attach(app, &view, tab_id.clone());
+    // Lens Messages: unread badges from the page title of messenger web apps (count only).
+    super::titles::attach(app, &view, tab_id.clone());
     if (tab.zoom - 1.0).abs() > 0.001 {
         let _ = view.set_zoom(tab.zoom);
     }
@@ -387,9 +393,12 @@ pub fn sleep_tabs(app: &AppHandle, ids: &[String]) {
         }
         let scroll = status.and_then(|s| s.get("scrollY").and_then(Value::as_f64));
         let _ = view.close();
-        let mut r = rt();
-        r.views.remove(&id);
-        r.state.mark_sleeping(&id, scroll);
+        {
+            let mut r = rt();
+            r.views.remove(&id);
+            r.state.mark_sleeping(&id, scroll);
+        }
+        super::titles::gone(&id);
     }
     save(&rt());
     emit_state(app);
@@ -482,6 +491,18 @@ pub fn close_view(tab_id: &str) {
     if let Some(v) = view {
         let _ = v.close();
     }
+    super::titles::gone(tab_id);
+}
+
+/// Reads the title of every open tab once, off the calling thread (Messages settings changed).
+pub fn report_space_titles(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let views: Vec<(String, Webview)> = rt().views.iter().map(|(id, v)| (id.clone(), v.clone())).collect();
+        for (id, view) in views {
+            super::titles::report(&app, &view, id);
+        }
+    });
 }
 
 pub fn active_view() -> Option<(String, Webview)> {

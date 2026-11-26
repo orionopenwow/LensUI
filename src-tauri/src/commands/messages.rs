@@ -58,10 +58,18 @@ pub fn messages_get_settings() -> Result<MessagesSettings, String> {
 }
 
 #[tauri::command]
-pub fn messages_set_settings(settings: MessagesSettings) -> Result<MessagesSettings, String> {
+pub fn messages_set_settings(app: AppHandle, settings: MessagesSettings) -> Result<MessagesSettings, String> {
     let s = settings.sanitize();
     feeds::write_json(&feeds::dir().join("messages.json"), &s)?;
-    lock()?.settings = s.clone();
+    let (dto, dock) = {
+        let mut st = lock()?;
+        st.settings = s.clone();
+        st.prune_spaces();
+        (unread(&st), st.settings.dock_badges)
+    };
+    announce(&app, &dto, dock);
+    // Messengers that were just turned on: read the titles of tabs that are already open.
+    crate::browser::host::report_space_titles(&app);
     Ok(s)
 }
 
@@ -88,20 +96,51 @@ pub fn messages_unread() -> Result<UnreadDto, String> {
     Ok(unread(&st))
 }
 
-/// Reported by the Lens Browser when a messenger space's page title changes. Only the count is
-/// kept — the title text itself is discarded.
+fn dock_on() -> bool {
+    lock().map(|s| s.settings.dock_badges).unwrap_or(false)
+}
+
+/// Tells every surface the badge changed: the inbox and widgets, and the Dock pin of Lens Messages.
+fn announce(app: &AppHandle, dto: &UnreadDto, dock_badges: bool) {
+    let _ = app.emit(EVT_UNREAD, dto.clone());
+    let text = (dock_badges && !dto.label.is_empty()).then(|| dto.label.clone());
+    let _ = app.emit("lens://coreapp-badge", serde_json::json!({ "path": format!("{}messages", crate::coreapps::PIN_PREFIX), "text": text }));
+}
+
+/// Called by the Lens Browser's title watcher (`browser::host`) whenever a tab's title or address
+/// changes. Only the count is kept: the title text is parsed and dropped here.
+pub fn space_title_changed(app: &AppHandle, tab_id: &str, url: &str, title: &str) {
+    let Ok(mut st) = lock() else { return };
+    if !st.space_title(tab_id, url, title, feeds::now_ms()) {
+        return;
+    }
+    let (dto, dock) = (unread(&st), st.settings.dock_badges);
+    drop(st);
+    announce(app, &dto, dock);
+}
+
+/// Called by the Lens Browser when a tab closes or goes to sleep.
+pub fn space_tab_gone(app: &AppHandle, tab_id: &str) {
+    let Ok(mut st) = lock() else { return };
+    if !st.space_tab_gone(tab_id, feeds::now_ms()) {
+        return;
+    }
+    let (dto, dock) = (unread(&st), st.settings.dock_badges);
+    drop(st);
+    announce(app, &dto, dock);
+}
+
+/// A page title reported for one messenger by hand (tests, tools). The Lens Browser reports real
+/// tabs through `space_title_changed`. Only the count is kept.
 #[tauri::command]
 pub fn messages_space_title(app: AppHandle, app_id: String, title: String) -> Result<UnreadDto, String> {
-    let dto = {
+    let Some(entry) = catalogue::get(&app_id) else { return Err("Unknown messenger.".into()) };
+    let (dto, dock) = {
         let mut st = lock()?;
-        if catalogue::get(&app_id).is_none() {
-            return Err("Unknown messenger.".into());
-        }
-        let n = badges::unread_from_title(&app_id, &title).unwrap_or(0);
-        st.space_unread.insert(app_id, (n, feeds::now_ms()));
-        unread(&st)
+        st.space_title(&format!("manual:{}", entry.id), entry.open_url, &title, feeds::now_ms());
+        (unread(&st), st.settings.dock_badges)
     };
-    let _ = app.emit(EVT_UNREAD, dto.clone());
+    announce(&app, &dto, dock);
     Ok(dto)
 }
 
@@ -125,7 +164,7 @@ pub fn messages_focus(app: AppHandle, mode: String, minutes: Option<u32>) -> Res
         }
         unread(&st)
     };
-    let _ = app.emit(EVT_UNREAD, dto.clone());
+    announce(&app, &dto, dock_on());
     Ok(dto)
 }
 
@@ -204,7 +243,7 @@ pub async fn messages_matrix_sync(app: AppHandle) -> Result<Vec<Conversation>, S
         }
         (st.matrix_rooms.clone(), unread(&st))
     };
-    let _ = app.emit(EVT_UNREAD, dto);
+    announce(&app, &dto, dock_on());
     Ok(rooms)
 }
 

@@ -75,7 +75,7 @@ fn inbox_orders_mentions_vip_unread() {
     let mut settings = MessagesSettings { enabled: true, apps: vec!["discord".into(), "gmail".into(), "slack".into(), "bogus".into()], vip: vec!["Gmail".into()], keywords: vec!["@pat".into()], mirror_toasts: true, ..Default::default() }.sanitize();
     assert_eq!(settings.apps.len(), 3, "unknown app dropped");
     settings.matrix_homeserver = None;
-    let mut st = State { settings, space_unread: Default::default(), matrix_rooms: vec![], matrix_since: None, focus: Focus::default() };
+    let mut st = State { settings, space_unread: Default::default(), space_tabs: Default::default(), matrix_rooms: vec![], matrix_since: None, focus: Focus::default() };
     st.space_unread.insert("slack".into(), (2, 10));
     let toasts = vec![("Discord".to_string(), "Ana".to_string(), "hey @pat".to_string(), 20i64)];
     let rows = inbox(&st, &toasts);
@@ -87,4 +87,73 @@ fn inbox_orders_mentions_vip_unread() {
     assert_eq!(rows[2].app, "slack");
     let bad = MessagesSettings { matrix_homeserver: Some("http://insecure.test".into()), ..Default::default() }.sanitize();
     assert!(bad.matrix_homeserver.is_none());
+}
+
+fn watching(apps: &[&str]) -> State {
+    let settings = MessagesSettings { enabled: true, apps: apps.iter().map(|a| a.to_string()).collect(), ..Default::default() }.sanitize();
+    State { settings, space_unread: Default::default(), space_tabs: Default::default(), matrix_rooms: vec![], matrix_since: None, focus: Focus::default() }
+}
+
+#[test]
+fn a_page_maps_to_its_messenger() {
+    use super::spaces::app_for_url;
+    assert_eq!(app_for_url("https://discord.com/channels/@me").unwrap().id, "discord");
+    assert_eq!(app_for_url("https://app.slack.com/client/T1/C1").unwrap().id, "slack");
+    assert_eq!(app_for_url("https://mail.google.com/mail/u/0/#inbox").unwrap().id, "gmail", "Gmail owns its host, not Google Chat");
+    assert_eq!(app_for_url("https://chat.google.com/u/0/").unwrap().id, "googlechat");
+    assert_eq!(app_for_url("https://teams.live.com/v2/").unwrap().id, "teams");
+    assert!(app_for_url("https://discord.com.evil.test/app").is_none());
+    assert!(app_for_url("http://discord.com/app").is_none(), "https only");
+    assert!(app_for_url("https://example.test/?next=https://discord.com/app").is_none());
+    assert!(app_for_url("sgnl://").is_none(), "desktop-only apps have no page");
+}
+
+#[test]
+fn title_changes_update_the_badge() {
+    let mut st = watching(&["discord", "slack", "gmail"]);
+    assert!(st.space_title("t1", "https://discord.com/channels/@me", "(3) Discord | Friends", 100));
+    assert_eq!(st.space_unread.get("discord"), Some(&(3, 100)));
+    assert!(!st.space_title("t1", "https://discord.com/channels/@me", "(3) Discord | #general", 200), "same count: nothing to announce");
+    assert_eq!(st.space_unread.get("discord"), Some(&(3, 100)));
+    assert!(st.space_title("t1", "https://discord.com/channels/@me", "Discord | Friends", 300));
+    assert_eq!(st.space_unread.get("discord"), Some(&(0, 300)));
+    let rows = inbox(&st, &[]);
+    assert_eq!(rows.iter().map(|r| r.unread).sum::<u32>(), 0);
+    assert!(st.space_title("t2", "https://mail.google.com/mail/u/0/", "Inbox (12) - me@example.test - Gmail", 400));
+    assert_eq!(inbox(&st, &[]).iter().find(|r| r.app == "gmail").unwrap().unread, 12);
+}
+
+#[test]
+fn two_tabs_of_one_messenger_add_up_and_leave_separately() {
+    let mut st = watching(&["slack", "whatsapp"]);
+    st.space_title("a", "https://app.slack.com/client/T1", "* Slack | general", 1);
+    st.space_title("b", "https://app.slack.com/client/T2", "! Slack | ops", 2);
+    assert_eq!(st.space_unread.get("slack").map(|v| v.0), Some(2));
+    assert!(st.space_tab_gone("a", 3));
+    assert_eq!(st.space_unread.get("slack").map(|v| v.0), Some(1));
+    // The tab leaves Slack for another site: its share goes too.
+    assert!(st.space_title("b", "https://example.test/", "(9) Example", 4));
+    assert!(st.space_unread.get("slack").is_none());
+    assert!(!st.space_tab_gone("b", 5), "nothing left to forget");
+    // One tab moving from one messenger to another changes both.
+    st.space_title("c", "https://web.whatsapp.com/", "WhatsApp (5)", 6);
+    assert!(st.space_title("c", "https://app.slack.com/client/T1", "* Slack", 7));
+    assert!(st.space_unread.get("whatsapp").is_none());
+    assert_eq!(st.space_unread.get("slack").map(|v| v.0), Some(1));
+}
+
+#[test]
+fn only_messengers_you_turned_on_are_counted() {
+    let mut st = watching(&["slack"]);
+    assert!(!st.space_title("t", "https://discord.com/app", "(4) Discord", 1), "Discord is not turned on");
+    assert!(st.space_unread.is_empty());
+    assert!(!st.space_title("t", "https://example.test/", "(7) Some site", 2));
+    st.settings.enabled = false;
+    assert!(!st.space_title("s", "https://app.slack.com/client/T1", "* Slack", 3), "Messages is off");
+    st.settings.enabled = true;
+    st.space_title("s", "https://app.slack.com/client/T1", "* Slack", 4);
+    assert_eq!(st.space_unread.get("slack").map(|v| v.0), Some(1));
+    st.settings.apps.clear();
+    st.prune_spaces();
+    assert!(st.space_unread.is_empty() && !st.space_tabs.has("slack"));
 }

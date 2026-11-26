@@ -14,6 +14,7 @@ pub mod badges;
 pub mod catalogue;
 pub mod focus;
 pub mod matrix;
+pub mod spaces;
 
 #[cfg(test)]
 mod tests;
@@ -93,6 +94,8 @@ pub struct State {
     pub settings: MessagesSettings,
     /// Badge counts per app from web-app space titles.
     pub space_unread: std::collections::HashMap<String, (u32, i64)>,
+    /// Per-tab counts behind `space_unread` (the browser's title watcher).
+    pub space_tabs: spaces::SpaceTitles,
     pub matrix_rooms: Vec<Conversation>,
     pub matrix_since: Option<String>,
     pub focus: focus::Focus,
@@ -105,11 +108,54 @@ pub fn state() -> &'static Mutex<State> {
         Mutex::new(State {
             settings: settings.sanitize(),
             space_unread: Default::default(),
+            space_tabs: Default::default(),
             matrix_rooms: Vec::new(),
             matrix_since: None,
             focus: focus::Focus::default(),
         })
     })
+}
+
+impl State {
+    fn watches(&self, app: &str) -> bool {
+        self.settings.enabled && self.settings.apps.iter().any(|a| a == app)
+    }
+
+    fn refresh_space(&mut self, app: &'static str, now_ms: i64) {
+        if self.space_tabs.has(app) {
+            self.space_unread.insert(app.to_string(), (self.space_tabs.total(app), now_ms));
+        } else {
+            self.space_unread.remove(app);
+        }
+    }
+
+    /// A browser tab's title or address changed. Counts only messengers the person turned on in
+    /// Messages; anything else is forgotten. Returns true when a badge changed.
+    pub fn space_title(&mut self, tab: &str, url: &str, title: &str, now_ms: i64) -> bool {
+        let watched = spaces::app_for_url(url).map(|a| self.watches(a.id)).unwrap_or(false);
+        let changed = if watched { self.space_tabs.report(tab, url, title) } else { self.space_tabs.forget(tab) };
+        for app in &changed {
+            self.refresh_space(*app, now_ms);
+        }
+        !changed.is_empty()
+    }
+
+    /// The tab closed or went to sleep: its share of the badge goes.
+    pub fn space_tab_gone(&mut self, tab: &str, now_ms: i64) -> bool {
+        let changed = self.space_tabs.forget(tab);
+        for app in &changed {
+            self.refresh_space(*app, now_ms);
+        }
+        !changed.is_empty()
+    }
+
+    /// After a settings change: counts of messengers that were turned off are dropped.
+    pub fn prune_spaces(&mut self) {
+        let on = self.settings.enabled;
+        let apps = self.settings.apps.clone();
+        self.space_tabs.retain_apps(|a| on && apps.iter().any(|x| x == a));
+        self.space_unread.retain(|a, _| on && apps.iter().any(|x| x == a));
+    }
 }
 
 /// Builds the unified inbox: one row per enabled web-app space (with its badge), Matrix rooms,
