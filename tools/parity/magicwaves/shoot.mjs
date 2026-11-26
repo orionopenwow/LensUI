@@ -76,6 +76,13 @@ const WINDOW_SCENES = [
   { id: "win-glance", magic: "dashboard", data: true, expect: [".mdb-window", '[data-lane="inbox"] .mdb-card', '[data-lane="shelf"] .mdb-card', ".mdb-strip"] },
   { id: "win-focus", magic: "dashboard", data: true, expect: ['.mdb[data-layout="focus"]', '[data-lane="inbox"] .mdb-card'], click: '.mdb-layout:has-text("Focus")' },
   { id: "win-board", magic: "dashboard,widgets,learn", data: true, expect: ['.mdb[data-layout="board"]', '[data-lane="feeds"] .mdb-card', '[data-lane="widgets"]', ".mdb-forget"], click: '.mdb-layout:has-text("Board")' },
+  // Wave M2: widgets from the gallery (mocked fetch, invented data), the gallery, the consent
+  // screen, Sources with the kill switch, and the X lane's consent.
+  { id: "win-widgets", magic: "dashboard,widgets", data: true, extra: "&widgets=sample", expect: ['[data-lane="widgets"] .mwg-tile', '[data-widget="weather"] .mac-columns', '[data-widget="rss"] .mac-actions', '[data-widget="clocks"] .mac-facts', '[data-widget="system"] .mac-facts', ".mdb-card-ask"], click: '.mdb-layout:has-text("Board")', focus: '[data-lane="widgets"]' },
+  { id: "win-widgets-gallery", magic: "dashboard,widgets", data: false, expect: ['[data-view="gallery"]', '[data-gallery-id="weather"]', '[data-gallery-id="system"]'], clicks: ['.mdb-layout:has-text("Board")', '[data-lane="widgets"] .mwg-btn:has-text("Add a widget")'], focus: '[data-lane="widgets"]' },
+  { id: "win-widgets-consent", magic: "dashboard,widgets", data: false, expect: ['[data-view="consent"]', '.mwg-hosts li:has-text("api.open-meteo.com")'], clicks: ['.mdb-layout:has-text("Board")', '[data-lane="widgets"] .mwg-btn:has-text("Add a widget")', '[data-gallery-id="weather"]', '.mwg-field:has-text("Latitude") input', '.mwg-btn:has-text("Next")'], fill: { '.mwg-field:has-text("Latitude") input': "33.45", '.mwg-field:has-text("Longitude") input': "-112.07" }, focus: '[data-lane="widgets"]' },
+  { id: "win-widgets-sources", magic: "dashboard,widgets", data: false, extra: "&widgets=sample", expect: ['[data-view="sources"]', '.mwg-sources li:has-text("api.open-meteo.com")', ".mwg-switch input"], clicks: ['.mdb-layout:has-text("Board")', '[data-lane="widgets"] .mwg-btn:has-text("Sources")'], focus: '[data-lane="widgets"]' },
+  { id: "win-x", magic: "dashboard,widgets", data: false, expect: ['[data-lane="x"] [data-view="x-consent"]', '[data-lane="x"] .mwg-btn:has-text("Open X")'], click: '.mdb-layout:has-text("Board")', focus: '[data-lane="x"]' },
 ];
 for (const preset of PRESETS) {
   for (const sc of WINDOW_SCENES) {
@@ -83,10 +90,16 @@ for (const preset of PRESETS) {
     const errors = [];
     pg.on("pageerror", (e) => errors.push(e.message));
     pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
-    await pg.goto(`${base}/harness.html?surface=dashboard&preset=${preset}&magic=${sc.magic}${sc.data ? "&dashdata=1" : ""}`);
+    await pg.goto(`${base}/harness.html?surface=dashboard&preset=${preset}&magic=${sc.magic}${sc.data ? "&dashdata=1" : ""}${sc.extra ?? ""}`);
     await pg.waitForTimeout(1100);
-    if (sc.click) await pg.locator(sc.click).first().click({ timeout: 3000 }).catch((e) => errors.push(`click: ${e.message.slice(0, 80)}`));
+    for (const sel of sc.clicks ?? (sc.click ? [sc.click] : [])) {
+      // Fill the form fields that come before this click (the consent scene's coordinates).
+      for (const [f, v] of Object.entries(sc.fill ?? {})) if (await pg.locator(f).count()) await pg.locator(f).first().fill(v).catch(() => {});
+      await pg.locator(sel).first().click({ timeout: 3000 }).catch((e) => errors.push(`click ${sel}: ${e.message.slice(0, 80)}`));
+      await pg.waitForTimeout(200);
+    }
     await pg.waitForTimeout(250);
+    if (sc.focus) await pg.locator(sc.focus).first().scrollIntoViewIfNeeded({ timeout: 3000 }).catch(() => {});
     for (const sel of sc.expect) if (!(await pg.locator(sel).count())) errors.push(`missing ${sel}`);
     // Esc and × both ask Rust to hide the window.
     const n0 = await pg.evaluate(() => window.__lensCalls.length);
