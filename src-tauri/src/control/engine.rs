@@ -173,6 +173,8 @@ pub struct Engine {
 }
 
 impl Engine {
+    /// An engine that keeps its undo stack in memory only (tests).
+    #[cfg(test)]
     pub fn new(entries: Vec<Entry>) -> Engine {
         Engine { entries, undo: Mutex::new(VecDeque::new()), next: Mutex::new(1), journal: None }
     }
