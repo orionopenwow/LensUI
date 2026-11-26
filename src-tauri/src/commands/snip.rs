@@ -436,9 +436,25 @@ fn build_overlay_on_main(app: &AppHandle) -> Result<tauri::WebviewWindow, String
 }
 
 fn build_overlay(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    match build_overlay_once(app) {
+        Ok(w) => Ok(w),
+        // WebView2 answers 0x8007139F ("not in the correct state") when it isn't ready for
+        // another controller yet; one short retry, then report it.
+        Err(e) if e.contains("8007139F") => {
+            std::thread::sleep(Duration::from_millis(250));
+            build_overlay_once(app).map_err(|e2| format!("{e2} (after a retry; first: {e})"))
+        }
+        Err(e) => Err(e),
+    }
+}
+
+fn build_overlay_once(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     if let Some(w) = app.get_webview_window(OVERLAY) {
         return Ok(w);
     }
+    // Transparent like every other Lens window: the WebView2 environment is shared, and a
+    // window created with different options than the rest can be refused. The overlay draws
+    // its own frame and dimming, so nothing shows through.
     WebviewWindowBuilder::new(
         app,
         OVERLAY,
@@ -446,6 +462,7 @@ fn build_overlay(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     )
     .title("Lens Snip")
     .decorations(false)
+    .transparent(true)
     .always_on_top(true)
     .skip_taskbar(true)
     .resizable(false)
