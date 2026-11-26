@@ -300,3 +300,6 @@
 .cmd-shelf-total { margin-left: auto; font-size: 11px; color: var(--lens-fg-secondary); }
 .cmd-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
 .cmd-confirm .is-danger { color: var(--lens-danger); }
+
+/* Heard, not seen: the live region that announces the Do-mode preview to screen readers. */
+.cmd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

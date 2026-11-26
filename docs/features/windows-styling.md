@@ -1,6 +1,8 @@
 # Window styling — feature dossier
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
+>
+> **Fable pass, 2026-11-26 (PR #115): status now works, with one item to check on a real PC.** Done: the caption engine uses the shared 42-name list through `caption_rules::skip_reason` (so do the tiler, Alt+drag, the key hook and pointer effects, with two source tests that keep it that way); `excluded_processes`, "leave alone" rules and fullscreen are honoured; `style` and `position` are drawn; a first cut of the per-app page ("Apps and window buttons", with the locked Protected badge) is in Settings › Windows & Keys › Window styling. Left: `position: top-left` needs a look on real hardware (it is only used where the title bar's left end is plain caption, and it covers the icon and the start of the title there); "Don't style this app" in the Dock menu; B-29; splitting `win_tiler.rs`. Rows below are updated in place.
 
 ## Rundown
 
@@ -22,11 +24,11 @@ Lens restyles other apps' windows: the coloured caption buttons (close / minimis
 | Per-row colour | Colour per button, hover glyphs | works | `caption_paint.rs`, parity rig |
 | No transparent pixels | Opaque edge, button probe in E2E | works | #99 |
 | Order | Close-min-max / min-max-close | works | `order` read by engine |
-| Position (top-left) | Advertised in catalogue | **broken — never read** | `catalogue.rs:139`; no read in `win_caption_engine.rs` |
-| Style variants | `style` enum (e.g. dots / glyph / pill) | **broken — not used** | no read in `caption_paint.rs` or engine |
+| Position (top-left) | Buttons 18 px in from the left edge, a plain patch over the native buttons on the right | partly — drawn where the left of the title bar is plain caption; tabbed and custom title bars keep the right. Not seen on a real PC yet | `caption_paint::left_side_is_free`, `render_cover`; PR #115 |
+| Style variants | classic, soft, small dots, pills, the in-app colours | works | `caption_paint::render_with`; parity rig runs every style on both sides; PR #115 |
 | Snap layouts | Long hover on green → Windows snap flyout | works | `win_caption_engine.rs:79/906/948` |
-| Exclusions | Per-app list | partly — only `win_traffic.rs` reads it | engine ignores `excluded_processes` |
-| Anti-cheat / fullscreen skip | Never draw over protected games or fullscreen | partly — engine uses its own short list | `win_caption_engine.rs:190` vs `win_rules.rs:180` |
+| Exclusions | Per-app list, "leave alone" rules | works | `caption_rules::skip_reason`; Apps and window buttons card; PR #115 |
+| Anti-cheat / fullscreen skip | Never draw over protected games or fullscreen | works — shared list, full path match; fullscreen = covers the monitor and not maximised | `caption_rules.rs`, `tests/win_rules.rs` source tests; PR #115 |
 
 ### 2. Frame (DWM)
 | Feature | Sub | Status | Evidence |
@@ -51,11 +53,11 @@ Lens restyles other apps' windows: the coloured caption buttons (close / minimis
 | Install | Only on click, never automatic | works | #76 |
 
 ## Quick wins (≤1 day each, ranked)
-1. **Use `win_rules::ANTI_CHEAT_FRAGMENTS` in the caption engine** (`win_caption_engine.rs:190`) instead of its private list, and honour `excluded_processes` there too. One source of truth; this is a §3.4 safety rule, so it goes first.
-2. **Hide `position` and `style` from the catalogue/UI until they work** (or wire them). A setting that does nothing is worse than no setting.
-3. **"Don't style this app" from the Dock's context menu**, writing `excluded_processes`.
-4. **Unit test: every name in `ANTI_CHEAT_FRAGMENTS` is skipped by the engine** (fails today).
-5. **Note in Appearance that corner style needs Windows 11.**
+1. ~~Use `win_rules::ANTI_CHEAT_FRAGMENTS` in the caption engine and honour `excluded_processes`.~~ Done (PR #115).
+2. ~~Hide or wire `position` and `style`.~~ Wired (PR #115); `position` has the limit described above.
+3. **"Don't style this app" from the Dock's context menu**, writing `excluded_processes`. Open; the switch now exists in Apps and window buttons, so this is a shortcut to it.
+4. ~~Unit test: every name in `ANTI_CHEAT_FRAGMENTS` is skipped by the engine.~~ Done: `caption_rules::tests::every_shared_anti_cheat_name_is_skipped` (PR #115).
+5. ~~Note that corner style needs Windows 11.~~ Already there (Appearance shows it on Windows 10).
 
 ## Polish assessment
 - **Visual:** buttons match per-row colours and pass 8,806 parity cases; hover glyph fade could use the shared motion token.
@@ -67,10 +69,9 @@ Lens restyles other apps' windows: the coloured caption buttons (close / minimis
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| suspected | **High (safety)** | Caption engine's private anti-cheat list misses most of the 42 names in `win_rules.rs:180` → overlay can sit over a protected game's window | `win_caption_engine.rs:190` |
-| suspected | Med | `excluded_processes` ignored by the engine → excluded apps still get buttons | engine has no read |
-| suspected | Med | `position: top-left` does nothing | `catalogue.rs:139` |
-| suspected | Low | `style` variants do nothing | `caption_paint.rs` |
+| B-43 | — | Fixed (PR #115): the caption engine's private anti-cheat list missed 38 of the 42 names; the tiler, key hook and pointer effects had their own short lists and Alt+drag could move a protected game that wasn't in front | `docs/brain/BUGS.md` |
+| B-44 | — | Fixed (PR #115): `excluded_processes`, `style` and `position` were ignored by the engine | `docs/brain/BUGS.md` |
+| open | Low | `position: top-left` not yet seen on a real PC (stacking of the two overlay windows, classic title bars) | `win_caption_engine.rs` |
 | B-29 | Low | Prebuilt hook DLL (`lens-dwm-hook/`) callbacks have no panic guard; app-crate callbacks are guarded | `docs/brain/BUGS.md:53` |
 | B-05 / B-06 | — | Fixed in wave 1 (hook guard; DLL by content hash; Remove all stops the hook) — keep the E2E | `docs/brain/BUGS.md:25-26` |
 

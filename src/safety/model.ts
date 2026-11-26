@@ -73,5 +73,26 @@ export function signInLine(facts: SafetyFacts): string {
   return `Hold Shift while you sign in and Lens stays out for that sign-in. Otherwise Lens waits for the Windows desktop to be ready (up to ${mins} ${mins === 1 ? "minute" : "minutes"}) before it shows anything or touches the taskbar.`;
 }
 
+export interface RemoveAllPreview {
+  /** "Remove all will check and undo 33 kinds of change." */
+  line: string;
+  /** Every kind of change it walks, in the order it runs. */
+  labels: string[];
+  /** What it never touches, so nobody has to wonder. */
+  keeps: string;
+}
+
+/** What "Remove all Lens changes" is about to do, shown before the person confirms. It is the
+ *  same list the backend walks (`changes::CHANGES`), so the preview can't promise more or less. */
+export function removeAllPreview(manifest: ChangeInfo[]): RemoveAllPreview | null {
+  if (manifest.length === 0) return null;
+  const n = manifest.length;
+  return {
+    line: `Remove all will check and undo ${n} ${n === 1 ? "kind" : "kinds"} of change, and report each one.`,
+    labels: manifest.map((c) => c.label),
+    keeps: "Not changed: your files, the apps you installed and themes you exported.",
+  };
+}
+
 /** Where the two buttons go (Settings deep links, `openSettingsAt`). */
 export const SAFETY_LINKS = { report: "about#report", removeAll: "about#backup", safetyNet: "about#safety" } as const;

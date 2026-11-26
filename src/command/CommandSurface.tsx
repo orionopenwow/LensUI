@@ -1048,6 +1048,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               ) : null}
               {mode === "do" ? (
                 <div className="cmd-do">
+                  {/* Screen readers hear the preview as it appears; sighted people see the row below. */}
+                  <span role="status" aria-live="polite" className="cmd-sr">
+                    {intent ? `${intent.summary}. Press Enter to do it.` : ""}
+                  </span>
                   {intent ? (
                     <button type="button" className="cmd-row is-active" onClick={() => runActive(false, false)}>
                       <span className="cmd-row-icon"><Zap size={14} /></span>

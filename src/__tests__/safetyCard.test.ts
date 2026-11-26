@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ChangeInfo, FailsafeReport } from "../types/generated";
-import { FALLBACK_FACTS, SAFETY_LINKS, changeGroups, changesLine, neverTouchedLine, safeModeLine, signInLine } from "../safety/model";
+import { FALLBACK_FACTS, SAFETY_LINKS, changeGroups, changesLine, neverTouchedLine, removeAllPreview, safeModeLine, signInLine } from "../safety/model";
 import { PAGES } from "../settings/registry";
 
 const root = join(import.meta.dir, "../..");
@@ -82,6 +82,19 @@ describe("Safety card", () => {
     expect(cmd).toContain("crate::app::signin_gate::MAX_WAIT_MS");
     // Lens never writes HKLM (the registry's own rule), so the card may say so.
     expect(rust("changes.rs")).toContain("Lens never writes HKLM");
+  });
+
+  test("Remove all shows what it will undo before the confirm word, from the same registry", () => {
+    expect(removeAllPreview([])).toBeNull();
+    const p = removeAllPreview(manifest);
+    expect(p?.line).toBe("Remove all will check and undo 4 kinds of change, and report each one.");
+    expect(p?.labels).toEqual(manifest.map((c) => c.label));
+    expect(p?.keeps).toContain("your files");
+    const card = readFileSync(join(root, "src/components/BackupRestoreCard.tsx"), "utf8");
+    expect(card).toContain('"changes_manifest_cmd"');
+    // The preview is rendered inside the confirmation, above the confirm word.
+    expect(card.indexOf("data-remove-all-preview")).toBeGreaterThan(card.indexOf("{confirming && ("));
+    expect(card.indexOf("data-remove-all-preview")).toBeLessThan(card.indexOf("Type ${CONFIRM_WORD} to confirm"));
   });
 
   test("its buttons go to sections that exist in Settings › About & Testing", () => {
