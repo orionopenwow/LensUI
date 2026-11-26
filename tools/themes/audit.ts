@@ -7,6 +7,7 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MERGED_PACKS, allPacks, contrastRatio, lighten, packById } from "../../src/themes/packs";
 import { NEAR_DUPLICATE, SAME_ON_SCREEN, distanceParts, nearest, packBase, packDistance, packScene } from "../../src/themes/distance";
+import { BODY_MIN, ICON_MIN, auditAllPacks, liftsText } from "../../src/themes/contrastAudit";
 import { FEATURED_LOOKS, FEEL_LABEL, FONT_LABEL, familyOf, featuredPacks, lookDistance, lookPack, lookScene, morePacks } from "../../src/themes/featured";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -56,6 +57,25 @@ export function buildAudit(): string {
     const card = light ? "#FFFFFF" : lighten(base, 0.045);
     const r = (a: string, b: string) => `${contrastRatio(a, b).toFixed(1)}:1`;
     push(`| ${p.label} | ${r(text, base)} | ${r(text, card)} | ${r(p.accent, base)} | ${r(p.accent, card)} |`);
+  }
+
+  const all = auditAllPacks();
+  const failing = all.filter((r) => r.failures.length);
+  push(
+    "",
+    "### Contrast, every pack",
+    "",
+    `What each pack really paints: its surface (with the accent tint mixed in) and its raised cards, under the text tones of its scheme (tokens.css). Body text (primary and secondary) must reach ${BODY_MIN}:1 on both; muted text (hints, icons) and the accent must reach ${ICON_MIN}:1. Dark packs with lighter bases get brighter secondary and muted tones (marked ↑). Packs that follow the Windows accent are checked for text only. \`src/__tests__/themeContrast.test.ts\` fails on any pack below these lines.`,
+    "",
+    `${all.length} packs, ${failing.length} below a line.`,
+    "",
+    "| Pack | Scheme | Surface · card | Text | Secondary | Muted | Accent |",
+    "|---|---|---|---|---|---|---|",
+  );
+  const f = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)}:1` : "Windows");
+  for (const r of [...all].sort((a, b) => a.label.localeCompare(b.label))) {
+    const lift = r.scheme === "dark" && liftsText(packById(r.id)) ? " ↑" : "";
+    push(`| ${r.label} | ${r.scheme}${lift} | \`${r.surface}\` · \`${r.card}\` | ${f(r.ratios.text)} | ${f(r.ratios["secondary text"])} | ${f(r.ratios["muted text"])} | ${f(r.ratios.accent)} |`);
   }
 
   push("", "## Near-duplicates", "", `Pairs of listed packs closer than ${NEAR_DUPLICATE.toFixed(2)}, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under ${SAME_ON_SCREEN.toFixed(2)} are the same theme on screen and are merged instead (next section), so none appears here.`, "", "| Distance | Pack | Almost the same as | What still differs |", "|---|---|---|---|");

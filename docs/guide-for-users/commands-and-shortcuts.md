@@ -84,6 +84,7 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | `Ctrl+Alt+Q` | Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. |
 | `Ctrl+Alt+Shift+S` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L,  and Ctrl+Alt+M are Lens shortcuts. |
 | `Ctrl+Alt+M` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and  are Lens shortcuts. |
+| `Ctrl+Esc` | - Lock and Windows Start: power stays with Windows; "Windows Start" sends . |
 | `Shift+1` | Overview: move windows between workspaces OverviewSurface.tsx Shown only when Lens workspaces are on in groups mode, with 2 or more workspaces Drag a tile onto a workspace, or press Shift + ← / →, or Shift + 1–9. |
 | `Shift+F10` | Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (). |
 | `Ctrl+V` | clippaste(id, mode?) Hides Command, then sends  to the window you came from. |

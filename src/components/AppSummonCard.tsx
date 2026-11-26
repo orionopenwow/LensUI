@@ -96,7 +96,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">App Hotkeys</div>
+          <div className="cc-label">App hotkeys</div>
           <div className="cc-desc">
             One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it
             isn't running. Great for a drop-down terminal.
@@ -106,7 +106,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           type="button"
           role="switch"
           aria-checked={as.enabled}
-          aria-label="App Hotkeys"
+          aria-label="App hotkeys"
           className={`cc-toggle ${as.enabled ? "on" : ""}`}
           onClick={() => save({ enabled: !as.enabled })}
         />

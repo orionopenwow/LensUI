@@ -38,7 +38,7 @@ export const CrashReportsCard: React.FC = () => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Crash Reports</div>
+          <div className="cc-label">Crash reports</div>
           <div className="cc-desc">
             Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded.
           </div>

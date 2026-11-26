@@ -751,12 +751,12 @@ pub(crate) fn spawn_watcher(
                                     _ => false,
                                 };
                                 let pointer_on = qs.as_ref().map(over).unwrap_or(false) || cursor_inside_bar;
-                                active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), FLYOUT_IDLE_MS)
+                                active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).0)
                             };
                             if !qs_vis {
                                 qs_idle_since = None;
                             } else if !qs_in_use && popout_may_auto_close(&watcher_handle, "quicksettings") {
-                                // Pointer away (and no keyboard focus) for FLYOUT_IDLE_MS: a
+                                // Pointer away (and no keyboard focus) for the pop-out delay: a
                                 // Quick Settings panel left open closes by itself.
                                 crate::commands::surfaces::glide_hide_surface(&watcher_handle, "quicksettings");
                             }
@@ -863,10 +863,15 @@ pub(crate) fn spawn_watcher(
                                     topbar_through = Some(through);
                                 }
                             }
-                            let halo = match local {
-                                Some((lx, ly)) if over_bar && through => (lx.round() as i32, ly.round() as i32, true),
-                                _ => (0, 0, false),
-                            };
+                            // No halo when it is switched off or Windows' transparency effects
+                            // are off (`last_theme` is re-read every ~2 s above).
+                            let halo = crate::app::topbar_hit::halo_for(
+                                local,
+                                over_bar,
+                                through,
+                                cfg.top_bar.pointer_halo,
+                                last_theme.transparency_enabled,
+                            );
                             if topbar_halo_sent != Some(halo) {
                                 topbar_halo_sent = Some(halo);
                                 let _ = watcher_handle.emit_to(
@@ -1087,7 +1092,7 @@ pub(crate) fn spawn_watcher(
                                 _ => false,
                             };
                             let in_use = settings_focused || pointer_on_settings || cursor_over_pill || cursor_over_dock_window;
-                            if !active_within(in_use, &mut settings_away_since, Instant::now(), POPOUT_AWAY_MS)
+                            if !active_within(in_use, &mut settings_away_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).1)
                                 && popout_may_auto_close(&watcher_handle, "settings")
                             {
                                 settings_away_since = None;
@@ -1373,6 +1378,17 @@ pub(crate) const FLYOUT_IDLE_MS: u128 = 1500;
 /// How long Settings on the Dock may sit with the pointer away and no keyboard focus.
 pub(crate) const POPOUT_AWAY_MS: u128 = 1800;
 
+/// How long pop-outs wait before closing by themselves, for `func.popoutCloseDelay`:
+/// (Quick Settings, Settings on the Dock) in ms. "normal" (and anything unknown) is the original
+/// FLYOUT_IDLE_MS / POPOUT_AWAY_MS pair.
+pub(crate) fn popout_delays(preset: &str) -> (u128, u128) {
+    match preset {
+        "short" => (800, 1000),
+        "long" => (3000, 3600),
+        _ => (FLYOUT_IDLE_MS, POPOUT_AWAY_MS),
+    }
+}
+
 /// Pure: `active` now, or within `grace_ms` of the last time it was. Tracks the moment it stopped.
 pub(crate) fn active_within(active: bool, idle_since: &mut Option<std::time::Instant>, now: std::time::Instant, grace_ms: u128) -> bool {
     if active {
@@ -1540,6 +1556,20 @@ mod hide_robustness_tests {
         // Used again: counts again at once.
         assert!(active_within(true, &mut since, t0 + Duration::from_millis(5000), FLYOUT_IDLE_MS));
         assert_eq!(since, None);
+    }
+
+    #[test]
+    fn popout_delay_presets_keep_normal_as_it_was() {
+        assert_eq!(popout_delays("normal"), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS));
+        assert_eq!(popout_delays(""), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS), "missing or unknown is normal");
+        assert_eq!(popout_delays("bogus"), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS));
+        let (qs_short, st_short) = popout_delays("short");
+        let (qs_long, st_long) = popout_delays("long");
+        assert!(qs_short < FLYOUT_IDLE_MS && FLYOUT_IDLE_MS < qs_long);
+        assert!(st_short < POPOUT_AWAY_MS && POPOUT_AWAY_MS < st_long);
+        // Short still gives a person time to move the pointer back.
+        assert!(qs_short >= 600 && st_short >= 600);
+        assert_eq!(crate::config::LensConfig::default().func.popout_close_delay, "normal");
     }
 
     #[test]

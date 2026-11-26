@@ -37,11 +37,11 @@ import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { resolveSystemArea } from "../dock/styles";
 import { TesterBadge } from "../tester/TesterHub";
 import "./TopBarSurface.css";
-import { useTopbarClickThrough } from "../topbar/clickThrough";
+import { haloAllowed, useTopbarClickThrough } from "../topbar/clickThrough";
 import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 
 export const TopBarSurface: React.FC = () => {
-  const { config } = useLensState();
+  const { config, winTheme } = useLensState();
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
   const systemInDock = !!config && resolveSystemArea(config.dock, config.topBar) === "dock";
   const [now, setNow] = useState(() => new Date());
@@ -60,15 +60,17 @@ export const TopBarSurface: React.FC = () => {
   const barRef = React.useRef<HTMLElement>(null);
   // Click-through: empty parts of the bar pass clicks to the app behind; the halo shows where.
   const halo = useTopbarClickThrough(barRef);
+  const haloOk = haloAllowed(config?.topBar, winTheme);
   useLayoutEffect(() => {
     const bar = barRef.current;
     if (!bar) return;
-    bar.dataset.halo = halo.on ? "on" : "off";
-    if (halo.on) {
+    const on = halo.on && haloOk;
+    bar.dataset.halo = on ? "on" : "off";
+    if (on) {
       bar.style.setProperty("--tb-hx", `${halo.x}px`);
       bar.style.setProperty("--tb-hy", `${halo.y}px`);
     }
-  }, [halo]);
+  }, [halo, haloOk]);
   const searchFlip = React.useRef<FlipCapture | null>(null);
   const searchDo = (ev: SearchEvent, query = "") => {
     const r = searchStep(searchPhaseRef.current, ev);
@@ -433,7 +435,7 @@ export const TopBarSurface: React.FC = () => {
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })
               }
-              aria-label="Quick Settings"
+              aria-label="Quick settings"
             >
               <Settings size={15.5} strokeWidth={2.55} />
             </button>

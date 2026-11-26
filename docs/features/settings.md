@@ -3,6 +3,8 @@
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
 >
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 4 done (Notifications merged into Focus & Notifications, "Lens Apps"; B-39 theme choices restore exactly), B-40's duplicate switch name fixed, Dock & Bar gained an Advanced section, the Top Bar switch is one flag. 22 pages now. Left: B-41, the unmounting switches in B-40, swallowed errors, the "Recently changed" strip.
+>
+> **Settings wave (2026-11-26):** B-41 fixed (the corner picker sat under `pointer-events: none` while Hot corners was off; now dimmed, not dead), B-40 fixed (switches replaced their state with the backend's reply and vanished; `Resource.adopt` keeps them mounted and focused), B-18 done for `src/settings`, `src/themeux` and the shell (toast or inline note, `src/ui/oops.ts`), remaining Title Case labels sentence-cased, consistent hover/pressed/disabled states on cards, chips, buttons, switches and segments. Hyper: 0 known failures. Left: the "Recently changed" strip, B-58 (`.pi-off` on three other cards).
 
 ## Rundown
 

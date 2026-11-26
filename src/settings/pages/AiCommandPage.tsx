@@ -21,6 +21,7 @@ import { SnipCard } from "../../components/SnipCard";
 import { PresenceCard } from "../../presence/PresenceCard";
 import { Section, StateNote } from "../ui/primitives";
 import type { PageProps } from "./common";
+import { oops } from "../../ui/oops";
 
 /** Lens › AI & Command. Agents used to be a separate tab; it's a section here now. */
 export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConfig }) => (
@@ -28,7 +29,7 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     <StateNote kind="info">Everything here is off until you turn it on. Local models are used first; nothing leaves this PC unless you allow it.</StateNote>
     <BridgeInbox />
     <Section id="engine" title="AI engine" summary="Engine, privacy and keys" forceOpen={section === "engine"}>
-      <AiCard onTryIt={() => invoke("toggle_surface", { label: "palette" }).catch(() => {})} />
+      <AiCard onTryIt={() => invoke("toggle_surface", { label: "palette" }).catch(oops("open Command"))} />
     </Section>
     <Section id="command" title="Lens Command" summary="Hotkey, Mini, slash commands" forceOpen={section === "command"}>
       <CommandCard config={config} onUpdateConfig={updateConfig} />

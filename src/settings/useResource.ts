@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { quiet } from "../ui/oops";
 
 export interface Resource<T> {
   data: T | null;
@@ -9,6 +10,21 @@ export interface Resource<T> {
   reload: () => void;
   /** Optimistic local update. */
   set: (next: T) => void;
+  /**
+   * Takes a backend reply as the new state only when it is one (B-40). A command that answers
+   * with nothing, or with a different shape, keeps what is shown, so the rows (and the switch
+   * that has keyboard focus) stay mounted instead of vanishing until the next reload.
+   */
+  adopt: (reply: unknown) => void;
+}
+
+/** Pure: the state to show after a backend reply. Replies that aren't a state keep the current one. */
+export function adoptReply<T>(current: T | null, reply: unknown): T | null {
+  if (reply === null || reply === undefined) return current;
+  if (current === null) return reply as T;
+  if (Array.isArray(current) !== Array.isArray(reply)) return current;
+  if (typeof current !== typeof reply) return current;
+  return reply as T;
 }
 
 /**
@@ -52,13 +68,14 @@ export function useResource<T>(
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
       alive.current = false;
-      unlisten.forEach((p) => p.then((fn) => fn()).catch(() => {}));
+      unlisten.forEach((p) => p.then((fn) => fn()).catch(quiet));
       if (t) window.clearInterval(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reload, (opts.events ?? []).join(","), opts.pollMs]);
 
-  return { data, error, loading, reload, set: setData };
+  const adopt = useCallback((reply: unknown) => setData((cur) => adoptReply<T>(cur, reply)), []);
+  return { data, error, loading, reload, set: setData, adopt };
 }
 
 /**

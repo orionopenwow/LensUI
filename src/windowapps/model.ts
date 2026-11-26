@@ -6,7 +6,7 @@
 //   window buttons → `windowControls.excludedProcesses` in the main config (the caption engine
 //                    reads it, src-tauri/src/caption_rules.rs)
 //   leave alone    → a per-app window rule with `exclude` (src-tauri/src/win_rules.rs); shown here,
-//                    changed in Per-App Window Rules just below
+//                    changed in Per-app window rules just below
 //   protected      → nowhere: it is built in (`win_rules::is_protected_process`) and can't be changed
 import type { WindowRule } from "../types/generated";
 
