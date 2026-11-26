@@ -7,7 +7,9 @@ export const Lane: React.FC<{
   cards: Card[];
   onDismiss: (id: string) => void;
   onOpen: (id: string) => void;
-}> = ({ spec, cards, onDismiss, onOpen }) => (
+  /** What the empty lane's button does; the button is disabled without it. */
+  onEmptyAction?: () => void;
+}> = ({ spec, cards, onDismiss, onOpen, onEmptyAction }) => (
   <section className="mdb-lane" aria-labelledby={`mdb-lane-${spec.id}`} data-lane={spec.id}>
     <h2 id={`mdb-lane-${spec.id}`} className="mdb-lane-title">
       {spec.label}
@@ -16,8 +18,7 @@ export const Lane: React.FC<{
     {cards.length === 0 ? (
       <div className="mdb-empty">
         <p>{spec.empty.text}</p>
-        {/* Sources connect in later waves; the button is shown but does nothing yet. */}
-        <button type="button" className="mdb-empty-action" disabled aria-disabled="true">
+        <button type="button" className="mdb-empty-action" disabled={!onEmptyAction} aria-disabled={!onEmptyAction} onClick={onEmptyAction}>
           {spec.empty.action}
         </button>
       </div>

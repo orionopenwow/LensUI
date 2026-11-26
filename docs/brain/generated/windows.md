@@ -30,7 +30,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `apps` | no (on demand) | 1040×760 |
 | `cleaner` | no (on demand) | 1040×760 |
 
-## Frontend routes (30) — `index.html?surface=<id>`
+## Frontend routes (31) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -52,6 +52,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `browser` | `./browser/BrowserSurface` | built at runtime |
 | `snip` | `./snip/SnipSurface` | built at runtime |
 | `magic` | `./magic/MagicSurface` | built at runtime |
+| `dashboard` | `./dashboard/DashboardWindow` | built at runtime |
 | `testerhub` | `./tester/TesterHubSurface` | declared |
 | `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
 | `approval` | `./approval/ApprovalSurface` | declared |

@@ -207,7 +207,9 @@ for (const mode of FULL ? ["advanced", "simple"] : ["advanced"]) {
 // 3. Every surface: opens with no errors in dark, light, high contrast and reduced motion, passes a
 //    quick accessibility pass, and Esc closes the flyouts.
 // ------------------------------------------------------------------------------------------------
-const FLYOUTS = new Set(["palette", "quicksettings", "launcher", "widgets", "overview", "settings"]);
+const FLYOUTS = new Set(["palette", "quicksettings", "launcher", "widgets", "overview", "settings", "dashboard"]);
+// Surfaces Rust builds on first use that the quick tier also covers (the rest run nightly).
+const QUICK_EXTRA = new Set(["dashboard"]);
 const ALL_VARIANTS = [
   { name: "dark", preset: "obsidian" },
   { name: "light", preset: "alabaster-daylight", colorScheme: "light" },
@@ -215,7 +217,7 @@ const ALL_VARIANTS = [
   { name: "reduced motion", preset: "obsidian", reducedMotion: true },
 ];
 const VARIANTS = FULL ? ALL_VARIANTS : ALL_VARIANTS.filter((v) => v.name === "dark" || v.name === "light");
-const surfaceIds = inventory.filter((i) => i.kind === "surface").map((i) => i.surface).filter((s) => SURFACES[s] || FULL);
+const surfaceIds = inventory.filter((i) => i.kind === "surface").map((i) => i.surface).filter((s) => SURFACES[s] || QUICK_EXTRA.has(s) || FULL);
 let axeSrc = null;
 try { axeSrc = readFileSync(join(root, "node_modules/axe-core/axe.min.js"), "utf8"); } catch {}
 for (const s of surfaceIds) {

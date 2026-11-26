@@ -63,6 +63,38 @@ for (const preset of PRESETS) {
     await pg.close();
   }
 }
+
+// The Dashboard window itself (wave M1): empty lanes, then lanes filled from the mock's local
+// sample data (?dashdata=1) in each layout, and with learned ordering on.
+const WINDOW_SCENES = [
+  { id: "win-empty", magic: "dashboard", data: false, expect: [".mdb-window", ".mdb-empty"] },
+  { id: "win-glance", magic: "dashboard", data: true, expect: [".mdb-window", '[data-lane="inbox"] .mdb-card', '[data-lane="shelf"] .mdb-card', ".mdb-strip"] },
+  { id: "win-focus", magic: "dashboard", data: true, expect: ['.mdb[data-layout="focus"]', '[data-lane="inbox"] .mdb-card'], click: '.mdb-layout:has-text("Focus")' },
+  { id: "win-board", magic: "dashboard,widgets,learn", data: true, expect: ['.mdb[data-layout="board"]', '[data-lane="feeds"] .mdb-card', '[data-lane="widgets"]', ".mdb-forget"], click: '.mdb-layout:has-text("Board")' },
+];
+for (const preset of PRESETS) {
+  for (const sc of WINDOW_SCENES) {
+    const pg = await browser.newPage({ viewport: { width: 440, height: 900 } });
+    const errors = [];
+    pg.on("pageerror", (e) => errors.push(e.message));
+    pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
+    await pg.goto(`${base}/harness.html?surface=dashboard&preset=${preset}&magic=${sc.magic}${sc.data ? "&dashdata=1" : ""}`);
+    await pg.waitForTimeout(1100);
+    if (sc.click) await pg.locator(sc.click).first().click({ timeout: 3000 }).catch((e) => errors.push(`click: ${e.message.slice(0, 80)}`));
+    await pg.waitForTimeout(250);
+    for (const sel of sc.expect) if (!(await pg.locator(sel).count())) errors.push(`missing ${sel}`);
+    // Esc and × both ask Rust to hide the window.
+    const n0 = await pg.evaluate(() => window.__lensCalls.length);
+    await pg.keyboard.press("Escape");
+    await pg.waitForTimeout(120);
+    const afterEsc = await pg.evaluate((n) => window.__lensCalls.slice(n), n0);
+    if (!afterEsc.includes("dashboard_hide")) errors.push("Esc did not hide the Dashboard");
+    await pg.screenshot({ path: join(shots, `${preset}-${sc.id}.png`) });
+    report.push({ preset, scene: sc.id, ok: errors.length === 0, errors });
+    console.log(`${errors.length ? "FAIL" : "ok  "} ${preset} ${sc.id}${errors.length ? " " + errors.join(" | ") : ""}`);
+    await pg.close();
+  }
+}
 await browser.close();
 srv.close();
 await writeFile(join(shots, "report.json"), JSON.stringify(report, null, 2));

@@ -56,3 +56,12 @@
 .mdb-topbar-btn:hover { background: rgb(var(--lens-ink) / 0.08); }
 .mdb-topbar-btn:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
 .mdb-topbar-btn .mdb-orb { width: 14px; height: 14px; }
+
+/* The Dashboard window: a slim, full-height panel; lanes stack in one column. */
+.mdb-window { position: fixed; inset: 0; overflow: hidden; border-radius: var(--lens-radius, 10px); box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.1); background: var(--lens-surface-solid, var(--lens-bg-base)); }
+.mdb-window .mdb-lanes { grid-template-columns: 1fr; align-content: start; }
+.mdb-window .mdb[data-layout="focus"] .mdb-lanes { grid-template-columns: 1fr; }
+.mdb-empty-action:not(:disabled) { cursor: pointer; color: var(--lens-fg); }
+.mdb-empty-action:not(:disabled):hover { background: rgb(var(--lens-ink) / 0.1); }
+.mdb-empty-action:focus-visible, .mdb-forget:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
+.mdb-forget { border: 0; padding: 0; background: transparent; color: var(--lens-fg); font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }

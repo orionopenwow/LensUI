@@ -37,6 +37,7 @@ import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/re
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
 import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
+import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -146,7 +147,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
         const withBackdrop = [...withApps, ...backdropTemplate(withApps)];
         const withWallpaper = [...withBackdrop, ...wallpaperTemplate(withBackdrop)];
-        setTemplates([...withWallpaper, ...lensAppTemplates(withWallpaper)]);
+        const withLensApps = [...withWallpaper, ...lensAppTemplates(withWallpaper)];
+        setTemplates(withLensApps);
+        // /dashboard only while the Magic Dashboard is on (docs/plans/MAGIC_WAVES.md).
+        invoke<boolean>("dashboard_available")
+          .then((on) => on && setTemplates([...withLensApps, ...dashboardTemplates(withLensApps, true)]))
+          .catch(() => {});
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
@@ -414,6 +420,13 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     for (const m of mentions) await resolveMention(m.source, m.arg);
     const parsed = parseSlash(rest, templates);
     const template = parsed?.command ?? null;
+
+    // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
+    if (isDashboardStub(template) || (!template && templates.some(isDashboardStub) && isDashboardPhrase(rest))) {
+      hide();
+      void openDashboard().then((err) => err && flash(err, false));
+      return setText("");
+    }
 
     // Commands that are actions, not prompts.
     if (template && !template.template) {
