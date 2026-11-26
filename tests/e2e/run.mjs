@@ -882,6 +882,13 @@ const SCENARIOS = [
         throw new Error(`Magic Mouse: timed out waiting for ${what}; status ${JSON.stringify(last)}`);
       };
       const before = arrow();
+      // Start clean whatever an earlier scenario left open: Magic Mouse ignores presses on Lens's
+      // own windows, so a leftover Magic Start or pop-out over the target hides the gesture.
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), startButton: false };
+      });
+      for (const cmd of ["magic_start_hide", "magic_hide"]) await invoke(dock, cmd).catch(() => {});
+      await sleep(500);
       await updateConfig(dock, (c) => {
         c.magicWaves = { ...(c.magicWaves || {}), mouse: true, mouseHoldMs: 400 };
       });
