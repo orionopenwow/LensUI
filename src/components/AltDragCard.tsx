@@ -136,17 +136,17 @@ export const AltDragCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           </div>
         </div>
 
-        <Toggle label="Right-Drag Resizes" desc={`${mod.label} + right button resizes the window`} on={ad.resize} onChange={() => save({ resize: !ad.resize })} />
-        <Toggle label="Bring to Front" desc="The window you grab comes to the front" on={ad.raise} onChange={() => save({ raise: !ad.raise })} />
+        <Toggle label="Right-drag resizes" desc={`${mod.label} + right button resizes the window`} on={ad.resize} onChange={() => save({ resize: !ad.resize })} />
+        <Toggle label="Bring to front" desc="The window you grab comes to the front" on={ad.raise} onChange={() => save({ raise: !ad.raise })} />
         <Toggle
-          label="Drag Maximised Windows Out"
+          label="Drag maximised windows out"
           desc="A maximised window shrinks back and follows the pointer"
           on={ad.restoreMaximized}
           onChange={() => save({ restoreMaximized: !ad.restoreMaximized })}
         />
 
         <div>
-          <div className="cc-label">Never Move</div>
+          <div className="cc-label">Never move</div>
           <div className="cc-desc">Apps that use {mod.label} + drag themselves, like drawing or 3D apps.</div>
         </div>
         <div className="cc-chip-grid">

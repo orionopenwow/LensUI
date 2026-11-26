@@ -42,7 +42,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Desktop Groups</div>
+      <div className="cc-label">Desktop groups</div>
       <div className="cc-desc">
         Named sections in the Desktop drawer. They only change how items are shown: nothing on your
         desktop is moved, renamed or deleted.

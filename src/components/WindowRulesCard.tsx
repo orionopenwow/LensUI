@@ -162,7 +162,7 @@ export const WindowStylingCard: React.FC = () => {
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Focus &amp; Borders</div>
+      <div className="cc-label">Focus &amp; borders</div>
       <div className="cc-desc">
         Dim what you're not using and outline the window you are. Lens draws this on top of your windows — nothing inside
         your apps changes, and fullscreen games and videos are left alone.
@@ -462,7 +462,7 @@ const PerAppRulesCard: React.FC = () => {
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Per-App Window Rules</div>
+      <div className="cc-label">Per-app window rules</div>
       <div className="cc-desc">
         Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely.
       </div>

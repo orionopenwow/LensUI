@@ -33,6 +33,19 @@ export function dropContained(rects: HitRect[]): HitRect[] {
   );
 }
 
+/**
+ * Whether the bar may draw the pointer halo at all: the person's switch (`topBar.pointerHalo`, on
+ * unless turned off) and Windows' "Transparency effects" (off means no see-through ring). Lens
+ * Core applies the same rule before it sends a halo; this keeps the page right the moment either
+ * changes.
+ */
+export function haloAllowed(
+  topBar: { pointerHalo?: boolean } | undefined | null,
+  winTheme: { transparencyEnabled?: boolean } | undefined | null
+): boolean {
+  return topBar?.pointerHalo !== false && winTheme?.transparencyEnabled !== false;
+}
+
 export function sameRects(a: HitRect[], b: HitRect[]): boolean {
   return a.length === b.length && a.every((r, i) => r.every((v, k) => v === b[i][k]));
 }

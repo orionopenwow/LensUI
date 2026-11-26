@@ -2,6 +2,7 @@ import React, { lazy } from "react";
 import type { PageId } from "../registry";
 import type { PageProps } from "./common";
 import { QuickPage } from "./QuickPage";
+import { quiet } from "../../ui/oops";
 
 // Pages load on first visit, so opening Settings doesn't parse every page (and the AI, Apps and
 // Music cards behind them) up front. ControlCenterSurface wraps them in <Suspense>.
@@ -16,7 +17,8 @@ const page = (load: () => Promise<Record<string, unknown>>, name: string) => {
 export function preloadSettingsPage(id: PageId) {
   const comp = PAGE_IDS_TO_NAMES[id];
   const load = comp ? loaders.get(comp) : undefined;
-  if (load) load().catch(() => {});
+  // A hover preload: if it fails, the click loads the page again and the boundary says why.
+  if (load) load().catch(quiet);
 }
 
 /** Pages that live in their own file. The rest (Appearance, Dock & Bar, Desktop, Windows & Keys,

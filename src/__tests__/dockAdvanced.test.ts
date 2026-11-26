@@ -13,7 +13,10 @@ import {
   clearSeparators,
   dockAdvancedSummary,
   dockAdvancedView,
+  POPOUT_CLOSE_DELAYS,
+  normalizePopoutCloseDelay,
   setAutoClosePopouts,
+  setPopoutCloseDelay,
   setFileDropOpen,
   setLaunchAnimation,
   setMagnification,
@@ -59,6 +62,7 @@ describe("Dock & Bar › Advanced: what the rows show", () => {
     expect(v.fileDropOpen).toBe(false);
     expect(v.middleClickNewInstance).toBe(true);
     expect(v.autoClosePopouts).toBe(true);
+    expect(v.popoutCloseDelay).toBe("normal");
     expect(v.style).toBe("floating");
     expect(v.styleIconSizeIsCustom).toBe(false);
     expect(v.customSizes).toEqual([]);
@@ -96,6 +100,7 @@ describe("Dock & Bar › Advanced: each click changes its own setting only", () 
     ["drop files", (c) => setFileDropOpen(c, true), "dock.fileDropOpen", true],
     ["middle-click", (c) => setMiddleClickNewInstance(c, false), "func.middleClickNewInstance", false],
     ["close pop-outs", (c) => setAutoClosePopouts(c, false), "func.autoClosePopouts", false],
+    ["close delay", (c) => setPopoutCloseDelay(c, "long"), "func.popoutCloseDelay", "long"],
     ["style icon size", (c) => setStyleIconSize(c, "slim", 28), "dock.iconSizes", { slim: 28 }],
     ["divider", (c) => toggleSeparatorAfter(c, "b"), "dock.separatorsAfter", ["b"]],
   ];
@@ -122,6 +127,30 @@ describe("Dock & Bar › Advanced: each click changes its own setting only", () 
     expect(setStyleIconSize(base, "slim", 4).dock.iconSizes).toEqual({ slim: STYLE_ICON_MIN });
     expect(setStyleIconSize(base, "slim", 400).dock.iconSizes).toEqual({ slim: STYLE_ICON_MAX });
     expect(setStyleIconSize(base, "slim", 27.6).dock.iconSizes).toEqual({ slim: 28 });
+  });
+});
+
+describe("pop-out close delay (func.popoutCloseDelay)", () => {
+  test("Normal is today's timing and the default; unknown values read as Normal", () => {
+    const normal = POPOUT_CLOSE_DELAYS.find((d) => d.id === "normal")!;
+    expect([normal.quickSettingsMs, normal.settingsMs]).toEqual([1500, 1800]);
+    expect(normalizePopoutCloseDelay(undefined)).toBe("normal");
+    expect(normalizePopoutCloseDelay("forever")).toBe("normal");
+    expect(setPopoutCloseDelay(sampleConfig(), "forever").func.popoutCloseDelay).toBe("normal");
+    expect(POPOUT_CLOSE_DELAYS.map((d) => d.id)).toEqual(["short", "normal", "long"]);
+  });
+
+  test("the presets match Lens Core's popout_delays table", () => {
+    const rs = readFileSync(join(root, "src-tauri/src/app/watcher.rs"), "utf8");
+    const fn = rs.slice(rs.indexOf("pub(crate) fn popout_delays"), rs.indexOf("pub(crate) fn popout_delays") + 400);
+    for (const d of POPOUT_CLOSE_DELAYS) {
+      if (d.id === "normal") {
+        expect(rs).toContain(`pub(crate) const FLYOUT_IDLE_MS: u128 = ${d.quickSettingsMs};`);
+        expect(rs).toContain(`pub(crate) const POPOUT_AWAY_MS: u128 = ${d.settingsMs};`);
+      } else expect(fn).toContain(`"${d.id}" => (${d.quickSettingsMs}, ${d.settingsMs})`);
+    }
+    // Both pop-outs use the setting, not the fixed constants.
+    expect(rs.match(/popout_delays\(&cfg\.func\.popout_close_delay\)/g)?.length).toBe(2);
   });
 });
 

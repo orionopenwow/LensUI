@@ -59,7 +59,7 @@ export const ThemeScheduleCard: React.FC<Props> = ({ config, onUpdateConfig }) =
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Day &amp; Night Themes</div>
+          <div className="cc-label">Day &amp; night themes</div>
           <div className="cc-desc">Switch packs automatically. A pack you pick by hand stays until the next switch.</div>
         </div>
         <button
