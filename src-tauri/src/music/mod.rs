@@ -9,6 +9,7 @@
 #![allow(dead_code)]
 
 pub mod color;
+pub mod desktop_lyrics;
 pub mod hash;
 pub mod history;
 pub mod lastfm;
@@ -48,6 +49,8 @@ pub struct MusicConfig {
     pub lyrics_lrclib: bool,
     pub lyrics_folder: Option<String>,
     pub lyrics_offset_ms: i64,
+    /// Show the line being sung on the desktop, under the Top Bar (click-through; off by default).
+    pub desktop_lyrics: bool,
     /// "compact" | "expanded" | "fullscreen"
     pub window_style: String,
     /// Lens dither/grain over the frosted background.
@@ -74,6 +77,7 @@ impl Default for MusicConfig {
             lyrics_lrclib: true,
             lyrics_folder: None,
             lyrics_offset_ms: 0,
+            desktop_lyrics: false,
             window_style: "expanded".into(),
             dither: true,
             scene_reactive: false,

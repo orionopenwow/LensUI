@@ -2,13 +2,13 @@
 // files (Space map, Biggest files, Downloads review, REVIEW picks) go through the Lens approval
 // card as a "Delete to Bin" request; a permanent delete needs a second, explicit confirmation.
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, FileText, ListChecks, ShieldCheck, Trash2, Undo2, X } from "lucide-react";
 import { ApprovalCard } from "../approval/ApprovalCard";
 import type { ApprovalRequest } from "../approval/model";
 import "../approval/ApprovalCard.css";
-import { fmtSize } from "./model";
-import type { Preview } from "./types";
+import { cleanCode, confirmStep, fmtSize } from "./model";
+import type { ConfirmCode, Preview } from "./types";
 import { Key, Spinner } from "./ui";
 
 function group(p: Preview) {
@@ -26,10 +26,40 @@ export const PreviewSheet: React.FC<{
   onRun: (confirm?: string | null) => void;
   onClose: () => void;
   onFullList: () => void;
-}> = ({ preview, title, smart, userFiles, busy, onRun, onClose, onFullList }) => {
+  /** Asks Rust for the one-time code of a permanent delete (shown here, typed by the person). */
+  onConfirmCode?: () => Promise<ConfirmCode>;
+}> = ({ preview, title, smart, userFiles, busy, onRun, onClose, onFullList, onConfirmCode }) => {
   const g = group(preview);
-  const [permanentOk, setPermanentOk] = useState(false);
-  const permanent = !!preview.confirmToken;
+  const permanent = !!preview.permanent;
+  const [code, setCode] = useState<string | null>(null);
+  const [typed, setTyped] = useState("");
+  const [expired, setExpired] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeSeq, setCodeSeq] = useState(0);
+  // The code is minted when the confirm step opens and again on "Get a new code". It is only
+  // ever shown here; the person types it and Rust checks it before anything is deleted.
+  useEffect(() => {
+    if (!permanent || !userFiles || !onConfirmCode) return;
+    let alive = true;
+    let timer: number | undefined;
+    setCode(null);
+    setTyped("");
+    setExpired(false);
+    setCodeError(null);
+    onConfirmCode()
+      .then((c) => {
+        if (!alive) return;
+        setCode(c.code);
+        timer = window.setTimeout(() => alive && setExpired(true), c.expiresInMs);
+      })
+      .catch((e) => alive && setCodeError(String(e)));
+    return () => {
+      alive = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [permanent, userFiles, onConfirmCode, preview.id, codeSeq]);
+  const newCode = useCallback(() => setCodeSeq((n) => n + 1), []);
+  const step = confirmStep(permanent, code, typed, expired);
   const extra = preview.entryCount - preview.entries.length;
 
   const request: ApprovalRequest = useMemo(
@@ -138,19 +168,40 @@ export const PreviewSheet: React.FC<{
 
         {userFiles ? (
           <div className="cl-approval">
-            {permanent && !permanentOk ? (
+            {step !== "bin" && step !== "hold" ? (
               <div className="cl-perm">
                 <AlertTriangle size={16} aria-hidden />
-                <span>Permanent delete skips the Recycle Bin. Lens can't bring these back.</span>
-                <button type="button" className="cl-btn is-danger is-sm" onClick={() => setPermanentOk(true)}>
-                  I understand
-                </button>
+                <span>
+                  Permanent delete skips the Recycle Bin. Lens can't bring these back.
+                  {codeError ? ` ${codeError}` : step === "expired" ? " That code has expired." : step === "loading" ? " Getting a code…" : null}
+                  {step === "type" && code ? (
+                    <>
+                      {" "}Type <strong className="cl-code cl-num">{code}</strong> to continue.
+                    </>
+                  ) : null}
+                </span>
+                {step === "type" && code ? (
+                  <input
+                    className="cl-code-input cl-num"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    autoFocus
+                    maxLength={code.length + 2}
+                    aria-label={`Type ${code.split("").join(" ")} to delete for good`}
+                    value={typed}
+                    onChange={(e) => setTyped(cleanCode(e.target.value, code.length))}
+                  />
+                ) : codeError || step === "expired" ? (
+                  <button type="button" className="cl-btn is-ghost is-sm" onClick={newCode}>
+                    Get a new code
+                  </button>
+                ) : null}
               </div>
             ) : (
               <ApprovalCard
                 request={request}
                 onApprove={async () => {
-                  onRun(preview.confirmToken ?? null);
+                  onRun(permanent ? cleanCode(typed, code?.length ?? 4) : null);
                   return true;
                 }}
                 onDeny={onClose}

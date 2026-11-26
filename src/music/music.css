@@ -122,6 +122,22 @@ button.lm-side-row { cursor: pointer; }
 .lm-q-sub { font-size: 11.5px; color: var(--lm-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lm-q-dur { font-size: 11px; color: var(--lm-ink-3); }
 .lm-q-empty { font-size: 12px; color: var(--lm-ink-3); padding: 8px 4px; line-height: 1.4; }
+/* Connect Spotify, inline in the queue panel. Matte: hairline, no glow. */
+.lm-connect { display: flex; flex-direction: column; gap: 8px; margin: 4px; padding: 12px; border-radius: var(--lens-radius, 8px); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--lm-line); }
+.lm-connect-steps { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.45; color: var(--lm-ink-2); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.lm-connect-link { border: 0; background: none; padding: 0; font: inherit; color: var(--lm-ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.lm-connect-input { height: 32px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--lm-line); background: rgba(0, 0, 0, 0.28); color: var(--lm-ink); font-size: 12px; min-width: 0; }
+.lm-connect-input:focus-visible, .lm-connect-btn:focus-visible, .lm-connect-link:focus-visible { outline: 2px solid var(--lens-accent, #fafafa); outline-offset: 2px; }
+.lm-connect-actions { display: flex; gap: 8px; }
+.lm-connect-btn { align-self: flex-start; height: 32px; margin: 0 4px 4px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lm-line); background: #fafafa; color: #09090b; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: opacity var(--lens-dur-fast); }
+.lm-connect .lm-connect-btn { margin: 0; }
+.lm-connect-btn.ghost { background: transparent; color: var(--lm-ink-2); }
+.lm-connect-btn:hover:not(:disabled) { opacity: 0.86; }
+.lm-connect-btn:disabled { opacity: 0.5; cursor: default; }
+.lm-connect-note { font-size: 11.5px; line-height: 1.4; color: var(--lm-ink-3); overflow-wrap: anywhere; }
+.lm-card-note { margin-top: 8px; }
+.lm-card-note.error { color: var(--lens-danger, #f87171); }
+.lm-connect-note.error { color: var(--lens-danger, #f87171); }
 .lm-explicit { display: inline-grid; font-family: inherit; place-items: center; width: 14px; height: 14px; border-radius: 3px; font-size: 9px; font-weight: 800; background: rgba(255, 255, 255, 0.24); color: #09090b; flex: 0 0 auto; }
 .lm-queue > :nth-child(n + 4):not(.lm-q-foot) { flex-shrink: 0; }
 .lm-q-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--lm-line); font-size: 12px; color: var(--lm-ink-2); }
@@ -218,3 +234,11 @@ button.lm-side-row { cursor: pointer; }
   .lm-dither { display: none; }
   .lm-backdrop-art { display: none; }
 }
+
+/* ---- lyrics on the desktop: one click-through line, no chrome ---- */
+html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background: transparent !important; overflow: hidden; }
+.lm-desk { position: fixed; inset: 0; display: grid; place-items: center; padding: 0 24px; pointer-events: none; user-select: none; --lm-desk-ink: #fafafa; }
+.lm-desk-line { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--lm-desk-ink); font-family: var(--lens-font, "Arial Rounded MT Bold", "Segoe UI Variable", system-ui, sans-serif); font-size: 26px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.3; text-shadow: 0 1px 2px rgba(9, 9, 11, 0.9), 0 0 12px rgba(9, 9, 11, 0.55); animation: lm-desk-in var(--lens-dur-slow, 220ms) var(--lens-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both; }
+@keyframes lm-desk-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .lm-desk-line { animation: none; } }
+:root[data-motion="reduce"] .lm-desk-line { animation: none; }

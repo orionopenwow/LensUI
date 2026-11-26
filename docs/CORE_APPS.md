@@ -36,7 +36,7 @@ These apps use their own small primitives next to `src/settings/ui`. **They move
 
 - Everything destructive is confirmed and audited to `%APPDATA%\LensUI\coreapps-audit.jsonl`: End task, uninstall, Recycle Bin and the speed test.
 - OS changes made here (startup entries, power mode) go through the existing reversible commands.
-- Uninstall can't be undone, so it always runs the vendor's own uninstaller.
+- Uninstall can't be undone, so it always runs the vendor's own uninstaller. This is the only place Lens starts an uninstaller: Lens Cleaner's per-app "Uninstall…" opens this window on that app (`coreapp_open` with `find`).
 - Leftovers go to the Recycle Bin and can be restored from there.
 - Nothing contacts the network unless you press *Get rates* or *Run speed test*.
 

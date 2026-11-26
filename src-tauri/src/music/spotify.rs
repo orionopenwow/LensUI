@@ -17,6 +17,67 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 pub const REDIRECT_PORT: u16 = 43117;
 pub const REDIRECT_URI: &str = "http://127.0.0.1:43117/callback";
+/// The sign-in reply comes back on the first of these that is free. Spotify only redirects to an
+/// address registered on the person's own developer app, so the fallbacks work once they are
+/// added there too (the settings card lists all three).
+pub const REDIRECT_PORTS: [u16; 3] = [REDIRECT_PORT, 43118, 43119];
+
+pub fn redirect_uri(port: u16) -> String {
+    format!("http://127.0.0.1:{}/callback", port)
+}
+
+pub fn redirect_uris() -> Vec<String> {
+    REDIRECT_PORTS.iter().map(|p| redirect_uri(*p)).collect()
+}
+
+/// The loopback listener for one sign-in, bound before the browser opens so a busy port is known
+/// up front instead of after the person has signed in.
+pub struct Loopback {
+    listener: TcpListener,
+    pub port: u16,
+}
+
+impl Loopback {
+    pub fn redirect_uri(&self) -> String {
+        redirect_uri(self.port)
+    }
+    /// True when the usual port was taken and a fallback is in use.
+    pub fn is_fallback(&self) -> bool {
+        self.port != REDIRECT_PORT
+    }
+}
+
+pub fn ports_busy_message(ports: &[u16]) -> String {
+    let list: Vec<String> = ports.iter().map(|p| p.to_string()).collect();
+    format!(
+        "Lens couldn't start the Spotify sign-in: ports {} on this PC are all in use by other apps. Close the app using one of them (often a second sign-in window or a local dev server) and try again.",
+        list.join(", ")
+    )
+}
+
+/// What to tell the person when a fallback port is in use.
+pub fn fallback_notice(port: u16) -> String {
+    format!(
+        "Port {} is in use, so Lens is listening on {} for this sign-in. If Spotify says the redirect URI is invalid, add {} to your Spotify app and connect again.",
+        REDIRECT_PORT,
+        port,
+        redirect_uri(port)
+    )
+}
+
+/// Binds the first free port of `ports` on 127.0.0.1.
+pub fn bind_first(ports: &[u16]) -> Result<Loopback, String> {
+    for port in ports {
+        if let Ok(listener) = TcpListener::bind(("127.0.0.1", *port)) {
+            return Ok(Loopback { listener, port: *port });
+        }
+    }
+    Err(ports_busy_message(ports))
+}
+
+pub fn bind_loopback() -> Result<Loopback, String> {
+    bind_first(&REDIRECT_PORTS)
+}
 pub const SCOPES: [(&str, &str); 7] = [
     ("user-read-playback-state", "See what's playing and your queue"),
     ("user-read-currently-playing", "See the current track"),
@@ -63,13 +124,13 @@ pub fn valid_client_id(id: &str) -> bool {
     id.len() == 32 && id.chars().all(|c| c.is_ascii_hexdigit())
 }
 
-pub fn authorize_url(client_id: &str, verifier: &str, state: &str) -> String {
+pub fn authorize_url(client_id: &str, verifier: &str, state: &str, redirect: &str) -> String {
     let scope: Vec<&str> = SCOPES.iter().map(|(s, _)| *s).collect();
     format!(
         "https://accounts.spotify.com/authorize?response_type=code&client_id={}&scope={}&redirect_uri={}&code_challenge_method=S256&code_challenge={}&state={}",
         super::lyrics::encode(client_id),
         super::lyrics::encode(&scope.join(" ")),
-        super::lyrics::encode(REDIRECT_URI),
+        super::lyrics::encode(redirect),
         challenge(verifier),
         super::lyrics::encode(state)
     )
@@ -123,8 +184,8 @@ fn decode(s: &str) -> String {
 
 /// Waits (up to `timeout`) for the browser to hit the loopback redirect. Only requests from
 /// 127.0.0.1 with the expected `state` are accepted.
-pub fn wait_for_code(expected_state: &str, timeout: Duration) -> Result<String, String> {
-    let listener = TcpListener::bind(("127.0.0.1", REDIRECT_PORT)).map_err(|_| format!("Port {} is busy. Close whatever uses it and try again.", REDIRECT_PORT))?;
+pub fn wait_for_code(loopback: Loopback, expected_state: &str, timeout: Duration) -> Result<String, String> {
+    let Loopback { listener, port } = loopback;
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     let deadline = Instant::now() + timeout;
     loop {
@@ -154,12 +215,26 @@ pub fn wait_for_code(expected_state: &str, timeout: Duration) -> Result<String, 
             }
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 if Instant::now() > deadline {
-                    return Err("Spotify sign-in timed out.".into());
+                    return Err(timeout_message(port));
                 }
                 std::thread::sleep(Duration::from_millis(120));
             }
             Err(e) => return Err(e.to_string()),
         }
+    }
+}
+
+/// Why nothing came back. On a fallback port the likeliest reason is an unregistered redirect.
+pub fn timeout_message(port: u16) -> String {
+    if port == REDIRECT_PORT {
+        "Spotify didn't send the sign-in back within 3 minutes. Finish signing in in your browser, or connect again.".into()
+    } else {
+        format!(
+            "Spotify didn't send the sign-in back within 3 minutes. Port {} was in use, so Lens listened on {}: add {} to your Spotify app's redirect URIs and connect again.",
+            REDIRECT_PORT,
+            port,
+            redirect_uri(port)
+        )
     }
 }
 
@@ -194,13 +269,13 @@ fn client() -> Result<reqwest::blocking::Client, String> {
         .map_err(|_| "network unavailable".to_string())
 }
 
-pub fn exchange_code(client_id: &str, code: &str, verifier: &str) -> Result<Tokens, String> {
-    let form = [("grant_type", "authorization_code"), ("code", code), ("redirect_uri", REDIRECT_URI), ("client_id", client_id), ("code_verifier", verifier)];
+pub fn exchange_code(client_id: &str, code: &str, verifier: &str, redirect: &str) -> Result<Tokens, String> {
+    let form = [("grant_type", "authorization_code"), ("code", code), ("redirect_uri", redirect), ("client_id", client_id), ("code_verifier", verifier)];
     let resp = client()?.post("https://accounts.spotify.com/api/token").form(&form).send().map_err(|_| "Spotify didn't answer.".to_string())?;
     let ok = resp.status().is_success();
     let body = resp.text().unwrap_or_default();
     if !ok {
-        return Err("Spotify refused the sign-in. Check the client ID and that the redirect URI is http://127.0.0.1:43117/callback.".into());
+        return Err(format!("Spotify refused the sign-in. Check the client ID and that {} is one of your Spotify app's redirect URIs.", redirect));
     }
     parse_token(&body, client_id, None)
 }
@@ -437,14 +512,77 @@ mod tests {
         let v = new_verifier();
         assert!(v.len() >= 43 && v.len() <= 128, "{}", v.len());
         assert_ne!(v, new_verifier());
-        let u = authorize_url("0123456789abcdef0123456789abcdef", &v, "st8");
+        let u = authorize_url("0123456789abcdef0123456789abcdef", &v, "st8", REDIRECT_URI);
         assert!(u.starts_with("https://accounts.spotify.com/authorize?response_type=code&client_id=0123456789abcdef0123456789abcdef"));
         assert!(u.contains("code_challenge_method=S256"));
         assert!(u.contains(&format!("code_challenge={}", challenge(&v))));
         assert!(u.contains("redirect_uri=http%3A%2F%2F127.0.0.1%3A43117%2Fcallback"));
+        let fb = authorize_url("0123456789abcdef0123456789abcdef", &v, "st8", &redirect_uri(43118));
+        assert!(fb.contains("redirect_uri=http%3A%2F%2F127.0.0.1%3A43118%2Fcallback"));
+        assert_eq!(redirect_uris()[0], REDIRECT_URI, "the usual address comes first");
+        assert_eq!(redirect_uris().len(), REDIRECT_PORTS.len());
         assert!(u.contains("user-modify-playback-state"));
         assert!(valid_client_id("0123456789abcdef0123456789abcdef"));
         assert!(!valid_client_id("not-an-id"));
+    }
+
+    /// A port nobody is listening on right now (bound once, then released).
+    fn free_port() -> u16 {
+        TcpListener::bind(("127.0.0.1", 0)).unwrap().local_addr().unwrap().port()
+    }
+
+    #[test]
+    fn a_busy_port_falls_back_to_the_next_one() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let busy = taken.local_addr().unwrap().port();
+        let free = free_port();
+        let lb = bind_first(&[busy, free]).expect("falls back");
+        assert_eq!(lb.port, free);
+        assert!(lb.is_fallback());
+        assert_eq!(lb.redirect_uri(), format!("http://127.0.0.1:{}/callback", free));
+        // The first port wins when it is free.
+        drop(lb);
+        assert_eq!(bind_first(&[free, busy]).unwrap().port, free);
+    }
+
+    #[test]
+    fn every_port_busy_is_a_clear_error() {
+        let a = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let b = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let (pa, pb) = (a.local_addr().unwrap().port(), b.local_addr().unwrap().port());
+        let err = bind_first(&[pa, pb]).err().expect("nothing free");
+        assert!(err.contains(&pa.to_string()) && err.contains(&pb.to_string()), "{err}");
+        assert!(err.contains("in use"), "{err}");
+        assert!(fallback_notice(43118).contains("http://127.0.0.1:43118/callback"));
+        assert!(timeout_message(43118).contains("http://127.0.0.1:43118/callback"));
+        assert!(!timeout_message(REDIRECT_PORT).contains("redirect"));
+    }
+
+    #[test]
+    fn the_sign_in_reply_arrives_on_the_fallback_port() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let lb = bind_first(&[taken.local_addr().unwrap().port(), free_port()]).unwrap();
+        let port = lb.port;
+        let browser = std::thread::spawn(move || {
+            let mut s = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+            s.write_all(b"GET /callback?code=abc123&state=st8 HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").unwrap();
+            let mut page = String::new();
+            let _ = s.read_to_string(&mut page);
+            page
+        });
+        assert_eq!(wait_for_code(lb, "st8", Duration::from_secs(10)).as_deref(), Ok("abc123"));
+        assert!(browser.join().unwrap().contains("Lens is connected to Spotify"));
+        // A reply with the wrong state is refused.
+        let lb = bind_first(&[free_port()]).unwrap();
+        let port = lb.port;
+        let other = std::thread::spawn(move || {
+            let mut s = std::net::TcpStream::connect(("127.0.0.1", port)).unwrap();
+            let _ = s.write_all(b"GET /callback?code=abc123&state=other HTTP/1.1\r\n\r\n");
+            let mut page = String::new();
+            let _ = s.read_to_string(&mut page);
+        });
+        assert!(wait_for_code(lb, "st8", Duration::from_secs(10)).is_err());
+        let _ = other.join();
     }
 
     #[test]

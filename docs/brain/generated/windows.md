@@ -32,7 +32,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `magicstart` | no (on demand) | 640×680 |
 | `dashboard` | no (on demand) | 440×720 |
 
-## Frontend routes (32) — `index.html?surface=<id>`
+## Frontend routes (33) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -60,6 +60,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
 | `approval` | `./approval/ApprovalSurface` | declared |
 | `nowplaying` | `./music/NowPlayingSurface` | declared |
+| `lyricsline` | `./music/LyricsLineSurface` | built at runtime |
 | `apps` | `./apps/AppsSurface` | declared |
 | `cleaner` | `./cleaner/CleanerSurface` | declared |
 | `coreapp` | `./coreapps/CoreAppSurface` | built at runtime |

@@ -10,6 +10,7 @@ export const messagesApi = {
   setSettings: (settings: MessagesSettings) => invoke<MessagesSettings>("messages_set_settings", { settings }),
   inbox: () => invoke<Conversation[]>("messages_inbox"),
   unread: () => invoke<UnreadDto>("messages_unread"),
+  mirrorStatus: () => invoke<{ status: string; note: string }>("messages_mirror_status"),
   focus: (mode: "all" | "vip" | "snooze", minutes: number | null = null) => invoke<UnreadDto>("messages_focus", { mode, minutes }),
   matrixLogin: (password: string) => invoke<null>("messages_matrix_login", { password }),
   matrixLogout: () => invoke<null>("messages_matrix_logout"),

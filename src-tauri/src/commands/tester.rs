@@ -43,6 +43,15 @@ pub struct TesterEnvironment {
     pub ram_gb: f64,
     pub displays: Vec<TesterDisplay>,
     pub lens_version: String,
+    /// How long Lens Cleaner's last full scan took on this PC (none until one has run).
+    pub cleaner_scan: Option<TesterCleanerScan>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TesterCleanerScan {
+    pub elapsed_ms: u64,
+    pub at_ms: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -127,6 +136,7 @@ pub(crate) fn tester_environment() -> TesterEnvironment {
         ram_gb: (telemetry.mem_total_gb * 10.0).round() / 10.0,
         displays,
         lens_version: env!("CARGO_PKG_VERSION").to_string(),
+        cleaner_scan: crate::commands::cleaner::last_scan_timing().map(|t| TesterCleanerScan { elapsed_ms: t.elapsed_ms, at_ms: t.at_ms }),
     }
 }
 

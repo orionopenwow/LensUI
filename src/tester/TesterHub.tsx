@@ -36,6 +36,7 @@ import {
   type Results,
   type RiskFilter,
   type StepStatus,
+  cleanerScanLabel,
 } from "./model";
 import "./TesterHub.css";
 import { fillStyle } from "../ui/motion";
@@ -565,6 +566,8 @@ function Report({ info, notes, results, steps }: { info: BuildInfo; notes: Retur
           <dd>{env ? `${env.ramGb} GB` : "—"}</dd>
           <dt>Displays</dt>
           <dd>{env?.displays.length ? env.displays.map((d) => `${d.width}×${d.height} at ${Math.round(d.scale * 100)}%${d.primary ? " (main)" : ""}`).join(" · ") : "—"}</dd>
+          <dt>Cleaner scan</dt>
+          <dd>{env ? cleanerScanLabel(env.cleanerScan) : "—"}</dd>
         </dl>
       </section>
 

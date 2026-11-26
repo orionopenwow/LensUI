@@ -1,5 +1,5 @@
-//! Per-app storage: which installed apps use the most space, with their caches and data, and a
-//! way to open the app's own uninstaller. Read-only: the list comes from the same registry keys
+//! Per-app storage: which installed apps use the most space, with their caches and data.
+//! Uninstalling is handed to Startup & Uninstall (one path, one audit log). Read-only: the list comes from the same registry keys
 //! Windows' "Installed apps" page uses (read with `reg query`, no writes).
 
 use serde::{Deserialize, Serialize};
@@ -94,36 +94,6 @@ pub fn icon_path(display_icon: &str) -> Option<String> {
     let s = s.trim().trim_matches('"');
     let l = s.to_lowercase();
     (l.ends_with(".exe") || l.ends_with(".ico") || l.ends_with(".dll")).then(|| s.to_string())
-}
-
-/// Splits an UninstallString into program and arguments without a shell. Only real .exe paths
-/// (or MsiExec with a product code) are accepted.
-pub fn split_uninstall(cmd: &str) -> Option<(String, Vec<String>)> {
-    let c = cmd.trim();
-    let (exe, rest) = if let Some(r) = c.strip_prefix('"') {
-        let end = r.find('"')?;
-        (r[..end].to_string(), r[end + 1..].trim().to_string())
-    } else {
-        let lower = c.to_lowercase();
-        let at = lower.find(".exe")? + 4;
-        (c[..at].to_string(), c[at..].trim().to_string())
-    };
-    if !exe.to_lowercase().ends_with(".exe") || exe.contains('&') || exe.contains('|') {
-        return None;
-    }
-    let args: Vec<String> = rest.split_whitespace().map(|s| s.trim_matches('"').to_string()).collect();
-    let is_msi = Path::new(&exe).file_name().is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case("msiexec.exe"));
-    if is_msi {
-        // MsiExec: only "/X{GUID}" or "/I{GUID}" (which opens the app's own maintenance UI).
-        let ok = args.len() == 1 && {
-            let a = args[0].to_uppercase();
-            (a.starts_with("/X{") || a.starts_with("/I{")) && a.ends_with('}') && a[3..a.len() - 1].chars().all(|c| c.is_ascii_hexdigit() || c == '-')
-        };
-        if !ok {
-            return None;
-        }
-    }
-    Some((exe, args))
 }
 
 /// Where an app usually keeps caches and data, by its name or publisher.

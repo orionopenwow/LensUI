@@ -67,7 +67,7 @@ const handlers: Record<string, (a: any) => any> = {
     { title: "Slow Static", artist: "North Arcade", album: "Low Orbit", sourceLabel: "Spotify", durationMs: 188_000, atMs: T0 - 1.2e6 },
     { title: "Paper Tides", artist: "The Placeholders", album: "Lens Sessions, Vol. 1", sourceLabel: "Spotify", durationMs: 236_000, atMs: T0 - 1.5e6 },
   ],
-  music_spotify_status: () => ({ connected: spotify, clientId: spotify ? "0123456789abcdef0123456789abcdef" : null, redirectUri: "http://127.0.0.1:43117/callback",
+  music_spotify_status: () => ({ connected: spotify, clientId: spotify ? "0123456789abcdef0123456789abcdef" : null, redirectUri: "http://127.0.0.1:43117/callback", redirectUris: ["http://127.0.0.1:43117/callback", "http://127.0.0.1:43118/callback", "http://127.0.0.1:43119/callback"],
     scopes: [["user-read-playback-state", "See what's playing and your queue"], ["user-modify-playback-state", "Play, pause, skip and add to your queue"], ["playlist-read-private", "List your playlists in the sidebar"], ["user-library-modify", "Save (like) a track when you ask"]] }),
   music_spotify_queue: () => ({
     current: track(0, "Harbour Lights", "The Placeholders", "Lens Sessions, Vol. 1", 224_000),

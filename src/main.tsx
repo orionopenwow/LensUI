@@ -72,6 +72,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   approval: lazy(() => import("./approval/ApprovalSurface").then((m) => ({ default: m.ApprovalSurface }))),
   // Now Playing (docs/MUSIC.md §2).
   nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
+  // Lyrics on the desktop: one click-through line (opt-in; docs/MUSIC.md).
+  lyricsline: lazy(() => import("./music/LyricsLineSurface").then((m) => ({ default: m.LyricsLineSurface }))),
   // Lens Apps window (docs/LENS_APPS.md §2).
   apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
   cleaner: lazy(() => import("./cleaner/CleanerSurface").then((m) => ({ default: m.CleanerSurface }))),
@@ -97,7 +99,7 @@ const Surface = surfaces[surfaceName] ?? surfaces.dock;
 import("./smooth/probe").then((m) => m.installSmoothProbe(surfaceName)).catch(() => {});
 // "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
 const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
-const withTwin = !["presence", "presencebar"].includes(surfaceName);
+const withTwin = !["presence", "presencebar", "lyricsline"].includes(surfaceName);
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their
 // listen() calls. Windows built on first use wait for this before their opening command is replayed.

@@ -4965,6 +4965,25 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
+   "id": "setting.music.musiccard.lyrics-on-the-desktop",
+   "kind": "setting",
+   "title": "Lyrics on the desktop",
+   "text": "Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Lyrics on the desktop"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Lyrics on the desktop"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
    "id": "setting.music.musiccard.use-lrclib",
    "kind": "setting",
    "title": "Use LRCLIB",
@@ -9222,7 +9241,7 @@
    "id": "doc.cleaner.4",
    "kind": "doc",
    "title": "Lens Cleaner: Automatic features (all off by default)",
-   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. Explorer drive verb HKCU\\Software\\Classes\\Drive\\shell\\LensUI.Clean , removed when you turn it off or remove all Lens changes.",
+   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. The Home screen shows one row per drive that has at least two snapshots: a 30-day sparkline, the change over the period and up to two of the biggest day-to-day jumps (≥ 1 GB or ≥ 1% of the drive, history::jumps ), labelled with the folder that grew most when the drive was mapped before and after. A jump opens the Space map at that folder ( cleaner space find ). Nothing shows until snapshot",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9239,7 +9258,7 @@
    "id": "doc.cleaner.5",
    "kind": "doc",
    "title": "Lens Cleaner: Standout features",
-   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" asks first, then opens the app's own uninstaller (quoted exe or MsiExec /X{GUID} only, no shell). - Downloads review (\"What's safe to delete in Downloads?\")",
+   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" hands the app over to Startup & Uninstall (opened on Installed apps, filtered to that app), which checks the uninstaller ( validate uninstall ), asks, runs ",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9576,7 +9595,7 @@
    "id": "doc.core-apps.2",
    "kind": "doc",
    "title": "Lens core apps: Safety",
-   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
+   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. This is the only place Lens starts an uninstaller: Lens Cleaner's per-app \"Uninstall…\" opens this window on that app ( coreapp open with find ). - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
    "path": [
     "Docs",
     "Lens core apps",
@@ -11667,6 +11686,23 @@
    "source": "docs/MESSAGES.md"
   },
   {
+   "id": "doc.messages.8",
+   "kind": "doc",
+   "title": "Lens Messages: Title watcher (how web-app badges update)",
+   "text": "Every Lens Browser tab has a WebView2 DocumentTitleChanged handler ( src-tauri/src/browser/titles.rs ). When a title changes, the handler passes the tab id, the page address and the title to commands::messages::space title changed . messages::spaces::app for url decides which messenger the page belongs to (https and the app's own hosts only), badges::unread from title parses the count, and the title text is dropped. Counts are kept per tab and summed per messenger, so two Slack workspaces add up and closing or sleeping a tab takes only its share away ( browser::titles::gone ). Pages of messengers you haven't turned on in Messages are ignored. When Messages settings change, open tabs are read once so a messenger you just turned on shows its badge straight away. A change emits lens://messages/unread and, when \"Badges on Dock icons\" is on, lens://coreapp-badge for the Lens Messages pin. Not",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Title watcher (how web-app badges update)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Title watcher (how web-app badges update)"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
    "id": "doc.music.0",
    "kind": "doc",
    "title": "Lens Music",
@@ -11703,7 +11739,7 @@
    "id": "doc.music.2",
    "kind": "doc",
    "title": "Lens Music: Pieces",
-   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback , DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/NowPlaying.tsx , MiniPlayer.tsx , m",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/No",
    "path": [
     "Docs",
     "Lens Music",
@@ -11737,7 +11773,7 @@
    "id": "doc.music.4",
    "kind": "doc",
    "title": "Lens Music: Connect Spotify",
-   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback , ticks Web API, and pastes the client ID. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's February 2026 Development Mode rules apply and are stated in the card: the app owner needs Premium, a new app allows 5 allow-listed users, artist top-tracks and batch metadata were removed (Lens uses artist albums for \"More by\"), library save/remove moved to /me/library , playlist",
+   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback (and, optionally, the same address on ports 43118 and 43119, used only when 43117 is busy), ticks Web API, and pastes the client ID. Lens binds the port before the browser opens: if 43117 is taken it uses the next free one and says so; if all three are taken, Connect fails straight away with a message naming the ports. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's Feb",
    "path": [
     "Docs",
     "Lens Music",
@@ -11883,6 +11919,23 @@
     "surface": "doc",
     "doc": "docs/MUSIC.md",
     "heading": "Needs real hardware"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.15",
+   "kind": "doc",
+   "title": "Lens Music: Lyrics on the desktop (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Lyrics on the desktop (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line. - Window lyricsline ( src-tauri/src/music/desktop lyrics.rs , src/music/LyricsLineSurface.tsx ): transparent, always on top, never focused ( WS EX NOACTIVATE ), every click passes through ( set ignore cursor events ). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits. - On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps. - Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion. - Not yet confirmed on a real PC (focus, multi-monitor placement, fullscr",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyrics on the desktop (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyrics on the desktop (opt-in)"
    },
    "source": "docs/MUSIC.md"
   },

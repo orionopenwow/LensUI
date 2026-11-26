@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Share2, X } from "lucide-react";
-import { COPY, driveName, fmtSize } from "./model";
+import { COPY, driveName, fmtScanTime, fmtSize } from "./model";
 import { Ambient, CountSize, FillBar, Key } from "./ui";
 
 export interface DoneInfo {
@@ -11,6 +11,8 @@ export interface DoneInfo {
   freeAfter: number;
   binned: number;
   skipped: [string, string][];
+  /** How long the scan before this clean took, measured in Rust. */
+  scanMs?: number;
 }
 
 /** Draws the "Share my result" card (1200×630 PNG) from the pack's own colours. Local only. */
@@ -125,6 +127,11 @@ export const Done: React.FC<{ info: DoneInfo; onShare: (png: string) => void; on
               </details>
             )}
           </div>
+        )}
+        {info.scanMs !== undefined && info.scanMs > 0 && (
+          <p className="cl-meta cl-done-scan">
+            Scanned your PC in <span className="cl-num">{fmtScanTime(info.scanMs)}</span>
+          </p>
         )}
         <div className="cl-home-actions">
           <button type="button" className="cl-btn is-ghost" onClick={() => setCard(drawShareCard(info))}>

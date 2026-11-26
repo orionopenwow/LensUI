@@ -27,6 +27,8 @@ struct State {
     /// (when, paths) of the last clean's Recycle-Bin items, for the undo toast.
     last_binned: (u64, Vec<String>),
     seq: u64,
+    /// The one-time code for a permanent delete (at most one live).
+    codes: cleaner::confirm::ConfirmCodes,
 }
 
 fn state() -> &'static Mutex<State> {
@@ -40,6 +42,15 @@ fn lock() -> std::sync::MutexGuard<'static, State> {
 
 fn dir() -> PathBuf {
     crate::config::config_dir().join("cleaner")
+}
+
+fn scan_timing_path() -> PathBuf {
+    dir().join("last-scan.txt")
+}
+
+/// How long the last full scan took here, for Tester Hub.
+pub(crate) fn last_scan_timing() -> Option<cleaner::ScanTiming> {
+    cleaner::ScanTiming::parse(&std::fs::read_to_string(scan_timing_path()).ok()?)
 }
 
 fn settings_path() -> PathBuf {
@@ -239,6 +250,11 @@ pub(crate) async fn cleaner_scan(app: AppHandle) -> Result<cleaner::ScanReport, 
     let _ = announce(&app, crate::presence::StepKind::Wait, "Looking around your PC (read-only)");
     let r = tauri::async_runtime::spawn_blocking(move || scan_blocking(&app, &cancel)).await.map_err(|e| e.to_string())?;
     crate::tester::log("info", "cleaner", &format!("scan: {} categories, {} safe in {} ms", r.categories.len(), cleaner::human(r.safe_bytes), r.elapsed_ms));
+    if !lock().cancel.load(Ordering::Relaxed) {
+        // Only a scan that ran to the end is a fair measurement.
+        let _ = std::fs::create_dir_all(dir());
+        let _ = std::fs::write(scan_timing_path(), cleaner::ScanTiming { elapsed_ms: r.elapsed_ms, at_ms: cleaner::now_ms() }.encode());
+    }
     Ok(r)
 }
 
@@ -257,7 +273,9 @@ pub(crate) struct Preview {
     entry_count: usize,
     steps: Vec<plan::PlanStep>,
     total: u64,
-    confirm_token: Option<String>,
+    /// A permanent delete of your files: the run needs the one-time code from
+    /// `cleaner_confirm_code`, typed by the person. The code is never part of the preview.
+    permanent: bool,
     refused: Vec<(String, String)>,
 }
 
@@ -265,9 +283,10 @@ fn store(p: plan::Plan, refused: Vec<(String, String)>) -> Preview {
     let mut st = lock();
     st.seq += 1;
     let id = format!("plan-{}-{}", cleaner::now_ms(), st.seq);
-    let pv = Preview { id: id.clone(), entries: p.entries.iter().take(PREVIEW_CAP).cloned().collect(), entry_count: p.entries.len(), steps: p.steps.clone(), total: p.total, confirm_token: p.confirm_token.clone(), refused };
+    let pv = Preview { id: id.clone(), entries: p.entries.iter().take(PREVIEW_CAP).cloned().collect(), entry_count: p.entries.len(), steps: p.steps.clone(), total: p.total, permanent: p.confirm_token.is_some(), refused };
     if st.plans.len() > 8 {
         st.plans.clear();
+        st.codes = Default::default();
     }
     st.plans.insert(id, p);
     pv
@@ -351,12 +370,68 @@ fn run_plan(app: Option<&AppHandle>, p: &plan::Plan, confirm: Option<&str>) -> p
     out
 }
 
-/// Runs a previewed plan. Only plans built here can run; a permanent delete of your files also
-/// needs the confirm token the preview carried (shown behind an extra confirmation in the UI).
+/// The Cleaner window's label: the only window that is handed a confirm code.
+const CLEANER_WINDOW: &str = "cleaner";
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ConfirmCode {
+    /// What the person types to delete for good.
+    code: String,
+    expires_in_ms: u64,
+    tries: u8,
+}
+
+fn random4() -> Result<[u8; 4], String> {
+    let hex = crate::win_mcp::random_token()?;
+    let n = u32::from_str_radix(hex.get(..8).unwrap_or(""), 16).map_err(|_| "The OS random generator failed.".to_string())?;
+    Ok(n.to_le_bytes())
+}
+
+fn plan_hash(p: &plan::Plan) -> String {
+    plan::token_for(&p.entries.iter().map(|e| e.path.clone()).collect::<Vec<_>>())
+}
+
+/// Mints the one-time code for a permanent delete, for the Cleaner window's confirm step only.
+/// Random, tied to this plan and its exact list, valid once and for two minutes.
+#[tauri::command]
+pub(crate) fn cleaner_confirm_code(window: tauri::WebviewWindow, id: String) -> Result<ConfirmCode, String> {
+    if window.label() != CLEANER_WINDOW {
+        return Err("Only the Cleaner window can confirm a permanent delete.".into());
+    }
+    let random = random4()?;
+    let mut st = lock();
+    let p = st.plans.get(&id).ok_or("That preview has expired; scan again.")?;
+    if p.confirm_token.is_none() {
+        return Err("This clean goes to the Recycle Bin, so it doesn't need a code.".into());
+    }
+    let hash = plan_hash(p);
+    let code = st.codes.issue(&id, &hash, cleaner::now_ms(), random);
+    Ok(ConfirmCode { code, expires_in_ms: cleaner::confirm::TTL_MS, tries: cleaner::confirm::MAX_TRIES })
+}
+
+/// Runs a previewed plan. Only plans built here can run. A permanent delete of your files also
+/// needs the one-time code from `cleaner_confirm_code` as `confirm`: without the right code
+/// nothing is touched and the plan stays, so the person can try again.
 #[tauri::command]
 pub(crate) async fn cleaner_run(app: AppHandle, id: String, confirm: Option<String>) -> Result<plan::Outcome, String> {
-    let p = lock().plans.remove(&id).ok_or("That preview has expired; scan again.")?;
-    let out = tauri::async_runtime::spawn_blocking(move || run_plan(Some(&app), &p, confirm.as_deref())).await.map_err(|e| e.to_string())?;
+    let (p, echo) = {
+        let mut st = lock();
+        let (token, hash) = {
+            let p = st.plans.get(&id).ok_or("That preview has expired; scan again.")?;
+            (p.confirm_token.clone(), plan_hash(p))
+        };
+        if token.is_some() {
+            st.codes.redeem(&id, &hash, confirm.as_deref().unwrap_or(""), cleaner::now_ms()).map_err(|r| r.message())?;
+        }
+        st.codes.forget(&id);
+        let p = st.plans.remove(&id).ok_or("That preview has expired; scan again.")?;
+        (p, token)
+    };
+    if echo.is_some() {
+        audit("confirm", &[format!("permanent delete of {} item(s) confirmed with a one-time code", p.entries.len())]);
+    }
+    let out = tauri::async_runtime::spawn_blocking(move || run_plan(Some(&app), &p, echo.as_deref())).await.map_err(|e| e.to_string())?;
     snapshot_now();
     Ok(out)
 }
@@ -440,6 +515,12 @@ pub(crate) fn cleaner_space_children(root: String, id: u32, depth: Option<u32>, 
     Ok(SpaceView { node, crumbs: t.crumbs(id), children: t.children(id, limit.unwrap_or(60).clamp(1, 400), depth.unwrap_or(1).clamp(1, 4)) })
 }
 
+/// The map node for a folder (the Home timeline opens the Space map at the folder that grew).
+#[tauri::command]
+pub(crate) fn cleaner_space_find(root: String, path: String) -> Result<Option<u32>, String> {
+    Ok(tree_for(&root)?.find(Path::new(&path)))
+}
+
 #[tauri::command]
 pub(crate) fn cleaner_biggest(root: String, kind: Option<String>, limit: Option<usize>) -> Result<Vec<tree::View>, String> {
     let t = tree_for(&root)?;
@@ -486,7 +567,9 @@ pub(crate) async fn cleaner_apps() -> Result<Vec<AppUsage>, String> {
                 let data_size = dirs.iter().map(|d| walk::size_of(d, &cancel).0).sum();
                 AppUsage {
                     icon: cleaner::apps::icon_path(&a.display_icon).and_then(|p| crate::win_windows::extract_icon_for_path(&p)),
-                    can_uninstall: cleaner::apps::split_uninstall(&a.uninstall).is_some(),
+                    // Uninstalling happens in Startup & Uninstall (one path, one audit log), which
+                    // checks the uninstaller itself and offers winget when it can't be run.
+                    can_uninstall: !a.uninstall.trim().is_empty(),
                     data_dirs: dirs.iter().map(|d| d.to_string_lossy().into_owned()).collect(),
                     key: a.key,
                     name: a.name,
@@ -501,16 +584,6 @@ pub(crate) async fn cleaner_apps() -> Result<Vec<AppUsage>, String> {
     })
     .await
     .map_err(|e| e.to_string())
-}
-
-/// Starts the app's own uninstaller (after you confirmed in Lens). Lens never removes app folders.
-#[tauri::command]
-pub(crate) fn cleaner_app_uninstall(app: AppHandle, key: String) -> Result<(), String> {
-    let a = cleaner::apps::installed().into_iter().find(|a| a.key == key).ok_or("That app isn't installed any more.")?;
-    let (exe, args) = cleaner::apps::split_uninstall(&a.uninstall).ok_or("This app's uninstaller can't be started safely from Lens; use Windows' Installed apps page.")?;
-    let _ = announce(&app, crate::presence::StepKind::Window, &format!("Opening {}'s uninstaller", a.name));
-    audit("uninstaller", &[format!("{} ({})", a.name, exe)]);
-    std::process::Command::new(exe).args(args).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -583,6 +656,8 @@ pub(crate) struct HistoryView {
     series: Vec<history::Point>,
     growth: Vec<history::Growth>,
     sudden: Option<u64>,
+    /// The biggest day-to-day rises in the series, labelled by folder when known.
+    jumps: Vec<history::Jump>,
 }
 
 fn history_path() -> PathBuf {
@@ -599,7 +674,7 @@ pub(crate) fn cleaner_history(root: String) -> HistoryView {
     let series = h.series(&root, 30);
     let total = cleaner::win::disk_space(Path::new(&root)).map(|d| d.0).unwrap_or(0);
     let week_ago = cleaner::day_string(cleaner::now_ms().saturating_sub(7 * 86_400_000));
-    HistoryView { enabled: load_settings().history, sudden: history::sudden_growth(&series, total), growth: h.growth(&week_ago, 6), series }
+    HistoryView { enabled: load_settings().history, sudden: history::sudden_growth(&series, total), growth: h.growth(&week_ago, 6), jumps: h.jumps(&root, 30, total, 3), series }
 }
 
 fn snapshot_now() {
