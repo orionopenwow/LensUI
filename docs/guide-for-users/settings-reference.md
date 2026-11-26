@@ -39,6 +39,7 @@ Every card and option in Lens Settings, grouped by tab. Each line is where to fi
 
 ## Windows & Keys
 
+- **Keyboard shortcuts** — Everything Lens listens for. Windows' own keys (Win+L, Ctrl+Alt+Del, Alt+Tab) are never taken.
 - **Start Key & Alt+Tab** — Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher.
   Options: Win Key Opens Lens Launcher, Alt+Tab Opens Lens Overview.
 - **Monitor** — One display connected — the Dock and Top Bar are on it.

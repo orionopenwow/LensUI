@@ -1012,14 +1012,15 @@
 .lb-glow::before {
   width: min(900px, 120%); aspect-ratio: 16 / 9; left: 50%; top: -6%;
   background:
-    radial-gradient(closest-side at 22% 55%, hsl(0 95% 60% / 0.55), transparent),
-    radial-gradient(closest-side at 40% 35%, hsl(45 95% 58% / 0.45), transparent),
-    radial-gradient(closest-side at 58% 60%, hsl(140 90% 52% / 0.40), transparent),
-    radial-gradient(closest-side at 72% 38%, hsl(195 95% 58% / 0.50), transparent),
-    radial-gradient(closest-side at 84% 60%, hsl(255 95% 66% / 0.50), transparent),
-    radial-gradient(closest-side at 50% 80%, hsl(306 95% 62% / 0.40), transparent);
-  filter: blur(64px) saturate(1.2);
-  opacity: var(--lb-glow-k, 0.32);
+    radial-gradient(closest-side at 22% 55%, hsl(0 95% 60% / 0.5), hsl(0 95% 60% / 0.18) 45%, transparent),
+    radial-gradient(closest-side at 40% 35%, hsl(45 95% 58% / 0.42), hsl(45 95% 58% / 0.15) 45%, transparent),
+    radial-gradient(closest-side at 58% 60%, hsl(140 90% 52% / 0.38), hsl(140 90% 52% / 0.13) 45%, transparent),
+    radial-gradient(closest-side at 72% 38%, hsl(195 95% 58% / 0.46), hsl(195 95% 58% / 0.16) 45%, transparent),
+    radial-gradient(closest-side at 84% 60%, hsl(255 95% 66% / 0.46), hsl(255 95% 66% / 0.16) 45%, transparent),
+    radial-gradient(closest-side at 50% 80%, hsl(306 95% 62% / 0.38), hsl(306 95% 62% / 0.13) 45%, transparent);
+  /* No blur filter: the radial gradients are already soft, and a 64 px blur on a drifting layer
+     cost a full-area re-raster every frame (the site's demo desk dropped to ~7 fps while dragging). */
+  opacity: var(--lb-glow-k, 0.36);
   transform: translateX(-50%);
   animation: lb-glow-drift 28s ease-in-out infinite alternate;
 }
