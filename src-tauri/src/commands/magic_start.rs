@@ -136,8 +136,10 @@ fn hide(app: &AppHandle, reason: &str) {
 /// return quickly, and building a webview can take a moment.
 pub(crate) fn on_win_tap(app: &AppHandle, seq: u64) {
     if !enabled(&app.state::<AppState>()) {
+        eprintln!("[Lens UI] magic start: Win tap {seq} ignored (the Magic button is off)");
         return;
     }
+    eprintln!("[Lens UI] magic start: Win tap {seq}");
     if is_showing(app) {
         hide(app, "Windows key pressed again");
         // Still acknowledge, so the watchdog doesn't open Windows Start over a deliberate close.

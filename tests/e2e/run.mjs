@@ -680,6 +680,14 @@ const SCENARIOS = [
       await sleep(800);
       if (!(await invoke(dock, "magic_start_available"))) throw new Error("Magic Start is not available after turning the Magic button on");
 
+      // The hook installs itself within ~40 ms of the flag; wait until it says it is live.
+      const hookStatus = () => invoke(dock, "get_keyhook_status_cmd").catch((e) => ({ error: String(e) }));
+      let st = await hookStatus();
+      for (let i = 0; i < 30 && !(st.active && st.winLauncher); i++) {
+        await sleep(100);
+        st = await hookStatus();
+      }
+      console.log(`note  magic-start: key hook before the tap ${JSON.stringify(st)}`);
       // A Win tap opens Magic Start (the page acknowledges, so Windows Start stays shut).
       winTap();
       try {
@@ -687,7 +695,7 @@ const SCENARIOS = [
       } catch (e) {
         const fg = foreground();
         closeWindowsStart();
-        throw new Error(`${e.message} (foreground: ${fg})`);
+        throw new Error(`${e.message} (foreground: ${fg}; key hook after: ${JSON.stringify(await hookStatus())})`);
       }
       const ms = await waitForSurface(s, "magicstart");
       const take = watchErrors(ms);
@@ -876,7 +884,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magicstart/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart/i.test(l)).slice(-12);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }
