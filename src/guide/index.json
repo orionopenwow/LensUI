@@ -11567,6 +11567,23 @@
    "source": "docs/MESSAGES.md"
   },
   {
+   "id": "doc.messages.8",
+   "kind": "doc",
+   "title": "Lens Messages: Title watcher (how web-app badges update)",
+   "text": "Every Lens Browser tab has a WebView2 DocumentTitleChanged handler ( src-tauri/src/browser/titles.rs ). When a title changes, the handler passes the tab id, the page address and the title to commands::messages::space title changed . messages::spaces::app for url decides which messenger the page belongs to (https and the app's own hosts only), badges::unread from title parses the count, and the title text is dropped. Counts are kept per tab and summed per messenger, so two Slack workspaces add up and closing or sleeping a tab takes only its share away ( browser::titles::gone ). Pages of messengers you haven't turned on in Messages are ignored. When Messages settings change, open tabs are read once so a messenger you just turned on shows its badge straight away. A change emits lens://messages/unread and, when \"Badges on Dock icons\" is on, lens://coreapp-badge for the Lens Messages pin. Not",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Title watcher (how web-app badges update)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Title watcher (how web-app badges update)"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
    "id": "doc.music.0",
    "kind": "doc",
    "title": "Lens Music",
@@ -11603,7 +11620,7 @@
    "id": "doc.music.2",
    "kind": "doc",
    "title": "Lens Music: Pieces",
-   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback , DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/NowPlaying.tsx , MiniPlayer.tsx , m",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/No",
    "path": [
     "Docs",
     "Lens Music",
@@ -11637,7 +11654,7 @@
    "id": "doc.music.4",
    "kind": "doc",
    "title": "Lens Music: Connect Spotify",
-   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback , ticks Web API, and pastes the client ID. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's February 2026 Development Mode rules apply and are stated in the card: the app owner needs Premium, a new app allows 5 allow-listed users, artist top-tracks and batch metadata were removed (Lens uses artist albums for \"More by\"), library save/remove moved to /me/library , playlist",
+   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback (and, optionally, the same address on ports 43118 and 43119, used only when 43117 is busy), ticks Web API, and pastes the client ID. Lens binds the port before the browser opens: if 43117 is taken it uses the next free one and says so; if all three are taken, Connect fails straight away with a message naming the ports. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's Feb",
    "path": [
     "Docs",
     "Lens Music",

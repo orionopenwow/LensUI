@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
-  currentLine, endTimeLabel, formatTime, heroGradient, initials, lineOpacity, lineState, queueRemaining, sourceCaps,
+  currentLine, endTimeLabel, formatTime, heroGradient, initials, lineOpacity, lineState, queueEmptyState, queueRemaining, sourceCaps,
   splitArtists, splitTitle, hexToRgb, luminance, type NowPlaying as NP, type RGB,
 } from "./model";
 import { placeholderArt, samplePalette } from "./art";
+import { SpotifyConnectInline } from "./spotifyConnect";
 import "./music.css";
 
 export type NowPlayingMode = "compact" | "expanded" | "fullscreen";
@@ -202,7 +203,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
       </main>
 
       {showQueue && mode !== "compact" && (
-        <QueuePanel now={now} position={position} queue={queue} history={history} connected={caps.queue}
+        <QueuePanel now={now} position={position} queue={queue} history={history} connected={caps.queue} onConnected={() => setSpotify(true)}
           sleepOpen={sleepOpen} setSleepOpen={setSleepOpen} />
       )}
 
@@ -305,8 +306,9 @@ const Lyrics: React.FC<{ result: LyricsResult | null; position: number; offset: 
 // ------------------------------------------------------------------------------ queue
 
 const QueuePanel: React.FC<{
-  now: NP; position: number; queue: Queue | null; history: Played[]; connected: boolean; sleepOpen: boolean; setSleepOpen: (v: boolean) => void;
-}> = ({ now, position, queue, history, connected, sleepOpen, setSleepOpen }) => {
+  now: NP; position: number; queue: Queue | null; history: Played[]; connected: boolean; onConnected: () => void; sleepOpen: boolean; setSleepOpen: (v: boolean) => void;
+}> = ({ now, position, queue, history, connected, onConnected, sleepOpen, setSleepOpen }) => {
+  const empty = queueEmptyState(now.sessionId, now.sourceLabel, connected);
   const remainingTrack = Math.max(0, now.durationMs - position);
   const items = connected && queue ? queue.items : [];
   const total = connected ? queueRemaining(remainingTrack, items) : remainingTrack;
@@ -351,6 +353,8 @@ const QueuePanel: React.FC<{
         </>
       ) : (
         <>
+          <div className="lm-q-empty">{empty.note}</div>
+          {empty.offerConnect && <SpotifyConnectInline onConnected={onConnected} />}
           <div className="lm-q-section">Recently played in Lens <span className="lm-q-hint">on this PC</span></div>
           {history.filter((h, i) => !(i === 0 && h.title === now.title)).slice(0, 12).map((h) => (
             <div key={`${h.title}-${h.atMs}`} className="lm-q-row">
@@ -358,7 +362,7 @@ const QueuePanel: React.FC<{
               <span className="lm-q-text"><span className="lm-q-name">{h.title}</span><span className="lm-q-sub">{[h.artist, h.sourceLabel].filter(Boolean).join(" – ")}</span></span>
             </div>
           ))}
-          {history.length <= 1 && <div className="lm-q-empty">Tracks you play show up here. {now.sourceLabel} doesn't share its queue with other apps.</div>}
+          {history.length <= 1 && <div className="lm-q-empty">Tracks you play show up here.</div>}
         </>
       )}
 

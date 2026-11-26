@@ -309,3 +309,20 @@ export function initials(name: string): string {
 export function queueRemaining(currentRemainingMs: number, items: { durationMs: number }[]): number {
   return Math.max(0, currentRemainingMs) + items.reduce((a, i) => a + Math.max(0, i.durationMs), 0);
 }
+
+/** What the queue panel says when Lens can't show a real queue, and whether to offer Connect Spotify there. */
+export function queueEmptyState(sessionId: string, sourceLabel: string, spotifyConnected: boolean): { note: string; offerConnect: boolean } {
+  const caps = sourceCaps(sessionId, spotifyConnected);
+  if (caps.queue) return { note: "", offerConnect: false };
+  if (sessionId.toLowerCase().includes("spotify")) {
+    return { note: "Windows doesn't share queues, so Lens can't see what's next. Connect Spotify to see your real queue here.", offerConnect: true };
+  }
+  const who = sourceLabel.trim() || "This app";
+  return { note: `${who} doesn't share its queue with other apps, so Lens shows what you played recently.`, offerConnect: false };
+}
+
+/** A Rust error as a sentence for the person (no "Error:" prefix, never empty). */
+export function connectError(e: unknown): string {
+  const text = String((e as { message?: unknown })?.message ?? e ?? "").replace(/^Error:\s*/, "").trim();
+  return text || "Lens couldn't connect to Spotify. Try again.";
+}

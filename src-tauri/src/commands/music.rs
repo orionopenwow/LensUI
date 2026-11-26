@@ -161,7 +161,15 @@ pub(crate) fn music_spicetify_export(tokens: TokensIn, install: bool) -> Result<
 
 // ------------------------------------------------------------------------------- Spotify
 
-static PENDING: Mutex<Option<(String, String, String)>> = Mutex::new(None);
+/// One sign-in in progress. The loopback listener is held from "Connect" until the reply arrives.
+struct PendingSpotify {
+    client_id: String,
+    verifier: String,
+    state: String,
+    loopback: spotify::Loopback,
+}
+
+static PENDING: Mutex<Option<PendingSpotify>> = Mutex::new(None);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -169,6 +177,8 @@ pub(crate) struct SpotifyStatus {
     connected: bool,
     client_id: Option<String>,
     redirect_uri: &'static str,
+    /// The usual redirect address first, then the fallbacks used when its port is busy.
+    redirect_uris: Vec<String>,
     scopes: Vec<(String, String)>,
 }
 
@@ -179,32 +189,51 @@ pub(crate) fn music_spotify_status() -> SpotifyStatus {
         connected: t.is_some(),
         client_id: t.map(|t| t.client_id),
         redirect_uri: spotify::REDIRECT_URI,
+        redirect_uris: spotify::redirect_uris(),
         scopes: spotify::SCOPES.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect(),
     }
 }
 
-/// Returns the Spotify authorize URL for the UI to open in the browser.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SpotifyBegin {
+    /// Spotify's consent page, for the UI to open in the browser.
+    url: String,
+    /// The address Spotify will send the sign-in back to (this PC only).
+    redirect_uri: String,
+    /// Set when the usual port was busy and a fallback is in use: what to do if Spotify refuses.
+    notice: Option<String>,
+}
+
+/// Starts a sign-in: binds the loopback port first (the usual one, or a fallback when it is busy)
+/// and returns Spotify's consent page for that address. Fails with a plain message when every port
+/// is in use, before any browser opens.
 #[tauri::command]
-pub(crate) fn music_spotify_begin(client_id: String) -> Result<String, String> {
+pub(crate) fn music_spotify_begin(client_id: String) -> Result<SpotifyBegin, String> {
     let id = client_id.trim().to_string();
     if !spotify::valid_client_id(&id) {
         return Err("A Spotify client ID is 32 letters and numbers (from developer.spotify.com/dashboard).".into());
     }
+    let mut pending = PENDING.lock().unwrap_or_else(|e| e.into_inner());
+    // An earlier attempt that never finished still holds its port: let it go first.
+    *pending = None;
+    let loopback = spotify::bind_loopback()?;
     let verifier = spotify::new_verifier();
     let state = spotify::new_verifier().chars().take(16).collect::<String>();
-    let url = spotify::authorize_url(&id, &verifier, &state);
-    if let Ok(mut p) = PENDING.lock() {
-        *p = Some((id, verifier, state));
-    }
-    Ok(url)
+    let redirect_uri = loopback.redirect_uri();
+    let url = spotify::authorize_url(&id, &verifier, &state, &redirect_uri);
+    let notice = loopback.is_fallback().then(|| spotify::fallback_notice(loopback.port));
+    *pending = Some(PendingSpotify { client_id: id, verifier, state, loopback });
+    Ok(SpotifyBegin { url, redirect_uri, notice })
 }
 
 /// Waits up to 3 minutes for the browser redirect, then stores the tokens (DPAPI).
 #[tauri::command(async)]
 pub(crate) fn music_spotify_finish() -> Result<(), String> {
-    let (id, verifier, state) = PENDING.lock().ok().and_then(|mut p| p.take()).ok_or("Start connecting Spotify first.")?;
-    let code = spotify::wait_for_code(&state, std::time::Duration::from_secs(180))?;
-    let tokens = spotify::exchange_code(&id, &code, &verifier)?;
+    let p = PENDING.lock().unwrap_or_else(|e| e.into_inner()).take().ok_or("Start connecting Spotify first.")?;
+    let redirect = p.loopback.redirect_uri();
+    let code = spotify::wait_for_code(p.loopback, &p.state, std::time::Duration::from_secs(180))?;
+    let tokens = spotify::exchange_code(&p.client_id, &code, &p.verifier, &redirect)?;
     spotify::save_tokens(&tokens)
 }
 

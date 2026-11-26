@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   contrast, currentLine, endTimeLabel, ensureContrast, formatTime, heroGradient, hexToRgb, initials, lineOpacity, lineState,
   livePosition, lyricScroll, miniState, musicAccent, pickVivid, quantize, queueRemaining, sourceCaps, splitArtists, splitTitle,
+  connectError, queueEmptyState,
   type NowPlaying,
 } from "../music/model";
 import { planAccent, MIN_GAP_MS } from "../music/themeFollow";
@@ -164,5 +165,29 @@ describe("titles and sources", () => {
     expect(sourceCaps("Spotify.exe", false).note).toContain("Connect Spotify");
     expect(sourceCaps("AppleInc.AppleMusicWin_x!App", true).note).toContain("Cider");
     expect(sourceCaps("msedge.exe", true)).toMatchObject({ queue: false, note: "" });
+  });
+});
+
+describe("queue panel without a real queue", () => {
+  test("Spotify, not connected: says why and offers Connect Spotify in place", () => {
+    const s = queueEmptyState("Spotify.exe", "Spotify", false);
+    expect(s.offerConnect).toBe(true);
+    expect(s.note).toContain("Windows doesn't share queues");
+    expect(s.note).toContain("Connect Spotify");
+  });
+  test("another player: explains, without a Spotify offer that wouldn't help", () => {
+    const s = queueEmptyState("msedge.exe", "Microsoft Edge", false);
+    expect(s.offerConnect).toBe(false);
+    expect(s.note).toContain("Microsoft Edge doesn't share its queue");
+    expect(queueEmptyState("vlc", "", true).note.startsWith("This app")).toBe(true);
+  });
+  test("Spotify connected: nothing to explain", () => {
+    expect(queueEmptyState("Spotify.exe", "Spotify", true)).toEqual({ note: "", offerConnect: false });
+  });
+  test("sign-in errors read as sentences", () => {
+    expect(connectError("Error: Port 43117 is in use")).toBe("Port 43117 is in use");
+    expect(connectError(new Error("Spotify refused the sign-in."))).toBe("Spotify refused the sign-in.");
+    expect(connectError("")).toContain("couldn't connect");
+    expect(connectError(undefined)).toContain("couldn't connect");
   });
 });
