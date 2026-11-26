@@ -32,7 +32,8 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_MENU, VK_RWIN, VK_SHIFT,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetAncestor, GetForegroundWindow, GetWindowThreadProcessId,
+    CreateWindowExW, DefWindowProcW, DestroyCursor, DispatchMessageW, GetAncestor, GetForegroundWindow,
+    GetSystemMetrics, GetWindowThreadProcessId, LoadCursorFromFileW, SM_CXCURSOR,
     PeekMessageW, RegisterClassW, SetLayeredWindowAttributes, SetWindowPos, ShowWindow, TranslateMessage,
     WindowFromPoint, GA_ROOT, HWND_TOPMOST, LWA_ALPHA, MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_SHOWWINDOW, SW_HIDE,
     WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE, WNDCLASSW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
@@ -451,6 +452,32 @@ struct HighContrastW {
 
 extern "system" {
     fn SystemParametersInfoW(action: u32, ui: u32, pv: *mut core::ffi::c_void, winini: u32) -> i32;
+}
+
+/// Whether Windows itself loads this pointer file (the same loader the pointer scheme uses).
+pub fn windows_can_load(path: &std::path::Path) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+    // SAFETY: a NUL-terminated path; the cursor is destroyed straight away.
+    unsafe {
+        match LoadCursorFromFileW(PCWSTR(wide.as_ptr())) {
+            Ok(h) => {
+                let _ = DestroyCursor(h);
+                true
+            }
+            Err(_) => false,
+        }
+    }
+}
+
+/// The person's current pointer size in px (what Windows draws the arrow at).
+pub fn pointer_size() -> u32 {
+    let w = unsafe { GetSystemMetrics(SM_CXCURSOR) };
+    if w > 0 {
+        w as u32
+    } else {
+        32
+    }
 }
 
 /// Windows high contrast is on (the Magic set then uses its high-contrast variant).

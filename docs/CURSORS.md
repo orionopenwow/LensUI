@@ -390,6 +390,11 @@ set through this suite's registry layer, so it shares the suite's backup and exa
   use the familiar Obsidian shapes. High contrast on in Windows → the high-contrast variant
   (white rim, black halo). The files are built at run time into `cursors/magic/<magic|magic-hc>`,
   outside `cursors/sets/` so a Look change can't prune them.
+  Before Windows is pointed at a file, Lens loads it with Windows' own `LoadCursorFromFile` and
+  keeps the first form Windows accepts: the multi-size `.ani`, then a single-size `.ani` at the
+  person's pointer size, then a still multi-size `.cur`. If none loads, nothing is applied.
+  (The Windows CI runner refused the multi-size `.ani`, so this matters.) `magic_mouse_status`
+  reports the form in use (`variant`) and any refused live reload (`warning`).
 * **Apply** (`magic_waves::mouse::apply_magic_with`): backup on first change (same
   `backup.json`), point `HKCU\Control Panel\Cursors` at the set, mark `cursors/magic-mouse.json`.
   `CursorBaseSize` is only written when the person already uses Lens pointers (their Lens size);

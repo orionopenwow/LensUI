@@ -1920,6 +1920,8 @@ export interface MagicMouseStatus {
   last: string;
   /** The last problem applying or removing the pointer ("" = none). */
   warning: string;
+  /** Which form of the pointer Windows accepted: "animated", "animated-<px>", "still", "". */
+  variant: string;
 }
 
 /**

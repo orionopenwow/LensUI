@@ -547,14 +547,59 @@ mod m3 {
         let before = reg.m.clone();
         reg.fail_reload = true;
         let (m, warn) =
-            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Apply, false).unwrap();
+            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Apply, false, &|_| true, 32).unwrap();
         assert!(m.applied && load_mode(&root).applied && warn.is_some());
         assert!(matches!(reg.read(CURSORS_KEY, "Arrow"), Some(RegVal::ExpandSz(p)) if p.ends_with("arrow.ani")));
         let (m, warn) =
-            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Restore, false).unwrap();
+            crate::magic_waves::mouse::run_soft(&root, &mut reg, "", CursorAction::Restore, false, &|_| true, 32).unwrap();
         assert!(!m.applied && warn.is_some());
         assert_eq!(reg.m, before);
         assert!(!root.join("backup.json").exists());
+    }
+
+    #[test]
+    fn windows_is_only_ever_pointed_at_files_it_loads() {
+        use crate::magic_waves::mouse::{apply_magic_checked, set_variant};
+        // Windows refuses multi-size .ani: the single-size one at the person's size is used.
+        let root = tmp("variant-single");
+        let mut reg = windows_defaults();
+        let no_multi = |p: &std::path::Path| {
+            let n = p.file_name().unwrap().to_string_lossy().to_string();
+            !(n.ends_with(".ani") && !n.contains('-'))
+        };
+        apply_magic_checked(&root, &mut reg, "", false, &no_multi, 44).unwrap();
+        let arrow = reg.read(CURSORS_KEY, "Arrow");
+        assert!(matches!(&arrow, Some(RegVal::ExpandSz(p)) if p.ends_with("arrow-48.ani")), "{arrow:?}");
+        assert_eq!(set_variant(&root, false), "animated-48");
+        let wait = reg.read(CURSORS_KEY, "Wait");
+        assert!(matches!(&wait, Some(RegVal::ExpandSz(p)) if p.ends_with("wait-48.ani")), "{wait:?}");
+        magic_off_with(&root, &mut reg, "").unwrap();
+
+        // Windows refuses every .ani: still pointers, all sizes, with the tip hotspot.
+        let root = tmp("variant-still");
+        let mut reg = windows_defaults();
+        let no_ani = |p: &std::path::Path| !p.to_string_lossy().ends_with(".ani");
+        apply_magic_checked(&root, &mut reg, "", true, &no_ani, 32).unwrap();
+        let arrow = reg.read(CURSORS_KEY, "Arrow");
+        assert!(matches!(&arrow, Some(RegVal::ExpandSz(p)) if p.ends_with("arrow-still.cur")), "{arrow:?}");
+        assert_eq!(set_variant(&root, true), "still");
+        if let Some(RegVal::ExpandSz(p)) = arrow {
+            let b = std::fs::read(p).unwrap();
+            assert_eq!(&b[0..4], &[0, 0, 2, 0]);
+            assert_eq!(u16::from_le_bytes([b[4], b[5]]) as usize, win_cursors::CURSOR_SIZES.len());
+        }
+        // No refused file is left in the folder, and the checked set is reused next time.
+        let dir = root.join("magic").join("magic-hc");
+        assert!(!std::fs::read_dir(&dir).unwrap().any(|e| e.unwrap().file_name().to_string_lossy().ends_with(".ani")));
+        magic_off_with(&root, &mut reg, "").unwrap();
+
+        // Windows refuses everything: nothing is applied and the person's pointers stay.
+        let root = tmp("variant-none");
+        let mut reg = windows_defaults();
+        let before = reg.m.clone();
+        assert!(apply_magic_checked(&root, &mut reg, "", false, &|_| false, 32).is_err());
+        assert_eq!(reg.m, before);
+        assert!(!load_mode(&root).applied);
     }
 
     fn tmp(tag: &str) -> PathBuf {

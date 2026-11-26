@@ -107,28 +107,111 @@ pub fn save_mode(root: &Path, mode: MouseMode) -> Result<(), String> {
     std::fs::rename(&tmp, mode_path(root)).map_err(|e| e.to_string())
 }
 
-/// Writes the Magic set's files (only the ones that are missing) and returns `(role, path)`.
-pub fn write_set(root: &Path, hc: bool) -> Result<Vec<(CursorRole, std::path::PathBuf)>, String> {
+/// Checks a pointer file the way Windows will load it (`LoadCursorFromFile` on Windows).
+pub type Loads<'a> = &'a dyn Fn(&Path) -> bool;
+
+fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, bytes).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })
+}
+
+/// Writes the Magic set and returns `(role, path)`. For the animated roles each
+/// [`cursor_art::Variant`] is tried in turn and the first file `loads` accepts is kept, so
+/// Windows is never pointed at a file it refuses. `size` is the person's pointer size (px).
+/// A set already written and checked (`set.txt`) is reused.
+pub fn write_set_checked(
+    root: &Path,
+    hc: bool,
+    loads: Loads,
+    size: u32,
+) -> Result<Vec<(CursorRole, std::path::PathBuf)>, String> {
     // Kept outside `sets/`, which the cursor suite prunes whenever the person changes their
     // Lens pointer style.
     let dir = root.join("magic").join(cursor_art::set_key(hc));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let mut out = Vec::new();
-    let missing = win_cursors::ALL_ROLES
-        .iter()
-        .any(|r| !dir.join(cursor_art::file_name(*r)).exists());
-    if missing {
-        for (_role, name, bytes) in cursor_art::build_set(hc) {
-            let path = dir.join(&name);
-            let tmp = path.with_extension("tmp");
-            std::fs::write(&tmp, &bytes).map_err(|e| e.to_string())?;
-            std::fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    let index = dir.join("set.txt");
+    if let Ok(t) = std::fs::read_to_string(&index) {
+        let known: Vec<(CursorRole, std::path::PathBuf)> = win_cursors::ALL_ROLES
+            .iter()
+            .filter_map(|r| {
+                let key = format!("{}=", r.reg_name());
+                t.lines()
+                    .find_map(|l| l.strip_prefix(&key))
+                    .map(|f| (*r, dir.join(f.trim())))
+            })
+            .collect();
+        if known.len() == win_cursors::ALL_ROLES.len() && known.iter().all(|(_, p)| p.exists()) {
+            return Ok(known);
         }
     }
+    let mut out = Vec::new();
+    let mut lines = String::new();
     for role in win_cursors::ALL_ROLES {
-        out.push((role, dir.join(cursor_art::file_name(role))));
+        let path = if cursor_art::magic_role(role) {
+            let mut chosen = None;
+            for v in cursor_art::variants(size) {
+                let (name, bytes) = cursor_art::build_magic_role(role, hc, v);
+                let p = dir.join(&name);
+                write_atomic(&p, &bytes)?;
+                if loads(&p) {
+                    chosen = Some(p);
+                    break;
+                }
+                let _ = std::fs::remove_file(&p);
+            }
+            chosen.ok_or_else(|| {
+                format!(
+                    "Windows could not load the Magic {} pointer",
+                    role.reg_name()
+                )
+            })?
+        } else {
+            let p = dir.join(role.file_name());
+            write_atomic(&p, &cursor_art::build_familiar(role, hc))?;
+            p
+        };
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        lines.push_str(&format!("{}={}\n", role.reg_name(), name));
+        out.push((role, path));
     }
+    write_atomic(&index, lines.as_bytes())?;
     Ok(out)
+}
+
+/// [`write_set_checked`] without a loader check (every file accepted), at 32 px.
+pub fn write_set(root: &Path, hc: bool) -> Result<Vec<(CursorRole, std::path::PathBuf)>, String> {
+    write_set_checked(root, hc, &|_| true, 32)
+}
+
+/// Which form of the Magic pointer is in use: "animated", "animated-<px>", "still", or ""
+/// when none has been written.
+pub fn set_variant(root: &Path, hc: bool) -> String {
+    let t = std::fs::read_to_string(
+        root.join("magic")
+            .join(cursor_art::set_key(hc))
+            .join("set.txt"),
+    )
+    .unwrap_or_default();
+    let Some(f) = t.lines().find_map(|l| l.strip_prefix("Arrow=")) else {
+        return String::new();
+    };
+    if f.ends_with("-still.cur") {
+        "still".into()
+    } else if let Some(px) = f
+        .strip_prefix("arrow-")
+        .and_then(|r| r.strip_suffix(".ani"))
+    {
+        format!("animated-{px}")
+    } else {
+        "animated".into()
+    }
 }
 
 /// Turns the Magic pointer on: backs up the person's pointers (first time only, shared with the
@@ -140,8 +223,22 @@ pub fn apply_magic_with(
     appdata: &str,
     hc: bool,
 ) -> Result<(), String> {
+    apply_magic_checked(root, reg, appdata, hc, &|_| true, 32)
+}
+
+/// [`apply_magic_with`] with a loader check and the person's pointer size (see
+/// [`write_set_checked`]).
+pub fn apply_magic_checked(
+    root: &Path,
+    reg: &mut dyn Registry,
+    appdata: &str,
+    hc: bool,
+    loads: Loads,
+    size: u32,
+) -> Result<(), String> {
+    // Files first: if Windows refuses every form of the pointer nothing else is touched.
+    let files = write_set_checked(root, hc, loads, size)?;
     ensure_backup(root, reg)?;
-    let files = write_set(root, hc)?;
     let as_str: Vec<(CursorRole, String)> = files
         .iter()
         .map(|(r, p)| (*r, with_env_prefix(&p.to_string_lossy(), appdata)))
@@ -184,9 +281,22 @@ pub fn run_with(
     action: CursorAction,
     hc: bool,
 ) -> Result<MouseMode, String> {
+    run_checked(root, reg, appdata, action, hc, &|_| true, 32)
+}
+
+/// [`run_with`] with a loader check and the person's pointer size.
+pub fn run_checked(
+    root: &Path,
+    reg: &mut dyn Registry,
+    appdata: &str,
+    action: CursorAction,
+    hc: bool,
+    loads: Loads,
+    size: u32,
+) -> Result<MouseMode, String> {
     let mode = load_mode(root);
     match action {
-        CursorAction::Apply => apply_magic_with(root, reg, appdata, hc)?,
+        CursorAction::Apply => apply_magic_checked(root, reg, appdata, hc, loads, size)?,
         CursorAction::Restore => magic_off_with(root, reg, appdata)?,
         CursorAction::None => return Ok(mode),
     }
@@ -229,11 +339,13 @@ pub fn run_soft(
     appdata: &str,
     action: CursorAction,
     hc: bool,
+    loads: Loads,
+    size: u32,
 ) -> Result<(MouseMode, Option<String>), String> {
     let mut soft = SoftReload {
         inner: reg,
         reload_error: None,
     };
-    let mode = run_with(root, &mut soft, appdata, action, hc)?;
+    let mode = run_checked(root, &mut soft, appdata, action, hc, loads, size)?;
     Ok((mode, soft.reload_error))
 }

@@ -40,7 +40,12 @@ fn high_contrast() -> bool {
 fn run(action: CursorAction) {
     let _one = BUSY.lock().unwrap_or_else(|e| e.into_inner());
     let hc = high_contrast();
-    let res = win_cursors::with_real_registry(|root, reg, appdata| mouse::run_soft(root, reg, appdata, action, hc));
+    #[cfg(windows)]
+    let (loads, size): (&dyn Fn(&std::path::Path) -> bool, u32) =
+        (&crate::magic_waves::mouse_win::windows_can_load, crate::magic_waves::mouse_win::pointer_size());
+    #[cfg(not(windows))]
+    let (loads, size): (&dyn Fn(&std::path::Path) -> bool, u32) = (&|_| true, 32);
+    let res = win_cursors::with_real_registry(|root, reg, appdata| mouse::run_soft(root, reg, appdata, action, hc, loads, size));
     let warning = match res {
         Err(e) => format!("{action:?} failed: {e}"),
         Ok((_, Some(e))) => format!("{action:?}: pointers written, but Windows did not reload them yet ({e})"),
@@ -198,6 +203,8 @@ pub(crate) struct MagicMouseStatus {
     pub last: String,
     /// The last problem applying or removing the pointer ("" = none).
     pub warning: String,
+    /// Which form of the pointer Windows accepted: "animated", "animated-<px>", "still", "".
+    pub variant: String,
 }
 
 #[tauri::command]
@@ -216,6 +223,7 @@ pub(crate) fn magic_mouse_status() -> MagicMouseStatus {
         grabs,
         last,
         warning: WARNING.lock().map(|w| w.clone()).unwrap_or_default(),
+        variant: if applied() { mouse::set_variant(&win_cursors::cursors_dir(), high_contrast()) } else { String::new() },
     }
 }
 

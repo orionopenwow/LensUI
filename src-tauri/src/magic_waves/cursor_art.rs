@@ -200,9 +200,10 @@ pub fn render(size: u32, phase: f32, with_tip: bool, high_contrast: bool) -> Fra
     }
 }
 
-/// One `.cur` holding every size for a phase. Animation frames stay DIB (widest support).
-fn cur_for(phase: f32, with_tip: bool, hc: bool) -> Vec<u8> {
-    let frames: Vec<Frame> = CURSOR_SIZES
+/// One `.cur` holding `sizes` for a phase. Animation frames stay DIB; a still pointer uses PNG
+/// for 96 px and up, like the rest of the cursor suite.
+fn cur_for(phase: f32, with_tip: bool, hc: bool, sizes: &[u32], png_large: bool) -> Vec<u8> {
+    let frames: Vec<Frame> = sizes
         .iter()
         .map(|&s| render(s, phase, with_tip, hc))
         .collect();
@@ -214,16 +215,75 @@ fn cur_for(phase: f32, with_tip: bool, hc: bool) -> Vec<u8> {
             hot_x: f.hot_x,
             hot_y: f.hot_y,
             rgba: &f.rgba,
-            png: false,
+            png: png_large && f.size >= 96,
         })
         .collect();
     encode_cur(&entries)
 }
 
-/// The animated `.ani` for the pointer (`with_tip`) or the busy ring.
+/// How an animated role is written. Lens tries them in order and keeps the first one Windows
+/// itself loads (`LoadCursorFromFile`), so Windows is never pointed at a file it refuses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Variant {
+    /// `.ani`, every frame holding all five sizes.
+    MultiAni,
+    /// `.ani` at one size (the person's current pointer size).
+    SingleAni(u32),
+    /// A still `.cur` (first frame, all sizes).
+    Still,
+}
+
+impl Variant {
+    pub fn label(self) -> String {
+        match self {
+            Variant::MultiAni => "animated".into(),
+            Variant::SingleAni(s) => format!("animated-{s}"),
+            Variant::Still => "still".into(),
+        }
+    }
+}
+
+/// The variants to try, best first. `size` is the person's pointer size in px.
+pub fn variants(size: u32) -> [Variant; 3] {
+    let single = *CURSOR_SIZES
+        .iter()
+        .min_by_key(|&&s| (s as i64 - size as i64).abs())
+        .unwrap_or(&32);
+    [
+        Variant::MultiAni,
+        Variant::SingleAni(single),
+        Variant::Still,
+    ]
+}
+
+/// File name and bytes of a Magic role (Arrow / AppStarting / Wait) in a variant.
+pub fn build_magic_role(role: CursorRole, hc: bool, v: Variant) -> (String, Vec<u8>) {
+    let with_tip = role != CursorRole::Wait;
+    let stem = role.reg_name().to_ascii_lowercase();
+    match v {
+        Variant::MultiAni => (
+            format!("{stem}.ani"),
+            build_ani_sized(with_tip, hc, &CURSOR_SIZES),
+        ),
+        Variant::SingleAni(s) => (
+            format!("{stem}-{s}.ani"),
+            build_ani_sized(with_tip, hc, &[s]),
+        ),
+        Variant::Still => (
+            format!("{stem}-still.cur"),
+            cur_for(0.0, with_tip, hc, &CURSOR_SIZES, true),
+        ),
+    }
+}
+
+/// The animated `.ani` for the pointer (`with_tip`) or the busy ring, at every size.
 pub fn build_ani(with_tip: bool, hc: bool) -> Vec<u8> {
+    build_ani_sized(with_tip, hc, &CURSOR_SIZES)
+}
+
+fn build_ani_sized(with_tip: bool, hc: bool, sizes: &[u32]) -> Vec<u8> {
     let frames: Vec<Vec<u8>> = (0..FRAMES)
-        .map(|f| cur_for(f as f32 / FRAMES as f32, with_tip, hc))
+        .map(|f| cur_for(f as f32 / FRAMES as f32, with_tip, hc, sizes, false))
         .collect();
     let title = if with_tip {
         "Lens Magic"
@@ -270,6 +330,17 @@ pub fn build_set(hc: bool) -> Vec<(CursorRole, String, Vec<u8>)> {
             (role, file_name(role), bytes)
         })
         .collect()
+}
+
+/// The familiar shape for a non-Magic role (text, hand, resize, …): Lens's Obsidian pointers.
+pub fn build_familiar(role: CursorRole, hc: bool) -> Vec<u8> {
+    let familiar = CursorStyle {
+        family: CursorFamily::Obsidian,
+        dark: true,
+        accent: "#fafafa".into(),
+        high_visibility: hc,
+    };
+    build_cursor_file(role, &familiar)
 }
 
 /// Folder name of the set under `cursors/sets/`.
