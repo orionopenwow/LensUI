@@ -303,6 +303,11 @@ pub struct ToolProposalEvent {
     /// `agentsafe::step_token`. Absent on steps that don't wait.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub approval_token: Option<String>,
+    /// Set when the model proposed several steps in one go: this step's place among them. The
+    /// whole plan is proposed before any step runs, so it can be shown as one list with an
+    /// Allow / Deny per step.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PlanPos>,
 }
 
 /// `lens://agentsafe/flag`: the gate found something in what a request attached ("context"),
@@ -635,33 +640,69 @@ fn wait_for(approvals: &Approvals, rx: &mpsc::Receiver<Answer>, call_id: &str, c
 const DECLINED: &str = "The user declined this action.";
 const NOT_MATCHED: &str = "Lens couldn't match that approval to this exact step, so it didn't run. Ask again if you still want it.";
 
-/// Issues the card's token for a waiting step, waits for the answer, and lets the step run only
-/// if the approval brought back that step's own unused token. `Ok(())` = run it.
-fn approved_step(binding: &crate::agentsafe::step_token::Binding, issue: impl FnOnce(Option<String>), deps: &RunDeps, call_id: &str, request_id: &str) -> Result<(), &'static str> {
+/// A step that is on a card, waiting for the person.
+struct Waiting {
+    rx: mpsc::Receiver<Answer>,
+    binding: crate::agentsafe::step_token::Binding,
+    token: Option<String>,
+}
+
+/// Registers a waiting step and issues its card's token. `propose` shows the card with it.
+fn open_step(binding: crate::agentsafe::step_token::Binding, propose: impl FnOnce(Option<String>), deps: &RunDeps, call_id: &str, request_id: &str) -> Waiting {
     use crate::agentsafe::step_token;
     let rx = deps.approvals.register(request_id, call_id);
-    let token = step_token::store().issue(binding, step_token::now_ms()).ok();
-    issue(token.clone());
-    match wait_for(deps.approvals, &rx, call_id, deps.cancel, deps.approval_timeout) {
+    let token = step_token::store().issue(&binding, step_token::now_ms()).ok();
+    propose(token.clone());
+    Waiting { rx, binding, token }
+}
+
+/// Waits for the answer and lets the step run only if the approval brought back that step's
+/// own unused token. `Ok(())` = run it.
+fn settle_step(w: &Waiting, deps: &RunDeps, call_id: &str) -> Result<(), &'static str> {
+    use crate::agentsafe::step_token;
+    match wait_for(deps.approvals, &w.rx, call_id, deps.cancel, deps.approval_timeout) {
         None => {
-            if let Some(t) = &token {
+            if let Some(t) = &w.token {
                 step_token::store().revoke(t);
             }
             Err(DECLINED)
         }
-        Some(offered) => step_token::store().redeem(Some(&offered), binding, step_token::now_ms()).map_err(|_| NOT_MATCHED),
+        Some(offered) => step_token::store().redeem(Some(&offered), &w.binding, step_token::now_ms()).map_err(|_| NOT_MATCHED),
     }
 }
 
-/// Proposes, gates, runs and reports one tool call. Returns (ok, message).
+fn approved_step(binding: crate::agentsafe::step_token::Binding, propose: impl FnOnce(Option<String>), deps: &RunDeps, call_id: &str, request_id: &str) -> Result<(), &'static str> {
+    let w = open_step(binding, propose, deps, call_id, request_id);
+    settle_step(&w, deps, call_id)
+}
+
+/// Where a step sits in a plan: several steps the model proposed in one go, shown together so
+/// the person can allow or deny each one (`ToolProposalEvent::plan`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanPos {
+    /// 0-based.
+    pub index: u32,
+    pub total: u32,
+}
+
+/// A step after validation and the safety gate, already shown to the person.
+enum Prepared {
+    /// Invalid or stopped by the gate: the outcome is known and nothing will run.
+    Settled(bool, String),
+    /// Will run, after the person's OK when `wait` is set.
+    Ready { name: String, args: Value, wait: Option<Waiting> },
+}
+
+/// Validates, gates and proposes one tool call. A step that needs the person's OK is registered
+/// and its card (with its one-time token) is shown; nothing runs here.
 ///
 /// Every step passes the agent-safety gate here (`step_gate`), whoever started the request:
 /// Lens Command, voice, the AI dock, Snip, the bridge inbox. The gate can refuse a step or make
 /// a low-risk one wait for the person; it never lets anything through that the tool's own risk
 /// would have stopped.
-fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunDeps, safety: &StepSafety, ran: &mut Vec<String>) -> (bool, String) {
+fn prepare_step(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunDeps, safety: &StepSafety, plan: Option<PlanPos>) -> Prepared {
     let risk = tools::risk_of(name);
-    let (ok, message) = match tools::validate(name, input) {
+    let args = match tools::validate(name, input) {
         Err(e) => {
             deps.sink.tool_proposal(&ToolProposalEvent {
                 id: id.into(),
@@ -672,76 +713,97 @@ fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunD
                 risk,
                 safety: Vec::new(),
                 approval_token: None,
+                plan,
             });
-            (false, e)
+            return Prepared::Settled(false, e);
         }
-        Ok(args) => {
-            let verdict = step_gate(name, &args, safety);
-            let summary = tools::describe(name, &args);
-            let mut notes = SafetyNote::from_reasons(verdict.reasons());
-            if !verdict.is_block() {
-                // Risk-class defaults are what the card already says ("Allow", the undo line).
-                notes.retain(|n| !crate::control::safety::QUIET.contains(&n.code.as_str()));
-            }
-            if verdict.is_ask() && safety.untrusted && !notes.iter().any(|n| n.code.starts_with("inject.")) {
-                notes.insert(
-                    0,
-                    SafetyNote {
-                        code: "origin.untrusted".into(),
-                        severity: "low".into(),
-                        detail: "Planned after reading text you attached, so Lens checks with you first".into(),
-                    },
-                );
-            }
-            if verdict.is_block() {
-                deps.sink.tool_proposal(&ToolProposalEvent {
-                    id: id.into(),
-                    call_id: call_id.into(),
-                    tool: name.into(),
-                    args: args.clone(),
-                    summary: summary.clone(),
-                    risk: Risk::Blocked,
-                    safety: notes.clone(),
-                    approval_token: None,
-                });
-                deps.sink.safety(&SafetyFlagEvent { id: id.into(), source: "step".into(), label: summary, verdict: "block".into(), set_aside: 0, reasons: notes });
-                (false, format!("Lens stopped this step for safety: {}. Tell the user; do not try another way.", verdict.text()))
-            } else {
-                let ask = verdict.is_ask();
-                let propose = |approval_token: Option<String>| {
-                    deps.sink.tool_proposal(&ToolProposalEvent {
-                        id: id.into(),
-                        call_id: call_id.into(),
-                        tool: name.into(),
-                        args: args.clone(),
-                        summary: summary.clone(),
-                        risk: if ask { Risk::Confirm } else { risk },
-                        safety: if ask { notes.clone() } else { Vec::new() },
-                        approval_token,
-                    })
-                };
-                let go = if risk == Risk::Confirm || ask {
-                    // The binding is made from the arguments that will run, not from the card.
-                    approved_step(&step_binding(id, call_id, name, &args), propose, deps, call_id, id)
-                } else {
-                    propose(None);
-                    Ok(())
-                };
-                match go {
-                    Ok(()) => {
-                        ran.push(name.to_string());
-                        match deps.host.run(name, &args) {
-                            Ok(m) => (true, m),
-                            Err(e) => (false, e),
-                        }
+        Ok(args) => args,
+    };
+    let verdict = step_gate(name, &args, safety);
+    let summary = tools::describe(name, &args);
+    let mut notes = SafetyNote::from_reasons(verdict.reasons());
+    if !verdict.is_block() {
+        // Risk-class defaults are what the card already says ("Allow", the undo line).
+        notes.retain(|n| !crate::control::safety::QUIET.contains(&n.code.as_str()));
+    }
+    if verdict.is_ask() && safety.untrusted && !notes.iter().any(|n| n.code.starts_with("inject.")) {
+        notes.insert(
+            0,
+            SafetyNote {
+                code: "origin.untrusted".into(),
+                severity: "low".into(),
+                detail: "Planned after reading text you attached, so Lens checks with you first".into(),
+            },
+        );
+    }
+    if verdict.is_block() {
+        deps.sink.tool_proposal(&ToolProposalEvent {
+            id: id.into(),
+            call_id: call_id.into(),
+            tool: name.into(),
+            args: args.clone(),
+            summary: summary.clone(),
+            risk: Risk::Blocked,
+            safety: notes.clone(),
+            approval_token: None,
+            plan,
+        });
+        deps.sink.safety(&SafetyFlagEvent { id: id.into(), source: "step".into(), label: summary, verdict: "block".into(), set_aside: 0, reasons: notes });
+        return Prepared::Settled(false, format!("Lens stopped this step for safety: {}. Tell the user; do not try another way.", verdict.text()));
+    }
+    let ask = verdict.is_ask();
+    let propose = |approval_token: Option<String>| {
+        deps.sink.tool_proposal(&ToolProposalEvent {
+            id: id.into(),
+            call_id: call_id.into(),
+            tool: name.into(),
+            args: args.clone(),
+            summary: summary.clone(),
+            risk: if ask { Risk::Confirm } else { risk },
+            safety: if ask { notes.clone() } else { Vec::new() },
+            approval_token,
+            plan,
+        })
+    };
+    let wait = if risk == Risk::Confirm || ask {
+        // The binding is made from the arguments that will run, not from the card.
+        Some(open_step(step_binding(id, call_id, name, &args), propose, deps, call_id, id))
+    } else {
+        propose(None);
+        None
+    };
+    Prepared::Ready { name: name.to_string(), args, wait }
+}
+
+/// Waits for the person where the step needs it, runs it, and reports the result.
+fn finish_step(id: &str, call_id: &str, step: Prepared, deps: &RunDeps, ran: &mut Vec<String>) -> (bool, String) {
+    let (ok, message) = match step {
+        Prepared::Settled(ok, message) => (ok, message),
+        Prepared::Ready { name, args, wait } => {
+            let go = match &wait {
+                Some(w) => settle_step(w, deps, call_id),
+                None => Ok(()),
+            };
+            match go {
+                Ok(()) => {
+                    ran.push(name.clone());
+                    match deps.host.run(&name, &args) {
+                        Ok(m) => (true, m),
+                        Err(e) => (false, e),
                     }
-                    Err(why) => (false, why.to_string()),
                 }
+                Err(why) => (false, why.to_string()),
             }
         }
     };
     deps.sink.tool_result(&ToolResultEvent { id: id.into(), call_id: call_id.into(), ok, message: message.clone() });
     (ok, message)
+}
+
+/// Proposes, gates, runs and reports one tool call. Returns (ok, message).
+fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunDeps, safety: &StepSafety, ran: &mut Vec<String>) -> (bool, String) {
+    let step = prepare_step(id, call_id, name, input, deps, safety, None);
+    finish_step(id, call_id, step, deps, ran)
 }
 
 /// `ai_run_intent`: runs a parsed intent (from `ai_intent`, possibly edited by the UI) through
@@ -835,10 +897,11 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
                     risk: Risk::Confirm,
                     safety: Vec::new(),
                     approval_token,
+                    plan: None,
                 })
             };
             // Consent to send is bound like any step: this request, this provider, these fields.
-            let ok = approved_step(&step_binding(id, &call_id, "send_to_cloud", &consent_args), propose, deps, &call_id, id).is_ok();
+            let ok = approved_step(step_binding(id, &call_id, "send_to_cloud", &consent_args), propose, deps, &call_id, id).is_ok();
             deps.sink.tool_result(&ToolResultEvent {
                 id: id.into(),
                 call_id,
@@ -894,10 +957,20 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
         }
         messages.push(ChatMessage { role: Role::Assistant, content: assistant });
 
+        // Several steps at once are a plan: all of them are checked and shown first (each
+        // waiting step with its own token), then run in order. Denying one skips only that one.
+        let total = out.tool_calls.len() as u32;
+        let plan = |n: usize| (total > 1).then_some(PlanPos { index: n as u32, total });
+        let call_id = |n: usize| format!("{}-r{}-{}", id, round, n);
+        let prepared: Vec<Prepared> = out
+            .tool_calls
+            .iter()
+            .enumerate()
+            .map(|(n, (_, name, input))| prepare_step(id, &call_id(n), name, input, deps, &safety, plan(n)))
+            .collect();
         let mut results = Vec::new();
-        for (n, (tid, name, input)) in out.tool_calls.iter().enumerate() {
-            let call_id = format!("{}-r{}-{}", id, round, n);
-            let (ok, message) = run_tool_call(id, &call_id, name, input, deps, &safety, &mut ran_tools);
+        for (n, (step, (tid, _, _))) in prepared.into_iter().zip(out.tool_calls.iter()).enumerate() {
+            let (ok, message) = finish_step(id, &call_id(n), step, deps, &mut ran_tools);
             results.push(Block::ToolResult { id: tid.clone(), content: message, is_error: !ok });
         }
         messages.push(ChatMessage { role: Role::User, content: results });

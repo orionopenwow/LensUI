@@ -121,6 +121,9 @@ export interface AiToolProposalEvent {
   /** On steps that wait for you: the one-time token to send back with the approval. Lens Core
    *  bound it to this exact step and refuses the step without it. */
   approval_token?: string;
+  /** Set when the model proposed several steps in one go: this step's place among them. The
+   *  whole plan is proposed before any step runs (see src/approval/plan.ts). */
+  plan?: { index: number; total: number };
 }
 
 export interface AiToolResultEvent {

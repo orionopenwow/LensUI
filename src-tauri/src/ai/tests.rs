@@ -14,6 +14,8 @@ struct Recorder {
     forged: Option<String>,
     /// Every token seen on a proposal.
     tokens: Mutex<Vec<String>>,
+    /// Tools to say no to even when `answer` is yes (per-step deny in a plan).
+    deny: Vec<String>,
 }
 
 impl Recorder {
@@ -48,6 +50,7 @@ impl AiSink for Recorder {
                 self.tokens.lock().unwrap().push(t.clone());
             }
             if let Some(a) = self.answer {
+                let a = a && !self.deny.contains(&ev.tool);
                 let token = self.forged.clone().or_else(|| ev.approval_token.clone());
                 self.approvals.resolve(&ev.call_id, a, token.as_deref()).unwrap();
             }
@@ -437,7 +440,7 @@ fn wire_shapes_match_the_contract() {
     assert!(req.allow_tools);
     let minimal: AiRequest = serde_json::from_value(json!({"prompt": "hi"})).unwrap();
     assert!(!minimal.allow_tools && minimal.provider.is_none());
-    let p = ToolProposalEvent { id: "a".into(), call_id: "c".into(), tool: "t".into(), args: json!({}), summary: "s".into(), risk: Risk::Low, safety: Vec::new(), approval_token: None };
+    let p = ToolProposalEvent { id: "a".into(), call_id: "c".into(), tool: "t".into(), args: json!({}), summary: "s".into(), risk: Risk::Low, safety: Vec::new(), approval_token: None, plan: None };
     assert_eq!(serde_json::to_value(&p).unwrap()["risk"], "low");
 }
 
@@ -598,6 +601,114 @@ fn shelf_text_is_a_gated_field() {
     run(&cloud, &req, PrivacyMode::AskEachTime, &rec, &Host::default());
     assert_eq!(rec.all("proposal")[0]["args"]["fields"], json!(["shelf_text"]));
     assert!(cloud.seen.lock().unwrap().is_empty());
+}
+
+// --- plans: several steps proposed at once ------------------------------------------------------
+
+fn three_step_plan() -> FakeCloud {
+    FakeCloud::new(vec![
+        Output {
+            tool_calls: vec![
+                ("t1".into(), "set_volume".into(), json!({"level": 20})),
+                ("t2".into(), "close_app".into(), json!({"name": "notepad"})),
+                ("t3".into(), "lock_screen".into(), json!({})),
+            ],
+            stop: "tool_use".into(),
+            ..Default::default()
+        },
+        Output { text: "Done.".into(), stop: "end_turn".into(), ..Default::default() },
+    ])
+}
+
+#[test]
+fn a_plan_is_shown_whole_before_any_step_runs() {
+    let cloud = three_step_plan();
+    let rec = Recorder::with(Some(true));
+    let host = Host::default();
+    let d = run(&cloud, &ask("quiet down and lock up", true), PrivacyMode::AllowCloud, &rec, &host);
+    assert_eq!(d.error, None);
+    // All three proposals come first, then the results in order.
+    let kinds: Vec<String> = rec.kinds().into_iter().filter(|k| k == "proposal" || k == "result").collect();
+    assert_eq!(kinds, ["proposal", "proposal", "proposal", "result", "result", "result"]);
+    let props = rec.all("proposal");
+    for (i, p) in props.iter().enumerate() {
+        assert_eq!(p["plan"], json!({ "index": i, "total": 3 }), "{p}");
+    }
+    // The safe step asks nothing; each risky step has its own token.
+    assert!(props[0].get("approval_token").is_none());
+    assert_eq!(props[0]["risk"], "low");
+    let (a, b) = (props[1]["approval_token"].as_str().unwrap(), props[2]["approval_token"].as_str().unwrap());
+    assert_ne!(a, b);
+    let ran: Vec<String> = host.calls.lock().unwrap().iter().map(|(t, _)| t.clone()).collect();
+    assert_eq!(ran, ["set_volume", "close_app", "lock_screen"]);
+}
+
+#[test]
+fn denying_one_step_of_a_plan_skips_only_that_step() {
+    let cloud = three_step_plan();
+    let rec = Recorder { answer: Some(true), deny: vec!["close_app".into()], ..Default::default() };
+    let host = Host::default();
+    let d = run(&cloud, &ask("quiet down and lock up", true), PrivacyMode::AllowCloud, &rec, &host);
+    assert_eq!(d.error, None);
+    let ran: Vec<String> = host.calls.lock().unwrap().iter().map(|(t, _)| t.clone()).collect();
+    assert_eq!(ran, ["set_volume", "lock_screen"]);
+    let results = rec.all("result");
+    assert_eq!((results[0]["ok"].as_bool(), results[1]["ok"].as_bool(), results[2]["ok"].as_bool()), (Some(true), Some(false), Some(true)));
+    assert!(results[1]["message"].as_str().unwrap().contains("declined"));
+    // The model is told which step was declined.
+    let seen = cloud.seen.lock().unwrap();
+    assert_eq!(seen.len(), 2);
+}
+
+#[test]
+fn one_steps_token_cannot_approve_another_step_of_the_same_plan() {
+    // Every approval comes back with the token of the *first* waiting step (close_app).
+    struct Crossed(Recorder, Mutex<Option<String>>);
+    impl AiSink for Crossed {
+        fn delta(&self, ev: &DeltaEvent) {
+            self.0.delta(ev)
+        }
+        fn done(&self, ev: &DoneEvent) {
+            self.0.done(ev)
+        }
+        fn tool_proposal(&self, ev: &ToolProposalEvent) {
+            self.0.push("proposal", serde_json::to_value(ev).unwrap());
+            if let Some(t) = &ev.approval_token {
+                let mut first = self.1.lock().unwrap();
+                let token = first.get_or_insert_with(|| t.clone()).clone();
+                self.0.approvals.resolve(&ev.call_id, true, Some(&token)).unwrap();
+            }
+        }
+        fn tool_result(&self, ev: &ToolResultEvent) {
+            self.0.tool_result(ev)
+        }
+    }
+    let cloud = three_step_plan();
+    let sink = Crossed(Recorder::with(None), Mutex::new(None));
+    let host = Host::default();
+    let cancel = AtomicBool::new(false);
+    let deps = RunDeps {
+        provider: &cloud,
+        host: &host,
+        sink: &sink,
+        approvals: &sink.0.approvals,
+        cancel: &cancel,
+        privacy: PrivacyMode::AllowCloud,
+        max_tokens: 512,
+        system_extra: String::new(),
+        approval_timeout: Duration::from_millis(400),
+    };
+    run_request("ai-test-plan", &ask("quiet down and lock up", true), &deps);
+    let ran: Vec<String> = host.calls.lock().unwrap().iter().map(|(t, _)| t.clone()).collect();
+    assert_eq!(ran, ["set_volume", "close_app"], "lock_screen was approved with close_app's token, so it must not run");
+}
+
+#[test]
+fn a_single_step_is_not_a_plan() {
+    let rec = Recorder::with(Some(true));
+    let host = Host::default();
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
+    assert!(rec.all("proposal")[0].get("plan").is_none());
 }
 
 // --- agent safety: the gate sits inside the runner (Fable wave 1, B-04) -----------------------

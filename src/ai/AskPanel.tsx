@@ -6,6 +6,8 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProposalApproval } from "../approval/LocalApproval";
+import { PlanCard } from "../approval/PlanCard";
+import { planIds, planSteps } from "../approval/plan";
 import { SafetyFlagBanners } from "../agentsafe/SafetyFlags";
 import {
   AppWindow,
@@ -235,6 +237,9 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   const [mention, setMention] = useState<{ query: string; start: number; caret: number } | null>(null);
   const [mentionIdx, setMentionIdx] = useState(0);
   const { state, ask, cancel, decide, reset } = useAiRequest();
+  // Several steps proposed at once are one plan: one list, an Allow / Deny per step.
+  const plan = planSteps(state.tools);
+  const inPlan = planIds(plan);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoSent = useRef(false);
@@ -571,7 +576,8 @@ export const AskPanel: React.FC<AskPanelProps> = ({
               </div>
             )}
             <SafetyFlagBanners sources={["context", "step"]} />
-            {state.tools.map((t) => (
+            {plan ? <PlanCard steps={plan} onDecide={(callId, ok) => decide(callId, ok)} /> : null}
+            {state.tools.filter((t) => !inPlan.has(t.call_id)).map((t) => (
               <ToolCard key={t.call_id} card={t} onDecide={(ok) => decide(t.call_id, ok)} />
             ))}
             {(state.phase === "done" || state.phase === "cancelled") && (
