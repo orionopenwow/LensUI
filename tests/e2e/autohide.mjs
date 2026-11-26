@@ -96,7 +96,7 @@ async function noFlyoutOpen(s, label) {
 
 
 // ---- Dock on a side edge (left/right) --------------------------------------------------------
-const DOCK_STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands"];
+const DOCK_STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"];
 const SETTINGS = "Lens Control Center";
 const QUICK = "Lens Quick Settings";
 /** The pill(s) the Dock draws, in physical screen px (window rect + CSS rect × device pixel ratio). */
