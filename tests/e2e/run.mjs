@@ -644,6 +644,77 @@ const SCENARIOS = [
     },
   },
   {
+    id: "magic-widgets",
+    title: "Dashboard widgets: add one from the gallery after its consent screen, fetch rules hold, remove it",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      // Off by default: every widget command refuses.
+      if (await invoke(dock, "widgets_add", { galleryId: "clocks", title: "World clocks", params: {}, hosts: [] }).then(() => true, () => false)) throw new Error("widgets_add worked with the widgets flag off");
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: true, widgets: true };
+      });
+      await sleep(800);
+      const before = await invoke(dock, "widgets_state");
+      for (const w of before.widgets || []) await invoke(dock, "widgets_remove", { id: w.id });
+
+      await invoke(dock, "open_dashboard");
+      const dash = await waitForSurface(s, "dashboard");
+      const take = watchErrors(dash);
+      await dash.waitForSelector(".mdb-lane", { timeout: 8000 });
+      await sleep(400);
+      await domClick(dash.locator('.mdb-layout:has-text("Board")').first());
+      await dash.waitForSelector('[data-lane="widgets"] [data-view="list"]', { timeout: 5000 });
+      if (!(await dash.locator('[data-lane="x"]').count())) throw new Error("the X lane is missing from Board with widgets on");
+
+      // Gallery → World clocks → settings → consent → Add.
+      await domClick(dash.locator('[data-lane="widgets"] .mwg-btn:has-text("Add a widget")').first());
+      await dash.waitForSelector('[data-gallery-id="clocks"]', { timeout: 5000 });
+      await domClick(dash.locator('[data-gallery-id="clocks"]').first());
+      await dash.waitForSelector('[data-view="form"]', { timeout: 5000 });
+      await domClick(dash.locator('[data-view="form"] .mwg-btn:has-text("Next")').first());
+      await dash.waitForSelector('[data-view="consent"]', { timeout: 5000 });
+      await shot(dash, "magic-widgets-consent");
+      await domClick(dash.locator('[data-view="consent"] .mwg-primary').first());
+      await dash.waitForSelector('[data-widget="clocks"] .mac-facts', { timeout: 8000 });
+      await shot(dash, "magic-widgets-added");
+      const st = await invoke(dock, "widgets_state");
+      const w = st.widgets.find((x) => x.galleryId === "clocks");
+      if (!w) throw new Error(`the added widget isn't in Lens's store: ${JSON.stringify(st)}`);
+
+      // Fetch rules: a local widget has no approved hosts, so every fetch is refused, and this PC
+      // and the local network are refused outright (no request is made in either case).
+      for (const url of ["https://api.open-meteo.com/v1/forecast", "https://127.0.0.1/", "https://localhost/", "http://example.com/"]) {
+        if (await invoke(dock, "widgets_fetch", { id: w.id, url, maxAgeMinutes: 15 }).then(() => true, () => false)) throw new Error(`widgets_fetch fetched ${url} for a widget without that host`);
+      }
+      // The kill switch turns fetching off and back on.
+      if (!(await invoke(dock, "widgets_set_fetch_off", { off: true })).fetchOff) throw new Error("the kill switch didn't turn fetching off");
+      await invoke(dock, "widgets_set_fetch_off", { off: false });
+
+      // Warm open: close and open again; the page records how long the rebuild took.
+      await invoke(dock, "dashboard_hide", { reason: "test" });
+      await sleep(400);
+      await dash.evaluate(() => delete document.documentElement.dataset.dashboardWarmMs);
+      await invoke(dock, "open_dashboard");
+      await dash.waitForFunction(() => document.documentElement.dataset.dashboardWarmMs !== undefined, null, { timeout: 5000 }).catch(() => {});
+      console.log(`note  magic-widgets: warm open ${await dash.evaluate(() => document.documentElement.dataset.dashboardWarmMs ?? "not recorded")} ms (budget 150 ms, gated in tools/perf)`);
+
+      // Remove it from the lane.
+      await dash.waitForSelector('[data-widget="clocks"]', { timeout: 5000 });
+      await domClick(dash.locator('[data-widget="clocks"] button[aria-label^="Remove"]').first());
+      await dash.waitForFunction(() => !document.querySelector('[data-widget="clocks"]'), null, { timeout: 5000 });
+      if ((await invoke(dock, "widgets_state")).widgets.length) throw new Error("the widget was still in Lens's store after Remove");
+
+      // Back to Glance and flags off.
+      await domClick(dash.locator('.mdb-layout:has-text("Glance")').first());
+      await invoke(dock, "dashboard_hide", { reason: "test reset" }).catch(() => {});
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: false, widgets: false };
+      });
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "dock-search-dismiss",
     title: "Dock search closes on a click outside and when another app takes focus",
     async run(s) {
