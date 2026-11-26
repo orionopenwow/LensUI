@@ -41,6 +41,13 @@ export function buildInventory(root) {
   // 5. Surfaces (windows) from the Tauri config.
   const conf = JSON.parse(read("src-tauri/tauri.conf.json"));
   for (const w of conf.app?.windows || []) add({ id: `surface:${w.label}`, kind: "surface", label: w.title || w.label, source: "tauri.conf.json", surface: w.label, tier: "headless" });
+  // …and the windows Rust builds on first use (`WebviewUrl::App("index.html?surface=…")`).
+  const rustWin = /WebviewUrl::App\("index\.html\?surface=([a-z-]+)"/g;
+  for (const f of ["commands/dashboard.rs", "commands/magic.rs"]) {
+    let text = "";
+    try { text = read(`src-tauri/src/${f}`); } catch { continue; }
+    for (let m; (m = rustWin.exec(text)); ) add({ id: `surface:${m[1]}`, kind: "surface", label: m[1], source: `src-tauri/src/${f}`, surface: m[1], tier: "headless" });
+  }
 
   // 6. The feature catalogue (docs/brain/FEATURES.md): table rows with a status.
   try {

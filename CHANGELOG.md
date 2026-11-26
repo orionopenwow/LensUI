@@ -14,6 +14,10 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Magic Dashboard (M1, off by default):** with Magic Dashboard on, "dashboard" in Command or the
+  Top Bar button opens a slim panel with Inbox, Feeds, Today, Shelf and Now playing lanes filled
+  from Lens's own data, in Glance, Focus or Board. Nothing is fetched from the network. Learned
+  ordering stays off unless you turn it on, and can be forgotten. See docs/DASHBOARD.md.
 - **Magic previews (off by default):** the groundwork for the Magic Dashboard, Magic Mouse, the
   Magic button, Shelf to Notes and Lens Studio v2. Nothing changes unless you turn one on in
   Settings › About & Testing › Magic (preview), which only appears in Tester mode. See

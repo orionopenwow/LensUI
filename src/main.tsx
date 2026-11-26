@@ -58,6 +58,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
   // Magic right-click window at the pointer (docs/MAGIC.md).
   magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
+  // Magic Dashboard (docs/plans/MAGIC_WAVES.md; only opened while magicWaves.dashboard is on).
+  dashboard: lazy(() => import("./dashboard/DashboardWindow").then((m) => ({ default: m.DashboardWindow }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).

@@ -361,6 +361,22 @@
         "decorations": false,
         "transparent": true,
         "create": false
+      },
+      {
+        "label": "dashboard",
+        "title": "Lens Dashboard",
+        "url": "index.html?surface=dashboard",
+        "width": 440,
+        "height": 720,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
       }
     ],
     "security": {

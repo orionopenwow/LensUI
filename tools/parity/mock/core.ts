@@ -275,6 +275,43 @@ const handlers: Record<string, (a: any) => any> = {
         ? { version: "0.3.0", seenVersion: "", onboardingCompleted: true, forced: false }
         : { version: "0.3.0", seenVersion: "0.3.0", onboardingCompleted: true, forced: false },
 };
+// Magic Dashboard (docs/plans/MAGIC_WAVES.md, wave M1): the window's commands, and with
+// ?dashdata=1 a little clearly-invented local data for its lanes (Messages, Feeds, Shelf and
+// today's calendar), so the parity scenes show filled lanes. Without it the lanes stay empty.
+handlers.dashboard_available = () => !!(config as any).magicWaves?.dashboard;
+handlers.open_dashboard = () => null;
+handlers.toggle_dashboard = () => true;
+handlers.dashboard_hide = () => null;
+if (params.get("dashdata")) {
+  const now = Date.now();
+  const min = 60_000;
+  handlers.messages_inbox = () => [
+    { id: "c1", source: "matrix", app: "Matrix", title: "Sample: Design team", unread: 3, mentions: 1, lastPreview: "Sample: can you check the new icons?", lastTs: now - 6 * min, url: "", vip: false, canReply: true },
+    { id: "c2", source: "space:discord", app: "Discord", title: "Sample: Lens testers", unread: 12, mentions: 0, lastPreview: null, lastTs: now - 40 * min, url: "", vip: false, canReply: false },
+    { id: "c3", source: "space:slack", app: "Slack", title: "Sample: read thread", unread: 0, mentions: 0, lastPreview: null, lastTs: now - 90 * min, url: "", vip: false, canReply: false },
+  ];
+  handlers.feeds_timeline = () => ({
+    items: [
+      { key: "f1", source: "Bluesky", kind: "post", author: "Sample Author", authorHandle: null, title: null, text: "Sample: a post you follow about matte desktop design.", media: [], url: "https://example.com/post/1", ts: now - 20 * min, reply: false, replies: null, reposts: null, likes: null, repostedBy: [] },
+      { key: "f2", source: "RSS · Sample Blog", kind: "article", author: "", authorHandle: null, title: "Sample: Release notes for a tool you use", text: "What changed this week.", media: [], url: "https://example.com/post/2", ts: now - 3 * 60 * min, reply: false, replies: null, reposts: null, likes: null, repostedBy: [] },
+    ],
+    hiddenByMutes: 0,
+    quiet: false,
+    sources: [],
+  });
+  handlers.shelf_list = () => [
+    { id: "sh1", shelf: "default", kind: "selection", title: "Sample: clipped quote", text: "Sample: the quote you saved earlier.", tags: [], pinned: true, local_only: false, created_ms: now - 2 * 60 * min, updated_ms: now, order: 0, chars: 36, approx_tokens: 9, source_app: "Lens Browser" },
+  ];
+  try {
+    const d = new Date();
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const later = new Date(now + 45 * min);
+    const hhmm = `${String(later.getHours()).padStart(2, "0")}:${String(later.getMinutes()).padStart(2, "0")}`;
+    if (later.getDate() === d.getDate()) localStorage.setItem("lens_calendar_events_v1", JSON.stringify([{ id: "e1", dateKey: key, time: hhmm, title: "Sample: Design review", done: false }]));
+  } catch {
+    /* no storage in this context */
+  }
+}
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
 /** Commands with their arguments, for checks that care which window a call names. */

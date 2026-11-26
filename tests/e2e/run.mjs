@@ -534,6 +534,116 @@ const SCENARIOS = [
     },
   },
   {
+    id: "magic-dashboard",
+    title: "Magic Dashboard: off by default, opens from Command when on, shows its lanes, closes every way",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const visible = () => invoke(dock, "is_surface_visible_cmd", { label: "dashboard" });
+      const waitVisible = async (want, what, ms = 4000) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < ms) {
+          if ((await visible()) === want) return;
+          await sleep(100);
+        }
+        throw new Error(`${what}: expected the Dashboard to be ${want ? "showing" : "hidden"}`);
+      };
+      // Off by default: nothing offered, opening refuses, no window.
+      if (await invoke(dock, "dashboard_available")) throw new Error("the Dashboard is available with its flag off");
+      const refused = await invoke(dock, "open_dashboard").then(() => false, () => true);
+      if (!refused) throw new Error("open_dashboard opened with the flag off");
+      if (surfaces(s).dashboard) throw new Error("a Dashboard window exists with the flag off");
+
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: true };
+        c.command = { ...(c.command || {}), enabled: true };
+      });
+      await sleep(800);
+      if (!(await invoke(dock, "dashboard_available"))) {
+        const back = await invoke(dock, "get_config");
+        throw new Error(`turning the flag on didn't reach Lens: get_config has magicWaves=${JSON.stringify(back.magicWaves)}`);
+      }
+
+      // Open it from Command by typing "dashboard". Start from a closed Command so nothing left
+      // from an earlier scenario (a safety card, a thread) is in the way.
+      await invoke(dock, "hide_surface", { label: "command" }).catch(() => {});
+      await sleep(300);
+      await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dashboard" } });
+      const cmd = await waitForSurface(s, "command");
+      await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dashboard", null, { timeout: 8000 });
+      // /dashboard is offered once Command has asked Rust whether the flag is on.
+      await sleep(600);
+      await cmd.waitForFunction(() => document.hasFocus() && !!document.documentElement.dataset.commandKeysReady, null, { timeout: 8000 }).catch(() => {});
+      await cmd.locator("textarea").first().press("Enter");
+      // The first open may still be building the window on a slow runner: allow 15 s.
+      let opened = await waitVisible(true, "after Command", 15000).then(() => true, () => false);
+      if (!opened && Number(await cmd.evaluate(() => document.documentElement.dataset.commandEnterSeen || 0)) === 0) {
+        console.log("WARN magic-dashboard: the first Enter never reached Command (B-12c); sending it once more");
+        await cmd.locator("textarea").first().press("Enter");
+        opened = await waitVisible(true, "after Command (second Enter)").then(() => true, () => false);
+      }
+      if (!opened) {
+        const trace = await cmd.evaluate(() => {
+          const d = document.documentElement.dataset;
+          return { enterSeen: d.commandEnterSeen, enter: d.commandEnter, queued: d.commandEnterQueued, run: d.commandRun, mode: document.querySelector("[data-mode]")?.getAttribute("data-mode") ?? null, text: document.querySelector("textarea")?.value ?? null };
+        });
+        const avail = await invoke(dock, "dashboard_available").catch((e) => `error: ${e}`);
+        throw new Error(`"dashboard" in Command did not open the Dashboard (available=${avail}; trace ${JSON.stringify(trace)}); Command ends with: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(-400)}`);
+      }
+
+      const dash = await waitForSurface(s, "dashboard");
+      const take = watchErrors(dash);
+      // Shown and painted: the page marks each open, and the lanes are on screen.
+      await dash.waitForFunction(() => !!document.documentElement.dataset.dashboardOpened, null, { timeout: 8000 });
+      await dash.waitForSelector(".mdb-lane", { timeout: 8000 });
+      // Still showing once the opening grace is over (the focus handoff from Command didn't close it).
+      await sleep(700);
+      if (!(await visible())) throw new Error("the Dashboard closed itself right after opening from Command");
+      const lanes = await dash.evaluate(() => [...document.querySelectorAll(".mdb-lane")].map((l) => l.getAttribute("data-lane")));
+      for (const want of ["today", "inbox", "shelf", "nowplaying"]) if (!lanes.includes(want)) throw new Error(`Glance is missing the ${want} lane (has ${lanes.join(", ")})`);
+      await shot(dash, "magic-dashboard");
+
+      // Esc closes it.
+      await dash.keyboard.press("Escape");
+      await waitVisible(false, "after Esc");
+      // The Top Bar button toggles it: open, then a second press closes.
+      await invoke(dock, "toggle_dashboard");
+      await waitVisible(true, "after the button");
+      await invoke(dock, "toggle_dashboard");
+      await waitVisible(false, "after a second press of the button");
+      // × closes it.
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "reopened");
+      await sleep(300);
+      await domClick(dash.locator(".mdb-close").first());
+      await waitVisible(false, "after ×");
+      // Another app taking the focus closes it (only checkable if Windows lets Notepad take the
+      // foreground on this runner, as in dock-search-dismiss).
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "reopened again");
+      await sleep(800);
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" });
+      const fg = ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null; Start-Sleep -Milliseconds 300; Add-Type -Namespace W -Name F -MemberDefinition '[DllImport("user32.dll")] public static extern System.IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);'; $id = 0; [W.F]::GetWindowThreadProcessId([W.F]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      try {
+        if (/notepad/i.test(fg)) await waitVisible(false, "after Notepad took the focus");
+        else console.log(`note  magic-dashboard: Windows kept "${fg}" in front (foreground lock); focus step skipped`);
+      } finally {
+        try { execFileSync("taskkill", ["/IM", "notepad.exe", "/F"], { stdio: "ignore" }); } catch {}
+      }
+      await invoke(dock, "dashboard_hide", { reason: "test reset" }).catch(() => {});
+
+      // Turning the flag off: hidden, and opening refuses again.
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "before turning it off");
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: false };
+      });
+      await waitVisible(false, "after turning the flag off");
+      if (!(await invoke(dock, "open_dashboard").then(() => false, () => true))) throw new Error("open_dashboard opened after the flag was turned off");
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "dock-search-dismiss",
     title: "Dock search closes on a click outside and when another app takes focus",
     async run(s) {
@@ -607,7 +717,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard/i.test(l)).slice(-12);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }
