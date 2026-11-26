@@ -68,7 +68,7 @@
   "categories": {
     "AI access": 13,
     "Alt+drag": 6,
-    "Behaviour": 16,
+    "Behaviour": 17,
     "Clipboard": 10,
     "Command & Shelf": 1,
     "Desktop": 1,
@@ -91,7 +91,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 183,
+  "count": 184,
   "entries": [
     {
       "capability": "change_settings",
@@ -1319,6 +1319,21 @@
     },
     {
       "capability": "change_settings",
+      "category": "Behaviour",
+      "default": true,
+      "description": "Sets the auto close popouts option under Behaviour.",
+      "example": "{\"args\":{\"changes\":{\"func.autoClosePopouts\":false}},\"tool\":\"lens_set\"}",
+      "label": "Auto close popouts",
+      "path": "func.autoClosePopouts",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
       "category": "Clipboard",
       "default": false,
       "description": "Keeps a private clipboard history on this PC.",
@@ -1446,21 +1461,6 @@
       "example": "{\"args\":{\"changes\":{\"func.perMonitorBars\":true}},\"tool\":\"lens_set\"}",
       "label": "Per monitor bars",
       "path": "func.perMonitorBars",
-      "reversible": true,
-      "risk": "low",
-      "schema": {
-        "type": "boolean"
-      },
-      "store": "config"
-    },
-    {
-      "capability": "change_settings",
-      "category": "Behaviour",
-      "default": true,
-      "description": "Sets the auto close popouts option under Behaviour.",
-      "example": "{\"args\":{\"changes\":{\"func.autoClosePopouts\":false}},\"tool\":\"lens_set\"}",
-      "label": "Auto close popouts",
-      "path": "func.autoClosePopouts",
       "reversible": true,
       "risk": "low",
       "schema": {
