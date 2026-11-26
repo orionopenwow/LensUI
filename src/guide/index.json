@@ -1677,6 +1677,25 @@
    "source": "src/components/PluginManagerCard.tsx"
   },
   {
+   "id": "card.system.shortcutscard",
+   "kind": "card",
+   "title": "Keyboard shortcuts",
+   "text": "Everything Lens listens for. Windows' own keys (Win+L, Ctrl+Alt+Del, Alt+Tab) are never taken. Keyboard shortcuts. Shortcuts",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Windows integration & shortcuts",
+    "Keyboard shortcuts"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "ShortcutsCard",
+    "label": "Keyboard shortcuts"
+   },
+   "source": "src/components/ShortcutsCard.tsx"
+  },
+  {
    "id": "card.system.shellkeyscard",
    "kind": "card",
    "title": "Start Key & Alt+Tab",
@@ -5370,7 +5389,7 @@
    "id": "setting.system.inline.global-shortcuts",
    "kind": "setting",
    "title": "Global Shortcuts",
-   "text": "Command Palette: Alt+Space · Widget Drawer: Alt+W",
+   "text": "",
    "path": [
     "Settings",
     "Windows & Keys",

@@ -476,7 +476,8 @@ impl Default for LensConfig {
                 hide_native_taskbar: true,
                 run_on_startup: false,
                 palette_hotkey: "Alt+Space".into(),
-                widgets_hotkey: "Alt+W".into(),
+                // Ctrl+Alt+W, not Alt+W: Alt+W opens the Window menu in many apps.
+                widgets_hotkey: "Ctrl+Alt+W".into(),
                 gaming_pause: true,
                 middle_click_new_instance: true,
                 injected_hook: false,

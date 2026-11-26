@@ -144,6 +144,7 @@ pub fn reserved_hotkey(spec: &HotkeySpec) -> bool {
     let fixed = [
         "alt+Space",
         "alt+KeyW",
+        "ctrl+alt+KeyW",
         "alt+KeyA",
         "alt+Backquote",
         "ctrl+alt+shift+KeyE",
