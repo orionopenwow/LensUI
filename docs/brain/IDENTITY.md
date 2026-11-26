@@ -83,6 +83,7 @@ Prices above are starting suggestions from the launch plan, not researched figur
 - **Transform and opacity only.** No animating width, height, top/left or layout; no native window resizes mid-animation. One motion system: `src/ui/motion` (glide, usePresence, FLIP) and the duration/easing tokens (`--lens-dur-*`, `--lens-ease-*`). A lint (`bun run lint:motion`) blocks regressions.
 - **Quick slides, never snaps.** Panels glide in and out (~180–220 ms ease-out); the dock slides away on auto-hide and the window hides only after the slide ends; interrupted motion reverses from where it is.
 - **Settle, don't bounce** — except one deliberate bounce: an app asking for attention, once.
+- **Light to look at, weighty to touch.** Presses sink and spring back with weight (three press weights: light, medium, heavy); everything that opens grows from what opened it. The binding spec is [`DESIGN.md` §5.1–5.5](../../DESIGN.md#5-motion--feel).
 - **Reduced motion respected** (Windows "Animation effects" off or the Lens setting): motion collapses to instant, nothing loops.
 - Budgets: p95 frame ≤ 16.7 ms at 60 Hz, no frame over 33 ms during an animation; tested by the perf and smoothness rigs.
 
