@@ -2,11 +2,13 @@
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works** (built, tested), **partly** (built with gaps), **broken** (known wrong), **not built**. Evidence is a path, a test name or a BUGS.md id. Reviewed against `main` on 2026-11-26.
 >
+> **Unified style + window carousel (feature/dock-unified, 2026-11-26):** eighth style "Unified" (one floating pill: Launcher, apps, tray, bell with count, two-line clock); window-count marks (dash = one window, three dots = several) on every style; a window carousel in the hover card for apps with 2+ windows; smooth reflow when apps are pinned, unpinned, reordered, opened or closed; Launcher pin glyphs. Works headless and on CI; the native thumbnail handover during a slide needs a real-PC check.
+>
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (Dock & Bar › Advanced, incl. the pop-out auto-close switch); per-monitor bars + Follow the pointer fixed in planning and unit-tested (B-53, not yet confirmed on a real PC). Left: quick wins 3–5, the "in 10 seconds" tour.
 
 ## Rundown
 
-The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and running apps, a system area, a search entry and a Settings gear, in seven styles on any screen edge. It is the first thing people see and the thing they touch most, so it carries most of Lens's perceived quality.
+The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and running apps, a system area, a search entry and a Settings gear, in eight styles on any screen edge. It is the first thing people see and the thing they touch most, so it carries most of Lens's perceived quality.
 
 - **Who it's for:** everyone who runs Lens; it is on by default (`dock` window, `src-tauri/tauri.conf.json`).
 - **Front end:** `src/surfaces/DockSurface.tsx` (2,928 lines) and `DockSurface.css` (2,293 lines); `src/dock/` (styles, previews, attention, system area, style picking); `src/magic/LensPan.tsx` (the Lens › Magic pan in the app menu).
@@ -19,7 +21,8 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 ### 1. Styles and edges
 | Feature | Sub / minute features | Status | Evidence |
 |---|---|---|---|
-| Seven styles | Floating (default), Slim, Taskbar, Studio, Minimal, Split, Islands | works | `src/dock/styles.ts:25-74` |
+| Eight styles | Floating (default), Slim, Taskbar, Studio, Minimal, Split, Islands, Unified | works | `src/dock/styles.ts` |
+| Unified | One floating pill (8 px off its edge): Launcher first, apps, hairline, tray + Quick Settings, bell with a red count, two-line clock (bold time; "Thu 26 Nov" in the locale's order, Windows' 12/24 h). Pop-outs keep Floating's width and open fused on the pill (`flyout_geom::UNIFIED_FLOAT_GAP`) | works (headless, CI); real-PC look unconfirmed | `styles.ts`, `DockSystemArea.tsx` (`clock="stacked"`), `dockUnified.test.ts`, Rust `unified_opens_like_floating_above_its_floating_pill`, E2E `dock-unified` |
 | Style picker | Live mini-previews per card; clicked card lights at once; one restyle 220 ms after clicks stop | works | `src/dock/useStylePick.ts`, `DockStylePreview.tsx` (#95) |
 | Screen edge | bottom / top / left / right (`dock.position`) | works (bottom/top E2E); left/right partly | E2E `dock-bottom`, `dock-top`; no left/right E2E |
 | App alignment | centre / start (`dock.alignment`) | works | `DockTab.tsx:110` |
@@ -36,7 +39,8 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Pinned apps | Mirror the Windows taskbar pins and their order; `pinsUserOrdered` once you reorder | works | B-22 fixed (`config.rs:scan_windows_taskbar_pins`) |
 | Pinned folders | `pinnedFolders` stacks | works | `DockSurface.tsx` |
 | Reorder by drag | Pointer drag, FLIP motion; locked Dock refuses | works | `dock.locked` (`DockTab.tsx:160`) |
-| Running indicators | Dots/pills per style; multiple windows | works | `DockSurface.css` |
+| Smooth reflow | Pin, unpin, reorder, open, close: icons glide along the Dock (transform only, two layout reads per change), new icons grow in; reduced motion = instant | works (headless) | `src/dock/reflow.ts`, `dockUnified.test.ts` |
+| Running indicators | One short dash = one window, three small dots = several, on every style and edge; focused = accent, urgent = attention colour | works | `src/dock/marks.ts`, `DockSurface.css` (`.dock-indicator.is-multi`) |
 | Launch animation | `launchAnimation` (none / lift / bounce / jelly) | works | Advanced › Launch animation |
 | Minimise feedback | `minimizeFeedback` | works | Advanced › Minimise pulse |
 | Scroll to cycle windows | `scrollCyclesWindows` | works | Advanced › Scroll to switch windows |
@@ -56,11 +60,13 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Hover a running app → DWM thumbnails | On by default (config v3); hover intent; titles; click activates | works on CI; real-PC unconfirmed | `win_previews.rs`, #102 |
 | Placement | Owned by the asking window; refused when it's hidden; follows the Dock's slide; closes ~260 ms after leaving | works | #79 unit tests |
 | Close a window from its thumbnail | × on the thumbnail | partly — needs real-PC check | #102 notes |
+| Window carousel (2+ windows) | Header (icon, name, n/N, ‹ ›); current window large with title + ×, neighbours peek; dots; wheel / ‹ › / ←→ / dots switch; click focuses. One native thumbnail over the centre tile, hidden as a slide starts and re-shown at rest. Card kept inside the usable area on every edge (`src/dock/placement.ts`) | works (headless); native handover needs a real-PC check | `src/dock/DockWindowCarousel.tsx`, `carousel.ts`, `dockUnified.test.ts` |
 
 ### 5. Context menu and Magic
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
 | App menu | Open, new window, pin/unpin, close, quit, keep on top, Quick Controls | works | `DockSurface.tsx` (`window_action_cmd`, `set_window_pinned_cmd`) |
+| Launcher pins | Pinned apps carry a small pin glyph in the Launcher grid and results; right-click offers Pin to Dock / Unpin from Dock | works | `src/surfaces/LauncherSurface.tsx` |
 | Lens › row | Hover 160 ms / → / Enter pans into the app's Magic actions; ← / Esc / Backspace back; first six + "More in Lens (n)…" | works | `src/magic/LensPan.tsx`, `lensPan.test.ts` (#84) |
 | Alt+right-click | Straight to the Magic window | works | #84 |
 | Keyboard menu | ↑/↓/Home/End, Esc returns focus to the icon | works | B-16 fixed (#72) |

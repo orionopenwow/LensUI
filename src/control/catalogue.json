@@ -1191,7 +1191,7 @@
       "capability": "change_look",
       "category": "Dock",
       "default": "floating",
-      "description": "The Dock's shape: floating, slim, taskbar, studio, minimal or split.",
+      "description": "The Dock's shape: floating, slim, taskbar, studio, minimal, split, islands or unified.",
       "example": "{\"args\":{\"changes\":{\"dock.style\":\"slim\"}},\"tool\":\"lens_set\"}",
       "label": "Dock style",
       "path": "dock.style",
@@ -1204,7 +1204,9 @@
           "taskbar",
           "studio",
           "minimal",
-          "split"
+          "split",
+          "islands",
+          "unified"
         ],
         "maxLength": 400,
         "type": "string"

@@ -56,7 +56,7 @@ export interface DockConfig {
   /** Live window thumbnails in the Dock hover card. */
   livePreviews?: boolean;
   /** Dock shape (see src/dock/styles.ts). Missing = "floating". */
-  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | string;
+  style?: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified" | string;
   /** Taskbar icon alignment. Missing = "center". */
   alignment?: "center" | "left" | string;
   /** Where the clock and system icons live. Missing = "auto". */

@@ -117,7 +117,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("theme.motion", "Motion", "Follow Windows, reduce, or allow full animation.", r#"{"enum":["system","reduce","full"]}"#),
     ("theme.contrast", "Contrast", "Follow Windows or force high contrast.", r#"{"enum":["system","high"]}"#),
     ("theme.locale", "Language", "Lens interface language.", r#"{"enum":["auto","en","es","de"]}"#),
-    ("dock.style", "Dock style", "The Dock's shape: floating, slim, taskbar, studio, minimal or split.", r#"{"enum":["floating","slim","taskbar","studio","minimal","split"]}"#),
+    ("dock.style", "Dock style", "The Dock's shape: floating, slim, taskbar, studio, minimal, split, islands or unified.", r#"{"enum":["floating","slim","taskbar","studio","minimal","split","islands","unified"]}"#),
     ("dock.position", "Dock edge", "Which screen edge the Dock sits on.", r#"{"enum":["bottom","top","left","right"]}"#),
     ("dock.alignment", "Dock alignment", "Centre or left-align apps in the Taskbar style.", r#"{"enum":["center","left"]}"#),
     ("dock.systemArea", "Clock and system icons", "Whether the clock and system icons live in the Dock or the top bar.", r#"{"enum":["auto","dock","topbar"]}"#),
