@@ -850,6 +850,7 @@ pub(crate) fn spawn_watcher(
                             .unwrap_or(false),
                         palette_visible: palette_in_use,
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
+                        foreground_other_app: foreground_is_other_app(),
                     }, &mut menu_idle_since, &mut settings_unfocused_since);
                     if guard.clear_stale_menu {
                         *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
@@ -1069,6 +1070,10 @@ pub(crate) struct DockGuardInput {
     pub palette_visible: bool,
     /// A mouse button is down somewhere outside the Dock window (a click elsewhere).
     pub click_outside: bool,
+    /// Windows' foreground window belongs to another process (another app, the desktop or the
+    /// taskbar took focus). WebView2 doesn't always tell the page (no blur, `hasFocus()` stays
+    /// true), so this is the reliable signal that the person moved on.
+    pub foreground_other_app: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1082,6 +1087,27 @@ pub(crate) struct DockGuard {
 /// Decides whether open flyouts should keep the Dock up. A menu flag only counts while the Dock
 /// window has focus or the pointer is over it; once neither has been true for STALE_MENU_MS it is
 /// treated as stale. A visible Control Center only counts while focused (plus a short grace).
+/// True when Windows' foreground window belongs to a process other than Lens.
+#[cfg(not(windows))]
+pub(crate) fn foreground_is_other_app() -> bool {
+    false
+}
+
+/// True when Windows' foreground window belongs to a process other than Lens.
+#[cfg(windows)]
+pub(crate) fn foreground_is_other_app() -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return false;
+        }
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        pid != 0 && pid != std::process::id()
+    }
+}
+
 pub(crate) fn dock_guard(
     i: DockGuardInput,
     menu_idle_since: &mut Option<std::time::Instant>,
@@ -1098,8 +1124,11 @@ pub(crate) fn dock_guard_at(
 ) -> DockGuard {
     let menu_in_use = i.dock_focused || i.cursor_over_pill || i.cursor_over_dock_window;
     let mut clear_stale_menu = false;
-    let menu_blocks = if i.menu_open && i.click_outside {
-        // Clicking anywhere outside the Dock closes its menus at once, focused or not.
+    let menu_blocks = if i.menu_open
+        && (i.click_outside || (i.foreground_other_app && !i.cursor_over_pill && !i.cursor_over_dock_window))
+    {
+        // Clicking anywhere outside the Dock, or another app taking the foreground while the
+        // pointer is away from the Dock, closes its menus at once.
         *menu_idle_since = None;
         clear_stale_menu = true;
         false
@@ -1140,6 +1169,19 @@ pub(crate) fn dock_guard_at(
 mod hide_robustness_tests {
     use super::*;
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn another_app_taking_focus_closes_dock_menus() {
+        let mut since = None;
+        let mut s_since = None;
+        let away = DockGuardInput { menu_open: true, dock_focused: true, foreground_other_app: true, ..Default::default() };
+        let g = dock_guard_at(away, &mut since, &mut s_since, Instant::now());
+        assert!(g.clear_stale_menu && !g.blocks_hide);
+        // Pointer still on the Dock (a click that hasn't taken focus yet): keep it open.
+        let on_dock = DockGuardInput { menu_open: true, foreground_other_app: true, cursor_over_pill: true, ..Default::default() };
+        let g = dock_guard_at(on_dock, &mut since, &mut s_since, Instant::now());
+        assert!(!g.clear_stale_menu && g.blocks_hide);
+    }
 
     #[test]
     fn idle_flyouts_stop_holding_bars_up() {
