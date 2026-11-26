@@ -160,3 +160,84 @@ fn the_hook_dll_source_refuses_every_process_the_app_protects() {
     assert!(dll.contains("return BOOL(0);"), "DllMain must refuse to load in excluded processes");
     assert!(dll.contains("const HOST: &[&str] = &[\"lens-ui.exe\"];"));
 }
+
+/// Every `.rs` file under `src/`, as (path relative to src with forward slashes, text).
+fn rust_sources() -> Vec<(String, String)> {
+    fn walk(dir: &std::path::Path, root: &std::path::Path, out: &mut Vec<(String, String)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                walk(&path, root, out);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                let rel = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+                out.push((rel, std::fs::read_to_string(&path).unwrap_or_default()));
+            }
+        }
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut out = Vec::new();
+    walk(&root, &root, &mut out);
+    assert!(out.len() > 50, "did not find the sources under {}", root.display());
+    out
+}
+
+/// AGENTS.md §3.4, one source of truth. The window-button engine used to carry its own list of
+/// four anti-cheat names while this file listed 42, and the tiler, the key hook and the pointer
+/// effects each had another copy. No file may name an anti-cheat process or game itself: they
+/// all ask `win_rules`.
+#[test]
+fn no_engine_keeps_a_private_anti_cheat_list() {
+    // Files that may spell these names, and why.
+    let allowed = [
+        "win_rules.rs",    // the list
+        "voice/safety.rs", // pauses the wake word in games (the microphone, not a window); also lists non-anti-cheat games
+        "control/grants.rs", // "vanguard" there is the brokerage, in the list of banking sites
+    ];
+    let mut private: Vec<String> = Vec::new();
+    for (rel, text) in rust_sources() {
+        if allowed.contains(&rel.as_str()) || rel.starts_with("tests/") {
+            continue;
+        }
+        let lower = text.to_lowercase();
+        for frag in ANTI_CHEAT_FRAGMENTS {
+            if lower.contains(&format!("\"{frag}\"")) {
+                private.push(format!("{rel}: \"{frag}\""));
+            }
+        }
+    }
+    assert!(private.is_empty(), "use win_rules::is_protected_process / is_anti_cheat_process instead of naming processes here: {private:?}");
+}
+
+/// Every engine that draws over, moves, restyles or hooks input for other apps' windows decides
+/// through the shared list. A new engine goes in this table with the call it makes.
+#[test]
+fn every_engine_that_touches_other_apps_uses_the_shared_list() {
+    let engines: [(&str, &[&str]); 9] = [
+        // Window buttons drawn over other apps: the engine asks caption_rules, which asks win_rules.
+        ("win_caption_engine.rs", &["caption_rules::skip_reason("]),
+        ("caption_rules.rs", &["win_rules::is_protected_process("]),
+        // Opacity, borders and corners through DWM; the opt-in hook.
+        ("win_dwm_engine.rs", &["win_rules::is_protected_process(", "win_rules::decorate_decision_for(", "win_rules::is_anti_cheat_process("]),
+        // Dimming, the active border, peek and pin.
+        ("win_focus_dim.rs", &["win_rules::decorate_decision_for("]),
+        // Tiling and snapping.
+        ("win_tiler.rs", &["win_rules::is_protected_process("]),
+        // Alt+drag move and resize.
+        ("win_altdrag.rs", &["win_rules::is_protected_process("]),
+        // Keyboard hook and the shared input service's pause.
+        ("win_keyhook.rs", &["win_rules::is_anti_cheat_process("]),
+        ("input.rs", &["win_keyhook::is_excluded_process("]),
+        // Pointer effects.
+        ("win_cursor_fx.rs", &["win_rules::is_anti_cheat_process("]),
+    ];
+    let sources = rust_sources();
+    for (file, calls) in engines {
+        let text = sources.iter().find(|(rel, _)| rel == file).map(|(_, t)| t.as_str()).unwrap_or_else(|| panic!("{file} is gone: update this table"));
+        for call in calls {
+            assert!(text.contains(call), "{file} no longer calls {call}");
+        }
+    }
+    // The Windhawk mod (in-process) has its own check: win_windhawk::tests::mod_excludes_every_anti_cheat_process.
+    // The hook DLL: the_hook_dll_source_refuses_every_process_the_app_protects (above).
+}

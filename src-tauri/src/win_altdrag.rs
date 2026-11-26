@@ -448,7 +448,12 @@ mod rt {
             return false;
         }
         if named {
-            let exe = crate::win_tiler::normalize_app(&String::from_utf16_lossy(&buf[..len as usize]));
+            let path = String::from_utf16_lossy(&buf[..len as usize]);
+            // Anti-cheat games and shell hosts are never moved, in front or not (AGENTS.md §3.4).
+            if crate::win_rules::is_protected_process(&path) {
+                return false;
+            }
+            let exe = crate::win_tiler::normalize_app(&path);
             if exe == "lens-ui.exe" || cfg.exclude.iter().any(|e| *e == exe) {
                 return false;
             }

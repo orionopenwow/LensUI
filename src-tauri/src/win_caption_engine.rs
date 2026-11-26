@@ -30,12 +30,12 @@ use windows::Win32::UI::WindowsAndMessaging::{
     SMTO_ABORTIFHUNG, SW_HIDE, WM_NCHITTEST, UpdateLayeredWindow, WindowFromPoint, CS_HREDRAW,
     CS_VREDRAW, EVENT_OBJECT_DESTROY, EVENT_OBJECT_HIDE, EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_OBJECT_SHOW, EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_MINIMIZEEND,
-    EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MOVESIZEEND, GA_ROOT, GWL_EXSTYLE, GWL_STYLE,
+    EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MOVESIZEEND, GA_ROOT, GWL_EXSTYLE,
     GW_HWNDPREV, GW_OWNER, HWND_MESSAGE, HWND_TOP, HWND_TOPMOST, IDC_ARROW, IDC_HAND, MSG,
     OBJID_WINDOW, SC_CLOSE, SC_MAXIMIZE, SC_MINIMIZE, SC_RESTORE, SWP_NOACTIVATE,
     SWP_NOSENDCHANGING, SWP_NOSIZE, SWP_NOZORDER, SWP_SHOWWINDOW, ULW_ALPHA, WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS, WM_LBUTTONUP, WM_MOUSEMOVE, WM_SETCURSOR, WM_SYSCOMMAND, WM_TIMER,
-    WM_USER, WNDCLASSW, WS_CAPTION, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    WM_USER, WNDCLASSW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
     WS_EX_TOPMOST, WS_POPUP,
 };
 
@@ -44,12 +44,19 @@ const WM_APP_SYNC: u32 = WM_USER + 42;
 const MAX_POOL_SLOTS: usize = 12;
 
 use crate::caption_paint::{self as paint, BASE_H};
-use crate::caption_paint::{order_code, slot_buttons, ORDER_YGR};
+use crate::caption_paint::{order_code, side_code, slot_buttons, style_code, ORDER_YGR, SIDE_LEFT, SIDE_RIGHT, STYLE_CLASSIC};
+use crate::caption_rules;
 
 static ENGINE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ENGINE_ENABLED: AtomicBool = AtomicBool::new(true);
 /// Button order (caption_paint::ORDER_*): Windows' own minimise, maximise, close by default.
 static ORDER: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(ORDER_YGR);
+/// Button look (caption_paint::STYLE_*), `windowControls.style`.
+static STYLE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(STYLE_CLASSIC);
+/// Which side the buttons sit on (caption_paint::SIDE_*), `windowControls.position`.
+static SIDE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(SIDE_RIGHT);
+/// Apps the person excluded (`windowControls.excludedProcesses`), cleaned by `caption_rules`.
+static EXCLUDED: std::sync::RwLock<Vec<String>> = std::sync::RwLock::new(Vec::new());
 
 /// How long after a change (a new window, activation, a move, a theme or setting change) its
 /// title-bar colour keeps being re-read. DWM fades the caption between its active and inactive
@@ -117,6 +124,11 @@ struct CaptionSlot {
     th: i32,
     /// Hidden while the target is still changing size, until then.
     quiet_until_ms: u64,
+    style: u8,
+    /// SIDE_LEFT only where the window's title bar has room on the left; otherwise SIDE_RIGHT.
+    side: u8,
+    /// On the left only: the patch over the native buttons at the right end (null otherwise).
+    cover: HWND,
 }
 
 thread_local! {
@@ -133,11 +145,20 @@ thread_local! {
     static PROBES: RefCell<HashMap<isize, (i32, i32, u32, Option<(i32, i32)>)>> = RefCell::new(HashMap::new());
     /// Which slot (0..3) the pointer is over, per overlay, for the snap-layouts hover.
     static HOVER_SLOT: RefCell<HashMap<isize, usize>> = RefCell::new(HashMap::new());
+    /// Whether the left end of a window's title bar is free, keyed like PROBES (size and DPI).
+    static LEFT_FREE: RefCell<HashMap<isize, (i32, i32, u32, bool)>> = RefCell::new(HashMap::new());
+    /// The patches that hide native buttons (they take no clicks and show no buttons).
+    static COVERS: RefCell<HashSet<isize>> = RefCell::new(HashSet::new());
 }
 
-pub fn set_caption_engine_config(enabled: bool, order: &str, border_radius: u32) {
-    ENGINE_ENABLED.store(enabled, Ordering::SeqCst);
-    ORDER.store(order_code(order), Ordering::SeqCst);
+/// Everything the engine takes from settings: `windowControls` (on/off, order, style, side and
+/// the per-app exclusion list) and the theme's corner radius.
+pub fn set_caption_engine_config(controls: &crate::config::WindowControlsConfig, border_radius: u32) {
+    ENGINE_ENABLED.store(controls.enabled, Ordering::SeqCst);
+    ORDER.store(order_code(&controls.order), Ordering::SeqCst);
+    STYLE.store(style_code(&controls.style), Ordering::SeqCst);
+    SIDE.store(side_code(&controls.position), Ordering::SeqCst);
+    *EXCLUDED.write().unwrap_or_else(|e| e.into_inner()) = caption_rules::clean_exclusions(&controls.excluded_processes);
     // Match Windows 11 DWM hardware corner radii: 0px (square), 4px (small), 8px (standard)
     let dwm_r = if border_radius <= 2 {
         0
@@ -155,7 +176,10 @@ pub fn set_caption_engine_config(enabled: bool, order: &str, border_radius: u32)
     }
 }
 
-fn get_process_name_lower(hwnd: HWND) -> String {
+/// The window's process as a lower-cased full path ("lens-ui.exe" for Lens itself, empty when
+/// Windows will not say). The whole path is matched against the protected lists, so a game is
+/// recognised by its folder as well as its file name.
+fn get_process_path_lower(hwnd: HWND) -> String {
     unsafe {
         let mut pid = 0u32;
         GetWindowThreadProcessId(hwnd, Some(&mut pid));
@@ -178,34 +202,17 @@ fn get_process_name_lower(hwnd: HWND) -> String {
         if !ok {
             return String::new();
         }
-        let path = String::from_utf16_lossy(&buf[..len as usize]);
-        std::path::Path::new(&path)
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_lowercase()
+        String::from_utf16_lossy(&buf[..len as usize]).to_lowercase()
     }
 }
 
-fn is_excluded(proc_lower: &str) -> bool {
-    let skip = [
-        "lens-ui.exe",
-        "searchhost.exe",
-        "shellexperiencehost.exe",
-        "startmenuexperiencehost.exe",
-        "textinputhost.exe",
-        "lockapp.exe",
-        "applicationframehost.exe", // handled cleanly or skip if needed? Keep UWP settings/calc working by not skipping unless cloaked!
-        "easyanticheat",
-        "valorant",
-        "cs2.exe",
-        "fortnite",
-    ];
-    // Allow ApplicationFrameHost (Windows Settings, Calculator, Store) — only skip true system shells/games
-    if proc_lower == "applicationframehost.exe" {
-        return false;
-    }
-    skip.iter().any(|s| proc_lower.contains(s))
+/// Whether Lens must leave this window alone (AGENTS.md §3.4): one shared decision,
+/// `caption_rules::skip_reason`, over the shared protected lists in `win_rules`, the person's
+/// exclusion list and their "leave alone" window rules. No names are listed here.
+fn skip_reason(path_lower: &str, fullscreen: bool) -> Option<caption_rules::Skip> {
+    let excluded = EXCLUDED.read().unwrap_or_else(|e| e.into_inner());
+    let rule_excluded = !path_lower.is_empty() && crate::win_rules::resolve_for_path(path_lower).exclude;
+    caption_rules::skip_reason(path_lower, &excluded, rule_excluded, fullscreen)
 }
 
 unsafe fn is_cloaked(hwnd: HWND) -> bool {
@@ -224,9 +231,10 @@ unsafe fn is_cloaked(hwnd: HWND) -> bool {
 /// (`caption_paint::sample_strip`), one screen capture per read. A row only counts where
 /// `WindowFromPoint` confirms the pixel belongs to `target_hwnd`, so a window stacked in front
 /// (or another overlay) never decides the colour. Returns 0x00RRGGBB per overlay row.
-unsafe fn sample_title_rows(target_hwnd: HWND, ov_x: i32, ov_y: i32, w: i32, h: i32, fallback: u32) -> Vec<u32> {
+unsafe fn sample_title_rows(target_hwnd: HWND, ov_x: i32, ov_y: i32, w: i32, h: i32, fallback: u32, side: u8) -> Vec<u32> {
     let (gap, cols) = paint::sample_strip(w);
-    let sx = ov_x - gap - cols;
+    // On the left the title bar continues to the overlay's right.
+    let sx = if side == SIDE_LEFT { ov_x + w + gap } else { ov_x - gap - cols };
     let rows = h.max(1);
     let screen_dc = GetDC(None);
     if screen_dc.is_invalid() {
@@ -281,7 +289,21 @@ fn median_rgb(rows: &[u32]) -> u32 {
 
 /// Paints the overlay from `caption_paint::render`: every non-button pixel is the title bar's own
 /// colour on that row, so it blends by construction (tested in caption_paint).
-unsafe fn paint_layered_caption(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i32, rows: &[u32], hovered: bool, order: u8) {
+#[allow(clippy::too_many_arguments)]
+unsafe fn paint_layered_caption(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i32, rows: &[u32], hovered: bool, order: u8, style: u8, side: u8) {
+    let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * paint::scale_for(w);
+    let src = paint::render_with(w, h, rows, hovered, order, corner_r, style, side);
+    blit_layered(hwnd, dst_x, dst_y, w, h, &src);
+}
+
+/// Paints the patch that hides the native buttons while Lens's own sit on the left.
+unsafe fn paint_layered_cover(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i32, rows: &[u32]) {
+    let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * paint::scale_for(w);
+    let src = paint::render_cover(w, h, rows, corner_r);
+    blit_layered(hwnd, dst_x, dst_y, w, h, &src);
+}
+
+unsafe fn blit_layered(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i32, src: &[u8]) {
     let screen_dc = GetDC(None);
     let mem_dc = CreateCompatibleDC(screen_dc);
     let bmi = BITMAPINFO {
@@ -309,10 +331,10 @@ unsafe fn paint_layered_caption(hwnd: HWND, dst_x: i32, dst_y: i32, w: i32, h: i
         return;
     }
     let old = SelectObject(mem_dc, hbmp);
-    let corner_r = (CORNER_RADIUS_PX.load(Ordering::Relaxed) as f32) * paint::scale_for(w);
-    let src = paint::render(w, h, rows, hovered, order, corner_r);
     let dst = std::slice::from_raw_parts_mut(bits_ptr as *mut u8, (w * h * 4) as usize);
-    dst.copy_from_slice(&src[..dst.len()]);
+    if src.len() >= dst.len() {
+        dst.copy_from_slice(&src[..dst.len()]);
+    }
 
     let pt_dst = POINT { x: dst_x, y: dst_y };
     let pt_src = POINT { x: 0, y: 0 };
@@ -341,6 +363,7 @@ struct EnumTarget {
     cap_w: i32,
     cap_h: i32,
     is_topmost: bool,
+    side: u8,
 }
 
 unsafe extern "system" fn enum_targets_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
@@ -370,10 +393,12 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         return BOOL(1);
     }
 
-    let proc_lower = get_process_name_lower(hwnd);
-    if proc_lower.is_empty() || is_excluded(&proc_lower) {
+    // Protected, excluded and "leave alone" apps are decided before Lens asks the window anything.
+    let path_lower = get_process_path_lower(hwnd);
+    if skip_reason(&path_lower, false).is_some() {
         return BOOL(1);
     }
+    let proc_lower = path_lower.rsplit(['\\', '/']).next().unwrap_or("");
 
     let mut rect = RECT::default();
     if DwmGetWindowAttribute(
@@ -393,11 +418,9 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         return BOOL(1);
     }
 
-    // Distinguish true fullscreen games/videos from maximized normal apps (Chrome, Explorer, etc.)
-    let style = GetWindowLongW(hwnd, GWL_STYLE) as u32;
-    let is_zoomed = IsZoomed(hwnd).as_bool();
-    let has_caption = (style & WS_CAPTION.0) != 0;
-    if !is_zoomed && !has_caption {
+    // Fullscreen games, videos and presentations get no overlay (AGENTS.md §3.4), whether or not
+    // the window kept a caption style. A maximised app is not fullscreen (caption_rules).
+    {
         let hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         let mut mi = MONITORINFO {
             cbSize: std::mem::size_of::<MONITORINFO>() as u32,
@@ -405,11 +428,12 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
         };
         if GetMonitorInfoW(hmon, &mut mi).as_bool() {
             let m = mi.rcMonitor;
-            if rect.left <= m.left
-                && rect.top <= m.top
-                && rect.right >= m.right
-                && rect.bottom >= m.bottom
-            {
+            let fullscreen = caption_rules::is_fullscreen(
+                (rect.left, rect.top, rect.right, rect.bottom),
+                (m.left, m.top, m.right, m.bottom),
+                IsZoomed(hwnd).as_bool(),
+            );
+            if fullscreen {
                 return BOOL(1);
             }
         }
@@ -456,12 +480,34 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
     }
     let is_topmost = (ex & WS_EX_TOPMOST.0) != 0;
 
+    // Buttons on the left only where the title bar's left end is plain caption (asked once per
+    // window size); tabs, toolbars and menus there keep the buttons on the right.
+    let side = if SIDE.load(Ordering::Relaxed) == SIDE_LEFT {
+        let cached = LEFT_FREE.with(|p| p.borrow().get(&key).copied());
+        let free = match cached {
+            Some((w, h, d, f)) if w == win_w && h == win_h && d == dpi => f,
+            _ => {
+                let f = paint::left_side_is_free(|x, y| nc_hit(hwnd, x, y), rect.left, rect.top, cap_w, cap_h);
+                LEFT_FREE.with(|p| p.borrow_mut().insert(key, (win_w, win_h, dpi, f)));
+                f
+            }
+        };
+        if free {
+            SIDE_LEFT
+        } else {
+            SIDE_RIGHT
+        }
+    } else {
+        SIDE_RIGHT
+    };
+
     targets.push(EnumTarget {
         hwnd,
         rect,
         cap_w,
         cap_h,
         is_topmost,
+        side,
     });
     BOOL(1)
 }
@@ -500,6 +546,36 @@ unsafe fn create_overlay_window(is_topmost: bool, w: i32, h: i32) -> Option<HWND
     })
 }
 
+/// Makes the patch over the native buttons for a window whose Lens buttons sit on the left.
+unsafe fn create_cover_window(is_topmost: bool, w: i32, h: i32) -> HWND {
+    match create_overlay_window(is_topmost, w, h) {
+        Some(cover) => {
+            COVERS.with(|c| {
+                c.borrow_mut().insert(cover.0 as isize);
+            });
+            cover
+        }
+        None => HWND(std::ptr::null_mut()),
+    }
+}
+
+unsafe fn destroy_cover(cover: HWND) {
+    if cover.0.is_null() {
+        return;
+    }
+    COVERS.with(|c| {
+        c.borrow_mut().remove(&(cover.0 as isize));
+    });
+    let _ = DestroyWindow(cover);
+}
+
+unsafe fn hide_slot(slot: &CaptionSlot) {
+    let _ = ShowWindow(slot.overlay, SW_HIDE);
+    if !slot.cover.0.is_null() {
+        let _ = ShowWindow(slot.cover, SW_HIDE);
+    }
+}
+
 unsafe fn clear_all_slots() {
     SLOTS.with(|slots_cell| {
         OVERLAY_TO_TARGET.with(|map_cell| {
@@ -507,10 +583,12 @@ unsafe fn clear_all_slots() {
             let mut map = map_cell.borrow_mut();
             for (_, slot) in slots.drain() {
                 let _ = DestroyWindow(slot.overlay);
+                destroy_cover(slot.cover);
             }
             map.clear();
             ROWS.with(|r| r.borrow_mut().clear());
             PROBES.with(|p| p.borrow_mut().clear());
+            LEFT_FREE.with(|p| p.borrow_mut().clear());
         });
     });
 }
@@ -546,7 +624,7 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
         // the window may still be animating. Hide now; the next sync after it has been still for
         // a moment re-measures and shows it again.
         if slot.shown {
-            let _ = ShowWindow(slot.overlay, SW_HIDE);
+            hide_slot(&slot);
         }
         slot.shown = false;
         slot.quiet_until_ms = now_ms() + RESIZE_QUIET_MS;
@@ -562,7 +640,7 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
         }
         return true;
     }
-    let x = rect.right - slot.w;
+    let x = if slot.side == SIDE_LEFT { rect.left } else { rect.right - slot.w };
     let y = rect.top;
     if x != slot.x || y != slot.y {
         slot.x = x;
@@ -579,6 +657,17 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
             0,
             SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING,
         );
+        if !slot.cover.0.is_null() {
+            let _ = SetWindowPos(
+                slot.cover,
+                HWND::default(),
+                rect.right - slot.w,
+                y,
+                0,
+                0,
+                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSENDCHANGING,
+            );
+        }
     }
     true
 }
@@ -606,6 +695,7 @@ unsafe fn sync_all_windows(mode: Resample) {
     let _ = EnumWindows(Some(enum_targets_cb), LPARAM(&mut targets as *mut _ as isize));
 
     let order: u8 = ORDER.load(Ordering::Relaxed);
+    let style: u8 = STYLE.load(Ordering::Relaxed);
     let cur_corner_r = CORNER_RADIUS_PX.load(Ordering::Relaxed);
     let active_keys: HashSet<isize> = targets.iter().map(|t| t.hwnd.0 as isize).collect();
     let now = now_ms();
@@ -620,9 +710,11 @@ unsafe fn sync_all_windows(mode: Resample) {
                 if let Some(slot) = slots.remove(&key) {
                     map.remove(&(slot.overlay.0 as isize));
                     let _ = DestroyWindow(slot.overlay);
+                    destroy_cover(slot.cover);
                 }
                 ROWS.with(|r| r.borrow_mut().remove(&key));
                 PROBES.with(|p| p.borrow_mut().remove(&key));
+                LEFT_FREE.with(|p| p.borrow_mut().remove(&key));
             }
         });
     });
@@ -643,13 +735,15 @@ unsafe fn sync_all_windows(mode: Resample) {
     for target in targets.iter().rev() {
         let key = target.hwnd.0 as isize;
         // Flush with the window's top-right corner: the native Close button reaches the very edge,
-        // and a 1 px gap let the pointer reach it there.
-        let x = target.rect.right - target.cap_w;
+        // and a 1 px gap let the pointer reach it there. On the left, flush with the top-left
+        // corner, and a patch (`cover`) sits where the overlay would have been.
+        let right_x = target.rect.right - target.cap_w;
+        let x = if target.side == SIDE_LEFT { target.rect.left } else { right_x };
         let y = target.rect.top;
 
         let existing = SLOTS.with(|s| s.borrow().get(&key).copied());
 
-        let fresh_slot = |ov: HWND, bg_rgb: u32| CaptionSlot {
+        let fresh_slot = |ov: HWND, bg_rgb: u32, cover: HWND| CaptionSlot {
             overlay: ov,
             x: i32::MIN,
             y: i32::MIN,
@@ -666,11 +760,21 @@ unsafe fn sync_all_windows(mode: Resample) {
             tw: target.rect.right - target.rect.left,
             th: target.rect.bottom - target.rect.top,
             quiet_until_ms: 0,
+            style,
+            side: target.side,
+            cover,
+        };
+        let new_cover = || {
+            if target.side == SIDE_LEFT {
+                create_cover_window(target.is_topmost, target.cap_w, target.cap_h)
+            } else {
+                HWND(std::ptr::null_mut())
+            }
         };
 
         // If topmost band changed on target, recreate overlay in the matching Z-band
         let mut slot = match existing {
-            Some(s) if s.is_topmost == target.is_topmost && IsWindow(s.overlay).as_bool() => s,
+            Some(s) if s.is_topmost == target.is_topmost && s.side == target.side && IsWindow(s.overlay).as_bool() => s,
             Some(old) => {
                 SLOTS.with(|s| {
                     s.borrow_mut().remove(&key);
@@ -679,10 +783,13 @@ unsafe fn sync_all_windows(mode: Resample) {
                     m.borrow_mut().remove(&(old.overlay.0 as isize));
                 });
                 let _ = DestroyWindow(old.overlay);
+                destroy_cover(old.cover);
+                // The other end of the title bar may be another colour: start the rows afresh.
+                ROWS.with(|r| r.borrow_mut().remove(&key));
                 let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h) else {
                     continue;
                 };
-                let fresh = fresh_slot(ov, old.bg_rgb);
+                let fresh = fresh_slot(ov, old.bg_rgb, new_cover());
                 SLOTS.with(|s| {
                     s.borrow_mut().insert(key, fresh);
                 });
@@ -697,7 +804,7 @@ unsafe fn sync_all_windows(mode: Resample) {
                 let Some(ov) = create_overlay_window(target.is_topmost, target.cap_w, target.cap_h) else {
                     continue;
                 };
-                let fresh = fresh_slot(ov, 0x0018_181B);
+                let fresh = fresh_slot(ov, 0x0018_181B, new_cover());
                 SLOTS.with(|s| {
                     s.borrow_mut().insert(key, fresh);
                 });
@@ -721,7 +828,7 @@ unsafe fn sync_all_windows(mode: Resample) {
 
         let old_rows = ROWS.with(|r| r.borrow().get(&key).cloned());
         let rows = if read_now {
-            sample_title_rows(target.hwnd, x, y, target.cap_w, target.cap_h, slot.bg_rgb)
+            sample_title_rows(target.hwnd, x, y, target.cap_w, target.cap_h, slot.bg_rgb, target.side)
         } else {
             old_rows.clone().unwrap_or_else(|| vec![slot.bg_rgb; target.cap_h.max(1) as usize])
         };
@@ -735,11 +842,17 @@ unsafe fn sync_all_windows(mode: Resample) {
         }
 
         let pos_changed = slot.x != x || slot.y != y;
-        let visual_changed = rows_changed || slot.order != order || slot.corner_r != cur_corner_r;
+        let visual_changed = rows_changed || slot.order != order || slot.style != style || slot.corner_r != cur_corner_r;
 
-        // Check if overlay is already immediately above target_hwnd in Z-order
+        // Check if overlay is already immediately above target_hwnd in Z-order (with a cover:
+        // the cover directly above the window and the overlay directly above the cover).
         let prev = GetWindow(target.hwnd, GW_HWNDPREV).unwrap_or(HWND(std::ptr::null_mut()));
-        let z_ok = prev == slot.overlay;
+        let has_cover = !slot.cover.0.is_null();
+        let z_ok = if has_cover {
+            prev == slot.cover && GetWindow(slot.cover, GW_HWNDPREV).unwrap_or(HWND(std::ptr::null_mut())) == slot.overlay
+        } else {
+            prev == slot.overlay
+        };
         let becomes_visible = show && !slot.shown;
 
         slot.x = x;
@@ -748,6 +861,7 @@ unsafe fn sync_all_windows(mode: Resample) {
         slot.h = target.cap_h;
         slot.bg_rgb = median_rgb(&rows);
         slot.order = order;
+        slot.style = style;
         slot.corner_r = cur_corner_r;
         slot.shown = show;
         slot.tw = target.rect.right - target.rect.left;
@@ -758,11 +872,14 @@ unsafe fn sync_all_windows(mode: Resample) {
 
         // Only re-render bitmap when size or visual properties changed — NEVER on mere (x, y) movement!
         if size_changed || visual_changed || becomes_visible {
-            paint_layered_caption(slot.overlay, x, y, target.cap_w, target.cap_h, &rows, slot.hovered, order);
+            paint_layered_caption(slot.overlay, x, y, target.cap_w, target.cap_h, &rows, slot.hovered, order, style, slot.side);
+            if has_cover {
+                paint_layered_cover(slot.cover, right_x, y, target.cap_w, target.cap_h, &rows);
+            }
         }
 
         if show && (pos_changed || size_changed || !z_ok || becomes_visible) {
-            let insert_after = if prev.0.is_null() || prev == slot.overlay {
+            let insert_after = if prev.0.is_null() || prev == slot.overlay || (has_cover && prev == slot.cover) {
                 if target.is_topmost {
                     HWND_TOPMOST
                 } else {
@@ -778,6 +895,19 @@ unsafe fn sync_all_windows(mode: Resample) {
                 }
             };
 
+            if has_cover {
+                // First the cover, then the overlay at the same place in the stack: the overlay
+                // ends up directly above the cover, and both directly above their window.
+                let _ = SetWindowPos(
+                    slot.cover,
+                    insert_after,
+                    right_x,
+                    y,
+                    target.cap_w,
+                    target.cap_h,
+                    SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_NOSENDCHANGING,
+                );
+            }
             let _ = SetWindowPos(
                 slot.overlay,
                 insert_after,
@@ -819,7 +949,7 @@ unsafe fn win_event_cb_guarded(
     if event == EVENT_SYSTEM_MINIMIZESTART {
         // Hide before the minimise animation starts, so the dots never fly down with it.
         if let Some(slot) = SLOTS.with(|s| s.borrow().get(&(hwnd.0 as isize)).copied()) {
-            let _ = ShowWindow(slot.overlay, SW_HIDE);
+            hide_slot(&slot);
         }
     }
     if event == EVENT_OBJECT_LOCATIONCHANGE {
@@ -890,6 +1020,16 @@ unsafe fn caption_wnd_proc_guarded(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
+    // A cover only hides the native buttons: it shows the normal pointer and takes no clicks.
+    if COVERS.with(|c| c.borrow().contains(&(hwnd.0 as isize))) {
+        if msg == WM_SETCURSOR {
+            if let Ok(arrow) = LoadCursorW(None, IDC_ARROW) {
+                SetCursor(arrow);
+            }
+            return LRESULT(1);
+        }
+        return DefWindowProcW(hwnd, msg, wparam, lparam);
+    }
     match msg {
         WM_SETCURSOR => {
             // Explicitly set crisp hand cursor over traffic-light buttons so Windows NEVER shows a wait/loading wheel!
@@ -906,7 +1046,7 @@ unsafe fn caption_wnd_proc_guarded(
                 // Snap layouts: arm a timer while the pointer rests on the green (maximise) dot.
                 if let Some(slot) = SLOTS.with(|s| s.borrow().get(&key).copied()) {
                     let mx = (lparam.0 & 0xFFFF) as i16 as i32;
-                    let si = paint::slot_at(slot.w, mx);
+                    let si = paint::slot_at_side(slot.w, mx, slot.side);
                     let prev = HOVER_SLOT.with(|h| h.borrow_mut().insert(hwnd.0 as isize, si));
                     if prev != Some(si) {
                         let _ = KillTimer(hwnd, SNAP_TIMER_ID);
@@ -933,7 +1073,7 @@ unsafe fn caption_wnd_proc_guarded(
                     };
                     let _ = TrackMouseEvent(&mut tme);
                     let rows = rows_of(key, slot.h, slot.bg_rgb);
-                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, true, slot.order);
+                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, true, slot.order, slot.style, slot.side);
                 }
             }
             LRESULT(0)
@@ -971,7 +1111,7 @@ unsafe fn caption_wnd_proc_guarded(
                 });
                 if let Some(slot) = need_paint {
                     let rows = rows_of(key, slot.h, slot.bg_rgb);
-                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, false, slot.order);
+                    paint_layered_caption(hwnd, slot.x, slot.y, slot.w, slot.h, &rows, false, slot.order, slot.style, slot.side);
                 }
             }
             LRESULT(0)
@@ -984,7 +1124,7 @@ unsafe fn caption_wnd_proc_guarded(
                 if let Some(slot) = slot_opt {
                     let target = HWND(key as *mut _);
                     let red_first: u8 = ORDER.load(Ordering::Relaxed);
-                    let slot_i = paint::slot_at(slot.w, click_x);
+                    let slot_i = paint::slot_at_side(slot.w, click_x, slot.side);
                     let action = match slot_buttons(red_first)[slot_i] {
                         0 => "maximize",
                         1 => "minimize",

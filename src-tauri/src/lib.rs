@@ -6,6 +6,7 @@ mod voice;
 mod ffi;
 mod sys_telemetry;
 mod caption_paint;
+mod caption_rules;
 mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]

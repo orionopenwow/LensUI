@@ -355,24 +355,11 @@ pub fn fallback_for(ev: HookEvent) -> Fallback {
     }
 }
 
-/// Processes whose presence in front means "never touch the keyboard" (anti-cheat clients and
-/// competitive games), matched as substrings of the lower-cased image path.
-pub const EXCLUDED_PROCESS_PARTS: [&str; 10] = [
-    "easyanticheat",
-    "beservice",
-    "battleye",
-    "vgc.exe",
-    "valorant",
-    "cs2.exe",
-    "fortnite",
-    "r5apex",
-    "faceit",
-    "riotclient",
-];
-
+/// Processes whose presence in front means "never touch the keyboard": anti-cheat services and
+/// protected games, from the one shared list (`win_rules::ANTI_CHEAT_FRAGMENTS`), matched as
+/// substrings of the lower-cased image path.
 pub fn is_excluded_process(image_path: &str) -> bool {
-    let p = image_path.to_ascii_lowercase();
-    EXCLUDED_PROCESS_PARTS.iter().any(|s| p.contains(s))
+    crate::win_rules::is_anti_cheat_process(image_path)
 }
 
 /// True when the window rectangle covers the whole monitor (borderless or exclusive fullscreen).
