@@ -1,0 +1,77 @@
+/* Settings › About & Testing › Safety. Matte and quiet: hairlines, no colour, no motion. */
+.sf-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sf-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.sf-list {
+  display: grid;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sf-item {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--lens-border, rgb(255 255 255 / 0.08));
+}
+.sf-term {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lens-fg, #fafafa);
+}
+.sf-body {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--lens-fg-secondary, #a1a1aa);
+}
+.sf-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sf-key {
+  font: 600 11px/1 var(--lens-font-mono, ui-monospace, monospace);
+  color: var(--lens-fg, #fafafa);
+  padding: 5px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--lens-border, rgb(255 255 255 / 0.1));
+  background: rgb(var(--lens-ink, 255 255 255) / 0.05);
+  white-space: nowrap;
+}
+.sf-details > summary {
+  cursor: pointer;
+  color: var(--lens-fg, #fafafa);
+}
+.sf-details > summary:focus-visible {
+  outline: 2px solid var(--lens-accent, #60a5fa);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.sf-group {
+  margin-top: 8px;
+}
+.sf-group-title {
+  font-weight: 600;
+  color: var(--lens-fg, #fafafa);
+}
+.sf-state {
+  font-weight: 600;
+  color: var(--lens-fg, #fafafa);
+}
+@media (max-width: 560px) {
+  .sf-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

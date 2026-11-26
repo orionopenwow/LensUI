@@ -48,7 +48,16 @@ export type ThreadItem =
       message?: string;
       ts: number;
     }
-  | { kind: "action"; key: string; title: string; detail?: string; ok: boolean; ts: number }
+  | {
+      kind: "action";
+      key: string;
+      title: string;
+      detail?: string;
+      ok: boolean;
+      ts: number;
+      /** "Teach me": where the setting this action changed lives (src/command/teach.ts). */
+      where?: { target: string; path: string };
+    }
   | { kind: "consent"; key: string; reqKey: string; dest: Destination; fields: string[]; state: "pending" | "allowed" | "declined"; ts: number }
   | { kind: "bridge"; key: string; request: BridgeRequest; state: "new" | "handled" | "dismissed"; ts: number };
 

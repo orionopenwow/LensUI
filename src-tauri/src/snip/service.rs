@@ -52,11 +52,15 @@ fn sealer() -> &'static dyn Sealer {
 // ------------------------------------------------------------------------------------ settings
 
 pub fn load_settings() -> SnipSettings {
-    fs::read(settings_path())
-        .ok()
-        .and_then(|b| serde_json::from_slice::<SnipSettings>(&b).ok())
-        .map(sanitize)
-        .unwrap_or_default()
+    let Some(mut s) = fs::read(settings_path()).ok().and_then(|b| serde_json::from_slice::<SnipSettings>(&b).ok()) else {
+        return SnipSettings::default();
+    };
+    // One-time move off the old default shortcut (Ctrl+Shift+S, Save As in most apps); written
+    // back so it happens once. If the write fails the move is simply made again next time.
+    if super::config::migrate(&mut s) {
+        let _ = save_settings(&s);
+    }
+    sanitize(s)
 }
 
 pub fn save_settings(s: &SnipSettings) -> Result<SnipSettings, String> {

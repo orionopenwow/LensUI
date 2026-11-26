@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { comboFromEvent, comboProblem, normalizeCombo, shortcutsFor, SIMPLE, WINDOWS_KEYS, withShortcut, withSimpleShortcuts } from "../keys/shortcuts";
+import { APP_KEYS, comboFromEvent, comboProblem, normalizeCombo, shortcutsFor, SIMPLE, snipComboNote, WINDOWS_KEYS, withShortcut, withSimpleShortcuts } from "../keys/shortcuts";
+import { DEFAULT_SNIP_SETTINGS } from "../snip/api";
 import { sampleConfig } from "./fixtures";
 
 describe("keyboard shortcuts", () => {
@@ -30,6 +31,42 @@ describe("keyboard shortcuts", () => {
     expect(comboProblem("W", "widgets", all)?.level).toBe("block");
     expect(comboProblem("Shift+W", "widgets", all)?.level).toBe("block");
     expect(comboProblem("Ctrl+Alt+B", "widgets", all)).toBeNull();
+  });
+
+  it("no Lens shortcut on the sheet is a Windows key, an everyday app key or a duplicate", () => {
+    // Every row, changeable here or not: Snip's old default (Ctrl+Shift+S, Save As) failed this.
+    const all = shortcutsFor(withSimpleShortcuts(sampleConfig()));
+    const single = all.filter((s) => !s.keys.includes("…") && !s.keys.includes("Arrows"));
+    for (const s of single) {
+      const c = normalizeCombo(s.keys);
+      expect(WINDOWS_KEYS).not.toContain(c);
+      // Alt+Space is the one known exception (the launcher, as in PowerToys Run); it gets a note.
+      if (s.id !== "palette") expect(comboProblem(s.keys, s.id, all)).toBeNull();
+      expect(APP_KEYS).not.toContain(c);
+    }
+    const keys = single.map((s) => normalizeCombo(s.keys));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("Snip's default is off Save As, and the sheet shows the shortcut Snip really has", () => {
+    expect(SIMPLE.snip).toBe("Ctrl+Alt+X");
+    expect(DEFAULT_SNIP_SETTINGS.hotkey).toBe(SIMPLE.snip);
+    expect(APP_KEYS).toContain("Ctrl+Shift+S");
+    const row = (other?: { snip?: string }) => shortcutsFor(sampleConfig(), other).find((s) => s.id === "snip")!;
+    expect(row().keys).toBe("Ctrl+Alt+X");
+    expect(row({ snip: "Ctrl+Alt+Shift+4" }).keys).toBe("Ctrl+Alt+Shift+4");
+    expect(row({ snip: "  " }).keys).toBe("Ctrl+Alt+X");
+  });
+
+  it("Snip's shortcut field says what a clashing choice would break", () => {
+    expect(snipComboNote("Ctrl+Alt+X", sampleConfig())).toBeNull();
+    expect(snipComboNote("")).toBeNull();
+    const saveAs = snipComboNote("ctrl+shift+s");
+    expect(saveAs?.level).toBe("note");
+    expect(saveAs?.message).toContain("Save As");
+    expect(snipComboNote("Win+Shift+S")?.level).toBe("block");
+    // Another Lens shortcut (needs the config to know them).
+    expect(snipComboNote(SIMPLE.command, withSimpleShortcuts(sampleConfig()))?.message).toContain("Ask Lens");
   });
 
   it("changing one shortcut touches only that key; reset touches only shortcuts", () => {

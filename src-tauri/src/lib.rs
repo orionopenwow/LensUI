@@ -6,6 +6,7 @@ mod voice;
 mod ffi;
 mod sys_telemetry;
 mod caption_paint;
+mod caption_rules;
 mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
@@ -965,6 +966,8 @@ pub fn run() {
             commands::tester::tester_reveal_report,
             commands::tester::tester_open_issue,
             commands::failsafe::failsafe_status,
+            commands::failsafe::safety_facts,
+            commands::rules::protected_processes_cmd,
             commands::failsafe::failsafe_take_notices,
             commands::failsafe::failsafe_reset_feature,
             commands::failsafe::failsafe_safe_mode_next,

@@ -4,6 +4,7 @@ import { Camera, ShieldCheck } from "lucide-react";
 import type { SnipSettings, SnipStatus } from "../snip/api";
 import { DEFAULT_SNIP_SETTINGS, snipHistoryClear, snipPinsRelease, snipRecentClear, snipRecordMics, snipSetSettings, snipStart, snipStatus } from "../snip/api";
 import { HistoryView } from "../snip/HistoryView";
+import { snipComboNote } from "../keys/shortcuts";
 import "../snip/snip.css";
 
 const MODES = [
@@ -66,6 +67,8 @@ export const SnipCard: React.FC<{ demo?: SnipStatus }> = ({ demo }) => {
     snipStatus().then(setSt).catch(() => setSt(null));
   }, [demo]);
 
+  const hotkeyNote = snipComboNote(s.hotkey);
+
   const save = (patch: Partial<SnipSettings>) => {
     const next = { ...s, ...patch };
     setSt((x) => (x ? { ...x, settings: next } : x));
@@ -92,9 +95,10 @@ export const SnipCard: React.FC<{ demo?: SnipStatus }> = ({ demo }) => {
           </div>
           {st?.message ? <div className="cc-desc" role="status">{st.message}</div> : null}
 
-          <Row label="Shortcut" desc="A modifier plus a key, e.g. Ctrl+Shift+S. Press it again while recording to stop.">
+          <Row label="Shortcut" desc="A modifier plus a key, e.g. Ctrl+Alt+X. Press it again while recording to stop.">
             <input className="snip-input" style={{ width: 160 }} value={s.hotkey} aria-label="Snip shortcut" onChange={(e) => setSt((x) => (x ? { ...x, settings: { ...s, hotkey: e.target.value } } : x))} onBlur={() => save({ hotkey: s.hotkey })} />
           </Row>
+          {hotkeyNote ? <div className="cc-desc" role="status" data-snip-hotkey-note>{hotkeyNote.message}</div> : null}
           <Row label="Use the Print Screen key" desc="Lens takes over Print Screen and gives it back to Windows when you turn this off or close Lens. A Windows policy can keep the key; your shortcut still works.">
             <Toggle on={s.printScreen} label="Use the Print Screen key" onChange={(v) => save({ printScreen: v })} />
           </Row>

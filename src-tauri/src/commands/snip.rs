@@ -80,7 +80,7 @@ pub(crate) fn sync_snip(app: &AppHandle, s: &SnipSettings) {
     let mut keys: Vec<String> = Vec::new();
     match crate::win_summon::parse_hotkey(&s.hotkey) {
         Some(spec) => keys.push(spec.canonical()),
-        None => h.3 = "Use a modifier (Ctrl, Alt or Win) and a key, e.g. Ctrl+Shift+S.".into(),
+        None => h.3 = "Use a modifier (Ctrl, Alt or Win) and a key, e.g. Ctrl+Alt+X.".into(),
     }
     if s.print_screen {
         keys.push("PrintScreen".into());

@@ -42,7 +42,8 @@ Everything here is **off by default**. With the defaults, windows look exactly a
   - the never-decorate list;
   - apps with a "Leave alone" rule;
   - fullscreen windows. A window counts as fullscreen when it covers its monitor and has no caption,
-    so a maximised app is not treated as a game even when the taskbar is hidden.
+    so a maximised app is not treated as a game even when the taskbar is hidden. (The window-button
+    overlay uses its own, stricter rule: see "Window buttons: which windows" below.)
   - Precedence is in that order: `win_rules::decorate_decision`, which is tested.
 - **No hooks into other processes.**
   - Focus changes arrive through the existing out-of-process WinEvent tracker (`win_events.rs`).
@@ -171,6 +172,45 @@ B-05, B-06):
   release installers are rebuilt from source by CI.
 
 Settings shows whether the helper is in use right now or paused.
+
+## Window buttons: which windows, which look, which side
+
+One decision per window, `caption_rules::skip_reason` (pure, tested on any machine), strongest
+reason first:
+
+1. **Protected** — Lens itself, Windows shell hosts and every name on
+   `win_rules::ANTI_CHEAT_FRAGMENTS`, matched against the process's full path, plus any process
+   Windows will not name. The engine has no list of its own. Two source tests in
+   `tests/win_rules.rs` fail the build if any file under `src-tauri/src` names an anti-cheat
+   process itself, or if an engine that touches other apps' windows (window buttons, DWM styling,
+   dimming, tiling, Alt+drag, the key hook, pointer effects) stops asking `win_rules`.
+2. **Excluded** — `windowControls.excludedProcesses` (Settings › Windows & Keys › Window styling ›
+   Apps and window buttons). "Notepad.exe", "notepad" and a full path all mean the same app; whole
+   names only, so excluding Notepad does not exclude Notepad++.
+3. **Left alone by a rule** — a per-app rule with `exclude`.
+4. **Fullscreen** — the window covers its whole monitor and is not maximised
+   (`caption_rules::is_fullscreen`), whether or not it kept a caption style. A maximised app is
+   never treated as fullscreen: with the taskbar hidden it covers the monitor too.
+
+| Setting | What the engine does | Where it is drawn |
+|---|---|---|
+| `windowControls.order` | Order of the three buttons, left to right | `caption_paint::slot_buttons` |
+| `windowControls.style` | `traffic-classic`, `traffic-muted` (soft fill, 1 px outline), `minimal-dots` (smaller, slightly see-through), `accent-pills` (18 × 10 pills); the colours of the in-app buttons in `global.css` | `caption_paint::render_with` |
+| `windowControls.position` | `top-left` puts the buttons 18 px in from the window's left edge and lays a plain title-bar patch over the native buttons on the right | `render_with` mirrored, `render_cover` |
+| `windowControls.excludedProcesses` | No overlay for those apps | `caption_rules::clean_exclusions` |
+
+**The left side has a limit that cannot be removed from outside the app.** The left end of a title
+bar is where apps put their icon, title, tabs and tools. Lens asks the window what is there
+(`WM_NCHITTEST`, `caption_paint::left_side_is_free`) and only uses the left where every point is
+plain caption or the window icon. Browsers, File Explorer, Terminal, Notepad and most Windows 11
+apps answer "client" (tabs or tools) and keep their buttons on the right. On a classic title bar
+the buttons cover the icon and the start of the title text. The patch on the right takes clicks
+and does nothing with them. Needs a look on a real PC before it is offered more widely.
+
+Tests: `caption_rules::tests` (all 42 names in four spellings each, shell hosts, exclusions,
+precedence, fullscreen), `caption_paint::tests` (every style blends on both sides, each style's
+colours in the configured order, the mirror, the cover, the left-side probe), and
+`tools/parity/caption/run.mjs` now runs every style on both sides over every title bar.
 
 ## Window buttons blend into every title bar
 
