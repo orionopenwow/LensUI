@@ -35,7 +35,7 @@ pub struct WebResult {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SourceStatus {
+pub struct WebSourceStatus {
     pub id: String,
     pub label: String,
     pub host: String,
@@ -48,7 +48,7 @@ pub struct SourceStatus {
 #[serde(rename_all = "camelCase")]
 pub struct WebAnswer {
     pub results: Vec<WebResult>,
-    pub sources: Vec<SourceStatus>,
+    pub sources: Vec<WebSourceStatus>,
     /// The configured engine's own results page for this query ("Open in <engine>").
     pub engine_url: String,
     pub engine_name: String,
@@ -344,8 +344,8 @@ pub fn stub_answer(q: &str) -> WebAnswer {
     WebAnswer {
         results: merge(lists, MAX_RESULTS),
         sources: vec![
-            SourceStatus { id: "duckduckgo".into(), label: "DuckDuckGo".into(), host: DDG_HOST.into(), ok: true, count: 2, error: None },
-            SourceStatus { id: "wikipedia".into(), label: "Wikipedia".into(), host: WIKI_HOST.into(), ok: true, count: 2, error: None },
+            WebSourceStatus { id: "duckduckgo".into(), label: "DuckDuckGo".into(), host: DDG_HOST.into(), ok: true, count: 2, error: None },
+            WebSourceStatus { id: "wikipedia".into(), label: "Wikipedia".into(), host: WIKI_HOST.into(), ok: true, count: 2, error: None },
         ],
         engine_url: format!("https://duckduckgo.com/?q={}", urlencode(q)),
         engine_name: "DuckDuckGo".into(),

@@ -210,7 +210,7 @@ mod tests {
             "windowControls": { "enabled": true, "frameBorderEnabled": true, "order": "yellow-green-red" },
             "tiling": { "enabled": true }, "workspaces": { "enabled": true }, "mcp": { "enabled": true },
             "hotCorners": { "enabled": true }, "altDrag": { "enabled": true }, "appSummon": { "enabled": true },
-            "ai": { "enabled": true }, "command": { "enabled": true },
+            "ai": { "enabled": true }, "command": { "enabled": true }, "selectionBar": { "enabled": true },
             "theme": { "preset": "obsidian" }
         })
     }

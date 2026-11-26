@@ -202,7 +202,7 @@ export const SelectionBarCard: React.FC<Props> = ({ config, updateConfig, advanc
         </>
       ) : null}
       {Object.keys(s.perApp).length ? (
-        <Row label="Per-app actions" desc={Object.entries(s.perApp).map(([app, ids]) => `${app.replace(/\.exe$/i, "")}: ${ids.map((i) => byId.get(i)?.label ?? i).join(", ")}`).join(" · ")}>
+        <Row label="Per-app actions" desc={Object.entries(s.perApp).map(([app, ids]) => `${app.replace(/\.exe$/i, "")}: ${(ids as string[]).map((i) => byId.get(i)?.label ?? i).join(", ")}`).join(" · ")}>
           <button type="button" className="sbc-btn" onClick={() => set({ perApp: {} })}>Clear</button>
         </Row>
       ) : null}

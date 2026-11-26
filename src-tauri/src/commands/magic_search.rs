@@ -16,7 +16,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::clip::bar;
-use crate::magic_search::{self as ms, SourceStatus, WebAnswer};
+use crate::magic_search::{self as ms, WebSourceStatus, WebAnswer};
 
 pub(crate) const LABEL: &str = "magicsearch";
 pub(crate) const EVT_OPEN: &str = "lens://magicsearch/open";
@@ -203,10 +203,10 @@ pub(crate) async fn magic_search_web(app: AppHandle, query: String) -> Result<We
         let mut sources = Vec::new();
         let mut take = |id: &str, label: &str, host: &str, r: Result<Vec<ms::WebResult>, String>| match r {
             Ok(list) => {
-                sources.push(SourceStatus { id: id.into(), label: label.into(), host: host.into(), ok: true, count: list.len(), error: None });
+                sources.push(WebSourceStatus { id: id.into(), label: label.into(), host: host.into(), ok: true, count: list.len(), error: None });
                 lists.push(list);
             }
-            Err(e) => sources.push(SourceStatus { id: id.into(), label: label.into(), host: host.into(), ok: false, count: 0, error: Some(e) }),
+            Err(e) => sources.push(WebSourceStatus { id: id.into(), label: label.into(), host: host.into(), ok: false, count: 0, error: Some(e) }),
         };
         if let Some(h) = ddg {
             take("duckduckgo", "DuckDuckGo", ms::DDG_HOST, h.join().unwrap_or_else(|_| Err("DuckDuckGo stopped unexpectedly.".into())));
