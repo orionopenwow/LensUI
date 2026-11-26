@@ -1,6 +1,7 @@
 # Lens AI and agents — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/AI.md`, `docs/AGENT_SAFETY.md`,
+Status date: 2026-11-26 (main at `6e7abb0`; Fable pass in PR #114: step-bound approvals, persisted undo, plan view).
+Fable pass status lines are marked **[#114]**; they describe the PR branch and are verified by unit tests, the headless parity harness and CI, not yet by hand on a real PC. Sources: `docs/AI.md`, `docs/AGENT_SAFETY.md`,
 `docs/MCP.md`, `docs/CLAUDE_CONTROL.md`, `docs/PRESENCE.md`, `docs/VOICE.md`, `docs/AI_SURFACES.md`,
 `docs/brain/BUGS.md`, Redline review (2026-11-24), code below.
 
@@ -58,7 +59,7 @@ risky step visible and approvable, and nothing leaving the PC without consent.
   brightness/night light, shelf, snapshots, run_action — works.
 - Grants per capability (read_settings, change_look, change_settings, windows, media…) with
   defaults (`CLAUDE_CONTROL.md` "Default grants") — works.
-- Undo stack per batch — works; **in memory only** (lost on restart; audit keeps the record).
+- Undo stack per batch — works; survives a restart **[#114]** (`control/undo.jsonl`, last 50 steps, ≤ 512 KB; window moves stay in memory).
 - `type_text` — **not built by design** (Lens never types for an AI yet).
 - In-app assistant treats Gate::Ask as run for internal tools (B-35, pinned by a test that every
   mutating `lens_*` is Confirm except `lens_shelf`, `lens_snapshot_save`).
@@ -92,9 +93,10 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 - Pending pill in the Top Bar — works (B-14 fixed: no misleading hotkey).
 - Window thumbnail in the card — **partly**: the card accepts `window.thumbnail`, no capture
   command wires it (`CLAUDE_CONTROL.md` "Not yet covered").
-- Multi-step plan view (per-step allow/deny) — **not built** (the site redo wants to show it).
-- Browser agent approval bound to the step — **partly** (`commands/browser.rs:459,522` trusts a
-  boolean from the UI).
+- Multi-step plan view (per-step allow/deny) — works (harness, CI) **[#114]**: several steps proposed in one turn are checked and shown whole before any runs (`ToolProposalEvent.plan`); `PlanCard` in the Ask panel and the approval window; denying one step skips only that one. The Command thread still shows one card per step.
+- Approvals bound to the exact step — works (CI) **[#114]**: browser agent, assistant runner,
+  cloud consent and the shared queue (MCP tools, `run_action`, bridge, Lens Apps) all need the
+  card's one-time token (`agentsafe/step_token.rs`, B-50).
 
 ### 2.7 Presence (the Lens orb)
 - Billowing rainbow Lens cloud (`LensCloud.tsx`, `src/styles/lens-cloud.css`), no spin — works.
@@ -113,9 +115,9 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 ## 3. Quick wins (≤ 1 day, ranked)
 1. **B-07: pin the three download checksums** (whisper.cpp, ffmpeg, yt-dlp) from official release
    pages — unblocks voice, transcripts and Explorer "Get transcript" in one change.
-2. **Step-bound approval tokens** for the browser agent and MCP `run_action` (Cleaner-style
+2. ~~**Step-bound approval tokens**~~ **done in #114** (B-50) for the browser agent and MCP `run_action` (Cleaner-style
    `confirm_token`), so a UI bug can't approve the wrong step.
-3. **Persist the undo stack** (`control/engine.rs`) to `%APPDATA%\LensUI\undo.jsonl` with a cap,
+3. ~~**Persist the undo stack**~~ **done in #114** (B-51) (`control/engine.rs`) to `%APPDATA%\LensUI\undo.jsonl` with a cap,
    so "Undo" survives a restart.
 4. **Window thumbnail in the approval card** using `win_previews` capture (already used by the
    Dock hover previews) — makes "close Report.docx" requests unmistakable.
@@ -140,14 +142,14 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 | B-07 | Medium | `media/setup.rs:197-241` | voice/transcription setup refuses (unpinned) |
 | B-12c | Medium | `CommandSurface.tsx` | rare lost first Enter after cold start |
 | B-35 | Low | `control/lens.rs run_internal` | Ask treated as run for internal tools (pinned by test) |
-| Suspected S1 | Medium | `commands/browser.rs:459,522` | approval is a UI boolean, not step-bound |
-| Suspected S2 | Low | `control` undo | in-memory only; lost on restart |
+| S1 → B-50 | — | browser agent, AI runner, shared queue | **fixed in #114**: step-bound one-time tokens |
+| S2 → B-51 | — | `control` undo | **fixed in #114**: bounded journal survives restart |
 | Suspected S3 | Low | `win_mcp.rs` known limit | `apply_theme_pack` reports success when the Dock window isn't running |
 | Suspected S4 | Low | `ai/providers/local.rs` | auto-detect re-probes each session start; slow first answer on machines without local models |
 | B-18 share | Low | 23 sites | swallowed errors |
 
 ## 6. One idea to push to main
-**Plan view in the approval card**: when an agent proposes several steps, show them as a list
+**Plan view in the approval card — shipped in #114**: when an agent proposes several steps, show them as a list
 with a risk chip each and per-step Allow / Deny, approving only the risky ones (hold) while safe
 reads run. It's what the site's new example shows, it's what agentic browsers lack, and the
 pipeline already classifies each step.
@@ -184,12 +186,12 @@ voice push-to-talk on your mic; orb over a fullscreen video (should hide); Ctrl+
 Feature: Lens AI + agents (providers, Command, tools, MCP, agentsafe, approval, presence, voice).
 Code: src-tauri/src/{ai,control,agentsafe,presence,voice}/*, win_mcp.rs, src/{ai,approval,presence,voice}/*.
 Do:
-1. Pin B-07 checksums from official release pages (whisper.cpp, ffmpeg, yt-dlp).
-2. Step-bound approval tokens (browser agent + MCP run_action).
-3. Persist the control undo stack (capped jsonl).
-4. Approval card: window thumbnail via win_previews; human context field names.
-5. Plan view with per-step allow/deny in the approval card.
-6. Toasts for 23 swallowed errors.
+1. OPEN       Pin B-07 checksums (the release API and Hugging Face were not reachable from the pass's session).
+2. DONE #114  Step-bound approval tokens (browser agent, AI runner, cloud consent, MCP queue).
+3. DONE #114  Persist the control undo stack (capped jsonl).
+4. PARTLY     Human context field names in cloud consent: done. Window thumbnail via win_previews: open.
+5. DONE #114  Plan view with per-step allow/deny (Ask panel + approval window; Command thread: open).
+6. PARTLY     Ask panel reports an answer that never reached Core; the other 22 sites: open.
 Check: bun test src; cargo tests (agentsafe, control, mcp); E2E safety-injection + intents.
 Manual: Claude Desktop multi-step task; voice on a real mic.
 Don't: add tools that run commands/scripts/delete files; weaken any block rule; log prompts or keys.

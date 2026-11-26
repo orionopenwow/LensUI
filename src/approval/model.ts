@@ -82,6 +82,9 @@ export interface ApprovalRequest {
   site?: string;
   createdMs: number;
   preview: ApprovalPreview;
+  /** The one-time token Lens Core issued with this card. Approving sends it back; Core refuses
+   *  an approval without the token of this exact request. */
+  token?: string;
 }
 
 export type Phase = "pending" | "holding" | "working" | "done" | "denied" | "failed";
@@ -198,6 +201,7 @@ export interface PendingActionLike {
   status?: string;
   reference?: string;
   preview?: ApprovalPreview | null;
+  token?: string;
 }
 
 const LOCAL_ORIGIN: Record<string, ApprovalRequest["origin"]> = { ai: "ai", bridge: "bridge", app: "app" };
@@ -218,6 +222,7 @@ export function fromPendingAction(a: PendingActionLike, preview?: ApprovalPrevie
     createdMs: a.createdMs,
     preview: pv ?? fallbackPreview(a.text, a.client || (local ? "Lens" : ""), local ? "low" : "confirm"),
     ...(a.reference ? { reference: a.reference } : {}),
+    ...(a.token ? { token: a.token } : {}),
     ...(a.kind === "bridge" && args.useClipboard === true ? { wantsClipboard: true } : {}),
   };
 }
@@ -225,7 +230,7 @@ export function fromPendingAction(a: PendingActionLike, preview?: ApprovalPrevie
 /** The card for a step the assistant proposed (Lens Command, the AI dock, voice) before, or
  *  without, its queue record: same shape, so the surface never draws its own dialog. */
 export function requestForProposal(
-  p: { call_id: string; tool: string; args?: Record<string, unknown>; summary: string; risk: string; safety?: SafetyReasonLike[] },
+  p: { call_id: string; tool: string; args?: Record<string, unknown>; summary: string; risk: string; safety?: SafetyReasonLike[]; approval_token?: string },
   now = Date.now()
 ): ApprovalRequest {
   const q = (p.summary || p.tool).trim().replace(/[.?!]*$/, "");
@@ -240,6 +245,7 @@ export function requestForProposal(
     origin: "ai",
     source: "Lens",
     reference: p.call_id,
+    ...(p.approval_token ? { token: p.approval_token } : {}),
     createdMs: now,
     preview: {
       question: `${q}?`,

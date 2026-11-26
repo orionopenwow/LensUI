@@ -4,6 +4,7 @@ import { AudioLines, BookmarkPlus, Captions, Download, MessageSquare, Sparkles }
 import { shelfAdd } from "../shelf/contract";
 import { captions, seek, type CaptionReply } from "./api";
 import { clock, cueAt, parseCaptions, toMarkdown, toSrt, toText, type Cue } from "./captions";
+import { oops } from "./oops";
 
 export interface TranscriptSeed {
   reply: CaptionReply;
@@ -72,7 +73,7 @@ export function TranscriptPanel({ url, seed, onAsk }: { url: string; seed?: Tran
         <div className="lb-tr-actions">
           <button className="lb-chip" onClick={() => onAsk("Summarise this video: key points with timestamps", toMarkdown(cues, meta))}><Sparkles size={12} /> Summarise</button>
           <button className="lb-chip" onClick={() => onAsk("Answer questions about this video", toMarkdown(cues, meta))}><MessageSquare size={12} /> Ask about it</button>
-          <button className="lb-chip" onClick={() => void shelfAdd({ kind: "transcript", title: reply.video?.title || "Transcript", text: toMarkdown(cues, meta), url }).catch(() => {})}><BookmarkPlus size={12} /> Add to Shelf</button>
+          <button className="lb-chip" onClick={() => void shelfAdd({ kind: "transcript", title: reply.video?.title || "Transcript", text: toMarkdown(cues, meta), url }).catch(oops("add the transcript to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf</button>
           <span className="lb-push" />
           <button className="lb-chip" aria-label="Save as text" onClick={() => save(`${base}.txt`, toText(cues), "text/plain")}><Download size={12} /> .txt</button>
           <button className="lb-chip" aria-label="Save as SRT" onClick={() => save(`${base}.srt`, toSrt(cues), "application/x-subrip")}>.srt</button>
@@ -85,7 +86,7 @@ export function TranscriptPanel({ url, seed, onAsk }: { url: string; seed?: Tran
           const i = cues.indexOf(c);
           return (
             <li key={`${c.start}-${i}`} className={i === active ? "is-now" : ""}>
-              <button className="lb-cue-t lb-mono" onClick={() => void seek(c.start).catch(() => {})} aria-label={`Play from ${clock(c.start)}`}>{clock(c.start)}</button>
+              <button className="lb-cue-t lb-mono" onClick={() => void seek(c.start).catch(oops("jump to that moment"))} aria-label={`Play from ${clock(c.start)}`}>{clock(c.start)}</button>
               <span>{c.text}</span>
             </li>
           );

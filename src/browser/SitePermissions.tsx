@@ -46,6 +46,28 @@ export function PermissionBar({ ask, more, onAnswer }: { ask: PermissionAsk; mor
   );
 }
 
+/** A request nobody answered in time (Lens blocked it). Says so, instead of the bar just vanishing. */
+export function timedOutText(ask: PermissionAsk): string {
+  return `${hostOf(ask.origin)} asked to ${KIND_TEXT[ask.kind].verb}. Nobody answered in time, so Lens blocked it. The site can ask again.`;
+}
+
+export function PermissionTimedOut({ ask, onClose }: { ask: PermissionAsk; onClose(): void }) {
+  const t = KIND_TEXT[ask.kind];
+  return (
+    <div className="lb-perm-bar lb-perm-late" role="status">
+      <span className="lb-perm-icon" aria-hidden><t.Icon size={14} /></span>
+      <span className="lb-perm-text">{timedOutText(ask)}</span>
+      <span className="lb-push" />
+      <button className="lb-btn lb-btn-sm" autoFocus onClick={onClose}>OK <Key k="Esc" /></button>
+    </div>
+  );
+}
+
+/** Which timed-out request to show on this tab (newest), if any. */
+export function lateFor(late: PermissionAsk[], tabId: string | undefined): PermissionAsk | undefined {
+  return tabId ? late.filter((a) => a.tab === tabId && a.kind in KIND_TEXT).sort((a, b) => b.id - a.id)[0] : undefined;
+}
+
 /** What this site may do, with a way to forget each answer. */
 export function SiteStrip({ origin, saved, onForget, onClose }: { origin: string; saved: SitePermissions | undefined; onForget(kind: PermissionKind | null): void; onClose(): void }) {
   const kinds = sitesKinds(saved, origin);

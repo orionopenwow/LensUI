@@ -13,6 +13,7 @@
 //! - [`hidden_text`]: finds instructions aimed at the AI in page, OCR and file text, plus text that
 //!   is hidden, tiny, off-screen or low-contrast, zero-width and bidi characters, and encoded
 //!   blocks. Flagged spans are quarantined before the text reaches a model.
+//! - [`step_token`]: one-time tokens that tie an approval to the exact step it was given for.
 //! - [`pipeline`]: combines grants, the domain guard, injection findings and the action's risk
 //!   class into `allow`, `ask(reasons)` or `block(reasons)`.
 //!
@@ -31,6 +32,7 @@ pub mod hidden_text;
 pub mod pipeline;
 pub mod profile;
 pub mod state;
+pub mod step_token;
 
 #[cfg(test)]
 mod tests;
@@ -123,4 +125,41 @@ impl Sensitivity {
             Sensitivity::Strict => "strict",
         }
     }
+}
+
+/// JSON with object keys sorted at every level and no whitespace, so the same arguments always
+/// hash the same (see [`step_token::Binding`]).
+pub fn canonical_json(v: &serde_json::Value) -> String {
+    fn write(v: &serde_json::Value, out: &mut String) {
+        match v {
+            serde_json::Value::Object(m) => {
+                let mut keys: Vec<&String> = m.keys().collect();
+                keys.sort();
+                out.push('{');
+                for (i, k) in keys.iter().enumerate() {
+                    if i > 0 {
+                        out.push(',');
+                    }
+                    out.push_str(&serde_json::Value::String((*k).clone()).to_string());
+                    out.push(':');
+                    write(&m[*k], out);
+                }
+                out.push('}');
+            }
+            serde_json::Value::Array(a) => {
+                out.push('[');
+                for (i, x) in a.iter().enumerate() {
+                    if i > 0 {
+                        out.push(',');
+                    }
+                    write(x, out);
+                }
+                out.push(']');
+            }
+            other => out.push_str(&other.to_string()),
+        }
+    }
+    let mut out = String::new();
+    write(v, &mut out);
+    out
 }

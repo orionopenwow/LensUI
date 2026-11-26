@@ -454,9 +454,11 @@ pub struct ActRequest {
     pub action: PageAction,
     #[serde(default)]
     pub caps: Option<Capabilities>,
-    /// Set only by the Lens after the user held "approve" on the card.
+    /// The one-time token Lens issued with the "Needs your OK" card for this exact step
+    /// (`ActResult::approval_token`). There is no "approved" flag: a step that needs approval
+    /// runs only when its own unused, unexpired token comes back with it.
     #[serde(default)]
-    pub approved: bool,
+    pub approval_token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -469,6 +471,13 @@ pub struct ActResult {
     /// Why the agent-safety gate made the step wait or refused it (chips on the card).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub safety: Vec<crate::ai::SafetyNote>,
+    /// With `needs_ok`: the token to send back once the person approves this step. Bound to the
+    /// tab, element, action, the element as the page describes it now, and what would be typed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval_token: Option<String>,
+    /// With `needs_ok` after an approval that didn't count: missing | unknown | expired | mismatch.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval_refused: Option<String>,
 }
 
 /// Runs one agent action on the page after the approval rules. The element is re-described
@@ -518,19 +527,39 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
             );
         }
         match decision.risk {
-            Risk::Blocked => return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: false, safety }),
-            Risk::AskFirst if !req.approved => {
-                if let Some(t) = rt().state.tab_mut(&tab_id) {
-                    t.badge = Some("approve".into());
-                }
-                host::emit_state(&app);
-                return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: true, safety });
+            Risk::Blocked => {
+                return Ok(ActResult { message: decision.reason.clone(), decision, ran: false, needs_ok: false, safety, approval_token: None, approval_refused: None })
             }
-            _ => {}
+            Risk::AskFirst => {
+                // The binding is built from the step as it is right now (the element was just
+                // re-described), so an approval given for anything else doesn't count.
+                use crate::agentsafe::step_token::{self, Outcome};
+                let binding = gating::step_binding(&tab_id, req.element, &action, page_url.as_deref().unwrap_or(""));
+                match step_token::store().check_or_issue(&binding, req.approval_token.as_deref(), step_token::now_ms())? {
+                    Outcome::Run => {}
+                    Outcome::Ask { token, refused } => {
+                        if let Some(t) = rt().state.tab_mut(&tab_id) {
+                            t.badge = Some("approve".into());
+                        }
+                        host::emit_state(&app);
+                        let message = refused.map(|r| r.message().to_string()).unwrap_or_else(|| decision.reason.clone());
+                        return Ok(ActResult {
+                            message,
+                            decision,
+                            ran: false,
+                            needs_ok: true,
+                            safety,
+                            approval_token: Some(token),
+                            approval_refused: refused.map(|r| r.code().to_string()),
+                        });
+                    }
+                }
+            }
+            Risk::Auto => {}
         }
         let safety = Vec::new();
         let cmd = match &action {
-            PageAction::ReadPage => return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Read the page.".into(), safety }),
+            PageAction::ReadPage => return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Read the page.".into(), safety, approval_token: None, approval_refused: None }),
             PageAction::Scroll { dy } => json!({ "do": "scroll", "dy": dy, "ref": req.element }),
             PageAction::Click { .. } => json!({ "do": "click", "ref": req.element }),
             PageAction::Submit { .. } => json!({ "do": "submit", "ref": req.element }),
@@ -539,13 +568,13 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
             PageAction::Navigate { url } => {
                 let u: tauri::Url = url.parse().map_err(|_| "Bad URL.".to_string())?;
                 view.navigate(u).map_err(|e| e.to_string())?;
-                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Opened the page.".into(), safety });
+                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Opened the page.".into(), safety, approval_token: None, approval_refused: None });
             }
             PageAction::Search { query } => {
                 let url = rt().state.settings.search_url.replace("{q}", &crate::browser::model::urlencode(query));
                 let u: tauri::Url = url.parse().map_err(|_| "Bad search URL.".to_string())?;
                 view.navigate(u).map_err(|e| e.to_string())?;
-                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Searched the web.".into(), safety });
+                return Ok(ActResult { decision, ran: true, needs_ok: false, message: "Searched the web.".into(), safety, approval_token: None, approval_refused: None });
             }
         };
         if matches!(cmd.get("ref"), Some(Value::Null)) && !matches!(action, PageAction::Scroll { .. }) {
@@ -562,6 +591,8 @@ pub async fn browser_agent_act(app: AppHandle, req: ActRequest) -> Result<ActRes
             needs_ok: false,
             message: res.get("msg").and_then(Value::as_str).unwrap_or("").chars().take(200).collect(),
             safety,
+            approval_token: None,
+            approval_refused: None,
         })
     })
     .await

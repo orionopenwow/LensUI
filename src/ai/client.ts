@@ -5,6 +5,7 @@
 //   await ai.ask({ prompt: "tidy my windows", context: {}, allow_tools: true });
 //   ai.text / ai.steps / ai.status;  ai.confirm(callId, true);  ai.cancel();
 
+import { confirmArgs, rememberStepToken } from "./stepTokens";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -37,7 +38,13 @@ export const aiClearSecret = (provider: "claude" | "local") => invoke<void>("ai_
 /** Starts a request and resolves with its id; output arrives as lens://ai/* events. */
 export const aiAsk = (req: AiRequest) => invoke<string>("ai_ask", { req });
 export const aiCancel = (id: string) => invoke<boolean>("ai_cancel", { id });
-export const aiConfirmTool = (callId: string, approve: boolean) => invoke<void>("ai_confirm_tool", { callId, approve });
+/**
+ * Answers a step that waits for you. An approval carries the step's one-time token (from the
+ * proposal event); pass it, or let the one remembered for `callId` be used. Without the right
+ * token Lens Core does not run the step.
+ */
+export const aiConfirmTool = (callId: string, approve: boolean, token?: string | null) =>
+  invoke<void>("ai_confirm_tool", confirmArgs(callId, approve, token));
 /** Instant, offline: what the built-in script assistant reads in a command (or null). */
 export const aiIntent = (text: string) => invoke<Intent | null>("ai_intent", { text });
 /**
@@ -55,7 +62,10 @@ export async function listenAiEvents(handler: (ev: AiEvent) => void): Promise<Un
   const uns = await Promise.all([
     listen<AiDeltaEvent>(AI_EVENTS.delta, (e) => handler({ kind: "delta", payload: e.payload })),
     listen<AiDoneEvent>(AI_EVENTS.done, (e) => handler({ kind: "done", payload: e.payload })),
-    listen<AiToolProposalEvent>(AI_EVENTS.toolProposal, (e) => handler({ kind: "tool-proposal", payload: e.payload })),
+    listen<AiToolProposalEvent>(AI_EVENTS.toolProposal, (e) => {
+      rememberStepToken(e.payload.call_id, e.payload.approval_token);
+      handler({ kind: "tool-proposal", payload: e.payload });
+    }),
     listen<AiToolResultEvent>(AI_EVENTS.toolResult, (e) => handler({ kind: "tool-result", payload: e.payload })),
   ]);
   return () => uns.forEach((u) => u());

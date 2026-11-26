@@ -23,8 +23,10 @@ export async function pendingRequests(): Promise<ApprovalRequest[]> {
   );
 }
 
-export async function approveMcp(id: string): Promise<boolean> {
-  const r = await invoke<PendingAction>("approve_mcp_action_cmd", { id });
+/** Approves one queued request. `token` is that request's own one-time token (`ApprovalRequest.token`);
+ *  Lens Core refuses the approval without it, so a card can only approve what it showed. */
+export async function approveMcp(id: string, token?: string | null): Promise<boolean> {
+  const r = await invoke<PendingAction>("approve_mcp_action_cmd", { id, token: token ?? null });
   return r.status === "done" || r.status === "approved";
 }
 
@@ -40,7 +42,7 @@ export async function approveRequest(req: ApprovalRequest): Promise<boolean> {
     await invoke("bridge_confirm", { id: req.reference, clipboard: clipboard || null });
     return true;
   }
-  return approveMcp(req.id);
+  return approveMcp(req.id, req.token);
 }
 
 /** Lens Apps: put a confirmation this surface is showing on the shared card too. */
