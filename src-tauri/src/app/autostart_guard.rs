@@ -130,6 +130,10 @@ pub(crate) fn dev_signin_exit_code(running_as_shell: bool) -> Option<i32> {
     if !(has_autostart_arg(std::env::args()) || running_as_shell) {
         return None;
     }
+    // The end-to-end test runs a debug build with --autostart to exercise the sign-in gate.
+    if !running_as_shell && std::env::var_os("LENS_E2E_ALLOW_AUTOSTART").is_some() {
+        return None;
+    }
     remove_run_entry();
     if running_as_shell {
         let _ = crate::win_shell::disable_shell_mode();

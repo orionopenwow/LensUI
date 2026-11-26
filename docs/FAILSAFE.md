@@ -242,3 +242,48 @@ check on hardware:
 * Killing `msedgewebview2.exe` (the GPU process and the browser process, not only a renderer).
 * A fullscreen game in front while a hook handler is benched: input must be unaffected.
 * Release build size and start-up time after the move from `panic = "abort"` to `"unwind"`.
+
+## 9. Sign-in safety
+
+What Lens may do while Windows is signing you in, and what always gets you back to a working
+desktop. Added after a report that "Start with Windows" made it hard to get in.
+
+**Sign-in gate** (`app/signin_gate.rs`). A Lens started by "Start with Windows" (`--autostart`)
+creates no window, installs no hook and leaves the taskbar alone until the desktop is ready:
+Explorer's taskbar window exists and the input desktop is the normal one (not the lock screen,
+the sign-in screen or a UAC prompt), both for 3 s in a row. If that never happens Lens starts
+anyway after two minutes, but never while the lock or sign-in screen is up. **Hold Shift while
+signing in to skip Lens for that sign-in.** A Lens started by hand does not wait.
+
+**Keys that always reach Windows** (`input::protected_combo`). Whatever a Lens feature asks, these
+pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,
+Win+D, Win+Tab. Alt+Tab is only ever taken by the optional Lens Alt+Tab (off by default), which
+falls back to Windows when its page does not answer. Every hook calls `CallNextHookEx` unless a
+handler swallowed the key.
+
+**Shell Mode is a Tester mode experiment.** Replacing Explorer as the Windows shell can leave a
+person with no desktop at sign-in. The card only shows with Tester mode on, enabling it is refused
+otherwise, and an override found at start-up without Tester mode is removed.
+
+**Start-up crashes** (§6) still bring back the Windows taskbar first and ask about Safe Mode in a
+native box; as the shell, the boot guard starts Explorer after two failed starts.
+
+**The watcher cannot freeze the Dock and Top Bar in place.** Each watcher pass runs inside a panic
+guard (a panic used to end the whole process). A supervisor thread watches the passes: after 2 s
+without one, the Dock and Top Bar are made click-through until the watcher runs again, so a stuck
+Lens can never cover other apps' buttons.
+
+**Fix-My-Desktop.bat** removes the start-with-Windows entry, the Shell Mode override and
+restarts Explorer. It is safe to run at any time.
+
+## 10. Monitors and pop-outs
+
+- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way
+  (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at
+  start-up and on a setting change.
+- **Follow the pointer** (Settings › Dock & Bar › Monitor): the bars stay on their monitor until
+  the pointer is pushed into the top or bottom edge of another one.
+- Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s
+  with the pointer away and no keyboard focus in them; never under the pointer, never while a
+  mouse button is held. Settings dragged off the Dock is a window and stays. The setting is
+  `func.autoClosePopouts` (on by default).
