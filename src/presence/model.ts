@@ -157,6 +157,7 @@ export const TAKEN_HOTKEYS = [
   "Alt+Space", "Ctrl+Space", "Ctrl+Alt+Space", "Ctrl+Alt+Shift+Space", "Ctrl+Shift+S", "Ctrl+Alt+S",
   "Ctrl+Alt+Q", "Ctrl+Alt+T", "Ctrl+Alt+V", "Ctrl+Alt+Shift+V", "Ctrl+Alt+U", "Ctrl+Shift+F12", "Alt+W",
   "Alt+Shift+T", "Ctrl+Alt+Up", "Ctrl+Alt+Down", "Ctrl+Alt+Left", "Ctrl+Alt+Right", "Ctrl+Alt+Shift+E",
+  "Ctrl+Alt+W", "Ctrl+Alt+Shift+Right", "Ctrl+Alt+Shift+Left",
 ];
 
 const norm = (s: string) =>

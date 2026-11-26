@@ -6,7 +6,9 @@ import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { LensConfig, WindowsThemeInfo } from "../types/lens";
 import { packById } from "../themes/packs";
-import { lookPack } from "../themes/featured";
+import { FEATURED_LOOKS, lookPack } from "../themes/featured";
+import { accentFromUrl } from "../themes/accentFromImage";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { PackCard } from "./ThemeGallery";
 import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf } from "../dock/styles";
 import { enableAmbientBackdrop } from "../playground/ambient/controls";
@@ -18,6 +20,7 @@ import {
   FIND_LATER,
   looksFor,
   NO_CHOICES,
+  suggestFromDesktop,
   whatsNewSince,
   type ColourScheme,
   type ExtraId,
@@ -82,6 +85,36 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const [scheme, setScheme] = useState<ColourScheme>("dark");
   const headingRef = useRef<HTMLHeadingElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  // First run starts from the person's own desktop colours (see suggestFromDesktop): a draft only,
+  // every option stays on offer, Finish writes it, Skip leaves nothing behind.
+  const [fromDesktop, setFromDesktop] = useState(false);
+  useEffect(() => {
+    if (reason !== "first") return;
+    let alive = true;
+    (async () => {
+      let wallpaperAccent: string | null = null;
+      try {
+        const path = await invoke<string | null>("snapshot_windows_wallpaper_cmd");
+        if (path) wallpaperAccent = (await accentFromUrl(convertFileSrc(path)))?.accent ?? null;
+      } catch {
+        /* no wallpaper to read: Windows' accent alone */
+      }
+      if (!alive) return;
+      const sug = suggestFromDesktop(
+        { windowsAccent: winTheme.accentHex, wallpaperAccent, lightApps: !!winTheme.appsUseLightTheme },
+        FEATURED_LOOKS.map((l) => ({ id: l.id, accent: packById(l.id)?.accent ?? "#888888" })),
+      );
+      setScheme(sug.scheme);
+      // Only fill what the person hasn't picked yet.
+      setChoices((c) => ({ ...c, look: c.look ?? (sug.look === baseRef.current.theme.preset ? undefined : sug.look), accent: c.accent ?? sug.accent, scheme: c.scheme ?? sug.scheme }));
+      setFromDesktop(true);
+    })();
+    return () => {
+      alive = false;
+    };
+    // Read once when setup opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isUpdate = reason !== "first";
   const notes = useMemo(() => (isUpdate ? whatsNewSince(reason === "forced" ? "" : seenVersion, version || "999") : []), [isUpdate, reason, seenVersion, version]);
@@ -109,6 +142,12 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const previewPack = packById(preview.theme.preset);
   const previewAccent =
     preview.theme.accentMode === "custom" ? preview.theme.customAccent : preview.theme.accentMode === "windows" ? winTheme.accentHex : previewPack?.accent ?? winTheme.accentHex;
+  // The setup screens wear the accent being picked (from the desktop at first), so they look like
+  // the person's own desktop from the first page.
+  const wizRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    wizRef.current?.style.setProperty("--lens-accent", previewAccent);
+  }, [previewAccent]);
 
   /** Leaves setup without changing anything but the "seen" markers. */
   const skipAll = () => {
@@ -170,7 +209,15 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   );
 
   return (
-    <div className="wiz" role="dialog" aria-modal="true" aria-labelledby="wiz-heading" onKeyDown={onKeyDown} data-setup-page={page}>
+    <div
+      className="wiz"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wiz-heading"
+      onKeyDown={onKeyDown}
+      data-setup-page={page}
+      ref={wizRef}
+    >
       <header className="wiz-top">
         <ol className="wiz-steps" aria-label="Setup steps">
           {pages.map((p, i) => (
@@ -288,6 +335,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             <div>
               {heading("Pick your colours")}
               <p className="wiz-sub">A featured look sets colours, font and glass. Your Dock stays as you picked it.</p>
+              {fromDesktop && <p className="wiz-sub wiz-from-desktop">Picked to match your desktop. Choose anything else below.</p>}
             </div>
             <div className="wiz-seg" role="radiogroup" aria-label="Light or dark">
               {SCHEMES.map((s) => (

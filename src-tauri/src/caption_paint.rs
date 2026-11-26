@@ -13,6 +13,82 @@
 /// Size of the overlay at 96 DPI: three 46 px Windows caption buttons by a 31 px caption.
 pub const BASE_W: i32 = 138;
 pub const BASE_H: i32 = 31;
+/// The least alpha any overlay pixel gets, so the whole overlay catches the mouse (see `render`).
+pub const MIN_HIT_ALPHA: u8 = 1;
+
+/// `WM_NCHITTEST` results for caption buttons.
+pub const HT_MINBUTTON: u32 = 8;
+pub const HT_MAXBUTTON: u32 = 9;
+pub const HT_CLOSE: u32 = 20;
+pub const HT_HELP: u32 = 21;
+
+fn is_button_hit(code: u32) -> bool {
+    matches!(code, HT_MINBUTTON | HT_MAXBUTTON | HT_CLOSE | HT_HELP)
+}
+
+/// The caption buttons' size (physical px: width from the window's right edge, height from its
+/// top edge), found by asking the window what is under a few points (`hit(x, y)` returns the
+/// `WM_NCHITTEST` code for a screen point). Covering exactly this area keeps every native button
+/// under Lens's dots, whatever the app's caption height (Explorer's tab row, Notepad, Office) or
+/// scale. `None` when the app doesn't report caption buttons (it draws its own) or the result
+/// doesn't look like caption buttons; the caller falls back to the standard size.
+pub fn probe_caption_buttons(mut hit: impl FnMut(i32, i32) -> u32, right: i32, top: i32, scale: f32) -> Option<(i32, i32)> {
+    let s = scale.max(1.0);
+    let px = |v: f32| (v * s).round() as i32;
+    let step = px(4.0).max(1);
+    // The Close button's column, a little in from the right edge.
+    let cx = right - px(10.0);
+    let mut y0 = None;
+    let mut y = top;
+    while y <= top + px(14.0) {
+        if hit(cx, y) == HT_CLOSE {
+            y0 = Some(y);
+            break;
+        }
+        y += 1;
+    }
+    let y0 = y0?;
+    // The last row still on Close: binary search (a caption button is one solid block).
+    let (mut lo, mut hi) = (y0, top + px(90.0));
+    if hit(cx, hi) == HT_CLOSE {
+        return None;
+    }
+    while hi - lo > 1 {
+        let mid = (lo + hi) / 2;
+        if hit(cx, mid) == HT_CLOSE {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    let y_end = lo;
+    let h = y_end + 1 - top;
+    let ymid = (y0 + y_end) / 2;
+    // Walk left along the middle of the buttons until a gap wider than a few px of non-buttons.
+    let mut left = right;
+    let mut x = right - 1;
+    let mut gap = 0;
+    while x >= right - px(300.0) {
+        if is_button_hit(hit(x, ymid)) {
+            left = x;
+            gap = 0;
+        } else {
+            gap += step;
+            if gap > px(8.0) {
+                break;
+            }
+        }
+        x -= step;
+    }
+    // Refine the last coarse step to the exact pixel.
+    while left > right - px(300.0) && is_button_hit(hit(left - 1, ymid)) {
+        left -= 1;
+    }
+    let w = right - left;
+    let ok_w = (px(60.0)..=px(300.0)).contains(&w);
+    let ok_h = (px(16.0)..=px(90.0)).contains(&h);
+    (ok_w && ok_h).then_some((w, h))
+}
 
 /// Order codes shared with the engine and the config (`windowControls.order`).
 pub const ORDER_YGR: u8 = 0;
@@ -214,7 +290,10 @@ pub fn render(w: i32, h: i32, row_rgb: &[u32], hovered: bool, order: u8, corner_
                 }
             }
 
-            let a = (255.0 * alpha).round().clamp(0.0, 255.0);
+            // Never fully transparent: Windows passes the mouse through alpha-0 pixels of a layered
+            // window, so a transparent corner or feather let the native Close button underneath
+            // light up red and show its tooltip. Alpha 1 is invisible but keeps the hit.
+            let a = (255.0 * alpha).round().clamp(MIN_HIT_ALPHA as f32, 255.0);
             let pm = a / 255.0;
             let i = ((y * w + x) * 4) as usize;
             px[i] = (b * pm).round() as u8;
@@ -403,6 +482,56 @@ mod tests {
             let (w, _) = overlay_size(dpi, BASE_H);
             let (gap, cols) = sample_strip(w);
             assert!(gap >= 2 && cols >= 6);
+        }
+    }
+
+    /// A fake window: caption buttons `bw` × `bh` (physical px) at the top-right of a window whose
+    /// right edge is `right` and top is `top`; Close is the rightmost third.
+    fn fake(right: i32, top: i32, bw: i32, bh: i32) -> impl FnMut(i32, i32) -> u32 {
+        move |x, y| {
+            if y < top || y >= top + bh || x >= right || x < right - bw {
+                return if y < top + bh + 4 { 2 } else { 1 }; // HTCAPTION / HTCLIENT
+            }
+            let third = bw / 3;
+            if x >= right - third {
+                HT_CLOSE
+            } else if x >= right - 2 * third {
+                HT_MAXBUTTON
+            } else {
+                HT_MINBUTTON
+            }
+        }
+    }
+
+    #[test]
+    fn probe_finds_the_native_buttons_at_any_caption_height_and_scale() {
+        // Standard Win32 caption, 100%.
+        assert_eq!(probe_caption_buttons(fake(1000, 100, 138, 31), 1000, 100, 1.0), Some((138, 31)));
+        // Explorer / Notepad with a tab row: a much taller caption.
+        assert_eq!(probe_caption_buttons(fake(1000, 100, 138, 48), 1000, 100, 1.0), Some((138, 48)));
+        // 150%.
+        let (w, h) = probe_caption_buttons(fake(3000, 40, 207, 47), 3000, 40, 1.5).unwrap();
+        assert!((w - 207).abs() <= 6 && h == 47, "{w}x{h}");
+        // Maximised: shorter caption flush with the top.
+        assert_eq!(probe_caption_buttons(fake(1920, 0, 138, 22), 1920, 0, 1.0), Some((138, 22)));
+    }
+
+    #[test]
+    fn probe_gives_up_when_the_app_reports_no_caption_buttons() {
+        // An app that draws its own buttons and answers HTCLIENT / HTCAPTION everywhere.
+        assert_eq!(probe_caption_buttons(|_, _| 1, 1000, 100, 1.0), None);
+        assert_eq!(probe_caption_buttons(|_, _| 2, 1000, 100, 1.0), None);
+        // Implausibly tall "Close" (e.g. a whole side panel answering HTCLOSE).
+        assert_eq!(probe_caption_buttons(|_, _| HT_CLOSE, 1000, 100, 1.0), None);
+    }
+
+    #[test]
+    fn every_overlay_pixel_catches_the_mouse() {
+        for (w, h) in [(138, 31), (207, 47), (276, 76)] {
+            for corner in [0.0, 8.0, 16.0] {
+                let px = render(w, h, &[0x202020], false, ORDER_YGR, corner);
+                assert!(px.chunks(4).all(|p| p[3] >= MIN_HIT_ALPHA), "{w}x{h} corner {corner}: a pixel lets clicks through to the native buttons");
+            }
         }
     }
 }
