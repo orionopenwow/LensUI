@@ -2,7 +2,7 @@
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works** (built, tested), **partly** (built with gaps), **broken** (known wrong), **not built**. Evidence is a path, a test name or a BUGS.md id. Reviewed against `main` on 2026-11-26.
 >
-> **Unified style + window carousel (feature/dock-unified, 2026-11-26):** eighth style "Unified" (one floating pill: Launcher, apps, tray, bell with count, two-line clock); window-count marks (dash = one window, three dots = several) on every style; a window carousel in the hover card for apps with 2+ windows; smooth reflow when apps are pinned, unpinned, reordered, opened or closed; Launcher pin glyphs. Works headless and on CI; the native thumbnail handover during a slide needs a real-PC check.
+> **Unified style + window carousel (feature/dock-unified, 2026-11-26):** eighth style "Unified" (one floating pill: Launcher, apps, tray, bell with count, two-line clock); window-count marks (dash = one window, three dots = several) on every style; a window carousel in the hover card for apps with 2+ windows; smooth reflow when apps are pinned, unpinned, reordered, opened or closed; Launcher pin glyphs. While searching, a system area in the row steps aside so the field and panel keep Floating's sizes. Works headless and on CI; the native thumbnail handover during a slide needs a real-PC check.
 >
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (Dock & Bar › Advanced, incl. the pop-out auto-close switch); per-monitor bars + Follow the pointer fixed in planning and unit-tested (B-53, not yet confirmed on a real PC). Left: quick wins 3–5, the "in 10 seconds" tour.
 

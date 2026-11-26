@@ -492,7 +492,7 @@ export const DockSurface: React.FC = () => {
       const padL = parseFloat(getComputedStyle(pillRef.current).paddingLeft) || 0;
       if (row) setLockedRowOffset(Math.max(0, Math.round(row.getBoundingClientRect().left - pr.left - padL)));
     } else if (pillRef.current && !dockSearchOpenRef.current && horizontalDock) {
-      const startW = Math.round(pillRef.current.getBoundingClientRect().width);
+      let startW = Math.round(pillRef.current.getBoundingClientRect().width);
       // The text box spreads out of the search icon; every other icon moves right. Icons may shrink a
       // little to make room, never below ~80 % of their size (tiny icons and a cramped field made the
       // Settings gear and the search field hard to hit). When that isn't enough the Dock widens just
@@ -502,20 +502,24 @@ export const DockSurface: React.FC = () => {
       const others = row
         ? Array.from(row.children).filter((el) => !el.classList.contains("dock-search-slot"))
         : [];
-      // The system area (Unified, or tray and clock in the Dock) keeps its own width: never shrunk.
-      const sysW = others
-        .filter((el) => el.classList.contains("dock-sys"))
-        .reduce((w, el) => w + el.getBoundingClientRect().width, 0);
-      const iconCount = others.filter((el) => !el.classList.contains("dock-divider") && !el.classList.contains("dock-sys")).length;
-      const dividerCount = others.filter((el) => el.classList.contains("dock-divider")).length;
+      // The system area in the row (Unified, or tray and clock in the Dock) steps aside while
+      // searching (DockSurface.css), so search gets Floating's room and the panel its own width.
+      const rowItems = others.filter((el) => !el.classList.contains("dock-sys") && (el as HTMLElement).dataset.reflowKey !== "sys-divider");
+      const asideW = others
+        .filter((el) => !rowItems.includes(el))
+        .reduce((w, el) => w + el.getBoundingClientRect().width + parseFloat(getComputedStyle(el).marginLeft || "0") + parseFloat(getComputedStyle(el).marginRight || "0"), 0);
+      const iconCount = rowItems.filter((el) => !el.classList.contains("dock-divider")).length;
+      const dividerCount = rowItems.length - iconCount;
       const slim = searchStyle === "slim";
+      // What the pill is without the parts that step aside (their widths and the row gaps).
+      startW = Math.round(startW - asideW - (others.length - rowItems.length) * (slim ? 4 : 6));
       // The whole search slot: glass + field + Ask toggle + ESC. 280 px leaves ~170 px to type in.
       const MIN_FIELD = slim ? 256 : 280;
       const chrome = slim ? 22 : 30; // pill padding + border while open
       const gap = slim ? 4 : 6;
       const dividerW = slim ? 5 : 9;
       const floorIcon = Math.max(slim ? 24 : 28, Math.round(effectiveIconSize * 0.8));
-      const fixed = others.length * gap + dividerCount * dividerW + Math.ceil(sysW);
+      const fixed = rowItems.length * gap + dividerCount * dividerW;
       const fit = Math.floor((startW - chrome - MIN_FIELD - fixed) / Math.max(1, iconCount));
       const icon = Math.max(floorIcon, Math.min(effectiveIconSize, fit));
       const needW = chrome + MIN_FIELD + fixed + icon * iconCount;

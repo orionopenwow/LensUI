@@ -2330,6 +2330,12 @@
   top: calc(3px + var(--dock-full-icon-size, 40px) + 6px);
 }
 
+/* While searching, the tray, bell and clock in the row step aside: the field gets Floating's room
+   and the panel keeps its own width (Unified, and any centred Dock with the system area in it). */
+.dock-stage:not(.is-bar) .dock-pill.is-expanded-launcher .dock-icons-row > :is(.dock-sys-inline, [data-reflow-key="sys-divider"]) {
+  display: none;
+}
+
 /* The Launcher button leads the pill, like the other Launcher-first styles. */
 .dock-stage.dock-style-unified .dock-launcher-btn {
   color: var(--lens-accent, var(--lens-fg));
