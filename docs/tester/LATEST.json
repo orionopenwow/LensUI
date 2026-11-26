@@ -1,209 +1,227 @@
 {
-  "date": "2026-11-24",
-  "build_ref": "main@7f77773",
+  "date": "2026-11-26",
+  "build_ref": "main@718ae8b",
   "changes": [
     {
       "area": "Dock",
-      "title": "Auto-hide never gets stuck",
-      "detail": "The Dock hides again reliably, and one click outside closes all its menus.",
-      "pr": 52
+      "title": "Menus open and close from their own button",
+      "detail": "The gear and Quick Settings close on a second press; Settings and Search have a visible ×; a quick click elsewhere closes them.",
+      "pr": 102
     },
     {
       "area": "Dock",
-      "title": "Dock sized from what it draws",
-      "detail": "Click areas and window size follow the real Dock, so no clipping or dead space above icons (B-15).",
-      "pr": 62
+      "title": "Window previews on by default",
+      "detail": "Live previews on hover, like Windows; turning them off again sticks.",
+      "pr": 102
     },
     {
       "area": "Dock",
-      "title": "Taskbar style matches Windows 11",
-      "detail": "The Taskbar dock style uses Windows 11's real proportions.",
-      "pr": 68
+      "title": "Smoother Dock, no white flash",
+      "detail": "Faster magnification, hover and reorder; no thin bright line when Search opens or the style changes.",
+      "pr": 83
     },
     {
       "area": "Dock",
-      "title": "Pins keep Windows' order",
-      "detail": "Apps copied from the Windows taskbar keep their order until you reorder them in Lens.",
-      "pr": 49
+      "title": "Dock styles keep menu sizes",
+      "detail": "Styles no longer change drop-up widths; the Taskbar style opens Settings and Search like Windows 11.",
+      "pr": 95
     },
     {
       "area": "Themes",
-      "title": "No freeze when applying a theme",
-      "detail": "Windows-side theme work runs in the background and is skipped when nothing changed.",
-      "pr": 53
+      "title": "Setup starts from your desktop",
+      "detail": "First run picks your light/dark mode, wallpaper colour and nearest look; Skip changes nothing.",
+      "pr": 99
     },
     {
       "area": "Themes",
-      "title": "Twelve featured looks",
-      "detail": "Twelve clearly different whole looks up front; the other 77 packs are under More themes.",
-      "pr": 65
+      "title": "Windows accent only on request",
+      "detail": "Lens copies its accent into Windows only with 'Also use this accent in Windows' ticked (off by default).",
+      "pr": 102
+    },
+    {
+      "area": "Themes",
+      "title": "Clean theme switching",
+      "detail": "Theme switches in Settings are instant with no growing or flashing; themes change colours only.",
+      "pr": 88
     },
     {
       "area": "Windows",
-      "title": "Yellow, Green, Red window buttons",
-      "detail": "New window-button colour option; Lens panels no longer double-animate.",
-      "pr": 60
+      "title": "Window dots cover the real buttons",
+      "detail": "The native Close button no longer lights up under the dots; they follow move, maximise, snap and restore; the green dot opens Snap Layouts.",
+      "pr": 99
     },
     {
       "area": "Desktop",
-      "title": "Wallpaper Switcher",
-      "detail": "Wallpaper picker, Settings card, auto-change with crossfade, /wallpaper, voice and tray.",
-      "pr": 65
+      "title": "Safer sign-in",
+      "detail": "With Start with Windows on, Lens waits for the real desktop; hold Shift at sign-in to skip Lens.",
+      "pr": 101
     },
     {
       "area": "Desktop",
-      "title": "No error windows at sign-in",
-      "detail": "Start with Windows refuses development builds and cleans up old entries (B-21).",
-      "pr": 49
+      "title": "Protected Windows keys",
+      "detail": "Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+F4, Win+L, Win+D and Win+Tab always reach Windows.",
+      "pr": 101
+    },
+    {
+      "area": "Desktop",
+      "title": "Click through the Top Bar",
+      "detail": "Only the bar's buttons take clicks; elsewhere the click goes to the app underneath.",
+      "pr": 102
+    },
+    {
+      "area": "Desktop",
+      "title": "Monitor changes handled",
+      "detail": "The Dock and Top Bar are re-placed on monitor, resolution, scaling or sleep changes; new 'Follow the pointer'.",
+      "pr": 101
+    },
+    {
+      "area": "Desktop",
+      "title": "Pop-outs close by themselves",
+      "detail": "Quick Settings and Settings close about 1.5 s after the pointer leaves.",
+      "pr": 101
+    },
+    {
+      "area": "Desktop",
+      "title": "Auto-hidden Top Bar stays hidden",
+      "detail": "It no longer pops back up after a settings save or Search.",
+      "pr": 94
     },
     {
       "area": "AI and Command",
-      "title": "In-page Lens buttons",
-      "detail": "Optional Lens orb beside tweets, YouTube, GitHub, media, code and downloads, in the extension and Lens Browser.",
-      "pr": 57
-    },
-    {
-      "area": "AI and Command",
-      "title": "Command first Enter",
-      "detail": "A start-up race was fixed; a rarer case is now traced (B-12b).",
-      "pr": 64
+      "title": "Lens › row in right-click menus",
+      "detail": "One Lens row slides into Magic actions; Explorer has a Lens menu inside folders and on drives.",
+      "pr": 84
     },
     {
       "area": "Browser",
-      "title": "Lens Browser big update",
-      "detail": "Keyboard shortcuts, address suggestions, working Back/Forward, Stop, per-site zoom, Find count, new-tab page, history, downloads and per-item import.",
-      "pr": 67
+      "title": "Site permission prompts",
+      "detail": "Camera, mic, location, notifications and clipboard requests show a Lens bar: Block, Allow once, Allow on this site.",
+      "pr": 74
+    },
+    {
+      "area": "Browser",
+      "title": "Simpler sidebar",
+      "detail": "Tabs first, pinned icons in one row, Find a tab with Ctrl+Shift+A.",
+      "pr": 86
     },
     {
       "area": "Settings",
-      "title": "Simple / Advanced mode",
-      "detail": "Simple shows the main settings as picture cards; Advanced shows everything.",
-      "pr": 56
+      "title": "One Simple / Advanced switch",
+      "detail": "At the top of the sidebar; plus one plain shortcuts cheat sheet.",
+      "pr": 99
     },
     {
       "area": "Settings",
-      "title": "Quick page",
-      "detail": "Most-used toggles, quick theme and window layouts at the top of Settings.",
-      "pr": 55
-    },
-    {
-      "area": "Settings",
-      "title": "Quick Settings fixes",
-      "detail": "Brightness for each screen, volume unmutes when raised, real Wi-Fi/Bluetooth states, Night light schedule, live window thumbnails.",
-      "pr": 60
+      "title": "Restart to update and Report a problem",
+      "detail": "Updates are announced outside Settings; a built-in bug report.",
+      "pr": 82
     },
     {
       "area": "Under the hood",
-      "title": "Failsafe and Safe Mode",
-      "detail": "Crashed windows reload themselves; repeated crashes turn that part off; a start-up crash loop brings the taskbar back and offers Safe Mode.",
-      "pr": 66
+      "title": "Renderer crash recovery",
+      "detail": "A renderer that exits during start-up is reloaded; the Dock always comes back.",
+      "pr": 91
     },
     {
       "area": "Under the hood",
-      "title": "Remove all, one list",
-      "detail": "Remove all undoes everything Lens changed, including app setups, the accent colour, workspaces and the live wallpaper.",
-      "pr": 62
-    },
-    {
-      "area": "Under the hood",
-      "title": "Smoothness check",
-      "detail": "Tester Hub can measure jank; one motion system for animations.",
-      "pr": 61
+      "title": "Magic waves scaffold",
+      "detail": "Groundwork for Dashboard, Magic Mouse and more; everything off.",
+      "pr": 103
     }
   ],
   "test_steps": [
     {
-      "id": "theme-no-freeze",
-      "area": "Themes",
-      "steps": "Settings › Appearance. Click through six of the twelve featured looks quickly, about one per second.",
-      "expected": "The PC stays responsive, the mouse never stalls, and the last look clicked is the one applied.",
-      "risk": "high"
-    },
-    {
-      "id": "remove-all-v3",
-      "area": "Settings",
-      "steps": "Turn on a live wallpaper, change the Windows accent from Lens and run one Lens Apps setup. Then Settings › About & Testing › Back up & restore › Remove all Lens changes, and quit Lens.",
-      "expected": "The wallpaper, accent and app setup are reverted; the report ends with 'Not changed: apps you installed'.",
-      "risk": "high"
-    },
-    {
-      "id": "safe-mode",
-      "area": "Under the hood",
-      "steps": "Settings › About & Testing › Safety net › Start in Safe Mode next time, then restart Lens.",
-      "expected": "Lens starts with optional features off and the taskbar and Dock working; the next normal start restores everything.",
-      "risk": "high"
-    },
-    {
-      "id": "autostart-signin",
+      "id": "t1",
       "area": "Desktop",
-      "steps": "Turn on Start with Windows, then sign out and back in.",
-      "expected": "Lens starts normally with no white 'can't reach this page' windows.",
+      "steps": "Turn on Start with Windows (Settings › Quick), sign out and in; then repeat holding Shift.",
+      "expected": "No error windows; Lens appears only after the normal desktop; with Shift, Lens does not start.",
       "risk": "high"
     },
     {
-      "id": "dock-autohide",
+      "id": "t2",
+      "area": "Desktop",
+      "steps": "Put a browser right under the Top Bar and click its tabs and title bar through the bar.",
+      "expected": "The browser gets the clicks; the bar's own buttons still work; no dead zones.",
+      "risk": "high"
+    },
+    {
+      "id": "t3",
+      "area": "Windows",
+      "steps": "Open Notepad, hover the top-right corner; maximise, snap (Win+Left), restore, resize; rest on the green dot.",
+      "expected": "Native Close never turns red or shows a tooltip; dots stay on the corner; green dot opens Snap Layouts.",
+      "risk": "high"
+    },
+    {
+      "id": "t4",
+      "area": "Desktop",
+      "steps": "With two screens: unplug one or change resolution or scaling; sleep and wake; try Monitor › Follow the pointer.",
+      "expected": "Dock and Top Bar land on a real screen in the right place; Follow the pointer moves on an edge push.",
+      "risk": "high"
+    },
+    {
+      "id": "t5",
+      "area": "Desktop",
+      "steps": "With a Lens menu open press Ctrl+Shift+Esc, Alt+F4, Win+D, Win+L.",
+      "expected": "Windows reacts every time.",
+      "risk": "high"
+    },
+    {
+      "id": "t6",
       "area": "Dock",
-      "steps": "Dock & Bar › auto-hide on. Open a Dock menu, then click the desktop, then another app.",
-      "expected": "Menus close on the first outside click and the Dock hides again within about 2 seconds.",
+      "steps": "Press the Dock gear twice, Top Bar Quick Settings twice; open Search and use × and Esc.",
+      "expected": "Second press closes; × and Esc close Search; nothing reopens by itself.",
       "risk": "med"
     },
     {
-      "id": "wallpaper-switcher",
+      "id": "t7",
       "area": "Desktop",
-      "steps": "Settings › Appearance › Wallpaper Switcher (or /wallpaper in Command). Pick a wallpaper, then set auto-change to the shortest interval.",
-      "expected": "Smooth crossfade with no black or white flash; light on CPU while a full-screen window covers the desktop.",
+      "steps": "Set the Top Bar to auto-hide; while hidden change a setting, then open and close Search.",
+      "expected": "The bar hides again and never stays stuck.",
       "risk": "med"
     },
     {
-      "id": "browser-daily",
+      "id": "t8",
+      "area": "Desktop",
+      "steps": "Open Quick Settings from the Dock and move the pointer away.",
+      "expected": "Closes after about 1.5 s; never while the pointer is over it.",
+      "risk": "med"
+    },
+    {
+      "id": "t9",
+      "area": "Dock",
+      "steps": "Hover a running app on the Dock, then move away.",
+      "expected": "Live previews appear beside the Dock and go away; none stuck in a corner.",
+      "risk": "med"
+    },
+    {
+      "id": "t10",
+      "area": "Themes",
+      "steps": "Settings › About & Testing › Setup: press Skip; reopen and press Finish.",
+      "expected": "Opens in your desktop's colours; Skip changes nothing; Finish changes only what you picked.",
+      "risk": "med"
+    },
+    {
+      "id": "t11",
       "area": "Browser",
-      "steps": "In Lens Browser try Ctrl+T, typing part of an open tab's address, Ctrl+Plus on one site, Ctrl+F, Back/Forward and Ctrl+H.",
-      "expected": "Each works; the open tab is offered as 'switch'; zoom is remembered for that site only; Back is greyed out with nowhere to go.",
+      "steps": "In Lens Browser open a site that asks for camera or location.",
+      "expected": "A Lens bar under the address bar; Esc blocks; 'Allow on this site' is remembered and can be forgotten in Settings.",
       "risk": "med"
     },
     {
-      "id": "browser-import",
-      "area": "Browser",
-      "steps": "Lens Browser › Import from Chrome, Edge or Arc, choosing only bookmarks.",
-      "expected": "Only bookmarks are imported, a receipt is shown, and no passwords are imported.",
-      "risk": "med"
-    },
-    {
-      "id": "quick-settings",
-      "area": "Settings",
-      "steps": "Top Bar › Quick Settings. Drag brightness with an external monitor attached; raise volume while muted.",
-      "expected": "Each screen changes or says 'Not supported by this monitor'; raising volume unmutes.",
-      "risk": "med"
-    },
-    {
-      "id": "settings-simple",
-      "area": "Settings",
-      "steps": "Open Settings, switch Simple/Advanced, and in Simple search for 'auto-hide'.",
-      "expected": "Cards show real previews; the result carries an Advanced tag and opens More options.",
-      "risk": "low"
-    },
-    {
-      "id": "in-page-lens",
-      "area": "AI and Command",
-      "steps": "Turn on one in-page placement (e.g. YouTube) in the extension or Lens Browser.",
-      "expected": "A small orb appears in that place only, the page doesn't jump, and Esc closes its menu.",
-      "risk": "low"
-    },
-    {
-      "id": "smoothness-check",
-      "area": "Under the hood",
-      "steps": "Tester Hub › Smoothness › Run smoothness check (about 2 minutes, hands off).",
-      "expected": "It finishes by itself with a verdict per interaction; attach the report to any jank bug.",
+      "id": "t12",
+      "area": "Themes",
+      "steps": "Change the Lens accent with 'Also use this accent in Windows' off, then on.",
+      "expected": "Windows' accent changes only when the box is ticked.",
       "risk": "low"
     }
   ],
   "known_issues": [
-    "Command's first Enter after start-up may rarely do nothing (B-12b); press Enter again and note the time.",
-    "Agent safety isn't wired into every agent path yet (B-04); the fix is in open PR #63. Don't point the agent at untrusted pages.",
-    "Esc stops Lens at work only while a Lens window has focus (B-13); use Ctrl+Alt+Pause. Fixed in open PR #63.",
-    "The opt-in injected window-style hook isn't fully stopped by Remove all until restart (B-05, B-06). Leave it off unless testing it.",
+    "A renderer crash during start-up can freeze Lens for up to a minute before recovery (B-31b); seen only in automated tests.",
+    "Lens's File Explorer entries are under Show more options on Windows 11; with the new 'Customize menu' (KB5127936) hiding app extensions may hide them.",
     "The desktop tab and edge Shelf may still briefly resize their window (B-30).",
-    "Magic menu isn't reachable from the Dock, Shelf or notifications yet (B-11); Feeds and Messages panels aren't shown yet (B-09); one-click transcription setup is blocked until download hashes are pinned (B-07).",
-    "After the November Windows update (KB5132061) some other Windhawk taskbar mods stop loading (confirmed: missing taskbar symbols). Turn the mod off and on again. Lens's own window-style mod doesn't use those symbols."
+    "One-click transcription setup is blocked until download hashes are pinned (B-07).",
+    "After KB5132061 some other Windhawk taskbar mods stop loading; turn them off and on. Lens's own mod is unaffected.",
+    "Going back to the first theme pack doesn't restore folder colours (B-39).",
+    "Top Bar click-through and its halo were verified only by automated tests; please confirm on a real PC."
   ]
 }
