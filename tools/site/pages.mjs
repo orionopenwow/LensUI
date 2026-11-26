@@ -246,9 +246,10 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 }
 /** A small app in the compact grid: a small real picture, its name, one line. */
 function miniTile(id, t, d, img, live) {
-  const pic = `<span class="mini-pic"><img src="media/${img}.webp" alt="" loading="lazy" width="320" height="200"></span><span class="mini-cap"><b>${esc(t)}</b><span>${esc(d)}</span></span>`;
-  if (id === "thumbdesk") return `<a class="mini" href="${THUMBDESK.home}" aria-label="${esc(t)}: ${esc(d)}. From the makers of Lens (opens its website)">${pic}</a>`;
-  return live ? `<button type="button" class="mini" data-open-app="${id}" aria-label="Open ${esc(t)} on the desk: ${esc(d)}">${pic}</button>` : `<div class="mini" role="group" aria-label="${esc(t)}: ${esc(d)}">${pic}</div>`;
+  const how = id === "thumbdesk" ? "From the makers of Lens: opens its website" : live ? "Opens on the desk above" : "";
+  const pic = `<span class="mini-pic"><img src="media/${img}.webp" alt="" loading="lazy" width="320" height="200"></span><span class="mini-cap"><b>${esc(t)}</b><span>${esc(d)}</span>${how ? `<span class="sr">. ${esc(how)}</span>` : ""}</span>`;
+  if (id === "thumbdesk") return `<a class="mini" href="${THUMBDESK.home}">${pic}</a>`;
+  return live ? `<button type="button" class="mini" data-open-app="${id}">${pic}</button>` : `<div class="mini">${pic}</div>`;
 }
 /** A short clip that plays only when asked (click, or hover with a mouse). */
 const clip = (id, label) => `<figure class="clip" data-clip><video preload="none" muted playsinline loop poster="media/poster-${id}.webp" aria-label="${esc(label)}"><source src="media/${id}.mp4" type="video/mp4"></video><button type="button" class="clip-play" aria-label="Play: ${esc(label)}"><span aria-hidden="true">▶</span></button></figure>`;
