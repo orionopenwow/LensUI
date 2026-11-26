@@ -27,7 +27,8 @@
     color var(--lens-dur-fast) var(--lens-ease-out);
 }
 
-/* Shown while the panel is pointed at or holds focus. */
+/* Shown while the panel is pointed at or holds focus; pinned ones always. */
+.lens-flyout-close.is-pinned,
 :hover > .lens-flyout-close,
 :focus-within > .lens-flyout-close,
 .lens-flyout-close:focus-visible {
@@ -57,4 +58,10 @@
   .lens-flyout-close {
     transition: none;
   }
+}
+
+/* In a header row (Settings): part of the flow, the same size and look. */
+.lens-flyout-close.is-inline {
+  position: static;
+  flex: none;
 }

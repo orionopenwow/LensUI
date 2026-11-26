@@ -2188,7 +2188,7 @@ export const DockSurface: React.FC = () => {
         {/* TIER 1: In-Dock Expanded Launcher Drawer (Directly above the single unified Dock row!) */}
         {dockSearchOpen && askMode.mode !== "ask" && (
           <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
-            <FlyoutClose onClose={closeInDockLauncher} />
+            <FlyoutClose pinned label="Close Search" onClose={closeInDockLauncher} />
             <div className="pal-filter-bar" style={{ padding: "4px 36px 6px 6px" }}>
               {(
                 [

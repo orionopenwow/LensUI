@@ -19,8 +19,13 @@ fn migration_secret_scrub_and_backup_round_trip() {
     assert_eq!(t.get("customAccent").unwrap().as_str(), Some("#FAFAFA"));
     assert_eq!(t.get("accentTintStrength").unwrap().as_f64(), Some(0.5));
     assert_eq!(v2.get("func").unwrap().get("targetMonitor").unwrap().as_str(), Some("primary"));
-    assert_eq!(v2.get("configVersion").unwrap().as_u64(), Some(2));
-    let (v2b, from2) = migrate_config_value(v2.clone()).unwrap(); assert_eq!(from2, 2); assert_eq!(v2b, v2);
+    assert_eq!(v2.get("configVersion").unwrap().as_u64(), Some(3));
+    assert_eq!(v2.get("dock").unwrap().get("livePreviews").unwrap().as_bool(), Some(true));
+    let (v2b, from2) = migrate_config_value(v2.clone()).unwrap(); assert_eq!(from2, 3); assert_eq!(v2b, v2);
+    // Previews turned off after the migration stay off.
+    let off: Value = serde_json::from_str(r##"{"configVersion":3,"dock":{"livePreviews":false}}"##).ok().unwrap();
+    let (off2, _) = migrate_config_value(off).unwrap();
+    assert_eq!(off2.get("dock").unwrap().get("livePreviews").unwrap().as_bool(), Some(false));
     let newer: Value = serde_json::from_str(r##"{"configVersion":9}"##).ok().unwrap();
     assert!(migrate_config_value(newer).is_err());
     assert!(migrate_config_value(serde_json::from_str::<Value>("[1]").ok().unwrap()).is_err());
@@ -61,7 +66,7 @@ fn migration_secret_scrub_and_backup_round_trip() {
     assert_eq!(rep.restored.len(), 4, "{:?}", rep);
     assert!(fs::read_to_string(std::path::Path::new(&rep.previous_saved_to).join("config.json")).unwrap().contains("old"));
     let restored_cfg = fs::read_to_string(dst.join("config.json")).unwrap();
-    assert!(restored_cfg.contains("nord-frost") && restored_cfg.contains("\"configVersion\": 2"));
+    assert!(restored_cfg.contains("nord-frost") && restored_cfg.contains("\"configVersion\": 3"));
     assert_eq!(fs::read_to_string(dst.join("AGENTS.md")).unwrap(), "# rules\nline \"two\"\n");
     assert!(dst.join("themes").join("My Dusk.lenstheme").is_file());
     assert!(!dst.join("agents.json").exists());

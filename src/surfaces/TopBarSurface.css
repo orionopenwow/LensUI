@@ -437,3 +437,22 @@
     padding: 0 7px;
   }
 }
+
+/* Click-through halo (src/topbar/clickThrough.ts): while the pointer is over an empty part of
+   the bar, clicks go to the app behind it, and the bar turns see-through in a soft circle around
+   the pointer to say so. The circle follows the pointer through animatable custom properties;
+   only the mask moves, nothing is laid out again. The mask is only set while the halo shows (a
+   mask also clips the bar's drop shadow). */
+@property --tb-hx { syntax: "<length>"; inherits: true; initial-value: -200px; }
+@property --tb-hy { syntax: "<length>"; inherits: true; initial-value: 16px; }
+@property --tb-halo { syntax: "<number>"; inherits: true; initial-value: 0; }
+.topbar[data-halo="on"] {
+  --tb-halo: 0.72;
+  transition: border-radius var(--lens-dur-base) var(--lens-ease-out), box-shadow var(--lens-dur-base) var(--lens-ease-out),
+    --tb-hx var(--lens-dur-instant) linear, --tb-hy var(--lens-dur-instant) linear, --tb-halo var(--lens-dur-fast) var(--lens-ease-out);
+  -webkit-mask-image: radial-gradient(circle 46px at var(--tb-hx) var(--tb-hy), rgb(0 0 0 / calc(1 - var(--tb-halo))) 0, rgb(0 0 0 / calc(1 - var(--tb-halo))) 18px, #000 46px);
+  mask-image: radial-gradient(circle 46px at var(--tb-hx) var(--tb-hy), rgb(0 0 0 / calc(1 - var(--tb-halo))) 0, rgb(0 0 0 / calc(1 - var(--tb-halo))) 18px, #000 46px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar[data-halo="on"] { transition: none; }
+}

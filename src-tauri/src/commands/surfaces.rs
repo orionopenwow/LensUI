@@ -88,12 +88,40 @@ pub(crate) fn glide_show_surface(app: &AppHandle, label: &str, focus: bool) {
     surface_state::mark_shown(label, generation);
 }
 
+/// When each flyout last started hiding. A flyout's own button blurs it first (which hides it),
+/// then the click arrives and would open it again; a click that lands this soon after a hide is
+/// the person closing it, so it stays closed (docs/DOCK_SMOOTHNESS.md › Toggles).
+static LAST_HIDE: std::sync::Mutex<Option<std::collections::HashMap<String, std::time::Instant>>> =
+    std::sync::Mutex::new(None);
+pub(crate) const TOGGLE_CLOSE_MS: u128 = 400;
+
+pub(crate) fn note_hidden(label: &str) {
+    let mut g = LAST_HIDE.lock().unwrap_or_else(|e| e.into_inner());
+    g.get_or_insert_with(Default::default).insert(label.to_string(), std::time::Instant::now());
+}
+
+/// True when `label` started hiding within the last `TOGGLE_CLOSE_MS`.
+pub(crate) fn hidden_just_now(label: &str) -> bool {
+    let g = LAST_HIDE.lock().unwrap_or_else(|e| e.into_inner());
+    g.as_ref()
+        .and_then(|m| m.get(label))
+        .map(|t| toggle_counts_as_close(t.elapsed().as_millis()))
+        .unwrap_or(false)
+}
+
+pub(crate) fn toggle_counts_as_close(ms_since_hide: u128) -> bool {
+    ms_since_hide < TOGGLE_CLOSE_MS
+}
+
 pub(crate) fn glide_hide_surface(app: &AppHandle, label: &str) {
     use crate::app::surface_state::{self, Step};
     let Some(win) = app.get_webview_window(label) else {
         return;
     };
     let visible = win.is_visible().unwrap_or(false);
+    if visible {
+        note_hidden(label);
+    }
     let Step::BeginHide(gen) = surface_state::request_hide(label, visible) else {
         // Not visible, or already closing: one exit is enough.
         return;
@@ -405,6 +433,8 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
     let _ = app.emit("lens://palette-anchor", &anchor);
 }
 
+static QS_LAST_TAB: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
 #[tauri::command]
 pub(crate) fn open_quicksettings_tab_cmd(
     app: AppHandle,
@@ -420,12 +450,20 @@ pub(crate) fn open_quicksettings_tab_cmd(
         let st = a.state::<AppState>();
         open_quicksettings_tab_cmd(a.clone(), st, retry_tab, retry_section, Some(retry_anchor))
     }) {
-        // If clicked from bottom-right dock gear while already visible in bottom-right mode, toggle closed
-        if anchor_mode == "bottom-right"
-            && qs.is_visible().unwrap_or(false)
-            && !qs.is_minimized().unwrap_or(false)
-        {
-            glide_hide_surface(&app, "quicksettings");
+        // A press on the button of an open panel closes it (any anchor): same tab → close, another
+        // tab → switch to it. A press right after the panel hid itself on blur (the same click)
+        // also counts as closing it, so it doesn't come straight back.
+        let qs_open = qs.is_visible().unwrap_or(false) && !qs.is_minimized().unwrap_or(false);
+        let same_tab = {
+            let mut last = QS_LAST_TAB.lock().unwrap_or_else(|e| e.into_inner());
+            let same = last.as_deref() == Some(tab.as_str());
+            *last = Some(tab.clone());
+            same
+        };
+        if (qs_open && (same_tab || anchor_mode == "bottom-right")) || (!qs_open && same_tab && hidden_just_now("quicksettings")) {
+            if qs_open {
+                glide_hide_surface(&app, "quicksettings");
+            }
             return;
         }
         dismiss_other_surfaces(&app, "quicksettings");
@@ -545,6 +583,12 @@ pub(crate) fn open_dock_popout_tab_cmd(app: AppHandle, state: State<AppState>, t
     }) else {
         return;
     };
+    // The gear's own click hid Settings on blur a moment ago: that click meant "close".
+    let shown = win.is_visible().unwrap_or(false) && !win.is_minimized().unwrap_or(false);
+    if !shown && hidden_just_now("settings") {
+        let _ = app.emit("lens://settings-open", false);
+        return;
+    }
     dismiss_other_surfaces(&app, "settings");
     let _ = app.emit("lens://settings-open", true);
     let _ = app.emit("lens://settings-tab", &tab);
@@ -572,6 +616,11 @@ pub(crate) fn toggle_settings_docked(app: AppHandle, state: State<AppState>) {
     if visible && !minimized {
         let _ = app.emit("lens://settings-open", false);
         glide_hide_surface(&app, "settings");
+        return;
+    }
+    // The gear's own click hid Settings on blur a moment ago: that click meant "close".
+    if hidden_just_now("settings") {
+        let _ = app.emit("lens://settings-open", false);
         return;
     }
 
@@ -663,5 +712,25 @@ mod glide_tests {
             assert!(!has_glide_page(label));
             assert_eq!(exit_fallback_ms(label), 185);
         }
+    }
+}
+
+#[cfg(test)]
+mod toggle_tests {
+    use super::*;
+
+    #[test]
+    fn a_click_right_after_a_blur_hide_counts_as_close() {
+        assert!(toggle_counts_as_close(0));
+        assert!(toggle_counts_as_close(TOGGLE_CLOSE_MS - 1));
+        assert!(!toggle_counts_as_close(TOGGLE_CLOSE_MS));
+        assert!(!toggle_counts_as_close(5_000));
+    }
+
+    #[test]
+    fn hidden_just_now_tracks_each_label() {
+        note_hidden("unit-test-flyout");
+        assert!(hidden_just_now("unit-test-flyout"));
+        assert!(!hidden_just_now("unit-test-other"));
     }
 }

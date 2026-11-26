@@ -135,6 +135,12 @@ jobs:
         # window; the nightly run goes through every pack (tools/robust/theme-switch.mjs).
         run: node tools/robust/theme-switch.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
 
+      - name: Dock flash (no bright line or band while search opens/closes or the style changes)
+        if: always()
+        # Frame by frame over a dark desktop, with a control line that must be caught
+        # (tools/robust/dock-flash.mjs).
+        run: node tools/robust/dock-flash.mjs
+
       # Hyper suite (tools/hyper/run.mjs, docs/TESTING.md): every Settings switch and choice, every
       # surface, and the cross-cutting rules, with a coverage report of every inventoried feature.
       # Fails only on failures not listed in tools/hyper/known.json; nightly runs the full tier.

@@ -13,14 +13,18 @@ import "./flyoutClose.css";
  * Put it as a direct child of the panel; the panel needs `position: relative` (or any positioned
  * value) — `.lens-flyout-host` provides it.
  */
-export const FlyoutClose: React.FC<{ onClose: () => void; className?: string; label?: string }> = ({
-  onClose,
-  className,
-  label = "Close",
-}) => (
+export const FlyoutClose: React.FC<{
+  onClose: () => void;
+  className?: string;
+  label?: string;
+  /** Always visible (not only on hover). Settings and Search use it. */
+  pinned?: boolean;
+  /** Sits in the normal flow (a header row) instead of the panel's top-right corner. */
+  inline?: boolean;
+}> = ({ onClose, className, label = "Close", pinned, inline }) => (
   <button
     type="button"
-    className={`lens-flyout-close ${className ?? ""}`}
+    className={`lens-flyout-close${pinned ? " is-pinned" : ""}${inline ? " is-inline" : ""} ${className ?? ""}`}
     aria-label={label}
     data-flyout-close=""
     onPointerDown={(e) => e.stopPropagation()}

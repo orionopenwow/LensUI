@@ -573,9 +573,9 @@
     {
       "capability": "destructive",
       "category": "Internal",
-      "default": 2,
+      "default": 3,
       "description": "Sets the config version option under Internal.",
-      "example": "{\"args\":{\"changes\":{\"configVersion\":3}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"configVersion\":4}},\"tool\":\"lens_set\"}",
       "label": "Config version",
       "path": "configVersion",
       "reversible": true,
@@ -991,9 +991,9 @@
     {
       "capability": "change_look",
       "category": "Dock",
-      "default": false,
+      "default": true,
       "description": "Sets the live previews option under Dock.",
-      "example": "{\"args\":{\"changes\":{\"dock.livePreviews\":true}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"dock.livePreviews\":false}},\"tool\":\"lens_set\"}",
       "label": "Live previews",
       "path": "dock.livePreviews",
       "reversible": true,

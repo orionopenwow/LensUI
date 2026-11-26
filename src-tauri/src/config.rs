@@ -93,8 +93,8 @@ pub struct DockConfig {
     /// Pinned app ids followed by a user separator.
     #[serde(default)]
     pub separators_after: Vec<String>,
-    /// Live window thumbnails in the Dock hover card. Off by default.
-    #[serde(default)]
+    /// Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default.
+    #[serde(default = "default_true")]
     pub live_previews: bool,
     /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
     #[serde(default = "default_dock_style")]
@@ -456,7 +456,7 @@ impl Default for LensConfig {
                 position: "bottom".into(),
                 locked: false,
                 separators_after: vec![],
-                live_previews: false,
+                live_previews: true,
                 style: default_dock_style(),
                 alignment: default_dock_alignment(),
                 system_area: default_dock_system_area(),

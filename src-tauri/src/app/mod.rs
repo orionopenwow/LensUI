@@ -13,6 +13,7 @@ pub(crate) mod place;
 pub(crate) mod flyout_geom;
 pub(crate) mod safe_start;
 pub(crate) mod surface_state;
+pub(crate) mod topbar_hit;
 
 use crate::*;
 

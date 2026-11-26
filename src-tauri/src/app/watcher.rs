@@ -468,6 +468,9 @@ pub(crate) fn spawn_watcher(
         let mut menu_idle_since: Option<Instant> = None;
         let mut settings_unfocused_since: Option<Instant> = None;
         let mut search_idle_since: Option<Instant> = None;
+        // Whether the Top Bar currently lets clicks through (None until first decided).
+        let mut topbar_through: Option<bool> = None;
+        let mut topbar_halo_sent: Option<(i32, i32, bool)> = None;
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -716,8 +719,52 @@ pub(crate) fn spawn_watcher(
                             // About every 2 s, restate the current state to the bar only, so a page
                             // that missed an event (it reloaded, an emit was dropped) cannot stay
                             // drawn while Lens has it hidden, or the reverse.
-                            let _ = topbar_win.set_ignore_cursor_events(!topbar_visible);
+                            if !topbar_visible {
+                                let _ = topbar_win.set_ignore_cursor_events(true);
+                            }
+                            topbar_through = None; // re-applied just below
                             let _ = watcher_handle.emit_to("topbar", "lens://topbar-visible", topbar_visible);
+                        }
+
+                        // Click-through: while the bar is shown, only its controls take clicks; a
+                        // click anywhere else on it goes to the app behind (tab strips, title bars).
+                        // The page shows a soft see-through halo around the cursor while it does.
+                        if topbar_visible {
+                            let local = match (topbar_win.outer_position(), cursor) {
+                                (Ok(p), Some((cx, cy))) => Some((
+                                    (cx - p.x) as f64 / scale,
+                                    (cy - p.y) as f64 / scale,
+                                )),
+                                _ => None,
+                            };
+                            let over_bar = cursor_inside_bar;
+                            let through = match local {
+                                Some((lx, ly)) if over_bar => {
+                                    crate::app::topbar_hit::is_through(&crate::app::topbar_hit::rects(), lx, ly)
+                                }
+                                // Away from the bar: let clicks through, so a click that lands the
+                                // moment the pointer arrives still reaches the app behind.
+                                _ => !crate::app::topbar_hit::rects().is_empty(),
+                            };
+                            if topbar_through != Some(through) {
+                                topbar_through = Some(through);
+                                let _ = topbar_win.set_ignore_cursor_events(through);
+                            }
+                            let halo = match local {
+                                Some((lx, ly)) if over_bar && through => (lx.round() as i32, ly.round() as i32, true),
+                                _ => (0, 0, false),
+                            };
+                            if topbar_halo_sent != Some(halo) {
+                                topbar_halo_sent = Some(halo);
+                                let _ = watcher_handle.emit_to(
+                                    "topbar",
+                                    "lens://topbar-halo",
+                                    serde_json::json!({ "x": halo.0, "y": halo.1, "on": halo.2 }),
+                                );
+                            }
+                        } else {
+                            topbar_through = None;
+                            topbar_halo_sent = None;
                         }
                     }
                 }

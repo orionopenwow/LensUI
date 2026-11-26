@@ -488,6 +488,7 @@ pub fn run() {
             commands::theme::save_config_cmd,
             commands::dock::set_dock_pill_width,
             commands::dock::set_dock_pill_rect_cmd,
+            commands::dock::set_topbar_hit_rects_cmd,
             commands::dock::set_dock_flyout_rect_cmd,
             commands::dock::dock_preview_show_cmd,
             commands::dock::dock_preview_hide_cmd,

@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { HookStatus } from "../components/HookStatus";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { Skeleton, ToastHost } from "../ui";
@@ -397,6 +398,7 @@ export const ControlCenterSurface: React.FC = () => {
             <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>
               ?
             </button>
+            <FlyoutClose pinned inline label="Close Settings" onClose={() => invoke("hide_surface", { label: "settings" }).catch(() => {})} />
           </header>
           <div ref={stageRef} key={tab} className="lens-tab-stage">
           {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
