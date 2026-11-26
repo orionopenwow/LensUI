@@ -106,7 +106,8 @@ export interface CommandInitial {
 interface ForegroundContext { process: string; appName: string; title: string; category: string; fullscreen: boolean; tiles: string[] }
 
 export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
-  useLensState();
+  const lens = useLensState();
+  const dashboardOn = !!(lens.config as { magicWaves?: { dashboard?: boolean } } | null)?.magicWaves?.dashboard;
   const settings = useCommandSettings();
   const [mode, setMode] = useState<Mode>(initial?.mode ?? "ask");
   const [text, setText] = useState(initial?.text ?? "");
@@ -149,14 +150,17 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         const withWallpaper = [...withBackdrop, ...wallpaperTemplate(withBackdrop)];
         const withLensApps = [...withWallpaper, ...lensAppTemplates(withWallpaper)];
         setTemplates(withLensApps);
-        // /dashboard only while the Magic Dashboard is on (docs/plans/MAGIC_WAVES.md).
-        invoke<boolean>("dashboard_available")
-          .then((on) => on && setTemplates([...withLensApps, ...dashboardTemplates(withLensApps, true)]))
-          .catch(() => {});
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
   }, []);
+  // /dashboard only while the Magic Dashboard is on (docs/plans/MAGIC_WAVES.md); follows the flag live.
+  useEffect(() => {
+    setTemplates((list) => {
+      const base = list.filter((t) => !isDashboardStub(t));
+      return dashboardOn ? [...base, ...dashboardTemplates(base, true)] : base;
+    });
+  }, [dashboardOn, templates.length === 0]);
   useEffect(() => {
     if (initial) return; // a scripted start (tests, parity) keeps its own mode
     setMode(settings.defaultMode);
@@ -422,7 +426,9 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     const template = parsed?.command ?? null;
 
     // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
-    if (isDashboardStub(template) || (!template && templates.some(isDashboardStub) && isDashboardPhrase(rest))) {
+    // Rust has the last word on the flag, so a Command opened before it was turned on still works.
+    const dashboardAsked = isDashboardStub(template) || (!template && isDashboardPhrase(rest) && (await invoke<boolean>("dashboard_available").catch(() => false)));
+    if (dashboardAsked) {
       hide();
       void openDashboard().then((err) => err && flash(err, false));
       return setText("");
