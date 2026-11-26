@@ -1,6 +1,6 @@
 # Lens Cleaner — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/CLEANER.md`, `docs/CLEANER_RESEARCH.md`,
+Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** permanent delete needs a random one-time code minted in Rust and typed by the person (S1 fixed), the measured scan time shows on Done and in Tester Hub (quick win 1), "Uninstall…" hands over to Startup & Uninstall, and Home has the "Where did my space go?" timeline (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC. Sources: `docs/CLEANER.md`, `docs/CLEANER_RESEARCH.md`,
 `docs/brain/BUGS.md`, Redline review, code below.
 
 ## 1. Rundown
@@ -42,8 +42,9 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
   - detector roots only, protected trees refused (unless declared), user-mode refusals, `..`,
     browser-private components, reparse points never followed, cloud-only files never touched;
   - checked twice (scan and right before touch with `symlink_metadata`);
-  - your files → Recycle Bin; permanent delete needs 4 steps incl. hold-to-confirm and a
-    confirm token for the exact list (`plan.rs:77 token_for`);
+  - your files → Recycle Bin; permanent delete needs 4 steps: a typed one-time code from Rust
+    (`confirm.rs`: random, one plan and list hash, single use, 2 minutes, 3 tries), then
+    hold-to-confirm; the list hash (`plan.rs token_for`) alone is never accepted;
   - undo 30 s (server 60 s) from `$I/$R` pairs, never overwrites;
   - one elevated helper with fixed argv via UAC;
   - audit log (paths only); presence announcements with Stop.
@@ -55,7 +56,7 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
   Windows.
 - **Large-file tray** — works: copy with progress → verify → bin original; never overwrites.
 - **Per-app storage** — works: Uninstall keys read-only, real icons, app size + caches;
-  "Uninstall…" asks then runs the app's own uninstaller (quoted exe or `MsiExec /X{GUID}`).
+  "Uninstall…" opens Startup & Uninstall on that app (the one uninstall path; Fable pass).
   MSIX icons — unverified.
 - **Downloads review** — works: local judgement with plain reasons, pre-picked, approval card,
   no AI.
@@ -66,7 +67,7 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
 - **MFT fast mode** — not built (documented).
 
 ## 3. Quick wins (≤ 1 day, ranked)
-1. **Show the measured scan time** in the Done screen and Tester Hub ("Scanned C: in 3.4 s") so
+1. **Done (Fable pass).** **Show the measured scan time** in the Done screen and Tester Hub ("Scanned C: in 3.4 s") so
    the < 10 s target is visible on real PCs.
 2. **Weekly tidy-up summary in the Dashboard Today lane** ("Lens freed 2.1 GB on Sunday").
 3. **Toasts for 13 swallowed errors** in `src/cleaner/*`.
@@ -89,7 +90,7 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
 ## 5. Bug assessment
 | Id | Severity | Where | Issue |
 |---|---|---|---|
-| Suspected S1 | Low | `plan.rs:77 token_for` | the confirm token is a deterministic hash of the path list, so it binds the delete to the list but doesn't prove a person approved; any Lens window could compute it. Acceptable today (only Lens windows call it); upgrade to a server-minted nonce stored with the plan |
+| S1 | — fixed (Fable pass) | `cleaner/confirm.rs`, `commands/cleaner.rs`, `PreviewSheet.tsx` | the confirm token was a deterministic hash of the path list and was returned in the preview. Now a random 4-digit code is minted in Rust for the Cleaner window only (`cleaner_confirm_code`), typed by the person and redeemed in `cleaner_run` before anything is touched: one plan, one list hash, one use, two minutes, three tries. A wrong or missing code deletes nothing. Tests: `cleaner::confirm::tests` (7) |
 | Suspected S2 | Low | `bin.rs` undo | bins on several drives (`D:\$Recycle.Bin`) — undo path unverified |
 | Suspected S3 | Low | `apps.rs` | MSIX apps have no `DisplayIcon` → blank icons |
 | Suspected S4 | Low | `steam.rs` | `LastPlayed` format differences across Steam client versions could mark played games as unplayed (review-only, never auto) |

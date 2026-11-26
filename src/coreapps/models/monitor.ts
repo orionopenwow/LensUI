@@ -102,3 +102,13 @@ export function slowHints(s: CoreMonitorSample, cpuHist: (number | null)[], now 
 
 /** The headline: average CPU over the last few samples, rounded. */
 export const headlineCpu = (h: (number | null)[]) => Math.round(avg(h, 3));
+
+/** One line for a bug report: name, process ids, and what it is using right now. */
+export function processLine(a: { name: string; pids: number[]; cpu?: number; memMb?: number; path?: string | null }): string {
+  const ids = a.pids.length > 8 ? `${a.pids.slice(0, 8).join(", ")}, … (${a.pids.length} processes)` : a.pids.join(", ");
+  const parts = [a.name, `PID ${ids}`];
+  if (typeof a.cpu === "number" && Number.isFinite(a.cpu)) parts.push(`CPU ${a.cpu.toFixed(1)}%`);
+  if (typeof a.memMb === "number" && Number.isFinite(a.memMb)) parts.push(`RAM ${Math.round(a.memMb)} MB`);
+  if (a.path) parts.push(a.path);
+  return parts.join(" · ");
+}

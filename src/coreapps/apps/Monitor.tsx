@@ -8,7 +8,7 @@ import { AppIcon } from "../shell/AppIcon";
 import { Button, Card, Confirm, ErrorNote, Hero, Pill, Search, Skeleton, Sparkline, Toast, cx } from "../shell/ui";
 import { useVisiblePoll } from "../shell/hooks";
 import { bitsPerSec, bytes, pct, plural } from "../shell/format";
-import { cpuShare, filled, headlineCpu, push, slowHints, sortApps, type SortKey } from "../models/monitor";
+import { cpuShare, filled, headlineCpu, processLine, push, slowHints, sortApps, type SortKey } from "../models/monitor";
 import { friendlyError } from "../models/load";
 import { coreApp } from "../registry";
 
@@ -73,9 +73,19 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
     document.getElementById(`mon-row-${n}`)?.scrollIntoView({ block: "nearest" });
   };
 
+  const copySelected = () => {
+    if (!selected) return;
+    const line = processLine({ name: selected.name, pids: selected.pids, cpu: cpuShare(selected.cpu, cores), memMb: selected.memoryMb, path: selected.exe });
+    navigator.clipboard
+      .writeText(line)
+      .then(() => setToast({ text: `Copied: ${line}`, tone: "ok" }))
+      .catch(() => setToast({ text: "Couldn't copy to the clipboard.", tone: "bad" }));
+  };
+
   const keys = [
     { keys: "Ctrl+F", label: "Search apps", match: (e: KeyboardEvent) => isKey(e, "f", { ctrl: true }), run: () => searchRef.current?.focus() },
     { keys: "↑+↓", label: "Move through apps (in the list)" },
+    { keys: "Ctrl+C", label: "Copy the selected app's line (name, PID, usage)", match: (e: KeyboardEvent) => isKey(e, "c", { ctrl: true }) && !window.getSelection()?.toString() && !(e.target as HTMLElement | null)?.closest?.("input, textarea"), run: () => copySelected() },
     { keys: "Delete", label: "End the selected app (asks first)", match: (e: KeyboardEvent) => e.key === "Delete", run: () => selected && !selected.protected && setConfirm(selected) },
     { keys: "1+2+3+4", label: "Sort by CPU, memory, disk, name (in the list)" },
   ];
@@ -117,6 +127,10 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
       working={presence.busy}
       meta={sample ? `${plural(sample.processCount, "process", "processes")} · ${cores} cores · sampled every second · paused while hidden` : "Starting…"}
       actions={
+        <>
+          <button type="button" className="ca-btn" disabled={!selected} onClick={copySelected}>
+            Copy line
+          </button>
         <button
           ref={endRef}
           type="button"
@@ -127,6 +141,7 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
         >
           {selected ? `End ${selected.name}` : "End task"}
         </button>
+        </>
       }
     >
       {error && !sample && <ErrorNote onRetry={tick}>{error}</ErrorNote>}

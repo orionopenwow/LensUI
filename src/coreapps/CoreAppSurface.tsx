@@ -26,6 +26,7 @@ export const CoreAppSurface: React.FC = () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("app") ?? "";
   const view = params.get("view") ?? undefined;
+  const find = params.get("find") ?? undefined;
   const { config, updateConfig } = useLensState();
   if (id === "sticky") {
     return (
@@ -40,7 +41,7 @@ export const CoreAppSurface: React.FC = () => {
   return (
     <AppErrorBoundary label={info.title}>
       <Suspense fallback={<div className="ca-root" aria-busy="true" />}>
-        <App config={config} updateConfig={updateConfig} initialView={view} />
+        <App config={config} updateConfig={updateConfig} initialView={view} initialFind={find} />
       </Suspense>
     </AppErrorBoundary>
   );
