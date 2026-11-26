@@ -67,8 +67,14 @@ pub(crate) fn dashboard_available(state: State<AppState>) -> bool {
 }
 
 /// Opens the Dashboard (the Top Bar button and Command call this). Refuses while the flag is off.
+/// Async so the window is built off the main thread (a sync command that builds a webview hangs on Windows).
 #[tauri::command]
-pub(crate) fn open_dashboard(app: AppHandle, state: State<AppState>) -> Result<(), String> {
+pub(crate) async fn open_dashboard(app: AppHandle) -> Result<(), String> {
+    show_dashboard(app)
+}
+
+fn show_dashboard(app: AppHandle) -> Result<(), String> {
+    let state = app.state::<AppState>();
     if !enabled(&state) {
         return Err("Turn on the Magic Dashboard first (Settings › About & Testing › Magic (preview)).".into());
     }
@@ -82,14 +88,14 @@ pub(crate) fn open_dashboard(app: AppHandle, state: State<AppState>) -> Result<(
 
 /// Opens the Dashboard, or closes it if it's showing (so a second press of the button closes it).
 #[tauri::command]
-pub(crate) fn toggle_dashboard(app: AppHandle, state: State<AppState>) -> Result<bool, String> {
+pub(crate) async fn toggle_dashboard(app: AppHandle) -> Result<bool, String> {
     if let Some(w) = app.get_webview_window(LABEL) {
         if w.is_visible().unwrap_or(false) {
             let _ = w.hide();
             return Ok(false);
         }
     }
-    open_dashboard(app, state).map(|_| true)
+    show_dashboard(app).map(|_| true)
 }
 
 /// Hides the Dashboard (×, Esc, focus moving to another app). Safe to call when it doesn't exist.

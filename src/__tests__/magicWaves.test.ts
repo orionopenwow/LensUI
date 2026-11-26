@@ -66,10 +66,10 @@ describe("Magic flags", () => {
     expect(users.filter((u) => !allowed.has(u.replace(/\\/g, "/")))).toEqual([]);
     const lib = readFileSync(join(import.meta.dir, "../../src-tauri/src/lib.rs"), "utf8");
     expect(lib).not.toMatch(/magic_waves::\w+::\w+\s*,/); // no commands registered from the scaffold
-    // The Dashboard window: built only inside open_dashboard, after the flag check; nothing at
+    // The Dashboard window: built only inside show_dashboard (behind open/toggle), after the flag check; nothing at
     // start-up (setup, watcher, tray) creates or opens it.
     const dash = readFileSync(join(import.meta.dir, "../../src-tauri/src/commands/dashboard.rs"), "utf8");
-    const open = dash.slice(dash.indexOf("pub(crate) fn open_dashboard"));
+    const open = dash.slice(dash.indexOf("fn show_dashboard"));
     expect(open.indexOf("if !enabled(&state)")).toBeGreaterThan(-1);
     expect(open.indexOf("if !enabled(&state)")).toBeLessThan(open.indexOf("ensure_window(&app)"));
     expect(dash.match(/ensure_window\(&app\)/g)?.length).toBe(1);
