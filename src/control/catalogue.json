@@ -574,9 +574,9 @@
     {
       "capability": "destructive",
       "category": "Internal",
-      "default": 3,
+      "default": 4,
       "description": "Sets the config version option under Internal.",
-      "example": "{\"args\":{\"changes\":{\"configVersion\":4}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"configVersion\":5}},\"tool\":\"lens_set\"}",
       "label": "Config version",
       "path": "configVersion",
       "reversible": true,
