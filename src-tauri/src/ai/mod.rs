@@ -884,7 +884,7 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
             let shown = if fields.is_empty() {
                 "your request".to_string()
             } else {
-                format!("your request plus: {}", fields.join(", ").replace('_', " "))
+                format!("your request plus {}", privacy::list_fields(&fields))
             };
             let consent_args = json!({ "provider": p.id(), "label": p.label(), "model": p.model(), "fields": fields });
             let propose = |approval_token: Option<String>| {

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { bookmarkRemove, bookmarkUpdate, type Bookmark, type BrowserView } from "./api";
 import { Key } from "./ApprovalCard";
 import { Avatar } from "./Sidebar";
+import { oops } from "./oops";
 
 interface Node {
   name: string;
@@ -43,7 +44,7 @@ function Row({ b, onOpen, onView, live }: { b: Bookmark; onOpen(url: string, bg:
         onSubmit={(e) => {
           e.preventDefault();
           setEdit(false);
-          if (live) void bookmarkUpdate(b.id, title, folder).then(onView).catch(() => {});
+          if (live) void bookmarkUpdate(b.id, title, folder).then(onView).catch(oops("save the bookmark"));
         }}
       >
         <input className="lb-input" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Name" autoFocus />
@@ -63,7 +64,7 @@ function Row({ b, onOpen, onView, live }: { b: Bookmark; onOpen(url: string, bg:
         <span className="lb-tab-title">{b.title || b.url}</span>
       </button>
       <button className="lb-icon-btn sm" aria-label={`Edit ${b.title}`} onClick={() => setEdit(true)}><Pencil size={12} /></button>
-      <button className="lb-icon-btn sm" aria-label={`Remove ${b.title}`} onClick={() => live && void bookmarkRemove(b.id).then(onView).catch(() => {})}><Trash2 size={12} /></button>
+      <button className="lb-icon-btn sm" aria-label={`Remove ${b.title}`} onClick={() => live && void bookmarkRemove(b.id).then(onView).catch(oops("remove the bookmark"))}><Trash2 size={12} /></button>
     </div>
   );
 }

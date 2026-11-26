@@ -123,6 +123,9 @@ export async function aiSetConfig(settings: AiCardSettings | Record<string, unkn
   await setAiConfig(cardSettingsToConfig(current, settings as AiCardSettings));
 }
 
+/** Shown on a step whose Allow / Deny never reached Lens Core. */
+export const ANSWER_LOST = "Lens didn't get your answer in time, so this step didn't run. Ask again if you still want it.";
+
 // ---------------------------------------------------------------- hook
 
 export type AiRequestPhase = "idle" | "streaming" | "done" | "error" | "cancelled";
@@ -221,7 +224,18 @@ export function useAiRequest() {
       ...s,
       tools: s.tools.map((t) => (t.call_id === callId ? { ...t, decision: approve ? "approved" : "denied" } : t)),
     }));
-    await aiConfirmTool(callId, approve).catch(() => {});
+    try {
+      await aiConfirmTool(callId, approve);
+    } catch {
+      // The answer didn't reach Lens Core (the step timed out or the request ended). Say so on
+      // the card instead of leaving it on "Approved · running…" for good.
+      setState((s) => ({
+        ...s,
+        tools: s.tools.map((t) =>
+          t.call_id === callId && !t.result ? { ...t, result: { id: s.id ?? "", call_id: callId, ok: false, message: ANSWER_LOST } } : t
+        ),
+      }));
+    }
   }, []);
 
   const reset = useCallback(() => {

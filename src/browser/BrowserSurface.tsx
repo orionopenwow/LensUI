@@ -17,7 +17,7 @@ import {
   EVT_BROWSER_PERMISSION, EVT_BROWSER_PERMISSION_DONE, permissionAnswer, permissionForget, permissionsList, permissionsWaiting,
   type PermissionAnswer, type PermissionAsk, type PermissionKind, type SitePermissions,
 } from "./api";
-import { askFor, PermissionBar, SiteStrip } from "./SitePermissions";
+import { askFor, lateFor, PermissionBar, PermissionTimedOut, SiteStrip } from "./SitePermissions";
 import { AgentPanel, type AgentSeed, type QuickAsk } from "./AgentPanel";
 import { AiPanel } from "./AiPanel";
 import { Key } from "./ApprovalCard";
@@ -32,6 +32,8 @@ import { Avatar, Sidebar, type ChatRef } from "./Sidebar";
 import { applyProposal, propose, summarisePrompt, sidebarPrefs, type TabActionKind, type TabProposal } from "./tabAi";
 import { TranscriptPanel, type TranscriptSeed } from "./TranscriptPanel";
 import "./Browser.css";
+import { oops, quiet } from "./oops";
+import { toastBus } from "../ui/toastBus";
 
 type Panel = "ask" | "transcript" | "downloads" | "history" | "bookmarks" | "notes" | "customise" | "import" | "ai" | null;
 
@@ -55,6 +57,8 @@ export interface BrowserInitial {
   nav?: Partial<NavState>;
   /** Parity: show the new-tab page. */
   start?: boolean;
+  /** Parity: a permission request that timed out unanswered. */
+  late?: PermissionAsk[];
   /** Parity: the reader view, open on this text. */
   reader?: ReaderSeed;
   /** Parity: history for the start page and the History panel. */
@@ -201,6 +205,9 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
 
   const origin = originOf(url);
   const ask = askFor(asks, tab?.id);
+  // Requests that timed out unanswered (Lens blocked them): said once on their tab.
+  const [late, setLate] = useState<PermissionAsk[]>(initial?.late ?? []);
+  const lateAsk = ask ? undefined : lateFor(late, tab?.id);
   const answer = (a: PermissionAsk, how: PermissionAnswer) => {
     setAsks((xs) => xs.filter((x) => x.id !== a.id));
     if (how !== "once") setPerms((p) => ({ ...p, [a.origin]: { ...(p[a.origin] ?? {}), [a.kind]: how === "site" } }));
@@ -210,6 +217,17 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
   };
+  // Failures reported by any part of the browser (`oops(...)`, src/browser/oops.ts) show here.
+  useEffect(() => {
+    let seen = toastBus.items[toastBus.items.length - 1]?.id ?? 0;
+    return toastBus.subscribe((items) => {
+      const last = items[items.length - 1];
+      if (!last || last.id <= seen) return;
+      seen = last.id;
+      setToast(last.text);
+      window.setTimeout(() => setToast((t) => (t === last.text ? null : t)), last.kind === "error" ? 4200 : 2200);
+    });
+  }, []);
 
   // The side panel slides; it stays mounted until it has left, then the page gets the room back
   // in one step (the native page view is never resized mid-animation).
@@ -286,7 +304,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     } catch (e) {
       flash(String(e));
     }
-    void browserState().then(setView).catch(() => {});
+    void browserState().then(setView).catch(quiet);
   };
   // A plan is for the tabs as they were: switching space drops it.
   const planSpace = useRef(s?.activeSpace);
@@ -302,13 +320,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
 
   useEffect(() => {
     if (!live) return;
-    browserState().then(setView).catch(() => {});
+    browserState().then(setView).catch(quiet);
     const un1 = listen<BrowserView>(EVT_BROWSER_STATE, (e) => setView(e.payload));
     const un2 = listen<Dl[]>(EVT_BROWSER_DOWNLOADS, (e) => setDownloads(e.payload));
-    permissionsWaiting().then(setAsks).catch(() => {});
-    permissionsList().then(setPerms).catch(() => {});
+    permissionsWaiting().then(setAsks).catch(quiet);
+    permissionsList().then(setPerms).catch(quiet);
     const un3 = listen<PermissionAsk>(EVT_BROWSER_PERMISSION, (e) => setAsks((xs) => [...xs.filter((x) => x.id !== e.payload.id), e.payload]));
-    const un4 = listen<{ id: number }>(EVT_BROWSER_PERMISSION_DONE, (e) => setAsks((xs) => xs.filter((x) => x.id !== e.payload.id)));
+    const un4 = listen<{ id: number; reason?: string }>(EVT_BROWSER_PERMISSION_DONE, (e) =>
+      setAsks((xs) => {
+        const gone = xs.find((x) => x.id === e.payload.id);
+        if (gone && e.payload.reason === "timeout") setLate((l) => [...l.filter((x) => x.tab !== gone.tab), gone].slice(-8));
+        return xs.filter((x) => x.id !== e.payload.id);
+      })
+    );
     return () => {
       un1.then((u) => u());
       un2.then((u) => u());
@@ -328,7 +352,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     const el = pageRef.current;
     const send = () => {
       const r = el.getBoundingClientRect();
-      void setViewport(r.left, r.top, r.width, r.height).catch(() => {});
+      void setViewport(r.left, r.top, r.width, r.height).catch(quiet);
     };
     const ro = new ResizeObserver(send);
     ro.observe(el);
@@ -342,19 +366,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const [stackPop, setStackPop] = useState(false);
   const overlay = rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
   useEffect(() => {
-    if (live) void setOverlay(overlay).catch(() => {});
+    if (live) void setOverlay(overlay).catch(quiet);
   }, [overlay, live]);
 
   useEffect(() => {
     if (!live || !editing) return;
-    const t = window.setTimeout(() => historySearch(address, 6).then(setSuggest).catch(() => {}), 90);
+    const t = window.setTimeout(() => historySearch(address, 6).then(setSuggest).catch(quiet), 90);
     return () => window.clearTimeout(t);
   }, [address, editing, live]);
 
   useEffect(() => {
     if (!live) return;
-    if (panel === "history") listArchived().then(setArch).catch(() => {});
-    if (panel === "notes" && url) notesGet(url).then(setNotes).catch(() => {});
+    if (panel === "history") listArchived().then(setArch).catch(oops("load archived tabs"));
+    if (panel === "notes" && url) notesGet(url).then(setNotes).catch(oops("load your notes for this page"));
   }, [panel, live, view, url]);
 
   // Keep the highlighted suggestion inside the list as it changes.
@@ -365,7 +389,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   // The new-tab page lists the sites used most.
   const showStart = startOpen || (!!view && !tab);
   useEffect(() => {
-    if (live && showStart) historySearch("", 80).then(setRecent).catch(() => {});
+    if (live && showStart) historySearch("", 80).then(setRecent).catch(quiet);
   }, [live, showStart]);
 
   // Toolbar truth: ask the active page whether it can go back or forward, whether it is still
@@ -384,7 +408,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           const next = navFromStatus(st);
           setNav((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
         })
-        .catch(() => {});
+        .catch(quiet);
     };
     read();
     const id = window.setInterval(read, 600);
@@ -399,7 +423,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   }, [live]);
   const reload = useCallback(() => {
     setNav((n) => ({ ...n, loading: true, error: "" }));
-    void historyNav("reload").catch(() => {});
+    void historyNav("reload").catch(oops("reload the page"));
   }, []);
 
   // Reader view opens on the text the page agent already extracts; it closes when the tab or the
@@ -454,15 +478,15 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           reload();
           break;
         case "alt+left":
-          void historyNav("back").catch(() => {});
+          void historyNav("back").catch(oops("go back"));
           break;
         case "alt+right":
-          void historyNav("forward").catch(() => {});
+          void historyNav("forward").catch(oops("go forward"));
           break;
         case "esc":
           if (reader) setReader(null);
           else if (startOpen && tab) setStartOpen(false);
-          else if (nav.loading) void historyNav("stop").then(() => setNav((n) => ({ ...n, loading: false }))).catch(() => {});
+          else if (nav.loading) void historyNav("stop").then(() => setNav((n) => ({ ...n, loading: false }))).catch(oops("stop loading"));
           break;
         case "ctrl+=":
         case "ctrl++":
@@ -487,7 +511,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           setFind("");
           break;
         case "ctrl+d":
-          void bookmarkToggle().then((on) => flash(on ? "Bookmarked" : "Bookmark removed")).catch(() => {});
+          void bookmarkToggle().then((on) => flash(on ? "Bookmarked" : "Bookmark removed")).catch(oops("change the bookmark"));
           break;
         case "ctrl+j":
           if (aiOn) setPanel((p) => (p === "ask" ? null : "ask"));
@@ -562,7 +586,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           return;
         case "copy_markdown": {
           const md = sel ? `> ${sel.replace(/\n/g, "\n> ")}\n\n— [${ev.title}](${ev.url})` : `[${ev.title}](${ev.url})`;
-          await navigator.clipboard?.writeText(md).catch(() => {});
+          await navigator.clipboard?.writeText(md).catch(oops("copy the page"));
           flash("Copied as Markdown");
           return;
         }
@@ -651,7 +675,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const active = rows[Math.min(sel, rows.length - 1)];
   const running = downloads.filter((d) => d.state === "downloading").length;
   const zoomPct = Math.round((tab?.zoom ?? 1) * 100);
-  const findStep = (back: boolean) => find && void findInPage(find, back).then(setFindInfo).catch(() => {});
+  const findStep = (back: boolean) => find && void findInPage(find, back).then(setFindInfo).catch(oops("search the page"));
   const crumbs = breadcrumb(url);
   const zoom = tab?.zoom ?? 1;
   const pagePanels = PAGE_PANELS.filter(([id]) => (id === "ask" ? aiOn : id === "transcript" ? aiOn && ai.transcripts : true));
@@ -824,7 +848,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               <BookOpen size={15} />
             </button>
           ) : null}
-          <button className="lb-icon-btn" aria-label={live && !nav.hasVideo ? "Picture in picture (no video on this page)" : "Picture in picture"} disabled={live && !nav.hasVideo} onClick={() => void pip().then((ok) => { if (!ok) flash("This page doesn't allow picture in picture"); }).catch(() => {})}><PictureInPicture2 size={15} /></button>
+          <button className="lb-icon-btn" aria-label={live && !nav.hasVideo ? "Picture in picture (no video on this page)" : "Picture in picture"} disabled={live && !nav.hasVideo} onClick={() => void pip().then((ok) => { if (!ok) flash("This page doesn't allow picture in picture"); }).catch(oops("start picture in picture"))}><PictureInPicture2 size={15} /></button>
           {aiOn && awaiting ? (
             <button className="lb-approve-pill" onClick={() => setPanel("ask")}>
               <Sparkles size={12} /> Approve {awaiting} action{awaiting > 1 ? "s" : ""} <Key k="Ctrl J" />
@@ -873,7 +897,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               value={find}
               placeholder="Find on page"
               aria-label="Find on page"
-              onChange={(e) => { setFind(e.target.value); void findInPage(e.target.value).then(setFindInfo).catch(() => {}); }}
+              onChange={(e) => { setFind(e.target.value); void findInPage(e.target.value).then(setFindInfo).catch(oops("search the page")); }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") findStep(e.shiftKey);
                 if (e.key === "Escape") { setFind(null); setFindInfo(null); }
@@ -906,7 +930,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             ) : null}
             <span className="lb-push" />
             <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void glance("promote").catch((e) => flash(String(e)))}>Open as tab <Key k="⏎" /></button>
-            <button className="lb-btn lb-btn-sm" onClick={() => { setGlanceSummary(null); void glance("close").catch(() => {}); }}>Close <Key k="Esc" /></button>
+            <button className="lb-btn lb-btn-sm" onClick={() => { setGlanceSummary(null); void glance("close").catch(quiet); }}>Close <Key k="Esc" /></button>
             {glanceSummary ? <p className="lb-glance-sum">{glanceSummary}</p> : null}
           </div>
         ) : null}
@@ -914,6 +938,10 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         {ask ? (
           <div onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); answer(ask, "block"); } }}>
             <PermissionBar ask={ask} more={asks.length - 1} onAnswer={(a) => answer(ask, a)} />
+          </div>
+        ) : lateAsk ? (
+          <div onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setLate((l) => l.filter((x) => x.id !== lateAsk.id)); } }}>
+            <PermissionTimedOut ask={lateAsk} onClose={() => setLate((l) => l.filter((x) => x.id !== lateAsk.id))} />
           </div>
         ) : siteOpen && origin ? (
           <SiteStrip
@@ -938,7 +966,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             <div className="lb-start lens-dither lens-dither-vignette">
               <h1>This tab stopped responding</h1>
               <p className="lb-dim">{hostOf(url)} crashed or froze. Your other tabs are fine.</p>
-              <button className="lb-btn lb-btn-primary" onClick={() => { setCrashed(false); failures.current = 0; void historyNav("reload").catch(() => {}); }}>
+              <button className="lb-btn lb-btn-primary" onClick={() => { setCrashed(false); failures.current = 0; void historyNav("reload").catch(oops("reload the page")); }}>
                 <RotateCw size={14} /> Reload <Key k="⏎" />
               </button>
             </div>
@@ -1055,7 +1083,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           ) : null}
           {shown === "import" ? (
             <div className="lb-panel-body lb-scroll-y">
-              <ImportPanel seed={initial?.importSeed} searchUrl={s.settings.searchUrl} onChanged={() => live && void browserState().then(setView).catch(() => {})} />
+              <ImportPanel seed={initial?.importSeed} searchUrl={s.settings.searchUrl} onChanged={() => live && void browserState().then(setView).catch(quiet)} />
             </div>
           ) : null}
           {shown === "ai" ? (
@@ -1092,7 +1120,7 @@ async function glanceSummarise(set: (s: string | null) => void) {
       }).then((u) => (unlisten = u));
     });
     await Promise.race([done, new Promise((r) => setTimeout(r, 5000))]);
-    void aiCancel(id).catch(() => {});
+    void aiCancel(id).catch(quiet);
     (unlisten as (() => void) | null)?.();
     if (!out) set("No local model answered in time.");
   } catch (e) {
