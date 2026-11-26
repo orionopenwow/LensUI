@@ -12,6 +12,7 @@ pub(crate) mod command_link;
 pub(crate) mod place;
 pub(crate) mod flyout_geom;
 pub(crate) mod safe_start;
+pub(crate) mod signin_gate;
 pub(crate) mod surface_state;
 
 use crate::*;

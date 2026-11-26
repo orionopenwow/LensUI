@@ -1363,9 +1363,12 @@ export const ControlCenterSurface: React.FC = () => {
               </div>
               <WindowRulesCard />
 
-              <div id="sec-shell">
-                <ShellModeCard />
-              </div>
+              {/* Replacing Explorer as the shell is a Tester mode experiment only (docs/FAILSAFE.md §9). */}
+              {config.tester?.enabled && (
+                <div id="sec-shell">
+                  <ShellModeCard />
+                </div>
+              )}
             </>
           )}
           </PageErrorBoundary>
