@@ -107,12 +107,15 @@ pub(crate) fn apply_frames(cfg: &LensConfig) {
 
 /// The system-wide writes, each only when its value changed: the Windows accent (registry plus a
 /// settings broadcast every app repaints for) and the Windhawk mod (Windhawk recompiles on write).
-pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool) {
-    if write_win_accent
-        && cfg.theme.accent_mode == "custom"
-        && crate::app::theme_apply::changed("accent", &cfg.theme.custom_accent)
-    {
-        let _ = set_windows_accent_color(&cfg.theme.custom_accent);
+pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool, epoch: u64) {
+    if write_win_accent && cfg.theme.accent_mode == "custom" {
+        // Under the accent lock, and only if no "Remove all" ran since this was queued.
+        let _io = crate::app::theme_apply::ACCENT_IO.lock().unwrap_or_else(|e| e.into_inner());
+        if crate::app::theme_apply::accent_write_current(epoch)
+            && crate::app::theme_apply::changed("accent", &cfg.theme.custom_accent)
+        {
+            let _ = set_windows_accent_color(&cfg.theme.custom_accent);
+        }
     }
     let c = frame_colors(cfg);
     // Windhawk's mod needs a real color; DWM accepts the borderless sentinel.

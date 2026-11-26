@@ -11,7 +11,7 @@
 //! Windhawk) after a longer one, and only when what they would write has actually changed.
 
 use crate::config::LensConfig;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -23,12 +23,35 @@ pub(crate) const SYSTEM_DELAY: Duration = Duration::from_millis(1200);
 struct Pending {
     cfg: LensConfig,
     write_accent: bool,
+    /// `ACCENT_EPOCH` when this write was queued; a "Remove all" in between cancels it.
+    epoch: u64,
     since: Instant,
     frames_done: bool,
 }
 
 static PENDING: OnceLock<Mutex<Option<Pending>>> = OnceLock::new();
 static WORKER: AtomicBool = AtomicBool::new(false);
+/// Bumped by "Remove all Lens changes" before it restores the Windows accent, so an accent write
+/// that was queued (or about to run) before it can't land afterwards and undo the restore.
+static ACCENT_EPOCH: AtomicU64 = AtomicU64::new(0);
+/// Held around every Windows accent write and the restore, so they never interleave.
+pub(crate) static ACCENT_IO: Mutex<()> = Mutex::new(());
+
+/// "Remove all": cancel any queued Windows accent write. Returns the guard the caller holds while
+/// restoring, so a write already in progress finishes first and none starts until it's done.
+pub(crate) fn cancel_accent_writes() -> std::sync::MutexGuard<'static, ()> {
+    let io = ACCENT_IO.lock().unwrap_or_else(|e| e.into_inner());
+    ACCENT_EPOCH.fetch_add(1, Ordering::SeqCst);
+    if let Some(p) = slot().lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
+        p.write_accent = false;
+    }
+    io
+}
+
+/// True when an accent write queued at `epoch` may still run.
+pub(crate) fn accent_write_current(epoch: u64) -> bool {
+    ACCENT_EPOCH.load(Ordering::SeqCst) == epoch
+}
 
 fn slot() -> &'static Mutex<Option<Pending>> {
     PENDING.get_or_init(|| Mutex::new(None))
@@ -40,7 +63,8 @@ pub(crate) fn schedule(cfg: &LensConfig, write_accent: bool) {
     {
         let mut g = slot().lock().unwrap_or_else(|e| e.into_inner());
         let accent = write_accent || g.as_ref().map(|p| p.write_accent).unwrap_or(false);
-        *g = Some(Pending { cfg: cfg.clone(), write_accent: accent, since: Instant::now(), frames_done: false });
+        let epoch = ACCENT_EPOCH.load(Ordering::SeqCst);
+        *g = Some(Pending { cfg: cfg.clone(), write_accent: accent, epoch, since: Instant::now(), frames_done: false });
     }
     if !WORKER.swap(true, Ordering::SeqCst) {
         std::thread::Builder::new()
@@ -66,7 +90,7 @@ fn worker() {
         if p.frames_done && quiet >= SYSTEM_DELAY {
             let done = g.take().unwrap();
             drop(g);
-            crate::commands::theme::apply_system_wide(&done.cfg, done.write_accent);
+            crate::commands::theme::apply_system_wide(&done.cfg, done.write_accent, done.epoch);
         }
     }
 }
