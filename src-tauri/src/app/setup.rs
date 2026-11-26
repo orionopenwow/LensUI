@@ -222,6 +222,7 @@ fn show_settings_on_launch(handle: &AppHandle) {
 
 /// Builds the start-up windows in `labels`, one at a time, off the main thread.
 fn build_lazy_windows(handle: &AppHandle, labels: &[&'static str]) {
+    let mut all_built = true;
     for &label in labels {
         // Claim the label first: a first-use build (`ensure_window`) started from another thread at
         // the same moment would otherwise build a second window under the same label, leaving an
@@ -245,9 +246,16 @@ fn build_lazy_windows(handle: &AppHandle, labels: &[&'static str]) {
             show_settings_on_launch(handle);
         }
         if !built {
+            all_built = false;
             eprintln!("[Lens UI] Building the {label} window took more than {}s; carrying on without waiting.", LAZY_BUILD_LIMIT.as_secs());
             crate::tester::log("warn", "setup", &format!("{label} window build is slow"));
         }
+    }
+    // Signal for the failsafe E2E (webview-killed): the main thread is no longer building windows.
+    if all_built {
+        eprintln!("[Lens UI] Start-up windows built.");
+    } else {
+        eprintln!("[Lens UI] Start-up windows: a build is still running.");
     }
 }
 

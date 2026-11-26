@@ -497,6 +497,11 @@ const SCENARIOS = [
         // fixed time. Without it the heartbeat probe still has to bring the Dock back.
         const watched = await waitFor(() => s.logs.join("").includes("Watching the dock page's renderer"), 20000);
         if (!watched) console.log("      WARN webview-killed: the Dock's renderer was never reported as watched (B-31 trace)");
+        // Kill only once the start-up windows are built. WebView2 creates each window on the main
+        // thread; a renderer killed in the middle of such a build can keep the main thread busy for
+        // a long time, and then nothing can reload anything (B-31b, a separate case).
+        const built = await waitFor(() => s.logs.join("").includes("Start-up windows built."), 90000);
+        if (!built) console.log("      WARN webview-killed: start-up windows were still being built at the kill (B-31b)");
         await sleep(1500); // one heartbeat
         await s.browser.close().catch(() => {});
         const killed = ps(
