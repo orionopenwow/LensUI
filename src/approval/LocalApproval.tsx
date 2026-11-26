@@ -2,6 +2,7 @@
 // Command, the AI dock, voice) and Lens Apps. Each of them also sits in the shared queue
 // (win_mcp::enqueue_local), so the same request shows on the pill and in the approval window, and
 // answering it in one place settles it everywhere.
+import { rememberStepToken } from "../ai/stepTokens";
 import React, { useEffect, useMemo, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { ApprovalCard } from "./ApprovalCard";
@@ -15,6 +16,8 @@ export interface ProposalLike {
   summary: string;
   risk: string;
   safety?: SafetyReasonLike[];
+  /** The step's one-time approval token from the proposal event. */
+  approval_token?: string;
 }
 
 /**
@@ -41,6 +44,8 @@ export const ProposalApproval: React.FC<{ proposal: ProposalLike; onDecide: (app
       request={request}
       compact={compact}
       onApprove={async () => {
+        // The surface's answer path sends the token Core issued for this exact step.
+        rememberStepToken(proposal.call_id, request.token ?? proposal.approval_token);
         await onDecide(true);
         return true;
       }}

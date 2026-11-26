@@ -7,6 +7,7 @@
  *   - `transcribeFile` and its events (W6-C).
  * It replaced the temporary contract.shim.ts when ai-core landed.
  */
+import { rememberStepToken } from "./stepTokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -174,10 +175,11 @@ export function useAiRequest() {
       }),
       listen<AiToolProposalEvent>(AI_EVENTS.toolProposal, (e) => {
         if (e.payload.id !== idRef.current) return;
+        rememberStepToken(e.payload.call_id, e.payload.approval_token);
         // The Ask panel shows its own consent card before any cloud send, so the backend's
         // ask-each-time consent for that same request is answered here instead of twice.
         if (e.payload.tool === CONSENT_TOOL) {
-          aiConfirmTool(e.payload.call_id, true).catch(() => {});
+          aiConfirmTool(e.payload.call_id, true, e.payload.approval_token).catch(() => {});
           return;
         }
         const card: AiToolProposal = { ...e.payload, risk: surfaceRisk(e.payload.risk) };

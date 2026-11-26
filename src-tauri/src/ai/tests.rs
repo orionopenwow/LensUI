@@ -10,6 +10,10 @@ struct Recorder {
     approvals: Arc<Approvals>,
     /// What to answer when a confirm-level proposal arrives (None = never answer).
     answer: Option<bool>,
+    /// What to send back as the approval token instead of the one on the card (None = the card's).
+    forged: Option<String>,
+    /// Every token seen on a proposal.
+    tokens: Mutex<Vec<String>>,
 }
 
 impl Recorder {
@@ -40,8 +44,12 @@ impl AiSink for Recorder {
     fn tool_proposal(&self, ev: &ToolProposalEvent) {
         self.push("proposal", serde_json::to_value(ev).unwrap());
         if ev.risk == Risk::Confirm {
+            if let Some(t) = &ev.approval_token {
+                self.tokens.lock().unwrap().push(t.clone());
+            }
             if let Some(a) = self.answer {
-                self.approvals.resolve(&ev.call_id, a).unwrap();
+                let token = self.forged.clone().or_else(|| ev.approval_token.clone());
+                self.approvals.resolve(&ev.call_id, a, token.as_deref()).unwrap();
             }
         }
     }
@@ -176,6 +184,75 @@ fn script_confirm_tools_wait_for_approval() {
     run(&ScriptProvider, &ask("take a note: buy milk", true), PrivacyMode::LocalOnly, &rec, &host);
     assert!(host.calls.lock().unwrap().is_empty());
     assert!(!rec.approvals.is_pending("ai-test-1-r0-0"));
+}
+
+#[test]
+fn an_approval_without_the_steps_token_runs_nothing() {
+    // "Yes" with no token, with a made-up token, and with the old boolean spelled as text.
+    for forged in ["", "true", &"a".repeat(64)] {
+        let rec = Recorder { answer: Some(true), forged: Some(forged.to_string()), ..Default::default() };
+        let host = Host::default();
+        run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
+        assert!(host.calls.lock().unwrap().is_empty(), "ran with token {:?}", forged);
+        assert_eq!(rec.all("result")[0]["ok"], false);
+        assert!(rec.text().contains("couldn't match"), "{}", rec.text());
+    }
+}
+
+#[test]
+fn a_token_from_another_step_or_a_used_one_runs_nothing() {
+    // First run: approved properly; its token is now spent.
+    let first = Recorder::with(Some(true));
+    let host = Host::default();
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &first, &host);
+    assert_eq!(host.calls.lock().unwrap().len(), 1);
+    let spent = first.tokens.lock().unwrap()[0].clone();
+    assert_eq!(spent.len(), 64);
+
+    // Replayed on the same step.
+    let rec = Recorder { answer: Some(true), forged: Some(spent), ..Default::default() };
+    let host = Host::default();
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
+    assert!(host.calls.lock().unwrap().is_empty());
+
+    // A live token issued for a different step (other tool and arguments).
+    let other = crate::agentsafe::step_token::store()
+        .issue(&step_binding("ai-test-1", "ai-test-1-r0-0", "set_volume", &json!({ "level": 100 })), crate::agentsafe::step_token::now_ms())
+        .unwrap();
+    let rec = Recorder { answer: Some(true), forged: Some(other), ..Default::default() };
+    let host = Host::default();
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
+    assert!(host.calls.lock().unwrap().is_empty());
+}
+
+#[test]
+fn every_waiting_step_gets_its_own_token_and_free_steps_get_none() {
+    let rec = Recorder::with(Some(true));
+    let host = Host::default();
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
+    let a = rec.all("proposal")[0]["approval_token"].as_str().unwrap().to_string();
+    let rec2 = Recorder::with(Some(true));
+    run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec2, &host);
+    let b = rec2.all("proposal")[0]["approval_token"].as_str().unwrap().to_string();
+    assert_ne!(a, b, "tokens are random, not derived from the step");
+
+    let rec = Recorder::with(None);
+    run(&ScriptProvider, &ask("open spotify", true), PrivacyMode::LocalOnly, &rec, &host);
+    assert!(rec.all("proposal")[0].get("approval_token").is_none());
+}
+
+#[test]
+fn step_bindings_differ_by_call_tool_and_arguments() {
+    let base = step_binding("r1", "c1", "set_volume", &json!({ "level": 20, "app": "x" }));
+    assert_eq!(base.digest(), step_binding("r1", "c1", "set_volume", &json!({ "app": "x", "level": 20 })).digest(), "key order doesn't matter");
+    for other in [
+        step_binding("r2", "c1", "set_volume", &json!({ "level": 20, "app": "x" })),
+        step_binding("r1", "c2", "set_volume", &json!({ "level": 20, "app": "x" })),
+        step_binding("r1", "c1", "set_mute", &json!({ "level": 20, "app": "x" })),
+        step_binding("r1", "c1", "set_volume", &json!({ "level": 100, "app": "x" })),
+    ] {
+        assert_ne!(base.digest(), other.digest());
+    }
 }
 
 #[test]
@@ -315,7 +392,7 @@ fn cancelling_stops_and_clears_approvals() {
     assert!(rt.cancel(&id));
     assert!(flag.load(Ordering::Relaxed));
     assert!(rx.recv().is_err(), "pending approvals of a cancelled request are dropped");
-    assert!(rt.approvals.resolve("c1", true).is_err());
+    assert!(rt.approvals.resolve("c1", true, None).is_err());
     rt.finish(&id);
     assert!(!rt.cancel(&id));
 }
@@ -360,7 +437,7 @@ fn wire_shapes_match_the_contract() {
     assert!(req.allow_tools);
     let minimal: AiRequest = serde_json::from_value(json!({"prompt": "hi"})).unwrap();
     assert!(!minimal.allow_tools && minimal.provider.is_none());
-    let p = ToolProposalEvent { id: "a".into(), call_id: "c".into(), tool: "t".into(), args: json!({}), summary: "s".into(), risk: Risk::Low, safety: Vec::new() };
+    let p = ToolProposalEvent { id: "a".into(), call_id: "c".into(), tool: "t".into(), args: json!({}), summary: "s".into(), risk: Risk::Low, safety: Vec::new(), approval_token: None };
     assert_eq!(serde_json::to_value(&p).unwrap()["risk"], "low");
 }
 

@@ -298,6 +298,11 @@ pub struct ToolProposalEvent {
     /// Why the agent-safety gate made this step wait or refused it (empty when it had no say).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub safety: Vec<SafetyNote>,
+    /// For a step that waits for the person: the one-time token to send back with the approval
+    /// (`ai_confirm_tool`). Bound to this request, call, tool and arguments; see
+    /// `agentsafe::step_token`. Absent on steps that don't wait.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_token: Option<String>,
 }
 
 /// `lens://agentsafe/flag`: the gate found something in what a request attached ("context"),
@@ -527,14 +532,24 @@ pub trait AiSink: Send + Sync {
     fn safety(&self, _ev: &SafetyFlagEvent) {}
 }
 
+/// The person's answer to one waiting call: `None` = declined (or timed out, or cancelled);
+/// `Some(token)` = approved, with the token that came back with the approval. The runner checks
+/// the token against the step it is about to run; an approval is not a flag.
+pub type Answer = Option<String>;
+
+/// The exact step an assistant approval covers.
+pub fn step_binding(request_id: &str, call_id: &str, tool: &str, args: &Value) -> crate::agentsafe::step_token::Binding {
+    crate::agentsafe::step_token::Binding::new(call_id, tool, request_id, &crate::agentsafe::canonical_json(args))
+}
+
 /// Calls waiting for the user's yes/no (`ai_confirm_tool`).
 #[derive(Default)]
 pub struct Approvals {
-    pending: Mutex<HashMap<String, (String, mpsc::Sender<bool>)>>,
+    pending: Mutex<HashMap<String, (String, mpsc::Sender<Answer>)>>,
 }
 
 impl Approvals {
-    pub fn register(&self, request_id: &str, call_id: &str) -> mpsc::Receiver<bool> {
+    pub fn register(&self, request_id: &str, call_id: &str) -> mpsc::Receiver<Answer> {
         let (tx, rx) = mpsc::channel();
         self.pending
             .lock()
@@ -543,10 +558,12 @@ impl Approvals {
         rx
     }
 
-    pub fn resolve(&self, call_id: &str, approve: bool) -> Result<(), String> {
+    /// Answers a waiting call. An approval carries the token from the card; the runner decides
+    /// whether it counts. Declining needs no token.
+    pub fn resolve(&self, call_id: &str, approve: bool, token: Option<&str>) -> Result<(), String> {
         let entry = self.pending.lock().unwrap_or_else(|e| e.into_inner()).remove(call_id);
         match entry {
-            Some((_, tx)) => tx.send(approve).map_err(|_| "That request has already finished.".to_string()),
+            Some((_, tx)) => tx.send(approve.then(|| token.unwrap_or("").to_string())).map_err(|_| "That request has already finished.".to_string()),
             None => Err("Nothing is waiting for that approval (it may have timed out).".into()),
         }
     }
@@ -598,19 +615,41 @@ You cannot delete files, send messages, spend money, read passwords, or control 
     s
 }
 
-fn wait_for(approvals: &Approvals, rx: &mpsc::Receiver<bool>, call_id: &str, cancel: &AtomicBool, timeout: Duration) -> bool {
+fn wait_for(approvals: &Approvals, rx: &mpsc::Receiver<Answer>, call_id: &str, cancel: &AtomicBool, timeout: Duration) -> Answer {
     let start = std::time::Instant::now();
     loop {
         match rx.recv_timeout(Duration::from_millis(150)) {
             Ok(v) => return v,
-            Err(mpsc::RecvTimeoutError::Disconnected) => return false,
+            Err(mpsc::RecvTimeoutError::Disconnected) => return None,
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 if cancel.load(Ordering::Relaxed) || start.elapsed() >= timeout {
-                    let _ = approvals.resolve(call_id, false);
-                    return false;
+                    let _ = approvals.resolve(call_id, false, None);
+                    return None;
                 }
             }
         }
+    }
+}
+
+/// Why a step that was waiting did not run.
+const DECLINED: &str = "The user declined this action.";
+const NOT_MATCHED: &str = "Lens couldn't match that approval to this exact step, so it didn't run. Ask again if you still want it.";
+
+/// Issues the card's token for a waiting step, waits for the answer, and lets the step run only
+/// if the approval brought back that step's own unused token. `Ok(())` = run it.
+fn approved_step(binding: &crate::agentsafe::step_token::Binding, issue: impl FnOnce(Option<String>), deps: &RunDeps, call_id: &str, request_id: &str) -> Result<(), &'static str> {
+    use crate::agentsafe::step_token;
+    let rx = deps.approvals.register(request_id, call_id);
+    let token = step_token::store().issue(binding, step_token::now_ms()).ok();
+    issue(token.clone());
+    match wait_for(deps.approvals, &rx, call_id, deps.cancel, deps.approval_timeout) {
+        None => {
+            if let Some(t) = &token {
+                step_token::store().revoke(t);
+            }
+            Err(DECLINED)
+        }
+        Some(offered) => step_token::store().redeem(Some(&offered), binding, step_token::now_ms()).map_err(|_| NOT_MATCHED),
     }
 }
 
@@ -632,6 +671,7 @@ fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunD
                 summary: tools::describe(name, input),
                 risk,
                 safety: Vec::new(),
+                approval_token: None,
             });
             (false, e)
         }
@@ -662,33 +702,40 @@ fn run_tool_call(id: &str, call_id: &str, name: &str, input: &Value, deps: &RunD
                     summary: summary.clone(),
                     risk: Risk::Blocked,
                     safety: notes.clone(),
+                    approval_token: None,
                 });
                 deps.sink.safety(&SafetyFlagEvent { id: id.into(), source: "step".into(), label: summary, verdict: "block".into(), set_aside: 0, reasons: notes });
                 (false, format!("Lens stopped this step for safety: {}. Tell the user; do not try another way.", verdict.text()))
             } else {
                 let ask = verdict.is_ask();
-                let rx = (risk == Risk::Confirm || ask).then(|| deps.approvals.register(id, call_id));
-                deps.sink.tool_proposal(&ToolProposalEvent {
-                    id: id.into(),
-                    call_id: call_id.into(),
-                    tool: name.into(),
-                    args: args.clone(),
-                    summary,
-                    risk: if ask { Risk::Confirm } else { risk },
-                    safety: if ask { notes } else { Vec::new() },
-                });
-                let approved = match &rx {
-                    Some(rx) => wait_for(deps.approvals, rx, call_id, deps.cancel, deps.approval_timeout),
-                    None => true,
+                let propose = |approval_token: Option<String>| {
+                    deps.sink.tool_proposal(&ToolProposalEvent {
+                        id: id.into(),
+                        call_id: call_id.into(),
+                        tool: name.into(),
+                        args: args.clone(),
+                        summary: summary.clone(),
+                        risk: if ask { Risk::Confirm } else { risk },
+                        safety: if ask { notes.clone() } else { Vec::new() },
+                        approval_token,
+                    })
                 };
-                if approved {
-                    ran.push(name.to_string());
-                    match deps.host.run(name, &args) {
-                        Ok(m) => (true, m),
-                        Err(e) => (false, e),
-                    }
+                let go = if risk == Risk::Confirm || ask {
+                    // The binding is made from the arguments that will run, not from the card.
+                    approved_step(&step_binding(id, call_id, name, &args), propose, deps, call_id, id)
                 } else {
-                    (false, "The user declined this action.".to_string())
+                    propose(None);
+                    Ok(())
+                };
+                match go {
+                    Ok(()) => {
+                        ran.push(name.to_string());
+                        match deps.host.run(name, &args) {
+                            Ok(m) => (true, m),
+                            Err(e) => (false, e),
+                        }
+                    }
+                    Err(why) => (false, why.to_string()),
                 }
             }
         }
@@ -777,17 +824,21 @@ pub fn run_request(id: &str, req: &AiRequest, deps: &RunDeps) -> (DoneEvent, Vec
             } else {
                 format!("your request plus: {}", fields.join(", ").replace('_', " "))
             };
-            let rx = deps.approvals.register(id, &call_id);
-            deps.sink.tool_proposal(&ToolProposalEvent {
-                id: id.into(),
-                call_id: call_id.clone(),
-                tool: "send_to_cloud".into(),
-                args: json!({ "provider": p.id(), "label": p.label(), "model": p.model(), "fields": fields }),
-                summary: format!("Send {} to {}?", shown, p.label()),
-                risk: Risk::Confirm,
-                safety: Vec::new(),
-            });
-            let ok = wait_for(deps.approvals, &rx, &call_id, deps.cancel, deps.approval_timeout);
+            let consent_args = json!({ "provider": p.id(), "label": p.label(), "model": p.model(), "fields": fields });
+            let propose = |approval_token: Option<String>| {
+                deps.sink.tool_proposal(&ToolProposalEvent {
+                    id: id.into(),
+                    call_id: call_id.clone(),
+                    tool: "send_to_cloud".into(),
+                    args: consent_args.clone(),
+                    summary: format!("Send {} to {}?", shown, p.label()),
+                    risk: Risk::Confirm,
+                    safety: Vec::new(),
+                    approval_token,
+                })
+            };
+            // Consent to send is bound like any step: this request, this provider, these fields.
+            let ok = approved_step(&step_binding(id, &call_id, "send_to_cloud", &consent_args), propose, deps, &call_id, id).is_ok();
             deps.sink.tool_result(&ToolResultEvent {
                 id: id.into(),
                 call_id,

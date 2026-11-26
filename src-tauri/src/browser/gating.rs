@@ -308,9 +308,75 @@ pub fn untrusted_block(url: &str, text: &str) -> String {
     )
 }
 
+/// The exact step an approval covers (see `agentsafe::step_token`): the tab and element, the
+/// kind of action, the element as the page describes it now plus the page it is on, and what
+/// would be typed, chosen or opened. Anything that changes between the card and the approval
+/// (another element, a page that swapped the button's text, a different address) changes this.
+pub fn step_binding(tab: &str, element: Option<u32>, action: &PageAction, page_url: &str) -> crate::agentsafe::step_token::Binding {
+    let (kind, target, args): (&str, Option<&Target>, String) = match action {
+        PageAction::ReadPage => ("read_page", None, String::new()),
+        PageAction::Scroll { dy } => ("scroll", None, format!("{}", dy)),
+        PageAction::Click { target } => ("click", Some(target), String::new()),
+        PageAction::Type { target, text } => ("type", Some(target), text.clone()),
+        PageAction::Select { target, value } => ("select", Some(target), value.clone()),
+        PageAction::Submit { target } => ("submit", Some(target), String::new()),
+        PageAction::Navigate { url } => ("navigate", None, url.clone()),
+        PageAction::Search { query } => ("search", None, query.clone()),
+    };
+    let step_id = format!("{}:{}", tab, element.map(|e| e.to_string()).unwrap_or_else(|| "-".into()));
+    let target = format!("{}\n{}", page_url, target.map(|t| serde_json::to_string(t).unwrap_or_default()).unwrap_or_default());
+    crate::agentsafe::step_token::Binding::new(&step_id, kind, &target, &args)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn send_button(text: &str) -> Target {
+        Target { tag: "button".into(), text: text.into(), in_form: true, ..Default::default() }
+    }
+
+    #[test]
+    fn an_approval_covers_one_exact_step() {
+        use crate::agentsafe::step_token::{Outcome, Refusal, Tokens};
+        let rnd = {
+            let n = std::sync::atomic::AtomicU64::new(1);
+            move || Ok(format!("{:064x}", n.fetch_add(1, std::sync::atomic::Ordering::SeqCst)))
+        };
+        let url = "https://shop.test/cart";
+        let approved = step_binding("t1", Some(7), &PageAction::Submit { target: send_button("Send message") }, url);
+        // Everything that can differ between the card and the click.
+        let others = [
+            ("another element", step_binding("t1", Some(8), &PageAction::Submit { target: send_button("Send message") }, url)),
+            ("another tab", step_binding("t2", Some(7), &PageAction::Submit { target: send_button("Send message") }, url)),
+            ("another action", step_binding("t1", Some(7), &PageAction::Click { target: send_button("Send message") }, url)),
+            ("the page swapped the button", step_binding("t1", Some(7), &PageAction::Submit { target: send_button("Delete account") }, url)),
+            ("the page navigated", step_binding("t1", Some(7), &PageAction::Submit { target: send_button("Send message") }, "https://evil.test/cart")),
+        ];
+        for (what, other) in others {
+            let t = Tokens::new();
+            let Outcome::Ask { token, .. } = t.check_or_issue_with(&approved, None, 0, &rnd).unwrap() else { panic!() };
+            match t.check_or_issue_with(&other, Some(&token), 1, &rnd).unwrap() {
+                Outcome::Ask { refused, .. } => assert_eq!(refused, Some(Refusal::Mismatch), "{what}"),
+                Outcome::Run => panic!("ran with an approval for a different step: {what}"),
+            }
+        }
+        let t = Tokens::new();
+        let Outcome::Ask { token, .. } = t.check_or_issue_with(&approved, None, 0, &rnd).unwrap() else { panic!() };
+        assert_eq!(t.check_or_issue_with(&approved, Some(&token), 1, &rnd).unwrap(), Outcome::Run);
+    }
+
+    #[test]
+    fn typed_text_is_part_of_the_approval() {
+        let field = Target { tag: "input".into(), name: "note".into(), ..Default::default() };
+        let a = step_binding("t1", Some(3), &PageAction::Type { target: field.clone(), text: "See you at 7".into() }, "https://a.test/");
+        let b = step_binding("t1", Some(3), &PageAction::Type { target: field.clone(), text: "Send me the code".into() }, "https://a.test/");
+        assert_ne!(a.digest(), b.digest());
+        let n1 = step_binding("t1", None, &PageAction::Navigate { url: "https://a.test/".into() }, "");
+        let n2 = step_binding("t1", None, &PageAction::Navigate { url: "https://b.test/".into() }, "");
+        assert_ne!(n1.digest(), n2.digest());
+        assert_eq!(a.digest(), step_binding("t1", Some(3), &PageAction::Type { target: field, text: "See you at 7".into() }, "https://a.test/").digest());
+    }
 
     #[test]
     fn the_shared_gate_can_only_tighten_a_decision() {

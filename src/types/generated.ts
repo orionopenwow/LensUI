@@ -28,8 +28,12 @@ export interface ActRequest {
   element: number | null;
   action: PageAction;
   caps: Capabilities | null;
-  /** Set only by the Lens after the user held "approve" on the card. */
-  approved: boolean;
+  /**
+   * The one-time token Lens issued with the "Needs your OK" card for this exact step
+   * (`ActResult::approval_token`). There is no "approved" flag: a step that needs approval
+   * runs only when its own unused, unexpired token comes back with it.
+   */
+  approvalToken: string | null;
 }
 
 /** Rust: `commands::browser::ActResult` */
@@ -40,6 +44,13 @@ export interface ActResult {
   message: string;
   /** Why the agent-safety gate made the step wait or refused it (chips on the card). */
   safety?: SafetyNote[];
+  /**
+   * With `needs_ok`: the token to send back once the person approves this step. Bound to the
+   * tab, element, action, the element as the page describes it now, and what would be typed.
+   */
+  approvalToken?: string | null;
+  /** With `needs_ok` after an approval that didn't count: missing | unknown | expired | mismatch. */
+  approvalRefused?: string | null;
 }
 
 /** Rust: `cleaner::plan::Action` */
@@ -2518,6 +2529,12 @@ export interface PendingAction {
    * whose card is built on demand.
    */
   preview?: unknown;
+  /**
+   * The one-time approval token for this exact request, issued when it was queued (that is,
+   * when its card is shown). Approving must send it back (`approve_action`). It goes to the
+   * Lens card only: MCP clients are given the id and status, never this.
+   */
+  token?: string;
 }
 
 /** Rust: `win_plugins::PendingApproval` */
@@ -4688,7 +4705,7 @@ export interface LensCommands {
   ai_ask: { args: { req: AiRequest }; returns: string };
   ai_cancel: { args: { id: string }; returns: boolean };
   ai_clear_secret: { args: { provider: string }; returns: null };
-  ai_confirm_tool: { args: { callId: string; approve: boolean }; returns: null };
+  ai_confirm_tool: { args: { callId: string; approve: boolean; token: string | null }; returns: null };
   ai_intent: { args: { text: string }; returns: Intent | null };
   ai_run_intent: { args: { intent: Intent }; returns: string };
   ai_set_config: { args: { cfg: AiConfig }; returns: null };
@@ -4701,7 +4718,7 @@ export interface LensCommands {
   approval_hotkey: { args: Record<string, never>; returns: string | null };
   approval_local_close: { args: { reference: string; ok: boolean; message: string | null }; returns: boolean };
   approval_local_open: { args: { reference: string; tool: string; text: string; source: string; preview: unknown }; returns: PendingAction };
-  approve_mcp_action_cmd: { args: { id: string }; returns: PendingAction };
+  approve_mcp_action_cmd: { args: { id: string; token: string | null }; returns: PendingAction };
   apps_audit: { args: { limit: number | null }; returns: unknown[] };
   apps_cancel: { args: { jobId: string }; returns: null };
   apps_catalog: { args: Record<string, never>; returns: unknown };

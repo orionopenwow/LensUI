@@ -230,6 +230,10 @@ export interface ActResult {
   message: string;
   /** Why the agent-safety gate made the step wait or refused it. */
   safety?: { code: string; severity: string; detail: string }[];
+  /** With `needsOk`: the one-time token for this exact step. Send it back once the person approves. */
+  approvalToken?: string;
+  /** With `needsOk` after an approval that didn't count: missing | unknown | expired | mismatch. */
+  approvalRefused?: string;
 }
 
 export interface MenuEvent {
@@ -301,8 +305,12 @@ export const pageEvents = () => invoke<MenuEvent[]>("browser_events");
 export const agentCheck = (action: PageAction, caps?: Capabilities, url?: string) =>
   invoke<Decision>("browser_agent_check", { action, caps: caps ?? null, url: url ?? null });
 export const agentDescribe = (element: number, tab?: string) => invoke<ElementDescription>("browser_agent_describe", { element, tab: tab ?? null });
-export const agentAct = (req: { tab?: string; element?: number; action: PageAction; caps?: Capabilities; approved?: boolean }) =>
-  invoke<ActResult>("browser_agent_act", { req: { tab: req.tab ?? null, element: req.element ?? null, action: req.action, caps: req.caps ?? null, approved: !!req.approved } });
+/** The request `browser_agent_act` takes. There is no "approved" flag: a step that needs your OK
+ *  runs only when the token Lens Core issued for that exact step comes back with it. */
+export function actRequest(req: { tab?: string; element?: number; action: PageAction; caps?: Capabilities; approvalToken?: string | null }) {
+  return { tab: req.tab ?? null, element: req.element ?? null, action: req.action, caps: req.caps ?? null, approvalToken: req.approvalToken || null };
+}
+export const agentAct = (req: Parameters<typeof actRequest>[0]) => invoke<ActResult>("browser_agent_act", { req: actRequest(req) });
 export const untrusted = (url: string, text: string) => invoke<string>("browser_untrusted", { url, text });
 export const captions = (lang?: string, tab?: string) => invoke<CaptionReply>("browser_captions", { lang: lang ?? null, tab: tab ?? null });
 export const seek = (seconds: number) => invoke<void>("browser_seek", { seconds });

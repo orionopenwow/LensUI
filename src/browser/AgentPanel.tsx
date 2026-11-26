@@ -43,6 +43,8 @@ export interface Acting {
 }
 
 const MAX_TURNS = 6;
+/** How often one step may ask again after an approval Lens Core refused (changed step, expired token). */
+const MAX_ASKS = 3;
 let keySeq = 0;
 const key = () => `k${++keySeq}`;
 
@@ -142,8 +144,12 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
       }
       try {
         let res = await agentAct({ element, action, caps });
-        if (res.needsOk && element) {
+        // Each card carries a one-time token for the exact step it shows. If the step changed
+        // while the card was up (the page swapped the button, the token ran out), Lens Core
+        // refuses the approval and hands back a new card for the step as it is now.
+        for (let asks = 0; res.needsOk && element && asks < MAX_ASKS; asks++) {
           const desc = await agentDescribe(element);
+          if (res.approvalRefused) push({ kind: "blocked", key: key(), text: "Asking again", reason: res.message, at: Date.now() });
           setPending({ step, element, decision: res.decision, desc, capturedAt: Date.now() });
           const ok = await new Promise<boolean>((r) => (approveResolve.current = r));
           setPending(null);
@@ -153,7 +159,11 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
             setRunning(false);
             return;
           }
-          res = await agentAct({ element, action, caps, approved: true });
+          res = await agentAct({ element, action, caps, approvalToken: res.approvalToken });
+        }
+        if (res.needsOk) {
+          push({ kind: "blocked", key: key(), text: "Left for you", reason: res.message || "This step needs your OK.", at: Date.now() });
+          continue;
         }
         if (res.decision.risk === "blocked") {
           push({ kind: "blocked", key: key(), text: "Left for you", reason: res.message, at: Date.now() });

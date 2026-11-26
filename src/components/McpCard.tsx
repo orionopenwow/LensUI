@@ -27,6 +27,8 @@ interface PendingAction {
   createdMs: number;
   status: string;
   result: string;
+  /** One-time approval token for this exact request (sent back on Approve). */
+  token?: string;
 }
 
 interface AuditEntry {
@@ -107,7 +109,7 @@ export const McpCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     setBusyId(a.id);
     setNote(null);
     try {
-      const res = await invoke<PendingAction>("approve_mcp_action_cmd", { id: a.id });
+      const res = await invoke<PendingAction>("approve_mcp_action_cmd", { id: a.id, token: a.token ?? null });
       if (res.kind === "nl" && res.status === "approved") {
         // Natural-language requests run through the same router as Dock search.
         const plan = parseNaturalLanguageActions(res.text);
