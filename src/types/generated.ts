@@ -3971,6 +3971,12 @@ export interface ThemeConfig {
   locale: string;
   /** "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack. */
   shapeStyle: string;
+  /**
+   * Also write a custom Lens accent into Windows' own accent colour (title bars, Start, the
+   * Windows taskbar). A system-wide change, so off unless the person turns it on; "Remove all
+   * Lens changes" puts Windows' accent back.
+   */
+  writeWindowsAccent: boolean;
 }
 
 /** Rust: `win_themes::ThemeFileInfo` */
