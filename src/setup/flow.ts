@@ -89,14 +89,6 @@ export const EXTRAS: Extra[] = [
     where: "Settings › Dock & Bar",
   },
   {
-    id: "livePreviews",
-    label: "Live window previews",
-    desc: "Hover a running app on the Dock to see its windows.",
-    windows: "",
-    since: "0.3.0",
-    where: "Settings › Dock & Bar › Behaviour",
-  },
-  {
     id: "ambientBackdrop",
     label: "Animated backdrop",
     desc: "A very slow, faint motion behind your desktop icons in your theme's colours.",

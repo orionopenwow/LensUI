@@ -37,6 +37,8 @@ import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { resolveSystemArea } from "../dock/styles";
 import { TesterBadge } from "../tester/TesterHub";
 import "./TopBarSurface.css";
+import { useTopbarClickThrough } from "../topbar/clickThrough";
+import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 
 export const TopBarSurface: React.FC = () => {
   const { config } = useLensState();
@@ -56,6 +58,17 @@ export const TopBarSurface: React.FC = () => {
   // new layout in one frame, then each item glides from where it was and the search field is
   // revealed by a clip. Nothing animates width, max-width or padding, and the window never moves.
   const barRef = React.useRef<HTMLElement>(null);
+  // Click-through: empty parts of the bar pass clicks to the app behind; the halo shows where.
+  const halo = useTopbarClickThrough(barRef);
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    bar.dataset.halo = halo.on ? "on" : "off";
+    if (halo.on) {
+      bar.style.setProperty("--tb-hx", `${halo.x}px`);
+      bar.style.setProperty("--tb-hy", `${halo.y}px`);
+    }
+  }, [halo]);
   const searchFlip = React.useRef<FlipCapture | null>(null);
   const searchDo = (ev: SearchEvent, query = "") => {
     const r = searchStep(searchPhaseRef.current, ev);
@@ -279,6 +292,8 @@ export const TopBarSurface: React.FC = () => {
       </div>
 
       <div className="topbar-right">
+        {/* Magic Dashboard (renders nothing while magicWaves.dashboard is off; docs/plans/MAGIC_WAVES.md). */}
+        <TopBarDashboardButton config={config} />
         {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
         {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
         {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}

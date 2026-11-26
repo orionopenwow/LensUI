@@ -534,6 +534,58 @@ const SCENARIOS = [
     },
   },
   {
+    id: "dock-search-dismiss",
+    title: "Dock search closes on a click outside and when another app takes focus",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const isOpen = () => dock.locator(".dock-search-glide-input").count().then((n) => n > 0);
+      const openSearch = async () => {
+        if (!(await isOpen())) await domClick(dock.locator(".dock-search-mag-btn").first());
+        for (let i = 0; i < 20 && !(await isOpen()); i++) await sleep(100);
+        if (!(await isOpen())) throw new Error("Dock search did not open");
+        await sleep(700); // past the focus-handoff grace period
+      };
+      const waitClosed = async (why) => {
+        for (let i = 0; i < 40 && (await isOpen()); i++) await sleep(100);
+        if (await isOpen()) {
+          await shot(dock, `dock-search-stuck-${why}`);
+          throw new Error(`Dock search stayed open after ${why}`);
+        }
+      };
+      const ps = (cmd) => execFileSync("powershell", ["-NoProfile", "-Command", cmd], { encoding: "utf8" });
+      // 1. Another app takes focus. (Only meaningful if the Dock had focus: a runner that never
+      // gives it the foreground can't take it away.)
+      await openSearch();
+      const hadFocus = await dock.evaluate(() => document.hasFocus());
+      if (!hadFocus) console.log("note  dock-search-dismiss: the Dock never had focus on this runner; the focus-loss step checks the no-focus path");
+      const fg = ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null; Start-Sleep -Milliseconds 300; Add-Type -Namespace W -Name F -MemberDefinition '[DllImport("user32.dll")] public static extern System.IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);'; $id = 0; [W.F]::GetWindowThreadProcessId([W.F]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      if (/notepad/i.test(fg)) await waitClosed("focus moved to Notepad");
+      else console.log(`note  dock-search-dismiss: Windows kept "${fg}" in front (foreground lock), so focus never left the Dock; step skipped`);
+      await domClick(dock.locator(".dock-search-mag-btn").first()).catch(() => {});
+      for (let i = 0; i < 10 && (await isOpen()); i++) await sleep(100);
+      ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
+      // 2. A real click on the desktop, far from the Dock.
+      await openSearch();
+      // Pick a desktop point outside the search drawer (a fixed point can sit under a wide
+      // drawer on a small runner screen, which is a click on the panel, not the desktop).
+      const [px, py] = await dock.evaluate(() => {
+        const d = window.devicePixelRatio || 1;
+        const r = document.querySelector(".dock-launcher-drawer")?.getBoundingClientRect();
+        const sw = window.screen.width, sh = window.screen.height;
+        const L = r ? (window.screenX + r.left) : sw, R = r ? (window.screenX + r.right) : sw;
+        const y = Math.round(sh * 0.45);
+        const x = L > 80 ? 30 : R < sw - 80 ? sw - 30 : 30;
+        return [Math.round(x * d), Math.round(y * d)];
+      });
+      ps(`Add-Type -Namespace W -Name U -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,uint x,uint y,uint d,System.UIntPtr e);'; [W.U]::SetCursorPos(${px},${py}); Start-Sleep -Milliseconds 120; [W.U]::mouse_event(2,0,0,0,[System.UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[System.UIntPtr]::Zero)`);
+      await waitClosed("a click on the desktop");
+      // 3. Esc and a second press still work after all that.
+      await openSearch();
+      await domClick(dock.locator(".dock-search-mag-btn").first());
+      await waitClosed("a second press");
+    },
+  },
+  {
     id: "quit-clean",
     title: "quitting leaves no Lens process behind",
     async run(s) {
@@ -555,6 +607,8 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search/i.test(l)).slice(-12);
+    if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }
 }

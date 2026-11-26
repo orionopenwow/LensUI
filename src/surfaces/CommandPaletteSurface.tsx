@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -371,6 +372,7 @@ export const CommandPaletteSurface: React.FC = () => {
               </button>
             );
           })}
+          <FlyoutClose pinned inline label="Close Search" onClose={() => invoke("hide_surface", { label: "palette" }).catch(() => {})} />
         </div>
 
         {/* Main Content: Mockup-Parity Launcher Home Grid OR Live Filtered Results */}

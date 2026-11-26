@@ -152,6 +152,13 @@ pub(crate) fn set_dock_pill_rect_cmd(x: f64, y: f64, w: f64, h: f64) {
     win_previews::set_pill_rect(x, y, w, h);
 }
 
+/// The Top Bar reports its controls' rects (CSS px inside the bar's window, `[x, y, w, h]`):
+/// everywhere else on the bar, clicks pass through to the app behind (app/topbar_hit.rs).
+#[tauri::command]
+pub(crate) fn set_topbar_hit_rects_cmd(rects: Vec<[f64; 4]>) {
+    crate::app::topbar_hit::set_rects(rects.into_iter().map(|r| (r[0], r[1], r[2], r[3])).collect());
+}
+
 /// The Dock reports its open flyout's rect (CSS px inside the dock window; w = 0 when closed), so
 /// the watcher knows when the pointer or a click is outside every part of the Dock.
 #[tauri::command]

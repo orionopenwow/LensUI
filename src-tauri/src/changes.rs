@@ -540,7 +540,12 @@ fn undo_print_screen(_: &mut LensConfig) -> Result<String, String> {
 }
 
 fn undo_windows_accent(_: &mut LensConfig) -> Result<String, String> {
-    crate::win_theme::restore_windows_accent()
+    // A theme change made just before can still have its Windows accent write queued (theme
+    // writes wait for things to settle); cancel it so it can't land after the restore.
+    let _io = crate::app::theme_apply::cancel_accent_writes();
+    let r = crate::win_theme::restore_windows_accent();
+    crate::app::theme_apply::forget_written_accent();
+    r
 }
 
 fn undo_app_recipes(_: &mut LensConfig) -> Result<String, String> {

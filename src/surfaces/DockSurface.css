@@ -41,6 +41,34 @@
   pointer-events: none;
 }
 
+/* Auto-hide is a visible slide (docs/DOCK_SMOOTHNESS.md › Slide): the shared ease-out moved ~70 %
+ * of the way in the first quarter of the time, so hiding read as a snap. Hiding uses the on-screen
+ * move curve (ease-in-out) for ~200 ms and only fades at the very end; revealing is a touch faster.
+ * A transition reverses from where it is, so an interrupted hide slides straight back. Reduced
+ * motion collapses the tokens to 1 ms (instant). */
+.dock-stage {
+  --dock-hide-dur: calc(var(--lens-dur-base) * 1.15);
+  --dock-reveal-dur: calc(var(--lens-dur-fast) * 1.15);
+}
+.dock-stage .dock-pill.is-hidden,
+.dock-stage .dock-split-pill.is-hidden {
+  transition:
+    transform var(--dock-hide-dur) var(--lens-ease-in-out),
+    opacity var(--lens-dur-instant) linear calc(var(--dock-hide-dur) - var(--lens-dur-instant)),
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out),
+    box-shadow var(--lens-dur-slow) var(--lens-ease-out);
+}
+.dock-stage .dock-pill:not(.is-hidden),
+.dock-stage .dock-split-pill:not(.is-hidden) {
+  transition:
+    transform var(--dock-reveal-dur) var(--lens-ease-in-out),
+    opacity var(--lens-dur-instant) linear,
+    background var(--lens-dur-slow) var(--lens-ease-out),
+    border-color var(--lens-dur-slow) var(--lens-ease-out),
+    box-shadow var(--lens-dur-slow) var(--lens-ease-out);
+}
+
 .dock-pill.is-fused-top {
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
@@ -1372,6 +1400,19 @@
   margin-left: -1px;
 }
 
+/* Never wider than the Dock window beside the Dock (the panel's × must stay on screen). */
+.dock-edge-left .dock-launcher-drawer,
+.dock-edge-right .dock-launcher-drawer {
+  max-width: calc(100vw - var(--dock-full-icon-size, 40px) - 40px);
+}
+
+/* On the left/right edges the search field runs across the panel's top: the × sits on the
+ * filter row below it instead of covering the field. */
+.dock-edge-left .dock-launcher-drawer > .lens-flyout-close,
+.dock-edge-right .dock-launcher-drawer > .lens-flyout-close {
+  top: calc(var(--dock-full-icon-size, 40px) + 26px);
+}
+
 .dock-edge-right .dock-launcher-drawer {
   left: auto;
   right: 100%;
@@ -1605,7 +1646,9 @@
 }
 
 /* Results panel: centred above a centred Taskbar, above the icons on a left-aligned bar. */
-.dock-stage.is-bar.dock-align-left .dock-launcher-drawer {
+/* Horizontal edges only: on the left/right edges the panel sits beside the bar (Studio is always
+ * left-aligned, and this rule used to push its panel off screen on the right edge). */
+.dock-stage.is-bar.dock-align-left:is(.dock-edge-bottom, .dock-edge-top) .dock-launcher-drawer {
   left: 8px;
   translate: 0 0;
 }
@@ -1850,8 +1893,10 @@
   transform: none;
 }
 
+/* Tooltips ride above the grown icon by translate, not by changing bottom/top/left/right (which
+ * re-laid them out on every pointer move). */
 .dock-stage.mag-on .dock-tooltip {
-  bottom: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: 0 calc((1 - var(--mag-s, 1)) * var(--dock-effective-icon-size, 40px));
 }
 
 .dock-stage.mag-on.dock-edge-top .dock-icons-row > .dock-item-wrap > .dock-item {
@@ -1859,8 +1904,7 @@
 }
 
 .dock-stage.mag-on.dock-edge-top .dock-tooltip {
-  top: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
-  bottom: auto;
+  translate: 0 calc((var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
 }
 
 .dock-stage.mag-on.dock-edge-left .dock-icons-row > *,
@@ -1877,11 +1921,11 @@
 }
 
 .dock-stage.mag-on.dock-edge-left .dock-tooltip {
-  left: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: calc((var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px)) 0;
 }
 
 .dock-stage.mag-on.dock-edge-right .dock-tooltip {
-  right: calc(100% + 16px + (var(--mag-s, 1) - 1) * var(--dock-effective-icon-size, 40px));
+  translate: calc((1 - var(--mag-s, 1)) * var(--dock-effective-icon-size, 40px)) 0;
 }
 
 /* ---------- Launch animations (dock.launchAnimation; "lift" = the rule above) ---------- */
@@ -2084,4 +2128,166 @@
   font-size: 10.5px;
   font-weight: 500;
   color: rgb(var(--lens-ink) / 0.5);
+}
+
+/* ---------- Attention (an app flashes its taskbar button; src/dock/attention.ts) ----------
+ * Same on every style and edge: the urgent colour (Windows' orange by default; a pack can set
+ * --lens-attention), one bounce when the request starts, and a steady highlight until the app is
+ * activated. Transform/opacity only; reduced motion keeps the colour and drops the bounce. */
+.dock-stage {
+  --dock-attention: var(--lens-attention, #f7630c);
+}
+
+@keyframes dock-attention-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  22% {
+    translate: calc(var(--dock-bounce-x) * 12px) calc(var(--dock-bounce-y) * 12px);
+  }
+  44% {
+    translate: 0 0;
+  }
+  64% {
+    translate: calc(var(--dock-bounce-x) * 5px) calc(var(--dock-bounce-y) * 5px);
+  }
+  82% {
+    translate: 0 0;
+  }
+}
+
+.dock-item-wrap.is-attention > .dock-item {
+  animation: dock-attention-bounce 760ms cubic-bezier(0.33, 0.9, 0.4, 1) 1;
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--dock-attention) 70%, transparent),
+    0 0 14px color-mix(in srgb, var(--dock-attention) 38%, transparent);
+  background: color-mix(in srgb, var(--dock-attention) 16%, var(--lens-bg-elevated, transparent));
+}
+
+/* Higher specificity than every style's own indicator rule (Taskbar, Islands…), so urgent looks
+ * the same everywhere. */
+.dock-stage .dock-icons-row .dock-item-wrap .dock-indicator.attention {
+  --dock-ind-k: 1;
+  opacity: 1;
+  background: var(--dock-attention);
+}
+
+.dock-attention-badge {
+  background: var(--dock-attention);
+}
+
+/* Screen readers hear it; nobody sees it. */
+.dock-attention-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-item-wrap.is-attention > .dock-item {
+    animation: none;
+  }
+}
+
+/* ---------- One shape while searching (docs/DOCK_SMOOTHNESS.md › Seamless join) ----------
+ * The results panel and the Dock read as one window: on the joined edge neither draws a border,
+ * a shadow or its own gradient, and both use the same fill (the same token Settings uses when it
+ * sits on the Dock), so no line or step in colour shows where they meet. Only outer corners stay
+ * round: a Dock narrower than the panel squares its joined corners, a bar wider than the panel
+ * squares the panel's. Checked pixel by pixel in tools/robust/dock-layout.mjs. */
+/* Both use the panel's lighter (elevated) fill, flat: identical across the joint on every edge,
+ * and at least as light as any point of the panel's old gradient, so its muted text keeps its
+ * contrast. */
+.dock-stage:not(.dock-style-islands) .dock-pill.is-expanded-launcher,
+.dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  background: color-mix(in srgb, var(--lens-pack-elevated, #141418) var(--lens-glass-opacity-pct), transparent);
+}
+/* The Dock's own shadow carries a 1 px inset highlight along its top: that was the bright line
+ * under the panel (and under Settings, see .is-fused-top). While joined, the panel's shadow
+ * outlines the combined shape. */
+.dock-stage:not(.dock-style-islands) .dock-pill.is-expanded-launcher {
+  box-shadow: none;
+}
+
+/* Bottom edge: the panel sits on the Dock's top. */
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher {
+  border-top-color: transparent;
+}
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  /* Sit on the Dock's outer edge, not over its (now transparent) 1 px border: two translucent
+   * fills overlapping made a dark line. */
+  bottom: calc(100% + 1px);
+  margin-bottom: 0;
+  border-bottom-color: transparent;
+  /* Its shadow must not fall across the Dock below it. */
+  clip-path: inset(-48px -48px 0 -48px);
+}
+/* data-join (set by the Dock after it opens): which of the two is wider along the joint. The
+ * narrower one keeps its joined corners square; equal widths square both. */
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher:is([data-join="drawer-wider"], [data-join="flush"]) {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.dock-stage:not(.dock-edge-top):not(.dock-edge-left):not(.dock-edge-right) .dock-pill.is-expanded-launcher:is([data-join="pill-wider"], [data-join="flush"]) > .dock-launcher-drawer {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Top edge: the panel hangs below the Dock. */
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher {
+  border-bottom-color: transparent;
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  /* The panel's shadow token draws a 1 px highlight just inside its (1 px) top border, which is
+   * the joint here: the panel starts 2 px up, under the Dock's last rows, and those two rows are
+   * clipped away, so the first painted row continues straight from the Dock. */
+  top: calc(100% - 1px);
+  margin-top: 0;
+  border-top-color: transparent;
+  clip-path: inset(2px -48px -48px -48px);
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher:is([data-join="drawer-wider"], [data-join="flush"]) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.dock-stage.dock-edge-top .dock-pill.is-expanded-launcher:is([data-join="pill-wider"], [data-join="flush"]) > .dock-launcher-drawer {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Left / right edges: the panel sits beside the Dock. */
+.dock-stage.dock-edge-left .dock-pill.is-expanded-launcher {
+  border-right-color: transparent;
+}
+.dock-stage.dock-edge-left .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  left: calc(100% + 1px);
+  margin-left: 0;
+  border-left-color: transparent;
+  clip-path: inset(-48px -48px -48px 0);
+}
+.dock-stage.dock-edge-right .dock-pill.is-expanded-launcher {
+  border-left-color: transparent;
+}
+.dock-stage.dock-edge-right .dock-pill.is-expanded-launcher > .dock-launcher-drawer {
+  right: calc(100% + 1px);
+  margin-right: 0;
+  border-right-color: transparent;
+  clip-path: inset(-48px 0 -48px -48px);
+}
+
+/* Text contrast in the search panel (axe, 4.5:1). The panel used to be a gradient, which axe can't
+ * measure, so its muted text (~3:1 on this fill) went unnoticed; on the flat joined fill it's
+ * measured. Inside the panel, muted text uses the secondary text colour. */
+.dock-launcher-drawer {
+  --lens-fg-muted: var(--lens-fg-secondary);
+}
+.dock-launcher-drawer .pal-filter-count {
+  color: var(--lens-fg);
+}
+:root[data-scheme="light"] .dock-launcher-drawer .pal-recent-age {
+  color: #065f46;
 }

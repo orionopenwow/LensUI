@@ -20,6 +20,8 @@ export interface ThemeConfig {
   locale?: string;
   /** "classic" | "expressive" | "dotmatrix" — shape style layer on top of the colour pack. */
   shapeStyle?: string;
+  /** Also write a custom accent into Windows' own accent colour. Off by default. */
+  writeWindowsAccent?: boolean;
 }
 
 export interface PinnedApp {

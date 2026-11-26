@@ -61,6 +61,19 @@ const SCENARIOS = {
       }
     },
   },
+  // Switching Dock styles (docs/DOCK_SMOOTHNESS.md): every style twice, with an app hovered.
+  "dock-style-switch": {
+    surface: "dock",
+    run: async (p) => {
+      for (const style of ["slim", "taskbar", "studio", "minimal", "split", "islands", "floating", "taskbar", "floating"]) {
+        await setConfig(p, new Function("c", `c.dock.style = ${JSON.stringify(style)};`));
+        await p.waitForTimeout(260);
+        const item = p.locator(".dock-item-wrap[data-dock-pinned='true']").nth(2);
+        if (await item.count()) await item.hover({ timeout: 1000 }).catch(() => {});
+        await p.waitForTimeout(140);
+      }
+    },
+  },
   "command-mini-expand": {
     surface: "command",
     run: async (p) => {

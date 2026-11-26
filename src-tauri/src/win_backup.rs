@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Bump when a migration step is added to `MIGRATIONS`.
-pub const CURRENT_CONFIG_VERSION: u32 = 2;
+pub const CURRENT_CONFIG_VERSION: u32 = 3;
 pub const BACKUP_FORMAT: u32 = 1;
 pub const BACKUP_EXT: &str = "lensbackup";
 const MAX_BACKUP_BYTES: usize = 16 * 1024 * 1024;
@@ -30,7 +30,7 @@ type Step = fn(&mut Map<String, Value>);
 
 /// MIGRATIONS[i] upgrades version (i + 1) to (i + 2). Configs written before versioning existed
 /// have no `configVersion` and count as version 1.
-const MIGRATIONS: &[Step] = &[migrate_v1_to_v2];
+const MIGRATIONS: &[Step] = &[migrate_v1_to_v2, migrate_v2_to_v3];
 
 /// v1 -> v2: introduce `configVersion`; clamp values to the ranges AGENTS.md guarantees
 /// (opacity 40–100 %, roundness 0–20 px); repair an invalid accent; "" monitor -> "primary".
@@ -60,6 +60,15 @@ fn migrate_v1_to_v2(cfg: &mut Map<String, Value>) {
         if func.get("targetMonitor").and_then(Value::as_str) == Some("") {
             func.insert("targetMonitor".into(), json!("primary"));
         }
+    }
+}
+
+/// v2 -> v3: hovering a running app on the Dock shows its windows, like the Windows taskbar.
+/// Live previews used to default to off, so every saved config has `false` without anyone having
+/// chosen it; turn them on once. Turning them off again afterwards sticks.
+fn migrate_v2_to_v3(cfg: &mut Map<String, Value>) {
+    if let Some(Value::Object(dock)) = cfg.get_mut("dock") {
+        dock.insert("livePreviews".into(), json!(true));
     }
 }
 

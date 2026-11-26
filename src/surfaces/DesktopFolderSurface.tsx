@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -316,6 +317,7 @@ export const DesktopFolderSurface: React.FC = () => {
       }}
     >
       <div
+        className="lens-flyout-host"
         style={{
           flex: 1,
           minHeight: 0,
@@ -336,7 +338,8 @@ export const DesktopFolderSurface: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "11px 12px 9px 14px",
+            // Room on the right for the shared close button (src/ui/FlyoutClose.tsx).
+            padding: "11px 40px 9px 14px",
             borderBottom: "1px solid var(--lens-border)",
           }}
         >
@@ -379,16 +382,9 @@ export const DesktopFolderSurface: React.FC = () => {
               {iconsHidden ? <Eye size={12} /> : <EyeOff size={12} />}
               <span>{iconsHidden ? "Show Icons" : "Condense"}</span>
             </button>
-            <button
-              type="button"
-              aria-label="Collapse Desktop Drawer"
-              onClick={collapse}
-              style={{ color: "var(--lens-fg-secondary)", padding: 4, cursor: "pointer" }}
-            >
-              <ChevronLeft size={16} strokeWidth={2.5} />
-            </button>
           </div>
         </div>
+        <FlyoutClose onClose={collapse} />
 
         {/* Search + Filter Pills */}
         <div style={{ padding: "10px 12px 6px 12px", display: "flex", flexDirection: "column", gap: 8 }}>

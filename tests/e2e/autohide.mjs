@@ -35,11 +35,14 @@ import { startLens, surfaces, page, invoke, setConfig, quit, sleep } from "./len
 // ---- state readers --------------------------------------------------------------------------
 const BAR = "Lens Top Bar";
 const DOCK = "Lens Dock";
-/** Top Bar: shown = window visible, takes clicks, page not sliding out. */
+/** Top Bar: shown = window visible and page not sliding out. A shown bar may ignore the mouse
+ *  (click-through: clicks on its empty parts go to the app behind), so "takes clicks" is not part
+ *  of "shown"; a hidden bar must never take clicks, which `hiddenTakesClicks` reports. */
 async function barState(s) {
   const w = await d(`win ${BAR}`);
   const pageHidden = await surfaces(s).topbar?.evaluate(() => !!document.querySelector(".topbar-wrapper.is-hidden")).catch(() => null);
-  return { shown: w.found && w.visible && !w.transparent && pageHidden === false, w, pageHidden };
+  const shown = w.found && w.visible && pageHidden === false;
+  return { shown, hiddenTakesClicks: !shown && w.found && w.visible && !w.transparent, w, pageHidden };
 }
 async function dockState(s) {
   const pageHidden = await surfaces(s).dock?.evaluate(() => {
@@ -54,7 +57,7 @@ async function expectWithin(label, read, want, ms) {
   let last;
   while (Date.now() - t0 <= ms) {
     last = await read();
-    if (last.shown === want) return Date.now() - t0;
+    if (last.shown === want && (want || !last.hiddenTakesClicks)) return Date.now() - t0;
     await sleep(50);
   }
   throw new Error(`${label}: expected ${want ? "shown" : "hidden"} within ${ms} ms, got ${JSON.stringify(last)}`);
@@ -64,7 +67,7 @@ async function expectStays(label, read, want, ms) {
   const t0 = Date.now();
   while (Date.now() - t0 <= ms) {
     const st = await read();
-    if (st.shown !== want) throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms`);
+    if (st.shown !== want || (!want && st.hiddenTakesClicks)) throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms`);
     await sleep(100);
   }
 }
