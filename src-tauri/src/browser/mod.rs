@@ -15,6 +15,7 @@ pub mod import;
 pub mod model;
 pub mod permissions;
 pub mod store;
+pub mod titles;
 
 #[cfg(test)]
 mod tests;

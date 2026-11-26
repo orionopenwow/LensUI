@@ -63,8 +63,9 @@ keyboard ──► hook_proc (hook thread, never blocks)
    `extend_deadline(2500)` so a cold start isn't mistaken for a hang.
 5. **Fullscreen games and anti-cheat:** checked off the hook thread every 250 ms
    (`SHQueryUserNotificationState` busy / D3D fullscreen / presentation mode, a foreground window
-   covering its monitor, or a foreground process matching `EXCLUDED_PROCESS_PARTS` — EasyAntiCheat,
-   BattlEye, Vanguard, Valorant, CS2, Fortnite, Apex, FACEIT, Riot client). While paused the hook
+   covering its monitor, or a foreground process on the shared anti-cheat list,
+   `win_rules::ANTI_CHEAT_FRAGMENTS` — EasyAntiCheat, BattlEye, Vanguard, Valorant, CS2, Fortnite,
+   Apex, FACEIT and the rest; every engine uses that one list). While paused the hook
    passes every key straight through and gestures are reset.
 6. **Clean exit:** `stop_keyhook()` posts `WM_QUIT` to the hook thread, which calls
    `UnhookWindowsHookEx`. Called from quit, tray quit and the panic hook. Windows also drops

@@ -68,6 +68,19 @@ const ORDERS = [
   [2, "red-yellow-green"],
 ];
 const DPIS = [96, 120, 144, 192, 240];
+// windowControls.style and windowControls.position. Every style and both sides run on every title
+// bar; the default (classic, right) runs the full order × scale grid above, the others one order at
+// three scales, since order and scale don't change how a style or a side blends.
+const STYLES = [
+  [0, "classic"],
+  [1, "soft"],
+  [2, "dots"],
+  [3, "pills"],
+];
+const SIDES = [
+  [0, "right"],
+  [1, "left"],
+];
 
 const cases = [];
 for (const [bar, active, inactive, gradient, content] of BARS) {
@@ -80,6 +93,18 @@ for (const [bar, active, inactive, gradient, content] of BARS) {
             if (hovered && !(order === 0 && (dpi === 96 || dpi === 144))) continue;
             const name = `${bar}_${state}_${mode}_${orderName}_${dpi}${hovered ? "_hover" : ""}`;
             cases.push({ name, bar, state, mode, orderName, dpi, hovered, args: [join(shots, `${name}.ppm`), dpi, order, hovered, corner, cap, baseH, capRows, gradient ? 1 : 0, content] });
+          }
+        }
+      }
+      for (const [style, styleName] of STYLES) {
+        for (const [side, sideName] of SIDES) {
+          if (style === 0 && side === 0) continue;
+          for (const dpi of [96, 144, 192]) {
+            for (const hovered of [0, 1]) {
+              if (hovered && dpi !== 144) continue;
+              const name = `${bar}_${state}_${mode}_${styleName}_${sideName}_${dpi}${hovered ? "_hover" : ""}`;
+              cases.push({ name, bar, state, mode, orderName: `${styleName} ${sideName}`, dpi, hovered, args: [join(shots, `${name}.ppm`), dpi, 0, hovered, corner, cap, baseH, capRows, gradient ? 1 : 0, content, `style=${style}`, `side=${side}`] });
+            }
           }
         }
       }
@@ -163,9 +188,9 @@ if (WRITE_SHOTS) {
   for (const c of cases) rmSync(c.args[0], { force: true });
 }
 
-const summary = { cases: cases.length, failed, pixels, tolerance: TOLERANCE, bars: BARS.length, modes: MODES.map((m) => m[0]), orders: ORDERS.map((o) => o[1]), dpis: DPIS, worst: Math.max(...cases.map((c) => c.delta)) };
+const summary = { cases: cases.length, failed, pixels, tolerance: TOLERANCE, bars: BARS.length, modes: MODES.map((m) => m[0]), orders: ORDERS.map((o) => o[1]), styles: STYLES.map((s) => s[1]), sides: SIDES.map((s) => s[1]), dpis: DPIS, worst: Math.max(...cases.map((c) => c.delta)) };
 writeFileSync(join(out, "report.json"), JSON.stringify({ ...summary, fails }, null, 2));
-console.log(`[parity:caption] ${cases.length} cases (${BARS.length} title bars × active/inactive × ${MODES.length} window modes × 3 orders × ${DPIS.length} scales, hover on a subset), ${pixels} pixels checked, worst difference ${summary.worst}, tolerance ${TOLERANCE}; the old single-colour overlay differs by ${ctl.join(" and ")} on the controls`);
+console.log(`[parity:caption] ${cases.length} cases (${BARS.length} title bars × active/inactive × ${MODES.length} window modes × 3 orders × ${DPIS.length} scales, plus ${STYLES.length} styles × ${SIDES.length} sides, hover on a subset), ${pixels} pixels checked, worst difference ${summary.worst}, tolerance ${TOLERANCE}; the old single-colour overlay differs by ${ctl.join(" and ")} on the controls`);
 if (failed) {
   console.log(fails.slice(0, 30).join("\n"));
   console.log(`[parity:caption] FAIL: ${failed} case(s) do not blend`);

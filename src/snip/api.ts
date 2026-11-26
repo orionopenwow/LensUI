@@ -19,7 +19,8 @@ export const EVT = {
 
 export const DEFAULT_SNIP_SETTINGS: SnipSettings = {
   enabled: false,
-  hotkey: "Ctrl+Shift+S",
+  hotkey: "Ctrl+Alt+X",
+  hotkeyRev: 1,
   printScreen: false,
   defaultMode: "region",
   delaySeconds: 0,

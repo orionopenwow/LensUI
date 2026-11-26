@@ -60,6 +60,22 @@ Source: <url>        (or File: <path>)
 
 **Token estimate.** About four characters per token for Latin script, one per character for CJK and other wide scripts. Rust (`approx_tokens`) and TS (`approxTokens`) use the same rule, and both are tested.
 
+## Shelf → Notes (Magic waves M4, off by default)
+
+With **Shelf to Notes** on, the Shelf drawer has **Make a note**. It builds one note from the ticked
+items (or the whole shelf when none are ticked) and shows it before anything happens:
+
+- **Save to Notes** — a text item tagged `lens-note` in the "Notes" shelf, like any note made in
+  Lens Notes.
+- **Export .md / .txt / PDF** — written by `save_note_export` into Downloads (or
+  `%APPDATA%\LensUI\exports` when there is no Downloads folder). Names are cleaned, nothing is
+  overwritten, PDFs must be real PDFs (`src/shelf/pdf.ts`, A4, Helvetica, Windows-1252 text).
+- **Send to a contact** — Matrix rooms you can reply in only. The exact text is shown on an approval
+  card; nothing is sent until you hold **Send**, and "Don't send" withdraws the request
+  (`messages_send` request → `feeds_approve` → send, once).
+
+The optional AI summary is not built yet. Tests: `src/__tests__/shelfNotes.test.ts`.
+
 ## Clipboard history v2
 
 | Command | What it does |

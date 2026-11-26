@@ -282,6 +282,18 @@ handlers.dashboard_available = () => !!(config as any).magicWaves?.dashboard;
 handlers.open_dashboard = () => null;
 handlers.toggle_dashboard = () => true;
 handlers.dashboard_hide = () => null;
+// Magic Start and Shelf → Notes (wave M4).
+handlers.magic_start_available = () => !!(config as any).magicWaves?.startButton;
+handlers.toggle_magic_start = () => {
+  if (!(config as any).magicWaves?.startButton) throw new Error("The Magic button is off");
+  return true;
+};
+handlers.magic_start_hide = () => null;
+handlers.open_windows_start = () => null;
+handlers.save_note_export = (a: any) => {
+  if (!(config as any).magicWaves?.shelfNotes) throw new Error("Shelf to Notes is off");
+  return `C:\\Users\\Sample\\Downloads\\${a?.stem ?? "note"}.${a?.ext ?? "md"}`;
+};
 if (params.get("dashdata")) {
   const now = Date.now();
   const min = 60_000;

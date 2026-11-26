@@ -43,8 +43,8 @@ pub(crate) async fn check_for_update_cmd(app: AppHandle) -> win_update::UpdateSt
 
 /// What every window should show right now (also broadcast as `lens://update-state`).
 #[tauri::command]
-pub(crate) fn get_update_state_cmd() -> win_update::UpdateStatus {
-    win_update::current()
+pub(crate) fn get_update_state_cmd(app: AppHandle) -> win_update::UpdateStatus {
+    win_update::current(&app)
 }
 
 /// Downloads and verifies the update without installing it.

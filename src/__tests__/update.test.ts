@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { IDLE, applyStatus, mayReplace, notesLines, viewOf, type UpdateStatus } from "../update/model";
+import { IDLE, RELEASES_URL, applyStatus, mayReplace, notesLines, updateNotice, viewOf, type UpdateStatus } from "../update/model";
 
 const st = (state: string, newVersion: string | null = "0.3.1"): UpdateStatus => ({
   state,
@@ -31,6 +31,18 @@ describe("update state", () => {
     expect(mayReplace("installing", "ready")).toBe(false);
     expect(mayReplace("installing", "error")).toBe(true);
     expect(mayReplace("error", "available")).toBe(true);
+  });
+
+  test("a build without an update key says releases aren't signed yet and points at the Releases page", () => {
+    for (const state of ["idle", "up-to-date", "available", "downloading", "ready", "installing", "error"]) {
+      expect(updateNotice(st(state))).toBeNull();
+    }
+    const fromBackend = updateNotice({ ...st("not-configured", null), message: "This is a development build, so it has no update key." });
+    expect(fromBackend?.text).toContain("development build");
+    const bare = updateNotice(st("not-configured", null));
+    expect(bare?.text).toContain("aren't signed yet");
+    expect(bare?.releasesUrl).toBe(RELEASES_URL);
+    expect(RELEASES_URL).toBe("https://github.com/orionopenwow/LensUI/releases");
   });
 
   test("the pill appears only when there is something to do", () => {

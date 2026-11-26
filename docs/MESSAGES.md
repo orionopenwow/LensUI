@@ -50,14 +50,10 @@ Password login (`m.login.password`, device "Lens") stores only the access token 
 
 Telegram allows third-party clients built on TDLib with the developer's own `api_id`/`api_hash` from my.telegram.org, under Telegram's API terms (no flooding, no spam, show the official client is not being impersonated). A native client means building TDLib for Windows (C++, OpenSSL, zlib), linking it via `tdjson`, and keeping its encrypted database under `%APPDATA%\LensUI\feeds\tdlib\`. Until that build exists, Telegram is a web-app space (`catalogue.rs` note says so). Plan: `messages/telegram.rs` with `td_json_client_*` FFI behind a feature flag, auth-state machine (phone → code → 2FA in the approval card), chats list → `Conversation`, send through the same approval flow.
 
-## Snippet: Lens Browser space title hook (shared file, not edited here)
+## Title watcher (how web-app badges update)
 
-In the browser's title-changed handler for a space whose start URL matches a catalogue app:
+Every Lens Browser tab has a WebView2 `DocumentTitleChanged` handler (`src-tauri/src/browser/titles.rs`). When a title changes, the handler passes the tab id, the page address and the title to `commands::messages::space_title_changed`. `messages::spaces::app_for_url` decides which messenger the page belongs to (https and the app's own hosts only), `badges::unread_from_title` parses the count, and the title text is dropped. Counts are kept per tab and summed per messenger, so two Slack workspaces add up and closing or sleeping a tab takes only its share away (`browser::titles::gone`). Pages of messengers you haven't turned on in Messages are ignored. When Messages settings change, open tabs are read once so a messenger you just turned on shows its badge straight away.
 
-```rust
-if let Some(app) = crate::messages::catalogue::APPS.iter().find(|a| space_url.starts_with(a.open_url)) {
-    let _ = crate::commands::messages::messages_space_title(app_handle.clone(), app.id.to_string(), title.clone());
-}
-```
+A change emits `lens://messages/unread` and, when "Badges on Dock icons" is on, `lens://coreapp-badge` for the Lens Messages pin. Nothing inside the page is read.
 
-Only the count is kept; the title text is discarded.
+Not yet confirmed on a real PC with signed-in Slack/Discord tabs; the parsing and bookkeeping are unit-tested (`messages/tests.rs`).

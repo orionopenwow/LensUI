@@ -4,6 +4,7 @@ import { emit } from "@tauri-apps/api/event";
 import { UpdatesCard } from "../../components/UpdatesCard";
 import { CrashReportsCard } from "../../components/CrashReportsCard";
 import { FailsafeCard } from "../../components/FailsafeCard";
+import { SafetyCard } from "../../components/SafetyCard";
 import { BackupRestoreCard } from "../../components/BackupRestoreCard";
 import { TesterHubCard } from "../../tester/TesterHubCard";
 import { ReportProblem } from "../../report/ReportProblem";
@@ -32,7 +33,8 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
           </button>
         </Row>
       </Section>
-      <Section id="safety" title="Safety net" summary="Safe Mode and paused features" forceOpen={section === "safety"}>
+      <Section id="safety" title="Safety net" summary="What Lens touches, Safe Mode, the ways back" defaultOpen={section === "safety"} forceOpen={section === "safety"}>
+        <SafetyCard />
         <FailsafeCard />
       </Section>
       <Section id="selftest" title="Self-test" summary="Checks Lens without changing anything" forceOpen={section === "selftest"}>

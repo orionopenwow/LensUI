@@ -254,13 +254,12 @@ pub(crate) fn save_config_cmd(
     #[cfg(windows)]
     if prev_config.window_controls.enabled != new_config.window_controls.enabled
         || prev_config.window_controls.order != new_config.window_controls.order
+        || prev_config.window_controls.style != new_config.window_controls.style
+        || prev_config.window_controls.position != new_config.window_controls.position
+        || prev_config.window_controls.excluded_processes != new_config.window_controls.excluded_processes
         || prev_config.theme.border_radius != new_config.theme.border_radius
     {
-        win_caption_engine::set_caption_engine_config(
-            new_config.window_controls.enabled,
-            &new_config.window_controls.order,
-            new_config.theme.border_radius,
-        );
+        win_caption_engine::set_caption_engine_config(&new_config.window_controls, new_config.theme.border_radius);
     }
 
     {

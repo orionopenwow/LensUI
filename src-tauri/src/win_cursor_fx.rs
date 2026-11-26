@@ -420,33 +420,10 @@ pub fn pick_monitor(monitors: &[Rect], x: i32, y: i32) -> Option<Rect> {
         .copied()
 }
 
-/// Processes the effects (and hooks) stand down for: Lens itself, shell UI, and anti-cheat
-/// protected games. Same list as the DWM engine / tiler / key hooks.
-pub const EXCLUDED_PROCESSES: [&str; 17] = [
-    "lens-ui.exe",
-    "searchhost.exe",
-    "shellexperiencehost.exe",
-    "startmenuexperiencehost.exe",
-    "textinputhost.exe",
-    "lockapp.exe",
-    "dwm.exe",
-    "easyanticheat",
-    "beservice",
-    "vgc.exe",
-    "valorant",
-    "cs2.exe",
-    "fortnite",
-    "r5apex",
-    "faceit",
-    "riotclient",
-    "leagueclient",
-];
-
-/// Games and anti-cheat clients only (shell UI isn't a reason to pause the effects).
+/// Anti-cheat services and protected games (shell UI isn't a reason to pause the effects).
+/// The names are the one shared list, `win_rules::ANTI_CHEAT_FRAGMENTS`.
 pub fn is_game_process(name_lower: &str) -> bool {
-    EXCLUDED_PROCESSES[7..]
-        .iter()
-        .any(|s| name_lower.contains(s))
+    crate::win_rules::is_anti_cheat_process(name_lower)
 }
 
 /// Why the effects are paused right now, if at all. Pure.

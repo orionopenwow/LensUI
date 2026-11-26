@@ -3,6 +3,7 @@
 pub(crate) mod theme;
 pub(crate) mod thumbdesk;
 pub(crate) mod dashboard;
+pub(crate) mod magic_start;
 pub(crate) mod widgets;
 pub(crate) mod dock;
 pub(crate) mod surfaces;
