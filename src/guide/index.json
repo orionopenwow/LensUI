@@ -2110,6 +2110,65 @@
    "source": "src/components/WindowRulesCard.tsx"
   },
   {
+   "id": "card.system.windowappscard",
+   "kind": "card",
+   "title": "Apps and window buttons",
+   "text": "Choose which apps get Lens's window buttons. Games with anti-cheat, fullscreen apps and Windows' own shell are always left alone; that can't be switched off. Apps and window buttons · Buttons on the · Another app. Window apps. Settings › Windows › Apps and window buttons. One list of the apps Lens has seen: a switch for Lens's window buttons per app (stored in `windowControls.excludedProcesses`), which apps a rule leaves alone, and a locked \"Protected\" badge on the apps Lens never touches (anti-cheat games, Windows shell",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Apps and window buttons"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.buttons-on-the",
+   "kind": "setting",
+   "title": "Buttons on the",
+   "text": "Left is used where a window's title bar is free there. Apps with tabs or tools in the title bar (browsers, File Explorer, Terminal) keep their buttons on the right.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Buttons on the"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Buttons on the"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.another-app",
+   "kind": "setting",
+   "title": "Another app",
+   "text": "Type its file name to keep Lens's buttons off it, e.g. obs64.exe.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Another app"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Another app"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
    "id": "card.system.shellmodecard",
    "kind": "card",
    "title": "Shell Mode (advanced)",
@@ -3823,7 +3882,7 @@
    "id": "setting.ai.snipcard.shortcut",
    "kind": "setting",
    "title": "Shortcut",
-   "text": "A modifier plus a key, e.g. Ctrl+Shift+S. Press it again while recording to stop.",
+   "text": "A modifier plus a key, e.g. Ctrl+Alt+X. Press it again while recording to stop.",
    "path": [
     "Settings",
     "AI & Command",
@@ -4554,6 +4613,26 @@
     "section": "updates"
    },
    "source": "src/components/CrashReportsCard.tsx"
+  },
+  {
+   "id": "card.about.safetycard",
+   "kind": "card",
+   "title": "Safety",
+   "text": "What Lens changes on this PC, what it never touches, and the ways back to plain Windows. Safety. Safety. Settings › About & Testing › Safety. One card for trust you can see: what Lens changes on this PC (the change registry), what it never touches, the keys that always reach Windows, Safe Mode, the Shift-at-sign-in skip, and the two ways out: Report a problem and Remove all. Everything shown is read fr",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Safety"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "SafetyCard",
+    "label": "Safety",
+    "section": "safety"
+   },
+   "source": "src/components/SafetyCard.tsx"
   },
   {
    "id": "card.about.failsafecard",
@@ -15247,6 +15326,23 @@
   },
   {
    "id": "doc.window-styling.8",
+   "kind": "doc",
+   "title": "Window styling 2.0: Window buttons: which windows, which look, which side",
+   "text": "One decision per window, caption rules::skip reason (pure, tested on any machine), strongest reason first: 1. Protected — Lens itself, Windows shell hosts and every name on win rules::ANTI CHEAT FRAGMENTS , matched against the process's full path, plus any process Windows will not name. The engine has no list of its own. Two source tests in tests/win rules.rs fail the build if any file under src-tauri/src names an anti-cheat process itself, or if an engine that touches other apps' windows (window buttons, DWM styling, dimming, tiling, Alt+drag, the key hook, pointer effects) stops asking win rules . 2. Excluded — windowControls.excludedProcesses (Settings › Windows & Keys › Window styling › Apps and window buttons). \"Notepad.exe\", \"notepad\" and a full path all mean the same app; whole names only, so excluding Notepad does not exclude Notepad++. 3. Left alone by a rule — a per-app rule wi",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "Window buttons: which windows, which look, which side"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "Window buttons: which windows, which look, which side"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.9",
    "kind": "doc",
    "title": "Window styling 2.0: Window buttons blend into every title bar",
    "text": "Lens's coloured window buttons on other apps' windows are drawn by win caption engine.rs : a small layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque (the native buttons are underneath), so it only blends if every pixel that is not one of the three dots is exactly the title bar's colour on that row. The pixels come from src-tauri/src/caption paint.rs , which is pure and tested on any machine. Why a strip used to show (the \"new window options don't blend\" report): - One colour for the whole overlay. The old engine read five pixels and painted their median everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows, apps with a thin caption) or title text near the sample points left a visible box. - Read once, too early. Colours were re-read only at activation and at the end of a move. DWM fades the caption be",

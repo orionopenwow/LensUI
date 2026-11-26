@@ -2,9 +2,10 @@
 // The ones kept in the main config can be changed here: press Change, then the new keys; a key that
 // belongs to Windows or to another Lens shortcut is refused, one most apps use gets a warning.
 // "Reset to simple defaults" puts every changeable shortcut back (src/keys/shortcuts.ts).
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { LensConfig } from "../types/lens";
 import { comboFromEvent, comboProblem, shortcutsFor, withShortcut, withSimpleShortcuts, type ShortcutId } from "../keys/shortcuts";
+import { snipStatus } from "../snip/api";
 import "./ShortcutsCard.css";
 
 interface Props {
@@ -13,7 +14,18 @@ interface Props {
 }
 
 export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
-  const all = useMemo(() => shortcutsFor(config), [config]);
+  // Snip keeps its shortcut in its own settings file; show the real one, not a guess.
+  const [snip, setSnip] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    snipStatus()
+      .then((st) => live && setSnip(st.settings.hotkey))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  const all = useMemo(() => shortcutsFor(config, { snip }), [config, snip]);
   const [recording, setRecording] = useState<ShortcutId | null>(null);
   const [message, setMessage] = useState<{ id: ShortcutId; text: string; level: "block" | "note" } | null>(null);
   const isSimple = all.every((s) => !s.editable || s.keys === s.simple);

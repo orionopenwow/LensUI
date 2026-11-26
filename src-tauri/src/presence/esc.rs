@@ -259,7 +259,7 @@ mod tests {
     fn approval_hotkeys_are_free_and_readable() {
         // Not the tiler's Ctrl+Alt+J (snap bottom-left) or the pause key.
         for h in APPROVAL_HOTKEYS {
-            assert!(!["Ctrl+Alt+J", "Ctrl+Alt+Pause", "Ctrl+Alt+Space", "Ctrl+Shift+S"].contains(&h));
+            assert!(!["Ctrl+Alt+J", "Ctrl+Alt+Pause", "Ctrl+Alt+Space", "Ctrl+Alt+X"].contains(&h));
             let spec = crate::win_summon::parse_hotkey(h).expect("parses");
             assert!(!crate::win_summon::reserved_hotkey(&spec), "{h}");
         }

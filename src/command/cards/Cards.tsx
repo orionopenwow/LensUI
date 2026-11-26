@@ -19,6 +19,8 @@ export interface CardHandlers {
   onStop: (key: string) => void;
   onTool: (callId: string, approve: boolean) => void;
   onBridge: (key: string, run: "summarise" | "ask-page" | "note" | "dismiss") => void;
+  /** "Teach me": open Settings where the setting an action changed lives. */
+  onShowSetting?: (target: string) => void;
 }
 
 const Btn = ({ icon: Icon, label, onClick, primary, kbd }: {
@@ -145,6 +147,16 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
             <span>{item.title}</span>
             {item.detail ? <span className="ct-sub">{item.detail}</span> : null}
           </p>
+          {item.ok && item.where ? (
+            <p className="ct-where" data-teach>
+              <span>You can change this in {item.where.path}</span>
+              {h.onShowSetting ? (
+                <button type="button" className="ct-where-link" onClick={() => h.onShowSetting?.(item.where!.target)}>
+                  Show me
+                </button>
+              ) : null}
+            </p>
+          ) : null}
         </article>
       );
     case "consent":

@@ -32,6 +32,8 @@ import {
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
 import { answersInText, runDo } from "./doMode";
 import { isNewOpen, pendingOpen } from "./openSeq";
+import { whereItLives } from "./teach";
+import { openSettingsAt } from "../update/useLensUpdate";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
@@ -578,6 +580,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     | undefined;
 
   const handlers: CardHandlers = {
+    onShowSetting: (target) => {
+      void hide();
+      void openSettingsAt(target);
+    },
     onCopy: (t) => navigator.clipboard.writeText(t).then(() => flash("Copied")).catch(() => flash("Couldn't copy", false)),
     onPaste: (t) => clipPasteText(t).catch((e) => flash(String(e), false)),
     onToShelf: (t, title) =>
@@ -667,7 +673,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       return;
     }
     if (out.kind === "intent") {
-      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now() } });
+      // "Teach me": the card also says where this setting lives, with a link.
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now(), where: whereItLives(out.intent.action) ?? undefined } });
       if (!answersInText(out.intent)) return;
     } else {
       dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: typed.slice(0, 60), detail: "Asked the AI", ok: true, ts: Date.now() } });

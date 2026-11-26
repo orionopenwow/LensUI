@@ -112,6 +112,20 @@ fn status(state: &str, message: &str) -> UpdateStatus {
     }
 }
 
+/// What a build without an update key says. Lens never trusts an update it cannot verify, so
+/// such a build does not check or download at all; the message says why and what to do instead.
+pub fn not_configured_message(dev_build: bool) -> &'static str {
+    if dev_build {
+        "This is a development build, so it has no update key and can't check for updates. Updates come with signed releases."
+    } else {
+        "Lens releases aren't signed yet, so this build can't verify an update and won't download one. Until signing is switched on, new builds are on the Releases page."
+    }
+}
+
+fn not_configured() -> UpdateStatus {
+    status("not-configured", not_configured_message(cfg!(debug_assertions)))
+}
+
 fn pubkey_configured(app: &AppHandle) -> bool {
     app.config()
         .plugins
@@ -126,10 +140,7 @@ fn pubkey_configured(app: &AppHandle) -> bool {
 /// Checks GitHub Releases for a newer signed build. Never installs anything.
 pub async fn check(app: &AppHandle) -> UpdateStatus {
     if !pubkey_configured(app) {
-        return status(
-            "not-configured",
-            "This build has no update key (local or development build). Updates come with official releases.",
-        );
+        return not_configured();
     }
     let updater = match app.updater() {
         Ok(u) => u,
@@ -167,9 +178,17 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-/// The status windows should show now: the last one Lens reported, or "idle".
-pub fn current() -> UpdateStatus {
-    lock(&LAST).clone().unwrap_or_else(|| status("idle", ""))
+/// The status windows should show now: the last one Lens reported, or "idle". A build without
+/// an update key says so from the start, before anyone presses "Check now".
+pub fn current(app: &AppHandle) -> UpdateStatus {
+    if let Some(st) = lock(&LAST).clone() {
+        return st;
+    }
+    if pubkey_configured(app) {
+        status("idle", "")
+    } else {
+        not_configured()
+    }
 }
 
 /// Records and broadcasts a status. The first time a version becomes ready (or available in
@@ -235,7 +254,7 @@ pub async fn check_and_publish(app: &AppHandle) -> UpdateStatus {
 /// compiled-in key before returning the bytes). Nothing is installed.
 pub async fn download(app: &AppHandle) -> Result<UpdateStatus, String> {
     if !pubkey_configured(app) {
-        return Err("This build has no update key.".into());
+        return Err(not_configured_message(cfg!(debug_assertions)).into());
     }
     // Read and release the lock before any await, so the future stays Send.
     let already = lock(&PENDING).as_ref().map(|p| ready_status(&p.update));
@@ -343,6 +362,55 @@ async fn tokio_sleep(secs: u64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Where every release lives (the Updates card links here: `RELEASES_URL` in src/update/model.ts).
+    const RELEASES_URL: &str = "https://github.com/orionopenwow/LensUI/releases";
+    /// The updater endpoint in tauri.conf.json, with the repository's own casing.
+    const UPDATE_ENDPOINT: &str = "https://github.com/orionopenwow/LensUI/releases/latest/download/latest.json";
+
+    /// The update path as committed: the endpoint is the repository's releases (canonical
+    /// casing), the key is never in the repo (release.yml injects it), and the release workflow
+    /// produces what that endpoint and the updater expect.
+    #[test]
+    fn the_update_path_is_consistent() {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).expect("tauri.conf.json");
+        let up = &conf["plugins"]["updater"];
+        let endpoints: Vec<&str> = up["endpoints"].as_array().expect("endpoints").iter().filter_map(|e| e.as_str()).collect();
+        assert_eq!(endpoints, vec![UPDATE_ENDPOINT]);
+        assert!(UPDATE_ENDPOINT.starts_with(RELEASES_URL) && UPDATE_ENDPOINT.starts_with("https://"));
+        assert_eq!(up["pubkey"].as_str(), Some(""), "the public key is injected by release.yml, never committed");
+        assert_eq!(up["windows"]["installMode"].as_str(), Some("passive"));
+        // One version everywhere: the workflow refuses a tag that disagrees with tauri.conf.json.
+        assert_eq!(conf["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
+        let pkg: serde_json::Value = serde_json::from_str(include_str!("../../package.json")).expect("package.json");
+        assert_eq!(pkg["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
+
+        let wf = include_str!("../../.github/workflows/release.yml");
+        for needed in [
+            "TAURI_SIGNING_PRIVATE_KEY",
+            "TAURI_UPDATER_PUBKEY",
+            "createUpdaterArtifacts",
+            "release/latest.json",
+            "\"windows-x86_64\"",
+            "releases/download/$env:TAG/",
+        ] {
+            assert!(wf.contains(needed), "release.yml no longer has {needed}");
+        }
+    }
+
+    #[test]
+    fn a_build_without_a_key_says_why_and_where_builds_are() {
+        let release = not_configured_message(false);
+        assert!(release.contains("aren't signed yet") && release.contains("Releases page"));
+        let dev = not_configured_message(true);
+        assert!(dev.contains("development build"));
+        assert_ne!(release, dev);
+        let st = not_configured();
+        assert_eq!(st.state, "not-configured");
+        assert!(st.new_version.is_none() && !st.message.is_empty());
+        // Never a notification, never a pill: there is nothing to do.
+        assert!(announce_for(&None, &st).is_none());
+    }
 
     #[test]
     fn modes_normalize() {

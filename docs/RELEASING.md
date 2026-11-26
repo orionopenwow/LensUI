@@ -31,8 +31,11 @@ into the repository.
    `gh variable set TAURI_UPDATER_PUBKEY < ~/.tauri/lensui.key.pub`.
 
    `tauri.conf.json` keeps `plugins.updater.pubkey` empty on purpose: the release workflow injects
-   the public key at build time, so local builds work without one. A build with an empty key reports
-   "Updates are not configured" instead of checking.
+   the public key at build time, so local builds work without one. A build with an empty key never
+   checks or downloads: Settings › About & Testing › Updates shows "Updates aren't available in this
+   build" with the reason (releases aren't signed yet, or a development build) and a button to the
+   Releases page. `win_update::tests::the_update_path_is_consistent` pins the endpoint, the empty
+   key and the three version numbers.
 
 ## Cutting a release
 
@@ -110,7 +113,7 @@ Sign before the updater signatures are produced (Tauri does this when signing is
 After a release is published:
 
 ```
-wingetcreate new https://github.com/orionopenwow/lensui/releases/download/v0.2.0/Lens.UI_0.2.0_x64-setup.exe
+wingetcreate new https://github.com/orionopenwow/LensUI/releases/download/v0.2.0/Lens.UI_0.2.0_x64-setup.exe
 ```
 
 (or `komac new`) generates the manifest; submit the PR to `microsoft/winget-pkgs`. Use the
