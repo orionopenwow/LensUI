@@ -400,7 +400,7 @@ pub(crate) fn run_setup(
 
     crate::app::tray::build_tray(app)?;
 
-    // Global Hotkeys: Alt+Space (Command Palette), Alt+W (Widget Drawer)
+    // Global Hotkeys: the Command Palette and Widget Drawer keys from config.func (Alt+Space, Ctrl+Alt+W by default)
     let palette_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
     let widgets_shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyW);
     let h_pal = handle.clone();
