@@ -78,6 +78,29 @@ fn toasts() -> Vec<(String, String, String, i64)> {
     r.items.into_iter().map(|n| (n.app_name, n.title, n.body, n.ts_ms as i64)).collect()
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MirrorStatus {
+    /// "off" | "ok" | "needs-access" | "denied" | "unavailable"
+    pub status: String,
+    /// Why the mirror is empty, in plain words ("" when it is off or working).
+    pub note: String,
+}
+
+/// Whether the notification mirror can read anything, and why not. Only asks Windows when the
+/// person turned the mirror on.
+#[tauri::command]
+pub async fn messages_mirror_status() -> Result<MirrorStatus, String> {
+    if !lock()?.settings.mirror_toasts {
+        return Ok(MirrorStatus { status: "off".into(), note: String::new() });
+    }
+    blocking(|| {
+        let r = crate::win_notifications::fetch_windows_toasts();
+        Ok(MirrorStatus { note: messages::mirror_note(&r.status, &r.reason), status: r.status })
+    })
+    .await
+}
+
 /// The unified inbox. Toast mirroring only reads toasts when the user turned it on.
 #[tauri::command]
 pub async fn messages_inbox() -> Result<Vec<Conversation>, String> {

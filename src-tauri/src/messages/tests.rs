@@ -157,3 +157,16 @@ fn only_messengers_you_turned_on_are_counted() {
     st.prune_spaces();
     assert!(st.space_unread.is_empty() && !st.space_tabs.has("slack"));
 }
+
+#[test]
+fn an_empty_mirror_says_why() {
+    assert_eq!(mirror_note("ok", ""), "");
+    assert!(mirror_note("unavailable", "").starts_with("Needs the packaged build"));
+    assert!(mirror_note("unavailable", "Element not found").ends_with("(Element not found)"));
+    assert!(mirror_note("needs-access", "x").contains("hasn't given Lens access"));
+    assert!(mirror_note("denied", "x").contains("turned off in Windows Settings"));
+    assert!(mirror_note("something-new", "").starts_with("Needs the packaged build"));
+    for s in ["unavailable", "needs-access", "denied"] {
+        assert!(mirror_note(s, "").contains("page title"), "says what still works");
+    }
+}

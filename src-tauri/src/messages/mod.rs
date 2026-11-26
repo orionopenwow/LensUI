@@ -158,6 +158,21 @@ impl State {
     }
 }
 
+/// Why the notification mirror shows nothing, in plain words ("" when it is working). `status` and
+/// `detail` come from `win_notifications` ("ok" | "needs-access" | "denied" | "unavailable").
+pub fn mirror_note(status: &str, detail: &str) -> String {
+    match status {
+        "ok" => String::new(),
+        "needs-access" => "Windows hasn't given Lens access to notifications yet. Badges still come from each messenger's page title.".into(),
+        "denied" => "Notification access for Lens is turned off in Windows Settings \u{203a} Privacy & security \u{203a} Notifications. Badges still come from each messenger's page title.".into(),
+        _ => {
+            let d = detail.trim();
+            let tail = if d.is_empty() { String::new() } else { format!(" ({})", crate::feeds::model::clip(d, 160)) };
+            format!("Needs the packaged build: Windows only lets packaged apps read notifications, and this build of Lens isn't one yet. Badges still come from each messenger's page title.{tail}")
+        }
+    }
+}
+
 /// Builds the unified inbox: one row per enabled web-app space (with its badge), Matrix rooms,
 /// and recent messenger toasts. Sorted: mentions/VIP first, then unread, then recent.
 pub fn inbox(st: &State, toasts: &[(String, String, String, i64)]) -> Vec<Conversation> {

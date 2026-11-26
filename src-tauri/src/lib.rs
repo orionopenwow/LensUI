@@ -447,6 +447,7 @@ pub fn run() {
             commands::messages::messages_get_settings,
             commands::messages::messages_set_settings,
             commands::messages::messages_inbox,
+            commands::messages::messages_mirror_status,
             commands::messages::messages_unread,
             commands::messages::messages_space_title,
             commands::messages::messages_focus,

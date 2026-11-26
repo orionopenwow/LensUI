@@ -384,3 +384,15 @@ describe("format", () => {
     expect(ymd("bad")).toBe("—");
   });
 });
+
+describe("Monitor: copy a process line", () => {
+  test("name, PID, usage and path on one line", async () => {
+    const { processLine } = await import("../coreapps/models/monitor");
+    expect(processLine({ name: "chrome", pids: [4120], cpu: 12.34, memMb: 812.6, path: "C:\\Program Files\\Google\\Chrome\\chrome.exe" })).toBe(
+      "chrome · PID 4120 · CPU 12.3% · RAM 813 MB · C:\\Program Files\\Google\\Chrome\\chrome.exe"
+    );
+    expect(processLine({ name: "idle", pids: [4] })).toBe("idle · PID 4");
+    const many = processLine({ name: "msedge", pids: Array.from({ length: 30 }, (_, i) => i + 1), path: null });
+    expect(many).toBe("msedge · PID 1, 2, 3, 4, 5, 6, 7, 8, … (30 processes)");
+  });
+});

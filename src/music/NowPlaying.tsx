@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
-  currentLine, endTimeLabel, formatTime, heroGradient, initials, lineOpacity, lineState, queueEmptyState, queueRemaining, sourceCaps,
+  currentLine, endTimeLabel, formatTime, heroGradient, initials, connectError, lineOpacity, lineState, queueEmptyState, queueRemaining, sourceCaps,
   splitArtists, splitTitle, hexToRgb, luminance, type NowPlaying as NP, type RGB,
 } from "./model";
 import { placeholderArt, samplePalette } from "./art";
@@ -62,6 +62,9 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   const [volume, setVolume] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Something the person clicked didn't work (Spotify said no, the network is down): say so here.
+  const [problem, setProblem] = useState<string | null>(null);
+  useEffect(() => setProblem(null), [now?.trackKey]);
 
   useEffect(() => setMode(modeProp ?? cfg?.windowStyle as NowPlayingMode ?? "expanded"), [modeProp, cfg?.windowStyle]);
   useEffect(() => {
@@ -196,6 +199,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
               </div>
             </div>
             {caps.note && <div className="lm-note">{caps.note}</div>}
+            {problem && <div className="lm-note" role="alert">{problem}</div>}
           </div>
         </header>
 
@@ -209,7 +213,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
 
       <PlayerBar now={now} position={position} mode={mode} onMode={changeMode} volume={volume} setVolume={setVolume}
         showLyrics={showLyrics} setShowLyrics={setShowLyrics} showQueue={showQueue} setShowQueue={setShowQueue}
-        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} />
+        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} onProblem={setProblem} />
     </div>
   );
 };
@@ -392,8 +396,8 @@ const QueuePanel: React.FC<{
 const PlayerBar: React.FC<{
   now: NP; position: number; mode: NowPlayingMode; onMode: (m: NowPlayingMode) => void; volume: number | null; setVolume: (v: number) => void;
   showLyrics: boolean; setShowLyrics: (v: boolean) => void; showQueue: boolean; setShowQueue: (v: boolean) => void; art: string;
-  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void;
-}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked }) => {
+  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void; onProblem: (text: string | null) => void;
+}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked, onProblem }) => {
   const playing = now.status === "playing";
   const dur = now.durationMs;
   const pct = dur > 0 ? Math.min(100, (position / dur) * 100) : 0;
@@ -421,7 +425,7 @@ const PlayerBar: React.FC<{
           </button>
           {likeUri && (
             <button type="button" className={`lm-icon-btn ${liked ? "on" : ""}`} aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"} aria-pressed={liked}
-              onClick={() => music.spotifySave(likeUri, !liked).then(() => setLiked(!liked)).catch(() => {})}><Heart size={16} fill={liked ? "currentColor" : "none"} /></button>
+              onClick={() => music.spotifySave(likeUri, !liked).then(() => (setLiked(!liked), onProblem(null))).catch((e) => onProblem(`Couldn't ${liked ? "remove this from" : "save this to"} Liked Songs: ${connectError(e)}`))}><Heart size={16} fill={liked ? "currentColor" : "none"} /></button>
           )}
           <button type="button" className={`lm-icon-btn ${showLyrics ? "on" : ""}`} aria-label="Lyrics" aria-pressed={showLyrics} onClick={() => setShowLyrics(!showLyrics)}><Mic2 size={16} /></button>
           <button type="button" className={`lm-icon-btn ${showQueue ? "on" : ""}`} aria-label="Queue" aria-pressed={showQueue} onClick={() => setShowQueue(!showQueue)}><ListMusic size={16} /></button>

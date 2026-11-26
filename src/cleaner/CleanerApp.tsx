@@ -439,7 +439,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       </header>
 
       <main className="cl-main" id="cl-main">
-        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch(() => {})} timeline={timeline} onOpenMap={openMapAt} />}
+        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} timeline={timeline} onOpenMap={openMapAt} />}
         {s.screen === "scanning" && (
           <Scanning
             checklist={overview?.checklist ?? []}
@@ -497,7 +497,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               setAppsErr(null);
               api.apps().then(setApps).catch((e) => setAppsErr(String(e)));
             }}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
             onUninstall={(a) => openCoreApp("startup", "uninstall", a.name).catch((e) => say(`Couldn't open Startup & Uninstall: ${e}`, true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
           />
         )}
@@ -506,7 +506,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             root={root}
             data={history}
             total={overview?.drives.find((d) => d.root === root)?.total ?? 0}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
             onEnable={() => {
               api
                 .settingsGet()
@@ -518,7 +518,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "downloads" && (
-          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch(() => {})} />
+          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))} />
         )}
         {s.screen === "done" && done && <Done info={done} showShare={demo?.share} onDone={() => dispatch({ type: "home" })} onShare={(png) => api.share(png).then((p) => say(`Saved the card to ${p}`)).catch((e) => say(String(e), true))} />}
       </main>
@@ -531,7 +531,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               <X size={16} />
             </button>
           </header>
-          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch(() => {})} />
+          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} />
         </aside>
       )}
 
