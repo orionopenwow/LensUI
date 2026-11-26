@@ -65,3 +65,9 @@
 .mdb-empty-action:not(:disabled):hover { background: rgb(var(--lens-ink) / 0.1); }
 .mdb-empty-action:focus-visible, .mdb-forget:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
 .mdb-forget { border: 0; padding: 0; background: transparent; color: var(--lens-fg); font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }
+
+/* Wave M2: "Ask about this" on a card, and lanes that draw themselves. */
+.mdb-card-ask { margin: 6px 0 0 0; display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 5px; background: transparent; color: var(--lens-fg-secondary); cursor: pointer; }
+.mdb-card-ask:hover, .mdb-card-dismiss:hover { background: rgb(var(--lens-ink) / 0.08); color: var(--lens-fg); }
+.mdb-card-ask:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
+.mdb-lane-body { min-width: 0; }
