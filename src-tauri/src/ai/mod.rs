@@ -551,6 +551,8 @@ pub fn step_binding(request_id: &str, call_id: &str, tool: &str, args: &Value) -
 #[derive(Default)]
 pub struct Approvals {
     pending: Mutex<HashMap<String, (String, mpsc::Sender<Answer>)>>,
+    /// The one-time tokens of the steps waiting here (one store per runtime).
+    pub tokens: crate::agentsafe::step_token::Tokens,
 }
 
 impl Approvals {
@@ -651,7 +653,7 @@ struct Waiting {
 fn open_step(binding: crate::agentsafe::step_token::Binding, propose: impl FnOnce(Option<String>), deps: &RunDeps, call_id: &str, request_id: &str) -> Waiting {
     use crate::agentsafe::step_token;
     let rx = deps.approvals.register(request_id, call_id);
-    let token = step_token::store().issue(&binding, step_token::now_ms()).ok();
+    let token = deps.approvals.tokens.issue(&binding, step_token::now_ms()).ok();
     propose(token.clone());
     Waiting { rx, binding, token }
 }
@@ -663,11 +665,11 @@ fn settle_step(w: &Waiting, deps: &RunDeps, call_id: &str) -> Result<(), &'stati
     match wait_for(deps.approvals, &w.rx, call_id, deps.cancel, deps.approval_timeout) {
         None => {
             if let Some(t) = &w.token {
-                step_token::store().revoke(t);
+                deps.approvals.tokens.revoke(t);
             }
             Err(DECLINED)
         }
-        Some(offered) => step_token::store().redeem(Some(&offered), &w.binding, step_token::now_ms()).map_err(|_| NOT_MATCHED),
+        Some(offered) => deps.approvals.tokens.redeem(Some(&offered), &w.binding, step_token::now_ms()).map_err(|_| NOT_MATCHED),
     }
 }
 

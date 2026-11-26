@@ -1,6 +1,7 @@
 # Lens Browser — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/BROWSER_AAA.md`, `docs/LENS_BROWSER.md`,
+Status date: 2026-11-26 (main at `6e7abb0`; Fable pass in PR #114: step-bound approvals, local reader view, failure toasts, permission timeout).
+Fable pass status lines are marked **[#114]**; they describe the PR branch and are verified by unit tests, the headless parity harness and CI, not yet by hand on a real PC. Sources: `docs/BROWSER_AAA.md`, `docs/LENS_BROWSER.md`,
 `docs/BROWSER_RESEARCH.md`, `docs/IN_PAGE_LENS.md`, `docs/brain/BUGS.md`, the code paths below.
 
 ## 1. Rundown
@@ -95,7 +96,8 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 ### 2.7 AI panel and agent
 - Ask about the page, quick actions, streaming, stop, retry, copy, add to Shelf — works
   (`AgentPanel.tsx`).
-- Summarise (reader button, context menu, start page, error page hand-off) — works.
+- Summarise (context menu, start page, error page hand-off, and from the reader view) — works.
+- Reader view — works (harness) **[#114]**: the toolbar's Reader button opens the page's own text set by Lens (`reader.ts`, `Pages.tsx ReaderPage`); headings, paragraphs, lists and web links only, nothing loaded, works with AI off; size / width / serif-sans saved in `appearance.reader`; Summarise and Ask are side actions; Esc closes.
 - Agent steps gated by `browser/gating.rs` → `agentsafe` — works:
   - risk levels clean / low / medium (ask) / high (blocked);
   - secrets, CAPTCHAs and logins blocked; credentials and purchases gated;
@@ -109,12 +111,17 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
     `exfil-near-discussion`, `instruction-with-such-as`.
 - Approval card (Needs your OK, Deny Esc, hold-to-approve, "this task can…" caps) — works
   (`ApprovalCard.tsx`, shared surface).
+- Approval bound to the exact step — works (CI) **[#114]**: `browser_agent_act` hands the card a
+  one-time token bound to tab + element, action, the element as the page describes it at that
+  moment, and what would be typed; without that token the step is asked again
+  (`agentsafe/step_token.rs`, `gating.rs step_binding`). `approved` no longer exists.
 - Agent profile stays signed out — works.
 
 ### 2.8 Site permissions (#74)
 - Bar under the address bar: Block (Esc) / Allow once / Allow on this site (Enter) — works
   (harness, CI compile); **not run on a real PC**.
 - Kinds: camera, microphone, location, notifications, clipboard read, multiple downloads.
+- A request nobody answered in 60 s says so on its tab ("Nobody answered in time, so Lens blocked it") — works (unit) **[#114]**.
 - Defaults: deny after 60 s; unknown kinds, non-web pages, and requests on a tab the agent acted
   on in the last 10 s (`permissions.rs:21 AGENT_QUIET_MS`) are denied without asking.
 - Saved per origin in `state.json → sitePermissions`; WebView2 told not to save, so Forget works.
@@ -139,17 +146,17 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 ### 2.11 Not built (by decision or pending)
 - Split view (AAA §2.5) — proposed, changes the owner's chosen layout.
 - Extensions beyond content scripts (AAA §2.6) — awaiting decision.
-- Reader view without AI (AAA §2.7) — possible from the page agent's `readable` text.
+- Reader view without AI (AAA §2.7) — **built in #114** (see 2.7).
 - Passwords/passkeys — not handled by design (Windows Hello handles passkeys).
 
 ## 3. Quick wins (≤ 1 day each, ranked)
-1. **Local reader view** (AAA §2.7): render `readable` text in a Lens page; reader button opens
+1. ~~**Local reader view**~~ **done in #114.** (AAA §2.7): render `readable` text in a Lens page; reader button opens
    it, AI summary becomes a secondary action. Big perceived quality jump, no network.
-2. **Stop swallowing errors on user actions**: 38 `.catch(() => {})` in `src/browser/*`
+2. ~~**Stop swallowing errors on user actions**~~ **done in #114** (`oops.ts`; test keeps the count at zero): 38 `.catch(() => {})` in `src/browser/*`
    (e.g. `BrowserSurface.tsx:285, 301, 304, 305, 346`, `AgentPanel.tsx:259, 303, 314`). Route to a
    small toast ("Couldn't load history — retry") so failures stop looking like nothing happened
    (B-18).
-3. **Approval token for agent steps**: `commands/browser.rs:459,522` trusts `req.approved` from
+3. ~~**Approval token for agent steps**~~ **done in #114** (B-43): `commands/browser.rs:459,522` trusts `req.approved` from
    the UI. Add a one-time token minted when the card is approved (like the Cleaner's
    `confirm_token`). Closes Redline's should-fix.
 4. **Group by task** in the Lens row (plan-first like the others; model returns groups from titles
@@ -177,16 +184,16 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 ## 5. Bug assessment
 | Id | Severity | Where | Issue |
 |---|---|---|---|
-| B-18 (browser share) | Low | `src/browser/*` (38 sites) | swallowed errors on user actions |
+| B-18 (browser share) | — | `src/browser/*` | **fixed in #114**: failures on user actions show in the browser toast (`oops.ts`) |
 | B-07 | Medium | `media/setup.rs` | Whisper/ffmpeg/yt-dlp unpinned → transcription setup refuses |
-| Suspected S1 | Medium | `commands/browser.rs:459,522` | agent step approval is a boolean from the UI, not bound to the approved step (Redline should-fix) |
+| S1 → B-43 | — | `commands/browser.rs` | **fixed in #114**: step-bound one-time approval tokens |
 | Suspected S2 | Low | `host.rs` icons-mode | page webview hidden while the floating Lens menu is open; if the menu loses focus without a close event the page could stay hidden — verify the restore path on blur |
-| Suspected S3 | Low | `permissions.rs` | a request held >60 s while the tab is in the background resolves deny silently; the bar should say "Timed out — ask again" |
+| S3 | — | `permissions.rs`, `SitePermissions.tsx` | **fixed in #114**: the timeout is announced on the request's tab |
 | Suspected S4 | Low | `Pages.tsx` error page | if WebView2 doesn't run document scripts on Chromium's error page, Lens shows Edge's raw page (AAA §2.3) |
 | Unverified | — | site permissions, icons-mode page hiding, Ctrl+Shift+A inside a page | built, CI-compiled, never run by hand |
 
 ## 6. One idea to push to main
-**Local reader view with "Ask" as a side action.** Uses existing `readable` extraction; adds
+**Local reader view with "Ask" as a side action — shipped in #114.** Uses existing `readable` extraction; adds
 `ReaderPage` in `Pages.tsx`, a toolbar toggle, font/size/width controls from theme tokens, and
 "Summarise" / "Ask" buttons that open the AI panel with the reader text. No network, no new
 permissions, immediately visible quality.
@@ -228,13 +235,13 @@ video; download a large file and watch the tray; theme switch with the browser o
 Feature: Lens Browser. Code: src/browser/*, src-tauri/src/browser/*, commands/browser.rs.
 Goal: polish to AAA on a real PC; keep layout; no new network in the frame.
 Do:
-1. Replace 38 `.catch(() => {})` in src/browser with a toast helper (B-18 share).
-2. Approval token for agent steps (commands/browser.rs:459,522) like Cleaner's confirm_token.
-3. Local reader view (Pages.tsx ReaderPage) from page_agent readable text.
-4. Core error status via NavigationCompleted.WebErrorStatus (host.rs), drop in-page detection.
-5. Permission bar: timed-out state + one-line copy "<site> wants your <kind>".
-6. Icons-mode: verify page webview is restored on every menu close path (blur, Esc, click).
-7. Group by task in the Lens row (plan-first; titles+hosts only).
+1. DONE #114  Replace 38 `.catch(() => {})` in src/browser with a toast helper (B-18 share).
+2. DONE #114  Approval token for agent steps (stronger than Cleaner's: random, single-use, expiring).
+3. DONE #114  Local reader view (Pages.tsx ReaderPage) from page_agent readable text.
+4. OPEN       Core error status via NavigationCompleted.WebErrorStatus (host.rs), drop in-page detection.
+5. DONE #114  Permission bar: timed-out state (the one-line copy was already "<site> wants to <verb>").
+6. OPEN       Icons-mode: verify page webview is restored on every menu close path (blur, Esc, click).
+7. OPEN       Group by task in the Lens row (plan-first; titles+hosts only).
 Check: bun test src; parity browser scenes; E2E safety-injection + new permission scenario;
 motion lint; axe in icons mode.
 Manual: camera prompt, Ctrl+Shift+A in a page, import from real Chrome, transcript.

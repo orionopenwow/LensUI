@@ -90,7 +90,7 @@ describe("step tokens (frontend)", () => {
     expect(browser).toContain("check_or_issue(&binding, req.approval_token.as_deref()");
     // The assistant's runner redeems the token right before the tool runs.
     const ai = rust("ai/mod.rs");
-    expect(ai).toContain("step_token::store().redeem(Some(&offered), &w.binding");
+    expect(ai).toContain("deps.approvals.tokens.redeem(Some(&offered), &w.binding");
     // The shared queue takes a token to approve.
     expect(rust("win_mcp.rs")).toContain("pub fn approve_action(id: &str, token: Option<&str>, host: &dyn McpHost)");
     // MCP clients are told the id and status of a queued request, never its token.

@@ -219,10 +219,13 @@ fn a_token_from_another_step_or_a_used_one_runs_nothing() {
     assert!(host.calls.lock().unwrap().is_empty());
 
     // A live token issued for a different step (other tool and arguments).
-    let other = crate::agentsafe::step_token::store()
+    let rec = Recorder { answer: Some(true), ..Default::default() };
+    let other = rec
+        .approvals
+        .tokens
         .issue(&step_binding("ai-test-1", "ai-test-1-r0-0", "set_volume", &json!({ "level": 100 })), crate::agentsafe::step_token::now_ms())
         .unwrap();
-    let rec = Recorder { answer: Some(true), forged: Some(other), ..Default::default() };
+    let rec = Recorder { forged: Some(other), ..rec };
     let host = Host::default();
     run(&ScriptProvider, &ask("close notepad", true), PrivacyMode::LocalOnly, &rec, &host);
     assert!(host.calls.lock().unwrap().is_empty());
