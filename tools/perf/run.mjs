@@ -43,7 +43,30 @@ async function sweep(page, selector, passes = 2, steps = 40) {
   await page.mouse.move(box.x + box.width / 2, box.y - 300);
 }
 
+// Magic Dashboard warm open (wave M2): Lens says "open", the window rebuilds its lanes from local
+// data and paints. Budget: under 150 ms, unthrottled (it's a wall-clock promise, not a frame metric).
+const DASHBOARD_WARM_MS = 150;
+async function dashboardWarmOpens(p, n = 7) {
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    await p.evaluate(() => { delete document.documentElement.dataset.dashboardWarmMs; window.__lensEmit("lens://dashboard-open", null); });
+    await p.waitForFunction(() => document.documentElement.dataset.dashboardWarmMs !== undefined, null, { timeout: 5000 });
+    times.push(Number(await p.evaluate(() => document.documentElement.dataset.dashboardWarmMs)));
+    await p.waitForTimeout(150);
+  }
+  times.sort((a, b) => a - b);
+  await p.evaluate((ms) => (window.__perf.warm = ms), times[Math.floor(times.length / 2)]);
+  return 0;
+}
+
 const SCENARIOS = {
+  "dashboard-warm-open": {
+    surface: "dashboard",
+    query: "magic=dashboard,widgets&dashdata=1",
+    throttle: 1,
+    warmBudget: DASHBOARD_WARM_MS,
+    run: (p) => dashboardWarmOpens(p),
+  },
   "dock-hover-sweep": { surface: "dock", run: (p) => sweep(p, ".dock-icons-row") },
   "dock-magnification": {
     surface: "dock",
@@ -158,7 +181,7 @@ async function measure(name, sc) {
   const page = await openSurface(browser, server.base, { surface: sc.surface, query: sc.query || "", settle: 0 });
   await page.addInitScript(instrument);
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: sc.throttle ?? THROTTLE });
   await page.reload();
   await page.waitForTimeout(1200);
   if (sc.setup) { await sc.setup(page); await page.waitForTimeout(400); }
@@ -178,6 +201,7 @@ async function measure(name, sc) {
     frames: frames.length,
     errors: page.problems.errors.length,
     steps,
+    ...(st.warm !== undefined ? { warm: st.warm } : {}),
   };
   await page.context().close();
   return r;
@@ -224,6 +248,11 @@ for (const [name, r] of Object.entries(results)) {
       if (r[k] > limit) flags.push(`${k} ${r[k]} > ${limit.toFixed(k === "cls" ? 3 : 1)}`);
     }
   } else if (!UPDATE) flags.push("no baseline");
+  const warmBudget = SCENARIOS[name]?.warmBudget;
+  if (warmBudget) {
+    if (r.warm === undefined || r.warm > warmBudget) failures.push(`${name}: warm open ${r.warm ?? "not measured"} ms > ${warmBudget} ms`);
+    flags.push(`warm open ${r.warm} ms (budget ${warmBudget})`);
+  }
   if (r.errors) flags.push(`${r.errors} page errors`);
   if (flags.length && b) failures.push(`${name}: ${flags.join(", ")}`);
   rows.push(`| ${name} | ${r.p50} | ${r.p95} | ${r.longTasks} | ${r.cls} | ${r.fcp} | ${r.frames} | ${flags.join("; ") || "ok"} |`);

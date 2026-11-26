@@ -1,6 +1,7 @@
-//! Magic waves (docs/plans/MAGIC_WAVES.md), wave M0 scaffold. Pure state and contracts only:
-//! nothing here applies a cursor, installs a hook, opens a window or touches the network. Later
-//! waves call into these from commands, each behind its `config.magicWaves` flag (all off).
+//! Magic waves (docs/plans/MAGIC_WAVES.md). State and contracts, called from commands, each behind
+//! its `config.magicWaves` flag (all off). Nothing here applies a cursor, installs a hook or opens
+//! a window. The only network path is `widgets::fetch_checked` (wave M2), reached through
+//! `commands::widgets::widgets_fetch` after `widgets::check` approves the address.
 #![allow(dead_code)]
 
 pub mod dashboard;
