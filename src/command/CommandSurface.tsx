@@ -640,6 +640,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     const typed = raw.trim();
     bump("commandRun");
     setText("");
+    // "dashboard" in Do mode opens the Magic Dashboard when it is on, the same as in Ask.
+    if ((isDashboardPhrase(typed) || typed.toLowerCase() === "/dashboard") && (await invoke<boolean>("dashboard_available").catch(() => false))) {
+      hide();
+      void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
     const out = await runDo(
       typed,
       {
