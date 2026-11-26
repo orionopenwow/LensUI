@@ -36,6 +36,7 @@ import { BatteryTopBarModule } from "../components/BatteryModule";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { resolveSystemArea } from "../dock/styles";
 import { TesterBadge } from "../tester/TesterHub";
+import { RemotePill } from "../music/RemotePill";
 import "./TopBarSurface.css";
 import { haloAllowed, useTopbarClickThrough } from "../topbar/clickThrough";
 import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
@@ -375,6 +376,7 @@ export const TopBarSurface: React.FC = () => {
         {config?.tester?.enabled && (
           <TesterBadge onClick={() => invoke("toggle_surface", { label: "testerhub" }).catch(() => {})} />
         )}
+        {config?.tester?.enabled && <RemotePill />}
         {!systemInDock && (
           <>
           <div className="topbar-utility-group">

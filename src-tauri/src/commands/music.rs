@@ -514,3 +514,98 @@ pub(crate) fn music_lastfm_finish() -> Result<String, String> {
 pub(crate) fn music_lastfm_disconnect() -> Result<(), String> {
     music::lastfm::disconnect()
 }
+
+// ------------------------------------------------------------------------------- Lens Remote
+
+fn tester_on(app: &AppHandle) -> bool {
+    use tauri::Manager;
+    app.state::<crate::AppState>().config.lock().map(|c| c.tester.enabled).unwrap_or(false)
+}
+
+/// Starts Lens Remote on this PC's LAN address (Tester mode only; docs/MUSIC.md › Lens Remote).
+#[tauri::command]
+pub(crate) fn music_remote_start(app: AppHandle) -> Result<music::remote::RemoteInfo, String> {
+    if !tester_on(&app) {
+        return Err("Lens Remote is a Tester mode preview for now. Turn on Tester mode in Settings › About & Testing first.".into());
+    }
+    if !music::config().enabled {
+        return Err("Turn on Lens Music first.".into());
+    }
+    music::ensure_started(&app);
+    music::remote::start(music::config().remote_idle_min)
+}
+
+#[tauri::command]
+pub(crate) fn music_remote_stop() -> music::remote::RemoteInfo {
+    music::remote::stop();
+    music::remote::info()
+}
+
+#[tauri::command]
+pub(crate) fn music_remote_status() -> music::remote::RemoteInfo {
+    music::remote::info()
+}
+
+/// A fresh one-time pairing code for another phone.
+#[tauri::command(async)]
+pub(crate) fn music_remote_pair() -> Result<music::remote::RemoteInfo, String> {
+    music::remote::new_pairing()
+}
+
+// ------------------------------------------------------------------------------- Equalizer APO
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct EqStatus {
+    /// Equalizer APO's config folder was found.
+    installed: bool,
+    config_dir: Option<String>,
+    /// The Lens preset in use ("" = Off).
+    active: String,
+    /// (id, name) of each preset.
+    presets: Vec<(String, String)>,
+    bands: Vec<u32>,
+}
+
+#[tauri::command]
+pub(crate) fn music_eq_status() -> EqStatus {
+    let dir = music::eq::config_dir();
+    EqStatus {
+        installed: dir.is_some(),
+        active: dir.as_deref().map(music::eq::active_in).unwrap_or_default(),
+        config_dir: dir.map(|d| d.display().to_string()),
+        presets: music::eq::PRESETS.iter().map(|p| (p.id.to_string(), p.name.to_string())).collect(),
+        bands: music::eq::BANDS.to_vec(),
+    }
+}
+
+/// Switches Equalizer APO to a Lens preset, or "off" to take Lens's lines out again.
+#[tauri::command]
+pub(crate) fn music_eq_set(preset: String) -> Result<EqStatus, String> {
+    let dir = music::eq::config_dir().ok_or("Equalizer APO isn't installed.")?;
+    if preset == "off" {
+        music::eq::off_in(&dir)?;
+    } else {
+        let p = music::eq::preset(&preset).ok_or("Unknown preset.")?;
+        music::eq::apply_in(&dir, &music::eq::backup_path(), p)?;
+    }
+    Ok(music_eq_status())
+}
+
+/// Opens Equalizer APO's Configuration Editor (its own program), or its folder.
+#[tauri::command]
+pub(crate) fn music_eq_open_editor() -> Result<(), String> {
+    let dir = music::eq::config_dir().ok_or("Equalizer APO isn't installed.")?;
+    let editor = dir.parent().map(|p| p.join("Editor.exe")).filter(|p| p.is_file());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let target = editor.unwrap_or(dir);
+        std::process::Command::new("explorer.exe").arg(target).creation_flags(0x0800_0000).spawn().map(|_| ()).map_err(|_| "Couldn't open Equalizer APO.".to_string())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = editor;
+        Err("Only available on Windows.".into())
+    }
+}

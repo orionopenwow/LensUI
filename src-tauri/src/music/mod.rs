@@ -11,6 +11,7 @@
 pub mod color;
 pub mod desktop_lyrics;
 pub mod discord;
+pub mod eq;
 pub mod hash;
 pub mod history;
 pub mod lastfm;
@@ -19,6 +20,7 @@ pub mod lrc;
 pub mod immersive;
 pub mod lyrics;
 pub mod offsets;
+pub mod remote;
 pub mod scrobble;
 pub mod session;
 pub mod spicetify;
@@ -93,6 +95,8 @@ pub struct MusicConfig {
     pub discord_show_progress: bool,
     /// The Music first-run setup in Settings was finished or skipped.
     pub setup_done: bool,
+    /// Lens Remote (Tester mode): minutes without a request before it stops by itself.
+    pub remote_idle_min: u32,
 }
 
 impl Default for MusicConfig {
@@ -130,6 +134,7 @@ impl Default for MusicConfig {
             discord_private: false,
             discord_show_progress: true,
             setup_done: false,
+            remote_idle_min: 10,
         }
     }
 }
@@ -152,6 +157,7 @@ impl MusicConfig {
         self.allow_only = clean(self.allow_only);
         self.lyrics_folder = self.lyrics_folder.filter(|f| !f.trim().is_empty());
         self.immersive_idle_s = self.immersive_idle_s.clamp(1, 30);
+        self.remote_idle_min = self.remote_idle_min.clamp(5, 60);
         if !["original", "translated", "both"].contains(&self.lyrics_view.as_str()) {
             self.lyrics_view = "original".into();
         }
@@ -320,6 +326,14 @@ pub(crate) fn emit(now: &NowPlaying) {
     use tauri::Emitter;
     if let Some(app) = APP.get() {
         let _ = app.emit("lens://music/now", now);
+    }
+}
+
+/// Tells every Lens window whether Lens Remote is on (the indicator) and its pairing address.
+pub(crate) fn emit_remote(info: &remote::RemoteInfo) {
+    use tauri::Emitter;
+    if let Some(app) = APP.get() {
+        let _ = app.emit("lens://music/remote", info);
     }
 }
 

@@ -12382,8 +12382,42 @@
   {
    "id": "doc.music.22",
    "kind": "doc",
+   "title": "Lens Music: Lens Remote (Tester mode preview)",
+   "text": "Control the music from a phone on the same home network. Tester mode only for now (Settings › About & Testing › Tester mode), and off until you turn it on in Settings › Music › Lens Remote. Why a preview: it serves plain HTTP on the LAN and hasn't been tried on real networks yet. - music/remote.rs : a tiny HTTP server on this PC's private LAN address ( lan address() picks the route Windows would use; nothing is sent), port 43120 or a free one. Standard library only. The page ( / , /remote.css , /remote.js ) loads nothing from the web. - Pairing : Settings shows a QR code ( src/music/qr.ts , generated on this PC) for http://<address /pair?t=<one-time code (32 random bytes from the OS). Opening it swaps the code for an HttpOnly, SameSite=Strict session cookie tied to the phone's address; the code is then gone (\"Pair another phone\" makes a new one). At most 3 phones. - Who may connect : pri",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lens Remote (Tester mode preview)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lens Remote (Tester mode preview)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.23",
+   "kind": "doc",
+   "title": "Lens Music: Equalizer (Equalizer APO bridge)",
+   "text": "Lens has no audio engine and never processes sound, so it doesn't offer an equalizer of its own. Settings › Music › Equalizer works with Equalizer APO (GPL-2.0, by Jonas Thedering), a separate program you install: - Detected by its config\\config.txt under Program Files. If it isn't installed: Get it in Lens Apps (a link to its official page; Lens doesn't bundle or run it). - Presets (10 bands, 32 Hz – 16 kHz, a negative preamp equal to the biggest boost so nothing clips): Flat, More bass, Clear voices, More treble, Late night. Choosing one writes lens-music.txt beside config.txt and adds one marked Include: lens-music.txt line at the end of config.txt (once). The first time, a copy of config.txt is kept in %APPDATA%\\LensUI\\music\\eqapo-config.before-lens.txt for reference. - Off removes exactly the marked line and Lens's file; anything you changed in config.txt meanwhile stays. Remove all",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Equalizer (Equalizer APO bridge)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Equalizer (Equalizer APO bridge)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.24",
+   "kind": "doc",
    "title": "Lens Music: Credits",
-   "text": "Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were learned from Cider (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.",
+   "text": "Equalizer presets run on Equalizer APO by Jonas Thedering (GPL-2.0), which Lens bridges to and never bundles. Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were learned from Cider (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.",
    "path": [
     "Docs",
     "Lens Music",
@@ -15195,6 +15229,40 @@
     "surface": "doc",
     "doc": "docs/THIRD_PARTY_NOTICES.md",
     "heading": "Discord RPC — protocol only"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.8",
+   "kind": "doc",
+   "title": "Third-party notices: Equalizer APO — bridged, not bundled",
+   "text": "Lens Music's Equalizer works with Equalizer APO (https://sourceforge.net/projects/equalizerapo/, GPL-2.0, by Jonas Thedering). It's a separate program you install; Lens never bundles, links or runs it. Lens writes one marked Include: line in its config.txt and one preset file beside it, both removed by Equalizer › Off and Remove all Lens changes. Credit only (COMBINATOR §5, \"Bridge\").",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Equalizer APO — bridged, not bundled"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Equalizer APO — bridged, not bundled"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.9",
+   "kind": "doc",
+   "title": "Third-party notices: QR code encoder",
+   "text": "src/music/qr.ts is Lens's own encoder, written from the QR Code specification (ISO/IEC 18004). Its structure follows the widely described algorithm of Project Nayuki's QR Code generator (MIT License, Copyright (c) Project Nayuki). No file of that project is included. \"QR Code\" is a registered trademark of DENSO WAVE INCORPORATED.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "QR code encoder"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "QR code encoder"
    },
    "source": "docs/THIRD_PARTY_NOTICES.md"
   },

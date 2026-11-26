@@ -64,13 +64,21 @@ const handlers: Record<string, (a: any) => any> = {
     restoreDelayS: 20, lyrics: true, lyricsLrclib: true, lyricsFolder: null, lyricsOffsetMs: 0, windowStyle: "expanded", dither: true,
     sceneReactive: false, history: true, lastfm: false, artTint: scene !== "np-theme-accent", immersiveIdleS: 3, immersiveGlow: scene.includes("glow"), immersiveLyrics: true,
     lyricsTranslate: scene.includes("both"), lyricsTranslateTo: "French", lyricsView: scene.includes("both") ? "both" : "original", discord: false, discordAppId: "", discordPrivate: false,
-    discordShowProgress: true, setupDone: !scene.includes("setup"), soundGlow: true, levelMeter: true, desktopLyrics: false,
+    discordShowProgress: true, setupDone: !scene.includes("setup"), remoteIdleMin: 10, soundGlow: true, levelMeter: true, desktopLyrics: false,
   }),
   music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
   music_lyrics_nudge: (a) => ({ songMs: (a?.steps ?? 0) * 500, key: "0123456789abcdef0123456789abcdef" }),
   music_translation_get: () => null,
   music_discord_status: () => ({ status: "Off", pipes: ["\\\\.\\pipe\\discord-ipc-0"] }),
   music_glow_level: () => 0.5,
+  // Tester mode scene: Lens Remote on with a pairing code waiting, Equalizer APO installed.
+  music_remote_status: () => scene === "card-tester"
+    ? { on: true, pairUrl: "http://192.168.1.20:43120/pair?t=" + "0123456789abcdef".repeat(4), address: "192.168.1.20:43120", phones: 0, idleMin: 10, note: null }
+    : { on: false, pairUrl: null, address: "", phones: 0, idleMin: 10, note: null },
+  music_eq_status: () => ({
+    installed: scene === "card-tester", configDir: scene === "card-tester" ? "C:\\Program Files\\EqualizerAPO\\config" : null, active: scene === "card-tester" ? "bass" : "",
+    presets: [["flat", "Flat"], ["bass", "More bass"], ["vocal", "Clear voices"], ["treble", "More treble"], ["night", "Late night (softer peaks)"]], bands: [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000],
+  }),
   music_config_set: (a) => a.config,
   music_now: () => SAMPLE,
   music_control: () => true,

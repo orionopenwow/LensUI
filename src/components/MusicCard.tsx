@@ -6,7 +6,7 @@ import { openExternal } from "../ai/open";
 import { DEFAULT_REDIRECTS, RedirectList, useSpotifyConnect } from "../music/spotifyConnect";
 import "../music/music.css";
 import type { LensConfig } from "../types/lens";
-import { MusicDiscordRows, MusicImmersiveRows, MusicImmersiveTweaks, MusicLyricExtras, MusicSetup } from "../music/MusicSettingsExtras";
+import { MusicDiscordRows, MusicEqualizerRows, MusicImmersiveRows, MusicRemoteRows, MusicImmersiveTweaks, MusicLyricExtras, MusicSetup } from "../music/MusicSettingsExtras";
 
 const DEFAULT: MusicConfig = {
   enabled: false,
@@ -41,6 +41,7 @@ const DEFAULT: MusicConfig = {
   discordPrivate: false,
   discordShowProgress: true,
   setupDone: false,
+  remoteIdleMin: 10,
 };
 
 const Toggle: React.FC<{ on: boolean; label: string; onChange: (v: boolean) => void; disabled?: boolean }> = ({ on, label, onChange, disabled }) => (
@@ -233,6 +234,8 @@ export const MusicCard: React.FC<Props> = ({ config, updateConfig }) => {
       )}
 
       <MusicDiscordRows cfg={cfg} save={save} off={off} />
+      <MusicRemoteRows cfg={cfg} save={save} off={off} tester={!!config?.tester?.enabled} />
+      <MusicEqualizerRows />
 
       {/* ---------------------------------------------------------------- Spicetify */}
       <div className="cc-label" style={{ marginTop: 20 }}>Spotify theme for Spicetify (optional)</div>

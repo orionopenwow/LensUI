@@ -27,6 +27,15 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **Show what you're listening to on Discord (opt-in).** Through the Discord app on this PC only;
   Lens itself sends nothing over the internet. Needs your own Discord application ID; Private
   listening hides it.
+- **Equalizer, the honest way.** Lens has no audio engine of its own, so Settings › Music ›
+  Equalizer works with Equalizer APO (free, by Jonas Thedering): pick Flat, More bass, Clear
+  voices, More treble or Late night and Lens switches its preset with one marked line; Off and
+  Remove all Lens changes take it out again. Not installed? Get it from Lens Apps. Spatial sound
+  opens Windows' Sound settings, because apps can't switch it.
+- **Lens Remote (Tester mode preview).** Control the music from your phone on the same home
+  network after scanning a one-time code. Off by default, home network only, stops by itself after
+  10 minutes without use, with a "Remote on" pill in the Top Bar. It's plain HTTP on your network
+  (no certificate is possible there), which is why it's a preview; Settings explains the limits.
 - **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
   time) and a Tweaks section that groups the advanced options.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,

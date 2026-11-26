@@ -9,7 +9,7 @@ export function setupSteps(): SetupStep[] {
   return [
     { id: "sources", title: "Where your music comes from", desc: "Lens shows whatever plays in Windows' media controls. Spotify and your own lyrics files are optional extras." },
     { id: "lyrics", title: "Lyrics and scrobbling", desc: "Both are off until you turn them on, and each says exactly what it sends." },
-    { id: "share", title: "Share and control", desc: "Optional: show what you're playing on Discord. A phone remote comes later." },
+    { id: "share", title: "Share and control", desc: "Optional: show what you're playing on Discord. A phone remote is a Tester mode preview." },
   ];
 }
 

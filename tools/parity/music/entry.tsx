@@ -161,10 +161,10 @@ function App() {
   if (scene === "accent") return <div style={{ padding: 24 }}><Chrome /></div>;
   if (scene === "scene") return <SceneCanvas />;
   if (scene === "spicetify") return <SpicetifyMock />;
-  if (scene === "card" || scene === "card-setup") {
+  if (scene === "card" || scene === "card-setup" || scene === "card-tester") {
     return (
       <div className="lens-glass cc-content" style={{ minHeight: "100%", boxSizing: "border-box", borderRadius: 0 }}>
-        <MusicCard />
+        <MusicCard {...(scene === "card-tester" ? { config: { tester: { enabled: true } } as never, updateConfig: () => {} } : {})} />
       </div>
     );
   }

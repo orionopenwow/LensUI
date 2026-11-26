@@ -50,3 +50,17 @@ built from Cider's public site and observed behaviour (docs/features/music.md �
 `src-tauri/src/music/discord.rs` speaks Discord's documented local RPC framing to the Discord app
 on the same PC. It is Lens's own code (standard library only); no Discord SDK or library is
 bundled or linked.
+
+## Equalizer APO — bridged, not bundled
+
+Lens Music's Equalizer works with Equalizer APO (https://sourceforge.net/projects/equalizerapo/,
+GPL-2.0, by Jonas Thedering). It's a separate program you install; Lens never bundles, links or
+runs it. Lens writes one marked `Include:` line in its `config.txt` and one preset file beside it,
+both removed by Equalizer › Off and Remove all Lens changes. Credit only (COMBINATOR §5, "Bridge").
+
+## QR code encoder
+
+`src/music/qr.ts` is Lens's own encoder, written from the QR Code specification (ISO/IEC 18004).
+Its structure follows the widely described algorithm of Project Nayuki's QR Code generator (MIT
+License, Copyright (c) Project Nayuki). No file of that project is included. "QR Code" is a
+registered trademark of DENSO WAVE INCORPORATED.
