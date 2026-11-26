@@ -1456,6 +1456,21 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
+      "default": true,
+      "description": "Sets the auto close popouts option under Behaviour.",
+      "example": "{\"args\":{\"changes\":{\"func.autoClosePopouts\":false}},\"tool\":\"lens_set\"}",
+      "label": "Auto close popouts",
+      "path": "func.autoClosePopouts",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Behaviour",
       "default": false,
       "description": "Starts Lens when you sign in.",
       "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":true}},\"tool\":\"lens_set\"}",
