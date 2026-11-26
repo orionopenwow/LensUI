@@ -9,6 +9,7 @@ import { DropSparkle, DropToAiMenu } from "../dock/ai/DropToAi";
 import { SuggestedApps, recordDockLaunch } from "../dock/ai/SuggestedApps";
 import { VoiceDockView, DockMicButton, useVoiceDock } from "../dock/voice/VoiceDock";
 import { MiniPlayer } from "../music/MiniPlayer";
+import { DockMusicCard } from "../music/DockMusicCard";
 import { useMiniPlacement } from "../music/useMiniPlacement";
 import type { DockStyleId as VoiceDockStyle, Edge as VoiceEdge } from "../dock/voice/dockMorph";
 import "../dock/ai/aiDock.css";
@@ -43,11 +44,6 @@ import {
   PanelBottom,
   Monitor,
   Sparkles,
-  SkipBack,
-  Play,
-  Pause,
-  SkipForward,
-  Music,
   PanelTop,
   PanelLeft,
   PanelRight,
@@ -63,7 +59,7 @@ import {
   executeNaturalLanguagePlan,
   parseNaturalLanguageActions,
 } from "../utils/nlActionRouter";
-import type { InstalledApp, MediaNowPlaying, PinnedApp, PinnedFolder, RunningWindow } from "../types/lens";
+import type { InstalledApp, PinnedApp, PinnedFolder, RunningWindow } from "../types/lens";
 import "./CommandPaletteSurface.css";
 import { useThemeSchedule } from "../themes/schedule";
 import { DockPreviewStrip } from "../components/DockPreviewStrip";
@@ -398,7 +394,6 @@ export const DockSurface: React.FC = () => {
     windows: RunningWindow[];
     iconUrl?: string | null;
   } | null>(null);
-  const [mediaInfo, setMediaInfo] = useState<MediaNowPlaying | null>(null);
   // Unread notification counts per app (normalised name -> count), shown as dock badges.
   const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
   // Text badges for pinned Lens core apps ("12:04" on Lens Timer), keyed by pin path.
@@ -759,11 +754,6 @@ export const DockSurface: React.FC = () => {
       iconUrl,
     });
     void setDockMenuOpen(true);
-    if (isSpotify) {
-      invoke<MediaNowPlaying>("get_media_now_playing_cmd")
-        .then((m) => setMediaInfo(m.hasSession ? m : null))
-        .catch(quiet);
-    }
   };
 
   const triggerLaunchAnim = (id: string) => {
@@ -2040,7 +2030,7 @@ export const DockSurface: React.FC = () => {
         <div
           ref={hoverLinger.ref}
           inert={hoverLinger.leaving}
-          className={`dock-hover-card dock-hover-edge-${edge} ${
+          className={`dock-hover-card dock-hover-edge-${edge} ${shownCard.isSpotify ? "is-music" : ""} ${
             livePreviews && !shownCard.isSpotify && shownCard.windows.length > 0 ? "has-previews" : ""
           } ${cardMode === "carousel" ? "has-carousel" : ""}`}
           // Kept inside the usable area on every edge and style, from the card's measured size.
@@ -2058,90 +2048,7 @@ export const DockSurface: React.FC = () => {
           onMouseLeave={scheduleHoverClose}
         >
           {shownCard.isSpotify ? (
-            <div className="dock-spotify-card">
-              <div className="dock-spotify-top">
-                {mediaInfo?.thumbnailDataUrl ? (
-                  <img src={mediaInfo.thumbnailDataUrl} alt="" className="dock-spotify-art" />
-                ) : (
-                  <div className="dock-spotify-art-fallback">
-                    <Music size={18} color="#1DB954" />
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="dock-spotify-title">
-                    {mediaInfo?.title || shownCard.windows[0]?.title || "Spotify"}
-                  </div>
-                  <div className="dock-spotify-artist">
-                    {mediaInfo?.artist || "Ready to play"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="dock-spotify-controls">
-                <button
-                  type="button"
-                  className="dock-media-btn"
-                  aria-label="Previous"
-                  onClick={() => {
-                    invoke("media_control_cmd", { action: "prev" }).catch(logFail("Dock", "go to the previous track"));
-                    window.setTimeout(() => {
-                      invoke<MediaNowPlaying>("get_media_now_playing_cmd")
-                        .then((m) => setMediaInfo(m.hasSession ? m : null))
-                        .catch(quiet);
-                    }, 260);
-                  }}
-                >
-                  <SkipBack size={14} fill="currentColor" strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  className="dock-media-btn play"
-                  aria-label={mediaInfo?.isPlaying ? "Pause" : "Play"}
-                  onClick={() => {
-                    setMediaInfo((prev) =>
-                      prev ? { ...prev, isPlaying: !prev.isPlaying } : prev
-                    );
-                    invoke("media_control_cmd", { action: "play_pause" }).catch(logFail("Dock", "play or pause"));
-                  }}
-                >
-                  {mediaInfo?.isPlaying ? (
-                    <Pause size={15} fill="currentColor" strokeWidth={2} />
-                  ) : (
-                    <Play size={15} fill="currentColor" strokeWidth={2} />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className="dock-media-btn"
-                  aria-label="Next"
-                  onClick={() => {
-                    invoke("media_control_cmd", { action: "next" }).catch(logFail("Dock", "go to the next track"));
-                    window.setTimeout(() => {
-                      invoke<MediaNowPlaying>("get_media_now_playing_cmd")
-                        .then((m) => setMediaInfo(m.hasSession ? m : null))
-                        .catch(quiet);
-                    }, 260);
-                  }}
-                >
-                  <SkipForward size={14} fill="currentColor" strokeWidth={2} />
-                </button>
-
-                <button
-                  type="button"
-                  className={`dock-topbar-pin-btn ${(config.topBar?.showMediaControls ?? true) ? "active" : ""}`}
-                  onClick={() => {
-                    const next = !(config.topBar?.showMediaControls ?? true);
-                    updateConfig({
-                      ...config,
-                      topBar: { ...config.topBar, showMediaControls: next },
-                    });
-                  }}
-                >
-                  <PanelTop size={11.5} strokeWidth={2.4} />
-                  <span>{(config.topBar?.showMediaControls ?? true) ? "In Top Bar" : "Pin Top Bar"}</span>
-                </button>
-              </div>
-            </div>
+            <DockMusicCard edge={edge} fallbackTitle={shownCard.windows[0]?.title || "Spotify"} />
           ) : cardMode === "carousel" ? (
             <DockWindowCarousel
               key={shownCard.key}

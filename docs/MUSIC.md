@@ -118,6 +118,8 @@ nowPlayingScene,
 ```
 The scene's "Move to the music" toggle only polls `music_level` while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on.
 
+The Dock's music pop-out (hover Spotify; `src/music/DockMusicCard.tsx`) reads the same peak through `music_glow_level` for its sound glow and level meter. It asks at most ~30 times a second, only while the pop-out is open, something is playing, one of the two is on (Settings → Music → Sound glow / Level meter, both on by default) and motion isn't reduced; the command returns 0 when both are off. It works with Music off, using Windows' media session directly (`get_media_now_playing_cmd`, which now carries position, length and whether seeking works; `media_control_cmd` takes `seek` with a position in ms).
+
 ### 6. Voice and Command intents
 
 Script intents → `music_control`:

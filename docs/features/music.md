@@ -1,6 +1,6 @@
 # Lens Music — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** Spotify sign-in binds its port first and falls back to 43118/43119 with a clear message (S1 fixed), the queue panel explains itself with an inline Connect Spotify (quick win 1), failed Liked Songs saves are shown, and opt-in lyrics on the desktop exist (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC or against a real Spotify account. Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
+Status date: 2026-11-26 (main at `6e7abb0`). **Dock music pop-out (branch `feature/music-sound-glow`):** the Spotify hover card in the Dock (`src/music/DockMusicCard.tsx`, maths in `soundGlow.ts`) now has a 56 px art header with a five-bar level meter, a seekable progress row, Up next / prev / play / next / Search, and a "sound glow" from the Dock edge in the art's colours (theme accent without art) that breathes with `levels.rs` — polled only while the card is open and playing, rAF + transform/opacity, no blur. Settings › Music › Sound glow / Level meter (on by default). `MediaNowPlaying` gained position/duration/seek and `media_control_cmd` a `seek`. Rendered headless (parity + visual `dock-music`); not yet seen on a real PC. **Fable pass (PR #112, 26 November 2026):** Spotify sign-in binds its port first and falls back to 43118/43119 with a clear message (S1 fixed), the queue panel explains itself with an inline Connect Spotify (quick win 1), failed Liked Songs saves are shown, and opt-in lyrics on the desktop exist (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC or against a real Spotify account. Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
 `docs/brain/BUGS.md`, code below.
 
 ## 1. Rundown
@@ -37,6 +37,7 @@ already look, without a new player.
   - Two apps playing → session choice — works (`session.rs`); real-PC switching unverified.
   - Position interpolated from `positionMs + updatedMs`, no polling — works.
 - **Now Playing window** — works: big art, lyrics, queue panel, controls.
+- **Dock music pop-out** (hover Spotify) — built: art + level meter, seek bar, Up next (when Music is on), Search (opens Spotify search), sound glow; works with Music off. Unverified on hardware: seek on real Spotify, the level with real audio, glow smoothness at 30 polls/s.
 - **Mini player** on Dock and Top Bar — works (`MiniPlayer.tsx`, `useMiniPlacement.ts`); now-playing
   row in Lens Browser sidebar only while playing (#86).
 - **Synced lyrics** (LRCLIB or your `.lrc` folder) — works; cache clearable; big bright current line.

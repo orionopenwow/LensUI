@@ -7,6 +7,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
+  artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
+  the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that
+  opens Spotify's search. A soft "sound glow" in the artwork's colours (or your accent, with no
+  artwork) rises from the Dock edge and breathes with the music. It stays matte and opaque (no
+  blur), is still when motion is reduced, and keeps text at 4.5:1 or moves below the controls.
+  Both are on by default and can be turned off in Settings › Music › Dock music pop-out; they read
+  the speakers' level (one number, no sound) only while the pop-out is open and music plays.
+  "Media controls in the Top Bar" moved from the pop-out to the same page.
+
 ### Fixed
 - **The Dock could fail to show on another monitor.** Moving a window onto a monitor with other
   scaling makes Windows resize it on the way, so the Dock (and the extra Top Bars) could end up the

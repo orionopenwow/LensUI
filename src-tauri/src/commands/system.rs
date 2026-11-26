@@ -143,8 +143,12 @@ pub(crate) async fn get_media_now_playing_cmd() -> MediaNowPlaying {
 }
 
 #[tauri::command]
-pub(crate) async fn media_control_cmd(action: String) {
-    let _ = tauri::async_runtime::spawn_blocking(move || media_control_action(&action)).await;
+pub(crate) async fn media_control_cmd(action: String, value: Option<f64>) {
+    // "seek" needs a finite, non-negative position in ms; the other actions ignore `value`.
+    if action == "seek" && !value.is_some_and(|v| v.is_finite() && v >= 0.0) {
+        return;
+    }
+    let _ = tauri::async_runtime::spawn_blocking(move || media_control_action(&action, value)).await;
 }
 
 #[tauri::command]

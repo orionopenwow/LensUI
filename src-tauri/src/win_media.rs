@@ -10,6 +10,14 @@ pub struct MediaNowPlaying {
     pub album: String,
     pub source_app: String,
     pub thumbnail_data_url: Option<String>,
+    /// Position in ms when Windows last reported it (`updated_ms`); the UI extrapolates while playing.
+    pub position_ms: u64,
+    /// Track length in ms (0 when the app doesn't share it).
+    pub duration_ms: u64,
+    /// Unix ms the position was reported at.
+    pub updated_ms: u64,
+    /// The app accepts seeking (`TryChangePlaybackPositionAsync`).
+    pub can_seek: bool,
 }
 
 impl Default for MediaNowPlaying {
@@ -22,6 +30,10 @@ impl Default for MediaNowPlaying {
             album: String::new(),
             source_app: String::new(),
             thumbnail_data_url: None,
+            position_ms: 0,
+            duration_ms: 0,
+            updated_ms: 0,
+            can_seek: false,
         }
     }
 }
@@ -41,7 +53,7 @@ mod worker {
 
     pub enum Req {
         Now(Sender<MediaNowPlaying>),
-        Control(String, Sender<bool>),
+        Control(String, Option<f64>, Sender<bool>),
     }
 
     fn sender() -> Sender<Req> {
@@ -69,9 +81,9 @@ mod worker {
     }
 
     /// Ask the media thread to send a transport command. Returns whether a session handled it.
-    pub fn control(action: &str) -> bool {
+    pub fn control(action: &str, value: Option<f64>) -> bool {
         let (tx, rx) = channel();
-        if sender().send(Req::Control(action.to_string(), tx)).is_err() {
+        if sender().send(Req::Control(action.to_string(), value, tx)).is_err() {
             return false;
         }
         rx.recv_timeout(Duration::from_secs(3)).unwrap_or(false)
@@ -110,7 +122,7 @@ mod worker {
                         .unwrap_or_default();
                     let _ = reply.send(out);
                 }
-                Req::Control(action, reply) => {
+                Req::Control(action, value, reply) => {
                     let handled = manager
                         .as_ref()
                         .and_then(pick_session)
@@ -127,6 +139,19 @@ mod worker {
                                 .TrySkipPreviousAsync()
                                 .and_then(|o| o.get())
                                 .unwrap_or(false),
+                            "seek" => {
+                                // Positions are relative to the timeline's start, in 100 ns ticks.
+                                let start = session
+                                    .GetTimelineProperties()
+                                    .and_then(|t| t.StartTime())
+                                    .map(|v| v.Duration)
+                                    .unwrap_or(0);
+                                let ms = value.filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0) as i64;
+                                session
+                                    .TryChangePlaybackPositionAsync(start + ms * 10_000)
+                                    .and_then(|o| o.get())
+                                    .unwrap_or(false)
+                            }
                             _ => false,
                         })
                         .unwrap_or(false);
@@ -171,11 +196,26 @@ mod worker {
             .map(|h| h.to_string_lossy())
             .unwrap_or_default();
 
-        let is_playing = session
-            .GetPlaybackInfo()
-            .and_then(|info| info.PlaybackStatus())
+        let info = session.GetPlaybackInfo().ok();
+        let is_playing = info
+            .as_ref()
+            .and_then(|i| i.PlaybackStatus().ok())
             .map(|st| st == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
             .unwrap_or(false);
+        let can_seek = info
+            .as_ref()
+            .and_then(|i| i.Controls().ok())
+            .and_then(|c| c.IsPlaybackPositionEnabled().ok())
+            .unwrap_or(false);
+        let (mut position_ms, mut duration_ms, mut updated_ms) = (0u64, 0u64, 0u64);
+        if let Ok(t) = session.GetTimelineProperties() {
+            use crate::music::timeline::{filetime_to_unix_ms, timespan_to_ms};
+            let start = t.StartTime().map(|v| timespan_to_ms(v.Duration)).unwrap_or(0);
+            let end = t.EndTime().map(|v| timespan_to_ms(v.Duration)).unwrap_or(0);
+            position_ms = t.Position().map(|v| timespan_to_ms(v.Duration)).unwrap_or(0).saturating_sub(start);
+            duration_ms = end.saturating_sub(start);
+            updated_ms = t.LastUpdatedTime().map(|v| filetime_to_unix_ms(v.UniversalTime)).unwrap_or(0);
+        }
 
         let mut title = String::new();
         let mut artist = String::new();
@@ -245,6 +285,10 @@ mod worker {
             album,
             source_app,
             thumbnail_data_url,
+            position_ms,
+            duration_ms,
+            updated_ms,
+            can_seek,
         }
     }
 }
@@ -260,8 +304,8 @@ pub fn get_media_now_playing() -> MediaNowPlaying {
 }
 
 #[cfg(windows)]
-pub fn media_control_action(action: &str) {
-    let handled = worker::control(action);
+pub fn media_control_action(action: &str, value: Option<f64>) {
+    let handled = worker::control(action, value);
 
     // Fallback to hardware virtual media keys if SMTC did not handle the command
     if !handled {
@@ -303,4 +347,4 @@ pub fn media_control_action(action: &str) {
 }
 
 #[cfg(not(windows))]
-pub fn media_control_action(_action: &str) {}
+pub fn media_control_action(_action: &str, _value: Option<f64>) {}

@@ -4997,7 +4997,7 @@
    "id": "card.music.musiccard",
    "kind": "card",
    "title": "Mini player",
-   "text": "Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, \"More by\" and saving songs. It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Dither texture · Sources · Theme follows the music. Music",
+   "text": "Hover Spotify in the Dock. These work even with Music off. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Sound glow · Level meter · Media controls in the Top Bar. Music",
    "path": [
     "Settings",
     "Music",
@@ -5084,6 +5084,63 @@
     "tab": "music",
     "card": "MusicCard",
     "label": "Music"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.sound-glow",
+   "kind": "setting",
+   "title": "Sound glow",
+   "text": "A soft glow in the artwork's colours rises from the Dock and breathes with the music. Still when motion is reduced.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Sound glow"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Sound glow"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.level-meter",
+   "kind": "setting",
+   "title": "Level meter",
+   "text": "Five small bars beside the song title. Both read your speakers' volume level, a single number, only while the pop-out is open and music plays. No sound is recorded.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Level meter"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Level meter"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.media-controls-in-the-top-bar",
+   "kind": "setting",
+   "title": "Media controls in the Top Bar",
+   "text": "Previous, play and next in the Top Bar when the mini player isn't there.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Media controls in the Top Bar"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Media controls in the Top Bar"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -12133,7 +12190,7 @@
    "id": "doc.music.10",
    "kind": "doc",
    "title": "Lens Music: 5. Playground scene (src/playground/registry.ts)",
-   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on.",
+   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on. The Dock's music pop-out (hover Spotify; src/music/DockMusicCard.tsx ) reads the same peak through music glow level for its sound glow and level meter. It asks at most ~30 times a second, only while the pop-out is open, something is playing, one of the two is on (Settings → Music → Sound glow / Level meter, both on by default) and motion isn't reduced; the command returns 0 when both are off. It works with Music off, using Windows' media session directly ( get media now playing cmd , which now carries position, length and whether seeking works; media control cmd takes seek with a position in ms).",
    "path": [
     "Docs",
     "Lens Music",
