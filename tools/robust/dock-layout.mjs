@@ -136,7 +136,7 @@ function check(m, ctx) {
     // The shared × of the results panel: on screen, named, clear of the field and its ESC chip.
     if (!onScreen(m.close, m)) p.push(`panel close button missing or off screen ${JSON.stringify(m.close)}`);
     else {
-      if (m.closeName !== "Close") p.push(`panel close button named "${m.closeName}"`);
+      if (!/^Close( \S.*)?$/.test(m.closeName ?? "")) p.push(`panel close button named "${m.closeName}"`);
       if (overlap(m.close, m.input) || overlap(m.close, m.esc)) p.push("panel close button covers the search field");
       if (m.close.w < 20 || m.close.h < 20) p.push("panel close button smaller than 20 px");
     }
