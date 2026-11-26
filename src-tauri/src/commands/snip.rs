@@ -8,7 +8,9 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder,
+};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::shelf::{ShelfItemInput, ShelfKind};
@@ -47,7 +49,8 @@ pub struct SnipStatus {
 // ============================================================================ settings & hotkeys
 
 fn hotkeys() -> &'static Mutex<(Vec<Shortcut>, bool, bool, String)> {
-    static H: std::sync::OnceLock<Mutex<(Vec<Shortcut>, bool, bool, String)>> = std::sync::OnceLock::new();
+    static H: std::sync::OnceLock<Mutex<(Vec<Shortcut>, bool, bool, String)>> =
+        std::sync::OnceLock::new();
     H.get_or_init(|| Mutex::new((Vec::new(), false, false, String::new())))
 }
 
@@ -60,7 +63,10 @@ fn status(settings: SnipSettings) -> SnipStatus {
         hotkey_ok: h.1,
         print_screen_owned: h.2,
         message: h.3.clone(),
-        recording: recording().lock().unwrap_or_else(|e| e.into_inner()).is_some(),
+        recording: recording()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_some(),
     }
 }
 
@@ -119,7 +125,11 @@ pub(crate) fn sync_snip(app: &AppHandle, s: &SnipSettings) {
 
 /// The hotkey stops a recording in progress; otherwise it starts a capture.
 fn hotkey_pressed(app: &AppHandle) {
-    if recording().lock().unwrap_or_else(|e| e.into_inner()).is_some() {
+    if recording()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_some()
+    {
         let _ = snip_record_stop(app.clone());
         return;
     }
@@ -135,7 +145,9 @@ fn apply_print_screen(on: bool) {
     {
         use crate::snip::win::{reg_delete, reg_get_dword, reg_set_dword};
         let path = service::printscreen_backup_path();
-        let stored: Option<printscreen::Backup> = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok());
+        let stored: Option<printscreen::Backup> = std::fs::read(&path)
+            .ok()
+            .and_then(|b| serde_json::from_slice(&b).ok());
         let current = reg_get_dword(printscreen::KEY, printscreen::VALUE);
         if on {
             let (act, backup) = printscreen::plan_enable(current, stored);
@@ -193,7 +205,10 @@ pub(crate) fn snip_status() -> SnipStatus {
 }
 
 #[tauri::command]
-pub(crate) fn snip_set_settings(app: AppHandle, settings: SnipSettings) -> Result<SnipStatus, String> {
+pub(crate) fn snip_set_settings(
+    app: AppHandle,
+    settings: SnipSettings,
+) -> Result<SnipStatus, String> {
     let saved = service::save_settings(&settings)?;
     sync_snip(&app, &saved);
     Ok(status(saved))
@@ -281,7 +296,10 @@ fn open_studio(app: &AppHandle, info: &SnipInfo) {
 /// The overlay page asks for this on load: a studio hand-off it may have missed.
 #[tauri::command]
 pub(crate) fn snip_take_pending() -> Option<SnipInfo> {
-    pending_studio().lock().unwrap_or_else(|e| e.into_inner()).take()
+    pending_studio()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
 }
 
 fn windows_list() -> Vec<WindowInfo> {
@@ -349,7 +367,11 @@ fn start(app: &AppHandle, mode: &str, delay: u32) -> Result<(), String> {
     };
     let id = session.id.clone();
     service::set_session(session);
-    *current_mode().lock().unwrap_or_else(|e| e.into_inner()) = if mode == "last" { "region".into() } else { mode.to_string() };
+    *current_mode().lock().unwrap_or_else(|e| e.into_inner()) = if mode == "last" {
+        "region".into()
+    } else {
+        mode.to_string()
+    };
     show_overlay(app, &vb)?;
     let _ = app.emit(EVT_BEGIN, serde_json::json!({ "id": id, "mode": mode }));
     Ok(())
@@ -390,17 +412,50 @@ pub(crate) fn capture_into_studio(app: &AppHandle, r: Rect) -> Result<(), String
 fn show_overlay(app: &AppHandle, vb: &Rect) -> Result<(), String> {
     let win = match app.get_webview_window(OVERLAY) {
         Some(w) => w,
-        None => WebviewWindowBuilder::new(app, OVERLAY, WebviewUrl::App("index.html?surface=snip".into()))
-            .title("Lens Snip")
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(false)
-            .shadow(false)
-            .visible(false)
-            .build()
-            .map_err(|e| e.to_string())?,
+        None => build_overlay_on_main(app)?,
     };
+    place_overlay(&win, vb);
+    Ok(())
+}
+
+/// WebView2 must be created on the UI thread: built from a worker thread (Magic Mouse's grab,
+/// a delayed snip) it fails with 0x8007139F. Runs the build on the main thread and waits for it;
+/// when already on the main thread it builds directly (waiting there would deadlock).
+fn build_overlay_on_main(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    if std::thread::current().name() == Some("main") {
+        return build_overlay(app);
+    }
+    let (tx, rx) = std::sync::mpsc::channel();
+    let h = app.clone();
+    app.run_on_main_thread(move || {
+        let _ = tx.send(build_overlay(&h));
+    })
+    .map_err(|e| e.to_string())?;
+    rx.recv_timeout(Duration::from_secs(10))
+        .map_err(|_| "The Snip window took too long to open.".to_string())?
+}
+
+fn build_overlay(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    if let Some(w) = app.get_webview_window(OVERLAY) {
+        return Ok(w);
+    }
+    WebviewWindowBuilder::new(
+        app,
+        OVERLAY,
+        WebviewUrl::App("index.html?surface=snip".into()),
+    )
+    .title("Lens Snip")
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .shadow(false)
+    .visible(false)
+    .build()
+    .map_err(|e| e.to_string())
+}
+
+fn place_overlay(win: &tauri::WebviewWindow, vb: &Rect) {
     let _ = win.set_position(PhysicalPosition::new(vb.x, vb.y));
     let _ = win.set_size(PhysicalSize::new(vb.w as u32, vb.h as u32));
     let _ = win.show();
@@ -414,11 +469,14 @@ fn show_overlay(app: &AppHandle, vb: &Rect) -> Result<(), String> {
         let _ = w2.set_position(PhysicalPosition::new(x, y));
         let _ = w2.set_size(PhysicalSize::new(w, h));
     });
-    Ok(())
 }
 
 #[tauri::command]
-pub(crate) fn snip_start(app: AppHandle, mode: Option<String>, delay: Option<u32>) -> Result<(), String> {
+pub(crate) fn snip_start(
+    app: AppHandle,
+    mode: Option<String>,
+    delay: Option<u32>,
+) -> Result<(), String> {
     let s = service::load_settings();
     let mode = mode.unwrap_or(s.default_mode);
     let delay = delay.unwrap_or(s.delay_seconds);
@@ -433,7 +491,10 @@ pub(crate) fn snip_start(app: AppHandle, mode: Option<String>, delay: Option<u32
 
 #[tauri::command]
 pub(crate) fn snip_session() -> Result<Option<SessionInfo>, String> {
-    let mode = current_mode().lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let mode = current_mode()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
     let res = service::with_session(|s| -> Result<SessionInfo, String> {
         let png = image::encode_png(&s.frame, true)?;
         Ok(SessionInfo {
@@ -459,7 +520,8 @@ pub(crate) fn snip_elements(hwnd: i64, x: i32, y: i32) -> Vec<Rect> {
         std::thread::spawn(move || {
             let _ = tx.send(crate::snip::win::element_rects(hwnd, x, y));
         });
-        rx.recv_timeout(Duration::from_millis(150)).unwrap_or_default()
+        rx.recv_timeout(Duration::from_millis(150))
+            .unwrap_or_default()
     }
     #[cfg(not(windows))]
     {
@@ -496,15 +558,28 @@ fn info_of(s: &Snip) -> Result<SnipInfo, String> {
 pub(crate) fn snip_commit(req: CommitRequest) -> Result<SnipInfo, String> {
     let (img, screen_rect, app_name, title) = if req.kind == "window" {
         let hwnd = req.hwnd.ok_or("No window was chosen.")?;
-        let info = service::with_session(|s| s.windows.iter().find(|w| w.hwnd == hwnd).cloned()).flatten();
+        let info =
+            service::with_session(|s| s.windows.iter().find(|w| w.hwnd == hwnd).cloned()).flatten();
         let (img, rect) = capture_window(hwnd)?;
-        (img, rect, info.as_ref().map(|w| w.app.clone()).unwrap_or_default(), info.map(|w| w.title).unwrap_or_default())
+        (
+            img,
+            rect,
+            info.as_ref().map(|w| w.app.clone()).unwrap_or_default(),
+            info.map(|w| w.title).unwrap_or_default(),
+        )
     } else {
         let r = req.rect.ok_or("Nothing was selected.")?;
         service::with_session(|s| {
             let frame = Rect::new(s.origin.0, s.origin.1, s.frame.w as i32, s.frame.h as i32);
             let local = geom::crop_in_frame(&r, &frame)?;
-            image::crop(&s.frame, &local).map(|img| (img, r.intersect(&frame), s.source_app.clone(), s.source_title.clone()))
+            image::crop(&s.frame, &local).map(|img| {
+                (
+                    img,
+                    r.intersect(&frame),
+                    s.source_app.clone(),
+                    s.source_title.clone(),
+                )
+            })
         })
         .flatten()
         .ok_or("The selection is outside the screen.")?
@@ -513,7 +588,14 @@ pub(crate) fn snip_commit(req: CommitRequest) -> Result<SnipInfo, String> {
         service::set_last_region(screen_rect);
     }
     service::end_session();
-    let snip = Snip { id: service::new_id("snip"), img, screen_rect, source_app: app_name, source_title: title, created_ms: service::now_ms() };
+    let snip = Snip {
+        id: service::new_id("snip"),
+        img,
+        screen_rect,
+        source_app: app_name,
+        source_title: title,
+        created_ms: service::now_ms(),
+    };
     let info = info_of(&snip)?;
     service::put_snip(snip);
     Ok(info)
@@ -544,17 +626,39 @@ pub struct Analysis {
 pub(crate) async fn snip_analyze(id: String) -> Analysis {
     let s = service::load_settings();
     let Some(snip) = service::get_snip(&id) else {
-        return Analysis { ocr: None, suggestions: vec![], error: Some("This snip is no longer open.".into()) };
+        return Analysis {
+            ocr: None,
+            suggestions: vec![],
+            error: Some("This snip is no longer open.".into()),
+        };
     };
     let lang = s.ocr_language.clone();
-    let res = tauri::async_runtime::spawn_blocking(move || crate::snip::ocr::recognize(&snip.img, &lang)).await;
+    let res =
+        tauri::async_runtime::spawn_blocking(move || crate::snip::ocr::recognize(&snip.img, &lang))
+            .await;
     match res {
         Ok(Ok(ocr)) => {
-            let suggestions = if s.auto_redact { redact::suggest(&ocr.lines) } else { vec![] };
-            Analysis { ocr: Some(ocr), suggestions, error: None }
+            let suggestions = if s.auto_redact {
+                redact::suggest(&ocr.lines)
+            } else {
+                vec![]
+            };
+            Analysis {
+                ocr: Some(ocr),
+                suggestions,
+                error: None,
+            }
         }
-        Ok(Err(e)) => Analysis { ocr: None, suggestions: vec![], error: Some(e) },
-        Err(e) => Analysis { ocr: None, suggestions: vec![], error: Some(e.to_string()) },
+        Ok(Err(e)) => Analysis {
+            ocr: None,
+            suggestions: vec![],
+            error: Some(e),
+        },
+        Err(e) => Analysis {
+            ocr: None,
+            suggestions: vec![],
+            error: Some(e.to_string()),
+        },
     }
 }
 
@@ -580,11 +684,17 @@ pub struct ExportResult {
 }
 
 fn ok(message: impl Into<String>, path: Option<String>) -> ExportResult {
-    ExportResult { ok: true, message: message.into(), path }
+    ExportResult {
+        ok: true,
+        message: message.into(),
+        path,
+    }
 }
 
 fn default_dir(sub: &str) -> std::path::PathBuf {
-    let home = std::env::var_os("USERPROFILE").map(std::path::PathBuf::from).unwrap_or_else(std::env::temp_dir);
+    let home = std::env::var_os("USERPROFILE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     home.join(sub)
 }
 
@@ -617,7 +727,9 @@ fn remember(snip: &Snip, png: &[u8], img: &Img, ocr_text: &str, tags: Vec<String
     if !s.history_enabled {
         return;
     }
-    let thumb = image::encode_png(&image::thumbnail(img, 240), true).map(|p| image::data_url(&p)).unwrap_or_default();
+    let thumb = image::encode_png(&image::thumbnail(img, 240), true)
+        .map(|p| image::data_url(&p))
+        .unwrap_or_default();
     let entry = SnipEntry {
         id: snip.id.clone(),
         created_ms: snip.created_ms,
@@ -652,11 +764,23 @@ pub(crate) fn snip_export(app: AppHandle, req: ExportRequest) -> Result<ExportRe
         }
         "save" => {
             let s = service::load_settings();
-            let dir = if s.save_dir.trim().is_empty() { default_dir(r"Pictures\Screenshots\Lens") } else { std::path::PathBuf::from(&s.save_dir) };
-            std::fs::create_dir_all(&dir).map_err(|e| format!("Can't create {}: {e}", dir.display()))?;
+            let dir = if s.save_dir.trim().is_empty() {
+                default_dir(r"Pictures\Screenshots\Lens")
+            } else {
+                std::path::PathBuf::from(&s.save_dir)
+            };
+            std::fs::create_dir_all(&dir)
+                .map_err(|e| format!("Can't create {}: {e}", dir.display()))?;
             let stem = template::expand(
                 &s.filename_template,
-                &template::Vars { stamp: stamp(), app: &snip.source_app, title: &snip.source_title, w: img.w, h: img.h, n: service::history_count() as u32 + 1 },
+                &template::Vars {
+                    stamp: stamp(),
+                    app: &snip.source_app,
+                    title: &snip.source_title,
+                    w: img.w,
+                    h: img.h,
+                    n: service::history_count() as u32 + 1,
+                },
             );
             let name = template::unique_name(&stem, "png", |n| dir.join(n).exists());
             let path = dir.join(name);
@@ -669,9 +793,17 @@ pub(crate) fn snip_export(app: AppHandle, req: ExportRequest) -> Result<ExportRe
         }
         "shelf" => {
             let path = service::write_handoff(&snip.id, &png)?;
-            let title = req.title.clone().filter(|t| !t.trim().is_empty()).unwrap_or_else(|| {
-                if snip.source_title.is_empty() { format!("Snip {}×{}", img.w, img.h) } else { format!("Snip — {}", snip.source_title) }
-            });
+            let title = req
+                .title
+                .clone()
+                .filter(|t| !t.trim().is_empty())
+                .unwrap_or_else(|| {
+                    if snip.source_title.is_empty() {
+                        format!("Snip {}×{}", img.w, img.h)
+                    } else {
+                        format!("Snip — {}", snip.source_title)
+                    }
+                });
             let item = ShelfItemInput {
                 kind: Some(ShelfKind::Image),
                 title: Some(title),
@@ -714,7 +846,11 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
     let img = image::decode_png(&png)?;
     // Agent safety: text in a screenshot is untrusted. Scan it before it goes anywhere near a
     // model; spans that read as instructions to an AI are set aside and shown to the person.
-    let scanned = crate::agentsafe::gate::scan_text(&req.ocr_text.clone().unwrap_or_default(), "ocr", "screenshot text");
+    let scanned = crate::agentsafe::gate::scan_text(
+        &req.ocr_text.clone().unwrap_or_default(),
+        "ocr",
+        "screenshot text",
+    );
     let flagged = !scanned.reasons.is_empty();
     let notes = crate::ai::SafetyNote::from_reasons(&scanned.reasons);
     if flagged {
@@ -725,7 +861,12 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
                 id: snip.id.clone(),
                 source: "snip".into(),
                 label: "screenshot text".into(),
-                verdict: if scanned.injection.high > 0 || scanned.injection.exfiltration { "block" } else { "ask" }.into(),
+                verdict: if scanned.injection.high > 0 || scanned.injection.exfiltration {
+                    "block"
+                } else {
+                    "ask"
+                }
+                .into(),
                 set_aside: scanned.set_aside.len() as u32,
                 reasons: notes.clone(),
             },
@@ -735,16 +876,41 @@ pub(crate) fn snip_to_claude(app: AppHandle, req: ClaudeRequest) -> Result<Expor
     let res = if req.target == "desktop" {
         set_clipboard(&img, &png)?;
         #[cfg(windows)]
-        let found = crate::snip::win::window_of_exe("claude.exe").map(|w| crate::snip::win::focus_window(w.hwnd)).unwrap_or(false);
+        let found = crate::snip::win::window_of_exe("claude.exe")
+            .map(|w| crate::snip::win::focus_window(w.hwnd))
+            .unwrap_or(false);
         #[cfg(not(windows))]
         let found = false;
-        remember_recent(RecentTarget { id: "claude-desktop".into(), kind: "claude".into(), label: "Claude".into(), exe: None, last_ms: 0, count: 0 });
+        remember_recent(RecentTarget {
+            id: "claude-desktop".into(),
+            kind: "claude".into(),
+            label: "Claude".into(),
+            exe: None,
+            last_ms: 0,
+            count: 0,
+        });
         // The image itself can't be cleaned, so say what Lens saw before the person pastes it.
-        let heads_up = if flagged { " Heads up: this image contains text that reads as instructions to an AI." } else { "" };
-        if found {
-            ok(format!("Image copied — Claude is in front. Press Ctrl+V to attach it.{}", heads_up), None)
+        let heads_up = if flagged {
+            " Heads up: this image contains text that reads as instructions to an AI."
         } else {
-            ok(format!("Image copied. Open Claude and press Ctrl+V to attach it.{}", heads_up), None)
+            ""
+        };
+        if found {
+            ok(
+                format!(
+                    "Image copied — Claude is in front. Press Ctrl+V to attach it.{}",
+                    heads_up
+                ),
+                None,
+            )
+        } else {
+            ok(
+                format!(
+                    "Image copied. Open Claude and press Ctrl+V to attach it.{}",
+                    heads_up
+                ),
+                None,
+            )
         }
     } else {
         let path = service::write_handoff(&snip.id, &png)?;
@@ -783,7 +949,9 @@ pub(crate) fn snip_share(app: AppHandle, id: String, png: String) -> Result<Expo
     let snip = service::get_snip(&id).ok_or("This snip is no longer open.")?;
     let bytes = image::from_data_url(&png)?;
     let path = service::write_handoff(&format!("{}-share", snip.id), &bytes)?;
-    let win = app.get_webview_window(OVERLAY).ok_or("The Lens Snip window isn't open.")?;
+    let win = app
+        .get_webview_window(OVERLAY)
+        .ok_or("The Lens Snip window isn't open.")?;
     #[cfg(windows)]
     let hwnd = win.hwnd().map_err(|e| e.to_string())?.0 as isize as i64;
     #[cfg(not(windows))]
@@ -791,14 +959,26 @@ pub(crate) fn snip_share(app: AppHandle, id: String, png: String) -> Result<Expo
         let _ = &win;
         0i64
     };
-    let title = if snip.source_title.is_empty() { "Snip".to_string() } else { snip.source_title.clone() };
+    let title = if snip.source_title.is_empty() {
+        "Snip".to_string()
+    } else {
+        snip.source_title.clone()
+    };
     let (tx, rx) = std::sync::mpsc::channel();
     app.run_on_main_thread(move || {
         let _ = tx.send(crate::snip::share::show(hwnd, &path, &title));
     })
     .map_err(|e| e.to_string())?;
-    rx.recv_timeout(Duration::from_secs(10)).map_err(|_| "The share sheet didn't open.".to_string())??;
-    remember_recent(RecentTarget { id: "share".into(), kind: "share".into(), label: "Share…".into(), exe: None, last_ms: 0, count: 0 });
+    rx.recv_timeout(Duration::from_secs(10))
+        .map_err(|_| "The share sheet didn't open.".to_string())??;
+    remember_recent(RecentTarget {
+        id: "share".into(),
+        kind: "share".into(),
+        label: "Share…".into(),
+        exe: None,
+        last_ms: 0,
+        count: 0,
+    });
     Ok(ok("Choose where to share it", None))
 }
 
@@ -856,13 +1036,27 @@ pub(crate) fn snip_open_in(req: OpenInRequest) -> Result<ExportResult, String> {
     #[cfg(windows)]
     {
         let name = exe.rsplit(['\\', '/']).next().unwrap_or(&exe).to_string();
-        let focused = crate::snip::win::window_of_exe(&name).map(|w| crate::snip::win::focus_window(w.hwnd)).unwrap_or(false);
+        let focused = crate::snip::win::window_of_exe(&name)
+            .map(|w| crate::snip::win::focus_window(w.hwnd))
+            .unwrap_or(false);
         if !focused {
-            std::process::Command::new(&exe).spawn().map_err(|e| format!("Couldn't start {label}: {e}"))?;
+            std::process::Command::new(&exe)
+                .spawn()
+                .map_err(|e| format!("Couldn't start {label}: {e}"))?;
         }
     }
-    remember_recent(RecentTarget { id: recent::app_id(&exe), kind: "app".into(), label: label.clone(), exe: Some(exe), last_ms: 0, count: 0 });
-    Ok(ok(format!("Image copied — paste it in {label} with Ctrl+V, then send it yourself."), None))
+    remember_recent(RecentTarget {
+        id: recent::app_id(&exe),
+        kind: "app".into(),
+        label: label.clone(),
+        exe: Some(exe),
+        last_ms: 0,
+        count: 0,
+    });
+    Ok(ok(
+        format!("Image copied — paste it in {label} with Ctrl+V, then send it yourself."),
+        None,
+    ))
 }
 
 // ============================================================================ pins
@@ -887,16 +1081,20 @@ fn open_pin(app: &AppHandle, snip: &Snip, img: Img) -> Result<String, String> {
     let (w, h) = (pinned.img.w, pinned.img.h);
     let at = snip.screen_rect;
     service::put_pin(&label, pinned);
-    let win = WebviewWindowBuilder::new(app, &label, WebviewUrl::App(format!("index.html?surface=snip&view=pin&label={label}").into()))
-        .title("Lens Pin")
-        .decorations(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(true)
-        .shadow(true)
-        .visible(false)
-        .build()
-        .map_err(|e| e.to_string())?;
+    let win = WebviewWindowBuilder::new(
+        app,
+        &label,
+        WebviewUrl::App(format!("index.html?surface=snip&view=pin&label={label}").into()),
+    )
+    .title("Lens Pin")
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(true)
+    .shadow(true)
+    .visible(false)
+    .build()
+    .map_err(|e| e.to_string())?;
     let _ = win.set_size(PhysicalSize::new(w.max(48), h.max(32)));
     let _ = win.set_position(PhysicalPosition::new(at.x, at.y));
     let _ = win.show();
@@ -932,11 +1130,17 @@ pub(crate) fn snip_pin_info(label: String) -> Result<PinInfo, String> {
 /// Click-through on/off for a pin (Ctrl+Alt+click on the pin's own toggle turns it back off from
 /// the tray-less pin menu; the pin also stops being click-through when Lens Snip is opened).
 #[tauri::command]
-pub(crate) fn snip_pin_click_through(app: AppHandle, label: String, on: bool) -> Result<(), String> {
+pub(crate) fn snip_pin_click_through(
+    app: AppHandle,
+    label: String,
+    on: bool,
+) -> Result<(), String> {
     if !label.starts_with("snip-pin-") {
         return Err("Not a pin.".into());
     }
-    let w = app.get_webview_window(&label).ok_or("This pin is closed.")?;
+    let w = app
+        .get_webview_window(&label)
+        .ok_or("This pin is closed.")?;
     w.set_ignore_cursor_events(on).map_err(|e| e.to_string())
 }
 
@@ -973,7 +1177,8 @@ pub(crate) fn snip_history(query: Option<String>) -> Vec<SnipEntry> {
 /// Reopens a history snip in the studio.
 #[tauri::command]
 pub(crate) fn snip_history_open(app: AppHandle, id: String) -> Result<SnipInfo, String> {
-    let entry = service::with_library(|lib| (lib.get(&id).cloned(), false)).ok_or("No such snip.")?;
+    let entry =
+        service::with_library(|lib| (lib.get(&id).cloned(), false)).ok_or("No such snip.")?;
     if entry.kind != "image" {
         return Err("Only images open in the studio.".into());
     }
@@ -1078,22 +1283,58 @@ pub(crate) fn snip_record_start(app: AppHandle, rect: Rect) -> Result<RecordStat
     }
     let ff = ffmpeg().ok_or("Recording needs ffmpeg. Set it up under Settings › Transcription, or install it and restart Lens.")?;
     let s = service::load_settings();
-    let dir = if s.save_dir.trim().is_empty() { default_dir(r"Videos\Lens") } else { std::path::PathBuf::from(&s.save_dir) };
+    let dir = if s.save_dir.trim().is_empty() {
+        default_dir(r"Videos\Lens")
+    } else {
+        std::path::PathBuf::from(&s.save_dir)
+    };
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let stem = template::expand("Lens Recording {date} at {time}", &template::Vars { stamp: stamp(), app: "", title: "", w: rect.w as u32, h: rect.h as u32, n: 1 });
-    let path = dir.join(template::unique_name(&stem, "mp4", |n| dir.join(n).exists()));
-    let opts = record::RecordOptions { rect, fps: s.record_fps, quality: s.record_quality.clone(), mic: s.record_mic.clone(), draw_cursor: true };
-    let child = hidden(std::process::Command::new(&ff).args(record::record_args(&opts, &path.display().to_string())))
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| format!("Couldn't start ffmpeg: {e}"))?;
-    *slot = Some(Recording { child, path: path.clone(), started_ms: service::now_ms(), format: s.record_format.clone(), fps: s.record_fps });
+    let stem = template::expand(
+        "Lens Recording {date} at {time}",
+        &template::Vars {
+            stamp: stamp(),
+            app: "",
+            title: "",
+            w: rect.w as u32,
+            h: rect.h as u32,
+            n: 1,
+        },
+    );
+    let path = dir.join(template::unique_name(&stem, "mp4", |n| {
+        dir.join(n).exists()
+    }));
+    let opts = record::RecordOptions {
+        rect,
+        fps: s.record_fps,
+        quality: s.record_quality.clone(),
+        mic: s.record_mic.clone(),
+        draw_cursor: true,
+    };
+    let child = hidden(
+        std::process::Command::new(&ff)
+            .args(record::record_args(&opts, &path.display().to_string())),
+    )
+    .stdin(std::process::Stdio::piped())
+    .stdout(std::process::Stdio::null())
+    .stderr(std::process::Stdio::null())
+    .spawn()
+    .map_err(|e| format!("Couldn't start ffmpeg: {e}"))?;
+    *slot = Some(Recording {
+        child,
+        path: path.clone(),
+        started_ms: service::now_ms(),
+        format: s.record_format.clone(),
+        fps: s.record_fps,
+    });
     drop(slot);
     snip_close(app.clone());
     open_record_frame(&app, &rect);
-    let st = RecordState { recording: true, elapsed_ms: 0, path: Some(path.display().to_string()), message: "Recording".into() };
+    let st = RecordState {
+        recording: true,
+        elapsed_ms: 0,
+        path: Some(path.display().to_string()),
+        message: "Recording".into(),
+    };
     let _ = app.emit(EVT_RECORD, &st);
     Ok(st)
 }
@@ -1102,21 +1343,35 @@ fn open_record_frame(app: &AppHandle, rect: &Rect) {
     let border = rect.inflate(4);
     for (label, view, r, click_through) in [
         ("snip-rec", "rec", border, true),
-        ("snip-recbar", "recbar", Rect::new(rect.x + rect.w / 2 - 110, (rect.y - 52).max(border.y - 52), 220, 40), false),
+        (
+            "snip-recbar",
+            "recbar",
+            Rect::new(
+                rect.x + rect.w / 2 - 110,
+                (rect.y - 52).max(border.y - 52),
+                220,
+                40,
+            ),
+            false,
+        ),
     ] {
         let win = match app.get_webview_window(label) {
             Some(w) => w,
-            None => match WebviewWindowBuilder::new(app, label, WebviewUrl::App(format!("index.html?surface=snip&view={view}").into()))
-                .title("Lens Recording")
-                .decorations(false)
-                .transparent(true)
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .resizable(false)
-                .shadow(false)
-                .focused(false)
-                .visible(false)
-                .build()
+            None => match WebviewWindowBuilder::new(
+                app,
+                label,
+                WebviewUrl::App(format!("index.html?surface=snip&view={view}").into()),
+            )
+            .title("Lens Recording")
+            .decorations(false)
+            .transparent(true)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .resizable(false)
+            .shadow(false)
+            .focused(false)
+            .visible(false)
+            .build()
             {
                 Ok(w) => w,
                 Err(e) => {
@@ -1139,15 +1394,29 @@ fn open_record_frame(app: &AppHandle, rect: &Rect) {
 /// `WDA_EXCLUDEFROMCAPTURE` on Lens's own recording frame (Windows 10 2004+).
 #[cfg(windows)]
 fn exclude_from_capture(hwnd: i64) {
-    use windows::Win32::UI::WindowsAndMessaging::{SetWindowDisplayAffinity, WINDOW_DISPLAY_AFFINITY};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetWindowDisplayAffinity, WINDOW_DISPLAY_AFFINITY,
+    };
     unsafe {
-        let _ = SetWindowDisplayAffinity(crate::snip::win::hwnd_from(hwnd), WINDOW_DISPLAY_AFFINITY(0x11));
+        let _ = SetWindowDisplayAffinity(
+            crate::snip::win::hwnd_from(hwnd),
+            WINDOW_DISPLAY_AFFINITY(0x11),
+        );
     }
 }
 
 fn stop_recording() -> Option<(std::path::PathBuf, u64, String, u32)> {
-    let rec = recording().lock().unwrap_or_else(|e| e.into_inner()).take()?;
-    let Recording { mut child, path, started_ms, format, fps } = rec;
+    let rec = recording()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()?;
+    let Recording {
+        mut child,
+        path,
+        started_ms,
+        format,
+        fps,
+    } = rec;
     if let Some(stdin) = child.stdin.as_mut() {
         use std::io::Write;
         let _ = stdin.write_all(b"q");
@@ -1157,7 +1426,9 @@ fn stop_recording() -> Option<(std::path::PathBuf, u64, String, u32)> {
     loop {
         match child.try_wait() {
             Ok(Some(_)) => break,
-            Ok(None) if std::time::Instant::now() < deadline => std::thread::sleep(Duration::from_millis(50)),
+            Ok(None) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(50))
+            }
             _ => {
                 let _ = child.kill();
                 let _ = child.wait();
@@ -1165,7 +1436,12 @@ fn stop_recording() -> Option<(std::path::PathBuf, u64, String, u32)> {
             }
         }
     }
-    Some((path, service::now_ms().saturating_sub(started_ms), format, fps))
+    Some((
+        path,
+        service::now_ms().saturating_sub(started_ms),
+        format,
+        fps,
+    ))
 }
 
 #[tauri::command]
@@ -1182,14 +1458,25 @@ pub(crate) fn snip_record_stop(app: AppHandle) -> Result<RecordState, String> {
     if format == "gif" {
         if let Some(ff) = ffmpeg() {
             let gif = path.with_extension("gif");
-            let st = hidden(std::process::Command::new(ff).args(record::gif_args(&path.display().to_string(), fps.min(15), 960, &gif.display().to_string()))).status();
+            let st = hidden(std::process::Command::new(ff).args(record::gif_args(
+                &path.display().to_string(),
+                fps.min(15),
+                960,
+                &gif.display().to_string(),
+            )))
+            .status();
             if matches!(st, Ok(s) if s.success()) && gif.exists() {
                 let _ = std::fs::remove_file(&path);
                 path = gif;
             }
         }
     }
-    let st = RecordState { recording: false, elapsed_ms: ms, path: Some(path.display().to_string()), message: "Saved".into() };
+    let st = RecordState {
+        recording: false,
+        elapsed_ms: ms,
+        path: Some(path.display().to_string()),
+        message: "Saved".into(),
+    };
     let _ = app.emit(EVT_RECORD, &st);
     Ok(st)
 }
@@ -1198,8 +1485,18 @@ pub(crate) fn snip_record_stop(app: AppHandle) -> Result<RecordState, String> {
 pub(crate) fn snip_record_state() -> RecordState {
     let slot = recording().lock().unwrap_or_else(|e| e.into_inner());
     match slot.as_ref() {
-        Some(r) => RecordState { recording: true, elapsed_ms: service::now_ms().saturating_sub(r.started_ms), path: Some(r.path.display().to_string()), message: "Recording".into() },
-        None => RecordState { recording: false, elapsed_ms: 0, path: None, message: String::new() },
+        Some(r) => RecordState {
+            recording: true,
+            elapsed_ms: service::now_ms().saturating_sub(r.started_ms),
+            path: Some(r.path.display().to_string()),
+            message: "Recording".into(),
+        },
+        None => RecordState {
+            recording: false,
+            elapsed_ms: 0,
+            path: None,
+            message: String::new(),
+        },
     }
 }
 
@@ -1208,16 +1505,33 @@ pub(crate) fn snip_record_state() -> RecordState {
 pub(crate) fn snip_record_trim(path: String, start: f64, end: f64) -> Result<String, String> {
     let ff = ffmpeg().ok_or("Trimming needs ffmpeg.")?;
     let input = std::path::PathBuf::from(&path);
-    let ext = input.extension().and_then(|e| e.to_str()).unwrap_or("mp4").to_ascii_lowercase();
+    let ext = input
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("mp4")
+        .to_ascii_lowercase();
     if ext != "mp4" || !input.is_file() {
         return Err("Only Lens MP4 recordings can be trimmed.".into());
     }
     let dir = input.parent().ok_or("Bad path.")?.to_path_buf();
-    let stem = format!("{} (trimmed)", input.file_stem().and_then(|s| s.to_str()).unwrap_or("Recording"));
-    let out = dir.join(template::unique_name(&stem, "mp4", |n| dir.join(n).exists()));
-    let st = hidden(std::process::Command::new(ff).args(record::trim_args(&path, start, end, &out.display().to_string())))
-        .status()
-        .map_err(|e| e.to_string())?;
+    let stem = format!(
+        "{} (trimmed)",
+        input
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("Recording")
+    );
+    let out = dir.join(template::unique_name(&stem, "mp4", |n| {
+        dir.join(n).exists()
+    }));
+    let st = hidden(std::process::Command::new(ff).args(record::trim_args(
+        &path,
+        start,
+        end,
+        &out.display().to_string(),
+    )))
+    .status()
+    .map_err(|e| e.to_string())?;
     if st.success() && out.exists() {
         Ok(out.display().to_string())
     } else {
@@ -1229,8 +1543,18 @@ pub(crate) fn snip_record_trim(path: String, start: f64, end: f64) -> Result<Str
 #[tauri::command]
 pub(crate) fn snip_record_mics() -> Vec<String> {
     let Some(ff) = ffmpeg() else { return vec![] };
-    let out = hidden(std::process::Command::new(ff).args(["-hide_banner", "-list_devices", "true", "-f", "dshow", "-i", "dummy"])).output();
-    out.map(|o| record::parse_dshow_audio(&String::from_utf8_lossy(&o.stderr))).unwrap_or_default()
+    let out = hidden(std::process::Command::new(ff).args([
+        "-hide_banner",
+        "-list_devices",
+        "true",
+        "-f",
+        "dshow",
+        "-i",
+        "dummy",
+    ]))
+    .output();
+    out.map(|o| record::parse_dshow_audio(&String::from_utf8_lossy(&o.stderr)))
+        .unwrap_or_default()
 }
 
 // ============================================================================ scrolling capture
@@ -1239,12 +1563,16 @@ pub(crate) fn snip_record_mics() -> Vec<String> {
 /// step and stitches a tall image. Stops at the end of the page, after 40 steps, or at 20 000 px.
 #[tauri::command]
 pub(crate) async fn snip_scroll_capture(app: AppHandle, hwnd: i64) -> Result<SnipInfo, String> {
-    let info = service::with_session(|s| s.windows.iter().find(|w| w.hwnd == hwnd).cloned()).flatten().ok_or("Choose a window to scroll.")?;
+    let info = service::with_session(|s| s.windows.iter().find(|w| w.hwnd == hwnd).cloned())
+        .flatten()
+        .ok_or("Choose a window to scroll.")?;
     if let Some(w) = app.get_webview_window(OVERLAY) {
         let _ = w.hide();
     }
     let app2 = app.clone();
-    let res = tauri::async_runtime::spawn_blocking(move || scroll_capture(&app2, &info)).await.map_err(|e| e.to_string())?;
+    let res = tauri::async_runtime::spawn_blocking(move || scroll_capture(&app2, &info))
+        .await
+        .map_err(|e| e.to_string())?;
     let mons = monitors();
     show_overlay(&app, &geom::virtual_bounds(&mons))?;
     let snip = res?;
@@ -1281,7 +1609,14 @@ fn scroll_capture(app: &AppHandle, w: &WindowInfo) -> Result<Snip, String> {
             let _ = app.emit(EVT_SCROLL, serde_json::json!({ "step": step + 1 }));
         }
         let img = st.finish();
-        Ok(Snip { id: service::new_id("snip"), screen_rect: Rect::new(w.rect.x, w.rect.y, img.w as i32, w.rect.h), img, source_app: w.app.clone(), source_title: w.title.clone(), created_ms: service::now_ms() })
+        Ok(Snip {
+            id: service::new_id("snip"),
+            screen_rect: Rect::new(w.rect.x, w.rect.y, img.w as i32, w.rect.h),
+            img,
+            source_app: w.app.clone(),
+            source_title: w.title.clone(),
+            created_ms: service::now_ms(),
+        })
     }
     #[cfg(not(windows))]
     {
