@@ -58,16 +58,16 @@ function killLens() {
   } catch {}
 }
 
-function spawnLens(env = {}) {
+function spawnLens(env = {}, args = []) {
   const logs = [];
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, ...env } });
+  const proc = spawn(EXE, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, ...env } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   return { proc, logs };
 }
 
-async function startLens(env = {}, timeoutMs = 60000) {
-  const { proc, logs } = spawnLens(env);
+async function startLens(env = {}, timeoutMs = 60000, args = []) {
+  const { proc, logs } = spawnLens(env, args);
   const t0 = Date.now();
   let up = false;
   while (Date.now() - t0 < timeoutMs) {
@@ -211,7 +211,56 @@ async function cleanStart() {
 // Scenarios
 // ---------------------------------------------------------------------------------------------
 
+const WINLOGON = "HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon";
+const shellOverride = () => ps(`(Get-ItemProperty -Path '${WINLOGON}' -Name Shell -ErrorAction SilentlyContinue).Shell`);
+
 const SCENARIOS = [
+  {
+    id: "signin-gate",
+    title: "a sign-in start (--autostart) waits for the desktop, then starts normally",
+    async run(problems) {
+      const t0 = Date.now();
+      const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal", LENS_E2E_ALLOW_AUTOSTART: "1" }, 150000, ["--autostart"]);
+      try {
+        await waitForSurface(s, "dock");
+        const said = s.logs.join("");
+        expect(problems, /Sign-in: the desktop is ready after \d+ ms/.test(said), `the sign-in gate did not report the desktop ready:\n${said.slice(-800)}`);
+        const waited = Number((said.match(/ready after (\d+) ms/) || [])[1] || 0);
+        expect(problems, waited >= 2900, `windows came up before the desktop had been ready for 3 s (${waited} ms)`);
+        console.log(`  signin-gate: desktop ready after ${waited} ms, dock up after ${Date.now() - t0} ms`);
+      } finally {
+        await quitLens(s);
+      }
+    },
+  },
+  {
+    id: "shell-override-healed",
+    title: "a Shell Mode override left behind without Tester mode is removed at start-up",
+    async run(problems) {
+      const before = shellOverride();
+      ps(`Set-ItemProperty -Path '${WINLOGON}' -Name Shell -Value '"${EXE}" --shell'`);
+      expect(problems, /--shell/.test(shellOverride()), "could not plant the test override (registry not writable?)");
+      const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal" });
+      try {
+        await waitForSurface(s, "dock");
+        const now = shellOverride();
+        expect(problems, !/lens-ui|--shell/i.test(now), `the Shell Mode override is still there: "${now}"`);
+        const status = await invoke(surfaces(s).dock, "get_shell_mode_status_cmd");
+        expect(problems, status.enabled === false, "Shell Mode still reports enabled");
+        let refused = "";
+        try {
+          await invoke(surfaces(s).dock, "enable_shell_mode_cmd");
+        } catch (e) {
+          refused = String(e);
+        }
+        expect(problems, /Tester mode/.test(refused), `enabling Shell Mode without Tester mode was not refused (${refused || "it was allowed"})`);
+      } finally {
+        await quitLens(s);
+        if (/lens-ui|--shell/i.test(shellOverride())) ps(`Remove-ItemProperty -Path '${WINLOGON}' -Name Shell -ErrorAction SilentlyContinue`);
+        if (before && !/lens-ui|--shell/i.test(before)) ps(`Set-ItemProperty -Path '${WINLOGON}' -Name Shell -Value '${before}'`);
+      }
+    },
+  },
   {
     id: "config-damaged",
     title: "wrong-typed values in config.json fall back alone; the rest survives",

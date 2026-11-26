@@ -39,7 +39,10 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
     onUpdateConfig({ ...config, func: { ...config.func, targetMonitor: id } as LensConfig["func"] });
 
   const targetMissing =
-    target !== "primary" && monitors.length > 0 && !monitors.some((m) => m.id.toLowerCase() === target.toLowerCase());
+    target !== "primary" &&
+    target !== "cursor" &&
+    monitors.length > 0 &&
+    !monitors.some((m) => m.id.toLowerCase() === target.toLowerCase());
 
   if (monitors.length <= 1 && !targetMissing) {
     return (
@@ -53,7 +56,10 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
   return (
     <div className="cc-card" style={{ gap: 10, padding: "12px 14px" }}>
       <div className="cc-label">Monitor</div>
-      <div className="cc-desc">Where the Dock and Top Bar live. If that display is unplugged they move to the main one.</div>
+      <div className="cc-desc">
+        Where the Dock and Top Bar live. If that display is unplugged they move to the main one. With Follow the
+        pointer, push the pointer into the top or bottom edge of a display to bring them there.
+      </div>
       <div className="cc-chip-grid" role="radiogroup" aria-label="Monitor for the Dock and Top Bar">
         <button
           type="button"
@@ -63,6 +69,15 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
           onClick={() => choose("primary")}
         >
           Main display
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={target === "cursor"}
+          className={`cc-chip ${target === "cursor" ? "active" : ""}`}
+          onClick={() => choose("cursor")}
+        >
+          Follow the pointer
         </button>
         {monitors.map((m, i) => (
           <button
