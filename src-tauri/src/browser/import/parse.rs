@@ -186,6 +186,7 @@ pub fn chromium_session(bytes: &[u8]) -> Result<Vec<ImportedTab>, String> {
 ///
 /// The shape is the one public Arc exporters describe; Lens's fixtures are written by hand.
 /// Anything unexpected is skipped rather than guessed.
+#[cfg(test)]
 pub fn arc_sidebar(bytes: &[u8]) -> Result<Vec<ImportedSpace>, String> {
     Ok(arc_sidebar_full(bytes)?.0)
 }
@@ -442,6 +443,7 @@ pub fn firefox_places(bytes: Vec<u8>, bookmarks: bool, history: bool, limit: usi
 }
 
 /// Firefox session store JSON: open tabs (current entry of each) and pinned state.
+#[cfg(test)]
 pub fn firefox_session(json: &[u8]) -> Result<Vec<ImportedTab>, String> {
     let (tabs, spaces) = firefox_session_full(json)?;
     Ok(tabs.into_iter().chain(spaces.into_iter().flat_map(|s| s.tabs)).collect())

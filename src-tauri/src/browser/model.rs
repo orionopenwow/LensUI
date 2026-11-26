@@ -1056,7 +1056,7 @@ impl BrowserState {
         s.blocking_allow = s
             .blocking_allow
             .iter()
-            .map(|h| h.trim().trim_start_matches("www.").to_ascii_lowercase())
+            .map(|h| h.trim().to_ascii_lowercase().trim_start_matches("www.").to_string())
             .filter(|h| !h.is_empty() && h.len() <= 253 && h.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-') && seen.insert(h.clone()))
             .collect();
         s.blocking_allow.truncate(BLOCKING_ALLOW_CAP);

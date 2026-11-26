@@ -482,6 +482,7 @@ export interface BatteryUsagePoint {
 export interface BlockingStatus {
   on: boolean;
   rules: number;
+  exceptions: number;
   skipped: number;
   lists: ListStatus[];
   updating: boolean;
