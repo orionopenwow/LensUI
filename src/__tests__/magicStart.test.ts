@@ -114,3 +114,13 @@ describe("Win-tap contract (startButton)", () => {
     expect(back.acts.at(-1)).toBe("openMagic");
   });
 });
+
+describe("Esc", () => {
+  test("is handled on the window, so it works before focus reaches the panel", async () => {
+    const src = await Bun.file(new URL("../magic/start/MagicStartWindow.tsx", import.meta.url)).text();
+    expect(src).toContain('window.addEventListener("keydown", onEsc)');
+    // The panel's own onKeyDown no longer owns Esc (it would miss it while focus is elsewhere).
+    const panel = src.slice(src.indexOf("const onKeyDown"));
+    expect(panel.slice(0, panel.indexOf("};")).includes('"Escape"')).toBe(false);
+  });
+});
