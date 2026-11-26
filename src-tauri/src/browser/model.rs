@@ -126,6 +126,9 @@ pub struct Appearance {
     pub grain: u8,
     /// "vertical" | "horizontal"
     pub tabs_layout: String,
+    /// Horizontal tab style: "curved" | "joined" | "compact" | "dynamic" | "merged"
+    /// (src/browser/tabModes.ts). "dynamic" is the toolbar-then-tabs layout Lens always had.
+    pub tab_style: String,
     /// "compact" | "comfortable"
     pub density: String,
     /// "lens" | "system" | "mono" | "serif"
@@ -144,6 +147,7 @@ impl Default for Appearance {
             dither: 40,
             grain: 20,
             tabs_layout: "vertical".into(),
+            tab_style: "dynamic".into(),
             density: "comfortable".into(),
             typeface: "lens".into(),
             sidebar: SidebarPrefs::default(),
@@ -287,11 +291,18 @@ pub struct BrowserSettings {
     /// Fetch real site icons (once per site, from the site itself). On by default.
     #[serde(default = "yes")]
     pub favicons: bool,
+    /// The Lens Browser setup (first open) was finished or skipped. People who already have
+    /// tabs never see it on upgrade (`repair`).
+    #[serde(default)]
+    pub setup_seen: bool,
 }
 
 fn yes() -> bool {
     true
 }
+
+/// Horizontal tab styles (mirrors `TAB_STYLES` in src/browser/tabModes.ts).
+pub const TAB_STYLES: &[&str] = &["curved", "joined", "compact", "dynamic", "merged"];
 
 /// Most sites on the blocking allow list.
 pub const BLOCKING_ALLOW_CAP: usize = 500;
@@ -320,6 +331,7 @@ impl Default for BrowserSettings {
             site_zoom: Default::default(),
             blocking_allow: vec![],
             favicons: true,
+            setup_seen: false,
         }
     }
 }
@@ -1037,6 +1049,10 @@ impl BrowserState {
         self.closed.drain(..cap);
         super::permissions::repair(&mut self.site_permissions);
         self.repair_splits();
+        // Upgrading with tabs already open: the browser is set up; don't greet again.
+        if !self.tabs.is_empty() || self.spaces.len() > 1 {
+            self.settings.setup_seen = true;
+        }
         self.repair_settings();
     }
 
@@ -1079,6 +1095,9 @@ impl BrowserState {
         a.grain = a.grain.min(100);
         if !["vertical", "horizontal"].contains(&a.tabs_layout.as_str()) {
             a.tabs_layout = d.tabs_layout;
+        }
+        if !TAB_STYLES.contains(&a.tab_style.as_str()) {
+            a.tab_style = d.tab_style;
         }
         if !["compact", "comfortable"].contains(&a.density.as_str()) {
             a.density = d.density;

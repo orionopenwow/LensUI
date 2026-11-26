@@ -16,10 +16,13 @@ import {
   type Appearance, type ArchivedTab, type BrowserAi, type BrowserView, type Download as Dl, type HistoryEntry, type ImportSource, type MenuEvent,
   EVT_BROWSER_PERMISSION, EVT_BROWSER_PERMISSION_DONE, permissionAnswer, permissionForget, permissionsList, permissionsWaiting,
   type PermissionAnswer, type PermissionAsk, type PermissionKind, type SitePermissions,
-  split as splitCmd, shield as shieldCmd, shieldAllow, type Shield,
+  split as splitCmd, shield as shieldCmd, shieldAllow, type Shield, importRun,
 } from "./api";
 import { ShieldButton, SplitDivider, SplitDropZone, SplitPill } from "./SplitView";
-import { clampRatio, pairFor, partnerOf, splitOf, splitRects, type Rect } from "./split";
+import { clampRatio, pairFor, splitOf, splitRects, type Rect } from "./split";
+import { TabStrip } from "./TabStrip";
+import { BrowserSetup, type SetupSeed } from "./BrowserSetup";
+import { cssVars, geometry, validStyle } from "./tabModes";
 import { askFor, lateFor, PermissionBar, PermissionTimedOut, SiteStrip } from "./SitePermissions";
 import { AgentPanel, type AgentSeed, type QuickAsk } from "./AgentPanel";
 import { AiPanel } from "./AiPanel";
@@ -79,6 +82,8 @@ export interface BrowserInitial {
   shield?: Shield;
   /** Parity: the stand-in page for the right side of a split. */
   mockPageRight?: React.ReactNode;
+  /** Parity: the first-open setup, on this step. */
+  setup?: SetupSeed;
 }
 
 /** Parity: where a split's stand-in page sits (the live app places native webviews instead). */
@@ -381,7 +386,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     ro.observe(el);
     send();
     return () => ro.disconnect();
-  }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary, sidePrefs.side, sidePrefs.mode, sidePrefs.width]);
+  }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, appearance.tabStyle, appearance.density, glanceSummary, sidePrefs.side, sidePrefs.mode, sidePrefs.width]);
 
   useLayoutEffect(() => {
     if (live || !pageRef.current) return;
@@ -403,7 +408,12 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   // error page are showing.
   // The icon stack's Lens menu and plan float over the page, so the page hides while they show.
   const [stackPop, setStackPop] = useState(false);
-  const overlay = !!dragTab || rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
+  // A horizontal strip's folder or space list is open over the page.
+  const [stripPop, setStripPop] = useState(false);
+  // First open (or "Run setup again" in Settings): the setup covers the frame until Done or Skip.
+  const [setupDismissed, setSetupDismissed] = useState(false);
+  const setupOpen = !setupDismissed && (live ? !!view && view.state.settings.setupSeen === false : !!initial?.setup);
+  const overlay = setupOpen || !!dragTab || stripPop || rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
   useEffect(() => {
     if (live) void setOverlay(overlay).catch(quiet);
   }, [overlay, live]);
@@ -728,16 +738,121 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const inSettings = panel === "customise" || panel === "import" || panel === "ai";
   const panelTabs = inSettings ? SETTINGS_PANELS : pagePanels;
   const horizontal = appearance.tabsLayout === "horizontal";
+  // Tab position and style decide the top chrome (tabModes.ts); the page's rectangle follows.
+  const tabStyle = validStyle(appearance.tabStyle);
+  const geo = geometry(horizontal ? "horizontal" : "vertical", tabStyle, appearance.density);
   const schemeVars = appearance.scheme === "auto" ? {} : SCHEME_TOKENS[appearance.scheme];
   const rootStyle = {
     ...schemeVars,
     ...(appearance.accent ? { "--lens-accent": appearance.accent } : {}),
     ...(TYPEFACES[appearance.typeface] ? { "--lens-font": TYPEFACES[appearance.typeface] } : {}),
     "--lb-side": `${sidePrefs.mode === "stack" ? 56 : sidePrefs.width}px`,
+    ...cssVars(geo),
   } as React.CSSProperties;
   const sleeping = s.tabs.filter((t) => t.life === "sleeping" && !t.archivedMs).length;
   const audible = s.tabs.find((t) => t.audible && t.spaceId === s.activeSpace && t.id !== s.activeTab);
-  const spaceTabs = s.tabs.filter((t) => t.spaceId === s.activeSpace && !t.archivedMs).sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.order - b.order);
+
+  // The address box: in the toolbar, or (merged tabs) in place of the open tab.
+  const addressBox = (
+    <div className={`lb-addr${editing ? " is-editing" : ""}`}>
+      {editing ? (
+        <>
+          <Search size={14} className="lb-dim" />
+          <input
+            ref={addrRef}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            onBlur={() => window.setTimeout(() => { setEditing(false); setSuggest([]); }, 120)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (active && sel > 0) pick(active, e.altKey || e.ctrlKey);
+                else void go(address, e.altKey || e.ctrlKey);
+              }
+              if (e.key === "ArrowDown" && rows.length) { e.preventDefault(); setSel((i) => (i + 1) % rows.length); }
+              if (e.key === "ArrowUp" && rows.length) { e.preventDefault(); setSel((i) => (i - 1 + rows.length) % rows.length); }
+              if (e.key === "Tab" && !e.shiftKey && active?.url && sel > 0) { e.preventDefault(); setAddress(active.url); }
+              if (e.key === "Escape") { setEditing(false); setSuggest([]); if (tab) setStartOpen(false); }
+            }}
+            placeholder={aiOn && ai.askInAddressBar ? "Search, enter an address, or start with ask" : "Search or enter an address"}
+            aria-label="Address"
+            role="combobox"
+            aria-expanded={rows.length > 0}
+            aria-controls="lb-suggest"
+            aria-autocomplete="list"
+            aria-activedescendant={active ? `lb-sg-${rows.indexOf(active)}` : undefined}
+            autoComplete="off"
+            spellCheck={false}
+            autoFocus
+          />
+          {showKind ? <Key k={showKind.kind === "ask" ? "Ask ⏎" : showKind.kind === "url" ? "Go ⏎" : "Search ⏎"} /> : null}
+        </>
+      ) : (
+        <button className="lb-addr-view" onClick={() => { setAddress(url); setEditing(true); window.setTimeout(() => addrRef.current?.select(), 0); }} aria-label="Edit address">
+          {tab ? <Avatar url={url} title={tab.title} size={14} /> : null}
+          <span className="lb-crumbs">
+            {crumbs.map((c, i) => (
+              <React.Fragment key={i}>
+                {i ? <span className="lb-crumb-sep">/</span> : null}
+                <span className={i === 0 ? "lb-crumb-host" : "lb-crumb"}>{c}</span>
+              </React.Fragment>
+            ))}
+          </span>
+        </button>
+      )}
+      {!editing && tab && origin ? (
+        <button className={`lb-icon-btn sm${siteOpen ? " is-on" : ""}`} aria-label={`Site permissions for ${hostOf(url)}`} aria-expanded={siteOpen} onClick={() => setSiteOpen((o) => !o)}>
+          <SlidersHorizontal size={13} />
+        </button>
+      ) : null}
+      {!editing && tab && shieldState ? (
+        <ShieldButton
+          shield={shieldState}
+          onToggle={() => {
+            const next = !shieldState.allowed;
+            setShield({ ...shieldState, allowed: next, blocked: next ? 0 : shieldState.blocked });
+            if (live) void shieldAllow(shieldState.site, next).then(setShield).catch(oops("change blocking for this site"));
+            flash(next ? `Ads and trackers allowed on ${shieldState.site}` : `Lens blocks ads and trackers on ${shieldState.site} again`);
+          }}
+        />
+      ) : null}
+      {!editing && tab ? (
+        <button className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
+          <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
+        </button>
+      ) : null}
+      {rows.length ? (
+        <ul className="lb-suggest" role="listbox" id="lb-suggest" aria-label="Suggestions" ref={suggestRef}>
+          {rows.map((r, i) => {
+            const Icon = SUGGEST_ICON[r.kind];
+            const on = r === active;
+            return (
+              <li key={r.key} id={`lb-sg-${i}`} role="option" aria-selected={on} className={on ? "is-on" : undefined} onMouseEnter={() => setSel(i)} onMouseDown={(e) => { e.preventDefault(); pick(r, e.ctrlKey || e.metaKey); }}>
+                {r.url && r.kind !== "url" ? <Avatar url={r.url} title={r.title} size={14} /> : <Icon size={14} className="lb-dim" />}
+                <span className="lb-tab-title">{r.title}</span>
+                <span className="lb-mono lb-dim">{r.detail}</span>
+                {on ? <Key k={r.kind === "tab" ? "Switch ⏎" : r.kind === "ask" ? "Ask ⏎" : r.kind === "search" ? "Search ⏎" : "Go ⏎"} /> : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+
+  const strip = horizontal ? (
+    <TabStrip
+      state={s}
+      style={tabStyle}
+      addressSlot={geo.merged ? addressBox : undefined}
+      ai={aiOn}
+      onActivate={(id) => { setStartOpen(false); void apply(tabActivate(id)); }}
+      onClose={(id) => void apply(tabClose(id))}
+      onNewTab={() => combo("ctrl+t")}
+      onSpace={(id) => void apply(spaceSwitch(id))}
+      onPopover={setStripPop}
+      onDragTab={setDragTab}
+    />
+  ) : null;
 
   return (
     <div
@@ -790,7 +905,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
       ) : null}
 
       <main className="lb-main">
-        <header className="lb-top" data-tauri-drag-region>
+        {horizontal && geo.rows[0] === "strip" ? strip : null}
+        <header className={`lb-top lb-top-${geo.mode}`} data-tauri-drag-region>
           {sideOpen && !horizontal ? null : (
             <button className="lb-icon-btn" aria-label="Show sidebar" onClick={() => { setSideOpen(true); if (horizontal) saveSettings({ appearance: { ...appearance, tabsLayout: "vertical" } }); }}>
               <PanelLeft size={16} />
@@ -804,89 +920,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             <button className="lb-icon-btn" aria-label="Reload" disabled={!tab} onClick={reload}><RotateCw size={15} /></button>
           )}
 
-          <div className={`lb-addr${editing ? " is-editing" : ""}`}>
-            {editing ? (
-              <>
-                <Search size={14} className="lb-dim" />
-                <input
-                  ref={addrRef}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  onBlur={() => window.setTimeout(() => { setEditing(false); setSuggest([]); }, 120)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      if (active && sel > 0) pick(active, e.altKey || e.ctrlKey);
-                      else void go(address, e.altKey || e.ctrlKey);
-                    }
-                    if (e.key === "ArrowDown" && rows.length) { e.preventDefault(); setSel((i) => (i + 1) % rows.length); }
-                    if (e.key === "ArrowUp" && rows.length) { e.preventDefault(); setSel((i) => (i - 1 + rows.length) % rows.length); }
-                    if (e.key === "Tab" && !e.shiftKey && active?.url && sel > 0) { e.preventDefault(); setAddress(active.url); }
-                    if (e.key === "Escape") { setEditing(false); setSuggest([]); if (tab) setStartOpen(false); }
-                  }}
-                  placeholder={aiOn && ai.askInAddressBar ? "Search, enter an address, or start with ask" : "Search or enter an address"}
-                  aria-label="Address"
-                  role="combobox"
-                  aria-expanded={rows.length > 0}
-                  aria-controls="lb-suggest"
-                  aria-autocomplete="list"
-                  aria-activedescendant={active ? `lb-sg-${rows.indexOf(active)}` : undefined}
-                  autoComplete="off"
-                  spellCheck={false}
-                  autoFocus
-                />
-                {showKind ? <Key k={showKind.kind === "ask" ? "Ask ⏎" : showKind.kind === "url" ? "Go ⏎" : "Search ⏎"} /> : null}
-              </>
-            ) : (
-              <button className="lb-addr-view" onClick={() => { setAddress(url); setEditing(true); window.setTimeout(() => addrRef.current?.select(), 0); }} aria-label="Edit address">
-                {tab ? <Avatar url={url} title={tab.title} size={14} /> : null}
-                <span className="lb-crumbs">
-                  {crumbs.map((c, i) => (
-                    <React.Fragment key={i}>
-                      {i ? <span className="lb-crumb-sep">/</span> : null}
-                      <span className={i === 0 ? "lb-crumb-host" : "lb-crumb"}>{c}</span>
-                    </React.Fragment>
-                  ))}
-                </span>
-              </button>
-            )}
-            {!editing && tab && origin ? (
-              <button className={`lb-icon-btn sm${siteOpen ? " is-on" : ""}`} aria-label={`Site permissions for ${hostOf(url)}`} aria-expanded={siteOpen} onClick={() => setSiteOpen((o) => !o)}>
-                <SlidersHorizontal size={13} />
-              </button>
-            ) : null}
-            {!editing && tab && shieldState ? (
-              <ShieldButton
-                shield={shieldState}
-                onToggle={() => {
-                  const next = !shieldState.allowed;
-                  setShield({ ...shieldState, allowed: next, blocked: next ? 0 : shieldState.blocked });
-                  if (live) void shieldAllow(shieldState.site, next).then(setShield).catch(oops("change blocking for this site"));
-                  flash(next ? `Ads and trackers allowed on ${shieldState.site}` : `Lens blocks ads and trackers on ${shieldState.site} again`);
-                }}
-              />
-            ) : null}
-            {!editing && tab ? (
-              <button className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
-                <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
-              </button>
-            ) : null}
-            {rows.length ? (
-              <ul className="lb-suggest" role="listbox" id="lb-suggest" aria-label="Suggestions" ref={suggestRef}>
-                {rows.map((r, i) => {
-                  const Icon = SUGGEST_ICON[r.kind];
-                  const on = r === active;
-                  return (
-                    <li key={r.key} id={`lb-sg-${i}`} role="option" aria-selected={on} className={on ? "is-on" : undefined} onMouseEnter={() => setSel(i)} onMouseDown={(e) => { e.preventDefault(); pick(r, e.ctrlKey || e.metaKey); }}>
-                      {r.url && r.kind !== "url" ? <Avatar url={r.url} title={r.title} size={14} /> : <Icon size={14} className="lb-dim" />}
-                      <span className="lb-tab-title">{r.title}</span>
-                      <span className="lb-mono lb-dim">{r.detail}</span>
-                      {on ? <Key k={r.kind === "tab" ? "Switch ⏎" : r.kind === "ask" ? "Ask ⏎" : r.kind === "search" ? "Search ⏎" : "Go ⏎"} /> : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
-          </div>
+          {geo.merged ? null : addressBox}
+          {geo.inline ? strip : null}
 
           {Math.abs(zoom - 1) > 0.01 ? (
             <span className="lb-zoom" role="group" aria-label="Zoom">
@@ -928,34 +963,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           {nav.loading ? <span className="lb-loadbar" role="status" aria-label="Loading page" /> : null}
         </header>
 
-        {horizontal ? (
-          <div className="lb-hstrip" role="tablist" aria-label="Tabs">
-            {spaceTabs.map((t) => (
-              <div
-                key={t.id}
-                role="tab"
-                tabIndex={t.id === s.activeTab ? 0 : -1}
-                aria-selected={t.id === s.activeTab}
-                className={`lb-htab${t.id === s.activeTab ? " is-active" : ""}${t.life === "sleeping" ? " is-sleeping" : ""}`}
-                onClick={() => void apply(tabActivate(t.id))}
-                onAuxClick={(e) => e.button === 1 && void apply(tabClose(t.id))}
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) return;
-                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void apply(tabActivate(t.id)); }
-                  if (e.key === "Delete") void apply(tabClose(t.id));
-                  const to = e.key === "ArrowRight" ? e.currentTarget.nextElementSibling : e.key === "ArrowLeft" ? e.currentTarget.previousElementSibling : null;
-                  if (to instanceof HTMLElement && to.getAttribute("role") === "tab") to.focus();
-                }}
-              >
-                <Avatar url={t.url} title={t.title} size={14} />
-                <span className="lb-tab-title">{t.title || hostOf(t.url)}</span>
-                {t.badge === "approve" && aiOn ? <span className="lb-pill">approve</span> : null}
-                <button className="lb-icon-btn sm lb-tab-x" aria-label={`Close ${t.title || hostOf(t.url)}`} onClick={(e) => { e.stopPropagation(); void apply(tabClose(t.id)); }}><X size={11} /></button>
-              </div>
-            ))}
-            <button className="lb-icon-btn sm" aria-label="New tab" onClick={() => combo("ctrl+t")}><Plus size={13} /></button>
-          </div>
-        ) : null}
+        {horizontal && geo.rows[1] === "strip" ? strip : null}
 
         {find !== null ? (
           <div className="lb-find" ref={findRef} role="search">
@@ -1198,6 +1206,22 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
       ) : null}
 
       {toastP.mounted ? <div className="lb-toast" role="status" ref={toastP.ref}>{toastP.value}</div> : null}
+      {setupOpen ? (
+        <BrowserSetup
+          settings={s.settings}
+          seed={initial?.setup}
+          live={live}
+          onFinish={(next, from) => {
+            setSetupDismissed(true);
+            setView({ ...view, state: { ...s, settings: next } });
+            if (!live) return;
+            void settingsSet(next)
+              .then(setView)
+              .then(() => (from ? importRun(from.browser, from.profile, { bookmarks: true, history: true, tabs: true, spaces: true }).then(() => { flash(`Imported from ${from.label}. Remove it any time in Import.`); return browserState().then(setView); }) : undefined))
+              .catch(oops("finish setting up Lens Browser"));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

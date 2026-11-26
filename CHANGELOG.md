@@ -8,6 +8,14 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Lens Browser tab styles.** Make it yours › Tab position: Vertical (the sidebar) or Horizontal,
+  with five styles drawn by Lens: Curved, Joined, Compact (one row, icon tabs), Dynamic (address
+  bar, then tabs; the previous horizontal look) and Merged (the open tab is the address bar). Spaces,
+  pinned tabs, folders (a dropdown chip), split view, the AI panel and the keyboard work in each.
+- **A short Lens Browser setup on first open.** Bring your bookmarks and tabs (with a count first),
+  pick how tabs look, choose ad blocking and a search engine (listed alphabetically, none
+  recommended), and turn the AI panel on or off. Nothing changes until Done; Skip leaves
+  everything as it was. Run it again from Settings › Lens Browser.
 - **Lens Browser blocks ads and trackers inside pages.** Scripts, images and frames from ad and
   tracker hosts are filtered with EasyList and EasyPrivacy (downloaded weekly from easylist.to,
   credited in THIRD_PARTY_NOTICES) on top of Lens's own short list. A shield in the address bar

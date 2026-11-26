@@ -53,6 +53,8 @@ export interface Appearance {
   dither: number;
   grain: number;
   tabsLayout: "vertical" | "horizontal";
+  /** Horizontal tab style (src/browser/tabModes.ts); missing in settings saved before it existed. */
+  tabStyle?: "curved" | "joined" | "compact" | "dynamic" | "merged";
   density: "compact" | "comfortable";
   typeface: "lens" | "system" | "mono" | "serif";
   /** The vertical tab sidebar (missing in settings saved before it existed). */
@@ -93,7 +95,7 @@ export interface BrowserAi {
   transcripts: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR, reader: DEFAULT_READER };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", tabStyle: "dynamic", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR, reader: DEFAULT_READER };
 export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
 
 export interface BrowserSettings {
@@ -114,6 +116,8 @@ export interface BrowserSettings {
   blockingAllow?: string[];
   /** Fetch real site icons (once per site, from the site). */
   favicons?: boolean;
+  /** The first-open setup was finished or skipped. */
+  setupSeen?: boolean;
 }
 
 /** Two tabs side by side; `left` takes `ratio` of the width. */

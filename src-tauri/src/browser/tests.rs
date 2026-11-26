@@ -311,3 +311,30 @@ fn blocking_allow_list_is_cleaned_and_favicons_default_on() {
     let old: BrowserSettings = serde_json::from_str(r#"{"sleepAfterMin":15,"maxLiveTabs":6,"searchUrl":"https://duckduckgo.com/?q={q}","blockTrackers":true,"lensContextMenu":true,"defaultZoom":1.0}"#).unwrap();
     assert!(old.favicons && old.blocking_allow.is_empty());
 }
+
+#[test]
+fn tab_styles_are_repaired_and_old_appearance_is_dynamic() {
+    let mut s = state();
+    s.settings.appearance.tab_style = "wavy".into();
+    s.repair_settings();
+    assert_eq!(s.settings.appearance.tab_style, "dynamic");
+    for st in TAB_STYLES {
+        s.settings.appearance.tab_style = st.to_string();
+        s.repair_settings();
+        assert_eq!(s.settings.appearance.tab_style, *st);
+    }
+    let old: Appearance = serde_json::from_str(r#"{"scheme":"dark","tabsLayout":"horizontal"}"#).unwrap();
+    assert_eq!(old.tab_style, "dynamic", "horizontal tabs before styles existed keep their look");
+}
+
+#[test]
+fn setup_shows_on_a_fresh_install_only() {
+    let mut fresh = state();
+    fresh.repair();
+    assert!(!fresh.settings.setup_seen);
+    let mut used = state();
+    used.open_tab("https://a.test", None, None, 1).unwrap();
+    used.settings.setup_seen = false;
+    used.repair();
+    assert!(used.settings.setup_seen, "an upgrade with tabs open is already set up");
+}

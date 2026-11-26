@@ -54,6 +54,14 @@ const STATES = [
   { id: "overview", surface: "overview", sizes: [[1120, 700], [1366, 768]] },
   { id: "command-mini", surface: "command", open: { layout: "mini" }, sizes: [[376, 456], [440, 520]] },
   { id: "command-full", surface: "command", open: { layout: "full" }, sizes: [[1000, 640], [760, 560]] },
+  // Lens Browser: tab position and the five horizontal styles (src/browser/tabModes.ts), and the setup.
+  ...["vertical", "curved", "joined", "compact", "dynamic", "merged"].map((m) => ({
+    id: `browser-tabs-${m}`,
+    surface: "browser",
+    init: `window.__lensBrowserAppearance = ${JSON.stringify(m === "vertical" ? { tabsLayout: "vertical" } : { tabsLayout: "horizontal", tabStyle: m })};`,
+    sizes: [[1280, 800], [1024, 700]],
+  })),
+  { id: "browser-setup", surface: "browser", init: "window.__lensBrowserSetup = true;", sizes: [[1280, 800], [1024, 700]] },
 ];
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta
@@ -102,7 +110,7 @@ for (const preset of PRESET_LIST) {
     if (ONLY.length && !ONLY.includes(st.surface) && !ONLY.includes(st.id)) continue;
     for (const [width, height] of st.sizes) {
       const name = `${st.id}-${preset}-${width}x${height}`;
-      const page = await openSurface(browser, server.base, { surface: st.surface, preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark" });
+      const page = await openSurface(browser, server.base, { surface: st.surface, preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark", init: st.init });
       if (st.config) {
         await page.evaluate((src) => { const c = JSON.parse(JSON.stringify(window.__lensConfig())); new Function("c", src)(c); window.__lensSetConfig(c); window.__lensEmit("lens://config-updated", c); }, st.config);
       }

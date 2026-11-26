@@ -24,6 +24,7 @@ export const SURFACES = {
   overview: [1120, 700],
   wallpaper: [960, 540],
   command: [1000, 640],
+  browser: [1280, 800],
 };
 
 export const PRESETS = ["obsidian", "catppuccin-mocha", "alabaster-daylight"];
@@ -74,6 +75,8 @@ export async function openSurface(browser, base, opts) {
   });
   const page = await context.newPage();
   page.problems = { errors: [], rejections: [] };
+  // A state can seed globals the mocks read before the surface loads (e.g. Lens Browser's look).
+  if (opts.init) await page.addInitScript(opts.init);
   await page.addInitScript(() => {
     window.__lensRejections = [];
     window.addEventListener("unhandledrejection", (e) => {
