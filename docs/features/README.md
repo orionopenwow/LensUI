@@ -13,7 +13,6 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 | Window styling | [windows-styling.md](windows-styling.md) | partly | Caption engine uses `win_rules::ANTI_CHEAT_FRAGMENTS` + honours `excluded_processes` | Engine's private anti-cheat list misses most of the 42 names (suspected, safety) | Per-app window rules page with locked "Protected" badge |
 | Command | [command.md](command.md) | works | Move Snip off Ctrl+Shift+S (Save As) | B-12c first key after cold start (maybe CDP-only) | "Teach me": show where each setting lives after an intent |
 | Setup, updates & safety | [setup-updates-safety.md](setup-updates-safety.md) | partly | Make updates shippable: signing pubkey, endpoint, first release | Empty updater pubkey in the repo is by design (injected by release.yml from the TAURI_UPDATER_PUBKEY variable); updates can't verify until the owner adds the key | Safety card in About |
-
 | Lens Browser | [browser.md](browser.md) | see dossier | Local reader view | Agent approval is a UI boolean, not step-bound | Reader view with Ask as a side action |
 | Magic | [magic.md](magic.md) | see dossier | Notifications get a real "Lens ›" menu | B-07 blocks "Get transcript" verbs | Menu key / Shift+F10 opens any Lens item's menu with Lens › focused |
 | AI and agents | [ai-agents.md](ai-agents.md) | see dossier | Pin B-07 checksums | Approval not step-bound; undo lost on restart | Plan view with per-step allow/deny |
