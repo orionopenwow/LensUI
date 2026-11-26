@@ -94,7 +94,63 @@ fn show_dashboard(app: &AppHandle) -> Result<(), String> {
     let _ = win.show();
     let _ = win.set_focus();
     eprintln!("[Lens UI] dashboard: shown ({})", if fresh { "first open, window built" } else { "reopened" });
+    watch_focus(app.clone(), win);
     Ok(())
+}
+
+/// Bumped on every open, so an older focus watch stops when a newer one starts.
+static OPEN_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Closes the Dashboard when another window takes the foreground, the way other pop-outs close.
+/// Windows' own answer is used (the page's focus events are unreliable on WebView2). Only after
+/// the Dashboard has actually held the foreground since this open, so a Dashboard Windows never
+/// brought to the front (focus lock) isn't closed under the person; ignores the first 500 ms.
+fn watch_focus(app: AppHandle, win: tauri::WebviewWindow) {
+    use std::sync::atomic::Ordering;
+    use std::time::{Duration, Instant};
+    let seq = OPEN_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+    let Ok(ours) = win.hwnd().map(|h| h.0 as isize) else { return };
+    std::thread::spawn(move || {
+        let opened = Instant::now();
+        let mut held = false;
+        let mut away_since: Option<Instant> = None;
+        loop {
+            std::thread::sleep(Duration::from_millis(100));
+            if OPEN_SEQ.load(Ordering::SeqCst) != seq {
+                return; // a newer open owns the watch
+            }
+            let Some(w) = app.get_webview_window(LABEL) else { return };
+            if !w.is_visible().unwrap_or(false) {
+                return;
+            }
+            let front = foreground_hwnd();
+            if front == Some(ours) {
+                held = true;
+                away_since = None;
+                continue;
+            }
+            if !held || opened.elapsed() < Duration::from_millis(500) {
+                continue;
+            }
+            let since = *away_since.get_or_insert_with(Instant::now);
+            if since.elapsed() >= Duration::from_millis(300) {
+                let _ = w.hide();
+                eprintln!("[Lens UI] dashboard: hidden (another window took the focus)");
+                return;
+            }
+        }
+    });
+}
+
+#[cfg(windows)]
+fn foreground_hwnd() -> Option<isize> {
+    let h = unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
+    (!h.0.is_null()).then_some(h.0 as isize)
+}
+
+#[cfg(not(windows))]
+fn foreground_hwnd() -> Option<isize> {
+    None
 }
 
 /// Opens the Dashboard, or closes it if it's showing (so a second press of the button closes it).

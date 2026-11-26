@@ -616,13 +616,20 @@ const SCENARIOS = [
       await sleep(300);
       await domClick(dash.locator(".mdb-close").first());
       await waitVisible(false, "after ×");
-      // Focus moving to another window closes it.
+      // Another app taking the focus closes it (only checkable if Windows lets Notepad take the
+      // foreground on this runner, as in dock-search-dismiss).
       await invoke(dock, "open_dashboard");
       await waitVisible(true, "reopened again");
-      await sleep(400);
-      await invoke(dock, "open_surface", { label: "settings" });
-      await waitVisible(false, "after another window took the focus");
-      await invoke(dock, "hide_surface", { label: "settings" }).catch(() => {});
+      await sleep(800);
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" });
+      const fg = ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null; Start-Sleep -Milliseconds 300; Add-Type -Namespace W -Name F -MemberDefinition '[DllImport("user32.dll")] public static extern System.IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);'; $id = 0; [W.F]::GetWindowThreadProcessId([W.F]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      try {
+        if (/notepad/i.test(fg)) await waitVisible(false, "after Notepad took the focus");
+        else console.log(`note  magic-dashboard: Windows kept "${fg}" in front (foreground lock); focus step skipped`);
+      } finally {
+        try { execFileSync("taskkill", ["/IM", "notepad.exe", "/F"], { stdio: "ignore" }); } catch {}
+      }
+      await invoke(dock, "dashboard_hide", { reason: "test reset" }).catch(() => {});
 
       // Turning the flag off: hidden, and opening refuses again.
       await invoke(dock, "open_dashboard");
