@@ -66,13 +66,19 @@ describe("Magic flags", () => {
     expect(users.filter((u) => !allowed.has(u.replace(/\\/g, "/")))).toEqual([]);
     const lib = readFileSync(join(import.meta.dir, "../../src-tauri/src/lib.rs"), "utf8");
     expect(lib).not.toMatch(/magic_waves::\w+::\w+\s*,/); // no commands registered from the scaffold
-    // The Dashboard window: built only inside show_dashboard (behind open/toggle), after the flag check; nothing at
-    // start-up (setup, watcher, tray) creates or opens it.
+    // The Dashboard window: built only by show_dashboard (reached only from open_dashboard, after the
+    // flag check) or by on_flag_changed when the flag has just been turned on; nothing at start-up
+    // (setup, watcher, tray) creates or opens it.
     const dash = readFileSync(join(import.meta.dir, "../../src-tauri/src/commands/dashboard.rs"), "utf8");
-    const open = dash.slice(dash.indexOf("fn show_dashboard"));
-    expect(open.indexOf("if !enabled(&state)")).toBeGreaterThan(-1);
-    expect(open.indexOf("if !enabled(&state)")).toBeLessThan(open.indexOf("ensure_window(&app)"));
-    expect(dash.match(/ensure_window\(&app\)/g)?.length).toBe(1);
+    const open = dash.slice(dash.indexOf("pub(crate) fn open_dashboard"), dash.indexOf("fn show_dashboard"));
+    expect(open.indexOf("if !enabled(")).toBeGreaterThan(-1);
+    expect(open.indexOf("if !enabled(")).toBeLessThan(open.indexOf("show_dashboard("));
+    expect(dash.match(/show_dashboard\(/g)?.length).toBe(2); // the definition and open_dashboard's call
+    const calls = [...dash.matchAll(/ensure_window\((app|&a)\)/g)];
+    expect(calls.length).toBe(2);
+    const flagOn = dash.slice(dash.indexOf("pub(crate) fn on_flag_changed"));
+    expect(flagOn.indexOf("if now && !was")).toBeGreaterThan(-1);
+    expect(flagOn.indexOf("if now && !was")).toBeLessThan(flagOn.indexOf("ensure_window(&a)"));
     for (const f of ["app/setup.rs", "app/watcher.rs", "app/tray.rs", "app/integration.rs"]) {
       const t = readFileSync(join(import.meta.dir, "../../src-tauri/src", f), "utf8");
       expect(t).not.toMatch(/dashboard::(open_dashboard|toggle_dashboard|ensure_window)/);

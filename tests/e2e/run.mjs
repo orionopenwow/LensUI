@@ -539,9 +539,9 @@ const SCENARIOS = [
     async run(s) {
       const dock = surfaces(s).dock;
       const visible = () => invoke(dock, "is_surface_visible_cmd", { label: "dashboard" });
-      const waitVisible = async (want, what) => {
+      const waitVisible = async (want, what, ms = 4000) => {
         const t0 = Date.now();
-        while (Date.now() - t0 < 4000) {
+        while (Date.now() - t0 < ms) {
           if ((await visible()) === want) return;
           await sleep(100);
         }
@@ -574,7 +574,8 @@ const SCENARIOS = [
       await sleep(600);
       await cmd.waitForFunction(() => document.hasFocus() && !!document.documentElement.dataset.commandKeysReady, null, { timeout: 8000 }).catch(() => {});
       await cmd.locator("textarea").first().press("Enter");
-      let opened = await waitVisible(true, "after Command").then(() => true, () => false);
+      // The first open may still be building the window on a slow runner: allow 15 s.
+      let opened = await waitVisible(true, "after Command", 15000).then(() => true, () => false);
       if (!opened && Number(await cmd.evaluate(() => document.documentElement.dataset.commandEnterSeen || 0)) === 0) {
         console.log("WARN magic-dashboard: the first Enter never reached Command (B-12c); sending it once more");
         await cmd.locator("textarea").first().press("Enter");

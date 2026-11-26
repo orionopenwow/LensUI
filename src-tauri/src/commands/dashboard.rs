@@ -28,7 +28,15 @@ fn enabled(state: &AppState) -> bool {
     state.config.lock().map(|c| c.magic_waves.dashboard).unwrap_or(false)
 }
 
+/// One build at a time: the ahead-of-time build and a quick first open can otherwise race and
+/// try to create the same window twice.
+static BUILD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 fn ensure_window(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    if let Some(w) = app.get_webview_window(LABEL) {
+        return Ok(w);
+    }
+    let _one = BUILD.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(w) = app.get_webview_window(LABEL) {
         return Ok(w);
     }
@@ -67,21 +75,29 @@ pub(crate) fn dashboard_available(state: State<AppState>) -> bool {
 }
 
 /// Opens the Dashboard (the Top Bar button and Command call this). Refuses while the flag is off.
-/// Async so the window is built off the main thread (a sync command that builds a webview hangs on Windows).
+/// The window is built and shown on a thread of its own: building a webview on the IPC thread
+/// that is waiting for it can hang on Windows (the Magic window does the same).
 #[tauri::command]
-pub(crate) async fn open_dashboard(app: AppHandle) -> Result<(), String> {
-    show_dashboard(app)
-}
-
-fn show_dashboard(app: AppHandle) -> Result<(), String> {
-    let state = app.state::<AppState>();
-    if !enabled(&state) {
+pub(crate) fn open_dashboard(app: AppHandle) -> Result<(), String> {
+    if !enabled(&app.state::<AppState>()) {
         eprintln!("[Lens UI] dashboard: open refused (magicWaves.dashboard is off)");
         return Err("Turn on the Magic Dashboard first (Settings › About & Testing › Magic (preview)).".into());
     }
+    std::thread::spawn(move || {
+        if let Err(e) = show_dashboard(&app) {
+            eprintln!("[Lens UI] dashboard: open failed ({e})");
+        }
+    });
+    Ok(())
+}
+
+fn show_dashboard(app: &AppHandle) -> Result<(), String> {
     let fresh = app.get_webview_window(LABEL).is_none();
-    let win = ensure_window(&app)?;
-    place(&app, &win);
+    if fresh {
+        eprintln!("[Lens UI] dashboard: building the window");
+    }
+    let win = ensure_window(app)?;
+    place(app, &win);
     let _ = app.emit_to(LABEL, EVT_OPEN, ());
     let _ = win.show();
     let _ = win.set_focus();
@@ -90,8 +106,9 @@ fn show_dashboard(app: AppHandle) -> Result<(), String> {
 }
 
 /// Opens the Dashboard, or closes it if it's showing (so a second press of the button closes it).
+/// Returns whether it will be showing.
 #[tauri::command]
-pub(crate) async fn toggle_dashboard(app: AppHandle) -> Result<bool, String> {
+pub(crate) fn toggle_dashboard(app: AppHandle) -> Result<bool, String> {
     if let Some(w) = app.get_webview_window(LABEL) {
         if w.is_visible().unwrap_or(false) {
             let _ = w.hide();
@@ -99,7 +116,28 @@ pub(crate) async fn toggle_dashboard(app: AppHandle) -> Result<bool, String> {
             return Ok(false);
         }
     }
-    show_dashboard(app).map(|_| true)
+    open_dashboard(app).map(|_| true)
+}
+
+/// Called after settings are saved: turning the Dashboard on builds its (hidden) window ahead of
+/// time on a thread of its own, so the first open is quick; turning it off hides it.
+pub(crate) fn on_flag_changed(app: &AppHandle, was: bool, now: bool) {
+    if now && !was {
+        let a = app.clone();
+        std::thread::spawn(move || {
+            if a.get_webview_window(LABEL).is_none() {
+                eprintln!("[Lens UI] dashboard: building the window ahead of the first open");
+                if let Err(e) = ensure_window(&a) {
+                    eprintln!("[Lens UI] dashboard: build failed ({e})");
+                }
+            }
+        });
+    } else if was && !now {
+        if let Some(w) = app.get_webview_window(LABEL) {
+            let _ = w.hide();
+            eprintln!("[Lens UI] dashboard: hidden (the Magic Dashboard was turned off)");
+        }
+    }
 }
 
 /// Hides the Dashboard (×, Esc, focus moving to another app, the flag turned off). Safe to call
