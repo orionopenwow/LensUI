@@ -3,6 +3,8 @@
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works** (built, tested), **partly** (built with gaps), **broken** (known wrong), **not built**. Evidence is a path, a test name or a BUGS.md id. Reviewed against `main` on 2026-11-26.
 >
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (Dock & Bar › Advanced, incl. the pop-out auto-close switch); per-monitor bars + Follow the pointer fixed in planning and unit-tested (B-53, not yet confirmed on a real PC). Left: quick wins 3–5, the "in 10 seconds" tour.
+>
+> **Robustness wave (branch `wave/robustness`, 2026-11-26):** quick win 3 done (E2E `dock-left`, `dock-right`: every style, hit zone, Settings and Quick Settings beside the pill inside the work area, auto-hide); quick win 4 done (B-18 Dock share, `src/failsafe/calls.ts`); multi-monitor: B-62 (Dock rescaled by a DPI change on the way to another monitor, never put back — likely the "Dock doesn't appear on other monitors" report), B-63 (side-Dock pop-outs on the wrong monitor / over the pill), B-64 (Settings over the Dock on small high-DPI screens), B-65 (attention hook after an Explorer restart). Needs a real-PC check with two monitors at different scaling. Left: quick win 5, the tour.
 
 ## Rundown
 
@@ -21,7 +23,7 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 |---|---|---|---|
 | Seven styles | Floating (default), Slim, Taskbar, Studio, Minimal, Split, Islands | works | `src/dock/styles.ts:25-74` |
 | Style picker | Live mini-previews per card; clicked card lights at once; one restyle 220 ms after clicks stop | works | `src/dock/useStylePick.ts`, `DockStylePreview.tsx` (#95) |
-| Screen edge | bottom / top / left / right (`dock.position`) | works (bottom/top E2E); left/right partly | E2E `dock-bottom`, `dock-top`; no left/right E2E |
+| Screen edge | bottom / top / left / right (`dock.position`) | works | E2E `dock-bottom`, `dock-top`, `dock-left`, `dock-right` (every style) |
 | App alignment | centre / start (`dock.alignment`) | works | `DockTab.tsx:110` |
 | System area | Shown / compact / hidden (`dock.systemArea`) | works | `DockTab.tsx:120`, `DockSystemArea.tsx` |
 | Icon size | 32–54 px; per-style defaults (`dockStyleIconSize`); a size of its own per Dock style (`dock.iconSizes` is keyed by style, not by app) | works | `styles.ts:123`; Advanced › "Icon size for <style>" (`src/dock/advanced.ts`, `dockAdvanced.test.ts`) |
@@ -91,7 +93,8 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 |---|---|---|---|
 | Target monitor | primary / a specific one / all (`perMonitorBars`) | partly — "all" is extra Top Bars only (one Dock); extra bars don't have their own auto-hide or click-through | `MonitorPickerCard.tsx`, `integration.rs` |
 | Follow the pointer | Push into another monitor's edge to move the bars; with per-monitor bars the extra Top Bar in the way swaps to the monitor the main bar left | works on CI by unit tests; real-PC unconfirmed | #101; `win_monitors::extra_topbar_plan` (B-53) |
-| Re-place on display change, resolution, DPI, sleep | | works | #101 |
+| Re-place on display change, resolution, DPI, sleep | Checked placement, placed again after a DPI rescale; idle Dock self-heal every ~2 s | works on CI; real-PC unconfirmed | #101, B-62 |
+| Explorer restart | Lens stays up, Dock in place, attention hook registered again | works on CI | B-65, E2E `explorer-restart` |
 
 ### 9. Dock studio
 | Feature | Sub | Status | Evidence |
@@ -101,8 +104,8 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 ## Quick wins (≤1 day each, ranked)
 1. **Done (PR #113).** ~~Expose the hidden Dock settings~~ in Dock & Bar › Advanced: magnification mode + range, launch animation, minimise feedback, labels, scroll to cycle windows, drop a file on an app, per-app icon size, separators. They already work in the Dock and in the control catalogue; people can't find them.
 2. **Done (PR #113), toggle only.** "Close pop-outs when the pointer leaves" for `func.autoClosePopouts`; the delay is still fixed in `watcher.rs` (needs a new setting).
-3. **Left/right edge E2E**: copy `dock-bottom` for left and right; those edges have no Windows coverage.
-4. **Swallowed errors**: replace the 34 `.catch(() => {})` in `DockSurface.tsx` with the failsafe reporter for launch/focus/window-action failures so a failed click says why (B-18).
+3. **Done (robustness wave).** ~~Left/right edge E2E~~: `dock-left`, `dock-right` in `tests/e2e/autohide.mjs`, every style.
+4. **Done (robustness wave).** ~~Swallowed errors~~ in `DockSurface.tsx` and `src/dock` go through `src/failsafe/calls.ts` (retried and logged; B-18 Dock share). A visible "couldn't" notice on the Dock is still open (the Dock has no toast host).
 5. **Split DockSurface.tsx** context menu into its own component file (it's the largest surface; easier reviews, fewer conflicts).
 
 ## Polish assessment
@@ -116,7 +119,7 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| B-18 | Low | 34 swallowed errors in the Dock | `DockSurface.tsx` |
+| B-18 | Low | ~~34 swallowed errors in the Dock~~ done (robustness wave) | `DockSurface.tsx`, `failsafeCalls.test.ts` |
 | B-30 | Low | Desktop tab and edge shelf still resize their native windows | `DesktopFolderSurface.tsx`, `EdgeShelfSurface.tsx` |
 | B-31b | Low | A renderer that dies during a start-up window build waits for the build | `app/setup.rs` |
 | B-53 (fixed) | Med | Per-monitor bars + Follow the pointer: there is one Dock, so nothing fights over the reveal zone; the real fault was the extra Top Bars staying where they were built (two bars on one monitor, none on another). Fixed by `extra_topbar_plan`; needs a two-display real-PC check | `integration.rs`, `win_monitors.rs` tests |
@@ -157,8 +160,8 @@ DO FIRST
  1 DONE #113  Dock & Bar › Advanced: magnification mode/range, launchAnimation, minimizeFeedback,
    showLabels, scrollCyclesWindows, fileDropOpen, per-STYLE iconSizes, separatorsAfter
  2 DONE #113  Toggle for func.autoClosePopouts (delay still fixed)
- 3 E2E dock-left / dock-right (copy dock-bottom)
- 4 Replace 34 swallowed catches in DockSurface with failsafe report (B-18)
+ 3 DONE wave/robustness  E2E dock-left / dock-right, every style
+ 4 DONE wave/robustness  Swallowed catches in DockSurface → src/failsafe/calls.ts (B-18)
 POLISH
  - cross-fade the pill on style change; name + keyboard for preview thumbnails
  - "Smart" auto-hide one-line explanation; badge positions on Islands

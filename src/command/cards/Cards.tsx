@@ -122,7 +122,7 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
         );
       }
       return (
-        <article className={`ct ct-tool risk-${p.risk} is-${item.state}`}>
+        <article className={`ct ct-tool risk-${p.risk} is-${item.state}`} aria-live="polite">
           <header className="ct-head">
             {p.risk === "blocked" ? <ShieldCheck size={13} strokeWidth={2.2} /> : <Zap size={13} strokeWidth={2.2} />}
             <span className="ct-title">{p.summary || p.tool}</span>
@@ -153,7 +153,7 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
     }
     case "action":
       return (
-        <article className={`ct ct-action${item.ok ? "" : " is-bad"}`}>
+        <article className={`ct ct-action${item.ok ? "" : " is-bad"}`} role="status" aria-live="polite">
           <p className="ct-line">
             {item.ok ? <Check size={13} strokeWidth={2.4} /> : <TriangleAlert size={13} strokeWidth={2.2} />}
             <span>{item.title}</span>

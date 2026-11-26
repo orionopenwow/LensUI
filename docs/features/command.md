@@ -60,7 +60,7 @@ Command is Lens's "say what you want" surface: type or speak, Lens turns it into
 ## Polish assessment
 - **Motion:** mini → full expand within budget; preview card appears without transition — a 120 ms rise would read better.
 - **Copy:** previews say "Will set dock.position = left" in places — use plain words ("Move the Dock to the left").
-- **A11y:** palette list has roles; preview card lacks `aria-live` so screen readers miss it.
+- **A11y:** palette list has roles; the preview card and action results are live regions (robustness wave).
 - **Code health:** `CommandSurface.tsx` and `intent.rs` both >1,100 lines; split parser / preview / apply.
 
 ## Bug assessment

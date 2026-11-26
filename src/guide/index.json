@@ -10629,7 +10629,7 @@
    "id": "doc.failsafe.11",
    "kind": "doc",
    "title": "Failsafe engineering: 10. Monitors and pop-outs",
-   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default). - A move onto a monitor with other scaling is checked and done again when Windows resized the window on the way (B-62), and an idle Dock goes back to its place about every 2 s, also while auto-hidden",
    "path": [
     "Docs",
     "Failsafe engineering",
@@ -10639,6 +10639,23 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "10. Monitors and pop-outs"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.12",
+   "kind": "doc",
+   "title": "Failsafe engineering: Stuck states: what closes each pop-out",
+   "text": "Way out Dock menus, hover card, search Live previews Quick Settings, Widgets, Search, Launcher, Overview Settings on the Dock Magic window, Dashboard --- --- --- --- --- --- Focus to another app, Alt+Tab, Win key (Start takes focus) watcher: other app in front → closed at once ( dock guard ) close 260 ms after the pointer leaves the card page blur → hide (retried once) 1.8 s away and unfocused (with \"Close pop-outs when the pointer leaves\") focus change → hide Click outside watcher click check as above page blur ; watcher for Search as above focus change Display sleep / resume, monitor unplugged re-placed with the bars; menus go stale after 1.2 s (no pointer) owner hidden or pointer unknown → closed blur when focus moves pointer unknown → closes after 1.8 s focus change Lock / unlock (Win+L) no foreground and no pointer → stale after 1.2 s pointer unknown → closed blur closes after 1.8 s",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Stuck states: what closes each pop-out"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Stuck states: what closes each pop-out"
    },
    "source": "docs/FAILSAFE.md"
   },

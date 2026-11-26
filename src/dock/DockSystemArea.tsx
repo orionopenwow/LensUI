@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { logFail } from "../failsafe/calls";
 import { Bell, ChevronUp, Volume2, Wifi } from "lucide-react";
 import { TrayStrip } from "../components/TrayStrip";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
@@ -7,7 +8,7 @@ import { BatteryIcon } from "../components/BatteryModule";
 import { usePolled, type BatteryStatus } from "../components/SystemModuleShared";
 import "./DockSystemArea.css";
 
-const openQs = (tab: string) => invoke("open_quicksettings_tab_cmd", { tab, section: tab }).catch(() => {});
+const openQs = (tab: string) => invoke("open_quicksettings_tab_cmd", { tab, section: tab }).catch(logFail("Dock", "open Quick Settings"));
 
 function useClock() {
   const [now, setNow] = useState(() => new Date());
@@ -54,7 +55,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
               type="button"
               className="dock-sys-btn dock-sys-icon"
               aria-label="Show system tray for a few seconds"
-              onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(() => {})}
+              onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(logFail("Dock", "show the system tray"))}
             >
               <ChevronUp size={iconPx} strokeWidth={2.4} />
             </button>

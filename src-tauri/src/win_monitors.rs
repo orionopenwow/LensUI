@@ -683,6 +683,77 @@ mod shell_keys_tests {
         assert!(r.y >= 34 && r.y + r.h as i32 <= 1080);
     }
 
+    /// Monitors left of and above the main one have negative coordinates; the pointer on them
+    /// must still find them, and an unplugged target falls back to the main monitor.
+    #[test]
+    fn negative_coordinate_monitors_are_found_and_unplugging_falls_back() {
+        // Main 1920×1080; a 1440p screen to its left, raised by 360 px; a screen above the main
+        // one; one to the right. Windows never overlaps monitors.
+        let mut ms = vec![
+            mon(0, 0, 1920, 1080, true),
+            mon(-2560, -360, 2560, 1440, false),
+            mon(0, -1080, 1920, 1080, false),
+            mon(1920, 0, 1920, 1080, false),
+        ];
+        ms[2].id = "\\\\.\\DISPLAY9".into();
+        assert_eq!(pick_monitor(&ms, "cursor", Some((-1, -1))), Some(1), "just left of and above the main corner");
+        assert_eq!(pick_monitor(&ms, "cursor", Some((-2560, -360))), Some(1), "its own top-left corner");
+        assert_eq!(pick_monitor(&ms, "cursor", Some((0, -1))), Some(2), "right above the main one");
+        assert_eq!(pick_monitor(&ms, "cursor", Some((100, -1080))), Some(2));
+        assert_eq!(pick_monitor(&ms, "cursor", Some((-2561, 0))), Some(0), "off every screen: main");
+        assert_eq!(pick_monitor(&ms, "cursor", Some((-10, -361))), Some(0), "the gap above the left screen is no screen");
+        assert_eq!(pick_monitor(&ms, "cursor", Some((1919, 1079))), Some(0));
+        assert_eq!(pick_monitor(&ms, "cursor", Some((1920, 1079))), Some(3), "right edge belongs to the next one");
+        assert_eq!(pick_monitor(&ms, &ms[2].id.to_lowercase(), None), Some(2));
+        ms.remove(2);
+        assert_eq!(pick_monitor(&ms, "\\\\.\\DISPLAY9", None), Some(0), "unplugged: main monitor");
+        assert_eq!(pick_monitor(&[], "cursor", Some((0, 0))), None);
+        assert_eq!(monitor_index_at(&ms, -2560, -360), Some(1));
+    }
+
+    /// Sorting puts the main monitor first, then left to right, whatever order Windows reported.
+    #[test]
+    fn monitors_are_listed_main_first_then_left_to_right() {
+        let mut ms = vec![mon(1920, 0, 1920, 1080, false), mon(-2560, -360, 2560, 1440, false), mon(0, 0, 1920, 1080, true)];
+        finalize_monitor_list(&mut ms);
+        assert_eq!(ms.iter().map(|m| m.x).collect::<Vec<_>>(), vec![0, -2560, 1920]);
+        assert!(ms[0].name.ends_with("(main)"));
+        assert_eq!(ms[1].name, "Display 2 · 2560×1440");
+    }
+
+    /// The Dock window on any edge, on a monitor left of or above the main one, at 100–200 %:
+    /// inside its monitor, on the right edge, and as deep as the scaled depth.
+    #[test]
+    fn surfaces_on_negative_coordinate_monitors_at_mixed_scaling() {
+        let layout = BarLayout { hide_native_taskbar: false, grounded_margin_bottom: 6, top_bar_height: 34, top_bar_floating: true };
+        for (x, y, w, h, scale) in [(-2560, -360, 2560u32, 1440u32, 1.5), (-1920, -1080, 1920, 1080, 1.25), (3840, -400, 3840, 2160, 2.0), (0, 0, 1366, 768, 1.0)] {
+            let mut m = mon(x, y, w, h, false);
+            m.scale = scale;
+            m.work_height = h - (48.0 * scale) as u32;
+            let label = format!("{w}x{h}@{scale} at ({x}, {y})");
+            let bar = topbar_rect(&m, &layout);
+            assert_eq!((bar.x, bar.y, bar.w), (x, y, w), "{label}");
+            assert_eq!(bar.h, (34.0 * scale) as u32 + (10.0 * scale) as u32, "{label}");
+            let bottom = bottom_edge(&m, &layout);
+            assert_eq!(bottom, y + h as i32 - (48.0 * scale) as i32, "{label}: above the Windows taskbar");
+            let dock = dock_rect(&m, &layout);
+            assert_eq!(dock.y + dock.h as i32, bottom - (6.0 * scale) as i32, "{label}");
+            assert_eq!((dock.x, dock.w), (x, w), "{label}");
+            for r in [quicksettings_rect(&m, &layout), notifications_rect(&m, &layout), widgets_rect(&m, &layout), desktop_folder_rect(&m, true)] {
+                assert!(r.x >= x && r.x + r.w as i32 <= x + w as i32, "{label}: {r:?} across");
+                assert!(r.y >= y && r.y + r.h as i32 <= y + h as i32, "{label}: {r:?} down");
+            }
+            for edge in ["left", "right", "top", "bottom"] {
+                for (thickness, align) in [(64, FlyoutAlign::Center), (96, FlyoutAlign::End)] {
+                    let strip = DockStrip { edge, thickness: (thickness as f64 * scale) as i32, margin: (6.0 * scale) as i32, top_inset: y + bar.h as i32, bottom_edge: bottom };
+                    let r = flyout_beside_dock(&m, &strip, (760.0 * scale) as u32, (748.0 * scale) as u32, align);
+                    assert!(r.x >= x && r.x + r.w as i32 <= x + w as i32, "{label} {edge}: {r:?} across");
+                    assert!(r.y >= y + bar.h as i32 && r.y + r.h as i32 <= bottom, "{label} {edge}: {r:?} down");
+                }
+            }
+        }
+    }
+
     #[test]
     fn per_monitor_bar_labels() {
         let ms = vec![

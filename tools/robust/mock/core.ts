@@ -29,8 +29,17 @@ const NEVER_FAIL = new Set(["get_config", "surface_ready_cmd"]);
 const W = globalThis as any;
 for (let i = 0; i < 16; i++) rand();
 W.__lensChaos = { rate, failed: [] as string[], timedOut: [] as string[] };
+// window.__lensFailOnce = { hide_surface: 1 } makes the next call(s) of that command reject (the
+// hyper suite's stuck-state rows check that a refused hide is tried again). Logged like any call.
+W.__lensFailOnce = {} as Record<string, number>;
 
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
+  if ((W.__lensFailOnce[cmd] ?? 0) > 0) {
+    W.__lensFailOnce[cmd]--;
+    real.calls.push(cmd);
+    real.callLog.push({ cmd, args: args ?? {} });
+    throw new Error(`${cmd} was refused (test)`);
+  }
   if (rate > 0 && !NEVER_FAIL.has(cmd)) {
     const r = rand();
     if (r < rate / 2) {

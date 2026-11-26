@@ -73,11 +73,11 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 2. **Done (PR #113).** ~~Sentence-case the Top Bar section~~ ("Auto-Hide Mode", "On Overlap", "Always Auto-Hide", "Bar Style" → "Auto-hide", "When a window overlaps", "Always hide"), per IDENTITY.md copy rules.
 3. **Done (PR #113).** Media controls row added; `height`, `floating` and the reveal/hide delays already had rows.
 4. **Halo off switch** ("Show a see-through ring when clicks pass through") for people who find it distracting.
-5. **Name the media pill buttons consistently** ("Previous track", not "Previous Track").
+5. **Done (robustness wave).** ~~Name the media pill buttons consistently~~: "Previous track", "Next track", and the desktop, Wi-Fi and volume buttons in sentence case.
 
 ## Polish assessment
 - **Motion:** reveal/hide are slides; the halo uses a registered custom property and mask (no layout). The search bubble's open animation still changes width — use FLIP with scale.
-- **Copy:** Title Case in the Top Bar settings section and several aria-labels ("Volume and Audio Mixer", "Wi-Fi and Network"); IDENTITY.md says sentence case.
+- **Copy:** the Top Bar's own aria-labels are sentence case (robustness wave); the settings section was done in #113.
 - **Visual parity:** the Top Bar has goldens for the default height; floating and per-monitor variants don't.
 - **A11y:** every icon button is named; the halo has no reduced-transparency alternative (users with "transparency effects off" in Windows still get it).
 - **Perf:** hit-rect reporting runs on layout change only; good. Media polling every few seconds while playing — fine.
