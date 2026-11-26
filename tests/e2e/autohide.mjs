@@ -298,6 +298,8 @@ try {
       results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.message || e) });
       console.log(`FAIL ${sc.id}: ${sc.title}\n      ${String(e.message || e).replace(/\n/g, "\n      ")}`);
       await surfaces(s).topbar?.screenshot({ path: join(outDir, `autohide-${sc.id}-topbar.png`) }).catch(() => {});
+      const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|palette|surface/i.test(l)).slice(-14);
+      if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     } finally {
       await d("notepad close").catch(() => {});
       await invoke(surfaces(s).dock, "save_config_cmd", { newConfig: original }).catch(() => {});
