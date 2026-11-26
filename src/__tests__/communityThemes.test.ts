@@ -85,7 +85,9 @@ describe("Claude Code community packs", () => {
     const next = packs.applyThemePack(sampleConfig(), "cc-blueprint");
     expect(next.theme.preset).toBe("cc-blueprint");
     expect(next.theme.surfaceHex).toBe("#0C2444");
-    expect(packs.allPacks().filter((p) => p.collection === CLAUDE_COLLECTION).length).toBe(CLAUDE_PACKS.length);
+    // Listed: every community pack except the ones merged into a twin (themes are colour-only).
+    const merged = CLAUDE_PACKS.filter((p) => packs.isMergedPack(p.id)).length;
+    expect(packs.allPacks().filter((p) => p.collection === CLAUDE_COLLECTION).length).toBe(CLAUDE_PACKS.length - merged);
   });
 
   test("the six built-in recommended packs are untouched", () => {

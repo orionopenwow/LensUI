@@ -86,7 +86,6 @@ pub struct DockConfig {
     pub hover_scale: f32,
     pub hover_lift: u32,
     pub auto_hide: String, // "never" | "smart" | "always"
-    pub show_top_bar: bool,
     pub pinned_apps: Vec<PinnedApp>,
     pub pinned_folders: Vec<PinnedFolder>,
     /// Screen edge: "bottom" (default) | "top" | "left" | "right"
@@ -299,15 +298,16 @@ pub struct StyledFolderRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct TopBarConfig {
+    /// The one switch for the Top Bar (config v4). `dock.showTopBar` used to be a second one;
+    /// `win_backup::fold_legacy_top_bar_flag` folds it in here on load.
     pub enabled: bool,
     pub auto_hide: String, // "overlap" | "never" | "always"
     pub reveal_delay_ms: u64,
     pub hide_delay_ms: u64,
     pub height: u32,
     pub floating: bool,
-    #[serde(default)]
     pub show_media_controls: bool,
 }
 
@@ -431,7 +431,6 @@ impl Default for LensConfig {
                 hover_scale: 1.24,
                 hover_lift: 8,
                 auto_hide: "never".into(),
-                show_top_bar: true,
                 pinned_apps: vec![
                     PinnedApp {
                         id: "explorer".into(),

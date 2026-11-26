@@ -43,7 +43,7 @@ import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 export const TopBarSurface: React.FC = () => {
   const { config } = useLensState();
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
-  const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
+  const systemInDock = !!config && resolveSystemArea(config.dock, config.topBar) === "dock";
   const [now, setNow] = useState(() => new Date());
   const approvals = usePendingApprovals();
   // The global hotkey for the approval window, once Lens has registered one (B-14).

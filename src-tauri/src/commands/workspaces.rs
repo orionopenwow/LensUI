@@ -15,7 +15,7 @@ pub(crate) fn tile_windows_cmd(app: AppHandle, state: State<AppState>, layout: S
         let size = mon.size();
         let work = mon.work_area();
         let scale = mon.scale_factor();
-        let bar_h = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+        let bar_h = if cfg.top_bar.enabled {
             ((cfg.top_bar.height as f64) * scale) as i32
                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
         } else {
@@ -47,7 +47,7 @@ pub(crate) fn tiling_work_area(app: &AppHandle, cfg: &LensConfig) -> Option<(i32
     let size = mon.size();
     let work = mon.work_area();
     let scale = mon.scale_factor();
-    let bar_h = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+    let bar_h = if cfg.top_bar.enabled {
         ((cfg.top_bar.height as f64) * scale) as i32
             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
     } else {

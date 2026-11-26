@@ -1,6 +1,8 @@
 # Themes, looks and backdrops — feature dossier
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
+>
+> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done: the Dock is out of the theme distance, the two pairs that only differed by Dock are merged (CRT → Green Phosphor, Claude Light Brand → Claude Light), audit regenerated, B-38 closed, B-39 fixed. Backdrop Lab has a "Lens Cloud" preset. Left: full-pack contrast audit, the Lens Cloud featured look, wallpaper quick wins.
 
 ## Rundown
 
@@ -18,7 +20,7 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 | Feature | Sub / minute | Status | Evidence |
 |---|---|---|---|
 | Featured twelve | Obsidian, Alabaster Daylight, Living Sky, Catppuccin Mocha, Hyprland Neon, Cyberpunk Amber, Paper Minimal, Lens Expressive, Lens Dot Matrix, Everforest, Solarized Matte, Gruvbox Warm | works | `featured.ts` |
-| More themes | ~36 packs grouped by family under "More themes" | works | `packs.ts`, THEMES_AUDIT "By family" |
+| More themes | 75 packs grouped by family under "More themes"; two packs that only differed by Dock are merged into their twin (ids still resolve) | works | `packs.ts` (`MERGED_PACKS`), THEMES_AUDIT "Merged", "By family" |
 | Contrast | Text ≥4.5:1, accent ≥3:1 on surface and cards for all twelve | works | THEMES_AUDIT Contrast table |
 | Colours only | Never Dock style/size/motion/position; font & shape only with "Also use the look's font and shape" | works | #95, `themes.test.ts` |
 | Theme cards | Preview the default floating Dock; no "X dock" badge | works | #95 |
@@ -36,7 +38,7 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
 | Fixed times or sun times | lat/long; day pack + night pack | works | `schedule.ts:82-139` |
-| Dark / Light / Day & night control | Appearance + Quick settings | works; B-39 on undo | THEMES_AUDIT, hyper |
+| Dark / Light / Day & night control | Appearance + Quick settings; going back restores exactly | works | `choiceUndo.ts`, hyper |
 
 ### 4. Import, export, community
 | Feature | Sub | Status | Evidence |
@@ -78,8 +80,8 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 | Studio v2 Theme workspace | Draft, undo/redo, templates | not built (scaffold, flag off) | `src/studio/v2/*` (#103) |
 
 ## Quick wins (≤1 day each, ranked)
-1. **Regenerate THEMES_AUDIT and prune near-duplicates that now differ only by Dock.** Since themes are colour-only, pairs listed as differing in "dock" (Green Phosphor/CRT, Claude Light/Claude Light Brand) are visually identical in practice — merge or hide one of each.
-2. **B-39 undo**: snapshot `folderStyle.theme`, pinned-folder colours and `themeSchedule` before the first theme change in a session; restore on going back.
+1. **Done (PR #113).** ~~Regenerate THEMES_AUDIT and prune near-duplicates that now differ only by Dock.~~ Since themes are colour-only, pairs listed as differing in "dock" (Green Phosphor/CRT, Claude Light/Claude Light Brand) are visually identical in practice — merge or hide one of each.
+2. **Done (PR #113).** ~~B-39 undo~~: snapshot `folderStyle.theme`, pinned-folder colours and `themeSchedule` before the first theme change in a session; restore on going back.
 3. **Folder picker dialog** for the Wallpaper library (Tauri dialog) — currently paste-a-path only.
 4. **Palette chip click copies hex** (deferred list) — tiny, delightful.
 5. **"Next wallpaper" in the Dock context menu and Top Bar** (deferred list).
@@ -95,10 +97,10 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| B-39 | Low | Undo doesn't restore folder colours / schedule | hyper `known.json` |
-| B-38 | — | Stale row: says 8 looks change the Dock style; fixed by #95 (`ThemeTab.tsx:537` says "Themes change colours only") — close it | `docs/brain/BUGS.md:49` |
+| B-39 (fixed) | Low | Undo didn't restore folder colours / schedule | `themeChoiceUndo.test.ts` |
+| B-38 (closed) | — | Was a stale row; moved to Fixed in BUGS.md, hyper `known.json` rows removed | `docs/brain/BUGS.md` |
 | B-19 | Low | ~421 hard-coded hex colours in TSX ignore themes and contrast modes | patterns.md |
-| suspected | Low | `featured.ts:70` still copies `dockStyle` into each featured pack object; nothing applies it now, but a future caller could | `src/themes/featured.ts:70` |
+| fixed | Low | `lookPack` no longer copies the look's Dock style into the pack | `themes.test.ts` ("a featured look's pack carries no Dock style") |
 | suspected | Low | Non-featured light packs may fail accent-on-card 3:1 (not audited) | THEMES_AUDIT covers only the twelve |
 
 ## One idea to push to main
@@ -129,14 +131,14 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 FEATURE Themes / looks / backdrops — docs/features/themes.md
 STATE   works; colours-only (#95), one-frame switch (#88), accent opt-in to Windows (#102)
 DO FIRST
- 1 Close stale B-38; fix B-39 (undo restores folderStyle, pinned-folder colours, themeSchedule)
- 2 Regenerate THEMES_AUDIT; merge/hide near-duplicates that only differed by Dock
+ 1 DONE #113  Close stale B-38; fix B-39 (undo restores folderStyle, pinned-folder colours, themeSchedule)
+ 2 DONE #113  Regenerate THEMES_AUDIT; merge near-duplicates that only differed by Dock (MERGED_PACKS)
  3 Extend contrast audit to every pack; fail CI on regressions
  4 Wallpaper: folder dialog, palette chip copies hex, Next in Dock/Top Bar menus
 POLISH
  - optional 150 ms snapshot cross-fade on theme switch (rig must stay 30/30)
  - consistent look descriptions; golden for the font/shape opt-in
-IDEA   "Lens Cloud" featured look + Backdrop preset
+IDEA   "Lens Cloud" featured look (LEFT) + Backdrop preset (DONE #113: Backdrop Lab › Lens › Lens Cloud)
 TESTS  bun test src; tools/robust/theme-switch.mjs; perf theme-switch; E2E theme-switch, remove-all
 OWNER CHECK  6-step list in this file
 ```

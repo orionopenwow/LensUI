@@ -176,13 +176,13 @@ patch("M7", "SAFE", "tile_windows_cmd tiles on the target monitor.", [
         let size = mon.size();
         let work = mon.work_area();
         let scale = mon.scale_factor();
-        let bar_h = if cfg.top_bar.enabled && cfg.dock.show_top_bar {''',
+        let bar_h = if cfg.top_bar.enabled {''',
      '''    if let Ok(Some(mon)) = lens_monitor(&app, &cfg.func.target_monitor) {
         let pos = mon.position();
         let size = mon.size();
         let work = mon.work_area();
         let scale = mon.scale_factor();
-        let bar_h = if cfg.top_bar.enabled && cfg.dock.show_top_bar {'''),
+        let bar_h = if cfg.top_bar.enabled {'''),
 ], requires="M0")
 
 patch("M8", "SAFE", "Watcher thread (auto-hide, click-through, desktop tab) tracks the target monitor.", [

@@ -80,6 +80,7 @@ import {
   resolveDockAlignment,
   resolveSystemArea,
 } from "../dock/styles";
+import { topBarEnabled } from "../topbar/enabled";
 import { DockSystemArea } from "../dock/DockSystemArea";
 
 interface RecentFileItem {
@@ -1098,7 +1099,7 @@ export const DockSurface: React.FC = () => {
   const dockStyle = normalizeDockStyle(dockExtras.style);
   const isBar = dockStyleInfo(dockStyle).fullWidth;
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
-  const systemInDock = resolveSystemArea(config.dock) === "dock";
+  const systemInDock = resolveSystemArea(config.dock, config.topBar) === "dock";
   const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio" || dockStyle === "islands";
   // Magic button (wave M4): with the Taskbar style, the start button opens Lens Magic Start.
   const startOpensMagic = dockStyle === "taskbar" && !!(config as { magicWaves?: { startButton?: boolean } } | null)?.magicWaves?.startButton;
@@ -1575,7 +1576,7 @@ export const DockSurface: React.FC = () => {
           dockSearchOpen && searchIconSize ? searchIconSize : effectiveIconSize
         }px`,
         ["--dock-full-icon-size" as string]: `${effectiveIconSize}px`,
-        ...(isBar && isVertical && config.dock.showTopBar && config.topBar?.enabled !== false
+        ...(isBar && isVertical && topBarEnabled(config)
           ? { ["--dock-topbar-offset" as string]: `${config.topBar?.height ?? 34}px` }
           : {}),
       }}

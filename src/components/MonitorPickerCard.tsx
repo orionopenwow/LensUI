@@ -99,8 +99,11 @@ export const MonitorPickerCard: React.FC<Props> = ({ config, onUpdateConfig, sho
       {showPerMonitorBars && (
         <div className="cc-row">
           <div>
-            <div className="cc-label">Top Bar on Every Monitor</div>
-            <div className="cc-desc">Show a Top Bar on each display. Applies after restarting Lens.</div>
+            <div className="cc-label">Top Bar on every monitor</div>
+            <div className="cc-desc">
+              Show a Top Bar on each display. Applies after restarting Lens.
+              {target.toLowerCase() === "cursor" ? " With Follow the pointer, the main bar moves and the others swap places so every display keeps one." : ""}
+            </div>
           </div>
           <button
             type="button"

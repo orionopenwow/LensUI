@@ -53,7 +53,11 @@ describe("deep links", () => {
     expect(resolveTarget("LENS://SETTINGS/Display")).toEqual({ page: "display" });
     expect(resolveTarget("theme")).toEqual({ page: "appearance" });
     expect(resolveTarget("monitor")).toEqual({ page: "tasks" });
-    expect(resolveTarget("messages")).toEqual({ page: "notifications" });
+    expect(resolveTarget("messages")).toEqual({ page: "focus" });
+    // The merged Notifications page: old ids and links land on Focus & Notifications.
+    expect(resolveTarget("notifications")).toEqual({ page: "focus" });
+    expect(resolveTarget("notifications#feeds")).toEqual({ page: "focus", section: "feeds" });
+    expect(resolveTarget("lens://settings/notifications#messages")).toEqual({ page: "focus", section: "messages" });
     expect(resolveTarget("agents")).toEqual({ page: "ai", section: "agents" });
     expect(resolveTarget("folders")).toEqual({ page: "desktop", section: "folders" });
     expect(resolveTarget("topbar")).toEqual({ page: "dock", section: "topbar" });

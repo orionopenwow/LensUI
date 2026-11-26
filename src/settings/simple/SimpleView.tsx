@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig, WindowsThemeInfo } from "../../types/lens";
 import { applyThemePack, packById } from "../../themes/packs";
 import { applyFeaturedLook, featuredPacks } from "../../themes/featured";
+import { chooseTheme } from "../../themes/choiceUndo";
 import { SwitcherCard } from "../../wallpapers/SwitcherCard";
 import { matchLookPointer } from "../../themes/featuredPointer";
 import { readSchedule } from "../../themes/schedule";
@@ -72,17 +73,21 @@ const Appearance: React.FC<SimpleProps> = ({ config, winTheme, onApplyConfig, up
     const isLight = (id: string) => packById(id)?.scheme === "light";
     const dayPack = isLight(current) ? current : isLight(schedule.dayPack) ? schedule.dayPack : "alabaster-daylight";
     const nightPack = !isLight(current) && packById(current) ? current : !isLight(schedule.nightPack) ? schedule.nightPack : "obsidian";
-    let out: LensConfig = { ...config, themeSchedule: { ...schedule, dayPack, nightPack, enabled: next === "auto" } };
-    if (next === "light" && !isLight(current)) out = applyThemePack(out, dayPack);
-    if (next === "dark" && isLight(current)) out = applyThemePack(out, nightPack);
-    onApplyConfig(out);
+    onApplyConfig(
+      chooseTheme(config, (c) => {
+        let out: LensConfig = { ...c, themeSchedule: { ...schedule, dayPack, nightPack, enabled: next === "auto" } };
+        if (next === "light" && !isLight(current)) out = applyThemePack(out, dayPack);
+        if (next === "dark" && isLight(current)) out = applyThemePack(out, nightPack);
+        return out;
+      }),
+    );
   };
 
   // One function for the life of the page, so the memoised theme cards skip unrelated re-renders.
   const applyRef = useRef<(id: string) => void>(() => {});
   applyRef.current = (id: string) => {
     setUndo(config);
-    onApplyConfig(applyFeaturedLook(config, id));
+    onApplyConfig(chooseTheme(config, (c) => applyFeaturedLook(c, id)));
     void matchLookPointer(id);
   };
   const applyLook = useCallback((id: string) => applyRef.current(id), []);

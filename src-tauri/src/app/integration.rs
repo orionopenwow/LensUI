@@ -47,20 +47,62 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     }
 }
 
-/// One Top Bar per monitor (`func.perMonitorBars`, off by default; applies after restart).
-fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
-    let monitors = win_monitors::list_monitors();
-    let target = win_monitors::pick_monitor(&monitors, &cfg.func.target_monitor, None).unwrap_or(0);
-    let layout = win_monitors::BarLayout {
+/// The monitor (index in `list_monitors()`) the main Top Bar was on when the extra bars were
+/// built; `usize::MAX` until they are. `place_extra_topbars` plans around it.
+static EXTRA_TOPBAR_HOME: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(usize::MAX);
+
+fn bar_layout(cfg: &LensConfig) -> win_monitors::BarLayout {
+    win_monitors::BarLayout {
         hide_native_taskbar: cfg.func.hide_native_taskbar,
         grounded_margin_bottom: cfg.dock.grounded_margin_bottom,
         top_bar_height: cfg.top_bar.height,
         top_bar_floating: cfg.top_bar.floating,
+    }
+}
+
+/// Keeps one Top Bar on every monitor when the main bars move ("Follow the pointer" together
+/// with "Top Bar on every monitor"), a display changes, or the Top Bar is switched on or off.
+/// `main_pos` is the top-left corner of the monitor the main bars are on now. Without this the
+/// extra bars stayed where they were built: two bars on the monitor the main bar moved to and
+/// none on the one it left (`win_monitors::extra_topbar_plan`).
+pub(crate) fn place_extra_topbars(app: &AppHandle, cfg: &LensConfig, main_pos: (i32, i32)) {
+    let home = EXTRA_TOPBAR_HOME.load(std::sync::atomic::Ordering::Relaxed);
+    if home == usize::MAX {
+        return;
+    }
+    let monitors = win_monitors::list_monitors();
+    let Some(main) = win_monitors::monitor_index_at(&monitors, main_pos.0, main_pos.1) else {
+        return;
     };
+    let layout = bar_layout(cfg);
+    for (label, index) in win_monitors::extra_topbar_plan(monitors.len(), home, main) {
+        let (Some(win), Some(m)) = (app.get_webview_window(&label), monitors.get(index)) else {
+            continue;
+        };
+        let r = win_monitors::topbar_rect(m, &layout);
+        crate::app::place::place_window(&win, r.x, r.y, r.w, r.h);
+        // The one Top Bar switch (topBar.enabled) covers the extra bars too.
+        if cfg.top_bar.enabled {
+            let _ = win.show();
+        } else {
+            let _ = win.hide();
+        }
+    }
+}
+
+/// One Top Bar per monitor (`func.perMonitorBars`, off by default; applies after restart).
+fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
+    let monitors = win_monitors::list_monitors();
+    // "Follow the pointer" starts on the monitor the pointer is on, like the main bars do.
+    let target = win_monitors::pick_monitor(&monitors, &cfg.func.target_monitor, win_monitors::cursor_pos()).unwrap_or(0);
+    EXTRA_TOPBAR_HOME.store(target, std::sync::atomic::Ordering::Relaxed);
+    let layout = bar_layout(cfg);
+    let enabled = cfg.top_bar.enabled;
     for label in win_monitors::extra_topbar_labels(&monitors, target) {
         let i: usize = label.trim_start_matches("topbar-").parse().unwrap_or(0);
         let Some(m) = monitors.get(i).cloned() else { continue };
         let app = handle.clone();
+        let cfg = cfg.clone();
         std::thread::spawn(move || {
             let Some(mut wc) = app.config().app.windows.iter().find(|w| w.label == "topbar").cloned() else {
                 return;
@@ -70,6 +112,16 @@ fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
                 let r = win_monitors::topbar_rect(&m, &layout);
                 let _ = win.set_position(PhysicalPosition::new(r.x, r.y));
                 let _ = win.set_size(PhysicalSize::new(r.w, r.h));
+                if !enabled {
+                    let _ = win.hide();
+                }
+                // The main bars may already be on another monitor than the one planned around
+                // (the pointer moved while the windows were being built): settle the layout now
+                // instead of waiting for the next display change.
+                if let Ok(Some(main)) = crate::app::watcher::lens_monitor(&app, &cfg.func.target_monitor) {
+                    let p = main.position();
+                    place_extra_topbars(&app, &cfg, (p.x, p.y));
+                }
             }
         });
     }

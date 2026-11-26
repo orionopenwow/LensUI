@@ -28,7 +28,9 @@ export interface ThemePack {
   folderTheme: string;
   frameStyle: string;
   controlStyle: string;
-  /** Dock layout this pack is designed around (see src/dock/styles.ts). Only applied when the user opts in. */
+  /** Dock layout the pack was first drawn with. A theme changes colours only (it never restyles
+   *  the Dock), so this is not applied and not part of how different two packs are; the website's
+   *  demo still reads it. */
   dockStyle?: string;
   /** One of the six packs shown first in Control Center and the Setup Wizard. */
   recommended?: boolean;
@@ -210,9 +212,25 @@ export function listCustomPacks(): ThemePack[] {
   return [...customPacks.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** Built-in packs followed by registered custom packs. */
+/**
+ * Packs folded into a twin (merged id → the pack that stays listed).
+ *
+ * These pairs only looked different because each came with its own Dock style. Since a theme
+ * changes colours only, they are the same theme on screen (same surface, accents a shade apart,
+ * same chrome; docs/THEMES_AUDIT.md "Merged"). The merged pack is no longer listed anywhere, but
+ * its id still resolves (`packById`), so settings, schedules and `.lenstheme` files that name it
+ * keep their exact colours, and its name still finds the twin (`packByAlias`).
+ */
+export const MERGED_PACKS: Readonly<Record<string, string>> = {
+  "cc-retro-crt": "cc-retro-green",
+  "cc-claude-light-brand": "cc-claude-light",
+};
+
+export const isMergedPack = (id: string): boolean => Object.prototype.hasOwnProperty.call(MERGED_PACKS, id);
+
+/** Every pack people can pick: built-in packs (without the merged ones) followed by registered custom packs. */
 export function allPacks(): ThemePack[] {
-  return [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS, ...listCustomPacks()];
+  return [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS, ...listCustomPacks()].filter((p) => !isMergedPack(p.id));
 }
 
 /** The plain definition written into a `.lenstheme` file for a custom pack. */
@@ -239,7 +257,9 @@ export function packById(id: string | undefined | null): ThemePack | undefined {
 
 export function packByAlias(phrase: string): ThemePack | undefined {
   const p = phrase.trim().toLowerCase();
-  return [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS].find((pack) => pack.id === p || pack.aliases.includes(p));
+  const hit = [...THEME_PACKS, ...LIVING_PACKS, ...COMMUNITY_PACKS].find((pack) => pack.id === p || pack.aliases.includes(p));
+  // Asking for a merged pack by name gets the twin that is still listed.
+  return hit && isMergedPack(hit.id) ? packById(MERGED_PACKS[hit.id]) ?? hit : hit;
 }
 
 function clamp255(n: number) {

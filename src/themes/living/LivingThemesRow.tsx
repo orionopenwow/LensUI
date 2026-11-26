@@ -8,6 +8,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { LensConfig } from "../../types/lens";
 import type { WallpaperState } from "../../surfaces/wallpaperTypes";
 import { applyThemePack } from "../packs";
+import { chooseTheme } from "../choiceUndo";
 import { readSchedule } from "../schedule";
 import { PlaygroundView } from "../../playground/PlaygroundView";
 import { setSkyLocation } from "../../playground/scenes/skyclock";
@@ -95,7 +96,7 @@ export const LivingThemesRow: React.FC<Props> = ({ config, onApplyPack, visible 
   }, [playing]);
 
   const choose = async (id: string) => {
-    onApplyPack(applyThemePack(config, id));
+    onApplyPack(chooseTheme(config, (c) => applyThemePack(c, id)));
     if (!alsoWallpaper) return;
     try {
       const st = await invoke<WallpaperState>("get_wallpaper_state_cmd");

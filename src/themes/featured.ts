@@ -1,7 +1,7 @@
 // The featured looks: twelve themes that are unmistakably different at a glance, each a whole
 // look and not just a palette. A look adds, on top of its theme pack (colours, radius, icons,
-// folders, window frame and buttons, backdrop): the font, how solid the glass is, the Dock style
-// and how it moves, and a matching pointer family.
+// folders, window frame and buttons, backdrop): the font, how solid the glass is and a matching
+// pointer family. It never changes the Dock (themes are colours and materials only).
 //
 // Every other pack stays available under "More themes", filed under the featured look it most
 // resembles (src/themes/distance.ts; the audit is docs/THEMES_AUDIT.md).
@@ -25,6 +25,8 @@ export interface FeaturedLook {
   glass: number;
   /** Backdrop blur in px (0 = none). */
   blur: number;
+  /** The Dock the look was drawn with. Never applied (a theme changes colours only) and not part
+   *  of how different two looks are; kept as the suggestion setup may offer. */
   dock: {
     style: string;
     magnification: "off" | "subtle" | "classic";
@@ -63,11 +65,12 @@ const LOOK_BY_ID = new Map(FEATURED_LOOKS.map((l) => [l.id, l]));
 export const featuredLook = (id: string | null | undefined): FeaturedLook | undefined => (id ? LOOK_BY_ID.get(id) : undefined);
 export const isFeatured = (id: string | null | undefined): boolean => !!id && LOOK_BY_ID.has(id);
 
-/** A featured look's pack with the look's Dock style, for previews and distance checks. */
+/** A featured look's pack with the look's one-line character, for previews and distance checks.
+ *  The look's Dock style is not copied in: nothing may apply a Dock from a theme. */
 export function lookPack(look: FeaturedLook): ThemePack {
   const pack = packById(look.id);
   if (!pack) throw new Error(`featured look without a pack: ${look.id}`);
-  return { ...pack, dockStyle: look.dock.style, description: look.character };
+  return { ...pack, description: look.character };
 }
 
 /** The featured packs in display order. */
