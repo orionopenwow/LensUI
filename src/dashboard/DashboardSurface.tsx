@@ -25,6 +25,10 @@ export interface DashboardProps {
   onCardOpen?: (card: Card) => void;
   /** The empty lane's button ("Open Feeds", "Open the Shelf"…); disabled when not given. */
   onEmptyAction?: (lane: LaneId) => void;
+  /** "Ask about this" on a card; the button is hidden when not given. */
+  onCardAsk?: (card: Card) => void;
+  /** Lanes that draw themselves (Widgets, X); return null to show cards as usual. */
+  renderLane?: (lane: LaneId) => React.ReactNode | null;
   onClose?: () => void;
 }
 
@@ -39,6 +43,8 @@ export const DashboardSurface = ({
   onLayoutChange,
   onCardOpen,
   onEmptyAction,
+  onCardAsk,
+  renderLane,
   onClose,
 }: DashboardProps) => {
   const [state, dispatch] = useReducer(reduce, undefined, () => ({ ...initialState({ layout, learn: flags.learn }), opens: flags.learn ? opens ?? {} : {} }));
@@ -117,11 +123,20 @@ export const DashboardSurface = ({
               if (c) onCardOpen?.(c);
             }}
             onEmptyAction={onEmptyAction ? () => onEmptyAction(l.id) : undefined}
+            onAsk={
+              onCardAsk
+                ? (id) => {
+                    const c = byId.get(id);
+                    if (c) onCardAsk(c);
+                  }
+                : undefined
+            }
+            body={renderLane?.(l.id) ?? undefined}
           />
         ))}
       </div>
       <footer className="mdb-foot">
-        Everything here comes from Lens on this PC and stays here.
+        {flags.widgets ? "Everything here comes from Lens on this PC. Widgets fetch only from the sites you approved (see Sources)." : "Everything here comes from Lens on this PC and stays here."}
         {flags.learn ? (
           <>
             {" "}Learned ordering is on; moved cards say why.{" "}

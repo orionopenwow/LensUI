@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 
 pub const LAYOUTS: &[&str] = &["glance", "focus", "board"];
-pub const LANES: &[&str] = &["inbox", "feeds", "today", "shelf", "widgets", "nowplaying"];
+pub const LANES: &[&str] = &["inbox", "feeds", "today", "shelf", "widgets", "x", "nowplaying"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]

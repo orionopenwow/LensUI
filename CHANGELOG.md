@@ -20,6 +20,14 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Lens doesn't answer within 300 ms Windows Start opens instead. With Shelf to Notes on, "Make a
   note" in the Shelf saves a note to Lens Notes, exports it as Markdown, text or PDF, or sends it to
   a Matrix room after you approve the exact text. See docs/MAGIC.md and docs/SHELF.md.
+- **Dashboard widgets and X (M2, off by default):** with Magic Dashboard and Widgets on, the
+  Dashboard's Widgets lane takes widgets from a small gallery (weather, a news feed, a GitHub
+  release, crypto prices, world clocks, this PC). Each one shows the sites it will fetch from and
+  asks before it's added; Sources lists every approved site with Remove and a switch that stops all
+  widget fetching. Lens does the fetching (https only, never this PC or the local network). The X
+  lane shows X's own timeline embed with your OK, plus an Open X button. Every card has "Ask about
+  this", which puts only that card's words into Ask. Empty Inbox, Feeds and Today lanes open the
+  place that fills them. See docs/DASHBOARD.md.
 - **Magic Dashboard (M1, off by default):** with Magic Dashboard on, "dashboard" in Command or the
   Top Bar button opens a slim panel with Inbox, Feeds, Today, Shelf and Now playing lanes filled
   from Lens's own data, in Glance, Focus or Board. Nothing is fetched from the network. Learned
