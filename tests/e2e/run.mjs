@@ -38,7 +38,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A running Lens with Playwright attached: { proc, browser, logs }. */
 async function startLens(timeoutMs = 60000) {
   const logs = [];
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false });
+  // LENS_E2E_ACCEPT_INJECTED: debug builds let the key hook see SendInput keys (magic-start's Win tap).
+  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_ACCEPT_INJECTED: "1" } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   const t0 = Date.now();

@@ -416,6 +416,14 @@ mod rt {
     /// Marks keys Lens sends itself (also ignored because they are flagged as injected).
     const LENS_EXTRA_INFO: usize = 0x4C45_4E53;
 
+    /// Debug builds only: `LENS_E2E_ACCEPT_INJECTED=1` lets the end-to-end tests press the Win key
+    /// with SendInput. Release builds always ignore injected keys (other tools' macros, remote
+    /// desktop), and Lens's own keys (LENS_EXTRA_INFO) are ignored either way.
+    fn accept_injected() -> bool {
+        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ON.get_or_init(|| cfg!(debug_assertions) && std::env::var("LENS_E2E_ACCEPT_INJECTED").as_deref() == Ok("1"))
+    }
+
     type Callback = Box<dyn Fn(u64, HookEvent) + Send + Sync + 'static>;
     type PingCallback = Box<dyn Fn(u64) + Send + Sync + 'static>;
 
@@ -486,7 +494,7 @@ mod rt {
     /// service ignores the answer then). Runs the pure [`KeyMachine`], optionally sends one mask
     /// key, pushes an event onto a channel and returns.
     pub fn on_key(ev: &KeyEvent) -> bool {
-        let injected = ev.injected() || ev.extra == LENS_EXTRA_INFO;
+        let injected = (ev.injected() && !accept_injected()) || ev.extra == LENS_EXTRA_INFO;
         // try_lock: never block on the input thread.
         let decision = match machine().try_lock() {
             Ok(mut m) => m.on_key(ev.vk, ev.down(), injected, ev.paused),
