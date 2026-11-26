@@ -659,6 +659,11 @@ mod rt {
         }
     }
 
+    /// Opens Windows' own Start with Ctrl+Esc (marked as Lens's own input, so the hook passes it).
+    pub fn send_ctrl_esc() {
+        send_keys(&[(VK_CONTROL, false), (VK_ESCAPE, false), (VK_ESCAPE, true), (VK_CONTROL, true)]);
+    }
+
     pub fn extend_deadline(ms: u64) {
         if let Ok(mut w) = watchdog().lock() {
             w.extend(now_ms() + ms);
@@ -726,6 +731,14 @@ pub fn ack(seq: u64) {
 }
 #[cfg(not(windows))]
 pub fn ack(_seq: u64) {}
+
+/// Opens Windows Start (Ctrl+Esc). Magic Start's "Windows Start" button and power menu use it.
+#[cfg(windows)]
+pub fn send_ctrl_esc() {
+    rt::send_ctrl_esc()
+}
+#[cfg(not(windows))]
+pub fn send_ctrl_esc() {}
 
 /// Give the UI longer for the current event (e.g. the Launcher window is being created).
 #[cfg(windows)]

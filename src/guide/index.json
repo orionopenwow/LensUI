@@ -7599,6 +7599,21 @@
    "source": "docs/MAGIC.md"
   },
   {
+   "id": "hotkey.ctrl-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Esc",
+   "text": "- Lock and Windows Start: power stays with Windows; \"Windows Start\" sends Ctrl+Esc.",
+   "path": [
+    "Keyboard",
+    "Ctrl+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
    "id": "hotkey.shift-1",
    "kind": "hotkey",
    "title": "Shift+1",
@@ -11282,8 +11297,25 @@
   {
    "id": "doc.magic.9",
    "kind": "doc",
+   "title": "Magic right-click window: Magic Start (Magic waves M4, off by default)",
+   "text": "With Magic button on (Settings › About & Testing › Magic (preview), confirmed once), a clean tap of the Windows key opens Lens Magic Start instead of Windows Start: - Search box over installed apps (name start, then word start, then anywhere; accents ignored). - Pinned — the Dock's own pins. Magic — Ask Magic, Snip, Dashboard (when on), Shelf → Note (when on), Open the Shelf. Recent — recent files and the newest Shelf items. - Lock and Windows Start : power stays with Windows; \"Windows Start\" sends Ctrl+Esc. - Esc clears the search, then closes. It also closes when another app takes the focus. Rules that never change: - Ctrl+Esc always opens Windows Start. Win+L, Win+D, Win+Tab and every other Win+key combination are never touched; the hook never swallows the Win key itself. - Watchdog: the page must acknowledge each open within 300 ms (2.5 s the first time, while the window is built) or",
+   "path": [
+    "Docs",
+    "Magic right-click window",
+    "Magic Start (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md",
+    "heading": "Magic Start (Magic waves M4, off by default)"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
+   "id": "doc.magic.10",
+   "kind": "doc",
    "title": "Magic right-click window: Needs real hardware",
-   "text": "- Hook behaviour under load and with high-poll-rate mice. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated targets (UIPI refusals).",
+   "text": "- Hook behaviour under load and with high-poll-rate mice. - Magic Start: Win tap on a real keyboard (incl. Win held then released with no other key), the first-build watchdog extension, Ctrl+Esc and Win+L while Magic Start is open, multi-monitor and high-DPI placement, and the Taskbar-style start button. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated tar",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -13341,6 +13373,23 @@
   {
    "id": "doc.shelf.3",
    "kind": "doc",
+   "title": "Shelf and clipboard history — contract: Shelf → Notes (Magic waves M4, off by default)",
+   "text": "With Shelf to Notes on, the Shelf drawer has Make a note . It builds one note from the ticked items (or the whole shelf when none are ticked) and shows it before anything happens: - Save to Notes — a text item tagged lens-note in the \"Notes\" shelf, like any note made in Lens Notes. - Export .md / .txt / PDF — written by save note export into Downloads (or %APPDATA%\\LensUI\\exports when there is no Downloads folder). Names are cleaned, nothing is overwritten, PDFs must be real PDFs ( src/shelf/pdf.ts , A4, Helvetica, Windows-1252 text). - Send to a contact — Matrix rooms you can reply in only. The exact text is shown on an approval card; nothing is sent until you hold Send , and \"Don't send\" withdraws the request ( messages send request → feeds approve → send, once). The optional AI summary is not built yet. Tests: src/ tests /shelfNotes.test.ts .",
+   "path": [
+    "Docs",
+    "Shelf and clipboard history — contract",
+    "Shelf → Notes (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SHELF.md",
+    "heading": "Shelf → Notes (Magic waves M4, off by default)"
+   },
+   "source": "docs/SHELF.md"
+  },
+  {
+   "id": "doc.shelf.4",
+   "kind": "doc",
    "title": "Shelf and clipboard history — contract: Clipboard history v2",
    "text": "Command What it does --- --- clip status() Enabled, paused-until, skip-next, counts and settings. It also wires change events on first use. clip set settings(settings) Saves %APPDATA%\\LensUI\\clip\\settings.json . Turning history on starts the listener; turning it off stops recording immediately. clip list(query?, kind?) ClipView[] : pinned first. The preview is capped at 240 characters, and the full text never goes to the list. clip get text(id) The full text, for previews and context chips. clip pin , clip rename , clip delete Single-clip edits. clip clear(minutes?, includePinned?) Clears recent clips. Pinned clips stay unless includePinned . clip wipe() Deletes everything, in memory and the sealed file. clip pause(minutes) , clip ignore next() Pause recording ( 0 resumes) or skip one copy. clip copy(id, mode?) Puts the clip back on the clipboard. clip paste(id, mode?) Hides Command, the",
    "path": [
@@ -13356,7 +13405,7 @@
    "source": "docs/SHELF.md"
   },
   {
-   "id": "doc.shelf.4",
+   "id": "doc.shelf.5",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract: Retiring the old in-memory history",
    "text": "win clipboard.rs (the text-only, in-memory history behind the Clipboard pane) still runs on its own func.clipboardHistory switch. Both listeners can run side by side. Once Command ships: 1. Point ClipboardPane.tsx at clip list / clip copy . 2. Map func.clipboardHistory onto ClipSettings.enabled once (a migration in config.rs ). 3. Remove start clipboard history from setup.",

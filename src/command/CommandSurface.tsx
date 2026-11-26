@@ -108,6 +108,7 @@ interface ForegroundContext { process: string; appName: string; title: string; c
 export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   const lens = useLensState();
   const dashboardOn = !!(lens.config as { magicWaves?: { dashboard?: boolean } } | null)?.magicWaves?.dashboard;
+  const notesOn = !!(lens.config as { magicWaves?: { shelfNotes?: boolean } } | null)?.magicWaves?.shelfNotes;
   const settings = useCommandSettings();
   const [mode, setMode] = useState<Mode>(initial?.mode ?? "ask");
   const [text, setText] = useState(initial?.text ?? "");
@@ -1167,6 +1168,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               inputRef.current?.focus();
             }}
             onNotice={flash}
+            notesOn={notesOn}
           />
         ) : null}
       </div>
