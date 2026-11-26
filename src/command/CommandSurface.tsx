@@ -33,6 +33,7 @@ import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, ty
 import { answersInText, runDo } from "./doMode";
 import { isNewOpen, pendingOpen } from "./openSeq";
 import { whereItLives } from "./teach";
+import { DO_EXAMPLES } from "./examples";
 import { openSettingsAt } from "../update/useLensUpdate";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
@@ -579,6 +580,13 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     | Extract<ThreadItem, { kind: "answer" }>
     | undefined;
 
+  // An example only types the phrase and hands the keyboard back: Enter still runs it, so the
+  // preview and the approval rules apply exactly as if it had been typed.
+  const pickExample = (phrase: string) => {
+    setText(phrase);
+    inputRef.current?.focus();
+  };
+
   const handlers: CardHandlers = {
     onShowSetting: (target) => {
       void hide();
@@ -1064,6 +1072,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
                   ) : (
                     <div className="cmd-empty"><p>{text.trim() ? "Not sure what that means yet — Enter asks the AI to work it out." : "Type a command. Lens handles common ones instantly, offline."}</p></div>
                   )}
+                  {!intent && !text.trim() && !thread.length ? (
+                    <div className="cmd-starters" aria-label="Examples">
+                      {DO_EXAMPLES.map((ex) => (
+                        <button key={ex.phrase} type="button" className="cmd-starter" data-do-example onClick={() => pickExample(ex.phrase)}>
+                          <span className="cmd-pop-desc">{ex.phrase}</span>
+                          <ArrowUp size={12} className="cmd-starter-go" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {thread.length ? (
                     <div className="cmd-thread">
                       {thread.filter((t) => t.kind === "tool" || t.kind === "action" || (t.kind === "answer" && !!t.text)).slice(-4).map((it, i, arr) => (

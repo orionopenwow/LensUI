@@ -240,7 +240,7 @@ fn publish_if(app: &AppHandle, st: UpdateStatus) -> UpdateStatus {
         publish(app, st.clone());
         st
     } else {
-        current()
+        current(app)
     }
 }
 

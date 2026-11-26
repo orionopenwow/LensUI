@@ -2,7 +2,7 @@
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
 >
-> **Fable pass, 2026-11-26 (PR #115): status works.** Done: Snip's default is Ctrl+Alt+X with a one-time move for files still on Ctrl+Shift+S; Save As and other common app keys are on the conflict list by name; the shortcuts sheet shows Snip's real shortcut; "Teach me" (an applied intent says where its setting lives, with a link); the Do-mode preview is announced to screen readers. Left: B-12c by hand on a real PC, the 10 s Undo toast, example chips, "Did you mean…", plain-language previews, splitting the two large files.
+> **Fable pass, 2026-11-26 (PR #115): status works.** Done: Snip's default is Ctrl+Alt+X with a one-time move for files still on Ctrl+Shift+S; Save As and other common app keys are on the conflict list by name; the shortcuts sheet shows Snip's real shortcut; "Teach me" (an applied intent says where its setting lives, with a link); the Do-mode preview is announced to screen readers. Example chips under an empty Do field are in too. Left: B-12c by hand on a real PC, the 10 s Undo toast, "Did you mean…", plain-language previews, splitting the two large files.
 
 ## Rundown
 
@@ -53,7 +53,7 @@ Command is Lens's "say what you want" surface: type or speak, Lens turns it into
 ## Quick wins (≤1 day each, ranked)
 1. ~~Move Snip off Ctrl+Shift+S and add Save As to the conflict list.~~ Done (PR #115).
 2. **Show "Undo" for 10 s as a toast after any approved intent**, not only inside the Command card.
-3. **Example chips under an empty input** ("dock on the left", "dark at sunset", "next wallpaper") drawn from ACTIONS.
+3. ~~Example chips under an empty input.~~ Done (PR #115): four examples in Do mode, each a phrase the engine's own tests pin (`src/command/examples.ts`); picking one types it, Enter runs it.
 4. **"Did you mean…" for near-miss commands** using the existing search scorer instead of "I didn't understand".
 5. **Settle B-12c by hand:** on a real PC, cold start → Ctrl+Alt+Space → type + Enter ten times; if no key is ever lost, close it as a DevTools-only quirk.
 

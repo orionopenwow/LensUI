@@ -51,6 +51,18 @@ export function ChipRow({ chips }: { chips: ContextChip[] }) {
   );
 }
 
+/** "Teach me": where the setting an applied action changed lives, with a link to it. */
+const TeachLine = ({ where, onShow }: { where: { target: string; path: string }; onShow?: (target: string) => void }) => (
+  <p className="ct-where" data-teach>
+    <span>You can change this in {where.path}</span>
+    {onShow ? (
+      <button type="button" className="ct-where-link" onClick={() => onShow(where.target)}>
+        Show me
+      </button>
+    ) : null}
+  </p>
+);
+
 export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandlers; latest: boolean }) {
   switch (item.kind) {
     case "user":
@@ -147,16 +159,7 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
             <span>{item.title}</span>
             {item.detail ? <span className="ct-sub">{item.detail}</span> : null}
           </p>
-          {item.ok && item.where ? (
-            <p className="ct-where" data-teach>
-              <span>You can change this in {item.where.path}</span>
-              {h.onShowSetting ? (
-                <button type="button" className="ct-where-link" onClick={() => h.onShowSetting?.(item.where!.target)}>
-                  Show me
-                </button>
-              ) : null}
-            </p>
-          ) : null}
+          {item.ok && item.where ? <TeachLine where={item.where} onShow={h.onShowSetting} /> : null}
         </article>
       );
     case "consent":
