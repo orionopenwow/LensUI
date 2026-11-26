@@ -4,6 +4,7 @@ import { AppWindow, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { RunningWindow } from "../types/lens";
 import { counterText, initialIndex, jumps, reconcileIndex, slideOffset, stepIndex, wheelStep, wrapIndex } from "./carousel";
 import { useWindowPeek } from "./usePeek";
+import { logFail, quiet } from "../failsafe/calls";
 import "./DockWindowCarousel.css";
 
 interface Props {
@@ -68,7 +69,7 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
   });
 
   // The picture leaves before the slide starts (the effect below brings it back at rest).
-  const hidePicture = () => invoke("dock_preview_hide_cmd").catch(() => {});
+  const hidePicture = () => invoke("dock_preview_hide_cmd").catch(quiet);
   const go = (delta: number) => {
     if (n < 2 || !delta) return;
     endPeek();
@@ -134,7 +135,8 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
             return next;
           });
         })
-        .catch(() => {
+        .catch((e) => {
+          logFail("Dock", "show the window preview")(e);
           if (!cancelled) setFailed((prev) => new Set(prev).add(currentHwnd));
         });
     };
@@ -148,7 +150,7 @@ export const DockWindowCarousel: React.FC<Props> = ({ title, windows, iconUrl, o
       cancelAnimationFrame(raf);
       ro?.disconnect();
       window.removeEventListener("resize", send);
-      invoke("dock_preview_hide_cmd").catch(() => {});
+      invoke("dock_preview_hide_cmd").catch(quiet);
     };
   }, [currentHwnd, active, n]);
 

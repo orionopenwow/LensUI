@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { logFail } from "../failsafe/calls";
+import { logFail, quiet } from "../failsafe/calls";
 import { Bell, ChevronUp, Volume2, Wifi } from "lucide-react";
 import { TrayStrip } from "../components/TrayStrip";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
@@ -45,7 +45,8 @@ function useClock24(enabled: boolean): boolean | null {
       .then((t) => {
         if (alive && typeof t?.clock24 === "boolean") setV(t.clock24);
       })
-      .catch(() => {});
+      // Unknown stays null (the locale decides); the next mount asks again.
+      .catch(quiet);
     return () => {
       alive = false;
     };

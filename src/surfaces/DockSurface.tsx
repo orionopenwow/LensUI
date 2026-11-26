@@ -2151,8 +2151,8 @@ export const DockSurface: React.FC = () => {
               iconUrl={shownCard.iconUrl}
               onFocus={(hwnd) => {
                 setHoverCard(null);
-                invoke("set_dock_menu_open", { open: false }).catch(() => {});
-                invoke("focus_window_cmd", { hwnd });
+                void setDockMenuOpen(false);
+                invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
               }}
               onClose={(hwnd) => {
                 invoke("window_action_cmd", { hwnd, action: "close" });
