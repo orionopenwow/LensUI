@@ -279,7 +279,11 @@ fn start_helpers() {
 }
 
 unsafe extern "system" fn rect_proc(h: HWND, msg: u32, w: WPARAM, l: LPARAM) -> LRESULT {
-    DefWindowProcW(h, msg, w, l)
+    crate::failsafe::guard::ffi_guard_else(
+        "magic_mouse.rect_proc",
+        || DefWindowProcW(h, msg, w, l),
+        || DefWindowProcW(h, msg, w, l),
+    )
 }
 
 unsafe fn make_window(class: &str, colour: u32, alpha: u8) -> Option<HWND> {

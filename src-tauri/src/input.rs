@@ -363,7 +363,7 @@ mod rt {
         })
     }
 
-    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 5] {
+    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 6] {
         MOUSE_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (MOUSE_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,

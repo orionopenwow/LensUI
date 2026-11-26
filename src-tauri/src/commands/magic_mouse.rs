@@ -166,10 +166,10 @@ fn install_handler(app: &AppHandle) {
             }
             Action::Grab(r) => {
                 let rect = crate::snip::geom::Rect::new(r.x, r.y, r.w, r.h);
-                match crate::commands::snip::capture_into_studio(&h, rect) {
+                let _ = match crate::commands::snip::capture_into_studio(&h, rect) {
                     Ok(()) => crate::tester::log("info", "magic-mouse", "grab opened in the studio"),
                     Err(e) => crate::tester::log("warn", "magic-mouse", &format!("grab failed: {e}")),
-                }
+                };
             }
         });
     }
