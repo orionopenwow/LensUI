@@ -534,6 +534,89 @@ const SCENARIOS = [
     },
   },
   {
+    id: "magic-dashboard",
+    title: "Magic Dashboard: off by default, opens from Command when on, shows its lanes, closes every way",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const visible = () => invoke(dock, "is_surface_visible_cmd", { label: "dashboard" });
+      const waitVisible = async (want, what) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < 4000) {
+          if ((await visible()) === want) return;
+          await sleep(100);
+        }
+        throw new Error(`${what}: expected the Dashboard to be ${want ? "showing" : "hidden"}`);
+      };
+      // Off by default: nothing offered, opening refuses, no window.
+      if (await invoke(dock, "dashboard_available")) throw new Error("the Dashboard is available with its flag off");
+      const refused = await invoke(dock, "open_dashboard").then(() => false, () => true);
+      if (!refused) throw new Error("open_dashboard opened with the flag off");
+      if (surfaces(s).dashboard) throw new Error("a Dashboard window exists with the flag off");
+
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: true };
+        c.command = { ...(c.command || {}), enabled: true };
+      });
+      await sleep(800);
+
+      // Open it from Command by typing "dashboard".
+      await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dashboard" } });
+      const cmd = await waitForSurface(s, "command");
+      await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dashboard", null, { timeout: 8000 });
+      // /dashboard is offered once Command has asked Rust whether the flag is on.
+      await sleep(600);
+      await cmd.waitForFunction(() => document.hasFocus() && !!document.documentElement.dataset.commandKeysReady, null, { timeout: 8000 }).catch(() => {});
+      await cmd.locator("textarea").first().press("Enter");
+      let opened = await waitVisible(true, "after Command").then(() => true, () => false);
+      if (!opened && Number(await cmd.evaluate(() => document.documentElement.dataset.commandEnterSeen || 0)) === 0) {
+        console.log("WARN magic-dashboard: the first Enter never reached Command (B-12c); sending it once more");
+        await cmd.locator("textarea").first().press("Enter");
+        opened = await waitVisible(true, "after Command (second Enter)").then(() => true, () => false);
+      }
+      if (!opened) throw new Error(`"dashboard" in Command did not open the Dashboard; Command shows: ${(await cmd.evaluate(() => document.getElementById("root").innerText)).slice(0, 300)}`);
+
+      const dash = await waitForSurface(s, "dashboard");
+      const take = watchErrors(dash);
+      await dash.waitForSelector(".mdb-lane", { timeout: 8000 });
+      const lanes = await dash.evaluate(() => [...document.querySelectorAll(".mdb-lane")].map((l) => l.getAttribute("data-lane")));
+      for (const want of ["today", "inbox", "shelf", "nowplaying"]) if (!lanes.includes(want)) throw new Error(`Glance is missing the ${want} lane (has ${lanes.join(", ")})`);
+      await shot(dash, "magic-dashboard");
+
+      // Esc closes it.
+      await dash.keyboard.press("Escape");
+      await waitVisible(false, "after Esc");
+      // The Top Bar button toggles it: open, then a second press closes.
+      await invoke(dock, "toggle_dashboard");
+      await waitVisible(true, "after the button");
+      await invoke(dock, "toggle_dashboard");
+      await waitVisible(false, "after a second press of the button");
+      // × closes it.
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "reopened");
+      await sleep(300);
+      await domClick(dash.locator(".mdb-close").first());
+      await waitVisible(false, "after ×");
+      // Focus moving to another window closes it.
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "reopened again");
+      await sleep(400);
+      await invoke(dock, "open_surface", { label: "settings" });
+      await waitVisible(false, "after another window took the focus");
+      await invoke(dock, "hide_surface", { label: "settings" }).catch(() => {});
+
+      // Turning the flag off: hidden, and opening refuses again.
+      await invoke(dock, "open_dashboard");
+      await waitVisible(true, "before turning it off");
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), dashboard: false };
+      });
+      await waitVisible(false, "after turning the flag off");
+      if (!(await invoke(dock, "open_dashboard").then(() => false, () => true))) throw new Error("open_dashboard opened after the flag was turned off");
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "quit-clean",
     title: "quitting leaves no Lens process behind",
     async run(s) {

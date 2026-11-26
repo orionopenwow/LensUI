@@ -9849,7 +9849,7 @@
    "id": "doc.dashboard.0",
    "kind": "doc",
    "title": "Magic Dashboard",
-   "text": "Status: scaffold (M0) , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
+   "text": "Status: M1: a real window with local lanes , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
    "path": [
     "Docs",
     "Magic Dashboard"
@@ -9865,7 +9865,7 @@
    "id": "doc.dashboard.1",
    "kind": "doc",
    "title": "Magic Dashboard: How it opens",
-   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). - Command: \"dashboard\". - No Dock icon and no new hotkey (owner decision).",
+   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). It calls toggle dashboard , so a second press closes it. - Command: \"dashboard\", \"open dashboard\" or /dashboard (offered only while the flag is on). - Rust refuses open dashboard while the flag is off, and never builds the window at start-up.",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -9880,6 +9880,40 @@
   },
   {
    "id": "doc.dashboard.2",
+   "kind": "doc",
+   "title": "Magic Dashboard: How it closes",
+   "text": "Esc, the ×, a second press of the button, clicking another window (it hides on blur like the pop-outs), or turning the flag off.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "How it closes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "How it closes"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.3",
+   "kind": "doc",
+   "title": "Magic Dashboard: Lanes in M1",
+   "text": "All from Lens's own data, read when the window opens; no network calls. - Inbox : unread Lens Messages conversations ( messages inbox ). - Feeds : the cached Feeds timeline ( feeds timeline ; feeds refresh is never called). - Today : today's open items from the Lens calendar. - Shelf : pinned first, then newest. - Now playing : the current media session; the card plays or pauses. - Widgets : placeholder until M2. Empty lanes say so and offer a button to the place you'd fill them (Messages, Feeds). - No Dock icon and no new hotkey (owner decision).",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Lanes in M1"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Lanes in M1"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.4",
    "kind": "doc",
    "title": "Magic Dashboard: Privacy",
    "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
@@ -9896,10 +9930,10 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.3",
+   "id": "doc.dashboard.5",
    "kind": "doc",
    "title": "Magic Dashboard: Code",
-   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
+   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Window, sources, saved layout and counts src/dashboard/DashboardWindow.tsx , sources.ts , memory.ts ; Rust commands/dashboard.rs Command phrases src/dashboard/command.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src/ tests /dashboardM1.test.ts , E2E magic-dashboard , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -9913,19 +9947,19 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.4",
+   "id": "doc.dashboard.6",
    "kind": "doc",
-   "title": "Magic Dashboard: Next (M1)",
-   "text": "Register the Dashboard window and Command intent, mount the Top Bar button, fill Inbox/Feeds/Today/Shelf from Lens Messages, Feeds, connected calendars and the Shelf, and add hyper-suite inventory rows for every flag.",
+   "title": "Magic Dashboard: Next (M2)",
+   "text": "Widgets runtime and gallery, the X embed lane, connect flows from the empty-lane buttons, Today from calendar connectors, Ask about this, and a perf budget scenario (< 150 ms warm open).",
    "path": [
     "Docs",
     "Magic Dashboard",
-    "Next (M1)"
+    "Next (M2)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/DASHBOARD.md",
-    "heading": "Next (M1)"
+    "heading": "Next (M2)"
    },
    "source": "docs/DASHBOARD.md"
   },
