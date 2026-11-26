@@ -61,6 +61,7 @@ mod syssettings;
 
 mod app;
 mod apps;
+mod thumbdesk;
 mod cleaner;
 mod bridge;
 mod browser;
@@ -79,6 +80,8 @@ mod guide;
 mod snip;
 // Lens Studio › Backdrop Lab exports (docs/BACKDROP_LAB.md).
 mod studio;
+// Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
+mod magic_waves;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]
@@ -168,6 +171,11 @@ pub fn run() {
     if let Some(code) = app::autostart_guard::dev_server_exit_code() {
         std::process::exit(code);
     }
+    // Started by "Start with Windows": wait until the desktop is really there (taskbar up, not
+    // on the lock or sign-in screen) before any window, hook or taskbar change. Shift skips.
+    if let Some(code) = app::signin_gate::wait_if_signin(running_as_shell) {
+        std::process::exit(code);
+    }
 
     win_crash::install_log_capture();
     install_exit_restore_handler();
@@ -207,6 +215,14 @@ pub fn run() {
     }
 
     let initial_config = config::load_config_for_run();
+    // Shell Mode is a Tester mode experiment. An override left behind without Tester mode (an
+    // older Lens, a copied config) is removed before it can take over the next sign-in.
+    if !running_as_shell && !initial_config.tester.enabled && win_shell::get_shell_mode_status().enabled {
+        match win_shell::disable_shell_mode() {
+            Ok(_) => eprintln!("[Lens] Removed a Shell Mode override (Shell Mode needs Tester mode)."),
+            Err(e) => eprintln!("[Lens] Could not remove the Shell Mode override: {e}"),
+        }
+    }
     let shared_config = Arc::new(Mutex::new(initial_config.clone()));
     let dock_pill_width = Arc::new(Mutex::new(640.0f64));
     let dock_menu_open = Arc::new(Mutex::new(false));
@@ -875,6 +891,9 @@ pub fn run() {
             commands::apps::apps_release_run,
             commands::apps::apps_release_discard,
             commands::apps::apps_open,
+            commands::apps::apps_portable_remove,
+            commands::thumbdesk::thumbdesk_info,
+            commands::thumbdesk::thumbdesk_open,
             commands::apps::apps_open_link,
             commands::apps::apps_recipe_preview,
             commands::apps::apps_integrations,

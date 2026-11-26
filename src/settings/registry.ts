@@ -136,8 +136,8 @@ export const PAGES: PageDef[] = [
     description: "How Lens works with Windows: startup, hotkeys, hot corners, Alt+drag and window styling.",
     icon: "monitor",
     color: "#38BDF8",
-    controls: ["Start with Windows", "Hot corners", "Alt+drag"],
-    keywords: ["hotkeys", "shortcuts", "win key", "alt tab", "hot corners", "alt drag", "summon", "window styling", "focus dim", "borders", "pin on top", "startup", "virtual desktop", "shell mode", "monitor"],
+    controls: ["Keyboard shortcuts", "Start with Windows", "Hot corners", "Alt+drag"],
+    keywords: ["hotkeys", "shortcuts", "keyboard shortcuts", "cheat sheet", "reset shortcuts", "win key", "alt tab", "hot corners", "alt drag", "summon", "window styling", "focus dim", "borders", "pin on top", "startup", "virtual desktop", "shell mode", "monitor"],
     sections: [
       { id: "desktops", label: "Virtual desktops", keywords: ["next desktop", "new desktop"] },
       { id: "integration", label: "Windows integration", keywords: ["startup", "fullscreen", "tray", "clipboard"] },
@@ -356,6 +356,7 @@ export const PAGES: PageDef[] = [
     sections: [
       { id: "vision", label: "Vision", keywords: ["text size", "contrast", "magnifier"] },
       { id: "motion", label: "Motion", keywords: ["animations"] },
+      { id: "controller", label: "Use a controller", keywords: ["controller", "gamepad", "xbox", "playstation", "thumbdesk", "mouse alternative"] },
     ],
     winUri: "ms-settings:easeofaccess",
   },
@@ -363,12 +364,15 @@ export const PAGES: PageDef[] = [
     id: "gaming",
     group: "windows",
     label: "Gaming",
-    description: "Game Mode and how Lens steps aside while you play.",
+    description: "Game Mode, how Lens steps aside while you play, and using the PC from a controller.",
     icon: "gamepad",
     color: "#22D3EE",
-    controls: ["Game Mode", "Pause Lens in games"],
-    keywords: ["gaming", "game mode", "game bar", "captures", "fullscreen", "anti-cheat"],
-    sections: [{ id: "lens", label: "Lens while gaming" }],
+    controls: ["Game Mode", "Pause Lens in games", "Use a controller"],
+    keywords: ["gaming", "game mode", "game bar", "captures", "fullscreen", "anti-cheat", "controller", "gamepad", "thumbdesk"],
+    sections: [
+      { id: "lens", label: "Lens while gaming" },
+      { id: "controller", label: "Use a controller", keywords: ["controller", "gamepad", "xbox", "playstation", "dualsense", "thumbdesk"] },
+    ],
     winUri: "ms-settings:gaming-gamemode",
   },
   // ---------------- Status
@@ -414,6 +418,7 @@ export const PAGES: PageDef[] = [
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },
       { id: "tester", label: "Tester Hub" },
+      { id: "magic", label: "Magic (preview)", keywords: ["magic dashboard", "magic mouse", "magic button", "shelf notes", "studio", "preview"] },
     ],
   },
 ];

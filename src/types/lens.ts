@@ -196,6 +196,8 @@ export interface LensConfig {
   command?: Partial<import("../command/settings").CommandSettings>;
   /** Tester mode: TEST BUILD badge and Ctrl+Alt+M to mark a moment in the log. */
   tester?: { enabled: boolean };
+  /** Magic waves feature flags (docs/plans/MAGIC_WAVES.md); all off by default. */
+  magicWaves?: Gen.MagicWavesConfig;
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */

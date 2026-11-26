@@ -13,6 +13,7 @@ import {
   cancelJob,
   discardRelease,
   installedApps,
+  removePortable,
   loadCatalog,
   loadSettings,
   onProgress,
@@ -177,9 +178,21 @@ function useAppsController(catalog: Catalog | null, demo: LensAppsProps["demo"])
       const it = itemFor(queue, target.id);
       if (it?.token)
         runRelease(it.token).then(
-          () => dispatch({ type: "finished", appId: target.id, ok: true }),
+          () => {
+            dispatch({ type: "finished", appId: target.id, ok: true });
+            installedApps().then(setInstalled);
+          },
           (e) => dispatch({ type: "finished", appId: target.id, ok: false, message: String(e) }),
         );
+      return;
+    }
+    // Portable apps (one program file Lens keeps in its apps folder) are removed by deleting that
+    // folder; there is no Windows uninstaller to run.
+    if (popover.mode === "uninstall" && (target.install as { portable?: boolean }).portable) {
+      removePortable(target.id).then(
+        () => installedApps().then(setInstalled),
+        (e) => dispatch({ type: "finished", appId: target.id, ok: false, message: String(e) }),
+      );
       return;
     }
     const op: QueueOp = popover.mode === "update" ? "upgrade" : popover.mode === "uninstall" ? "uninstall" : "install";

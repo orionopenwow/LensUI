@@ -119,7 +119,26 @@ fn finish_hide(app: &AppHandle, label: &str, generation: u64) {
     use crate::app::surface_state::{self, Step};
     if surface_state::acknowledge_hidden(label, generation) == Step::HideNow {
         if let Some(w) = app.get_webview_window(label) {
-            let _ = w.hide();
+            hide_window_really(&w);
+        }
+    }
+}
+
+/// Hides a window for certain. A window shown without activation goes through a raw
+/// `ShowWindow(SW_SHOWNOACTIVATE)` (see `glide_show_surface`), which Tauri doesn't see: Tauri
+/// still believes it is hidden, so its `hide()` changes nothing and the window stayed on screen
+/// (Search opened from the Top Bar never closed, and held the bar up). Hide it natively as well.
+pub(crate) fn hide_window_really(w: &tauri::WebviewWindow) {
+    let _ = w.hide();
+    #[cfg(windows)]
+    if let Ok(raw) = w.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{IsWindowVisible, ShowWindow, SW_HIDE};
+        unsafe {
+            let h = HWND(raw.0 as *mut _);
+            if IsWindowVisible(h).as_bool() {
+                let _ = ShowWindow(h, SW_HIDE);
+            }
         }
     }
 }
@@ -257,11 +276,16 @@ pub(crate) fn sync_topbar_search_cmd(app: AppHandle, state: State<AppState>, que
     let Some(win) = existing else {
         return;
     };
-    if let Some(tb) = app.get_webview_window("topbar") {
-        let _ = tb.set_ignore_cursor_events(false);
-        let _ = tb.show();
+    if open {
+        // Searching from the bar shows it. The shared flag says so too, so the auto-hide
+        // watcher (the one owner) can hide it again once Search closes and the pointer leaves.
+        state.topbar_visible.store(true, std::sync::atomic::Ordering::Relaxed);
+        if let Some(tb) = app.get_webview_window("topbar") {
+            let _ = tb.set_ignore_cursor_events(false);
+            let _ = tb.show();
+        }
+        let _ = app.emit("lens://topbar-visible", true);
     }
-    let _ = app.emit("lens://topbar-visible", true);
     if !open {
         glide_hide_surface(&app, "palette");
         let _ = app.emit("lens://topbar-search-open", false);
@@ -331,18 +355,28 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
 
         let dock_w = *state.dock_pill_width.lock().unwrap_or_else(|e| e.into_inner());
         let (pal_w, pal_h, x, y) = if anchor == "bottom-dock" {
-            // Exact live dock length, positioned strictly 0px flush directly ABOVE the dock pill!
-            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 18.0) * scale) as i32;
-            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale) as i32;
-            let w = (dock_w.max(680.0) * scale).round() as u32;
-            let h = (412.0 * scale) as u32;
-            (
-                w,
-                h,
-                pos.x + ((size.width as i32 - w as i32) / 2),
-                (bottom_edge - dock_pill_h - margin_bottom - h as i32 + 1)
-                    .max(pos.y + bar_h + 6),
-            )
+            // The search tray has its own width (app/flyout_geom.rs): a narrow Dock style never
+            // squeezes it and the Taskbar style opens it where Windows Search opens.
+            let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
+            let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
+            let r = crate::app::flyout_geom::search_rect_bottom(
+                &crate::app::flyout_geom::Monitor {
+                    x: pos.x,
+                    w: size.width as i32,
+                    bottom: bottom_edge,
+                    top: pos.y + bar_h + (6.0 * scale) as i32,
+                    scale,
+                },
+                &crate::app::flyout_geom::DockInput {
+                    style: &cfg.dock.style,
+                    alignment: &cfg.dock.alignment,
+                    pill_w_logical: dock_w,
+                    pill_h: dock_pill_h,
+                    margin_bottom,
+                },
+                412.0,
+            );
+            (r.w, r.h, r.x, r.y)
         } else {
             // "top-right" flush directly beneath Top Bar at the top-right corner (0px gap!)
             let w = (520.0 * scale) as u32;

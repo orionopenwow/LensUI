@@ -561,6 +561,24 @@
       "https://raw.githubusercontent.com/storytold/soundcraft/3d5916e42cb231ae52da6479ddfac7a857c07bce/docs/images/midi.png": 563989
     }
   },
+  "thumbdesk": {
+    "repo": "orionopenwow/ThumbDesk",
+    "commit": "81ed6cded116e2cd999e925b80e5bb73f4874333",
+    "icon": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/logo.png",
+    "screenshots": [
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_ui_screenshot.png",
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_radial_menu.png",
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_lab_gyro.png"
+    ],
+    "loop": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_demo.gif",
+    "sizes": {
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/logo.png": 71446,
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_ui_screenshot.png": 431510,
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_radial_menu.png": 364375,
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/ui_lab_gyro.png": 286444,
+      "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_demo.gif": 1284182
+    }
+  },
   "typst": {
     "repo": "typst/typst",
     "commit": "a6dcd82927b2a44bb089bc9151e29566e84e7d5a",

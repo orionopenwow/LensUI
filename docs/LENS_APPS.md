@@ -158,6 +158,14 @@ Index `catalog.json` (name, pitch, why, category, replaces) so "what tool should
 - "Remove all Lens changes" should call `apps_recipe_revert` for each id in `journals.json`.
 - "Remove all Lens changes" does **not** uninstall apps; that is a separate, explicit button in AppsCard.
 
+## Portable apps and ThumbDesk
+
+A GitHub-release app can set `"portable": true` in its `install` object when the release ships one
+program file instead of an installer. Lens then keeps the verified file in
+`%APPDATA%\LensUI\apps\portable\<id>\` (nothing is written outside Lens's data folder), Open runs
+it, and Uninstall deletes the folder (`apps_portable_remove`). ThumbDesk, the controller companion from
+the makers of Lens, is the first: see [docs/apps/THUMBDESK.md](apps/THUMBDESK.md).
+
 ## Catalogue refresh (TODO)
 
 `apps_catalog_refresh` stays disabled until `catalog.json` is published with a detached signature made by the Lens release key (minisign, the same key as the updater in PR #3). Lens will verify it before replacing the bundled copy. Until then, new apps arrive with Lens updates.

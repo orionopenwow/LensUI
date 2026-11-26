@@ -35,7 +35,8 @@ const base = {
   // `?settingsMode=simple|advanced` shows Settings in that mode (docs/SETTINGS_SIMPLE.md).
   settingsMode: params.get("settingsMode") ?? "advanced",
 };
-let config: any = JSON.parse(JSON.stringify(base));
+// The hyper suite (tools/hyper) seeds a saved config before a reload, to check settings survive it.
+let config: any = JSON.parse(JSON.stringify(W.__lensSeedConfig ?? base));
 const now = Date.now();
 const note = (id: string, title: string, body: string, appName: string, mins: number) => ({ id, title, body, appName, category: "system", tsMs: now - mins * 60000, source: "lens" });
 const notes = [
@@ -53,6 +54,13 @@ if (params.get("look") && isFeatured(preset)) config = applyFeaturedLook(config,
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
+// ?magic=dashboard,studioV2,… turns on Magic preview flags (and Tester mode, which shows the
+// Settings › About › Magic (preview) section) for the Magic scaffold scenes.
+if (params.get("magic")) {
+  const on = Object.fromEntries((params.get("magic") || "").split(",").filter(Boolean).map((f) => [f, true]));
+  config.tester = { enabled: true };
+  config.magicWaves = { dashboard: false, widgets: false, mouse: false, mouseHoldMs: 400, startButton: false, shelfNotes: false, studioV2: false, learn: false, ...on };
+}
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });
@@ -76,6 +84,17 @@ const wsStatus = () =>
     : { enabled: false, active: "1", workspaces: [] };
 config.dndSchedule = { enabled: true, ranges: [{ startMin: 1320, endMin: 420, days: [0, 1, 2, 3, 4, 5, 6] }, { startMin: 540, endMin: 720, days: [1, 2, 3, 4, 5] }], autoFullscreen: true };
 const handlers: Record<string, (a: any) => any> = {
+  // ThumbDesk (Settings › Gaming › Use a controller). ?thumbdesk=off shows the "Get ThumbDesk" state.
+  thumbdesk_info: () =>
+    params.get("thumbdesk") === "off"
+      ? { installed: false, path: null, running: false, status: null, pinned: false }
+      : {
+          installed: true,
+          path: "C:\\Users\\you\\AppData\\Roaming\\LensUI\\apps\\portable\\thumbdesk\\ThumbDesk.exe",
+          running: true,
+          pinned: true,
+          status: { version: "2.3.0", connected: true, controller: "DualSense Wireless Controller", runtimeEnabled: true, guardSuspended: false, voiceListening: false },
+        },
   // Wave 4–6 cards (integration): enough realistic data for every Control Center tab.
   list_monitors_cmd: () => [
     { id: "\\\\.\\DISPLAY1", name: "DELL U2723QE", x: 0, y: 0, width: 2560, height: 1440, workX: 0, workY: 0, workWidth: 2560, workHeight: 1392, scale: 1.5, primary: true },

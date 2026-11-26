@@ -118,7 +118,9 @@ describe("Lens Expressive / Dot Matrix packs", () => {
     expect(exl.scheme).toBe("light");
     for (const p of [ex, dm, exl]) expect(p.dockStyle).toBe("islands");
     expect(recommendedPacks().length).toBe(6);
-    const cfg = applyThemePack(sampleConfig(), "lens-expressive");
+    // The shape style comes along only when the person asks for the look's font and shape.
+    expect(applyThemePack(sampleConfig(), "lens-expressive").theme.shapeStyle).toBe(sampleConfig().theme.shapeStyle);
+    const cfg = applyThemePack(sampleConfig(), "lens-expressive", { withFontAndShape: true });
     expect(cfg.theme.shapeStyle).toBe("expressive");
     // A pack without a shape style keeps the user's choice.
     const kept = applyThemePack({ ...cfg, theme: { ...cfg.theme, shapeStyle: "dotmatrix" } }, "nord-frost");

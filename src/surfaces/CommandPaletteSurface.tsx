@@ -233,13 +233,28 @@ export const CommandPaletteSurface: React.FC = () => {
   const showHomeGrid = query.trim() === "" && filterTab === "all";
   navRef.current = { filtered, selected, activate: search.activate };
 
+  // Esc closes the palette wherever focus is: the search field lives in the Top Bar or Dock, so the
+  // palette window often has focus on its body, where a handler on the root never sees the key.
+  const escRef = useRef<() => void>(() => {});
+  escRef.current = () => {
+    if (askPrompt !== null) {
+      setAskPrompt(null);
+      return;
+    }
+    hide();
+  };
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) escRef.current();
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, []);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      if (askPrompt !== null) {
-        setAskPrompt(null);
-        return;
-      }
-      hide();
+      // Handled by the window listener above (one close per key press).
+      return;
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelected((s) => Math.min(Math.max(0, filtered.length - 1), s + 1));

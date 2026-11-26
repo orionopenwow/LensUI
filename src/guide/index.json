@@ -1677,6 +1677,25 @@
    "source": "src/components/PluginManagerCard.tsx"
   },
   {
+   "id": "card.system.shortcutscard",
+   "kind": "card",
+   "title": "Keyboard shortcuts",
+   "text": "Everything Lens listens for. Windows' own keys (Win+L, Ctrl+Alt+Del, Alt+Tab) are never taken. Keyboard shortcuts. Shortcuts",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Windows integration & shortcuts",
+    "Keyboard shortcuts"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "ShortcutsCard",
+    "label": "Keyboard shortcuts"
+   },
+   "source": "src/components/ShortcutsCard.tsx"
+  },
+  {
    "id": "card.system.shellkeyscard",
    "kind": "card",
    "title": "Start Key & Alt+Tab",
@@ -2128,6 +2147,46 @@
     "section": "cleaner"
    },
    "source": "src/components/CleanerCard.tsx"
+  },
+  {
+   "id": "card.accessibility.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Accessibility",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "accessibility",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
+  },
+  {
+   "id": "card.gaming.controllercard",
+   "kind": "card",
+   "title": "Controller",
+   "text": "Controller",
+   "path": [
+    "Settings",
+    "Gaming",
+    "Use a controller",
+    "Controller"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "gaming",
+    "card": "ControllerCard",
+    "label": "Controller",
+    "section": "controller"
+   },
+   "source": "src/components/ControllerCard.tsx"
   },
   {
    "id": "card.ai.bridgeinbox",
@@ -5330,7 +5389,7 @@
    "id": "setting.system.inline.global-shortcuts",
    "kind": "setting",
    "title": "Global Shortcuts",
-   "text": "Command Palette: Alt+Space · Widget Drawer: Alt+W",
+   "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -5711,7 +5770,7 @@
    "id": "pack.windows-mesh",
    "kind": "pack",
    "title": "Windows Mesh",
-   "text": "Follows your Windows accent colour, with a familiar full-width taskbar. Theme pack (Core).",
+   "text": "Follows your Windows accent colour on a familiar Windows-dark base. Theme pack (Core).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5783,7 +5842,7 @@
    "id": "pack.tokyo-night",
    "kind": "pack",
    "title": "Tokyo Night",
-   "text": "Deep navy with neon-city blue. Apps and folders sit in separate pills. Theme pack (Linux Suite).",
+   "text": "Deep navy with neon-city blue. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5837,7 +5896,7 @@
    "id": "pack.gruvbox-warm",
    "kind": "pack",
    "title": "Gruvbox Warm",
-   "text": "Retro warm grey with orange. Squarer corners, taskbar layout. Theme pack (Linux Suite).",
+   "text": "Retro warm grey with orange and squarer corners. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5909,7 +5968,7 @@
    "id": "pack.hyprland-neon",
    "kind": "pack",
    "title": "Hyprland Neon",
-   "text": "Tiling-desktop look: glowing cyan borders and split dock pills. Theme pack (Linux Suite).",
+   "text": "Tiling-desktop look with glowing cyan borders. Theme pack (Linux Suite).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5963,7 +6022,7 @@
    "id": "pack.solarized-matte",
    "kind": "pack",
    "title": "Solarized Matte",
-   "text": "Classic teal-blue Solarized with a labelled studio dock. Theme pack (Studio).",
+   "text": "Classic teal-blue Solarized, matte. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5981,7 +6040,7 @@
    "id": "pack.lens-expressive",
    "kind": "pack",
    "title": "Lens Expressive",
-   "text": "Obsidian colours with soft, playful shapes: pill tiles, a scalloped clock and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours with soft, playful shapes: pill tiles and a scalloped clock. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -5999,7 +6058,7 @@
    "id": "pack.lens-dot-matrix",
    "kind": "pack",
    "title": "Lens Dot Matrix",
-   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills and an islands dock. Theme pack (Studio).",
+   "text": "Obsidian colours, flat tiles and LED-dot numerals, with stat pills. Theme pack (Studio).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -6035,7 +6094,7 @@
    "id": "pack.lens-expressive-light",
    "kind": "pack",
    "title": "Lens Expressive Light",
-   "text": "Alabaster daylight colours with the Expressive shapes and an islands dock. Theme pack (Light).",
+   "text": "Alabaster daylight colours with the Expressive shapes. Theme pack (Light).",
    "path": [
     "Settings",
     "Theme & Look",
@@ -7300,6 +7359,96 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "hotkey.ctrl-shift-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-esc",
+   "kind": "hotkey",
+   "title": "Alt+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-f4",
+   "kind": "hotkey",
+   "title": "Alt+F4",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+F4"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-l",
+   "kind": "hotkey",
+   "title": "Win+L",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Win+L"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-d",
+   "kind": "hotkey",
+   "title": "Win+D",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+D"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-tab",
+   "kind": "hotkey",
+   "title": "Win+Tab",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+Tab"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
    "id": "hotkey.alt-l",
    "kind": "hotkey",
    "title": "Alt+L",
@@ -7517,51 +7666,6 @@
    "path": [
     "Keyboard",
     "Win+R"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.win-d",
-   "kind": "hotkey",
-   "title": "Win+D",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+D"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.win-tab",
-   "kind": "hotkey",
-   "title": "Win+Tab",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+Tab"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.ctrl-shift-esc",
-   "kind": "hotkey",
-   "title": "Ctrl+Shift+Esc",
-   "text": "Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to",
-   "path": [
-    "Keyboard",
-    "Ctrl+Shift+Esc"
    ],
    "target": {
     "surface": "doc",
@@ -9742,6 +9846,90 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "doc.dashboard.0",
+   "kind": "doc",
+   "title": "Magic Dashboard",
+   "text": "Status: scaffold (M0) , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
+   "path": [
+    "Docs",
+    "Magic Dashboard"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Magic Dashboard"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.1",
+   "kind": "doc",
+   "title": "Magic Dashboard: How it opens",
+   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). - Command: \"dashboard\". - No Dock icon and no new hotkey (owner decision).",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "How it opens"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "How it opens"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.2",
+   "kind": "doc",
+   "title": "Magic Dashboard: Privacy",
+   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Privacy"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.3",
+   "kind": "doc",
+   "title": "Magic Dashboard: Code",
+   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Code"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.4",
+   "kind": "doc",
+   "title": "Magic Dashboard: Next (M1)",
+   "text": "Register the Dashboard window and Command intent, mount the Top Bar button, fill Inbox/Feeds/Today/Shelf from Lens Messages, Feeds, connected calendars and the Shelf, and add hyper-suite inventory rows for every flag.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Next (M1)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Next (M1)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
    "id": "doc.dither.0",
    "kind": "doc",
    "title": "Lens dither material",
@@ -10142,6 +10330,40 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "Needs a real PC"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.10",
+   "kind": "doc",
+   "title": "Failsafe engineering: 9. Sign-in safety",
+   "text": "What Lens may do while Windows is signing you in, and what always gets you back to a working desktop. Added after a report that \"Start with Windows\" made it hard to get in. Sign-in gate ( app/signin gate.rs ). A Lens started by \"Start with Windows\" ( --autostart ) creates no window, installs no hook and leaves the taskbar alone until the desktop is ready: Explorer's taskbar window exists and the input desktop is the normal one (not the lock screen, the sign-in screen or a UAC prompt), both for 3 s in a row. If that never happens Lens starts anyway after two minutes, but never while the lock or sign-in screen is up. Hold Shift while signing in to skip Lens for that sign-in. A Lens started by hand does not wait. Keys that always reach Windows ( input::protected combo ). Whatever a Lens feature asks, these pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "9. Sign-in safety"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "9. Sign-in safety"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.11",
+   "kind": "doc",
+   "title": "Failsafe engineering: 10. Monitors and pop-outs",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "10. Monitors and pop-outs"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "10. Monitors and pop-outs"
    },
    "source": "docs/FAILSAFE.md"
   },
@@ -10550,7 +10772,24 @@
    "source": "docs/LENS_APPS.md"
   },
   {
-   "id": "doc.lens-apps.15",
+   "id": "doc.lens-apps.14",
+   "kind": "doc",
+   "title": "Lens Apps: Portable apps and ThumbDesk",
+   "text": "A GitHub-release app can set \"portable\": true in its install object when the release ships one program file instead of an installer. Lens then keeps the verified file in %APPDATA%\\LensUI\\apps\\portable\\<id \\ (nothing is written outside Lens's data folder), Open runs it, and Uninstall deletes the folder ( apps portable remove ). ThumbDesk, the controller companion from the makers of Lens, is the first: see docs/apps/THUMBDESK.md.",
+   "path": [
+    "Docs",
+    "Lens Apps",
+    "Portable apps and ThumbDesk"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_APPS.md",
+    "heading": "Portable apps and ThumbDesk"
+   },
+   "source": "docs/LENS_APPS.md"
+  },
+  {
+   "id": "doc.lens-apps.16",
    "kind": "doc",
    "title": "Lens Apps: Editing the catalogue",
    "text": "1. Edit the table in tools/apps/make catalog.py . 2. Run python3 tools/apps/make catalog.py . 3. Run bun test src/ tests /apps.test.ts . The schema tests check every https URL, licence, winget id and recipe step. 4. Optionally run rustc --edition 2021 --test src-tauri/src/apps/mod.rs , which checks the backend accepts every install spec.",
@@ -13002,7 +13241,7 @@
    "id": "doc.settings-simple.2",
    "kind": "doc",
    "title": "Settings: Simple and Advanced: How it works",
-   "text": "- The pill: a Simple / Advanced pill sits at the top of the sidebar and again at its foot, so it's always in reach. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform. - Simple sidebar: Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under ··· More (N pages) . A folded page you open from search or a link still shows. - Card pages (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under More options , which reveals with a fade and slide (transform and opacity only). Nothing above it moves. - Pages left as they are: Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple. - Search always searches everything. In Simple mode, results that are ",
+   "text": "- The pill: one Simple / Advanced pill sits at the top of the sidebar. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform. - Simple sidebar: Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under ··· More (N pages) . A folded page you open from search or a link still shows. - Card pages (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under More options , which reveals with a fade and slide (transform and opacity only). Nothing above it moves. - Pages left as they are: Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple. - Search always searches everything. In Simple mode, results that are folded away or live under More options carry ",
    "path": [
     "Docs",
     "Settings: Simple and Advanced",

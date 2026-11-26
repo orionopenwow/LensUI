@@ -1,0 +1,14 @@
+/* Lens Studio v2 shell. */
+.sv2 { display: flex; flex-direction: column; gap: 10px; width: 100%; color: var(--lens-fg); }
+.sv2-head { display: flex; align-items: center; gap: 8px; }
+.sv2-tabs { display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: rgb(var(--lens-ink) / 0.05); }
+.sv2-tab { border: 0; background: transparent; color: var(--lens-fg-secondary); font: inherit; font-size: 12px; padding: 4px 12px; border-radius: 6px; cursor: pointer; transition: background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
+.sv2-tab.on { background: rgb(var(--lens-ink) / 0.1); color: var(--lens-fg); }
+.sv2-history { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.sv2-icon { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: var(--lens-fg); cursor: pointer; }
+.sv2-icon:disabled { color: var(--lens-fg-secondary); opacity: 0.6; cursor: default; }
+.sv2-icon:not(:disabled):hover { background: rgb(var(--lens-ink) / 0.08); }
+.sv2-apply { border: 0; padding: 5px 12px; border-radius: 6px; font: inherit; font-size: 12px; background: rgb(var(--lens-ink) / 0.06); color: var(--lens-fg-secondary); }
+.sv2-tab:focus-visible, .sv2-icon:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
+.sv2-panel { min-height: 120px; padding: 12px; border-radius: max(4px, calc(var(--lens-radius) - 2px)); background: rgb(var(--lens-ink) / 0.035); box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.06); }
+.sv2-placeholder { margin: 0; font-size: 12px; color: var(--lens-fg-secondary); }

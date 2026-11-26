@@ -9,7 +9,13 @@ pub(crate) fn get_shell_mode_status_cmd() -> win_shell::ShellModeStatus {
 }
 
 #[tauri::command]
-pub(crate) fn enable_shell_mode_cmd() -> Result<win_shell::ShellModeStatus, String> {
+pub(crate) fn enable_shell_mode_cmd(state: tauri::State<'_, crate::AppState>) -> Result<win_shell::ShellModeStatus, String> {
+    // Replacing Explorer as the Windows shell can leave a person with no desktop at sign-in.
+    // It is a Tester mode experiment only (docs/FAILSAFE.md §9).
+    let tester = state.config.lock().unwrap_or_else(|e| e.into_inner()).tester.enabled;
+    if !tester {
+        return Err("Shell Mode is only available with Tester mode on (Settings › About & Testing).".into());
+    }
     win_shell::enable_shell_mode()
 }
 

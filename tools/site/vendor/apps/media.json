@@ -161,5 +161,17 @@
   ],
   "icon": "https://raw.githubusercontent.com/excalidraw/excalidraw/9c2e462ec23e54c4cf0493328840d6a27191c674/public/maskable_icon_x512.png",
   "shots": []
+ },
+ "thumbdesk": {
+  "name": "ThumbDesk",
+  "license": "MIT",
+  "repo": "https://github.com/orionopenwow/ThumbDesk",
+  "homepage": "https://orionopenwow.github.io/ThumbDesk/",
+  "pitch": "Use your whole PC from an Xbox or PlayStation controller: cursor, clicks, shortcuts, voice and scripts.",
+  "replaces": [],
+  "icon": "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/logo.png",
+  "shots": [
+   "https://raw.githubusercontent.com/orionopenwow/ThumbDesk/81ed6cded116e2cd999e925b80e5bb73f4874333/docs/assets/thumbdesk_ui_screenshot.png"
+  ]
  }
 }

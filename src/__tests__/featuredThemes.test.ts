@@ -59,17 +59,19 @@ describe("featured looks", () => {
     }
   });
 
-  test("applying a look sets everything it defines, in one config, and can be undone", () => {
+  test("applying a look sets its colours and materials, never the Dock, and can be undone", () => {
     const before = DEFAULT_CONFIG;
     for (const l of FEATURED_LOOKS) {
       const after = applyFeaturedLook(before, l.id);
       expect(after.theme.preset).toBe(l.id);
-      expect(after.theme.fontFamily).toBe(l.font);
+      expect(after.theme.fontFamily).toBe(before.theme.fontFamily);
+      expect(applyFeaturedLook(before, l.id, { withFontAndShape: true }).theme.fontFamily).toBe(l.font);
       expect(after.theme.glassOpacity).toBe(l.glass);
       expect(after.theme.blurPx).toBe(l.blur);
-      expect(after.dock.style).toBe(l.dock.style);
-      expect(after.dock.magnification).toBe(l.dock.magnification);
-      expect(after.dock.launchAnimation).toBe(l.dock.launch);
+      expect(after.dock.style).toBe(before.dock.style);
+      expect(after.dock.magnification).toBe(before.dock.magnification);
+      expect(after.dock.launchAnimation).toBe(before.dock.launchAnimation);
+      expect(after.dock.iconSize).toBe(before.dock.iconSize);
       expect(after.windowControls.frameStyle).toBe(lookPack(l).frameStyle);
       expect(lookApplied(after, l.id)).toBe(true);
       // Nothing outside the look moves: pins, hotkeys and the button order stay.

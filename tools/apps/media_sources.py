@@ -8,6 +8,7 @@ SUITE = ["photocraft", "vectorcraft", "filmcraft", "lightcraft", "pdfcraft", "ef
 
 SOURCES = {
     "artcraft": "storytold/artcraft",
+    "thumbdesk": "orionopenwow/ThumbDesk",
     "craft-launcher": "storytold/craft-launcher",
     **{s: f"storytold/{s}" for s in SUITE},
     "concat": "jub0t/Concat",
@@ -70,6 +71,7 @@ def _suite_icon(name):
 
 OVERRIDES: dict[str, dict] = {
     **{s: {"icon": _suite_icon(s)} for s in SUITE},
+    "thumbdesk": {"icon": "docs/assets/logo.png", "screenshots": ["docs/assets/thumbdesk_ui_screenshot.png", "docs/assets/ui_radial_menu.png", "docs/assets/ui_lab_gyro.png"], "loop": "docs/assets/thumbdesk_demo.gif"},
     "artcraft": {"screenshots": ["frontend/apps/artcraft/app/public/resources/gifs/3D_CANVAS_DEMO.webp", "frontend/apps/artcraft/app/public/resources/gifs/2D_CANVAS_DEMO.webp"]},
     "craft-launcher": {"icon": "assets/app-icon/hicolor/256x256/apps/ai.storyteller.artcraft-launcher.png"},
     "concat": {"screenshots": ["assets/editor.png"]},
