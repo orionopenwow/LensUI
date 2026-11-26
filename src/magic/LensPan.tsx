@@ -21,6 +21,7 @@ import { DEFAULT_MAGIC, magicGetConfig, magicOpen, type MagicConfig } from "./co
 import { inputFor, PAN_INTENT_MS, panelRows, panKey, type LensItem } from "./lensPanModel";
 import type { Row } from "./model";
 import "./lens-pan.css";
+import { logFail, quiet } from "../failsafe/calls";
 
 interface PanCtx {
   item: LensItem;
@@ -96,17 +97,17 @@ export function LensPan({
   useEffect(() => {
     if (!panned || loaded.current) return;
     loaded.current = true;
-    magicGetConfig().then((c) => c && setCfg(c)).catch(() => {});
+    magicGetConfig().then((c) => c && setCfg(c)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
         setUsage(s?.usage ?? {});
       })
-      .catch(() => {});
+      .catch(quiet);
   }, [panned]);
 
   const open = (run: string | null) => {
-    void magicOpen(inputFor(item, run)).catch(() => {});
+    void magicOpen(inputFor(item, run)).catch(logFail("Magic", "open the Magic window"));
     onClose();
   };
 

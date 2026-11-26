@@ -115,8 +115,9 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
 ## 3. Quick wins (≤ 1 day, ranked)
 1. **Notifications get a real "Lens ›" menu** instead of opening the window directly: a compact
    two-row menu (Dismiss, Lens ›) fits the toast; consistency across all Lens items.
-2. **Replace 23 swallowed errors** in `src/magic/*.tsx` and `src/dashboard/*.tsx`
-   (e.g. `MagicSurface.tsx:161,167,173,179,197`) with the toast helper so a failed action says so.
+2. **Done (robustness wave).** ~~Replace 23 swallowed errors~~ in `src/magic/*` and `src/dashboard/*`:
+   user actions are logged with what was being done, closing the window is retried once
+   (`src/failsafe/calls.ts`); a visible toast is still open (neither window has a toast host).
 3. **Open-latency readout** in Tester Hub from the existing `magic_report_open` numbers (p50/p95),
    so the ≤ 80 ms target is checkable by the owner on his PC.
 4. **Settings copy for Windows 11**: on Win11 the Explorer card should show a one-line "Find it
@@ -132,8 +133,8 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
   in one phrase ("stays on this PC" / "sent to Claude").
 - **Visual parity:** parity scenes exist for menus and waves; add the Magic window per target
   kind × theme to the visual job (currently only menu scenes are golden-checked).
-- **A11y:** strong in the pan; verify the Magic window's chip switcher is announced (aria-live for
-  target change).
+- **A11y:** strong in the pan; the Magic window announces a target change (`aria-live` on the
+  target line, robustness wave).
 - **Perf:** resolve budget 120 ms is enforced; open latency on hardware unknown.
 - **Consistency:** the dither band in the Magic header is the last "pixel" pattern after the
   browser moved to the Lens glow — align with the brand (owner asked to drop the pixel look in the
@@ -143,7 +144,7 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
 | Id | Severity | Where | Issue |
 |---|---|---|---|
 | B-07 | Medium | `media/setup.rs` | Get transcript verbs can't run (unpinned downloads) |
-| B-18 share | Low | `src/magic/*`, `src/dashboard/*` (23) | swallowed errors |
+| B-18 share | Low | `src/magic/*`, `src/dashboard/*` (23) | ~~swallowed errors~~ done (robustness wave) |
 | Suspected S1 | Medium | `trigger.rs` hold mode | replay of a short right-click into apps using raw input (games, CAD) may arrive late or twice — listed under "needs real hardware" |
 | Suspected S2 | Low | `bridge/cli.rs detect` | drive repair handles `C:"`; UNC roots (`\\server\share\`) and mapped network drives aren't covered by the repair test |
 | Suspected S3 | Low | Dashboard foreground close (`abf48f0`) | closes when another window takes the foreground — a Lens toast or the approval card taking focus could close the Dashboard mid-task; exempt Lens's own transient surfaces |
@@ -191,7 +192,7 @@ Merge state: M0, M1 on main; M2 #108, M3 #109, M4 #107 in flight — polish afte
 Do:
 1. Menu key / Shift+F10 opens item menus with Lens › focused (LensPan).
 2. Notification toast gets a 2-row menu (Dismiss, Lens ›).
-3. Toasts instead of 23 swallowed errors in magic/dashboard.
+3. DONE wave/robustness: no swallowed errors in magic/dashboard (logged/retried; toasts still open).
 4. Tester Hub: Magic open-latency p50/p95 from magic_report_open.
 5. Dashboard: don't close on Lens's own transient surfaces taking focus.
 6. Copy: "Micro-save" → "Save a snapshot"; footer privacy phrase.

@@ -3,6 +3,7 @@ import { FlyoutClose } from "../ui/FlyoutClose";
 import { ClipboardPane } from "../components/ClipboardPane";
 import { PluginSlot } from "../components/PluginSlot";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { Cpu, HardDrive, Clock, StickyNote, Layers, FolderOpen, Terminal, SlidersHorizontal } from "lucide-react";
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
 import { WindowGroups } from "../dock/ai/WindowGroups";
@@ -43,12 +44,12 @@ export const WidgetDrawerSurface: React.FC = () => {
     const onBlur = () => {
       window.setTimeout(() => {
         if (!document.hasFocus()) {
-          invoke("hide_surface", { label: "widgets" }).catch(() => {});
+          void hideSurface("widgets");
         }
       }, 120);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") invoke("hide_surface", { label: "widgets" }).catch(() => {});
+      if (e.key === "Escape") void hideSurface("widgets");
     };
     window.addEventListener("blur", onBlur);
     window.addEventListener("keydown", onKey);
@@ -97,7 +98,7 @@ export const WidgetDrawerSurface: React.FC = () => {
         >
           <span style={{ fontWeight: 600, letterSpacing: "0.01em" }}>Lens Widgets</span>
         </div>
-        <FlyoutClose onClose={() => invoke("hide_surface", { label: "widgets" }).catch(() => {})} />
+        <FlyoutClose onClose={() => void hideSurface("widgets")} />
 
         <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           {enabled.has("clock") && (

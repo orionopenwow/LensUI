@@ -293,11 +293,16 @@ it tested, give it a Settings switch or choice (picked up automatically), or add
 - Source rules: the Top Bar has one owner of shown/hidden, every flyout show path dismisses the
   others, the change registry covers every change (`tools/changes/check.mjs`), and only the settings
   writer writes `config.json`.
+- Stuck states (`stuck:*`, docs/FAILSAFE.md §10): Quick Settings, Widgets, Launcher, Overview and
+  Search close when focus leaves them, a refused close is tried again, and the Dock closes its menus
+  on blur, on the watcher's "stale" signal and when it hides (and reports "menu closed" again when
+  the first report is refused).
 
 **Real Windows** (E2E job): `tests/e2e/autohide.mjs` moves the real cursor through the Top Bar and
 Dock edges (idle hide, reveal, fast and slow leave, far corners, settings saves while hidden, Search
 and Quick Settings dismissed by click outside / Esc / another window / another flyout, smart dodge
-over a maximised window, Dock on the bottom and top) and checks the real window state after every
+over a maximised window, Dock on the bottom and top, Dock on the left and right in every style with
+its hit zone, Settings and Quick Settings beside it inside the work area, and an Explorer restart) and checks the real window state after every
 step, sampling every 16 ms for flicker. `tests/e2e/intents.mjs` previews every Command intent from
 its own phrasing and runs dark ↔ light mode end to end.
 

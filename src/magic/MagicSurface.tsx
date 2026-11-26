@@ -24,6 +24,7 @@ import {
   rowsFor, toneOf, visibleRows, appName, type Caps, type KeyState, type Mode, type Row,
 } from "./model";
 import "./magic.css";
+import { logFail, quiet, retryOnce } from "../failsafe/calls";
 
 const EXTRA_ICONS: Record<string, LucideIcon> = {
   minus: Minus, maximize: Maximize2, "panel-left": PanelLeft, "panel-right": PanelRight, monitor: Monitor, layers: Layers,
@@ -158,25 +159,25 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const rows = visibleRows(set, keys);
 
   const hide = useCallback(() => {
-    if (!preview) void magicHide().catch(() => {});
+    if (!preview) void retryOnce(magicHide, "Magic", "close the Magic window");
   }, [preview]);
 
   // Settings, right-click order and usage are read each time the window opens (cheap, local).
   const refresh = useCallback(() => {
     if (preview) return;
-    magicGetConfig().then((c) => setCfg(c)).catch(() => {});
+    magicGetConfig().then((c) => setCfg(c)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
         setUsage(s?.usage ?? {});
       })
-      .catch(() => {});
+      .catch(quiet);
     invoke<{ active: string; providers: { id: string; label: string; is_local: boolean }[] }>("ai_status")
       .then((s) => {
         const p = s.providers.find((x) => x.id === s.active);
         if (p) setProvider({ label: p.label, local: p.is_local });
       })
-      .catch(() => {});
+      .catch(quiet);
   }, [preview]);
 
   // A row already picked in a Lens menu's "Lens ›" panel (src/magic/LensPan.tsx): run it once
@@ -194,7 +195,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       refresh();
       requestAnimationFrame(() => {
         inputRef.current?.focus();
-        void magicReportOpen(openLatency(p.atMs, Date.now()), p.resolveMs).catch(() => {});
+        void magicReportOpen(openLatency(p.atMs, Date.now()), p.resolveMs).catch(quiet);
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,14 +207,14 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
     let un: (() => void) | undefined;
     let alive = true;
     onMagicOpen(accept).then((u) => (alive ? (un = u) : u()));
-    magicLast().then((p) => p && alive && accept(p)).catch(() => {});
+    magicLast().then((p) => p && alive && accept(p)).catch(quiet);
     let unFocus: (() => void) | undefined;
     getCurrentWindow()
       .onFocusChanged(({ payload }) => {
         if (!payload) hide();
       })
       .then((u) => (alive ? (unFocus = u) : u()))
-      .catch(() => {});
+      .catch(logFail("Magic", "watch for focus leaving the window"));
     return () => {
       alive = false;
       un?.();
@@ -225,7 +226,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
 
   const runRow = async (row: Row) => {
     if (!t) return;
-    if (row.action && !preview) void contextMenuRecordUse(row.action.id).catch(() => {});
+    if (row.action && !preview) void contextMenuRecordUse(row.action.id).catch(quiet);
     if (preview) return;
     const kind = localKind(row);
     try {
@@ -236,7 +237,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
         }
         if (verb === "workspace") return setResult({ type: "workspace" });
         if (verb === "rule") {
-          await invoke("open_surface", { label: "settings" }).catch(() => {});
+          await invoke("open_surface", { label: "settings" }).catch(logFail("Magic", "open Settings"));
           return note("Opened Settings › Windows & Quick to style this app.");
         }
         if (verb === "shelf") {
@@ -382,7 +383,8 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       aria-label={`Lens — ${kindLabel(t.kind)}: ${t.label}`}
     >
       <header className="magic-head">
-        <div className="magic-target">
+        {/* Announced when ← → or a chip changes what Magic acts on (screen readers). */}
+        <div className="magic-target" aria-live="polite" aria-atomic="true">
           <span className={`magic-dot is-${tone}`} aria-hidden />
           <span className="magic-mono magic-kind">{kindLabel(t.kind).toUpperCase()}</span>
           <span className="magic-label">{t.label}</span>
@@ -516,7 +518,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
                   type="button"
                   className="magic-btn is-primary"
                   onClick={() =>
-                    void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: keys.query } }).then(hide).catch(() => {})
+                    void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: keys.query } }).then(hide).catch(logFail("Magic", "open Lens Command"))
                   }
                 >
                   Continue in Command <ArrowUpRight size={14} aria-hidden />
@@ -586,7 +588,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
           type="button"
           className="magic-link"
           onClick={() =>
-            !preview && void invoke("show_command_cmd", { payload: { layout: "full", text: keys.query || undefined } }).then(hide).catch(() => {})
+            !preview && void invoke("show_command_cmd", { payload: { layout: "full", text: keys.query || undefined } }).then(hide).catch(logFail("Magic", "open Lens Command"))
           }
         >
           Expand to Command <ArrowUpRight size={12} aria-hidden />

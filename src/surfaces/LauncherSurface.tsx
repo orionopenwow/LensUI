@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { listen } from "@tauri-apps/api/event";
 import { ackKeyhook, type KeyhookMessage } from "../shell/keyhookResponder";
 import {
@@ -117,7 +118,7 @@ export const LauncherSurface: React.FC = () => {
 
   const hide = useCallback(() => {
     setMenu(null);
-    invoke("hide_surface", { label: "launcher" }).catch(() => {});
+    void hideSurface("launcher");
   }, []);
 
   const refresh = useCallback(() => {
@@ -302,7 +303,7 @@ export const LauncherSurface: React.FC = () => {
   return (
     <div className="ln-root" onKeyDown={onKeyDown} onClick={() => setMenu(null)}>
       <div className={`ln-shell lens-flyout-host lens-glide-dock ${glidePhase}`}>
-        <FlyoutClose onClose={() => invoke("hide_surface", { label: "launcher" }).catch(() => {})} />
+        <FlyoutClose onClose={() => void hideSurface("launcher")} />
         <div className="ln-search">
           <Search size={16} strokeWidth={2.55} />
           <input

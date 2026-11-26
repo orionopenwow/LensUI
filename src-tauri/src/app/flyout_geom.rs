@@ -119,7 +119,11 @@ pub fn flyout_rect_bottom(m: &Monitor, dock: &DockInput, own_w_logical: f64, des
     } else {
         (pill_top(m, dock), 0, true)
     };
-    let max_h = (bar_top - gap - m.top - (4.0 * s) as i32).max((400.0 * s) as i32) as u32;
+    // Room between the Top Bar and the bar. A 400 px floor keeps Settings usable on short
+    // screens, but never taller than the room itself: on a small or highly scaled display
+    // (1280×720 at 150 %) the floor used to push the flyout down over the Dock (B-64).
+    let room = (bar_top - gap - m.top).max(1);
+    let max_h = (room - (4.0 * s) as i32).max(((400.0 * s) as i32).min(room)).max(1) as u32;
     let h = ((desired_h_logical.max(400.0)) * s).round() as u32;
     let h = h.min(max_h);
     let x = if opens_like_windows(dock.style) && dock.alignment.eq_ignore_ascii_case("left") {
@@ -251,6 +255,54 @@ mod tests {
                 assert!((r.x + r.w as i32 / 2 - m.w / 2).abs() <= 1, "{style} centred");
             }
         }
+    }
+
+    /// Monitors left of and above the main one (negative coordinates) at mixed scaling, down to
+    /// short, highly scaled screens: every flyout stays on its monitor, below the Top Bar, and
+    /// never covers the Dock.
+    #[test]
+    fn flyouts_fit_any_monitor_position_and_scale() {
+        let monitors = [
+            // (x, y, w, h, scale)
+            (0, 0, 1920, 1080, 1.0),
+            (-2560, 0, 2560, 1440, 1.5),
+            (-1920, -1080, 1920, 1080, 1.25),
+            (1920, -400, 3840, 2160, 2.0),
+            (-1280, 200, 1280, 720, 1.5),
+            (0, 1080, 1366, 768, 1.75),
+        ];
+        for (x, y, w, h, scale) in monitors {
+            let top_bar = (34.0 * scale) as i32;
+            let m = Monitor { x, w, bottom: y + h - (48.0 * scale) as i32, top: y + top_bar + (4.0 * scale) as i32, scale };
+            for (style, pill) in STYLES {
+                for desired in [400.0, 748.0, 1400.0] {
+                    let d = dock(style, "center", pill.min(w as f64 / scale), scale);
+                    for r in [settings_rect_bottom(&m, &d, desired), search_rect_bottom(&m, &d, desired)] {
+                        let label = format!("{style} {desired} on {w}x{h}@{scale} at ({x}, {y}): {r:?}");
+                        assert!(r.x >= x && r.x + r.w as i32 <= x + w, "inside the monitor across: {label}");
+                        assert!(r.y >= m.top, "below the Top Bar: {label}");
+                        let bar_top = if opens_like_windows(style) {
+                            m.bottom - ((TASKBAR_H * scale).round() as i32).max(d.pill_h) - d.margin_bottom
+                        } else {
+                            m.bottom - d.pill_h - d.margin_bottom
+                        };
+                        assert!(r.y + r.h as i32 <= bar_top + 1, "never over the Dock: {label}");
+                        assert!(r.h > 0 && r.w > 0, "{label}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_400_px_floor_never_pushes_settings_over_the_dock() {
+        // 1280×720 at 150 %: 853×480 logical, less room than the floor.
+        let m = Monitor { x: -1280, w: 1280, bottom: 720, top: 57, scale: 1.5 };
+        let d = dock("floating", "center", 640.0, 1.5);
+        let r = settings_rect_bottom(&m, &d, 720.0);
+        let pill_top = m.bottom - d.pill_h - d.margin_bottom;
+        assert_eq!(r.y + r.h as i32, pill_top + 1, "still fused to the pill");
+        assert!(r.y >= m.top);
     }
 
     #[test]
