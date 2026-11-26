@@ -573,8 +573,8 @@ pub(crate) fn spawn_watcher(
                                 _ => false,
                             };
                             let pal = watcher_handle.get_webview_window("palette");
-                            let pal_focused = pal.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
-                            let bar_focused = topbar_win.is_focused().unwrap_or(false);
+                            let pal_focused = pal.as_ref().map(is_foreground).unwrap_or(false);
+                            let bar_focused = is_foreground(&topbar_win);
                             let pointer_in = pal.as_ref().map(in_rect).unwrap_or(false) || in_rect(&topbar_win);
                             let close = search_should_close(
                                 SearchGuardInput {
@@ -600,7 +600,7 @@ pub(crate) fn spawn_watcher(
                         // an app no longer pins the bar forever.
                         let qs_in_use = qs_vis && {
                             let qs = watcher_handle.get_webview_window("quicksettings");
-                            let focused = qs.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
+                            let focused = qs.as_ref().map(is_foreground).unwrap_or(false);
                             let over = |w: &tauri::WebviewWindow| match (w.outer_position(), w.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {
                                     cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
@@ -791,7 +791,7 @@ pub(crate) fn spawn_watcher(
                     // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is
                     // in use. "In use" is checked here rather than trusted: see DockGuard below.
                     let mut menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
-                    let dock_focused = dock_win.is_focused().unwrap_or(false);
+                    let dock_focused = is_foreground(&dock_win);
                     // The Dock window is a tall see-through strip, so "over the Dock" means over the
                     // pill or over the open flyout (both reported by the Dock in CSS px).
                     let cursor_over_dock_window = match (dock_win.outer_position(), cursor) {
@@ -818,12 +818,37 @@ pub(crate) fn spawn_watcher(
                     let palette_in_use = palette_vis_now && {
                         let focused = watcher_handle
                             .get_webview_window("palette")
-                            .and_then(|w| w.is_focused().ok())
+                            .map(|w| is_foreground(&w))
                             .unwrap_or(false);
                         active_within(focused, &mut palette_idle_since, Instant::now(), FLYOUT_IDLE_MS)
                     };
                     if !palette_vis_now {
                         palette_idle_since = None;
+                    }
+                    // Without the Top Bar nothing above closes an abandoned Search: same rule here
+                    // (another app has the foreground and the pointer is away, or a click outside).
+                    if palette_vis_now && !(cfg.top_bar.enabled && cfg.dock.show_top_bar) {
+                        if let Some(pal) = watcher_handle.get_webview_window("palette") {
+                            let pointer_in = match (pal.outer_position(), pal.outer_size(), cursor) {
+                                (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                    cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                }
+                                _ => false,
+                            };
+                            let close = search_should_close(
+                                SearchGuardInput {
+                                    palette_focused: is_foreground(&pal),
+                                    bar_focused: false,
+                                    pointer_inside: pointer_in || cursor_over_pill,
+                                    click_outside: !pointer_in && !cursor_over_pill && clicked,
+                                },
+                                &mut search_idle_since,
+                                Instant::now(),
+                            );
+                            if close {
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "palette");
+                            }
+                        }
                     }
                     let guard = dock_guard(DockGuardInput {
                         menu_open,
@@ -833,7 +858,7 @@ pub(crate) fn spawn_watcher(
                         settings_visible: settings_now_vis,
                         settings_focused: watcher_handle
                             .get_webview_window("settings")
-                            .and_then(|w| w.is_focused().ok())
+                            .map(|w| is_foreground(&w))
                             .unwrap_or(false),
                         palette_visible: palette_in_use,
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && clicked,
@@ -1214,6 +1239,23 @@ mod dock_guard_tests {
     fn nothing_open_never_blocks() {
         assert!(run(DockGuardInput::default(), &[0, 2000]).iter().all(|g| !g.blocks_hide && !g.clear_stale_menu));
     }
+}
+
+/// True when `w` is Windows' foreground window. Tauri's `is_focused()` reports the last active
+/// window of Lens's UI thread (GetActiveWindow), which stays "focused" after another app takes
+/// the foreground, so a flyout left behind an app kept the Top Bar and Dock up forever.
+#[cfg(windows)]
+pub(crate) fn is_foreground(w: &tauri::WebviewWindow) -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    match w.hwnd() {
+        Ok(h) => unsafe { GetForegroundWindow() }.0 as isize == h.0 as isize,
+        Err(_) => false,
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn is_foreground(w: &tauri::WebviewWindow) -> bool {
+    w.is_focused().unwrap_or(false)
 }
 
 /// True while the left, right or middle mouse button is held (any window).
