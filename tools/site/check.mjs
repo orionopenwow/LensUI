@@ -254,9 +254,12 @@ async function waitDesk(page, sel = "#desk-host") {
   await p2.waitForTimeout(1500);
   const still = a === (await grab());
   report.stage.reducedMotionStill = still;
-  report.stage.reducedMotionAutoplay = await p2.evaluate(() => !!window.lensSite.shows.current);
+  // With reduced motion the demo shows its first step and stays there.
+  const rmStep = await p2.evaluate(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`);
+  await p2.waitForTimeout(6500);
+  report.stage.reducedMotionAutoplay = (await p2.evaluate(() => window.lensSite.shows.playing)) || rmStep !== (await p2.evaluate(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`));
   if (!still) problems.push("desk: the backdrop moves with reduced motion");
-  if (report.stage.reducedMotionAutoplay) problems.push("desk: the scene reel autoplays with reduced motion");
+  if (report.stage.reducedMotionAutoplay) problems.push("desk: the demo advances with reduced motion");
   await rm.close();
 }
 
@@ -313,28 +316,39 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await waitDesk(page);
   await page.waitForTimeout(2500);
-  // Nothing moves on its own: no tour starts, no window moves without input.
-  const before = await D(() => [...window.lensSite.desk.wins.values()].map((w) => `${w.app}:${Math.round(w.x)},${Math.round(w.y)}`).join("|"));
-  await page.waitForTimeout(2500);
-  expect(!(await D(() => window.lensSite.shows.current)), "no tour starts by itself");
-  expect(before === (await D(() => [...window.lensSite.desk.wins.values()].map((w) => `${w.app}:${Math.round(w.x)},${Math.round(w.y)}`).join("|"))), "the desk doesn't move without input");
-  // Tours: a tab starts one; Next and Back step it; each step's target exists; Exit leaves free play.
+  // The demo plays by itself, slowly: three steps per part, one part after another, the Dock first.
+  await page.mouse.move(2, 2);
   const tourIds = await D(() => window.lensSite.shows.list.map((s) => s.id));
-  expect(tourIds.length >= 6, "there are showcase tabs", tourIds.join(","));
-  expect(tourIds[0] === "docks" && tourIds[1] === "browser", "the tours start with the docks, then Lens Browser", tourIds.join(","));
-  expect(!tourIds.some((t) => ["music", "cleaner", "core", "apps"].includes(t)), "Music, Cleaner, Lens Apps and the core apps are page sections, not hero tours", tourIds.join(","));
+  expect(tourIds.join(",") === "docks,browser,magic,themes,agent", "the demo's parts: the Dock, then Lens Browser, Right-click, Themes, the agentic desktop", tourIds.join(","));
+  expect(await D(() => window.lensSite.shows.list.every((s) => s.steps.length === 3)), "every part shows its feature in three steps");
+  expect(!(await page.$("#sc-bar [data-next], #sc-bar [data-back], #sc-bar [data-reset], #sc-bar [data-exit], .xsteps, .xstep")), "no Next, Back or step tabs: the demo and exhibits play by themselves");
+  expect(!tourIds.some((t) => ["music", "cleaner", "core", "apps"].includes(t)), "Music, Cleaner, Lens Apps and the core apps are page sections, not hero parts", tourIds.join(","));
+  await page.waitForFunction(() => window.lensSite.shows.current?.id === "docks" && !window.lensSite.shows.busy, null, { timeout: 15000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.current?.id)) === "docks", "the demo starts with the Dock");
+  const at0 = await D(() => window.lensSite.shows.index);
+  await page.waitForFunction((i) => window.lensSite.shows.index !== i, at0, { timeout: 9000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.index)) === at0 + 1, "the demo moves on by itself, one step at a time");
+  // Pointing at the desk holds the step; Pause stops it; Play resumes.
+  const deskB = await deskBox(page);
+  await page.mouse.move(deskB.x + deskB.width / 2, deskB.y + 40);
+  const held = await D(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`);
+  await page.waitForTimeout(6500);
+  expect(held === (await D(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`)), "pointing at the demo holds the step");
+  await page.mouse.move(2, 2);
+  await page.click("#sc-bar [data-play]");
+  expect((await page.$eval("#sc-bar [data-play]", (b) => b.getAttribute("aria-pressed"))) === "true" && (await D(() => window.lensSite.shows.paused)), "Pause stops the demo");
+  const paused = await D(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`);
+  await page.waitForTimeout(6000);
+  expect(paused === (await D(() => `${window.lensSite.shows.current?.id}:${window.lensSite.shows.index}`)), "a paused demo stays put");
+  await page.click("#sc-bar [data-play]");
+  expect(!(await D(() => window.lensSite.shows.paused)), "Play resumes the demo");
+  await D(() => window.lensSite.shows.pause());
+  // A tab jumps to its part.
+  await page.click('#sc-tabs [data-sc="browser"]');
+  await page.waitForFunction(() => window.lensSite.shows.current?.id === "browser" && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
+  expect((await D(() => window.lensSite.shows.index)) === 0, "a tab starts its part at step 1");
   expect(await D(() => /scene=home/.test(window.lensSite.desk.byApp("browser")?.frame?.src ?? "")), "the desk's Lens Browser opens on its new tab page");
-  await page.click('#sc-tabs [data-sc="desktop"]');
-  await page.waitForFunction(() => window.lensSite.shows.current?.id === "desktop" && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
-  expect((await D(() => window.lensSite.shows.index)) === 0, "a tab starts its tour at step 1");
-  await page.waitForTimeout(1500);
-  expect((await D(() => window.lensSite.shows.index)) === 0, "a tour waits for Next");
-  await page.click("#sc-bar [data-next]");
-  await page.waitForFunction(() => window.lensSite.shows.index === 1 && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
-  expect((await D(() => window.lensSite.shows.index)) === 1, "Next moves one step");
-  await page.click("#sc-bar [data-back]");
-  await page.waitForFunction(() => window.lensSite.shows.index === 0 && !window.lensSite.shows.busy, null, { timeout: 8000 }).catch(() => {});
-  expect((await D(() => window.lensSite.shows.index)) === 0, "Back moves one step back");
+  await D(() => window.lensSite.shows.pause());
   // Every tour tab opens the real surface for its subject, and every step leaves only real surfaces on
   // the desk: each open window (and Quick Settings, Command or the magic window when shown) holds the
   // element its real React component renders.
@@ -350,7 +364,7 @@ async function waitDesk(page, sel = "#desk-host") {
     await page.waitForTimeout(250);
   };
   for (const id of tourIds) {
-    await D((i) => window.lensSite.shows.start(i), id);
+    await D((i) => { window.lensSite.shows.pause(); return window.lensSite.shows.start(i); }, id);
     await settle();
     const first = await D(() => { const st = window.lensSite.shows.state().step; return !st?.target || !!st.target(window.lensSite.desk); });
     expect(first, `tour “${id}” first step has its target`);
@@ -362,8 +376,8 @@ async function waitDesk(page, sel = "#desk-host") {
       if (k < total - 1) { await D(() => window.lensSite.shows.next()); await settle(); }
     }
   }
-  await page.click("#sc-bar [data-exit]"); await page.waitForTimeout(300);
-  expect(!(await D(() => window.lensSite.shows.current)), "Exit returns to free play");
+  await D(() => window.lensSite.shows.exit()); await page.waitForTimeout(300);
+  expect(!(await D(() => window.lensSite.shows.current)), "the demo can step aside for free play");
   await D(() => window.lensSite.desk.reset());
   await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await page.waitForTimeout(300);
@@ -565,9 +579,14 @@ async function waitDesk(page, sel = "#desk-host") {
     const sections = await D(() => [...document.querySelectorAll("main section[id]")].map((x) => x.id));
     expect(!sections.includes("market") && !(await D(() => /Share your whole setup/i.test(document.querySelector("main").textContent))), "the marketplace section is gone");
     const cards = await D(() => [...document.querySelectorAll("[data-app-card]")].map((c) => c.dataset.appCard));
-    const names = await D(() => [...document.querySelectorAll("#apps h4")].map((h) => h.textContent.trim()));
+    const names = await D(() => [...document.querySelectorAll("#apps h3")].map((h) => h.textContent.trim()));
     expect(cards.length >= 10 && new Set(cards).size === cards.length && new Set(names).size === names.length, "every app is listed once", cards.join(","));
-    expect((await page.locator("#core-grid .core").count()) === 9, "all nine core apps are shown at once");
+    // Smaller apps are small pictures in one compact grid; the main features get the big exhibits.
+    const minis = await D(() => [...document.querySelectorAll("#core-grid .mini")].map((m) => m.textContent));
+    expect(minis.length >= 14 && ["Lens Music", "Lens Cleaner", "Notes", "Lens Feeds", "Lens Messages", "ThumbDesk", "Monitor"].every((n) => minis.some((t) => t.includes(n))), "the small apps (Music, Cleaner, Notes, Feeds, Messages, ThumbDesk and the core apps) share one compact grid", String(minis.length));
+    const sizes = await D(() => ({ mini: Math.max(...[...document.querySelectorAll("#core-grid .mini-pic")].map((e) => e.getBoundingClientRect().width)), main: Math.max(...[...document.querySelectorAll(".xmain")].map((e) => e.getBoundingClientRect().width)) }));
+    expect(sizes.mini <= 360 && sizes.main <= 1110, "exhibits stay a sensible size: small apps as small pictures, main features no wider than about 1100 px", JSON.stringify(sizes));
+    expect(!(await page.$("#apps .apt img")) && (await page.locator("#apps .apt .app-ic svg").count()) === (await page.locator("#apps .apt").count()), "Lens Apps use one drawn icon set: a glyph on a matte tile, no screenshots");
     expect(!(await page.$("#f-magic video, #byo video, #f-browser video")), "the exhibits are live surfaces, not clips");
     expect(!!(await page.$("#how-themes")) && (await D(() => /\.lenstheme/.test(document.getElementById("how-themes").textContent))), "“How themes work” sits under the theme lab");
     for (const id of ["f-magic", "byo", "f-browser"]) {
@@ -575,26 +594,31 @@ async function waitDesk(page, sel = "#desk-host") {
       const ok = await page.waitForFunction((i) => { const hs = [...document.querySelectorAll(`#${i} .xf`)]; return hs.length && hs.every((h) => { if (h.closest("[hidden]")) return true; const d = h.querySelector("iframe")?.contentDocument; return h.classList.contains("is-ready") && d && (!h.dataset.marker || d.querySelector(h.dataset.marker)); }); }, id, { timeout: 20000 }).then(() => true, () => false);
       expect(ok, `#${id}: every exhibit frame holds its real surface`);
     }
-    // Magic exhibit: a step shows the real window in that state; the visitor's own right-click works too.
+    // Magic exhibit: three calm steps on repeat; the visitor's own right-click works too.
     await page.evaluate(() => document.getElementById("mx").scrollIntoView({ block: "center" }));
-    await page.click('#mx .xstep[data-step="approval"]');
-    expect(await page.waitForFunction(() => /Needs your OK/i.test(document.querySelector("#mx .mx-menu iframe")?.contentDocument?.body?.textContent ?? ""), null, { timeout: 20000 }).then(() => true, () => false), "the magic exhibit's “Send to Claude” step shows the approval");
+    await page.mouse.move(2, 2);
+    expect((await page.locator("#mx .xdots i").count()) === 3 && !!(await page.$("#mx [data-xpause]")), "the right-click exhibit loops three steps, with Pause");
+    expect(await page.waitForFunction(() => /scene=summary/.test(document.querySelector("#mx .mx-menu iframe")?.src ?? ""), null, { timeout: 12000 }).then(() => true, () => false), "the right-click exhibit moves on to Summarise by itself");
     const tb = await page.locator("#mx .mx-target").boundingBox();
     await page.mouse.click(tb.x + tb.width * 0.75, tb.y + tb.height * 0.8, { button: "right" });
     await page.waitForTimeout(600);
     const moved = await D(() => { const m = document.querySelector("#mx .mx-menu").getBoundingClientRect(), t = document.querySelector("#mx .mx-target").getBoundingClientRect(); return (m.left - t.left) / t.width; });
     expect(moved > 0.4, "right-clicking the exhibit opens the magic window there", String(moved));
     expect(await D(() => !document.querySelector("#mx .mx-dim").hidden), "the right-click exhibit dims everything but the clicked spot and its menu");
-    // Your agent: one line of three steps beside the real approval card.
-    expect((await page.locator("#byo .agent-flow > li").count()) === 3, "your agent is three short steps");
-    expect((await page.locator("#byo .xf").count()) === 1, "your agent has one exhibit: the real approval card");
+    // Agentic desktop: Claude Code's five-step plan, each step's risk, the real browser and the real card.
+    expect((await page.locator("#byo .ag-plan > li").count()) === 5 && (await page.locator("#byo .ag-plan > li.is-ask").count()) === 3, "the agent exhibit shows a five-step plan, three steps waiting for an OK");
+    expect((await page.locator("#byo .xf").count()) === 2, "the agent exhibit is the real Lens Browser and the real approval card");
+    await page.evaluate(() => document.getElementById("byo").scrollIntoView({ block: "center" }));
+    expect(await page.waitForFunction(() => /Step 3 of 5/.test(document.querySelector("#byo .ag-card iframe")?.contentDocument?.body?.textContent ?? ""), null, { timeout: 20000 }).then(() => true, () => false), "the approval card is the booking step of Claude Code's plan");
+    expect(!(await D(() => /asks first|AI that asks/i.test([...document.querySelectorAll("main h1, main h2")].map((h) => h.textContent).join(" ")))), "“asks first” is not a headline");
     // Lens Browser: the steps are states of the real BrowserSurface.
     await page.evaluate(() => document.getElementById("f-browser").scrollIntoView({ block: "center" }));
-    await page.click('#f-browser .xstep[data-step="approval"]');
-    expect(await page.waitForFunction(() => { const h = document.querySelector("#f-browser .xf"); return h.classList.contains("is-ready") && h.querySelector("iframe").contentDocument?.querySelector(".lb-root") && /scene=approval/.test(h.querySelector("iframe").src); }, null, { timeout: 10000 }).then(() => true, () => false), "the browser exhibit steps through the real browser");
+    await page.mouse.move(2, 2);
+    expect(await page.waitForFunction(() => { const h = document.querySelector("#f-browser .xf"); return h.classList.contains("is-ready") && h.querySelector("iframe").contentDocument?.querySelector(".lb-root") && /scene=agent/.test(h.querySelector("iframe").src); }, null, { timeout: 15000 }).then(() => true, () => false), "the browser exhibit moves through the real browser by itself");
     expect((await page.locator("#f-browser .why li").count()) === 5, "Lens Browser lists five things it does differently");
     const order = await D(() => [...document.querySelectorAll("main section[id]")].map((x) => x.id));
-    expect(order.indexOf("f-browser") < order.indexOf("f-magic") && order.indexOf("f-magic") < order.indexOf("overlays"), "Lens Browser comes first after the hero; the small apps come later", order.join(","));
+    const at = (x) => order.indexOf(x);
+    expect(at("f-dock") >= 0 && at("f-dock") < at("f-browser") && at("f-browser") < at("f-magic") && at("f-magic") < at("byo") && at("byo") < at("overlays") && at("overlays") < at("apps"), "the Dock comes first after the hero, then Lens Browser, Right-click and the agentic desktop; the small apps later", order.join(","));
   }
   // The Guide: the orb opens it, / too; a chip acts on the desk; Esc collapses it.
   await page.click("#guide-orb");
@@ -666,6 +690,82 @@ async function waitDesk(page, sel = "#desk-host") {
     await ctx.close();
   }
 }
+// ---- icons stay in their box --------------------------------------------------------------------------
+// An icon (an svg or img inside an icon holder, or any inline svg outside a live surface or picture) must
+// never render larger than its intended box: 64 px for icon classes, 96 px for any other inline svg.
+// A stylesheet that stops applying (an unclosed @media once blew five icons up to 1152 px) fails here.
+{
+  for (const w of [375, 768, 1440]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: 900 } });
+    const page = await ctx.newPage();
+    for (const pg of ["index.html", "download.html", "features.html"]) {
+      const ok = await page.goto(base + pg).then((r) => r?.ok(), () => false);
+      if (!ok) continue;
+      await page.waitForTimeout(600);
+      const big = await page.evaluate(() => {
+        const out = [];
+        const ICON = "[class*='-ic'], [class^='ic'], .k-ic, .why-ic, .app-ic, .sc-ic, .byo-ic, .learn-ic, .sb-btn, .btn, .kicker, .get-pill";
+        for (const el of document.querySelectorAll("main svg, main img, header svg, header img, footer svg, footer img")) {
+          if (el.closest(".xstage, .desk-host, .lab, .dr-frame, .hero-logo, figure, .mini-pic, .clip, .ov-media, .gw, iframe")) continue;
+          if (el.ownerSVGElement) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width < 1) continue;
+          const inIcon = !!el.closest(ICON);
+          const limit = inIcon ? 64 : el.tagName.toLowerCase() === "svg" ? 96 : Infinity;
+          if (r.width > limit || r.height > limit) out.push(`${el.tagName.toLowerCase()} in .${el.parentElement?.className || el.parentElement?.tagName} ${Math.round(r.width)}×${Math.round(r.height)}`);
+        }
+        return out;
+      });
+      if (big.length) problems.push(`icons: ${pg} at ${w}px: ${big.length} icon(s) larger than their box: ${big.slice(0, 4).join("; ")}`);
+    }
+    await ctx.close();
+  }
+}
+
+// ---- the dock's Settings pop-out on the hero desk ------------------------------------------------------
+// Settings opens from the dock's gear joined to the dock (overlapping its top edge by 1 px, at its own
+// 760 px width), apart and 12 px above the bar on the Taskbar style; a second click closes it, and opening
+// Search closes it, as in the app (src-tauri/src/app/flyout_geom.rs).
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(base + "index.html");
+  await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
+  await waitDesk(page);
+  await page.evaluate(() => window.lensSite.shows.exit());
+  const dockF = () => page.frames().find((f) => f.url().includes("live/dock/"));
+  const geo = () => page.evaluate(() => {
+    const d = window.lensSite.desk, w = d.fly;
+    const p = d.frame.contentDocument.querySelector(".dock-pill"), r = p.getBoundingClientRect();
+    return w && { y: w.y, h: w.h, w: w.w, x: w.x, fused: w.el.classList.contains("is-fused"), pillTop: d.frame.offsetTop + r.top, pillFused: p.classList.contains("is-fused-top"), W: d.W };
+  });
+  for (const style of ["floating", "taskbar", "slim", "islands"]) {
+    await page.evaluate((s2) => window.lensSite.desk.dockStyle(s2), style);
+    await page.waitForTimeout(1200);
+    await dockF().click("button[aria-label='Settings']");
+    await page.waitForTimeout(900);
+    const g = await geo();
+    if (!g) { problems.push(`pop-out: ${style}: the dock's gear doesn't open Settings`); continue; }
+    if (style === "taskbar") {
+      if (g.fused || Math.abs(g.pillTop - (g.y + g.h) - 12) > 2 || g.w > 680) problems.push(`pop-out: taskbar: Settings should open apart, 12 px above the bar, at most 680 px wide (${JSON.stringify(g)})`);
+    } else if (!g.fused || !g.pillFused || Math.abs(g.y + g.h - g.pillTop - 1) > 1.5 || g.w < 760 || Math.abs(g.x + g.w / 2 - g.W / 2) > 2) problems.push(`pop-out: ${style}: Settings should open joined to the dock, 760 px wide and centred (${JSON.stringify(g)})`);
+    await dockF().click("button[aria-label='Settings']");
+    await page.waitForTimeout(700);
+    if (await geo()) problems.push(`pop-out: ${style}: a second click on the gear doesn't close Settings`);
+  }
+  await page.evaluate(() => window.lensSite.desk.dockStyle("floating"));
+  await page.waitForTimeout(900);
+  await dockF().click("button[aria-label='Settings']"); await page.waitForTimeout(700);
+  await dockF().click(".dock-search-mag-btn"); await page.waitForTimeout(900);
+  if (await geo()) problems.push("pop-out: opening Search doesn't close Settings");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(500);
+  await dockF().click("button[aria-label='Settings']"); await page.waitForTimeout(900);
+  await page.evaluate(() => window.lensSite.desk.fly?.frame.contentWindow.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await page.waitForTimeout(600);
+  if (await geo()) problems.push("pop-out: Esc doesn't close Settings");
+  await ctx.close();
+}
+
   // OS detection: the hero's Download adapts, honestly.
   for (const [ua, want, href] of [["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", "Download for Windows", "download.html"], ["Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", "Get Lens for Windows", "#platforms"]]) {
     const c = await browser.newContext({ viewport: { width: 1280, height: 800 }, userAgent: ua });

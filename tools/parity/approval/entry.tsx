@@ -1,4 +1,4 @@
-// "Needs your OK" in every preview type: ?scene=look|window|settings|element|compact|hold|done|blocked|pill&preset=…
+// "Needs your OK" in every preview type: ?scene=look|window|settings|element|dinner|compact|hold|done|blocked|pill&preset=…
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
@@ -226,6 +226,39 @@ const variants: typeof previews = {
   },
 };
 Object.assign(previews, variants);
+// The website's agentic-desktop exhibit: one step of a five-step plan Claude Code is running. The card is
+// the risky step (a booking with a no-show fee); "This task can" lists what each step of the plan may do.
+const dinnerSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='520' height='150'><rect width='520' height='150' fill='#fafafa'/><text x='16' y='28' font-family='Arial' font-size='14' font-weight='700' fill='#111'>Complete your reservation</text><text x='16' y='46' font-family='Arial' font-size='11' fill='#666'>Harbor &amp; Vine · Fri 8:00 PM · 4 people</text><rect x='16' y='58' width='152' height='26' rx='3' fill='#fff' stroke='#d4d4d8'/><text x='24' y='75' font-family='Arial' font-size='11' fill='#333'>Sen W.</text><rect x='176' y='58' width='152' height='26' rx='3' fill='#fff' stroke='#d4d4d8'/><text x='184' y='75' font-family='Arial' font-size='11' fill='#333'>Party of 4</text><rect x='13' y='95' width='178' height='38' rx='7' fill='none' stroke='#e8b04b' stroke-width='3'/><rect x='17' y='99' width='170' height='30' rx='5' fill='#d4383c'/><text x='32' y='119' font-family='Arial' font-size='11' font-weight='700' fill='#fff'>Complete reservation</text></svg>`;
+previews.dinner = {
+  pv: {
+    question: "Book Friday dinner for 4 at Harbor & Vine?",
+    reason: "Step 3 of 5. They charge $25 a person if you don't show, so Claude Code stopped here.",
+    verb: "Book",
+    kind: "element",
+    element: { image: `data:image/svg+xml;utf8,${encodeURIComponent(dinnerSvg)}`, label: "Complete reservation", capturedAgo: "2s ago", siteLabel: "Lens Browser" },
+    details: [
+      { label: "When", value: "Fri, Nov 27 · 8:00 PM" },
+      { label: "Party", value: "4 · Maya eats vegan" },
+      { label: "No-show", value: "$25 a person" },
+      { label: "Next", value: "Calendar event, then 3 messages (each asks)" },
+    ],
+    reversible: false,
+    risk: "confirm",
+    holdToConfirm: true,
+    capabilities: ["type_text"],
+    taskList: [
+      { id: "browse", label: "Search and read sites in Lens Browser", level: "allowed", used: true },
+      { id: "type_text", label: "Fill in the reservation form", level: "ask", used: true },
+      { id: "calendar", label: "Add “Dinner · Harbor & Vine” to your calendar", level: "ask", used: true },
+      { id: "send_messages", label: "Message Maya, Sam and Priya", level: "ask", used: true },
+      { id: "payments", label: "Pay with a saved method", level: "blocked", used: false },
+    ],
+  },
+  origin: "mcp",
+  source: "Claude Code",
+  site: "tables.example",
+};
+
 const PANELS: [string, string, string][] = [
   ["delete", "Deletions go to the Bin", "Before anything is removed, Lens counts it, sets aside what matters and keeps a 30-day undo."],
   ["payment", "Every payment waits", "Lens stops at the amount and the saved card, and pays only when you hold to confirm."],
@@ -299,5 +332,5 @@ if (scene === "noaccess") {
   );
 } else {
   const key = previews[scene] ? scene : "look";
-  app.render(desk(cardFor(key, { tasksOpen: p.get("tasks") === "1" || key === "look" })));
+  app.render(desk(cardFor(key, { tasksOpen: p.get("tasks") === "1" || key === "look" || key === "dinner" })));
 }

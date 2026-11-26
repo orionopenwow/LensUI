@@ -27,39 +27,33 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 // ---- the hero desk ----------------------------------------------------------------------------
 const host = $("#desk-host");
 const desk = createDesk(host, { fitViewport: true, label: "Lens desktop demo", layout: [["browser", 0.03, 0.03], ["notes", 0.58, 0.03]] });
-// The desk is the visitor's: nothing plays on its own. Tabs below it start a guided tour that moves
-// one step at a time, only when the visitor presses Next (or does the highlighted thing).
+// The demo plays by itself, slowly: each part shows its feature in three steps, then hands over to the
+// next (js/showcases.js). Pointing at it or focusing it holds the step, Pause stops it, and using the desk
+// yourself stops it until Play. Tabs below jump to a part. Reduced motion: the first step, still.
 const scTabs = $("#sc-tabs");
 const scbar = $("#sc-bar");
 const capN = scbar.querySelector(".sc-n"), capT = scbar.querySelector(".sc-t"), dots = scbar.querySelector(".sc-dots");
-const FREE = { n: "Free play", t: "Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or start with the docks below and go step by step." };
-const btn = (k) => scbar.querySelector(`[data-${k}]`);
+const playBtn = scbar.querySelector("[data-play]");
 const shows = createShowcases(desk, {
   onChange(st) {
-    scTabs.querySelectorAll("[role=tab]").forEach((t) => {
+    scTabs.querySelectorAll("[role=tab]").forEach((t, k) => {
       const on = st.showcase?.id === t.dataset.sc;
       t.setAttribute("aria-selected", on ? "true" : "false");
-      t.tabIndex = on || (!st.showcase && t === scTabs.firstElementChild) ? 0 : -1;
+      t.tabIndex = on || (!st.showcase && k === 0) ? 0 : -1;
     });
-    if (!st.showcase) {
-      capN.textContent = FREE.n; capT.textContent = FREE.t; dots.innerHTML = "";
-      ["back", "next", "reset", "exit"].forEach((k) => (btn(k).disabled = true));
-      scbar.classList.remove("is-touring");
-      if (location.hash.startsWith("#tour/")) history.replaceState(null, "", location.pathname + location.search);
-      return;
+    playBtn.setAttribute("aria-pressed", String(st.paused));
+    playBtn.querySelector(".lbl").textContent = st.paused ? "Play" : "Pause";
+    if (!st.showcase) { dots.innerHTML = ""; return; }
+    capN.textContent = st.showcase.title;
+    const t = st.busy && !st.step ? "" : st.cap;
+    if (t && capT.textContent !== t) {
+      if (reducedMotion()) capT.textContent = t;
+      else { capT.style.opacity = "0"; clearTimeout(capT._t); capT._t = setTimeout(() => { capT.textContent = t; capT.style.opacity = ""; }, 220); }
     }
-    scbar.classList.add("is-touring");
-    capN.textContent = `${st.showcase.title} · ${st.index + 1} of ${st.total}`;
-    capT.textContent = st.busy && !st.step ? "Setting up…" : st.step?.cap ?? "";
-    dots.innerHTML = Array.from({ length: st.total }, (_, k) => `<i class="${k < st.index ? "was" : k === st.index ? "on" : ""}"></i>`).join("");
-    btn("back").disabled = st.busy || st.index === 0;
-    btn("next").disabled = st.busy || st.done;
-    btn("next").querySelector("span").textContent = st.done ? "Done" : "Next";
-    btn("reset").disabled = st.busy;
-    btn("exit").disabled = false;
-    history.replaceState(null, "", `#tour/${st.showcase.id}`);
+    dots.innerHTML = Array.from({ length: st.total }, (_, k) => `<i class="${k === st.index ? "on" : ""}"></i>`).join("");
   },
 });
+playBtn.addEventListener("click", () => (shows.paused ? shows.play() : shows.pause()));
 // Each tour's tab carries the icon of the thing it shows (the shared icon set; two drawn glyphs).
 const SC_SVG = {
   docks: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="15" width="18" height="5" rx="2.5"/><path d="M7 17.5h.01M10.5 17.5h.01M14 17.5h.01M17.5 17.5h.01"/><rect x="5" y="4" width="14" height="8" rx="2"/></svg>`,
@@ -67,16 +61,14 @@ const SC_SVG = {
   magic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`,
   agent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/></svg>`,
 };
-const SC_IMG = { desktop: "brand/lens-logo-small.svg", browser: "lens-browser" };
+const SC_IMG = { browser: "lens-browser" };
 const scIcon = (id) => SC_SVG[id] ? `<span class="sc-ic g" aria-hidden="true">${SC_SVG[id]}</span>` : `<span class="sc-ic" aria-hidden="true"><img src="${iconUrl(SC_IMG[id] ?? "lens-command")}" alt="" width="28" height="28"></span>`;
 scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}">${scIcon(s.id)}<span class="sc-tx"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></span></button>`).join("");
 scTabs.addEventListener("click", (e) => {
   const t = e.target.closest("[data-sc]");
   if (!t) return;
-  if (shows.current?.id === t.dataset.sc) return;
-  // Bring the whole desk and its step bar into view, so each step's caption sits under what it points at.
-  bringIntoView();
-  shows.start(t.dataset.sc);
+  if (shows.current?.id === t.dataset.sc && !shows.paused) return;
+  shows.start(t.dataset.sc, { user: true });
 });
 scTabs.addEventListener("keydown", (e) => {
   if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -86,28 +78,13 @@ scTabs.addEventListener("keydown", (e) => {
   const n = all[(k + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length];
   n.focus(); n.click();
 });
-scbar.addEventListener("click", (e) => {
-  if (e.target.closest("[data-next]")) shows.next();
-  else if (e.target.closest("[data-back]")) shows.back();
-  else if (e.target.closest("[data-reset]")) shows.reset();
-  else if (e.target.closest("[data-exit]")) shows.exit();
-});
-// Arrow keys step the tour while the desk or its bar has focus; Esc leaves it.
-addEventListener("keydown", (e) => {
-  if (!shows.current) return;
-  const inDesk = host.contains(document.activeElement) || scbar.contains(document.activeElement) || document.activeElement === document.body;
-  if (!inDesk || document.activeElement?.closest?.("input, textarea, [contenteditable=true], .lx-cmd")) return;
-  if (e.key === "ArrowRight") { e.preventDefault(); shows.next(); }
-  else if (e.key === "ArrowLeft") { e.preventDefault(); shows.back(); }
-  else if (e.key === "Escape" && !document.activeElement?.closest?.(".lx-approve, .lx-magic, .gw")) shows.exit();
-});
-// The desk's background chatter (toasts, now-playing ticks) stays quiet so nothing moves by itself.
+// The desk's background chatter (toasts, now-playing ticks) stays quiet; the demo is the only motion.
 desk.setQuiet(true);
 const deep = decodeURIComponent(location.hash).match(/^#tour\/(.+)$/);
-if (deep) shows.start(deep[1]);
+shows.start(deep ? deep[1] : shows.list[0].id);
 
 // Old scene names (the Guide, #scene/… links) map to the nearest tour.
-const SCENE_TO_TOUR = { everyday: "desktop", tiling: "desktop", settings: "desktop", "magic-right-click": "magic", snip: "magic", claude: "agent", approvals: "agent", ade: "agent", "browser-ai": "browser", docks: "docks", themes: "themes" };
+const SCENE_TO_TOUR = { everyday: "docks", tiling: "docks", settings: "docks", desktop: "docks", "magic-right-click": "magic", snip: "magic", claude: "agent", approvals: "agent", ade: "agent", "browser-ai": "browser", docks: "docks", themes: "themes" };
 // Music, Cleaner, Lens Apps and the core apps are sections further down now, not hero tours: their
 // old links open that app on the desk.
 const SCENE_TO_APP = { music: "music", cleaner: "cleaner", apps: "store", core: "monitor", "core-apps": "monitor" };
@@ -120,8 +97,8 @@ function bringIntoView() {
 }
 export function playScene(id) {
   bringIntoView();
-  if (SCENE_TO_APP[id]) { if (shows.current) shows.exit(); return desk.open(SCENE_TO_APP[id]); }
-  return shows.start(SCENE_TO_TOUR[id] ?? (shows.list.some((s) => s.id === id) ? id : "desktop"));
+  if (SCENE_TO_APP[id]) { shows.pause(); return desk.open(SCENE_TO_APP[id]); }
+  return shows.start(SCENE_TO_TOUR[id] ?? (shows.list.some((s) => s.id === id) ? id : "docks"), { user: true });
 }
 const legacy = decodeURIComponent(location.hash).match(/^#scene\/(.+)$/);
 if (legacy) playScene(legacy[1]);
@@ -131,7 +108,7 @@ addEventListener("hashchange", () => {
   if (m) playScene(m[1]);
 });
 // A small compatibility surface for the Guide and the checks: "scenes" never autoplay any more.
-const scenes = { get playing() { return false; }, play: () => playScene("desktop"), pause() {}, stop: () => shows.exit(), go: (i) => shows.start(shows.list[i]?.id ?? "desktop"), goId: playScene, get current() { return shows.current; } };
+const scenes = { get playing() { return shows.playing; }, play: () => shows.play(), pause: () => shows.pause(), stop: () => shows.pause(), go: (i) => shows.start(shows.list[i]?.id ?? "docks", { user: true }), goId: playScene, get current() { return shows.current; } };
 window.lensSite = { desk, scenes, shows, playScene, detectOS, APPS, OVERS };
 addEventListener("lens-play-scene", (e) => playScene(e.detail));
 document.querySelectorAll("[data-play-scene]").forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); playScene(b.dataset.playScene); }));
@@ -213,7 +190,7 @@ function pickDock(i, { focus = false, apply = true } = {}) {
   const [style, name, line, o] = DOCKS[i];
   railInfo.innerHTML = `<b>${esc(name)}</b> <span>${esc(line)}</span>`;
   if (!apply) return;
-  if (window.lensSite?.shows?.current) window.lensSite.shows.exit();
+  if (window.lensSite?.shows) window.lensSite.shows.pause();
   desk.dockStyle(style, o.shape ?? "classic");
   if (o.pack) getPacks().then((ps) => desk.setPack(ps.find((p) => p.id === o.pack)));
 }
@@ -243,5 +220,5 @@ lazy("#themes", (el) => import("./themelab.js").then((m) => m.init(el)));
 import("./exhibits.js").then((m) => m.init());
 // "Get" opens the real Lens Apps on the desk; a core app's picture opens that app there.
 document.querySelectorAll("[data-get]").forEach((b) => b.addEventListener("click", () => playScene("apps")));
-document.querySelectorAll("[data-open-app]").forEach((b) => b.addEventListener("click", () => { if (shows.current) shows.exit(); bringIntoView(); desk.open(b.dataset.openApp); }));
+document.querySelectorAll("[data-open-app]").forEach((b) => b.addEventListener("click", () => { shows.pause(); bringIntoView(); desk.open(b.dataset.openApp); }));
 
