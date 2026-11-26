@@ -240,14 +240,6 @@ jobs:
         shell: pwsh
         run: node tests/e2e/failsafe.mjs
 
-      # TEMPORARY (fix/webview-killed): sample the Dock renderer recovery eight times.
-      - name: webview-killed x8 (temporary)
-        if: always() && hashFiles('src-tauri/target/debug/lens-ui.exe') != ''
-        shell: pwsh
-        env:
-          FAILSAFE_ONLY: webview-killed
-          FAILSAFE_REPEAT: "8"
-        run: node tests/e2e/failsafe.mjs
       # Auto-hide on a real desktop (tests/e2e/autohide.mjs): moves the real cursor through the Top
       # Bar and Dock edges, opens and dismisses flyouts every way, and checks the real window state
       # after each step: no stuck-open bar, no flicker, no flyout left behind.
