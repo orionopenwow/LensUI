@@ -285,3 +285,26 @@ describe("flag and Command", () => {
     for (const p of ["widgets", "show widgets", "what are widgets", "edit widgets settings please"]) expect(isEditWidgetsPhrase(p)).toBe(false);
   });
 });
+
+describe("press weight", () => {
+  test("a press stays visible for at least 90 ms, even on the quickest click", async () => {
+    const { releaseDelay, MIN_HOLD_MS } = await import("../deskwidgets/press");
+    expect(MIN_HOLD_MS).toBe(90);
+    expect(releaseDelay(1000, 1010)).toBe(80);
+    expect(releaseDelay(1000, 1090)).toBe(0);
+    expect(releaseDelay(1000, 1500)).toBe(0);
+    expect(releaseDelay(1000, 900)).toBe(90);
+  });
+
+  test("every interactive element in the desktop widgets declares a weight", async () => {
+    const { readFileSync, readdirSync } = await import("node:fs");
+    const dir = new URL("../deskwidgets/", import.meta.url);
+    for (const f of readdirSync(dir).filter((n) => n.endsWith(".tsx"))) {
+      const src = readFileSync(new URL(f, dir), "utf8");
+      for (const m of src.matchAll(/<button\b[\s\S]*?<\/button>/g)) {
+        const tag = m[0].slice(0, m[0].search(/\n\s*>|">\s*\n|<\//) + 1 || 400);
+        expect(`${f}: ${tag.replace(/\s+/g, " ").slice(0, 160)}`).toMatch(/data-weight="(light|medium|heavy)"/);
+      }
+    }
+  });
+});

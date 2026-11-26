@@ -330,6 +330,7 @@ async function openTab(page, label) {
 // broadcast may recolour the cards, but no widget may move or change size, and nothing may error.
 {
   const page = await openSurface(browser, server.base, { surface: "deskwidgets", query: "magic=desktopWidgets&desk=sample", width: 1600, height: 900, settle: 1500 });
+  await page.evaluate(() => (window.__rig = {})); // broadcast() starts its clock here
   const boxes = () => page.evaluate(() => [...document.querySelectorAll(".dwg-item")].map((e) => { const r = e.getBoundingClientRect(); return [e.getAttribute("data-id"), Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(":"); }));
   const before = await boxes();
   const problems = [];

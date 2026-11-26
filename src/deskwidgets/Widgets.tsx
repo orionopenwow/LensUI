@@ -238,15 +238,15 @@ export const MusicWidget: React.FC<WidgetProps> = ({ size, preview }) => {
   const controls = (
     <div className="dwm-controls">
       {size !== "small" && (
-        <button type="button" aria-label="Previous" onClick={() => act("prev")}>
+        <button type="button" data-weight="medium" aria-label="Previous" onClick={() => act("prev")}>
           <SkipBack size={14} aria-hidden />
         </button>
       )}
-      <button type="button" className="is-main" aria-label={playing ? "Pause" : "Play"} onClick={() => act("play_pause")}>
+      <button type="button" data-weight="medium" className="is-main" aria-label={playing ? "Pause" : "Play"} onClick={() => act("play_pause")}>
         {playing ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
       </button>
       {size !== "small" && (
-        <button type="button" aria-label="Next" onClick={() => act("next")}>
+        <button type="button" data-weight="medium" aria-label="Next" onClick={() => act("next")}>
           <SkipForward size={14} aria-hidden />
         </button>
       )}
@@ -333,7 +333,7 @@ export const NotesWidget: React.FC<WidgetProps> = ({ size, preview }) => {
       <div className="dw-notes is-empty">
         <StickyNote size={18} aria-hidden />
         <span className="dw-sub">No notes yet</span>
-        <button type="button" className="dw-link" onClick={() => open()}>
+        <button type="button" data-weight="medium" className="dw-link" onClick={() => open()}>
           Open Lens Notes
         </button>
       </div>
@@ -348,7 +348,7 @@ export const NotesWidget: React.FC<WidgetProps> = ({ size, preview }) => {
       <ul className="dw-note-list">
         {shown.map((n) => (
           <li key={n.id}>
-            <button type="button" className="dw-note" onClick={() => open(n)}>
+            <button type="button" data-weight="light" className="dw-note" onClick={() => open(n)}>
               <span className="dw-title dw-clip">{n.title}</span>
               {size !== "large" || shown.length < 4 ? <span className="dw-sub dw-clamp">{firstLine(n.text.replace(n.title, "")) || " "}</span> : null}
             </button>
@@ -412,7 +412,7 @@ export const TodayWidget: React.FC<WidgetProps> = ({ size, preview }) => {
         <ul className="dw-tasks" ref={listRef}>
           {open.slice(0, max).map((e) => (
             <li key={e.id} data-event={e.id}>
-              <button type="button" className="dw-check" aria-label={`Done: ${e.title}`} onClick={() => void tick(e.id)}>
+              <button type="button" data-weight="medium" className="dw-check" aria-label={`Done: ${e.title}`} onClick={() => void tick(e.id)}>
                 <Check size={11} aria-hidden />
               </button>
               <span className="dw-clip">{e.title}</span>

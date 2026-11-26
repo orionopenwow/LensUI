@@ -72,6 +72,14 @@ kill switch (**Stop all widget fetching**) and its Sources page.
 - **Layout per monitor** in `%APPDATA%\LensUI\desktop-widgets.json` (atomic writes, sanitized on
   read), keyed by the monitor's device name and resolution. Not in config.json, so agents using the
   control catalogue can't rearrange your desktop (they can only turn the feature on or off).
+- **Feel** (DESIGN.md §5): every control declares a press weight (`data-weight`: light for menu
+  rows, the kinds list and notes; medium for widget buttons, the − badge and the cards; heavy for
+  Done/Save and the gallery previews). The press starts on pointer-down, shows for at least 90 ms
+  even on the quickest click (also for Space/Enter), sinks (medium 0.97 and 1 px, heavy 0.955 and
+  1.5 px, a fill step) and springs back in 220 ms; hover never scales (`src/deskwidgets/press.ts`,
+  a local stand-in for the shared press primitives). A widget added from the gallery grows from
+  its preview (or from the preview carried under the pointer); the gallery rises from the bottom
+  and returns there on Done/Esc, and both can be reversed mid-way.
 - **Motion**: add, remove, resize and move reflow with FLIP (`captureFlip`, transform and opacity
   only); the analog second hand is one CSS sweep started at the current second. Reduced motion:
   no reflow animation, no fades, no second hand.

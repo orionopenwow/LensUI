@@ -148,9 +148,9 @@ html.dwg-page #root {
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform var(--lens-dur-instant) var(--lens-ease-out);
+  transition: background-color var(--lens-dur-fast) var(--lens-ease-out);
 }
-.dwg-done:hover { transform: scale(1.03); }
+.dwg-done:hover { background: #e4e4e7; }
 .dwg-done:disabled { opacity: 0.45; cursor: default; transform: none; }
 .dwg-plain { padding: 5px 12px; border: 0; border-radius: 7px; background: rgb(255 255 255 / 0.08); color: #fafafa; font: inherit; font-size: 12.5px; cursor: pointer; }
 .dwg-panel-body { flex: 1; display: flex; min-height: 0; }
@@ -300,9 +300,8 @@ html[data-motion="reduce"] .dwg-item, html[data-motion="reduce"] .dwg-dim, html[
 .dw-music .dw-col { flex: 1; }
 .dw-music .dw-bar-fill { background: var(--lens-fg); }
 .dwm-controls { display: flex; align-items: center; justify-content: center; gap: 6px; }
-.dwm-controls button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--lens-fg); cursor: pointer; transition: transform var(--lens-dur-instant) var(--lens-ease-out), background-color var(--lens-dur-instant) var(--lens-ease-out); }
+.dwm-controls button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--lens-fg); cursor: pointer; transition: background-color var(--lens-dur-fast) var(--lens-ease-out); }
 .dwm-controls button:hover { background: rgb(var(--lens-ink) / 0.08); }
-.dwm-controls button:active { transform: scale(0.94); }
 .dwm-controls .is-main { width: 34px; height: 34px; background: rgb(var(--lens-ink) / 0.1); }
 
 /* Notes. */
@@ -325,3 +324,37 @@ html[data-motion="reduce"] .dwg-item, html[data-motion="reduce"] .dwg-dim, html[
 
 /* Dashboard gallery widgets: their Adaptive Card, a little smaller. */
 .dw-gallery { display: flex; flex-direction: column; gap: 6px; font-size: 12px; overflow: hidden; }
+
+/* ---- Press weight (DESIGN.md §5.1–5.2) ----
+   Pressing sinks the control within a frame (press.ts marks [data-pressed] on pointerdown and keeps
+   it at least 90 ms); the release springs back. Hover never scales. Light: one fill step only.
+   Medium: 0.97, 1 px down, one shade. Heavy: 0.955, 1.5 px down, two shades and an inner shade.
+   The fill step is an inset shade, so any surface darkens (or, on light themes, deepens) evenly. */
+.dwg [data-weight] {
+  transition:
+    transform var(--lens-press-release, 220ms) var(--lens-ease-spring),
+    box-shadow var(--lens-dur-fast) var(--lens-ease-out),
+    background-color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.dwg [data-weight][data-pressed] {
+  transition-duration: var(--lens-press-in, 70ms), var(--lens-press-in, 70ms), var(--lens-press-in, 70ms);
+  transition-timing-function: var(--lens-ease-out);
+}
+.dwg [data-weight="light"][data-pressed] { box-shadow: inset 0 0 0 999px rgb(var(--lens-ink) / 0.07); }
+.dwg [data-weight="medium"][data-pressed] { transform: translateY(1px) scale(0.97); box-shadow: inset 0 0 0 999px rgb(var(--lens-ink) / 0.08); }
+.dwg [data-weight="heavy"][data-pressed] { transform: translateY(1.5px) scale(0.955); box-shadow: inset 0 0 0 999px rgb(0 0 0 / 0.14), inset 0 1px 0 rgb(0 0 0 / 0.25); }
+.dwg .dwg-item[data-weight][data-pressed] { transform: translateY(1px) scale(0.985); box-shadow: inset 0 0 0 1px var(--dwg-line), 0 4px 12px rgb(0 0 0 / 0.26); }
+.dwg .dwg-item.is-lifted, .dwg .dwg-item.is-lifted[data-pressed] { transition: none; }
+.dwg-preview[data-weight] { box-shadow: none; }
+.dwg-preview[data-weight][data-pressed] { box-shadow: none; }
+.dwg-preview[data-pressed] .dwg-preview-box { opacity: 0.92; }
+.dwg [data-weight][data-no-press] { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .dwg [data-weight][data-pressed] { transform: none; }
+}
+html[data-motion="reduce"] .dwg [data-weight][data-pressed] { transform: none; }
+
+/* A preview carried out of the gallery: it follows the pointer 1:1 (no easing while dragging). */
+.dwg-carry { position: absolute; z-index: 30; pointer-events: none; opacity: 0.94; }
+.dwg-carry .dwg-item { box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.16), 0 18px 40px rgb(0 0 0 / 0.45); }
+.dwg .dw-check[data-pressed] { box-shadow: inset 0 0 0 1.5px rgb(var(--lens-ink) / 0.35), inset 0 0 0 999px rgb(var(--lens-ink) / 0.1); }

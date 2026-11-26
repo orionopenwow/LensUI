@@ -12,7 +12,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { Minus } from "lucide-react";
 import type { DeskItem } from "../types/generated";
 import { useLensState } from "../hooks/useLensState";
-import { captureFlip, glide } from "../ui/motion";
+import { captureFlip, glide, usePresence } from "../ui/motion";
+import { usePressWeight } from "./press";
 import { reducedMotion } from "../ui/motion/tokens";
 import { EMPTY_STORE, WIDGETS_CHANGED, widgetsApi, type WidgetStore } from "../widgets/api";
 import { addItem, gridFor, layout, moveTo, newId, rectOf, removeItem, resize, settle, snapCell, cellAt, type Grid, type GridItem, type Size } from "./grid";
@@ -52,7 +53,14 @@ interface NewDrag {
   req: AddRequest;
   x: number;
   y: number;
+  /** Where the pointer holds the carried preview, and its size (CSS px). */
+  ox: number;
+  oy: number;
+  w: number;
+  h: number;
 }
+
+type Box = { x: number; y: number; w: number; h: number };
 
 const toItems = (d: DeskItem[]): GridItem[] => d.map((i) => ({ ...i }));
 const toDesk = (g: GridItem[]): DeskItem[] => g.map((i) => ({ id: i.id, kind: i.kind, size: i.size, col: i.col, row: i.row, params: i.params }));
@@ -79,6 +87,12 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
   const [error, setError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const flip = useRef<{ play: () => void } | null>(null);
+  /** A widget just added from the gallery grows from its preview (DESIGN.md §5.3). */
+  const grow = useRef<{ id: string; from: Box } | null>(null);
+  usePressWeight(root);
+  // The gallery rises from the bottom and returns there; the dim fades. Both interruptible.
+  const panel = usePresence<HTMLElement>(editing, { animateEnter: false, enter: { y: 28, opacity: 0 }, enterOptions: { duration: "slow", ease: "out", additive: true }, exit: { y: 28, opacity: 0 }, exitOptions: { duration: "exit", ease: "exit", additive: true } });
+  const dim = usePresence<HTMLDivElement>(editing, { animateEnter: false, exit: { opacity: 0 }, exitOptions: { duration: "exit", ease: "exit" } });
 
   useEffect(() => {
     document.documentElement.classList.add("dwg-page");
@@ -155,6 +169,15 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
   useLayoutEffect(() => {
     flip.current?.play();
     flip.current = null;
+    const g = grow.current;
+    grow.current = null;
+    const el = g && root.current?.querySelector<HTMLElement>(`.dwg-item[data-id="${CSS.escape(g.id)}"]`);
+    if (g && el && !reducedMotion()) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        glide(el, { x: g.from.x - r.left, y: g.from.y - r.top, scaleX: g.from.w / r.width, scaleY: g.from.h / r.height, opacity: 0.9 }, { opacity: 1 }, { duration: "slow", ease: "out", origin: "0 0" });
+      }
+    }
   }, [items]);
 
   // Tell Rust where the widgets are, so only they take the pointer.
@@ -218,7 +241,9 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
     commit(removeItem(items, id));
   };
   const add = (req: AddRequest, at?: { col: number; row: number }) => {
-    commit(addItem(items, { id: newId(req.kind), kind: req.kind, size: req.size, params: req.params ?? {}, ...(at ?? {}) }, grid));
+    const id = newId(req.kind);
+    if (req.from) grow.current = { id, from: req.from };
+    commit(addItem(items, { id, kind: req.kind, size: req.size, params: req.params ?? {}, ...(at ?? {}) }, grid));
   };
   const setParams = (id: string, params: Record<string, string>) => commit(items.map((i) => (i.id === id ? { ...i, params } : i)));
 
@@ -262,7 +287,7 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
       if (!d) return;
       const overPanel = document.elementFromPoint(e.clientX, e.clientY)?.closest(".dwg-panel");
       const cell = overPanel ? null : cellAt(e.clientX, e.clientY, grid);
-      if (cell) addRef.current(d.req, cell);
+      if (cell) addRef.current({ ...d.req, from: { x: e.clientX - d.ox, y: e.clientY - d.oy, w: d.w, h: d.h } }, cell);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -285,10 +310,11 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
       onPointerUp={onPointerUp}
       onPointerCancel={() => setDrag(null)}
     >
-      {editing && <div className="dwg-dim" aria-hidden />}
+      {dim.mounted && <div ref={dim.ref} className="dwg-dim" aria-hidden />}
       {(menu || editing) && <div className="dwg-catch" onPointerDown={() => setMenu(null)} aria-hidden />}
       {snap && dragging && <div className="dwg-ghost" style={ghostStyle(rectOf(snap.col, snap.row, dragging.size, grid))} aria-hidden />}
       {newDrag && newDragCell && <div className="dwg-ghost" style={ghostStyle(rectOf(newDragCell.col, newDragCell.row, newDrag.req.size, grid))} aria-hidden />}
+      {newDrag && <CarriedPreview drag={newDrag} />}
       {placed.map((p) => {
         const Widget = WIDGETS[p.kind];
         const r = rectOf(p.col, p.row, p.size, grid);
@@ -298,6 +324,7 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
           <div
             key={p.id}
             className={`dwg-item is-${p.size}${isDrag ? " is-lifted" : ""}`}
+            data-weight="medium"
             data-id={p.id}
             data-kind={p.kind}
             data-size={p.size}
@@ -311,7 +338,7 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
             }}
           >
             {editing && (
-              <button type="button" className="dwg-remove" aria-label={`Remove ${name}`} onClick={() => void remove(p.id)}>
+              <button type="button" data-weight="medium" className="dwg-remove" aria-label={`Remove ${name}`} onClick={() => void remove(p.id)}>
                 <Minus size={12} aria-hidden />
               </button>
             )}
@@ -322,34 +349,36 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
       {menu && menuItem && (
         <div className="dwg-menu" role="menu" aria-label={`${kindDef(menuItem.kind)?.name ?? "Widget"} menu`} style={menuStyle(menu, view)}>
           {(["small", "medium", "large"] as Size[]).map((s) => (
-            <button key={s} type="button" role="menuitemradio" aria-checked={menuItem.size === s} className="dwg-menu-row" onClick={() => setSize(menuItem.id, s)}>
+            <button key={s} type="button" role="menuitemradio" aria-checked={menuItem.size === s} data-weight="light" className="dwg-menu-row" onClick={() => setSize(menuItem.id, s)}>
               <span className="dwg-menu-check" aria-hidden>{menuItem.size === s ? "✓" : ""}</span>
               {SIZE_LABEL[s]}
             </button>
           ))}
           <hr />
-          <button type="button" role="menuitem" className="dwg-menu-row" onClick={() => void enterEdit(menuItem.id)}>
+          <button type="button" role="menuitem" data-weight="light" className="dwg-menu-row" onClick={() => void enterEdit(menuItem.id)}>
             <span className="dwg-menu-check" aria-hidden />
             Edit “{kindDef(menuItem.kind)?.name ?? "widget"}”…
           </button>
-          <button type="button" role="menuitem" className="dwg-menu-row" onClick={() => void remove(menuItem.id)}>
+          <button type="button" role="menuitem" data-weight="light" className="dwg-menu-row" onClick={() => void remove(menuItem.id)}>
             <span className="dwg-menu-check" aria-hidden />
             Remove Widget
           </button>
           <hr />
-          <button type="button" role="menuitem" className="dwg-menu-row" onClick={() => void enterEdit()}>
+          <button type="button" role="menuitem" data-weight="light" className="dwg-menu-row" onClick={() => void enterEdit()}>
             <span className="dwg-menu-check" aria-hidden />
             Edit Widgets…
           </button>
         </div>
       )}
       {editing && overflow.length > 0 && <p className="dwg-overflow">{overflow.length === 1 ? "One widget doesn't fit on this screen." : `${overflow.length} widgets don't fit on this screen.`} Make room or remove one.</p>}
-      {editing && (
+      {panel.mounted && (
         <EditGallery
+          panelRef={panel.ref}
+          leaving={!editing}
           store={store}
           preview={!!initial}
           onAdd={(req) => add(req)}
-          onDragStart={(req, x, y) => setNewDrag({ req, x, y })}
+          onDragStart={(req, x, y, box) => setNewDrag({ req, x, y, ox: x - box.x, oy: y - box.y, w: box.w, h: box.h })}
           onDone={leaveEdit}
           onOpenDashboard={() => {
             leaveEdit();
@@ -370,6 +399,23 @@ export const DeskWidgetsSurface: React.FC<DeskWidgetsProps> = ({ api = deskApi, 
 /** A widget's cell, and while it is dragged, how far the pointer has carried it (transform only). */
 function itemStyle(r: { x: number; y: number; w: number; h: number }, carry: { x: number; y: number } | null): React.CSSProperties {
   return { left: r.x, top: r.y, width: r.w, height: r.h, ...(carry ? { transform: `translate(${carry.x}px, ${carry.y}px)` } : {}) };
+}
+
+/** The preview being carried out of the gallery, under the pointer where it was picked up. */
+const CarriedPreview: React.FC<{ drag: NewDrag }> = ({ drag }) => {
+  const Widget = WIDGETS[drag.req.kind];
+  const full = rectOf(0, 0, drag.req.size, gridFor(4000, 4000));
+  return (
+    <div className="dwg-carry" style={ghostStyle({ x: drag.x - drag.ox, y: drag.y - drag.oy, w: drag.w, h: drag.h })} aria-hidden>
+      <span className={`dwg-item is-${drag.req.size} is-preview`} style={scaleStyle(full.w, full.h, drag.w / full.w)}>
+        {Widget && <Widget size={drag.req.size} params={drag.req.params ?? {}} preview />}
+      </span>
+    </div>
+  );
+};
+
+function scaleStyle(width: number, height: number, k: number): React.CSSProperties {
+  return { width, height, transform: `scale(${k})` };
 }
 
 function ghostStyle(r: { x: number; y: number; w: number; h: number }): React.CSSProperties {

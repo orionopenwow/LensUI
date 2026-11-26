@@ -77,7 +77,7 @@
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 6,
-    "Magic (preview)": 8,
+    "Magic (preview)": 9,
     "Pointer effects": 11,
     "Quick settings": 5,
     "Sessions": 2,
@@ -92,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 192,
+  "count": 193,
   "entries": [
     {
       "capability": "change_settings",

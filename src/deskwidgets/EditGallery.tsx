@@ -14,7 +14,15 @@ export interface AddRequest {
   kind: string;
   size: Size;
   params?: Record<string, string>;
+  /** The preview's box on screen (CSS px), so the new widget grows from it. */
+  from?: { x: number; y: number; w: number; h: number };
 }
+
+type Box = { x: number; y: number; w: number; h: number };
+const boxOf = (el: Element | null): Box | undefined => {
+  const r = el?.getBoundingClientRect();
+  return r ? { x: r.left, y: r.top, w: r.width, h: r.height } : undefined;
+};
 
 const PREVIEW_SCALE = 0.5;
 const boxStyle = (width: number, height: number): React.CSSProperties => ({ width, height });
@@ -27,7 +35,8 @@ function choices(kind: string, store: WidgetStore | null | undefined) {
   return kind === "weather" ? all.filter((w) => w.galleryId === "weather") : kind === "gallery" ? all.filter((w) => w.galleryId !== "weather") : [];
 }
 
-const Preview: React.FC<{ kind: string; size: Size; params: Record<string, string>; onAdd: () => void; onDrag: (x: number, y: number) => void }> = ({ kind, size, params, onAdd, onDrag }) => {
+const Preview: React.FC<{ kind: string; size: Size; params: Record<string, string>; onAdd: (from?: Box) => void; onDrag: (x: number, y: number, box: Box) => void }> = ({ kind, size, params, onAdd, onDrag }) => {
+  const box = useRef<HTMLSpanElement>(null);
   const Widget = WIDGETS[kind];
   const r = rectOf(0, 0, size, PREVIEW_GRID);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -37,6 +46,7 @@ const Preview: React.FC<{ kind: string; size: Size; params: Record<string, strin
     <button
       type="button"
       className="dwg-preview"
+      data-weight="heavy"
       data-preview={`${kind}:${size}`}
       aria-label={`Add ${name}, ${SIZE_LABEL[size].toLowerCase()}`}
       onPointerDown={(e) => {
@@ -48,17 +58,17 @@ const Preview: React.FC<{ kind: string; size: Size; params: Record<string, strin
         if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 6) {
           start.current = null;
           dragged.current = true;
-          onDrag(e.clientX, e.clientY);
+          onDrag(e.clientX, e.clientY, boxOf(box.current) ?? { x: e.clientX, y: e.clientY, w: 0, h: 0 });
         }
       }}
       onPointerUp={() => (start.current = null)}
       onClick={() => {
         // A drag that just ended drops the widget itself; only a plain click (or Enter) adds here.
         if (dragged.current) dragged.current = false;
-        else onAdd();
+        else onAdd(boxOf(box.current));
       }}
     >
-      <span className="dwg-preview-box" style={boxStyle(r.w * PREVIEW_SCALE, r.h * PREVIEW_SCALE)}>
+      <span ref={box} className="dwg-preview-box" style={boxStyle(r.w * PREVIEW_SCALE, r.h * PREVIEW_SCALE)}>
         <span className={`dwg-item is-${size} is-preview`} style={scaledStyle(r.w, r.h)} aria-hidden>
           {Widget && <Widget size={size} params={params} preview />}
         </span>
@@ -72,10 +82,13 @@ export const EditGallery: React.FC<{
   store: WidgetStore | null;
   preview?: boolean;
   onAdd: (r: AddRequest) => void;
-  onDragStart: (r: AddRequest, x: number, y: number) => void;
+  onDragStart: (r: AddRequest, x: number, y: number, box: Box) => void;
+  panelRef?: React.Ref<HTMLElement>;
+  /** Gliding back to the bottom after Done: no longer interactive. */
+  leaving?: boolean;
   onDone: () => void;
   onOpenDashboard: () => void;
-}> = ({ store, preview, onAdd, onDragStart, onDone, onOpenDashboard }) => {
+}> = ({ store, preview, onAdd, onDragStart, onDone, onOpenDashboard, panelRef, leaving }) => {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<string>("clock");
   const [pick, setPick] = useState<string>("");
@@ -93,14 +106,14 @@ export const EditGallery: React.FC<{
   const req = (size: Size): AddRequest => ({ kind: kind!.id, size, params: kind?.fetches && ref ? { ref } : kind?.id === "clock" ? { zones: DEFAULT_ZONES.join(",") } : {} });
 
   return (
-    <section className="dwg-panel" aria-label="Widget gallery">
+    <section ref={panelRef} className="dwg-panel" aria-label="Widget gallery" inert={leaving || undefined}>
       <header className="dwg-panel-head">
         <label className="dwg-search">
           <Search size={13} aria-hidden />
           <input ref={search} value={q} onChange={(e) => setQ(e.currentTarget.value)} placeholder="Search widgets" aria-label="Search widgets" />
         </label>
         <span className="dwg-hint">Click a widget to add it, or drag it onto the desktop.</span>
-        <button type="button" className="dwg-done" onClick={onDone}>
+        <button type="button" data-weight="heavy" className="dwg-done" onClick={onDone}>
           Done
         </button>
       </header>
@@ -108,7 +121,7 @@ export const EditGallery: React.FC<{
         <ul className="dwg-kinds" role="listbox" aria-label="Kinds of widget">
           {list.map((k) => (
             <li key={k.id} role="presentation">
-              <button type="button" role="option" aria-selected={k.id === kind?.id} className={`dwg-kind${k.id === kind?.id ? " is-on" : ""}`} data-kind={k.id} onClick={() => setSel(k.id)}>
+              <button type="button" data-weight="light" role="option" aria-selected={k.id === kind?.id} className={`dwg-kind${k.id === kind?.id ? " is-on" : ""}`} data-kind={k.id} onClick={() => setSel(k.id)}>
                 {k.name}
               </button>
             </li>
@@ -141,14 +154,14 @@ export const EditGallery: React.FC<{
                     ? "Weather comes from a Weather widget on the Dashboard: add it there first. It asks which site Lens may fetch from before anything is fetched."
                     : "Add a widget on the Dashboard first; it can then sit on your desktop too."}
                 </p>
-                <button type="button" className="dwg-done" onClick={onOpenDashboard}>
+                <button type="button" data-weight="heavy" className="dwg-done" onClick={onOpenDashboard}>
                   Open the Dashboard
                 </button>
               </div>
             ) : (
               <div className="dwg-previews">
                 {kind.sizes.map((s) => (
-                  <Preview key={s} kind={kind.id} size={s} params={req(s).params ?? {}} onAdd={() => onAdd(req(s))} onDrag={(x, y) => onDragStart(req(s), x, y)} />
+                  <Preview key={s} kind={kind.id} size={s} params={req(s).params ?? {}} onAdd={(from) => onAdd({ ...req(s), from })} onDrag={(x, y, b) => onDragStart(req(s), x, y, b)} />
                 ))}
               </div>
             )}
@@ -187,10 +200,10 @@ export const WidgetEditor: React.FC<{ item: GridItem; store: WidgetStore | null;
           ))}
           {bad.length > 0 && <p className="dwg-fine is-bad">Not a time zone: {bad.join(", ")}</p>}
           <div className="dwg-editor-bar">
-            <button type="submit" className="dwg-done" disabled={bad.length > 0}>
+            <button type="submit" data-weight="heavy" className="dwg-done" disabled={bad.length > 0}>
               Save
             </button>
-            <button type="button" className="dwg-plain" onClick={onClose}>
+            <button type="button" data-weight="medium" className="dwg-plain" onClick={onClose}>
               Cancel
             </button>
           </div>
@@ -210,7 +223,7 @@ export const WidgetEditor: React.FC<{ item: GridItem; store: WidgetStore | null;
           </label>
           <p className="dwg-fine">Change its place or address on the Dashboard; its approved sites are under Sources there.</p>
           <div className="dwg-editor-bar">
-            <button type="button" className="dwg-done" onClick={onClose}>
+            <button type="button" data-weight="heavy" className="dwg-done" onClick={onClose}>
               Done
             </button>
           </div>
@@ -219,7 +232,7 @@ export const WidgetEditor: React.FC<{ item: GridItem; store: WidgetStore | null;
         <>
           <p className="dwg-fine">{def?.id === "notes" ? "Shows your newest Lens Notes. Click one to open it." : def?.id === "today" ? "Shows today's open items from the Lens calendar; tick one to mark it done." : "Nothing to set for this widget. Change its size from its menu."}</p>
           <div className="dwg-editor-bar">
-            <button type="button" className="dwg-done" onClick={onClose}>
+            <button type="button" data-weight="heavy" className="dwg-done" onClick={onClose}>
               Done
             </button>
           </div>
