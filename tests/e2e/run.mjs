@@ -913,7 +913,9 @@ const SCENARIOS = [
         ps(`${W} [W.M]::SetCursorPos($cx-100,$cy-60) | Out-Null; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 700; for($i=0;$i -lt 10;$i++){ [W.M]::mouse_event(1,20,12,0,$z); Start-Sleep -Milliseconds 25 }; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(4,0,0,0,$z)`);
         const grabbed = await until("the grab", (st) => st.grabs >= 1);
         if (!/^grab /.test(grabbed.last)) throw new Error(`last action was "${grabbed.last}", expected a grab`);
-        const studio = await waitForSurface(s, "snip", 15000);
+        const studio = await waitForSurface(s, "snip", 15000).catch(async (e) => {
+          throw new Error(`${e.message}; Magic Mouse status ${JSON.stringify(await status())}`);
+        });
         await shot(studio, "magic-mouse-grab-studio");
         await studio.keyboard.press("Escape").catch(() => {});
         await sleep(600);
@@ -926,7 +928,9 @@ const SCENARIOS = [
         // Hold without moving: the Magic menu at the pointer.
         ps(`${W} [W.M]::SetCursorPos($cx,$cy) | Out-Null; Start-Sleep -Milliseconds 120; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 700; [W.M]::mouse_event(4,0,0,0,$z)`);
         await until("the hold", (st) => st.holds > m.holds);
-        const magic = await waitForSurface(s, "magic", 15000);
+        const magic = await waitForSurface(s, "magic", 15000).catch(async (e) => {
+          throw new Error(`${e.message}; Magic Mouse status ${JSON.stringify(await status())}`);
+        });
         await shot(magic, "magic-mouse-hold-menu");
         await invoke(dock, "magic_hide").catch(() => {});
       } finally {

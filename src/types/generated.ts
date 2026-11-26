@@ -1953,6 +1953,8 @@ export interface MagicMouseStatus {
   holds: number;
   grabs: number;
   last: string;
+  /** What the last hold or grab led to: "grab: opened in the studio", "grab failed: …", "grab: capturing" (still running or stuck). */
+  lastResult: string;
   /** The last problem applying or removing the pointer ("" = none). */
   warning: string;
   /** Which form of the pointer Windows accepted: "animated", "animated-<px>", "still", "". */

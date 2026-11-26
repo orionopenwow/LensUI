@@ -41,19 +41,29 @@ fn run(action: CursorAction) {
     let _one = BUSY.lock().unwrap_or_else(|e| e.into_inner());
     let hc = high_contrast();
     #[cfg(windows)]
-    let (loads, size): (&dyn Fn(&std::path::Path) -> bool, u32) =
-        (&crate::magic_waves::mouse_win::windows_can_load, crate::magic_waves::mouse_win::pointer_size());
+    let (loads, size): (&dyn Fn(&std::path::Path) -> bool, u32) = (
+        &crate::magic_waves::mouse_win::windows_can_load,
+        crate::magic_waves::mouse_win::pointer_size(),
+    );
     #[cfg(not(windows))]
     let (loads, size): (&dyn Fn(&std::path::Path) -> bool, u32) = (&|_| true, 32);
-    let res = win_cursors::with_real_registry(|root, reg, appdata| mouse::run_soft(root, reg, appdata, action, hc, loads, size));
+    let res = win_cursors::with_real_registry(|root, reg, appdata| {
+        mouse::run_soft(root, reg, appdata, action, hc, loads, size)
+    });
     let warning = match res {
         Err(e) => format!("{action:?} failed: {e}"),
-        Ok((_, Some(e))) => format!("{action:?}: pointers written, but Windows did not reload them yet ({e})"),
+        Ok((_, Some(e))) => {
+            format!("{action:?}: pointers written, but Windows did not reload them yet ({e})")
+        }
         Ok((_, None)) => String::new(),
     };
     if action != CursorAction::None {
         let level = if warning.is_empty() { "info" } else { "warn" };
-        let msg = if warning.is_empty() { format!("pointer {action:?}") } else { warning.clone() };
+        let msg = if warning.is_empty() {
+            format!("pointer {action:?}")
+        } else {
+            warning.clone()
+        };
         let _ = crate::tester::log(level, "magic-mouse", &msg);
         *WARNING.lock().unwrap_or_else(|e| e.into_inner()) = warning;
     }
@@ -79,7 +89,11 @@ fn gestures(on: bool, hold: u32) {
 
 /// Start-up: undo a Magic pointer a crash left behind, then turn on if the flag is on.
 pub(crate) fn startup(app: &AppHandle, cfg: &LensConfig) {
-    run(decide(mouse::load_mode(&win_cursors::cursors_dir()), false, Moment::Startup));
+    run(decide(
+        mouse::load_mode(&win_cursors::cursors_dir()),
+        false,
+        Moment::Startup,
+    ));
     install_handler(app);
     if cfg.magic_waves.mouse {
         enable(cfg.magic_waves.mouse_hold_ms);
@@ -104,7 +118,11 @@ pub(crate) fn on_config(prev: &LensConfig, next: &LensConfig) {
 fn enable(hold: u32) {
     WANTED.store(true, Ordering::SeqCst);
     if !step_aside_now() {
-        run(decide(mouse::load_mode(&win_cursors::cursors_dir()), true, Moment::SettingChanged));
+        run(decide(
+            mouse::load_mode(&win_cursors::cursors_dir()),
+            true,
+            Moment::SettingChanged,
+        ));
     }
     gestures(true, hold);
     start_watcher();
@@ -113,7 +131,11 @@ fn enable(hold: u32) {
 fn disable() {
     WANTED.store(false, Ordering::SeqCst);
     gestures(false, 0);
-    run(decide(mouse::load_mode(&win_cursors::cursors_dir()), false, Moment::SettingChanged));
+    run(decide(
+        mouse::load_mode(&win_cursors::cursors_dir()),
+        false,
+        Moment::SettingChanged,
+    ));
 }
 
 /// Exit, power events and "Remove all": pointer back, gestures off. Never blocks for long.
@@ -148,20 +170,37 @@ fn start_watcher() {
     if WATCHER.swap(true, Ordering::SeqCst) {
         return;
     }
-    let _ = std::thread::Builder::new().name("lens-magic-mouse-watch".into()).spawn(|| {
-        while WANTED.load(Ordering::SeqCst) {
-            let aside = step_aside_now();
-            #[cfg(windows)]
-            crate::magic_waves::mouse_win::set_aside(aside);
-            let mode = mouse::load_mode(&win_cursors::cursors_dir());
-            let action = if aside { decide(mode, true, Moment::GameForeground) } else { decide(mode, true, Moment::SettingChanged) };
-            if action != CursorAction::None && WANTED.load(Ordering::SeqCst) {
-                run(action);
+    let _ = std::thread::Builder::new()
+        .name("lens-magic-mouse-watch".into())
+        .spawn(|| {
+            while WANTED.load(Ordering::SeqCst) {
+                let aside = step_aside_now();
+                #[cfg(windows)]
+                crate::magic_waves::mouse_win::set_aside(aside);
+                let mode = mouse::load_mode(&win_cursors::cursors_dir());
+                let action = if aside {
+                    decide(mode, true, Moment::GameForeground)
+                } else {
+                    decide(mode, true, Moment::SettingChanged)
+                };
+                if action != CursorAction::None && WANTED.load(Ordering::SeqCst) {
+                    run(action);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(1000));
             }
-            std::thread::sleep(std::time::Duration::from_millis(1000));
-        }
-        WATCHER.store(false, Ordering::SeqCst);
-    });
+            WATCHER.store(false, Ordering::SeqCst);
+        });
+}
+
+/// What the last hold or grab led to ("" = none yet), for the status and the E2E.
+fn last_result() -> &'static std::sync::Mutex<String> {
+    static R: std::sync::OnceLock<std::sync::Mutex<String>> = std::sync::OnceLock::new();
+    R.get_or_init(|| std::sync::Mutex::new(String::new()))
+}
+
+#[cfg_attr(not(windows), allow(dead_code))]
+fn set_result(s: &str) {
+    *last_result().lock().unwrap_or_else(|e| e.into_inner()) = s.to_string();
 }
 
 /// Hold → Magic menu at the pointer; grab → the region in the Snip studio (copy, OCR, save,
@@ -173,16 +212,27 @@ fn install_handler(app: &AppHandle) {
         let h = app.clone();
         mouse_win::set_handler(move |a| match a {
             Action::Hold { x, y } => {
-                if let Err(e) = crate::commands::magic::open_at(&h, x, y, None, "magic-mouse") {
-                    crate::tester::log("warn", "magic-mouse", &format!("open failed: {e}"));
+                match crate::commands::magic::open_at(&h, x, y, None, "magic-mouse") {
+                    Ok(_) => set_result("hold: Magic opened"),
+                    Err(e) => {
+                        set_result(&format!("hold: open failed: {e}"));
+                        crate::tester::log("warn", "magic-mouse", &format!("open failed: {e}"));
+                    }
                 }
             }
             Action::Grab(r) => {
                 let rect = crate::snip::geom::Rect::new(r.x, r.y, r.w, r.h);
-                let _ = match crate::commands::snip::capture_into_studio(&h, rect) {
-                    Ok(()) => crate::tester::log("info", "magic-mouse", "grab opened in the studio"),
-                    Err(e) => crate::tester::log("warn", "magic-mouse", &format!("grab failed: {e}")),
-                };
+                set_result("grab: capturing");
+                match crate::commands::snip::capture_into_studio(&h, rect) {
+                    Ok(()) => {
+                        set_result("grab: opened in the studio");
+                        crate::tester::log("info", "magic-mouse", "grab opened in the studio");
+                    }
+                    Err(e) => {
+                        set_result(&format!("grab failed: {e}"));
+                        crate::tester::log("warn", "magic-mouse", &format!("grab failed: {e}"));
+                    }
+                }
             }
         });
     }
@@ -201,6 +251,8 @@ pub(crate) struct MagicMouseStatus {
     pub holds: u32,
     pub grabs: u32,
     pub last: String,
+    /// What the last hold or grab led to: "grab: opened in the studio", "grab failed: …", "grab: capturing" (still running or stuck).
+    pub last_result: String,
     /// The last problem applying or removing the pointer ("" = none).
     pub warning: String,
     /// Which form of the pointer Windows accepted: "animated", "animated-<px>", "still", "".
@@ -222,13 +274,21 @@ pub(crate) fn magic_mouse_status() -> MagicMouseStatus {
         holds,
         grabs,
         last,
+        last_result: last_result().lock().map(|r| r.clone()).unwrap_or_default(),
         warning: WARNING.lock().map(|w| w.clone()).unwrap_or_default(),
-        variant: if applied() { mouse::set_variant(&win_cursors::cursors_dir(), high_contrast()) } else { String::new() },
+        variant: if applied() {
+            mouse::set_variant(&win_cursors::cursors_dir(), high_contrast())
+        } else {
+            String::new()
+        },
     }
 }
 
 /// The Magic pointer's frames for the settings card (PNG data URLs), normal or high contrast.
 #[tauri::command]
-pub(crate) fn magic_mouse_preview(size: Option<u32>, high_contrast: Option<bool>) -> Vec<win_cursors::CursorPreview> {
+pub(crate) fn magic_mouse_preview(
+    size: Option<u32>,
+    high_contrast: Option<bool>,
+) -> Vec<win_cursors::CursorPreview> {
     crate::magic_waves::cursor_art::preview(size.unwrap_or(64), high_contrast.unwrap_or(false))
 }
