@@ -1131,10 +1131,11 @@ pub(crate) fn dock_guard_at(
     let menu_in_use = i.dock_focused || i.cursor_over_pill || i.cursor_over_dock_window;
     let mut clear_stale_menu = false;
     let menu_blocks = if i.menu_open
-        && (i.click_outside || (i.foreground_other_app && !i.cursor_over_pill && !i.cursor_over_dock_window))
+        && (i.click_outside || (i.foreground_other_app && !i.cursor_over_pill))
     {
-        // Clicking anywhere outside the Dock, or another app taking the foreground while the
-        // pointer is away from the Dock, closes its menus at once.
+        // Clicking anywhere outside the Dock, or another app taking the foreground (like the
+        // Start menu, wherever the pointer is; only a press on the pill itself, which is how
+        // menus open, is spared), closes its menus at once.
         *menu_idle_since = None;
         clear_stale_menu = true;
         false
@@ -1183,7 +1184,11 @@ mod hide_robustness_tests {
         let away = DockGuardInput { menu_open: true, dock_focused: true, foreground_other_app: true, ..Default::default() };
         let g = dock_guard_at(away, &mut since, &mut s_since, Instant::now());
         assert!(g.clear_stale_menu && !g.blocks_hide);
-        // Pointer still on the Dock (a click that hasn't taken focus yet): keep it open.
+        // Another app in front while the pointer rests over the open panel: still closes.
+        let over_panel = DockGuardInput { menu_open: true, foreground_other_app: true, cursor_over_dock_window: true, ..Default::default() };
+        let g = dock_guard_at(over_panel, &mut since, &mut s_since, Instant::now());
+        assert!(g.clear_stale_menu);
+        // Pointer on the pill (the click that opens a menu, before it takes focus): keep it open.
         let on_dock = DockGuardInput { menu_open: true, foreground_other_app: true, cursor_over_pill: true, ..Default::default() };
         let g = dock_guard_at(on_dock, &mut since, &mut s_since, Instant::now());
         assert!(!g.clear_stale_menu && g.blocks_hide);
