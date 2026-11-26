@@ -38,6 +38,7 @@ import { resolveSystemArea } from "../dock/styles";
 import { TesterBadge } from "../tester/TesterHub";
 import "./TopBarSurface.css";
 import { useTopbarClickThrough } from "../topbar/clickThrough";
+import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 
 export const TopBarSurface: React.FC = () => {
   const { config } = useLensState();
@@ -291,6 +292,8 @@ export const TopBarSurface: React.FC = () => {
       </div>
 
       <div className="topbar-right">
+        {/* Magic Dashboard (renders nothing while magicWaves.dashboard is off; docs/plans/MAGIC_WAVES.md). */}
+        <TopBarDashboardButton config={config} />
         {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
         {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
         {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
