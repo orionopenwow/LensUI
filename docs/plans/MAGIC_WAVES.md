@@ -9,7 +9,7 @@ A research plan and build plan for the next large step after 0.3.0. **Nothing he
 | Written | 25 November 2026, on `main` at `5556b0b` (after #92, #95) |
 | Related | [IDENTITY.md](../brain/IDENTITY.md) (promises, look, voice), [FEATURES.md](../brain/FEATURES.md) (catalogue rows), [AGENTS.md](../../AGENTS.md) (safety contract), [MAGIC.md](../MAGIC.md), [RIGHTCLICK.md](../RIGHTCLICK.md), [SHELF.md](../SHELF.md), [FEEDS.md](../FEEDS.md), [FEEDS_RESEARCH.md](../FEEDS_RESEARCH.md), [MESSAGES.md](../MESSAGES.md), [PLUGINS.md](../PLUGINS.md), [CURSORS.md](../CURSORS.md), [KEYHOOK.md](../KEYHOOK.md), [MCP.md](../MCP.md), [PLAYGROUND.md](../PLAYGROUND.md), [DOCK_STYLES.md](../DOCK_STYLES.md) |
 
-How to update: when a wave starts, link its PR next to the wave; when it lands, move the matching rows in FEATURES.md from **Planned** to **Shipped**. Decisions the owner makes go in [Open questions](#open-questions) with the answer, never silently into a spec.
+How to update: when a wave starts, link its PR next to the wave; when it lands, move the matching rows in FEATURES.md from **Planned** to **Shipped**. Decisions the owner makes go in [Decisions](#7-decisions-answered-by-the-owner-2026-11-25) with the answer, never silently into a spec.
 
 ---
 
@@ -57,7 +57,7 @@ How to update: when a wave starts, link its PR next to the wave; when it lands, 
 
 ### 4.1 Magic Dashboard
 
-**One line.** A slim, full-height Lens surface (opened from the Dock, the Top Bar, the Magic button or Command (`Ctrl+Alt+Space` → "dashboard")) with lanes for what matters now: inbox, feeds, today, Shelf, and widgets.
+**One line.** A slim, full-height Lens surface (opened from a Top Bar button or Command (`Ctrl+Alt+Space` → "dashboard"), and from the Magic button when that is on) with lanes for what matters now: inbox, feeds, today, Shelf, and widgets.
 
 #### 4.1.1 Scope
 
@@ -129,7 +129,7 @@ Per-source consent: connecting a source shows what Lens will read, how often, wh
 - **The pointer**: a Lens cursor set (arrow, hand, text, busy, etc.) whose arrow is the Lens cloud (six-colour billow, no spin) with a short pointer tip; animated `.ani` frames for idle "breathing" at low frame rate. Hot spot at the tip. Sizes generated for every Windows step (32/48/64/96/128 px) and the user's pointer-size setting (Windows changes cursor size in steps by DPI and the Accessibility size slider; apps must query the effective size, not assume it). Applied through the existing `apply_cursor_theme` + change registry; *Normal pointer* restores the person's previous scheme.
 - **Magic actions** (all use the existing Magic resolver and catalogue):
   - *Hold* (configurable 350–1000 ms, like Magic's hold-right-click) on anything → the Magic window at the pointer.
-  - *Grab* (modifier + drag, proposed `Ctrl+Alt` + left-drag; if Alt+drag is set to its Ctrl+Alt modifier the card warns and offers another chord) → a region on screen. The region is captured **once**, on that gesture, and offered: *Text (OCR)*, *Images on this page*, *Video on this page* (only in Lens Browser or via the browser extension, never by bypassing DRM), *Add to Shelf*, *Send to Claude* (approval), *Copy*.
+  - *Grab* (hold the left button about 400 ms, then drag; a short click stays a normal click, and the hold time is adjustable) → a region on screen. The region is captured **once**, on that gesture, and offered: *Text (OCR)*, *Images on this page*, *Video on this page* (only in Lens Browser or via the browser extension, never by bypassing DRM), *Add to Shelf*, *Send to Claude* (approval), *Copy*.
   - *Auto rules* (custom): "When I grab from a browser, add the page link and title", "When I grab code, keep it as text". Rules are local, listed and editable.
 - **Halo**: a soft halo around the pointer while a Magic modifier is held (the effects overlay already draws click-through glows), so it is obvious when Magic is armed.
 
@@ -159,7 +159,7 @@ Pointer schemes are global and can be left behind by a crash → restore on exit
 **One line.** Opt-in: tapping the Windows key or clicking the Dock's Start position opens **Lens Magic Start**, a compact Start-style menu (search, pinned, recent, Magic actions for what is under the pointer or selected, Dashboard), while every Windows shortcut keeps working.
 
 - **Builds on the existing Win-tap → Launcher hook** (Win down/up pass through; a tap with nothing else pressed is masked so Start doesn't open; Win+L, Win+E, Win+Shift+S, Win+Tab, Win+number untouched; ack watchdog falls back to opening Start; pauses in fullscreen/anti-cheat).
-- **Options**: *Windows key opens* → Windows Start (default) · Lens Magic Start · Lens Magic Start, and a second tap opens Windows Start. *Start button on the Dock* (Taskbar style) → same choices.
+- **Options**: *Windows key opens* → Windows Start (default) · Lens Magic Start (the owner's choice when the Magic button is on). *Start button on the Dock* (Taskbar style) → same choices.
 - **Never blocks system shortcuts**; `Ctrl+Esc` always opens Windows Start as the escape hatch; Fix-My-Desktop and Remove all turn it off.
 - Out of scope: replacing Start system-wide via shell injection (no Explorer patching).
 
@@ -209,7 +209,7 @@ Each wave: one or more PRs, ≤ 3 agents in parallel, merged one at a time when 
 | **M1 Dashboard core** | Opus | Dashboard surface + Glance/Focus/Board presets; lanes for Inbox, Feeds, Shelf, Today; context strip; Ask about this (local) | Opens < 150 ms warm; no lane fetches unless its source is connected; Why-this-is-here on reordered cards | Perf budget scenario; hyper set/restore; E2E open/close every way | Open it from the Dock, Top Bar, Command; connect Bluesky; see counts from Slack/Discord spaces |
 | **M2 Widgets** | Opus | Lens widget format (plugin + Adaptive Card + Feed/API), widget gallery (5–8 curated), Lens-side fetch with approvals | Sandbox tests: no network from widgets; endpoint approval required; size caps | Plugin sandbox tests extended; fixture widgets | Add a weather and a GitHub widget; revoke a site |
 | **M3 Magic Mouse** | Opus | Lens cursor set (all sizes, high-contrast variant), halo, hold/grab gestures, region capture → OCR/images/video/Shelf/Claude, auto rules | Restores the previous scheme on exit/crash/Remove all; paused in fullscreen and anti-cheat; pointer move path unchanged in cost | Cursor encoder tests at 32–128 px; E2E grab → Shelf; restore after simulated crash | Use it for an hour: normal clicking, text selection, a game (it steps aside), grab text from a PDF |
-| **M4 Magic button + Shelf → Notes** | Opus | Win-key options, Lens Magic Start, Start position on the Taskbar Dock; Make a note, Export (md/txt/pdf), Send to contact with approval | Win+L, Ctrl+Alt+Del, Alt+Tab, Ctrl+Esc unaffected; hook watchdog falls back to Start | Keyhook unit tests; E2E Win tap with Lens hung → Start opens | Tap Win (both modes), lock the PC, make a note from three grabs and export it |
+| **M4 Magic button + Shelf → Notes** | Opus | Win-key options, Lens Magic Start, Start position on the Taskbar Dock; Make a note, Export (md/txt/pdf), Send to contact with approval | Win+L, Ctrl+Alt+Del, Alt+Tab, Ctrl+Esc unaffected; hook watchdog falls back to Start | Keyhook unit tests; E2E Win tap with Lens hung → Start opens | Tap Win (off and Magic), lock the PC, make a note from three grabs and export it |
 | **M5 Studio** | Opus | Lens Studio Dock/Theme/Desktop workspaces on the real surfaces, undo/redo, templates, import/export, Top Bar choreography | No layout change on theme edits; Apply validated by the settings writer; every control in the hyper inventory | Theme-switch rig on studio previews; visual parity; hyper | Build a Dock + theme from a template, undo 10 steps, export and re-import |
 | **M6 Behaviour-aware + Dashboard AI** | Opus | Learned ordering (opt-in), MCP exposure of Dashboard context (off, per-source), digest per lane | Signals wiped by *Forget*; nothing leaves without approval; MCP requires the existing token | Privacy tests (signals file sealed, wipe), MCP auth tests | Turn learning on for a week; check Why-this-is-here makes sense; wipe it |
 | **P Fable 5.2 polish** | Fable 5.2 | §5.1 | All budgets green; zero motion-lint offenders added; copy pass done | Full hyper tier, rigs, a11y | Look and feel pass on two monitors |
@@ -260,12 +260,12 @@ All behind flags that default **off**; no network, no hooks, no timers when off.
 
 ---
 
-## 7. Open questions
+## 7. Decisions (answered by the owner, 2026-11-25)
 
-1. **Dashboard shortcut and entry**: a dedicated Dock icon, a Top Bar button, or both? (Default proposal: a Top Bar button plus Command; no new global hotkey.)
-2. **X**: are you willing to use your own pay-per-use X developer key for the X lane, or should the X lane stay embed-only?
-3. **Magic Mouse grab gesture**: `Ctrl+Alt`+left-drag (only clashes if you set Alt+drag to Ctrl+Alt), or something else you prefer?
-4. **Magic button default**: when turned on, should a Windows-key tap open Lens Magic Start with a second tap for Windows Start, or Lens only?
+1. **Dashboard entry**: a Top Bar button plus Command ("dashboard"); no Dock icon and no new global hotkey.
+2. **X**: embed-only (official embeds and the X web app with the person's own sign-in); no API key and no cost.
+3. **Magic Mouse grab gesture**: hold the left button about 400 ms, then drag (no modifier keys). A short click stays a normal click; the hold time is adjustable in Settings.
+4. **Magic button**: when turned on, a Windows-key tap opens Lens Magic Start only. `Ctrl+Esc` always opens Windows Start, and the 300 ms watchdog still falls back to Windows Start if Lens doesn't answer.
 
 ## Sources
 
