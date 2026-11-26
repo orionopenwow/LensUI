@@ -539,7 +539,18 @@ const SCENARIOS = [
       ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
       // 2. A real click on the desktop, far from the Dock.
       await openSearch();
-      ps(`Add-Type -Namespace W -Name U -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,uint x,uint y,uint d,System.UIntPtr e);'; [W.U]::SetCursorPos(160,160); Start-Sleep -Milliseconds 120; [W.U]::mouse_event(2,0,0,0,[System.UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[System.UIntPtr]::Zero)`);
+      // Pick a desktop point outside the search drawer (a fixed point can sit under a wide
+      // drawer on a small runner screen, which is a click on the panel, not the desktop).
+      const [px, py] = await dock.evaluate(() => {
+        const d = window.devicePixelRatio || 1;
+        const r = document.querySelector(".dock-launcher-drawer")?.getBoundingClientRect();
+        const sw = window.screen.width, sh = window.screen.height;
+        const L = r ? (window.screenX + r.left) : sw, R = r ? (window.screenX + r.right) : sw;
+        const y = Math.round(sh * 0.45);
+        const x = L > 80 ? 30 : R < sw - 80 ? sw - 30 : 30;
+        return [Math.round(x * d), Math.round(y * d)];
+      });
+      ps(`Add-Type -Namespace W -Name U -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,uint x,uint y,uint d,System.UIntPtr e);'; [W.U]::SetCursorPos(${px},${py}); Start-Sleep -Milliseconds 120; [W.U]::mouse_event(2,0,0,0,[System.UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[System.UIntPtr]::Zero)`);
       await waitClosed("a click on the desktop");
       // 3. Esc and a second press still work after all that.
       await openSearch();
