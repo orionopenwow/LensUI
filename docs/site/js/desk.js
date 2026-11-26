@@ -55,7 +55,7 @@ let uid = 0;
  * createDesk(host, { label, layout })
  * host: an element the desk fills (it sets its height from the 16:10 design size).
  */
-export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false, accentLayer = false } = {}) {
+export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false, accentLayer = false, ratio = 0.625, mobileRatio = 1.2, hint: showHint = true, running = [], minDesktop = 768, designW = 1600 } = {}) {
   const n = ++uid;
   host.classList.add("lx-host");
   host.innerHTML = `<div class="lx" tabindex="0" role="application" aria-roledescription="desktop" aria-label="${esc(label)}" aria-describedby="lx-help-${n}">
@@ -107,11 +107,12 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function fit() {
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
-    else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
+    else if (cw < minDesktop) { W = 900; H = Math.round(900 * mobileRatio); k = cw / W; }
     else {
       // Real Lens windows are desktop-sized, so the desk keeps a desktop's width (1600 design px at
-      // least) and scales down to fit the page, the way a screenshot of a monitor would.
-      W = Math.max(cw, 1600); k = cw / W; H = Math.round(W * 10 / 16);
+      // least) and scales down to fit the page, the way a screenshot of a monitor would. `ratio` is
+      // its height over width (16:10 by default; the dock widget is a short strip of desktop).
+      W = Math.max(cw, designW); k = cw / W; H = Math.round(W * ratio);
       /* tabs above + step bar below stay on screen */ if (fitViewport) H = Math.round(Math.max(560 / k, Math.min(H, (innerHeight - 280) / k)));
     }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
@@ -193,7 +194,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       const b = [...d.querySelectorAll(".dock-item")].find((x) => (x.getAttribute("aria-label") ?? "").startsWith(name));
       if (!b) return null;
       const r = b.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: frame.offsetTop + r.top + r.height / 2 };
+      return { x: frame.offsetLeft + r.left + r.width / 2, y: frame.offsetTop + r.top + r.height / 2 };
     } catch { return null; }
   }
   function minimize(hwnd) {
@@ -393,12 +394,22 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   let frameReady = false, tall = false;
   const outbox = [];
   const send = (m) => (frameReady ? frame.contentWindow?.postMessage(m, location.origin) : outbox.push(m));
+  // The dock's frame is a strip along its edge (as the app's dock window is), or the whole work area
+  // while something needs room (search, a menu, window previews).
+  let edge = "bottom";
   function sizeFrame() {
-    frame.style.height = `${tall ? H - TOP : DOCK_H}px`;
-    frame.style.top = `${tall ? TOP : H - DOCK_H}px`;
+    const side = edge === "left" || edge === "right";
+    const r = tall ? { l: 0, t: TOP, w: W, h: H - TOP }
+      : edge === "top" ? { l: 0, t: TOP, w: W, h: DOCK_H }
+      : side ? { l: edge === "left" ? 0 : W - DOCK_H, t: TOP, w: DOCK_H, h: H - TOP }
+      : { l: 0, t: H - DOCK_H, w: W, h: DOCK_H };
+    Object.assign(frame.style, { left: `${r.l}px`, top: `${r.t}px`, width: `${r.w}px`, height: `${r.h}px` });
   }
+  const bg = [...running];
   function sync() {
     const list = [...wins.values()].map((w) => ({ hwnd: w.id, app: w.app, title: APPS[w.app].name, focused: w.id === focusedId && !w.min, min: w.min }));
+    // Apps that run without a window on this desk (the Dock widget: so its running marks show).
+    bg.forEach((app, i) => { if (!list.some((x) => x.app === app)) list.push({ hwnd: 90000 + i, app, title: APPS[app].name, focused: false, min: true }); });
     send({ lens: "windows", list });
     emit("windows", list);
   }
@@ -413,7 +424,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   // The frame only takes the pointer over the dock itself, so windows under its empty band stay clickable.
   let pill = null;
   function pillRect() {
-    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); return { l: r.left - 12, r: r.right + 12, t: frame.offsetTop + r.top - 70, b: frame.offsetTop + r.bottom + 10 }; } catch { return null; }
+    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); const x0 = frame.offsetLeft, y0 = frame.offsetTop, side = edge === "left" || edge === "right"; return side ? { l: x0 + r.left - (edge === "right" ? 70 : 10), r: x0 + r.right + (edge === "left" ? 70 : 10), t: y0 + r.top - 12, b: y0 + r.bottom + 12 } : { l: x0 + r.left - 12, r: x0 + r.right + 12, t: y0 + r.top - (edge === "top" ? 10 : 70), b: y0 + r.bottom + (edge === "top" ? 70 : 10) }; } catch { return null; }
   }
   function pillTest(p) {
     pill = pillRect();
@@ -431,7 +442,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   let fly = null, dstyle = "floating", dalign = "center";
   const FLY = { settings: [760, 560], monitor: [760, 520] };
   function pillBox() {
-    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); if (!r.width) return null; return { l: r.left, r: r.right, t: frame.offsetTop + r.top, w: r.width }; } catch { return null; }
+    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); if (!r.width) return null; return { l: frame.offsetLeft + r.left, r: frame.offsetLeft + r.right, t: frame.offsetTop + r.top, w: r.width }; } catch { return null; }
   }
   function placeFly() {
     const w = fly && wins.get(fly.id);
@@ -480,7 +491,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   /** A real surface asked for something outside itself (the backend's job in the app). */
   function act(cmd, args = {}) {
     if (cmd === "launch_app_cmd") { const id = String(args.path ?? "").replace("lens://", "").split("/")[0]; open(APPS[id] ? id : "browser"); }
-    else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) return; if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
+    else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) { const app = bg[args.hwnd - 90000]; if (app) open(app); return; } if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
     else if (cmd === "window_action_cmd") { const w = wins.get(args.hwnd); if (!w) return; ({ minimize: () => minimize(w.id), close: () => close(w.id), maximize: () => snap(w.id, "max"), restore: () => restore(w.id) })[args.action]?.(); }
     else if (cmd === "open_quicksettings_tab_cmd") openOver("qs", { toggle: true });
     // The dock's own Monitor and Settings buttons.
@@ -573,11 +584,13 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   });
   cv.addEventListener("pointerdown", (e) => { if (e.target === cv || e.target.closest(".lx-bg")) { for (const k2 of Object.keys(overs)) closeOver(k2); blurAll(); emit("user", "desktop"); } });
   // A one-time hint: right-click is the feature people miss.
-  let hint = document.createElement("div");
-  hint.className = "lx-hint";
-  hint.innerHTML = "Try right-click <b>✦</b>";
-  cv.append(hint);
-  setTimeout(() => { hint?.remove(); hint = null; }, 14000);
+  let hint = showHint ? document.createElement("div") : null;
+  if (hint) {
+    hint.className = "lx-hint";
+    hint.innerHTML = "Try right-click <b>✦</b>";
+    cv.append(hint);
+    setTimeout(() => { hint?.remove(); hint = null; }, 14000);
+  }
 
   // ---- keyboard ---------------------------------------------------------------------------------------
   root.addEventListener("keydown", (e) => {
@@ -686,6 +699,15 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     setPack, wash, toDesk,
     async setMode(m) { const ps = await getPacks(); setPack(ps.find((x) => x.id === (m === "light" ? "alabaster-daylight" : "obsidian"))); },
     async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); },
+    /** Moves the dock to an edge of the screen (bottom, top, left, right), as Settings › Dock does. */
+    dockEdge(e) {
+      edge = ["top", "left", "right"].includes(e) ? e : "bottom";
+      sizeFrame();
+      const m = { lens: "config", patch: { dock: { position: edge } } };
+      send(m); tell(topbar, m);
+      setTimeout(placeFly, 60);
+    },
+    get edge() { return edge; },
     dockStyle(style, shape, align) {
       dstyle = String(style || "floating").toLowerCase(); if (align) dalign = align;
       setTimeout(placeFly, 60); setTimeout(placeFly, 420);
