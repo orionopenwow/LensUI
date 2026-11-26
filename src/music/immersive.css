@@ -1,0 +1,219 @@
+/* Immersive (Immersive.tsx). Matte: the colour is the artwork's, as gradients only; no blur
+   layers, no glass. Only transform and opacity animate, on motion tokens; reduced motion and a
+   hidden window leave everything still. */
+.lm-imm {
+  --imm-ink: #fafafa;
+  --imm-ink-2: rgb(250 250 250 / 0.74);
+  --imm-ink-3: rgb(250 250 250 / 0.5);
+  --imm-line: rgb(255 255 255 / 0.12);
+  --imm-fill: rgb(255 255 255 / 0.08);
+  --imm-fill-press: rgb(255 255 255 / 0.14);
+  --imm-scrim: rgb(9 9 11 / 0.55);
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--imm-base, #09090b);
+  color: var(--imm-ink);
+  font-family: "Arial Rounded MT Bold", "Arial Rounded", "Segoe UI Variable", system-ui, sans-serif;
+  z-index: 10;
+  contain: strict;
+}
+.lm-imm.is-light {
+  --imm-ink: #09090b;
+  --imm-ink-2: rgb(9 9 11 / 0.72);
+  --imm-ink-3: rgb(9 9 11 / 0.5);
+  --imm-line: rgb(0 0 0 / 0.12);
+  --imm-fill: rgb(0 0 0 / 0.06);
+  --imm-fill-press: rgb(0 0 0 / 0.12);
+  --imm-scrim: rgb(250 250 250 / 0.55);
+}
+.lm-imm.is-idle { cursor: none; }
+
+/* ---- ambient field: four soft colour fields, each on its own slow loop */
+.lm-imm-field { position: absolute; inset: 0; pointer-events: none; }
+.lm-imm-layer {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 78vmax;
+  height: 78vmax;
+  margin: -39vmax 0 0 -39vmax;
+  border-radius: 50%;
+  will-change: transform;
+  animation: lm-imm-drift calc(var(--lens-dur-slower) * var(--beats)) var(--lens-ease-in-out) infinite alternate;
+  animation-delay: calc(var(--lens-dur-slower) * var(--beats) * var(--phase) * -1);
+}
+.lm-imm.is-still .lm-imm-layer { animation-play-state: paused; }
+@keyframes lm-imm-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(var(--dx), var(--dy), 0) scale(var(--s)); }
+}
+/* A soft shade under the lyrics so the text reads over any colour. */
+.lm-imm-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, transparent 38%, var(--imm-scrim) 100%);
+}
+.lm-imm-art-only .lm-imm-scrim, .lm-imm-empty .lm-imm-scrim { background: radial-gradient(closest-side, transparent 40%, var(--imm-scrim) 140%); }
+
+/* ---- optional sound glow along the bottom edge (level-driven scaleY + opacity, set in code) */
+.lm-imm-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38vh;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  background:
+    radial-gradient(60% 100% at 30% 100%, var(--imm-g1, transparent) 0%, transparent 70%),
+    radial-gradient(60% 100% at 72% 100%, var(--imm-g2, transparent) 0%, transparent 70%);
+  will-change: transform, opacity;
+}
+
+/* ---- stage */
+.lm-imm-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 6vw;
+  padding: 8vh 7vw 18vh;
+  box-sizing: border-box;
+}
+.lm-imm-art-only .lm-imm-stage, .lm-imm-empty .lm-imm-stage { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+.lm-imm-left { display: grid; gap: 28px; justify-items: start; min-width: 0; }
+.lm-imm-art-only .lm-imm-left, .lm-imm-empty .lm-imm-left { justify-items: center; }
+.lm-imm-art {
+  width: min(42vh, 34vw);
+  height: min(42vh, 34vw);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: calc(var(--lens-radius, 8px) + 6px);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.08) inset, 0 24px 60px rgb(0 0 0 / 0.45);
+  transform-origin: 50% 50%;
+}
+.lm-imm.is-light .lm-imm-art { box-shadow: 0 18px 48px rgb(0 0 0 / 0.22); }
+.lm-imm-art-only .lm-imm-art { width: min(54vh, 46vw); height: min(54vh, 46vw); }
+.lm-imm-empty .lm-imm-art { opacity: 0.55; }
+.lm-imm-empty .lm-imm-controls { display: none; }
+.lm-imm-text { display: grid; gap: 8px; min-width: 0; max-width: 100%; }
+.lm-imm-title {
+  margin: 0;
+  font-size: clamp(22px, 3.4vw, 44px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.lm-imm-sub { font-size: clamp(13px, 1.4vw, 19px); color: var(--imm-ink-2); overflow-wrap: anywhere; }
+
+/* ---- lyrics: the current line bright, the rest faded with distance; lines glide (FLIP) */
+.lm-imm-lyrics {
+  min-width: 0;
+  height: 64vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* Lines fade out at the edges instead of being cut. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 82%, transparent 100%);
+}
+.lm-imm-lines { display: grid; gap: 2.6vh; width: 100%; }
+.lm-imm-line {
+  display: grid;
+  gap: 6px;
+  transform-origin: 0 50%;
+  transition: opacity var(--lens-dur-slow) var(--lens-ease-out), transform var(--lens-dur-slow) var(--lens-ease-out);
+  animation: lm-imm-line-in var(--lens-dur-slow) var(--lens-ease-out);
+}
+.lm-imm-line-text { font-size: clamp(22px, 3vw, 46px); line-height: 1.18; font-weight: 700; overflow-wrap: anywhere; }
+.lm-imm-line-sub { font-size: clamp(14px, 1.5vw, 22px); line-height: 1.3; color: var(--imm-ink-2); font-weight: 600; }
+.lm-imm-line[data-role="current"] { transform: scale(1.04); }
+.lm-imm-line[data-role="current"] .lm-imm-line-text { color: var(--imm-ink); text-shadow: 0 0 0.6em color-mix(in srgb, var(--imm-accent) 35%, transparent); }
+.lm-imm.is-light .lm-imm-line[data-role="current"] .lm-imm-line-text { text-shadow: none; }
+@keyframes lm-imm-line-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+}
+.lm-imm.is-still .lm-imm-line { animation: none; }
+
+/* ---- close and controls: shown while the pointer moves, hidden with the cursor when idle */
+.lm-imm .lm-imm-close { top: 18px; right: 18px; z-index: 3; transition: opacity var(--lens-dur-base) var(--lens-ease-out); }
+.lm-imm-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 4vh;
+  width: min(880px, 86vw);
+  margin-left: max(-440px, -43vw);
+  display: grid;
+  gap: 14px;
+  z-index: 2;
+  transition: opacity var(--lens-dur-base) var(--lens-ease-out), transform var(--lens-dur-base) var(--lens-ease-out);
+}
+.lm-imm.is-idle .lm-imm-controls { opacity: 0; transform: translate3d(0, 6px, 0); pointer-events: none; transition-duration: var(--lens-dur-slow); }
+.lm-imm.is-idle .lm-imm-close { opacity: 0; pointer-events: none; }
+.lm-imm-seek { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.lm-imm-time { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--imm-ink-2); min-width: 44px; }
+.lm-imm-time:last-child { text-align: right; }
+.lm-imm-seek input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--imm-accent) var(--imm-pct, 0%), var(--imm-line) var(--imm-pct, 0%));
+  cursor: pointer;
+  margin: 0;
+}
+.lm-imm-seek input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 4px; height: 20px; border-radius: 2px; background: var(--imm-ink); transition: transform var(--lens-dur-fast) var(--lens-ease-out); }
+.lm-imm-seek input[type="range"]:active::-webkit-slider-thumb { transform: scaleX(1.25); }
+.lm-imm-seek input[type="range"]:disabled { cursor: not-allowed; opacity: 0.4; }
+.lm-imm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; }
+.lm-imm-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lm-imm-side-end { justify-content: flex-end; }
+.lm-imm-transport { display: flex; align-items: center; gap: 18px; }
+.lm-imm-btn {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--imm-ink);
+  cursor: pointer;
+}
+.lm-imm-btn:hover:not(:disabled) { background: var(--imm-fill); }
+.lm-imm-play { width: 64px; height: 64px; background: var(--imm-ink); color: var(--imm-base, #09090b); }
+.lm-imm-play:hover:not(:disabled) { background: var(--imm-ink); color: var(--imm-base, #09090b); }
+.lm-imm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lm-imm-chip {
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--imm-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--imm-ink-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lm-imm-chip:hover { background: var(--imm-fill); color: var(--imm-ink); }
+.lm-imm-chip.is-on { background: var(--imm-accent); border-color: transparent; color: var(--imm-on-accent); }
+.lm-imm-nudge, .lm-imm-views { display: inline-flex; align-items: center; gap: 6px; color: var(--imm-ink-2); }
+.lm-imm-nudge-val { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 56px; text-align: center; }
+
+/* ---- press weight (DESIGN.md §5.2): sink on press, spring back on release */
+.lm-imm [data-weight] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background-color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-base) var(--lens-ease-out); }
+.lm-imm [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); background-color: var(--imm-fill-press); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
+.lm-imm [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.25); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
+.lm-imm [data-weight]:focus-visible { outline: 2px solid var(--imm-accent); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .lm-imm-stage { grid-template-columns: minmax(0, 1fr); gap: 3vh; padding: 6vh 6vw 22vh; justify-items: center; text-align: center; }
+  .lm-imm-left { justify-items: center; }
+  .lm-imm-art { width: min(30vh, 60vw); height: min(30vh, 60vw); }
+  .lm-imm-lyrics { height: 36vh; }
+}

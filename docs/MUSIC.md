@@ -1,8 +1,8 @@
 # Lens Music
 
-One now-playing layer for **every app that shows up in Windows' media controls** — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a frosted Now Playing window, an optional "theme follows the music" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: [MUSIC_RESEARCH.md](MUSIC_RESEARCH.md).
+One now-playing layer for **every app that shows up in Windows' media controls** — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a matte artwork-tinted Now Playing window and its full-screen Immersive mode, an optional "theme follows the music" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: [MUSIC_RESEARCH.md](MUSIC_RESEARCH.md).
 
-**Everything is off by default.** Settings → Music turns it on. Lyrics (network), Spotify, Last.fm and the audio-reactive scene are separate opt-ins.
+**Everything is off by default.** Settings → Music turns it on. Lyrics (network), lyric translation (AI), Spotify, Last.fm, Discord and the audio-reactive scene are separate opt-ins.
 
 ## What works with which app
 
@@ -32,13 +32,14 @@ Apple Music has no public Windows API for Lens to use, so it's "now playing via 
 | Speaker peak level (one number; no audio) | `music/levels.rs` |
 | Spicetify theme generator (export only) | `music/spicetify.rs`, `color.rs` |
 | MD5 / SHA-256 / base64url (std-only) | `music/hash.rs` |
-| Commands (26) | `src-tauri/src/commands/music.rs` |
-| UI | `src/music/NowPlaying.tsx`, `MiniPlayer.tsx`, `music.css`, `themeFollow.ts`, `scene.ts`, `art.ts`, `model.ts`, `api.ts`, `src/components/MusicCard.tsx` |
+| Immersive, per-song lyric timing, translation cache, Discord Rich Presence | `music/immersive.rs`, `offsets.rs`, `translate.rs`, `discord.rs` |
+| Commands (37) | `src-tauri/src/commands/music.rs` |
+| UI | `src/music/NowPlaying.tsx`, `Immersive.tsx` (+ `immersiveModel.ts`, `immersive.css`), `tint.ts`, `translate.ts`, `useTranslation.ts`, `press.ts`, `command.ts`, `setup.ts`, `MusicSettingsExtras.tsx`, `MiniPlayer.tsx`, `music.css`, `themeFollow.ts`, `scene.ts`, `art.ts`, `model.ts`, `api.ts`, `src/components/MusicCard.tsx` |
 | Tests | Rust tests in each `music/*.rs`; `src/__tests__/music.test.ts`; gallery `tools/parity/music/` |
 
 Event: `lens://music/now` (payload `NowPlaying`, see `src/types/generated.ts`). The UI interpolates position from `positionMs` + `updatedMs`; no polling.
 
-Data on disk (all under `%APPDATA%\LensUI`): `music.json` (settings), `music\history.json` (last 100 tracks, clearable), `music\lyrics\*.json` (cache, clearable), `music\spotify.bin` and `music\lastfm.bin` (DPAPI-sealed; deleted by Disconnect), `music\spicetify\Lens\` (exported theme).
+Data on disk (all under `%APPDATA%\LensUI`): `music.json` (settings), `music\history.json` (last 100 tracks, clearable), `music\lyrics\*.json` (cache, clearable), `music\translations\*.json` (lyric translations, cleared with the lyrics cache), `music\offsets.tsv` (per-song lyric timing, 500 songs), `music\spotify.bin` and `music\lastfm.bin` (DPAPI-sealed; deleted by Disconnect), `music\spicetify\Lens\` (exported theme).
 
 ## Spotify reskin via Spicetify — the honest route
 
@@ -163,3 +164,53 @@ Settings › Music › Synced lyrics › **Lyrics on the desktop** (off by defau
 - On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps.
 - Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion.
 - Not yet confirmed on a real PC (focus, multi-monitor placement, fullscreen games); the rules (`wanted`, `should_show`, `place`, `desktopLine`) are unit-tested.
+
+## Immersive (learned from Cider)
+
+Now Playing full screen on one monitor: the artwork large, a field of four soft gradients in its colours drifting slowly behind it, and the synced lyrics large with the current line bright. Open it with the Immersive button in Now Playing's player bar (or **F11** there), the ⤢ button on the Dock music card (while Lens Music is on), or by typing "immersive" (or `/immersive`) in Lens Command. **Esc**, **F11** or × leaves; the artwork returns to where it came from.
+
+- `music_immersive_open(from)` puts the `nowplaying` window full screen on the monitor under the pointer, shows it and tells the page (`lens://music/immersive`, plus `music_immersive_pending` for a page that mounts later). It refuses with a sentence when the window in front is full screen and isn't Lens (`music::immersive::may_open`): Immersive never covers a game or a film. `music_immersive_close(keepWindow)` leaves full screen and hides the window unless Immersive came from Now Playing.
+- Matte: the colour is the artwork's, as gradients; no blur layers, no glass. Only transform and opacity animate, on the motion tokens. Each layer loops on its own length (a multiple of `--lens-dur-slower`); with reduced motion, while paused, or while the window is hidden, they stay still and the 8 fps position tick stops (`document.hidden`).
+- The cursor and the controls (seek, previous / play / next, lyric timing, Original / Translated / Both) hide after 3 s without the mouse moving (Settings › Music › Tweaks › Immersive, 1–10 s) and come back on any movement or key.
+- Lyrics: only the lines around the current one are in the page (long songs cost the same as short ones); when the line changes, the lines glide to their new places (FLIP, move only).
+- Optional sound glow along the bottom edge (Tweaks › Immersive, off by default): it reads the speakers' peak level through `music_glow_level` only while Immersive is on screen, playing and motion isn't reduced.
+- Keys: Space play/pause, ←/→ seek 5 s, N/P next/previous, `[` / `]` lyric timing.
+- Light themes get a paper field and dark text; accents are re-checked against Immersive's own field.
+
+## Artwork tint
+
+Now Playing's accents (active buttons, the seek fill, chips) come from the artwork when one of its colours can be lifted to **4.5:1** against every background it sits on: the hero gradient's top, middle and base (`tint.ts › pickTint`, `heroBackgrounds`). Greys, rare specks and colours that would have to be washed out to white or black are skipped; then the theme accent is used, lifted the same way. Text on an accent fill is near-black or near-white, whichever reads better. Settings › Music › Immersive › **Artwork colours in Now Playing** (on by default; local only).
+
+The window is matte: the artwork's colours as a gradient, solid panels, no blurred copy of the art and no `backdrop-filter`.
+
+## Lyric timing per song
+
+LRCLIB timings drift on live versions and radio edits. The lyrics header (and Immersive) has **−0.5 s / +0.5 s / Reset**, and `[` / `]` do the same. The nudge is saved for that song (`music_lyrics_offset`, `music_lyrics_nudge(steps)`, `music_lyrics_offset_reset`) in `music\offsets.tsv`, keyed by title and artist so it follows the song from Spotify to a browser tab, at most 500 songs, ±10 s, and is added to the global Timing in Settings.
+
+## Lyric translation (opt-in)
+
+Settings › Music › Synced lyrics › **Offer translations** adds Translate to the lyrics header. Translating:
+
+1. Looks for a saved translation of these lines into this language first (`music_translation_get(key)`; the key is made from the lines and the language, `translate.ts › translationKey`, 32 hex characters).
+2. Otherwise asks Lens AI (`ai_ask`, tools off): the local model when one is running on this PC, else the provider chosen in Settings › AI. The privacy mode applies unchanged: Local only refuses cloud providers; Ask each time shows the shared Send / Don't send card in Now Playing; the usage log records it. Only the numbered lyric lines are sent.
+3. Saves the answer (`music_translation_put`) with the provider's name, which is shown under the lyrics ("Translated by Ollama · llama3.2, on this PC · saved on this PC").
+
+"Translate into" defaults to the Windows display language. Original / Translated / Both switches what the lyrics show (saved as `lyricsView`). The built-in script assistant can't translate and says so.
+
+## Discord Rich Presence (opt-in)
+
+Settings › Music › **Show on Discord**: "Listening to …" on your Discord profile with the song, the artist and the time left.
+
+- Lens talks only to the Discord app on this PC, through its local named pipe (`\\.\pipe\discord-ipc-0` … `-9`), with Discord's RPC framing (`opcode u32 LE`, `length u32 LE`, JSON): handshake with the application ID, then `SET_ACTIVITY` with Lens's process id. A small hand-written client (`music/discord.rs`, standard library only): no crate, and **Lens itself makes no network call** for this. The Discord app shares it with whoever can see your profile.
+- Discord needs an application ID to show an activity. Lens has none of its own, so you create one (discord.com/developers/applications, any name; Discord shows "Listening to <name>") and paste its ID, like Spotify's client ID.
+- **Private listening** clears the activity until you turn it off. Paused or stopped clears it too. "Show time left" turns the progress bar off.
+- Artwork: Discord can only show web images. With Spotify connected, Lens passes Spotify's https cover address (Discord loads it); otherwise no picture. Windows' thumbnail is never uploaded.
+- Retries every 5 s, doubling to a minute, while Discord isn't running; status text in Settings. Closing Lens closes the pipe and Discord clears the activity.
+
+## Music setup and Tweaks
+
+Until finished or skipped, Settings › Music opens with a three-step **Set up Lens Music**: where your music comes from (Windows media = Lens Music itself, Spotify, your .lrc folder), lyrics and scrobbling (LRCLIB, Last.fm), share and control (Discord; a phone remote is planned and nothing listens on the network today). Every choice is a normal switch; nothing is turned on for you. The advanced options sit in a collapsible **Tweaks** section grouped as Look, Sources, Lyrics, Immersive and Playground.
+
+## Credits
+
+Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were **learned from Cider** (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.

@@ -41,6 +41,7 @@ import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/ba
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
 import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
 import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
+import { immersiveTemplates, isImmersivePhrase, isImmersiveStub, openImmersive } from "../music/command";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -158,6 +159,17 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
   }, []);
+  // /immersive only while Lens Music is on (its settings live in music.json, read once here).
+  const [musicOn, setMusicOn] = useState(false);
+  useEffect(() => {
+    invoke<{ enabled?: boolean } | null>("music_config_get").then((c) => setMusicOn(!!c?.enabled)).catch(() => {});
+  }, []);
+  useEffect(() => {
+    setTemplates((list) => {
+      const base = list.filter((t) => !isImmersiveStub(t));
+      return musicOn ? [...base, ...immersiveTemplates(base, true)] : base;
+    });
+  }, [musicOn, templates.length === 0]);
   // /dashboard only while the Magic Dashboard is on (docs/plans/MAGIC_WAVES.md); follows the flag live.
   useEffect(() => {
     setTemplates((list) => {
@@ -440,6 +452,13 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       void openDashboard().then((err) => err && flash(err, false));
       return;
     }
+    // "immersive" or /immersive while Lens Music is on: Now Playing full screen.
+    if (isImmersiveStub(template) || (!template && musicOn && isImmersivePhrase(rest))) {
+      setText("");
+      await hide();
+      void openImmersive().then((err) => err && flash(err, false));
+      return;
+    }
 
     // Commands that are actions, not prompts.
     if (template && !template.template) {
@@ -662,6 +681,11 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     if ((isDashboardPhrase(typed) || typed.toLowerCase() === "/dashboard") && (await invoke<boolean>("dashboard_available").catch(() => false))) {
       await hide();
       void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
+    if (musicOn && isImmersivePhrase(typed)) {
+      await hide();
+      void openImmersive().then((err) => err && flash(err, false));
       return;
     }
     const out = await runDo(

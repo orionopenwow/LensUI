@@ -4,14 +4,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
-  Disc3, Heart, ListMusic, Maximize2, Minimize2, Moon, MoreHorizontal, Mic2, Pause, Play, Repeat, Repeat1,
+  Disc3, Expand, Heart, Languages, ListMusic, Maximize2, Minimize2, Moon, MoreHorizontal, Mic2, Pause, Play, Repeat, Repeat1,
   Shuffle, SkipBack, SkipForward, Speaker, Volume2,
 } from "lucide-react";
+import { ProposalApproval } from "../approval/LocalApproval";
+import { ImmersiveView, type ImmersiveFrom, type Rect } from "./Immersive";
+import type { LyricsView } from "./immersiveModel";
+import { heroBackgrounds, pickTint } from "./tint";
+import { usePressWeight } from "./press";
+import { useLyricTranslation } from "./useTranslation";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
   currentLine, endTimeLabel, formatTime, heroGradient, initials, connectError, lineOpacity, lineState, queueEmptyState, queueRemaining, sourceCaps,
-  splitArtists, splitTitle, hexToRgb, luminance, type NowPlaying as NP, type RGB,
+  splitArtists, splitTitle, hexToRgb, luminance, pickVivid, type NowPlaying as NP, type RGB,
 } from "./model";
 import { placeholderArt, samplePalette } from "./art";
 import { SpotifyConnectInline } from "./spotifyConnect";
@@ -19,12 +26,22 @@ import "./music.css";
 
 export type NowPlayingMode = "compact" | "expanded" | "fullscreen";
 
+/** Lens's own accent (the theme's), read from the page. */
+function themeAccent(): string {
+  const v = typeof document !== "undefined" ? getComputedStyle(document.documentElement).getPropertyValue("--lens-accent").trim() : "";
+  return v.startsWith("#") ? v : "#fafafa";
+}
+
 interface Props {
   mode?: NowPlayingMode;
   onMode?: (m: NowPlayingMode) => void;
   onClose?: () => void;
   /** Tests and the gallery can pass a fixed snapshot/position. */
   fixed?: { now: NP; position: number };
+  /** Start in Immersive (the gallery; the app opens it through music_immersive_open). */
+  immersive?: { from: ImmersiveFrom };
+  /** Gallery: a saved translation to show, as if it had been loaded. */
+  demoTranslation?: string[];
 }
 
 const SLEEP_CHOICES: { label: string; minutes: number | null; end?: boolean }[] = [
@@ -44,7 +61,7 @@ function cssBase(): string {
   return rgb && luminance(rgb) < 0.12 ? v : "#0b0b0e";
 }
 
-export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClose, fixed }) => {
+export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClose, fixed, immersive: immersiveProp, demoTranslation }) => {
   const live = useNowPlaying(8);
   const now = fixed?.now ?? live.now;
   const position = fixed?.position ?? live.position;
@@ -65,7 +82,47 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   // Something the person clicked didn't work (Spotify said no, the network is down): say so here.
   const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => setProblem(null), [now?.trackKey]);
-
+  const rootRef = useRef<HTMLDivElement>(null);
+  usePressWeight(rootRef);
+  // This song's own lyric nudge (saved per song), on top of the global Timing offset.
+  const [songOffset, setSongOffset] = useState(0);
+  const [view, setView] = useState<LyricsView>("original");
+  useEffect(() => {
+    if (cfg?.lyricsView === "original" || cfg?.lyricsView === "translated" || cfg?.lyricsView === "both") setView(cfg.lyricsView);
+  }, [cfg?.lyricsView]);
+  // Immersive: what opened it and where the artwork was, so it can grow from there and return.
+  const [immersive, setImmersive] = useState<{ from: ImmersiveFrom; trigger: Rect | null } | null>(immersiveProp ? { ...immersiveProp, trigger: null } : null);
+  const lastArtRect = useRef<Rect | null>(null);
+  const artRect = (): Rect | null => {
+    const r = rootRef.current?.querySelector(".lm-art")?.getBoundingClientRect();
+    return r ? { x: r.left, y: r.top, w: r.width, h: r.height } : null;
+  };
+  useEffect(() => {
+    if (fixed) return;
+    const enter = (from: ImmersiveFrom) => setImmersive((cur) => cur ?? { from, trigger: from === "nowplaying" ? lastArtRect.current : null });
+    // Opened before this page was listening (first build, reload): pick it up once.
+    invoke<ImmersiveFrom | null>("music_immersive_pending").then((f) => f && enter(f)).catch(() => {});
+    const un = listen<{ on: boolean; from: ImmersiveFrom }>("lens://music/immersive", (e) => {
+      if (!e.payload?.on) return setImmersive(null);
+      enter(e.payload.from);
+      void invoke("music_immersive_pending").catch(() => {});
+    });
+    return () => {
+      un.then((f) => f()).catch(() => {});
+    };
+  }, [fixed]);
+  const openImmersive = () => {
+    lastArtRect.current = artRect();
+    if (fixed) return setImmersive({ from: "nowplaying", trigger: lastArtRect.current });
+    invoke("music_immersive_open", { from: "nowplaying" })
+      .then(() => setImmersive((cur) => cur ?? { from: "nowplaying", trigger: lastArtRect.current }))
+      .catch((e) => setProblem(String(e)));
+  };
+  const closeImmersive = () => {
+    const keep = immersive?.from === "nowplaying";
+    setImmersive(null);
+    if (!fixed) void invoke("music_immersive_close", { keepWindow: keep }).catch(() => {});
+  };
   useEffect(() => setMode(modeProp ?? cfg?.windowStyle as NowPlayingMode ?? "expanded"), [modeProp, cfg?.windowStyle]);
   useEffect(() => {
     music.config().then(setCfg).catch(() => {});
@@ -87,7 +144,22 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
     setLiked(false);
     music.lyrics().then(setLyrics).catch(() => setLyrics(null));
     music.history().then(setHistory).catch(() => {});
+    music.lyricsOffset().then((o) => setSongOffset(o?.songMs ?? 0)).catch(() => setSongOffset(0));
   }, [trackKey]);
+  const nudge = (steps: number) => {
+    if (fixed) return setSongOffset((v) => Math.max(-10_000, Math.min(10_000, v + steps * 500)));
+    music.lyricsNudge(steps).then((o) => setSongOffset(o.songMs)).catch((e) => setProblem(String(e)));
+  };
+  const resetNudge = () => {
+    if (fixed) return setSongOffset(0);
+    music.lyricsOffsetReset().then(() => setSongOffset(0)).catch(() => {});
+  };
+  const changeView = (v: LyricsView) => {
+    setView(v);
+    if (cfg && !fixed) music.setConfig({ ...cfg, lyricsView: v }).then(setCfg).catch(() => {});
+  };
+  const translation = useLyricTranslation(lyrics, !!cfg?.lyricsTranslate, cfg?.lyricsTranslateTo ?? "");
+  const translated = demoTranslation ?? translation.lines;
   const caps = sourceCaps(now?.sessionId ?? "", spotify);
   useEffect(() => {
     if (!caps.queue) return setQueue(null);
@@ -100,10 +172,18 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
     onMode?.(m);
   };
 
-  // ---- keyboard: Space play/pause, ←/→ seek 5 s, N/P next/prev, L lyrics, Q queue, F fullscreen, Esc.
+  // ---- keyboard: Space play/pause, ←/→ seek 5 s, N/P next/prev, L lyrics, Q queue, F fullscreen,
+  // F11 Immersive, [ / ] lyric timing, Esc. Immersive has its own keys.
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (immersive) return;
       if ((e.target as HTMLElement)?.closest("input, textarea")) return;
+      if (e.key === "F11") {
+        e.preventDefault();
+        return openImmersive();
+      }
+      if (e.key === "]") return nudge(1);
+      if (e.key === "[") return nudge(-1);
       if (e.key === " ") (e.preventDefault(), music.control("play_pause"));
       else if (e.key === "ArrowRight" && now?.controls.seek) music.control("seek", position + 5000);
       else if (e.key === "ArrowLeft" && now?.controls.seek) music.control("seek", Math.max(0, position - 5000));
@@ -120,14 +200,58 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
 
   const base = typeof document !== "undefined" ? cssBase() : "#09090b";
   const hero = useMemo(() => heroGradient(palette, base), [palette, base]);
+  // Accents from the artwork, checked for 4.5:1 on every part of the hero; the theme accent otherwise.
+  const tint = useMemo(
+    () => pickTint(cfg?.artTint === false ? [] : palette, heroBackgrounds(palette, base, pickVivid(palette)), themeAccent()),
+    [palette, base, cfg?.artTint]
+  );
+  const rootStyle = {
+    ["--lm-hero" as string]: hero,
+    ["--lens-accent" as string]: tint.accent,
+    ["--lm-on-accent" as string]: tint.onAccent,
+  } as React.CSSProperties;
+  const light = typeof document !== "undefined" && document.documentElement.dataset.scheme === "light";
+  // Immersive sits on its own field (paper on light themes, near-black on dark): checked against that.
+  const immTint = useMemo(
+    () => pickTint(cfg?.artTint === false ? [] : palette, light ? ["#f3f3f5", "#e4e4e8"] : ["#060607", "#1a1a1f"], themeAccent()),
+    [palette, light, cfg?.artTint]
+  );
+  const totalOffset = (cfg?.lyricsOffsetMs ?? 0) + songOffset;
   const { main, sub } = splitTitle(now?.title ?? "", now?.album ?? "");
   const artists = splitArtists(now?.artist ?? "");
   const playing = now?.status === "playing";
   const dur = now?.durationMs ?? 0;
 
+  if (immersive) {
+    const n: NP = now ?? ({ hasSession: false, title: "", artist: "", album: "", status: "none", controls: {}, durationMs: 0 } as unknown as NP);
+    return (
+      <ImmersiveView
+        now={n}
+        position={position}
+        art={art}
+        palette={palette}
+        lyrics={lyrics}
+        cfg={cfg}
+        offsetMs={totalOffset}
+        songOffsetMs={songOffset}
+        onNudge={nudge}
+        translated={translated}
+        view={view}
+        onView={changeView}
+        accent={immTint.accent}
+        onAccent={immTint.onAccent}
+        light={light}
+        from={immersive.from}
+        trigger={immersive.trigger}
+        onClose={closeImmersive}
+        frozen={!!fixed}
+      />
+    );
+  }
+
   if (!now || !now.hasSession) {
     return (
-      <div className={`lm-np lm-mode-${mode} lm-empty`} style={{ ["--lm-hero" as string]: hero }}>
+      <div ref={rootRef} className={`lm-np lm-mode-${mode} lm-empty`} style={rootStyle}>
         {onClose && <FlyoutClose onClose={onClose} />}
         <div className="lm-backdrop" aria-hidden><div className="lm-hero-wash" />{cfg?.dither !== false && <div className="lm-dither" />}</div>
         <div className="lm-empty-card">
@@ -140,10 +264,9 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   }
 
   return (
-    <div className={`lm-np lm-mode-${mode} ${showQueue ? "" : "lm-no-queue"}`} style={{ ["--lm-hero" as string]: hero }}>
+    <div ref={rootRef} className={`lm-np lm-mode-${mode} ${showQueue ? "" : "lm-no-queue"}`} style={rootStyle} data-tint={tint.fromArt ? "art" : "theme"}>
       {onClose && mode !== "fullscreen" && <FlyoutClose onClose={onClose} />}
       <div className="lm-backdrop" aria-hidden>
-        <img src={art} alt="" className="lm-backdrop-art" />
         <div className="lm-hero-wash" />
         {cfg?.dither !== false && <div className="lm-dither" />}
       </div>
@@ -170,10 +293,10 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
               {lyrics?.found && <span className="lm-chip"><Mic2 size={12} aria-hidden />{lyrics.synced ? "Synced lyrics" : "Lyrics"}</span>}
             </div>
             <div className="lm-actions">
-              <button type="button" className="lm-pill lm-pill-primary" onClick={() => music.control("play_pause")} disabled={!(playing ? now.controls.pause : now.controls.play)}>
+              <button type="button" data-weight="heavy" className="lm-pill lm-pill-primary" onClick={() => music.control("play_pause")} disabled={!(playing ? now.controls.pause : now.controls.play)}>
                 {playing ? <Pause size={15} /> : <Play size={15} />} {playing ? "Pause" : "Play"}
               </button>
-              <button type="button" className="lm-pill lm-pill-outline" disabled={!now.controls.shuffle} aria-pressed={!!now.shuffle}
+              <button type="button" data-weight="medium" className="lm-pill lm-pill-outline" disabled={!now.controls.shuffle} aria-pressed={!!now.shuffle}
                 onClick={() => music.control("shuffle", now.shuffle ? 0 : 1)}>
                 <Shuffle size={15} /> Shuffle
               </button>
@@ -187,13 +310,13 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
                 </label>
               )}
               <div className="lm-menu-wrap">
-                <button type="button" className="lm-icon-btn" aria-label="More" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
+                <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="More" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
                   <MoreHorizontal size={16} />
                 </button>
                 {moreOpen && (
                   <div className="lm-menu lm-menu-down" role="menu">
-                    <button type="button" role="menuitem" onClick={() => (addToShelf(now), setMoreOpen(false))}>Add to Shelf</button>
-                    <button type="button" role="menuitem" onClick={() => (navigator.clipboard?.writeText(songText(now)).catch(() => {}), setMoreOpen(false))}>Copy song and artist</button>
+                    <button type="button" role="menuitem" data-weight="light" onClick={() => (addToShelf(now), setMoreOpen(false))}>Add to Shelf</button>
+                    <button type="button" role="menuitem" data-weight="light" onClick={() => (navigator.clipboard?.writeText(songText(now)).catch(() => {}), setMoreOpen(false))}>Copy song and artist</button>
                   </div>
                 )}
               </div>
@@ -203,7 +326,11 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
           </div>
         </header>
 
-        {showLyrics && <Lyrics result={lyrics} position={position} offset={cfg?.lyricsOffsetMs ?? 0} canSeek={now.controls.seek} enabled={!!cfg?.lyrics} />}
+        {showLyrics && (
+          <Lyrics result={lyrics} position={position} offset={totalOffset} canSeek={now.controls.seek} enabled={!!cfg?.lyrics}
+            songOffset={songOffset} onNudge={nudge} onResetNudge={resetNudge}
+            translateOn={!!cfg?.lyricsTranslate} translation={translation} translated={translated} view={view} onView={changeView} />
+        )}
       </main>
 
       {showQueue && mode !== "compact" && (
@@ -213,7 +340,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
 
       <PlayerBar now={now} position={position} mode={mode} onMode={changeMode} volume={volume} setVolume={setVolume}
         showLyrics={showLyrics} setShowLyrics={setShowLyrics} showQueue={showQueue} setShowQueue={setShowQueue}
-        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} onProblem={setProblem} />
+        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} onProblem={setProblem} onImmersive={openImmersive} />
     </div>
   );
 };
@@ -242,7 +369,7 @@ const Sidebar: React.FC<{ now: NP; history: Played[]; playlists: PlaylistItem[];
     <div className="lm-side-head">Library</div>
     <div className="lm-side-section">Playing on this PC <span className="lm-count">{now.sessions.length}</span></div>
     {now.sessions.map((s) => (
-      <button key={s.id} type="button" className={`lm-side-row ${s.active ? "active" : ""}`} onClick={() => music.selectSession(s.id)}>
+      <button key={s.id} type="button" data-weight="light" className={`lm-side-row ${s.active ? "active" : ""}`} onClick={() => music.selectSession(s.id)}>
         <span className="lm-side-thumb"><Speaker size={14} aria-hidden /></span>
         <span className="lm-side-text"><span className="lm-side-title">{s.title || s.label}</span><span className="lm-side-sub">{s.label}</span></span>
         {s.playing && <Bars />}
@@ -276,7 +403,14 @@ const Sidebar: React.FC<{ now: NP; history: Played[]; playlists: PlaylistItem[];
 
 // ------------------------------------------------------------------------------ lyrics
 
-const Lyrics: React.FC<{ result: LyricsResult | null; position: number; offset: number; canSeek: boolean; enabled: boolean }> = ({ result, position, offset, canSeek, enabled }) => {
+type Translation = ReturnType<typeof useLyricTranslation>;
+const VIEW_LABELS: [LyricsView, string][] = [["original", "Original"], ["translated", "Translated"], ["both", "Both"]];
+
+const Lyrics: React.FC<{
+  result: LyricsResult | null; position: number; offset: number; canSeek: boolean; enabled: boolean;
+  songOffset: number; onNudge: (steps: number) => void; onResetNudge: () => void;
+  translateOn: boolean; translation: Translation; translated: string[] | null; view: LyricsView; onView: (v: LyricsView) => void;
+}> = ({ result, position, offset, canSeek, enabled, songOffset, onNudge, onResetNudge, translateOn, translation, translated, view, onView }) => {
   const box = useRef<HTMLDivElement>(null);
   const lines = result?.lines ?? [];
   const synced = !!result?.synced;
@@ -291,21 +425,66 @@ const Lyrics: React.FC<{ result: LyricsResult | null; position: number; offset: 
   if (!result) return <div className="lm-lyrics lm-lyrics-empty">Looking for lyrics…</div>;
   if (result.instrumental) return <div className="lm-lyrics lm-lyrics-empty">Instrumental</div>;
   if (!result.found) return <div className="lm-lyrics lm-lyrics-empty">{result.note ?? "No lyrics for this track."}</div>;
-  return (
-    <section className="lm-lyrics" ref={box} aria-label="Lyrics" aria-live="off">
-      {lines.map((l, i) => (
-        <button key={i} type="button" data-i={i} data-state={synced ? lineState(i, cur) : "plain"}
-          className="lm-line" style={synced ? { opacity: lineOpacity(i, cur) } : undefined}
-          disabled={!synced || !canSeek} onClick={() => music.control("seek", l.startMs)}>
-          {l.text || "♪"}
+  const hasTranslation = !!translated?.some((t) => t);
+  const tools = (
+    <div className="lm-lyric-tools" role="toolbar" aria-label="Lyrics options">
+      {synced && (
+        <span className="lm-lyric-nudge" role="group" aria-label="Lyric timing for this song">
+          <button type="button" data-weight="medium" className="lm-mini-btn" aria-label="Lyrics later by half a second" onClick={() => onNudge(-1)}>−0.5 s</button>
+          <span className="lm-mono lm-lyric-offset" aria-live="polite">{songOffset === 0 ? "In time" : `${songOffset > 0 ? "+" : "−"}${(Math.abs(songOffset) / 1000).toFixed(1)} s`}</span>
+          <button type="button" data-weight="medium" className="lm-mini-btn" aria-label="Lyrics earlier by half a second" onClick={() => onNudge(1)}>+0.5 s</button>
+          {songOffset !== 0 && <button type="button" data-weight="light" className="lm-mini-btn lm-mini-ghost" onClick={onResetNudge}>Reset</button>}
+        </span>
+      )}
+      <span className="lm-spacer" />
+      {translateOn && !hasTranslation && (
+        <button type="button" data-weight="medium" className="lm-mini-btn" disabled={translation.status === "working" || translation.status === "asking"} onClick={() => void translation.translate()}>
+          <Languages size={13} aria-hidden /> {translation.status === "working" ? "Translating…" : `Translate into ${translation.language}`}
         </button>
-      ))}
+      )}
+      {hasTranslation && (
+        <span className="lm-lyric-views" role="radiogroup" aria-label="Lyrics shown">
+          {VIEW_LABELS.map(([id, label]) => (
+            <button key={id} type="button" role="radio" aria-checked={view === id} data-weight="medium" className={`lm-mini-btn ${view === id ? "on" : ""}`} onClick={() => onView(id)}>{label}</button>
+          ))}
+        </span>
+      )}
+    </div>
+  );
+  return (
+    <>
+    <div className="lm-lyric-head">
+      {tools}
+      {translation.proposal && (
+        <div className="lm-lyric-consent">
+          <ProposalApproval proposal={translation.proposal} onDecide={translation.decide} />
+        </div>
+      )}
+      {translation.error && <div className="lm-note" role="alert">{translation.error}</div>}
+    </div>
+    <section className="lm-lyrics" ref={box} aria-label="Lyrics" aria-live="off">
+      {lines.map((l, i) => {
+        const t = (translated?.[i] ?? "").trim();
+        const text = view === "translated" && t ? t : l.text || "♪";
+        return (
+          <button key={i} type="button" data-weight="light" data-i={i} data-state={synced ? lineState(i, cur) : "plain"}
+            className="lm-line" style={synced ? lineStyle(i, cur) : undefined}
+            disabled={!synced || !canSeek} onClick={() => music.control("seek", l.startMs)}>
+            {text}
+            {view === "both" && t && t !== l.text.trim() && <span className="lm-line-sub">{t}</span>}
+          </button>
+        );
+      })}
+      {hasTranslation && translation.saved && <div className="lm-credit lm-mono">Translated by {translation.saved.provider} · saved on this PC</div>}
       {result.source === "lrclib" && (
         <div className="lm-credit lm-mono">Lyrics from <a href="https://lrclib.net" onClick={(e) => e.preventDefault()}>LRCLIB</a></div>
       )}
     </section>
+    </>
   );
 };
+
+const lineStyle = (i: number, cur: number): React.CSSProperties => ({ opacity: lineOpacity(i, cur) });
 
 // ------------------------------------------------------------------------------ queue
 
@@ -325,11 +504,11 @@ const QueuePanel: React.FC<{
         {connected && <span className="lm-q-count lm-mono">{items.length} items</span>}
       </div>
       <div className="lm-q-toggles">
-        <button type="button" className={`lm-icon-btn ${now.shuffle ? "on" : ""}`} aria-label="Shuffle" aria-pressed={!!now.shuffle} disabled={!now.controls.shuffle}
+        <button type="button" data-weight="medium" className={`lm-icon-btn ${now.shuffle ? "on" : ""}`} aria-label="Shuffle" aria-pressed={!!now.shuffle} disabled={!now.controls.shuffle}
           onClick={() => music.control("shuffle", now.shuffle ? 0 : 1)}><Shuffle size={15} /></button>
-        <button type="button" className={`lm-icon-btn ${repeat === "list" ? "on" : ""}`} aria-label="Repeat all" aria-pressed={repeat === "list"} disabled={!now.controls.repeat}
+        <button type="button" data-weight="medium" className={`lm-icon-btn ${repeat === "list" ? "on" : ""}`} aria-label="Repeat all" aria-pressed={repeat === "list"} disabled={!now.controls.repeat}
           onClick={() => music.control("repeat", repeat === "list" ? 0 : 2)}><Repeat size={15} /></button>
-        <button type="button" className={`lm-icon-btn ${repeat === "track" ? "on" : ""}`} aria-label="Repeat one" aria-pressed={repeat === "track"} disabled={!now.controls.repeat}
+        <button type="button" data-weight="medium" className={`lm-icon-btn ${repeat === "track" ? "on" : ""}`} aria-label="Repeat one" aria-pressed={repeat === "track"} disabled={!now.controls.repeat}
           onClick={() => music.control("repeat", repeat === "track" ? 0 : 1)}><Repeat1 size={15} /></button>
       </div>
 
@@ -375,13 +554,13 @@ const QueuePanel: React.FC<{
         {sleepLabel && <span className="lm-q-sleep lm-mono">{sleepLabel}</span>}
         <span className="lm-spacer" />
         <div className="lm-menu-wrap">
-          <button type="button" className={`lm-icon-btn ${sleepLabel ? "on" : ""}`} aria-label="Sleep timer" aria-expanded={sleepOpen} onClick={() => setSleepOpen(!sleepOpen)}>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${sleepLabel ? "on" : ""}`} aria-label="Sleep timer" aria-expanded={sleepOpen} onClick={() => setSleepOpen(!sleepOpen)}>
             <Moon size={15} />
           </button>
           {sleepOpen && (
             <div className="lm-menu" role="menu">
               {SLEEP_CHOICES.map((c) => (
-                <button key={c.label} type="button" role="menuitem" onClick={() => (music.sleep(c.minutes, !!c.end), setSleepOpen(false))}>{c.label}</button>
+                <button key={c.label} type="button" role="menuitem" data-weight="light" onClick={() => (music.sleep(c.minutes, !!c.end), setSleepOpen(false))}>{c.label}</button>
               ))}
             </div>
           )}
@@ -396,8 +575,8 @@ const QueuePanel: React.FC<{
 const PlayerBar: React.FC<{
   now: NP; position: number; mode: NowPlayingMode; onMode: (m: NowPlayingMode) => void; volume: number | null; setVolume: (v: number) => void;
   showLyrics: boolean; setShowLyrics: (v: boolean) => void; showQueue: boolean; setShowQueue: (v: boolean) => void; art: string;
-  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void; onProblem: (text: string | null) => void;
-}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked, onProblem }) => {
+  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void; onProblem: (text: string | null) => void; onImmersive: () => void;
+}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked, onProblem, onImmersive }) => {
   const playing = now.status === "playing";
   const dur = now.durationMs;
   const pct = dur > 0 ? Math.min(100, (position / dur) * 100) : 0;
@@ -414,21 +593,21 @@ const PlayerBar: React.FC<{
       </div>
       <div className="lm-bar-row">
         <div className="lm-bar-left">
-          <button type="button" className={`lm-icon-btn ${now.shuffle ? "on" : ""}`} aria-label="Shuffle" disabled={!now.controls.shuffle} onClick={() => music.control("shuffle", now.shuffle ? 0 : 1)}><Shuffle size={16} /></button>
-          <button type="button" className="lm-icon-btn" aria-label="Previous" disabled={!now.controls.prev} onClick={() => music.control("prev")}><SkipBack size={18} /></button>
-          <button type="button" className="lm-icon-btn lm-play" aria-label={playing ? "Pause" : "Play"} disabled={!(playing ? now.controls.pause : now.controls.play)} onClick={() => music.control("play_pause")}>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${now.shuffle ? "on" : ""}`} aria-label="Shuffle" disabled={!now.controls.shuffle} onClick={() => music.control("shuffle", now.shuffle ? 0 : 1)}><Shuffle size={16} /></button>
+          <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="Previous" disabled={!now.controls.prev} onClick={() => music.control("prev")}><SkipBack size={18} /></button>
+          <button type="button" data-weight="medium" className="lm-icon-btn lm-play" aria-label={playing ? "Pause" : "Play"} disabled={!(playing ? now.controls.pause : now.controls.play)} onClick={() => music.control("play_pause")}>
             {playing ? <Pause size={20} /> : <Play size={20} />}
           </button>
-          <button type="button" className="lm-icon-btn" aria-label="Next" disabled={!now.controls.next} onClick={() => music.control("next")}><SkipForward size={18} /></button>
-          <button type="button" className={`lm-icon-btn ${repeat !== "none" ? "on" : ""}`} aria-label="Repeat" disabled={!now.controls.repeat} onClick={() => music.control("repeat", nextRepeat)}>
+          <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="Next" disabled={!now.controls.next} onClick={() => music.control("next")}><SkipForward size={18} /></button>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${repeat !== "none" ? "on" : ""}`} aria-label="Repeat" disabled={!now.controls.repeat} onClick={() => music.control("repeat", nextRepeat)}>
             {repeat === "track" ? <Repeat1 size={16} /> : <Repeat size={16} />}
           </button>
           {likeUri && (
-            <button type="button" className={`lm-icon-btn ${liked ? "on" : ""}`} aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"} aria-pressed={liked}
+            <button type="button" data-weight="medium" className={`lm-icon-btn ${liked ? "on" : ""}`} aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"} aria-pressed={liked}
               onClick={() => music.spotifySave(likeUri, !liked).then(() => (setLiked(!liked), onProblem(null))).catch((e) => onProblem(`Couldn't ${liked ? "remove this from" : "save this to"} Liked Songs: ${connectError(e)}`))}><Heart size={16} fill={liked ? "currentColor" : "none"} /></button>
           )}
-          <button type="button" className={`lm-icon-btn ${showLyrics ? "on" : ""}`} aria-label="Lyrics" aria-pressed={showLyrics} onClick={() => setShowLyrics(!showLyrics)}><Mic2 size={16} /></button>
-          <button type="button" className={`lm-icon-btn ${showQueue ? "on" : ""}`} aria-label="Queue" aria-pressed={showQueue} onClick={() => setShowQueue(!showQueue)}><ListMusic size={16} /></button>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${showLyrics ? "on" : ""}`} aria-label="Lyrics" aria-pressed={showLyrics} onClick={() => setShowLyrics(!showLyrics)}><Mic2 size={16} /></button>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${showQueue ? "on" : ""}`} aria-label="Queue" aria-pressed={showQueue} onClick={() => setShowQueue(!showQueue)}><ListMusic size={16} /></button>
         </div>
         <div className="lm-track-card">
           <img src={art} alt="" />
@@ -443,9 +622,10 @@ const PlayerBar: React.FC<{
               setVolume(v);
               invoke("set_volume_cmd", { level: v }).catch(() => {});
             }} />
-          <button type="button" className="lm-icon-btn" aria-label="Sound output" onClick={() => invoke("open_windows_setting_cmd", { uri: "ms-settings:sound" }).catch(() => {})}><Speaker size={16} /></button>
-          <button type="button" className={`lm-icon-btn ${mode === "compact" ? "on" : ""}`} aria-label="Mini player" onClick={() => onMode(mode === "compact" ? "expanded" : "compact")}><Minimize2 size={16} /></button>
-          <button type="button" className={`lm-icon-btn ${mode === "fullscreen" ? "on" : ""}`} aria-label="Full screen" onClick={() => onMode(mode === "fullscreen" ? "expanded" : "fullscreen")}><Maximize2 size={16} /></button>
+          <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="Sound output" onClick={() => invoke("open_windows_setting_cmd", { uri: "ms-settings:sound" }).catch(() => {})}><Speaker size={16} /></button>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${mode === "compact" ? "on" : ""}`} aria-label="Mini player" onClick={() => onMode(mode === "compact" ? "expanded" : "compact")}><Minimize2 size={16} /></button>
+          <button type="button" data-weight="medium" className={`lm-icon-btn ${mode === "fullscreen" ? "on" : ""}`} aria-label="Full screen" onClick={() => onMode(mode === "fullscreen" ? "expanded" : "fullscreen")}><Maximize2 size={16} /></button>
+          <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="Immersive (F11)" onClick={onImmersive}><Expand size={16} /></button>
         </div>
       </div>
     </div>

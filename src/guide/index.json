@@ -5134,44 +5134,6 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
-   "id": "setting.music.musiccard.dither-texture",
-   "kind": "setting",
-   "title": "Dither texture",
-   "text": "Lens's halftone grain over the blurred artwork.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Dither texture"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Dither texture"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.sources",
-   "kind": "setting",
-   "title": "Sources",
-   "text": "Apps shown first when several are playing. Hidden apps are never shown.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Sources"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Sources"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
    "id": "setting.music.musiccard.theme-follows-the-music",
    "kind": "setting",
    "title": "Theme follows the music",
@@ -5267,6 +5229,101 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
+   "id": "setting.music.musiccard.recently-played-in-lens",
+   "kind": "setting",
+   "title": "Recently played in Lens",
+   "text": "Keeps the last 100 songs on this PC so the Now Playing window can list them.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played in Lens"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played in Lens"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.recently-played",
+   "kind": "setting",
+   "title": "Recently played",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.scrobble-to-last-fm",
+   "kind": "setting",
+   "title": "Scrobble to Last.fm",
+   "text": "Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Scrobble to Last.fm"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Scrobble to Last.fm"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.dither-texture",
+   "kind": "setting",
+   "title": "Dither texture",
+   "text": "Lens's halftone grain over the artwork-coloured background.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Dither texture"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Dither texture"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.sources",
+   "kind": "setting",
+   "title": "Sources",
+   "text": "Apps shown first when several are playing. Hidden apps are never shown.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Sources"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Sources"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
    "id": "setting.music.musiccard.use-lrclib",
    "kind": "setting",
    "title": "Use LRCLIB",
@@ -5358,63 +5415,6 @@
     "tab": "music",
     "card": "MusicCard",
     "label": "Audio-reactive scene"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.recently-played-in-lens",
-   "kind": "setting",
-   "title": "Recently played in Lens",
-   "text": "Keeps the last 100 songs on this PC so the Now Playing window can list them.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Recently played in Lens"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Recently played in Lens"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.recently-played",
-   "kind": "setting",
-   "title": "Recently played",
-   "text": "",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Recently played"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Recently played"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.scrobble-to-last-fm",
-   "kind": "setting",
-   "title": "Scrobble to Last.fm",
-   "text": "Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Scrobble to Last.fm"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Scrobble to Last.fm"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -12044,7 +12044,7 @@
    "id": "doc.music.0",
    "kind": "doc",
    "title": "Lens Music",
-   "text": "One now-playing layer for every app that shows up in Windows' media controls — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a frosted Now Playing window, an optional \"theme follows the music\" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: MUSIC RESEARCH.md. Everything is off by default. Settings → Music turns it on. Lyrics (network), Spotify, Last.fm and the audio-reactive scene are separate opt-ins.",
+   "text": "One now-playing layer for every app that shows up in Windows' media controls — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a matte artwork-tinted Now Playing window and its full-screen Immersive mode, an optional \"theme follows the music\" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: MUSIC RESEARCH.md. Everything is off by default. Settings → Music turns it on. Lyrics (network), lyric translation (AI), Spotify, Last.fm, Discord and the audio-reactive scene are separate opt-ins.",
    "path": [
     "Docs",
     "Lens Music"
@@ -12077,7 +12077,7 @@
    "id": "doc.music.2",
    "kind": "doc",
    "title": "Lens Music: Pieces",
-   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/No",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Immersive, per-song lyric timing, translation cache, Discord ",
    "path": [
     "Docs",
     "Lens Music",
@@ -12274,6 +12274,125 @@
     "surface": "doc",
     "doc": "docs/MUSIC.md",
     "heading": "Lyrics on the desktop (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.16",
+   "kind": "doc",
+   "title": "Lens Music: Immersive (learned from Cider)",
+   "text": "Now Playing full screen on one monitor: the artwork large, a field of four soft gradients in its colours drifting slowly behind it, and the synced lyrics large with the current line bright. Open it with the Immersive button in Now Playing's player bar (or F11 there), the ⤢ button on the Dock music card (while Lens Music is on), or by typing \"immersive\" (or /immersive ) in Lens Command. Esc , F11 or × leaves; the artwork returns to where it came from. - music immersive open(from) puts the nowplaying window full screen on the monitor under the pointer, shows it and tells the page ( lens://music/immersive , plus music immersive pending for a page that mounts later). It refuses with a sentence when the window in front is full screen and isn't Lens ( music::immersive::may open ): Immersive never covers a game or a film. music immersive close(keepWindow) leaves full screen and hides the window",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Immersive (learned from Cider)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Immersive (learned from Cider)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.17",
+   "kind": "doc",
+   "title": "Lens Music: Artwork tint",
+   "text": "Now Playing's accents (active buttons, the seek fill, chips) come from the artwork when one of its colours can be lifted to 4.5:1 against every background it sits on: the hero gradient's top, middle and base ( tint.ts › pickTint , heroBackgrounds ). Greys, rare specks and colours that would have to be washed out to white or black are skipped; then the theme accent is used, lifted the same way. Text on an accent fill is near-black or near-white, whichever reads better. Settings › Music › Immersive › Artwork colours in Now Playing (on by default; local only). The window is matte: the artwork's colours as a gradient, solid panels, no blurred copy of the art and no backdrop-filter .",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Artwork tint"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Artwork tint"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.18",
+   "kind": "doc",
+   "title": "Lens Music: Lyric timing per song",
+   "text": "LRCLIB timings drift on live versions and radio edits. The lyrics header (and Immersive) has −0.5 s / +0.5 s / Reset , and [ / ] do the same. The nudge is saved for that song ( music lyrics offset , music lyrics nudge(steps) , music lyrics offset reset ) in music\\offsets.tsv , keyed by title and artist so it follows the song from Spotify to a browser tab, at most 500 songs, ±10 s, and is added to the global Timing in Settings.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyric timing per song"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyric timing per song"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.19",
+   "kind": "doc",
+   "title": "Lens Music: Lyric translation (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Offer translations adds Translate to the lyrics header. Translating: 1. Looks for a saved translation of these lines into this language first ( music translation get(key) ; the key is made from the lines and the language, translate.ts › translationKey , 32 hex characters). 2. Otherwise asks Lens AI ( ai ask , tools off): the local model when one is running on this PC, else the provider chosen in Settings › AI. The privacy mode applies unchanged: Local only refuses cloud providers; Ask each time shows the shared Send / Don't send card in Now Playing; the usage log records it. Only the numbered lyric lines are sent. 3. Saves the answer ( music translation put ) with the provider's name, which is shown under the lyrics (\"Translated by Ollama · llama3.2, on this PC · saved on this PC\"). \"Translate into\" defaults to the Windows display language. Original / T",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyric translation (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyric translation (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.20",
+   "kind": "doc",
+   "title": "Lens Music: Discord Rich Presence (opt-in)",
+   "text": "Settings › Music › Show on Discord : \"Listening to …\" on your Discord profile with the song, the artist and the time left. - Lens talks only to the Discord app on this PC, through its local named pipe ( \\\\.\\pipe\\discord-ipc-0 … -9 ), with Discord's RPC framing ( opcode u32 LE , length u32 LE , JSON): handshake with the application ID, then SET ACTIVITY with Lens's process id. A small hand-written client ( music/discord.rs , standard library only): no crate, and Lens itself makes no network call for this. The Discord app shares it with whoever can see your profile. - Discord needs an application ID to show an activity. Lens has none of its own, so you create one (discord.com/developers/applications, any name; Discord shows \"Listening to <name \") and paste its ID, like Spotify's client ID. - Private listening clears the activity until you turn it off. Paused or stopped clears it too. \"Show",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Discord Rich Presence (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Discord Rich Presence (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.21",
+   "kind": "doc",
+   "title": "Lens Music: Music setup and Tweaks",
+   "text": "Until finished or skipped, Settings › Music opens with a three-step Set up Lens Music : where your music comes from (Windows media = Lens Music itself, Spotify, your .lrc folder), lyrics and scrobbling (LRCLIB, Last.fm), share and control (Discord; a phone remote is planned and nothing listens on the network today). Every choice is a normal switch; nothing is turned on for you. The advanced options sit in a collapsible Tweaks section grouped as Look, Sources, Lyrics, Immersive and Playground.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Music setup and Tweaks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Music setup and Tweaks"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.22",
+   "kind": "doc",
+   "title": "Lens Music: Credits",
+   "text": "Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were learned from Cider (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Credits"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Credits"
    },
    "source": "docs/MUSIC.md"
   },
@@ -15042,6 +15161,40 @@
     "surface": "doc",
     "doc": "docs/THIRD_PARTY_NOTICES.md",
     "heading": "Simple Icons — website demo only"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.6",
+   "kind": "doc",
+   "title": "Third-party notices: Cider — learned from, nothing used",
+   "text": "Lens Music's Immersive mode, artwork-tinted pages, lyric translation, Discord presence and its setup/Tweaks pages were inspired by Cider (cider.sh), a community Apple Music client. Its licence for reuse is unclear, so nothing of it is in Lens: no code, assets or copy. The Lens versions were built from Cider's public site and observed behaviour (docs/features/music.md › 10). Credit only.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Cider — learned from, nothing used"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Cider — learned from, nothing used"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.7",
+   "kind": "doc",
+   "title": "Third-party notices: Discord RPC — protocol only",
+   "text": "src-tauri/src/music/discord.rs speaks Discord's documented local RPC framing to the Discord app on the same PC. It is Lens's own code (standard library only); no Discord SDK or library is bundled or linked.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Discord RPC — protocol only"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Discord RPC — protocol only"
    },
    "source": "docs/THIRD_PARTY_NOTICES.md"
   },

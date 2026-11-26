@@ -8,6 +8,27 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Immersive: Now Playing full screen (learned from Cider).** Big artwork, its colours drifting
+  slowly behind it as soft gradients, and big synced lyrics with the line being sung bright. Open
+  it from Now Playing (or F11 there), the Dock music card, or by typing "immersive" in Lens
+  Command; Esc leaves. The cursor and controls hide after a few seconds without the mouse moving.
+  It opens on the monitor you're using and never over a full-screen game or film, stays still
+  when motion is reduced, and stops drawing while it's hidden. An optional sound glow is in
+  Settings › Music › Tweaks.
+- **Now Playing takes its colours from the artwork**, and only where they read: every accent is
+  checked at 4.5:1 against the background it sits on, otherwise your theme accent is used. The
+  window is matte now (no blurred copy of the cover, no glass panels).
+- **Lyric timing per song.** −0.5 s / +0.5 s (or `[` / `]`) when a song's lyrics run early or
+  late; Lens remembers it for that song.
+- **Lyric translation (opt-in).** Settings › Music › Synced lyrics › Offer translations. Lens AI
+  translates the lyric lines: your local model when one is running, otherwise the AI you chose,
+  under its privacy mode ("Ask each time" asks first). It says who translated, keeps the result on
+  this PC, and you can show the original, the translation or both.
+- **Show what you're listening to on Discord (opt-in).** Through the Discord app on this PC only;
+  Lens itself sends nothing over the internet. Needs your own Discord application ID; Private
+  listening hides it.
+- **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
+  time) and a Tweaks section that groups the advanced options.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that

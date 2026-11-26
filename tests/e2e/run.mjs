@@ -863,6 +863,32 @@ const SCENARIOS = [
     },
   },
   {
+    id: "music-immersive",
+    title: "Immersive opens full screen from Command's path, renders, and Esc leaves it",
+    async run(s) {
+      const dock = await waitForSurface(s, "dock");
+      const before = await invoke(dock, "music_config_get");
+      await invoke(dock, "music_config_set", { config: { ...before, enabled: true } });
+      try {
+        await invoke(dock, "music_immersive_open", { from: "command" });
+        const np = await waitForSurface(s, "nowplaying", 30000);
+        const take = watchErrors(np);
+        await np.waitForSelector(".lm-imm", { timeout: 15000 });
+        await shot(np, "music-immersive");
+        // Nothing plays on the runner: the empty state shows, with its controls.
+        const text = await np.evaluate(() => document.querySelector(".lm-imm")?.textContent || "");
+        if (!text.trim()) throw new Error("Immersive rendered nothing");
+        await np.evaluate(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+        await np.waitForFunction(() => !document.querySelector(".lm-imm"), null, { timeout: 5000 });
+        const errs = take();
+        if (errs.length) throw new Error(`errors in Now Playing:\n${errs.join("\n")}`);
+      } finally {
+        await invoke(dock, "music_config_set", { config: before }).catch(() => {});
+        await invoke(dock, "hide_surface", { label: "nowplaying" }).catch(() => {});
+      }
+    },
+  },
+  {
     id: "quit-clean",
     title: "quitting leaves no Lens process behind",
     async run(s) {

@@ -6,7 +6,7 @@
   --lm-ink-2: rgba(250, 250, 250, 0.72);
   --lm-ink-3: rgba(250, 250, 250, 0.48);
   --lm-line: rgba(255, 255, 255, 0.10);
-  --lm-glass: rgba(14, 14, 18, 0.58);
+  --lm-glass: rgb(12 12 15 / 0.9);
   --lm-radius: calc(var(--lens-radius, 8px) + 4px);
   --lm-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
   position: relative;
@@ -32,10 +32,9 @@
 .lm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .lm-spacer { flex: 1 1 auto; }
 
-/* ---- backdrop: blurred artwork + deep tinted gradient + optional dither ---- */
+/* ---- backdrop: matte, the artwork's colours as gradients only (no blurred image, no glass) ---- */
 .lm-backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: #0b0b0e; }
-.lm-backdrop-art { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: blur(64px) saturate(1.35) brightness(0.55); transform: scale(1.05); }
-.lm-hero-wash { position: absolute; inset: 0; background: var(--lm-hero, #0b0b0e); opacity: 0.78; }
+.lm-hero-wash { position: absolute; inset: 0; background: var(--lm-hero, #0b0b0e); }
 .lm-dither {
   position: absolute; inset: 0; opacity: 0.14; mix-blend-mode: overlay; pointer-events: none;
   background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.6px, transparent 0.9px);
@@ -43,7 +42,7 @@
 }
 
 /* ---- sidebar ---- */
-.lm-side { grid-row: 1 / 2; min-height: 0; overflow: auto; padding: 12px 8px; border-radius: var(--lm-radius); background: var(--lm-glass); border: 1px solid var(--lm-line); backdrop-filter: blur(24px); }
+.lm-side { grid-row: 1 / 2; min-height: 0; overflow: auto; padding: 12px 8px; border-radius: var(--lm-radius); background: var(--lm-glass); border: 1px solid var(--lm-line); }
 .lm-side-head { font-size: 15px; font-weight: 700; padding: 0 8px 8px; }
 .lm-side-section { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--lm-ink-3); padding: 12px 8px 4px; }
 .lm-count { font-family: var(--lm-mono); font-weight: 500; }
@@ -94,7 +93,7 @@ button.lm-side-row { cursor: pointer; }
 .lm-icon-btn:focus-visible, .lm-pill:focus-visible, .lm-line:focus-visible, .lm-side-row:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, #fafafa); outline-offset: 2px; }
 
 /* lyrics */
-.lm-lyrics { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 16px 160px; scrollbar-width: none; mask-image: linear-gradient(180deg, transparent 0, #000 48px, #000 calc(100% - 120px), transparent 100%); }
+.lm-lyrics { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 16px 160px; scrollbar-width: none; mask-image: linear-gradient(180deg, transparent 0, #000 48px, #000 calc(100% - 120px), transparent 100%); }
 .lm-lyrics::-webkit-scrollbar { display: none; }
 .lm-line { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--lm-ink); font: inherit; font-size: clamp(22px, 2.6vw, 36px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.22; padding: 8px 0; cursor: pointer; transition: opacity var(--lens-dur-slow) var(--lens-ease-out), transform var(--lens-dur-slow) var(--lens-ease-out); transform-origin: left center; }
 .lm-line[data-state="current"] { transform: scale(1.02); }
@@ -105,7 +104,7 @@ button.lm-side-row { cursor: pointer; }
 .lm-credit a { color: inherit; }
 
 /* ---- queue ---- */
-.lm-queue { grid-row: 1 / 2; min-height: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--lm-radius); background: var(--lm-glass); border: 1px solid var(--lm-line); backdrop-filter: blur(24px); overflow: hidden; }
+.lm-queue { grid-row: 1 / 2; min-height: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--lm-radius); background: var(--lm-glass); border: 1px solid var(--lm-line); overflow: hidden; }
 .lm-q-head { display: flex; align-items: baseline; gap: 8px; }
 .lm-q-title { font-size: 18px; font-weight: 800; }
 .lm-q-count { font-size: 12px; color: var(--lm-ink-3); }
@@ -150,7 +149,7 @@ button.lm-side-row { cursor: pointer; }
 .lm-menu button:hover, .lm-menu button:focus-visible { background: rgba(255, 255, 255, 0.10); outline: none; }
 
 /* ---- floating player bar ---- */
-.lm-bar { grid-column: 1 / -1; grid-row: 2 / 3; display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 12px; border-radius: calc(var(--lm-radius) + 4px); background: rgba(16, 16, 20, 0.62); border: 1px solid var(--lm-line); backdrop-filter: blur(28px) saturate(1.3); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); }
+.lm-bar { grid-column: 1 / -1; grid-row: 2 / 3; display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 12px; border-radius: calc(var(--lm-radius) + 4px); background: rgb(14 14 18 / 0.94); border: 1px solid var(--lm-line); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35); }
 .lm-scrub { display: flex; align-items: center; gap: 12px; }
 .lm-time { font-size: 11px; color: var(--lm-ink-3); min-width: 40px; }
 .lm-time:last-child { text-align: right; }
@@ -232,7 +231,6 @@ button.lm-side-row { cursor: pointer; }
 }
 @media (forced-colors: active) {
   .lm-dither { display: none; }
-  .lm-backdrop-art { display: none; }
 }
 
 /* ---- lyrics on the desktop: one click-through line, no chrome ---- */
@@ -247,3 +245,49 @@ html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background:
 .lm-settings-head {
   margin-top: 16px;
 }
+
+/* ---- lyric tools: per-song timing nudge, translate, original / translated / both */
+.lm-lyric-head { flex: 0 0 auto; padding: 0 16px; }
+.lm-lyric-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0 10px; }
+.lm-lyric-nudge, .lm-lyric-views { display: inline-flex; align-items: center; gap: 6px; }
+.lm-lyric-offset { font-size: 11.5px; color: var(--lm-ink-2); min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.lm-mini-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--lm-line); background: rgb(255 255 255 / 0.04); color: var(--lm-ink-2); font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out); }
+.lm-mini-btn:hover:not(:disabled) { background: rgb(255 255 255 / 0.09); color: var(--lm-ink); }
+.lm-mini-btn.on { background: var(--lens-accent, #fafafa); color: var(--lm-on-accent, #09090b); border-color: transparent; }
+.lm-mini-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lm-mini-ghost { border-color: transparent; background: transparent; }
+.lm-line-sub { display: block; margin-top: 4px; font-size: 0.55em; font-weight: 600; letter-spacing: 0; color: var(--lm-ink-2); }
+.lm-lyric-consent { margin: 4px 0 12px; max-width: 460px; }
+
+/* ---- press weight (DESIGN.md §5.2): sink on press, spring back on release; hover never scales */
+.lm-np [data-weight="medium"], .lm-np [data-weight="heavy"] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-fast) var(--lens-ease-out); }
+.lm-np [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); filter: none; transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
+.lm-np [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.25); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
+.lm-np [data-weight="light"][data-pressed] { background-color: rgb(255 255 255 / 0.06); }
+.lm-np .lm-line[data-weight="light"][data-pressed] { background: none; opacity: 1; }
+
+/* ---- Settings › Music additions (MusicSettingsExtras.tsx) */
+.lm-set-row { margin-top: 12px; gap: 16px; }
+.lm-set-text { min-width: 0; }
+.lm-set-input { width: 220px; }
+.lm-set-input-wide { width: 280px; }
+.lm-set-inline { margin-top: 8px; gap: 8px; justify-content: flex-start; }
+.lm-set-steps { margin: 8px 0 0; padding-left: 18px; }
+.lm-set-chips { flex-wrap: nowrap; }
+.lm-setup { margin-top: 14px; padding: 14px 16px; border-radius: calc(var(--lens-radius, 8px) + 2px); border: 1px solid var(--lens-border, rgb(255 255 255 / 0.1)); background: var(--lens-bg-surface, rgb(255 255 255 / 0.03)); overflow: hidden; }
+.lm-setup-head { display: flex; align-items: center; justify-content: space-between; }
+.lm-setup-count { font-size: 11px; color: var(--lens-fg-secondary); font-variant-numeric: tabular-nums; }
+.lm-setup-title { margin-top: 8px; font-size: 13px; font-weight: 600; }
+.lm-setup-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+.lm-tweaks { margin-top: 20px; }
+.lm-tweaks > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.lm-tweaks > summary::-webkit-details-marker { display: none; }
+.lm-tweaks > summary::after { content: "›"; transition: transform var(--lens-dur-fast) var(--lens-ease-out); }
+.lm-tweaks[open] > summary::after { transform: rotate(90deg); }
+.lm-tweaks-group { margin-top: 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lens-fg-secondary); }
+.cc-card [data-weight="medium"][data-pressed], .lm-setup [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); transition: transform var(--lens-dur-instant) var(--lens-ease-out); }
+.cc-card [data-weight="heavy"][data-pressed], .lm-setup [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); transition: transform var(--lens-dur-instant) var(--lens-ease-out); }
+.lm-setup [data-weight="medium"], .lm-setup [data-weight="heavy"] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring); }
+.lm-mode-compact .lm-lyric-head { display: none; }
+.lm-mode-fullscreen .lm-main { position: relative; }
+.lm-mode-fullscreen .lm-lyric-head { position: absolute; top: 24px; right: 24px; z-index: 2; padding: 0; }
