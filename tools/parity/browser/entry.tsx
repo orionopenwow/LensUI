@@ -1,4 +1,4 @@
-// Renders Lens Browser scenes for screenshots: ?scene=frame|agent|approval|transcript|address&preset=…
+// Renders Lens Browser scenes for screenshots: ?scene=frame|agent|approval|dinner-plan|dinner|transcript|address&preset=…
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
@@ -162,6 +162,17 @@ const pending: PendingOk = {
 };
 
 
+// The website's agentic-desktop exhibit: Claude Code, connected over MCP, books Friday dinner. Reading
+// and searching run; the reservation (a no-show fee) waits for an OK; the calendar and messages come next.
+const dinnerAsk = "Book Friday dinner for 4 near me and add it to my calendar, then message Maya, Sam and Priya";
+const dinnerItems: AgentItem[] = [
+  { kind: "user", key: "du", text: dinnerAsk, at: NOW - 150_000 },
+  { kind: "group", key: "dg1", title: "Searched places near you", icon: "search", host: "tables.example", verbs: ["search", "open", "open", "open", "read"], why: "Kept places free Friday at 7:30–8:30 with plant mains for Maya.", tabId: "t3", at: NOW - 120_000 },
+  { kind: "say", key: "ds1", text: "Harbor & Vine is free at 8:00 and has nine plant mains. I'll fill the reservation, then add it to your calendar and message Maya, Sam and Priya. Each of those asks you first.", at: NOW - 90_000 },
+  { kind: "action", key: "da1", text: "Clicked “Harbor & Vine”.", ok: true, at: NOW - 70_000 },
+  { kind: "action", key: "da2", text: "Typed into “Party size”.", ok: true, at: NOW - 50_000 },
+  { kind: "action", key: "da3", text: "Typed into “Name”.", ok: true, at: NOW - 30_000 },
+];
 const ytDesc = (over: any) => ({ ...pending.desc, ...over, target: { ...pending.desc.target, ...(over.target ?? {}) } });
 const payPending: PendingOk = {
   step: { do: "click", ref: 7 },
@@ -327,6 +338,8 @@ const scenes: Record<string, BrowserInitial> = {
   permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
   "permission-site": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, perms: { [new URL(activeUrl).origin]: { location: true, notifications: false } } },
   agent: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems, startedAt: NOW - 196_000, actions: 23, running: false } },
+  "dinner-plan": { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: dinnerItems.slice(0, 3), startedAt: NOW - 150_000, actions: 6, running: true } },
+  dinner: { view: { ...view, state: { ...view.state, tabs: view.state.tabs.map((x) => (x.id === "t3" ? { ...x, badge: "approve" } : x)) } }, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: dinnerItems, startedAt: NOW - 150_000, actions: 9, running: true, pending } },
   approval: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems.slice(0, 3), startedAt: NOW - 196_000, actions: 23, running: true, pending } },
   transcript: {
     view,
