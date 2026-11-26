@@ -48,6 +48,8 @@ export function validateApp(a: CatalogApp, ids: Set<string>, categories: Set<str
   req(isHttpsUrl(a.homepage), "homepage must be https");
   req(a.repo === null || isHttpsUrl(a.repo), "repo must be https or null");
   req(Array.isArray(a.sources) && a.sources.length > 0 && a.sources.every(isHttpsUrl), "sources must be https links");
+  req(a.author === undefined || (typeof a.author === "string" && !!a.author.trim()), "author must be a name");
+  req(a.thumb === undefined || a.thumb === null || (isMediaUrl(a.thumb.src) && a.thumb.src.startsWith("https://raw.githubusercontent.com/") && /^docs\/media\/apps\/[a-z0-9-]+\.webp$/.test(a.thumb.site)), "thumb must be a pinned repo image and its site copy, or null");
   const m = a.media;
   req(m?.icon === null || isMediaUrl(m?.icon), "media icon must be an https image URL or null");
   req(Array.isArray(m?.screenshots) && m.screenshots.every(isMediaUrl), "screenshots must be https image URLs");

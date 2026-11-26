@@ -55,7 +55,7 @@ let uid = 0;
  * createDesk(host, { label, layout })
  * host: an element the desk fills (it sets its height from the 16:10 design size).
  */
-export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false } = {}) {
+export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false, accentLayer = false } = {}) {
   const n = ++uid;
   host.classList.add("lx-host");
   host.innerHTML = `<div class="lx" tabindex="0" role="application" aria-roledescription="desktop" aria-label="${esc(label)}" aria-describedby="lx-help-${n}">
@@ -85,6 +85,22 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   let pack = null, accent = null, committed = null, visible = false;
   const packMsg = () => (pack ? { lens: "pack", pack: { id: pack.id, label: pack.label, base: baseOf(pack), accent: accent ?? pack.accent, radius: pack.radius, scheme: pack.scheme, frameStyle: pack.frameStyle, controlStyle: pack.controlStyle } } : null);
   const tell = (f, m) => { try { if (m) f?.contentWindow?.postMessage(m, location.origin); } catch { /* frame gone */ } };
+  // The Theme lab's accent layer (css/lab-accent.css): the accent at full strength on every real
+  // surface on this desk, easing from one colour to the next, with ink that reads on it.
+  const onAccent = (hex) => { const n = parseInt(String(hex).slice(1, 7), 16); if (Number.isNaN(n)) return "#09090b"; const l = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2] > 0.18 ? "#09090b" : "#fafafa"; };
+  function dress(f) {
+    if (!accentLayer) return;
+    try {
+      const doc = f?.contentDocument;
+      if (!doc?.head) return;
+      if (!doc.getElementById("lab-accent")) doc.head.append(Object.assign(doc.createElement("link"), { id: "lab-accent", rel: "stylesheet", href: new URL("css/lab-accent.css", SITE).href }));
+      const r = doc.documentElement;
+      r.style.setProperty("--lab-on-accent", onAccent(accent ?? pack?.accent ?? "#fafafa"));
+      r.classList.toggle("lab-still", reducedMotion());
+      r.classList.toggle("lab-motion", !reducedMotion());
+    } catch { /* not ready yet */ }
+  }
+  const dressAll = () => { for (const f of [frame, topbar, ...[...wins.values()].map((w) => w.frame), ...Object.values(overs).map((o) => o.frame)]) dress(f); };
 
   // ---- size: a 16:10 design canvas, scaled down on small screens --------------------------------
   let W = 1280, H = 800, k = 1, full = false;
@@ -389,7 +405,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   addEventListener("message", (e) => {
     if (e.source !== frame.contentWindow) return;
     const m = e.data ?? {};
-    if (m.lens === "ready" && !frameReady) { frameReady = true; root.classList.add("dock-live"); outbox.splice(0).forEach((x) => frame.contentWindow.postMessage(x, location.origin)); sync(); }
+    if (m.lens === "ready" && !frameReady) { frameReady = true; dress(frame); root.classList.add("dock-live"); outbox.splice(0).forEach((x) => frame.contentWindow.postMessage(x, location.origin)); sync(); }
     else if (m.lens === "tall") { if (m.on) closeFly2(); tall = !!m.on; sizeFrame(); frame.classList.toggle("is-tall", tall); emit("dock-tall", tall); }
     else if (m.lens === "act") { emit("user", "dock"); act(m.cmd, m.args); }
   });
@@ -487,6 +503,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = who.w;
     if (m.a === "ready") {
       tell(e.source, packMsg());
+      dress(e.source.frameElement);
       if (w) { w.ready = true; w.el.classList.add("is-ready"); emit("ready", w); }
       else if (who.over) { overs[who.over].el.classList.add("is-ready"); emit("ready", { over: who.over }); }
       else { root.classList.add("top-live"); emit("ready", { top: true }); }
@@ -623,9 +640,23 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (!p.collection) document.documentElement.dataset.preset = p.id;
     send({ lens: "pack", pack: { id: p.id, label: p.label, base: baseOf(p), accent: acc ?? p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle }, ...(dockStyle ? { dockStyle } : {}) });
     for (const f of [topbar, ...[...wins.values()].map((w) => w.frame), ...Object.values(overs).map((o) => o.frame)]) tell(f, packMsg());
+    dressAll();
     emit("theme", { p, acc, preview });
   }
   const revert = () => { if (committed) setPack(committed.p, { acc: committed.acc }); };
+  /** A short wash of the accent across the desk from a point (desk px; the centre by default). */
+  function wash(color, at) {
+    if (reducedMotion()) return;
+    const el = document.createElement("div");
+    el.className = "lx-wash";
+    el.setAttribute("aria-hidden", "true");
+    el.style.setProperty("--wash", color);
+    el.style.setProperty("--x", `${Math.round(at?.x ?? W / 2)}px`);
+    el.style.setProperty("--y", `${Math.round(at?.y ?? H / 2)}px`);
+    cv.append(el);
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 1500);
+  }
 
 
   // ---- visibility: frames load when the desk is near the screen; the backdrop pauses off-screen ---------
@@ -652,7 +683,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     /** The document of a real surface (a window's app id, or "qs" | "cmd" | "magic" | "top"), for tours and checks. */
     doc: (id) => { try { return (id === "top" ? topbar : overs[id]?.frame ?? api.byApp(id)?.frame)?.contentDocument ?? null; } catch { return null; } },
     get pack() { return pack; }, get committed() { return committed; },
-    setPack,
+    setPack, wash, toDesk,
     async setMode(m) { const ps = await getPacks(); setPack(ps.find((x) => x.id === (m === "light" ? "alabaster-daylight" : "obsidian"))); },
     async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); },
     dockStyle(style, shape, align) {

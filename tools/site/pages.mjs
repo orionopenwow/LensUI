@@ -76,7 +76,7 @@ export function home(o) {
   // A stage reserves its room before its frames load (no layout shift).
   return homeHtml(o).replace(/data-w="(\d+)" data-h="(\d+)"/g, (m, w, h) => `${m} style="aspect-ratio:${w}/${h}"`);
 }
-function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
+function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = null }) {
   void packs;
   const PAUSE = `<button type="button" class="sb-btn x-pause" data-xpause aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span class="sr">Pause</span></button>`;
   const xbar = (label, first) => `<div class="xbar"><p class="xcap" aria-live="off">${esc(first)}</p><span class="xdots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>${PAUSE.replace('<span class="sr">Pause</span>', `<span class="sr">Pause ${esc(label)}</span>`)}</div>`;
@@ -161,8 +161,9 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
         <div class="lab-picks" role="group" aria-label="Themes"></div>
         <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
         <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
-        <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
-        <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
+        <p class="lab-label" id="acc-l">Accent <span>click a colour, or drag one onto the desk</span></p>
+        <div class="lab-acc" role="radiogroup" aria-labelledby="acc-l"></div>
+        <p class="lab-acc-now" aria-live="polite"></p>
         <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
         <p class="lab-now" aria-live="polite"></p>
       </aside>
@@ -214,8 +215,8 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 <section id="apps" class="sec xsec" aria-labelledby="apps-h">
   <div class="inner">
     <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Official releases, checked before they install.</p></div>
-    <div class="app-grid">${[...SUITE, ...PICKS].map((id) => appTile(id, apps)).join("")}</div>
-    <p class="fine">Names belong to each project; Lens isn't affiliated with them. The icons here are Lens's own drawings.</p>
+    <div class="app-grid">${[...SUITE, ...PICKS].map((id) => appTile(id, catalog.find((a) => a.id === id), apps[id])).join("")}</div>
+    <p class="fine apps-fine">Names, screenshots and trademarks belong to each project; Lens isn't affiliated with any of them. Each screenshot comes from the project's own repository; where a repository has none, the tile is Lens's own drawing.</p>
   </div>
 </section>
 
@@ -288,14 +289,25 @@ export const appGlyph = (id) => {
 };
 const extra = (t, line, { clip: c, img, alt } = {}) => `<article class="ex">${c ? clip(c, t) : img ? `<figure class="clip still"><img src="media/${img}" alt="${esc(alt ?? t)}" loading="lazy" width="1100" height="619"></figure>` : ""}<h3>${esc(t)}</h3><p>${esc(line)}</p></article>`;
 
-/** One app, once: Lens's own matte icon for it, one line, its licence, and Get. */
-function appTile(id, apps) {
-  const a = apps[id];
-  if (!a) return "";
+/** One app, once: a real screenshot from its own repository (or Lens's drawn tile when the repo has
+ *  none), its name and line, who makes it (linked to the source), its licence, the credit, and Get. */
+function appTile(id, c, m = {}) {
+  if (!c && !m.name) return "";
+  const name = c?.name ?? m.name, license = c?.license ?? m.license, repo = c?.repo ?? m.repo ?? c?.homepage ?? m.homepage;
+  const author = c?.author ?? c?.publisher ?? "";
+  const thumb = c?.thumb?.site ? c.thumb.site.replace(/^docs\//, "") : null;
+  const shot = thumb
+    ? `<figure class="apt-shot"><img src="${esc(thumb)}" alt="Screenshot of ${esc(name)}" loading="lazy" decoding="async" width="640" height="400"></figure>`
+    : `<div class="apt-shot is-glyph">${appGlyph(id)}</div>`;
   return `<article class="apt" data-app-card="${esc(id)}">
-  ${appGlyph(id)}
-  <div class="apt-t"><h3><a href="${esc(a.repo ?? a.homepage)}">${esc(a.name)}</a></h3><span>${esc(LINES[id] ?? "")}</span><span class="meta">${esc(a.license)}</span></div>
-  <button class="get-pill" type="button" data-get="${esc(a.name)}" aria-live="polite">Get</button>
+  ${shot}
+  <div class="apt-body">
+    <div class="apt-t"><h3><a href="${esc(c?.homepage ?? repo)}">${esc(name)}</a></h3><span class="apt-line">${esc(LINES[id] ?? "")}</span>
+      <span class="apt-by">${author ? `by <a href="${esc(repo)}" aria-label="${esc(author)}: ${esc(name)} source code">${esc(author)}</a> · ` : ""}<span class="apt-lic">${esc(license)}</span></span>
+    </div>
+    <button class="get-pill" type="button" data-get="${esc(name)}" aria-live="polite">Get</button>
+  </div>
+  ${thumb ? `<p class="apt-credit">Screenshot: ${esc(name)}, ${esc(license)}</p>` : ""}
 </article>`;
 }
 

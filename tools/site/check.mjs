@@ -574,6 +574,34 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.keyboard.press("Escape");
   await page.click("[data-shuffle]"); await page.waitForTimeout(600);
   expect((await D(() => window.lensSite.lab.committed?.p.id)) !== "rose-pine", "Shuffle changes the theme");
+  // Accents: each named colour is a radio with its name shown, and picking it repaints the desk: the
+  // dock's running marks, the music window's primary button, the browser's space dot and the active
+  // window's focus border all compute to that colour once the short transition has run.
+  {
+    const accents = await D(() => [...document.querySelectorAll(".lab-acc [data-acc]")].map((b) => [b.dataset.acc, b.getAttribute("aria-label")]).filter(([h]) => h));
+    expect(accents.length >= 8 && (await D(() => document.querySelector(".lab-acc").getAttribute("role"))) === "radiogroup", "the accents are a radio group of named colours", String(accents.length));
+    const painted = (hex) => D((hex) => {
+      const n = parseInt(hex.slice(1), 16), rgb = `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+      const lab = document.getElementById("lab-desk"), hits = new Set();
+      const docs = [...lab.querySelectorAll("iframe")].map((f) => { try { return f.contentDocument; } catch { return null; } }).filter(Boolean);
+      for (const d of docs) for (const [sel, prop] of [[".dock-indicator", "backgroundColor"], [".lm-pill-primary", "backgroundColor"], [".lb-space-dot", "backgroundColor"]]) for (const el of d.querySelectorAll(sel)) if (getComputedStyle(el)[prop] === rgb) hits.add(sel);
+      const lw = lab.querySelector(".lw.is-focused");
+      if (lw && getComputedStyle(lw).boxShadow.includes(rgb)) hits.add("focus border");
+      return [...hits];
+    }, hex);
+    const missed = [];
+    for (const [hex, name] of accents) {
+      await page.click(`.lab-acc [data-acc="${hex}"]`);
+      let hits = [];
+      for (let t = 0; t < 30 && hits.length < 4; t++) { await page.waitForTimeout(150); hits = await painted(hex); }
+      const shown = await D(() => document.querySelector(".lab-acc-now")?.textContent ?? "");
+      const checked = await D((h) => document.querySelector(`.lab-acc [data-acc="${h}"]`).getAttribute("aria-checked"), hex);
+      if (hits.length < 4 || !shown.includes(name) || checked !== "true") missed.push(`${name} ${hex}: ${hits.join("+") || "nothing"} in the accent, label “${shown}”, checked=${checked}`);
+    }
+    expect(!missed.length, "each accent visibly repaints the desk (dock marks, primary button, space dot, focus border) and shows its name", missed.join("; "));
+    await page.click('.lab-acc [data-acc=""]'); await page.waitForTimeout(300);
+    expect((await D(() => window.lensSite.lab.committed?.acc)) == null, "the theme's own accent can be picked back");
+  }
   // Icons: every icon on the page comes from the shared set (or the brand folder, or the apps' own repos).
   const odd = await D(() => [...document.querySelectorAll("main img, #desk-host img, #lab-desk img")].map((i) => i.getAttribute("src") ?? "").filter((s) => s && !/media\/icons\/|media\/apps\/|media\/shot-|media\/core-|media\/surface-|brand\//.test(s)));
   expect(!odd.length, "icons come from the shared icon set", odd.slice(0, 5).join(", "));
@@ -589,7 +617,12 @@ async function waitDesk(page, sel = "#desk-host") {
     expect(minis.length >= 14 && ["Lens Music", "Lens Cleaner", "Notes", "Lens Feeds", "Lens Messages", "ThumbDesk", "Monitor"].every((n) => minis.some((t) => t.includes(n))), "the small apps (Music, Cleaner, Notes, Feeds, Messages, ThumbDesk and the core apps) share one compact grid", String(minis.length));
     const sizes = await D(() => ({ mini: Math.max(...[...document.querySelectorAll("#core-grid .mini-pic")].map((e) => e.getBoundingClientRect().width)), main: Math.max(...[...document.querySelectorAll(".xmain")].map((e) => e.getBoundingClientRect().width)) }));
     expect(sizes.mini <= 360 && sizes.main <= 1110, "exhibits stay a sensible size: small apps as small pictures, main features no wider than about 1100 px", JSON.stringify(sizes));
-    expect(!(await page.$("#apps .apt img")) && (await page.locator("#apps .apt .app-ic svg").count()) === (await page.locator("#apps .apt").count()), "Lens Apps use one drawn icon set: a glyph on a matte tile, no screenshots");
+    // Lens Apps: a real screenshot on top of each card (Lens's drawn tile where the repo has none),
+    // lazy, sized so nothing shifts, with who makes it (linked), the licence and a screenshot credit.
+    const apps = await D(() => [...document.querySelectorAll("#apps .apt")].map((c) => { const i = c.querySelector(".apt-shot img"); return { id: c.dataset.appCard, img: !!i, lazy: i?.loading === "lazy", sized: !!(i?.getAttribute("width") && i?.getAttribute("height")), glyph: !!c.querySelector(".apt-shot .app-ic svg"), by: !!c.querySelector(".apt-by a[href^='https://']"), credit: c.querySelector(".apt-credit")?.textContent ?? "", get: !!c.querySelector("[data-get]") }; }));
+    const badApps = apps.filter((a) => !(a.img || a.glyph) || (a.img && (!a.lazy || !a.sized || !/^Screenshot: /.test(a.credit))) || !a.by || !a.get).map((a) => a.id);
+    expect(apps.length === 12 && apps.filter((a) => a.img).length >= 8 && !badApps.length, "Lens Apps cards: a lazy, sized screenshot (or Lens's tile), “by” the maker linked to the source, the licence, a screenshot credit and Get", badApps.join(", "));
+    expect(await D(() => /screenshots and trademarks belong to each project/i.test(document.querySelector("#apps .apps-fine")?.textContent ?? "")), "the Lens Apps note credits each project's names, screenshots and trademarks");
     expect(!(await page.$("#f-magic video, #byo video, #f-browser video")), "the exhibits are live surfaces, not clips");
     expect(!!(await page.$("#how-themes")) && (await D(() => /\.lenstheme/.test(document.getElementById("how-themes").textContent))), "“How themes work” sits under the theme lab");
     for (const id of ["f-magic", "byo", "f-browser"]) {
