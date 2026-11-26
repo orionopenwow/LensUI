@@ -188,6 +188,7 @@ const handlers: Record<string, (a: any) => any> = {
     const depth = a?.depth ?? 1;
     return { node: strip(n, 1), crumbs: crumbs(n.id).map((c: any) => strip(c, 1)), children: (n.children ?? []).map((c: any) => strip(c, depth)) };
   },
+  cleaner_space_find: () => 0,
   cleaner_biggest: (a) => BIG.filter((b) => !a?.kind || a.kind === "all" || TYPE[b.name.split(".").pop()!.toLowerCase()] === a.kind),
   cleaner_reveal: () => null,
   cleaner_open: () => null,
@@ -221,6 +222,7 @@ const handlers: Record<string, (a: any) => any> = {
       { path: `${U}\\Downloads`, before: 51.1 * GB, after: 52.3 * GB, delta: 1.2 * GB },
     ],
     sudden: 9.4 * GB,
+    jumps: [{ day: DAYS[25].day, delta: DAYS[25].used - DAYS[24].used, folder: `${U}\\Videos`, folderDelta: 7.3 * GB }],
   }),
   cleaner_settings_get: () => ({ weekly: false, lowSpaceAlert: true, lowSpacePct: 10, lowSpaceGb: 10, history: true, explorerVerb: false, lastWeeklyMs: 0, lastAlertDay: "" }),
   cleaner_settings_set: (a) => a?.next,

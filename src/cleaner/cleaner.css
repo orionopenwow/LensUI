@@ -1646,6 +1646,75 @@
 .cl-delta.is-down {
   color: var(--cl-safe);
 }
+/* Home: "Where did my space go?" — one row per drive, quiet until there is something to show. */
+.cl-tl {
+  display: grid;
+  gap: var(--cl-2);
+  margin-top: var(--cl-5);
+}
+.cl-tl-title {
+  margin: 0;
+  font-weight: 600;
+}
+.cl-tl-row {
+  display: grid;
+  grid-template-columns: 48px 160px auto 1fr;
+  align-items: center;
+  gap: var(--cl-4);
+  min-height: 48px;
+  padding: var(--cl-2) var(--cl-5);
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+}
+.cl-tl-drive {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.cl-tl-spark {
+  width: 160px;
+  height: 32px;
+  overflow: visible;
+}
+.cl-tl-dot {
+  fill: var(--cl-danger);
+  stroke: var(--cl-surface);
+  stroke-width: 1.5;
+}
+.cl-tl-change {
+  white-space: nowrap;
+}
+.cl-tl-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--cl-2);
+  min-width: 0;
+}
+.cl-tl-jump {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cl-tl-jump:hover {
+  color: var(--lens-fg);
+  border-color: rgb(var(--lens-ink) / 0.28);
+}
+.cl-tl-drive:focus-visible,
+.cl-tl-jump:focus-visible {
+  outline: 2px solid var(--lens-fg);
+  outline-offset: 2px;
+}
 .cl-growth li {
   display: grid;
   grid-template-columns: 1fr auto 32px;

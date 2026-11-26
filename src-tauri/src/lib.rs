@@ -869,6 +869,7 @@ pub fn run() {
             commands::cleaner::cleaner_space_scan,
             commands::cleaner::cleaner_space_children,
             commands::cleaner::cleaner_biggest,
+            commands::cleaner::cleaner_space_find,
             commands::cleaner::cleaner_reveal,
             commands::cleaner::cleaner_open,
             commands::cleaner::cleaner_apps,

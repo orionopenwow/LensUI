@@ -443,3 +443,61 @@ export function fmtScanTime(ms: number): string {
   const s = total % 60;
   return s ? `${Math.floor(total / 60)} min ${s} s` : `${Math.floor(total / 60)} min`;
 }
+
+// ---- "Where did my space go?" on Home -----------------------------------------------------------
+
+/** Where value `i` of a series sits in the sparkline drawn by `sparkPath` (same maths). */
+export function sparkPoint(values: number[], i: number, w: number, h: number, pad = 2): { x: number; y: number } | null {
+  if (values.length < 2 || i < 0 || i >= values.length) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  return { x: pad + (i / (values.length - 1)) * (w - pad * 2), y: h - pad - ((values[i] - min) / span) * (h - pad * 2) };
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-11-18" → "18 Nov" (no Date parsing: snapshot days are local calendar days already). */
+export function dayLabel(day: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!m) return day;
+  const month = MONTHS[Number(m[2]) - 1];
+  return month ? `${Number(m[3])} ${month}` : day;
+}
+
+/** The last part of a path: "C:\\Users\\you\\Videos" → "Videos". */
+export function folderName(path: string): string {
+  const parts = path.split(/[\\/]/).filter(Boolean);
+  return parts[parts.length - 1] ?? path;
+}
+
+export interface TimelineRow {
+  root: string;
+  used: number[];
+  /** Change in used space from the first to the last snapshot shown. */
+  delta: number;
+  days: number;
+  jumps: { index: number; day: string; delta: number; folder: string | null; label: string }[];
+}
+
+/**
+ * One Home-screen row per drive that has at least two daily snapshots: the sparkline values, the
+ * change over the period and its biggest jumps (most recent first), each with where to open the map.
+ */
+export function timelineRows(histories: { root: string; view: { enabled: boolean; series: { day: string; used: number }[]; jumps?: { day: string; delta: number; folder?: string | null }[] } | null }[], maxJumps = 2): TimelineRow[] {
+  const rows: TimelineRow[] = [];
+  for (const { root, view } of histories) {
+    if (!view?.enabled || view.series.length < 2) continue;
+    const used = view.series.map((p) => p.used);
+    const jumps = (view.jumps ?? [])
+      .slice(0, maxJumps)
+      .map((j) => {
+        const folder = j.folder ?? null;
+        return { index: view.series.findIndex((p) => p.day === j.day), day: j.day, delta: j.delta, folder, label: `${dayLabel(j.day)} · +${fmtSize(j.delta)}${folder ? ` · ${folderName(folder)}` : ""}` };
+      })
+      .filter((j) => j.index > 0)
+      .sort((a, b) => b.index - a.index);
+    rows.push({ root, used, delta: used[used.length - 1] - used[0], days: used.length, jumps });
+  }
+  return rows;
+}

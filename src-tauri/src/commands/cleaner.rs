@@ -515,6 +515,12 @@ pub(crate) fn cleaner_space_children(root: String, id: u32, depth: Option<u32>, 
     Ok(SpaceView { node, crumbs: t.crumbs(id), children: t.children(id, limit.unwrap_or(60).clamp(1, 400), depth.unwrap_or(1).clamp(1, 4)) })
 }
 
+/// The map node for a folder (the Home timeline opens the Space map at the folder that grew).
+#[tauri::command]
+pub(crate) fn cleaner_space_find(root: String, path: String) -> Result<Option<u32>, String> {
+    Ok(tree_for(&root)?.find(Path::new(&path)))
+}
+
 #[tauri::command]
 pub(crate) fn cleaner_biggest(root: String, kind: Option<String>, limit: Option<usize>) -> Result<Vec<tree::View>, String> {
     let t = tree_for(&root)?;
@@ -650,6 +656,8 @@ pub(crate) struct HistoryView {
     series: Vec<history::Point>,
     growth: Vec<history::Growth>,
     sudden: Option<u64>,
+    /// The biggest day-to-day rises in the series, labelled by folder when known.
+    jumps: Vec<history::Jump>,
 }
 
 fn history_path() -> PathBuf {
@@ -666,7 +674,7 @@ pub(crate) fn cleaner_history(root: String) -> HistoryView {
     let series = h.series(&root, 30);
     let total = cleaner::win::disk_space(Path::new(&root)).map(|d| d.0).unwrap_or(0);
     let week_ago = cleaner::day_string(cleaner::now_ms().saturating_sub(7 * 86_400_000));
-    HistoryView { enabled: load_settings().history, sudden: history::sudden_growth(&series, total), growth: h.growth(&week_ago, 6), series }
+    HistoryView { enabled: load_settings().history, sudden: history::sudden_growth(&series, total), growth: h.growth(&week_ago, 6), jumps: h.jumps(&root, 30, total, 3), series }
 }
 
 fn snapshot_now() {

@@ -11,7 +11,7 @@ import { AppsPanel, DownloadsPanel, TimelinePanel } from "./Extras";
 import { Cleanup } from "./Cleanup";
 import { Done, type DoneInfo } from "./Done";
 import { Home } from "./Home";
-import { flow, fmtSize, initialFlow, keyAction, selectionPayload, type CleanupTab, type FlowState } from "./model";
+import { flow, fmtSize, folderName, initialFlow, keyAction, selectionPayload, timelineRows, type CleanupTab, type FlowState } from "./model";
 import { PreviewSheet } from "./PreviewSheet";
 import { Scanning } from "./Scanning";
 import { SettingsPanel } from "./SettingsPanel";
@@ -30,6 +30,7 @@ export interface CleanerDemo {
   settings?: boolean;
   space?: { root?: string; mode?: MapView; filter?: string; selected?: string[]; nodeId?: number; moving?: { path: string; done: number; total: number } };
   downloadsPicked?: string[];
+  timelines?: { root: string; view: HistoryView | null }[];
 }
 
 interface SheetState {
@@ -89,6 +90,19 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       .catch((e) => say(`Couldn't read your drives: ${e}`, true, { label: "Try again", run: () => loadOverview() }));
   }, [say]);
   useEffect(loadOverview, [loadOverview]);
+
+  // Home: "Where did my space go?" from the daily snapshots (only when the person turned them on).
+  const [timelines, setTimelines] = useState<{ root: string; view: HistoryView | null }[]>(demo?.timelines ?? []);
+  const driveRoots = (overview?.drives ?? []).map((d) => d.root).slice(0, 6).join("|");
+  useEffect(() => {
+    if (demo || !driveRoots || s.screen !== "home") return;
+    let alive = true;
+    Promise.all(driveRoots.split("|").map((r) => api.history(r).then((view) => ({ root: r, view })).catch(() => ({ root: r, view: null })))).then((t) => alive && setTimelines(t));
+    return () => {
+      alive = false;
+    };
+  }, [demo, driveRoots, s.screen]);
+  const timeline = useMemo(() => timelineRows(timelines), [timelines]);
 
   // ── scan ────────────────────────────────────────────────────────────────────────────────────
   const scan = useCallback(() => {
@@ -260,6 +274,24 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
     if (s.screen === "space" && !summary && !spaceProgress) mapDrive(root);
   }, [s.screen, summary, spaceProgress, root, mapDrive]);
 
+  // From the Home timeline: open the Space map on a drive, at the folder that grew when known.
+  const openMapAt = useCallback(
+    async (r: string, folder: string | null) => {
+      dispatch({ type: "space" });
+      if (!summary || root !== r) await mapDrive(r);
+      if (!folder) return;
+      try {
+        const id = await api.spaceFind(r, folder);
+        if (id == null) return say(`${folderName(folder)} isn't on ${r} any more, so this is the whole drive.`);
+        setView(await api.spaceChildren(r, id, 1, 80));
+        api.spaceChildren(r, id, 3, 24).then((d) => setNested(d.children)).catch(() => {});
+      } catch {
+        // The map itself failed and already said so (with Try again).
+      }
+    },
+    [summary, root, mapDrive, say]
+  );
+
   useEffect(() => {
     if (!summary) return;
     api.biggest(root, filter, 40).then(setBiggest).catch(() => setBiggest([]));
@@ -407,7 +439,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       </header>
 
       <main className="cl-main" id="cl-main">
-        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch(() => {})} />}
+        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch(() => {})} timeline={timeline} onOpenMap={openMapAt} />}
         {s.screen === "scanning" && (
           <Scanning
             checklist={overview?.checklist ?? []}

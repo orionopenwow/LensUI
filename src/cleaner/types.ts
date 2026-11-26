@@ -183,6 +183,15 @@ export interface HistoryView {
   series: HistoryPoint[];
   growth: { path: string; before: number; after: number; delta: number }[];
   sudden?: number | null;
+  /** The biggest day-to-day rises in the series, labelled by the folder that grew when known. */
+  jumps?: HistoryJump[];
+}
+
+export interface HistoryJump {
+  day: string;
+  delta: number;
+  folder?: string | null;
+  folderDelta: number;
 }
 
 export interface UndoResult {

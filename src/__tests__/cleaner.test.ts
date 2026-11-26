@@ -20,6 +20,10 @@ import {
   arcPath,
   cleanCode,
   fmtScanTime,
+  dayLabel,
+  folderName,
+  sparkPoint,
+  timelineRows,
   confirmStep,
 } from "../cleaner/model";
 import type { CleanerCategory, ScanReport, SpaceNode } from "../cleaner/types";
@@ -210,5 +214,59 @@ describe("measured scan time", () => {
     expect(fmtScanTime(60_000)).toBe("1 min");
     expect(fmtScanTime(72_300)).toBe("1 min 12 s");
     expect(fmtScanTime(-5)).toBe("0.0 s");
+  });
+});
+
+describe("Home timeline: where did my space go", () => {
+  const GB = 1_000_000_000;
+  const series = [100, 100.2, 109, 109, 121].map((gb, i) => ({ day: `2026-11-0${i + 1}`, used: gb * GB, free: 0 }));
+  const view = {
+    enabled: true,
+    series,
+    growth: [],
+    jumps: [
+      { day: "2026-11-05", delta: 12 * GB, folder: null, folderDelta: 0 },
+      { day: "2026-11-03", delta: 8.8 * GB, folder: "C:\\Users\\you\\Videos", folderDelta: 8 * GB },
+      { day: "2026-10-01", delta: 5 * GB, folder: null, folderDelta: 0 },
+    ],
+  };
+
+  test("one row per drive with snapshots; drives without history stay quiet", () => {
+    const rows = timelineRows([
+      { root: "C:\\", view },
+      { root: "D:\\", view: { enabled: true, series: series.slice(0, 1), jumps: [] } },
+      { root: "E:\\", view: { enabled: false, series, jumps: [] } },
+      { root: "F:\\", view: null },
+    ]);
+    expect(rows.map((r) => r.root)).toEqual(["C:\\"]);
+    expect(rows[0].days).toBe(5);
+    expect(rows[0].delta).toBe(21 * GB);
+  });
+
+  test("jumps are labelled by day, size and folder, newest first, at most two", () => {
+    const [row] = timelineRows([{ root: "C:\\", view }]);
+    expect(row.jumps.map((j) => j.label)).toEqual(["5 Nov · +12.0 GB", "3 Nov · +8.8 GB · Videos"]);
+    expect(row.jumps.map((j) => j.index)).toEqual([4, 2]);
+    expect(row.jumps[1].folder).toBe("C:\\Users\\you\\Videos");
+    // A jump on a day that is no longer in the series is dropped.
+    const [three] = timelineRows([{ root: "C:\\", view }], 3);
+    expect(three.jumps.length).toBe(2);
+  });
+
+  test("jump dots sit on the sparkline", () => {
+    const used = [0, 10, 5];
+    expect(sparkPoint(used, 0, 100, 20, 2)).toEqual({ x: 2, y: 18 });
+    expect(sparkPoint(used, 1, 100, 20, 2)).toEqual({ x: 50, y: 2 });
+    expect(sparkPoint(used, 2, 100, 20, 2)).toEqual({ x: 98, y: 10 });
+    expect(sparkPoint(used, 3, 100, 20)).toBeNull();
+    expect(sparkPoint([1], 0, 100, 20)).toBeNull();
+  });
+
+  test("days and folders read plainly", () => {
+    expect(dayLabel("2026-11-18")).toBe("18 Nov");
+    expect(dayLabel("2026-01-05")).toBe("5 Jan");
+    expect(dayLabel("soon")).toBe("soon");
+    expect(folderName("C:\\Users\\you\\Videos\\")).toBe("Videos");
+    expect(folderName("D:/Games/Big")).toBe("Big");
   });
 });

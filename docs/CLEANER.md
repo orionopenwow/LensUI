@@ -72,7 +72,7 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
 |---|---|
 | Weekly tidy-up | Once a week, cleans SAFE pre-ticked categories **except the Recycle Bin**, then sends a notification. The first run is a week after you turn it on. |
 | Low-space alert | Below 10% or 10 GB free: shows the Top Bar pill (`LowSpacePill`) and one notification a day. |
-| Daily snapshots | Powers "Where did my space go?": drive usage once a day, plus your top folders after each Space map scan, in `cleaner\history.txt` (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. |
+| Daily snapshots | Powers "Where did my space go?": drive usage once a day, plus your top folders after each Space map scan, in `cleaner\history.txt` (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. The Home screen shows one row per drive that has at least two snapshots: a 30-day sparkline, the change over the period and up to two of the biggest day-to-day jumps (≥ 1 GB or ≥ 1% of the drive, `history::jumps`), labelled with the folder that grew most when the drive was mapped before and after. A jump opens the Space map at that folder (`cleaner_space_find`). Nothing shows until snapshots are on. |
 | Explorer drive verb | `HKCU\Software\Classes\Drive\shell\LensUI.Clean`, removed when you turn it off or remove all Lens changes. |
 
 ## Standout features

@@ -42,6 +42,7 @@ export const api = {
   undo: () => invoke<UndoResult>("cleaner_undo"),
   spaceScan: (root: string) => invoke<SpaceSummary>("cleaner_space_scan", { root }),
   spaceChildren: (root: string, id: number, depth = 1, limit = 60) => invoke<SpaceView>("cleaner_space_children", { root, id, depth, limit }),
+  spaceFind: (root: string, path: string) => invoke<number | null>("cleaner_space_find", { root, path }),
   biggest: (root: string, kind: string, limit = 40) => invoke<SpaceNode[]>("cleaner_biggest", { root, kind, limit }),
   reveal: (path: string) => invoke<void>("cleaner_reveal", { path }),
   open: (uri: string) => invoke<void>("cleaner_open", { uri }),
