@@ -105,6 +105,7 @@ static OPEN_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::ne
 /// Windows' own answer is used (the page's focus events are unreliable on WebView2). Only after
 /// the Dashboard has actually held the foreground since this open, so a Dashboard Windows never
 /// brought to the front (focus lock) isn't closed under the person; ignores the first 500 ms.
+#[cfg(windows)]
 fn watch_focus(app: AppHandle, win: tauri::WebviewWindow) {
     use std::sync::atomic::Ordering;
     use std::time::{Duration, Instant};
@@ -142,16 +143,19 @@ fn watch_focus(app: AppHandle, win: tauri::WebviewWindow) {
     });
 }
 
+/// Elsewhere the page's own focus events close it (there's no foreground window to ask).
+#[cfg(not(windows))]
+fn watch_focus(_app: AppHandle, _win: tauri::WebviewWindow) {
+    let _ = &OPEN_SEQ;
+}
+
 #[cfg(windows)]
 fn foreground_hwnd() -> Option<isize> {
     let h = unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
     (!h.0.is_null()).then_some(h.0 as isize)
 }
 
-#[cfg(not(windows))]
-fn foreground_hwnd() -> Option<isize> {
-    None
-}
+
 
 /// Opens the Dashboard, or closes it if it's showing (so a second press of the button closes it).
 /// Returns whether it will be showing.
