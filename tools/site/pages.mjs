@@ -250,7 +250,7 @@ export function download({ log, stars = null }) {
     <div class="platforms">
       <article class="plat on">
         <div class="plat-h">${OS_ICON.windows}<h3>Windows 10 &amp; 11</h3><span class="tag ok">Beta</span></div>
-        <p>Windows 10 (1809 or newer) or 11. <a class="btn small" href="${REPO}/releases/latest">Installer on GitHub Releases</a> (from 0.3.0). The installers are not yet code-signed, so SmartScreen warns the first time: choose <b>More info › Run anyway</b>. Updates are signed.</p>
+        <p>Windows 10 (1809 or newer) or 11. <a class="btn small" href="${REPO}/releases">Installer on GitHub Releases</a> (from 0.3.0). The installers are not yet code-signed, so SmartScreen warns the first time: choose <b>More info › Run anyway</b>. Updates are signed.</p>
         <p>To build from source you need <a href="https://www.rust-lang.org/tools/install">Rust</a> and <a href="https://bun.sh">Bun</a>.</p>
         <pre><code>git clone ${REPO.toLowerCase()}
 cd lensui
