@@ -145,3 +145,24 @@ proptest! {
         prop_assert_eq!(hook_wanted(&table, paused), would_call);
     }
 }
+
+#[test]
+fn sign_in_lock_and_escape_keys_are_protected() {
+    // Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L, Win+D, Win+Tab.
+    assert!(protected_combo(0x2E, true, true, false, false));
+    assert!(protected_combo(0x1B, true, false, true, false));
+    assert!(protected_combo(0x1B, false, true, false, false));
+    assert!(protected_combo(0x73, false, true, false, false));
+    assert!(protected_combo(0x4C, false, false, false, true));
+    assert!(protected_combo(0x44, false, false, false, true));
+    assert!(protected_combo(0x09, false, false, false, true));
+}
+
+#[test]
+fn ordinary_keys_and_lens_alt_tab_are_not_protected() {
+    assert!(!protected_combo(0x09, false, true, false, false)); // Alt+Tab: Lens Alt+Tab may take it
+    assert!(!protected_combo(0x4C, false, false, false, false)); // plain L
+    assert!(!protected_combo(0x1B, false, false, false, false)); // plain Esc
+    assert!(!protected_combo(0x73, false, false, false, false)); // plain F4
+    assert!(!protected_combo(0x5B, false, false, false, false)); // the Win key on its own
+}

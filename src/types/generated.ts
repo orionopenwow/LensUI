@@ -1414,6 +1414,11 @@ export interface FuncConfig {
   altTabOverview: boolean;
   /** One Top Bar per monitor. OFF by default; applies after restart. */
   perMonitorBars: boolean;
+  /**
+   * Pop-outs from the Dock and Top Bar (Quick Settings, Settings on the Dock) close by
+   * themselves when the pointer has been away for a moment and they don't have keyboard focus.
+   */
+  autoClosePopouts: boolean;
 }
 
 /** Rust: `syssettings::GamingState` */

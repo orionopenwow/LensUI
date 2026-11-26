@@ -207,6 +207,10 @@ pub struct FuncConfig {
     /// One Top Bar per monitor. OFF by default; applies after restart.
     #[serde(default)]
     pub per_monitor_bars: bool,
+    /// Pop-outs from the Dock and Top Bar (Quick Settings, Settings on the Dock) close by
+    /// themselves when the pointer has been away for a moment and they don't have keyboard focus.
+    #[serde(default = "default_true")]
+    pub auto_close_popouts: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -494,6 +498,7 @@ impl Default for LensConfig {
                 win_key_launcher: false,
                 alt_tab_overview: false,
                 per_monitor_bars: false,
+                auto_close_popouts: true,
             },
             window_controls: WindowControlsConfig {
                 enabled: true,

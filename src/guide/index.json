@@ -7340,6 +7340,96 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "hotkey.ctrl-shift-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-esc",
+   "kind": "hotkey",
+   "title": "Alt+Esc",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.alt-f4",
+   "kind": "hotkey",
+   "title": "Alt+F4",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Alt+F4"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-l",
+   "kind": "hotkey",
+   "title": "Win+L",
+   "text": "pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, Win+L,",
+   "path": [
+    "Keyboard",
+    "Win+L"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-d",
+   "kind": "hotkey",
+   "title": "Win+D",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+D"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "hotkey.win-tab",
+   "kind": "hotkey",
+   "title": "Win+Tab",
+   "text": "Win+D, Win+Tab.",
+   "path": [
+    "Keyboard",
+    "Win+Tab"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
    "id": "hotkey.alt-l",
    "kind": "hotkey",
    "title": "Alt+L",
@@ -7557,51 +7647,6 @@
    "path": [
     "Keyboard",
     "Win+R"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.win-d",
-   "kind": "hotkey",
-   "title": "Win+D",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+D"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.win-tab",
-   "kind": "hotkey",
-   "title": "Win+Tab",
-   "text": "Win key shortcuts (Win+E, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them",
-   "path": [
-    "Keyboard",
-    "Win+Tab"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/SHELL_MODE.md"
-   },
-   "source": "docs/SHELL_MODE.md"
-  },
-  {
-   "id": "hotkey.ctrl-shift-esc",
-   "kind": "hotkey",
-   "title": "Ctrl+Shift+Esc",
-   "text": "Task Manager. Press Ctrl+Shift+Esc → Run new task → type the full path to",
-   "path": [
-    "Keyboard",
-    "Ctrl+Shift+Esc"
    ],
    "target": {
     "surface": "doc",
@@ -10266,6 +10311,40 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "Needs a real PC"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.10",
+   "kind": "doc",
+   "title": "Failsafe engineering: 9. Sign-in safety",
+   "text": "What Lens may do while Windows is signing you in, and what always gets you back to a working desktop. Added after a report that \"Start with Windows\" made it hard to get in. Sign-in gate ( app/signin gate.rs ). A Lens started by \"Start with Windows\" ( --autostart ) creates no window, installs no hook and leaves the taskbar alone until the desktop is ready: Explorer's taskbar window exists and the input desktop is the normal one (not the lock screen, the sign-in screen or a UAC prompt), both for 3 s in a row. If that never happens Lens starts anyway after two minutes, but never while the lock or sign-in screen is up. Hold Shift while signing in to skip Lens for that sign-in. A Lens started by hand does not wait. Keys that always reach Windows ( input::protected combo ). Whatever a Lens feature asks, these pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "9. Sign-in safety"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "9. Sign-in safety"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.11",
+   "kind": "doc",
+   "title": "Failsafe engineering: 10. Monitors and pop-outs",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "10. Monitors and pop-outs"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "10. Monitors and pop-outs"
    },
    "source": "docs/FAILSAFE.md"
   },
