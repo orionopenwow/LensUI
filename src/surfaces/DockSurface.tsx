@@ -82,6 +82,7 @@ import {
 } from "../dock/styles";
 import { topBarEnabled } from "../topbar/enabled";
 import { DockSystemArea } from "../dock/DockSystemArea";
+import { hideSurface, logFail, quiet, retryOnce, setDockMenuOpen } from "../failsafe/calls";
 
 interface RecentFileItem {
   name: string;
@@ -407,7 +408,7 @@ export const DockSurface: React.FC = () => {
       })
     );
     return () => {
-      un.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
     };
   }, []);
   // Alt+1..9 activation (the backend emits the index; the latest render's rows handle it).
@@ -473,7 +474,7 @@ export const DockSurface: React.FC = () => {
     searchOpenedAtRef.current = performance.now();
     // One pop-out at a time: docked Settings goes when search opens.
     if (settingsOpenRef.current) {
-      invoke("hide_surface", { label: "settings" }).catch(() => {});
+      void hideSurface("settings", "Dock");
       setSettingsOpen(false);
     }
     const searchEdge = normalizeEdge((config?.dock as DockExtras | undefined)?.position);
@@ -522,9 +523,9 @@ export const DockSurface: React.FC = () => {
     setDockFilterTab("all");
     setDockSelectedIdx(0);
     setDockSearchOpen(true);
-    invoke("set_dock_search_expanded_cmd", { expanded: true }).catch(() => {});
-    invoke<InstalledApp[]>("scan_installed_apps_cmd").then(setInstalledApps).catch(() => {});
-    invoke<LauncherHomeData>("get_launcher_home_cmd").then(setHomeData).catch(() => {});
+    void retryOnce(() => invoke("set_dock_search_expanded_cmd", { expanded: true }), "Dock", "open search");
+    invoke<InstalledApp[]>("scan_installed_apps_cmd").then(setInstalledApps).catch(logFail("Dock", "list installed apps"));
+    invoke<LauncherHomeData>("get_launcher_home_cmd").then(setHomeData).catch(logFail("Dock", "load search suggestions"));
     window.setTimeout(() => searchInputRef.current?.focus(), 40);
     window.setTimeout(() => searchInputRef.current?.focus(), 120);
   };
@@ -546,7 +547,7 @@ export const DockSurface: React.FC = () => {
       setLockedDockWidth(null);
       setSearchIconSize(null);
       setLockedRowOffset(null);
-      invoke("set_dock_search_expanded_cmd", { expanded: false }).catch(() => {});
+      void retryOnce(() => invoke("set_dock_search_expanded_cmd", { expanded: false }), "Dock", "close search");
     });
   };
 
@@ -611,7 +612,7 @@ export const DockSurface: React.FC = () => {
   const menuOpenerRef = useRef<HTMLElement | null>(null);
   const closeMenu = () => {
     setCtxMenu(null);
-    invoke("set_dock_menu_open", { open: false }).catch(() => {});
+    void setDockMenuOpen(false);
     const opener = menuOpenerRef.current;
     menuOpenerRef.current = null;
     if (opener && opener.isConnected && document.activeElement && opener.ownerDocument.activeElement?.closest(".dock-ctx-menu")) opener.focus({ preventScroll: true });
@@ -621,7 +622,7 @@ export const DockSurface: React.FC = () => {
     setHoverCard(null);
     menuOpenerRef.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     setCtxMenu(menu);
-    invoke("set_dock_menu_open", { open: true }).catch(() => {});
+    void setDockMenuOpen(true);
   };
 
   // Opened from the keyboard (context-menu key or Shift+F10 on a focused icon): focus goes into the
@@ -680,7 +681,7 @@ export const DockSurface: React.FC = () => {
       if (hoverShownRef.current.key) hoverShownRef.current.closedAt = performance.now();
       setHoverCard(null);
       if (!ctxMenu && !dockSearchOpenRef.current) {
-        invoke("set_dock_menu_open", { open: false }).catch(() => {});
+        void setDockMenuOpen(false);
       }
     }, 180);
   };
@@ -724,11 +725,11 @@ export const DockSurface: React.FC = () => {
       windows,
       iconUrl,
     });
-    invoke("set_dock_menu_open", { open: true }).catch(() => {});
+    void setDockMenuOpen(true);
     if (isSpotify) {
       invoke<MediaNowPlaying>("get_media_now_playing_cmd")
         .then((m) => setMediaInfo(m.hasSession ? m : null))
-        .catch(() => {});
+        .catch(quiet);
     }
   };
 
@@ -746,7 +747,7 @@ export const DockSurface: React.FC = () => {
     const syncSettingsVis = () => {
       invoke<boolean>("is_surface_visible_cmd", { label: "settings" })
         .then((vis) => setSettingsOpen(Boolean(vis)))
-        .catch(() => {});
+        .catch(quiet);
     };
     syncSettingsVis();
     const t1 = window.setTimeout(syncSettingsVis, 350);
@@ -759,7 +760,7 @@ export const DockSurface: React.FC = () => {
         closeMenu();
         closeInDockLauncher();
         if (settingsOpenRef.current) {
-          invoke("hide_surface", { label: "settings" }).catch(() => {});
+          void hideSurface("settings", "Dock");
           setSettingsOpen(false);
         }
       }
@@ -798,7 +799,7 @@ export const DockSurface: React.FC = () => {
       if (e.relatedTarget === null) {
         setHoverCard(null);
         if (!dockSearchOpenRef.current) {
-          invoke("set_dock_menu_open", { open: false }).catch(() => {});
+          void setDockMenuOpen(false);
         }
       }
     };
@@ -832,7 +833,7 @@ export const DockSurface: React.FC = () => {
         .then((vis) => {
           if (typeof vis === "boolean" && vis !== settingsOpenRef.current) setSettingsOpen(vis);
         })
-        .catch(() => {});
+        .catch(quiet);
     }, 1500);
     window.addEventListener("keydown", onKey);
     window.addEventListener("blur", onBlur);
@@ -868,7 +869,7 @@ export const DockSurface: React.FC = () => {
         r = Math.max(r, rc.right); b = Math.max(b, rc.bottom);
       });
       const open = Number.isFinite(l);
-      invoke("set_dock_flyout_rect_cmd", open ? { x: l, y: t, w: r - l, h: b - t } : { x: 0, y: 0, w: 0, h: 0 }).catch(() => {});
+      void retryOnce(() => invoke("set_dock_flyout_rect_cmd", open ? { x: l, y: t, w: r - l, h: b - t } : { x: 0, y: 0, w: 0, h: 0 }), "Dock", "report the open flyout");
     };
     const raf = requestAnimationFrame(report);
     const t1 = window.setTimeout(report, 260); // after open/close transitions settle
@@ -899,7 +900,7 @@ export const DockSurface: React.FC = () => {
           });
           setNotifCounts(counts);
         })
-        .catch(() => {});
+        .catch(quiet);
     };
     load();
     const unlisten = listen("lens://notifications-changed", load);
@@ -972,7 +973,7 @@ export const DockSurface: React.FC = () => {
         }
         const appPath = t?.dataset.dockLaunchPath;
         if (!appPath || files.length === 0) return;
-        invoke("open_files_with_app_cmd", { appPath, files }).catch(() => {});
+        invoke("open_files_with_app_cmd", { appPath, files }).catch(logFail("Dock", "open the dropped files"));
       }),
     ];
     return () => offs.forEach((u) => u.then((fn) => fn()));
@@ -1016,14 +1017,14 @@ export const DockSurface: React.FC = () => {
         }
         const mid = window.innerWidth / 2;
         const symmetricW = 2 * Math.max(mid - left, right - mid);
-        invoke("set_dock_pill_width", { width: extra ? symmetricW : rect.width }).catch(() => {});
+        invoke("set_dock_pill_width", { width: extra ? symmetricW : rect.width }).catch(quiet);
         // Full rect (CSS px within this window) lets the backend hit-test Docks on any edge.
-        invoke("set_dock_pill_rect_cmd", {
+        void retryOnce(() => invoke("set_dock_pill_rect_cmd", {
           x: left,
           y: top,
           w: right - left,
           h: bottom - top,
-        }).catch(() => {});
+        }), "Dock", "report where it is");
       }
     };
     report();
@@ -1192,7 +1193,7 @@ export const DockSurface: React.FC = () => {
     const cur = wheelIdxRef.current[key] ?? Math.max(0, wins.findIndex((w) => w.isFocused));
     const next = (cur + (deltaY > 0 ? 1 : -1) + wins.length) % wins.length;
     wheelIdxRef.current[key] = next;
-    invoke("focus_window_cmd", { hwnd: wins[next].hwnd }).catch(() => {});
+    invoke("focus_window_cmd", { hwnd: wins[next].hwnd }).catch(logFail("Dock", "switch to the next window"));
   };
   const updateDockExtras = (patch: DockExtras) =>
     updateConfig({ ...config, dock: { ...config.dock, ...patch } as typeof config.dock });
@@ -1395,10 +1396,10 @@ export const DockSurface: React.FC = () => {
     const focusedIdx = it.wins.findIndex((w) => w.isFocused);
     if (focusedIdx >= 0 && it.wins.length > 1) {
       // Pressing again cycles through that app's windows.
-      invoke("focus_window_cmd", { hwnd: it.wins[(focusedIdx + 1) % it.wins.length].hwnd });
+      invoke("focus_window_cmd", { hwnd: it.wins[(focusedIdx + 1) % it.wins.length].hwnd }).catch(logFail("Dock", "switch to that window"));
     } else {
       // Same as clicking: focuses, or minimizes when already in front.
-      invoke("focus_window_cmd", { hwnd: it.primary.hwnd });
+      invoke("focus_window_cmd", { hwnd: it.primary.hwnd }).catch(logFail("Dock", "switch to that window"));
     }
   };
 
@@ -1457,7 +1458,7 @@ export const DockSurface: React.FC = () => {
       isDir: false,
       run: () => {
         closeInDockLauncher();
-        invoke("focus_window_cmd", { hwnd: w.hwnd });
+        invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
       },
     })),
     ...homeData.recentFiles.slice(0, 12).map((rf) => ({
@@ -1484,7 +1485,7 @@ export const DockSurface: React.FC = () => {
       iconUrl: w.iconDataUrl,
       run: () => {
         closeInDockLauncher();
-        invoke("focus_window_cmd", { hwnd: w.hwnd });
+        invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
       },
     })),
     ...homeData.folders.map((f) => ({
@@ -1545,7 +1546,7 @@ export const DockSurface: React.FC = () => {
                 config,
                 updateConfig,
                 "dock-search"
-              ).catch(() => {});
+              ).catch(logFail("Dock", "run that"));
             },
           },
         ]
@@ -1620,7 +1621,7 @@ export const DockSurface: React.FC = () => {
                         type="button"
                         className="dock-ctx-item"
                         onClick={() => {
-                          invoke("focus_window_cmd", { hwnd: w.hwnd });
+                          invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
                           closeMenu();
                         }}
                       >
@@ -1666,7 +1667,7 @@ export const DockSurface: React.FC = () => {
                           const hwnd = shownMenu.windows[0].hwnd;
                           invoke<{ hwnd: number }[]>("list_pinned_windows_cmd")
                             .then((list) => invoke("set_window_pinned_cmd", { hwnd, pinned: !list.some((p) => p.hwnd === hwnd) }))
-                            .catch(() => {});
+                            .catch(logFail("Dock", "keep the window on top"));
                           closeMenu();
                         }}
                       >
@@ -2031,11 +2032,11 @@ export const DockSurface: React.FC = () => {
                   className="dock-media-btn"
                   aria-label="Previous"
                   onClick={() => {
-                    invoke("media_control_cmd", { action: "prev" }).catch(() => {});
+                    invoke("media_control_cmd", { action: "prev" }).catch(logFail("Dock", "go to the previous track"));
                     window.setTimeout(() => {
                       invoke<MediaNowPlaying>("get_media_now_playing_cmd")
                         .then((m) => setMediaInfo(m.hasSession ? m : null))
-                        .catch(() => {});
+                        .catch(quiet);
                     }, 260);
                   }}
                 >
@@ -2049,7 +2050,7 @@ export const DockSurface: React.FC = () => {
                     setMediaInfo((prev) =>
                       prev ? { ...prev, isPlaying: !prev.isPlaying } : prev
                     );
-                    invoke("media_control_cmd", { action: "play_pause" }).catch(() => {});
+                    invoke("media_control_cmd", { action: "play_pause" }).catch(logFail("Dock", "play or pause"));
                   }}
                 >
                   {mediaInfo?.isPlaying ? (
@@ -2063,11 +2064,11 @@ export const DockSurface: React.FC = () => {
                   className="dock-media-btn"
                   aria-label="Next"
                   onClick={() => {
-                    invoke("media_control_cmd", { action: "next" }).catch(() => {});
+                    invoke("media_control_cmd", { action: "next" }).catch(logFail("Dock", "go to the next track"));
                     window.setTimeout(() => {
                       invoke<MediaNowPlaying>("get_media_now_playing_cmd")
                         .then((m) => setMediaInfo(m.hasSession ? m : null))
-                        .catch(() => {});
+                        .catch(quiet);
                     }, 260);
                   }}
                 >
@@ -2098,8 +2099,8 @@ export const DockSurface: React.FC = () => {
               iconUrl={shownCard.iconUrl}
               onFocus={(hwnd) => {
                 setHoverCard(null);
-                invoke("set_dock_menu_open", { open: false }).catch(() => {});
-                invoke("focus_window_cmd", { hwnd });
+                void setDockMenuOpen(false);
+                invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
               }}
               onClose={(hwnd) => {
                 invoke("window_action_cmd", { hwnd, action: "close" });
@@ -2121,8 +2122,8 @@ export const DockSurface: React.FC = () => {
                     className="dock-win-row-main"
                     onClick={() => {
                       setHoverCard(null);
-                      invoke("set_dock_menu_open", { open: false }).catch(() => {});
-                      invoke("focus_window_cmd", { hwnd: w.hwnd });
+                      void setDockMenuOpen(false);
+                      invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
                     }}
                   >
                     {w.iconDataUrl || shownCard.iconUrl ? (
@@ -2454,10 +2455,10 @@ export const DockSurface: React.FC = () => {
                   triggerLaunchAnim("launcher");
                   if (startOpensMagic) {
                     // The backend refuses while the Magic button is off; the Launcher is the fallback.
-                    invoke("toggle_magic_start").catch(() => invoke("toggle_surface", { label: "launcher" }).catch(() => {}));
+                    invoke("toggle_magic_start").catch(() => invoke("toggle_surface", { label: "launcher" }).catch(logFail("Dock", "open the Launcher")));
                     return;
                   }
-                  invoke("toggle_surface", { label: "launcher" }).catch(() => {});
+                  invoke("toggle_surface", { label: "launcher" }).catch(logFail("Dock", "open the Launcher"));
                 }}
               >
                 <LayoutGrid size={19} strokeWidth={2.15} />
@@ -2556,7 +2557,7 @@ export const DockSurface: React.FC = () => {
                 const dpr = window.devicePixelRatio || 1;
                 const x = Math.round((window.screenX + r.left + r.width / 2) * dpr);
                 const top = Math.round((window.screenY + r.top) * dpr);
-                invoke("show_command_cmd", { payload: { layout: "mini", anchor: `dock:${x}:${top}` } }).catch(() => {});
+                invoke("show_command_cmd", { payload: { layout: "mini", anchor: `dock:${x}:${top}` } }).catch(logFail("Dock", "open Lens Mini"));
               }}
             >
               <DropSparkle
@@ -2593,7 +2594,7 @@ export const DockSurface: React.FC = () => {
               onOpenSettings={() => {
                 invoke("open_surface", { label: "settings" })
                   .then(() => emit("lens://settings-tab", "ai"))
-                  .catch(() => {});
+                  .catch(logFail("Dock", "open Settings"));
               }}
             />
           )}
@@ -2665,7 +2666,7 @@ export const DockSurface: React.FC = () => {
                   setHoverCard(null);
                   triggerLaunchAnim(app.id);
                   if (primaryWin) {
-                    invoke("focus_window_cmd", { hwnd: primaryWin.hwnd });
+                    invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
                   } else {
                     if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
                     invoke("launch_app_cmd", { path: app.path });
@@ -2778,7 +2779,7 @@ export const DockSurface: React.FC = () => {
                   if (suppressClickRef.current) return;
                   setHoverCard(null);
                   triggerLaunchAnim(`win-${primaryWin.hwnd}`);
-                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd });
+                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
@@ -2840,7 +2841,7 @@ export const DockSurface: React.FC = () => {
               triggerLaunchAnim("monitor");
               if (settingsOpen && activeSettingsTab === "monitor") {
                 setSettingsOpen(false);
-                invoke("toggle_settings_docked");
+                invoke("toggle_settings_docked").catch(logFail("Dock", "open Settings"));
               } else {
                 setSettingsOpen(true);
                 setActiveSettingsTab("monitor");
@@ -2864,7 +2865,7 @@ export const DockSurface: React.FC = () => {
               triggerLaunchAnim("settings");
               if (settingsOpen && activeSettingsTab !== "monitor") {
                 setSettingsOpen(false);
-                invoke("toggle_settings_docked");
+                invoke("toggle_settings_docked").catch(logFail("Dock", "open Settings"));
               } else {
                 setSettingsOpen(true);
                 // The gear always opens on Quick settings, never on the page used last.
@@ -2890,7 +2891,7 @@ export const DockSurface: React.FC = () => {
         )}
         </div>
         {musicMini === "dock" && (
-          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />
+          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(logFail("Dock", "open Now Playing"))} />
         )}
         {voiceDock.enabled && (
           <>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { listen } from "@tauri-apps/api/event";
 import { Search, AppWindow, X, CornerDownLeft, ArrowBigUp } from "lucide-react";
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
@@ -89,7 +90,7 @@ export const OverviewSurface: React.FC = () => {
   selectedRef.current = selectedHwnd;
 
   const hide = useCallback(() => {
-    invoke("hide_surface", { label: "overview" }).catch(() => {});
+    void hideSurface("overview");
   }, []);
 
   const groups = useMemo<Group[]>(() => {

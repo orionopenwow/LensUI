@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { logFail, quiet } from "../failsafe/calls";
 import type { AttentionApp as GeneratedAttentionApp, AttentionSnapshot as GeneratedAttentionSnapshot } from "../types/generated";
 
 export const ATTENTION_EVENT = "dock:attention";
@@ -135,7 +136,7 @@ export function useAttention(focusedWindows: { processName?: string; exePath?: s
     const offs: (() => void)[] = [];
     let alive = true;
     const keep = (p: Promise<() => void>) =>
-      p.then((fn) => (alive ? offs.push(fn) : fn())).catch(() => {});
+      p.then((fn) => (alive ? offs.push(fn) : fn())).catch(logFail("Dock", "listen for apps asking for attention"));
     keep(listen<AttentionPayload>(ATTENTION_EVENT, (e) => setMap((m) => applyAttention(m, e.payload, performance.now()))));
     keep(listen<AttentionSnapshot>(ATTENTION_SNAPSHOT_EVENT, (e) => setMap((m) => applySnapshot(m, e.payload, performance.now()))));
     // After a reload the page asks for the current set (a backend without the command: no-op).
@@ -143,7 +144,7 @@ export function useAttention(focusedWindows: { processName?: string; exePath?: s
       .then((snap) => {
         if (alive && snap) setMap((m) => applySnapshot(m, snap, performance.now()));
       })
-      .catch(() => {});
+      .catch(quiet);
     return () => {
       alive = false;
       offs.forEach((f) => f());
