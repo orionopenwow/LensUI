@@ -852,6 +852,12 @@ pub(crate) fn spawn_watcher(
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
                         foreground_other_app: foreground_is_other_app(),
                     }, &mut menu_idle_since, &mut settings_unfocused_since);
+                    if menu_open && (tick % 8 == 0 || guard.clear_stale_menu) {
+                        eprintln!(
+                            "[Lens UI] [watcher] dock menu open: fg other app={} dock fg={} over pill={} over panel={} clicked={} clear={}",
+                            foreground_is_other_app(), dock_focused, cursor_over_pill, cursor_over_dock_window, mouse_button_down(), guard.clear_stale_menu
+                        );
+                    }
                     if guard.clear_stale_menu {
                         *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
                         menu_open = false;
