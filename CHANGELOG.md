@@ -8,6 +8,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Fixed
+- **The Dock could fail to show on another monitor.** Moving a window onto a monitor with other
+  scaling makes Windows resize it on the way, so the Dock (and the extra Top Bars) could end up the
+  wrong size, with the Dock pushed off the screen. Every placement is now checked and done again
+  when it didn't land, and an idle Dock goes back to its place about every two seconds, also while
+  it is auto-hidden.
+- **Pop-outs from a Dock on the left or right edge** now open on the Dock's own monitor with
+  "Follow the pointer", never over the Dock, and use the top of the screen when there is no Top Bar.
+- **Settings and Search could cover the Dock on small, highly scaled screens** (1280×720 at 150 %).
+- **After Explorer restarts, apps asking for attention still show on the Dock.**
+- **A refused window call no longer leaves the Dock or a pop-out stuck.** Closing a pop-out, the
+  Dock's click-through and its "menu closed" report are tried again, and what failed is logged.
 - **Lens's window buttons could be drawn over anti-cheat games.** The engine that draws them kept
   its own list of four names; the shared list has 42. It now uses the shared list, as do tiling,
   Alt+drag, the keyboard hook and pointer effects, and a test fails the build if any of them names
@@ -19,6 +30,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Top Bar buttons are named in sentence case** for screen readers ("Previous track", "Volume and
+  audio mixer"). Lens Command's results and Magic's "what to act on" changes are announced.
 - **Snip's shortcut is Ctrl+Alt+X** (was Ctrl+Shift+S, which is Save As in most apps). If you never
   changed it, it moves once; a shortcut you chose is kept. Snip's settings warn when a shortcut
   would break a common app shortcut, and the shortcuts sheet shows the one Snip really has.

@@ -6,7 +6,7 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 
 | Feature | File | Status | Top quick win | Top bug | Idea to push |
 |---|---|---|---|---|---|
-| Dock | [dock.md](dock.md) | works | Left/right edge E2E (hidden settings now in Dock & Bar › Advanced, #113) | B-18 swallowed errors (per-monitor bars + follow-the-pointer fixed as B-53, needs a real-PC check) | "Dock in 10 seconds" ghost tour after a style change |
+| Dock | [dock.md](dock.md) | works (robustness wave: left/right E2E, B-18 Dock share, B-62–B-65) | Split `DockSurface.tsx` (left/right E2E done) | B-62 multi-monitor DPI fix needs a two-display real-PC check | "Dock in 10 seconds" ghost tour after a style change |
 | Top Bar | [topbar.md](topbar.md) | works | Halo off switch (one enable flag done in #113, B-52) | Halo ignores Windows' transparency-off (suspected) | Focus strip under the clock |
 | Settings | [settings.md](settings.md) | works | Fix B-41 corner picker (page merge and "Lens Apps" done in #113) | B-41, B-40 unmounting switches (B-39 fixed in #113) | "Recently changed" strip with Undo |
 | Themes & backdrops | [themes.md](themes.md) | works | Contrast audit for every pack (Dock-only duplicates merged, audit regenerated in #113) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
@@ -26,13 +26,13 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 Quick wins still open in those four dossiers, ranked by value for the effort:
 
 1. **Settings B-41**: the "Corner to edit" radios on Windows & Keys can't be clicked where they are drawn. A real, visible fault on a page people use.
-2. **Dock left/right edge E2E**: copy `dock-bottom` for the two edges that have no Windows coverage.
-3. **Swallowed errors (B-18)** on user actions in `DockSurface.tsx` and the Settings shell: route launch, focus, window and save failures through the failsafe reporter so a failed click says why.
+2. ~~**Dock left/right edge E2E**~~: done (robustness wave), every style on both edges.
+3. **Swallowed errors (B-18)**: the Dock, the pop-outs, Magic and the Dashboard are done (robustness wave, `src/failsafe/calls.ts`); the Settings shell and the Top Bar remain.
 4. **Contrast audit for every pack**, not only the featured twelve, failing CI on regressions (some light packs may miss 3:1 for the accent on cards).
 5. **Top Bar halo switch** and no halo when Windows' transparency effects are off.
 6. **Settings B-40**: Animated backdrop and startup-app switches unmount after one click (the duplicate name is fixed).
 7. **A delay setting for closing pop-outs** (the switch exists; the 1.5 s / 1.8 s are fixed in `watcher.rs`).
-8. **Sentence-case the Top Bar's own aria-labels** ("Volume and Audio Mixer", "Wi-Fi and Network").
+8. ~~**Sentence-case the Top Bar's own aria-labels**~~: done (robustness wave).
 9. **Wallpaper**: folder picker dialog, palette chip copies hex, Next wallpaper in the Dock and Top Bar menus.
 10. **Split `DockSurface.tsx`** (context menu first). No behaviour change, goldens unchanged.
 

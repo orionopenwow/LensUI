@@ -81,9 +81,9 @@ pub(crate) fn place_extra_topbars(app: &AppHandle, cfg: &LensConfig, main_pos: (
         crate::app::place::place_window(&win, r.x, r.y, r.w, r.h);
         // The one Top Bar switch (topBar.enabled) covers the extra bars too.
         if cfg.top_bar.enabled {
-            let _ = win.show();
+            crate::app::place::show_window(&win);
         } else {
-            let _ = win.hide();
+            crate::app::place::hide_window(&win);
         }
     }
 }
@@ -107,11 +107,12 @@ fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
             };
             wc.label = label;
             if let Ok(win) = tauri::WebviewWindowBuilder::from_config(&app, &wc).and_then(|b| b.build()) {
+                // One placement, checked: a bar built on the main monitor and moved to one with
+                // other scaling is rescaled by Windows on the way and placed again (B-62).
                 let r = win_monitors::topbar_rect(&m, &layout);
-                let _ = win.set_position(PhysicalPosition::new(r.x, r.y));
-                let _ = win.set_size(PhysicalSize::new(r.w, r.h));
+                crate::app::place::place_window(&win, r.x, r.y, r.w, r.h);
                 if !enabled {
-                    let _ = win.hide();
+                    crate::app::place::hide_window(&win);
                 }
                 // The main bars may already be on another monitor than the one planned around
                 // (the pointer moved while the windows were being built): settle the layout now
@@ -651,7 +652,7 @@ pub(crate) fn sync_command_hotkeys(app: &AppHandle, cfg: &LensConfig) {
 /// surface's own bottom placement.
 pub(crate) fn side_dock_flyout(
     cfg: &LensConfig,
-    scale: f64,
+    monitor: &tauri::window::Monitor,
     bar_h: i32,
     bottom_edge: i32,
     w: u32,
@@ -662,18 +663,169 @@ pub(crate) fn side_dock_flyout(
     if edge == "bottom" {
         return None;
     }
-    let m = win_monitors::target_monitor(&cfg.func.target_monitor)?;
-    let (_, _, pill_w, pill_h) = win_previews::pill_rect_css(); // CSS px, 0 until reported
-    let thickness = if edge == "top" { pill_h } else { pill_w }.max(56);
+    // The monitor the Dock is on, as the caller found it (`lens_monitor`). Looking it up again
+    // here from the preference put a flyout on the monitor under the pointer with "Follow the
+    // pointer", not on the Dock's (B-63).
+    let m = monitor_info(monitor);
+    let pill = win_previews::pill_rect_css(); // CSS px inside the Dock window, 0 until reported
+    let r = side_flyout_rect(&m, edge, pill, win_previews::dock_depth_css(), cfg.dock.grounded_margin_bottom, top_inset_px(cfg, bar_h), bottom_edge, w, h, align);
+    Some((r.x, r.y))
+}
+
+/// The Top Bar's height when it is on, else 0: the side Dock's window starts there too
+/// (`watcher::dock_window_target`), so its flyouts must not leave a gap where no bar is.
+pub(crate) fn top_inset_px(cfg: &LensConfig, bar_h: i32) -> i32 {
+    if cfg.top_bar.enabled { bar_h } else { 0 }
+}
+
+/// Pure part of `side_dock_flyout`, unit-tested for mixed scaling and monitors left of or above
+/// the main one (negative coordinates).
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn side_flyout_rect(
+    m: &win_monitors::MonitorInfo,
+    edge: &'static str,
+    pill_css: (i32, i32, i32, i32),
+    depth_css: f64,
+    margin_css: u32,
+    top_inset: i32,
+    bottom_edge: i32,
+    w: u32,
+    h: u32,
+    align: win_monitors::FlyoutAlign,
+) -> win_monitors::SurfaceRect {
+    // How far the pill's inner side is from the Dock window's screen-edge side, in CSS px. The
+    // pill need not touch the window edge (a style may inset it); using its width alone let the
+    // flyout cover the inset part of the pill.
+    let (px, py, pw, ph) = pill_css;
+    let reach = match edge {
+        "top" if ph > 0 => py + ph,
+        "left" if pw > 0 => px + pw,
+        "right" if pw > 0 => (depth_css.round() as i32 - px).max(pw),
+        _ => 0,
+    };
+    let thickness = reach.max(56);
     let strip = win_monitors::DockStrip {
         edge,
-        thickness: (thickness as f64 * scale).round() as i32,
-        margin: (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32,
-        top_inset: m.y + bar_h,
+        thickness: (thickness as f64 * m.scale).round() as i32,
+        margin: (margin_css as f64 * m.scale).round() as i32,
+        top_inset: m.y + top_inset,
         bottom_edge,
     };
-    let r = win_monitors::flyout_beside_dock(&m, &strip, w, h, align);
-    Some((r.x, r.y))
+    win_monitors::flyout_beside_dock(m, &strip, w, h, align)
+}
+
+/// A Tauri monitor as the plain record the geometry works with.
+pub(crate) fn monitor_info(monitor: &tauri::window::Monitor) -> win_monitors::MonitorInfo {
+    let (p, sz, work) = (monitor.position(), monitor.size(), monitor.work_area());
+    win_monitors::MonitorInfo {
+        id: monitor.name().cloned().unwrap_or_default(),
+        name: String::new(),
+        x: p.x,
+        y: p.y,
+        width: sz.width,
+        height: sz.height,
+        work_x: work.position.x,
+        work_y: work.position.y,
+        work_width: work.size.width,
+        work_height: work.size.height,
+        scale: monitor.scale_factor(),
+        primary: false,
+    }
+}
+
+#[cfg(test)]
+mod side_flyout_tests {
+    use super::*;
+    use crate::win_monitors::{FlyoutAlign, MonitorInfo};
+
+    fn mon(x: i32, y: i32, w: u32, h: u32, scale: f64) -> MonitorInfo {
+        MonitorInfo { id: String::new(), name: String::new(), x, y, width: w, height: h, work_x: x, work_y: y, work_width: w, work_height: h, scale, primary: false }
+    }
+
+    /// Left and right Docks on monitors left of and above the main one, at 100–200 %: every
+    /// flyout lies inside its own monitor, below the Top Bar, beside the pill, never over it.
+    #[test]
+    fn side_flyouts_stay_on_the_docks_monitor_at_any_scale_and_position() {
+        let monitors = [
+            mon(0, 0, 1920, 1080, 1.0),
+            mon(-2560, 0, 2560, 1440, 1.5),
+            mon(-1920, -1080, 1920, 1080, 1.25),
+            mon(1920, -400, 3840, 2160, 2.0),
+            mon(0, 1080, 1366, 768, 1.0),
+        ];
+        for m in &monitors {
+            for edge in ["left", "right"] {
+                for (w_css, h_css, align) in [(760.0, 748.0, FlyoutAlign::Center), (404.0, 580.0, FlyoutAlign::End), (680.0, 412.0, FlyoutAlign::Center)] {
+                    let (w, h) = ((w_css * m.scale) as u32, (h_css * m.scale) as u32);
+                    let bar = (34.0 * m.scale) as i32;
+                    let bottom = m.y + m.height as i32 - (48.0 * m.scale) as i32;
+                    // A 64 px pill flush with the outer edge of a 760 px deep window.
+                    let pill = if edge == "left" { (0, 200, 64, 420) } else { (696, 200, 64, 420) };
+                    let r = side_flyout_rect(m, edge, pill, 760.0, 0, bar, bottom, w, h, align);
+                    let label = format!("{edge} on {}x{}@{} at ({}, {})", m.width, m.height, m.scale, m.x, m.y);
+                    assert!(r.x >= m.x && r.x + r.w as i32 <= m.x + m.width as i32, "{label}: x {:?}", r);
+                    assert!(r.y >= m.y + bar && r.y + r.h as i32 <= bottom, "{label}: y {:?}", r);
+                    let thick = (64.0 * m.scale).round() as i32;
+                    if edge == "left" {
+                        assert_eq!(r.x, m.x + thick - 1, "{label}: joined to the pill");
+                    } else {
+                        assert_eq!(r.x + r.w as i32, m.x + m.width as i32 - thick + 1, "{label}: joined to the pill");
+                    }
+                }
+            }
+        }
+    }
+
+    /// Side Docks on monitors left of and above the main one, at mixed scaling: the window hugs
+    /// its own monitor's edge, the reveal strip is on that edge (not on the neighbour across the
+    /// seam), and the pill the page reports is inside the "over" zone.
+    #[test]
+    fn side_dock_window_and_zones_on_negative_coordinate_monitors() {
+        for (x, y, w, h, scale) in [(-2560, -360, 2560, 1440, 1.5), (0, -1080, 1920, 1080, 1.25), (-3840, 0, 3840, 2160, 2.0), (0, 0, 1920, 1080, 1.0)] {
+            for edge in ["left", "right"] {
+                let top_inset = (34.0 * scale) as i32;
+                let bottom = y + h - (48.0 * scale) as i32;
+                let (wx, wy, ww, wh) = win_previews::dock_window_rect_with_depth(edge, (x, y, w, h), bottom, top_inset, 0, scale, 760.0);
+                let label = format!("{edge} on {w}x{h}@{scale} at ({x}, {y})");
+                assert!(wx >= x && wx + ww <= x + w, "{label}: window across");
+                assert_eq!((wy, wy + wh), (y + top_inset, bottom), "{label}: window down");
+                if edge == "left" { assert_eq!(wx, x, "{label}"); } else { assert_eq!(wx + ww, x + w, "{label}"); }
+                // The page reports a 64×420 CSS px pill flush with the outer edge, centred.
+                let depth_css = (ww as f64 / scale).round() as i32;
+                let pill_x = if edge == "left" { 0 } else { depth_css - 64 };
+                let pill_y = ((wh as f64 / scale) as i32 - 420) / 2;
+                let z = win_previews::dock_zones(edge, (wx, wy), (pill_x, pill_y, 64, 420), scale, (x, y, x + w, y + h));
+                let cx = wx + ((pill_x + 32) as f64 * scale) as i32;
+                let cy = wy + ((pill_y + 210) as f64 * scale) as i32;
+                assert!(z.over.contains(cx, cy), "{label}: pill centre is over the Dock");
+                let (outer, neighbour) = if edge == "left" { (x, x - 1) } else { (x + w - 1, x + w) };
+                assert!(z.reveal.contains(outer, cy), "{label}: the monitor's own edge reveals");
+                assert!(!z.reveal.contains(neighbour - if edge == "left" { 4 } else { -4 }, cy), "{label}: the neighbour's pixels don't");
+                assert!(!z.over.contains(x + w / 2, cy), "{label}: the middle of the screen is not over the Dock");
+            }
+        }
+    }
+
+    /// A pill inset from the window's edge: the flyout starts past the pill, not inside it.
+    #[test]
+    fn an_inset_pill_is_never_covered() {
+        let m = mon(-1920, 0, 1920, 1080, 1.5);
+        let r = side_flyout_rect(&m, "left", (10, 100, 60, 400), 760.0, 0, 51, 1008, 600, 600, FlyoutAlign::Center);
+        assert_eq!(r.x, -1920 + (70.0f64 * 1.5).round() as i32 - 1);
+        let r = side_flyout_rect(&m, "right", (690, 100, 60, 400), 760.0, 0, 51, 1008, 600, 600, FlyoutAlign::Center);
+        assert_eq!(r.x + r.w as i32, (70.0f64 * 1.5).round() as i32 * -1 + 1);
+        // Not reported yet: the old 56 px estimate.
+        let r = side_flyout_rect(&m, "left", (0, 0, 0, 0), 760.0, 0, 51, 1008, 600, 600, FlyoutAlign::Center);
+        assert_eq!(r.x, -1920 + (56.0f64 * 1.5).round() as i32 - 1);
+    }
+
+    #[test]
+    fn a_side_flyout_without_a_top_bar_may_use_the_top_of_the_screen() {
+        let m = mon(-1920, -1080, 1920, 1080, 1.0);
+        let r = side_flyout_rect(&m, "left", (0, 0, 60, 400), 760.0, 0, 0, 0, 404, 2000, FlyoutAlign::End);
+        assert_eq!(r.y, -1080);
+        assert_eq!(r.h, 1080);
+    }
 }
 
 // ================================================================================ Tester Hub

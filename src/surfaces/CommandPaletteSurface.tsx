@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { listen } from "@tauri-apps/api/event";
 import {
   Search,
@@ -134,7 +135,7 @@ export const CommandPaletteSurface: React.FC = () => {
     const onBlur = () => {
       window.setTimeout(() => {
         if (!document.hasFocus()) {
-          invoke("hide_surface", { label: "palette" }).catch(() => {});
+          void hideSurface("palette");
         }
       }, 150);
     };
@@ -190,7 +191,7 @@ export const CommandPaletteSurface: React.FC = () => {
       return;
     }
     setAskPrompt(null);
-    invoke("hide_surface", { label: "palette" }).catch(() => {});
+    void hideSurface("palette");
   };
 
   // Same ranking as the Launcher and the Dock search (src/search).
@@ -372,7 +373,7 @@ export const CommandPaletteSurface: React.FC = () => {
               </button>
             );
           })}
-          <FlyoutClose pinned inline label="Close Search" onClose={() => invoke("hide_surface", { label: "palette" }).catch(() => {})} />
+          <FlyoutClose pinned inline label="Close Search" onClose={() => void hideSurface("palette")} />
         </div>
 
         {/* Main Content: Mockup-Parity Launcher Home Grid OR Live Filtered Results */}
