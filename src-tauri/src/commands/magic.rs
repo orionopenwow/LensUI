@@ -90,7 +90,7 @@ fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, r
 }
 
 /// Gathers what's under (x, y) and opens the window there.
-fn open_at(app: &AppHandle, x: i32, y: i32, lens: Option<LensTargetInput>, via: &str) -> Result<(), String> {
+pub(crate) fn open_at(app: &AppHandle, x: i32, y: i32, lens: Option<LensTargetInput>, via: &str) -> Result<(), String> {
     let at_ms = now_ms();
     let started = std::time::Instant::now();
     #[cfg(windows)]

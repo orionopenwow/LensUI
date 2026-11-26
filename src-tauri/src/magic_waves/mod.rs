@@ -3,8 +3,12 @@
 //! waves call into these from commands, each behind its `config.magicWaves` flag (all off).
 #![allow(dead_code)]
 
+pub mod cursor_art;
 pub mod dashboard;
+pub mod gesture;
 pub mod mouse;
+#[cfg(windows)]
+pub mod mouse_win;
 pub mod widgets;
 
 #[cfg(test)]

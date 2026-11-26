@@ -208,13 +208,22 @@ Each wave: one or more PRs, ≤ 3 agents in parallel, merged one at a time when 
 | **M0 Scaffold** (feature/magic-scaffold) | Opus | §6 scaffold: surfaces, routes, stores, types, feature flags (all off), Settings cards (disabled copy), docs | Builds; flags off = zero new windows, hooks, timers or network; hyper inventory lists every new setting | Unit tests for stores and flags; visual parity scenes for empty states | Nothing changes on your desktop with flags off |
 | **M1 Dashboard core** | Opus | Dashboard surface + Glance/Focus/Board presets; lanes for Inbox, Feeds, Shelf, Today; context strip; Ask about this (local) | Opens < 150 ms warm; no lane fetches unless its source is connected; Why-this-is-here on reordered cards | Perf budget scenario; hyper set/restore; E2E open/close every way | Open it from the Dock, Top Bar, Command; connect Bluesky; see counts from Slack/Discord spaces |
 | **M2 Widgets** | Opus | Lens widget format (plugin + Adaptive Card + Feed/API), widget gallery (5–8 curated), Lens-side fetch with approvals | Sandbox tests: no network from widgets; endpoint approval required; size caps | Plugin sandbox tests extended; fixture widgets | Add a weather and a GitHub widget; revoke a site |
-| **M3 Magic Mouse** | Opus | Lens cursor set (all sizes, high-contrast variant), halo, hold/grab gestures, region capture → OCR/images/video/Shelf/Claude, auto rules | Restores the previous scheme on exit/crash/Remove all; paused in fullscreen and anti-cheat; pointer move path unchanged in cost | Cursor encoder tests at 32–128 px; E2E grab → Shelf; restore after simulated crash | Use it for an hour: normal clicking, text selection, a game (it steps aside), grab text from a PDF |
+| **M3 Magic Mouse** (built, preview; branch `feature/magic-m3-mouse`) | Opus | Lens cursor set (all sizes, high-contrast variant), halo, hold/grab gestures, region capture → OCR/images/video/Shelf/Claude, auto rules | Restores the previous scheme on exit/crash/Remove all; paused in fullscreen and anti-cheat; pointer move path unchanged in cost | Cursor encoder tests at 32–128 px; E2E grab → Shelf; restore after simulated crash | Use it for an hour: normal clicking, text selection, a game (it steps aside), grab text from a PDF |
 | **M4 Magic button + Shelf → Notes** | Opus | Win-key options, Lens Magic Start, Start position on the Taskbar Dock; Make a note, Export (md/txt/pdf), Send to contact with approval | Win+L, Ctrl+Alt+Del, Alt+Tab, Ctrl+Esc unaffected; hook watchdog falls back to Start | Keyhook unit tests; E2E Win tap with Lens hung → Start opens | Tap Win (off and Magic), lock the PC, make a note from three grabs and export it |
 | **M5 Studio** | Opus | Lens Studio Dock/Theme/Desktop workspaces on the real surfaces, undo/redo, templates, import/export, Top Bar choreography | No layout change on theme edits; Apply validated by the settings writer; every control in the hyper inventory | Theme-switch rig on studio previews; visual parity; hyper | Build a Dock + theme from a template, undo 10 steps, export and re-import |
 | **M6 Behaviour-aware + Dashboard AI** | Opus | Learned ordering (opt-in), MCP exposure of Dashboard context (off, per-source), digest per lane | Signals wiped by *Forget*; nothing leaves without approval; MCP requires the existing token | Privacy tests (signals file sealed, wipe), MCP auth tests | Turn learning on for a week; check Why-this-is-here makes sense; wipe it |
 | **P Fable 5.2 polish** | Fable 5.2 | §5.1 | All budgets green; zero motion-lint offenders added; copy pass done | Full hyper tier, rigs, a11y | Look and feel pass on two monitors |
 | **R Redline** | independent reviewer | Release review of everything above | No blockers | — | — |
 | **T Manual test** | Owner | §5.2 checklist | Every row ticked or a bug filed through *Report a problem* | — | All of it |
+
+**M3 status (26 November 2026).** Built behind `magicWaves.mouse` (asks first): the Lens Magic
+pointer set at 32–128 px with a high-contrast variant, applied and restored through the cursor
+suite (exit, crash, Remove all, step-aside in fullscreen / games / anti-cheat); hold-then-drag
+grab with a click-through rectangle that opens the region in the Snip studio (copy, OCR, save,
+Shelf, Ask Claude); hold-and-release opens the Magic menu; hold time 200–1200 ms in Settings.
+Not in this wave: the pointer halo, "find images/videos on the page" for a region over Lens
+Browser, and auto rules. The `.ani` files are generated at run time rather than committed. See
+[CURSORS.md](../CURSORS.md#magic-mouse-pointer-preview-off-by-default).
 
 ### 5.1 Fable 5.2 polishing phase summary
 

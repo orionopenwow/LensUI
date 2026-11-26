@@ -14,6 +14,13 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Magic Mouse (M3, off by default):** turning it on (Settings asks first) gives you the Lens
+  Magic pointer, the Lens cloud in a ring, at every Windows pointer size, with a high-contrast
+  variant. Hold the left button, then drag, to grab part of the screen and copy it, copy its
+  text, save it, put it on the Shelf or ask Claude about it (Claude asks before anything leaves
+  your PC). Hold and let go to open Magic. A quick click is still a click. Your own pointers come
+  back when it's off, on exit, after a crash, with Remove all, and while a game or fullscreen app
+  is in front. See docs/CURSORS.md.
 - **Magic Dashboard (M1, off by default):** with Magic Dashboard on, "dashboard" in Command or the
   Top Bar button opens a slim panel with Inbox, Feeds, Today, Shelf and Now playing lanes filled
   from Lens's own data, in Glance, Focus or Board. Nothing is fetched from the network. Learned

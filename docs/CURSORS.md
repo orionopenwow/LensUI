@@ -378,6 +378,37 @@ In `restore_backup`, write each `cursors/<name>` entry back to `dir.join("cursor
 else). Restoring the files does not touch the registry: the user's original cursor backup comes
 back, so "Restore my Windows pointers" still works after moving to a new PC.
 
+## Magic Mouse pointer (preview, off by default)
+
+Magic Mouse (`config.magicWaves.mouse`, docs/plans/MAGIC_WAVES.md §4.2, wave M3) applies its own
+set through this suite's registry layer, so it shares the suite's backup and exact restore.
+
+* **The set** (`src-tauri/src/magic_waves/cursor_art.rs`): the Lens cloud (the logo's six hues)
+  breathing inside a dark ring, with a short pointer tip that carries the hotspot. Arrow and
+  AppStarting are an 8-frame `.ani` (6 fps); Wait is the ring alone (hotspot in the middle).
+  Every frame holds all five Windows sizes (32/48/64/96/128). Text, hand, resize and the rest
+  use the familiar Obsidian shapes. High contrast on in Windows → the high-contrast variant
+  (white rim, black halo). The files are built at run time into `cursors/magic/<magic|magic-hc>`,
+  outside `cursors/sets/` so a Look change can't prune them.
+* **Apply** (`magic_waves::mouse::apply_magic_with`): backup on first change (same
+  `backup.json`), point `HKCU\Control Panel\Cursors` at the set, mark `cursors/magic-mouse.json`.
+  `CursorBaseSize` is only written when the person already uses Lens pointers (their Lens size);
+  otherwise their Windows pointer size is left alone. Follow theme pack does nothing while the
+  Magic pointer is on.
+* **Remove** (`magic_off_with`): back to the person's Lens pointers if they had chosen some,
+  otherwise the backup is written back exactly; the Magic files are deleted.
+* **When:** flag off, Lens exit, "Remove all Lens changes" (which also turns the flag off), and
+  while a fullscreen app, game, presentation or anti-cheat process is in front (it comes back
+  after). A crash or power cut leaves the mark behind, and the next start restores first.
+* **Gestures** (`magic_waves::gesture`, `magic_waves::mouse_win`): on the shared input service as
+  `Feature::MagicMouse`. Hold the left button (200–1200 ms, default 400) without moving, then
+  drag: a click-through accent rectangle follows, and releasing opens the region in the Snip
+  studio (copy, copy text, save, Shelf, Ask Claude, which asks first). Hold and release without
+  moving: the Magic menu at the pointer. A short click, an early drag, a modified click and
+  anything over Lens's own windows stay ordinary; only the button-up after an armed hold is
+  swallowed, and the app under the pointer is handed its own button-up when the hold arms.
+  Nothing is captured except on that gesture.
+
 ## Persistence and exit
 
 Pointer sets and pointer settings are Windows settings, so — like Windows' own Mouse control
@@ -396,6 +427,11 @@ hooks exist only while Lens runs and are removed on exit and from the panic hook
   `rustc --edition 2021 --test --cfg lens_standalone lib_t.rs` where `lib_t.rs` declares the two
   modules (the `lens_standalone` cfg drops the serde derives). Adding `--cfg lens_win_check` with
   `--emit=metadata` type-checks the Win32 code on any OS.
+* Magic Mouse: `cargo test --lib magic_waves` covers the gesture machine (short click, early
+  drag, hold, grab, tiny grab, cancel, hold time, "only an armed up is ever swallowed"), the
+  `.ani` files (RIFF/ACON, 8 frames, every size), hotspots, the role split, apply → remove
+  round trips against the in-memory registry, and crash recovery. The E2E `magic-mouse`
+  scenario drives it with SendInput on a real Windows runner.
 * Needs real Windows hardware: the registry apply / restore round trip and how Explorer and apps
   pick the new pointers up, `CursorBaseSize` on Windows 10 1903+ and Windows 11, the PNG-in-CUR
   entries at 96/128 px under 200–400 % scaling, `.ani` playback, every SPI write, the low-level

@@ -1,6 +1,6 @@
 // Screenshots the Magic scaffold (docs/plans/MAGIC_WAVES.md, wave M0) in Settings › About ›
 // Magic (preview): the section with every flag off (Tester mode only), then with the Dashboard,
-// Magic button and Studio shells on, in a dark and a light theme. Fails on page errors, on a
+// Magic button and Studio shells on, the Magic Mouse card (wave M3), in a dark and a light theme. Fails on page errors, on a
 // shell that doesn't render, and if the section shows outside Tester mode with every flag off.
 // Run after `node tools/parity/build.mjs`. Output: tools/parity/magicwaves/shots (or $MAGIC_SHOTS).
 import { createServer } from "node:http";
@@ -23,6 +23,11 @@ const SCENES = [
   { id: "start", magic: "startButton", expect: [".mstart"] },
   { id: "notes", magic: "shelfNotes", expect: [".snp", ".snp-body"] },
   { id: "studio", magic: "studioV2", expect: [".sv2", '[role="tab"][aria-selected="true"]'] },
+  // Magic Mouse (wave M3): the card with the pointer frames, high-contrast frames, the grab
+  // picture and its actions; and the confirmation shown before the flag turns on.
+  { id: "mouse", magic: "mouse", expect: [".mmp", ".mmp-sprite img", ".mmp-rect", ".mmp-chip"] },
+  { id: "mouse-hc", magic: "mouse", expect: [".mmp", ".mmp-sprite img"], click: ".mmp-hc input" },
+  { id: "mouse-confirm", magic: "none", expect: [".mpv-confirm", ".mmp"], click: '[data-section="magic"] [role="switch"][aria-label="Magic Mouse"], [data-section="magic"] input[aria-label="Magic Mouse"]' },
 ];
 const T = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml" };
 

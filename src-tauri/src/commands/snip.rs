@@ -355,6 +355,37 @@ fn start(app: &AppHandle, mode: &str, delay: u32) -> Result<(), String> {
     Ok(())
 }
 
+/// Magic Mouse (wave M3): captures `r` (physical px) at the end of a hold-and-drag gesture and
+/// opens it in the studio, where copy, OCR, save, Shelf and Ask Claude (which asks first) live.
+/// Only ever called for that gesture: nothing is captured in the background. The pointer is left
+/// out of the picture.
+pub(crate) fn capture_into_studio(app: &AppHandle, r: Rect) -> Result<(), String> {
+    let fg = foreground();
+    let mons = monitors();
+    if mons.is_empty() {
+        return Err("No display found.".into());
+    }
+    let vb = geom::virtual_bounds(&mons);
+    let region = geom::clamp(&r, &vb);
+    if region.w < 2 || region.h < 2 {
+        return Err("The region is off screen.".into());
+    }
+    let img = capture(&region, false)?;
+    let snip = Snip {
+        id: service::new_id("snip"),
+        img,
+        screen_rect: region,
+        source_app: fg.as_ref().map(|w| w.app.clone()).unwrap_or_default(),
+        source_title: fg.as_ref().map(|w| w.title.clone()).unwrap_or_default(),
+        created_ms: service::now_ms(),
+    };
+    let info = info_of(&snip)?;
+    service::put_snip(snip);
+    show_overlay(app, &vb)?;
+    open_studio(app, &info);
+    Ok(())
+}
+
 /// Builds (first time) and shows the overlay window over the whole virtual desktop.
 fn show_overlay(app: &AppHandle, vb: &Rect) -> Result<(), String> {
     let win = match app.get_webview_window(OVERLAY) {
