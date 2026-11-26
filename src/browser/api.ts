@@ -57,7 +57,17 @@ export interface Appearance {
   typeface: "lens" | "system" | "mono" | "serif";
   /** The vertical tab sidebar (missing in settings saved before it existed). */
   sidebar?: SidebarPrefs;
+  /** The reader view's text (missing in settings saved before it existed). */
+  reader?: ReaderPrefs;
 }
+
+export interface ReaderPrefs {
+  /** Text size in px, 14–26. */
+  size: number;
+  width: "narrow" | "medium" | "wide";
+  face: "serif" | "sans";
+}
+export const DEFAULT_READER: ReaderPrefs = { size: 18, width: "medium", face: "serif" };
 
 export interface SidebarPrefs {
   /** 200–380 px, full mode only. */
@@ -83,7 +93,7 @@ export interface BrowserAi {
   transcripts: boolean;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR };
+export const DEFAULT_APPEARANCE: Appearance = { scheme: "auto", accent: null, dither: 40, grain: 20, tabsLayout: "vertical", density: "comfortable", typeface: "lens", sidebar: DEFAULT_SIDEBAR, reader: DEFAULT_READER };
 export const DEFAULT_BROWSER_AI: BrowserAi = { enabled: true, agentInNewTabs: false, pageSummaries: true, askInAddressBar: true, transcripts: true };
 
 export interface BrowserSettings {

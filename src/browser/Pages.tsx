@@ -1,8 +1,10 @@
-// Lens's own pages inside the content area: the new-tab page and the page shown when a site
-// fails to load. Both are frame UI (the tab's webview is hidden while they show).
-import React, { useRef } from "react";
-import { CloudOff, Download, History as HistoryIcon, RotateCw, Search, ShieldAlert, Sparkles, TriangleAlert, Undo2 } from "lucide-react";
-import type { Bookmark, HistoryEntry, Tab } from "./api";
+// Lens's own pages inside the content area: the new-tab page, the page shown when a site fails
+// to load, and the reader view. All are frame UI (the tab's webview is hidden while they show).
+import React, { useLayoutEffect, useMemo, useRef } from "react";
+import { CloudOff, Download, History as HistoryIcon, Minus, Plus, RotateCw, Search, ShieldAlert, Sparkles, TriangleAlert, Undo2, X } from "lucide-react";
+import { glideIn } from "../ui/motion";
+import type { Bookmark, HistoryEntry, ReaderPrefs, Tab } from "./api";
+import { READER_SIZE, READER_WIDTHS, clampReader, parseReadable, readerWorthIt, readingLabel, stepSize, type Inline } from "./reader";
 import { Key } from "./ApprovalCard";
 import { hostOf, relTime } from "./model";
 import { errorInfo, topSites } from "./nav";
@@ -154,6 +156,108 @@ export function ErrorPage(p: ErrorProps) {
         {info.kind === "dns" && host ? <button className="lb-btn" onClick={() => p.onSearch(host)}><Search size={14} /> Search for {host}</button> : null}
       </div>
       <p className="lb-mono lb-dim">{host ? `${host} · ` : ""}{p.code}</p>
+    </div>
+  );
+}
+
+/** What the reader is open on: one tab's text at one address. */
+export interface ReaderSeed {
+  tabId: string;
+  /** The tab's address when the reader opened; the reader closes when the tab moves on. */
+  tabUrl?: string;
+  url: string;
+  title: string;
+  text: string;
+}
+
+interface ReaderProps {
+  /** The page agent's readable text for the tab (markdown-ish: "# ", "- ", "[text](url)"). */
+  text: string;
+  title: string;
+  url: string;
+  prefs?: Partial<ReaderPrefs> | null;
+  /** Summarise and Ask show only when the browser's AI is on. */
+  ask: boolean;
+  onPrefs(p: ReaderPrefs): void;
+  onClose(): void;
+  onGo(url: string): void;
+  /** Side actions: the AI panel summarises, or opens for a question about, this page. */
+  onSummarise(): void;
+  onAsk(): void;
+}
+
+const inline = (parts: Inline[], onGo: (url: string) => void) =>
+  parts.map((p, i) =>
+    p.href ? (
+      <a key={i} href={p.href} onClick={(e) => { e.preventDefault(); onGo(p.href!); }}>{p.text}</a>
+    ) : (
+      <React.Fragment key={i}>{p.text}</React.Fragment>
+    )
+  );
+
+/**
+ * Reader view: the page's own text, set by Lens. Local: it shows text the page already gave the
+ * frame, loads nothing (no images, no fonts, no scripts), and works with AI turned off.
+ * Summarise and Ask are side actions that hand the same text to the AI panel.
+ */
+export function ReaderPage(p: ReaderProps) {
+  const root = useRef<HTMLDivElement>(null);
+  const doc = useMemo(() => parseReadable(p.text, { title: p.title, url: p.url }), [p.text, p.title, p.url]);
+  const prefs = clampReader(p.prefs);
+  const worth = readerWorthIt(doc);
+  useLayoutEffect(() => {
+    glideIn(root.current, { y: 6, opacity: 0 }, { duration: "fast" });
+    root.current?.focus();
+  }, []);
+  const label = readingLabel(doc);
+  const widths: ReaderPrefs["width"][] = ["narrow", "medium", "wide"];
+  return (
+    <div
+      className={`lb-reader lb-reader-${prefs.face}`}
+      ref={root}
+      role="region"
+      aria-label="Reader view"
+      tabIndex={-1}
+      style={{ "--lb-reader-size": `${prefs.size}px`, "--lb-reader-col": `${READER_WIDTHS[prefs.width]}px` } as React.CSSProperties}
+    >
+      <div className="lb-reader-bar" role="toolbar" aria-label="Reader">
+        <span className="lb-mono lb-dim lb-reader-meta">{[doc.host, label].filter(Boolean).join(" · ")}</span>
+        <span className="lb-reader-tools">
+          <button className="lb-icon-btn sm" aria-label="Smaller text" disabled={prefs.size <= READER_SIZE.min} onClick={() => p.onPrefs(stepSize(prefs, -1))}><Minus size={12} /></button>
+          <span className="lb-mono lb-reader-size" aria-live="polite" aria-label={`Text size ${prefs.size}`}>{prefs.size}</span>
+          <button className="lb-icon-btn sm" aria-label="Larger text" disabled={prefs.size >= READER_SIZE.max} onClick={() => p.onPrefs(stepSize(prefs, 1))}><Plus size={12} /></button>
+          <span className="lb-reader-seg" role="radiogroup" aria-label="Column width">
+            {widths.map((w) => (
+              <button key={w} role="radio" aria-checked={prefs.width === w} className={`lb-chip${prefs.width === w ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, width: w })}>{w === "narrow" ? "Narrow" : w === "medium" ? "Medium" : "Wide"}</button>
+            ))}
+          </span>
+          <span className="lb-reader-seg" role="radiogroup" aria-label="Typeface">
+            <button role="radio" aria-checked={prefs.face === "serif"} className={`lb-chip${prefs.face === "serif" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "serif" })}>Serif</button>
+            <button role="radio" aria-checked={prefs.face === "sans"} className={`lb-chip${prefs.face === "sans" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "sans" })}>Sans</button>
+          </span>
+          {p.ask && doc.words ? (
+            <>
+              <button className="lb-chip" onClick={p.onSummarise}><Sparkles size={12} /> Summarise</button>
+              <button className="lb-chip" onClick={p.onAsk}>Ask <Key k="Ctrl J" /></button>
+            </>
+          ) : null}
+          <button className="lb-chip" onClick={p.onClose}><X size={12} /> Close <Key k="Esc" /></button>
+        </span>
+      </div>
+      <article className="lb-reader-col">
+        <h1>{doc.title}</h1>
+        {!worth ? (
+          <p className="lb-reader-note">{doc.words ? "There isn't much to read on this page. Here is the text Lens found." : "Lens couldn't find any text to read on this page."}</p>
+        ) : null}
+        {doc.blocks.map((b, i) => {
+          if (b.kind === "heading") {
+            const H = (`h${Math.min(6, Math.max(2, b.level))}`) as "h2";
+            return <H key={i}>{inline(b.inline, p.onGo)}</H>;
+          }
+          if (b.kind === "list") return <ul key={i}>{b.items.map((it, j) => <li key={j}>{inline(it, p.onGo)}</li>)}</ul>;
+          return <p key={i}>{inline(b.inline, p.onGo)}</p>;
+        })}
+      </article>
     </div>
   );
 }

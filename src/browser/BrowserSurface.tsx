@@ -27,7 +27,7 @@ import { ImportPanel, type ImportSeed } from "./ImportPanel";
 import { DownloadsPanel, HistoryPanel } from "./Lists";
 import { breadcrumb, classifyAddress, dropIndex, hostOf } from "./model";
 import { cycleTab, IDLE_NAV, navFromStatus, suggestions, tabAt, zoomStep, type NavState, type PageStatus, type Suggestion } from "./nav";
-import { ErrorPage, StartPage } from "./Pages";
+import { ErrorPage, ReaderPage, StartPage, type ReaderSeed } from "./Pages";
 import { Avatar, Sidebar, type ChatRef } from "./Sidebar";
 import { applyProposal, propose, summarisePrompt, sidebarPrefs, type TabActionKind, type TabProposal } from "./tabAi";
 import { TranscriptPanel, type TranscriptSeed } from "./TranscriptPanel";
@@ -55,6 +55,8 @@ export interface BrowserInitial {
   nav?: Partial<NavState>;
   /** Parity: show the new-tab page. */
   start?: boolean;
+  /** Parity: the reader view, open on this text. */
+  reader?: ReaderSeed;
   /** Parity: history for the start page and the History panel. */
   history?: HistoryEntry[];
   /** Parity: which suggestion row is highlighted. */
@@ -174,6 +176,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const [sel, setSel] = useState(initial?.selected ?? 0);
   const [arch, setArch] = useState<ArchivedTab[]>([]);
   const [crashed, setCrashed] = useState(false);
+  // Reader view: the active page's own text, set by Lens (local; nothing is loaded).
+  const [reader, setReader] = useState<ReaderSeed | null>(initial?.reader ?? null);
   // Site permissions: requests waiting for an answer, remembered answers, and the site strip.
   const [asks, setAsks] = useState<PermissionAsk[]>(initial?.asks ?? []);
   const [perms, setPerms] = useState<SitePermissions>(initial?.perms ?? {});
@@ -336,7 +340,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   // error page are showing.
   // The icon stack's Lens menu and plan float over the page, so the page hides while they show.
   const [stackPop, setStackPop] = useState(false);
-  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
+  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
   useEffect(() => {
     if (live) void setOverlay(overlay).catch(() => {});
   }, [overlay, live]);
@@ -398,6 +402,23 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     void historyNav("reload").catch(() => {});
   }, []);
 
+  // Reader view opens on the text the page agent already extracts; it closes when the tab or the
+  // address changes, so it never shows one page's text under another page's address.
+  const toggleReader = useCallback(async () => {
+    if (reader) return setReader(null);
+    if (!tab) return;
+    if (!live) return;
+    try {
+      const r = await pageRead<{ text: string; url: string; title?: string }>("readable");
+      setReader({ tabId: tab.id, tabUrl: tab.url, url: r.url || tab.url, title: r.title || tab.title, text: r.text || "" });
+    } catch {
+      flash("Couldn't read this page. Try again once it has loaded.");
+    }
+  }, [reader, tab, live]);
+  useEffect(() => {
+    if (reader && live && (!tab || tab.id !== reader.tabId || tab.url !== reader.tabUrl)) setReader(null);
+  }, [reader, live, tab]);
+
   const openGlance = useCallback(async (u: string) => {
     setGlanceSummary(null);
     try {
@@ -439,7 +460,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           void historyNav("forward").catch(() => {});
           break;
         case "esc":
-          if (startOpen && tab) setStartOpen(false);
+          if (reader) setReader(null);
+          else if (startOpen && tab) setStartOpen(false);
           else if (nav.loading) void historyNav("stop").then(() => setNav((n) => ({ ...n, loading: false }))).catch(() => {});
           break;
         case "ctrl+=":
@@ -486,7 +508,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         }
       }
     },
-    [tab, apply, aiOn, s, startOpen, nav.loading, zoomTo, reload]
+    [tab, apply, aiOn, s, startOpen, nav.loading, zoomTo, reload, reader]
   );
 
   const onMenu = useCallback(
@@ -797,8 +819,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               {running ? <span className="lb-tray-n" aria-hidden>{running}</span> : null}
             </button>
           ) : null}
-          {aiOn && ai.pageSummaries ? (
-            <button className="lb-icon-btn" aria-label="Reader view" onClick={() => { setPanel("ask"); setQuick({ prompt: "Show this page as a clean reader view in Markdown, keeping headings and links", url, page: true }); }}>
+          {tab && !showStart ? (
+            <button className={`lb-icon-btn${reader ? " is-on" : ""}`} aria-label={reader ? "Close reader view" : "Reader view"} aria-pressed={!!reader} onClick={() => void toggleReader()}>
               <BookOpen size={15} />
             </button>
           ) : null}
@@ -929,6 +951,19 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               onRetry={reload}
               onBack={() => combo("alt+left")}
               onSearch={(q) => void go(q)}
+            />
+          ) : reader && tab ? (
+            <ReaderPage
+              text={reader.text}
+              title={reader.title}
+              url={reader.url}
+              prefs={appearance.reader}
+              ask={aiOn && ai.pageSummaries}
+              onPrefs={(r) => saveSettings({ appearance: { ...appearance, reader: r } })}
+              onClose={() => setReader(null)}
+              onGo={(u) => { setReader(null); void go(u, false); }}
+              onSummarise={() => { setPanel("ask"); setQuick({ prompt: QUICK.summarise, url: reader.url, page: true }); }}
+              onAsk={() => setPanel("ask")}
             />
           ) : showStart ? (
             <StartPage
