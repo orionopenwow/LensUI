@@ -2,7 +2,7 @@
 // "why this is here" reasons. Pure: no fetching, no timers. Sources fill lanes in later waves,
 // each only after the person connects it.
 
-export type LaneId = "inbox" | "feeds" | "today" | "shelf" | "widgets" | "nowplaying";
+export type LaneId = "inbox" | "feeds" | "today" | "shelf" | "widgets" | "x" | "nowplaying";
 export type LayoutId = "glance" | "focus" | "board";
 
 export interface Card {
@@ -33,6 +33,7 @@ export const LANES: readonly LaneSpec[] = [
   { id: "today", label: "Today", empty: { text: "Your calendar and reminders for today.", action: "Connect a calendar" } },
   { id: "shelf", label: "Shelf", empty: { text: "Things you put on the Shelf, ready to use or turn into a note.", action: "Open the Shelf" } },
   { id: "widgets", label: "Widgets", empty: { text: "Small widgets from the gallery. Each one asks before it fetches anything.", action: "Add a widget" }, needs: "widgets" },
+  { id: "x", label: "X", empty: { text: "Your X timeline, embedded with your OK. Lens doesn't read or store it.", action: "Set up X" }, needs: "widgets" },
   { id: "nowplaying", label: "Now playing", empty: { text: "What's playing on this PC.", action: "Open Lens Music" } },
 ];
 
@@ -47,7 +48,7 @@ export interface LayoutSpec {
 export const LAYOUTS: readonly LayoutSpec[] = [
   { id: "glance", label: "Glance", desc: "A little of everything, at a look.", lanes: ["today", "inbox", "shelf", "nowplaying"] },
   { id: "focus", label: "Focus", desc: "Only what needs you: inbox and today.", lanes: ["inbox", "today"] },
-  { id: "board", label: "Board", desc: "Every lane side by side.", lanes: ["inbox", "feeds", "today", "shelf", "widgets", "nowplaying"] },
+  { id: "board", label: "Board", desc: "Every lane side by side.", lanes: ["inbox", "feeds", "today", "shelf", "widgets", "x", "nowplaying"] },
 ];
 
 export interface DashboardState {

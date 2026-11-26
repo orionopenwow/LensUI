@@ -63,6 +63,21 @@ export function buildInventory(root) {
     }
   } catch {}
 
+  // 7. Magic Dashboard lanes (src/dashboard/store.ts) and gallery widgets (src/widgets/gallery.ts),
+  // wave M2. Both are behind preview flags; parity scenes and the magic-widgets E2E cover them.
+  try {
+    const store = read("src/dashboard/store.ts");
+    const lanes = store.match(/export const LANES[\s\S]*?\n\];/)?.[0] || "";
+    for (const m of lanes.matchAll(/\{ id: "([a-z]+)", label: "([^"]+)"/g)) {
+      add({ id: `dashboard-lane:${m[1]}`, kind: "dashboard-lane", label: `Dashboard lane: ${m[2]}`, source: "src/dashboard/store.ts", tier: "headless", reason: "parity scenes (tools/parity/magicwaves) and the magic-dashboard E2E" });
+    }
+    const gallery = read("src/widgets/gallery.ts");
+    const list = gallery.match(/export const GALLERY[\s\S]*?\n\];/)?.[0] || "";
+    for (const m of list.matchAll(/\n  \{\n    id: "([a-z-]+)",\n    name: "([^"]+)"/g)) {
+      add({ id: `widget:${m[1]}`, kind: "widget", label: `Widget: ${m[2]}`, source: "src/widgets/gallery.ts", tier: "headless", reason: "parity scene win-widgets (mocked fetch); unit tests in src/__tests__/widgets.test.ts" });
+    }
+  } catch {}
+
   // De-duplicate by id (a row can appear twice in the Guide index).
   const seen = new Map();
   for (const it of items) if (!seen.has(it.id)) seen.set(it.id, it);
