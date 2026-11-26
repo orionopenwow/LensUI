@@ -418,21 +418,13 @@ fn show_overlay(app: &AppHandle, vb: &Rect) -> Result<(), String> {
     Ok(())
 }
 
-/// WebView2 must be created on the UI thread: built from a worker thread (Magic Mouse's grab,
-/// a delayed snip) it fails with 0x8007139F. Runs the build on the main thread and waits for it;
-/// when already on the main thread it builds directly (waiting there would deadlock).
+/// Built from its tauri.conf.json entry ("create": false), like Lens's other on-demand windows,
+/// so it gets the same WebView2 environment options as every other window. A window built in code
+/// with different options (the E2E build adds a DevTools port to every configured window) is
+/// refused by WebView2 with 0x8007139F. Never call this from the main thread inside a sync command
+/// (see `build_window_from_config`); Snip's callers run on worker threads.
 fn build_overlay_on_main(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
-    if std::thread::current().name() == Some("main") {
-        return build_overlay(app);
-    }
-    let (tx, rx) = std::sync::mpsc::channel();
-    let h = app.clone();
-    app.run_on_main_thread(move || {
-        let _ = tx.send(build_overlay(&h));
-    })
-    .map_err(|e| e.to_string())?;
-    rx.recv_timeout(Duration::from_secs(10))
-        .map_err(|_| "The Snip window took too long to open.".to_string())?
+    build_overlay(app)
 }
 
 fn build_overlay(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
@@ -452,9 +444,10 @@ fn build_overlay_once(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     if let Some(w) = app.get_webview_window(OVERLAY) {
         return Ok(w);
     }
-    // Transparent like every other Lens window: the WebView2 environment is shared, and a
-    // window created with different options than the rest can be refused. The overlay draws
-    // its own frame and dimming, so nothing shows through.
+    if let Some(w) = crate::app::setup::build_window_from_config(app, OVERLAY) {
+        return Ok(w);
+    }
+    // No config entry (should not happen): build it in code, matching the config entry.
     WebviewWindowBuilder::new(
         app,
         OVERLAY,
