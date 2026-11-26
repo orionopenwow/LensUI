@@ -891,6 +891,8 @@ impl Default for MagicWavesConfig {
     }
 }
 
+// Used by the Magic waves from M1 on (and the scaffold tests today).
+#[cfg_attr(not(test), allow(dead_code))]
 impl MagicWavesConfig {
     /// Clamp values that came from disk or an import into their allowed ranges.
     pub fn sanitized(mut self) -> Self {
