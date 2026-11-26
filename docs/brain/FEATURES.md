@@ -223,11 +223,11 @@ De-duplicated from: the reviews (`docs/reviews/2026-11-23*.md`), `docs/FEATURE_R
 
 ### Magic waves (planned, see [MAGIC_WAVES.md](../plans/MAGIC_WAVES.md))
 
-All off by default; built in waves M0–M6, then Fable 5.2 polish, Redline and the owner's manual test pass.
+All off by default; built in waves M0–M6, then Fable 5.2 polish, Redline and the owner's manual test pass. **M0 scaffold: in a PR** (flags in `config.magicWaves`, shells previewable in Settings › About › Magic (preview) with Tester mode on).
 
 | Idea | Status | Why |
 |---|---|---|
-| Magic Dashboard: one slim surface with Inbox, Feeds (incl. X via your own key or embed), Today, Shelf and widget lanes; context strip; Ask about this | Planned (M1) | One calm place for what matters now, without background capture |
+| Magic Dashboard: one slim surface with Inbox, Feeds (X as official embeds only), Today, Shelf and widget lanes; context strip; Ask about this | Planned (M1) | One calm place for what matters now, without background capture |
 | Lens widget format: plugin, Adaptive Card and Feed/API widgets in the existing sandbox; curated gallery | Planned (M2) | Open-source widgets (Glance/Homepage-style) without giving widgets network access |
 | Behaviour-aware ordering with "Why this is here" and one-click forget | Planned (M6) | Tends toward how you work; opt-in and explainable |
 | Magic Mouse: animated Lens-cloud pointer, hold for Magic, grab a region → OCR, images, video, Shelf, Claude | Planned (M3) | Everything under the pointer becomes Magic, as a normal pointer otherwise |

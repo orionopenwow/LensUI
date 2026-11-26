@@ -9782,6 +9782,90 @@
    "source": "docs/CURSORS.md"
   },
   {
+   "id": "doc.dashboard.0",
+   "kind": "doc",
+   "title": "Magic Dashboard",
+   "text": "Status: scaffold (M0) , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
+   "path": [
+    "Docs",
+    "Magic Dashboard"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Magic Dashboard"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.1",
+   "kind": "doc",
+   "title": "Magic Dashboard: How it opens",
+   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). - Command: \"dashboard\". - No Dock icon and no new hotkey (owner decision).",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "How it opens"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "How it opens"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.2",
+   "kind": "doc",
+   "title": "Magic Dashboard: Privacy",
+   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Privacy"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Privacy"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.3",
+   "kind": "doc",
+   "title": "Magic Dashboard: Code",
+   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Code"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Code"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.4",
+   "kind": "doc",
+   "title": "Magic Dashboard: Next (M1)",
+   "text": "Register the Dashboard window and Command intent, mount the Top Bar button, fill Inbox/Feeds/Today/Shelf from Lens Messages, Feeds, connected calendars and the Shelf, and add hyper-suite inventory rows for every flag.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Next (M1)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Next (M1)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
    "id": "doc.dither.0",
    "kind": "doc",
    "title": "Lens dither material",

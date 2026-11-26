@@ -77,6 +77,7 @@
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 6,
+    "Magic (preview)": 8,
     "Pointer effects": 11,
     "Quick settings": 5,
     "Sessions": 2,
@@ -91,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 183,
+  "count": 191,
   "entries": [
     {
       "capability": "change_settings",
@@ -1792,6 +1793,128 @@
         "type": "integer"
       },
       "store": "live"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on the Magic Dashboard, opened from a Top Bar button and Command.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.dashboard\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic Dashboard",
+      "path": "magicWaves.dashboard",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Lets the Dashboard reorder cards from how you use it, on this PC only, with a reason on each.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.learn\":true}},\"tool\":\"lens_set\"}",
+      "label": "Learned ordering",
+      "path": "magicWaves.learn",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on Magic Mouse: the Lens pointer and hold-then-drag to grab part of the screen.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.mouse\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic Mouse",
+      "path": "magicWaves.mouse",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": 400,
+      "description": "How long to hold the left button before a drag becomes a Magic grab, in milliseconds.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.mouseHoldMs\":700}},\"tool\":\"lens_set\"}",
+      "label": "Magic Mouse hold time",
+      "path": "magicWaves.mouseHoldMs",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "maximum": 1200,
+        "minimum": 200,
+        "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on making a note from the Shelf and exporting it.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.shelfNotes\":true}},\"tool\":\"lens_set\"}",
+      "label": "Shelf to Notes",
+      "path": "magicWaves.shelfNotes",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Makes a Windows-key tap open Lens Magic Start; Ctrl+Esc still opens Windows Start.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.startButton\":true}},\"tool\":\"lens_set\"}",
+      "label": "Magic button",
+      "path": "magicWaves.startButton",
+      "reversible": true,
+      "risk": "confirm",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Turns on the new Dock, Theme and Desktop studio with undo.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.studioV2\":true}},\"tool\":\"lens_set\"}",
+      "label": "Lens Studio v2",
+      "path": "magicWaves.studioV2",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
+      "description": "Shows the Widgets lane on the Magic Dashboard; Lens fetches only sources you approve.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.widgets\":true}},\"tool\":\"lens_set\"}",
+      "label": "Dashboard widgets",
+      "path": "magicWaves.widgets",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
     },
     {
       "capability": "destructive",
