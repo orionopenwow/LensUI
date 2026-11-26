@@ -201,11 +201,13 @@ fn act_on(app: &AppHandle, tab: Option<&str>, element: u32, act: &PageAct) -> Re
 }
 
 /// Folder for pictures taken for agents (inside Lens's own folder; nothing else is written).
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn shots_dir() -> std::path::PathBuf {
     crate::win_mcp::lens_dir().join("cli").join("shots")
 }
 
 /// Where the page sits inside the captured frame image, in physical pixels (pure, tested).
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn page_crop(frame: (i32, i32), client: (i32, i32), vp: (f64, f64, f64, f64), scale: f64) -> (i32, i32, i32, i32) {
     let s = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
     let x = client.0 - frame.0 + (vp.0 * s).round() as i32;
