@@ -844,6 +844,8 @@ pub fn run() {
             commands::music::music_history,
             commands::music::music_history_clear,
             commands::music::music_level,
+            commands::music::music_glow_level,
+            commands::music::music_open_search,
             commands::music::music_spicetify_preview,
             commands::music::music_spicetify_export,
             commands::music::music_spotify_status,

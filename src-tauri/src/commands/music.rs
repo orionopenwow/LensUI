@@ -103,6 +103,41 @@ pub(crate) fn music_level() -> f32 {
     }
 }
 
+/// Speaker peak level 0..1 for the Dock music pop-out's sound glow and level meter. It works with
+/// Music off (the pop-out uses Windows' media session directly) and answers 0 when both are
+/// turned off. The pop-out only asks while it is open and something is playing.
+#[tauri::command]
+pub(crate) fn music_glow_level() -> f32 {
+    let c = music::config();
+    if c.sound_glow || c.level_meter {
+        music::levels::peak()
+    } else {
+        0.0
+    }
+}
+
+/// The pop-out's search button: opens Spotify's own search (a fixed link, nothing user-typed).
+#[tauri::command]
+pub(crate) fn music_open_search() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        std::process::Command::new("explorer.exe")
+            .arg(MUSIC_SEARCH_URI)
+            .creation_flags(0x0800_0000)
+            .spawn()
+            .map(|_| ())
+            .map_err(|_| "Couldn't open Spotify search.".to_string())
+    }
+    #[cfg(not(windows))]
+    {
+        Err("Only available on Windows.".into())
+    }
+}
+
+/// Spotify's search page (opens the desktop app when it is installed).
+pub(crate) const MUSIC_SEARCH_URI: &str = "spotify:search";
+
 // ------------------------------------------------------------------------------- Spicetify
 
 #[derive(Deserialize)]

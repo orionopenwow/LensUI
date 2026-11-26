@@ -5,6 +5,7 @@ import { applyThemePack } from "../../../src/themes/packs";
 import { applyFeaturedLook, isFeatured } from "../../../src/themes/featured";
 import { wallpaperHandlers } from "./wallpapers";
 import { emitLocal } from "./event";
+import { placeholderArt } from "../../../src/music/art";
 const params = new URLSearchParams(location.search);
 const preset = params.get("preset") || "obsidian";
 const W = (globalThis as any);
@@ -218,7 +219,18 @@ const handlers: Record<string, (a: any) => any> = {
   get_windows_theme: () => ({ accentHex: "#2D7D9A", accentR: 45, accentG: 125, accentB: 154, appsUseLightTheme: false, systemUsesLightTheme: false, transparencyEnabled: true }),
   get_running_windows: () => running,
   get_icon_for_path: () => null,
-  get_media_now_playing_cmd: () => ({ hasSession: true, isPlaying: true, title: "Midnight City", artist: "M83", album: "", sourceApp: "Spotify", thumbnailDataUrl: null }),
+  // A playing Spotify track with a timeline, for the Dock's music pop-out (DockMusicCard). `?musicArt=1`
+  // adds generated artwork (src/music/art.ts, never real album art) so the sound glow takes its
+  // colours; without it the glow falls back to the theme accent. `?musicPaused=1` pauses it.
+  get_media_now_playing_cmd: () => ({
+    hasSession: true, isPlaying: !params.get("musicPaused"), title: "Midnight City", artist: "M83", album: "", sourceApp: "Spotify",
+    thumbnailDataUrl: params.get("musicArt") ? placeholderArt("Midnight City", 128) : null,
+    positionMs: 74_000, durationMs: 243_000, updatedMs: Date.now(), canSeek: true,
+  }),
+  media_control_cmd: () => null,
+  // Speaker peak for the sound glow and level meter (one number; the pop-out asks ~30×/s while open).
+  music_glow_level: () => 0.45 + 0.35 * Math.abs(Math.sin(Date.now() / 260)),
+  music_open_search: () => null,
   get_quick_state_cmd: () => ({ volume: 62, muted: false, brightness: 80, nightLightEnabled: false, nightLightWarmth: 40 }),
   list_audio_sessions_cmd: () => [
     { pid: 1, name: "Spotify", volume: 70, muted: false },

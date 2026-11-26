@@ -60,6 +60,11 @@ pub struct MusicConfig {
     /// Keep "Recently played in Lens" on this PC.
     pub history: bool,
     pub lastfm: bool,
+    /// Dock music pop-out: a soft glow in the artwork's colours rising from the Dock edge,
+    /// breathing with the speaker level (on by default; static when motion is reduced).
+    pub sound_glow: bool,
+    /// Dock music pop-out: the small five-bar level meter beside the title (on by default).
+    pub level_meter: bool,
 }
 
 impl Default for MusicConfig {
@@ -83,6 +88,8 @@ impl Default for MusicConfig {
             scene_reactive: false,
             history: true,
             lastfm: false,
+            sound_glow: true,
+            level_meter: true,
         }
     }
 }
@@ -346,6 +353,10 @@ mod tests {
         // Unknown and missing fields from older files still load.
         let parsed: MusicConfig = serde_json::from_str(r#"{"enabled":true,"future":1}"#).unwrap();
         assert!(parsed.enabled && parsed.history);
+        // The Dock pop-out's glow and meter are on unless turned off, also for older files.
+        assert!(d.sound_glow && d.level_meter && parsed.sound_glow && parsed.level_meter);
+        let off: MusicConfig = serde_json::from_str(r#"{"soundGlow":false,"levelMeter":false}"#).unwrap();
+        assert!(!off.sound_glow && !off.level_meter);
     }
 
     #[test]
