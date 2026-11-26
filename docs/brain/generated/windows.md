@@ -2,7 +2,7 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (23)
+## Declared windows (24)
 
 | Label | Visible at start | Size |
 |---|---|---|
@@ -29,6 +29,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `nowplaying` | no (on demand) | 1280×800 |
 | `apps` | no (on demand) | 1040×760 |
 | `cleaner` | no (on demand) | 1040×760 |
+| `dashboard` | no (on demand) | 440×720 |
 
 ## Frontend routes (31) — `index.html?surface=<id>`
 
@@ -52,7 +53,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `browser` | `./browser/BrowserSurface` | built at runtime |
 | `snip` | `./snip/SnipSurface` | built at runtime |
 | `magic` | `./magic/MagicSurface` | built at runtime |
-| `dashboard` | `./dashboard/DashboardWindow` | built at runtime |
+| `dashboard` | `./dashboard/DashboardWindow` | declared |
 | `testerhub` | `./tester/TesterHubSurface` | declared |
 | `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
 | `approval` | `./approval/ApprovalSurface` | declared |

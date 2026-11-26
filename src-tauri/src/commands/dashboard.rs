@@ -3,7 +3,7 @@
 //! is on: every command here refuses (or does nothing) when the flag is off, and the window is
 //! built on first open, never at start-up. Nothing here touches the network.
 use crate::AppState;
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State};
 
 pub(crate) const LABEL: &str = "dashboard";
 /// Sent to the Dashboard window each time it opens, so it rebuilds its lanes and context strip.
@@ -40,19 +40,11 @@ fn ensure_window(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     if let Some(w) = app.get_webview_window(LABEL) {
         return Ok(w);
     }
-    WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("index.html?surface=dashboard".into()))
-        .title("Lens Dashboard")
-        .inner_size(PANEL_W, 720.0)
-        .decorations(false)
-        .transparent(true)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(false)
-        .shadow(false)
-        .visible(false)
-        .focused(false)
-        .build()
-        .map_err(|e| e.to_string())
+    // From its tauri.conf.json entry (create: false), like Lens's other on-demand windows, so it
+    // gets exactly the same WebView2 settings: a webview built with different browser arguments
+    // fails with 0x8007139F because all of Lens's webviews share one WebView2 environment.
+    crate::app::setup::build_window_from_config(app, LABEL)
+        .ok_or_else(|| "the Dashboard window could not be created".to_string())
 }
 
 fn place(app: &AppHandle, win: &tauri::WebviewWindow) {
