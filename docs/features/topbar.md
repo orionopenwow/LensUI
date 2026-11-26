@@ -2,7 +2,7 @@
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
 >
-> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (one enable flag with a config v4 migration, B-43; sentence-case section), media controls row added; height, floating and the delays already had rows. Per-monitor bars keep one bar per display under Follow the pointer (B-44). Left: halo off switch, aria-label pass on the bar itself, focus strip.
+> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (one enable flag with a config v4 migration, B-52; sentence-case section), media controls row added; height, floating and the delays already had rows. Per-monitor bars keep one bar per display under Follow the pointer (B-53). Left: halo off switch, aria-label pass on the bar itself, focus strip.
 
 ## Rundown
 
@@ -69,7 +69,7 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 | Follow the pointer | Shared with the Dock | works on CI | #101 |
 
 ## Quick wins (≤1 day each, ranked)
-1. **Done (PR #113, B-43).** `topBar.enabled` is the only flag; config v4 folds `dock.showTopBar` in and drops it. Was: the bar shows only when `topBar.enabled && dock.showTopBar` (`watcher.rs:103,187,663,1014`; `ControlCenterSurface.tsx:772`). Two flags for one switch: an agent or import that sets only one leaves the switch lying. Make `dock.showTopBar` a read-only mirror (migrate on load) and use `topBar.enabled` everywhere.
+1. **Done (PR #113, B-52).** `topBar.enabled` is the only flag; config v4 folds `dock.showTopBar` in and drops it. Was: the bar shows only when `topBar.enabled && dock.showTopBar` (`watcher.rs:103,187,663,1014`; `ControlCenterSurface.tsx:772`). Two flags for one switch: an agent or import that sets only one leaves the switch lying. Make `dock.showTopBar` a read-only mirror (migrate on load) and use `topBar.enabled` everywhere.
 2. **Done (PR #113).** ~~Sentence-case the Top Bar section~~ ("Auto-Hide Mode", "On Overlap", "Always Auto-Hide", "Bar Style" → "Auto-hide", "When a window overlaps", "Always hide"), per IDENTITY.md copy rules.
 3. **Done (PR #113).** Media controls row added; `height`, `floating` and the reveal/hide delays already had rows.
 4. **Halo off switch** ("Show a see-through ring when clicks pass through") for people who find it distracting.
@@ -86,7 +86,7 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| B-43 (fixed) | Med | Two enable flags could disagree (`topBar.enabled` vs `dock.showTopBar`) | config v4 migration, `topbarEnabled.test.ts`, `win_backup` tests |
+| B-52 (fixed) | Med | Two enable flags could disagree (`topBar.enabled` vs `dock.showTopBar`) | config v4 migration, `topbarEnabled.test.ts`, `win_backup` tests |
 | suspected | Low | Halo ignores Windows' "Transparency effects: off" | `TopBarSurface.css:449` |
 | suspected | Low | Clicks on the Dashboard button while the flag flips off mid-session leave a stale hit rect until the next layout | `clickThrough.ts` reports on layout change only |
 | B-14 | — | Approval pill hotkey text (fixed) | #72 |
@@ -129,7 +129,7 @@ POLISH
  - refresh Top Bar icons to the Quick Settings chip style
 CHECK
  - stale hit rect when the Dashboard flag flips
- - DONE #113 per-monitor bars keep one bar per display (B-44); two-display real-PC check still needed
+ - DONE #113 per-monitor bars keep one bar per display (B-53); two-display real-PC check still needed
 TESTS  bun test src; E2E topbar-* (tests/e2e/autohide.mjs); add tab-strip click-through E2E
 OWNER CHECK  7-step list in this file
 ```

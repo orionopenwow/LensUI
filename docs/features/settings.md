@@ -80,7 +80,7 @@ Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & 
 | B-40 | Low | Switches unmount after one click (still open); the duplicate "Animation effects" name is fixed (the row is "Windows animation effects") | hyper `known.json` |
 | B-41 | Low | Corner picker radios not clickable where drawn | hyper `known.json` |
 | B-18 | Low | 27 swallowed errors in Settings | grep |
-| B-43 (fixed) | Med | Two Top Bar enable flags shown as one switch | see topbar.md |
+| B-52 (fixed) | Med | Two Top Bar enable flags shown as one switch | see topbar.md |
 | suspected | Low | Search ranks a Guide row above its own page when the page label is a partial match ("Sound" vs "Sound output device") | `search.ts:83` scoring weights |
 
 ## One idea to push to main

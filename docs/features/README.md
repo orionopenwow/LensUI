@@ -6,8 +6,8 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 
 | Feature | File | Status | Top quick win | Top bug | Idea to push |
 |---|---|---|---|---|---|
-| Dock | [dock.md](dock.md) | works | Left/right edge E2E (hidden settings now in Dock & Bar › Advanced, #113) | B-18 swallowed errors (per-monitor bars + follow-the-pointer fixed as B-44, needs a real-PC check) | "Dock in 10 seconds" ghost tour after a style change |
-| Top Bar | [topbar.md](topbar.md) | works | Halo off switch (one enable flag done in #113, B-43) | Halo ignores Windows' transparency-off (suspected) | Focus strip under the clock |
+| Dock | [dock.md](dock.md) | works | Left/right edge E2E (hidden settings now in Dock & Bar › Advanced, #113) | B-18 swallowed errors (per-monitor bars + follow-the-pointer fixed as B-53, needs a real-PC check) | "Dock in 10 seconds" ghost tour after a style change |
+| Top Bar | [topbar.md](topbar.md) | works | Halo off switch (one enable flag done in #113, B-52) | Halo ignores Windows' transparency-off (suspected) | Focus strip under the clock |
 | Settings | [settings.md](settings.md) | works | Fix B-41 corner picker (page merge and "Lens Apps" done in #113) | B-41, B-40 unmounting switches (B-39 fixed in #113) | "Recently changed" strip with Undo |
 | Themes & backdrops | [themes.md](themes.md) | works | Contrast audit for every pack (Dock-only duplicates merged, audit regenerated in #113) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
 | Window styling | [windows-styling.md](windows-styling.md) | partly | Caption engine uses `win_rules::ANTI_CHEAT_FRAGMENTS` + honours `excluded_processes` | Engine's private anti-cheat list misses most of the 42 names (suspected, safety) | Per-app window rules page with locked "Protected" badge |

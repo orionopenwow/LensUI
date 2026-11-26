@@ -2,7 +2,7 @@
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works** (built, tested), **partly** (built with gaps), **broken** (known wrong), **not built**. Evidence is a path, a test name or a BUGS.md id. Reviewed against `main` on 2026-11-26.
 >
-> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (Dock & Bar › Advanced, incl. the pop-out auto-close switch); per-monitor bars + Follow the pointer fixed in planning and unit-tested (B-44, not yet confirmed on a real PC). Left: quick wins 3–5, the "in 10 seconds" tour.
+> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (Dock & Bar › Advanced, incl. the pop-out auto-close switch); per-monitor bars + Follow the pointer fixed in planning and unit-tested (B-53, not yet confirmed on a real PC). Left: quick wins 3–5, the "in 10 seconds" tour.
 
 ## Rundown
 
@@ -90,7 +90,7 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
 | Target monitor | primary / a specific one / all (`perMonitorBars`) | partly — "all" is extra Top Bars only (one Dock); extra bars don't have their own auto-hide or click-through | `MonitorPickerCard.tsx`, `integration.rs` |
-| Follow the pointer | Push into another monitor's edge to move the bars; with per-monitor bars the extra Top Bar in the way swaps to the monitor the main bar left | works on CI by unit tests; real-PC unconfirmed | #101; `win_monitors::extra_topbar_plan` (B-44) |
+| Follow the pointer | Push into another monitor's edge to move the bars; with per-monitor bars the extra Top Bar in the way swaps to the monitor the main bar left | works on CI by unit tests; real-PC unconfirmed | #101; `win_monitors::extra_topbar_plan` (B-53) |
 | Re-place on display change, resolution, DPI, sleep | | works | #101 |
 
 ### 9. Dock studio
@@ -119,7 +119,7 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | B-18 | Low | 34 swallowed errors in the Dock | `DockSurface.tsx` |
 | B-30 | Low | Desktop tab and edge shelf still resize their native windows | `DesktopFolderSurface.tsx`, `EdgeShelfSurface.tsx` |
 | B-31b | Low | A renderer that dies during a start-up window build waits for the build | `app/setup.rs` |
-| B-44 (fixed) | Med | Per-monitor bars + Follow the pointer: there is one Dock, so nothing fights over the reveal zone; the real fault was the extra Top Bars staying where they were built (two bars on one monitor, none on another). Fixed by `extra_topbar_plan`; needs a two-display real-PC check | `integration.rs`, `win_monitors.rs` tests |
+| B-53 (fixed) | Med | Per-monitor bars + Follow the pointer: there is one Dock, so nothing fights over the reveal zone; the real fault was the extra Top Bars staying where they were built (two bars on one monitor, none on another). Fixed by `extra_topbar_plan`; needs a two-display real-PC check | `integration.rs`, `win_monitors.rs` tests |
 | suspected | Low | Islands style with attention badge + ThumbDesk badge on the same icon overlap | `DockSurface.css` badge rules |
 | suspected | Low | Live previews on a Dock placed left/right open beside the icon but the hover card's arrow is drawn for bottom | `win_previews.rs` placement, no left/right test |
 
@@ -163,7 +163,7 @@ POLISH
  - cross-fade the pill on style change; name + keyboard for preview thumbnails
  - "Smart" auto-hide one-line explanation; badge positions on Islands
 CHECK
- - DONE #113 (unit tests, B-44) per-monitor bars + follow-the-pointer together; needs two real displays
+ - DONE #113 (unit tests, B-53) per-monitor bars + follow-the-pointer together; needs two real displays
  - previews on left/right edges
 DON'T
  - change hit zones or watcher focus rules without the autohide E2E family green
