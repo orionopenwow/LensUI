@@ -147,10 +147,12 @@ pub fn status() -> (bool, bool, u32, u32, String) {
 }
 
 /// The E2E (tests/e2e/run.mjs) drives the gesture with SendInput; it starts Lens with
-/// `LENS_E2E_INJECTED_INPUT` set. Lens's own injected events never count.
+/// `LENS_E2E_INJECTED_INPUT` set. Debug builds only (release builds always ignore injected input,
+/// like the key hook). Lens's own injected events never count.
 fn test_input(e: &MouseEvent) -> bool {
     static ALLOW: OnceLock<bool> = OnceLock::new();
-    e.extra != LENS_EXTRA_INFO && *ALLOW.get_or_init(|| std::env::var_os("LENS_E2E_INJECTED_INPUT").is_some())
+    e.extra != LENS_EXTRA_INFO
+        && *ALLOW.get_or_init(|| cfg!(debug_assertions) && std::env::var_os("LENS_E2E_INJECTED_INPUT").is_some())
 }
 
 fn key_down(vk: u16) -> bool {
