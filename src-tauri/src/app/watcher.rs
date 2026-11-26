@@ -625,6 +625,13 @@ pub(crate) fn spawn_watcher(
                                 &mut search_idle_since,
                                 Instant::now(),
                             );
+                            if tick % 8 == 0 || close {
+                                eprintln!(
+                                    "[Lens UI] [watcher] search open: palette fg={} bar fg={} pointer in={} clicked={} close={} phase={:?}",
+                                    pal_focused, bar_focused, pointer_in, clicked, close,
+                                    crate::app::surface_state::snapshot().into_iter().find(|(k, _)| k == "palette").map(|(_, v)| v)
+                                );
+                            }
                             if close {
                                 bg_topbar_search_open.store(false, std::sync::atomic::Ordering::Relaxed);
                                 crate::commands::surfaces::glide_hide_surface(&watcher_handle, "palette");

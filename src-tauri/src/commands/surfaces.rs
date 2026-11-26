@@ -147,7 +147,26 @@ fn finish_hide(app: &AppHandle, label: &str, generation: u64) {
     use crate::app::surface_state::{self, Step};
     if surface_state::acknowledge_hidden(label, generation) == Step::HideNow {
         if let Some(w) = app.get_webview_window(label) {
-            let _ = w.hide();
+            hide_window_really(&w);
+        }
+    }
+}
+
+/// Hides a window for certain. A window shown without activation goes through a raw
+/// `ShowWindow(SW_SHOWNOACTIVATE)` (see `glide_show_surface`), which Tauri doesn't see: Tauri
+/// still believes it is hidden, so its `hide()` changes nothing and the window stayed on screen
+/// (Search opened from the Top Bar never closed, and held the bar up). Hide it natively as well.
+pub(crate) fn hide_window_really(w: &tauri::WebviewWindow) {
+    let _ = w.hide();
+    #[cfg(windows)]
+    if let Ok(raw) = w.hwnd() {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{IsWindowVisible, ShowWindow, SW_HIDE};
+        unsafe {
+            let h = HWND(raw.0 as *mut _);
+            if IsWindowVisible(h).as_bool() {
+                let _ = ShowWindow(h, SW_HIDE);
+            }
         }
     }
 }
