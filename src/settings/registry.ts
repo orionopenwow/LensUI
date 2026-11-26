@@ -418,6 +418,7 @@ export const PAGES: PageDef[] = [
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },
       { id: "tester", label: "Tester Hub" },
+      { id: "magic", label: "Magic (preview)", keywords: ["magic dashboard", "magic mouse", "magic button", "shelf notes", "studio", "preview"] },
     ],
   },
 ];

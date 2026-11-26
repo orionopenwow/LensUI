@@ -8,7 +8,7 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { join, resolve } from "node:path";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const root = resolve(import.meta.dirname, "../..");
 const outDir = join(root, "tests/e2e/out");
@@ -286,7 +286,10 @@ try {
   await sleep(2000);
   // A fresh profile opens the first-run setup in Settings; a focused Settings window (rightly)
   // holds the Dock up, so finish it and close every flyout before measuring auto-hide.
-  await setConfig(s, (c) => { c.onboardingCompleted = true; });
+  // Both markers: with only onboardingCompleted, the setup reopens as "What's new" because the
+  // seen version doesn't match, and its Settings window then holds the Top Bar up mid-test.
+  const appVersion = JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8")).version;
+  await setConfig(s, (c) => { c.onboardingCompleted = true; c.setupSeenVersion = appVersion; });
   for (const f of ["settings", ...FLYOUTS]) await invoke(surfaces(s).dock, "hide_surface", { label: f }).catch(() => {});
   await sleep(800);
   const original = await invoke(surfaces(s).dock, "get_config");
@@ -301,6 +304,10 @@ try {
       results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.message || e) });
       console.log(`FAIL ${sc.id}: ${sc.title}\n      ${String(e.message || e).replace(/\n/g, "\n      ")}`);
       await surfaces(s).topbar?.screenshot({ path: join(outDir, `autohide-${sc.id}-topbar.png`) }).catch(() => {});
+      const cfgNow = await invoke(surfaces(s).dock, "get_config").catch(() => null);
+      const openNow = [];
+      for (const f of ["settings", ...FLYOUTS]) if (await invoke(surfaces(s).dock, "is_surface_visible_cmd", { label: f }).catch(() => false)) openNow.push(f);
+      console.log(`      state: topBar.autoHide=${cfgNow?.topBar?.autoHide} setupSeen=${cfgNow?.setupSeenVersion} open=[${openNow.join(", ")}]`);
       const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|palette|surface/i.test(l)).slice(-14);
       if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     } finally {

@@ -39,18 +39,20 @@ try {
     push(action, `"${phrase}" previews as ${action}`, ok, JSON.stringify(intent).slice(0, 300));
   }
   // Run one reversible intent end to end and put it back.
+  // "toggle theme" twice: works whether Lens starts light or dark (first-run setup now picks the
+  // mode from Windows, which is light on the CI runner).
   const before = await invoke(dock, "get_config");
-  const light = await invoke(dock, "ai_intent", { text: "light mode" });
-  const runOk = await invoke(dock, "ai_run_intent", { intent: light }).then(() => true, (e) => String(e));
+  const toggle = await invoke(dock, "ai_intent", { text: "toggle theme" });
+  const runOk = await invoke(dock, "ai_run_intent", { intent: toggle }).then(() => true, (e) => String(e));
   await sleep(2000);
   const mid = await invoke(dock, "get_config");
-  const dark = await invoke(dock, "ai_intent", { text: "dark mode" });
-  await invoke(dock, "ai_run_intent", { intent: dark }).catch(() => {});
+  const back = await invoke(dock, "ai_intent", { text: "toggle theme" });
+  await invoke(dock, "ai_run_intent", { intent: back }).catch(() => {});
   await sleep(2000);
   const after = await invoke(dock, "get_config");
   if (runOk !== true) push("set_color_mode", "runs and changes the look", false, `ai_run_intent: ${runOk}`);
   else {
-    push("set_color_mode", "running it changes the look", JSON.stringify(mid.theme) !== JSON.stringify(before.theme), "theme unchanged after \"light mode\"");
+    push("set_color_mode", "running it changes the look", JSON.stringify(mid.theme) !== JSON.stringify(before.theme), `theme unchanged after "toggle theme" (preset ${before.theme?.preset})`);
     push("set_color_mode", "running the opposite puts the look back", after.theme?.preset === before.theme?.preset, `preset ${before.theme?.preset} → ${after.theme?.preset}`);
   }
   await invoke(dock, "save_config_cmd", { newConfig: before }).catch(() => {});

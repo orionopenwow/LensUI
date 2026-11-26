@@ -391,6 +391,11 @@ pub struct LensConfig {
     /// Tester mode: TEST BUILD badge and the Ctrl+Alt+M mark-moment hotkey. Off by default.
     #[serde(default)]
     pub tester: TesterConfig,
+    /// Magic Dashboard, Magic Mouse, the Magic button, Shelf → Notes and Lens Studio v2
+    /// (docs/plans/MAGIC_WAVES.md). Every flag is off by default; while off, nothing new is
+    /// shown, started, hooked or fetched.
+    #[serde(default)]
+    pub magic_waves: MagicWavesConfig,
 }
 
 impl Default for LensConfig {
@@ -562,6 +567,7 @@ impl Default for LensConfig {
             ai: Default::default(),
             command: serde_json::Value::Null,
             tester: TesterConfig::default(),
+            magic_waves: MagicWavesConfig::default(),
         }
     }
 }
@@ -851,6 +857,59 @@ impl LensConfig {
 pub struct TesterConfig {
     /// Shows the "TEST BUILD <sha>" badge and enables the Mark-moment hotkey.
     pub enabled: bool,
+}
+
+/// Feature flags and options for the Magic waves (docs/plans/MAGIC_WAVES.md). All flags default
+/// to off. The scaffold only stores them; later waves read them.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MagicWavesConfig {
+    /// Magic Dashboard (opened from a Top Bar button and Command "dashboard").
+    pub dashboard: bool,
+    /// Widgets lane on the Dashboard (sandboxed widgets; Lens fetches approved sources only).
+    pub widgets: bool,
+    /// Magic Mouse mode: the Lens pointer set and hold-then-drag grab.
+    pub mouse: bool,
+    /// How long the left button is held before a drag becomes a Magic grab (ms).
+    pub mouse_hold_ms: u32,
+    /// Magic button: a Windows-key tap opens Lens Magic Start (Ctrl+Esc still opens Windows Start).
+    pub start_button: bool,
+    /// Shelf → Notes summary and export.
+    pub shelf_notes: bool,
+    /// Lens Studio v2 (Dock / Theme / Desktop workspaces with undo).
+    pub studio_v2: bool,
+    /// Learned ordering on the Dashboard (local only, with "Why this is here").
+    pub learn: bool,
+}
+
+impl Default for MagicWavesConfig {
+    fn default() -> Self {
+        Self {
+            dashboard: false,
+            widgets: false,
+            mouse: false,
+            mouse_hold_ms: 400,
+            start_button: false,
+            shelf_notes: false,
+            studio_v2: false,
+            learn: false,
+        }
+    }
+}
+
+// Used by the Magic waves from M1 on (and the scaffold tests today).
+#[cfg_attr(not(test), allow(dead_code))]
+impl MagicWavesConfig {
+    /// Clamp values that came from disk or an import into their allowed ranges.
+    pub fn sanitized(mut self) -> Self {
+        self.mouse_hold_ms = self.mouse_hold_ms.clamp(200, 1200);
+        self
+    }
+
+    /// True when any Magic feature is on (used to skip all Magic work when everything is off).
+    pub fn any_on(&self) -> bool {
+        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn
+    }
 }
 
 #[cfg(test)]
