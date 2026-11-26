@@ -54,6 +54,13 @@ if (params.get("look") && isFeatured(preset)) config = applyFeaturedLook(config,
 // ?shape=expressive|dotmatrix and ?dockStyle=islands: style-layer scenes (tools/parity/styles).
 if (params.get("shape")) config.theme.shapeStyle = params.get("shape");
 if (params.get("dockStyle")) config.dock.style = params.get("dockStyle");
+// ?magic=dashboard,studioV2,… turns on Magic preview flags (and Tester mode, which shows the
+// Settings › About › Magic (preview) section) for the Magic scaffold scenes.
+if (params.get("magic")) {
+  const on = Object.fromEntries((params.get("magic") || "").split(",").filter(Boolean).map((f) => [f, true]));
+  config.tester = { enabled: true };
+  config.magicWaves = { dashboard: false, widgets: false, mouse: false, mouseHoldMs: 400, startButton: false, shelfNotes: false, studioV2: false, learn: false, ...on };
+}
 W.__lensConfig = () => config;
 W.__lensSetConfig = (c: any) => { config = c; };
 const win = (hwnd: number, title: string, proc: string, exe: string, focused = false) => ({ hwnd, title, processName: proc, exePath: exe, isFocused: focused, isMinimized: false, isMaximized: focused, iconDataUrl: null });

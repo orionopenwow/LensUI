@@ -205,7 +205,7 @@ Each wave: one or more PRs, ≤ 3 agents in parallel, merged one at a time when 
 
 | Wave | Model | Deliverables | Exit criteria | Tests | You check by hand |
 |---|---|---|---|---|---|
-| **M0 Scaffold** | Opus | §6 scaffold: surfaces, routes, stores, types, feature flags (all off), Settings cards (disabled copy), docs | Builds; flags off = zero new windows, hooks, timers or network; hyper inventory lists every new setting | Unit tests for stores and flags; visual parity scenes for empty states | Nothing changes on your desktop with flags off |
+| **M0 Scaffold** (feature/magic-scaffold) | Opus | §6 scaffold: surfaces, routes, stores, types, feature flags (all off), Settings cards (disabled copy), docs | Builds; flags off = zero new windows, hooks, timers or network; hyper inventory lists every new setting | Unit tests for stores and flags; visual parity scenes for empty states | Nothing changes on your desktop with flags off |
 | **M1 Dashboard core** | Opus | Dashboard surface + Glance/Focus/Board presets; lanes for Inbox, Feeds, Shelf, Today; context strip; Ask about this (local) | Opens < 150 ms warm; no lane fetches unless its source is connected; Why-this-is-here on reordered cards | Perf budget scenario; hyper set/restore; E2E open/close every way | Open it from the Dock, Top Bar, Command; connect Bluesky; see counts from Slack/Discord spaces |
 | **M2 Widgets** | Opus | Lens widget format (plugin + Adaptive Card + Feed/API), widget gallery (5–8 curated), Lens-side fetch with approvals | Sandbox tests: no network from widgets; endpoint approval required; size caps | Plugin sandbox tests extended; fixture widgets | Add a weather and a GitHub widget; revoke a site |
 | **M3 Magic Mouse** | Opus | Lens cursor set (all sizes, high-contrast variant), halo, hold/grab gestures, region capture → OCR/images/video/Shelf/Claude, auto rules | Restores the previous scheme on exit/crash/Remove all; paused in fullscreen and anti-cheat; pointer move path unchanged in cost | Cursor encoder tests at 32–128 px; E2E grab → Shelf; restore after simulated crash | Use it for an hour: normal clicking, text selection, a game (it steps aside), grab text from a PDF |
@@ -242,6 +242,14 @@ What the polish wave does across all of these, after the features work:
 ---
 
 ## 6. Scaffold plan (wave M0, Opus)
+
+**Built (branch feature/magic-scaffold).** Differences from the table below, on purpose:
+- Flags live in `config.magicWaves` (Rust `MagicWavesConfig`), not `config.magic`, because `magic` is already the right-click Magic config. `studio.v2` became `magicWaves.studioV2`; `magicWaves.mouseHoldMs` (400, 200–1200) is the grab hold time.
+- No Settings page of its own yet: the cards are a **Magic (preview)** section in About & Testing, shown only in Tester mode or once a flag is on.
+- No new window, command or hook is registered: the Dashboard, Magic Start and Studio are components previewed in that section; the Top Bar button (`src/dashboard/TopBarDashboardButton.tsx`) renders nothing while the flag is off and is not mounted yet.
+- Rust is pure state in `src-tauri/src/magic_waves/` (mouse apply/restore decisions incl. restore-after-crash, Dashboard layout store, widget fetch stub that never fetches); `win_keyhook.rs` is untouched — the Magic button contract is `src/magic/start/startButton.ts` until M4 wires it.
+- Parity: `tools/parity/magicwaves/shoot.mjs` (flags off and on, dark and light) runs in the Visual parity job. The hyper inventory (PR #94) is not on main yet; its entries come with M1.
+
 
 All behind flags that default **off**; no network, no hooks, no timers when off.
 
