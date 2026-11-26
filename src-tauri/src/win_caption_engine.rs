@@ -67,6 +67,46 @@ fn now_ms() -> u64 {
 }
 
 static CORNER_RADIUS_PX: AtomicI32 = AtomicI32::new(8);
+
+mod ffi {
+    use windows::Win32::Foundation::HWND;
+    #[link(name = "user32")]
+    extern "system" {
+        pub fn SendMessageTimeoutW(hwnd: HWND, msg: u32, wparam: usize, lparam: isize, flags: u32, timeout_ms: u32, result: *mut usize) -> isize;
+        pub fn ShowWindow(hwnd: HWND, cmd: i32) -> i32;
+        pub fn GetForegroundWindow() -> HWND;
+        pub fn KillTimer(hwnd: HWND, id: usize) -> i32;
+        pub fn SetTimer(hwnd: HWND, id: usize, ms: u32, proc_: *const core::ffi::c_void) -> usize;
+        pub fn keybd_event(vk: u8, scan: u8, flags: u32, extra: usize);
+    }
+    pub const SW_HIDE: i32 = 0;
+    pub const WM_NCHITTEST: u32 = 0x0084;
+    pub const SMTO_ABORTIFHUNG: u32 = 0x0002;
+    pub const KEYEVENTF_KEYUP: u32 = 0x0002;
+    pub const VK_LWIN: u8 = 0x5B;
+    pub const VK_Z: u8 = 0x5A;
+}
+
+/// After a window changes size (a maximise, snap, restore or an interactive resize), its overlay
+/// stays hidden until this long after the last size change, then reappears once its caption
+/// colour has settled — so it never trails a window that is still animating or being dragged.
+const RESIZE_QUIET_MS: u64 = 260;
+/// Hovering the green (maximise) dot this long opens Windows' snap layouts (Win+Z), the way the
+/// native maximise button does on Windows 11.
+const SNAP_HOVER_MS: u32 = 650;
+const SNAP_TIMER_ID: usize = 7;
+
+/// Asks the window what is at a screen point (`WM_NCHITTEST`), giving up at once if it is hung.
+unsafe fn nc_hit(hwnd: HWND, x: i32, y: i32) -> u32 {
+    let mut res: usize = 0;
+    let lp = (((y as i16 as u16 as u32) << 16) | (x as i16 as u16 as u32)) as i32 as isize;
+    let ok = ffi::SendMessageTimeoutW(hwnd, ffi::WM_NCHITTEST, 0, lp, ffi::SMTO_ABORTIFHUNG, 40, &mut res);
+    if ok == 0 {
+        0
+    } else {
+        res as u32
+    }
+}
 static MANAGER_HWND: AtomicIsize = AtomicIsize::new(0);
 
 #[derive(Clone, Copy)]
@@ -87,6 +127,11 @@ struct CaptionSlot {
     settle_until_ms: u64,
     /// The overlay has been shown (a new one waits for a stable read).
     shown: bool,
+    /// The target window's size when last placed; a change means a maximise, snap or resize.
+    tw: i32,
+    th: i32,
+    /// Hidden while the target is still changing size, until then.
+    quiet_until_ms: u64,
 }
 
 thread_local! {
@@ -98,6 +143,11 @@ thread_local! {
     /// Round-robin cursor: one settled window is re-read per tick, so a caption that changes
     /// later (a theme switch, an app repainting) is caught within a few seconds.
     static RR: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    /// The native caption buttons' size per window, keyed by the window's size and DPI (probing
+    /// asks the window a few dozen questions, so it runs once per size, not on every tick).
+    static PROBES: RefCell<HashMap<isize, (i32, i32, u32, Option<(i32, i32)>)>> = RefCell::new(HashMap::new());
+    /// Which slot (0..3) the pointer is over, per overlay, for the snap-layouts hover.
+    static HOVER_SLOT: RefCell<HashMap<isize, usize>> = RefCell::new(HashMap::new());
 }
 
 pub fn set_caption_engine_config(enabled: bool, order: &str, border_radius: u32) {
@@ -381,6 +431,17 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
     }
 
     let dpi = GetDpiForWindow(hwnd).max(96);
+    let (win_w, win_h) = (rect.right - rect.left, rect.bottom - rect.top);
+    let key = hwnd.0 as isize;
+    let cached = PROBES.with(|p| p.borrow().get(&key).copied());
+    let probed = match cached {
+        Some((w, h, d, r)) if w == win_w && h == win_h && d == dpi => r,
+        _ => {
+            let r = paint::probe_caption_buttons(|x, y| nc_hit(hwnd, x, y), rect.right, rect.top, dpi as f32 / 96.0);
+            PROBES.with(|p| p.borrow_mut().insert(key, (win_w, win_h, dpi, r)));
+            r
+        }
+    };
     // Caption height: Chromium browsers draw their own 38 px tab strip; otherwise DWM's own
     // caption-button bounds when they look like real buttons (this follows maximised windows,
     // whose caption is shorter); otherwise the standard 31 px. Per-row colour sampling keeps the
@@ -402,7 +463,12 @@ unsafe fn enum_targets_cb_guarded(hwnd: HWND, lparam: LPARAM) -> BOOL {
             BASE_H
         }
     };
-    let (cap_w, cap_h) = paint::overlay_size(dpi, base_h);
+    let (cap_w, mut cap_h) = paint::overlay_size(dpi, base_h);
+    // The window's own answer wins: cover the native buttons' full height, in physical pixels,
+    // so no strip of them is left under the dots (tall tab captions, maximised windows).
+    if let Some((_, ph)) = probed {
+        cap_h = ph;
+    }
     let is_topmost = (ex & WS_EX_TOPMOST.0) != 0;
 
     targets.push(EnumTarget {
@@ -459,6 +525,7 @@ unsafe fn clear_all_slots() {
             }
             map.clear();
             ROWS.with(|r| r.borrow_mut().clear());
+            PROBES.with(|p| p.borrow_mut().clear());
         });
     });
 }
@@ -488,8 +555,30 @@ unsafe fn fast_move_single_slot(hwnd: HWND) -> bool {
         }
     }
 
-    let x = rect.right - slot.w - 1;
-    let y = rect.top + 1;
+    let (tw, th) = (rect.right - rect.left, rect.bottom - rect.top);
+    if slot.tw != 0 && (tw != slot.tw || th != slot.th) {
+        // A maximise, snap, restore or resize: the caption's height and colour may change and
+        // the window may still be animating. Hide now; the next sync after it has been still for
+        // a moment re-measures and shows it again.
+        if slot.shown {
+            let _ = ffi::ShowWindow(slot.overlay, ffi::SW_HIDE);
+        }
+        slot.shown = false;
+        slot.quiet_until_ms = now_ms() + RESIZE_QUIET_MS;
+        slot.tw = tw;
+        slot.th = th;
+        SLOTS.with(|s| {
+            s.borrow_mut().insert(key, slot);
+        });
+        let mgr = HWND(MANAGER_HWND.load(Ordering::Relaxed) as *mut _);
+        if !mgr.0.is_null() {
+            // A follow-up sync once the window has been still (a maximise has no move-size-end).
+            let _ = ffi::SetTimer(mgr, 2, RESIZE_QUIET_MS as u32 + 20, std::ptr::null());
+        }
+        return true;
+    }
+    let x = rect.right - slot.w;
+    let y = rect.top;
     if x != slot.x || y != slot.y {
         slot.x = x;
         slot.y = y;
@@ -548,6 +637,7 @@ unsafe fn sync_all_windows(mode: Resample) {
                     let _ = DestroyWindow(slot.overlay);
                 }
                 ROWS.with(|r| r.borrow_mut().remove(&key));
+                PROBES.with(|p| p.borrow_mut().remove(&key));
             }
         });
     });
@@ -567,8 +657,10 @@ unsafe fn sync_all_windows(mode: Resample) {
     // 2. Sync each active window from bottom to top (reverse Z-order) so stacking settles cleanly
     for target in targets.iter().rev() {
         let key = target.hwnd.0 as isize;
-        let x = target.rect.right - target.cap_w - 1;
-        let y = target.rect.top + 1;
+        // Flush with the window's top-right corner: the native Close button reaches the very edge,
+        // and a 1 px gap let the pointer reach it there.
+        let x = target.rect.right - target.cap_w;
+        let y = target.rect.top;
 
         let existing = SLOTS.with(|s| s.borrow().get(&key).copied());
 
@@ -586,6 +678,9 @@ unsafe fn sync_all_windows(mode: Resample) {
             created_ms: now,
             settle_until_ms: now + SETTLE_AFTER_EVENT_MS,
             shown: false,
+            tw: target.rect.right - target.rect.left,
+            th: target.rect.bottom - target.rect.top,
+            quiet_until_ms: 0,
         };
 
         // If topmost band changed on target, recreate overlay in the matching Z-band
@@ -648,7 +743,8 @@ unsafe fn sync_all_windows(mode: Resample) {
         let rows_changed = old_rows.as_deref() != Some(rows.as_slice());
         // A new overlay waits until two reads agree (the app has painted its caption) or a short
         // time has passed, so it never appears in a colour the title bar is only passing through.
-        let show = slot.shown || (!is_new_slot && !rows_changed) || now >= slot.created_ms + SHOW_NEW_AFTER_MS;
+        let quiet = now < slot.quiet_until_ms;
+        let show = !quiet && (slot.shown || (!is_new_slot && !rows_changed) || now >= slot.created_ms + SHOW_NEW_AFTER_MS);
         if rows_changed {
             ROWS.with(|r| r.borrow_mut().insert(key, rows.clone()));
         }
@@ -669,6 +765,8 @@ unsafe fn sync_all_windows(mode: Resample) {
         slot.order = order;
         slot.corner_r = cur_corner_r;
         slot.shown = show;
+        slot.tw = target.rect.right - target.rect.left;
+        slot.th = target.rect.bottom - target.rect.top;
         SLOTS.with(|s| {
             s.borrow_mut().insert(key, slot);
         });
@@ -733,6 +831,12 @@ unsafe fn win_event_cb_guarded(
     if id_object != OBJID_WINDOW.0 || hwnd.0.is_null() {
         return;
     }
+    if event == EVENT_SYSTEM_MINIMIZESTART {
+        // Hide before the minimise animation starts, so the dots never fly down with it.
+        if let Some(slot) = SLOTS.with(|s| s.borrow().get(&(hwnd.0 as isize)).copied()) {
+            let _ = ffi::ShowWindow(slot.overlay, ffi::SW_HIDE);
+        }
+    }
     if event == EVENT_OBJECT_LOCATIONCHANGE {
         // 0.015ms zero-lag drag path for tracked windows; falls back to full sync only if untracked/minimized
         if fast_move_single_slot(hwnd) {
@@ -772,7 +876,13 @@ unsafe fn manager_wnd_proc_guarded(
             LRESULT(0)
         }
         WM_TIMER => {
-            sync_all_windows(Resample::Settling);
+            if wparam.0 == 2 {
+                let _ = ffi::KillTimer(hwnd, 2);
+                // Some window just changed size: re-measure and re-read every caption.
+                sync_all_windows(Resample::All { settle_ms: SETTLE_AFTER_EVENT_MS });
+            } else {
+                sync_all_windows(Resample::Settling);
+            }
             LRESULT(0)
         }
         _ => DefWindowProcW(hwnd, msg, wparam, lparam),
@@ -808,6 +918,18 @@ unsafe fn caption_wnd_proc_guarded(
         WM_MOUSEMOVE => {
             let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
             if let Some(key) = target_key {
+                // Snap layouts: arm a timer while the pointer rests on the green (maximise) dot.
+                if let Some(slot) = SLOTS.with(|s| s.borrow().get(&key).copied()) {
+                    let mx = (lparam.0 & 0xFFFF) as i16 as i32;
+                    let si = paint::slot_at(slot.w, mx);
+                    let prev = HOVER_SLOT.with(|h| h.borrow_mut().insert(hwnd.0 as isize, si));
+                    if prev != Some(si) {
+                        let _ = ffi::KillTimer(hwnd, SNAP_TIMER_ID);
+                        if slot_buttons(ORDER.load(Ordering::Relaxed))[si] == 0 {
+                            let _ = ffi::SetTimer(hwnd, SNAP_TIMER_ID, SNAP_HOVER_MS, std::ptr::null());
+                        }
+                    }
+                }
                 let mut need_paint = None;
                 SLOTS.with(|s| {
                     if let Some(slot) = s.borrow_mut().get_mut(&key) {
@@ -831,7 +953,26 @@ unsafe fn caption_wnd_proc_guarded(
             }
             LRESULT(0)
         }
+        WM_TIMER if wparam.0 == SNAP_TIMER_ID => {
+            let _ = ffi::KillTimer(hwnd, SNAP_TIMER_ID);
+            let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
+            let on_green = HOVER_SLOT
+                .with(|h| h.borrow().get(&(hwnd.0 as isize)).copied())
+                .is_some_and(|si| slot_buttons(ORDER.load(Ordering::Relaxed))[si] == 0);
+            if let (Some(key), true) = (target_key, on_green) {
+                // Win+Z opens snap layouts for the window in front; only offer it for that window.
+                if ffi::GetForegroundWindow().0 as isize == key {
+                    ffi::keybd_event(ffi::VK_LWIN, 0, 0, 0);
+                    ffi::keybd_event(ffi::VK_Z, 0, 0, 0);
+                    ffi::keybd_event(ffi::VK_Z, 0, ffi::KEYEVENTF_KEYUP, 0);
+                    ffi::keybd_event(ffi::VK_LWIN, 0, ffi::KEYEVENTF_KEYUP, 0);
+                }
+            }
+            LRESULT(0)
+        }
         WM_MOUSELEAVE => {
+            let _ = ffi::KillTimer(hwnd, SNAP_TIMER_ID);
+            HOVER_SLOT.with(|h| h.borrow_mut().remove(&(hwnd.0 as isize)));
             let target_key = OVERLAY_TO_TARGET.with(|m| m.borrow().get(&(hwnd.0 as isize)).copied());
             if let Some(key) = target_key {
                 let mut need_paint = None;
