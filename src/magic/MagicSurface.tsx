@@ -278,6 +278,11 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
         }
         return note("Use “Get transcript” from the Lens browser extension for web videos.", false);
       }
+      if (kind === "search") {
+        // Lens Magic Search in its own pop-out (or Lens Browser's side panel when it is in front).
+        await invoke("magic_search_open", { query: t.text ?? t.url ?? t.path ?? t.label, action: null });
+        return hide();
+      }
       if (kind === "command") {
         await invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: t.text ?? t.url ?? t.path ?? t.label } });
         return hide();

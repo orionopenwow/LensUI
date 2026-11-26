@@ -92,6 +92,23 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
   places after preview — works.
 - Windows 11 compact menu top-level — **not built** (needs signed sparse MSIX + IExplorerCommand).
 
+### 2.5b Magic selection bar and Magic Search (off by default; `feature/selection-bar`)
+- Select text anywhere → a non-activating matte bar 8 px below the selection end: Cut / Copy /
+  Paste (only when they'd work: editable = UIA ValuePattern writable or TextEditPattern; Paste needs
+  clipboard text), Magic Search, up to 9 catalogue actions (surface `selectionBar`), More. Built,
+  not yet confirmed on a real PC. Spec and status: `docs/plans/SELECTION_BAR.md` §8.
+- Rules: `src-tauri/src/clip/bar.rs` (placement, availability, gestures, hide rules),
+  `clip/smart.rs` (local classifier), `clip/selection_rules.rs` (policy v2, everywhere minus
+  exclusions, migration), `commands/selection_bar.rs` (window, keys, hotkeys).
+- Magic Search: `src/magic/search/*`, `commands/magic_search.rs`, aggregator `magic_search.rs`
+  (DuckDuckGo HTML + Wikipedia through the approved-site fetch path; stubbed in E2E). Reachable
+  from the bar, Command ("magic search …"), the Magic window / Lens › panels (`magic_search`
+  action) and an optional hotkey. In Lens Browser it goes to the browser's side panel.
+- Settings: AI & Command › Selection bar (`SelectionBarCard.tsx`, `config.selectionBar`).
+- Tests: Rust units in the files above; `selectionBar.test.ts`, `magicSearch.test.ts`; parity
+  `tools/parity/magic` scenes `selbar*`, `msearch*`; goldens `selection-bar-*`, `magic-search-*`;
+  E2E `selection-bar` (Notepad).
+
 ### 2.6 Magic waves (all behind `config.magicWaves`, off by default)
 - **M0 scaffold** (#103) — merged: flags (dashboard, widgets, mouse, mouseHoldMs 400 [200–1200],
   startButton, shelfNotes, studioV2, learn), Tester-only "Magic (preview)" section, mouse/start

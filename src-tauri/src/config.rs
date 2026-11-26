@@ -413,6 +413,10 @@ pub struct LensConfig {
     /// shown, started, hooked or fetched.
     #[serde(default)]
     pub magic_waves: MagicWavesConfig,
+    /// The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md). Off by default;
+    /// where it may read is the selection policy (`clip/selection_rules.rs`, selection.json).
+    #[serde(default)]
+    pub selection_bar: SelectionBarConfig,
 }
 
 impl Default for LensConfig {
@@ -586,6 +590,7 @@ impl Default for LensConfig {
             command: serde_json::Value::Null,
             tester: TesterConfig::default(),
             magic_waves: MagicWavesConfig::default(),
+            selection_bar: SelectionBarConfig::default(),
         }
     }
 }
@@ -933,3 +938,114 @@ impl MagicWavesConfig {
 #[cfg(test)]
 #[path = "tests/config_writer.rs"]
 mod config_writer_tests;
+
+/// Settings › Magic › Selection bar (docs/plans/SELECTION_BAR.md §4). Everything here is about
+/// how the bar looks and behaves; *whether Lens may read a selection in an app* stays in the
+/// selection policy (selection.json), checked by `clip::selection_rules::may_read` every time.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SelectionBarConfig {
+    /// The bar after a finished text selection. Off by default.
+    pub enabled: bool,
+    /// Button labels: "off" (icons only), "hover", "always".
+    pub labels: String,
+    pub show_cut: bool,
+    pub show_copy: bool,
+    pub show_paste: bool,
+    /// The Magic Search button.
+    pub show_search: bool,
+    /// Your actions, in order: catalogue ids (`src/context/actions.catalog.json`, surface
+    /// "selectionBar") or `custom:…` prompt actions.
+    pub actions: Vec<String>,
+    /// Actions shown before ⋯ More (3–9).
+    pub max_actions: u32,
+    /// Direct global hotkeys: action id → "Ctrl+Alt+T". None by default; conflict-checked.
+    pub hotkeys: std::collections::BTreeMap<String, String>,
+    /// Magic Search's own global hotkey ("" = none, the default).
+    pub search_hotkey: String,
+    pub trigger_drag: bool,
+    pub trigger_double_click: bool,
+    pub trigger_triple_click: bool,
+    /// Wait after the mouse is released, 0–600 ms.
+    pub delay_ms: u32,
+    /// Shortest selection that opens the bar.
+    pub min_chars: u32,
+    /// "below" (flips above at the edge), "above", "pointer".
+    pub placement: String,
+    /// Hides on its own after this long (0 = never). 1.5–30 s.
+    pub auto_hide_ms: u32,
+    /// Hides when the pointer moves this far from it (physical px, 40–600).
+    pub hide_distance_px: u32,
+    /// Smart actions and the inline preview line (local only).
+    pub smart: bool,
+    /// Smart kinds turned off (`clip::smart::SmartKind` ids).
+    pub smart_off: Vec<String>,
+    /// Frequent actions float up within the unpinned ones (local counts). Off by default.
+    pub learn: bool,
+    /// Per-app action sets: exe name → action ids (replaces `actions` in that app).
+    pub per_app: std::collections::BTreeMap<String, Vec<String>>,
+    /// AI provider per action ("local" | "default" | "claude"); unset = the action's own.
+    pub providers: std::collections::BTreeMap<String, String>,
+    /// Magic Search: web results through the configured search engine (shown with every source).
+    pub web_results: bool,
+    /// Magic Search: matches from Shelf, clipboard history, notes and recent files (local only).
+    pub local_results: bool,
+}
+
+impl Default for SelectionBarConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            labels: "hover".into(),
+            show_cut: true,
+            show_copy: true,
+            show_paste: true,
+            show_search: true,
+            actions: vec!["ask".into(), "translate".into(), "explain".into(), "shelf_add".into()],
+            max_actions: 4,
+            hotkeys: Default::default(),
+            search_hotkey: String::new(),
+            trigger_drag: true,
+            trigger_double_click: true,
+            trigger_triple_click: true,
+            delay_ms: 120,
+            min_chars: 2,
+            placement: "below".into(),
+            auto_hide_ms: 4000,
+            hide_distance_px: 120,
+            smart: true,
+            smart_off: Vec::new(),
+            learn: false,
+            per_app: Default::default(),
+            providers: Default::default(),
+            web_results: true,
+            local_results: true,
+        }
+    }
+}
+
+impl SelectionBarConfig {
+    /// Values from disk or an import, pulled into their allowed ranges.
+    pub fn sanitized(mut self) -> Self {
+        if !matches!(self.labels.as_str(), "off" | "hover" | "always") {
+            self.labels = "hover".into();
+        }
+        if !matches!(self.placement.as_str(), "below" | "above" | "pointer") {
+            self.placement = "below".into();
+        }
+        self.max_actions = self.max_actions.clamp(3, 9);
+        self.delay_ms = crate::clip::bar::clamp_delay(self.delay_ms);
+        self.min_chars = self.min_chars.clamp(1, 50);
+        self.auto_hide_ms = crate::clip::bar::clamp_auto_hide(self.auto_hide_ms);
+        self.hide_distance_px = crate::clip::bar::clamp_away(self.hide_distance_px);
+        let ok_id = |s: &String| !s.is_empty() && s.len() <= 64 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':'));
+        self.actions.retain(ok_id);
+        self.actions.dedup();
+        self.actions.truncate(9);
+        self.hotkeys.retain(|k, v| ok_id(k) && v.len() <= 40);
+        self.search_hotkey = self.search_hotkey.trim().chars().take(40).collect();
+        self.per_app.retain(|k, v| !k.is_empty() && k.len() <= 120 && v.len() <= 9);
+        self.providers.retain(|k, v| ok_id(k) && matches!(v.as_str(), "local" | "default" | "claude"));
+        self
+    }
+}

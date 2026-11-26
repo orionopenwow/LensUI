@@ -45,6 +45,7 @@ pub const SWITCHES: &[Switch] = &[
     Switch { id: "appSummon", label: "App hotkeys", paths: &["appSummon.enabled"] },
     Switch { id: "ai", label: "Lens AI", paths: &["ai.enabled"] },
     Switch { id: "command", label: "Lens Command", paths: &["command.enabled"] },
+    Switch { id: "selectionBar", label: "Magic selection bar", paths: &["selectionBar.enabled"] },
 ];
 
 static SAFE_MODE: AtomicBool = AtomicBool::new(false);

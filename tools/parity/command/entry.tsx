@@ -5,7 +5,7 @@ import "../../../src/styles/tokens.css";
 import "../../../src/styles/global.css";
 import { CommandSurface, type CommandInitial } from "../../../src/command/CommandSurface";
 import { EdgeShelfSurface } from "../../../src/command/mini/EdgeShelfSurface";
-import { BubbleSurface } from "../../../src/command/mini/BubbleSurface";
+import { SelectionBar } from "../../../src/magic/selection/SelectionBar";
 import type { ContextChip, ThreadItem } from "../../../src/command/thread";
 
 const p = new URLSearchParams(location.search);
@@ -88,7 +88,7 @@ if (scene.startsWith("edge-")) {
 } else if (scene === "bubble") {
   root.render(
     <Desktop side="center">
-      <div style={{ width: 32, height: 32 }}><BubbleSurface initial={{ chars: 64 }} /></div>
+      <SelectionBar initial={{ show: { seq: 1, chars: 64, app: "C:\\Windows\\notepad.exe", category: "notes", cut: true, copy: true, paste: false, pastePreview: false, editable: true, smart: null } }} />
     </Desktop>
   );
 } else if (miniScenes[scene]) {

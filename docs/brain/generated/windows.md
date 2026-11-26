@@ -2,7 +2,7 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (25)
+## Declared windows (26)
 
 | Label | Visible at start | Size |
 |---|---|---|
@@ -20,7 +20,8 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `cursorfx` | no (on demand) | 1920×1080 |
 | `command` | no (on demand) | 1000×640 |
 | `edgeshelf` | no (on demand) | 6×96 |
-| `bubble` | no (on demand) | 32×32 |
+| `bubble` | no (on demand) | 360×48 |
+| `magicsearch` | no (on demand) | 420×520 |
 | `testerhub` | no (on demand) | 760×860 |
 | `studio` | no (on demand) | 1280×820 |
 | `voicehud` | no (on demand) | 480×560 |
@@ -32,7 +33,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `magicstart` | no (on demand) | 640×680 |
 | `dashboard` | no (on demand) | 440×720 |
 
-## Frontend routes (33) — `index.html?surface=<id>`
+## Frontend routes (34) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -50,7 +51,8 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `cursorfx` | `./surfaces/CursorFxSurface` | declared |
 | `command` | `./command/CommandSurface` | declared |
 | `edgeshelf` | `./command/mini/EdgeShelfSurface` | declared |
-| `bubble` | `./command/mini/BubbleSurface` | declared |
+| `bubble` | `./magic/selection/SelectionBar` | declared |
+| `magicsearch` | `./magic/search/MagicSearch` | declared |
 | `browser` | `./browser/BrowserSurface` | built at runtime |
 | `snip` | `./snip/SnipSurface` | built at runtime |
 | `magic` | `./magic/MagicSurface` | built at runtime |

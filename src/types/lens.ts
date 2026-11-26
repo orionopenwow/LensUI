@@ -206,6 +206,8 @@ export interface LensConfig {
   tester?: { enabled: boolean };
   /** Magic waves feature flags (docs/plans/MAGIC_WAVES.md); all off by default. */
   magicWaves?: Gen.MagicWavesConfig;
+  /** The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md); off by default. */
+  selectionBar?: Gen.SelectionBarConfig;
 }
 
 /** OS fields are optional on the frontend: older backends and the initial state omit them. */

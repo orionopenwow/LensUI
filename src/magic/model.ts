@@ -228,8 +228,11 @@ export function onKey(s: KeyState, key: string, set: RowSet, targets: number): K
 
 // ---- requests -------------------------------------------------------------------------------------
 
-const PROMPTS: Record<string, string> = {
+/** The instruction each catalogue action sends with the item (shared with the selection bar's
+ *  answers in Magic Search). */
+export const PROMPTS: Record<string, string> = {
   ask: "Answer the question about this.",
+  define: "Define this word or term in one or two short sentences, then give one example sentence.",
   summarize: "Summarise this as a short TL;DR and 3–5 key points.",
   explain: "Explain this simply, with one example.",
   translate: "Translate this into English (or into the user's language if it is already English).",
@@ -282,9 +285,10 @@ export function markdownFor(t: MagicTarget): string {
 }
 
 /** Which actions the surface can run itself without the AI (and how). */
-export function localKind(row: Row): "window" | "copy" | "shelf" | "command" | "media" | "ai" {
+export function localKind(row: Row): "window" | "copy" | "shelf" | "command" | "media" | "search" | "ai" {
   if (row.windowAction) return "window";
   const id = row.action?.id ?? "";
+  if (id === "magic_search") return "search";
   if (id === "copy_md") return "copy";
   if (id === "micro_save" || id === "shelf_add") return "shelf";
   if (id === "transcribe" || id === "yt_transcript") return "media";

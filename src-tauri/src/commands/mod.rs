@@ -27,6 +27,8 @@ pub(crate) mod feeds;
 pub(crate) mod messages;
 pub(crate) mod media;
 pub(crate) mod clip;
+pub(crate) mod selection_bar;
+pub(crate) mod magic_search;
 pub(crate) mod magic;
 pub(crate) mod shelf;
 pub(crate) mod rightclick;
