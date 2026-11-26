@@ -137,17 +137,29 @@ pub(crate) fn kick(label: &str) {
     let Some(label) = GUARDED.iter().copied().find(|l| *l == label) else {
         return;
     };
-    if running().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
-        // Diagnostic (B-31): a running watch thread polls every quarter second.
-        let idle = ticks().lock().unwrap_or_else(|e| e.into_inner()).get(label).map(|t| t.elapsed());
-        if let Some(idle) = idle.filter(|d| *d > Duration::from_secs(2)) {
-            eprintln!("[Lens UI] The load guard for the {label} page has not looked for {}ms (busy: {}).", idle.as_millis(), busy_with(label));
-        }
-        return;
-    }
     let Some(app) = app_handle().get().cloned() else {
         return;
     };
+    if running().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
+        // A running watch thread in its keep-alive loop polls every quarter second and reloads the
+        // page itself. One still busy starting up (waiting for the first load, or showing the
+        // windows) would not get there in time (B-31): reload the page from here instead.
+        let busy = busy_with(label);
+        if matches!(busy, "waiting" | "probing" | "reloading") {
+            return;
+        }
+        let idle = ticks().lock().unwrap_or_else(|e| e.into_inner()).get(label).map(|t| t.elapsed()).unwrap_or_default();
+        let app2 = app.clone();
+        thread::spawn(move || {
+            let main = match main_thread_answers(&app2, Duration::from_secs(1)) {
+                Some(d) => format!("the main thread answers in {}ms", d.as_millis()),
+                None => "the main thread did not answer within 1s".to_string(),
+            };
+            eprintln!("[Lens UI] The load guard for the {label} page is busy ({busy}, {}ms); {main}. Reloading it directly.", idle.as_millis());
+            revive(&app2, label);
+        });
+        return;
+    }
     eprintln!("[Lens UI] No load guard was watching the {label} page; starting one to reload it.");
     crate::tester::log("warn", "loadguard", &format!("no watch thread for {label}; restarted"));
     thread::spawn(move || {
@@ -157,6 +169,26 @@ pub(crate) fn kick(label: &str) {
         let original = app.get_webview_window(label).and_then(|w| page_url(&w, Duration::from_secs(2)));
         keep_alive(&app, label, original.as_ref());
     });
+}
+
+/// Reloads a guarded page whose renderer exited while its watch thread was busy elsewhere.
+/// Consumes the "dead" mark first, so the watch thread does not reload it a second time.
+#[cfg_attr(test, allow(dead_code))]
+fn revive(app: &AppHandle, label: &'static str) {
+    static REVIVING: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    let set = REVIVING.get_or_init(|| Mutex::new(HashSet::new()));
+    if !set.lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()) {
+        return;
+    }
+    if crate::app::renderer::take_dead(label) {
+        surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+        if !recover_now(app, label, None, "stopped answering (its renderer exited)") {
+            eprintln!("[Lens UI] The {label} page did not come back after a direct reload.");
+        }
+        beat(label);
+        crate::app::renderer::watch_window(app, label);
+    }
+    set.lock().unwrap_or_else(|e| e.into_inner()).remove(label);
 }
 
 /// The address of the page in `win`, or None if the main thread does not answer within `limit`.
@@ -169,22 +201,62 @@ fn page_url(win: &tauri::WebviewWindow, limit: Duration) -> Option<tauri::Url> {
     rx.recv_timeout(limit).ok().flatten()
 }
 
-fn hide(app: &AppHandle, label: &str) {
-    if let Some(win) = app.get_webview_window(label) {
+/// Runs `f` on a helper thread and waits at most `limit` for it. Window calls made from a
+/// watch thread are answered by the main thread; at start-up the main thread can be busy for a
+/// long time (a start-up window build, B-31), and a watch thread that waited for it could not
+/// reload a page whose renderer died meanwhile. Returns whether `f` finished in time.
+fn bounded(limit: Duration, f: impl FnOnce() + Send + 'static) -> bool {
+    let (tx, rx) = std::sync::mpsc::channel();
+    thread::spawn(move || {
+        f();
+        let _ = tx.send(());
+    });
+    rx.recv_timeout(limit).is_ok()
+}
+
+/// How long a watch thread waits for a window call before moving on.
+const WINDOW_CALL_LIMIT: Duration = Duration::from_secs(3);
+
+fn hide(app: &AppHandle, label: &'static str) {
+    let Some(win) = app.get_webview_window(label) else {
+        return;
+    };
+    if !bounded(WINDOW_CALL_LIMIT, move || {
         let _ = win.set_ignore_cursor_events(true);
         let _ = win.hide();
+    }) {
+        eprintln!("[Lens UI] Hiding the {label} window is taking long; the load guard carries on.");
     }
 }
 
-/// Puts the surfaces back on screen as soon as their pages are ready.
+/// Puts the surfaces back on screen as soon as their pages are ready. Never holds up the watch
+/// thread for more than [`WINDOW_CALL_LIMIT`]: the positioning finishes on its own thread.
 fn show_now(app: &AppHandle) {
-    let cfg = app
-        .state::<crate::app::AppState>()
-        .config
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .clone();
-    crate::app::watcher::position_dock_and_bars(app, &cfg);
+    let app2 = app.clone();
+    if !bounded(WINDOW_CALL_LIMIT, move || {
+        let cfg = app2
+            .state::<crate::app::AppState>()
+            .config
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        crate::app::watcher::position_dock_and_bars(&app2, &cfg);
+    }) {
+        eprintln!("[Lens UI] Placing the Dock and bars is taking long (the main thread is busy); the load guard carries on.");
+    }
+}
+
+/// Whether the main thread runs a task within `limit` (B-31 diagnostic).
+#[cfg_attr(test, allow(dead_code))]
+fn main_thread_answers(app: &AppHandle, limit: Duration) -> Option<Duration> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let asked = Instant::now();
+    if app.run_on_main_thread(move || {
+        let _ = tx.send(());
+    }).is_err() {
+        return None;
+    }
+    rx.recv_timeout(limit).ok().map(|_| asked.elapsed())
 }
 
 fn watch(app: AppHandle, label: &'static str) {
@@ -494,6 +566,14 @@ mod tests {
         assert!(beat_age("settings").is_none());
         beat("desktopfolder");
         assert!(beat_age("desktopfolder").is_some_and(|a| a < Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn a_slow_window_call_never_holds_the_watch_thread() {
+        let started = Instant::now();
+        assert!(!bounded(Duration::from_millis(50), || thread::sleep(Duration::from_millis(400))));
+        assert!(started.elapsed() < Duration::from_millis(300), "returned after the limit, not after the call");
+        assert!(bounded(Duration::from_secs(2), || {}));
     }
 
     #[test]
