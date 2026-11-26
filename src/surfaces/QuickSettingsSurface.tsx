@@ -926,7 +926,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   <Activity size={14} color="var(--lens-fg)" />
                   Open Full Widget Drawer
                 </span>
-                <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)" }}>Alt+W</span>
+                <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)" }}>{config?.func.widgetsHotkey || "Ctrl+Alt+W"}</span>
               </button>
 
               <button

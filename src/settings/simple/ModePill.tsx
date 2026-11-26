@@ -1,23 +1,19 @@
-// The Simple / Advanced pill: a two-option radiogroup with a sliding thumb. It sits at the top of
-// the Settings sidebar and again at the bottom, so it is in reach wherever you are in the list.
+// The Simple / Advanced pill: a two-option radiogroup with a sliding thumb, once, at the top of the
+// Settings sidebar. (A second copy at the bottom read as a duplicate setting and was removed.)
 import React from "react";
 import type { SettingsMode } from "./mode";
 import "./simple.css";
 
-export const ModePill: React.FC<{ mode: SettingsMode; onChange: (m: SettingsMode) => void; place: "top" | "bottom" }> = ({
-  mode,
-  onChange,
-  place,
-}) => {
+export const ModePill: React.FC<{ mode: SettingsMode; onChange: (m: SettingsMode) => void }> = ({ mode, onChange }) => {
   const opts: { id: SettingsMode; label: string }[] = [
     { id: "simple", label: "Simple" },
     { id: "advanced", label: "Advanced" },
   ];
   return (
     <div
-      className={`ss-pill ss-pill-${place} ${mode === "advanced" ? "is-adv" : ""}`}
+      className={`ss-pill ss-pill-top ${mode === "advanced" ? "is-adv" : ""}`}
       role="radiogroup"
-      aria-label={place === "top" ? "Settings detail" : "Settings detail (bottom)"}
+      aria-label="Settings detail"
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
           e.preventDefault();

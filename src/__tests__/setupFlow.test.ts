@@ -1,5 +1,5 @@
 // Lens setup (docs/SETUP.md): when it opens, and that Skip and Finish write only what they say.
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -11,9 +11,14 @@ import {
   markSeen,
   NO_CHOICES,
   setupReason,
+  suggestFromDesktop,
+  isLightLook,
+  DEFAULT_DARK_LOOK,
+  DEFAULT_LIGHT_LOOK,
   whatsNewSince,
   type SetupStatus,
 } from "../setup/flow";
+import { packById } from "../themes/packs";
 import { FEATURED_LOOKS } from "../themes/featured";
 import { sampleConfig } from "./fixtures";
 import { parseChangelog, render } from "../../tools/setup/whats-new.mjs";
@@ -120,5 +125,29 @@ describe("pages", () => {
     const root = join(import.meta.dir, "../..");
     const expected = render(parseChangelog(readFileSync(join(root, "CHANGELOG.md"), "utf8")));
     expect(readFileSync(join(root, "src/setup/whatsNew.ts"), "utf8")).toBe(expected);
+  });
+});
+
+describe("setup starts from the person's desktop colours", () => {
+  const looks = FEATURED_LOOKS.map((l) => ({ id: l.id, accent: packById(l.id)?.accent ?? "#888888" }));
+  it("follows Windows' light or dark app mode", () => {
+    expect(suggestFromDesktop({ windowsAccent: "#0078D4", wallpaperAccent: null, lightApps: false }, looks).scheme).toBe("dark");
+    expect(suggestFromDesktop({ windowsAccent: "#0078D4", wallpaperAccent: null, lightApps: true }, looks).scheme).toBe("light");
+  });
+  it("starts from the wallpaper's colour, else follows Windows", () => {
+    expect(suggestFromDesktop({ windowsAccent: "#0078D4", wallpaperAccent: "#E0457B", lightApps: false }, looks).accent).toBe("#E0457B");
+    expect(suggestFromDesktop({ windowsAccent: "#0078D4", wallpaperAccent: null, lightApps: false }, looks).accent).toBe("windows");
+  });
+  it("picks a look of the right scheme, and the neutral default for a grey desktop", () => {
+    for (const lightApps of [false, true]) {
+      const s = suggestFromDesktop({ windowsAccent: "#3A7BD5", wallpaperAccent: "#3A7BD5", lightApps }, looks);
+      expect(isLightLook(s.look)).toBe(lightApps);
+    }
+    expect(suggestFromDesktop({ windowsAccent: "#808080", wallpaperAccent: null, lightApps: false }, looks).look).toBe(DEFAULT_DARK_LOOK);
+    expect(suggestFromDesktop({ windowsAccent: "#808080", wallpaperAccent: null, lightApps: true }, looks).look).toBe(DEFAULT_LIGHT_LOOK);
+  });
+  it("is only a draft: applying no choices leaves the config untouched", () => {
+    const cfg = sampleConfig();
+    expect(applyChoices(cfg, NO_CHOICES, "")).toEqual(markSeen(cfg, ""));
   });
 });

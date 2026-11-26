@@ -16,7 +16,7 @@ B wins on friendliness: one obvious place to look, nothing covers the page, deep
 
 ## How it works
 
-- **The pill:** a Simple / Advanced pill sits at the top of the sidebar and again at its foot, so it's always in reach. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform.
+- **The pill:** one Simple / Advanced pill sits at the top of the sidebar. It's a radiogroup; the arrow keys switch it, and the thumb slides with a transform.
 - **Simple sidebar:** Quick, Appearance, Dock & Bar, Windows & Keys, AI & Command, Music, Display, Sound, Network and Power. The other pages fold under **··· More (N pages)**. A folded page you open from search or a link still shows.
 - **Card pages** (Appearance, Dock & Bar, Windows & Keys, AI & Command) open on visual cards. The whole original page sits below under **More options**, which reveals with a fade and slide (transform and opacity only). Nothing above it moves.
 - **Pages left as they are:** Music, Display, Sound (the mixer with its white fill bars), Network and Power are already essentials-only, so they show unchanged in Simple.

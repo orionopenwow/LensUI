@@ -109,7 +109,7 @@ function lensActions(cfg: LensConfig | null | undefined, update: UnifiedSearchOp
   });
   const out: SearchItem[] = [
     a("settings", "Lens Control Center", "Lens settings", "settings preferences control center lens", () => invoke("open_surface", { label: "settings" })),
-    a("widgets", "Widget Drawer", "Clock, stats and notes · Alt+W", "widgets telemetry notes", () => invoke("toggle_surface", { label: "widgets" })),
+    a("widgets", "Widget Drawer", "Clock, stats and notes", "widgets telemetry notes", () => invoke("toggle_surface", { label: "widgets" })),
     a("overview", "Show all windows", "Overview · Alt+`", "overview windows switcher alt tab mission control", () => invoke("toggle_surface", { label: "overview" })),
     a("quick", "Quick Settings", "Volume, brightness, night light", "quick settings volume brightness", () => invoke("open_quicksettings_tab_cmd", { tab: "quick" })),
     a("notifications", "Notifications", "Notification center", "notifications alerts bell", () => invoke("open_quicksettings_tab_cmd", { tab: "notifications", section: "notifications" })),

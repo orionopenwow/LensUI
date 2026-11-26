@@ -266,6 +266,53 @@ promise rejections are counted per command and reported.
 Known defects are matched in `KNOWN` in `tools/soak/run.mjs` and reported as `fixme(Fn)` rather
 than failures.
 
+## Hyper suite (every control, every surface, the rules)
+
+`tools/hyper/run.mjs` builds an inventory of everything Lens has and tests as much of it as a
+headless browser can, then writes a coverage report that lists every item as pass, fail or untested
+(with the reason). Real-Windows parts are separate E2E files whose results it folds in.
+
+**Inventory** (`tools/hyper/inventory.mjs`, generated, never hand-written): every setting and tool in
+the control catalogue (`src/control/catalogue.json`), every Settings page (`src/settings/registry.ts`),
+every row the Guide indexes (`src/guide/index.json`), every Command intent and its first phrasing
+(`src-tauri/src/ai/intent.rs`), every window (`src-tauri/tauri.conf.json`) and every row of
+`docs/brain/FEATURES.md`. Adding a setting, page, intent or window adds it to the report; to make
+it tested, give it a Settings switch or choice (picked up automatically), or add a check to
+`run.mjs` / an E2E file with `inventoryId` set to its inventory id.
+
+**Checks (headless, parity mock backend):**
+- Every switch on every Settings page: flips when clicked, writes only its own setting (catalogue
+  path when known, otherwise a small change), flipping back restores the settings byte for byte,
+  no errors; one per page (every one with `--full`) survives a reload. A switch that changes no
+  setting and doesn't move drives Windows directly and is listed as untested, not passed.
+- Every choice group (Segmented): every option can be picked, going back restores the settings.
+- Themes change colour only: every look on Appearance (every pack with `--full`) leaves the Dock,
+  Top Bar and behaviour settings alone.
+- Every window renders without errors in dark and light (plus high contrast and reduced motion
+  with `--full`), has no critical axe findings, and Esc closes every flyout.
+- Source rules: the Top Bar has one owner of shown/hidden, every flyout show path dismisses the
+  others, the change registry covers every change (`tools/changes/check.mjs`), and only the settings
+  writer writes `config.json`.
+
+**Real Windows** (E2E job): `tests/e2e/autohide.mjs` moves the real cursor through the Top Bar and
+Dock edges (idle hide, reveal, fast and slow leave, far corners, settings saves while hidden, Search
+and Quick Settings dismissed by click outside / Esc / another window / another flyout, smart dodge
+over a maximised window, Dock on the bottom and top) and checks the real window state after every
+step, sampling every 16 ms for flicker. `tests/e2e/intents.mjs` previews every Command intent from
+its own phrasing and runs dark ↔ light mode end to end.
+
+**Gate:** CI fails only on failures not in `tools/hyper/known.json`; each known failure has a row in
+`docs/brain/BUGS.md` with steps. When one is fixed the report lists it under "now pass": remove it.
+
+```sh
+node tools/robust/build.mjs && node tools/hyper/run.mjs     # quick tier (~3 min, every PR)
+node tools/hyper/run.mjs --full                              # nightly: both Settings modes, every pack, every reload, all variants
+node tools/hyper/run.mjs --write-known                       # accept today's failures as known (log each in BUGS.md first)
+node tests/e2e/autohide.mjs; node tests/e2e/intents.mjs     # Windows, after the E2E build
+```
+
+Reports: `tools/hyper/out/coverage.md` and `coverage.json` (uploaded with the robustness reports).
+
 ## App-side test hooks (snippets, not applied)
 
 The suites need nothing from the app today. They find elements by existing class names and roles,

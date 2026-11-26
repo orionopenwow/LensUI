@@ -1,0 +1,32 @@
+/* Settings › Windows & Keys › Keyboard shortcuts. */
+.ks-head { align-items: flex-start; }
+.ks-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; }
+.ks-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--lens-border);
+}
+.ks-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ks-name { font-size: 13px; color: var(--lens-fg); }
+.ks-sub { font-size: 11px; color: var(--lens-fg-secondary); }
+.ks-msg { font-size: 11px; color: var(--lens-fg-secondary); }
+.ks-msg.is-block { color: #f87171; }
+.ks-keys {
+  font: 600 11.5px/1 var(--lens-font-mono, ui-monospace, monospace);
+  color: var(--lens-fg);
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.05);
+  white-space: nowrap;
+}
+.ks-keys.is-recording {
+  cursor: text;
+  border-color: var(--lens-accent);
+  color: var(--lens-fg-secondary);
+  font-weight: 500;
+}
+.ks-change { font-size: 12px; }
