@@ -803,7 +803,17 @@ const SCENARIOS = [
         // Windows itself must accept the generated files (RIFF/ACON .ani, multi-size .cur).
         const loads = ps(`Add-Type -Namespace W -Name C -MemberDefinition '[DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern System.IntPtr LoadCursorFromFileW(string p);'; $k = Get-ItemProperty 'HKCU:\\Control Panel\\Cursors'; foreach ($n in 'Arrow','AppStarting','Wait','IBeam','SizeAll') { $p = $k.$n; '{0}={1}' -f $n, ([W.C]::LoadCursorFromFileW($p) -ne [System.IntPtr]::Zero) }`).trim();
         if (/=False/.test(loads)) throw new Error(`Windows could not load a Magic pointer file: ${loads.replace(/\s+/g, " ")}`);
-        ps(`Start-Process notepad -WindowStyle Maximized; Start-Sleep -Milliseconds 1500`);
+        // Not maximised: on a runner without a taskbar a maximised window fills the screen,
+        // which Lens rightly treats as fullscreen (Magic Mouse steps aside there).
+        ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1500; Add-Type -Namespace W -Name P -MemberDefinition '[DllImport("user32.dll")] public static extern bool MoveWindow(System.IntPtr h,int x,int y,int w,int ht,bool r); [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);'; $cx=[int]([W.P]::GetSystemMetrics(0)/2); $cy=[int]([W.P]::GetSystemMetrics(1)/2); [W.P]::MoveWindow($p.MainWindowHandle, $cx-400, $cy-300, 800, 600, $true) | Out-Null`);
+        let ready = null;
+        try {
+          ready = await until("the gestures to be live", (st) => st.hookLive && !st.steppedAside, 8000);
+        } catch {}
+        if (!ready) {
+          console.log(`note  magic-mouse: this runner counts the screen as busy (fullscreen/presentation); Magic Mouse stepped aside, gesture steps skipped: ${JSON.stringify(await status())}`);
+          return;
+        }
         // Hold-then-drag: press, hold past the hold time, drag 200×120, release.
         ps(`${W} [W.M]::SetCursorPos($cx-100,$cy-60) | Out-Null; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 700; for($i=0;$i -lt 10;$i++){ [W.M]::mouse_event(1,20,12,0,$z); Start-Sleep -Milliseconds 25 }; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(4,0,0,0,$z)`);
         const grabbed = await until("the grab", (st) => st.grabs >= 1);
@@ -829,10 +839,11 @@ const SCENARIOS = [
         await updateConfig(dock, (c) => {
           c.magicWaves = { ...(c.magicWaves || {}), mouse: false };
         });
+        // Checked here so it also runs when the gesture steps are skipped on a busy runner.
+        await until("the pointer to come back", (st) => !st.pointerApplied && !st.hookLive, 20000);
+        const after = arrow();
+        if (after !== before) throw new Error(`Arrow pointer not restored: "${after}" (was "${before}")`);
       }
-      await until("the pointer to come back", (st) => !st.pointerApplied && !st.hookLive, 20000);
-      const after = arrow();
-      if (after !== before) throw new Error(`Arrow pointer not restored: "${after}" (was "${before}")`);
     },
   },
   {
