@@ -17,29 +17,45 @@ import "./ambient.css";
 /* Settings: the backdrop lives in the wallpaper settings as the Playground scene "ambient".   */
 /* ------------------------------------------------------------------------------------------ */
 
+/** Pure: a backend reply replaces the shown wallpaper state only when it is one (B-40). */
+export function adoptWallpaperState(current: WallpaperState | null, reply: unknown): WallpaperState | null {
+  const r = reply as WallpaperState | null | undefined;
+  return r && typeof r === "object" && r.settings && typeof r.settings === "object" ? r : current;
+}
+
 /** Wallpaper state plus setters for the backdrop. */
 export function useAmbient() {
   const [state, setState] = useState<WallpaperState | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    const load = () => invoke<WallpaperState>("get_wallpaper_state_cmd").then(setState).catch(() => {});
+    // A failed read keeps what is shown; the next "wallpaper changed" event reads again.
+    const load = () =>
+      invoke<WallpaperState>("get_wallpaper_state_cmd")
+        .then((r) => setState((cur) => adoptWallpaperState(cur, r)))
+        .catch((e) => setError(`Couldn't read the wallpaper settings: ${String(e).replace(/^Error:\s*/, "")}`));
     load();
     const un = listen("lens://wallpaper-changed", load);
     return () => {
       un.then((f) => f());
     };
   }, []);
-  const save = useCallback(
-    async (next: WallpaperSettings) => {
-      setError(null);
-      try {
-        setState(await invoke<WallpaperState>("set_wallpaper_settings_cmd", { settings: next }));
-      } catch (e) {
-        setError(String(e));
-      }
-    },
-    []
-  );
+  const save = useCallback(async (next: WallpaperSettings) => {
+    setError(null);
+    // Optimistic: the switch shows the new value at once and stays mounted (and focused) while
+    // Lens saves; a refusal puts the old value back and says why.
+    let before: WallpaperState | null = null;
+    setState((cur) => {
+      before = cur;
+      return cur ? { ...cur, settings: next } : cur;
+    });
+    try {
+      const reply = await invoke<WallpaperState>("set_wallpaper_settings_cmd", { settings: next });
+      setState((cur) => adoptWallpaperState(cur, reply));
+    } catch (e) {
+      setState((cur) => before ?? cur);
+      setError(String(e).replace(/^Error:\s*/, ""));
+    }
+  }, []);
   const s = state?.settings;
   return {
     ready: !!s,
@@ -63,21 +79,24 @@ export async function enableAmbientBackdrop(): Promise<void> {
 /* UI                                                                                          */
 /* ------------------------------------------------------------------------------------------ */
 
-/** One switch for the current-theme hero in Theme & Look. */
+/** One switch for the current-theme hero in Theme & Look. Rendered (disabled) before the state
+ *  arrives, so it never pops in or out under the pointer or the keyboard focus (B-40). */
 export const AnimatedBackdropSwitch: React.FC = () => {
   const a = useAmbient();
-  if (!a.ready) return null;
   return (
-    <label className="amb-switch-row">
-      <span className="amb-switch-text">
-        <span className="amb-switch-label">Animated backdrop</span>
-        <span className="amb-switch-hint">A very slow, faint motion in this theme's colours</span>
-      </span>
-      <span className={`amb-switch ${a.on ? "on" : ""}`}>
-        <input type="checkbox" role="switch" aria-label="Animated backdrop" aria-checked={a.on} checked={a.on} onChange={(e) => a.setOn(e.target.checked)} />
-        <span className="amb-knob" />
-      </span>
-    </label>
+    <>
+      <label className="amb-switch-row">
+        <span className="amb-switch-text">
+          <span className="amb-switch-label">Animated backdrop</span>
+          <span className="amb-switch-hint">A very slow, faint motion in this theme's colours</span>
+        </span>
+        <span className={`amb-switch ${a.on ? "on" : ""}`}>
+          <input type="checkbox" role="switch" aria-label="Animated backdrop" aria-checked={a.on} checked={a.on} disabled={!a.ready} onChange={(e) => a.setOn(e.target.checked)} />
+          <span className="amb-knob" />
+        </span>
+      </label>
+      {a.error && <div className="amb-error" role="alert">Couldn't change the backdrop: {a.error}</div>}
+    </>
   );
 };
 
@@ -88,9 +107,10 @@ export const AmbientWallpaperOptions: React.FC = () => {
   return (
     <div className="amb-options">
       <div className="amb-row">
-        <span className="amb-row-label">Animated backdrop</span>
+        <span className="amb-row-label">Animated wallpaper</span>
         <span className={`amb-switch ${a.on ? "on" : ""}`}>
-          <input type="checkbox" role="switch" aria-label="Animated backdrop" checked={a.on} onChange={(e) => a.setOn(e.target.checked)} />
+          {/* Same setting as the hero's "Animated backdrop"; its own name so the two can be told apart. */}
+          <input type="checkbox" role="switch" aria-label="Animated wallpaper" aria-checked={a.on} checked={a.on} onChange={(e) => a.setOn(e.target.checked)} />
           <span className="amb-knob" />
         </span>
       </div>

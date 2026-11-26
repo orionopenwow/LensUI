@@ -110,7 +110,7 @@ export const BackupRestoreCard: React.FC = () => {
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Back Up &amp; Restore</div>
+      <div className="cc-label">Back up &amp; restore</div>
       <div className="cc-desc">
         Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved
         keys and tokens are always left out.
@@ -162,7 +162,7 @@ export const BackupRestoreCard: React.FC = () => {
 
       <div className="cc-row" style={{ marginTop: 6 }}>
         <div>
-          <div className="cc-label">Remove All Lens Changes</div>
+          <div className="cc-label">Remove all Lens changes</div>
           <div className="cc-desc">
             Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell
             mode and start-with-Windows. Use before uninstalling.

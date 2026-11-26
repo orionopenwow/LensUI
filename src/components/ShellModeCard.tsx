@@ -73,7 +73,7 @@ export const ShellModeCard: React.FC = () => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Shell Mode (advanced)</div>
+          <div className="cc-label">Shell mode (advanced)</div>
           <div className="cc-desc">
             Start Lens instead of the Windows taskbar and desktop when you sign in. This account only.
           </div>

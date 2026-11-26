@@ -3,6 +3,8 @@
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
 >
 > **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (one enable flag with a config v4 migration, B-52; sentence-case section), media controls row added; height, floating and the delays already had rows. Per-monitor bars keep one bar per display under Follow the pointer (B-53). Left: halo off switch, aria-label pass on the bar itself, focus strip.
+>
+> **Settings wave (2026-11-26):** halo switch done (Dock & Bar › Top Bar › Pointer halo, `topBar.pointerHalo`); the halo is never drawn while Windows' transparency effects are off (Lens Core already re-reads `EnableTransparency` every ~2 s with the theme; `topbar_hit::halo_for` and the page's `haloAllowed` apply the rule). The bar's aria-labels are sentence case. Pop-out close delay is a setting (Short / Normal / Long). Left: focus strip, icon refresh.
 
 ## Rundown
 

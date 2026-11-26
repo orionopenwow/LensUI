@@ -44,6 +44,102 @@ Text on the surface and on raised cards must reach 4.5:1; the accent must reach 
 | Solarized Matte | 14.4:1 | 12.6:1 | 4.8:1 | 4.2:1 |
 | Gruvbox Warm | 14.1:1 | 12.3:1 | 5.8:1 | 5.1:1 |
 
+### Contrast, every pack
+
+What each pack really paints: its surface (with the accent tint mixed in) and its raised cards, under the text tones of its scheme (tokens.css). Body text (primary and secondary) must reach 4.5:1 on both; muted text (hints, icons) and the accent must reach 3:1. Dark packs with lighter bases get brighter secondary and muted tones (marked ↑). Packs that follow the Windows accent are checked for text only. `src/__tests__/themeContrast.test.ts` fails on any pack below these lines.
+
+87 packs, 0 below a line.
+
+| Pack | Scheme | Surface · card | Text | Secondary | Muted | Accent |
+|---|---|---|---|---|---|---|
+| Alabaster Daylight | light | `#EEEEF0` · `#FFFFFF` | 15.3:1 | 6.7:1 | 5.1:1 | 4.5:1 |
+| Amber Monitor | dark | `#0A0500` · `#15100B` | 18.1:1 | 7.4:1 | 3.9:1 | 10.3:1 |
+| Aurora (Claude) | dark | `#14123A` · `#1F1D43` | 15.3:1 | 6.2:1 | 3.3:1 | 5.1:1 |
+| Base16 Cupcake | light | `#FBF1F2` · `#FFFFFF` | 16.0:1 | 7.0:1 | 5.4:1 | 3.0:1 |
+| Base16 Eighties | dark ↑ | `#2D2D2D` · `#363636` | 11.6:1 | 7.0:1 | 5.1:1 | 4.0:1 |
+| Base16 Ocean | dark ↑ | `#2B303B` · `#353944` | 11.1:1 | 6.7:1 | 4.9:1 | 4.3:1 |
+| Block Clouds | dark | `#0D173F` · `#182148` | 14.9:1 | 6.1:1 | 3.2:1 | 10.2:1 |
+| Blueprint | dark ↑ | `#0C2444` · `#172E4C` | 13.1:1 | 7.9:1 | 5.8:1 | 8.2:1 |
+| Braille Stars | dark | `#0A1430` · `#151F39` | 15.6:1 | 6.4:1 | 3.4:1 | 7.0:1 |
+| Catppuccin Frappé | dark ↑ | `#303446` · `#393D4E` | 10.3:1 | 6.2:1 | 4.6:1 | 6.6:1 |
+| Catppuccin Latte | light | `#EFF1F5` · `#FFFFFF` | 15.7:1 | 6.8:1 | 5.3:1 | 4.3:1 |
+| Catppuccin Macchiato | dark ↑ | `#24273A` · `#2E3143` | 12.3:1 | 7.4:1 | 5.4:1 | 8.1:1 |
+| Catppuccin Mocha | dark ↑ | `#1E1E2E` · `#282837` | 13.9:1 | 8.4:1 | 6.1:1 | 7.1:1 |
+| CGA-4 | dark | `#000000` · `#0B0B0B` | 18.9:1 | 7.7:1 | 4.1:1 | 16.1:1 |
+| Circit | light | `#FCF9F5` · `#FFFFFF` | 16.9:1 | 7.4:1 | 5.7:1 | 7.4:1 |
+| City Night | dark | `#272221` · `#151720` | 15.0:1 | 6.1:1 | 3.2:1 | 10.1:1 |
+| Claude Dark | dark | `#141413` · `#1F1F1E` | 15.8:1 | 6.4:1 | 3.4:1 | 6.6:1 |
+| Claude Dark Brand | dark | `#141413` · `#1F1F1E` | 15.8:1 | 6.4:1 | 3.4:1 | 4.2:1 |
+| Claude Dusk | dark ↑ | `#262624` · `#30302E` | 12.7:1 | 7.6:1 | 5.6:1 | 4.2:1 |
+| Claude Light | light | `#FAF9F5` · `#FFFFFF` | 16.8:1 | 7.3:1 | 5.7:1 | 3.1:1 |
+| Claude Midnight | dark | `#000000` · `#0B0B0B` | 18.9:1 | 7.7:1 | 4.1:1 | 6.3:1 |
+| Cyberpunk Amber | dark | `#0D0B09` · `#181614` | 17.3:1 | 7.0:1 | 3.7:1 | 14.9:1 |
+| Daltonized Dark | dark | `#0B0E14` · `#16191F` | 16.9:1 | 6.9:1 | 3.6:1 | 5.8:1 |
+| Daltonized Light | light | `#FFFFFF` · `#FFFFFF` | 17.7:1 | 7.7:1 | 6.0:1 | 6.1:1 |
+| Deep Water | dark ↑ | `#062C3A` · `#113543` | 12.5:1 | 7.5:1 | 5.5:1 | 9.6:1 |
+| Departure Board | dark | `#1A120B` · `#241D16` | 15.9:1 | 6.5:1 | 3.4:1 | 8.1:1 |
+| Desert Day | dark | `#34261A` · `#261E19` | 14.0:1 | 5.7:1 | 3.0:1 | 7.6:1 |
+| Dither Dunes | light | `#F1E8D6` · `#FFFFFF` | 14.6:1 | 6.4:1 | 4.9:1 | 3.5:1 |
+| Dither Dunes Night | dark | `#1C1712` · `#26211D` | 15.3:1 | 6.2:1 | 3.3:1 | 4.3:1 |
+| Dracula Glass | dark ↑ | `#282A36` · `#32343F` | 11.8:1 | 7.1:1 | 5.2:1 | 5.2:1 |
+| Ember | dark | `#2A0D12` · `#34181D` | 15.5:1 | 6.3:1 | 3.4:1 | 6.2:1 |
+| Everforest | dark ↑ | `#2D353B` · `#363E44` | 10.4:1 | 6.3:1 | 4.6:1 | 5.4:1 |
+| Everforest Light | light | `#FDF6E3` · `#FFFFFF` | 16.4:1 | 7.2:1 | 5.5:1 | 3.0:1 |
+| GitHub Dark | dark | `#0D1117` · `#181C21` | 16.4:1 | 6.7:1 | 3.5:1 | 6.8:1 |
+| GitHub Dark Dimmed | dark ↑ | `#22272E` · `#2C3137` | 12.6:1 | 7.6:1 | 5.6:1 | 4.6:1 |
+| GitHub Light | light | `#FFFFFF` · `#FFFFFF` | 17.7:1 | 7.7:1 | 6.0:1 | 5.2:1 |
+| Golden Hour | dark | `#35242A` · `#241B2A` | 14.0:1 | 5.7:1 | 3.0:1 | 8.6:1 |
+| Graphite | dark | `#18181C` · `#222226` | 15.2:1 | 6.2:1 | 3.3:1 | 6.2:1 |
+| Green Phosphor | dark | `#001A00` · `#0B240B` | 15.8:1 | 6.4:1 | 3.4:1 | 12.2:1 |
+| Gruvbox Light | light | `#FBF1C7` · `#FFFFFF` | 15.6:1 | 6.8:1 | 5.2:1 | 3.7:1 |
+| Gruvbox Warm | dark ↑ | `#282828` · `#323232` | 12.3:1 | 7.4:1 | 5.4:1 | 5.1:1 |
+| Halftone Dawn | light | `#F6EAD9` · `#FFFFFF` | 14.9:1 | 6.5:1 | 5.0:1 | 3.1:1 |
+| Halftone Dusk | dark ↑ | `#1F2336` · `#292D3F` | 13.1:1 | 7.9:1 | 5.8:1 | 3.5:1 |
+| High Contrast | dark | `#000000` · `#0B0B0B` | 18.9:1 | 7.7:1 | 4.1:1 | 10.4:1 |
+| High Contrast Pro | dark | `#000000` · `#0B0B0B` | 18.9:1 | 7.7:1 | 4.1:1 | 14.9:1 |
+| Honu Lagoon | light | `#E6FBFF` · `#FFFFFF` | 16.5:1 | 7.2:1 | 5.6:1 | 4.2:1 |
+| Hyprland Neon | dark | `#0A0C12` · `#15171D` | 17.2:1 | 7.0:1 | 3.7:1 | 9.6:1 |
+| Kanagawa Wave | dark ↑ | `#1F1F28` · `#292932` | 13.8:1 | 8.3:1 | 6.1:1 | 4.5:1 |
+| Koi Mosaic | light | `#EEF8F1` · `#FFFFFF` | 16.3:1 | 7.1:1 | 5.5:1 | 7.2:1 |
+| Lens Dot Matrix | dark | `#101013` · `#1B1B1E` | 16.5:1 | 6.7:1 | 3.6:1 | 15.6:1 |
+| Lens Expressive | dark | `#0B0B0E` · `#161619` | 17.3:1 | 7.0:1 | 3.7:1 | 17.3:1 |
+| Lens Expressive Light | light | `#EDEDF0` · `#FFFFFF` | 15.2:1 | 6.6:1 | 5.1:1 | 4.4:1 |
+| Midnight | dark | `#050507` · `#101012` | 18.2:1 | 7.4:1 | 3.9:1 | 6.4:1 |
+| Monokai | dark ↑ | `#272822` · `#31322C` | 12.4:1 | 7.5:1 | 5.5:1 | 5.3:1 |
+| Monokai Pro | dark ↑ | `#2D2A2E` · `#363437` | 11.8:1 | 7.1:1 | 5.2:1 | 9.0:1 |
+| Moonlight | dark | `#1E2336` · `#121626` | 14.9:1 | 6.1:1 | 3.2:1 | 10.5:1 |
+| Nature | dark | `#0F1F17` · `#1A2921` | 14.5:1 | 5.9:1 | 3.1:1 | 8.7:1 |
+| Night Reef | dark | `#0A1430` · `#151F39` | 15.6:1 | 6.4:1 | 3.4:1 | 8.1:1 |
+| Nord Frost | dark ↑ | `#2E3440` · `#373D49` | 10.4:1 | 6.3:1 | 4.6:1 | 5.4:1 |
+| Northern Lights | dark | `#102D2C` · `#0F1D24` | 14.0:1 | 5.7:1 | 3.0:1 | 10.3:1 |
+| Obsidian | dark | `#08080B` · `#111116` | 18.0:1 | 7.3:1 | 3.9:1 | 18.0:1 |
+| One Dark | dark ↑ | `#282C34` · `#32353D` | 11.8:1 | 7.1:1 | 5.2:1 | 5.2:1 |
+| One Half Light | light | `#FAFAFA` · `#FFFFFF` | 17.0:1 | 7.4:1 | 5.7:1 | 4.0:1 |
+| Paper Garden | light | `#FBF6EC` · `#FFFFFF` | 16.4:1 | 7.2:1 | 5.5:1 | 3.2:1 |
+| Paper Garden, Kraft | dark ↑ | `#35312A` · `#3E3A34` | 10.8:1 | 6.5:1 | 4.8:1 | 4.2:1 |
+| Paper Minimal | light | `#F5F1E8` · `#FFFFFF` | 15.7:1 | 6.9:1 | 5.3:1 | 4.6:1 |
+| Paper-White Mono | dark | `#0A0A0A` · `#151515` | 17.5:1 | 7.1:1 | 3.8:1 | 14.6:1 |
+| Plotter Tide | light | `#F4EFE4` · `#FFFFFF` | 15.5:1 | 6.7:1 | 5.2:1 | 3.9:1 |
+| Plotter Tide, Night | dark | `#141A27` · `#1F2431` | 14.8:1 | 6.0:1 | 3.2:1 | 6.1:1 |
+| Rosé Pine | dark | `#191724` · `#23212E` | 15.1:1 | 6.2:1 | 3.3:1 | 9.4:1 |
+| Rosé Pine Dawn | light | `#FAF4ED` · `#FFFFFF` | 16.2:1 | 7.1:1 | 5.5:1 | 3.5:1 |
+| Rosé Pine Moon | dark ↑ | `#232136` · `#2D2B3F` | 13.2:1 | 7.9:1 | 5.8:1 | 6.6:1 |
+| Seasons | dark ↑ | `#212E22` · `#1B241F` | 13.6:1 | 8.2:1 | 6.0:1 | 7.2:1 |
+| Sequoia Frost | dark | `#1E1E20` · `#28282A` | 14.1:1 | 5.7:1 | 3.0:1 | 4.0:1 |
+| Sky | dark | `#1E2647` · `#161D39` | 14.1:1 | 5.8:1 | 3.1:1 | 7.6:1 |
+| Snow Pines | dark | `#14143A` · `#1F1F43` | 15.1:1 | 6.1:1 | 3.3:1 | 9.1:1 |
+| Solarized Light | light | `#FDF6E3` · `#FFFFFF` | 16.4:1 | 7.2:1 | 5.5:1 | 3.4:1 |
+| Solarized Matte | dark ↑ | `#002B36` · `#0B353F` | 12.6:1 | 7.6:1 | 5.6:1 | 4.2:1 |
+| Synthwave | dark | `#0D0B1E` · `#181628` | 17.0:1 | 6.9:1 | 3.7:1 | 4.9:1 |
+| Terracotta | light | `#FDF6F0` · `#FFFFFF` | 16.6:1 | 7.2:1 | 5.6:1 | 5.9:1 |
+| Tides of Light | dark | `#162B36` · `#13202A` | 14.0:1 | 5.7:1 | 3.0:1 | 7.8:1 |
+| Tokyo Night | dark | `#1A1B26` · `#242530` | 14.6:1 | 5.9:1 | 3.1:1 | 6.0:1 |
+| Vector Range | dark ↑ | `#0E2F27` · `#193831` | 12.2:1 | 7.3:1 | 5.4:1 | 7.2:1 |
+| Warm Neutral | light | `#F5F0E8` · `#FFFFFF` | 15.6:1 | 6.8:1 | 5.2:1 | 3.6:1 |
+| Weather Window | dark | `#232933` · `#1D2028` | 14.0:1 | 5.7:1 | 3.0:1 | 6.8:1 |
+| White-Label Cyberpunk | dark | `#0A0612` · `#15111D` | 17.8:1 | 7.3:1 | 3.8:1 | 4.9:1 |
+| Windows Mesh | dark | `#12212C` · `#181B21` | 15.7:1 | 6.4:1 | 3.4:1 | Windows |
+
 ## Near-duplicates
 
 Pairs of listed packs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under 0.08 are the same theme on screen and are merged instead (next section), so none appears here.
@@ -58,8 +154,8 @@ Pairs of listed packs closer than 0.30, closest first. None of these is deleted:
 | 0.16 | Night Reef | Braille Stars | backdrop, accent |
 | 0.16 | Paper Garden | Claude Light | accent, chrome, shape, base |
 | 0.17 | Plotter Tide | Dither Dunes | backdrop, base |
+| 0.17 | Rosé Pine Dawn | Base16 Cupcake | accent, shape, base |
 | 0.17 | Halftone Dawn | Dither Dunes | backdrop, accent, base |
-| 0.18 | Rosé Pine Dawn | Base16 Cupcake | accent, shape, base |
 | 0.18 | GitHub Light | One Half Light | accent, base, shape |
 | 0.20 | Halftone Dawn | Paper Garden | backdrop, base, accent |
 | 0.20 | Halftone Dawn | Plotter Tide | backdrop, accent, base |
@@ -84,6 +180,7 @@ Pairs of listed packs closer than 0.30, closest first. None of these is deleted:
 | 0.26 | Solarized Light | One Half Light | backdrop, base, accent, chrome |
 | 0.27 | Sky | Night Reef | backdrop, shape, chrome, accent |
 | 0.27 | GitHub Dark Dimmed | Base16 Ocean | accent, base, shape |
+| 0.27 | One Half Light | Base16 Cupcake | accent, shape, chrome, base |
 | 0.27 | Claude Light | Terracotta | accent, chrome |
 | 0.28 | Halftone Dusk | Dither Dunes Night | base, backdrop |
 | 0.28 | GitHub Dark Dimmed | Base16 Eighties | backdrop, accent, base, shape |
@@ -93,7 +190,6 @@ Pairs of listed packs closer than 0.30, closest first. None of these is deleted:
 | 0.28 | Catppuccin Mocha | Rosé Pine | accent, base, shape |
 | 0.28 | Tokyo Night | One Dark | base, accent, chrome, shape |
 | 0.29 | Paper Garden | Rosé Pine Dawn | accent, shape |
-| 0.29 | One Half Light | Base16 Cupcake | accent, shape, chrome, base |
 | 0.29 | Blueprint | Monokai Pro | base, accent, shape |
 | 0.30 | Braille Stars | Aurora (Claude) | accent, backdrop, base |
 
@@ -130,13 +226,13 @@ The other 75 packs, filed under the featured look each is closest to. Community 
 | Daltonized Light | 0.20 | GitHub Light (0.09) |
 | GitHub Light | 0.21 | Daltonized Light (0.09) |
 | One Half Light | 0.26 | GitHub Light (0.18) |
-| Base16 Cupcake | 0.37 | Rosé Pine Dawn (0.18) |
-| Rosé Pine Dawn | 0.40 | Base16 Cupcake (0.18) |
+| Base16 Cupcake | 0.36 | Rosé Pine Dawn (0.17) |
+| Rosé Pine Dawn | 0.40 | Base16 Cupcake (0.17) |
 | Solarized Light | 0.41 | One Half Light (0.26) |
 | Lens Expressive Light | 0.43 | Alabaster Daylight (0.43) |
 | Circit | 0.43 | Daltonized Light (0.36) |
-| Gruvbox Light | 0.49 | One Half Light (0.33) |
-| Honu Lagoon | 0.50 | Koi Mosaic (0.31) |
+| Gruvbox Light | 0.49 | Base16 Cupcake (0.32) |
+| Honu Lagoon | 0.50 | Base16 Cupcake (0.31) |
 | Koi Mosaic | 0.51 | Honu Lagoon (0.31) |
 
 ### Like Sky (7)
@@ -203,7 +299,7 @@ The other 75 packs, filed under the featured look each is closest to. Community 
 | Halftone Dawn | 0.39 | Dither Dunes (0.17) |
 | Paper Garden | 0.40 | Claude Light (0.16) |
 | Claude Light | 0.47 | Paper Garden (0.16) |
-| Everforest Light | 0.54 | Warm Neutral (0.33) |
+| Everforest Light | 0.52 | Warm Neutral (0.30) |
 
 ### Like Everforest (7)
 
