@@ -257,11 +257,16 @@ pub(crate) fn sync_topbar_search_cmd(app: AppHandle, state: State<AppState>, que
     let Some(win) = existing else {
         return;
     };
-    if let Some(tb) = app.get_webview_window("topbar") {
-        let _ = tb.set_ignore_cursor_events(false);
-        let _ = tb.show();
+    if open {
+        // Searching from the bar shows it. The shared flag says so too, so the auto-hide
+        // watcher (the one owner) can hide it again once Search closes and the pointer leaves.
+        state.topbar_visible.store(true, std::sync::atomic::Ordering::Relaxed);
+        if let Some(tb) = app.get_webview_window("topbar") {
+            let _ = tb.set_ignore_cursor_events(false);
+            let _ = tb.show();
+        }
+        let _ = app.emit("lens://topbar-visible", true);
     }
-    let _ = app.emit("lens://topbar-visible", true);
     if !open {
         glide_hide_surface(&app, "palette");
         let _ = app.emit("lens://topbar-search-open", false);

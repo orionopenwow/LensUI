@@ -79,6 +79,13 @@ pub(crate) fn resize_dock_window(app: &AppHandle, cfg: &LensConfig) {
     crate::app::place::place_window(&dock, x, y, w, h);
 }
 
+/// Whether the auto-hide watcher currently has the Top Bar shown (the shared one-owner flag).
+pub(crate) fn topbar_shown_state(app: &AppHandle) -> bool {
+    app.try_state::<AppState>()
+        .map(|s| s.topbar_visible.load(std::sync::atomic::Ordering::Relaxed))
+        .unwrap_or(true)
+}
+
 pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
     if let Ok(Some(monitor)) = lens_monitor(app, &cfg.func.target_monitor) {
         let size = monitor.size();
@@ -118,11 +125,16 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
             crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
-            let _ = topbar.set_ignore_cursor_events(false);
             if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
+                // Repositioning (every settings save, theme change or reload) keeps the bar in the
+                // state the auto-hide watcher has it in. Forcing "shown" here used to pop an
+                // auto-hidden bar back up behind the watcher's back, where it stayed stuck until
+                // the pointer touched the top edge.
+                let shown = topbar_shown_state(app);
+                let _ = topbar.set_ignore_cursor_events(!shown);
                 let _ = topbar.unminimize();
                 let _ = topbar.show();
-                let _ = app.emit("lens://topbar-visible", true);
+                let _ = app.emit("lens://topbar-visible", shown);
             } else {
                 let _ = topbar.hide();
             }
@@ -436,7 +448,6 @@ pub(crate) fn spawn_watcher(
         let mut last_theme = read_windows_theme();
         let mut tick: u64 = 0;
 
-        let mut topbar_visible = true;
         let mut topbar_edge_since: Option<Instant> = None;
         let mut topbar_leave_since: Option<Instant> = None;
 
@@ -465,6 +476,8 @@ pub(crate) fn spawn_watcher(
         loop {
             thread::sleep(Duration::from_millis(65));
             tick = tick.wrapping_add(1);
+            // Sampled once per pass: the "pressed since last check" bit is consumed by the read.
+            let clicked = mouse_button_down();
 
             // Every ~2s check Windows DWM Accent / Personalize Registry
             if tick % 30 == 0 {
@@ -550,6 +563,10 @@ pub(crate) fn spawn_watcher(
                     .get_webview_window("topbar")
                     .filter(|_| crate::app::loadguard::may_show("topbar"))
                 {
+                    // One owner of "shown": the shared flag. Other paths (opening Search, a settings
+                    // save) may show the bar by setting it; the watcher adopts that here, so it can
+                    // still hide the bar later instead of believing it is already hidden.
+                    let mut topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
                     if cfg.top_bar.enabled && cfg.dock.show_top_bar {
                         let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                             + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
@@ -592,15 +609,15 @@ pub(crate) fn spawn_watcher(
                                 _ => false,
                             };
                             let pal = watcher_handle.get_webview_window("palette");
-                            let pal_focused = pal.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
-                            let bar_focused = topbar_win.is_focused().unwrap_or(false);
+                            let pal_focused = pal.as_ref().map(is_foreground).unwrap_or(false);
+                            let bar_focused = is_foreground(&topbar_win);
                             let pointer_in = pal.as_ref().map(in_rect).unwrap_or(false) || in_rect(&topbar_win);
                             let close = search_should_close(
                                 SearchGuardInput {
                                     palette_focused: pal_focused,
                                     bar_focused,
                                     pointer_inside: pointer_in,
-                                    click_outside: !pointer_in && mouse_button_down(),
+                                    click_outside: !pointer_in && clicked,
                                 },
                                 &mut search_idle_since,
                                 Instant::now(),
@@ -619,7 +636,7 @@ pub(crate) fn spawn_watcher(
                         // an app no longer pins the bar forever.
                         let qs_in_use = qs_vis && {
                             let qs = watcher_handle.get_webview_window("quicksettings");
-                            let focused = qs.as_ref().and_then(|w| w.is_focused().ok()).unwrap_or(false);
+                            let focused = qs.as_ref().map(is_foreground).unwrap_or(false);
                             let over = |w: &tauri::WebviewWindow| match (w.outer_position(), w.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {
                                     cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
@@ -695,6 +712,12 @@ pub(crate) fn spawn_watcher(
                             let _ = topbar_win.unminimize();
                             let _ = topbar_win.show();
                             let _ = watcher_handle.emit("lens://topbar-visible", true);
+                        } else if tick % 30 == 0 {
+                            // About every 2 s, restate the current state to the bar only, so a page
+                            // that missed an event (it reloaded, an emit was dropped) cannot stay
+                            // drawn while Lens has it hidden, or the reverse.
+                            let _ = topbar_win.set_ignore_cursor_events(!topbar_visible);
+                            let _ = watcher_handle.emit_to("topbar", "lens://topbar-visible", topbar_visible);
                         }
                     }
                 }
@@ -804,7 +827,7 @@ pub(crate) fn spawn_watcher(
                     // Never hide the dock while Search, Context Menu, Hover Card, Settings, or Palette is
                     // in use. "In use" is checked here rather than trusted: see DockGuard below.
                     let mut menu_open = *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner());
-                    let dock_focused = dock_win.is_focused().unwrap_or(false);
+                    let dock_focused = is_foreground(&dock_win);
                     // The Dock window is a tall see-through strip, so "over the Dock" means over the
                     // pill or over the open flyout (both reported by the Dock in CSS px).
                     let cursor_over_dock_window = match (dock_win.outer_position(), cursor) {
@@ -831,12 +854,37 @@ pub(crate) fn spawn_watcher(
                     let palette_in_use = palette_vis_now && {
                         let focused = watcher_handle
                             .get_webview_window("palette")
-                            .and_then(|w| w.is_focused().ok())
+                            .map(|w| is_foreground(&w))
                             .unwrap_or(false);
                         active_within(focused, &mut palette_idle_since, Instant::now(), FLYOUT_IDLE_MS)
                     };
                     if !palette_vis_now {
                         palette_idle_since = None;
+                    }
+                    // Without the Top Bar nothing above closes an abandoned Search: same rule here
+                    // (another app has the foreground and the pointer is away, or a click outside).
+                    if palette_vis_now && !(cfg.top_bar.enabled && cfg.dock.show_top_bar) {
+                        if let Some(pal) = watcher_handle.get_webview_window("palette") {
+                            let pointer_in = match (pal.outer_position(), pal.outer_size(), cursor) {
+                                (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                    cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                }
+                                _ => false,
+                            };
+                            let close = search_should_close(
+                                SearchGuardInput {
+                                    palette_focused: is_foreground(&pal),
+                                    bar_focused: false,
+                                    pointer_inside: pointer_in || cursor_over_pill,
+                                    click_outside: !pointer_in && !cursor_over_pill && clicked,
+                                },
+                                &mut search_idle_since,
+                                Instant::now(),
+                            );
+                            if close {
+                                crate::commands::surfaces::glide_hide_surface(&watcher_handle, "palette");
+                            }
+                        }
                     }
                     let guard = dock_guard(DockGuardInput {
                         menu_open,
@@ -846,10 +894,10 @@ pub(crate) fn spawn_watcher(
                         settings_visible: settings_now_vis,
                         settings_focused: watcher_handle
                             .get_webview_window("settings")
-                            .and_then(|w| w.is_focused().ok())
+                            .map(|w| is_foreground(&w))
                             .unwrap_or(false),
                         palette_visible: palette_in_use,
-                        click_outside: !cursor_over_dock_window && !cursor_over_pill && mouse_button_down(),
+                        click_outside: !cursor_over_dock_window && !cursor_over_pill && clicked,
                         foreground_other_app: foreground_is_other_app(),
                     }, &mut menu_idle_since, &mut settings_unfocused_since);
                     if guard.clear_stale_menu {
@@ -1271,14 +1319,38 @@ mod dock_guard_tests {
     }
 }
 
+/// True when `w` is Windows' foreground window. Tauri's `is_focused()` reports the last active
+/// window of Lens's UI thread (GetActiveWindow), which stays "focused" after another app takes
+/// the foreground, so a flyout left behind an app kept the Top Bar and Dock up forever.
+#[cfg(windows)]
+pub(crate) fn is_foreground(w: &tauri::WebviewWindow) -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    match w.hwnd() {
+        Ok(h) => unsafe { GetForegroundWindow() }.0 as isize == h.0 as isize,
+        Err(_) => false,
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn is_foreground(w: &tauri::WebviewWindow) -> bool {
+    w.is_focused().unwrap_or(false)
+}
+
 /// True while the left, right or middle mouse button is held (any window).
 #[cfg(windows)]
 pub(crate) fn mouse_button_down() -> bool {
     use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON};
+    // Held now (0x8000), or pressed since the previous check (0x0001). The watcher looks every
+    // 65 ms, and a quick click can go down and up between two looks: reading only the "held" bit
+    // missed it, so a click outside Search never closed it (B-42). Read every button each time so
+    // each one's "since last check" bit is consumed.
     unsafe {
-        [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON]
-            .iter()
-            .any(|vk| (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0)
+        let mut any = false;
+        for vk in [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON] {
+            let state = GetAsyncKeyState(vk.0 as i32) as u16;
+            any |= state & 0x8001 != 0;
+        }
+        any
     }
 }
 
