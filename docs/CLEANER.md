@@ -57,9 +57,9 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
 - **Checked twice:** at scan time and again right before each file is touched, after re-reading it with `symlink_metadata`. A file that became a link in between is skipped.
 - **Your files:** they go to the Recycle Bin (`SHFileOperationW` with `FOF_ALLOWUNDO | FOF_WANTNUKEWARNING`). A permanent delete needs:
   1. "Delete for good…";
-  2. an "I understand" step;
+  2. typing a 4-digit one-time code shown only in the confirm step ("Type 4827 to continue");
   3. the hold-to-confirm approval card;
-  4. a confirm token that ties the delete to the exact list you saw. Without the token it falls back to the bin.
+  4. Rust checking that code before anything is touched. The code is random, minted in Rust (`cleaner/confirm.rs`, `cleaner_confirm_code`), handed only to the Cleaner window and never part of the preview. It is tied to that plan and the hash of its exact list (`plan::token_for`), works once, expires after two minutes and is thrown away after three wrong tries. Without the right code `cleaner_run` refuses and nothing is touched; the plan stays so you can get a new code. The list hash alone is never accepted: anything that knows the list could compute it.
 - **Undo:** for 30 s after a clean, "Restore from Recycle Bin" puts back exactly the items that clean binned. It reads `$I`/`$R` pairs in your `$Recycle.Bin\<SID>` and never overwrites. The server allows 60 s.
 - **Elevation:** one helper, `lens-ui.exe --cleaner-elevated <component-cleanup|delivery-optimization>`, with exactly three arguments and fixed argv in `elevated.rs`. It is started with `ShellExecuteExW("runas")`, so Windows shows UAC. Nothing from the UI reaches its command line.
 - **Audit log:** `%APPDATA%\LensUI\cleaner\log\YYYY-MM-DD.log` records every delete, bin, step, skip, undo, move and settings change. Paths only. It is kept for 90 days.

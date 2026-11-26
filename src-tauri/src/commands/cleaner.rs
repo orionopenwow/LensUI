@@ -27,6 +27,8 @@ struct State {
     /// (when, paths) of the last clean's Recycle-Bin items, for the undo toast.
     last_binned: (u64, Vec<String>),
     seq: u64,
+    /// The one-time code for a permanent delete (at most one live).
+    codes: cleaner::confirm::ConfirmCodes,
 }
 
 fn state() -> &'static Mutex<State> {
@@ -40,6 +42,15 @@ fn lock() -> std::sync::MutexGuard<'static, State> {
 
 fn dir() -> PathBuf {
     crate::config::config_dir().join("cleaner")
+}
+
+fn scan_timing_path() -> PathBuf {
+    dir().join("last-scan.txt")
+}
+
+/// How long the last full scan took here, for Tester Hub.
+pub(crate) fn last_scan_timing() -> Option<cleaner::ScanTiming> {
+    cleaner::ScanTiming::parse(&std::fs::read_to_string(scan_timing_path()).ok()?)
 }
 
 fn settings_path() -> PathBuf {
@@ -239,6 +250,11 @@ pub(crate) async fn cleaner_scan(app: AppHandle) -> Result<cleaner::ScanReport, 
     let _ = announce(&app, crate::presence::StepKind::Wait, "Looking around your PC (read-only)");
     let r = tauri::async_runtime::spawn_blocking(move || scan_blocking(&app, &cancel)).await.map_err(|e| e.to_string())?;
     crate::tester::log("info", "cleaner", &format!("scan: {} categories, {} safe in {} ms", r.categories.len(), cleaner::human(r.safe_bytes), r.elapsed_ms));
+    if !lock().cancel.load(Ordering::Relaxed) {
+        // Only a scan that ran to the end is a fair measurement.
+        let _ = std::fs::create_dir_all(dir());
+        let _ = std::fs::write(scan_timing_path(), cleaner::ScanTiming { elapsed_ms: r.elapsed_ms, at_ms: cleaner::now_ms() }.encode());
+    }
     Ok(r)
 }
 
@@ -257,7 +273,9 @@ pub(crate) struct Preview {
     entry_count: usize,
     steps: Vec<plan::PlanStep>,
     total: u64,
-    confirm_token: Option<String>,
+    /// A permanent delete of your files: the run needs the one-time code from
+    /// `cleaner_confirm_code`, typed by the person. The code is never part of the preview.
+    permanent: bool,
     refused: Vec<(String, String)>,
 }
 
@@ -265,9 +283,10 @@ fn store(p: plan::Plan, refused: Vec<(String, String)>) -> Preview {
     let mut st = lock();
     st.seq += 1;
     let id = format!("plan-{}-{}", cleaner::now_ms(), st.seq);
-    let pv = Preview { id: id.clone(), entries: p.entries.iter().take(PREVIEW_CAP).cloned().collect(), entry_count: p.entries.len(), steps: p.steps.clone(), total: p.total, confirm_token: p.confirm_token.clone(), refused };
+    let pv = Preview { id: id.clone(), entries: p.entries.iter().take(PREVIEW_CAP).cloned().collect(), entry_count: p.entries.len(), steps: p.steps.clone(), total: p.total, permanent: p.confirm_token.is_some(), refused };
     if st.plans.len() > 8 {
         st.plans.clear();
+        st.codes = Default::default();
     }
     st.plans.insert(id, p);
     pv
@@ -351,12 +370,68 @@ fn run_plan(app: Option<&AppHandle>, p: &plan::Plan, confirm: Option<&str>) -> p
     out
 }
 
-/// Runs a previewed plan. Only plans built here can run; a permanent delete of your files also
-/// needs the confirm token the preview carried (shown behind an extra confirmation in the UI).
+/// The Cleaner window's label: the only window that is handed a confirm code.
+const CLEANER_WINDOW: &str = "cleaner";
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ConfirmCode {
+    /// What the person types to delete for good.
+    code: String,
+    expires_in_ms: u64,
+    tries: u8,
+}
+
+fn random4() -> Result<[u8; 4], String> {
+    let hex = crate::win_mcp::random_token()?;
+    let n = u32::from_str_radix(hex.get(..8).unwrap_or(""), 16).map_err(|_| "The OS random generator failed.".to_string())?;
+    Ok(n.to_le_bytes())
+}
+
+fn plan_hash(p: &plan::Plan) -> String {
+    plan::token_for(&p.entries.iter().map(|e| e.path.clone()).collect::<Vec<_>>())
+}
+
+/// Mints the one-time code for a permanent delete, for the Cleaner window's confirm step only.
+/// Random, tied to this plan and its exact list, valid once and for two minutes.
+#[tauri::command]
+pub(crate) fn cleaner_confirm_code(window: tauri::WebviewWindow, id: String) -> Result<ConfirmCode, String> {
+    if window.label() != CLEANER_WINDOW {
+        return Err("Only the Cleaner window can confirm a permanent delete.".into());
+    }
+    let random = random4()?;
+    let mut st = lock();
+    let p = st.plans.get(&id).ok_or("That preview has expired; scan again.")?;
+    if p.confirm_token.is_none() {
+        return Err("This clean goes to the Recycle Bin, so it doesn't need a code.".into());
+    }
+    let hash = plan_hash(p);
+    let code = st.codes.issue(&id, &hash, cleaner::now_ms(), random);
+    Ok(ConfirmCode { code, expires_in_ms: cleaner::confirm::TTL_MS, tries: cleaner::confirm::MAX_TRIES })
+}
+
+/// Runs a previewed plan. Only plans built here can run. A permanent delete of your files also
+/// needs the one-time code from `cleaner_confirm_code` as `confirm`: without the right code
+/// nothing is touched and the plan stays, so the person can try again.
 #[tauri::command]
 pub(crate) async fn cleaner_run(app: AppHandle, id: String, confirm: Option<String>) -> Result<plan::Outcome, String> {
-    let p = lock().plans.remove(&id).ok_or("That preview has expired; scan again.")?;
-    let out = tauri::async_runtime::spawn_blocking(move || run_plan(Some(&app), &p, confirm.as_deref())).await.map_err(|e| e.to_string())?;
+    let (p, echo) = {
+        let mut st = lock();
+        let (token, hash) = {
+            let p = st.plans.get(&id).ok_or("That preview has expired; scan again.")?;
+            (p.confirm_token.clone(), plan_hash(p))
+        };
+        if token.is_some() {
+            st.codes.redeem(&id, &hash, confirm.as_deref().unwrap_or(""), cleaner::now_ms()).map_err(|r| r.message())?;
+        }
+        st.codes.forget(&id);
+        let p = st.plans.remove(&id).ok_or("That preview has expired; scan again.")?;
+        (p, token)
+    };
+    if echo.is_some() {
+        audit("confirm", &[format!("permanent delete of {} item(s) confirmed with a one-time code", p.entries.len())]);
+    }
+    let out = tauri::async_runtime::spawn_blocking(move || run_plan(Some(&app), &p, echo.as_deref())).await.map_err(|e| e.to_string())?;
     snapshot_now();
     Ok(out)
 }

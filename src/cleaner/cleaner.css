@@ -1050,6 +1050,27 @@
 .cl-perm span {
   flex: 1;
 }
+.cl-code {
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.cl-code-input {
+  width: 72px;
+  height: 32px;
+  padding: 0 var(--cl-2);
+  border-radius: var(--cl-radius);
+  border: 1px solid color-mix(in srgb, var(--cl-danger), transparent 40%);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+.cl-code-input:focus-visible {
+  outline: 2px solid var(--cl-danger);
+  outline-offset: 2px;
+}
 .cl-sheet-groups {
   display: grid;
   gap: var(--cl-2);
@@ -1153,6 +1174,9 @@
 }
 .cl-done-notes {
   margin-top: var(--cl-4);
+}
+.cl-done-scan {
+  margin: var(--cl-3) 0 0;
 }
 .cl-skipped summary {
   cursor: pointer;

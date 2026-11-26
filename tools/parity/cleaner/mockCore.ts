@@ -160,12 +160,13 @@ const handlers: Record<string, (a: any) => any> = {
     if (cats.includes("windows-update")) steps.push({ category: "windows-update", kind: "elevated", target: "component-cleanup", label: "Windows Update leftovers (Windows asks for permission)", size: 0 });
     const total = REPORT.categories.filter((c) => cats.includes(c.id) && c.method !== "openSettings").reduce((s, c) => s + c.size, 0) + picks.reduce((s: number, p: any) => s + p.size, 0);
     const count = REPORT.categories.filter((c) => cats.includes(c.id) && c.method === "deleteFiles").reduce((s, c) => s + c.count, 0) + picks.length;
-    return { id: "plan-1", entries: [...entries, ...picks], entryCount: count, steps, total, confirmToken: null, refused: [] };
+    return { id: "plan-1", entries: [...entries, ...picks], entryCount: count, steps, total, permanent: false, refused: [] };
   },
   cleaner_preview_paths: (a) => {
     const entries = (a?.paths ?? []).map((p: string) => ({ category: "user", path: p, size: BIG.find((b) => b.path === p)?.size ?? 1 * GB, action: a?.permanent ? "delete" : "recycle" }));
-    return { id: "plan-2", entries, entryCount: entries.length, steps: [], total: entries.reduce((s: number, e: any) => s + e.size, 0), confirmToken: a?.permanent ? "7f3a9c" : null, refused: [] };
+    return { id: "plan-2", entries, entryCount: entries.length, steps: [], total: entries.reduce((s: number, e: any) => s + e.size, 0), permanent: !!a?.permanent, refused: [] };
   },
+  cleaner_confirm_code: () => ({ code: "4827", expiresInMs: 120000, tries: 3 }),
   cleaner_run: async () => {
     if (live) await sleep(1400);
     freed = true;

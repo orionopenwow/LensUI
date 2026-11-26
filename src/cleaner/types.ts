@@ -91,7 +91,8 @@ export interface Preview {
   entryCount: number;
   steps: PlanStep[];
   total: number;
-  confirmToken?: string | null;
+  /** A permanent delete of your files: the run needs the one-time code the person types. */
+  permanent?: boolean;
   refused: [string, string][];
 }
 
@@ -187,4 +188,11 @@ export interface HistoryView {
 export interface UndoResult {
   restored: string[];
   left: [string, string][];
+}
+
+/** The one-time code for a permanent delete, minted in Rust for the Cleaner's confirm step only. */
+export interface ConfirmCode {
+  code: string;
+  expiresInMs: number;
+  tries: number;
 }

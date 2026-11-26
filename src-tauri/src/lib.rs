@@ -864,6 +864,7 @@ pub fn run() {
             commands::cleaner::cleaner_preview_paths,
             commands::cleaner::cleaner_full_list,
             commands::cleaner::cleaner_run,
+            commands::cleaner::cleaner_confirm_code,
             commands::cleaner::cleaner_undo,
             commands::cleaner::cleaner_space_scan,
             commands::cleaner::cleaner_space_children,

@@ -657,6 +657,10 @@ fn settings_and_helpers() {
     assert!(win::open_uri("steam://uninstall/1 & calc").is_err());
     assert!(audit::line(0, "delete", "a\nb").ends_with("delete a b\n"));
     assert_eq!(plan::token_for(&["b".into(), "a".into()]), plan::token_for(&["a".into(), "b".into()]));
+    let timing = ScanTiming { elapsed_ms: 3_412, at_ms: 1_795_000_000_000 };
+    assert_eq!(ScanTiming::parse(&timing.encode()), Some(timing));
+    assert_eq!(ScanTiming::parse(""), None);
+    assert_eq!(ScanTiming::parse("fast yesterday"), None);
 }
 
 /// Throughput benchmark (not run in CI): `LENS_BENCH_DIR=/usr cargo test --lib bench_scan -- --ignored --nocapture`.

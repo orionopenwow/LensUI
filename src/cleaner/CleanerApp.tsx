@@ -151,6 +151,9 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
 
   const sysDrive = useMemo(() => overview?.drives.find((d) => d.root.toUpperCase().startsWith("C")) ?? overview?.drives[0], [overview]);
 
+  const sheetId = sheet?.preview.id;
+  const confirmCodeFor = useCallback(() => (sheetId ? api.confirmCode(sheetId) : Promise.reject(new Error("That preview has expired; scan again."))), [sheetId]);
+
   const run = useCallback(
     async (confirm?: string | null) => {
       if (!sheet) return;
@@ -181,6 +184,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           freeAfter: after?.free ?? (before?.free ?? 0) + out.freed,
           binned: out.binned.length,
           skipped: out.skipped,
+          scanMs: s.report?.elapsedMs,
         });
         dispatch({ type: "cleaned", freed: out.freed });
       } catch (e) {
@@ -498,7 +502,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         </aside>
       )}
 
-      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} />}
+      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} onConfirmCode={confirmCodeFor} />}
 
       <div className="cl-toasts" aria-live="polite">
         {undoLeft > 0 && (

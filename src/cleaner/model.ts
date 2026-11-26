@@ -411,3 +411,35 @@ export const COPY = {
   doneTitle: (n: string) => `You just freed ${n}`,
   undo: "Restore from Recycle Bin",
 };
+
+// ---- permanent delete: the typed one-time code -------------------------------------------------
+
+/** Digits only, capped at the code's length (people paste "4827 " or type "48 27"). */
+export function cleanCode(typed: string, digits = 4): string {
+  return typed.replace(/\D/g, "").slice(0, digits);
+}
+
+/**
+ * Where the confirm step is: "bin" (no code needed), "loading" (waiting for Rust to mint one),
+ * "expired", "type" (code shown, not typed yet) or "hold" (typed: the hold-to-confirm card shows).
+ */
+export function confirmStep(permanent: boolean, code: string | null, typed: string, expired: boolean): "bin" | "loading" | "expired" | "type" | "hold" {
+  if (!permanent) return "bin";
+  if (expired) return "expired";
+  if (!code) return "loading";
+  return cleanCode(typed, code.length) === code ? "hold" : "type";
+}
+
+// ---- measured scan time ------------------------------------------------------------------------
+
+/** The scan-time target from the Cleaner's checklist. */
+export const SCAN_TARGET_MS = 10_000;
+
+/** "3.4 s", "0.4 s", "1 min 12 s". */
+export function fmtScanTime(ms: number): string {
+  const v = Math.max(0, ms);
+  if (v < 59_950) return `${(v / 1000).toFixed(1)} s`;
+  const total = Math.round(v / 1000);
+  const s = total % 60;
+  return s ? `${Math.floor(total / 60)} min ${s} s` : `${Math.floor(total / 60)} min`;
+}

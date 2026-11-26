@@ -18,6 +18,9 @@ import {
   squarify,
   sunburst,
   arcPath,
+  cleanCode,
+  fmtScanTime,
+  confirmStep,
 } from "../cleaner/model";
 import type { CleanerCategory, ScanReport, SpaceNode } from "../cleaner/types";
 
@@ -176,5 +179,36 @@ describe("lens cleaner maps", () => {
     expect(ring1[0].a0).toBeCloseTo(ring0[0].a0, 9);
     expect(arcPath(100, 100, 40, 70, 0, Math.PI / 2)).toMatch(/^M/);
     expect(arcPath(100, 100, 40, 70, 0, Math.PI * 2)).toContain("A70 70 0 1 1");
+  });
+});
+
+describe("permanent delete: the typed one-time code", () => {
+  test("typed input keeps digits only", () => {
+    expect(cleanCode(" 48 27 ")).toBe("4827");
+    expect(cleanCode("4827999")).toBe("4827");
+    expect(cleanCode("abcd")).toBe("");
+  });
+  test("the hold-to-confirm card only appears once the shown code is typed", () => {
+    expect(confirmStep(false, null, "", false)).toBe("bin");
+    expect(confirmStep(true, null, "", false)).toBe("loading");
+    expect(confirmStep(true, "4827", "", false)).toBe("type");
+    expect(confirmStep(true, "4827", "482", false)).toBe("type");
+    expect(confirmStep(true, "4827", "4828", false)).toBe("type");
+    expect(confirmStep(true, "4827", "4827", false)).toBe("hold");
+    expect(confirmStep(true, "0007", "0007", false)).toBe("hold");
+  });
+  test("an expired code can't be used, even typed correctly", () => {
+    expect(confirmStep(true, "4827", "4827", true)).toBe("expired");
+  });
+});
+
+describe("measured scan time", () => {
+  test("reads as seconds, then minutes", () => {
+    expect(fmtScanTime(3_412)).toBe("3.4 s");
+    expect(fmtScanTime(412)).toBe("0.4 s");
+    expect(fmtScanTime(59_900)).toBe("59.9 s");
+    expect(fmtScanTime(60_000)).toBe("1 min");
+    expect(fmtScanTime(72_300)).toBe("1 min 12 s");
+    expect(fmtScanTime(-5)).toBe("0.0 s");
   });
 });
