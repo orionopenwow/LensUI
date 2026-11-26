@@ -96,7 +96,7 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 - Multi-step plan view (per-step allow/deny) — works (harness, CI) **[#114]**: several steps proposed in one turn are checked and shown whole before any runs (`ToolProposalEvent.plan`); `PlanCard` in the Ask panel and the approval window; denying one step skips only that one. The Command thread still shows one card per step.
 - Approvals bound to the exact step — works (CI) **[#114]**: browser agent, assistant runner,
   cloud consent and the shared queue (MCP tools, `run_action`, bridge, Lens Apps) all need the
-  card's one-time token (`agentsafe/step_token.rs`, B-43).
+  card's one-time token (`agentsafe/step_token.rs`, B-50).
 
 ### 2.7 Presence (the Lens orb)
 - Billowing rainbow Lens cloud (`LensCloud.tsx`, `src/styles/lens-cloud.css`), no spin — works.
@@ -115,9 +115,9 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 ## 3. Quick wins (≤ 1 day, ranked)
 1. **B-07: pin the three download checksums** (whisper.cpp, ffmpeg, yt-dlp) from official release
    pages — unblocks voice, transcripts and Explorer "Get transcript" in one change.
-2. ~~**Step-bound approval tokens**~~ **done in #114** (B-43) for the browser agent and MCP `run_action` (Cleaner-style
+2. ~~**Step-bound approval tokens**~~ **done in #114** (B-50) for the browser agent and MCP `run_action` (Cleaner-style
    `confirm_token`), so a UI bug can't approve the wrong step.
-3. ~~**Persist the undo stack**~~ **done in #114** (B-44) (`control/engine.rs`) to `%APPDATA%\LensUI\undo.jsonl` with a cap,
+3. ~~**Persist the undo stack**~~ **done in #114** (B-51) (`control/engine.rs`) to `%APPDATA%\LensUI\undo.jsonl` with a cap,
    so "Undo" survives a restart.
 4. **Window thumbnail in the approval card** using `win_previews` capture (already used by the
    Dock hover previews) — makes "close Report.docx" requests unmistakable.
@@ -142,8 +142,8 @@ risky step visible and approvable, and nothing leaving the PC without consent.
 | B-07 | Medium | `media/setup.rs:197-241` | voice/transcription setup refuses (unpinned) |
 | B-12c | Medium | `CommandSurface.tsx` | rare lost first Enter after cold start |
 | B-35 | Low | `control/lens.rs run_internal` | Ask treated as run for internal tools (pinned by test) |
-| S1 → B-43 | — | browser agent, AI runner, shared queue | **fixed in #114**: step-bound one-time tokens |
-| S2 → B-44 | — | `control` undo | **fixed in #114**: bounded journal survives restart |
+| S1 → B-50 | — | browser agent, AI runner, shared queue | **fixed in #114**: step-bound one-time tokens |
+| S2 → B-51 | — | `control` undo | **fixed in #114**: bounded journal survives restart |
 | Suspected S3 | Low | `win_mcp.rs` known limit | `apply_theme_pack` reports success when the Dock window isn't running |
 | Suspected S4 | Low | `ai/providers/local.rs` | auto-detect re-probes each session start; slow first answer on machines without local models |
 | B-18 share | Low | 23 sites | swallowed errors |

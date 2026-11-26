@@ -156,7 +156,7 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
    (e.g. `BrowserSurface.tsx:285, 301, 304, 305, 346`, `AgentPanel.tsx:259, 303, 314`). Route to a
    small toast ("Couldn't load history — retry") so failures stop looking like nothing happened
    (B-18).
-3. ~~**Approval token for agent steps**~~ **done in #114** (B-43): `commands/browser.rs:459,522` trusts `req.approved` from
+3. ~~**Approval token for agent steps**~~ **done in #114** (B-50): `commands/browser.rs:459,522` trusts `req.approved` from
    the UI. Add a one-time token minted when the card is approved (like the Cleaner's
    `confirm_token`). Closes Redline's should-fix.
 4. **Group by task** in the Lens row (plan-first like the others; model returns groups from titles
@@ -186,7 +186,7 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 |---|---|---|---|
 | B-18 (browser share) | — | `src/browser/*` | **fixed in #114**: failures on user actions show in the browser toast (`oops.ts`) |
 | B-07 | Medium | `media/setup.rs` | Whisper/ffmpeg/yt-dlp unpinned → transcription setup refuses |
-| S1 → B-43 | — | `commands/browser.rs` | **fixed in #114**: step-bound one-time approval tokens |
+| S1 → B-50 | — | `commands/browser.rs` | **fixed in #114**: step-bound one-time approval tokens |
 | Suspected S2 | Low | `host.rs` icons-mode | page webview hidden while the floating Lens menu is open; if the menu loses focus without a close event the page could stay hidden — verify the restore path on blur |
 | S3 | — | `permissions.rs`, `SitePermissions.tsx` | **fixed in #114**: the timeout is announced on the request's tab |
 | Suspected S4 | Low | `Pages.tsx` error page | if WebView2 doesn't run document scripts on Chromium's error page, Lens shows Edge's raw page (AAA §2.3) |
