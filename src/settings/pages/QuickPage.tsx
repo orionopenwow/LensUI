@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type { BatteryStatus, BluetoothState, QuickSettingsState, RunningWindow, WifiState, WindowStylingState } from "../../types/generated";
 import { applyThemePack, packById, packSwatch, recommendedPacks } from "../../themes/packs";
+import { chooseTheme } from "../../themes/choiceUndo";
 import { FillSlider } from "../ui/FillSlider";
 import { HeroTile, Section } from "../ui/primitives";
 import type { PageProps } from "./common";
@@ -153,7 +154,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
         label={light ? "Light mode" : "Dark mode"}
         sub="Switch the theme"
         active={!light}
-        onClick={() => updateConfig(applyThemePack(config, light ? "obsidian" : "alabaster-daylight"))}
+        onClick={() => updateConfig(chooseTheme(config, (c) => applyThemePack(c, light ? "obsidian" : "alabaster-daylight")))}
       />
     ),
     night: (
@@ -314,7 +315,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
               role="radio"
               aria-checked={config.theme.preset === p.id}
               className={`sh-quick-pack ${config.theme.preset === p.id ? "is-on" : ""}`}
-              onClick={() => updateConfig(applyThemePack(config, p.id))}
+              onClick={() => updateConfig(chooseTheme(config, (c) => applyThemePack(c, p.id)))}
             >
               <span className="sh-quick-swatch" ref={paint(packSwatch(p))} aria-hidden />
               <span>{p.label}</span>

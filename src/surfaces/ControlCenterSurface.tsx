@@ -8,6 +8,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FOLDER_THEMES, FRAME_STYLES, applyThemePack } from "../themes/packs";
+import { chooseTheme } from "../themes/choiceUndo";
 import { WindowRulesCard } from "../components/WindowRulesCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
@@ -286,7 +287,7 @@ export const ControlCenterSurface: React.FC = () => {
 
   // All theme application goes through the shared pack registry (src/themes/packs.ts)
   const applyPack = (packId: string) => {
-    const next = applyThemePack(config, packId);
+    const next = chooseTheme(config, (c) => applyThemePack(c, packId));
     updateConfig(next);
     setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
   };
@@ -435,7 +436,26 @@ export const ControlCenterSurface: React.FC = () => {
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
           {PageComponent && (
             <Suspense fallback={<Skeleton label={`Loading ${pageDef.label}`} shape="page" rows={4} className="sh-page-loading" />}>
-              <PageComponent section={section} config={config} updateConfig={updateConfig} />
+              <PageComponent
+                section={section}
+                config={config}
+                updateConfig={updateConfig}
+                // Notification history, Feeds and Messages are part of Focus & Notifications (they
+                // were a page of their own). Built here: the history pane reads the live window list.
+                slot={tab === "focus" && (
+                  <>
+                    <MessagingHubPane runningWindows={runningWindows} />
+                    <Suspense fallback={null}>
+                      <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
+                        <FeedsCard />
+                      </Section>
+                      <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
+                        <MessagesCard />
+                      </Section>
+                    </Suspense>
+                  </>
+                )}
+              />
             </Suspense>
           )}
           {tab === "tasks" && (
@@ -711,20 +731,6 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                 )}
               </div>
-            </>
-          )}
-
-          {tab === "notifications" && (
-            <>
-              <MessagingHubPane runningWindows={runningWindows} />
-              <Suspense fallback={null}>
-                <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
-                  <FeedsCard />
-                </Section>
-                <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
-                  <MessagesCard />
-                </Section>
-              </Suspense>
             </>
           )}
 

@@ -31,7 +31,7 @@
   },
   {
    "id": "store",
-   "label": "Apps"
+   "label": "Lens Apps"
   },
   {
    "id": "display",
@@ -86,46 +86,42 @@
    "label": "System & Tasks"
   },
   {
-   "id": "messages",
-   "label": "Notifications"
-  },
-  {
    "id": "about",
    "label": "About & Testing"
   }
  ],
  "entries": [
   {
-   "id": "card.messages.messaginghubpane",
+   "id": "card.focus.messaginghubpane",
    "kind": "card",
    "title": "Messaging hub",
    "text": "Messaging hub",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messaging hub"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagingHubPane",
     "label": "Messaging hub"
    },
    "source": "src/components/MessagingHubPane.tsx"
   },
   {
-   "id": "card.messages.feedscard",
+   "id": "card.focus.feedscard",
    "kind": "card",
    "title": "Feeds",
    "text": "One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC. Feeds · Sources · Mute words · Quiet hours · Refresh every · AI digest · OPML. Feeds. Settings › Feeds. Credentials go straight to the sealed vault; this card never reads them back",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Feeds",
     "section": "feeds"
@@ -133,19 +129,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.sources",
+   "id": "setting.focus.feedscard.sources",
    "kind": "setting",
    "title": "Sources",
    "text": "",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Sources"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Sources",
     "section": "feeds"
@@ -153,19 +149,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.mute-words",
+   "id": "setting.focus.feedscard.mute-words",
    "kind": "setting",
    "title": "Mute words",
    "text": "Words, @handles, or source:reddit — one per line. Muted posts are hidden everywhere, including the digest.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Mute words"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Mute words",
     "section": "feeds"
@@ -173,19 +169,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.quiet-hours",
+   "id": "setting.focus.feedscard.quiet-hours",
    "kind": "setting",
    "title": "Quiet hours",
    "text": "No refreshes and no \"new\" pill between these times.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Quiet hours"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Quiet hours",
     "section": "feeds"
@@ -193,19 +189,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.refresh-every",
+   "id": "setting.focus.feedscard.refresh-every",
    "kind": "setting",
    "title": "Refresh every",
    "text": "Each network also has its own polite rate limit.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Refresh every"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Refresh every",
     "section": "feeds"
@@ -213,19 +209,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.ai-digest",
+   "id": "setting.focus.feedscard.ai-digest",
    "kind": "setting",
    "title": "AI digest",
    "text": "Five bullets with sources. Runs on your local model unless your AI privacy setting allows cloud.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "AI digest"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "AI digest",
     "section": "feeds"
@@ -233,19 +229,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.opml",
+   "id": "setting.focus.feedscard.opml",
    "kind": "setting",
    "title": "OPML",
    "text": "Bring your subscriptions from Feedly, Inoreader, NetNewsWire or any reader.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "OPML"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "OPML",
     "section": "feeds"
@@ -253,18 +249,18 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "card.messages.messagescard",
+   "id": "card.focus.messagescard",
    "kind": "card",
    "title": "Messages",
    "text": "One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count. Messages · Mirror notifications · Show previews · Badges on Dock icons · VIPs · Alert keywords · Matrix (advanced). Messages. Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens reads only the unread badge. Matrix is the one place Lens can read and send (with approval)",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Messages",
     "section": "messages"
@@ -272,19 +268,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.mirror-notifications",
+   "id": "setting.focus.messagescard.mirror-notifications",
    "kind": "setting",
    "title": "Mirror notifications",
    "text": "Use Windows notifications from these apps for badges and mention alerts. Needs notification access for Lens.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Mirror notifications"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Mirror notifications",
     "section": "messages"
@@ -292,19 +288,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.show-previews",
+   "id": "setting.focus.messagescard.show-previews",
    "kind": "setting",
    "title": "Show previews",
    "text": "Show the first line of new messages in the inbox where the source provides it.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Show previews"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Show previews",
     "section": "messages"
@@ -312,19 +308,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.badges-on-dock-icons",
+   "id": "setting.focus.messagescard.badges-on-dock-icons",
    "kind": "setting",
    "title": "Badges on Dock icons",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Badges on Dock icons"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Badges on Dock icons",
     "section": "messages"
@@ -332,19 +328,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.vips",
+   "id": "setting.focus.messagescard.vips",
    "kind": "setting",
    "title": "VIPs",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "VIPs"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "VIPs",
     "section": "messages"
@@ -352,19 +348,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.alert-keywords",
+   "id": "setting.focus.messagescard.alert-keywords",
    "kind": "setting",
    "title": "Alert keywords",
    "text": "Your name, project names — a message containing one counts as a mention.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Alert keywords"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Alert keywords",
     "section": "messages"
@@ -372,19 +368,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.matrix-advanced",
+   "id": "setting.focus.messagescard.matrix-advanced",
    "kind": "setting",
    "title": "Matrix (advanced)",
    "text": "Connect your own Matrix homeserver — including bridges you run yourself — to read rooms and reply from Lens. Every reply shows you the exact text and waits for you to hold Send.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Matrix (advanced)"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Matrix (advanced)",
     "section": "messages"
@@ -4743,8 +4739,8 @@
    "text": "Apps",
    "path": [
     "Settings",
-    "Apps",
-    "Apps settings",
+    "Lens Apps",
+    "Lens Apps settings",
     "Apps"
    ],
    "target": {
@@ -5511,11 +5507,11 @@
   {
    "id": "tab.store",
    "kind": "tab",
-   "title": "Apps",
-   "text": "The Apps tab in Settings.",
+   "title": "Lens Apps",
+   "text": "The Lens Apps tab in Settings.",
    "path": [
     "Settings",
-    "Apps"
+    "Lens Apps"
    ],
    "target": {
     "surface": "settings",
@@ -5715,21 +5711,6 @@
    "target": {
     "surface": "settings",
     "tab": "monitor"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "tab.messages",
-   "kind": "tab",
-   "title": "Notifications",
-   "text": "The Notifications tab in Settings.",
-   "path": [
-    "Settings",
-    "Notifications"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "messages"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },

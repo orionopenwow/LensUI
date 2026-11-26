@@ -10,7 +10,7 @@ export const LensAppsPage: React.FC<PageProps> = ({ section }) => (
     <div className="cc-card" style={{ position: "relative", padding: 0, overflow: "hidden" }}>
       <LensApps />
     </div>
-    <Section id="settings" title="Apps settings" summary="Updates, activity log, remove what Lens installed" defaultOpen={section === "settings"} forceOpen={section === "settings"}>
+    <Section id="settings" title="Lens Apps settings" summary="Updates, activity log, remove what Lens installed" defaultOpen={section === "settings"} forceOpen={section === "settings"}>
       <AppsCard />
     </Section>
   </>
