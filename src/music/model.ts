@@ -326,3 +326,31 @@ export function connectError(e: unknown): string {
   const text = String((e as { message?: unknown })?.message ?? e ?? "").replace(/^Error:\s*/, "").trim();
   return text || "Lens couldn't connect to Spotify. Try again.";
 }
+
+// ---- lyrics on the desktop ---------------------------------------------------------------------
+
+/**
+ * The one line the desktop strip shows, or null when there is nothing to show (no synced lyrics,
+ * before the first line, an instrumental gap, or the song is over). `key` changes with the line,
+ * so the strip can fade from one line to the next.
+ */
+export function desktopLine(
+  lyrics: { found: boolean; synced: boolean; lines: LyricLine[] } | null,
+  status: string,
+  positionMs: number,
+  offsetMs = 0,
+  durationMs = 0
+): { key: number; text: string } | null {
+  if (!lyrics?.found || !lyrics.synced || status !== "playing") return null;
+  if (durationMs > 0 && positionMs >= durationMs) return null;
+  const i = currentLine(lyrics.lines, positionMs, offsetMs);
+  const text = i >= 0 ? (lyrics.lines[i]?.text ?? "").trim() : "";
+  return text ? { key: i, text } : null;
+}
+
+/** The line's colour: the artwork's vivid colour, lightened until it reads on a dark shadow. */
+export function desktopLineColor(palette: { color: RGB; weight: number }[]): string {
+  const vivid = pickVivid(palette);
+  if (!vivid) return "#fafafa";
+  return rgbToHex(ensureContrast(vivid, { r: 9, g: 9, b: 11 }, 7));
+}

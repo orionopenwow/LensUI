@@ -234,3 +234,11 @@ button.lm-side-row { cursor: pointer; }
   .lm-dither { display: none; }
   .lm-backdrop-art { display: none; }
 }
+
+/* ---- lyrics on the desktop: one click-through line, no chrome ---- */
+html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background: transparent !important; overflow: hidden; }
+.lm-desk { position: fixed; inset: 0; display: grid; place-items: center; padding: 0 24px; pointer-events: none; user-select: none; --lm-desk-ink: #fafafa; }
+.lm-desk-line { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--lm-desk-ink); font-family: var(--lens-font, "Arial Rounded MT Bold", "Segoe UI Variable", system-ui, sans-serif); font-size: 26px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.3; text-shadow: 0 1px 2px rgba(9, 9, 11, 0.9), 0 0 12px rgba(9, 9, 11, 0.55); animation: lm-desk-in var(--lens-dur-slow, 220ms) var(--lens-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both; }
+@keyframes lm-desk-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .lm-desk-line { animation: none; } }
+:root[data-motion="reduce"] .lm-desk-line { animation: none; }

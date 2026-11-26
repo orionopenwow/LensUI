@@ -152,3 +152,12 @@ Anchor ids for coach marks: `data-guide-id="music.card"`, `music.lyrics`, `music
 - Spotify OAuth loopback (port 43117 free, browser redirect), queue/playlists on a Premium account, and Development-Mode allow-listing.
 - Last.fm desktop auth and scrobble timing.
 - The exported Spicetify theme on the current Spotify desktop build.
+
+## Lyrics on the desktop (opt-in)
+
+Settings › Music › Synced lyrics › **Lyrics on the desktop** (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line.
+
+- Window `lyricsline` (`src-tauri/src/music/desktop_lyrics.rs`, `src/music/LyricsLineSurface.tsx`): transparent, always on top, never focused (`WS_EX_NOACTIVATE`), every click passes through (`set_ignore_cursor_events`). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits.
+- On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps.
+- Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion.
+- Not yet confirmed on a real PC (focus, multi-monitor placement, fullscreen games); the rules (`wanted`, `should_show`, `place`, `desktopLine`) are unit-tested.

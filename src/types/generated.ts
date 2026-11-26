@@ -2208,6 +2208,8 @@ export interface MusicConfig {
   lyricsLrclib: boolean;
   lyricsFolder: string | null;
   lyricsOffsetMs: number;
+  /** Show the line being sung on the desktop, under the Top Bar (click-through; off by default). */
+  desktopLyrics: boolean;
   /** "compact" | "expanded" | "fullscreen" */
   windowStyle: string;
   /** Lens dither/grain over the frosted background. */

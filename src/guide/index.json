@@ -4965,6 +4965,25 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
+   "id": "setting.music.musiccard.lyrics-on-the-desktop",
+   "kind": "setting",
+   "title": "Lyrics on the desktop",
+   "text": "Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Lyrics on the desktop"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Lyrics on the desktop"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
    "id": "setting.music.musiccard.use-lrclib",
    "kind": "setting",
    "title": "Use LRCLIB",
@@ -11868,6 +11887,23 @@
     "surface": "doc",
     "doc": "docs/MUSIC.md",
     "heading": "Needs real hardware"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.15",
+   "kind": "doc",
+   "title": "Lens Music: Lyrics on the desktop (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Lyrics on the desktop (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line. - Window lyricsline ( src-tauri/src/music/desktop lyrics.rs , src/music/LyricsLineSurface.tsx ): transparent, always on top, never focused ( WS EX NOACTIVATE ), every click passes through ( set ignore cursor events ). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits. - On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps. - Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion. - Not yet confirmed on a real PC (focus, multi-monitor placement, fullscr",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyrics on the desktop (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyrics on the desktop (opt-in)"
    },
    "source": "docs/MUSIC.md"
   },

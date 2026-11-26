@@ -19,6 +19,7 @@ const DEFAULT: MusicConfig = {
   lyricsLrclib: true,
   lyricsFolder: null,
   lyricsOffsetMs: 0,
+  desktopLyrics: false,
   windowStyle: "expanded",
   dither: true,
   sceneReactive: false,
@@ -149,6 +150,9 @@ export const MusicCard: React.FC = () => {
       </Row>
       {cfg.lyrics && !off && (
         <>
+          <Row label="Lyrics on the desktop" desc="Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.">
+            <Toggle on={cfg.desktopLyrics} label="Lyrics on the desktop" onChange={(v) => save({ desktopLyrics: v })} />
+          </Row>
           <Row label="Use LRCLIB" desc="Turn off to use only your own .lrc files.">
             <Toggle on={cfg.lyricsLrclib} label="Use LRCLIB" onChange={(v) => save({ lyricsLrclib: v })} />
           </Row>

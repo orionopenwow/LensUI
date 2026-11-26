@@ -6,9 +6,17 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::AppHandle;
 
+/// Starts the media-session watcher and, the first time, brings the desktop lyrics window in line
+/// with the saved settings (it is only ever opened when its switch is on).
+fn started(app: &AppHandle) {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    music::ensure_started(app);
+    ONCE.call_once(|| music::desktop_lyrics::sync(app));
+}
+
 #[tauri::command]
 pub(crate) fn music_config_get(app: AppHandle) -> MusicConfig {
-    music::ensure_started(&app);
+    started(&app);
     music::config()
 }
 
@@ -17,12 +25,14 @@ pub(crate) fn music_config_set(app: AppHandle, config: MusicConfig) -> Result<Mu
     let saved = music::set_config(config)?;
     music::ensure_started(&app);
     music::refresh();
+    // Lyrics on the desktop: opens or closes its window to match the switch.
+    music::desktop_lyrics::sync(&app);
     Ok(saved)
 }
 
 #[tauri::command(async)]
 pub(crate) fn music_now(app: AppHandle) -> NowPlaying {
-    music::ensure_started(&app);
+    started(&app);
     music::now()
 }
 

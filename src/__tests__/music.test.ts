@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   contrast, currentLine, endTimeLabel, ensureContrast, formatTime, heroGradient, hexToRgb, initials, lineOpacity, lineState,
   livePosition, lyricScroll, miniState, musicAccent, pickVivid, quantize, queueRemaining, sourceCaps, splitArtists, splitTitle,
-  connectError, queueEmptyState,
+  connectError, queueEmptyState, desktopLine, desktopLineColor,
   type NowPlaying,
 } from "../music/model";
 import { planAccent, MIN_GAP_MS } from "../music/themeFollow";
@@ -189,5 +189,30 @@ describe("queue panel without a real queue", () => {
     expect(connectError(new Error("Spotify refused the sign-in."))).toBe("Spotify refused the sign-in.");
     expect(connectError("")).toContain("couldn't connect");
     expect(connectError(undefined)).toContain("couldn't connect");
+  });
+});
+
+describe("lyrics on the desktop", () => {
+  const lyrics = { found: true, synced: true, lines: [{ startMs: 1000, text: "First line" }, { startMs: 5000, text: "  " }, { startMs: 9000, text: "Second line" }] };
+  test("shows the line being sung, keyed so lines can fade", () => {
+    expect(desktopLine(lyrics, "playing", 1500)).toEqual({ key: 0, text: "First line" });
+    expect(desktopLine(lyrics, "playing", 9500)).toEqual({ key: 2, text: "Second line" });
+    expect(desktopLine(lyrics, "playing", 8800, 250)).toEqual({ key: 2, text: "Second line" });
+  });
+  test("shows nothing before the first line, in a gap, when paused or after the end", () => {
+    expect(desktopLine(lyrics, "playing", 500)).toBeNull();
+    expect(desktopLine(lyrics, "playing", 6000)).toBeNull();
+    expect(desktopLine(lyrics, "paused", 1500)).toBeNull();
+    expect(desktopLine(lyrics, "playing", 20_000, 0, 20_000)).toBeNull();
+  });
+  test("shows nothing without synced lyrics", () => {
+    expect(desktopLine(null, "playing", 1500)).toBeNull();
+    expect(desktopLine({ ...lyrics, synced: false }, "playing", 1500)).toBeNull();
+    expect(desktopLine({ ...lyrics, found: false }, "playing", 1500)).toBeNull();
+  });
+  test("the colour comes from the artwork and always reads on the dark shadow", () => {
+    expect(desktopLineColor([])).toBe("#fafafa");
+    const dark = hexToRgb(desktopLineColor([{ color: { r: 40, g: 10, b: 90 }, weight: 1 }]))!;
+    expect(contrast(dark, { r: 9, g: 9, b: 11 })).toBeGreaterThanOrEqual(7);
   });
 });
