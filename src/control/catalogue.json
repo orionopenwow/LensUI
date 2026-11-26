@@ -83,7 +83,7 @@
     "Sessions": 2,
     "Summon keys": 2,
     "Testing": 1,
-    "Theme": 14,
+    "Theme": 15,
     "Theme schedule": 1,
     "Top bar": 7,
     "Wallpaper & Playground": 19,
@@ -92,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 192,
+  "count": 193,
   "entries": [
     {
       "capability": "change_settings",
@@ -2346,6 +2346,21 @@
         "maximum": 150,
         "minimum": 80,
         "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Theme",
+      "default": false,
+      "description": "Sets the write windows accent option under Theme.",
+      "example": "{\"args\":{\"changes\":{\"theme.writeWindowsAccent\":true}},\"tool\":\"lens_set\"}",
+      "label": "Write windows accent",
+      "path": "theme.writeWindowsAccent",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
       },
       "store": "config"
     },
