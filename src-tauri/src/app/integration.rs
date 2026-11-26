@@ -129,11 +129,9 @@ fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
 pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensConfig) {
     win_crash::set_feature_flags(next);
 
-    if prev.func.win_key_launcher != next.func.win_key_launcher
-        || prev.func.alt_tab_overview != next.func.alt_tab_overview
-    {
-        win_keyhook::configure_keyhook(next.func.win_key_launcher, next.func.alt_tab_overview);
-    }
+    // The Win-tap hook runs when the Magic button or the Launcher option wants taps (or Alt+Tab
+    // Overview is on); Magic Start decides where taps go.
+    crate::commands::magic_start::on_flags_changed(app, prev, next);
 
     // Pointers follow the theme pack when "Follow theme" is on (the cursor module checks that).
     if prev.theme.preset != next.theme.preset
@@ -203,7 +201,7 @@ fn start_shell_keys(handle: &AppHandle, cfg: &LensConfig) {
     let ev_app = handle.clone();
     let ping_app = handle.clone();
     win_keyhook::start_keyhook(
-        cfg.func.win_key_launcher,
+        crate::commands::magic_start::hook_wants_taps(cfg.magic_waves.start_button, cfg.func.win_key_launcher),
         cfg.func.alt_tab_overview,
         move |seq, event| {
             #[derive(serde::Serialize, Clone)]
@@ -213,10 +211,25 @@ fn start_shell_keys(handle: &AppHandle, cfg: &LensConfig) {
             }
             match &event {
                 win_keyhook::HookEvent::LauncherToggle => {
-                    if ev_app.get_webview_window("launcher").is_none() {
-                        win_keyhook::extend_deadline(2500);
+                    use crate::commands::magic_start::{on_win_tap, tap_target, TapTarget};
+                    let (magic, launcher) = ev_app
+                        .state::<crate::AppState>()
+                        .config
+                        .lock()
+                        .map(|c| (c.magic_waves.start_button, c.func.win_key_launcher))
+                        .unwrap_or((false, false));
+                    match tap_target(magic, launcher) {
+                        TapTarget::MagicStart => on_win_tap(&ev_app, seq),
+                        TapTarget::Launcher => {
+                            if ev_app.get_webview_window("launcher").is_none() {
+                                win_keyhook::extend_deadline(2500);
+                            }
+                            toggle_surface(ev_app.clone(), "launcher".into());
+                        }
+                        // The hook was told to stop watching taps between the key and this
+                        // event: give the tap back to Windows.
+                        TapTarget::Windows => win_keyhook::send_ctrl_esc(),
                     }
-                    toggle_surface(ev_app.clone(), "launcher".into());
                 }
                 win_keyhook::HookEvent::OverviewOpen { .. } => {
                     let shown = ev_app

@@ -10,6 +10,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FOLDER_THEMES, FRAME_STYLES, applyThemePack } from "../themes/packs";
 import { chooseTheme } from "../themes/choiceUndo";
 import { WindowRulesCard } from "../components/WindowRulesCard";
+import { WindowAppsCard } from "../components/WindowAppsCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
 import { TilingCard } from "../components/TilingCard";
@@ -1388,10 +1389,11 @@ export const ControlCenterSurface: React.FC = () => {
               <div id="sec-styling" className="sh-anchor">
                 <div className="cc-section-title">Window styling</div>
                 <div className="cc-section-sub">
-                  Focus dimming, the active-window border, pin on top and per-app rules.
+                  Focus dimming, the active-window border, pin on top, per-app rules and which apps get window buttons.
                 </div>
               </div>
               <WindowRulesCard />
+              <WindowAppsCard config={config} onUpdateConfig={updateConfig} />
 
               {/* Replacing Explorer as the shell is a Tester mode experiment only (docs/FAILSAFE.md §9). */}
               {config.tester?.enabled && (

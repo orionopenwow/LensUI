@@ -15,6 +15,7 @@ import { elapsed, hostOf } from "./model";
 import { ResultView } from "./ResultCards";
 import { pageStep } from "../presence/browser";
 import { Avatar } from "./Sidebar";
+import { oops, quiet } from "./oops";
 
 export interface AgentSeed {
   items: AgentItem[];
@@ -43,6 +44,8 @@ export interface Acting {
 }
 
 const MAX_TURNS = 6;
+/** How often one step may ask again after an approval Lens Core refused (changed step, expired token). */
+const MAX_ASKS = 3;
 let keySeq = 0;
 const key = () => `k${++keySeq}`;
 
@@ -142,8 +145,12 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
       }
       try {
         let res = await agentAct({ element, action, caps });
-        if (res.needsOk && element) {
+        // Each card carries a one-time token for the exact step it shows. If the step changed
+        // while the card was up (the page swapped the button, the token ran out), Lens Core
+        // refuses the approval and hands back a new card for the step as it is now.
+        for (let asks = 0; res.needsOk && element && asks < MAX_ASKS; asks++) {
           const desc = await agentDescribe(element);
+          if (res.approvalRefused) push({ kind: "blocked", key: key(), text: "Asking again", reason: res.message, at: Date.now() });
           setPending({ step, element, decision: res.decision, desc, capturedAt: Date.now() });
           const ok = await new Promise<boolean>((r) => (approveResolve.current = r));
           setPending(null);
@@ -153,7 +160,11 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
             setRunning(false);
             return;
           }
-          res = await agentAct({ element, action, caps, approved: true });
+          res = await agentAct({ element, action, caps, approvalToken: res.approvalToken });
+        }
+        if (res.needsOk) {
+          push({ kind: "blocked", key: key(), text: "Left for you", reason: res.message || "This step needs your OK.", at: Date.now() });
+          continue;
         }
         if (res.decision.risk === "blocked") {
           push({ kind: "blocked", key: key(), text: "Left for you", reason: res.message, at: Date.now() });
@@ -256,7 +267,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
   const takeOver = () => {
     stop();
     push({ kind: "say", key: key(), text: "You have the tab. Ask again when you want me back.", at: Date.now() });
-    void focusPage().catch(() => {});
+    void focusPage().catch(quiet);
   };
 
   const retry = (step: PlanStep) => {
@@ -300,7 +311,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
               {it.why ? <span className="lb-dim lb-tl-why">{it.why}</span> : null}
             </span>
             {it.tabId ? (
-              <button className="lb-chip" onClick={() => void tabActivate(it.tabId!).catch(() => {})} aria-label="Jump to tab">
+              <button className="lb-chip" onClick={() => void tabActivate(it.tabId!).catch(oops("switch to that tab"))} aria-label="Jump to tab">
                 <CornerDownRight size={12} /> tab
               </button>
             ) : it.host ? <span className="lb-mono lb-dim">in Lens</span> : null}
@@ -311,8 +322,8 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           <div className="lb-msg lb-msg-answer">
             <div className="lb-answer-text">{it.text}</div>
             <div className="lb-answer-actions">
-              <button className="lb-chip" onClick={() => navigator.clipboard?.writeText(it.text).catch(() => {})}><Copy size={12} /> Copy <Key k="C" /></button>
-              <button className="lb-chip" onClick={() => void shelfAdd({ kind: "answer", title: it.text.slice(0, 60), text: it.text }).catch(() => {})}><BookmarkPlus size={12} /> Add to Shelf <Key k="S" /></button>
+              <button className="lb-chip" onClick={() => navigator.clipboard?.writeText(it.text).catch(oops("copy that"))}><Copy size={12} /> Copy <Key k="C" /></button>
+              <button className="lb-chip" onClick={() => void shelfAdd({ kind: "answer", title: it.text.slice(0, 60), text: it.text }).catch(oops("add that to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf <Key k="S" /></button>
             </div>
           </div>
         );

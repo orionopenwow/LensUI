@@ -20,7 +20,6 @@ const Skeleton: React.FC<{ rows?: number }> = ({ rows = 6 }) => (
 );
 
 export const AppsPanel: React.FC<{ apps: AppUsage[] | null; error: string | null; onUninstall: (a: AppUsage) => void; onReveal: (p: string) => void; onRetry: () => void }> = ({ apps, error, onUninstall, onReveal, onRetry }) => {
-  const [confirm, setConfirm] = useState<string | null>(null);
   const max = useMemo(() => Math.max(1, ...(apps ?? []).map((a) => a.size + a.dataSize)), [apps]);
   return (
     <section className="cl-panel" aria-labelledby="cl-apps-title">
@@ -71,16 +70,11 @@ export const AppsPanel: React.FC<{ apps: AppUsage[] | null; error: string | null
                     <FolderOpen size={13} />
                   </button>
                 )}
-                {a.canUninstall &&
-                  (confirm === a.key ? (
-                    <button type="button" className="cl-btn is-danger is-sm" onClick={() => (setConfirm(null), onUninstall(a))} autoFocus>
-                      Open its uninstaller
-                    </button>
-                  ) : (
-                    <button type="button" className="cl-btn is-ghost is-sm" onClick={() => setConfirm(a.key)}>
-                      Uninstall…
-                    </button>
-                  ))}
+                {a.canUninstall && (
+                  <button type="button" className="cl-btn is-ghost is-sm" aria-label={`Uninstall ${a.name} in Startup & Uninstall`} onClick={() => onUninstall(a)}>
+                    Uninstall…
+                  </button>
+                )}
               </span>
             </li>
           ))}

@@ -19,6 +19,8 @@ export interface CardHandlers {
   onStop: (key: string) => void;
   onTool: (callId: string, approve: boolean) => void;
   onBridge: (key: string, run: "summarise" | "ask-page" | "note" | "dismiss") => void;
+  /** "Teach me": open Settings where the setting an action changed lives. */
+  onShowSetting?: (target: string) => void;
 }
 
 const Btn = ({ icon: Icon, label, onClick, primary, kbd }: {
@@ -48,6 +50,18 @@ export function ChipRow({ chips }: { chips: ContextChip[] }) {
     </div>
   );
 }
+
+/** "Teach me": where the setting an applied action changed lives, with a link to it. */
+const TeachLine = ({ where, onShow }: { where: { target: string; path: string }; onShow?: (target: string) => void }) => (
+  <p className="ct-where" data-teach>
+    <span>You can change this in {where.path}</span>
+    {onShow ? (
+      <button type="button" className="ct-where-link" onClick={() => onShow(where.target)}>
+        Show me
+      </button>
+    ) : null}
+  </p>
+);
 
 export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandlers; latest: boolean }) {
   switch (item.kind) {
@@ -145,6 +159,7 @@ export function ThreadCard({ item, h, latest }: { item: ThreadItem; h: CardHandl
             <span>{item.title}</span>
             {item.detail ? <span className="ct-sub">{item.detail}</span> : null}
           </p>
+          {item.ok && item.where ? <TeachLine where={item.where} onShow={h.onShowSetting} /> : null}
         </article>
       );
     case "consent":

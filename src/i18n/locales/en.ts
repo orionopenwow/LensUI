@@ -84,7 +84,7 @@ const dict: Record<string, string> = {
   "qs.windows_accent_color": "Windows Accent Color",
   "qs.surface_and_glass_tuning": "Surface & Glass Tuning",
   "qs.desktop_and_shell_controls": "Desktop & Shell Controls",
-  "qs.traffic_light_controls": "Traffic Light Controls",
+  "qs.traffic_light_controls": "Window buttons",
   "qs.green_yellow_red_across_all_windows": "Green · Yellow · Red across all windows",
   "qs.green_yellow_red": "Green · Yellow · Red",
   "qs.red_yellow_green": "Red · Yellow · Green",

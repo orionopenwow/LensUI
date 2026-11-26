@@ -2268,6 +2268,65 @@
    "source": "src/components/WindowRulesCard.tsx"
   },
   {
+   "id": "card.system.windowappscard",
+   "kind": "card",
+   "title": "Apps and window buttons",
+   "text": "Choose which apps get Lens's window buttons. Games with anti-cheat, fullscreen apps and Windows' own shell are always left alone; that can't be switched off. Apps and window buttons · Buttons on the · Another app. Window apps. Settings › Windows › Apps and window buttons. One list of the apps Lens has seen: a switch for Lens's window buttons per app (stored in `windowControls.excludedProcesses`), which apps a rule leaves alone, and a locked \"Protected\" badge on the apps Lens never touches (anti-cheat games, Windows shell",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Apps and window buttons"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.buttons-on-the",
+   "kind": "setting",
+   "title": "Buttons on the",
+   "text": "Left is used where a window's title bar is free there. Apps with tabs or tools in the title bar (browsers, File Explorer, Terminal) keep their buttons on the right.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Buttons on the"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Buttons on the"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.another-app",
+   "kind": "setting",
+   "title": "Another app",
+   "text": "Type its file name to keep Lens's buttons off it, e.g. obs64.exe.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Another app"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Another app"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
    "id": "card.system.shellmodecard",
    "kind": "card",
    "title": "Shell Mode (advanced)",
@@ -3981,7 +4040,7 @@
    "id": "setting.ai.snipcard.shortcut",
    "kind": "setting",
    "title": "Shortcut",
-   "text": "A modifier plus a key, e.g. Ctrl+Shift+S. Press it again while recording to stop.",
+   "text": "A modifier plus a key, e.g. Ctrl+Alt+X. Press it again while recording to stop.",
    "path": [
     "Settings",
     "AI & Command",
@@ -4714,6 +4773,26 @@
    "source": "src/components/CrashReportsCard.tsx"
   },
   {
+   "id": "card.about.safetycard",
+   "kind": "card",
+   "title": "Safety",
+   "text": "What Lens changes on this PC, what it never touches, and the ways back to plain Windows. Safety. Safety. Settings › About & Testing › Safety. One card for trust you can see: what Lens changes on this PC (the change registry), what it never touches, the keys that always reach Windows, Safe Mode, the Shift-at-sign-in skip, and the two ways out: Report a problem and Remove all. Everything shown is read fr",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Safety"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "SafetyCard",
+    "label": "Safety",
+    "section": "safety"
+   },
+   "source": "src/components/SafetyCard.tsx"
+  },
+  {
    "id": "card.about.failsafecard",
    "kind": "card",
    "title": "Safety net",
@@ -5119,6 +5198,25 @@
     "tab": "music",
     "card": "MusicCard",
     "label": "Synced lyrics"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.lyrics-on-the-desktop",
+   "kind": "setting",
+   "title": "Lyrics on the desktop",
+   "text": "Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Lyrics on the desktop"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Lyrics on the desktop"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -7760,6 +7858,21 @@
    "source": "docs/MAGIC.md"
   },
   {
+   "id": "hotkey.ctrl-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Esc",
+   "text": "- Lock and Windows Start: power stays with Windows; \"Windows Start\" sends Ctrl+Esc.",
+   "path": [
+    "Keyboard",
+    "Ctrl+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
    "id": "hotkey.shift-1",
    "kind": "hotkey",
    "title": "Shift+1",
@@ -7930,6 +8043,23 @@
   {
    "id": "doc.agent-safety.2",
    "kind": "doc",
+   "title": "Agent safety (W8-O): Step tokens: an approval covers one exact step",
+   "text": "A yes/no flag from the UI says \"something was approved\". Lens does not accept that. When Lens Core shows a \"Needs your OK\" card it issues a one-time token ( agentsafe/step token.rs ) and the executor refuses the step unless that token comes back with the approval. Property How --- --- Bound to the step The token is stored against a digest of (step id, action kind, target, SHA-256 of the canonical arguments). The executor rebuilds that digest from the step it is about to run. Single use Redeeming removes the token, whether it matched or not. A token offered for the wrong step is burnt. Expires 10 minutes after the card was shown (the same time a request may wait in the queue). Can't be made up 256 random bits from the OS, kept in Core. Nothing is derived from the step. Where it is checked: Path Step id Kind Target Arguments Executor --- --- --- --- --- --- Browser agent ( browser agent ac",
+   "path": [
+    "Docs",
+    "Agent safety (W8-O)",
+    "Step tokens: an approval covers one exact step"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_SAFETY.md",
+    "heading": "Step tokens: an approval covers one exact step"
+   },
+   "source": "docs/AGENT_SAFETY.md"
+  },
+  {
+   "id": "doc.agent-safety.3",
+   "kind": "doc",
    "title": "Agent safety (W8-O): Red-team results",
    "text": "Run with cargo test agentsafe (CI), or locally without crates: Results: Suite Cases Result --- --- --- Scam and look-alike URLs ( fixtures/scam urls.txt ) 35 35 flagged high or critical Popular sites, false-positive budget 2 ( fixtures/top sites.txt ) 209 0 flagged medium or above Injection pages ( fixtures/pages/ .txt ) 18 malicious, 7 clean all as expected Pipeline cases ( fixtures/redteam.txt ) 60 all verdicts as expected Wrapped text never contains quarantined instructions 18 pass Fuzz: random URLs, text, styles, actions, clients (4,000) plus parser fuzz (20,000) 24,000 no panics; invariants hold (login always blocked, untrusted payments always blocked, send never silently allowed, every ask/block has reasons, spans on char boundaries) Total red-team cases: 120 . The fuzzer found a real panic during development: slicing a URL tail inside a multi-byte character. It was fixed, and the ",
    "path": [
@@ -7945,7 +8075,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.3",
+   "id": "doc.agent-safety.4",
    "kind": "doc",
    "title": "Agent safety (W8-O): Where the check sits (Fable wave 1)",
    "text": "Every agent path goes through one adapter, agentsafe::gate : Call What it answers --- --- gate::decide(&GateInput) May this client do this action now? Allow, ask (with reasons) or block (with reasons). gate::scan text(text, source, label) Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). gate::taint note / taint for Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. It is called from the two places every path already passes, so callers inherit it without doing anything: 1. Lens Control — control::lens::gate , preview and legacy decision , through control::safety (which maps a Call to the pipeline's action word). That covers every MCP client (Claude Desktop, Claude Code, others), every lens to",
@@ -7962,7 +8092,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.5",
+   "id": "doc.agent-safety.6",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Browser (feature/lens-browser)",
    "text": "1. Agent profile. In src-tauri/src/browser/host.rs , where an agent run opens or reuses a tab webview, pick the data folder from the grants: When a run ends: call crate::commands::agentsafe::agentsafe run ended(run id) , close the agent webviews and delete profiles root.join(\"agent\") . Never navigate a signed-in webview to a different site than the grant's ( grant.site == registrable domain(new url) ); otherwise reopen in the sandbox. 2. Before each page action. In browser/gating.rs classify(action, caps) , after the existing capability decision: 3. Reading pages. Replace gating::untrusted block(url, text) with the collector plus scan: COLLECTOR JS is collectorScript() from src/agentsafe/collector.ts . Pass it from the UI once at start-up with browser set collector(js) , or build it into the binary with include str! of a generated file. 4. Banner. In the browser frame, above the page:",
@@ -7979,7 +8109,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.6",
+   "id": "doc.agent-safety.7",
    "kind": "doc",
    "title": "Agent safety (W8-O): Claude control (feature/claude-control)",
    "text": "1. Run the pipeline in control::lens::gate before the grant decision: 2. MCP tool and resource text is untrusted. Scan it with agentsafe scan(nodes, \"tool:<client \") before it reaches the internal model. 3. Approval card. In src/approval/ApprovalCard.tsx , under the one-line question: Use hold-to-confirm whenever holdToConfirm is true.",
@@ -7996,7 +8126,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.7",
+   "id": "doc.agent-safety.8",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Snip (feature/lens-snip)",
    "text": "Before Paste to Claude , Ask and Translate , scan the OCR text. Pass the OCR's own contrast estimate per line if it has one ( collectorHelpers.contrastRatio on the line's sampled text and background colours):",
@@ -8013,7 +8143,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.8",
+   "id": "doc.agent-safety.9",
    "kind": "doc",
    "title": "Agent safety (W8-O): Right-click and the extension (feature/rightclick-context, feature/ai-bridges)",
    "text": "- Page text from the extension ( page text , selections, YouTube transcripts) is untrusted. In the bridge's LensAi adapter, scan it first with agentsafe scan([{ id: 0, text, source: \"dom\" }], url) and pass wrapped as page text . - The content script can also run lensTextCollector(4000) ; bundle src/agentsafe/collector.ts into the content script. That gives full style facts instead of plain text. - The \"Copy page into context\" and \"Add to Shelf\" actions store the raw text, but mark the Shelf item source = page so packs re-scan it when sent to a model.",
@@ -8030,7 +8160,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.9",
+   "id": "doc.agent-safety.10",
    "kind": "doc",
    "title": "Agent safety (W8-O): Voice and the internal AI (feature/voice, feature/ai-core)",
    "text": "- Voice commands the user spoke are origin: \"user\" . - Steps an AI proposes after reading pages, files or tool output are origin: \"untrusted\" . - In ai/tools.rs 's runner, call agentsafe check with the tool's kind before executing.",
@@ -8047,7 +8177,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.10",
+   "id": "doc.agent-safety.11",
    "kind": "doc",
    "title": "Agent safety (W8-O): Control Center",
    "text": "Mount the card in AI & Command , below the approvals or permissions card:",
@@ -8064,7 +8194,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.12",
+   "id": "doc.agent-safety.13",
    "kind": "doc",
    "title": "Agent safety (W8-O): Third-party data",
    "text": "agentsafe/confusables.rs uses a hand-picked subset of the prototype mappings in Unicode's confusables.txt (UTS #39, \"Unicode Security Mechanisms\"). Copyright © 1991-2026 Unicode, Inc. Distributed under the Unicode License v3 (https://www.unicode.org/license.txt), which permits copying and modification provided the copyright and permission notice are included. The brand list, lure words and risky-TLD list were compiled by hand from public phishing-trend reporting. There is no third-party list.",
@@ -8081,7 +8211,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.13",
+   "id": "doc.agent-safety.14",
    "kind": "doc",
    "title": "Agent safety (W8-O): Privacy",
    "text": "- Grants and settings are saved under %APPDATA%\\LensUI\\agentsafe\\ . Grants are saved as site names and times only. - The set-aside viewer is in memory only, keeps the last 200 entries, and is never written to disk. - No check makes a network request.",
@@ -8117,7 +8247,7 @@
    "id": "doc.ai.2",
    "kind": "doc",
    "title": "Lens Intelligence (AI core): Commands",
-   "text": "Command Args (JS) Returns --- --- --- ai status – AiStatus { providers: ProviderInfo[], active, privacy } ai set config { cfg: AiConfig } void (sanitised, saved to LensConfig.ai , emits lens://config-updated ) ai set secret { provider: \"claude\" \\ \"local\", secret } void . The key is DPAPI-encrypted under %APPDATA%\\LensUI\\secrets\\ai-<provider .bin . It is never returned or logged; only has key is exposed ai clear secret { provider } void ai ask { req: AiRequest } request id ( string ). Output arrives as events ai cancel { id } boolean (false if the id is unknown or already finished) ai confirm tool { callId, approve } void ; errors if nothing is waiting under that id ai intent { text } Intent \\ null . Instant and offline (script engine only) ai run intent { intent: Intent } request id. Runs a parsed intent through the same tool registry and risk gating , with no model and no network: low t",
+   "text": "Command Args (JS) Returns --- --- --- ai status – AiStatus { providers: ProviderInfo[], active, privacy } ai set config { cfg: AiConfig } void (sanitised, saved to LensConfig.ai , emits lens://config-updated ) ai set secret { provider: \"claude\" \\ \"local\", secret } void . The key is DPAPI-encrypted under %APPDATA%\\LensUI\\secrets\\ai-<provider .bin . It is never returned or logged; only has key is exposed ai clear secret { provider } void ai ask { req: AiRequest } request id ( string ). Output arrives as events ai cancel { id } boolean (false if the id is unknown or already finished) ai confirm tool { callId, approve, token } void ; errors if nothing is waiting under that id. token is the proposal's approval token ; an approval without that step's own token does not run the step (docs/AGENT SAFETY.md \"Step tokens\"). Declining needs no token ai intent { text } Intent \\ null . Instant and off",
    "path": [
     "Docs",
     "Lens Intelligence (AI core)",
@@ -8134,7 +8264,7 @@
    "id": "doc.ai.3",
    "kind": "doc",
    "title": "Lens Intelligence (AI core): Events",
-   "text": "Event Payload --- --- lens://ai/delta { id, text } : streamed text, in order lens://ai/done { id, provider, model, usage?: { input tokens, output tokens }, error? } : always the last event of a request. error: \"Cancelled.\" means it was cancelled lens://ai/tool-proposal { id, call id, tool, args, summary, risk: \"low\"\\ \"confirm\"\\ \"blocked\" } lens://ai/tool-result { id, call id, ok, message } Each tool call follows the same sequence: 1. A tool-proposal is emitted for every call, so the UI can show a timeline. 2. Next comes: - low : runs straight away. - confirm : waits for ai confirm tool (2-minute timeout, which counts as declined). - blocked , or arguments that fail validation: never runs. 3. A tool-result is emitted with the outcome. In ask each time mode, a cloud request first emits a consent proposal. Its tool is \"send to cloud\" , its risk is \"confirm\" , and its args are { provider, la",
+   "text": "Event Payload --- --- lens://ai/delta { id, text } : streamed text, in order lens://ai/done { id, provider, model, usage?: { input tokens, output tokens }, error? } : always the last event of a request. error: \"Cancelled.\" means it was cancelled lens://ai/tool-proposal { id, call id, tool, args, summary, risk: \"low\"\\ \"confirm\"\\ \"blocked\", approval token?, plan?: { index, total } } lens://ai/tool-result { id, call id, ok, message } Each tool call follows the same sequence: 1. A tool-proposal is emitted for every call, so the UI can show a timeline. 2. Next comes: - low : runs straight away. - confirm : waits for ai confirm tool with the proposal's approval token (2-minute timeout, which counts as declined). - When the model proposes several calls in one turn, they are a plan : every call is validated, gated and proposed first (each with plan: { index, total } , each waiting step with its ",
    "path": [
     "Docs",
     "Lens Intelligence (AI core)",
@@ -9284,7 +9414,7 @@
    "id": "doc.claude-control.23",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail: Not yet covered",
-   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack lives in memory, so it is lost on restart. The audit log keeps the record. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
+   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack survives a restart: the last 50 settings changes (at most 512 KB) are kept in %APPDATA%\\LensUI\\control\\undo.jsonl and read back when Lens starts. Window moves are undoable only until Lens closes (a window handle from before a restart may belong to another window). Damaged lines in the journal are skipped. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
    "path": [
     "Docs",
     "Lens Control: Claude control over every desktop detail",
@@ -9368,7 +9498,7 @@
    "id": "doc.cleaner.4",
    "kind": "doc",
    "title": "Lens Cleaner: Automatic features (all off by default)",
-   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. Explorer drive verb HKCU\\Software\\Classes\\Drive\\shell\\LensUI.Clean , removed when you turn it off or remove all Lens changes.",
+   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. The Home screen shows one row per drive that has at least two snapshots: a 30-day sparkline, the change over the period and up to two of the biggest day-to-day jumps (≥ 1 GB or ≥ 1% of the drive, history::jumps ), labelled with the folder that grew most when the drive was mapped before and after. A jump opens the Space map at that folder ( cleaner space find ). Nothing shows until snapshot",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9385,7 +9515,7 @@
    "id": "doc.cleaner.5",
    "kind": "doc",
    "title": "Lens Cleaner: Standout features",
-   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" asks first, then opens the app's own uninstaller (quoted exe or MsiExec /X{GUID} only, no shell). - Downloads review (\"What's safe to delete in Downloads?\")",
+   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" hands the app over to Startup & Uninstall (opened on Installed apps, filtered to that app), which checks the uninstaller ( validate uninstall ), asks, runs ",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9722,7 +9852,7 @@
    "id": "doc.core-apps.2",
    "kind": "doc",
    "title": "Lens core apps: Safety",
-   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
+   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. This is the only place Lens starts an uninstaller: Lens Cleaner's per-app \"Uninstall…\" opens this window on that app ( coreapp open with find ). - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
    "path": [
     "Docs",
     "Lens core apps",
@@ -11208,7 +11338,7 @@
    "id": "doc.lens-browser.16",
    "kind": "doc",
    "title": "Lens Browser: AI only if you want it / Free, bring your own model",
-   "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, reader view, Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
+   "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, the reader view's Summarise and Ask buttons (the reader view itself is local and stays), Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
    "path": [
     "Docs",
     "Lens Browser",
@@ -11511,8 +11641,25 @@
   {
    "id": "doc.magic.9",
    "kind": "doc",
+   "title": "Magic right-click window: Magic Start (Magic waves M4, off by default)",
+   "text": "With Magic button on (Settings › About & Testing › Magic (preview), confirmed once), a clean tap of the Windows key opens Lens Magic Start instead of Windows Start: - Search box over installed apps (name start, then word start, then anywhere; accents ignored). - Pinned — the Dock's own pins. Magic — Ask Magic, Snip, Dashboard (when on), Shelf → Note (when on), Open the Shelf. Recent — recent files and the newest Shelf items. - Lock and Windows Start : power stays with Windows; \"Windows Start\" sends Ctrl+Esc. - Esc clears the search, then closes. It also closes when another app takes the focus. Rules that never change: - Ctrl+Esc always opens Windows Start. Win+L, Win+D, Win+Tab and every other Win+key combination are never touched; the hook never swallows the Win key itself. - Watchdog: the page must acknowledge each open within 300 ms (2.5 s the first time, while the window is built) or",
+   "path": [
+    "Docs",
+    "Magic right-click window",
+    "Magic Start (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md",
+    "heading": "Magic Start (Magic waves M4, off by default)"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
+   "id": "doc.magic.10",
+   "kind": "doc",
    "title": "Magic right-click window: Needs real hardware",
-   "text": "- Hook behaviour under load and with high-poll-rate mice. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated targets (UIPI refusals).",
+   "text": "- Hook behaviour under load and with high-poll-rate mice. - Magic Start: Win tap on a real keyboard (incl. Win held then released with no other key), the first-build watchdog extension, Ctrl+Esc and Win+L while Magic Start is open, multi-monitor and high-DPI placement, and the Taskbar-style start button. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated tar",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -11796,6 +11943,23 @@
    "source": "docs/MESSAGES.md"
   },
   {
+   "id": "doc.messages.8",
+   "kind": "doc",
+   "title": "Lens Messages: Title watcher (how web-app badges update)",
+   "text": "Every Lens Browser tab has a WebView2 DocumentTitleChanged handler ( src-tauri/src/browser/titles.rs ). When a title changes, the handler passes the tab id, the page address and the title to commands::messages::space title changed . messages::spaces::app for url decides which messenger the page belongs to (https and the app's own hosts only), badges::unread from title parses the count, and the title text is dropped. Counts are kept per tab and summed per messenger, so two Slack workspaces add up and closing or sleeping a tab takes only its share away ( browser::titles::gone ). Pages of messengers you haven't turned on in Messages are ignored. When Messages settings change, open tabs are read once so a messenger you just turned on shows its badge straight away. A change emits lens://messages/unread and, when \"Badges on Dock icons\" is on, lens://coreapp-badge for the Lens Messages pin. Not",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Title watcher (how web-app badges update)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Title watcher (how web-app badges update)"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
    "id": "doc.music.0",
    "kind": "doc",
    "title": "Lens Music",
@@ -11832,7 +11996,7 @@
    "id": "doc.music.2",
    "kind": "doc",
    "title": "Lens Music: Pieces",
-   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback , DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/NowPlaying.tsx , MiniPlayer.tsx , m",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/No",
    "path": [
     "Docs",
     "Lens Music",
@@ -11866,7 +12030,7 @@
    "id": "doc.music.4",
    "kind": "doc",
    "title": "Lens Music: Connect Spotify",
-   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback , ticks Web API, and pastes the client ID. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's February 2026 Development Mode rules apply and are stated in the card: the app owner needs Premium, a new app allows 5 allow-listed users, artist top-tracks and batch metadata were removed (Lens uses artist albums for \"More by\"), library save/remove moved to /me/library , playlist",
+   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback (and, optionally, the same address on ports 43118 and 43119, used only when 43117 is busy), ticks Web API, and pastes the client ID. Lens binds the port before the browser opens: if 43117 is taken it uses the next free one and says so; if all three are taken, Connect fails straight away with a message naming the ports. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's Feb",
    "path": [
     "Docs",
     "Lens Music",
@@ -12012,6 +12176,23 @@
     "surface": "doc",
     "doc": "docs/MUSIC.md",
     "heading": "Needs real hardware"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.15",
+   "kind": "doc",
+   "title": "Lens Music: Lyrics on the desktop (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Lyrics on the desktop (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line. - Window lyricsline ( src-tauri/src/music/desktop lyrics.rs , src/music/LyricsLineSurface.tsx ): transparent, always on top, never focused ( WS EX NOACTIVATE ), every click passes through ( set ignore cursor events ). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits. - On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps. - Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion. - Not yet confirmed on a real PC (focus, multi-monitor placement, fullscr",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyrics on the desktop (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyrics on the desktop (opt-in)"
    },
    "source": "docs/MUSIC.md"
   },
@@ -13570,6 +13751,23 @@
   {
    "id": "doc.shelf.3",
    "kind": "doc",
+   "title": "Shelf and clipboard history — contract: Shelf → Notes (Magic waves M4, off by default)",
+   "text": "With Shelf to Notes on, the Shelf drawer has Make a note . It builds one note from the ticked items (or the whole shelf when none are ticked) and shows it before anything happens: - Save to Notes — a text item tagged lens-note in the \"Notes\" shelf, like any note made in Lens Notes. - Export .md / .txt / PDF — written by save note export into Downloads (or %APPDATA%\\LensUI\\exports when there is no Downloads folder). Names are cleaned, nothing is overwritten, PDFs must be real PDFs ( src/shelf/pdf.ts , A4, Helvetica, Windows-1252 text). - Send to a contact — Matrix rooms you can reply in only. The exact text is shown on an approval card; nothing is sent until you hold Send , and \"Don't send\" withdraws the request ( messages send request → feeds approve → send, once). The optional AI summary is not built yet. Tests: src/ tests /shelfNotes.test.ts .",
+   "path": [
+    "Docs",
+    "Shelf and clipboard history — contract",
+    "Shelf → Notes (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SHELF.md",
+    "heading": "Shelf → Notes (Magic waves M4, off by default)"
+   },
+   "source": "docs/SHELF.md"
+  },
+  {
+   "id": "doc.shelf.4",
+   "kind": "doc",
    "title": "Shelf and clipboard history — contract: Clipboard history v2",
    "text": "Command What it does --- --- clip status() Enabled, paused-until, skip-next, counts and settings. It also wires change events on first use. clip set settings(settings) Saves %APPDATA%\\LensUI\\clip\\settings.json . Turning history on starts the listener; turning it off stops recording immediately. clip list(query?, kind?) ClipView[] : pinned first. The preview is capped at 240 characters, and the full text never goes to the list. clip get text(id) The full text, for previews and context chips. clip pin , clip rename , clip delete Single-clip edits. clip clear(minutes?, includePinned?) Clears recent clips. Pinned clips stay unless includePinned . clip wipe() Deletes everything, in memory and the sealed file. clip pause(minutes) , clip ignore next() Pause recording ( 0 resumes) or skip one copy. clip copy(id, mode?) Puts the clip back on the clipboard. clip paste(id, mode?) Hides Command, the",
    "path": [
@@ -13585,7 +13783,7 @@
    "source": "docs/SHELF.md"
   },
   {
-   "id": "doc.shelf.4",
+   "id": "doc.shelf.5",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract: Retiring the old in-memory history",
    "text": "win clipboard.rs (the text-only, in-memory history behind the Clipboard pane) still runs on its own func.clipboardHistory switch. Both listeners can run side by side. Once Command ships: 1. Point ClipboardPane.tsx at clip list / clip copy . 2. Map func.clipboardHistory onto ClipSettings.enabled once (a migration in config.rs ). 3. Remove start clipboard history from setup.",
@@ -15493,6 +15691,23 @@
   },
   {
    "id": "doc.window-styling.8",
+   "kind": "doc",
+   "title": "Window styling 2.0: Window buttons: which windows, which look, which side",
+   "text": "One decision per window, caption rules::skip reason (pure, tested on any machine), strongest reason first: 1. Protected — Lens itself, Windows shell hosts and every name on win rules::ANTI CHEAT FRAGMENTS , matched against the process's full path, plus any process Windows will not name. The engine has no list of its own. Two source tests in tests/win rules.rs fail the build if any file under src-tauri/src names an anti-cheat process itself, or if an engine that touches other apps' windows (window buttons, DWM styling, dimming, tiling, Alt+drag, the key hook, pointer effects) stops asking win rules . 2. Excluded — windowControls.excludedProcesses (Settings › Windows & Keys › Window styling › Apps and window buttons). \"Notepad.exe\", \"notepad\" and a full path all mean the same app; whole names only, so excluding Notepad does not exclude Notepad++. 3. Left alone by a rule — a per-app rule wi",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "Window buttons: which windows, which look, which side"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "Window buttons: which windows, which look, which side"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.9",
    "kind": "doc",
    "title": "Window styling 2.0: Window buttons blend into every title bar",
    "text": "Lens's coloured window buttons on other apps' windows are drawn by win caption engine.rs : a small layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque (the native buttons are underneath), so it only blends if every pixel that is not one of the three dots is exactly the title bar's colour on that row. The pixels come from src-tauri/src/caption paint.rs , which is pure and tested on any machine. Why a strip used to show (the \"new window options don't blend\" report): - One colour for the whole overlay. The old engine read five pixels and painted their median everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows, apps with a thin caption) or title text near the sample points left a visible box. - Read once, too early. Colours were re-read only at activation and at the end of a move. DWM fades the caption be",

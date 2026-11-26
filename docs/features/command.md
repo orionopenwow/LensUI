@@ -1,6 +1,8 @@
 # Command — feature dossier
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
+>
+> **Fable pass, 2026-11-26 (PR #115): status works.** Done: Snip's default is Ctrl+Alt+X with a one-time move for files still on Ctrl+Shift+S; Save As and other common app keys are on the conflict list by name; the shortcuts sheet shows Snip's real shortcut; "Teach me" (an applied intent says where its setting lives, with a link); the Do-mode preview is announced to screen readers. Example chips under an empty Do field are in too. Left: B-12c by hand on a real PC, the 10 s Undo toast, "Did you mean…", plain-language previews, splitting the two large files.
 
 ## Rundown
 
@@ -46,12 +48,12 @@ Command is Lens's "say what you want" surface: type or speak, Lens turns it into
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
 | Open Command / palette / shelf / snip | Rebindable | works | #99 |
-| Conflict check | Warns on clash | partly — Snip's Ctrl+Shift+S still clashes with Save As in most apps | #99 note |
+| Conflict check | Warns on clash | works — Snip is on Ctrl+Alt+X; its field names what a clashing choice would break | `src/keys/shortcuts.ts`, `snip/config.rs::migrate`; PR #115 |
 
 ## Quick wins (≤1 day each, ranked)
-1. **Move Snip off Ctrl+Shift+S** (Save As in most apps) to a free combo, and add Save As to the conflict list.
+1. ~~Move Snip off Ctrl+Shift+S and add Save As to the conflict list.~~ Done (PR #115).
 2. **Show "Undo" for 10 s as a toast after any approved intent**, not only inside the Command card.
-3. **Example chips under an empty input** ("dock on the left", "dark at sunset", "next wallpaper") drawn from ACTIONS.
+3. ~~Example chips under an empty input.~~ Done (PR #115): four examples in Do mode, each a phrase the engine's own tests pin (`src/command/examples.ts`); picking one types it, Enter runs it.
 4. **"Did you mean…" for near-miss commands** using the existing search scorer instead of "I didn't understand".
 5. **Settle B-12c by hand:** on a real PC, cold start → Ctrl+Alt+Space → type + Enter ten times; if no key is ever lost, close it as a DevTools-only quirk.
 
@@ -67,11 +69,11 @@ Command is Lens's "say what you want" surface: type or speak, Lens turns it into
 | B-12b | — | First Enter after cold start did nothing — handler side closed (wave 4c) | `docs/brain/BUGS.md:48` |
 | B-12c | Low | On some cold starts the very first key sent over DevTools never reaches the page; second Enter works. Maybe CDP-only | `docs/brain/BUGS.md:48` |
 | B-37 | — | Fixed | BUGS.md |
-| suspected | Low | Ctrl+Shift+S default clashes with Save As | #99 note |
-| suspected | Low | Preview card not announced to screen readers | `CommandSurface.tsx` |
+| B-48 | — | Fixed (PR #115): Snip's default Ctrl+Shift+S took Save As away from every app | `docs/brain/BUGS.md` |
+| — | — | Fixed (PR #115): the Do-mode preview is announced (`role="status"`) | `CommandSurface.tsx` |
 
 ## One idea to push to main
-**"Teach me" mode.** After an intent is applied, the card shows where that setting lives ("Settings › Dock › Position") with a link — Command becomes the fastest way to learn Lens's settings.
+**"Teach me" mode.** After an intent is applied, the card shows where that setting lives ("Settings › Dock › Position") with a link — Command becomes the fastest way to learn Lens's settings. **Built (PR #115)** for the offline intents that change a setting (`src/command/teach.ts`, names from the Settings registry). Next: the same line on AI tool cards that change settings.
 
 ## Test plan
 **Unit:** every ACTION has ≥3 phrasings that parse to it; preview text is plain words for each; apply→undo is identity on the full config for every ACTION.

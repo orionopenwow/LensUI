@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { currentTokens, music, type LastfmStatus, type MusicConfig, type SpicetifyPreview, type SpotifyStatus } from "../music/api";
 import { openExternal } from "../ai/open";
+import { DEFAULT_REDIRECTS, RedirectList, useSpotifyConnect } from "../music/spotifyConnect";
 import "../music/music.css";
 
 const DEFAULT: MusicConfig = {
@@ -18,6 +19,7 @@ const DEFAULT: MusicConfig = {
   lyricsLrclib: true,
   lyricsFolder: null,
   lyricsOffsetMs: 0,
+  desktopLyrics: false,
   windowStyle: "expanded",
   dither: true,
   sceneReactive: false,
@@ -44,7 +46,6 @@ export const MusicCard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [clientId, setClientId] = useState("");
-  const [connecting, setConnecting] = useState(false);
   const [lastfm, setLastfm] = useState<LastfmStatus | null>(null);
   const [lfKey, setLfKey] = useState("");
   const [lfSecret, setLfSecret] = useState("");
@@ -67,19 +68,11 @@ export const MusicCard: React.FC = () => {
   };
   const off = !cfg.enabled;
 
-  const connectSpotify = async () => {
+  const spotifyConnect = useSpotifyConnect(setSpotify);
+  const connecting = spotifyConnect.connecting;
+  const connectSpotify = () => {
     setError(null);
-    try {
-      const url = await music.spotifyBegin(clientId);
-      setConnecting(true);
-      openExternal(url);
-      await music.spotifyFinish();
-      setSpotify(await music.spotifyStatus());
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setConnecting(false);
-    }
+    void spotifyConnect.connect(clientId);
   };
 
   return (
@@ -157,6 +150,9 @@ export const MusicCard: React.FC = () => {
       </Row>
       {cfg.lyrics && !off && (
         <>
+          <Row label="Lyrics on the desktop" desc="Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.">
+            <Toggle on={cfg.desktopLyrics} label="Lyrics on the desktop" onChange={(v) => save({ desktopLyrics: v })} />
+          </Row>
           <Row label="Use LRCLIB" desc="Turn off to use only your own .lrc files.">
             <Toggle on={cfg.lyricsLrclib} label="Use LRCLIB" onChange={(v) => save({ lyricsLrclib: v })} />
           </Row>
@@ -202,7 +198,7 @@ export const MusicCard: React.FC = () => {
         <>
           <ol className="cc-desc" style={{ margin: "8px 0 0", paddingLeft: 18 }}>
             <li>Create an app at <button type="button" className="md-link" onClick={() => openExternal("https://developer.spotify.com/dashboard")}>developer.spotify.com/dashboard</button>.</li>
-            <li>Add the redirect URI <span className="lm-mono">{spotify?.redirectUri ?? "http://127.0.0.1:43117/callback"}</span> and tick Web API.</li>
+            <li>Add the redirect URI <RedirectList uris={spotify?.redirectUris?.length ? spotify.redirectUris : DEFAULT_REDIRECTS} /> and tick Web API.</li>
             <li>Paste its client ID here. Spotify asks you to approve these permissions:</li>
           </ol>
           <ul className="cc-desc" style={{ margin: "4px 0 0", paddingLeft: 18 }}>
@@ -213,6 +209,8 @@ export const MusicCard: React.FC = () => {
             <input className="cc-input" style={{ width: 280 }} placeholder="Client ID (32 characters)" aria-label="Spotify client ID" value={clientId} onChange={(e) => setClientId(e.target.value)} />
             <button type="button" className="cc-btn" disabled={connecting || clientId.trim().length !== 32} onClick={connectSpotify}>{connecting ? "Waiting for Spotify…" : "Connect"}</button>
           </div>
+          {spotifyConnect.notice && <div className="cc-desc lm-card-note" role="status">{spotifyConnect.notice}</div>}
+          {spotifyConnect.error && <div className="cc-desc lm-card-note error" role="alert">{spotifyConnect.error}</div>}
         </>
       )}
       <div className="cc-desc" style={{ marginTop: 8 }}>

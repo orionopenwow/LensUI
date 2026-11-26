@@ -589,6 +589,40 @@ fn history_tracks_growth() {
 }
 
 #[test]
+fn timeline_jumps_are_the_big_days_labelled_by_folder() {
+    const GB: u64 = 1_000_000_000;
+    let total = 500 * GB;
+    let mut h = history::History::default();
+    // Used space: 100, 100.2, 109, 109, 121 GB over five days.
+    for (day, used) in [("2026-11-01", 100 * GB), ("2026-11-02", 100 * GB + GB / 5), ("2026-11-03", 109 * GB), ("2026-11-04", 109 * GB), ("2026-11-05", 121 * GB)] {
+        h.record_drive(day, "C:\\", total, total - used);
+    }
+    // Videos was mapped before and after the 3 Nov jump; Games only after it; D: is another drive.
+    h.record_folder("2026-11-02", "C:\\Users\\you\\Videos", 10 * GB);
+    h.record_folder("2026-11-03", "C:\\Users\\you\\Videos", 18 * GB);
+    h.record_folder("2026-11-02", "C:\\Users\\you\\Downloads", 4 * GB);
+    h.record_folder("2026-11-04", "C:\\Users\\you\\Downloads", 5 * GB);
+    h.record_folder("2026-11-05", "C:\\Games", 40 * GB);
+    h.record_folder("2026-11-02", "D:\\Big", GB);
+    h.record_folder("2026-11-03", "D:\\Big", 90 * GB);
+    let jumps = h.jumps("C:\\", 30, total, 3);
+    assert_eq!(jumps.len(), 2, "200 MB and a flat day are not jumps: {jumps:?}");
+    assert_eq!((jumps[0].day.as_str(), jumps[0].delta), ("2026-11-05", 12 * GB), "largest first");
+    assert_eq!(jumps[0].folder, None, "no before-and-after map of any folder across that day");
+    assert_eq!(jumps[1].day, "2026-11-03");
+    assert_eq!(jumps[1].folder.as_deref(), Some("C:\\Users\\you\\Videos"), "the folder that grew most on this drive");
+    assert_eq!(jumps[1].folder_delta, 8 * GB);
+    assert_eq!(h.jumps("C:\\", 30, total, 1).len(), 1);
+    assert!(h.jumps("E:\\", 30, total, 3).is_empty());
+    // On a small drive 1% counts; on a big one 1 GB does.
+    assert!(history::is_jump(600_000_000, 32 * GB));
+    assert!(!history::is_jump(600_000_000, 500 * GB));
+    assert!(history::is_jump(GB, 4_000 * GB));
+    // Jumps survive the text file.
+    assert_eq!(history::parse(&h.serialize()).jumps("C:\\", 30, total, 3), jumps);
+}
+
+#[test]
 fn installed_apps_from_reg_query() {
     let out = "\r\nHKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Spotify\r\n    DisplayName    REG_SZ    Spotify\r\n    Publisher    REG_SZ    Spotify AB\r\n    DisplayIcon    REG_SZ    \"C:\\Users\\you\\AppData\\Roaming\\Spotify\\Spotify.exe\",0\r\n    UninstallString    REG_SZ    \"C:\\Users\\you\\AppData\\Roaming\\Spotify\\Spotify.exe\" /uninstall\r\n    EstimatedSize    REG_DWORD    0x4b000\r\n\r\nHKEY_LOCAL_MACHINE\\...\\{GUID}\r\n    DisplayName    REG_SZ    Some Runtime\r\n    SystemComponent    REG_DWORD    0x1\r\n    UninstallString    REG_SZ    MsiExec.exe /X{1234-ABCD}\r\n";
     let apps = apps::parse_reg_query(out);
@@ -596,13 +630,9 @@ fn installed_apps_from_reg_query() {
     assert_eq!(apps[0].name, "Spotify");
     assert_eq!(apps[0].size, 0x4b000 * 1024);
     assert_eq!(apps::icon_path(&apps[0].display_icon).as_deref(), Some("C:\\Users\\you\\AppData\\Roaming\\Spotify\\Spotify.exe"));
-    let (exe, args) = apps::split_uninstall(&apps[0].uninstall).unwrap();
-    assert!(exe.ends_with("Spotify.exe"));
-    assert_eq!(args, vec!["/uninstall"]);
-    assert!(apps::split_uninstall("MsiExec.exe /X{1234-ABCD}").is_some());
-    assert!(apps::split_uninstall("MsiExec.exe /X{1234} & del C:\\").is_none());
-    assert!(apps::split_uninstall("cmd /c del C:\\").is_none());
-    assert!(apps::split_uninstall("C:\\x\\un.exe /S").is_some());
+    // Uninstalling is Startup & Uninstall's job (`coreapps::uninstall::validate_uninstall`): the
+    // Cleaner only says whether an app has an uninstaller to hand over.
+    assert!(!apps[0].uninstall.is_empty());
 }
 
 #[test]
@@ -657,6 +687,10 @@ fn settings_and_helpers() {
     assert!(win::open_uri("steam://uninstall/1 & calc").is_err());
     assert!(audit::line(0, "delete", "a\nb").ends_with("delete a b\n"));
     assert_eq!(plan::token_for(&["b".into(), "a".into()]), plan::token_for(&["a".into(), "b".into()]));
+    let timing = ScanTiming { elapsed_ms: 3_412, at_ms: 1_795_000_000_000 };
+    assert_eq!(ScanTiming::parse(&timing.encode()), Some(timing));
+    assert_eq!(ScanTiming::parse(""), None);
+    assert_eq!(ScanTiming::parse("fast yesterday"), None);
 }
 
 /// Throughput benchmark (not run in CI): `LENS_BENCH_DIR=/usr cargo test --lib bench_scan -- --ignored --nocapture`.

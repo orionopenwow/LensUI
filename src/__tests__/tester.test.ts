@@ -126,3 +126,14 @@ describe("report text", () => {
     expect(issueBody({ version: "1", sha: "abc" }, null, failed)).toContain("**b** (Themes)");
   });
 });
+
+describe("Cleaner scan time in the Tester Hub", () => {
+  test("says the measured time against the 10 s target, or that it isn't measured", async () => {
+    const { cleanerScanLabel, envLines } = await import("../tester/model");
+    expect(cleanerScanLabel(null)).toContain("not measured yet");
+    expect(cleanerScanLabel({ elapsedMs: 3_412, atMs: 1 })).toBe("3.4 s (target: under 10 s)");
+    expect(cleanerScanLabel({ elapsedMs: 14_000, atMs: 1 })).toBe("14.0 s (target: under 10 s, missed)");
+    const lines = envLines({ windows: "Windows 11", cpu: "x", gpus: [], ramGb: 16, displays: [], lensVersion: "0.3.0", cleanerScan: { elapsedMs: 3_412, atMs: 1 } });
+    expect(lines.some((l) => l === "Cleaner scan: 3.4 s (target: under 10 s)")).toBe(true);
+  });
+});

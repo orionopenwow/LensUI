@@ -33,15 +33,23 @@ export const SIMPLE = {
   command: "Ctrl+Alt+Space",
   widgets: "Ctrl+Alt+W",
   magic: "Ctrl+Alt+Q",
+  /** Was Ctrl+Shift+S until 0.3, which is Save As in most apps (src-tauri/src/snip/config.rs). */
+  snip: "Ctrl+Alt+X",
 } as const;
 
-export function shortcutsFor(c: LensConfig): Shortcut[] {
+/** Shortcuts kept outside the main config (Snip has its own settings file). */
+export interface OtherShortcuts {
+  /** Snip's shortcut as set in Snip settings. */
+  snip?: string;
+}
+
+export function shortcutsFor(c: LensConfig, other: OtherShortcuts = {}): Shortcut[] {
   return [
     { id: "palette", name: "Open the launcher", keys: c.func.paletteHotkey || SIMPLE.palette, simple: SIMPLE.palette, editable: true },
     { id: "command", name: "Ask Lens (Command)", keys: cmdHotkey(c), simple: SIMPLE.command, editable: true, when: "Lens Command is on" },
     { id: "widgets", name: "Open the widgets", keys: c.func.widgetsHotkey || SIMPLE.widgets, simple: SIMPLE.widgets, editable: true },
     { id: "magic", name: "Magic menu for what's under the pointer", keys: SIMPLE.magic, simple: SIMPLE.magic, editable: false, where: "Settings › Magic" },
-    { id: "snip", name: "Snip part of the screen", keys: "Ctrl+Shift+S", simple: "Ctrl+Shift+S", editable: false, where: "Snip settings", when: "Snip is on" },
+    { id: "snip", name: "Snip part of the screen", keys: other.snip?.trim() || SIMPLE.snip, simple: SIMPLE.snip, editable: false, where: "Snip settings", when: "Snip is on" },
     { id: "pause", name: "Pause Lens's AI", keys: "Ctrl+Alt+Pause", simple: "Ctrl+Alt+Pause", editable: false, where: "Settings › AI › Presence" },
     { id: "dock-n", name: "Open Dock app 1–9", keys: "Alt+1 … Alt+9", simple: "Alt+1 … Alt+9", editable: false, when: "Dock number keys are on" },
     { id: "tiling", name: "Snap and tile windows", keys: "Ctrl+Alt+Arrows", simple: "Ctrl+Alt+Arrows", editable: false, when: "Tiling keys are on" },
@@ -76,7 +84,30 @@ export const WINDOWS_KEYS = [
 export const APP_KEYS = [
   "Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+Z", "Ctrl+Y", "Ctrl+A", "Ctrl+S", "Ctrl+Shift+S", "Ctrl+F", "Ctrl+P", "Ctrl+N",
   "Ctrl+O", "Ctrl+W", "Ctrl+T", "Ctrl+Shift+T", "Ctrl+R", "Ctrl+L", "Ctrl+Space", "Alt+W", "Alt+F", "Alt+E",
+  "Ctrl+Shift+N", "Ctrl+Shift+P", "Ctrl+Shift+Z", "Ctrl+Shift+V", "Ctrl+H", "Ctrl+B", "Ctrl+I", "Ctrl+U", "Ctrl+K",
 ].map(normalizeCombo);
+
+/** What the well-known ones do, so the note can say what would break. */
+const APP_KEY_NAMES: Record<string, string> = {
+  "Ctrl+S": "Save",
+  "Ctrl+Shift+S": "Save As",
+  "Ctrl+C": "Copy",
+  "Ctrl+V": "Paste",
+  "Ctrl+X": "Cut",
+  "Ctrl+Z": "Undo",
+  "Ctrl+Y": "Redo",
+  "Ctrl+Shift+Z": "Redo",
+  "Ctrl+A": "Select all",
+  "Ctrl+F": "Find",
+  "Ctrl+P": "Print",
+  "Ctrl+N": "New",
+  "Ctrl+O": "Open",
+  "Ctrl+W": "Close tab",
+  "Ctrl+T": "New tab",
+  "Ctrl+Shift+T": "Reopen tab",
+  "Ctrl+Shift+N": "New private window",
+  "Ctrl+Shift+V": "Paste as plain text",
+};
 
 export interface ComboProblem {
   /** "block": can't be used; "note": works, but worth knowing. */
@@ -95,9 +126,20 @@ export function comboProblem(combo: string, id: ShortcutId, all: Shortcut[]): Co
   if (WINDOWS_KEYS.includes(c)) return { level: "block", message: `${c} belongs to Windows.` };
   const other = all.find((s) => s.id !== id && normalizeCombo(s.keys) === c);
   if (other) return { level: "block", message: `Already used for "${other.name}".` };
-  if (APP_KEYS.includes(c)) return { level: "note", message: `${c} is a shortcut in many apps; it would stop working there.` };
+  if (APP_KEYS.includes(c)) {
+    const does = APP_KEY_NAMES[c];
+    return { level: "note", message: does ? `${c} is ${does} in most apps; it would stop working there.` : `${c} is a shortcut in many apps; it would stop working there.` };
+  }
   if (c === "Alt+Space") return { level: "note", message: "Alt+Space also opens a window's own menu in Windows." };
   return null;
+}
+
+/** What to say under Snip's own shortcut field (Snip keeps its shortcut in its own settings): why
+ *  the keys can't or shouldn't be used, or null when they are fine. Pass the config to also catch
+ *  a clash with another Lens shortcut. */
+export function snipComboNote(combo: string, c?: LensConfig): ComboProblem | null {
+  if (!combo.trim()) return null;
+  return comboProblem(combo, "snip", c ? shortcutsFor(c, { snip: combo }) : []);
 }
 
 /** The config with every changeable shortcut back on the simple defaults (nothing else touched). */

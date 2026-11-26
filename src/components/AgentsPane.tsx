@@ -568,21 +568,21 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "red-yellow-green" },
       });
-      return "Switched window traffic lights to Red · Yellow · Green.";
+      return "Switched the window buttons to Red · Yellow · Green.";
     }
     if (p.includes("yellow green red")) {
       onUpdateConfig({
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "yellow-green-red" },
       });
-      return "Switched window traffic lights to Yellow · Green · Red.";
+      return "Switched the window buttons to Yellow · Green · Red.";
     }
     if (p.includes("green yellow red")) {
       onUpdateConfig({
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "green-yellow-red" },
       });
-      return "Switched window traffic lights to Green · Yellow · Red.";
+      return "Switched the window buttons to Green · Yellow · Red.";
     }
     if (p.includes("windows default") && p.includes("button")) {
       onUpdateConfig({

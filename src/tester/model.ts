@@ -1,6 +1,8 @@
 // Tester Hub data model: build info, the daily LATEST.json, checklist results and their maths.
 // Pure functions only (no React, no Tauri), so everything here is covered by bun tests.
 
+import { fmtScanTime, SCAN_TARGET_MS } from "../cleaner/model";
+
 export type Risk = "high" | "med" | "low";
 
 export interface LatestChange {
@@ -265,6 +267,14 @@ export interface EnvSummary {
   ramGb: number;
   displays: { width: number; height: number; scale: number; primary: boolean }[];
   lensVersion: string;
+  /** How long Lens Cleaner's last full scan took on this PC; absent until one has run. */
+  cleanerScan?: { elapsedMs: number; atMs: number } | null;
+}
+
+/** "3.4 s (target: under 10 s)" for the Tester Hub and the test report. */
+export function cleanerScanLabel(scan: EnvSummary["cleanerScan"]): string {
+  if (!scan) return "not measured yet (run a scan in Lens Cleaner)";
+  return `${fmtScanTime(scan.elapsedMs)} (target: under ${Math.round(SCAN_TARGET_MS / 1000)} s${scan.elapsedMs > SCAN_TARGET_MS ? ", missed" : ""})`;
 }
 
 export function envLines(env: EnvSummary | null): string[] {
@@ -275,6 +285,7 @@ export function envLines(env: EnvSummary | null): string[] {
     `GPU: ${env.gpus.length ? env.gpus.join(", ") : "unknown"}`,
     `RAM: ${env.ramGb} GB`,
     `Displays: ${env.displays.length ? env.displays.map((d) => `${d.width}×${d.height} @ ${Math.round(d.scale * 100)}%${d.primary ? " (primary)" : ""}`).join(", ") : "unknown"}`,
+    `Cleaner scan: ${cleanerScanLabel(env.cleanerScan)}`,
   ];
 }
 

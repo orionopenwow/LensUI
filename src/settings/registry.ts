@@ -417,7 +417,7 @@ export const PAGES: PageDef[] = [
       { id: "report", label: "Report a problem", keywords: ["bug", "report a bug", "feedback", "issue", "something broke"] },
       { id: "updates", label: "Updates & crash reports", keywords: ["restart to update", "update lens", "what's new", "release notes"] },
       { id: "setup", label: "Setup", keywords: ["setup", "welcome", "first run", "wizard", "what's new", "onboarding"] },
-      { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch"] },
+      { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch", "safety", "what lens touches", "what lens changes", "protected keys", "anti-cheat", "skip lens at sign-in", "shift"] },
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },
       { id: "tester", label: "Tester Hub" },

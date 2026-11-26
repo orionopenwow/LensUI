@@ -49,7 +49,9 @@ pub struct Plan {
     pub entries: Vec<Entry>,
     pub steps: Vec<PlanStep>,
     pub total: u64,
-    /// Present only for a permanent delete of your files; the run must echo it back.
+    /// Present only for a permanent delete of your files: the hash of the exact list. It ties the
+    /// delete to that list; the person's agreement is the one-time code in `confirm.rs`, which
+    /// the command layer checks before it echoes this back to `execute`.
     pub confirm_token: Option<String>,
 }
 
@@ -73,7 +75,8 @@ pub fn roots_for(category: &str, specs: &[Spec], ctx: &Ctx) -> Vec<PathBuf> {
     }
 }
 
-/// FNV-1a over the sorted paths: ties a permanent delete to exactly the list you saw.
+/// FNV-1a over the sorted paths: ties a permanent delete to exactly the list you saw. Anything
+/// that knows the list can compute it, so it is never treated as proof that a person agreed.
 pub fn token_for(paths: &[String]) -> String {
     let mut v: Vec<&String> = paths.iter().collect();
     v.sort();
@@ -137,7 +140,7 @@ pub fn plan(specs: &[Spec], ctx: &Ctx, guard: &Guard, categories: &[String], pic
 }
 
 /// Plan for files and folders you picked in the Space map, Biggest files or the Downloads review.
-/// Recycle Bin by default; `permanent` adds a confirm token the run must echo back.
+/// Recycle Bin by default; `permanent` adds the list hash, and the run then needs the one-time code.
 pub fn plan_user(guard: &Guard, paths: &[String], permanent: bool, cancel: &AtomicBool) -> (Plan, Vec<(String, String)>) {
     let mut p = Plan::default();
     let mut refused = Vec::new();

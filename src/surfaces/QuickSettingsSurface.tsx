@@ -667,14 +667,14 @@ export const QuickSettingsSurface: React.FC = () => {
               <div className="qs-card">
                 <div className="qs-row">
                   <div>
-                    <div className="qs-row-title">Traffic Light Controls</div>
+                    <div className="qs-row-title">Window buttons</div>
                     <div className="qs-row-sub">Yellow · Green · Red across all windows</div>
                   </div>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={!!(config.windowControls.enabled)}
-                    aria-label="Traffic Light Controls"
+                    aria-label="Window buttons"
                     className={`qs-switch ${config.windowControls.enabled ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({

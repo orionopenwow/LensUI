@@ -6,11 +6,12 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Eraser, Settings2, X } from "lucide-react";
 import { api, EVENTS, on } from "./api";
+import { openCoreApp } from "../coreapps/registry";
 import { AppsPanel, DownloadsPanel, TimelinePanel } from "./Extras";
 import { Cleanup } from "./Cleanup";
 import { Done, type DoneInfo } from "./Done";
 import { Home } from "./Home";
-import { flow, fmtSize, initialFlow, keyAction, selectionPayload, type CleanupTab, type FlowState } from "./model";
+import { flow, fmtSize, folderName, initialFlow, keyAction, selectionPayload, timelineRows, type CleanupTab, type FlowState } from "./model";
 import { PreviewSheet } from "./PreviewSheet";
 import { Scanning } from "./Scanning";
 import { SettingsPanel } from "./SettingsPanel";
@@ -29,6 +30,7 @@ export interface CleanerDemo {
   settings?: boolean;
   space?: { root?: string; mode?: MapView; filter?: string; selected?: string[]; nodeId?: number; moving?: { path: string; done: number; total: number } };
   downloadsPicked?: string[];
+  timelines?: { root: string; view: HistoryView | null }[];
 }
 
 interface SheetState {
@@ -88,6 +90,19 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       .catch((e) => say(`Couldn't read your drives: ${e}`, true, { label: "Try again", run: () => loadOverview() }));
   }, [say]);
   useEffect(loadOverview, [loadOverview]);
+
+  // Home: "Where did my space go?" from the daily snapshots (only when the person turned them on).
+  const [timelines, setTimelines] = useState<{ root: string; view: HistoryView | null }[]>(demo?.timelines ?? []);
+  const driveRoots = (overview?.drives ?? []).map((d) => d.root).slice(0, 6).join("|");
+  useEffect(() => {
+    if (demo || !driveRoots || s.screen !== "home") return;
+    let alive = true;
+    Promise.all(driveRoots.split("|").map((r) => api.history(r).then((view) => ({ root: r, view })).catch(() => ({ root: r, view: null })))).then((t) => alive && setTimelines(t));
+    return () => {
+      alive = false;
+    };
+  }, [demo, driveRoots, s.screen]);
+  const timeline = useMemo(() => timelineRows(timelines), [timelines]);
 
   // ── scan ────────────────────────────────────────────────────────────────────────────────────
   const scan = useCallback(() => {
@@ -151,6 +166,9 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
 
   const sysDrive = useMemo(() => overview?.drives.find((d) => d.root.toUpperCase().startsWith("C")) ?? overview?.drives[0], [overview]);
 
+  const sheetId = sheet?.preview.id;
+  const confirmCodeFor = useCallback(() => (sheetId ? api.confirmCode(sheetId) : Promise.reject(new Error("That preview has expired; scan again."))), [sheetId]);
+
   const run = useCallback(
     async (confirm?: string | null) => {
       if (!sheet) return;
@@ -181,6 +199,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           freeAfter: after?.free ?? (before?.free ?? 0) + out.freed,
           binned: out.binned.length,
           skipped: out.skipped,
+          scanMs: s.report?.elapsedMs,
         });
         dispatch({ type: "cleaned", freed: out.freed });
       } catch (e) {
@@ -254,6 +273,24 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
   useEffect(() => {
     if (s.screen === "space" && !summary && !spaceProgress) mapDrive(root);
   }, [s.screen, summary, spaceProgress, root, mapDrive]);
+
+  // From the Home timeline: open the Space map on a drive, at the folder that grew when known.
+  const openMapAt = useCallback(
+    async (r: string, folder: string | null) => {
+      dispatch({ type: "space" });
+      if (!summary || root !== r) await mapDrive(r);
+      if (!folder) return;
+      try {
+        const id = await api.spaceFind(r, folder);
+        if (id == null) return say(`${folderName(folder)} isn't on ${r} any more, so this is the whole drive.`);
+        setView(await api.spaceChildren(r, id, 1, 80));
+        api.spaceChildren(r, id, 3, 24).then((d) => setNested(d.children)).catch(() => {});
+      } catch {
+        // The map itself failed and already said so (with Try again).
+      }
+    },
+    [summary, root, mapDrive, say]
+  );
 
   useEffect(() => {
     if (!summary) return;
@@ -402,7 +439,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       </header>
 
       <main className="cl-main" id="cl-main">
-        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch(() => {})} />}
+        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} timeline={timeline} onOpenMap={openMapAt} />}
         {s.screen === "scanning" && (
           <Scanning
             checklist={overview?.checklist ?? []}
@@ -460,8 +497,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               setAppsErr(null);
               api.apps().then(setApps).catch((e) => setAppsErr(String(e)));
             }}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
-            onUninstall={(a) => api.appUninstall(a.key).catch((e) => say(String(e), true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
+            onUninstall={(a) => openCoreApp("startup", "uninstall", a.name).catch((e) => say(`Couldn't open Startup & Uninstall: ${e}`, true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "timeline" && (
@@ -469,7 +506,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             root={root}
             data={history}
             total={overview?.drives.find((d) => d.root === root)?.total ?? 0}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
             onEnable={() => {
               api
                 .settingsGet()
@@ -481,7 +518,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "downloads" && (
-          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch(() => {})} />
+          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))} />
         )}
         {s.screen === "done" && done && <Done info={done} showShare={demo?.share} onDone={() => dispatch({ type: "home" })} onShare={(png) => api.share(png).then((p) => say(`Saved the card to ${p}`)).catch((e) => say(String(e), true))} />}
       </main>
@@ -494,11 +531,11 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               <X size={16} />
             </button>
           </header>
-          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch(() => {})} />
+          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} />
         </aside>
       )}
 
-      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} />}
+      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} onConfirmCode={confirmCodeFor} />}
 
       <div className="cl-toasts" aria-live="polite">
         {undoLeft > 0 && (

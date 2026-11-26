@@ -4,7 +4,7 @@ export { convertFileSrc, isTauri } from "../mock/core";
 
 const now = Date.now();
 const settings = {
-  enabled: true, hotkey: "Ctrl+Shift+S", printScreen: true, defaultMode: "region", delaySeconds: 0, includeCursor: false, afterCapture: "studio",
+  enabled: true, hotkey: "Ctrl+Alt+X", hotkeyRev: 1, printScreen: true, defaultMode: "region", delaySeconds: 0, includeCursor: false, afterCapture: "studio",
   saveDir: "", filenameTemplate: "Lens Snip {date} at {time}", autoRedact: true, ocrLanguage: "auto", beautify: "none", pinOpacity: 1,
   pinClickThrough: false, recordFps: 30, recordFormat: "mp4", recordQuality: "balanced", recordMic: "", recordClickHighlight: true,
   historyEnabled: true, historyDays: 30, historyMax: 500, historyMaxMb: 1024, showRecent: true,

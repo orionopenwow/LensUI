@@ -342,11 +342,7 @@ pub(crate) fn run_setup(
     // Start native Win32 pixel-matched Green·Yellow·Red Caption Engine (works on Chrome, Electron, Explorer, Notepad!)
     #[cfg(windows)]
     {
-        win_caption_engine::set_caption_engine_config(
-            initial_config.window_controls.enabled,
-            &initial_config.window_controls.order,
-            initial_config.theme.border_radius,
-        );
+        win_caption_engine::set_caption_engine_config(&initial_config.window_controls, initial_config.theme.border_radius);
         win_caption_engine::start_caption_engine();
     }
 

@@ -52,6 +52,27 @@ export function viewOf(s: UpdateStatus): UpdateView {
   }
 }
 
+/** Every release; the in-app updater reads the newest one (`win_update::RELEASES_URL`). */
+export const RELEASES_URL = "https://github.com/orionopenwow/LensUI/releases";
+
+export interface UpdateNotice {
+  /** Why updates can't run in this build, in plain words. */
+  text: string;
+  /** Where to get builds by hand meanwhile. */
+  releasesUrl: string;
+}
+
+/** The notice the Updates card shows instead of its normal status when this build has no update
+ *  key: Lens won't check or download what it can't verify, and the card says so plainly rather
+ *  than offering buttons that can't work. Null in every other state. */
+export function updateNotice(s: UpdateStatus): UpdateNotice | null {
+  if (s.state !== "not-configured") return null;
+  const text =
+    s.message.trim() ||
+    "Lens releases aren't signed yet, so this build can't verify an update and won't download one. Until signing is switched on, new builds are on the Releases page.";
+  return { text, releasesUrl: RELEASES_URL };
+}
+
 /** The release notes as short paragraphs and bullet lines for the "What's new" sheet. */
 export function notesLines(notes: string | null | undefined, max = 40): string[] {
   if (!notes) return [];

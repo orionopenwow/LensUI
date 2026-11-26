@@ -27,7 +27,7 @@ Apple Music has no public Windows API for Lens to use, so it's "now playing via 
 | Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) | `src-tauri/src/music/service.rs` (Windows) |
 | Session choice, timeline maths, history, sleep timer, config | `music/session.rs`, `timeline.rs`, `history.rs`, `mod.rs` |
 | Lyrics: LRC parser, LRCLIB client (User-Agent, cache, `429 Retry-After` + jitter), local `.lrc` folder | `music/lrc.rs`, `lyrics.rs` |
-| Spotify Web API (OAuth PKCE, user's own client ID, loopback `http://127.0.0.1:43117/callback`, DPAPI tokens) | `music/spotify.rs` |
+| Spotify Web API (OAuth PKCE, user's own client ID, loopback `http://127.0.0.1:43117/callback` with fallbacks on 43118 and 43119, DPAPI tokens) | `music/spotify.rs` |
 | Last.fm (user's own API key/secret, desktop auth, scrobble rules) | `music/lastfm.rs`, `scrobble.rs` |
 | Speaker peak level (one number; no audio) | `music/levels.rs` |
 | Spicetify theme generator (export only) | `music/spicetify.rs`, `color.rs` |
@@ -53,7 +53,7 @@ and `spicetify restore` to undo. Caveats shown in the card: Spotify updates undo
 
 ## Connect Spotify
 
-1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI `http://127.0.0.1:43117/callback`, ticks Web API, and pastes the client ID.
+1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI `http://127.0.0.1:43117/callback` (and, optionally, the same address on ports 43118 and 43119, used only when 43117 is busy), ticks Web API, and pastes the client ID. Lens binds the port before the browser opens: if 43117 is taken it uses the next free one and says so; if all three are taken, Connect fails straight away with a message naming the ports.
 2. Lens opens Spotify's consent page (PKCE S256, `state` checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic.
 3. Scopes, each explained in the card: `user-read-playback-state`, `user-read-currently-playing`, `user-modify-playback-state`, `user-read-recently-played`, `playlist-read-private`, `user-library-read`, `user-library-modify`.
 
@@ -152,3 +152,12 @@ Anchor ids for coach marks: `data-guide-id="music.card"`, `music.lyrics`, `music
 - Spotify OAuth loopback (port 43117 free, browser redirect), queue/playlists on a Premium account, and Development-Mode allow-listing.
 - Last.fm desktop auth and scrobble timing.
 - The exported Spicetify theme on the current Spotify desktop build.
+
+## Lyrics on the desktop (opt-in)
+
+Settings › Music › Synced lyrics › **Lyrics on the desktop** (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line.
+
+- Window `lyricsline` (`src-tauri/src/music/desktop_lyrics.rs`, `src/music/LyricsLineSurface.tsx`): transparent, always on top, never focused (`WS_EX_NOACTIVATE`), every click passes through (`set_ignore_cursor_events`). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits.
+- On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps.
+- Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion.
+- Not yet confirmed on a real PC (focus, multi-monitor placement, fullscreen games); the rules (`wanted`, `should_show`, `place`, `desktopLine`) are unit-tested.

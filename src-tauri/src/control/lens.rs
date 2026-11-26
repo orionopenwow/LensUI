@@ -35,7 +35,14 @@ pub fn live_default() -> Value {
 
 pub fn engine() -> &'static Engine {
     static E: OnceLock<Engine> = OnceLock::new();
-    E.get_or_init(|| Engine::new(catalogue::build(&default_stores())))
+    // The undo stack is kept in the journal, so "Undo" still works after Lens restarts.
+    E.get_or_init(|| Engine::with_journal(catalogue::build(&default_stores()), undo_path()))
+}
+
+/// %APPDATA%\LensUI\control\undo.jsonl: the last settings changes an agent made, with the values
+/// to put back. Bounded (`engine::UNDO_DEPTH` steps, `engine::UNDO_JOURNAL_MAX_BYTES`).
+pub fn undo_path() -> PathBuf {
+    control_dir().join("undo.jsonl")
 }
 
 pub fn control_dir() -> PathBuf {

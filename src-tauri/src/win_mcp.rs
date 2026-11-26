@@ -111,8 +111,9 @@ pub trait McpHost: Send + Sync {
     /// A request was queued for approval or changed state (show it to the user).
     fn pending_changed(&self, action: &PendingAction);
     /// Hands the person's answer for a local request (see [`LOCAL_KINDS`]) to the part of Lens
-    /// that raised it.
-    fn resolve_local(&self, _action: &PendingAction, _approve: bool) -> Result<(), String> {
+    /// that raised it. `token` is the approval token that came back from the card; the owner
+    /// checks it against the step it is about to run.
+    fn resolve_local(&self, _action: &PendingAction, _approve: bool, _token: Option<&str>) -> Result<(), String> {
         Err(OFFLINE.into())
     }
     /// False only for the bridge's stand-in when Lens can't be reached.
@@ -608,6 +609,28 @@ pub struct PendingAction {
     /// whose card is built on demand.
     #[serde(default, skip_serializing_if = "Value::is_null")]
     pub preview: Value,
+    /// The one-time approval token for this exact request, issued when it was queued (that is,
+    /// when its card is shown). Approving must send it back (`approve_action`). It goes to the
+    /// Lens card only: MCP clients are given the id and status, never this.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub token: String,
+}
+
+/// The exact request an approval on the shared card covers: this queue record, this tool, this
+/// client and wording, these arguments (see `agentsafe::step_token`).
+pub fn record_binding(a: &PendingAction) -> crate::agentsafe::step_token::Binding {
+    crate::agentsafe::step_token::Binding::new(
+        &a.id,
+        &format!("{}:{}", a.kind, a.tool),
+        &format!("{}\n{}", a.client, a.text),
+        &crate::agentsafe::canonical_json(&a.args),
+    )
+}
+
+fn issue_for(a: &mut PendingAction) {
+    use crate::agentsafe::step_token;
+    // No token (the OS random source failed) means the request can't be approved: fail closed.
+    a.token = step_token::store().issue(&record_binding(a), step_token::now_ms()).unwrap_or_default();
 }
 
 /// Requests raised inside Lens rather than by an MCP client: the assistant ("ai": Lens Command,
@@ -660,7 +683,7 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
     if q.iter().filter(|a| a.status == "pending" && !is_local_kind(&a.kind)).count() >= MAX_PENDING {
         return Err(format!("{} requests are already waiting for the user; try again after they answer.", MAX_PENDING));
     }
-    let a = PendingAction {
+    let mut a = PendingAction {
         id: format!("lens-{}-{}", now % 1_000_000_000, NEXT_ID.fetch_add(1, Ordering::SeqCst)),
         kind: if matches!(call, ToolCall::RunAction(_)) { "nl" } else { "tool" }.into(),
         tool: call.name().into(),
@@ -672,7 +695,9 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
         result: String::new(),
         reference: String::new(),
         preview: Value::Null,
+        token: String::new(),
     };
+    issue_for(&mut a);
     q.push(a.clone());
     Ok(a)
 }
@@ -680,6 +705,13 @@ pub fn enqueue(call: &ToolCall, args: &Value, client: &str) -> Result<PendingAct
 /// Queues a confirmation raised inside Lens. Asking twice for the same `reference` returns the
 /// request that is already waiting. The owner calls [`finish_local`] when it is settled.
 pub fn enqueue_local(kind: &str, reference: &str, tool: &str, args: &Value, text: &str, client: &str, preview: Value) -> Result<PendingAction, String> {
+    enqueue_local_with(kind, reference, tool, args, text, client, preview, None)
+}
+
+/// [`enqueue_local`] for an owner that issued the step's approval token itself (the assistant's
+/// runner): the card carries the owner's token and the owner checks it when it comes back.
+#[allow(clippy::too_many_arguments)]
+pub fn enqueue_local_with(kind: &str, reference: &str, tool: &str, args: &Value, text: &str, client: &str, preview: Value, owner_token: Option<String>) -> Result<PendingAction, String> {
     if !is_local_kind(kind) || reference.trim().is_empty() {
         return Err("Not a local approval request.".into());
     }
@@ -692,7 +724,7 @@ pub fn enqueue_local(kind: &str, reference: &str, tool: &str, args: &Value, text
     if q.iter().filter(|a| a.status == "pending" && is_local_kind(&a.kind)).count() >= MAX_LOCAL_PENDING {
         return Err("Too many requests are already waiting for you.".into());
     }
-    let a = PendingAction {
+    let mut a = PendingAction {
         id: format!("lens-{}-{}", now % 1_000_000_000, NEXT_ID.fetch_add(1, Ordering::SeqCst)),
         kind: kind.into(),
         tool: clean_text(tool, 60),
@@ -704,7 +736,12 @@ pub fn enqueue_local(kind: &str, reference: &str, tool: &str, args: &Value, text
         result: String::new(),
         reference: clean_text(reference, 120),
         preview,
+        token: String::new(),
     };
+    match owner_token {
+        Some(t) if kind == "ai" => a.token = t,
+        _ => issue_for(&mut a),
+    }
     q.push(a.clone());
     Ok(a)
 }
@@ -751,9 +788,40 @@ fn set_status(id: &str, from: &[&str], status: &str, result: &str) -> Result<Pen
     Ok(a.clone())
 }
 
+/// Whether the queue itself checks the approval token. The assistant's own steps ("ai") are
+/// checked by its runner, right before the tool runs, against the arguments it will run with.
+fn queue_checks_token(kind: &str) -> bool {
+    kind != "ai"
+}
+
 /// User clicked Approve. "tool" requests run here; "nl" requests are marked approved and the
 /// frontend runs them through the action router, then calls `complete_action`.
-pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, String> {
+///
+/// `token` must be the one-time token of this exact request (`PendingAction::token`). Without
+/// it, with another request's, with a used or an expired one, nothing is approved; the request
+/// stays pending with a fresh token so the card can ask again.
+pub fn approve_action(id: &str, token: Option<&str>, host: &dyn McpHost) -> Result<PendingAction, String> {
+    let current = find_action(id).ok_or("That request no longer exists.")?;
+    if current.status != "pending" {
+        return Err(format!("That request is already {}.", current.status));
+    }
+    if queue_checks_token(&current.kind) {
+        use crate::agentsafe::step_token;
+        if let Err(refusal) = step_token::store().redeem(token, &record_binding(&current), step_token::now_ms()) {
+            let fresh = {
+                let mut q = queue().lock().unwrap_or_else(|e| e.into_inner());
+                q.iter_mut().find(|a| a.id == id && a.status == "pending").map(|a| {
+                    issue_for(a);
+                    a.clone()
+                })
+            };
+            if let Some(a) = fresh {
+                host.pending_changed(&a);
+            }
+            append_audit(&audit_line(&current.client, &current.tool, "refused", false, &format!("approval token {}", refusal.code()), 0));
+            return Err(refusal.message().into());
+        }
+    }
     let a = set_status(id, &["pending"], "approved", "")?;
     if a.kind == "nl" {
         host.pending_changed(&a);
@@ -761,7 +829,7 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
     }
     if is_local_kind(&a.kind) {
         // The owner runs it and reports back through `finish_local`.
-        let a = match host.resolve_local(&a, true) {
+        let a = match host.resolve_local(&a, true, token) {
             Ok(()) => a,
             Err(e) => set_status(id, &["approved"], "failed", &e)?,
         };
@@ -790,7 +858,7 @@ pub fn approve_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, Str
 pub fn decline_action(id: &str, host: &dyn McpHost) -> Result<PendingAction, String> {
     let a = set_status(id, &["pending"], "declined", "The user declined this request.")?;
     if is_local_kind(&a.kind) {
-        let _ = host.resolve_local(&a, false);
+        let _ = host.resolve_local(&a, false, None);
     }
     host.pending_changed(&a);
     append_audit(&audit_line(&a.client, &a.tool, "declined", true, &a.text, 0));
@@ -1553,9 +1621,10 @@ pub mod lens_host {
             crate::control::lens::read_resource(&self.app, client, uri)
         }
 
-        fn resolve_local(&self, action: &PendingAction, approve: bool) -> Result<(), String> {
+        fn resolve_local(&self, action: &PendingAction, approve: bool, token: Option<&str>) -> Result<(), String> {
             match action.kind.as_str() {
-                "ai" => crate::ai::runtime().approvals.resolve(&action.reference, approve),
+                // The runner redeems the token against the step it is about to run.
+                "ai" => crate::ai::runtime().approvals.resolve(&action.reference, approve, token),
                 "bridge" => crate::commands::bridge::resolve_from_card(&self.app, &action.reference, approve),
                 // Lens Apps answer in their own window; it listens for `lens://mcp-changed`.
                 "app" => Ok(()),

@@ -193,6 +193,18 @@ pub fn protected_combo(vk: u32, ctrl: bool, alt: bool, shift: bool, win: bool) -
     }
 }
 
+/// The same keys by name, for people (Settings › About & Testing › Safety) and for the test that
+/// keeps the names and [`protected_combo`] in step: (label, key, [ctrl, alt, shift, win]).
+pub const PROTECTED_KEYS: [(&str, u32, [bool; 4]); 7] = [
+    ("Ctrl+Alt+Del", 0x2E, [true, true, false, false]),
+    ("Ctrl+Shift+Esc", 0x1B, [true, false, true, false]),
+    ("Alt+Esc", 0x1B, [false, true, false, false]),
+    ("Alt+F4", 0x73, [false, true, false, false]),
+    ("Win+L", 0x4C, [false, false, false, true]),
+    ("Win+D", 0x44, [false, false, false, true]),
+    ("Win+Tab", 0x09, [false, false, false, true]),
+];
+
 /// Does a device need its hook installed? Yes while any claimed feature would be called.
 pub fn hook_wanted(claims: &[(bool, WhenPaused)], paused: bool) -> bool {
     claims.iter().any(|&(claimed, when)| claimed && (!paused || when == WhenPaused::Observe))

@@ -17,6 +17,7 @@
 pub mod apps;
 pub mod audit;
 pub mod bin;
+pub mod confirm;
 pub mod detectors;
 pub mod dupes;
 pub mod elevated;
@@ -162,6 +163,26 @@ pub fn civil(days: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+/// How long the last full scan took on this PC, kept so the "under 10 seconds" target is visible
+/// on real hardware (Done screen, Tester Hub). One line of text in Lens's own folder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScanTiming {
+    pub elapsed_ms: u64,
+    pub at_ms: u64,
+}
+
+impl ScanTiming {
+    pub fn encode(&self) -> String {
+        format!("{} {}\n", self.elapsed_ms, self.at_ms)
+    }
+    pub fn parse(text: &str) -> Option<ScanTiming> {
+        let mut it = text.split_whitespace();
+        let elapsed_ms = it.next()?.parse().ok()?;
+        let at_ms = it.next()?.parse().ok()?;
+        Some(ScanTiming { elapsed_ms, at_ms })
+    }
 }
 
 pub fn now_ms() -> u64 {
