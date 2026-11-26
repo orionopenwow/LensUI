@@ -632,7 +632,7 @@ export const DockSurface: React.FC = () => {
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     setCardSize((p) => (Math.abs(p.w - w) < 1 && Math.abs(p.h - h) < 1 ? p : { w, h }));
-  }, [shownCard?.key, shownCard?.windows.length, cardMode, mediaInfo?.title, hoverLinger.mounted]);
+  }, [shownCard?.key, shownCard?.windows.length, cardMode, hoverLinger.mounted]);
   const menuLinger = useLingering(ctxMenu, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownMenu = menuLinger.value;
 
