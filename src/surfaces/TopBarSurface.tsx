@@ -43,7 +43,7 @@ import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 export const TopBarSurface: React.FC = () => {
   const { config } = useLensState();
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
-  const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
+  const systemInDock = !!config && resolveSystemArea(config.dock, config.topBar) === "dock";
   const [now, setNow] = useState(() => new Date());
   const approvals = usePendingApprovals();
   // The global hotkey for the approval window, once Lens has registered one (B-14).
@@ -186,7 +186,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "left" })}
-      aria-label="Previous Desktop"
+      aria-label="Previous desktop"
     >
       <ChevronLeft size={14} strokeWidth={2.3} />
     </button>
@@ -196,7 +196,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 8px", fontSize: 11.5, fontWeight: 500 }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "overview" })}
-      aria-label="Desktops Overview"
+      aria-label="Desktops overview"
     >
       <Layers size={13} strokeWidth={2.2} />
       <span>Desktops</span>
@@ -207,7 +207,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "right" })}
-      aria-label="Next Desktop"
+      aria-label="Next desktop"
     >
       <ChevronRight size={14} strokeWidth={2.3} />
     </button>
@@ -217,7 +217,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "new" })}
-      aria-label="New Desktop"
+      aria-label="New desktop"
     >
       <Plus size={14} strokeWidth={2.3} />
     </button>
@@ -244,7 +244,7 @@ export const TopBarSurface: React.FC = () => {
               <button
                 type="button"
                 className="topbar-media-btn"
-                aria-label="Previous Track"
+                aria-label="Previous track"
                 onClick={() => {
                   invoke("media_control_cmd", { action: "prev" }).catch(() => {});
                   window.setTimeout(() => {
@@ -274,7 +274,7 @@ export const TopBarSurface: React.FC = () => {
               <button
                 type="button"
                 className="topbar-media-btn"
-                aria-label="Next Track"
+                aria-label="Next track"
                 onClick={() => {
                   invoke("media_control_cmd", { action: "next" }).catch(() => {});
                   window.setTimeout(() => {
@@ -411,7 +411,7 @@ export const TopBarSurface: React.FC = () => {
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "network", section: "network" })
               }
-              aria-label="Wi-Fi and Network"
+              aria-label="Wi-Fi and network"
             >
               <Wifi size={16} strokeWidth={2.6} />
             </button>
@@ -422,7 +422,7 @@ export const TopBarSurface: React.FC = () => {
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "audio", section: "audio" })
               }
-              aria-label="Volume and Audio Mixer"
+              aria-label="Volume and audio mixer"
             >
               <Volume2 size={16} strokeWidth={2.6} />
             </button>

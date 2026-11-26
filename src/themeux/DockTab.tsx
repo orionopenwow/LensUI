@@ -11,11 +11,36 @@ import {
   type DockSystemAreaMode,
 } from "../dock/styles";
 import { ValueSlider } from "./ThemeTab";
+import { Section } from "../settings/ui/primitives";
+import {
+  LAUNCH_CHOICES,
+  MAGNIFICATION_CHOICES,
+  STYLE_ICON_MAX,
+  STYLE_ICON_MIN,
+  clearSeparators,
+  dockAdvancedSummary,
+  dockAdvancedView,
+  setAutoClosePopouts,
+  setFileDropOpen,
+  setLaunchAnimation,
+  setMagnification,
+  setMagnificationRange,
+  setMiddleClickNewInstance,
+  setMinimizeFeedback,
+  setScrollCyclesWindows,
+  setShowLabels,
+  setStyleIconSize,
+  sharedStyleIconSize,
+  toggleSeparatorAfter,
+} from "../dock/advanced";
+import { dockStyleLabel } from "../dock/styles";
 
 interface Props {
   config: LensConfig;
   accent: string;
   updateConfig: (next: LensConfig) => void;
+  /** Section a deep link asked for ("advanced" opens the Advanced section). */
+  section?: string;
 }
 
 const Seg: React.FC<{
@@ -51,7 +76,7 @@ const Toggle: React.FC<{ label: string; desc: string; on: boolean; onChange: (v:
 );
 
 /** Dock & Top Bar tab, Dock half: style → position → size → auto-hide → system area. */
-export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
+export const DockTab: React.FC<Props> = ({ config, accent, updateConfig, section }) => {
   const [style, pickStyle] = useStylePick(config, updateConfig);
   const alignment = dockAlignmentOf(config);
   const systemArea = dockSystemAreaOf(config);
@@ -165,6 +190,167 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig }) => {
           onChange={(v) => setDock({ suggestedApps: v })}
         />
       </div>
+
+      <DockAdvanced config={config} updateConfig={updateConfig} open={section === "advanced"} />
     </>
+  );
+};
+
+/**
+ * 5. Advanced: the Dock settings that already worked but had no row (magnification, launch
+ * animation, app names, per-style icon size, dividers…). Closed until asked for. Every click is
+ * one helper from src/dock/advanced.ts, so the rows are covered by dockAdvanced.test.ts.
+ */
+const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConfig) => void; open: boolean }> = ({ config, updateConfig, open }) => {
+  const view = dockAdvancedView(config);
+  const styleName = dockStyleLabel(view.style);
+  const shared = sharedStyleIconSize(config, view.style);
+  const otherSizes = view.customSizes.filter((s) => s.style !== view.style);
+  const dividers = view.separators.filter((s) => s.on).length;
+  return (
+    <Section id="advanced" title="Advanced" summary={dockAdvancedSummary(view)} defaultOpen={open} forceOpen={open}>
+      <div className="cc-card">
+        <Seg
+          label="Magnification"
+          desc="Icons grow under the pointer."
+          value={view.magnification}
+          options={MAGNIFICATION_CHOICES}
+          onChange={(id) => updateConfig(setMagnification(config, id))}
+        />
+        {view.magnification !== "off" && (
+          <ValueSlider
+            label="Magnification reach"
+            hint="icons each side"
+            value={view.magnificationRange}
+            min={1}
+            max={4}
+            onChange={(v) => updateConfig(setMagnificationRange(config, v))}
+          />
+        )}
+        <Seg
+          label="Launch animation"
+          desc="What an icon does when you open its app."
+          value={view.launchAnimation}
+          options={LAUNCH_CHOICES}
+          onChange={(id) => updateConfig(setLaunchAnimation(config, id))}
+        />
+        <Toggle
+          label="Minimise pulse"
+          desc="An app's icon pulses once when one of its windows is minimised or brought back."
+          on={view.minimizeFeedback}
+          onChange={(v) => updateConfig(setMinimizeFeedback(config, v))}
+        />
+      </div>
+
+      <div className="cc-card">
+        <Toggle
+          label="Show app names"
+          desc="Beside the icons on Taskbar and Studio, under them on the other styles."
+          on={view.showLabels}
+          onChange={(v) => updateConfig(setShowLabels(config, v))}
+        />
+        <Toggle
+          label="Scroll to switch windows"
+          desc="Turn the mouse wheel over an app to step through its open windows."
+          on={view.scrollCyclesWindows}
+          onChange={(v) => updateConfig(setScrollCyclesWindows(config, v))}
+        />
+        <Toggle
+          label="Drop files on apps"
+          desc="Drop a file on an app in the Dock to open it with that app."
+          on={view.fileDropOpen}
+          onChange={(v) => updateConfig(setFileDropOpen(config, v))}
+        />
+        <Toggle
+          label="Middle-click opens a new window"
+          desc="Middle-click an app to start another window of it."
+          on={view.middleClickNewInstance}
+          onChange={(v) => updateConfig(setMiddleClickNewInstance(config, v))}
+        />
+        <Toggle
+          label="Close pop-outs when the pointer leaves"
+          desc="Quick Settings and Settings on the Dock close a moment after you move away. Never while the pointer is over them."
+          on={view.autoClosePopouts}
+          onChange={(v) => updateConfig(setAutoClosePopouts(config, v))}
+        />
+      </div>
+
+      <div className="cc-card">
+        <div className="tux-row">
+          <div className="tux-row-text">
+            <div className="cc-label">Icon size for {styleName}</div>
+            <div className="cc-desc">
+              {view.styleIconSizeIsCustom
+                ? `${styleName} keeps its own size. The other styles use the size above.`
+                : `${styleName} uses the size above (${shared} px here). Move the slider to give this style its own.`}
+            </div>
+          </div>
+          {view.styleIconSizeIsCustom && (
+            <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(setStyleIconSize(config, view.style, null))}>
+              Use the shared size
+            </button>
+          )}
+        </div>
+        <ValueSlider
+          label={`${styleName} icons`}
+          value={view.styleIconSize}
+          min={STYLE_ICON_MIN}
+          max={STYLE_ICON_MAX}
+          step={2}
+          unit="px"
+          onChange={(v) => updateConfig(setStyleIconSize(config, view.style, v))}
+        />
+        {otherSizes.length > 0 && (
+          <div className="tux-row">
+            <div className="tux-row-text">
+              <div className="cc-label">Other styles with their own size</div>
+              <div className="cc-desc">Press one to hand it back to the shared size.</div>
+            </div>
+            <div className="cc-chip-grid">
+              {otherSizes.map((s) => (
+                <button key={s.style} type="button" className="cc-chip" aria-label={`${s.label}: ${s.size} px. Use the shared size`} onClick={() => updateConfig(setStyleIconSize(config, s.style, null))}>
+                  {s.label} · {s.size} px
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="cc-card">
+        <div className="tux-row">
+          <div className="tux-row-text">
+            <div className="cc-label">Dividers</div>
+            <div className="cc-desc">
+              {view.separators.length === 0
+                ? "Pin an app to the Dock to put a divider after it."
+                : "Pick the apps that get a thin divider after them. Also in each app's right-click menu."}
+            </div>
+          </div>
+          {dividers > 0 && (
+            <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(clearSeparators(config))}>
+              Remove all
+            </button>
+          )}
+        </div>
+        {view.separators.length > 0 && (
+          <div className="cc-chip-grid" role="group" aria-label="Divider after">
+            {view.separators.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="switch"
+                aria-checked={s.on}
+                aria-label={`Divider after ${s.name}`}
+                className={`cc-chip ${s.on ? "active" : ""}`}
+                onClick={() => updateConfig(toggleSeparatorAfter(config, s.id))}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 };

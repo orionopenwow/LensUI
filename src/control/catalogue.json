@@ -73,7 +73,7 @@
     "Command & Shelf": 1,
     "Desktop": 1,
     "Do Not Disturb": 3,
-    "Dock": 25,
+    "Dock": 24,
     "Hot corners": 8,
     "Icons & folders": 4,
     "Internal": 6,
@@ -92,7 +92,7 @@
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 193,
+  "count": 192,
   "entries": [
     {
       "capability": "change_settings",
@@ -574,9 +574,9 @@
     {
       "capability": "destructive",
       "category": "Internal",
-      "default": 3,
+      "default": 4,
       "description": "Sets the config version option under Internal.",
-      "example": "{\"args\":{\"changes\":{\"configVersion\":4}},\"tool\":\"lens_set\"}",
+      "example": "{\"args\":{\"changes\":{\"configVersion\":5}},\"tool\":\"lens_set\"}",
       "label": "Config version",
       "path": "configVersion",
       "reversible": true,
@@ -1180,21 +1180,6 @@
       "example": "{\"args\":{\"changes\":{\"dock.showLabels\":true}},\"tool\":\"lens_set\"}",
       "label": "Show labels",
       "path": "dock.showLabels",
-      "reversible": true,
-      "risk": "low",
-      "schema": {
-        "type": "boolean"
-      },
-      "store": "config"
-    },
-    {
-      "capability": "change_look",
-      "category": "Dock",
-      "default": true,
-      "description": "Sets the show top bar option under Dock.",
-      "example": "{\"args\":{\"changes\":{\"dock.showTopBar\":false}},\"tool\":\"lens_set\"}",
-      "label": "Show top bar",
-      "path": "dock.showTopBar",
       "reversible": true,
       "risk": "low",
       "schema": {

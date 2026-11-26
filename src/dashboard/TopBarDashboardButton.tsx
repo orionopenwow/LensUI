@@ -8,6 +8,7 @@ import { LensCloud } from "../presence/LensCloud";
 import { isOn } from "../magicwaves/flags";
 import type { LensConfig } from "../types/lens";
 import "./dashboard.css";
+import { logFail } from "../failsafe/calls";
 
 /** Event the Dashboard window listens for each time it opens. */
 export const OPEN_DASHBOARD_EVENT = "lens://dashboard-open";
@@ -20,7 +21,7 @@ export const TopBarDashboardButton: React.FC<{ config: LensConfig | null; onOpen
       className="mdb-topbar-btn"
       aria-label="Open the Dashboard"
       // A second press closes it (toggle_dashboard).
-      onClick={() => (onOpen ? onOpen() : void invoke("toggle_dashboard").catch(() => {}))}
+      onClick={() => (onOpen ? onOpen() : void invoke("toggle_dashboard").catch(logFail("Top Bar", "open the Dashboard")))}
     >
       <span className="mdb-orb" aria-hidden="true">
         <LensCloud />

@@ -918,7 +918,14 @@ mod sys {
         let ctl = CONTROL.load(Ordering::SeqCst);
         if ctl != 0 {
             unsafe {
-                PostMessageW(ctl, WM_APP_HIDE, 0, 0);
+                // A full message queue refuses the post; the tiles would then stay until the
+                // watchdog noticed. Try once more, then say so (B-18).
+                if PostMessageW(ctl, WM_APP_HIDE, 0, 0) == 0 {
+                    std::thread::sleep(Duration::from_millis(15));
+                    if PostMessageW(ctl, WM_APP_HIDE, 0, 0) == 0 {
+                        eprintln!("[Lens UI] previews: the hide request was refused twice; the preview watchdog removes them");
+                    }
+                }
             }
         }
     }

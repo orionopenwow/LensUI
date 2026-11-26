@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { THEME_PACKS, applyThemePack, packSwatch } from "../themes/packs";
+import { chooseTheme } from "../themes/choiceUndo";
 import { listen } from "@tauri-apps/api/event";
 import {
   Wifi,
@@ -156,13 +158,13 @@ export const QuickSettingsSurface: React.FC = () => {
     const onBlur = () => {
       window.setTimeout(() => {
         if (!document.hasFocus()) {
-          invoke("hide_surface", { label: "quicksettings" }).catch(() => {});
+          void hideSurface("quicksettings");
         }
       }, 120);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        invoke("hide_surface", { label: "quicksettings" });
+        void hideSurface("quicksettings");
         return;
       }
       const tag = (e.target as HTMLElement | null)?.tagName;
@@ -264,7 +266,7 @@ export const QuickSettingsSurface: React.FC = () => {
   return (
     <div className={`qs-shell ${anchorMode === "bottom-right" ? "is-bottom-right" : ""}`}>
       <div className={`qs-panel lens-flyout-host ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
-        <FlyoutClose onClose={() => invoke("hide_surface", { label: "quicksettings" }).catch(() => {})} />
+        <FlyoutClose onClose={() => void hideSurface("quicksettings")} />
         {/* Usable Flick Switcher only in Quick / Theme / All — zero title bar or header strip in dedicated popouts! */}
         {!isDedicatedArea && (
           <div className="qs-header" style={{ padding: "8px 40px 8px 10px" }}>
@@ -585,7 +587,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     type="button"
                     className={`qs-preset-card ${config.theme.preset === p.id ? "active" : ""}`}
                     onClick={() =>
-                      updateConfig(applyThemePack(config, p.id))
+                      updateConfig(chooseTheme(config, (c) => applyThemePack(c, p.id)))
                     }
                   >
                     <span className="qs-preset-swatch" style={{ background: p.swatch }} />
@@ -845,7 +847,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 type="button"
                 className="qs-popout-btn"
                 onClick={() => {
-                  invoke("hide_surface", { label: "quicksettings" });
+                  void hideSurface("quicksettings");
                   invoke("open_surface", { label: "settings" });
                 }}
               >
@@ -918,7 +920,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 type="button"
                 className="qs-expand-btn"
                 onClick={() => {
-                  invoke("hide_surface", { label: "quicksettings" });
+                  void hideSurface("quicksettings");
                   invoke("toggle_surface", { label: "widgets" });
                 }}
               >
@@ -933,7 +935,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 type="button"
                 className="qs-popout-btn"
                 onClick={() => {
-                  invoke("hide_surface", { label: "quicksettings" });
+                  void hideSurface("quicksettings");
                   invoke("open_surface", { label: "settings" });
                 }}
               >

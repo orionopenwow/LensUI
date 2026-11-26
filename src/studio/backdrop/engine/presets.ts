@@ -38,6 +38,9 @@ export const PRESETS: Preset[] = [
   make("lens-nebula", "Lens Nebula", "Lens", "nebula", ["#05040B", "#1B1342", "#5B3FD9", "#C084FC", "#FDF4FF"], { speed: 0.12, warp: 0.25, softness: 0.55, bloom: 0.35, grain: 0.018, vignette: 0.35, tone: "aces", exposure: 0.2, params: { a: 0.9, b: 0.7 } }, 0.3, 0.35),
   make("lens-obsidian-glow", "Obsidian Glow", "Lens", "mesh", ["#050506", "#0E0E12", "#1C1C24", "#3A3A48", "#9A9AAE"], { speed: 0.1, warp: 0.22, softness: 0.4, grain: 0.022, vignette: 0.4 }, 0.15, 0.4),
   make("lens-aperture", "Aperture", "Lens", "eclipse", ["#020203", "#0B0B10", "#3B2F8F", "#A78BFA", "#FFFFFF"], { speed: 0.1, bloom: 0.4, params: { a: 0.75, b: 0.6 }, tone: "aces" }, 0.2, 0.35),
+  // The Lens cloud: the logo's six hues (src/styles/lens-cloud.css) billowing out of near-black.
+  // Lens's one colour moment as a backdrop; slow, so it reads as matte and never as a light show.
+  make("lens-cloud", "Lens Cloud", "Lens", "nebula", ["#050507", "#FA3838", "#FAC72E", "#16F360", "#2EC7FA", "#7F56FB", "#FA42E8"], { speed: 0.08, warp: 0.3, softness: 0.6, bloom: 0.25, grain: 0.02, vignette: 0.45, tone: "aces", exposure: -0.15, params: { a: 0.9, b: 0.7 } }, 0.3, 0.5),
 
   // ── Soft ──
   make("soft-peach-mist", "Peach Mist", "Soft", "mesh", ["#2A1630", "#7A3E6E", "#E9788C", "#FFB996", "#FFE9D2"], { speed: 0.16, softness: 0.55 }, 0.3, 0.85),

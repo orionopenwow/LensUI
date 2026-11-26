@@ -31,7 +31,7 @@
   },
   {
    "id": "store",
-   "label": "Apps"
+   "label": "Lens Apps"
   },
   {
    "id": "display",
@@ -86,46 +86,42 @@
    "label": "System & Tasks"
   },
   {
-   "id": "messages",
-   "label": "Notifications"
-  },
-  {
    "id": "about",
    "label": "About & Testing"
   }
  ],
  "entries": [
   {
-   "id": "card.messages.messaginghubpane",
+   "id": "card.focus.messaginghubpane",
    "kind": "card",
    "title": "Messaging hub",
    "text": "Messaging hub",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messaging hub"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagingHubPane",
     "label": "Messaging hub"
    },
    "source": "src/components/MessagingHubPane.tsx"
   },
   {
-   "id": "card.messages.feedscard",
+   "id": "card.focus.feedscard",
    "kind": "card",
    "title": "Feeds",
    "text": "One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC. Feeds · Sources · Mute words · Quiet hours · Refresh every · AI digest · OPML. Feeds. Settings › Feeds. Credentials go straight to the sealed vault; this card never reads them back",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Feeds",
     "section": "feeds"
@@ -133,19 +129,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.sources",
+   "id": "setting.focus.feedscard.sources",
    "kind": "setting",
    "title": "Sources",
    "text": "",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Sources"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Sources",
     "section": "feeds"
@@ -153,19 +149,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.mute-words",
+   "id": "setting.focus.feedscard.mute-words",
    "kind": "setting",
    "title": "Mute words",
    "text": "Words, @handles, or source:reddit — one per line. Muted posts are hidden everywhere, including the digest.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Mute words"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Mute words",
     "section": "feeds"
@@ -173,19 +169,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.quiet-hours",
+   "id": "setting.focus.feedscard.quiet-hours",
    "kind": "setting",
    "title": "Quiet hours",
    "text": "No refreshes and no \"new\" pill between these times.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Quiet hours"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Quiet hours",
     "section": "feeds"
@@ -193,19 +189,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.refresh-every",
+   "id": "setting.focus.feedscard.refresh-every",
    "kind": "setting",
    "title": "Refresh every",
    "text": "Each network also has its own polite rate limit.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Refresh every"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Refresh every",
     "section": "feeds"
@@ -213,19 +209,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.ai-digest",
+   "id": "setting.focus.feedscard.ai-digest",
    "kind": "setting",
    "title": "AI digest",
    "text": "Five bullets with sources. Runs on your local model unless your AI privacy setting allows cloud.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "AI digest"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "AI digest",
     "section": "feeds"
@@ -233,19 +229,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.opml",
+   "id": "setting.focus.feedscard.opml",
    "kind": "setting",
    "title": "OPML",
    "text": "Bring your subscriptions from Feedly, Inoreader, NetNewsWire or any reader.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "OPML"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "OPML",
     "section": "feeds"
@@ -253,18 +249,18 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "card.messages.messagescard",
+   "id": "card.focus.messagescard",
    "kind": "card",
    "title": "Messages",
    "text": "One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count. Messages · Mirror notifications · Show previews · Badges on Dock icons · VIPs · Alert keywords · Matrix (advanced). Messages. Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens reads only the unread badge. Matrix is the one place Lens can read and send (with approval)",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Messages",
     "section": "messages"
@@ -272,19 +268,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.mirror-notifications",
+   "id": "setting.focus.messagescard.mirror-notifications",
    "kind": "setting",
    "title": "Mirror notifications",
    "text": "Use Windows notifications from these apps for badges and mention alerts. Needs notification access for Lens.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Mirror notifications"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Mirror notifications",
     "section": "messages"
@@ -292,19 +288,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.show-previews",
+   "id": "setting.focus.messagescard.show-previews",
    "kind": "setting",
    "title": "Show previews",
    "text": "Show the first line of new messages in the inbox where the source provides it.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Show previews"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Show previews",
     "section": "messages"
@@ -312,19 +308,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.badges-on-dock-icons",
+   "id": "setting.focus.messagescard.badges-on-dock-icons",
    "kind": "setting",
    "title": "Badges on Dock icons",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Badges on Dock icons"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Badges on Dock icons",
     "section": "messages"
@@ -332,19 +328,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.vips",
+   "id": "setting.focus.messagescard.vips",
    "kind": "setting",
    "title": "VIPs",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "VIPs"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "VIPs",
     "section": "messages"
@@ -352,19 +348,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.alert-keywords",
+   "id": "setting.focus.messagescard.alert-keywords",
    "kind": "setting",
    "title": "Alert keywords",
    "text": "Your name, project names — a message containing one counts as a mention.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Alert keywords"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Alert keywords",
     "section": "messages"
@@ -372,19 +368,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.matrix-advanced",
+   "id": "setting.focus.messagescard.matrix-advanced",
    "kind": "setting",
    "title": "Matrix (advanced)",
    "text": "Connect your own Matrix homeserver — including bridges you run yourself — to read rooms and reply from Lens. Every reply shows you the exact text and waits for you to hold Send.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Matrix (advanced)"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Matrix (advanced)",
     "section": "messages"
@@ -1151,6 +1147,60 @@
    "source": "src/themeux/DockTab.tsx"
   },
   {
+   "id": "setting.dock.docktab.icon-size-for",
+   "kind": "setting",
+   "title": "Icon size for",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Icon size for"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Icon size for"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.other-styles-with-their-own-size",
+   "kind": "setting",
+   "title": "Other styles with their own size",
+   "text": "Press one to hand it back to the shared size.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Other styles with their own size"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Other styles with their own size"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.dividers",
+   "kind": "setting",
+   "title": "Dividers",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Dividers"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Dividers"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
    "id": "setting.dock.docktab.hide-the-windows-taskbar",
    "kind": "setting",
    "title": "Hide the Windows taskbar",
@@ -1219,6 +1269,114 @@
     "tab": "dock",
     "card": "DockTab",
     "label": "Suggest apps you usually open now"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.minimise-pulse",
+   "kind": "setting",
+   "title": "Minimise pulse",
+   "text": "An app's icon pulses once when one of its windows is minimised or brought back.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Minimise pulse"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Minimise pulse"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.show-app-names",
+   "kind": "setting",
+   "title": "Show app names",
+   "text": "Beside the icons on Taskbar and Studio, under them on the other styles.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Show app names"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Show app names"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.scroll-to-switch-windows",
+   "kind": "setting",
+   "title": "Scroll to switch windows",
+   "text": "Turn the mouse wheel over an app to step through its open windows.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Scroll to switch windows"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Scroll to switch windows"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.drop-files-on-apps",
+   "kind": "setting",
+   "title": "Drop files on apps",
+   "text": "Drop a file on an app in the Dock to open it with that app.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Drop files on apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Drop files on apps"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.middle-click-opens-a-new-window",
+   "kind": "setting",
+   "title": "Middle-click opens a new window",
+   "text": "Middle-click an app to start another window of it.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Middle-click opens a new window"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Middle-click opens a new window"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.close-pop-outs-when-the-pointer-leaves",
+   "kind": "setting",
+   "title": "Close pop-outs when the pointer leaves",
+   "text": "Quick Settings and Settings on the Dock close a moment after you move away. Never while the pointer is over them.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Close pop-outs when the pointer leaves"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Close pop-outs when the pointer leaves"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1758,7 +1916,7 @@
    "id": "card.system.monitorpickercard",
    "kind": "card",
    "title": "Monitor",
-   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on Every Monitor. Monitor picker. which monitor the Dock and Top Bar live on",
+   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on every monitor. Monitor picker. which monitor the Dock and Top Bar live on",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1776,20 +1934,20 @@
   {
    "id": "setting.system.monitorpickercard.top-bar-on-every-monitor",
    "kind": "setting",
-   "title": "Top Bar on Every Monitor",
+   "title": "Top Bar on every monitor",
    "text": "Show a Top Bar on each display. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Monitor",
-    "Top Bar on Every Monitor"
+    "Top Bar on every monitor"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "MonitorPickerCard",
-    "label": "Top Bar on Every Monitor"
+    "label": "Top Bar on every monitor"
    },
    "source": "src/components/MonitorPickerCard.tsx"
   },
@@ -4822,8 +4980,8 @@
    "text": "Apps",
    "path": [
     "Settings",
-    "Apps",
-    "Apps settings",
+    "Lens Apps",
+    "Lens Apps settings",
     "Apps"
    ],
    "target": {
@@ -5292,7 +5450,7 @@
    "id": "setting.dock.inline.enable-top-bar",
    "kind": "setting",
    "title": "Enable Top Bar",
-   "text": "Desktop sessions switcher, active app title, and clock",
+   "text": "Desktops, the app in front, search, the clock and quick settings.",
    "path": [
     "Settings",
     "Dock & Bar",
@@ -5307,38 +5465,56 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.dock.inline.auto-hide-mode",
+   "id": "setting.dock.inline.auto-hide",
    "kind": "setting",
-   "title": "Auto-Hide Mode",
-   "text": "On Overlap dodges maximized or top-edge windows automatically",
+   "title": "Auto-hide",
+   "text": "Hides when a window reaches the top of the screen, so tabs and title bars stay clear.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Auto-Hide Mode"
+    "Auto-hide"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Auto-Hide Mode"
+    "label": "Auto-hide"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.dock.inline.bar-style",
    "kind": "setting",
-   "title": "Bar Style",
-   "text": "Full-width edge strip or floating rounded glass pill",
+   "title": "Bar style",
+   "text": "A strip along the whole top edge, or a floating rounded pill.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Bar Style"
+    "Bar style"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Bar Style"
+    "label": "Bar style"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "setting.dock.inline.media-controls",
+   "kind": "setting",
+   "title": "Media controls",
+   "text": "Shows what is playing, with previous, play and next.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Top Bar",
+    "Media controls"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Media controls"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -5666,11 +5842,11 @@
   {
    "id": "tab.store",
    "kind": "tab",
-   "title": "Apps",
-   "text": "The Apps tab in Settings.",
+   "title": "Lens Apps",
+   "text": "The Lens Apps tab in Settings.",
    "path": [
     "Settings",
-    "Apps"
+    "Lens Apps"
    ],
    "target": {
     "surface": "settings",
@@ -5870,21 +6046,6 @@
    "target": {
     "surface": "settings",
     "tab": "monitor"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "tab.messages",
-   "kind": "tab",
-   "title": "Notifications",
-   "text": "The Notifications tab in Settings.",
-   "path": [
-    "Settings",
-    "Notifications"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "messages"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -10525,7 +10686,7 @@
    "id": "doc.failsafe.11",
    "kind": "doc",
    "title": "Failsafe engineering: 10. Monitors and pop-outs",
-   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default). - A move onto a monitor with other scaling is checked and done again when Windows resized the window on the way (B-62), and an idle Dock goes back to its place about every 2 s, also while auto-hidden",
    "path": [
     "Docs",
     "Failsafe engineering",
@@ -10535,6 +10696,23 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "10. Monitors and pop-outs"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.12",
+   "kind": "doc",
+   "title": "Failsafe engineering: Stuck states: what closes each pop-out",
+   "text": "Way out Dock menus, hover card, search Live previews Quick Settings, Widgets, Search, Launcher, Overview Settings on the Dock Magic window, Dashboard --- --- --- --- --- --- Focus to another app, Alt+Tab, Win key (Start takes focus) watcher: other app in front → closed at once ( dock guard ) close 260 ms after the pointer leaves the card page blur → hide (retried once) 1.8 s away and unfocused (with \"Close pop-outs when the pointer leaves\") focus change → hide Click outside watcher click check as above page blur ; watcher for Search as above focus change Display sleep / resume, monitor unplugged re-placed with the bars; menus go stale after 1.2 s (no pointer) owner hidden or pointer unknown → closed blur when focus moves pointer unknown → closes after 1.8 s focus change Lock / unlock (Win+L) no foreground and no pointer → stale after 1.2 s pointer unknown → closed blur closes after 1.8 s",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Stuck states: what closes each pop-out"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Stuck states: what closes each pop-out"
    },
    "source": "docs/FAILSAFE.md"
   },
@@ -14340,7 +14518,7 @@
    "id": "doc.themes-audit.0",
    "kind": "doc",
    "title": "Theme audit",
-   "text": "Generated by bun tools/themes/audit.ts from src/themes/distance.ts and src/themes/featured.ts . Do not edit by hand; src/ tests /featuredThemes.test.ts fails when it is out of date. 89 packs were compared pair by pair. The distance adds up how far apart two packs are in surface colour and accent (OKLab), light or dark, corner radius and shape style, Dock style, window chrome (frame, buttons, icons) and animated backdrop. Under 0.30 two packs read as the same theme with a tweak.",
+   "text": "Generated by bun tools/themes/audit.ts from src/themes/distance.ts and src/themes/featured.ts . Do not edit by hand; src/ tests /featuredThemes.test.ts fails when it is out of date. 87 packs were compared pair by pair. The distance adds up how far apart two packs are in surface colour and accent (OKLab), light or dark, corner radius and shape style, window chrome (frame, buttons, icons) and animated backdrop. Under 0.30 two packs read as the same theme with a tweak.",
    "path": [
     "Docs",
     "Theme audit"
@@ -14356,7 +14534,7 @@
    "id": "doc.themes-audit.1",
    "kind": "doc",
    "title": "Theme audit: The featured twelve",
-   "text": "Each is a whole look: palette, accent, glass, corners, Dock style and motion, window frame and buttons, icons, font, its own animated backdrop and a pointer family. No two share a backdrop. Look Character Surface · accent Corners Glass Dock Frame · buttons Icons Font Backdrop Pointer Feel --- --- --- --- --- --- --- --- --- --- --- --- Obsidian Matte black glass with white chrome. The Lens default. #09090B · #FAFAFA 8px 96%, 20px blur floating, no magnify, lift launch obsidian-hairline · traffic-classic obsidian-squircle, squircle Rounded waves obsidian Calm Alabaster Daylight Bright daylight, white cards and one clear blue. #EEEEF0 · #2563EB (light) 10px 98%, 16px blur floating, subtle magnify, lift launch obsidian-hairline · traffic-classic native, squircle Modern sans paper outline Crisp Sky The real sky, live. Light by day, dark at night. #0B1230 · #A9B8EE 16px 80%, 28px blur floatin",
+   "text": "Each is a whole look: palette, accent, glass, corners, window frame and buttons, icons, font, its own animated backdrop and a pointer family. No two share a backdrop. A look never changes the Dock: themes are colours and materials only. Look Character Surface · accent Corners Glass Frame · buttons Icons Font Backdrop Pointer Feel --- --- --- --- --- --- --- --- --- --- --- Obsidian Matte black glass with white chrome. The Lens default. #09090B · #FAFAFA 8px 96%, 20px blur obsidian-hairline · traffic-classic obsidian-squircle, squircle Rounded waves obsidian Calm Alabaster Daylight Bright daylight, white cards and one clear blue. #EEEEF0 · #2563EB (light) 10px 98%, 16px blur obsidian-hairline · traffic-classic native, squircle Modern sans paper outline Crisp Sky The real sky, live. Light by day, dark at night. #0B1230 · #A9B8EE 16px 80%, 28px blur obsidian-hairline · traffic-muted frosted",
    "path": [
     "Docs",
     "Theme audit",
@@ -14390,7 +14568,7 @@
    "id": "doc.themes-audit.3",
    "kind": "doc",
    "title": "Theme audit: Near-duplicates",
-   "text": "Pairs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.20 Green Phosphor CRT dock, shape, accent 0.20 Claude Light Claude Light Brand dock, accent 0.20 Paper Minimal Plotter Tide shape, chrome, accent 0.21 Catppuccin Mocha Catppuccin Macchiato accent, base 0.22 Catppuccin Macchiato Rosé Pine Moon accent, base, shape 0.24 Weather Window Tides of Light backdrop, accent, ",
+   "text": "Pairs of listed packs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under 0.08 are the same theme on screen and are merged instead (next section), so none appears here. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.16 Night Reef Braille Stars backdrop, accent 0.16 Paper Garden Claude Light accent, chrome, shape, base 0.17 Plotter Tide Dither Dunes backdrop, base 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.18 GitHub Light One Half Light accent, ba",
    "path": [
     "Docs",
     "Theme audit",
@@ -14406,8 +14584,25 @@
   {
    "id": "doc.themes-audit.4",
    "kind": "doc",
+   "title": "Theme audit: Merged",
+   "text": "Packs closer than 0.08 to another one. They only looked different because each came with its own Dock style; a theme changes colours only now, so they are the same theme on screen. The merged pack is no longer listed, its name finds the pack that stays, and settings or theme files that name it keep working with their exact colours. Merged pack Now listed as Distance What still differs --- --- --- --- CRT Green Phosphor 0.06 shape, accent Claude Light Brand Claude Light 0.06 accent",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Merged"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Merged"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.5",
+   "kind": "doc",
    "title": "Theme audit: More themes, by family",
-   "text": "The other 77 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
+   "text": "The other 75 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
    "path": [
     "Docs",
     "Theme audit",
@@ -14421,10 +14616,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.5",
+   "id": "doc.themes-audit.6",
    "kind": "doc",
    "title": "Theme audit: Like Obsidian (5)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Desert Day (0.35) GitHub Dark 0.65 Daltonized Dark (0.14) Daltonized Dark 0.66 GitHub Dark (0.14) Claude Midnight 1.02 Claude Dark Brand (0.73)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Claude Dark Brand (0.26) GitHub Dark 0.51 Daltonized Dark (0.14) Daltonized Dark 0.52 GitHub Dark (0.14) Claude Midnight 0.88 Claude Dark Brand (0.59)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14438,78 +14633,78 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.6",
-   "kind": "doc",
-   "title": "Theme audit: Like Alabaster Daylight (13)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) One Half Light 0.26 Alabaster Daylight (0.26) Daltonized Light 0.34 GitHub Light (0.09) GitHub Light 0.35 Daltonized Light (0.09) Base16 Cupcake 0.37 Rosé Pine Dawn (0.18) Rosé Pine Dawn 0.40 Base16 Cupcake (0.18) Circit 0.43 Koi Mosaic (0.38) Claude Light 0.50 Claude Light Brand (0.20) Honu Lagoon 0.50 Koi Mosaic (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31) Solarized Light 0.55 One Half Light (0.40) Lens Expressive Light 0.57 Alabaster Daylight (0.57) Gruvbox Light 0.63 GitHub Light (0.43)",
-   "path": [
-    "Docs",
-    "Theme audit",
-    "Like Alabaster Daylight (13)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Alabaster Daylight (13)"
-   },
-   "source": "docs/THEMES_AUDIT.md"
-  },
-  {
    "id": "doc.themes-audit.7",
    "kind": "doc",
-   "title": "Theme audit: Like Sky (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Sky (0.27) Tides of Light 0.31 Weather Window (0.24) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Braille Stars 0.46 Night Reef (0.30) Seasons 0.49 Tides of Light (0.31) Northern Lights 0.50 Tides of Light (0.33)",
+   "title": "Theme audit: Like Alabaster Daylight (12)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) Daltonized Light 0.20 GitHub Light (0.09) GitHub Light 0.21 Daltonized Light (0.09) One Half Light 0.26 GitHub Light (0.18) Base16 Cupcake 0.37 Rosé Pine Dawn (0.18) Rosé Pine Dawn 0.40 Base16 Cupcake (0.18) Solarized Light 0.41 One Half Light (0.26) Lens Expressive Light 0.43 Alabaster Daylight (0.43) Circit 0.43 Daltonized Light (0.36) Gruvbox Light 0.49 One Half Light (0.33) Honu Lagoon 0.50 Koi Mosaic (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Sky (8)"
+    "Like Alabaster Daylight (12)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Sky (8)"
+    "heading": "Like Alabaster Daylight (12)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-audit.8",
    "kind": "doc",
-   "title": "Theme audit: Like Catppuccin Mocha (17)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Aurora (Claude) 0.39 Night Reef (0.34) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 Catppuccin Mocha (0.50) Snow Pines 0.50 Golden Hour (0.35) Tokyo Night 0.53 One Dark (0.42) Desert Day 0.55 Golden Hour (0.31) Dither Dunes Night 0.55 Halftone Dusk (0.28) Plotter Tide, Night 0.56 Ember (0.45) Ember 0.57 Dither Dunes Night (0.32) Nature 0.60 Seasons (0.35) Windows Mesh 0.71 Daltonized Dark (0.46)",
+   "title": "Theme audit: Like Sky (7)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Braille Stars (0.16) Tides of Light 0.31 Weather Window (0.24) Braille Stars 0.32 Night Reef (0.16) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Seasons 0.49 Tides of Light (0.31)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Catppuccin Mocha (17)"
+    "Like Sky (7)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Catppuccin Mocha (17)"
+    "heading": "Like Sky (7)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-audit.9",
    "kind": "doc",
-   "title": "Theme audit: Like Hyprland Neon (4)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Midnight 0.72 Braille Stars (0.41) Block Clouds 0.75 Vector Range (0.42) High Contrast 0.82 CGA-4 (0.44) Synthwave 0.82 White-Label Cyberpunk (0.28)",
+   "title": "Theme audit: Like Catppuccin Mocha (15)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Tokyo Night 0.39 One Dark (0.28) Aurora (Claude) 0.39 Braille Stars (0.30) Plotter Tide, Night 0.42 Ember (0.31) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 GitHub Dark Dimmed (0.45) Snow Pines 0.50 Golden Hour (0.35) Graphite 0.53 Weather Window (0.38) Desert Day 0.55 Golden Hour (0.31) Windows Mesh 0.57 Daltonized Dark (0.46)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Hyprland Neon (4)"
+    "Like Catppuccin Mocha (15)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Hyprland Neon (4)"
+    "heading": "Like Catppuccin Mocha (15)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-audit.10",
    "kind": "doc",
+   "title": "Theme audit: Like Hyprland Neon (3)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Northern Lights 0.50 Tides of Light (0.33) Midnight 0.58 Daltonized Dark (0.37) High Contrast 0.68 CGA-4 (0.44)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Hyprland Neon (3)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Hyprland Neon (3)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.11",
+   "kind": "doc",
    "title": "Theme audit: Like Cyberpunk Amber (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 CRT (0.20) Departure Board 0.53 Amber Monitor (0.36) High Contrast Pro 0.56 High Contrast (0.52) CRT 0.60 Green Phosphor (0.20) CGA-4 0.81 High Contrast (0.44) White-Label Cyberpunk 0.88 Synthwave (0.28)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 Cyberpunk Amber (0.44) Departure Board 0.53 Desert Day (0.32) High Contrast Pro 0.56 High Contrast (0.52) Block Clouds 0.65 Snow Pines (0.36) White-Label Cyberpunk 0.74 Synthwave (0.28) CGA-4 0.81 High Contrast (0.44)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14523,10 +14718,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.11",
+   "id": "doc.themes-audit.12",
    "kind": "doc",
    "title": "Theme audit: Like Paper Minimal (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Paper Minimal (0.20) Warm Neutral 0.39 Plotter Tide (0.28) Terracotta 0.49 Claude Light (0.27) Dither Dunes 0.51 Halftone Dawn (0.17) Halftone Dawn 0.53 Dither Dunes (0.17) Everforest Light 0.54 Warm Neutral (0.33) Paper Garden 0.54 Claude Light Brand (0.29) Claude Light Brand 0.55 Claude Light (0.20)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Dither Dunes (0.17) Terracotta 0.35 Paper Garden (0.24) Dither Dunes 0.37 Plotter Tide (0.17) Warm Neutral 0.39 Plotter Tide (0.28) Halftone Dawn 0.39 Dither Dunes (0.17) Paper Garden 0.40 Claude Light (0.16) Claude Light 0.47 Paper Garden (0.16) Everforest Light 0.54 Warm Neutral (0.33)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14540,27 +14735,27 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.12",
+   "id": "doc.themes-audit.13",
    "kind": "doc",
-   "title": "Theme audit: Like Everforest (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.47 Base16 Ocean (0.31) Monokai Pro 0.50 Blueprint (0.43) Base16 Ocean 0.54 Base16 Eighties (0.24) One Dark 0.55 Base16 Eighties (0.37) Paper Garden, Kraft 0.56 Plotter Tide, Night (0.50) Monokai 0.61 Monokai Pro (0.45) Blueprint 0.61 Monokai Pro (0.43) Graphite 0.62 Kanagawa Wave (0.47)",
+   "title": "Theme audit: Like Everforest (7)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.33 Base16 Ocean (0.31) Monokai Pro 0.36 Blueprint (0.29) Base16 Ocean 0.40 Base16 Eighties (0.24) One Dark 0.41 Base16 Eighties (0.23) Monokai 0.47 Monokai Pro (0.45) Blueprint 0.47 Monokai Pro (0.29) Nature 0.55 Seasons (0.35)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Everforest (8)"
+    "Like Everforest (7)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Everforest (8)"
+    "heading": "Like Everforest (7)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.13",
+   "id": "doc.themes-audit.14",
    "kind": "doc",
    "title": "Theme audit: Like Solarized Matte (2)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.59 Base16 Ocean (0.24) GitHub Dark Dimmed 0.64 GitHub Dark (0.25)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.45 One Dark (0.23) GitHub Dark Dimmed 0.50 GitHub Dark (0.25)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14574,19 +14769,19 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.14",
+   "id": "doc.themes-audit.15",
    "kind": "doc",
-   "title": "Theme audit: Like Gruvbox Warm (4)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.52 Kanagawa Wave (0.44) Claude Dark Brand 0.60 Claude Dark (0.40) Kanagawa Wave 0.61 Claude Dusk (0.44) Vector Range 0.65 Block Clouds (0.42)",
+   "title": "Theme audit: Like Gruvbox Warm (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.38 Kanagawa Wave (0.30) Kanagawa Wave 0.47 Claude Dusk (0.30) Paper Garden, Kraft 0.48 Plotter Tide, Night (0.36) Dither Dunes Night 0.49 Halftone Dusk (0.28) Ember 0.51 Plotter Tide, Night (0.31) Vector Range 0.51 Departure Board (0.38) Claude Dark Brand 0.60 Claude Dark (0.26) Synthwave 0.70 White-Label Cyberpunk (0.28)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Gruvbox Warm (4)"
+    "Like Gruvbox Warm (8)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Gruvbox Warm (4)"
+    "heading": "Like Gruvbox Warm (8)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
@@ -14594,7 +14789,7 @@
    "id": "doc.themes-claude.0",
    "kind": "doc",
    "title": "Claude Code community themes in Lens",
-   "text": "Lens ships 59 community theme packs from the Claude Code ecosystem, in the Theme gallery under Browse all › Claude Code . Every card credits its author and has an Original ↗ link. All of these are unofficial in Lens: Lens copies only colour values (palettes are facts), never artwork, backdrop code, logos or the Claude wordmark. Anthropic's example themes are Apache-2.0; every community source below is MIT. How a pack is built: - Surface: the theme's background, or, for Anthropic's scene themes, the theme's own glass tint (the colour the app lays over the scene). - Accent: read from the palette file, or for scene themes the scene's signature colour (\"palette derived from the scene\"). - Animated backdrops are not copied. Where a theme has one, the pack suggests the closest Lens Playground scene and links the original. - Contrast: every pack meets the 4.5:1 body-text bar as published, so no",
+   "text": "Lens ships 59 community theme packs from the Claude Code ecosystem, in the Theme gallery under Browse all › Claude Code . Every card credits its author and has an Original ↗ link. Two of the 59 are no longer listed as cards: CRT (now Green Phosphor) and Claude Light Brand (now Claude Light). Each differed from its twin only by the Dock style it came with, and a theme changes colours only now, so they were the same theme on screen. Their ids still work in settings, schedules and theme files, and their names find the twin ( MERGED PACKS in src/themes/packs.ts ; THEMES AUDIT.md \"Merged\"). All of these are unofficial in Lens: Lens copies only colour values (palettes are facts), never artwork, backdrop code, logos or the Claude wordmark. Anthropic's example themes are Apache-2.0; every community source below is MIT. How a pack is built: - Surface: the theme's background, or, for Anthropic's s",
    "path": [
     "Docs",
     "Claude Code community themes in Lens"

@@ -1,6 +1,8 @@
 # Top Bar — feature dossier
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
+>
+> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 2 done (one enable flag with a config v4 migration, B-52; sentence-case section), media controls row added; height, floating and the delays already had rows. Per-monitor bars keep one bar per display under Follow the pointer (B-53). Left: halo off switch, aria-label pass on the bar itself, focus strip.
 
 ## Rundown
 
@@ -19,12 +21,12 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 |---|---|---|---|
 | Left cluster | Launcher, all windows, virtual desktops ‹ › overview + new desktop | works | `TopBarSurface.tsx:167-220` (`switch_virtual_desktop_cmd`) |
 | Active app title | Name of the app in front | works | `TopBarSurface.tsx` |
-| Media pill | Prev / play-pause / next, now playing, `showMediaControls` | works; toggle has no Settings row | `:247-277`; config only |
+| Media pill | Prev / play-pause / next, now playing, `showMediaControls` | works | `:247-277`; Dock & Bar › Top Bar › Media controls |
 | Ask Lens (Guide) | Opens the Guide | works | `:307` |
 | Search bubble | Click/focus opens the palette; state machine closed→opening→open→closing | works | `searchMachine.ts`, `topbarSearch.test.ts` |
 | Right cluster | Peek system tray, notifications, Wi-Fi, volume, Quick Settings | works | `:386-436` |
 | Dashboard button | Only when `magicWaves.dashboard` is on; opens the Magic Dashboard | works (flag off by default) | `TopBarSurface.tsx:296`, #103/#104 |
-| Height / floating | `height`, `floating` | partly — floating in Quick Settings only, height has no UI | `QuickSettingsSurface.tsx:748` |
+| Height / floating | `height`, `floating` | works | Dock & Bar › Top Bar (Bar style, Bar height); `QuickSettingsSurface.tsx:748` |
 
 ### 2. Clock and calendar
 | Feature | Sub | Status | Evidence |
@@ -63,19 +65,19 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 ### 6. Multi-monitor
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
-| Top Bar on every monitor | `perMonitorBars` | partly — only basic placement covered | `MonitorPickerCard.tsx:109` |
+| Top Bar on every monitor | `perMonitorBars` | partly — placement covered for any main-bar position (`extra_topbar_plan`), the one switch hides the extra bars; extra bars have no auto-hide/click-through of their own; real-PC unconfirmed | `MonitorPickerCard.tsx`, `integration.rs` |
 | Follow the pointer | Shared with the Dock | works on CI | #101 |
 
 ## Quick wins (≤1 day each, ranked)
-1. **One "Show Top Bar" flag.** The bar shows only when `topBar.enabled && dock.showTopBar` (`watcher.rs:103,187,663,1014`; `ControlCenterSurface.tsx:772`). Two flags for one switch: an agent or import that sets only one leaves the switch lying. Make `dock.showTopBar` a read-only mirror (migrate on load) and use `topBar.enabled` everywhere.
-2. **Sentence-case the Top Bar section** ("Auto-Hide Mode", "On Overlap", "Always Auto-Hide", "Bar Style" → "Auto-hide", "When a window overlaps", "Always hide"), per IDENTITY.md copy rules.
-3. **Rows for `height`, `floating`, `showMediaControls`, reveal/hide delays** in Dock & Bar › Top Bar (Advanced).
+1. **Done (PR #113, B-52).** `topBar.enabled` is the only flag; config v4 folds `dock.showTopBar` in and drops it. Was: the bar shows only when `topBar.enabled && dock.showTopBar` (`watcher.rs:103,187,663,1014`; `ControlCenterSurface.tsx:772`). Two flags for one switch: an agent or import that sets only one leaves the switch lying. Make `dock.showTopBar` a read-only mirror (migrate on load) and use `topBar.enabled` everywhere.
+2. **Done (PR #113).** ~~Sentence-case the Top Bar section~~ ("Auto-Hide Mode", "On Overlap", "Always Auto-Hide", "Bar Style" → "Auto-hide", "When a window overlaps", "Always hide"), per IDENTITY.md copy rules.
+3. **Done (PR #113).** Media controls row added; `height`, `floating` and the reveal/hide delays already had rows.
 4. **Halo off switch** ("Show a see-through ring when clicks pass through") for people who find it distracting.
-5. **Name the media pill buttons consistently** ("Previous track", not "Previous Track").
+5. **Done (robustness wave).** ~~Name the media pill buttons consistently~~: "Previous track", "Next track", and the desktop, Wi-Fi and volume buttons in sentence case.
 
 ## Polish assessment
 - **Motion:** reveal/hide are slides; the halo uses a registered custom property and mask (no layout). The search bubble's open animation still changes width — use FLIP with scale.
-- **Copy:** Title Case in the Top Bar settings section and several aria-labels ("Volume and Audio Mixer", "Wi-Fi and Network"); IDENTITY.md says sentence case.
+- **Copy:** the Top Bar's own aria-labels are sentence case (robustness wave); the settings section was done in #113.
 - **Visual parity:** the Top Bar has goldens for the default height; floating and per-monitor variants don't.
 - **A11y:** every icon button is named; the halo has no reduced-transparency alternative (users with "transparency effects off" in Windows still get it).
 - **Perf:** hit-rect reporting runs on layout change only; good. Media polling every few seconds while playing — fine.
@@ -84,7 +86,7 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| suspected | Med | Two enable flags can disagree (`topBar.enabled` vs `dock.showTopBar`) — Settings shows "off" while one is on | `watcher.rs:103`, `ControlCenterSurface.tsx:772` |
+| B-52 (fixed) | Med | Two enable flags could disagree (`topBar.enabled` vs `dock.showTopBar`) | config v4 migration, `topbarEnabled.test.ts`, `win_backup` tests |
 | suspected | Low | Halo ignores Windows' "Transparency effects: off" | `TopBarSurface.css:449` |
 | suspected | Low | Clicks on the Dashboard button while the flag flips off mid-session leave a stale hit rect until the next layout | `clickThrough.ts` reports on layout change only |
 | B-14 | — | Approval pill hotkey text (fixed) | #72 |
@@ -119,14 +121,15 @@ The Top Bar is Lens's slim bar along the top of the screen. It holds the launche
 FEATURE Top Bar — docs/features/topbar.md
 STATE   works; click-through + halo (#102), auto-hide fixes (#94 #101), Dashboard button (flag off)
 DO FIRST
- 1 One enable flag: topBar.enabled everywhere; migrate dock.showTopBar on load (watcher.rs 103/187/663/1014)
- 2 Sentence-case the Top Bar settings section and aria-labels
- 3 Advanced rows: height, floating, showMediaControls, reveal/hide delays, halo on/off
+ 1 DONE #113  One enable flag: topBar.enabled everywhere; config v4 folds dock.showTopBar on load
+ 2 DONE #113  Sentence-case the Top Bar settings section (aria-labels on the bar itself still Title Case)
+ 3 DONE #113  showMediaControls row (height, floating, delays already had rows); LEFT halo on/off
 POLISH
  - search bubble open via FLIP/scale, not width; respect Windows transparency-off for the halo
  - refresh Top Bar icons to the Quick Settings chip style
 CHECK
- - stale hit rect when the Dashboard flag flips; per-monitor bars
+ - stale hit rect when the Dashboard flag flips
+ - DONE #113 per-monitor bars keep one bar per display (B-53); two-display real-PC check still needed
 TESTS  bun test src; E2E topbar-* (tests/e2e/autohide.mjs); add tab-strip click-through E2E
 OWNER CHECK  7-step list in this file
 ```

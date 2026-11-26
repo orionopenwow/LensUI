@@ -232,3 +232,77 @@ describe("dock style picker", () => {
     expect(configForStyle(cfg, "no-such-style")).toBe(cfg);
   });
 });
+
+// Themes are colours and materials only (#95), so packs that differed just in the Dock they were
+// drawn with are one theme on screen. They are merged, not deleted (docs/THEMES_AUDIT.md "Merged").
+describe("near-duplicate packs that only differed by Dock are merged", () => {
+  const { MERGED_PACKS, isMergedPack, allPacks, packById, packByAlias, applyThemePack, THEME_PACKS, COMMUNITY_PACKS } = packs;
+
+  test("the Dock is not part of how different two packs are", async () => {
+    const { distanceParts, packDistance } = await import("../themes/distance");
+    const a = packById("obsidian")!;
+    expect(packDistance(a, { ...a, dockStyle: "taskbar" })).toBe(0);
+    expect(Object.keys(distanceParts(a, a))).not.toContain("dock");
+  });
+
+  test("every merged pack is the same on screen as the pack it was folded into", async () => {
+    const { packDistance, distanceParts, SAME_ON_SCREEN } = await import("../themes/distance");
+    expect(Object.keys(MERGED_PACKS).length).toBeGreaterThanOrEqual(2);
+    for (const [gone, kept] of Object.entries(MERGED_PACKS)) {
+      const a = packById(gone)!;
+      const b = packById(kept)!;
+      expect(a).toBeDefined();
+      expect(b).toBeDefined();
+      expect(isMergedPack(kept)).toBe(false); // no chains
+      expect(packDistance(a, b)).toBeLessThan(SAME_ON_SCREEN);
+      const parts = distanceParts(a, b);
+      expect(parts.base).toBe(0);
+      expect(parts.scheme).toBe(0);
+      expect(parts.chrome).toBe(0);
+      // Same collection and credit, so nobody's work is hidden behind someone else's name.
+      expect(a.collection).toBe(b.collection);
+      expect(a.source?.url).toBe(b.source?.url);
+    }
+  });
+
+  test("no two listed built-in packs are the same on screen", async () => {
+    const { packDistance, SAME_ON_SCREEN } = await import("../themes/distance");
+    const listed = allPacks().filter((p) => p.tier !== "Custom");
+    for (let i = 0; i < listed.length; i++) for (let j = i + 1; j < listed.length; j++) {
+      const d = packDistance(listed[i], listed[j]);
+      expect({ pair: `${listed[i].id} ~ ${listed[j].id}`, distinct: d >= SAME_ON_SCREEN }).toEqual({ pair: `${listed[i].id} ~ ${listed[j].id}`, distinct: true });
+    }
+  });
+
+  test("merged packs are not listed, but their ids and names still work", () => {
+    const listed = new Set(allPacks().map((p) => p.id));
+    for (const [gone, kept] of Object.entries(MERGED_PACKS)) {
+      expect(listed.has(gone)).toBe(false);
+      expect(listed.has(kept)).toBe(true);
+      // A config, schedule or .lenstheme that names the merged pack keeps its exact colours.
+      const pack = packById(gone)!;
+      const applied = applyThemePack(sampleConfig(), gone);
+      expect(applied.theme.preset).toBe(gone);
+      expect(applied.theme.customAccent).toBe(pack.accent);
+      expect(applied.theme.surfaceHex).toBe(pack.base ?? "");
+      // Asking by name gets the pack that is still listed.
+      for (const alias of pack.aliases) expect(packByAlias(alias)?.id).toBe(kept);
+      expect(packByAlias(gone)?.id).toBe(kept);
+    }
+    expect(packByAlias("crt")?.id).toBe("cc-retro-green");
+    expect(packByAlias("claude light brand")?.id).toBe("cc-claude-light");
+    // Nothing else left the list.
+    const builtIn = allPacks().filter((p) => p.tier !== "Custom");
+    const living = builtIn.filter((p) => p.tier === "Living").length;
+    expect(builtIn.length).toBe(THEME_PACKS.length + living + COMMUNITY_PACKS.length - Object.keys(MERGED_PACKS).length);
+  });
+
+  test("a featured look's pack carries no Dock style", async () => {
+    const { FEATURED_LOOKS, lookPack } = await import("../themes/featured");
+    const plain = new Map(packs.THEME_PACKS.map((p) => [p.id, p.dockStyle]));
+    for (const look of FEATURED_LOOKS) {
+      if (!plain.has(look.id)) continue;
+      expect(lookPack(look).dockStyle).toBe(plain.get(look.id));
+    }
+  });
+});

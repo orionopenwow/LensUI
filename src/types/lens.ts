@@ -45,7 +45,6 @@ export interface DockConfig {
   hoverScale: number;
   hoverLift: number;
   autoHide: "never" | "smart" | "always" | string;
-  showTopBar: boolean;
   pinnedApps: PinnedApp[];
   pinnedFolders: PinnedFolder[];
   /** Screen edge the Dock sits on. */
@@ -91,6 +90,8 @@ export interface FuncConfig {
   widgetsHotkey: string;
   gamingPause: boolean;
   middleClickNewInstance: boolean;
+  /** Settings and Search pop-outs close a moment after the pointer leaves them. Missing = on. */
+  autoClosePopouts?: boolean;
   /** Legacy in-process window styling (loads a DLL into every app). Off by default. */
   injectedHook?: boolean;
   /** Lens hosts tray icons itself in the Top Bar (experimental). */

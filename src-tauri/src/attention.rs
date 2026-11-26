@@ -148,6 +148,13 @@ pub fn start(app: tauri::AppHandle) {
     let _ = app;
 }
 
+/// Pure: is `msg` Explorer's "TaskbarCreated" broadcast (it restarted), so the shell hook must
+/// be registered again? `registered` is 0 or missing when Windows wouldn't register the name.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn reregister_on(msg: u32, registered: Option<u32>) -> bool {
+    matches!(registered, Some(id) if id != 0 && id == msg)
+}
+
 #[cfg(windows)]
 mod sys {
     use super::{with_state, ATTENTION_EVENT};
@@ -174,6 +181,7 @@ mod sys {
     #[link(name = "user32")]
     extern "system" {
         fn RegisterShellHookWindow(hwnd: Hwnd) -> i32;
+        fn DeregisterShellHookWindow(hwnd: Hwnd) -> i32;
         fn RegisterWindowMessageW(name: *const u16) -> u32;
         fn GetForegroundWindow() -> Hwnd;
         fn IsWindow(hwnd: Hwnd) -> i32;
@@ -194,6 +202,8 @@ mod sys {
 
     static APP: OnceLock<AppHandle> = OnceLock::new();
     static SHELLHOOK: OnceLock<u32> = OnceLock::new();
+    /// Explorer broadcasts this when its taskbar is (re)created, e.g. after explorer.exe restarts.
+    static TASKBAR_CREATED: OnceLock<u32> = OnceLock::new();
     static STARTED: OnceLock<()> = OnceLock::new();
     static EPOCH: OnceLock<std::time::Instant> = OnceLock::new();
 
@@ -261,6 +271,14 @@ mod sys {
             }
             return 0;
         }
+        if super::reregister_on(msg, TASKBAR_CREATED.get().copied()) {
+            // Explorer restarted. Shell hook windows are registered with the shell; register
+            // again so apps asking for attention still reach the Dock (docs/FAILSAFE.md §10).
+            DeregisterShellHookWindow(hwnd);
+            let ok = RegisterShellHookWindow(hwnd) != 0;
+            eprintln!("[Lens] attention: Explorer restarted; shell hook registered again: {}", ok);
+            return 0;
+        }
         if msg == WM_TIMER && wparam == SWEEP_TIMER {
             let fg = GetForegroundWindow();
             let changed = with_state(|s| !s.is_empty() && s.sweep(fg, |h| IsWindow(h) != 0));
@@ -292,6 +310,7 @@ mod sys {
                 };
                 RegisterClassW(&wc);
                 let _ = SHELLHOOK.set(RegisterWindowMessageW(wide("SHELLHOOK").as_ptr()));
+                let _ = TASKBAR_CREATED.set(RegisterWindowMessageW(wide("TaskbarCreated").as_ptr()));
                 let title = wide("");
                 // A hidden top-level window: message-only windows don't receive shell hooks.
                 let hwnd = CreateWindowExW(
@@ -366,6 +385,14 @@ mod tests {
         assert_eq!(s.snapshot().apps[0].count, 1);
         assert!(s.clear(11));
         assert!(s.snapshot().apps.is_empty());
+    }
+
+    #[test]
+    fn an_explorer_restart_registers_the_shell_hook_again() {
+        assert!(reregister_on(0xC0F3, Some(0xC0F3)));
+        assert!(!reregister_on(0xC0F3, Some(0xC0F4)), "another registered message");
+        assert!(!reregister_on(0, Some(0)), "a name Windows refused never matches");
+        assert!(!reregister_on(0x0113, None), "before start-up registered it");
     }
 
     #[test]

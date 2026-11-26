@@ -13,7 +13,7 @@ const why: Record<string, string> = {
   fullscreen: "A full-screen app is open",
 };
 
-export const FocusPage: React.FC<PageProps> = ({ section }) => {
+export const FocusPage: React.FC<PageProps> = ({ section, slot }) => {
   const dnd = useResource<DndStatus>("get_dnd_status_cmd", {}, { events: ["lens://dnd-changed"] });
   const [err, setErr] = useState<string | null>(null);
   const d = dnd.data;
@@ -58,6 +58,8 @@ export const FocusPage: React.FC<PageProps> = ({ section }) => {
           }
         />
       )}
+      {/* Notification history, Feeds and Messages (the old Notifications page). */}
+      {slot}
       <Section id="windows" title="Windows notifications" summary="In Windows Settings" defaultOpen={section === "windows"} forceOpen={section === "windows"}>
         <StateNote kind="info">Windows' own Do not disturb and per-app notification rules can only be changed in Windows Settings.</StateNote>
         <LinkRow>

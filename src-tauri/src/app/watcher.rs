@@ -100,7 +100,7 @@ fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), botto
         let dock_h = (depth_css * scale) as u32;
         return (pos.0, bottom_edge - dock_h as i32 - margin_bottom, size.0, dock_h);
     }
-    let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+    let top_inset = if cfg.top_bar.enabled {
         ((cfg.top_bar.height as f64) * scale) as i32 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
     } else {
         0
@@ -167,10 +167,13 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let (x, y, dock_w, dock_h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
             // One native call, and none at all when the Dock is already there (G-02, G-03).
             crate::app::place::place_window(&dock, x, y, dock_w, dock_h);
-            let _ = dock.set_always_on_top(true);
+            if let Err(e) = dock.set_always_on_top(true) {
+                eprintln!("[Lens UI] dock: always-on-top refused ({}); the next placement tries again", e);
+            }
             // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
+            // A refused show is retried once and then by the watcher, which re-shows a hidden Dock.
             if crate::app::loadguard::may_show("dock") {
-                let _ = dock.show();
+                crate::app::place::show_window(&dock);
             }
             eprintln!(
                 "[Lens UI] Dock positioned at ({}, {}) size {}x{} (bottom_edge={}, scale={})",
@@ -184,23 +187,27 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
             crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
-            if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
+            if cfg.top_bar.enabled && crate::app::loadguard::may_show("topbar") {
                 // Repositioning (every settings save, theme change or reload) keeps the bar in the
                 // state the auto-hide watcher has it in. Forcing "shown" here used to pop an
                 // auto-hidden bar back up behind the watcher's back, where it stayed stuck until
                 // the pointer touched the top edge.
                 let shown = topbar_shown_state(app);
-                let _ = topbar.set_ignore_cursor_events(!shown);
+                crate::app::place::set_click_through(&topbar, !shown);
                 let _ = topbar.unminimize();
-                let _ = topbar.show();
+                crate::app::place::show_window(&topbar);
                 let _ = app.emit("lens://topbar-visible", shown);
             } else {
-                let _ = topbar.hide();
+                crate::app::place::hide_window(&topbar);
             }
             eprintln!(
                 "[Lens UI] TopBar positioned at ({}, {}) size {}x{}",
                 pos.x, pos.y, size.width, bar_h + extra_h
             );
+        }
+        // "Top Bar on every monitor": the extra bars make room for the main one wherever it is.
+        if cfg.func.per_monitor_bars {
+            crate::app::integration::place_extra_topbars(app, cfg, (pos.x, pos.y));
         }
 
         // Widget Drawer positioned cleanly on the right below top bar
@@ -348,7 +355,7 @@ pub(crate) fn position_settings_docked_with_height(
             None => y,
         };
         let (x, y) = crate::app::integration::side_dock_flyout(
-            cfg, scale, bar_h, bottom_edge, target_w, target_h,
+            cfg, &mon, bar_h, bottom_edge, target_w, target_h,
             win_monitors::FlyoutAlign::Center,
         )
         .unwrap_or((x, y));
@@ -660,7 +667,7 @@ pub(crate) fn spawn_watcher(
                     // save) may show the bar by setting it; the watcher adopts that here, so it can
                     // still hide the bar later instead of believing it is already hidden.
                     let mut topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
-                        if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+                        if cfg.top_bar.enabled {
                             let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
                             let cursor_in_mon_x = cursor
@@ -805,7 +812,9 @@ pub(crate) fn spawn_watcher(
                                     let _ = topbar_win.show();
                                     let _ = watcher_handle.emit("lens://topbar-visible", true);
                                 } else {
-                                    let _ = topbar_win.set_ignore_cursor_events(true);
+                                    // A hidden bar must never take clicks: retried once, and the
+                                    // ~2 s restatement below applies it again if Windows refused.
+                                    crate::app::place::set_click_through(&topbar_win, true);
                                     let _ = watcher_handle.emit("lens://topbar-visible", false);
                                 }
                             } else if topbar_visible
@@ -848,8 +857,11 @@ pub(crate) fn spawn_watcher(
                                 _ => !crate::app::topbar_hit::rects().is_empty(),
                             };
                             if topbar_through != Some(through) {
-                                topbar_through = Some(through);
-                                let _ = topbar_win.set_ignore_cursor_events(through);
+                                // Remembered only once applied, so a refused change is tried again
+                                // on the next pass instead of being taken as done (B-18).
+                                if crate::app::place::set_click_through(&topbar_win, through) {
+                                    topbar_through = Some(through);
+                                }
                             }
                             let halo = match local {
                                 Some((lx, ly)) if over_bar && through => (lx.round() as i32, ly.round() as i32, true),
@@ -1011,7 +1023,7 @@ pub(crate) fn spawn_watcher(
                         }
                     // Without the Top Bar nothing above closes an abandoned Search: same rule here
                     // (another app has the foreground and the pointer is away, or a click outside).
-                    if palette_vis_now && !(cfg.top_bar.enabled && cfg.dock.show_top_bar) {
+                    if palette_vis_now && !(cfg.top_bar.enabled) {
                         if let Some(pal) = watcher_handle.get_webview_window("palette") {
                             let pointer_in = match (pal.outer_position(), pal.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {
@@ -1152,7 +1164,7 @@ pub(crate) fn spawn_watcher(
                                 || dock_win.is_minimized().unwrap_or(false))
                         {
                             let _ = dock_win.unminimize();
-                            let _ = dock_win.show();
+                            crate::app::place::show_window(&dock_win);
                             let _ = watcher_handle.emit("lens://dock-visible", true);
                         }
 
@@ -1172,6 +1184,20 @@ pub(crate) fn spawn_watcher(
                             || win_previews::flyout_rect_css().2 > 0
                             || dock_vis_changed_at.elapsed().as_millis() < 800
                             || dock_pill_changed_at.elapsed().as_millis() < 600;
+                        // Self-heal about every 2 s while idle: a Dock window that was moved or
+                        // resized behind Lens's back (a scaling change on the way to another
+                        // monitor, Explorer restarting, a display waking up) goes back to its
+                        // place. Nothing happens when it is already there (B-62).
+                        // Also while auto-hidden: the reveal strip is measured from the window, so
+                        // a misplaced hidden Dock could never be brought back.
+                        let dock_settled = !menu_open
+                            && !dock_flyout_open
+                            && !cursor_over_pill
+                            && win_previews::flyout_rect_css().2 == 0
+                            && dock_vis_changed_at.elapsed().as_millis() >= 800;
+                        if tick % 30 == 15 && dock_settled {
+                            resize_dock_window(&watcher_handle, &cfg);
+                        }
                         let depth_now = win_previews::dock_depth_css();
                         let depth_wanted = win_previews::dock_depth_for_pill(&cfg.dock.position, pill_now);
                         if let Some(depth) = dock_sizer.step(watcher_started.elapsed().as_millis() as u64, depth_now, depth_wanted, dock_busy) {
@@ -1187,8 +1213,12 @@ pub(crate) fn spawn_watcher(
                         // Click-through everywhere except over the visible dock pill (or when context menu/search/hover card is open)
                         let want_ignore = !menu_open && (!dock_visible || !cursor_over_pill);
                         if want_ignore != dock_ignoring_cursor {
-                            dock_ignoring_cursor = want_ignore;
-                            let _ = dock_win.set_ignore_cursor_events(want_ignore);
+                            // Remembered only once applied: a refused change (the window was busy
+                            // being rebuilt or moved) used to be taken as done, leaving a hidden
+                            // Dock that took clicks or a shown one that let them through (B-18).
+                            if crate::app::place::set_click_through(&dock_win, want_ignore) {
+                                dock_ignoring_cursor = want_ignore;
+                            }
                         }
                     }
 
