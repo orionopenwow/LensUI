@@ -592,11 +592,17 @@ mod rt {
     fn foreground_blocks_input() -> bool {
         unsafe {
             if let Ok(state) = SHQueryUserNotificationState() {
-                if state == QUNS_RUNNING_D3D_FULL_SCREEN
-                    || state == QUNS_PRESENTATION_MODE
-                    || state == QUNS_BUSY
-                {
+                if state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE {
                     return true;
+                }
+                // QUNS_BUSY is "a window covers the whole screen". With the Windows taskbar hidden
+                // (which Lens can do) every maximised window does, so a maximised window is not a
+                // fullscreen app here; a borderless fullscreen one still is.
+                if state == QUNS_BUSY {
+                    let fg = GetForegroundWindow();
+                    if fg.0.is_null() || !windows::Win32::UI::WindowsAndMessaging::IsZoomed(fg).as_bool() {
+                        return true;
+                    }
                 }
             }
             let fg = GetForegroundWindow();
