@@ -1813,6 +1813,21 @@
       "capability": "change_settings",
       "category": "Magic (preview)",
       "default": false,
+      "description": "Pins widgets on the desktop, above the wallpaper and below your windows; local data only.",
+      "example": "{\"args\":{\"changes\":{\"magicWaves.desktopWidgets\":true}},\"tool\":\"lens_set\"}",
+      "label": "Desktop widgets",
+      "path": "magicWaves.desktopWidgets",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Magic (preview)",
+      "default": false,
       "description": "Lets the Dashboard reorder cards from how you use it, on this PC only, with a reason on each.",
       "example": "{\"args\":{\"changes\":{\"magicWaves.learn\":true}},\"tool\":\"lens_set\"}",
       "label": "Learned ordering",

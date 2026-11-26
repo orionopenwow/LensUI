@@ -24,6 +24,8 @@ export const SURFACES = {
   overview: [1120, 700],
   wallpaper: [960, 540],
   command: [1000, 640],
+  // The desktop widgets host covers a work area (the mock turns the flag on for it).
+  deskwidgets: [1600, 900],
 };
 
 export const PRESETS = ["obsidian", "catppuccin-mocha", "alabaster-daylight"];

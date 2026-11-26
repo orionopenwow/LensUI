@@ -110,6 +110,9 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
   fullscreen and anti-cheat; restore on Remove all/crash.
 - **M4** (#107, in flight): Magic Start on Win tap (Lens only when on; Ctrl+Esc → Windows Start;
   300 ms watchdog), Shelf → Notes with md/txt/pdf export and Send to contact (asks).
+- **Desktop widgets** (`magicWaves.desktopWidgets`) — built: widgets on the desktop below every
+  window, snapping grid, edit mode with a gallery, Magic on the desktop background offers
+  **Edit widgets…**. See [desktop-widgets.md](desktop-widgets.md).
 - **Studio v2** — scaffold only: Dock/Theme/Desktop tabs, draft with undo/redo/revert/apply.
 
 ## 3. Quick wins (≤ 1 day, ranked)

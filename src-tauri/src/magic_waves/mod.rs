@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 pub mod dashboard;
+pub mod desktop_widgets;
 pub mod mouse;
 pub mod widgets;
 

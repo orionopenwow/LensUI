@@ -8,7 +8,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useLensState } from "../hooks/useLensState";
-import { magicFlags } from "../magicwaves/flags";
+import { magicFlags, withFlag } from "../magicwaves/flags";
+import { editDesktopWidgets } from "../deskwidgets/api";
 import { DashboardSurface } from "./DashboardSurface";
 import { contextStrip, type Card, type LaneId, type LayoutId } from "./store";
 import { loadSnapshot, stripItems, type CalEventLike, type CardAction, type DashCard, type Readers } from "./sources";
@@ -80,7 +81,7 @@ const listenWidgets = (cb: (s: WidgetStore) => void) => {
 };
 
 export const DashboardWindow: React.FC = () => {
-  const { config } = useLensState();
+  const { config, updateConfig } = useLensState();
   const flags = magicFlags(config);
   const [cards, setCards] = useState<Card[]>([]);
   const [strip, setStrip] = useState<string[] | undefined>(undefined);
@@ -197,7 +198,19 @@ export const DashboardWindow: React.FC = () => {
           hideSoon("Ask about this");
         }}
         renderLane={(lane) =>
-          lane === "widgets" ? <WidgetsLane listen={listenWidgets} /> : lane === "x" ? <XLane fetchOff={widgets.fetchOff} /> : null
+          lane === "widgets" ? (
+            <WidgetsLane
+              listen={listenWidgets}
+              desktop={{
+                on: flags.desktopWidgets,
+                onToggle: (on) => config && void updateConfig(withFlag(config, "desktopWidgets", on)),
+                onEdit: () => {
+                  void hide("edit desktop widgets");
+                  void editDesktopWidgets();
+                },
+              }}
+            />
+          ) : lane === "x" ? <XLane fetchOff={widgets.fetchOff} /> : null
         }
         onClose={() => void hide("×")}
       />

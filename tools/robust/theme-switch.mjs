@@ -325,6 +325,27 @@ async function openTab(page, label) {
   await page.context().close();
 }
 
+// ── Scenario C: desktop widgets follow a theme change without moving ────────────────────────────
+// The desktop host (docs/features/desktop-widgets.md) with one widget of each local kind: a theme
+// broadcast may recolour the cards, but no widget may move or change size, and nothing may error.
+{
+  const page = await openSurface(browser, server.base, { surface: "deskwidgets", query: "magic=desktopWidgets&desk=sample", width: 1600, height: 900, settle: 1500 });
+  const boxes = () => page.evaluate(() => [...document.querySelectorAll(".dwg-item")].map((e) => { const r = e.getBoundingClientRect(); return [e.getAttribute("data-id"), Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(":"); }));
+  const before = await boxes();
+  const problems = [];
+  if (before.length < 4) problems.push(`only ${before.length} widgets rendered`);
+  for (const preset of ["alabaster-daylight", "catppuccin-mocha", "obsidian"]) {
+    await broadcast(page, `c.theme.preset = ${JSON.stringify(preset)};`);
+    await page.waitForTimeout(SETTLE_MS + 150);
+    const after = await boxes();
+    if (after.join("|") !== before.join("|")) problems.push(`widgets moved on ${preset}: ${after.filter((b, i) => b !== before[i]).join(", ")}`);
+  }
+  if (page.problems.errors.length) problems.push(...page.problems.errors);
+  results.push({ name: "desktop widgets: theme broadcast keeps the layout", ok: !problems.length, problems });
+  console.log(`${problems.length ? "FAIL" : "ok  "} desktop widgets: theme broadcast keeps the layout${problems.length ? "\n       " + problems.join("\n       ") : ""}`);
+  await page.context().close();
+}
+
 await browser.close();
 server.close();
 
