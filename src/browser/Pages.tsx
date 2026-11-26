@@ -4,7 +4,7 @@ import React, { useLayoutEffect, useMemo, useRef } from "react";
 import { CloudOff, Download, History as HistoryIcon, Minus, Plus, RotateCw, Search, ShieldAlert, Sparkles, TriangleAlert, Undo2, X } from "lucide-react";
 import { glideIn } from "../ui/motion";
 import type { Bookmark, HistoryEntry, ReaderPrefs, Tab } from "./api";
-import { READER_SIZE, READER_WIDTHS, clampReader, parseReadable, readerWorthIt, readingLabel, stepSize, type Inline } from "./reader";
+import { READER_SIZE, clampReader, parseReadable, readerWorthIt, readingLabel, stepSize, type Inline } from "./reader";
 import { Key } from "./ApprovalCard";
 import { hostOf, relTime } from "./model";
 import { errorInfo, topSites } from "./nav";
@@ -213,12 +213,11 @@ export function ReaderPage(p: ReaderProps) {
   const widths: ReaderPrefs["width"][] = ["narrow", "medium", "wide"];
   return (
     <div
-      className={`lb-reader lb-reader-${prefs.face}`}
+      className={`lb-reader lb-reader-${prefs.face} lb-reader-w-${prefs.width} lb-reader-s-${prefs.size}`}
       ref={root}
       role="region"
       aria-label="Reader view"
       tabIndex={-1}
-      style={{ "--lb-reader-size": `${prefs.size}px`, "--lb-reader-col": `${READER_WIDTHS[prefs.width]}px` } as React.CSSProperties}
     >
       <div className="lb-reader-bar" role="toolbar" aria-label="Reader">
         <span className="lb-mono lb-dim lb-reader-meta">{[doc.host, label].filter(Boolean).join(" · ")}</span>

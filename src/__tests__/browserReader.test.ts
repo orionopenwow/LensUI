@@ -72,6 +72,11 @@ describe("reader view", () => {
     expect(clampReader(null)).toEqual({ size: 18, width: "medium", face: "serif" });
     expect(clampReader({ size: 999, width: "huge" as never, face: "comic" as never })).toEqual({ size: READER_SIZE.max, width: "medium", face: "serif" });
     expect(clampReader({ size: 1, width: "wide", face: "sans" })).toEqual({ size: READER_SIZE.min, width: "wide", face: "sans" });
+    expect(clampReader({ size: 19 }).size % 2).toBe(0);
+    // Every size and width the model can produce has its class in the stylesheet.
+    const css = readFileSync(join(import.meta.dir, "..", "browser", "Browser.css"), "utf8");
+    for (let n = READER_SIZE.min; n <= READER_SIZE.max; n += READER_SIZE.step) expect(css).toContain(`.lb-reader-s-${n} {`);
+    for (const w of ["narrow", "medium", "wide"]) expect(css).toContain(`.lb-reader-w-${w} {`);
     let p = clampReader({ size: READER_SIZE.max - 2 });
     p = stepSize(p, 1);
     expect(p.size).toBe(READER_SIZE.max);

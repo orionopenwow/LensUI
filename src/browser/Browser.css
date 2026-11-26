@@ -1055,6 +1055,16 @@
   box-sizing: border-box; width: 100%; max-width: var(--lb-reader-col); margin: 0 auto; padding: 40px 24px 96px;
   font-size: var(--lb-reader-size); line-height: 1.65; text-align: left; overflow-wrap: anywhere;
 }
+.lb-reader-w-narrow { --lb-reader-col: 560px; }
+.lb-reader-w-medium { --lb-reader-col: 680px; }
+.lb-reader-w-wide { --lb-reader-col: 820px; }
+.lb-reader-s-14 { --lb-reader-size: 14px; }
+.lb-reader-s-16 { --lb-reader-size: 16px; }
+.lb-reader-s-18 { --lb-reader-size: 18px; }
+.lb-reader-s-20 { --lb-reader-size: 20px; }
+.lb-reader-s-22 { --lb-reader-size: 22px; }
+.lb-reader-s-24 { --lb-reader-size: 24px; }
+.lb-reader-s-26 { --lb-reader-size: 26px; }
 .lb-reader-serif .lb-reader-col { font-family: Charter, "Bitstream Charter", Cambria, Georgia, "Times New Roman", serif; }
 .lb-reader-sans .lb-reader-col { font-family: var(--lens-font, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif); }
 .lb-reader-col h1 { margin: 0 0 0.9em; font-size: 1.7em; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }

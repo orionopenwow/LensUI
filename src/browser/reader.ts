@@ -21,7 +21,6 @@ export interface ReaderDoc {
 }
 
 export const READER_SIZE = { min: 14, max: 26, step: 2, def: 18 } as const;
-export const READER_WIDTHS: Record<ReaderPrefs["width"], number> = { narrow: 560, medium: 680, wide: 820 };
 const MAX_BLOCKS = 4000;
 
 /** Only web links are kept as links; anything else (javascript:, data:, file:) stays plain text. */
@@ -139,8 +138,10 @@ export function readerWorthIt(doc: ReaderDoc): boolean {
 
 export function clampReader(p: Partial<ReaderPrefs> | null | undefined): ReaderPrefs {
   const size = Math.round(Number(p?.size));
+  // Sizes are even steps (14, 16 … 26): each has a class in Browser.css, so no inline style is needed.
+  const even = (n: number) => READER_SIZE.min + Math.round((n - READER_SIZE.min) / READER_SIZE.step) * READER_SIZE.step;
   return {
-    size: Number.isFinite(size) ? Math.min(READER_SIZE.max, Math.max(READER_SIZE.min, size)) : READER_SIZE.def,
+    size: Number.isFinite(size) ? even(Math.min(READER_SIZE.max, Math.max(READER_SIZE.min, size))) : READER_SIZE.def,
     width: p?.width === "narrow" || p?.width === "wide" ? p.width : "medium",
     face: p?.face === "sans" ? "sans" : "serif",
   };

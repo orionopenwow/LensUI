@@ -7769,6 +7769,23 @@
   {
    "id": "doc.agent-safety.2",
    "kind": "doc",
+   "title": "Agent safety (W8-O): Step tokens: an approval covers one exact step",
+   "text": "A yes/no flag from the UI says \"something was approved\". Lens does not accept that. When Lens Core shows a \"Needs your OK\" card it issues a one-time token ( agentsafe/step token.rs ) and the executor refuses the step unless that token comes back with the approval. Property How --- --- Bound to the step The token is stored against a digest of (step id, action kind, target, SHA-256 of the canonical arguments). The executor rebuilds that digest from the step it is about to run. Single use Redeeming removes the token, whether it matched or not. A token offered for the wrong step is burnt. Expires 10 minutes after the card was shown (the same time a request may wait in the queue). Can't be made up 256 random bits from the OS, kept in Core. Nothing is derived from the step. Where it is checked: Path Step id Kind Target Arguments Executor --- --- --- --- --- --- Browser agent ( browser agent ac",
+   "path": [
+    "Docs",
+    "Agent safety (W8-O)",
+    "Step tokens: an approval covers one exact step"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_SAFETY.md",
+    "heading": "Step tokens: an approval covers one exact step"
+   },
+   "source": "docs/AGENT_SAFETY.md"
+  },
+  {
+   "id": "doc.agent-safety.3",
+   "kind": "doc",
    "title": "Agent safety (W8-O): Red-team results",
    "text": "Run with cargo test agentsafe (CI), or locally without crates: Results: Suite Cases Result --- --- --- Scam and look-alike URLs ( fixtures/scam urls.txt ) 35 35 flagged high or critical Popular sites, false-positive budget 2 ( fixtures/top sites.txt ) 209 0 flagged medium or above Injection pages ( fixtures/pages/ .txt ) 18 malicious, 7 clean all as expected Pipeline cases ( fixtures/redteam.txt ) 60 all verdicts as expected Wrapped text never contains quarantined instructions 18 pass Fuzz: random URLs, text, styles, actions, clients (4,000) plus parser fuzz (20,000) 24,000 no panics; invariants hold (login always blocked, untrusted payments always blocked, send never silently allowed, every ask/block has reasons, spans on char boundaries) Total red-team cases: 120 . The fuzzer found a real panic during development: slicing a URL tail inside a multi-byte character. It was fixed, and the ",
    "path": [
@@ -7784,7 +7801,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.3",
+   "id": "doc.agent-safety.4",
    "kind": "doc",
    "title": "Agent safety (W8-O): Where the check sits (Fable wave 1)",
    "text": "Every agent path goes through one adapter, agentsafe::gate : Call What it answers --- --- gate::decide(&GateInput) May this client do this action now? Allow, ask (with reasons) or block (with reasons). gate::scan text(text, source, label) Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). gate::taint note / taint for Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. It is called from the two places every path already passes, so callers inherit it without doing anything: 1. Lens Control — control::lens::gate , preview and legacy decision , through control::safety (which maps a Call to the pipeline's action word). That covers every MCP client (Claude Desktop, Claude Code, others), every lens to",
@@ -7801,7 +7818,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.5",
+   "id": "doc.agent-safety.6",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Browser (feature/lens-browser)",
    "text": "1. Agent profile. In src-tauri/src/browser/host.rs , where an agent run opens or reuses a tab webview, pick the data folder from the grants: When a run ends: call crate::commands::agentsafe::agentsafe run ended(run id) , close the agent webviews and delete profiles root.join(\"agent\") . Never navigate a signed-in webview to a different site than the grant's ( grant.site == registrable domain(new url) ); otherwise reopen in the sandbox. 2. Before each page action. In browser/gating.rs classify(action, caps) , after the existing capability decision: 3. Reading pages. Replace gating::untrusted block(url, text) with the collector plus scan: COLLECTOR JS is collectorScript() from src/agentsafe/collector.ts . Pass it from the UI once at start-up with browser set collector(js) , or build it into the binary with include str! of a generated file. 4. Banner. In the browser frame, above the page:",
@@ -7818,7 +7835,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.6",
+   "id": "doc.agent-safety.7",
    "kind": "doc",
    "title": "Agent safety (W8-O): Claude control (feature/claude-control)",
    "text": "1. Run the pipeline in control::lens::gate before the grant decision: 2. MCP tool and resource text is untrusted. Scan it with agentsafe scan(nodes, \"tool:<client \") before it reaches the internal model. 3. Approval card. In src/approval/ApprovalCard.tsx , under the one-line question: Use hold-to-confirm whenever holdToConfirm is true.",
@@ -7835,7 +7852,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.7",
+   "id": "doc.agent-safety.8",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Snip (feature/lens-snip)",
    "text": "Before Paste to Claude , Ask and Translate , scan the OCR text. Pass the OCR's own contrast estimate per line if it has one ( collectorHelpers.contrastRatio on the line's sampled text and background colours):",
@@ -7852,7 +7869,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.8",
+   "id": "doc.agent-safety.9",
    "kind": "doc",
    "title": "Agent safety (W8-O): Right-click and the extension (feature/rightclick-context, feature/ai-bridges)",
    "text": "- Page text from the extension ( page text , selections, YouTube transcripts) is untrusted. In the bridge's LensAi adapter, scan it first with agentsafe scan([{ id: 0, text, source: \"dom\" }], url) and pass wrapped as page text . - The content script can also run lensTextCollector(4000) ; bundle src/agentsafe/collector.ts into the content script. That gives full style facts instead of plain text. - The \"Copy page into context\" and \"Add to Shelf\" actions store the raw text, but mark the Shelf item source = page so packs re-scan it when sent to a model.",
@@ -7869,7 +7886,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.9",
+   "id": "doc.agent-safety.10",
    "kind": "doc",
    "title": "Agent safety (W8-O): Voice and the internal AI (feature/voice, feature/ai-core)",
    "text": "- Voice commands the user spoke are origin: \"user\" . - Steps an AI proposes after reading pages, files or tool output are origin: \"untrusted\" . - In ai/tools.rs 's runner, call agentsafe check with the tool's kind before executing.",
@@ -7886,7 +7903,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.10",
+   "id": "doc.agent-safety.11",
    "kind": "doc",
    "title": "Agent safety (W8-O): Control Center",
    "text": "Mount the card in AI & Command , below the approvals or permissions card:",
@@ -7903,7 +7920,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.12",
+   "id": "doc.agent-safety.13",
    "kind": "doc",
    "title": "Agent safety (W8-O): Third-party data",
    "text": "agentsafe/confusables.rs uses a hand-picked subset of the prototype mappings in Unicode's confusables.txt (UTS #39, \"Unicode Security Mechanisms\"). Copyright © 1991-2026 Unicode, Inc. Distributed under the Unicode License v3 (https://www.unicode.org/license.txt), which permits copying and modification provided the copyright and permission notice are included. The brand list, lure words and risky-TLD list were compiled by hand from public phishing-trend reporting. There is no third-party list.",
@@ -7920,7 +7937,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.13",
+   "id": "doc.agent-safety.14",
    "kind": "doc",
    "title": "Agent safety (W8-O): Privacy",
    "text": "- Grants and settings are saved under %APPDATA%\\LensUI\\agentsafe\\ . Grants are saved as site names and times only. - The set-aside viewer is in memory only, keeps the last 200 entries, and is never written to disk. - No check makes a network request.",
@@ -9123,7 +9140,7 @@
    "id": "doc.claude-control.23",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail: Not yet covered",
-   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack lives in memory, so it is lost on restart. The audit log keeps the record. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
+   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack survives a restart: the last 50 settings changes (at most 512 KB) are kept in %APPDATA%\\LensUI\\control\\undo.jsonl and read back when Lens starts. Window moves are undoable only until Lens closes (a window handle from before a restart may belong to another window). Damaged lines in the journal are skipped. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
    "path": [
     "Docs",
     "Lens Control: Claude control over every desktop detail",
