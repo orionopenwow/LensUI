@@ -8,6 +8,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Link rules in Lens Browser.** Send links to a space by site ("github.com goes to Code"), by the
+  app they came from ("links from Slack go to Work") or by words in the address. Arc's Air Traffic
+  Control rules come over with an Arc import and leave with its undo.
+- **`lens` on the command line, for your own Claude Code or Codex.** `lens-ui.exe --cli browse read`,
+  `browse click 12`, `computer windows`… talk to the running Lens (MCP on), one client per terminal,
+  through Lens's grants, approval card and page checks; sign-ins stay in Lens. Page outlines are
+  compact (about the size of the page's plain text, with every control numbered). Setup for Claude
+  Code and Codex and the measured token costs: docs/AGENT_CLI.md. Lens's MCP browser tools now reach
+  the real Lens Browser.
+- **Published Lens Browser benchmarks** (cold open, memory with 1 and 10 tabs, tab switch), measured
+  on every pull request on CI's Windows runner, with the method and caveats: docs/BENCHMARKS.md.
+- **What Lens Browser sends, spelled out**: filter lists, site icons and the update check, nothing
+  else; Settings › Lens Browser › Privacy shows this session's requests.
 - **Lens Browser tab styles.** Make it yours › Tab position: Vertical (the sidebar) or Horizontal,
   with five styles drawn by Lens: Curved, Joined, Compact (one row, icon tabs), Dynamic (address
   bar, then tabs; the previous horizontal look) and Merged (the open tab is the address bar). Spaces,

@@ -22,6 +22,8 @@ pub enum PageAct {
 pub enum BrowserCall {
     Tabs,
     Read { tab: Option<String>, mode: String },
+    /// A PNG of the tab's page, saved under %APPDATA%\LensUI\cli\shots (the path is returned).
+    Screenshot { tab: Option<String> },
     Transcript { tab: Option<String>, lang: Option<String> },
     Navigate { input: String, new_tab: bool },
     Act { tab: Option<String>, element: u32, act: PageAct },
@@ -63,12 +65,13 @@ pub fn parse(tool: &str, m: &Map<String, Value>) -> Result<BrowserCall, String> 
         "lens_browser_tabs" => Ok(BrowserCall::Tabs),
         "lens_browser_read" => {
             let mode = s(m, "mode", 12).unwrap_or_else(|| "readable".into());
-            if !matches!(mode.as_str(), "readable" | "snapshot") {
-                return Err("mode must be readable (page as markdown) or snapshot (text plus numbered elements)".into());
+            if !matches!(mode.as_str(), "readable" | "snapshot" | "compact") {
+                return Err("mode must be readable (page as markdown), compact (short outline with numbered elements) or snapshot (text plus numbered elements as JSON)".into());
             }
             Ok(BrowserCall::Read { tab, mode })
         }
         "lens_browser_transcript" => Ok(BrowserCall::Transcript { tab, lang: s(m, "lang", 12) }),
+        "lens_browser_screenshot" => Ok(BrowserCall::Screenshot { tab }),
         "lens_browser_navigate" => {
             let input = s(m, "input", 2000).ok_or("input must be a web address or search words")?;
             if !navigation_ok(&input) {
@@ -119,6 +122,7 @@ pub fn needs(call: &BrowserCall, url: Option<&str>) -> Needs {
     match call {
         BrowserCall::Tabs => read("List your browser tabs and Spaces".into()),
         BrowserCall::Read { .. } => read(format!("Read the page{}", on)),
+        BrowserCall::Screenshot { .. } => read(format!("Take a picture of the page{}", on)),
         BrowserCall::Transcript { .. } => read(format!("Get the video transcript{}", on)),
         BrowserCall::Navigate { input, .. } => Needs {
             capability: Capability::Browse,

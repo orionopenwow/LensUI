@@ -338,3 +338,34 @@ fn setup_shows_on_a_fresh_install_only() {
     used.repair();
     assert!(used.settings.setup_seen, "an upgrade with tabs open is already set up");
 }
+
+#[test]
+fn link_rules_route_by_site_words_or_app_and_are_cleaned() {
+    let mut s = state();
+    let work = s.add_space("Work");
+    let code = s.add_space("Code");
+    assert!(s.add_link_rule("domain", "https://www.GitHub.com/orionopenwow", &code).is_ok());
+    assert!(s.add_link_rule("app", "C:\\Program Files\\Slack\\slack.exe", &work).is_ok());
+    assert!(s.add_link_rule("contains", "Invoice", &work).is_ok());
+    assert!(s.add_link_rule("domain", "not a host", &work).is_err());
+    assert!(s.add_link_rule("colour", "red", &work).is_err());
+    assert!(s.add_link_rule("domain", "github.com", "nope").is_err());
+    let again = s.add_link_rule("domain", "github.com", &code).unwrap();
+    assert_eq!(s.settings.link_rules.len(), 3, "the same rule twice is one rule ({again})");
+    let r = &s.settings.link_rules;
+    assert_eq!(r[0].value, "github.com");
+    assert_eq!(r[1].value, "slack");
+    assert_eq!(route_link(r, "https://gist.github.com/x", None), Some(code.as_str()));
+    assert_eq!(route_link(r, "https://notgithub.com/x", None), None);
+    assert_eq!(route_link(r, "https://docs.example/a", Some("Slack.exe")), Some(work.as_str()));
+    assert_eq!(route_link(r, "https://shop.example/INVOICE/7", None), Some(work.as_str()));
+    assert_eq!(route_link(r, "https://news.example/", Some("teams")), None);
+    // First match wins: github.com from Slack goes to Code (its rule is first).
+    assert_eq!(route_link(r, "https://github.com/", Some("slack")), Some(code.as_str()));
+    // Removing a space removes its rules.
+    s.remove_space(&code).unwrap();
+    assert_eq!(s.settings.link_rules.len(), 2);
+    assert!(s.settings.link_rules.iter().all(|r| r.space_id == work));
+    let old: BrowserSettings = serde_json::from_str(r#"{"sleepAfterMin":15,"maxLiveTabs":6,"searchUrl":"https://duckduckgo.com/?q={q}","blockTrackers":true,"lensContextMenu":true,"defaultZoom":1.0}"#).unwrap();
+    assert!(old.link_rules.is_empty());
+}

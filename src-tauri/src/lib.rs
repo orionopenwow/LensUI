@@ -1,3 +1,4 @@
+mod agent_cli;
 mod ai;
 mod config;
 mod report;
@@ -148,6 +149,10 @@ pub fn run() {
     // AI apps launch `lens-ui.exe --mcp-stdio`: act as the MCP bridge only, never start the shell.
     if win_mcp::is_stdio_invocation() {
         std::process::exit(win_mcp::run_stdio_bridge());
+    }
+    // `lens-ui.exe --cli browse read`: the command line for agents (agent_cli.rs). Never the shell.
+    if agent_cli::is_cli_invocation() {
+        std::process::exit(agent_cli::run());
     }
     // Browser native-messaging host, lens:// links, Explorer verbs and `--ask`: forward and exit.
     if let Some(code) = bridge::early_exit_code() {
@@ -363,6 +368,8 @@ pub fn run() {
             // Lens Browser (docs/LENS_BROWSER.md)
             commands::browser::browser_open,
             commands::browser::browser_split,
+            commands::browser::browser_link_rule_add,
+            commands::browser::browser_link_rule_remove,
             commands::browser::browser_shield,
             commands::browser::browser_shield_allow,
             commands::browser::browser_blocking_status,

@@ -295,6 +295,59 @@ pub struct BrowserSettings {
     /// tabs never see it on upgrade (`repair`).
     #[serde(default)]
     pub setup_seen: bool,
+    /// "Send links from <app or site> to <space>" (applied when a link arrives from outside).
+    #[serde(default)]
+    pub link_rules: Vec<LinkRule>,
+}
+
+/// One link rule. `when`: "domain" (the link's host or a subdomain), "contains" (text in the
+/// address) or "app" (the app the link came from, by its program name).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkRule {
+    pub id: String,
+    pub when: String,
+    pub value: String,
+    pub space_id: String,
+}
+
+pub const LINK_RULES_CAP: usize = 200;
+
+/// Cleans a rule's value for its kind; None when it can't be used.
+pub fn clean_rule_value(when: &str, value: &str) -> Option<String> {
+    let v = value.trim();
+    let out = match when {
+        "domain" => {
+            let l = v.to_ascii_lowercase();
+            let l = l.split("://").last().unwrap_or("");
+            let host = l.split(['/', '?', '#', ':']).next().unwrap_or("").trim_start_matches("*.").trim_start_matches("www.").trim_end_matches('.');
+            if host.contains('.') && host.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-') { host.to_string() } else { return None }
+        }
+        "contains" => v.to_lowercase(),
+        "app" => {
+            let name = v.rsplit(['\\', '/']).next().unwrap_or(v).to_lowercase();
+            name.trim_end_matches(".exe").to_string()
+        }
+        _ => return None,
+    };
+    (!out.is_empty() && out.chars().count() <= 200).then_some(out)
+}
+
+/// The space a link goes to: the first rule that matches. `source_app` is the program the link
+/// came from ("slack", "Teams.exe"…), when known.
+pub fn route_link<'a>(rules: &'a [LinkRule], url: &str, source_app: Option<&str>) -> Option<&'a str> {
+    let host = super::filter::host_of(url).unwrap_or_default();
+    let lower = url.to_lowercase();
+    let app = source_app.map(|a| a.rsplit(['\\', '/']).next().unwrap_or(a).to_lowercase().trim_end_matches(".exe").to_string());
+    rules
+        .iter()
+        .find(|r| match r.when.as_str() {
+            "domain" => !host.is_empty() && (host == r.value || host.ends_with(&format!(".{}", r.value))),
+            "contains" => lower.contains(&r.value),
+            "app" => app.as_deref() == Some(r.value.as_str()),
+            _ => false,
+        })
+        .map(|r| r.space_id.as_str())
 }
 
 fn yes() -> bool {
@@ -332,6 +385,7 @@ impl Default for BrowserSettings {
             blocking_allow: vec![],
             favicons: true,
             setup_seen: false,
+            link_rules: vec![],
         }
     }
 }
@@ -538,6 +592,7 @@ impl BrowserState {
         let closed: Vec<String> = self.tabs.iter().filter(|t| t.space_id == id).map(|t| t.id.clone()).collect();
         self.tabs.retain(|t| t.space_id != id);
         self.repair_splits();
+        self.repair_link_rules();
         if self.active_space == id {
             self.active_space = self.spaces[0].id.clone();
             self.active_tab = self.most_recent_in(&self.active_space.clone());
@@ -931,6 +986,47 @@ impl BrowserState {
         true
     }
 
+    /// Drops link rules for spaces that are gone, cleans values, removes duplicates, caps the list.
+    pub fn repair_link_rules(&mut self) {
+        let spaces: Vec<String> = self.spaces.iter().map(|s| s.id.clone()).collect();
+        let mut seen = std::collections::HashSet::new();
+        let mut next = self.next_id;
+        let rules = std::mem::take(&mut self.settings.link_rules);
+        for mut r in rules {
+            let Some(v) = clean_rule_value(&r.when, &r.value) else { continue };
+            if !spaces.contains(&r.space_id) || !seen.insert((r.when.clone(), v.clone())) {
+                continue;
+            }
+            r.value = v;
+            if r.id.is_empty() || r.id.len() > 40 {
+                r.id = format!("r{next}");
+                next += 1;
+            }
+            self.settings.link_rules.push(r);
+            if self.settings.link_rules.len() >= LINK_RULES_CAP {
+                break;
+            }
+        }
+        self.next_id = next;
+    }
+
+    /// Adds a rule (cleaned). Returns its id.
+    pub fn add_link_rule(&mut self, when: &str, value: &str, space_id: &str) -> Result<String, String> {
+        let v = clean_rule_value(when, value).ok_or("That rule can't be used: give a site like github.com, some words, or an app name.")?;
+        if !self.spaces.iter().any(|s| s.id == space_id) {
+            return Err("That space doesn't exist.".into());
+        }
+        if let Some(r) = self.settings.link_rules.iter().find(|r| r.when == when && r.value == v) {
+            return Ok(r.id.clone());
+        }
+        if self.settings.link_rules.len() >= LINK_RULES_CAP {
+            return Err("That's a lot of rules; remove one first.".into());
+        }
+        let id = self.fresh_id("r");
+        self.settings.link_rules.push(LinkRule { id: id.clone(), when: when.into(), value: v, space_id: space_id.into() });
+        Ok(id)
+    }
+
     /// The split a tab is part of.
     pub fn split_of(&self, tab: &str) -> Option<&Split> {
         self.splits.iter().find(|s| s.left == tab || s.right == tab)
@@ -1049,6 +1145,7 @@ impl BrowserState {
         self.closed.drain(..cap);
         super::permissions::repair(&mut self.site_permissions);
         self.repair_splits();
+        self.repair_link_rules();
         // Upgrading with tabs already open: the browser is set up; don't greet again.
         if !self.tabs.is_empty() || self.spaces.len() > 1 {
             self.settings.setup_seen = true;

@@ -54,6 +54,7 @@ pub fn facts(call: &Call, site: Option<&str>) -> CallFacts {
         Call::Browser(b) => match b {
             BrowserCall::Tabs => f("read"),
             BrowserCall::Read { .. } => CallFacts { action: "read", url: site_url(), reads_untrusted: Some("a web page") },
+            BrowserCall::Screenshot { .. } => CallFacts { action: "read", url: site_url(), reads_untrusted: None },
             BrowserCall::Transcript { .. } => CallFacts { action: "read", url: site_url(), reads_untrusted: Some("a video transcript") },
             BrowserCall::Navigate { input, .. } => CallFacts { action: "navigate", url: url_of(input), reads_untrusted: None },
             BrowserCall::Act { act, .. } => CallFacts {

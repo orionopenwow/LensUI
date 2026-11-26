@@ -1,0 +1,77 @@
+{
+  "method": "tokens = ceil(chars/4)",
+  "rows": [
+    {
+      "page": "01-article",
+      "html": 3030,
+      "innerText": 1664,
+      "snapshot": 3909,
+      "compact": 1286,
+      "elements": 39,
+      "truncated": false
+    },
+    {
+      "page": "02-search",
+      "html": 2143,
+      "innerText": 601,
+      "snapshot": 3585,
+      "compact": 769,
+      "elements": 49,
+      "truncated": false
+    },
+    {
+      "page": "03-product",
+      "html": 2340,
+      "innerText": 759,
+      "snapshot": 3019,
+      "compact": 815,
+      "elements": 40,
+      "truncated": false
+    },
+    {
+      "page": "04-booking",
+      "html": 1495,
+      "innerText": 141,
+      "snapshot": 2195,
+      "compact": 246,
+      "elements": 36,
+      "truncated": false
+    },
+    {
+      "page": "05-dashboard",
+      "html": 2532,
+      "innerText": 535,
+      "snapshot": 5094,
+      "compact": 776,
+      "elements": 73,
+      "truncated": false
+    },
+    {
+      "page": "06-docs",
+      "html": 2844,
+      "innerText": 1259,
+      "snapshot": 4052,
+      "compact": 1370,
+      "elements": 47,
+      "truncated": false
+    },
+    {
+      "page": "07-forum",
+      "html": 4222,
+      "innerText": 2008,
+      "snapshot": 9273,
+      "compact": 1509,
+      "elements": 73,
+      "truncated": true
+    },
+    {
+      "page": "08-login",
+      "html": 1437,
+      "innerText": 123,
+      "snapshot": 2143,
+      "compact": 238,
+      "elements": 35,
+      "truncated": false
+    }
+  ]
+}

@@ -28,7 +28,9 @@ fn changed(app: &AppHandle) -> Result<BrowserView, String> {
 
 /// Opens the Lens Browser window, optionally with a page in a new tab.
 #[tauri::command]
-pub async fn browser_open(app: AppHandle, url: Option<String>) -> Result<BrowserView, String> {
+pub async fn browser_open(app: AppHandle, url: Option<String>, source: Option<String>) -> Result<BrowserView, String> {
+    // The app the link came from, for link rules: the caller says, or the window in front.
+    let source = source.or_else(foreground_app);
     blocking(move || {
         host::ensure_window(&app)?;
         host::start_maintenance(app.clone());
@@ -37,14 +39,54 @@ pub async fn browser_open(app: AppHandle, url: Option<String>) -> Result<Browser
                 Some(Address::Url(x)) | Some(Address::Search(x)) => x,
                 _ => return Err("Lens Browser can only open web pages.".into()),
             };
-            let active = rt().state.active_tab.clone();
-            rt().state.open_tab(&target, None, active.as_deref(), host::now())?;
+            // Link rules: "links from Slack go to Work", "github.com goes to Code".
+            let routed = {
+                let r = rt();
+                crate::browser::model::route_link(&r.state.settings.link_rules, &target, source.as_deref()).map(str::to_string)
+            };
+            match routed {
+                Some(space) => {
+                    rt().state.open_tab(&target, Some(&space), None, host::now())?;
+                }
+                None => {
+                    let active = rt().state.active_tab.clone();
+                    rt().state.open_tab(&target, None, active.as_deref(), host::now())?;
+                }
+            }
         } else if rt().state.active_tab.is_none() {
             let t = rt().state.tabs.iter().max_by_key(|t| t.last_active_ms).map(|t| t.id.clone());
             if let Some(t) = t {
                 rt().state.activate(&t, host::now())?;
             }
         }
+        changed(&app)
+    })
+    .await
+}
+
+/// The program in front when a link arrives from outside (not Lens itself), lower-cased.
+fn foreground_app() -> Option<String> {
+    crate::win_windows::list_running_windows()
+        .into_iter()
+        .find(|w| w.is_focused)
+        .map(|w| w.process_name.to_lowercase())
+        .filter(|p| !p.is_empty() && !p.starts_with("lens-ui"))
+}
+
+/// Adds a link rule ("domain" | "contains" | "app" → space). Returns the browser view.
+#[tauri::command]
+pub async fn browser_link_rule_add(app: AppHandle, when: String, value: String, space: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.add_link_rule(&when, &value, &space)?;
+        changed(&app)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn browser_link_rule_remove(app: AppHandle, id: String) -> Result<BrowserView, String> {
+    blocking(move || {
+        rt().state.settings.link_rules.retain(|r| r.id != id);
         changed(&app)
     })
     .await
@@ -367,6 +409,7 @@ pub async fn browser_settings_set(app: AppHandle, settings: BrowserSettings) -> 
             let mut r = rt();
             r.state.settings = settings;
             r.state.repair_settings();
+            r.state.repair_link_rules();
             crate::browser::blocklist::publish(r.state.settings.block_trackers, &r.state.settings.blocking_allow);
         }
         let op = host::menu_op();
@@ -383,7 +426,7 @@ pub async fn browser_settings_set(app: AppHandle, settings: BrowserSettings) -> 
 #[tauri::command]
 pub async fn browser_page(op: String, tab: Option<String>) -> Result<Value, String> {
     blocking(move || {
-        if !matches!(op.as_str(), "snapshot" | "readable" | "status") {
+        if !matches!(op.as_str(), "snapshot" | "readable" | "status" | "compact") {
             return Err("Unknown page op.".into());
         }
         let (_, view) = host::view_for(tab.as_deref())?;
@@ -435,7 +478,7 @@ const AGENT_TAINT: &str = "browser-agent";
 /// The browser's own classification, then the shared agent-safety gate on top of it: look-alike
 /// sites, steps planned from a page that hides instructions, and the hard blocks. Returns the
 /// combined decision and the gate's reasons for the card.
-fn checked(action: &PageAction, caps: &Capabilities, page_url: Option<&str>) -> (Decision, Vec<crate::ai::SafetyNote>) {
+pub(crate) fn checked(action: &PageAction, caps: &Capabilities, page_url: Option<&str>) -> (Decision, Vec<crate::ai::SafetyNote>) {
     use crate::agentsafe::gate;
     let own = gating::classify(action, caps);
     let (word, field, target_url) = gating::gate_question(action, &own);

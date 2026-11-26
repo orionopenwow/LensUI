@@ -404,8 +404,15 @@ impl Desktop for LensDesktop {
     fn memory_policy(&self) -> MemoryPolicy {
         grants().lock().unwrap_or_else(|e| e.into_inner()).memory.clone()
     }
-    // `browser` and `browser_tab` keep their "Lens Browser isn't available" defaults until
-    // feature/lens-browser lands; docs/CLAUDE_CONTROL.md ("Lens Browser") has the two methods.
+
+    /// Lens Browser, after Lens Control's gating (browser/agent_control.rs).
+    fn browser(&self, call: &super::browser::BrowserCall) -> Result<Value, String> {
+        crate::browser::agent_control::run(&self.app, call)
+    }
+
+    fn browser_tab(&self, tab: Option<&str>) -> Option<(String, Option<String>)> {
+        crate::browser::agent_control::tab_info(tab)
+    }
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
-  blockingStatus, blockingUpdate, browserOpen, browserState, historyClear, permissionForget, permissionsList, settingsSet, type BlockingStatus, type BrowserSettings, type SitePermissions,
+  blockingStatus, blockingUpdate, browserOpen, browserState, faviconsClear, historyClear, linkRuleAdd, linkRuleRemove, permissionForget, permissionsList, sentRequests, settingsSet,
+  type BlockingStatus, type BrowserSettings, type LinkRule, type SentRequest, type SitePermissions, type Space,
 } from "../browser/api";
+import { cleanValue, ruleLine, RULE_KINDS } from "../browser/linkRules";
+import { SENDS } from "../browser/setupFlow";
 import { SitePermissionsList } from "../browser/SitePermissions";
 
 const ENGINES: [string, string][] = [
@@ -18,8 +21,10 @@ export function BrowserCard() {
   const [msg, setMsg] = useState<string | null>(null);
   const [perms, setPerms] = useState<SitePermissions>({});
   const [lists, setLists] = useState<BlockingStatus | null>(null);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [sent, setSent] = useState<SentRequest[] | null>(null);
   useEffect(() => {
-    browserState().then((v) => setS(v.state.settings)).catch(() => {});
+    browserState().then((v) => { setS(v.state.settings); setSpaces(v.state.spaces); }).catch(() => {});
     permissionsList().then(setPerms).catch(() => {});
     blockingStatus().then(setLists).catch(() => {});
   }, []);
@@ -118,6 +123,33 @@ export function BrowserCard() {
       </div>
       <div className="cc-row cc-row-gap">
         <div>
+          <div className="cc-label">Link rules</div>
+          <div className="cc-desc">Send links that arrive from another app or site to a space: "links from Slack go to Work", "github.com goes to Code". The first rule that fits wins.</div>
+          <LinkRules rules={s.linkRules ?? []} spaces={spaces} onAdd={(w, v, sp) => void linkRuleAdd(w, v, sp).then((view) => setS(view.state.settings)).catch((e) => setMsg(String(e)))} onRemove={(id) => void linkRuleRemove(id).then((view) => setS(view.state.settings)).catch((e) => setMsg(String(e)))} />
+        </div>
+      </div>
+      <div className="cc-row cc-row-gap">
+        <div>
+          <div className="cc-label">Privacy: what is sent</div>
+          <div className="cc-desc">Besides the pages you open (which talk to their own sites, as in any browser), Lens Browser itself sends only these. No telemetry, no history, no page text.</div>
+          <ul className="cc-list" aria-label="What Lens Browser sends">
+            {SENDS.map((x) => <li key={x.what} className="cc-desc"><b>{x.what}</b> to {x.to}. {x.when}.</li>)}
+          </ul>
+          <span className="cc-btn-row">
+            <button className="cc-btn-ghost" data-weight="medium" onClick={() => void sentRequests().then(setSent).catch((e) => setMsg(String(e)))}>Show what was sent this session</button>
+            <button className="cc-btn-ghost" data-weight="medium" onClick={() => void faviconsClear().then(() => setMsg("Forgot every saved site icon.")).catch((e) => setMsg(String(e)))}>Forget site icons</button>
+          </span>
+          {sent ? (
+            sent.length ? (
+              <ul className="cc-list" aria-label="Sent this session">
+                {sent.slice(0, 20).map((x, i) => <li key={i} className="cc-desc cc-num">{new Date(x.atMs).toLocaleTimeString()} · {x.purpose === "filter_list" ? "filter list" : "site icon"} · {x.host}{x.ok ? "" : " (failed)"}</li>)}
+              </ul>
+            ) : <div className="cc-desc">Nothing sent yet this session.</div>
+          ) : null}
+        </div>
+      </div>
+      <div className="cc-row cc-row-gap">
+        <div>
           <div className="cc-label">Site permissions</div>
           <div className="cc-desc">Camera, microphone, location, notifications, clipboard and several downloads at once. Sites ask first; forget an answer and the site asks again.</div>
           <SitePermissionsList saved={perms} onForget={(o, k) => void permissionForget(o, k).then(setPerms).catch((e) => setMsg(String(e)))} />
@@ -142,6 +174,39 @@ function BlockingLists({ status, onUpdate }: { status: BlockingStatus; onUpdate(
         <span key={l.id}> · {l.name} ({when(l.fetchedMs)}, {l.licence.split(",")[0]})</span>
       ))}{" "}
       <button className="cc-btn-ghost" data-weight="medium" disabled={status.updating} onClick={onUpdate}>{status.updating ? "Updating…" : "Update now"}</button>
+    </div>
+  );
+}
+
+/** Link rules: the list, and a one-line form to add one. */
+function LinkRules({ rules, spaces, onAdd, onRemove }: { rules: LinkRule[]; spaces: Space[]; onAdd(when: LinkRule["when"], value: string, space: string): void; onRemove(id: string): void }) {
+  const [when, setWhen] = useState<LinkRule["when"]>("domain");
+  const [value, setValue] = useState("");
+  const [space, setSpace] = useState(spaces[0]?.id ?? "");
+  const clean = cleanValue(when, value);
+  const kind = RULE_KINDS.find((k) => k.id === when)!;
+  return (
+    <div className="cc-rules">
+      {rules.length ? (
+        <ul className="cc-list" aria-label="Link rules">
+          {rules.map((r) => (
+            <li key={r.id} className="cc-row">
+              <span className="cc-desc">{ruleLine(r, spaces)}</span>
+              <button className="cc-btn-ghost" data-weight="medium" aria-label={`Remove: ${ruleLine(r, spaces)}`} onClick={() => onRemove(r.id)}>Remove</button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="cc-btn-row" role="group" aria-label="Add a link rule">
+        <select className="cc-input" aria-label="Rule kind" value={when} onChange={(e) => setWhen(e.target.value as LinkRule["when"])}>
+          {RULE_KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
+        </select>
+        <input className="cc-input" aria-label={kind.label} placeholder={kind.hint} value={value} onChange={(e) => setValue(e.target.value)} />
+        <select className="cc-input" aria-label="Open in space" value={space || spaces[0]?.id || ""} onChange={(e) => setSpace(e.target.value)}>
+          {spaces.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
+        </select>
+        <button className="cc-btn" data-weight="medium" disabled={!clean || !(space || spaces[0])} onClick={() => { onAdd(when, value, space || spaces[0].id); setValue(""); }}>Add</button>
+      </div>
     </div>
   );
 }

@@ -50,6 +50,13 @@ Claude Desktop ──stdio──▶ lens-ui.exe --mcp-stdio ──loopback TCP +
 Approvals appear in the MCP card and as a Lens notification. Requests expire after 10 minutes; at most 5 can wait
 at once; identical pending requests are merged.
 
+## From a terminal: `lens` (Claude Code, Codex, scripts)
+
+`lens-ui.exe --cli browse read`, `… browse click 12`, `… computer windows`: a command-line client of
+this same server for your own coding agent, one client per terminal, using the Lens Control tools
+(`lens_browser_tabs/read/screenshot/transcript/navigate/act`, `lens_windows`, `lens_window_action`).
+Setup for Claude Code and Codex, the commands, and measured token costs: [AGENT_CLI.md](AGENT_CLI.md).
+
 ## Security model
 
 * **Off by default, loopback only, token-gated.** The port binds to 127.0.0.1; a connection without the token

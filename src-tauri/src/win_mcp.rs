@@ -1425,6 +1425,20 @@ fn forward(link: &mut Link, line: &str) -> Option<String> {
     read_capped_line(&mut link.reader).ok()?
 }
 
+/// A connection for `lens-ui.exe --cli` (agent_cli.rs): same endpoint, token and rules as the
+/// stdio bridge.
+pub struct CliLink(Link);
+
+impl CliLink {
+    pub fn call(&mut self, line: &str) -> Option<String> {
+        forward(&mut self.0, line)
+    }
+}
+
+pub fn cli_link() -> Option<CliLink> {
+    connect_to_lens().map(CliLink)
+}
+
 /// Runs until stdin closes. stdout carries only JSON-RPC; diagnostics go to stderr.
 pub fn run_stdio_bridge() -> i32 {
     let stdin = std::io::stdin();
