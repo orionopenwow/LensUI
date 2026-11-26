@@ -15,10 +15,10 @@ export interface RecentLike {
 
 export interface ShelfLike {
   kind: string;
-  title: string | null;
-  text: string | null;
-  url: string | null;
-  path: string | null;
+  title?: string | null;
+  text?: string | null;
+  url?: string | null;
+  path?: string | null;
 }
 
 /** One row in the panel. `kind` decides what Enter / click does. */
