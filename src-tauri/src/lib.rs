@@ -80,6 +80,8 @@ mod guide;
 mod snip;
 // Lens Studio › Backdrop Lab exports (docs/BACKDROP_LAB.md).
 mod studio;
+// Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
+mod magic_waves;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]

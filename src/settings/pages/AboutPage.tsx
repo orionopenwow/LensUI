@@ -7,6 +7,7 @@ import { FailsafeCard } from "../../components/FailsafeCard";
 import { BackupRestoreCard } from "../../components/BackupRestoreCard";
 import { TesterHubCard } from "../../tester/TesterHubCard";
 import { ReportProblem } from "../../report/ReportProblem";
+import { MagicPreviewSection } from "../../magicwaves/MagicPreviewSection";
 import { LinkRow, Row, Section, StateNote, Toggle, WinLink } from "../ui/primitives";
 import type { PageProps } from "./common";
 
@@ -76,6 +77,7 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
         </Row>
         <TesterHubCard />
       </Section>
+      <MagicPreviewSection config={config} updateConfig={updateConfig} section={section} />
       <LinkRow>
         <WinLink uri="ms-settings:about" label="About this PC" />
       </LinkRow>

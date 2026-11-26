@@ -8,6 +8,10 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Magic previews (off by default):** the groundwork for the Magic Dashboard, Magic Mouse, the
+  Magic button, Shelf to Notes and Lens Studio v2. Nothing changes unless you turn one on in
+  Settings › About & Testing › Magic (preview), which only appears in Tester mode. See
+  docs/plans/MAGIC_WAVES.md.
 - **ThumbDesk in Lens:** the controller companion from the makers of Lens (use the whole PC from an
   Xbox or PlayStation controller) is in Lens Apps under "From the makers of Lens", with a "Use a
   controller" card in Settings › Gaming and Accessibility, `/thumbdesk` in Command, and a small

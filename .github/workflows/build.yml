@@ -179,6 +179,9 @@ jobs:
       - name: Render every Lens setup page (first launch and What's new, dark and light)
         run: node tools/parity/setup/shoot.mjs
 
+      - name: Render the Magic scaffold previews (flags off and on, dark and light)
+        run: node tools/parity/magicwaves/shoot.mjs
+
       - name: Render Lens Command scenes
         run: node tools/parity/command/build.mjs && node tools/parity/command/shoot.mjs
       - name: Approval card gallery (Needs your OK)
