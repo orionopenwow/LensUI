@@ -429,9 +429,12 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     // Rust has the last word on the flag, so a Command opened before it was turned on still works.
     const dashboardAsked = isDashboardStub(template) || (!template && isDashboardPhrase(rest) && (await invoke<boolean>("dashboard_available").catch(() => false)));
     if (dashboardAsked) {
-      hide();
+      // Hide Command first and wait, so its hide can't hand the focus back to another app after
+      // the Dashboard has taken it.
+      setText("");
+      await hide();
       void openDashboard().then((err) => err && flash(err, false));
-      return setText("");
+      return;
     }
 
     // Commands that are actions, not prompts.
@@ -642,7 +645,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     setText("");
     // "dashboard" in Do mode opens the Magic Dashboard when it is on, the same as in Ask.
     if ((isDashboardPhrase(typed) || typed.toLowerCase() === "/dashboard") && (await invoke<boolean>("dashboard_available").catch(() => false))) {
-      hide();
+      await hide();
       void openDashboard().then((err) => err && flash(err, false));
       return;
     }

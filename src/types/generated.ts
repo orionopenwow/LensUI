@@ -4920,7 +4920,7 @@ export interface LensCommands {
   cursor_restore_cmd: { args: Record<string, never>; returns: boolean };
   cursor_suite_status_cmd: { args: Record<string, never>; returns: unknown };
   dashboard_available: { args: Record<string, never>; returns: boolean };
-  dashboard_hide: { args: Record<string, never>; returns: null };
+  dashboard_hide: { args: { reason: string | null }; returns: null };
   decline_mcp_action_cmd: { args: { id: string }; returns: PendingAction };
   delete_theme_file_cmd: { args: { name: string }; returns: null };
   delete_workflow_macro_cmd: { args: { id: string }; returns: WorkflowMacro[] };

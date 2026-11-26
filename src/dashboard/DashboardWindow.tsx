@@ -3,7 +3,7 @@
 // Lens's own data once (Messages, Feeds, the calendar, the Shelf, now playing) and builds the
 // lanes and the context strip; nothing is read in between and nothing goes over the network.
 // Closes on ×, Esc, a second press of the button, or when another app takes the focus.
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -14,6 +14,7 @@ import { contextStrip, type Card, type LaneId, type LayoutId } from "./store";
 import { loadSnapshot, stripItems, type CalEventLike, type CardAction, type DashCard, type Readers } from "./sources";
 import { clearOpens, readLayout, readOpens, writeLayout, writeOpens } from "./memory";
 import { openCoreApp } from "../coreapps/registry";
+import { blurCloses, OPEN_GRACE_MS } from "./focus";
 
 export const OPEN_EVENT = "lens://dashboard-open";
 const CALENDAR_KEY = "lens_calendar_events_v1";
@@ -35,20 +36,21 @@ export const lensReaders: Readers = {
   nowPlaying: () => invoke("get_media_now_playing_cmd"),
 };
 
-const hide = () => invoke("dashboard_hide").catch(() => {});
+const hide = (reason: string) => invoke("dashboard_hide", { reason }).catch(() => {});
+
 
 /** What opening a card does. Every action stays inside Lens. */
 export function runCardAction(a: CardAction): void {
   switch (a.kind) {
     case "app":
       void openCoreApp(a.app).catch(() => {});
-      return hideSoon();
+      return hideSoon("opened an app");
     case "url":
       void invoke("browser_open", { url: a.url }).catch(() => {});
-      return hideSoon();
+      return hideSoon("opened a link");
     case "shelf":
       void invoke("open_surface", { label: "command" }).catch(() => {});
-      return hideSoon();
+      return hideSoon("opened the Shelf");
     case "media":
       void invoke("media_control_cmd", { action: "play_pause" }).catch(() => {});
       return;
@@ -57,7 +59,7 @@ export function runCardAction(a: CardAction): void {
   }
 }
 
-const hideSoon = () => void setTimeout(() => void hide(), 60);
+const hideSoon = (reason: string) => void setTimeout(() => void hide(reason), 60);
 
 /** The empty lanes' buttons. Lanes without one keep a disabled button. */
 const EMPTY_ACTIONS: Partial<Record<LaneId, () => void>> = {
@@ -82,16 +84,40 @@ export const DashboardWindow: React.FC = () => {
     setSeq((n) => n + 1);
   }, []);
 
+  // When it last opened, whether the page has painted since, and the last focus state Windows
+  // reported. A focus loss inside the grace is decided when the grace ends: if the focus didn't
+  // come back by then, it really moved away.
+  const openedAt = useRef(Date.now());
+  const painted = useRef(false);
+  const focused = useRef(true);
+  const graceTimer = useRef<number | null>(null);
+  const markOpened = useCallback(() => {
+    openedAt.current = Date.now();
+    painted.current = false;
+    focused.current = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => (painted.current = true)));
+    if (graceTimer.current) window.clearTimeout(graceTimer.current);
+    graceTimer.current = window.setTimeout(() => {
+      graceTimer.current = null;
+      if (!focused.current) void hide("focus moved to another window while it was opening");
+    }, OPEN_GRACE_MS);
+    document.documentElement.dataset.dashboardOpened = String(openedAt.current);
+  }, []);
+
   // Rebuild on every open (and once on first load).
   useEffect(() => {
+    markOpened();
     void refresh();
-    const un = listen(OPEN_EVENT, () => void refresh());
+    const un = listen(OPEN_EVENT, () => {
+      markOpened();
+      void refresh();
+    });
     return () => void un.then((f) => f());
-  }, [refresh]);
+  }, [refresh, markOpened]);
 
   // Turning the flag off closes the window; turning learning off forgets what it learned.
   useEffect(() => {
-    if (config && !flags.dashboard) void hide();
+    if (config && !flags.dashboard) void hide("the Magic Dashboard was turned off");
   }, [config, flags.dashboard]);
   useEffect(() => {
     if (!flags.learn) {
@@ -105,14 +131,15 @@ export const DashboardWindow: React.FC = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        void hide();
+        void hide("Esc");
       }
     };
     window.addEventListener("keydown", onKey);
     let un: (() => void) | null = null;
     getCurrentWindow()
-      .onFocusChanged(({ payload: focused }) => {
-        if (!focused) void hide();
+      .onFocusChanged(({ payload }) => {
+        focused.current = payload;
+        if (!payload && blurCloses(Date.now(), openedAt.current, painted.current)) void hide("focus moved to another window");
       })
       .then((f) => (un = f))
       .catch(() => {});
@@ -141,7 +168,7 @@ export const DashboardWindow: React.FC = () => {
         }}
         onCardOpen={(c) => runCardAction((c as DashCard).action ?? { kind: "none" })}
         onEmptyAction={(lane) => EMPTY_ACTIONS[lane]?.()}
-        onClose={() => void hide()}
+        onClose={() => void hide("×")}
       />
     </div>
   );

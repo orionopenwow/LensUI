@@ -78,11 +78,13 @@ fn show_dashboard(app: AppHandle) -> Result<(), String> {
     if !enabled(&state) {
         return Err("Turn on the Magic Dashboard first (Settings › About & Testing › Magic (preview)).".into());
     }
+    let fresh = app.get_webview_window(LABEL).is_none();
     let win = ensure_window(&app)?;
     place(&app, &win);
     let _ = app.emit_to(LABEL, EVT_OPEN, ());
     let _ = win.show();
     let _ = win.set_focus();
+    eprintln!("[Lens UI] dashboard: shown ({})", if fresh { "first open, window built" } else { "reopened" });
     Ok(())
 }
 
@@ -92,16 +94,21 @@ pub(crate) async fn toggle_dashboard(app: AppHandle) -> Result<bool, String> {
     if let Some(w) = app.get_webview_window(LABEL) {
         if w.is_visible().unwrap_or(false) {
             let _ = w.hide();
+            eprintln!("[Lens UI] dashboard: hidden (second press of the button)");
             return Ok(false);
         }
     }
     show_dashboard(app).map(|_| true)
 }
 
-/// Hides the Dashboard (×, Esc, focus moving to another app). Safe to call when it doesn't exist.
+/// Hides the Dashboard (×, Esc, focus moving to another app, the flag turned off). Safe to call
+/// when it doesn't exist. `reason` only goes to the session log, so a hide can be traced.
 #[tauri::command]
-pub(crate) fn dashboard_hide(app: AppHandle) {
+pub(crate) fn dashboard_hide(app: AppHandle, reason: Option<String>) {
     if let Some(w) = app.get_webview_window(LABEL) {
+        if w.is_visible().unwrap_or(false) {
+            eprintln!("[Lens UI] dashboard: hidden ({})", reason.as_deref().unwrap_or("unspecified"));
+        }
         let _ = w.hide();
     }
 }

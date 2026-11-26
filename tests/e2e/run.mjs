@@ -559,7 +559,10 @@ const SCENARIOS = [
       });
       await sleep(800);
 
-      // Open it from Command by typing "dashboard".
+      // Open it from Command by typing "dashboard". Start from a closed Command so nothing left
+      // from an earlier scenario (a safety card, a thread) is in the way.
+      await invoke(dock, "hide_surface", { label: "command" }).catch(() => {});
+      await sleep(300);
       await invoke(dock, "show_command_cmd", { payload: { layout: "full", mode: "do", text: "dashboard" } });
       const cmd = await waitForSurface(s, "command");
       await cmd.waitForFunction(() => document.querySelector("textarea")?.value === "dashboard", null, { timeout: 8000 });
@@ -577,7 +580,12 @@ const SCENARIOS = [
 
       const dash = await waitForSurface(s, "dashboard");
       const take = watchErrors(dash);
+      // Shown and painted: the page marks each open, and the lanes are on screen.
+      await dash.waitForFunction(() => !!document.documentElement.dataset.dashboardOpened, null, { timeout: 8000 });
       await dash.waitForSelector(".mdb-lane", { timeout: 8000 });
+      // Still showing once the opening grace is over (the focus handoff from Command didn't close it).
+      await sleep(700);
+      if (!(await visible())) throw new Error("the Dashboard closed itself right after opening from Command");
       const lanes = await dash.evaluate(() => [...document.querySelectorAll(".mdb-lane")].map((l) => l.getAttribute("data-lane")));
       for (const want of ["today", "inbox", "shelf", "nowplaying"]) if (!lanes.includes(want)) throw new Error(`Glance is missing the ${want} lane (has ${lanes.join(", ")})`);
       await shot(dash, "magic-dashboard");
@@ -690,7 +698,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard/i.test(l)).slice(-12);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }

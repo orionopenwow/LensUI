@@ -18,6 +18,7 @@ import {
 import { contextStrip, initialState, laneCards, reduce } from "../dashboard/store";
 import { clearOpens, MAX_OPENS, readLayout, readOpens, writeLayout, writeOpens } from "../dashboard/memory";
 import { dashboardTemplates, isDashboardPhrase, isDashboardStub } from "../dashboard/command";
+import { blurCloses, OPEN_GRACE_MS } from "../dashboard/focus";
 
 const NOW = new Date(2026, 10, 25, 14, 0, 0);
 const key = dateKeyOf(NOW);
@@ -186,5 +187,15 @@ describe("privacy", () => {
       const t = readFileSync(join(import.meta.dir, "../dashboard", f), "utf8");
       expect(t).not.toMatch(/\bfetch\(|XMLHttpRequest|WebSocket|feeds_refresh|messages_matrix_sync/);
     }
+  });
+});
+
+describe("Dashboard focus after opening", () => {
+  test("a focus loss right after opening, or before the first paint, does not close it", () => {
+    expect(blurCloses(1000 + OPEN_GRACE_MS - 1, 1000, true)).toBe(false);
+    expect(blurCloses(1000 + 5000, 1000, false)).toBe(false);
+  });
+  test("a focus loss once it is open and painted closes it", () => {
+    expect(blurCloses(1000 + OPEN_GRACE_MS, 1000, true)).toBe(true);
   });
 });
