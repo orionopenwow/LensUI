@@ -205,8 +205,8 @@ export const MusicCard: React.FC = () => {
             <input className="cc-input" style={{ width: 280 }} placeholder="Client ID (32 characters)" aria-label="Spotify client ID" value={clientId} onChange={(e) => setClientId(e.target.value)} />
             <button type="button" className="cc-btn" disabled={connecting || clientId.trim().length !== 32} onClick={connectSpotify}>{connecting ? "Waiting for Spotify…" : "Connect"}</button>
           </div>
-          {spotifyConnect.notice && <div className="cc-desc" role="status" style={{ marginTop: 8 }}>{spotifyConnect.notice}</div>}
-          {spotifyConnect.error && <div className="cc-desc" role="alert" style={{ marginTop: 8, color: "var(--lens-danger)" }}>{spotifyConnect.error}</div>}
+          {spotifyConnect.notice && <div className="cc-desc lm-card-note" role="status">{spotifyConnect.notice}</div>}
+          {spotifyConnect.error && <div className="cc-desc lm-card-note error" role="alert">{spotifyConnect.error}</div>}
         </>
       )}
       <div className="cc-desc" style={{ marginTop: 8 }}>

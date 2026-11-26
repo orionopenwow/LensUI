@@ -135,6 +135,8 @@ button.lm-side-row { cursor: pointer; }
 .lm-connect-btn:hover:not(:disabled) { opacity: 0.86; }
 .lm-connect-btn:disabled { opacity: 0.5; cursor: default; }
 .lm-connect-note { font-size: 11.5px; line-height: 1.4; color: var(--lm-ink-3); overflow-wrap: anywhere; }
+.lm-card-note { margin-top: 8px; }
+.lm-card-note.error { color: var(--lens-danger, #f87171); }
 .lm-connect-note.error { color: var(--lens-danger, #f87171); }
 .lm-explicit { display: inline-grid; font-family: inherit; place-items: center; width: 14px; height: 14px; border-radius: 3px; font-size: 9px; font-weight: 800; background: rgba(255, 255, 255, 0.24); color: #09090b; flex: 0 0 auto; }
 .lm-queue > :nth-child(n + 4):not(.lm-q-foot) { flex-shrink: 0; }
