@@ -76,7 +76,7 @@ export const SavedThemesCard: React.FC<Props> = ({ config, onUpdateConfig }) => 
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Saved Themes</div>
+      <div className="cc-label">Saved themes</div>
       <div className="cc-desc">
         Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own.
         To use someone else's theme, drop their file into the themes folder and press Refresh.

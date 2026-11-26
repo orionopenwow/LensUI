@@ -8,6 +8,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Fixed
+- **The hot-corner picker couldn't be clicked while Hot corners was off.** It's dimmed now, not
+  dead, so you can set corners up first; only "Try it" needs the feature on.
+- **Some Settings switches vanished or stopped responding after one click** (Animated backdrop,
+  startup apps, Animation effects). They now stay put, keep keyboard focus, and say why when
+  Windows refuses.
+- **Failures in Settings no longer pass silently.** A refused save, a page action or a Windows
+  setting that didn't change now says so in the toast or next to the control.
+- **Contrast in every theme pack.** All 87 packs now keep body text at 4.5:1 and hints, icons and
+  the accent at 3:1 on surfaces and cards. Lighter dark packs (Catppuccin, One Dark, Monokai and
+  others) get brighter secondary text, and two light packs' accents are a shade darker. The full
+  table is in docs/THEMES_AUDIT.md.
 - **Lens's window buttons could be drawn over anti-cheat games.** The engine that draws them kept
   its own list of four names; the shared list has 42. It now uses the shared list, as do tiling,
   Alt+drag, the keyboard hook and pointer effects, and a test fails the build if any of them names
@@ -19,6 +30,9 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Sentence case** for the Top Bar's button names ("Previous desktop", "Wi-Fi and network") and
+  the remaining Title Case labels in Settings; Settings controls also got consistent hover,
+  pressed and disabled states.
 - **Snip's shortcut is Ctrl+Alt+X** (was Ctrl+Shift+S, which is Save As in most apps). If you never
   changed it, it moves once; a shortcut you chose is kept. Snip's settings warn when a shortcut
   would break a common app shortcut, and the shortcuts sheet shows the one Snip really has.
@@ -31,6 +45,11 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Pointer halo switch** (Settings › Dock & Bar › Top Bar). The see-through ring that shows where
+  clicks pass through the Top Bar can be turned off, and it is never drawn while Windows'
+  transparency effects are off.
+- **How long pop-outs wait before closing** (Settings › Dock & Bar › Advanced › Close after): Short,
+  Normal (the old 1.5 s / 1.8 s) or Long, for Quick Settings and Settings on the Dock.
 - **Safety card** (Settings › About & Testing › Safety net): what Lens changes on this PC, from
   the same list Remove all walks; what it never touches; the keys that always reach Windows; Safe
   Mode; holding Shift at sign-in to skip Lens; and buttons to Report a problem and Remove all.

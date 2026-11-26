@@ -36,6 +36,7 @@ import { buildIndex, search, type SearchEntry } from "./search";
 import { preloadSettingsPage } from "./pages";
 import { ModePill } from "./simple/ModePill";
 import { inSimpleNav, isAdvancedHit, morePages, type SettingsMode } from "./simple/mode";
+import { oops } from "../ui/oops";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   quick: SlidersHorizontal,
@@ -108,7 +109,7 @@ export const SettingsNav: React.FC<{
 
   const open = (r: SearchEntry) => {
     if (r.kind === "windows" && r.uri) {
-      invoke("open_windows_setting_cmd", { uri: r.uri }).catch(() => {});
+      invoke("open_windows_setting_cmd", { uri: r.uri }).catch(oops(`open ${r.label} in Windows Settings`));
     } else {
       onNavigate(r.page, r.section);
     }
@@ -226,7 +227,7 @@ export const SettingsNav: React.FC<{
           <Sparkles size={15} strokeWidth={2.1} color="#F472B6" aria-hidden />
           <span>Setup Wizard</span>
         </button>
-        <button type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(() => {})}>
+        <button type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(oops("quit Lens"))}>
           <Power size={15} strokeWidth={2.1} aria-hidden />
           <span>Quit Lens</span>
         </button>

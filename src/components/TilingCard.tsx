@@ -104,7 +104,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     <div className="cc-card lens-tiling-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Automatic Tiling</div>
+          <div className="cc-label">Automatic tiling</div>
           <div className="cc-desc">
             New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left
             alone, and a window you move yourself starts floating.
@@ -114,7 +114,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           type="button"
           role="switch"
           aria-checked={tiling.enabled}
-          aria-label="Automatic Tiling"
+          aria-label="Automatic tiling"
           className={`cc-toggle ${tiling.enabled ? "on" : ""}`}
           onClick={() => save({ enabled: !tiling.enabled })}
         />
@@ -155,7 +155,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         onChange={(v) => save({ gap: Math.round(v) })}
       />
       <PillFillBar
-        label="Master Width"
+        label="Master width"
         value={Math.round(tiling.masterRatio * 100)}
         min={20}
         max={80}
@@ -168,7 +168,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">New Windows Open</div>
+          <div className="cc-label">New windows open</div>
           <div className="cc-desc">Where a window you just opened goes in the layout</div>
         </div>
         <div className="cc-chip-grid">
@@ -188,7 +188,7 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         </div>
       </div>
 
-      <div className="cc-label">Always Float</div>
+      <div className="cc-label">Always float</div>
       <div className="cc-desc">These apps are never tiled.</div>
       <div className="cc-chip-grid">
         {tiling.floatApps.map((app) => (
@@ -223,8 +223,8 @@ export const TilingCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">Tiling Shortcuts</div>
-          <div className="cc-desc">Work after turning on Keyboard Tiling Shortcuts and restarting Lens.</div>
+          <div className="cc-label">Tiling shortcuts</div>
+          <div className="cc-desc">Work after turning on Keyboard Tiling shortcuts and restarting Lens.</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0, whiteSpace: "nowrap" }}>
           <button
