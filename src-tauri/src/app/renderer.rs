@@ -55,6 +55,10 @@ pub(crate) fn on_failure(label: &str, kind: i32) -> bool {
     eprintln!("[Lens UI] The {label} page's renderer exited (kind {kind}).");
     if crate::app::loadguard::GUARDED.contains(&label) {
         dead().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string());
+        // Not in unit tests: reaching the load guard from a test pulls window code into the test
+        // binary, which then needs the app manifest to start (STATUS_ENTRYPOINT_NOT_FOUND).
+        #[cfg(not(test))]
+        crate::app::loadguard::kick(label);
         false
     } else {
         true
@@ -72,6 +76,44 @@ pub(crate) fn watch<R: tauri::Runtime>(webview: &tauri::Webview<R>) {
     register(webview, webview.label().to_string(), 0);
 }
 
+/// Anything that can hand out its native webview: a bare webview (the page-load hook) or a
+/// webview window (the load guard).
+pub(crate) trait HostsWebview: Clone + Send + 'static {
+    fn with_native(&self, f: impl FnOnce(tauri::webview::PlatformWebview) + Send + 'static);
+}
+
+impl<R: tauri::Runtime> HostsWebview for tauri::Webview<R> {
+    fn with_native(&self, f: impl FnOnce(tauri::webview::PlatformWebview) + Send + 'static) {
+        let _ = self.with_webview(f);
+    }
+}
+
+impl<R: tauri::Runtime> HostsWebview for tauri::WebviewWindow<R> {
+    fn with_native(&self, f: impl FnOnce(tauri::webview::PlatformWebview) + Send + 'static) {
+        let _ = self.with_webview(f);
+    }
+}
+
+/// Same as [`watch`], for a window by label. The load guard calls this for the always-on pages
+/// once they report ready and after every reload, so they are watched even if every attempt from
+/// the page-load hook came too early (idempotent: a controller already watched is skipped).
+pub(crate) fn watch_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>, label: &str) {
+    use tauri::Manager;
+    if let Some(win) = app.get_webview_window(label) {
+        register(&win, label.to_string(), 0);
+    }
+}
+
+/// True once the renderer behind `label` is being watched (tests and diagnostics).
+pub(crate) fn is_watched(label: &str) -> bool {
+    watched_labels().lock().unwrap_or_else(|e| e.into_inner()).contains(label)
+}
+
+fn watched_labels() -> &'static Mutex<HashSet<String>> {
+    static SET: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    SET.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
 #[cfg(windows)]
 thread_local! {
     /// The controller (by address) each label is currently watched on. Only the address is kept,
@@ -82,9 +124,9 @@ thread_local! {
 }
 
 #[cfg(windows)]
-fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String, attempt: u32) {
+fn register<W: HostsWebview>(webview: &W, label: String, attempt: u32) {
     let again = webview.clone();
-    let _ = webview.with_webview(move |pw| {
+    webview.with_native(move |pw| {
         use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_PROCESS_FAILED_KIND;
         use webview2_com::ProcessFailedEventHandler;
         crate::failsafe::guard::ffi_guard("renderer-register", (), || unsafe {
@@ -103,6 +145,9 @@ fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String, attem
                         std::thread::sleep(std::time::Duration::from_millis(250));
                         register(&again, label, attempt + 1);
                     });
+                } else {
+                    eprintln!("[Lens UI] Could not watch the {label} page's renderer (WebView2 not ready).");
+                    crate::tester::log("warn", "renderer", &format!("could not watch the {label} renderer"));
                 }
                 return;
             };
@@ -124,13 +169,33 @@ fn register<R: tauri::Runtime>(webview: &tauri::Webview<R>, label: String, attem
             let mut token = 0i64;
             if core.add_ProcessFailed(&handler, &mut token).is_ok() {
                 WATCHED.with(|w| w.borrow_mut().insert(label.clone(), addr));
+                watched_labels().lock().unwrap_or_else(|e| e.into_inner()).insert(label.clone());
+                eprintln!("[Lens UI] Watching the {label} page's renderer (attempt {attempt}, controller {addr:#x}).");
+            } else {
+                eprintln!("[Lens UI] Could not watch the {label} page's renderer (add_ProcessFailed failed).");
             }
         });
     });
 }
 
 #[cfg(not(windows))]
-fn register<R: tauri::Runtime>(_webview: &tauri::Webview<R>, _label: String, _attempt: u32) {}
+fn register<W: HostsWebview>(_webview: &W, _label: String, _attempt: u32) {}
+
+/// Reloads the page behind `win` through WebView2 itself. Works when the page's renderer has
+/// exited (that is what `Reload` is for), and needs no page address: asking a webview for its URL
+/// is a call the main thread has to answer, and the load guard must never wait on that (B-31).
+pub(crate) fn reload_page<R: tauri::Runtime>(win: &tauri::WebviewWindow<R>) {
+    #[cfg(windows)]
+    let _ = win.with_webview(|pw| {
+        crate::failsafe::guard::ffi_guard("renderer-reload", (), || unsafe {
+            if let Ok(core) = pw.controller().CoreWebView2() {
+                let _ = core.Reload();
+            }
+        });
+    });
+    #[cfg(not(windows))]
+    let _ = win.eval("location.reload()");
+}
 
 /// Puts keyboard focus inside the page of `win`, not just on its native window (B-12b).
 ///
