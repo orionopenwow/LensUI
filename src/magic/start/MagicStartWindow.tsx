@@ -121,13 +121,22 @@ export const MagicStartWindow: React.FC = () => {
     if (err) setStatus(err);
   }, []);
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+  // Esc is handled on the window, not on the panel: right after Magic Start opens, keyboard focus
+  // may not be inside the panel yet, and Esc must still clear the search or close it.
+  const queryRef = useRef(query);
+  queryRef.current = query;
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
       e.preventDefault();
-      if (query) setQuery("");
+      if (queryRef.current) setQuery("");
       else void hide("escape");
-      return;
-    }
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, []);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
     const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 0;
     // Left/Right move the caret while typing; only Up/Down walk the results.
     if (step && !(query && (e.key === "ArrowLeft" || e.key === "ArrowRight"))) {

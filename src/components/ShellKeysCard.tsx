@@ -58,7 +58,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
   return (
     <div className="cc-card" style={{ gap: 10, padding: "12px 14px" }}>
-      <div className="cc-label">Start Key &amp; Alt+Tab</div>
+      <div className="cc-label">Start key &amp; Alt+Tab</div>
       <div className="cc-desc">
         Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep
         working; only a single tap of the Win key opens the Launcher.
@@ -66,7 +66,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">Win Key Opens Lens Launcher</div>
+          <div className="cc-label">Win key opens Lens Launcher</div>
           <div className="cc-desc">Tap the Windows key to open the Launcher instead of Start.</div>
         </div>
         <button
@@ -81,7 +81,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">Alt+Tab Opens Lens Overview</div>
+          <div className="cc-label">Alt+Tab opens Lens Overview</div>
           <div className="cc-desc">Hold Alt, tap Tab to move, release Alt to switch. Esc cancels.</div>
         </div>
         <button

@@ -21,6 +21,8 @@ import {
   dockAdvancedSummary,
   dockAdvancedView,
   setAutoClosePopouts,
+  setPopoutCloseDelay,
+  POPOUT_DELAY_CHOICES,
   setFileDropOpen,
   setLaunchAnimation,
   setMagnification,
@@ -48,8 +50,9 @@ const Seg: React.FC<{
   desc?: string;
   value: string;
   options: { id: string; label: string }[];
+  disabled?: boolean;
   onChange: (id: string) => void;
-}> = ({ label, desc, value, options, onChange }) => (
+}> = ({ label, desc, value, options, disabled, onChange }) => (
   <div className="tux-row">
     <div className="tux-row-text">
       <div className="cc-label">{label}</div>
@@ -57,7 +60,7 @@ const Seg: React.FC<{
     </div>
     <div className="tux-seg" role="radiogroup" aria-label={label}>
       {options.map((o) => (
-        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className={value === o.id ? "active" : ""} onClick={() => onChange(o.id)}>
+        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className={value === o.id ? "active" : ""} disabled={disabled} onClick={() => onChange(o.id)}>
           {o.label}
         </button>
       ))}
@@ -272,6 +275,14 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
           desc="Quick Settings and Settings on the Dock close a moment after you move away. Never while the pointer is over them."
           on={view.autoClosePopouts}
           onChange={(v) => updateConfig(setAutoClosePopouts(config, v))}
+        />
+        <Seg
+          label="Close after"
+          desc={view.autoClosePopouts ? "How long a pop-out waits once the pointer has left it." : "Turn on closing pop-outs above to choose."}
+          value={view.popoutCloseDelay}
+          options={POPOUT_DELAY_CHOICES}
+          disabled={!view.autoClosePopouts}
+          onChange={(id) => updateConfig(setPopoutCloseDelay(config, id))}
         />
       </div>
 

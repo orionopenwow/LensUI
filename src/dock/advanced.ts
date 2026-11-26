@@ -34,6 +34,8 @@ export interface DockAdvancedView {
   fileDropOpen: boolean;
   middleClickNewInstance: boolean;
   autoClosePopouts: boolean;
+  /** How long pop-outs wait before closing (`func.popoutCloseDelay`). */
+  popoutCloseDelay: PopoutCloseDelay;
   /** The style in use, its icon size right now, and whether that is the person's own size. */
   style: DockStyleId;
   styleIconSize: number;
@@ -62,6 +64,7 @@ export function dockAdvancedView(config: LensConfig): DockAdvancedView {
     middleClickNewInstance: config.func.middleClickNewInstance !== false,
     // On unless turned off: the same default Lens uses (FuncConfig.auto_close_popouts).
     autoClosePopouts: config.func.autoClosePopouts !== false,
+    popoutCloseDelay: normalizePopoutCloseDelay(config.func.popoutCloseDelay),
     style,
     styleIconSize: resolveDockIconSize(dock, style),
     styleIconSizeIsCustom: validSize(sizes[style]),
@@ -82,6 +85,22 @@ export const setScrollCyclesWindows = (config: LensConfig, on: boolean): LensCon
 export const setFileDropOpen = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { fileDropOpen: on });
 export const setMiddleClickNewInstance = (config: LensConfig, on: boolean): LensConfig => withFuncPatch(config, { middleClickNewInstance: on });
 export const setAutoClosePopouts = (config: LensConfig, on: boolean): LensConfig => withFuncPatch(config, { autoClosePopouts: on });
+export const setPopoutCloseDelay = (config: LensConfig, id: string): LensConfig => withFuncPatch(config, { popoutCloseDelay: normalizePopoutCloseDelay(id) });
+
+/**
+ * How long a pop-out (Quick Settings, Settings on the Dock) waits with the pointer away before it
+ * closes. Mirrors `app::watcher::popout_delays` in Lens Core; "normal" is the original timing.
+ */
+export const POPOUT_CLOSE_DELAYS = [
+  { id: "short", label: "Short", quickSettingsMs: 800, settingsMs: 1000 },
+  { id: "normal", label: "Normal", quickSettingsMs: 1500, settingsMs: 1800 },
+  { id: "long", label: "Long", quickSettingsMs: 3000, settingsMs: 3600 },
+] as const;
+export type PopoutCloseDelay = (typeof POPOUT_CLOSE_DELAYS)[number]["id"];
+export const POPOUT_DELAY_CHOICES = POPOUT_CLOSE_DELAYS.map((d) => ({ id: d.id, label: d.label }));
+export function normalizePopoutCloseDelay(id: unknown): PopoutCloseDelay {
+  return POPOUT_CLOSE_DELAYS.some((d) => d.id === id) ? (id as PopoutCloseDelay) : "normal";
+}
 
 /**
  * Gives one Dock style its own icon size, or (with `null`) hands it back to the shared size.
@@ -128,6 +147,7 @@ export const DOCK_ADVANCED_PATHS = [
   "dock.separatorsAfter",
   "func.middleClickNewInstance",
   "func.autoClosePopouts",
+  "func.popoutCloseDelay",
 ] as const;
 
 export const MAGNIFICATION_CHOICES = DOCK_MAGNIFICATION.map((m) => ({ id: m.id, label: m.label }));

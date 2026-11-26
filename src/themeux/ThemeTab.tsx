@@ -29,6 +29,7 @@ import { CursorSuiteCard } from "../components/CursorSuiteCard";
 import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "../dock/styles";
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
 import { LivingThemesRow } from "../themes/living/LivingThemesRow";
+import { quiet } from "../ui/oops";
 
 interface Props {
   config: LensConfig;
@@ -268,7 +269,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const [undo, setUndo] = useState<LensConfig | null>(null);
 
   useEffect(() => {
-    invoke<WallpaperState>("get_wallpaper_state_cmd").then(setWallpaper).catch(() => {});
+    // Only the Wallpaper section's one-line summary reads this; it says "—" until a read works.
+    invoke<WallpaperState>("get_wallpaper_state_cmd").then(setWallpaper).catch(quiet);
   }, [open.wallpaper]);
 
   // Close the accent popover on Escape or a click outside it.

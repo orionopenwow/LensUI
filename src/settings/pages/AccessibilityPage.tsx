@@ -17,7 +17,7 @@ export const AccessibilityPage: React.FC<PageProps> = ({ section, config, update
   const [err, setErr] = useState<string | null>(null);
   const a = acc.data;
   const setAnim = (on: boolean) =>
-    a && optimistic(a, { ...a, animations: on }, acc.set, () => invoke<AccessState>("sys_set_animations_cmd", { on }).then(acc.set), setErr, "animation effects");
+    a && optimistic(a, { ...a, animations: on }, acc.set, () => invoke<AccessState>("sys_set_animations_cmd", { on }).then(acc.adopt), setErr, "animation effects");
 
   return (
     <>

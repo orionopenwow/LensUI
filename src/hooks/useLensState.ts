@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LensConfig, WindowsThemeInfo, RunningWindow } from "../types/lens";
 import { packById, lighten } from "../themes/packs";
+import { liftsText } from "../themes/contrastAudit";
 import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks";
 import { setLocale } from "../i18n";
 import { applyUiScale } from "../shell/uiScale";
@@ -22,6 +23,9 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
 
   root.dataset.preset = cfg.theme.preset;
   root.dataset.scheme = packById(cfg.theme.preset)?.scheme ?? "dark";
+  // Lighter dark bases get brighter secondary and muted text (tokens.css, contrast audit).
+  if (liftsText(packById(cfg.theme.preset))) root.dataset.textLift = "";
+  else delete root.dataset.textLift;
   // Accessibility: Lens overrides for motion and contrast (empty = follow Windows)
   root.dataset.motion =
     cfg.theme.motion === "reduce" || cfg.theme.motion === "full" ? cfg.theme.motion : "";

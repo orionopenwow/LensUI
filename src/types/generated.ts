@@ -1474,6 +1474,11 @@ export interface FuncConfig {
    * themselves when the pointer has been away for a moment and they don't have keyboard focus.
    */
   autoClosePopouts: boolean;
+  /**
+   * How long those pop-outs wait: "short" | "normal" | "long" (Settings › Dock & Bar ›
+   * Advanced). "normal" is the original 1.5 s / 1.8 s; see `app::watcher::popout_delays`.
+   */
+  popoutCloseDelay: string;
 }
 
 /** Rust: `syssettings::GamingState` */
@@ -4327,6 +4332,11 @@ export interface TopBarConfig {
   height: number;
   floating: boolean;
   showMediaControls: boolean;
+  /**
+   * The see-through ring around the pointer while clicks pass through the bar. Never drawn
+   * while Windows' "Transparency effects" is off, whatever this says.
+   */
+  pointerHalo: boolean;
 }
 
 /** Rust: `music::spotify::TrackItem` */

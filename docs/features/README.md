@@ -7,9 +7,9 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 | Feature | File | Status | Top quick win | Top bug | Idea to push |
 |---|---|---|---|---|---|
 | Dock | [dock.md](dock.md) | works (robustness wave: left/right E2E, B-18 Dock share, B-62–B-65) | Split `DockSurface.tsx` (left/right E2E done) | B-62 multi-monitor DPI fix needs a two-display real-PC check | "Dock in 10 seconds" ghost tour after a style change |
-| Top Bar | [topbar.md](topbar.md) | works | Halo off switch (one enable flag done in #113, B-52) | Halo ignores Windows' transparency-off (suspected) | Focus strip under the clock |
-| Settings | [settings.md](settings.md) | works | Fix B-41 corner picker (page merge and "Lens Apps" done in #113) | B-41, B-40 unmounting switches (B-39 fixed in #113) | "Recently changed" strip with Undo |
-| Themes & backdrops | [themes.md](themes.md) | works | Contrast audit for every pack (Dock-only duplicates merged, audit regenerated in #113) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
+| Top Bar | [topbar.md](topbar.md) | works | Focus strip (halo switch and transparency-off rule done in the Settings wave) | Stale hit rect when the Dashboard flag flips (suspected) | Focus strip under the clock |
+| Settings | [settings.md](settings.md) | works | "Recently changed" strip (B-41, B-40, Settings swallowed errors fixed in the Settings wave) | B-58 `.pi-off` dead clicks on three cards | "Recently changed" strip with Undo |
+| Themes & backdrops | [themes.md](themes.md) | works | Wallpaper folder dialog (every-pack contrast audit done in the Settings wave) | B-19 hard-coded colours (B-38 closed, B-39 fixed in #113) | "Lens Cloud" featured look (Backdrop preset done in #113) |
 | Window styling | [windows-styling.md](windows-styling.md) | works (Fable pass, #115) | "Don't style this app" in the Dock menu | Left-side buttons not yet seen on a real PC | Per-app window rules page with locked "Protected" badge (first cut built, #115) |
 | Command | [command.md](command.md) | works (Fable pass, #115) | 10 s Undo toast after an applied intent | B-12c first key after cold start (maybe CDP-only) | "Teach me": show where each setting lives after an intent (built, #115) |
 | Setup, updates & safety | [setup-updates-safety.md](setup-updates-safety.md) | partly (Fable pass, #115: code ready, owner creates the key and first release) | Make updates shippable: signing key and first release (owner) | Empty updater pubkey in the repo is by design (injected by release.yml from the TAURI_UPDATER_PUBKEY variable); updates can't verify until the owner adds the key | Safety card in About (built, #115) |
@@ -26,14 +26,14 @@ Status words: **works** (built and tested), **partly** (built with gaps), **brok
 
 Quick wins still open in those four dossiers, ranked by value for the effort:
 
-1. **Settings B-41**: the "Corner to edit" radios on Windows & Keys can't be clicked where they are drawn. A real, visible fault on a page people use.
+1. **Done (Settings wave).** ~~**Settings B-41**: the "Corner to edit" radios on Windows & Keys can't be clicked where they are drawn. A real, visible fault on a page people use.~~
 2. ~~**Dock left/right edge E2E**~~: done (robustness wave), every style on both edges.
-3. **Swallowed errors (B-18)**: the Dock, the pop-outs, Magic and the Dashboard are done (robustness wave, `src/failsafe/calls.ts`); the Settings shell and the Top Bar remain.
-4. **Contrast audit for every pack**, not only the featured twelve, failing CI on regressions (some light packs may miss 3:1 for the accent on cards).
-5. **Top Bar halo switch** and no halo when Windows' transparency effects are off.
-6. **Settings B-40**: Animated backdrop and startup-app switches unmount after one click (the duplicate name is fixed).
-7. **A delay setting for closing pop-outs** (the switch exists; the 1.5 s / 1.8 s are fixed in `watcher.rs`).
-8. ~~**Sentence-case the Top Bar's own aria-labels**~~: done (robustness wave).
+3. **Mostly done.** ~~**Swallowed errors (B-18)**~~ in the Dock, pop-outs, Magic and Dashboard (robustness wave) and Settings (Settings wave); `TopBarSurface.tsx` and `AgentsPane.tsx` remain.
+4. **Done (Settings wave).** ~~**Contrast audit for every pack**, not only the featured twelve, failing CI on regressions (some light packs may miss 3:1 for the accent on cards).~~
+5. **Done (Settings wave).** ~~**Top Bar halo switch** and no halo when Windows' transparency effects are off.~~
+6. **Done (Settings wave).** ~~**Settings B-40**: Animated backdrop and startup-app switches unmount after one click (the duplicate name is fixed).~~
+7. **Done (Settings wave).** ~~**A delay setting for closing pop-outs** (the switch exists; the 1.5 s / 1.8 s are fixed in `watcher.rs`).~~
+8. **Done** (robustness and Settings waves). ~~**Sentence-case the Top Bar's own aria-labels**~~.
 9. **Wallpaper**: folder picker dialog, palette chip copies hex, Next wallpaper in the Dock and Top Bar menus.
 10. **Split `DockSurface.tsx`** (context menu first). No behaviour change, goldens unchanged.
 

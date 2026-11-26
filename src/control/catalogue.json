@@ -68,7 +68,7 @@
   "categories": {
     "AI access": 13,
     "Alt+drag": 6,
-    "Behaviour": 17,
+    "Behaviour": 18,
     "Clipboard": 10,
     "Command & Shelf": 1,
     "Desktop": 1,
@@ -85,14 +85,14 @@
     "Testing": 1,
     "Theme": 15,
     "Theme schedule": 1,
-    "Top bar": 7,
+    "Top bar": 8,
     "Wallpaper & Playground": 19,
     "Widgets": 2,
     "Window frames": 7,
     "Window styling": 9,
     "Workspaces & tiling": 10
   },
-  "count": 193,
+  "count": 195,
   "entries": [
     {
       "capability": "change_settings",
@@ -1457,6 +1457,27 @@
     {
       "capability": "change_settings",
       "category": "Behaviour",
+      "default": "normal",
+      "description": "How long Quick Settings and Settings on the Dock wait before closing when the pointer leaves.",
+      "example": "{\"args\":{\"changes\":{\"func.popoutCloseDelay\":\"short\"}},\"tool\":\"lens_set\"}",
+      "label": "Pop-out close delay",
+      "path": "func.popoutCloseDelay",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "enum": [
+          "short",
+          "normal",
+          "long"
+        ],
+        "maxLength": 400,
+        "type": "string"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_settings",
+      "category": "Behaviour",
       "default": false,
       "description": "Starts Lens when you sign in.",
       "example": "{\"args\":{\"changes\":{\"func.runOnStartup\":true}},\"tool\":\"lens_set\"}",
@@ -2553,6 +2574,21 @@
       "risk": "low",
       "schema": {
         "type": "integer"
+      },
+      "store": "config"
+    },
+    {
+      "capability": "change_look",
+      "category": "Top bar",
+      "default": true,
+      "description": "A see-through ring at the pointer where clicks pass through the top bar. Never shown while Windows' transparency effects are off.",
+      "example": "{\"args\":{\"changes\":{\"topBar.pointerHalo\":false}},\"tool\":\"lens_set\"}",
+      "label": "Pointer halo",
+      "path": "topBar.pointerHalo",
+      "reversible": true,
+      "risk": "low",
+      "schema": {
+        "type": "boolean"
       },
       "store": "config"
     },

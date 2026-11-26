@@ -47,7 +47,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Hot Corners</div>
+          <div className="cc-label">Hot corners</div>
           <div className="cc-desc">
             Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are
             skipped, so moving across screens never sets one off.
@@ -57,7 +57,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           type="button"
           role="switch"
           aria-checked={hc.enabled}
-          aria-label="Hot Corners"
+          aria-label="Hot corners"
           className={`cc-toggle ${hc.enabled ? "on" : ""}`}
           onClick={() => save({ enabled: !hc.enabled })}
         />
@@ -68,7 +68,11 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         {statusLine}
       </div>
 
-      <div className={hc.enabled ? "" : "pi-off"} aria-disabled={!hc.enabled}>
+      {/* B-41: while Hot corners is off the picker is dimmed, not dead. It used to sit under
+          `.pi-off` (pointer-events: none), so the radios were announced and focusable but a click
+          went nowhere. Choosing corners and actions while off is set-up for later; only "Try it"
+          needs the feature on. */}
+      <div className={hc.enabled ? "" : "pi-dim"}>
         <div className="hc-screen" role="radiogroup" aria-label="Corner to edit">
           <span className="hc-screen-label">Choose a corner</span>
           {CORNER_KEYS.map((k) => (
@@ -89,10 +93,10 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         </div>
       </div>
 
-      <div className={hc.enabled ? "" : "pi-off"} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className={`hc-pick ${hc.enabled ? "" : "pi-dim"}`}>
         <div className="hc-pick-head">
           <div className="cc-label">{CORNER_LABELS[selected]} corner</div>
-          <button type="button" className="cc-btn-ghost" disabled={hc[selected] === "none"} onClick={tryAction}>
+          <button type="button" className="cc-btn-ghost" disabled={!hc.enabled || hc[selected] === "none"} onClick={tryAction}>
             Try it
           </button>
         </div>
@@ -111,7 +115,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         {tried && <div className="cc-desc">{tried}</div>}
 
         <PillFillBar
-          label="Rest Time"
+          label="Rest time"
           value={hc.dwellMs}
           min={0}
           max={1000}
@@ -124,7 +128,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
         <div className="cc-row">
           <div>
-            <div className="cc-label">Every Monitor</div>
+            <div className="cc-label">Every monitor</div>
             <div className="cc-desc">Off: only the main monitor's corners</div>
           </div>
           <button

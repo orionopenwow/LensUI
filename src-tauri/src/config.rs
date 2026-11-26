@@ -215,6 +215,14 @@ pub struct FuncConfig {
     /// themselves when the pointer has been away for a moment and they don't have keyboard focus.
     #[serde(default = "default_true")]
     pub auto_close_popouts: bool,
+    /// How long those pop-outs wait: "short" | "normal" | "long" (Settings › Dock & Bar ›
+    /// Advanced). "normal" is the original 1.5 s / 1.8 s; see `app::watcher::popout_delays`.
+    #[serde(default = "default_popout_close_delay")]
+    pub popout_close_delay: String,
+}
+
+fn default_popout_close_delay() -> String {
+    "normal".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -309,6 +317,9 @@ pub struct TopBarConfig {
     pub height: u32,
     pub floating: bool,
     pub show_media_controls: bool,
+    /// The see-through ring around the pointer while clicks pass through the bar. Never drawn
+    /// while Windows' "Transparency effects" is off, whatever this says.
+    pub pointer_halo: bool,
 }
 
 impl Default for TopBarConfig {
@@ -321,6 +332,7 @@ impl Default for TopBarConfig {
             height: 34,
             floating: false,
             show_media_controls: true,
+            pointer_halo: true,
         }
     }
 }
@@ -505,6 +517,7 @@ impl Default for LensConfig {
                 alt_tab_overview: false,
                 per_monitor_bars: false,
                 auto_close_popouts: true,
+                popout_close_delay: default_popout_close_delay(),
             },
             window_controls: WindowControlsConfig {
                 enabled: true,
