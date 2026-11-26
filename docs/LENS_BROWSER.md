@@ -44,9 +44,14 @@ Lens Browser window ("browser")                    one native window
 * **Keyboard shortcuts** (Ctrl+L, Ctrl+T, Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has
   focus. While a page has focus, the page gets the keys. Fixing that needs WebView2's
   `AcceleratorKeyPressed` (see "Native WebView2 extras").
-* **Content blocking** stops *tabs* from navigating to a built-in list of ad/tracker hosts (plus
-  your own). It does not filter a page's sub-resources; WebView2's own "strict" tracking prevention
-  does that once the native extras are on.
+* **Content blocking** ("Lens blocks ads and trackers", on by default): every request a page makes
+  goes through WebView2's `WebResourceRequested` and Lens's own matcher (`browser/blocklist/`) with
+  EasyList and EasyPrivacy (downloaded weekly from easylist.to, credited in THIRD_PARTY_NOTICES)
+  plus the built-in host list, which also still stops top-level navigations. Cosmetic rules (hiding
+  page elements), regex and redirect rules are not supported, so some empty ad boxes stay visible.
+  The handler runs on the UI thread; its cost is measured in docs/BENCHMARKS.md once run on Windows.
+* **Split view**: two tabs side by side. Drag a tab onto the page, or Ctrl+Shift+S; Ctrl+Shift+X
+  swaps. The pages are two native webviews; the frame draws the divider in the gap between them.
 * **The approval card shows a replica, not a screenshot.** It redraws the exact element (its text
   and colours, measured live) and the form's fields. A real cropped capture needs
   `ICoreWebView2::CapturePreview` (native extras).

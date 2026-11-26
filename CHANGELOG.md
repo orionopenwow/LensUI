@@ -8,6 +8,21 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Lens Browser blocks ads and trackers inside pages.** Scripts, images and frames from ad and
+  tracker hosts are filtered with EasyList and EasyPrivacy (downloaded weekly from easylist.to,
+  credited in THIRD_PARTY_NOTICES) on top of Lens's own short list. A shield in the address bar
+  shows how many requests were blocked on the page; click it to allow ads on that site. On by
+  default; it only changes what Lens Browser's own tabs load. Not yet run on a real PC.
+- **Split view in Lens Browser.** Drag a tab onto the page to open it beside the current one, or
+  press Ctrl+Shift+S; Ctrl+Shift+X swaps sides; drag the divider (or use the arrow keys on it) to
+  resize. Click into either page to work there. Not yet run on a real PC.
+- **Real site icons in Lens Browser.** Lens fetches each site's icon once, from that site, and keeps
+  it on this PC; the frame only ever sees a checked image. Letter icons when there is none, or
+  with Settings › Lens Browser › Site icons off.
+- **A fuller import from Arc and Zen.** Arc spaces keep their colour and emoji, nested folders, split
+  views and the favourites row; Air Traffic Control rules are found and counted. Zen workspaces,
+  essentials, folders and splits come over too. Still undoable in one step. (Ideas learned from
+  Ardia; no code used.)
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that

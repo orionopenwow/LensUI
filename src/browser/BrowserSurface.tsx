@@ -16,7 +16,10 @@ import {
   type Appearance, type ArchivedTab, type BrowserAi, type BrowserView, type Download as Dl, type HistoryEntry, type ImportSource, type MenuEvent,
   EVT_BROWSER_PERMISSION, EVT_BROWSER_PERMISSION_DONE, permissionAnswer, permissionForget, permissionsList, permissionsWaiting,
   type PermissionAnswer, type PermissionAsk, type PermissionKind, type SitePermissions,
+  split as splitCmd, shield as shieldCmd, shieldAllow, type Shield,
 } from "./api";
+import { ShieldButton, SplitDivider, SplitDropZone, SplitPill } from "./SplitView";
+import { clampRatio, pairFor, partnerOf, splitOf, splitRects, type Rect } from "./split";
 import { askFor, lateFor, PermissionBar, PermissionTimedOut, SiteStrip } from "./SitePermissions";
 import { AgentPanel, type AgentSeed, type QuickAsk } from "./AgentPanel";
 import { AiPanel } from "./AiPanel";
@@ -70,7 +73,16 @@ export interface BrowserInitial {
   perms?: SitePermissions;
   /** Parity: a Lens plan waiting in the sidebar. */
   proposal?: TabProposal;
+  /** Parity: a tab being dragged over the page (split view drop zones). */
+  dragTab?: string;
+  /** Parity: the address bar's ads-and-trackers shield. */
+  shield?: Shield;
+  /** Parity: the stand-in page for the right side of a split. */
+  mockPageRight?: React.ReactNode;
 }
+
+/** Parity: where a split's stand-in page sits (the live app places native webviews instead). */
+const mockAt = (r: Rect): React.CSSProperties => ({ left: r.x, width: r.w });
 
 /** `https://host[:port]` of a web page, or "" (mirrors `permissions::origin_of`). */
 function originOf(url: string): string {
@@ -100,6 +112,7 @@ const SUGGEST_ICON: Record<Suggestion["kind"], React.ComponentType<{ size?: numb
 /** Shortcuts the frame handles itself (the page agent forwards the same set while a page has focus). */
 const FRAME_KEYS = new Set([
   "ctrl+l", "ctrl+t", "ctrl+w", "ctrl+f", "ctrl+j", "ctrl+shift+t", "ctrl+d", "ctrl+shift+k", "ctrl+shift+a", "ctrl+tab", "ctrl+shift+tab", "ctrl+h", "ctrl+r",
+  "ctrl+shift+s", "ctrl+shift+x",
   "ctrl+=", "ctrl++", "ctrl+shift++", "ctrl+shift+=", "ctrl+-", "ctrl+shift+_", "ctrl+0", "ctrl+1", "ctrl+2", "ctrl+3", "ctrl+4", "ctrl+5", "ctrl+6", "ctrl+7", "ctrl+8", "ctrl+9",
 ]);
 
@@ -204,6 +217,15 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const locked = !!space?.locked && !(view?.unlocked ?? []).includes(space.id);
 
   const origin = originOf(url);
+  // Split view: the active tab's pair, the tab being dragged over the page, the page's area.
+  const sp = splitOf(s, tab?.id);
+  const [dragTab, setDragTab] = useState<string | null>(initial?.dragTab ?? null);
+  const [area, setArea] = useState<Rect>({ x: 0, y: 0, w: 0, h: 0 });
+  const [ratio, setRatio] = useState<number | null>(null);
+  const shownSplit = sp ? { ...sp, ratio: ratio ?? sp.ratio } : null;
+  const ratioFrame = useRef(0);
+  // The address bar's ads-and-trackers shield.
+  const [shieldState, setShield] = useState<Shield | null>(initial?.shield ?? null);
   const ask = askFor(asks, tab?.id);
   // Requests that timed out unanswered (Lens blocked them): said once on their tab.
   const [late, setLate] = useState<PermissionAsk[]>(initial?.late ?? []);
@@ -352,6 +374,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     const el = pageRef.current;
     const send = () => {
       const r = el.getBoundingClientRect();
+      setArea({ x: r.left, y: r.top, w: r.width, h: r.height });
       void setViewport(r.left, r.top, r.width, r.height).catch(quiet);
     };
     const ro = new ResizeObserver(send);
@@ -360,11 +383,27 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
     return () => ro.disconnect();
   }, [live, panelP.mounted, sideOpen, find, view?.glance, appearance.tabsLayout, glanceSummary, sidePrefs.side, sidePrefs.mode, sidePrefs.width]);
 
+  useLayoutEffect(() => {
+    if (live || !pageRef.current) return;
+    const r = pageRef.current.getBoundingClientRect();
+    setArea({ x: r.left, y: r.top, w: r.width, h: r.height });
+  }, [live, panelP.mounted, sideOpen]);
+
+  // The shield's count, while a page is showing.
+  useEffect(() => {
+    if (!live || !tab) return;
+    let gone = false;
+    const read = () => void shieldCmd(tab.id).then((x) => { if (!gone) setShield(x); }).catch(quiet);
+    read();
+    const id = window.setInterval(() => document.visibilityState === "visible" && read(), 1500);
+    return () => { gone = true; window.clearInterval(id); };
+  }, [live, tab?.id, tab?.url]);
+
   // The page draws above the frame UI, so hide it while suggestions, the new-tab page or an
   // error page are showing.
   // The icon stack's Lens menu and plan float over the page, so the page hides while they show.
   const [stackPop, setStackPop] = useState(false);
-  const overlay = rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
+  const overlay = !!dragTab || rows.length > 0 || crashed || startOpen || !!nav.error || !!reader || (sideOpen && sidePrefs.mode === "stack" && (stackPop || !!proposal));
   useEffect(() => {
     if (live) void setOverlay(overlay).catch(quiet);
   }, [overlay, live]);
@@ -524,6 +563,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         case "ctrl+shift+a":
           setSideOpen(true);
           setFindSignal((n) => n + 1);
+          break;
+        case "ctrl+shift+s":
+          // Split the active tab with the most recent other tab, or close the split.
+          if (tab) void apply(splitOf(s, tab.id) ? splitCmd("close", { tab: tab.id }) : splitCmd("with", { tab: tab.id }));
+          break;
+        case "ctrl+shift+x":
+          if (tab && splitOf(s, tab.id)) void apply(splitCmd("swap", { tab: tab.id }));
           break;
         default: {
           const n = /^ctrl\+([1-9])$/.exec(k);
@@ -737,6 +783,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           onApplyProposal={() => void applyPlan()}
           findSignal={findSignal}
           onPopover={setStackPop}
+          onDragTab={setDragTab}
           onLock={() => space && void spaceLock(space.id, !space.locked).then(() => browserState().then(setView)).catch((e) => flash(String(e)))}
           onSettings={() => setPanel(inSettings ? null : "customise")}
         />
@@ -807,6 +854,17 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
                 <SlidersHorizontal size={13} />
               </button>
             ) : null}
+            {!editing && tab && shieldState ? (
+              <ShieldButton
+                shield={shieldState}
+                onToggle={() => {
+                  const next = !shieldState.allowed;
+                  setShield({ ...shieldState, allowed: next, blocked: next ? 0 : shieldState.blocked });
+                  if (live) void shieldAllow(shieldState.site, next).then(setShield).catch(oops("change blocking for this site"));
+                  flash(next ? `Ads and trackers allowed on ${shieldState.site}` : `Lens blocks ads and trackers on ${shieldState.site} again`);
+                }}
+              />
+            ) : null}
             {!editing && tab ? (
               <button className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
                 <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
@@ -842,6 +900,16 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               <Download size={15} />
               {running ? <span className="lb-tray-n" aria-hidden>{running}</span> : null}
             </button>
+          ) : null}
+          {tab && shownSplit ? (
+            <SplitPill
+              split={shownSplit}
+              tabs={s.tabs}
+              active={tab.id}
+              onActivate={(id) => void apply(tabActivate(id))}
+              onSwap={() => void apply(splitCmd("swap", { tab: tab.id }))}
+              onClose={() => void apply(splitCmd("close", { tab: tab.id }))}
+            />
           ) : null}
           {tab && !showStart ? (
             <button className={`lb-icon-btn${reader ? " is-on" : ""}`} aria-label={reader ? "Close reader view" : "Reader view"} aria-pressed={!!reader} onClick={() => void toggleReader()}>
@@ -1006,9 +1074,44 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               onImport={() => setPanel("import")}
               onHistory={() => setPanel("history")}
             />
+          ) : shownSplit && !live && area.w > 0 ? (
+            // Parity: stand-ins where the core puts the two pages.
+            <>
+              {splitRects({ ...area, x: 0, y: 0 }, shownSplit.ratio).map((r, i) => (
+                <div key={i} className={`lb-split-mock${(i === 0 ? shownSplit.left : shownSplit.right) === tab?.id ? " is-active" : ""}`} style={mockAt(r)}>
+                  {i === 0 ? initial?.mockPage ?? null : initial?.mockPageRight ?? initial?.mockPage ?? null}
+                </div>
+              ))}
+            </>
           ) : (
-            initial?.mockPage ?? null
+            // The real page is hidden while a tab is dragged over it; so is the stand-in.
+            dragTab ? null : initial?.mockPage ?? null
           )}
+          {shownSplit && tab && area.w > 0 && !overlay ? (
+            <SplitDivider
+              area={area}
+              split={shownSplit}
+              onRatio={(r) => {
+                setRatio(clampRatio(r));
+                if (!live) return;
+                cancelAnimationFrame(ratioFrame.current);
+                ratioFrame.current = requestAnimationFrame(() => void splitCmd("ratio", { tab: tab.id, ratio: r }).catch(quiet));
+              }}
+              onCommit={(r) => void apply(splitCmd("ratio", { tab: tab.id, ratio: r })).then(() => setRatio(null))}
+            />
+          ) : null}
+          {dragTab && tab && dragTab !== tab.id && area.w > 0 ? (
+            <SplitDropZone
+              area={area}
+              dragged={s.tabs.find((t) => t.id === dragTab) ?? null}
+              onDrop={(side, id) => {
+                setDragTab(null);
+                const pair = pairFor(side, tab.id, id);
+                if (pair) void apply(splitCmd("with", { tab: pair.left, other: pair.right }));
+              }}
+              onCancel={() => setDragTab(null)}
+            />
+          ) : null}
         </div>
       </main>
 

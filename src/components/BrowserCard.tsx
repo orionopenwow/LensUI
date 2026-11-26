@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { browserOpen, browserState, historyClear, permissionForget, permissionsList, settingsSet, type BrowserSettings, type SitePermissions } from "../browser/api";
+import {
+  blockingStatus, blockingUpdate, browserOpen, browserState, historyClear, permissionForget, permissionsList, settingsSet, type BlockingStatus, type BrowserSettings, type SitePermissions,
+} from "../browser/api";
 import { SitePermissionsList } from "../browser/SitePermissions";
 
 const ENGINES: [string, string][] = [
@@ -15,9 +17,11 @@ export function BrowserCard() {
   const [s, setS] = useState<BrowserSettings | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [perms, setPerms] = useState<SitePermissions>({});
+  const [lists, setLists] = useState<BlockingStatus | null>(null);
   useEffect(() => {
     browserState().then((v) => setS(v.state.settings)).catch(() => {});
     permissionsList().then(setPerms).catch(() => {});
+    blockingStatus().then(setLists).catch(() => {});
   }, []);
   const save = (patch: Partial<BrowserSettings>) => {
     if (!s) return;
@@ -69,10 +73,31 @@ export function BrowserCard() {
       </div>
       <div className="cc-row" style={{ marginTop: 12 }}>
         <div>
-          <div className="cc-label">Block known ad and tracker sites</div>
-          <div className="cc-desc">Stops tabs from opening them. It doesn't filter ads inside pages.</div>
+          <div className="cc-label">Lens blocks ads and trackers</div>
+          <div className="cc-desc">
+            Filters what pages load (scripts, images, frames) with EasyList and EasyPrivacy, downloaded from easylist.to and refreshed weekly, plus Lens's own short list.
+            Only Lens Browser's tabs are affected. Turn it off for one site with the shield in the address bar.
+          </div>
+          {lists ? <BlockingLists status={lists} onUpdate={() => void blockingUpdate().then(setLists).catch((e) => setMsg(String(e)))} /> : null}
+          {(s.blockingAllow ?? []).length ? (
+            <ul className="cc-list" aria-label="Sites where ads are allowed">
+              {(s.blockingAllow ?? []).map((site) => (
+                <li key={site} className="cc-row">
+                  <span className="cc-desc">{site}</span>
+                  <button className="cc-btn-ghost" data-weight="medium" onClick={() => save({ blockingAllow: (s.blockingAllow ?? []).filter((x) => x !== site) })}>Block again</button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
-        {toggle(s.blockTrackers, "Block known ad and tracker sites", "blockTrackers")}
+        {toggle(s.blockTrackers, "Lens blocks ads and trackers", "blockTrackers")}
+      </div>
+      <div className="cc-row cc-row-gap">
+        <div>
+          <div className="cc-label">Site icons</div>
+          <div className="cc-desc">Lens fetches each site's icon once, from that site, and keeps it on this PC. Off: letter icons, nothing fetched.</div>
+        </div>
+        {toggle(s.favicons !== false, "Site icons", "favicons")}
       </div>
       <div className="cc-row" style={{ marginTop: 12 }}>
         <div>
@@ -100,6 +125,20 @@ export function BrowserCard() {
         <button className="cc-btn-ghost" onClick={() => void historyClear(0).then(() => setMsg("Cleared all browsing history.")).catch((e) => setMsg(String(e)))}>Clear all history</button>
       </div>
       {msg ? <div className="cc-desc" role="status" style={{ marginTop: 8 }}>{msg}</div> : null}
+    </div>
+  );
+}
+
+/** Which filter lists are loaded, when they were fetched, and their licences. */
+function BlockingLists({ status, onUpdate }: { status: BlockingStatus; onUpdate(): void }) {
+  const when = (ms: number) => (ms ? new Date(ms).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "not yet");
+  return (
+    <div className="cc-desc cc-lists">
+      <span className="cc-num">{status.rules.toLocaleString()} rules</span>
+      {status.lists.map((l) => (
+        <span key={l.id}> · {l.name} ({when(l.fetchedMs)}, {l.licence.split(",")[0]})</span>
+      ))}{" "}
+      <button className="cc-btn-ghost" data-weight="medium" disabled={status.updating} onClick={onUpdate}>{status.updating ? "Updating…" : "Update now"}</button>
     </div>
   );
 }

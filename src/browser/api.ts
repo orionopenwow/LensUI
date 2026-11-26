@@ -110,6 +110,17 @@ export interface BrowserSettings {
   defaultZoom: number;
   /** Zoom remembered per site (host → factor). */
   siteZoom?: Record<string, number>;
+  /** Sites where "Lens blocks ads and trackers" is off. */
+  blockingAllow?: string[];
+  /** Fetch real site icons (once per site, from the site). */
+  favicons?: boolean;
+}
+
+/** Two tabs side by side; `left` takes `ratio` of the width. */
+export interface Split {
+  left: string;
+  right: string;
+  ratio: number;
 }
 
 export interface BrowserState {
@@ -126,6 +137,8 @@ export interface BrowserState {
   closed?: { tab: Tab; closedMs: number }[];
   /** Site permissions answered "on this site" or "Block". */
   sitePermissions?: SitePermissions;
+  /** Split views (two tabs side by side). */
+  splits?: Split[];
 }
 
 export interface Download {
@@ -341,7 +354,7 @@ export type Engine = "chromium" | "firefox" | "arc";
 export interface ImportProfile { id: string; label: string }
 export interface ImportSource { browser: string; label: string; engine: Engine; profiles: ImportProfile[] }
 export interface ImportKinds { bookmarks: boolean; history: boolean; tabs: boolean; spaces: boolean }
-export interface ImportCounts { bookmarks: number; history: number; openTabs: number; pinnedTabs: number; spaces: number; notes: string[] }
+export interface ImportCounts { bookmarks: number; history: number; openTabs: number; pinnedTabs: number; spaces: number; folders?: number; splits?: number; rules?: number; notes: string[] }
 export interface ImportApplied { bookmarks: number; history: number; tabs: number; spaces: number }
 export interface ImportProgress { browser: string; step: "bookmarks" | "history" | "tabs" | "spaces" | "done"; state: "running" | "done" | "skipped" | "failed"; count: number; note?: string | null }
 export const EVT_BROWSER_IMPORT = "lens://browser/import";
@@ -379,3 +392,19 @@ export const focusPage = () => invoke<void>("browser_focus_page");
 
 /** Rough memory saved by sleeping tabs (a WebView2 renderer for a typical page is ~60–120 MB). */
 export const SLEEP_SAVING_MB = 80;
+
+// ---- Split view, ads and trackers, favicons, privacy ----
+export const split = (action: "with" | "close" | "swap" | "ratio", o: { tab?: string; other?: string; ratio?: number } = {}) =>
+  invoke<BrowserView>("browser_split", { action, tab: o.tab ?? null, other: o.other ?? null, ratio: o.ratio ?? null });
+export interface Shield { on: boolean; site: string; allowed: boolean; blocked: number }
+export const shield = (tab?: string) => invoke<Shield>("browser_shield", { tab: tab ?? null });
+export const shieldAllow = (site: string, allow: boolean) => invoke<Shield>("browser_shield_allow", { site, allow });
+export interface ListStatus { id: string; name: string; licence: string; home: string; fetchedMs: number; failedMs: number; bytes: number }
+export interface BlockingStatus { on: boolean; rules: number; skipped: number; lists: ListStatus[]; updating: boolean }
+export const blockingStatus = () => invoke<BlockingStatus>("browser_blocking_status");
+export const blockingUpdate = () => invoke<BlockingStatus>("browser_blocking_update");
+export const EVT_BROWSER_ICONS = "lens://browser/icons";
+export const favicons = () => invoke<Record<string, string>>("browser_favicons");
+export const faviconsClear = () => invoke<void>("browser_favicons_clear");
+export interface SentRequest { purpose: "filter_list" | "favicon"; host: string; atMs: number; ok: boolean }
+export const sentRequests = () => invoke<SentRequest[]>("browser_sent");

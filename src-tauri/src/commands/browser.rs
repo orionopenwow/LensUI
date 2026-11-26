@@ -367,6 +367,7 @@ pub async fn browser_settings_set(app: AppHandle, settings: BrowserSettings) -> 
             let mut r = rt();
             r.state.settings = settings;
             r.state.repair_settings();
+            crate::browser::blocklist::publish(r.state.settings.block_trackers, &r.state.settings.blocking_allow);
         }
         let op = host::menu_op();
         let views: Vec<_> = rt().views.values().cloned().collect();
@@ -393,10 +394,37 @@ pub async fn browser_page(op: String, tab: Option<String>) -> Result<Value, Stri
 
 /// Context-menu choices made inside the active page since the last call.
 #[tauri::command]
-pub async fn browser_events() -> Result<Value, String> {
-    blocking(move || match host::active_view() {
-        Some((_, view)) => host::eval_op(&view, json!({ "op": "events" }), Duration::from_millis(800)),
-        None => Ok(json!([])),
+pub async fn browser_events(app: AppHandle) -> Result<Value, String> {
+    blocking(move || {
+        let active = host::active_view();
+        // Split view: the page beside the active one is asked too. A press inside it makes it
+        // the active tab, and its own events (a shortcut pressed there) count from then on.
+        let partner = {
+            let r = rt();
+            active.as_ref().and_then(|(id, _)| r.state.split_partner(id)).and_then(|p| r.views.get(&p).cloned().map(|v| (p, v)))
+        };
+        if let Some((pid, pview)) = partner {
+            if let Ok(Value::Array(evs)) = host::eval_op(&pview, json!({ "op": "events" }), Duration::from_millis(500)) {
+                if evs.iter().any(|e| e.get("action").and_then(Value::as_str) == Some("focus")) {
+                    let now = host::now();
+                    let _ = rt().state.activate(&pid, now);
+                    host::save(&rt());
+                    host::emit_state(&app);
+                    let rest: Vec<Value> = evs.into_iter().filter(|e| e.get("action").and_then(Value::as_str) != Some("focus")).collect();
+                    return Ok(Value::Array(rest));
+                }
+            }
+        }
+        match active {
+            Some((_, view)) => {
+                let v = host::eval_op(&view, json!({ "op": "events" }), Duration::from_millis(800))?;
+                Ok(match v {
+                    Value::Array(evs) => Value::Array(evs.into_iter().filter(|e| e.get("action").and_then(Value::as_str) != Some("focus")).collect()),
+                    other => other,
+                })
+            }
+            None => Ok(json!([])),
+        }
     })
     .await
 }
@@ -1161,4 +1189,145 @@ pub fn browser_permission_forget(origin: String, kind: Option<String>) -> std::c
     permissions::publish(&r.state.site_permissions);
     host::save(&r);
     r.state.site_permissions.clone()
+}
+
+// ---------------------------------------------------------------------------------------------
+// Split view
+
+/// Split view: `with` (put `other`, or the most recent other tab, beside `tab`), `close`,
+/// `swap`, `ratio` (0.2–0.8). `tab` defaults to the active tab.
+#[tauri::command]
+pub async fn browser_split(app: AppHandle, action: String, tab: Option<String>, other: Option<String>, ratio: Option<f64>) -> Result<BrowserView, String> {
+    blocking(move || {
+        {
+            let mut r = rt();
+            let tab = tab.or_else(|| r.state.active_tab.clone()).ok_or("No tab is open.")?;
+            match action.as_str() {
+                "with" => {
+                    let space = r.state.tab(&tab).map(|t| t.space_id.clone()).ok_or("That tab is closed.")?;
+                    let other = match other {
+                        Some(o) => o,
+                        None => r
+                            .state
+                            .tabs
+                            .iter()
+                            .filter(|t| t.id != tab && t.space_id == space && t.archived_ms.is_none())
+                            .max_by_key(|t| t.last_active_ms)
+                            .map(|t| t.id.clone())
+                            .ok_or("Open another tab to split with.")?,
+                    };
+                    r.state.split_with(&tab, &other)?;
+                    let now = host::now();
+                    if r.state.active_tab.as_deref() != Some(tab.as_str()) && r.state.active_tab.as_deref() != Some(other.as_str()) {
+                        r.state.activate(&tab, now)?;
+                    }
+                }
+                "close" => {
+                    r.state.unsplit(&tab);
+                }
+                "swap" => {
+                    r.state.swap_split(&tab);
+                }
+                "ratio" => {
+                    r.state.set_split_ratio(&tab, ratio.unwrap_or(0.5)).ok_or("That tab isn't in a split.")?;
+                }
+                _ => return Err("Unknown split action.".into()),
+            }
+        }
+        changed(&app)
+    })
+    .await
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ads and trackers, favicons, privacy
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Shield {
+    /// Blocking is on in settings.
+    pub on: bool,
+    /// The site of the tab's page (what the toggle applies to).
+    pub site: String,
+    /// The person turned blocking off on this site.
+    pub allowed: bool,
+    /// Requests blocked on this page since it started loading.
+    pub blocked: u32,
+}
+
+/// The address bar's shield for a tab (default: the active one).
+#[tauri::command]
+pub fn browser_shield(tab: Option<String>) -> Shield {
+    let r = rt();
+    let id = tab.or_else(|| r.state.active_tab.clone()).unwrap_or_default();
+    let url = r.state.tab(&id).map(|t| t.url.clone()).unwrap_or_default();
+    let site = crate::browser::filter::host_of(&url).map(|h| crate::browser::blocklist::site_for(&h)).unwrap_or_default();
+    Shield {
+        on: r.state.settings.block_trackers,
+        allowed: !site.is_empty() && r.state.settings.blocking_allow.contains(&site),
+        site,
+        blocked: crate::browser::blocklist::blocked_on(&id),
+    }
+}
+
+/// Turns blocking off (`allow: true`) or back on for a site, then reloads the tab.
+#[tauri::command]
+pub async fn browser_shield_allow(app: AppHandle, site: String, allow: bool) -> Result<Shield, String> {
+    blocking(move || {
+        let site = crate::browser::blocklist::site_for(site.trim());
+        if site.is_empty() {
+            return Err("No site to change.".into());
+        }
+        {
+            let mut r = rt();
+            let list = &mut r.state.settings.blocking_allow;
+            list.retain(|s| s != &site);
+            if allow {
+                list.push(site.clone());
+            }
+            r.state.repair_settings();
+            crate::browser::blocklist::publish(r.state.settings.block_trackers, &r.state.settings.blocking_allow);
+            host::save(&r);
+        }
+        if let Some((_, v)) = host::active_view() {
+            let _ = v.reload();
+        }
+        host::emit_state(&app);
+        Ok(browser_shield(None))
+    })
+    .await
+}
+
+/// Filter lists: what's loaded, when each list was fetched, their licences.
+#[tauri::command]
+pub fn browser_blocking_status() -> crate::browser::blocklist::BlockingStatus {
+    crate::browser::blocklist::status()
+}
+
+/// Downloads the filter lists now (Settings › Browser › "Update lists").
+#[tauri::command]
+pub async fn browser_blocking_update() -> Result<crate::browser::blocklist::BlockingStatus, String> {
+    blocking(move || {
+        crate::browser::blocklist::update(true)?;
+        Ok(crate::browser::blocklist::status())
+    })
+    .await
+}
+
+/// Site icons the core has fetched: host → data URL.
+#[tauri::command]
+pub fn browser_favicons() -> std::collections::BTreeMap<String, String> {
+    crate::browser::icons::all()
+}
+
+/// Forgets every fetched icon (Settings › Browser › Privacy).
+#[tauri::command]
+pub fn browser_favicons_clear() {
+    crate::browser::icons::clear();
+}
+
+/// What Lens Browser itself sent this session (not the pages): newest first.
+#[tauri::command]
+pub fn browser_sent() -> Vec<crate::browser::net::Sent> {
+    crate::browser::net::sent()
 }

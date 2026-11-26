@@ -125,6 +125,22 @@ function MockPage() {
   );
 }
 
+// The right side of a split: a quiet document page.
+function MockSide() {
+  return (
+    <div style={{ position: "absolute", inset: 0, background: "#ffffff", color: "#18181b", font: "14px/22px system-ui", padding: "24px 28px", boxSizing: "border-box", overflow: "hidden" }}>
+      <div style={{ fontSize: 12, color: "#71717a" }}>github.com / orionopenwow / LensUI</div>
+      <h2 style={{ fontSize: 18, margin: "8px 0 12px" }}>Pull requests</h2>
+      {["Split view in Lens Browser", "Real favicons from the core", "Filter lists for ads and trackers", "Arc import: colours and splits"].map((x, i) => (
+        <div key={x} style={{ padding: "10px 0", borderTop: "1px solid #e4e4e7", display: "flex", gap: 8 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 5, marginTop: 6, background: i ? "#16a34a" : "#8250df" }} />
+          <span>{x}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const agentItems: AgentItem[] = [
   { kind: "user", key: "u1", text: "Book seafood for four on Friday, somewhere Maya can eat (she's vegan)", at: NOW - 196_000 },
   { kind: "say", key: "s1", text: "Seafood and vegan pull against each other. Four of the 31 places near you do both; Harbor & Vine has nine plant mains and is free at 8:00.", at: NOW - 120_000 },
@@ -334,6 +350,12 @@ const scenes: Record<string, BrowserInitial> = {
   "downloads-empty": { view, panel: "downloads", chats, mockPage: <MockPage />, now: NOW, nav: back },
   "import-pick": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, nav: back, importSeed: { sources: importSources, pick: { browser: "chrome", profile: "Default" }, counts: { bookmarks: 7, history: 18_204, openTabs: 2, pinnedTabs: 1, spaces: 0, notes: [] }, items: importItemsSeed, receipts: receiptsSeed, open: "bookmarks", skip: ["https://oldjob.example/wiki", "https://oldjob.example/payroll"], now: NOW } },
   frame: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  // ---- Ardia lessons pass: split view, the ads-and-trackers shield, the fuller Arc import ----
+  split: { view: withState({ splits: [{ left: "t3", right: "t9", ratio: 0.58 }] }), panel: null, chats, mockPage: <MockPage />, mockPageRight: <MockSide />, now: NOW, nav: back, shield: { on: true, site: "tables.example", allowed: false, blocked: 14 } },
+  "split-drop": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, dragTab: "t9" },
+  shield: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, shield: { on: true, site: "tables.example", allowed: false, blocked: 27 } },
+  "shield-off": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, shield: { on: true, site: "tables.example", allowed: true, blocked: 0 } },
+  "import-arc": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, importSeed: { sources: importSources, pick: { browser: "arc", profile: "arc" }, counts: { bookmarks: 412, history: 18_204, openTabs: 0, pinnedTabs: 23, spaces: 3, folders: 9, splits: 2, rules: 4, notes: [] } } },
   // Site permissions: a page asks for the camera; the site strip with remembered answers.
   permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
   "permission-site": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, perms: { [new URL(activeUrl).origin]: { location: true, notifications: false } } },

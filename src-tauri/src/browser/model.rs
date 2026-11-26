@@ -281,7 +281,20 @@ pub struct BrowserSettings {
     /// Zoom remembered per site (host → factor). A site opens at the size it was last set to.
     #[serde(default)]
     pub site_zoom: std::collections::BTreeMap<String, f64>,
+    /// Sites (registrable domains) where "Lens blocks ads and trackers" is turned off.
+    #[serde(default)]
+    pub blocking_allow: Vec<String>,
+    /// Fetch real site icons (once per site, from the site itself). On by default.
+    #[serde(default = "yes")]
+    pub favicons: bool,
 }
+
+fn yes() -> bool {
+    true
+}
+
+/// Most sites on the blocking allow list.
+pub const BLOCKING_ALLOW_CAP: usize = 500;
 
 /// Most sites whose zoom is remembered; the map is cleared of defaults as it goes.
 pub const SITE_ZOOM_CAP: usize = 500;
@@ -305,6 +318,8 @@ impl Default for BrowserSettings {
             download_rules: vec![],
             page_marks: false,
             site_zoom: Default::default(),
+            blocking_allow: vec![],
+            favicons: true,
         }
     }
 }
@@ -331,6 +346,40 @@ pub struct BrowserState {
     /// Site permissions answered "on this site" or "Block": origin → kind → allowed.
     #[serde(default)]
     pub site_permissions: std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>>,
+    /// Split views: two tabs shown side by side while either is active.
+    #[serde(default)]
+    pub splits: Vec<Split>,
+}
+
+/// Two tabs side by side. `left` takes `ratio` of the width.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Split {
+    pub left: String,
+    pub right: String,
+    #[serde(default = "half")]
+    pub ratio: f64,
+}
+
+fn half() -> f64 {
+    0.5
+}
+
+pub const SPLIT_MIN: f64 = 0.2;
+pub const SPLIT_MAX: f64 = 0.8;
+/// Logical pixels between the two pages (the frame draws the divider there).
+pub const SPLIT_GAP: f64 = 6.0;
+
+/// Where the two pages of a split go inside the content rectangle `(x, y, w, h)`.
+/// Edges are rounded to whole logical pixels so the two pages never overlap or leave a seam
+/// wider than the gap at any DPI.
+pub fn split_rects(x: f64, y: f64, w: f64, h: f64, ratio: f64) -> ((f64, f64, f64, f64), (f64, f64, f64, f64)) {
+    let ratio = if ratio.is_finite() { ratio.clamp(SPLIT_MIN, SPLIT_MAX) } else { 0.5 };
+    let usable = (w - SPLIT_GAP).max(2.0);
+    let lw = (usable * ratio).round().max(1.0);
+    let rx = (x + lw + SPLIT_GAP).round();
+    let rw = (x + w - rx).max(1.0);
+    ((x, y, lw, h.max(1.0)), (rx, y, rw, h.max(1.0)))
 }
 
 impl Default for BrowserState {
@@ -347,6 +396,7 @@ impl Default for BrowserState {
             next_id: 1,
             closed: vec![],
             site_permissions: Default::default(),
+            splits: vec![],
         };
         let id = s.add_space("Personal");
         s.active_space = id;
@@ -475,6 +525,7 @@ impl BrowserState {
         self.folders.retain(|f| f.space_id != id);
         let closed: Vec<String> = self.tabs.iter().filter(|t| t.space_id == id).map(|t| t.id.clone()).collect();
         self.tabs.retain(|t| t.space_id != id);
+        self.repair_splits();
         if self.active_space == id {
             self.active_space = self.spaces[0].id.clone();
             self.active_tab = self.most_recent_in(&self.active_space.clone());
@@ -579,10 +630,13 @@ impl BrowserState {
     /// Closes a tab; returns the tab that should become active (most recently used in the space).
     pub fn close_tab(&mut self, id: &str) -> Option<String> {
         let Some(tab) = self.tab(id).cloned() else { return self.active_tab.clone() };
+        // Closing one side of a split leaves the other side open, and it takes over.
+        let partner = self.split_partner(id);
+        self.unsplit(id);
         self.tabs.retain(|t| t.id != id);
         self.remember_closed(tab.clone(), 0);
         if self.active_tab.as_deref() == Some(id) {
-            self.active_tab = self.most_recent_in(&tab.space_id);
+            self.active_tab = partner.filter(|p| self.tab(p).is_some()).or_else(|| self.most_recent_in(&tab.space_id));
         }
         self.active_tab.clone()
     }
@@ -645,6 +699,7 @@ impl BrowserState {
             t.life = TabLife::Sleeping;
             n += 1;
         }
+        self.repair_splits();
         n
     }
 
@@ -779,11 +834,13 @@ impl BrowserState {
     pub fn sleep_candidates(&self, now: u64) -> Vec<String> {
         let s = &self.settings;
         let active = self.active_tab.as_deref();
+        // The other side of the active split is on screen too.
+        let beside = active.and_then(|a| self.split_partner(a));
         let idle_ms = u64::from(s.sleep_after_min) * 60_000;
         let mut live: Vec<&Tab> = self
             .tabs
             .iter()
-            .filter(|t| t.life == TabLife::Live && Some(t.id.as_str()) != active && !(t.audible && !t.muted) && !t.busy)
+            .filter(|t| t.life == TabLife::Live && Some(t.id.as_str()) != active && Some(&t.id) != beside.as_ref() && !(t.audible && !t.muted) && !t.busy)
             .collect();
         live.sort_by_key(|t| std::cmp::Reverse(t.last_active_ms));
         let mut out: Vec<String> = vec![];
@@ -862,6 +919,78 @@ impl BrowserState {
         true
     }
 
+    /// The split a tab is part of.
+    pub fn split_of(&self, tab: &str) -> Option<&Split> {
+        self.splits.iter().find(|s| s.left == tab || s.right == tab)
+    }
+
+    /// The other tab of a split.
+    pub fn split_partner(&self, tab: &str) -> Option<String> {
+        self.split_of(tab).map(|s| if s.left == tab { s.right.clone() } else { s.left.clone() })
+    }
+
+    /// Puts `right` beside `left`. Both must be open tabs in the same space; either one leaves
+    /// any split it was in.
+    pub fn split_with(&mut self, left: &str, right: &str) -> Result<(), String> {
+        if left == right {
+            return Err("Pick two different tabs to split.".into());
+        }
+        let (Some(a), Some(b)) = (self.tab(left), self.tab(right)) else { return Err("That tab is closed.".into()) };
+        if a.space_id != b.space_id {
+            return Err("Both tabs need to be in the same space.".into());
+        }
+        if a.archived_ms.is_some() || b.archived_ms.is_some() {
+            return Err("That tab is archived.".into());
+        }
+        self.splits.retain(|s| s.left != left && s.right != left && s.left != right && s.right != right);
+        self.splits.push(Split { left: left.into(), right: right.into(), ratio: 0.5 });
+        Ok(())
+    }
+
+    pub fn unsplit(&mut self, tab: &str) -> bool {
+        let n = self.splits.len();
+        self.splits.retain(|s| s.left != tab && s.right != tab);
+        n != self.splits.len()
+    }
+
+    pub fn swap_split(&mut self, tab: &str) -> bool {
+        match self.splits.iter_mut().find(|s| s.left == tab || s.right == tab) {
+            Some(s) => {
+                std::mem::swap(&mut s.left, &mut s.right);
+                s.ratio = 1.0 - s.ratio;
+                true
+            }
+            None => false,
+        }
+    }
+
+    pub fn set_split_ratio(&mut self, tab: &str, ratio: f64) -> Option<f64> {
+        let s = self.splits.iter_mut().find(|s| s.left == tab || s.right == tab)?;
+        s.ratio = if ratio.is_finite() { ratio.clamp(SPLIT_MIN, SPLIT_MAX) } else { 0.5 };
+        Some(s.ratio)
+    }
+
+    /// Drops splits whose tabs are gone, archived, in different spaces, or already used.
+    pub fn repair_splits(&mut self) {
+        let mut seen: std::collections::HashSet<String> = Default::default();
+        let tabs = &self.tabs;
+        let ok = |id: &str| tabs.iter().find(|t| t.id == id && t.archived_ms.is_none()).map(|t| t.space_id.clone());
+        self.splits.retain(|s| {
+            let fine = s.left != s.right && matches!((ok(&s.left), ok(&s.right)), (Some(a), Some(b)) if a == b) && !seen.contains(&s.left) && !seen.contains(&s.right);
+            if fine {
+                seen.insert(s.left.clone());
+                seen.insert(s.right.clone());
+            }
+            fine
+        });
+        for s in self.splits.iter_mut() {
+            if !s.ratio.is_finite() {
+                s.ratio = 0.5;
+            }
+            s.ratio = s.ratio.clamp(SPLIT_MIN, SPLIT_MAX);
+        }
+    }
+
     pub fn is_bookmarked(&self, url: &str) -> bool {
         self.bookmarks.iter().any(|b| b.url == url)
     }
@@ -907,6 +1036,7 @@ impl BrowserState {
         let cap = self.closed.len().saturating_sub(CLOSED_CAP);
         self.closed.drain(..cap);
         super::permissions::repair(&mut self.site_permissions);
+        self.repair_splits();
         self.repair_settings();
     }
 
@@ -922,6 +1052,14 @@ impl BrowserState {
             s.default_zoom = 1.0;
         }
         s.archive_after_days = s.archive_after_days.min(365);
+        let mut seen = std::collections::HashSet::new();
+        s.blocking_allow = s
+            .blocking_allow
+            .iter()
+            .map(|h| h.trim().trim_start_matches("www.").to_ascii_lowercase())
+            .filter(|h| !h.is_empty() && h.len() <= 253 && h.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-') && seen.insert(h.clone()))
+            .collect();
+        s.blocking_allow.truncate(BLOCKING_ALLOW_CAP);
         s.download_rules.retain(|r| !r.ext.trim().is_empty() && !r.folder.trim().is_empty() && r.ext.len() <= 16);
         s.download_rules.truncate(40);
         s.site_zoom.retain(|host, z| !host.is_empty() && host.len() <= 255 && (0.25..=5.0).contains(z) && (*z - 1.0).abs() > 0.001);

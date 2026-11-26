@@ -160,3 +160,53 @@ fn firefox_session_from_mozlz4() {
     assert_eq!((tabs[0].url.as_str(), tabs[0].title.as_str(), tabs[0].pinned), ("https://a.test/2", "Two", true));
     assert_eq!(tabs[1].url, "https://b.test/");
 }
+
+#[test]
+fn arc_full_fixture_spaces_colours_nested_folders_splits_favourites_and_rules() {
+    let (spaces, rules) = arc_sidebar_full(include_bytes!("fixtures/arc_sidebar_full.json")).unwrap();
+    let names: Vec<&str> = spaces.iter().map(|s| s.name.as_str()).collect();
+    assert_eq!(names, vec!["Work", "Home", "Favourites"]);
+    let work = &spaces[0];
+    assert_eq!(work.color.as_deref(), Some("#3366cc"));
+    assert_eq!(work.icon.as_deref(), Some("💼"));
+    let lens = work.tabs.iter().find(|t| t.url == "https://code.example/lens").unwrap();
+    assert_eq!(lens.folder.as_deref(), Some("Projects / Lens"), "nested folders keep their path");
+    assert!(lens.pinned);
+    let docs = work.tabs.iter().find(|t| t.url == "https://docs.example/").unwrap();
+    let chat = work.tabs.iter().find(|t| t.url == "https://chat.example/").unwrap();
+    assert!(docs.split.is_some() && docs.split == chat.split, "a split view's tabs share a group");
+    assert_eq!(docs.folder, None, "a split is not a folder");
+    assert!(!work.tabs.iter().any(|t| t.url.starts_with("arc://")));
+    assert!(spaces[1].color.is_none());
+    assert_eq!(spaces[2].tabs.len(), 1);
+    assert!(spaces[2].tabs[0].pinned);
+    assert_eq!(rules.len(), 2, "rules without a condition or a space are dropped");
+    assert_eq!((rules[0].when.as_str(), rules[0].value.as_str(), rules[0].space.as_str()), ("domain", "github.com", "Work"));
+    assert_eq!((rules[1].when.as_str(), rules[1].value.as_str(), rules[1].space.as_str()), ("contains", "recipes", "Home"));
+}
+
+#[test]
+fn arc_files_without_the_new_parts_still_import() {
+    let json = br#"{"sidebar":{"containers":[{"spaces":["S1",{"id":"S1","title":"Only","containerIDs":[]}],"items":[]}]}}"#;
+    let (s, r) = arc_sidebar_full(json).unwrap();
+    assert_eq!(s.len(), 1);
+    assert!(s[0].tabs.is_empty() && s[0].color.is_none() && r.is_empty());
+    assert!(arc_sidebar_full(b"{}").is_err());
+}
+
+#[test]
+fn zen_workspaces_groups_essentials_and_splits() {
+    let (loose, spaces) = firefox_session_full(include_bytes!("fixtures/zen_session.json")).unwrap();
+    assert_eq!(loose.len(), 1);
+    assert!(loose[0].pinned);
+    assert_eq!(spaces.len(), 2);
+    let r = spaces.iter().find(|s| s.name == "Research").unwrap();
+    assert_eq!(r.icon.as_deref(), Some("🔬"));
+    assert_eq!(r.tabs.len(), 2, "about: pages are skipped");
+    assert_eq!(r.tabs[0].folder.as_deref(), Some("Papers"));
+    assert!(r.tabs[1].pinned, "essentials are pinned");
+    let fun = spaces.iter().find(|s| s.name == "Fun").unwrap();
+    assert!(fun.tabs[0].split.is_some() && fun.tabs[0].split == fun.tabs[1].split);
+    // Plain Firefox callers still get every tab.
+    assert_eq!(firefox_session(include_bytes!("fixtures/zen_session.json")).unwrap().len(), 5);
+}

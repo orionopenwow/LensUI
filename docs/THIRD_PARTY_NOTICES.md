@@ -37,3 +37,23 @@ WordNet 3.0 (Princeton) is a redistributable option for a future offline fallbac
 - Windows built-ins (File Explorer, Notepad, Terminal) are shown with original generic stand-ins, not
   Microsoft's artwork. Open-source apps (Krita, Blender, OBS Studio, Ollama, ArtCraft…) use the icon from
   each project's own repository, under that project's licence.
+
+## EasyList and EasyPrivacy — filter lists, downloaded at runtime
+
+- Source: <https://easylist.to/> (EasyList, EasyPrivacy). Authors: The EasyList authors.
+- Licence: dual-licensed, GNU GPL v3 or Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0).
+- Used for: "Lens blocks ads and trackers" in Lens Browser. Lens downloads the two lists at runtime
+  from easylist.to (weekly, through `src-tauri/src/browser/net.rs`), keeps them in
+  `%APPDATA%\LensUI\browser\filters\`, and reads them as data. **Lens does not ship, bundle or
+  modify the lists**; they stay the EasyList authors' work under their licence.
+- The matcher that reads them (`src-tauri/src/browser/blocklist/rules.rs`) is Lens's own MIT code,
+  written from the public filter syntax documentation. No code from uBlock Origin, Adblock Plus,
+  Brave's `adblock` crate or any other blocker was used.
+
+## Ardia — ideas only (learned from, nothing used)
+
+- Project: Ardia (ardia.dev), a Chromium browser for macOS. Licence: GPL-3.0.
+- Lens Browser's split view, Arc/Zen import of colours and splits, link rules, the agent command
+  line for the person's own Claude Code / Codex, published benchmarks with their method, and a
+  plain list of what the browser sends were **learned from Ardia's public description**. No code,
+  assets, text or designs were copied; Lens's versions are its own and MIT-licensed.
