@@ -325,3 +325,52 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
 }
 export function convertFileSrc(p: string) { return p; }
 export function isTauri() { return false; }
+
+// Dashboard widgets (docs/plans/MAGIC_WAVES.md, wave M2). An in-memory widget store and a mocked
+// fetch: nothing here touches the network. ?widgets=sample starts with one widget of each kind
+// (clearly invented data); without it the Widgets lane starts empty.
+{
+  type W = { id: string; galleryId: string; title: string; params: Record<string, string>; hosts: string[]; addedMs: number };
+  const store: { fetchOff: boolean; widgets: W[] } = { fetchOff: false, widgets: [] };
+  let n = 0;
+  const add = (galleryId: string, title: string, params: Record<string, string>, hosts: string[]) => {
+    store.widgets.push({ id: `w${++n}`, galleryId, title, params, hosts, addedMs: Date.now() });
+  };
+  if (params.get("widgets") === "sample") {
+    add("weather", "Weather", { place: "Sample City", lat: "33.45", lon: "-112.07", units: "c" }, ["api.open-meteo.com"]);
+    add("rss", "News feed", { url: "https://example.com/feed.xml" }, ["example.com"]);
+    add("crypto", "Crypto prices", { ids: "bitcoin,ethereum", currency: "usd" }, ["api.coingecko.com"]);
+    add("clocks", "World clocks", { zones: "UTC,Europe/London,Asia/Tokyo" }, []);
+    add("system", "This PC", {}, []);
+  }
+  const snap = () => {
+    const s = JSON.parse(JSON.stringify(store));
+    emitLocal("lens://widgets-changed", s);
+    return s;
+  };
+  const SAMPLE: Record<string, string> = {
+    "api.open-meteo.com": JSON.stringify({ current: { temperature_2m: 21.4, weather_code: 2, wind_speed_10m: 9.3 }, daily: { temperature_2m_max: [26.1], temperature_2m_min: [14.8] } }),
+    "example.com": `<?xml version="1.0"?><rss><channel><title>Sample Blog</title><item><title>Sample: Release notes for a tool you use</title><link>https://example.com/post/1</link></item><item><title>Sample: Matte desktops are back</title><link>https://example.com/post/2</link></item></channel></rss>`,
+    "api.coingecko.com": JSON.stringify({ bitcoin: { usd: 12345.67, usd_24h_change: 1.8 }, ethereum: { usd: 1234.5, usd_24h_change: -0.6 } }),
+    "api.github.com": JSON.stringify({ tag_name: "v0.0.0-sample", name: "Sample release", published_at: "2026-01-01T00:00:00Z", html_url: "https://github.com/orionopenwow/LensUI/releases" }),
+  };
+  handlers.widgets_state = () => JSON.parse(JSON.stringify(store));
+  handlers.widgets_add = (a) => (add(a.galleryId, a.title, a.params ?? {}, a.hosts ?? []), snap());
+  handlers.widgets_remove = (a) => ((store.widgets = store.widgets.filter((w) => w.id !== a.id)), snap());
+  handlers.widgets_move = (a) => {
+    const i = store.widgets.findIndex((w) => w.id === a.id);
+    const j = i + Math.sign(a.delta);
+    if (i >= 0 && j >= 0 && j < store.widgets.length) [store.widgets[i], store.widgets[j]] = [store.widgets[j], store.widgets[i]];
+    return snap();
+  };
+  handlers.widgets_set_params = (a) => (store.widgets.forEach((w) => w.id === a.id && (w.params = a.params)), snap());
+  handlers.widgets_revoke_host = (a) => (store.widgets.forEach((w) => w.id === a.id && (w.hosts = w.hosts.filter((h) => h !== a.host))), snap());
+  handlers.widgets_set_fetch_off = (a) => ((store.fetchOff = !!a.off), snap());
+  handlers.widgets_fetch = (a) => {
+    const w = store.widgets.find((x) => x.id === a.id);
+    const host = (() => { try { return new URL(a.url).hostname; } catch { return ""; } })();
+    if (store.fetchOff) return Promise.reject("Widget fetching is turned off.");
+    if (!w || !w.hosts.includes(host)) return Promise.reject(`${host || "That site"} isn't approved for this widget.`);
+    return { body: SAMPLE[host] ?? "", contentType: "text/plain", fetchedMs: Date.now(), fromCache: false };
+  };
+}
