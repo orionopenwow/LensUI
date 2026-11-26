@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Eraser, Settings2, X } from "lucide-react";
 import { api, EVENTS, on } from "./api";
+import { openCoreApp } from "../coreapps/registry";
 import { AppsPanel, DownloadsPanel, TimelinePanel } from "./Extras";
 import { Cleanup } from "./Cleanup";
 import { Done, type DoneInfo } from "./Done";
@@ -465,7 +466,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               api.apps().then(setApps).catch((e) => setAppsErr(String(e)));
             }}
             onReveal={(p) => api.reveal(p).catch(() => {})}
-            onUninstall={(a) => api.appUninstall(a.key).catch((e) => say(String(e), true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
+            onUninstall={(a) => openCoreApp("startup", "uninstall", a.name).catch((e) => say(`Couldn't open Startup & Uninstall: ${e}`, true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "timeline" && (

@@ -872,7 +872,6 @@ pub fn run() {
             commands::cleaner::cleaner_reveal,
             commands::cleaner::cleaner_open,
             commands::cleaner::cleaner_apps,
-            commands::cleaner::cleaner_app_uninstall,
             commands::cleaner::cleaner_downloads_review,
             commands::cleaner::cleaner_move,
             commands::cleaner::cleaner_history,

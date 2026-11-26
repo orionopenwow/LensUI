@@ -83,7 +83,7 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
   - locked system items are dimmed and can't be selected;
   - the Windows folder carries a hard-link note.
 - **Large-file tray:** drag a big file onto "Move to D:", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites (`film (2).mkv`).
-- **Per-app storage:** reads the Uninstall keys (`reg query`, read-only) and uses real icons (`extract_icon_for_path`). Each app shows app size plus caches & data. "Uninstall…" asks first, then opens the app's own uninstaller (quoted exe or `MsiExec /X{GUID}` only, no shell).
+- **Per-app storage:** reads the Uninstall keys (`reg query`, read-only) and uses real icons (`extract_icon_for_path`). Each app shows app size plus caches & data. "Uninstall…" hands the app over to **Startup & Uninstall** (opened on Installed apps, filtered to that app), which checks the uninstaller (`validate_uninstall`), asks, runs it and writes the one audit log (`coreapps-audit.jsonl`). The Cleaner never starts an uninstaller itself.
 - **Downloads review** ("What's safe to delete in Downloads?"):
   - every file is judged locally by type, age and last opened, with a plain reason;
   - suggestions are pre-picked, and you confirm through the approval card;

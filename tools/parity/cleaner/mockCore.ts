@@ -199,7 +199,7 @@ const handlers: Record<string, (a: any) => any> = {
     { key: "k5", name: "Discord", publisher: "Discord Inc.", size: 0.5 * GB, dataSize: 1.9 * GB, dataDirs: [`${U}\\AppData\\Roaming\\discord`], icon: null, canUninstall: true },
     { key: "k6", name: "Blender 4.2", publisher: "Blender Foundation", size: 1.6 * GB, dataSize: 0.3 * GB, dataDirs: [], icon: null, canUninstall: true },
   ],
-  cleaner_app_uninstall: () => null,
+  coreapp_open: () => null,
   cleaner_downloads_review: () => [
     { path: `${U}\\Downloads\\ubuntu-24.04-desktop-amd64.iso`, name: "ubuntu-24.04-desktop-amd64.iso", size: 6.1 * GB, kind: "disk", ageDays: 140, openedDays: 140, suggest: true, reason: "A setup file from 140 days ago. You've most likely installed it already." },
     { path: `${U}\\Downloads\\raw-footage-wedding.zip`, name: "raw-footage-wedding.zip", size: 11.8 * GB, kind: "archive", ageDays: 210, openedDays: 210, suggest: true, reason: "You already unzipped this; the folder next to it has the contents." },

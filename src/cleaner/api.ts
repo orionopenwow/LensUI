@@ -46,7 +46,6 @@ export const api = {
   reveal: (path: string) => invoke<void>("cleaner_reveal", { path }),
   open: (uri: string) => invoke<void>("cleaner_open", { uri }),
   apps: () => invoke<AppUsage[]>("cleaner_apps"),
-  appUninstall: (key: string) => invoke<void>("cleaner_app_uninstall", { key }),
   downloadsReview: () => invoke<Verdict[]>("cleaner_downloads_review"),
   move: (path: string, destDir: string) => invoke<string>("cleaner_move", { path, destDir }),
   history: (root: string) => invoke<HistoryView>("cleaner_history", { root }),

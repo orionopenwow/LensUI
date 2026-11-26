@@ -596,13 +596,9 @@ fn installed_apps_from_reg_query() {
     assert_eq!(apps[0].name, "Spotify");
     assert_eq!(apps[0].size, 0x4b000 * 1024);
     assert_eq!(apps::icon_path(&apps[0].display_icon).as_deref(), Some("C:\\Users\\you\\AppData\\Roaming\\Spotify\\Spotify.exe"));
-    let (exe, args) = apps::split_uninstall(&apps[0].uninstall).unwrap();
-    assert!(exe.ends_with("Spotify.exe"));
-    assert_eq!(args, vec!["/uninstall"]);
-    assert!(apps::split_uninstall("MsiExec.exe /X{1234-ABCD}").is_some());
-    assert!(apps::split_uninstall("MsiExec.exe /X{1234} & del C:\\").is_none());
-    assert!(apps::split_uninstall("cmd /c del C:\\").is_none());
-    assert!(apps::split_uninstall("C:\\x\\un.exe /S").is_some());
+    // Uninstalling is Startup & Uninstall's job (`coreapps::uninstall::validate_uninstall`): the
+    // Cleaner only says whether an app has an uninstaller to hand over.
+    assert!(!apps[0].uninstall.is_empty());
 }
 
 #[test]

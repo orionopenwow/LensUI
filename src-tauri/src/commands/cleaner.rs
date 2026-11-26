@@ -561,7 +561,9 @@ pub(crate) async fn cleaner_apps() -> Result<Vec<AppUsage>, String> {
                 let data_size = dirs.iter().map(|d| walk::size_of(d, &cancel).0).sum();
                 AppUsage {
                     icon: cleaner::apps::icon_path(&a.display_icon).and_then(|p| crate::win_windows::extract_icon_for_path(&p)),
-                    can_uninstall: cleaner::apps::split_uninstall(&a.uninstall).is_some(),
+                    // Uninstalling happens in Startup & Uninstall (one path, one audit log), which
+                    // checks the uninstaller itself and offers winget when it can't be run.
+                    can_uninstall: !a.uninstall.trim().is_empty(),
                     data_dirs: dirs.iter().map(|d| d.to_string_lossy().into_owned()).collect(),
                     key: a.key,
                     name: a.name,
@@ -576,16 +578,6 @@ pub(crate) async fn cleaner_apps() -> Result<Vec<AppUsage>, String> {
     })
     .await
     .map_err(|e| e.to_string())
-}
-
-/// Starts the app's own uninstaller (after you confirmed in Lens). Lens never removes app folders.
-#[tauri::command]
-pub(crate) fn cleaner_app_uninstall(app: AppHandle, key: String) -> Result<(), String> {
-    let a = cleaner::apps::installed().into_iter().find(|a| a.key == key).ok_or("That app isn't installed any more.")?;
-    let (exe, args) = cleaner::apps::split_uninstall(&a.uninstall).ok_or("This app's uninstaller can't be started safely from Lens; use Windows' Installed apps page.")?;
-    let _ = announce(&app, crate::presence::StepKind::Window, &format!("Opening {}'s uninstaller", a.name));
-    audit("uninstaller", &[format!("{} ({})", a.name, exe)]);
-    std::process::Command::new(exe).args(args).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

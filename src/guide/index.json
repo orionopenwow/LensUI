@@ -9224,7 +9224,7 @@
    "id": "doc.cleaner.5",
    "kind": "doc",
    "title": "Lens Cleaner: Standout features",
-   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" asks first, then opens the app's own uninstaller (quoted exe or MsiExec /X{GUID} only, no shell). - Downloads review (\"What's safe to delete in Downloads?\")",
+   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" hands the app over to Startup & Uninstall (opened on Installed apps, filtered to that app), which checks the uninstaller ( validate uninstall ), asks, runs ",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9561,7 +9561,7 @@
    "id": "doc.core-apps.2",
    "kind": "doc",
    "title": "Lens core apps: Safety",
-   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
+   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. This is the only place Lens starts an uninstaller: Lens Cleaner's per-app \"Uninstall…\" opens this window on that app ( coreapp open with find ). - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
    "path": [
     "Docs",
     "Lens core apps",
