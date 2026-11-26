@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { FlyoutClose } from "../ui/FlyoutClose";
 import { ClipboardPane } from "../components/ClipboardPane";
 import { PluginSlot } from "../components/PluginSlot";
 import { invoke } from "@tauri-apps/api/core";
-import { Cpu, HardDrive, Clock, StickyNote, X, Layers, FolderOpen, Terminal, SlidersHorizontal } from "lucide-react";
+import { Cpu, HardDrive, Clock, StickyNote, Layers, FolderOpen, Terminal, SlidersHorizontal } from "lucide-react";
 import { useLensState, useRunningWindows, useSurfaceGlide } from "../hooks/useLensState";
 import { WindowGroups } from "../dock/ai/WindowGroups";
 import { AskPanel } from "../ai/AskPanel";
@@ -75,7 +76,7 @@ export const WidgetDrawerSurface: React.FC = () => {
   return (
     <div style={{ width: "100%", height: "100%", padding: 8, display: "flex", flexDirection: "column" }}>
       <aside
-        className={`lens-glass lens-glide-right ${glidePhase}`}
+        className={`lens-glass lens-glide-right lens-flyout-host ${glidePhase}`}
         style={{
           flex: 1,
           borderRadius: "var(--lens-radius)",
@@ -95,18 +96,8 @@ export const WidgetDrawerSurface: React.FC = () => {
           }}
         >
           <span style={{ fontWeight: 600, letterSpacing: "0.01em" }}>Lens Widgets</span>
-          <button aria-label="Close widgets"
-            type="button"
-            onClick={() => invoke("hide_surface", { label: "widgets" })}
-            style={{
-              padding: 4,
-              borderRadius: 6,
-              color: "var(--lens-fg-secondary)",
-            }}
-          >
-            <X size={15} />
-          </button>
         </div>
+        <FlyoutClose onClose={() => invoke("hide_surface", { label: "widgets" }).catch(() => {})} />
 
         <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           {enabled.has("clock") && (

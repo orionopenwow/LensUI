@@ -10,21 +10,36 @@
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  gap: 12px;
+}
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-pill {
   padding: 0 8px;
   height: calc(var(--dock-full-icon-size, 36px) + 20px);
-  gap: 12px;
+}
+/* Left / right: a full-height column of islands (the bar's own height rule would squeeze the
+ * apps island into a 56 px strip and push its top icons off screen). */
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) .dock-pill {
+  width: calc(var(--dock-full-icon-size, 36px) + 20px);
+  padding: calc(var(--dock-topbar-offset, 0px) + 8px) 0 8px 0;
 }
 
 /* Each section is its own island. */
 .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
-  height: calc(var(--dock-full-icon-size, 36px) + 12px);
-  padding: 0 10px;
   border-radius: 999px;
   background: var(--lens-bg-elevated);
   border: 1px solid rgb(var(--lens-ink) / 0.06);
   box-shadow: 0 6px 18px rgb(0 0 0 / calc(0.32 * var(--lens-shade-k)));
   display: flex;
   align-items: center;
+}
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) :is(.dock-icons-row, .dock-sys, .lds-island) {
+  height: calc(var(--dock-full-icon-size, 36px) + 12px);
+  padding: 0 10px;
+}
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) :is(.dock-icons-row, .dock-sys, .lds-island) {
+  width: calc(var(--dock-full-icon-size, 36px) + 12px);
+  padding: 10px 0;
+  flex-direction: column;
 }
 :root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
   border-color: transparent;

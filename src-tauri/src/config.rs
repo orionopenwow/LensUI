@@ -40,6 +40,11 @@ pub struct ThemeConfig {
     /// "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack.
     #[serde(default = "default_shape_style")]
     pub shape_style: String,
+    /// Also write a custom Lens accent into Windows' own accent colour (title bars, Start, the
+    /// Windows taskbar). A system-wide change, so off unless the person turns it on; "Remove all
+    /// Lens changes" puts Windows' accent back.
+    #[serde(default)]
+    pub write_windows_accent: bool,
 }
 
 fn default_shape_style() -> String {
@@ -93,8 +98,8 @@ pub struct DockConfig {
     /// Pinned app ids followed by a user separator.
     #[serde(default)]
     pub separators_after: Vec<String>,
-    /// Live window thumbnails in the Dock hover card. Off by default.
-    #[serde(default)]
+    /// Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default.
+    #[serde(default = "default_true")]
     pub live_previews: bool,
     /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
     #[serde(default = "default_dock_style")]
@@ -418,6 +423,7 @@ impl Default for LensConfig {
                 contrast: "system".into(),
                 locale: "auto".into(),
                 shape_style: default_shape_style(),
+                write_windows_accent: false,
             },
             dock: DockConfig {
                 grounded_margin_bottom: 0,
@@ -465,7 +471,7 @@ impl Default for LensConfig {
                 position: "bottom".into(),
                 locked: false,
                 separators_after: vec![],
-                live_previews: false,
+                live_previews: true,
                 style: default_dock_style(),
                 alignment: default_dock_alignment(),
                 system_area: default_dock_system_area(),

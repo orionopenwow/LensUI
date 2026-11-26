@@ -239,7 +239,9 @@ const handlers: Record<string, (a: any) => any> = {
   list_theme_files_cmd: () => [],
   list_tray_icons_cmd: () => [],
   get_topbar_visible_cmd: () => true,
-  is_surface_visible_cmd: () => false,
+  // Tests set window.__lensVisible = { settings: true } to play the real window's state.
+  is_surface_visible_cmd: (a: any) => !!((W as any).__lensVisible ?? {})[a?.label],
+  hide_surface: (a: any) => { const v = ((W as any).__lensVisible ??= {}); v[a?.label] = false; return null; },
   get_dnd_cmd: () => false,
   list_desktop_items_cmd: () => [],
   get_desktop_icons_hidden_cmd: () => true,
@@ -312,8 +314,12 @@ if (params.get("dashdata")) {
 }
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
+/** Commands with their arguments, for checks that care which window a call names. */
+export const callLog: { cmd: string; args: any }[] = [];
+(W as any).__lensCallLog = callLog;
 export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   calls.push(cmd);
+  callLog.push({ cmd, args: args ?? {} });
   const h = handlers[cmd];
   return (h ? h(args ?? {}) : null) as T;
 }

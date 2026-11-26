@@ -109,6 +109,22 @@ jobs:
           VISUAL_EMIT_B64: "1"
         run: node tools/visual/run.mjs
 
+      - name: Dock layout, every style × edge × icon size (search open and closed)
+        if: always()
+        run: node tools/robust/dock-layout.mjs
+
+      - name: Dock search and docked Settings never stay open
+        if: always()
+        run: node tools/robust/dock-dismiss.mjs
+
+      - name: Dock auto-hide slides (no one-frame jumps)
+        if: always()
+        run: node tools/robust/dock-slide.mjs
+
+      - name: Dock pop-outs carry the shared close button
+        if: always()
+        run: node tools/robust/flyout-close.mjs
+
       - name: Accessibility (axe-core)
         if: always()
         run: node tools/a11y/run.mjs
@@ -118,6 +134,12 @@ jobs:
         # Every featured look on the Appearance page, Simple mode, and switches made by another
         # window; the nightly run goes through every pack (tools/robust/theme-switch.mjs).
         run: node tools/robust/theme-switch.mjs ${{ github.event_name == 'schedule' && '--full' || '' }}
+
+      - name: Dock flash (no bright line or band while search opens/closes or the style changes)
+        if: always()
+        # Frame by frame over a dark desktop, with a control line that must be caught
+        # (tools/robust/dock-flash.mjs).
+        run: node tools/robust/dock-flash.mjs
 
       # Hyper suite (tools/hyper/run.mjs, docs/TESTING.md): every Settings switch and choice, every
       # surface, and the cross-cutting rules, with a coverage report of every inventoried feature.
@@ -156,6 +178,7 @@ jobs:
             tools/hyper/out/
             tools/visual/out/report.json
             tools/visual/out/diff/
+            tools/robust/out-layout/
           if-no-files-found: warn
 
       - name: Upload new goldens

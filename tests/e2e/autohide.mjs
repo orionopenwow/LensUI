@@ -8,7 +8,7 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { join, resolve } from "node:path";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const root = resolve(import.meta.dirname, "../..");
 const outDir = join(root, "tests/e2e/out");
@@ -35,11 +35,14 @@ import { startLens, surfaces, page, invoke, setConfig, quit, sleep } from "./len
 // ---- state readers --------------------------------------------------------------------------
 const BAR = "Lens Top Bar";
 const DOCK = "Lens Dock";
-/** Top Bar: shown = window visible, takes clicks, page not sliding out. */
+/** Top Bar: shown = window visible and page not sliding out. A shown bar may ignore the mouse
+ *  (click-through: clicks on its empty parts go to the app behind), so "takes clicks" is not part
+ *  of "shown"; a hidden bar must never take clicks, which `hiddenTakesClicks` reports. */
 async function barState(s) {
   const w = await d(`win ${BAR}`);
   const pageHidden = await surfaces(s).topbar?.evaluate(() => !!document.querySelector(".topbar-wrapper.is-hidden")).catch(() => null);
-  return { shown: w.found && w.visible && !w.transparent && pageHidden === false, w, pageHidden };
+  const shown = w.found && w.visible && pageHidden === false;
+  return { shown, hiddenTakesClicks: !shown && w.found && w.visible && !w.transparent, w, pageHidden };
 }
 async function dockState(s) {
   const pageHidden = await surfaces(s).dock?.evaluate(() => {
@@ -54,7 +57,7 @@ async function expectWithin(label, read, want, ms) {
   let last;
   while (Date.now() - t0 <= ms) {
     last = await read();
-    if (last.shown === want) return Date.now() - t0;
+    if (last.shown === want && (want || !last.hiddenTakesClicks)) return Date.now() - t0;
     await sleep(50);
   }
   throw new Error(`${label}: expected ${want ? "shown" : "hidden"} within ${ms} ms, got ${JSON.stringify(last)}`);
@@ -64,7 +67,7 @@ async function expectStays(label, read, want, ms) {
   const t0 = Date.now();
   while (Date.now() - t0 <= ms) {
     const st = await read();
-    if (st.shown !== want) throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms`);
+    if (st.shown !== want || (!want && st.hiddenTakesClicks)) throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms`);
     await sleep(100);
   }
 }
@@ -283,7 +286,10 @@ try {
   await sleep(2000);
   // A fresh profile opens the first-run setup in Settings; a focused Settings window (rightly)
   // holds the Dock up, so finish it and close every flyout before measuring auto-hide.
-  await setConfig(s, (c) => { c.onboardingCompleted = true; });
+  // Both markers: with only onboardingCompleted, the setup reopens as "What's new" because the
+  // seen version doesn't match, and its Settings window then holds the Top Bar up mid-test.
+  const appVersion = JSON.parse(readFileSync(join(root, "src-tauri/tauri.conf.json"), "utf8")).version;
+  await setConfig(s, (c) => { c.onboardingCompleted = true; c.setupSeenVersion = appVersion; });
   for (const f of ["settings", ...FLYOUTS]) await invoke(surfaces(s).dock, "hide_surface", { label: f }).catch(() => {});
   await sleep(800);
   const original = await invoke(surfaces(s).dock, "get_config");
@@ -298,6 +304,10 @@ try {
       results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.message || e) });
       console.log(`FAIL ${sc.id}: ${sc.title}\n      ${String(e.message || e).replace(/\n/g, "\n      ")}`);
       await surfaces(s).topbar?.screenshot({ path: join(outDir, `autohide-${sc.id}-topbar.png`) }).catch(() => {});
+      const cfgNow = await invoke(surfaces(s).dock, "get_config").catch(() => null);
+      const openNow = [];
+      for (const f of ["settings", ...FLYOUTS]) if (await invoke(surfaces(s).dock, "is_surface_visible_cmd", { label: f }).catch(() => false)) openNow.push(f);
+      console.log(`      state: topBar.autoHide=${cfgNow?.topBar?.autoHide} setupSeen=${cfgNow?.setupSeenVersion} open=[${openNow.join(", ")}]`);
       const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|palette|surface/i.test(l)).slice(-14);
       if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     } finally {

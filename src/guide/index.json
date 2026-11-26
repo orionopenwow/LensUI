@@ -9980,124 +9980,6 @@
    "source": "docs/DITHER.md"
   },
   {
-   "id": "doc.dock-smoothness.0",
-   "kind": "doc",
-   "title": "Dock smoothness",
-   "text": "What keeps the Dock fast and steady. Two halves: the native window side (this section) and the page side (styles, motion, search bar), which has its own section.",
-   "path": [
-    "Docs",
-    "Dock smoothness"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Dock smoothness"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.2",
-   "kind": "doc",
-   "title": "Dock smoothness: Live previews (\"screens\")",
-   "text": "Symptom. Window previews could sit in the bottom-right corner of the screen and stay there, instead of appearing in the Dock's hover card and going away when the pointer left. Causes. - Previews are native DWM thumbnail windows (topmost, click-through) drawn over boxes the page measures. They were only removed when the page said \"hide\". A page that never said it (hover card closed through click-through glass, the Dock or Quick Settings hidden while the page kept running, a reload) left them on screen indefinitely. - Quick Settings' \"Open windows\" row re-requests previews every 4 s while its page is mounted. Its panel sits at the right of the screen, and a hidden panel's page still reports itself as visible, so previews kept reappearing there. - Tiles were converted to screen pixels with the asking window's origin at that moment. A window that was sliding, being resized or parked off scre",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "Live previews (\"screens\")"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Live previews (\"screens\")"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.3",
-   "kind": "doc",
-   "title": "Dock smoothness: Bright bar on the Dock while Settings moves",
-   "text": "Causes. - The Dock drew its \"fused\" top edge (flat, joined to Settings) whenever Settings was open , even after Settings had been dragged elsewhere, leaving a bare bright seam on top of the pill. - The Dock reports its width on every frame of a width animation. Each report resized and moved the Settings window, and every native resize of a see-through WebView window can show an unpainted strip for a frame next to the Dock. Now. - The watcher emits lens://settings-docked (true only while Settings' edge sits on the pill, for every Dock edge; settings is docked , unit-tested). The Dock's fused edge follows it. - Settings follows the Dock's width only after the width has stood still for 140 ms ( SETTINGS FOLLOW MS ): one resize per change instead of one per animation frame.",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "Bright bar on the Dock while Settings moves"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Bright bar on the Dock while Settings moves"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.4",
-   "kind": "doc",
-   "title": "Dock smoothness: Auto-hide that sticks (\"the top Dock doesn't re-hide\")",
-   "text": "The watcher (65 ms loop, real pointer position each pass) is the single owner of \"shown\". It only stays up while something is in use , and three blockers could stay \"in use\" forever: Blocker Before Now --- --- --- Dock has keyboard focus Counted forever. Clicking an icon whose app doesn't take the foreground left the Dock focused, which also kept any stale menu flag alive. Counts for 4 s after the pointer was last on the Dock ( DOCK FOCUS GRACE MS ). Search palette visible Kept the Dock up as long as the palette window existed. Only while focused, plus 1.5 s ( FLYOUT IDLE MS ). Quick Settings visible Kept the Top Bar up as long as the panel existed. Only while focused or under the pointer (panel or bar), plus 1.5 s. PR #52's guards (stale menu after 1.2 s, click outside closes menus, visibility re-sent every ~2 s) are unchanged.",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Auto-hide that sticks (\"the top Dock doesn't re-hide\")"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.5",
-   "kind": "doc",
-   "title": "Dock smoothness: Latency",
-   "text": "Measured on CI's Windows runner is not representative of a real desktop, so these are the paths and what each costs, not timings: - Hover → preview. The page waits 170 ms for the card's entrance, then one command; the native side creates one small window and one DWM thumbnail per tile on a dedicated thread (no COM, nothing on the UI thread). The watchdog adds one GetWindowRect , one IsWindowVisible and one GetCursorPos per 60 ms while previews are shown, and nothing otherwise. - Settings following the Dock. Was up to ~60 resizes per second during a Dock width animation; now one, 140 ms after the width settles. - Next steps. Reuse tile windows and thumbnail registrations between hovers instead of recreating them (saves a window create/destroy per tile per hover); move the 170 ms entrance wait to a measured \"card settled\" signal from the page.",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "Latency"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Latency"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.6",
-   "kind": "doc",
-   "title": "Dock smoothness: To check on a real PC",
-   "text": "1. Hover a Dock app with several windows: previews appear inside the card, follow the Dock as it slides, and are gone ~¼ s after the pointer leaves, including on a quick flick off the screen edge. 2. Open Quick Settings, then close it or click an app: no previews remain at the right of the screen. 3. Open Settings from the Dock and drag it away: the Dock's top edge rounds back immediately and nothing flashes on the Dock while dragging or while the Dock changes width. 4. Dock on the top edge with auto-hide: click a Dock icon, move away; the Dock hides within about half a second (4 s at most if the Dock kept focus). 5. Open Search or Quick Settings, click into an app: the bar and Dock hide again after ~1.5 s.",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "To check on a real PC"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "To check on a real PC"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
-   "id": "doc.dock-smoothness.7",
-   "kind": "doc",
-   "title": "Dock smoothness: Apps asking for attention",
-   "text": "Windows flashes a taskbar button orange when an app calls FlashWindowEx (a chat message, a dialog waiting behind other windows). The Lens Dock showed nothing. src-tauri/src/attention.rs registers the same shell hook Explorer uses ( RegisterShellHookWindow , HSHELL FLASH ) on its own thread and keeps one record per flashing window, grouped by executable the way the Dock groups windows. A request ends when the window is activated ( HSHELL WINDOWACTIVATED , HSHELL RUDEAPPACTIVATED ), comes to the front, or is destroyed; a 1 s sweep catches anything the hook missed. The window in front and Lens's own windows never count. For the Dock page: - Event lens://dock-attention , sent whole after every change: { version, apps: [{ exePath, processName, hwnds: number[], count, sinceMs }] } , oldest first. Match exePath case-insensitively against get running windows / pinned app paths. - Command get doc",
-   "path": [
-    "Docs",
-    "Dock smoothness",
-    "Apps asking for attention"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/DOCK_SMOOTHNESS.md",
-    "heading": "Apps asking for attention"
-   },
-   "source": "docs/DOCK_SMOOTHNESS.md"
-  },
-  {
    "id": "doc.dock-styles.0",
    "kind": "doc",
    "title": "Dock styles and Dock options",
@@ -10117,7 +9999,7 @@
    "id": "doc.dock-styles.1",
    "kind": "doc",
    "title": "Dock styles and Dock options: Settings (`DockConfig`)",
-   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (existing) m",
+   "text": "All are optional with serde defaults, so old config files load unchanged. Key (JSON) Values Default ------------------------- ------------------------------------------------ ------------- style floating, slim, taskbar, studio, minimal, split, islands floating alignment center, left (Taskbar only; Studio is always left) center systemArea auto, dock, topbar auto magnification off, subtle (×1.22), classic (×1.6) off magnificationRange 1–4 neighbouring icons each side 2 launchAnimation none, lift, bounce, jelly lift minimizeFeedback pulse an icon when a window is minimised/restored false iconSizes per-style icon size, e.g. {\"slim\": 28} {} showLabels app names (beside icons on bars = \"never combine\"; under icons elsewhere) false fileDropOpen drop files on a Dock app to open them with it false scrollCyclesWindows mouse wheel over an app cycles its windows false func.middleClickNewInstance (ex",
    "path": [
     "Docs",
     "Dock styles and Dock options",

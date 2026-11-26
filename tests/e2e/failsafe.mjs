@@ -32,6 +32,8 @@ mkdirSync(outDir, { recursive: true });
 const EXE = resolve(process.env.LENS_EXE || join(root, "src-tauri/target/debug/lens-ui.exe"));
 const PORT = Number(process.env.E2E_CDP_PORT || 9222);
 const ONLY = (process.env.FAILSAFE_ONLY || "").split(",").filter(Boolean);
+// Runs every selected scenario this many times (to measure a flaky one: FAILSAFE_REPEAT=10).
+const REPEAT = Math.max(1, Number(process.env.FAILSAFE_REPEAT || 1));
 const DATA = join(process.env.APPDATA || "", "LensUI");
 const CONFIG = join(DATA, "config.json");
 const FEATURES = join(DATA, "features.json");
@@ -94,6 +96,18 @@ function surfaces(s) {
     } catch {}
   }
   return map;
+}
+
+/** Polls `check` (sync or async) every 250 ms until it is truthy or `ms` passes. */
+async function waitFor(check, ms) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    try {
+      if (await check()) return true;
+    } catch {}
+    await sleep(250);
+  }
+  return false;
 }
 
 async function waitForSurface(s, name, ms = 40000) {
@@ -479,33 +493,48 @@ const SCENARIOS = [
       const s = await startLens({ LENS_SAFE_MODE_CHOICE: "normal", LENS_ALIVE_STALE_SECS: "12" });
       try {
         await waitForSurface(s, "dock");
-        await sleep(6000); // at least one heartbeat, and the renderer watchdog is registered
+        // Wait for the signal that the Dock's renderer is watched (app::renderer logs it), not a
+        // fixed time. Without it the heartbeat probe still has to bring the Dock back.
+        const watched = await waitFor(() => s.logs.join("").includes("Watching the dock page's renderer"), 20000);
+        if (!watched) console.log("      WARN webview-killed: the Dock's renderer was never reported as watched (B-31 trace)");
+        // Kill only once the start-up windows are built. WebView2 creates each window on the main
+        // thread; a renderer killed in the middle of such a build can keep the main thread busy for
+        // a long time, and then nothing can reload anything (B-31b, a separate case).
+        const built = await waitFor(() => s.logs.join("").includes("Start-up windows built."), 90000);
+        if (!built) console.log("      WARN webview-killed: start-up windows were still being built at the kill (B-31b)");
+        await sleep(1500); // one heartbeat
         await s.browser.close().catch(() => {});
         const killed = ps(
           "$n = 0; Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match '--type=renderer' -and $_.CommandLine -match 'lens-ui' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n"
         );
         expect(problems, Number(killed) > 0, "found no Lens WebView2 renderer to kill");
-        await sleep(2000);
+        const killedAt = Date.now();
+        await sleep(1000);
         expect(problems, lensProcessCount() > 0, "Lens went down with its WebView renderers");
-        // WebView2 reports the dead renderer (ProcessFailed) and the load guard reloads the Dock
-        // within about a second of noticing; the heartbeat (12 s here) is only the backstop. The
-        // page is polled every second until it is back. Playwright cannot follow targets through a
-        // renderer crash, so the page is asked directly over its DevTools socket (cdpEval).
+        // Deterministic: wait for Lens to say it reloaded the Dock (either path), then for the
+        // reloaded page to answer. Playwright cannot follow targets through a renderer crash, so
+        // the page is asked directly over its DevTools socket (cdpEval).
+        const reloadLine = /The dock page stopped answering \(([^)]*)\)/;
+        const said = await waitFor(() => reloadLine.test(s.logs.join("")), 45000);
         let revived = false;
-        const t0 = Date.now();
-        while (Date.now() - t0 < 90000 && !revived) {
-          await sleep(1000);
-          const alive = await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0");
-          if (alive !== true) continue;
+        if (said) {
+          revived = await waitFor(async () => (await cdpEval("dock", "!!window.__TAURI_INTERNALS__ && (document.getElementById('root')?.innerHTML.length || 0) > 0")) === true, 30000);
+        }
+        if (revived) {
+          const how = s.logs.join("").match(reloadLine)?.[1] ?? "?";
+          console.log(`      webview-killed: Dock back ${Date.now() - killedAt} ms after the kill (${how}); watched before the kill: ${watched}`);
+          for (const l of s.logs.join("").split(/\r?\n/).filter((x) => /load guard|No load guard/.test(x))) console.log(`        ${l.trim()}`);
           const hasDock = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('get_config').then((c) => !!c && !!c.dock)");
           expect(problems, hasDock === true, "the reloaded Dock page cannot reach the backend");
           const logged = await cdpEval("dock", "window.__TAURI_INTERNALS__.invoke('tester_log_get', { after: null, limit: 500 }).then((l) => l.some((x) => x.area === 'loadguard' && /stopped answering/.test(x.message)))");
           expect(problems, logged === true, "the session log does not say the Dock page was reloaded by the load guard");
-          revived = true;
-        }
-        if (!revived) {
-          const said = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer/i.test(l)).slice(-12);
-          problems.push(`the Dock page was not reloaded after its renderer was killed. Lens said:\n        ${said.join("\n        ") || "(nothing)"}`);
+        } else {
+          const lines = s.logs.join("").split(/\r?\n/).filter((l) => /\[Lens UI\]|failsafe|renderer|panick|thread/i.test(l) && !/Watching the (?!dock)/.test(l)).slice(-40);
+          let targets = "";
+          try {
+            targets = (await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json()).map((t) => `${t.type} ${t.url}`).join("\n        ");
+          } catch {}
+          problems.push(`the Dock page was not reloaded after its renderer was killed (Lens ${said ? "said it reloaded it, but the page never answered" : "never said it reloaded it"}; watched before the kill: ${watched}). Lens said:\n        ${lines.join("\n        ") || "(nothing)"}\n      DevTools targets:\n        ${targets || "(none)"}`);
         }
         expect(problems, lensProcessCount() > 0, "Lens exited while recovering");
       } finally {
@@ -585,7 +614,7 @@ if (hadData) cpSync(DATA, backup, { recursive: true });
 
 const results = [];
 try {
-  for (const sc of SCENARIOS) {
+  for (const sc of SCENARIOS.flatMap((x) => Array.from({ length: REPEAT }, () => x))) {
     if (ONLY.length && !ONLY.includes(sc.id)) continue;
     const problems = [];
     const t0 = Date.now();

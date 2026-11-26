@@ -150,7 +150,7 @@
 
 /* Light-scheme values for component colours that used to be hard-coded for dark (wave-2 polish). */
 :root[data-scheme="light"] {
-  --lens-badge-active: #047857;
+  --lens-badge-active: #065f46; /* 4.5:1 on the light search panel's green chip */
   --lens-badge-open: #1d4ed8;
   --lens-knob-a: #f4f4f5;
   --lens-knob-b: #ffffff;

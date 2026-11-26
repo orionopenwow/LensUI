@@ -1,0 +1,67 @@
+/* Shared close button for Dock pop-outs (src/ui/FlyoutClose.tsx). */
+.lens-flyout-host {
+  position: relative;
+}
+
+.lens-flyout-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg-secondary, var(--lens-fg));
+  cursor: pointer;
+  opacity: 0;
+  scale: 0.9;
+  transition:
+    opacity var(--lens-dur-fast) var(--lens-ease-out),
+    scale var(--lens-dur-fast) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    color var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+/* Shown while the panel is pointed at or holds focus; pinned ones always. */
+.lens-flyout-close.is-pinned,
+:hover > .lens-flyout-close,
+:focus-within > .lens-flyout-close,
+.lens-flyout-close:focus-visible {
+  opacity: 1;
+  scale: 1;
+}
+
+.lens-flyout-close:hover {
+  background: rgb(var(--lens-ink) / 0.14);
+  color: var(--lens-fg);
+}
+
+.lens-flyout-close:focus-visible {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent));
+  outline-offset: 1px;
+}
+
+/* No hover on touch screens: always visible. */
+@media (hover: none) {
+  .lens-flyout-close {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-flyout-close {
+    transition: none;
+  }
+}
+
+/* In a header row (Settings): part of the flow, the same size and look. */
+.lens-flyout-close.is-inline {
+  position: static;
+  flex: none;
+}

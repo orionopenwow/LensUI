@@ -327,6 +327,26 @@ pub(crate) fn position_settings_docked_with_height(
         );
         let (target_w, target_h) = (r.w, r.h);
         let (x, y) = (r.x, r.y);
+        // Where the pill really starts: the Dock reports its rect (CSS px in its window), which
+        // is right for every style; the icon-size estimate only fits Floating and left a gap or
+        // an overlap (the seam) on the others. Joined styles sit flush on it, 1 physical px
+        // tucked under the Dock so no rounding can open a hairline gap. The Taskbar style opens
+        // like the Start menu and is never joined.
+        // (With magnification the report includes the icons' grow headroom above the pill.)
+        let joined = cfg.dock.style != "taskbar";
+        let measured_top = (joined && (cfg.dock.magnification == "off" || cfg.dock.magnification.is_empty()))
+            .then(|| app.get_webview_window("dock"))
+            .flatten()
+            .and_then(|dock| {
+                let origin = dock.inner_position().ok()?;
+                let inner = dock.inner_size().ok()?;
+                let (_, py, _, ph) = win_previews::pill_rect_css();
+                settings_join_top(origin.y, inner.height, scale, py, ph)
+            });
+        let y = match measured_top {
+            Some(pill_top) => (pill_top - target_h as i32 + 1).max(geom_mon.top),
+            None => y,
+        };
         let (x, y) = crate::app::integration::side_dock_flyout(
             cfg, scale, bar_h, bottom_edge, target_w, target_h,
             win_monitors::FlyoutAlign::Center,
@@ -337,6 +357,22 @@ pub(crate) fn position_settings_docked_with_height(
             let _ = app.emit("lens://settings-open", true);
         }
     }
+}
+
+/// Top of the Dock pill in physical screen px, from the rect the Dock reports (CSS px in its own
+/// window). Rounded the same way the compositor snaps the pill's top edge (floor of the scaled
+/// CSS position). None when the report is missing or the pill is outside its window (sliding
+/// off screen), so the caller falls back to its estimate.
+pub(crate) fn settings_join_top(win_y: i32, win_h_phys: u32, scale: f64, pill_y_css: i32, pill_h_css: i32) -> Option<i32> {
+    if pill_h_css <= 0 || scale <= 0.0 || pill_y_css < 0 {
+        return None;
+    }
+    let top = (pill_y_css as f64 * scale).floor() as i64;
+    let bottom = ((pill_y_css + pill_h_css) as f64 * scale).ceil() as i64;
+    if bottom > win_h_phys as i64 + 1 {
+        return None;
+    }
+    Some(win_y + top as i32)
 }
 
 /// Settings keeps one height while it is open (docs/SMOOTHNESS.md, G-01): resizing the native
@@ -491,6 +527,9 @@ pub(crate) fn spawn_watcher(
         let mut menu_idle_since: Option<Instant> = None;
         let mut settings_unfocused_since: Option<Instant> = None;
         let mut search_idle_since: Option<Instant> = None;
+        // Whether the Top Bar currently lets clicks through (None until first decided).
+        let mut topbar_through: Option<bool> = None;
+        let mut topbar_halo_sent: Option<(i32, i32, bool)> = None;
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -511,6 +550,8 @@ pub(crate) fn spawn_watcher(
                 // the next pass sees a change and re-applies the real state.
                 let was = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
                 bg_topbar_visible.store(!was, std::sync::atomic::Ordering::Relaxed);
+                topbar_through = None;
+                topbar_halo_sent = None;
             }
             // Sampled once per pass: the "pressed since last check" bit is consumed by the read.
             let clicked = mouse_button_down();
@@ -779,8 +820,52 @@ pub(crate) fn spawn_watcher(
                             // About every 2 s, restate the current state to the bar only, so a page
                             // that missed an event (it reloaded, an emit was dropped) cannot stay
                             // drawn while Lens has it hidden, or the reverse.
-                            let _ = topbar_win.set_ignore_cursor_events(!topbar_visible);
+                            if !topbar_visible {
+                                let _ = topbar_win.set_ignore_cursor_events(true);
+                            }
+                            topbar_through = None; // re-applied just below
                             let _ = watcher_handle.emit_to("topbar", "lens://topbar-visible", topbar_visible);
+                        }
+
+                        // Click-through: while the bar is shown, only its controls take clicks; a
+                        // click anywhere else on it goes to the app behind (tab strips, title bars).
+                        // The page shows a soft see-through halo around the cursor while it does.
+                        if topbar_visible {
+                            let local = match (topbar_win.outer_position(), cursor) {
+                                (Ok(p), Some((cx, cy))) => Some((
+                                    (cx - p.x) as f64 / scale,
+                                    (cy - p.y) as f64 / scale,
+                                )),
+                                _ => None,
+                            };
+                            let over_bar = cursor_inside_bar;
+                            let through = match local {
+                                Some((lx, ly)) if over_bar => {
+                                    crate::app::topbar_hit::is_through(&crate::app::topbar_hit::rects(), lx, ly)
+                                }
+                                // Away from the bar: let clicks through, so a click that lands the
+                                // moment the pointer arrives still reaches the app behind.
+                                _ => !crate::app::topbar_hit::rects().is_empty(),
+                            };
+                            if topbar_through != Some(through) {
+                                topbar_through = Some(through);
+                                let _ = topbar_win.set_ignore_cursor_events(through);
+                            }
+                            let halo = match local {
+                                Some((lx, ly)) if over_bar && through => (lx.round() as i32, ly.round() as i32, true),
+                                _ => (0, 0, false),
+                            };
+                            if topbar_halo_sent != Some(halo) {
+                                topbar_halo_sent = Some(halo);
+                                let _ = watcher_handle.emit_to(
+                                    "topbar",
+                                    "lens://topbar-halo",
+                                    serde_json::json!({ "x": halo.0, "y": halo.1, "on": halo.2 }),
+                                );
+                            }
+                        } else {
+                            topbar_through = None;
+                            topbar_halo_sent = None;
                             }
                         }
                     }
@@ -961,7 +1046,14 @@ pub(crate) fn spawn_watcher(
                                 .unwrap_or(false),
                             palette_visible: palette_in_use,
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && clicked,
+                        foreground_other_app: foreground_is_other_app(),
                         }, &mut menu_idle_since, &mut settings_unfocused_since);
+                    if menu_open && (tick % 8 == 0 || guard.clear_stale_menu) {
+                        eprintln!(
+                            "[Lens UI] [watcher] dock menu open: fg other app={} dock fg={} over pill={} over panel={} clicked={} clear={}",
+                            foreground_is_other_app(), dock_focused, cursor_over_pill, cursor_over_dock_window, clicked, guard.clear_stale_menu
+                        );
+                    }
                         if guard.clear_stale_menu {
                             *bg_dock_menu_open.lock().unwrap_or_else(|e| e.into_inner()) = false;
                             menu_open = false;
@@ -1289,6 +1381,10 @@ pub(crate) struct DockGuardInput {
     pub palette_visible: bool,
     /// A mouse button is down somewhere outside the Dock window (a click elsewhere).
     pub click_outside: bool,
+    /// Windows' foreground window belongs to another process (another app, the desktop or the
+    /// taskbar took focus). WebView2 doesn't always tell the page (no blur, `hasFocus()` stays
+    /// true), so this is the reliable signal that the person moved on.
+    pub foreground_other_app: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1302,6 +1398,27 @@ pub(crate) struct DockGuard {
 /// Decides whether open flyouts should keep the Dock up. A menu flag only counts while the Dock
 /// window has focus or the pointer is over it; once neither has been true for STALE_MENU_MS it is
 /// treated as stale. A visible Control Center only counts while focused (plus a short grace).
+/// True when Windows' foreground window belongs to a process other than Lens.
+#[cfg(not(windows))]
+pub(crate) fn foreground_is_other_app() -> bool {
+    false
+}
+
+/// True when Windows' foreground window belongs to a process other than Lens.
+#[cfg(windows)]
+pub(crate) fn foreground_is_other_app() -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return false;
+        }
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        pid != 0 && pid != std::process::id()
+    }
+}
+
 pub(crate) fn dock_guard(
     i: DockGuardInput,
     menu_idle_since: &mut Option<std::time::Instant>,
@@ -1318,8 +1435,12 @@ pub(crate) fn dock_guard_at(
 ) -> DockGuard {
     let menu_in_use = i.dock_focused || i.cursor_over_pill || i.cursor_over_dock_window;
     let mut clear_stale_menu = false;
-    let menu_blocks = if i.menu_open && i.click_outside {
-        // Clicking anywhere outside the Dock closes its menus at once, focused or not.
+    let menu_blocks = if i.menu_open
+        && (i.click_outside || (i.foreground_other_app && !i.cursor_over_pill))
+    {
+        // Clicking anywhere outside the Dock, or another app taking the foreground (like the
+        // Start menu, wherever the pointer is; only a press on the pill itself, which is how
+        // menus open, is spared), closes its menus at once.
         *menu_idle_since = None;
         clear_stale_menu = true;
         false
@@ -1360,6 +1481,23 @@ pub(crate) fn dock_guard_at(
 mod hide_robustness_tests {
     use super::*;
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn another_app_taking_focus_closes_dock_menus() {
+        let mut since = None;
+        let mut s_since = None;
+        let away = DockGuardInput { menu_open: true, dock_focused: true, foreground_other_app: true, ..Default::default() };
+        let g = dock_guard_at(away, &mut since, &mut s_since, Instant::now());
+        assert!(g.clear_stale_menu && !g.blocks_hide);
+        // Another app in front while the pointer rests over the open panel: still closes.
+        let over_panel = DockGuardInput { menu_open: true, foreground_other_app: true, cursor_over_dock_window: true, ..Default::default() };
+        let g = dock_guard_at(over_panel, &mut since, &mut s_since, Instant::now());
+        assert!(g.clear_stale_menu);
+        // Pointer on the pill (the click that opens a menu, before it takes focus): keep it open.
+        let on_dock = DockGuardInput { menu_open: true, foreground_other_app: true, cursor_over_pill: true, ..Default::default() };
+        let g = dock_guard_at(on_dock, &mut since, &mut s_since, Instant::now());
+        assert!(!g.clear_stale_menu && g.blocks_hide);
+    }
 
     #[test]
     fn idle_flyouts_stop_holding_bars_up() {
@@ -1548,5 +1686,29 @@ mod search_guard_tests {
         assert!(search_should_close(idle, &mut s, t0 + Duration::from_millis(1300)));
         let mut s2 = None;
         assert!(search_should_close(SearchGuardInput { bar_focused: true, click_outside: true, ..Default::default() }, &mut s2, t0));
+    }
+}
+
+#[cfg(test)]
+mod settings_join_tests {
+    use super::settings_join_top;
+
+    #[test]
+    fn join_lands_on_the_pill_top_at_common_scales() {
+        // Dock window at y=1020 (physical), 60 CSS px tall pill at y=0 in a 60 px window.
+        assert_eq!(settings_join_top(1020, 60, 1.0, 0, 60), Some(1020));
+        // 125 %: pill at CSS y=13 → 16.25 px → snaps to 16.
+        assert_eq!(settings_join_top(900, 100, 1.25, 13, 60), Some(916));
+        // 150 % and 175 %: fractional tops floor, never leaving a gap above the pill.
+        assert_eq!(settings_join_top(0, 200, 1.5, 21, 56), Some(31));
+        assert_eq!(settings_join_top(0, 200, 1.75, 21, 56), Some(36));
+    }
+
+    #[test]
+    fn falls_back_when_the_report_is_unusable() {
+        assert_eq!(settings_join_top(0, 100, 1.0, 0, 0), None); // nothing reported yet
+        assert_eq!(settings_join_top(0, 60, 1.0, 50, 60), None); // sliding off its window
+        assert_eq!(settings_join_top(0, 60, 0.0, 0, 60), None);
+        assert_eq!(settings_join_top(0, 60, 1.0, -4, 60), None);
     }
 }

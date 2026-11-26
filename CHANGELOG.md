@@ -7,6 +7,12 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Changed
+- **Lens no longer changes Windows' accent colour on its own.** Picking a Lens accent used to
+  write it into Windows' accent (title bars, Start, the taskbar) as well. That's now a separate
+  "Also use this accent in Windows" option under Appearance, off by default; turning it off puts
+  Windows' own accent back.
+
 ### Added
 - **Magic Dashboard (M1, off by default):** with Magic Dashboard on, "dashboard" in Command or the
   Top Bar button opens a slim panel with Inbox, Feeds, Today, Shelf and Now playing lanes filled
