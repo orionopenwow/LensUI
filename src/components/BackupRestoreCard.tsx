@@ -47,7 +47,7 @@ export const BackupRestoreCard: React.FC = () => {
     if (!confirming || manifest.length > 0) return;
     let live = true;
     invoke<ChangeInfo[]>("changes_manifest_cmd")
-      .then((m) => live && setManifest(m))
+      .then((m) => live && Array.isArray(m) && setManifest(m))
       .catch(() => undefined);
     return () => {
       live = false;

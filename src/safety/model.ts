@@ -56,8 +56,8 @@ export function safeModeLine(report: FailsafeReport | null): SafeModeLine {
   if (status.safeMode) {
     return { on: true, text: `Optional features are off until you restart Lens; your settings are unchanged.${status.safeReason ? ` ${status.safeReason}` : ""}` };
   }
-  const paused = status.tripped.length;
-  const held = report.switches.filter((s) => s.off).length;
+  const paused = (status.tripped ?? []).length;
+  const held = (report.switches ?? []).filter((s) => s.off).length;
   const parts = [paused > 0 ? `${paused} paused after repeated failures` : "", held > 0 ? `${held} held off by features.json` : ""].filter(Boolean);
   return {
     on: false,

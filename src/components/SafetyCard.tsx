@@ -21,14 +21,14 @@ export const SafetyCard: React.FC<{ demo?: { manifest: ChangeInfo[]; report: Fai
     if (demo) return;
     let live = true;
     invoke<ChangeInfo[]>("changes_manifest_cmd")
-      .then((m) => live && setManifest(m))
+      .then((m) => live && Array.isArray(m) && setManifest(m))
       .catch(() => undefined);
     invoke<SafetyFacts>("safety_facts")
-      .then((f) => live && setFacts(f))
+      .then((f) => live && Array.isArray(f?.protectedKeys) && setFacts(f))
       .catch(() => undefined);
     const readFailsafe = () =>
       invoke<FailsafeReport>("failsafe_status")
-        .then((r) => live && setReport(r))
+        .then((r) => live && !!r?.status && setReport(r))
         .catch(() => undefined);
     void readFailsafe();
     const un = listen("lens://failsafe-notice", () => void readFailsafe());

@@ -32,10 +32,10 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
   const refresh = useCallback(() => {
     invoke<RunningWindow[]>("get_running_windows")
-      .then(setRunning)
+      .then((w) => Array.isArray(w) && setRunning(w))
       .catch(() => undefined);
     invoke<WindowRule[]>("get_window_rules_cmd")
-      .then(setRules)
+      .then((r) => Array.isArray(r) && setRules(r))
       .catch(() => undefined);
   }, []);
 
@@ -44,14 +44,14 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
   }, [refresh]);
 
   // Ask the backend which of these apps are on its built-in protected lists.
-  const excluded = wc.excludedProcesses;
+  const excluded = useMemo(() => wc.excludedProcesses ?? [], [wc.excludedProcesses]);
   useEffect(() => {
     const queries = protectionQueries(running, excluded);
     if (queries.length === 0) return;
     let live = true;
     invoke<boolean[]>("protected_processes_cmd", { processes: queries.map((q) => q.query) })
       .then((flags) => {
-        if (live) setProtectedKeys(new Set(queries.filter((_, i) => flags[i]).map((q) => q.key)));
+        if (live && Array.isArray(flags)) setProtectedKeys(new Set(queries.filter((_, i) => flags[i]).map((q) => q.key)));
       })
       .catch(() => undefined);
     return () => {

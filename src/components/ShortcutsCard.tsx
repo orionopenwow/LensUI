@@ -19,7 +19,7 @@ export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
   useEffect(() => {
     let live = true;
     snipStatus()
-      .then((st) => live && setSnip(st.settings.hotkey))
+      .then((st) => live && setSnip(st?.settings?.hotkey))
       .catch(() => undefined);
     return () => {
       live = false;
