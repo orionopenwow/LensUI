@@ -136,8 +136,8 @@ export const PAGES: PageDef[] = [
     description: "How Lens works with Windows: startup, hotkeys, hot corners, Alt+drag and window styling.",
     icon: "monitor",
     color: "#38BDF8",
-    controls: ["Start with Windows", "Hot corners", "Alt+drag"],
-    keywords: ["hotkeys", "shortcuts", "win key", "alt tab", "hot corners", "alt drag", "summon", "window styling", "focus dim", "borders", "pin on top", "startup", "virtual desktop", "shell mode", "monitor"],
+    controls: ["Keyboard shortcuts", "Start with Windows", "Hot corners", "Alt+drag"],
+    keywords: ["hotkeys", "shortcuts", "keyboard shortcuts", "cheat sheet", "reset shortcuts", "win key", "alt tab", "hot corners", "alt drag", "summon", "window styling", "focus dim", "borders", "pin on top", "startup", "virtual desktop", "shell mode", "monitor"],
     sections: [
       { id: "desktops", label: "Virtual desktops", keywords: ["next desktop", "new desktop"] },
       { id: "integration", label: "Windows integration", keywords: ["startup", "fullscreen", "tray", "clipboard"] },

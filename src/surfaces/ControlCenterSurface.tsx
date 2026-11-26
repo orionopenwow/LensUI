@@ -10,6 +10,7 @@ import { WindowRulesCard } from "../components/WindowRulesCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
 import { TilingCard } from "../components/TilingCard";
+import { ShortcutsCard } from "../components/ShortcutsCard";
 import { WorkspacesCard } from "../components/WorkspacesCard";
 import { DesktopGroupsCard } from "../components/DesktopGroupsCard";
 import { BackupRestoreCard } from "../components/BackupRestoreCard";
@@ -1111,7 +1112,7 @@ export const ControlCenterSurface: React.FC = () => {
               <div id="sec-widgets" className="sh-anchor">
                 <div className="cc-section-title">Widget Access</div>
                 <div className="cc-section-sub">
-                  Toggle modular widgets in your Lens Widget Drawer (Alt+W).
+                  Toggle modular widgets in your Lens Widget Drawer ({config.func.widgetsHotkey || "Ctrl+Alt+W"}).
                 </div>
               </div>
 
@@ -1202,6 +1203,8 @@ export const ControlCenterSurface: React.FC = () => {
                   Startup, hotkeys and how Lens works alongside Windows. Dock and taskbar options are in Dock &amp; Bar.
                 </div>
               </div>
+
+              <ShortcutsCard config={config} onUpdateConfig={updateConfig} />
 
               <div className="cc-card">
                 <div className="cc-row">
@@ -1334,7 +1337,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Global Shortcuts</div>
-                    <div className="cc-desc">Command Palette: Alt+Space · Widget Drawer: Alt+W</div>
+                    <div className="cc-desc">Command Palette: {config.func.paletteHotkey || "Alt+Space"} · Widget Drawer: {config.func.widgetsHotkey || "Ctrl+Alt+W"}</div>
                   </div>
                   <span className="cc-chip active">Active</span>
                 </div>
