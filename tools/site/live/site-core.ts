@@ -49,7 +49,7 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
   if (cmd === "scan_installed_apps_cmd") return INSTALLED as T;
   // The dock's own Monitor and Settings buttons, Now Playing and the rest ask the backend for a surface:
   // on the site the page's desk opens the real one.
-  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd" || cmd === "open_dock_popout_tab_cmd" || cmd === "toggle_settings_docked" || cmd === "open_surface" || cmd === "toggle_surface") { toPage(cmd, args); return null as T; }
+  if (cmd === "launch_app_cmd" || cmd === "focus_window_cmd" || cmd === "window_action_cmd" || cmd === "open_dock_popout_tab_cmd" || cmd === "toggle_settings_docked" || cmd === "open_surface" || cmd === "toggle_surface" || cmd === "hide_surface") { toPage(cmd, args); return null as T; }
   if (cmd === "get_launcher_home_cmd") {
     return {
       recentFiles: [
