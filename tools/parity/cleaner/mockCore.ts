@@ -160,12 +160,13 @@ const handlers: Record<string, (a: any) => any> = {
     if (cats.includes("windows-update")) steps.push({ category: "windows-update", kind: "elevated", target: "component-cleanup", label: "Windows Update leftovers (Windows asks for permission)", size: 0 });
     const total = REPORT.categories.filter((c) => cats.includes(c.id) && c.method !== "openSettings").reduce((s, c) => s + c.size, 0) + picks.reduce((s: number, p: any) => s + p.size, 0);
     const count = REPORT.categories.filter((c) => cats.includes(c.id) && c.method === "deleteFiles").reduce((s, c) => s + c.count, 0) + picks.length;
-    return { id: "plan-1", entries: [...entries, ...picks], entryCount: count, steps, total, confirmToken: null, refused: [] };
+    return { id: "plan-1", entries: [...entries, ...picks], entryCount: count, steps, total, permanent: false, refused: [] };
   },
   cleaner_preview_paths: (a) => {
     const entries = (a?.paths ?? []).map((p: string) => ({ category: "user", path: p, size: BIG.find((b) => b.path === p)?.size ?? 1 * GB, action: a?.permanent ? "delete" : "recycle" }));
-    return { id: "plan-2", entries, entryCount: entries.length, steps: [], total: entries.reduce((s: number, e: any) => s + e.size, 0), confirmToken: a?.permanent ? "7f3a9c" : null, refused: [] };
+    return { id: "plan-2", entries, entryCount: entries.length, steps: [], total: entries.reduce((s: number, e: any) => s + e.size, 0), permanent: !!a?.permanent, refused: [] };
   },
+  cleaner_confirm_code: () => ({ code: "4827", expiresInMs: 120000, tries: 3 }),
   cleaner_run: async () => {
     if (live) await sleep(1400);
     freed = true;
@@ -187,6 +188,7 @@ const handlers: Record<string, (a: any) => any> = {
     const depth = a?.depth ?? 1;
     return { node: strip(n, 1), crumbs: crumbs(n.id).map((c: any) => strip(c, 1)), children: (n.children ?? []).map((c: any) => strip(c, depth)) };
   },
+  cleaner_space_find: () => 0,
   cleaner_biggest: (a) => BIG.filter((b) => !a?.kind || a.kind === "all" || TYPE[b.name.split(".").pop()!.toLowerCase()] === a.kind),
   cleaner_reveal: () => null,
   cleaner_open: () => null,
@@ -198,7 +200,7 @@ const handlers: Record<string, (a: any) => any> = {
     { key: "k5", name: "Discord", publisher: "Discord Inc.", size: 0.5 * GB, dataSize: 1.9 * GB, dataDirs: [`${U}\\AppData\\Roaming\\discord`], icon: null, canUninstall: true },
     { key: "k6", name: "Blender 4.2", publisher: "Blender Foundation", size: 1.6 * GB, dataSize: 0.3 * GB, dataDirs: [], icon: null, canUninstall: true },
   ],
-  cleaner_app_uninstall: () => null,
+  coreapp_open: () => null,
   cleaner_downloads_review: () => [
     { path: `${U}\\Downloads\\ubuntu-24.04-desktop-amd64.iso`, name: "ubuntu-24.04-desktop-amd64.iso", size: 6.1 * GB, kind: "disk", ageDays: 140, openedDays: 140, suggest: true, reason: "A setup file from 140 days ago. You've most likely installed it already." },
     { path: `${U}\\Downloads\\raw-footage-wedding.zip`, name: "raw-footage-wedding.zip", size: 11.8 * GB, kind: "archive", ageDays: 210, openedDays: 210, suggest: true, reason: "You already unzipped this; the folder next to it has the contents." },
@@ -220,6 +222,7 @@ const handlers: Record<string, (a: any) => any> = {
       { path: `${U}\\Downloads`, before: 51.1 * GB, after: 52.3 * GB, delta: 1.2 * GB },
     ],
     sudden: 9.4 * GB,
+    jumps: [{ day: DAYS[25].day, delta: DAYS[25].used - DAYS[24].used, folder: `${U}\\Videos`, folderDelta: 7.3 * GB }],
   }),
   cleaner_settings_get: () => ({ weekly: false, lowSpaceAlert: true, lowSpacePct: 10, lowSpaceGb: 10, history: true, explorerVerb: false, lastWeeklyMs: 0, lastAlertDay: "" }),
   cleaner_settings_set: (a) => a?.next,

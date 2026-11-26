@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useLensUpdate } from "../update/useLensUpdate";
-import { notesLines } from "../update/model";
+import { notesLines, updateNotice } from "../update/model";
+import { openExternal } from "../ai/open";
 import "../update/update.css";
 
 interface UpdateSettings {
@@ -61,6 +62,7 @@ export const UpdatesCard: React.FC = () => {
   };
 
   const state = status.state;
+  const notice = updateNotice(status);
   const shown = error ?? (status.message || (settings ? MODES.find((m) => m.id === settings.mode)?.desc : "Updates are unavailable in this build."));
   const notes = state === "available" || state === "ready" || state === "downloading" ? notesLines(status.notes) : [];
 
@@ -71,6 +73,18 @@ export const UpdatesCard: React.FC = () => {
         From GitHub Releases, checked against Lens' signing key before anything installs. Nothing installs until you choose Restart to
         update. To roll back, run the previous installer from the Releases page.
       </div>
+
+      {notice && (
+        <div className="lu-notice" role="status" data-update-notice>
+          <div className="lu-notice-title">Updates aren't available in this build</div>
+          <div className="cc-desc">{notice.text}</div>
+          <div className="lu-actions">
+            <button type="button" className="cc-btn-ghost" onClick={() => openExternal(notice.releasesUrl)}>
+              Open the Releases page
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="cc-chip-grid" role="radiogroup" aria-label="Update mode">
         {MODES.map((m) => (
@@ -90,10 +104,10 @@ export const UpdatesCard: React.FC = () => {
 
       <div className="cc-row">
         <div className="cc-desc lu-state" role="status">
-          {shown}
+          {notice ? "Your choice above is kept for when signed releases start." : shown}
         </div>
         <div className="lu-actions">
-          {state !== "ready" && state !== "installing" && (
+          {!notice && state !== "ready" && state !== "installing" && (
             <button type="button" className="cc-btn-ghost" disabled={busy || state === "downloading"} onClick={() => void run(check)}>
               {busy && state !== "downloading" ? "Checking…" : "Check now"}
             </button>

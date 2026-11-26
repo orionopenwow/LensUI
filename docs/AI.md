@@ -15,7 +15,7 @@ Code: `src-tauri/src/ai/` (core), `src-tauri/src/commands/ai.rs` (commands), `sr
 
 ## Contract (fixed; other packages build against it)
 
-Payload fields are snake_case, exactly as written here. Command **arguments** follow Tauri's camelCase conversion, so `ai_confirm_tool(call_id, approve)` is invoked as `{ callId, approve }`. `src/ai/client.ts` wraps every command, so UI code never spells this out.
+Payload fields are snake_case, exactly as written here. Command **arguments** follow Tauri's camelCase conversion, so `ai_confirm_tool(call_id, approve, token)` is invoked as `{ callId, approve, token }`. `src/ai/client.ts` wraps every command, so UI code never spells this out.
 
 ### Commands
 
@@ -27,7 +27,7 @@ Payload fields are snake_case, exactly as written here. Command **arguments** fo
 | `ai_clear_secret` | `{ provider }` | `void` |
 | `ai_ask` | `{ req: AiRequest }` | request id (`string`). Output arrives as events |
 | `ai_cancel` | `{ id }` | `boolean` (false if the id is unknown or already finished) |
-| `ai_confirm_tool` | `{ callId, approve }` | `void`; errors if nothing is waiting under that id |
+| `ai_confirm_tool` | `{ callId, approve, token }` | `void`; errors if nothing is waiting under that id. `token` is the proposal's `approval_token`; an approval without that step's own token does not run the step (docs/AGENT_SAFETY.md "Step tokens"). Declining needs no token |
 | `ai_intent` | `{ text }` | `Intent \| null`. Instant and offline (script engine only) |
 | `ai_run_intent` | `{ intent: Intent }` | request id. Runs a parsed intent through the **same tool registry and risk gating**, with no model and no network: `low` tools run at once, `confirm` tools emit `tool-proposal` and wait for `ai_confirm_tool`, and results arrive as `tool-result`. The tool's message is then sent as a `delta`, followed by `done` (provider `"script"`). The intent is re-validated in the backend: `_tool` must name a registry tool, unknown arguments are dropped and arguments are schema-checked. Maths and conversions just echo their summary. It works while AI is off (like `ai_intent`), but not when `allow_tools` is false. Added for the surfaces package (PR #12) |
 | `ai_usage_log` *(extra)* | `{ limit?: number }` | the most recent usage-log lines (metadata only) |
@@ -55,14 +55,15 @@ Every other failure arrives as `done.error`.
 |---|---|
 | `lens://ai/delta` | `{ id, text }`: streamed text, in order |
 | `lens://ai/done` | `{ id, provider, model, usage?: { input_tokens, output_tokens }, error? }`: always the last event of a request. `error: "Cancelled."` means it was cancelled |
-| `lens://ai/tool-proposal` | `{ id, call_id, tool, args, summary, risk: "low"\|"confirm"\|"blocked" }` |
+| `lens://ai/tool-proposal` | `{ id, call_id, tool, args, summary, risk: "low"\|"confirm"\|"blocked", approval_token?, plan?: { index, total } }` |
 | `lens://ai/tool-result` | `{ id, call_id, ok, message }` |
 
 Each tool call follows the same sequence:
 1. A `tool-proposal` is emitted for every call, so the UI can show a timeline.
 2. Next comes:
    - `low`: runs straight away.
-   - `confirm`: waits for `ai_confirm_tool` (2-minute timeout, which counts as declined).
+   - `confirm`: waits for `ai_confirm_tool` with the proposal's `approval_token` (2-minute timeout, which counts as declined).
+   - When the model proposes several calls in one turn, they are a **plan**: every call is validated, gated and proposed first (each with `plan: { index, total }`, each waiting step with its own token), then they run in order. Declining one step skips only that step. `src/approval/PlanCard.tsx` shows the plan as one list with an Allow / Deny per step.
    - `blocked`, or arguments that fail validation: never runs.
 3. A `tool-result` is emitted with the outcome.
 

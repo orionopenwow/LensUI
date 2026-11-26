@@ -189,9 +189,38 @@ onContextMenu={(e) => {
 
 **8. Backup / Remove all Lens changes**: include `%APPDATA%\LensUI\magic.json`. Nothing else is written; the feature changes no Windows settings.
 
+## Magic Start (Magic waves M4, off by default)
+
+With **Magic button** on (Settings › About & Testing › Magic (preview), confirmed once), a clean
+tap of the Windows key opens **Lens Magic Start** instead of Windows Start:
+
+- **Search box** over installed apps (name start, then word start, then anywhere; accents ignored).
+- **Pinned** — the Dock's own pins. **Magic** — Ask Magic, Snip, Dashboard (when on), Shelf → Note
+  (when on), Open the Shelf. **Recent** — recent files and the newest Shelf items.
+- **Lock** and **Windows Start**: power stays with Windows; "Windows Start" sends Ctrl+Esc.
+- Esc clears the search, then closes. It also closes when another app takes the focus.
+
+Rules that never change:
+
+- **Ctrl+Esc always opens Windows Start.** Win+L, Win+D, Win+Tab and every other Win+key
+  combination are never touched; the hook never swallows the Win key itself.
+- **Watchdog:** the page must acknowledge each open within 300 ms (2.5 s the first time, while the
+  window is built) or Windows Start opens instead, and taps go to Windows until Lens answers again.
+- **Off = no change.** Turning the Magic button off hides Magic Start and, unless the older
+  "Windows key opens the Launcher" option is on, takes the hook off the Win key.
+- With the **Taskbar** Dock style, the Dock's start button opens Magic Start.
+
+Files: `src-tauri/src/commands/magic_start.rs` (routing, window, export command),
+`src-tauri/src/win_keyhook.rs` (`send_ctrl_esc`), `src-tauri/src/app/integration.rs` (tap routing),
+`src/magic/start/{model.ts,MagicStart.tsx,MagicStartWindow.tsx,MagicStart.css}`.
+Tests: `src/__tests__/magicStart.test.ts`, Rust `commands::magic_start::tests`, E2E `magic-start`.
+
 ## Needs real hardware
 
 - Hook behaviour under load and with high-poll-rate mice.
+- Magic Start: Win tap on a real keyboard (incl. Win held then released with no other key), the
+  first-build watchdog extension, Ctrl+Esc and Win+L while Magic Start is open, multi-monitor and
+  high-DPI placement, and the Taskbar-style start button.
 - The watchdog re-install.
 - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD).
 - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular:

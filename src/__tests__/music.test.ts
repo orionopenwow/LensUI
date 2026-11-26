@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   contrast, currentLine, endTimeLabel, ensureContrast, formatTime, heroGradient, hexToRgb, initials, lineOpacity, lineState,
   livePosition, lyricScroll, miniState, musicAccent, pickVivid, quantize, queueRemaining, sourceCaps, splitArtists, splitTitle,
+  connectError, queueEmptyState, desktopLine, desktopLineColor,
   type NowPlaying,
 } from "../music/model";
 import { planAccent, MIN_GAP_MS } from "../music/themeFollow";
@@ -164,5 +165,54 @@ describe("titles and sources", () => {
     expect(sourceCaps("Spotify.exe", false).note).toContain("Connect Spotify");
     expect(sourceCaps("AppleInc.AppleMusicWin_x!App", true).note).toContain("Cider");
     expect(sourceCaps("msedge.exe", true)).toMatchObject({ queue: false, note: "" });
+  });
+});
+
+describe("queue panel without a real queue", () => {
+  test("Spotify, not connected: says why and offers Connect Spotify in place", () => {
+    const s = queueEmptyState("Spotify.exe", "Spotify", false);
+    expect(s.offerConnect).toBe(true);
+    expect(s.note).toContain("Windows doesn't share queues");
+    expect(s.note).toContain("Connect Spotify");
+  });
+  test("another player: explains, without a Spotify offer that wouldn't help", () => {
+    const s = queueEmptyState("msedge.exe", "Microsoft Edge", false);
+    expect(s.offerConnect).toBe(false);
+    expect(s.note).toContain("Microsoft Edge doesn't share its queue");
+    expect(queueEmptyState("vlc", "", true).note.startsWith("This app")).toBe(true);
+  });
+  test("Spotify connected: nothing to explain", () => {
+    expect(queueEmptyState("Spotify.exe", "Spotify", true)).toEqual({ note: "", offerConnect: false });
+  });
+  test("sign-in errors read as sentences", () => {
+    expect(connectError("Error: Port 43117 is in use")).toBe("Port 43117 is in use");
+    expect(connectError(new Error("Spotify refused the sign-in."))).toBe("Spotify refused the sign-in.");
+    expect(connectError("")).toContain("couldn't connect");
+    expect(connectError(undefined)).toContain("couldn't connect");
+  });
+});
+
+describe("lyrics on the desktop", () => {
+  const lyrics = { found: true, synced: true, lines: [{ startMs: 1000, text: "First line" }, { startMs: 5000, text: "  " }, { startMs: 9000, text: "Second line" }] };
+  test("shows the line being sung, keyed so lines can fade", () => {
+    expect(desktopLine(lyrics, "playing", 1500)).toEqual({ key: 0, text: "First line" });
+    expect(desktopLine(lyrics, "playing", 9500)).toEqual({ key: 2, text: "Second line" });
+    expect(desktopLine(lyrics, "playing", 8800, 250)).toEqual({ key: 2, text: "Second line" });
+  });
+  test("shows nothing before the first line, in a gap, when paused or after the end", () => {
+    expect(desktopLine(lyrics, "playing", 500)).toBeNull();
+    expect(desktopLine(lyrics, "playing", 6000)).toBeNull();
+    expect(desktopLine(lyrics, "paused", 1500)).toBeNull();
+    expect(desktopLine(lyrics, "playing", 20_000, 0, 20_000)).toBeNull();
+  });
+  test("shows nothing without synced lyrics", () => {
+    expect(desktopLine(null, "playing", 1500)).toBeNull();
+    expect(desktopLine({ ...lyrics, synced: false }, "playing", 1500)).toBeNull();
+    expect(desktopLine({ ...lyrics, found: false }, "playing", 1500)).toBeNull();
+  });
+  test("the colour comes from the artwork and always reads on the dark shadow", () => {
+    expect(desktopLineColor([])).toBe("#fafafa");
+    const dark = hexToRgb(desktopLineColor([{ color: { r: 40, g: 10, b: 90 }, weight: 1 }]))!;
+    expect(contrast(dark, { r: 9, g: 9, b: 11 })).toBeGreaterThanOrEqual(7);
   });
 });

@@ -83,6 +83,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
       {flags.shelfNotes && (
         <div className="mpv-frame mpv-frame-small">
           <NotePreview
+            demo
             items={[
               { kind: "page", title: "Sample: a page you kept", text: "A line you highlighted.", url: "https://example.com/article", source_app: "Lens Browser" },
               { kind: "text", title: "Sample: a quick thought", text: "Call back about the design review." },

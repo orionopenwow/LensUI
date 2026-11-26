@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
-  currentLine, endTimeLabel, formatTime, heroGradient, initials, lineOpacity, lineState, queueRemaining, sourceCaps,
+  currentLine, endTimeLabel, formatTime, heroGradient, initials, connectError, lineOpacity, lineState, queueEmptyState, queueRemaining, sourceCaps,
   splitArtists, splitTitle, hexToRgb, luminance, type NowPlaying as NP, type RGB,
 } from "./model";
 import { placeholderArt, samplePalette } from "./art";
+import { SpotifyConnectInline } from "./spotifyConnect";
 import "./music.css";
 
 export type NowPlayingMode = "compact" | "expanded" | "fullscreen";
@@ -61,6 +62,9 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   const [volume, setVolume] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Something the person clicked didn't work (Spotify said no, the network is down): say so here.
+  const [problem, setProblem] = useState<string | null>(null);
+  useEffect(() => setProblem(null), [now?.trackKey]);
 
   useEffect(() => setMode(modeProp ?? cfg?.windowStyle as NowPlayingMode ?? "expanded"), [modeProp, cfg?.windowStyle]);
   useEffect(() => {
@@ -195,6 +199,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
               </div>
             </div>
             {caps.note && <div className="lm-note">{caps.note}</div>}
+            {problem && <div className="lm-note" role="alert">{problem}</div>}
           </div>
         </header>
 
@@ -202,13 +207,13 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
       </main>
 
       {showQueue && mode !== "compact" && (
-        <QueuePanel now={now} position={position} queue={queue} history={history} connected={caps.queue}
+        <QueuePanel now={now} position={position} queue={queue} history={history} connected={caps.queue} onConnected={() => setSpotify(true)}
           sleepOpen={sleepOpen} setSleepOpen={setSleepOpen} />
       )}
 
       <PlayerBar now={now} position={position} mode={mode} onMode={changeMode} volume={volume} setVolume={setVolume}
         showLyrics={showLyrics} setShowLyrics={setShowLyrics} showQueue={showQueue} setShowQueue={setShowQueue}
-        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} />
+        art={art} likeUri={caps.like ? queue?.current?.uri ?? null : null} liked={liked} setLiked={setLiked} onProblem={setProblem} />
     </div>
   );
 };
@@ -305,8 +310,9 @@ const Lyrics: React.FC<{ result: LyricsResult | null; position: number; offset: 
 // ------------------------------------------------------------------------------ queue
 
 const QueuePanel: React.FC<{
-  now: NP; position: number; queue: Queue | null; history: Played[]; connected: boolean; sleepOpen: boolean; setSleepOpen: (v: boolean) => void;
-}> = ({ now, position, queue, history, connected, sleepOpen, setSleepOpen }) => {
+  now: NP; position: number; queue: Queue | null; history: Played[]; connected: boolean; onConnected: () => void; sleepOpen: boolean; setSleepOpen: (v: boolean) => void;
+}> = ({ now, position, queue, history, connected, onConnected, sleepOpen, setSleepOpen }) => {
+  const empty = queueEmptyState(now.sessionId, now.sourceLabel, connected);
   const remainingTrack = Math.max(0, now.durationMs - position);
   const items = connected && queue ? queue.items : [];
   const total = connected ? queueRemaining(remainingTrack, items) : remainingTrack;
@@ -351,6 +357,8 @@ const QueuePanel: React.FC<{
         </>
       ) : (
         <>
+          <div className="lm-q-empty">{empty.note}</div>
+          {empty.offerConnect && <SpotifyConnectInline onConnected={onConnected} />}
           <div className="lm-q-section">Recently played in Lens <span className="lm-q-hint">on this PC</span></div>
           {history.filter((h, i) => !(i === 0 && h.title === now.title)).slice(0, 12).map((h) => (
             <div key={`${h.title}-${h.atMs}`} className="lm-q-row">
@@ -358,7 +366,7 @@ const QueuePanel: React.FC<{
               <span className="lm-q-text"><span className="lm-q-name">{h.title}</span><span className="lm-q-sub">{[h.artist, h.sourceLabel].filter(Boolean).join(" – ")}</span></span>
             </div>
           ))}
-          {history.length <= 1 && <div className="lm-q-empty">Tracks you play show up here. {now.sourceLabel} doesn't share its queue with other apps.</div>}
+          {history.length <= 1 && <div className="lm-q-empty">Tracks you play show up here.</div>}
         </>
       )}
 
@@ -388,8 +396,8 @@ const QueuePanel: React.FC<{
 const PlayerBar: React.FC<{
   now: NP; position: number; mode: NowPlayingMode; onMode: (m: NowPlayingMode) => void; volume: number | null; setVolume: (v: number) => void;
   showLyrics: boolean; setShowLyrics: (v: boolean) => void; showQueue: boolean; setShowQueue: (v: boolean) => void; art: string;
-  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void;
-}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked }) => {
+  likeUri: string | null; liked: boolean; setLiked: (v: boolean) => void; onProblem: (text: string | null) => void;
+}> = ({ now, position, mode, onMode, volume, setVolume, showLyrics, setShowLyrics, showQueue, setShowQueue, art, likeUri, liked, setLiked, onProblem }) => {
   const playing = now.status === "playing";
   const dur = now.durationMs;
   const pct = dur > 0 ? Math.min(100, (position / dur) * 100) : 0;
@@ -417,7 +425,7 @@ const PlayerBar: React.FC<{
           </button>
           {likeUri && (
             <button type="button" className={`lm-icon-btn ${liked ? "on" : ""}`} aria-label={liked ? "Remove from Liked Songs" : "Save to Liked Songs"} aria-pressed={liked}
-              onClick={() => music.spotifySave(likeUri, !liked).then(() => setLiked(!liked)).catch(() => {})}><Heart size={16} fill={liked ? "currentColor" : "none"} /></button>
+              onClick={() => music.spotifySave(likeUri, !liked).then(() => (setLiked(!liked), onProblem(null))).catch((e) => onProblem(`Couldn't ${liked ? "remove this from" : "save this to"} Liked Songs: ${connectError(e)}`))}><Heart size={16} fill={liked ? "currentColor" : "none"} /></button>
           )}
           <button type="button" className={`lm-icon-btn ${showLyrics ? "on" : ""}`} aria-label="Lyrics" aria-pressed={showLyrics} onClick={() => setShowLyrics(!showLyrics)}><Mic2 size={16} /></button>
           <button type="button" className={`lm-icon-btn ${showQueue ? "on" : ""}`} aria-label="Queue" aria-pressed={showQueue} onClick={() => setShowQueue(!showQueue)}><ListMusic size={16} /></button>

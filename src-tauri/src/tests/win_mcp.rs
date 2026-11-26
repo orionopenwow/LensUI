@@ -37,7 +37,7 @@ impl McpHost for Fake {
     fn confirm_all(&self) -> bool { self.confirm }
     fn pending_changed(&self, a: &PendingAction) { self.log.lock().unwrap().push(format!("pending {} {}", a.id, a.status)); }
     fn run_ai_tool(&self, t: &str, a: &Value) -> Result<String, String> { self.log.lock().unwrap().push(format!("ai {} {}", t, a)); Ok(format!("ran {}", t)) }
-    fn resolve_local(&self, a: &PendingAction, approve: bool) -> Result<(), String> {
+    fn resolve_local(&self, a: &PendingAction, approve: bool, _token: Option<&str>) -> Result<(), String> {
         self.log.lock().unwrap().push(format!("resolve {} {} {}", a.kind, a.reference, approve));
         if a.reference.ends_with("-gone") { Err("Nothing is waiting for that approval (it may have timed out).".into()) } else { Ok(()) }
     }
@@ -135,8 +135,15 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     let st = call(&mut s, &h, 32, "get_action_status", &format!(r#"{{"id":"{}"}}"#, rid));
     assert!(text(&st).contains("pending"));
     assert!(is_err(&call(&mut s, &h, 33, "get_action_status", r#"{"id":"nope"}"#)));
-    let ap = approve_action(&rid, &h).unwrap(); assert_eq!(ap.status, "approved");
-    assert!(approve_action(&rid, &h).is_err());
+    let rtok = find_action(&rid).unwrap().token;
+    assert_eq!(rtok.len(), 64, "every queued request has a token for its card");
+    assert!(!ra.to_string().contains(&rtok), "the AI app is never given the approval token");
+    assert!(approve_action(&rid, None, &h).is_err(), "no token, no approval");
+    assert_eq!(find_action(&rid).unwrap().status, "pending");
+    assert!(approve_action(&rid, Some(&rtok), &h).is_err(), "the refused attempt replaced the token");
+    let rtok = find_action(&rid).unwrap().token;
+    let ap = approve_action(&rid, Some(&rtok), &h).unwrap(); assert_eq!(ap.status, "approved");
+    assert!(approve_action(&rid, Some(&rtok), &h).is_err());
     let done = complete_action(&rid, true, "Muted Chrome · Brightness 40%", &h).unwrap(); assert_eq!(done.status, "done");
     assert!(complete_action(&rid, true, "again", &h).is_err());
     // pending cap
@@ -158,7 +165,7 @@ fn json_rpc_tools_actions_audit_and_loopback() {
     let qid = q["result"]["structuredContent"]["id"].as_str().unwrap().to_string();
     assert!(!hc.log.lock().unwrap().iter().any(|l| l == "vol 12"));
     assert!(call(&mut s2, &hc, 61, "list_windows", "{}")["result"]["structuredContent"]["windows"].as_array().is_some());
-    let d = approve_action(&qid, &hc).unwrap(); assert_eq!(d.status, "done"); assert!(d.result.contains("12"));
+    let d = approve_action(&qid, Some(&find_action(&qid).unwrap().token), &hc).unwrap(); assert_eq!(d.status, "done"); assert!(d.result.contains("12"));
     assert!(hc.log.lock().unwrap().iter().any(|l| l == "vol 12"));
     // rate limit
     let mut s3 = Session::default();
@@ -244,7 +251,7 @@ fn local_requests_become_pending_actions_on_the_shared_queue() {
     assert!(list_actions().iter().any(|x| x.id == a.id && x.status == "pending"));
 
     // Approved on the shared card: the owner is told, then reports the outcome.
-    let ap = approve_action(&a.id, &h).unwrap();
+    let ap = approve_action(&a.id, Some(&a.token), &h).unwrap();
     assert_eq!(ap.status, "approved");
     assert!(h.log.lock().unwrap().iter().any(|l| l == "resolve ai t-local-r0-0 true"));
     let done = finish_local("ai", "t-local-r0-0", true, "Closed Word.").unwrap();
@@ -262,18 +269,59 @@ fn local_requests_become_pending_actions_on_the_shared_queue() {
     assert_eq!(find_action(&c.id).unwrap().status, "declined");
     let d = enqueue_local("app", "t-local-app:npp:get", "apps_get", &Value::Null, "Get Notepad++", "Lens Apps", Value::Null).unwrap();
     assert_eq!(finish_local("app", "t-local-app:npp:get", true, "Done.").unwrap().status, "done");
-    assert!(approve_action(&d.id, &h).is_err(), "nothing left to approve");
+    assert!(approve_action(&d.id, Some(&d.token), &h).is_err(), "nothing left to approve");
 
     // The owner no longer waits (timed out): approving says so instead of pretending.
     let e = enqueue_local("ai", "t-local-gone", "create_note", &json!({}), "Save a note", "Lens", Value::Null).unwrap();
-    let failed = approve_action(&e.id, &h).unwrap();
+    let failed = approve_action(&e.id, Some(&e.token), &h).unwrap();
     assert_eq!(failed.status, "failed");
     assert!(failed.result.contains("timed out"));
 
     // MCP records are unchanged on the wire: no reference, no preview.
-    let m = PendingAction { id: "x".into(), kind: "tool".into(), tool: "set_volume".into(), args: json!({}), text: "t".into(), client: "c".into(), created_ms: 1, status: "pending".into(), result: String::new(), reference: String::new(), preview: Value::Null };
+    let m = PendingAction { id: "x".into(), kind: "tool".into(), tool: "set_volume".into(), args: json!({}), text: "t".into(), client: "c".into(), created_ms: 1, status: "pending".into(), result: String::new(), reference: String::new(), preview: Value::Null, token: String::new() };
     let wire = serde_json::to_value(&m).unwrap();
-    assert!(wire.get("reference").is_none() && wire.get("preview").is_none());
+    assert!(wire.get("reference").is_none() && wire.get("preview").is_none() && wire.get("token").is_none());
     let back: PendingAction = serde_json::from_value(json!({ "id": "x", "kind": "tool", "tool": "set_volume", "args": {}, "text": "t", "client": "c", "createdMs": 1, "status": "pending", "result": "" })).unwrap();
     assert_eq!(back, m);
+}
+
+#[test]
+fn an_approval_on_the_card_is_bound_to_its_own_request() {
+    let h = Fake { log: Mutex::new(Vec::new()), confirm: false };
+    // Two Lens Apps requests waiting at once.
+    let a = enqueue_local("app", "t-bind-a", "apps_get", &json!({"id": "notepad++"}), "Get Notepad++", "Lens Apps", Value::Null).unwrap();
+    let b = enqueue_local("app", "t-bind-b", "apps_remove", &json!({"id": "vlc"}), "Remove VLC", "Lens Apps", Value::Null).unwrap();
+    assert_ne!(a.token, b.token);
+
+    // A's token can't approve B (a card wired to the wrong request).
+    let err = approve_action(&b.id, Some(&a.token), &h).unwrap_err();
+    assert!(err.contains("asking again"), "{err}");
+    assert_eq!(find_action(&b.id).unwrap().status, "pending");
+    // ...and it was burnt by the attempt, so it no longer approves A either.
+    assert!(approve_action(&a.id, Some(&a.token), &h).is_err());
+    // Both cards got a fresh token and can be approved properly.
+    let (a2, b2) = (find_action(&a.id).unwrap(), find_action(&b.id).unwrap());
+    assert_ne!(a2.token, a.token);
+    assert_eq!(approve_action(&b.id, Some(&b2.token), &h).unwrap().status, "approved");
+    assert_eq!(approve_action(&a.id, Some(&a2.token), &h).unwrap().status, "approved");
+    // Replay.
+    assert!(approve_action(&a.id, Some(&a2.token), &h).is_err());
+    finish_local("app", "t-bind-a", true, "ok");
+    finish_local("app", "t-bind-b", true, "ok");
+
+    // The binding covers the tool, the client, the wording and the arguments.
+    let base = PendingAction { id: "q1".into(), kind: "tool".into(), tool: "close_app".into(), args: json!({"name": "word"}), text: "Close Word".into(), client: "Claude".into(), created_ms: 1, status: "pending".into(), result: String::new(), reference: String::new(), preview: Value::Null, token: String::new() };
+    let d = record_binding(&base).digest();
+    for other in [
+        PendingAction { id: "q2".into(), ..base.clone() },
+        PendingAction { tool: "lock_screen".into(), ..base.clone() },
+        PendingAction { kind: "nl".into(), ..base.clone() },
+        PendingAction { args: json!({"name": "excel"}), ..base.clone() },
+        PendingAction { client: "Other".into(), ..base.clone() },
+        PendingAction { text: "Close Excel".into(), ..base.clone() },
+    ] {
+        assert_ne!(record_binding(&other).digest(), d);
+    }
+    // Status, result and the token itself are not part of it.
+    assert_eq!(record_binding(&PendingAction { status: "approved".into(), token: "x".into(), ..base.clone() }).digest(), d);
 }

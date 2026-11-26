@@ -166,3 +166,20 @@ fn ordinary_keys_and_lens_alt_tab_are_not_protected() {
     assert!(!protected_combo(0x73, false, false, false, false)); // plain F4
     assert!(!protected_combo(0x5B, false, false, false, false)); // the Win key on its own
 }
+
+/// The keys the Safety card names are exactly the keys the hook lets through, and the label
+/// spells the combination it stands for.
+#[test]
+fn the_named_protected_keys_all_reach_windows() {
+    for (label, vk, [ctrl, alt, shift, win]) in PROTECTED_KEYS {
+        assert!(protected_combo(vk, ctrl, alt, shift, win), "{label}");
+        assert_eq!(label.contains("Ctrl"), ctrl, "{label}");
+        assert_eq!(label.contains("Alt"), alt, "{label}");
+        assert_eq!(label.contains("Shift"), shift, "{label}");
+        assert_eq!(label.contains("Win"), win, "{label}");
+        // The bare key, with nothing held, is an ordinary key.
+        assert!(!protected_combo(vk, false, false, false, false), "{label} without modifiers");
+    }
+    let labels: std::collections::HashSet<&str> = PROTECTED_KEYS.iter().map(|k| k.0).collect();
+    assert_eq!(labels.len(), PROTECTED_KEYS.len());
+}

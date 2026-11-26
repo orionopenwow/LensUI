@@ -1,6 +1,6 @@
 # Lens Music — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
+Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** Spotify sign-in binds its port first and falls back to 43118/43119 with a clear message (S1 fixed), the queue panel explains itself with an inline Connect Spotify (quick win 1), failed Liked Songs saves are shown, and opt-in lyrics on the desktop exist (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC or against a real Spotify account. Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
 `docs/brain/BUGS.md`, code below.
 
 ## 1. Rundown
@@ -40,6 +40,7 @@ already look, without a new player.
 - **Mini player** on Dock and Top Bar — works (`MiniPlayer.tsx`, `useMiniPlacement.ts`); now-playing
   row in Lens Browser sidebar only while playing (#86).
 - **Synced lyrics** (LRCLIB or your `.lrc` folder) — works; cache clearable; big bright current line.
+- **Lyrics on the desktop** (opt-in, click-through line under the Top Bar; hidden when paused or a fullscreen app is in front) — built in the Fable pass, unverified on hardware.
 - **Queue panel** — partly: Spotify's real queue when connected; otherwise "Recently played in
   Lens" (Windows never shares a queue).
 - **History** (last 100, clearable) — works.
@@ -57,7 +58,7 @@ already look, without a new player.
 - **Apple Music** — now-playing via Windows only (no public API); Cider suggested for theming.
 
 ## 3. Quick wins (≤ 1 day, ranked)
-1. **Queue panel empty state** that explains "Windows doesn't share queues — connect Spotify to see
+1. **Done (Fable pass).** **Queue panel empty state** that explains "Windows doesn't share queues — connect Spotify to see
    yours" with the Connect button inline (today the panel silently shows recent tracks).
 2. **Lyrics offset nudge** (±0.5 s keys) saved per track — LRCLIB timings drift for live versions.
 3. **Art fallback**: when an app sends no or tiny art, use a Lens cloud gradient seeded by the
@@ -83,7 +84,7 @@ already look, without a new player.
 | Id | Severity | Where | Issue |
 |---|---|---|---|
 | B-02 (fixed) | — | `spicetify.rs`, `win_uninstall.rs` | Spicetify theme now removed by Remove all |
-| Suspected S1 | Medium | `music/spotify.rs` loopback 43117 | if the port is taken, OAuth fails; needs a fallback port or a clear error |
+| S1 | — fixed (Fable pass) | `music/spotify.rs`, `commands/music.rs` | the port was bound only after the browser had opened, so a busy 43117 surfaced late or not at all. Now bound in `music_spotify_begin`, with fallbacks 43118/43119 (listed as optional redirect URIs), a notice when a fallback is used and an immediate error naming the ports when none is free. Tests: `a_busy_port_falls_back…`, `every_port_busy…`, `the_sign_in_reply_arrives_on_the_fallback_port` |
 | Suspected S2 | Low | `levels.rs` | output device change (Bluetooth connect) may leave the meter on the old endpoint until restart |
 | Suspected S3 | Low | `themeFollow.ts` | theme-follow + a user theme switch can race (last write wins); respect an explicit theme pick for the session |
 | Suspected S4 | Low | `session.rs` | two sessions with identical metadata (browser tab + Spotify) may flip the chosen session |

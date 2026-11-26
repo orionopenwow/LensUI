@@ -298,6 +298,18 @@ handlers.magic_mouse_preview = (a: any) => {
   ];
 };
 handlers.magic_mouse_status = () => ({ wanted: !!(config as any).magicWaves?.mouse, pointerApplied: !!(config as any).magicWaves?.mouse, gesturesOn: !!(config as any).magicWaves?.mouse, hookLive: false, steppedAside: false, holds: 0, grabs: 0, last: "" });
+// Magic Start and Shelf → Notes (wave M4).
+handlers.magic_start_available = () => !!(config as any).magicWaves?.startButton;
+handlers.toggle_magic_start = () => {
+  if (!(config as any).magicWaves?.startButton) throw new Error("The Magic button is off");
+  return true;
+};
+handlers.magic_start_hide = () => null;
+handlers.open_windows_start = () => null;
+handlers.save_note_export = (a: any) => {
+  if (!(config as any).magicWaves?.shelfNotes) throw new Error("Shelf to Notes is off");
+  return `C:\\Users\\Sample\\Downloads\\${a?.stem ?? "note"}.${a?.ext ?? "md"}`;
+};
 if (params.get("dashdata")) {
   const now = Date.now();
   const min = 60_000;

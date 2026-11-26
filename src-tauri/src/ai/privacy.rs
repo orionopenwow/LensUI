@@ -134,8 +134,48 @@ pub fn cap(s: &str, max_chars: usize) -> String {
     out
 }
 
+/// What a context field is, in the person's words (the consent card never shows key names).
+pub fn field_label(field: &str) -> &'static str {
+    match field {
+        "app_name" => "the app's name",
+        "window_title" => "the window title",
+        "url" => "the page address",
+        "selection" => "your selected text",
+        "clipboard" => "your clipboard",
+        "files" => "the files you attached",
+        "page_text" => "the page text",
+        "shelf_text" => "your Shelf items",
+        _ => "other context",
+    }
+}
+
+/// "your selected text, the page text and your clipboard".
+pub fn list_fields(fields: &[&str]) -> String {
+    let mut names: Vec<&str> = fields.iter().map(|f| field_label(f)).collect();
+    names.dedup();
+    match names.len() {
+        0 => String::new(),
+        1 => names[0].to_string(),
+        n => format!("{} and {}", names[..n - 1].join(", "), names[n - 1]),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn consent_names_fields_in_plain_words() {
+        assert_eq!(list_fields(&["selection"]), "your selected text");
+        assert_eq!(list_fields(&["selection", "page_text"]), "your selected text and the page text");
+        assert_eq!(list_fields(&["window_title", "selection", "clipboard"]), "the window title, your selected text and your clipboard");
+        assert_eq!(list_fields(&[]), "");
+        // Every field the context can carry has a name of its own; no key leaks through.
+        for f in ["app_name", "window_title", "url", "selection", "clipboard", "files", "page_text", "shelf_text"] {
+            let l = field_label(f);
+            assert!(l != "other context" && !l.contains('_'), "{f}");
+        }
+        assert_eq!(field_label("something_new"), "other context");
+    }
+
     use super::*;
 
     #[test]

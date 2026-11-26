@@ -372,5 +372,5 @@ should delete `control/` (grants revert to the defaults).
 - Per-app window rules (`window-rules.json`) and pointer *sets* (`win_cursors` state). Add them as stores in `lens.rs` plus `RULES` entries.
 - Typing text (`type_text`) has a capability and a default, but no tool: Lens never types for an AI yet.
 - Window thumbnails in the card need a capture command (`win_previews`); the card already accepts `window.thumbnail`.
-- The undo stack lives in memory, so it is lost on restart. The audit log keeps the record.
+- The undo stack survives a restart: the last 50 settings changes (at most 512 KB) are kept in `%APPDATA%\LensUI\control\undo.jsonl` and read back when Lens starts. Window moves are undoable only until Lens closes (a window handle from before a restart may belong to another window). Damaged lines in the journal are skipped.
 - A theme-pack change is applied by the frontend (`lens://mcp-apply-pack`). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.

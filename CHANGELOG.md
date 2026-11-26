@@ -7,7 +7,24 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Fixed
+- **Lens's window buttons could be drawn over anti-cheat games.** The engine that draws them kept
+  its own list of four names; the shared list has 42. It now uses the shared list, as do tiling,
+  Alt+drag, the keyboard hook and pointer effects, and a test fails the build if any of them names
+  a process itself again. Fullscreen windows are skipped even when they keep a title-bar style.
+- **Apps on the window-button exclusion list still got buttons.** The list is now honoured, and
+  has a home: Settings › Windows & Keys › Window styling › Apps and window buttons, where
+  protected apps show a locked "Protected" badge.
+- **Window button styles did nothing outside Lens's own windows.** Soft, Small dots and Pills are
+  now drawn over other apps too.
+
 ### Changed
+- **Snip's shortcut is Ctrl+Alt+X** (was Ctrl+Shift+S, which is Save As in most apps). If you never
+  changed it, it moves once; a shortcut you chose is kept. Snip's settings warn when a shortcut
+  would break a common app shortcut, and the shortcuts sheet shows the one Snip really has.
+- **The Updates card says so when updates can't run.** A build without an update key (releases
+  aren't signed yet, or a development build) shows why and a button to the Releases page instead
+  of a "Check now" that could never find anything.
 - **Lens no longer changes Windows' accent colour on its own.** Picking a Lens accent used to
   write it into Windows' accent (title bars, Start, the taskbar) as well. That's now a separate
   "Also use this accent in Windows" option under Appearance, off by default; turning it off puts
@@ -21,6 +38,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
   your PC). Hold and let go to open Magic. A quick click is still a click. Your own pointers come
   back when it's off, on exit, after a crash, with Remove all, and while a game or fullscreen app
   is in front. See docs/CURSORS.md.
+- **Safety card** (Settings › About & Testing › Safety net): what Lens changes on this PC, from
+  the same list Remove all walks; what it never touches; the keys that always reach Windows; Safe
+  Mode; holding Shift at sign-in to skip Lens; and buttons to Report a problem and Remove all.
+- **Window buttons on the left** (Apps and window buttons › Buttons on the): used where a window's
+  title bar is free on the left; apps with tabs or tools there keep their buttons on the right.
+- **Command teaches where settings live.** After Command changes a setting, the card says where to
+  find it ("Settings › Dock & Bar › Dock style") with a "Show me" link.
+- **Magic Start and Shelf to Notes (M4, off by default):** with the Magic button on, a Windows-key
+  tap opens Lens Magic Start (search, pinned apps, Magic actions, recent files and Shelf items, Lock
+  and Windows Start). Ctrl+Esc always opens Windows Start, Win+key shortcuts are untouched, and if
+  Lens doesn't answer within 300 ms Windows Start opens instead. With Shelf to Notes on, "Make a
+  note" in the Shelf saves a note to Lens Notes, exports it as Markdown, text or PDF, or sends it to
+  a Matrix room after you approve the exact text. See docs/MAGIC.md and docs/SHELF.md.
 - **Dashboard widgets and X (M2, off by default):** with Magic Dashboard and Widgets on, the
   Dashboard's Widgets lane takes widgets from a small gallery (weather, a news feed, a GitHub
   release, crypto prices, world clocks, this PC). Each one shows the sites it will fetch from and

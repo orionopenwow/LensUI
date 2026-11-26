@@ -225,6 +225,8 @@ Not in this wave: the pointer halo, "find images/videos on the page" for a regio
 Browser, and auto rules. The `.ani` files are generated at run time rather than committed. See
 [CURSORS.md](../CURSORS.md#magic-mouse-pointer-preview-off-by-default).
 
+**M4 built (branch feature/magic-m4-start-notes).** Magic Start is a real window (`magicstart`, `src/magic/start/MagicStartWindow.tsx`, Rust `src-tauri/src/commands/magic_start.rs`) opened through the existing Win-tap hook: the hook watches taps when the Magic button or the old Launcher option is on, the Magic button wins, and the page acknowledges each open (300 ms watchdog, 2.5 s on the first build) or Windows Start opens. Ctrl+Esc and every Win+key combination stay with Windows. The Taskbar-style Dock's start button opens Magic Start. Power is Lock plus "Windows Start" (Ctrl+Esc sent by Lens). Shelf → Notes: "Make a note" in the Shelf drawer → save to Lens Notes, export .md/.txt/.pdf (real PDF written by `src/shelf/pdf.ts`) to Downloads, or send to a Matrix room through the Messages approval card plus hold-to-send. Not yet: the optional AI summary (the note is built locally; Ask with approval comes later).
+
 ### 5.1 Fable 5.2 polishing phase summary
 
 What the polish wave does across all of these, after the features work:

@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type {
-  LastfmStatus, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyStatus, TrackItem,
+  LastfmStatus, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyBegin, SpotifyStatus, TrackItem,
 } from "../types/generated";
 import { livePosition } from "./model";
 
-export type { MusicConfig, NowPlaying, LyricsResult, Played, Queue, TrackItem, PlaylistItem, SpotifyStatus, LastfmStatus, SpicetifyPreview };
+export type { MusicConfig, NowPlaying, LyricsResult, Played, Queue, TrackItem, PlaylistItem, SpotifyStatus, SpotifyBegin, LastfmStatus, SpicetifyPreview };
 
 export const EVENT_NOW = "lens://music/now";
 
@@ -26,7 +26,7 @@ export const music = {
   spicetifyPreview: (tokens: SpicetifyTokens) => invoke<SpicetifyPreview>("music_spicetify_preview", { tokens }),
   spicetifyExport: (tokens: SpicetifyTokens, install: boolean) => invoke<string[]>("music_spicetify_export", { tokens, install }),
   spotifyStatus: () => invoke<SpotifyStatus>("music_spotify_status"),
-  spotifyBegin: (clientId: string) => invoke<string>("music_spotify_begin", { clientId }),
+  spotifyBegin: (clientId: string) => invoke<SpotifyBegin>("music_spotify_begin", { clientId }),
   spotifyFinish: () => invoke<void>("music_spotify_finish"),
   spotifyDisconnect: () => invoke<void>("music_spotify_disconnect"),
   spotifyQueue: () => invoke<Queue>("music_spotify_queue"),

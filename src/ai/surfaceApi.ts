@@ -7,6 +7,7 @@
  *   - `transcribeFile` and its events (W6-C).
  * It replaced the temporary contract.shim.ts when ai-core landed.
  */
+import { rememberStepToken } from "./stepTokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -122,6 +123,9 @@ export async function aiSetConfig(settings: AiCardSettings | Record<string, unkn
   await setAiConfig(cardSettingsToConfig(current, settings as AiCardSettings));
 }
 
+/** Shown on a step whose Allow / Deny never reached Lens Core. */
+export const ANSWER_LOST = "Lens didn't get your answer in time, so this step didn't run. Ask again if you still want it.";
+
 // ---------------------------------------------------------------- hook
 
 export type AiRequestPhase = "idle" | "streaming" | "done" | "error" | "cancelled";
@@ -174,10 +178,11 @@ export function useAiRequest() {
       }),
       listen<AiToolProposalEvent>(AI_EVENTS.toolProposal, (e) => {
         if (e.payload.id !== idRef.current) return;
+        rememberStepToken(e.payload.call_id, e.payload.approval_token);
         // The Ask panel shows its own consent card before any cloud send, so the backend's
         // ask-each-time consent for that same request is answered here instead of twice.
         if (e.payload.tool === CONSENT_TOOL) {
-          aiConfirmTool(e.payload.call_id, true).catch(() => {});
+          aiConfirmTool(e.payload.call_id, true, e.payload.approval_token).catch(() => {});
           return;
         }
         const card: AiToolProposal = { ...e.payload, risk: surfaceRisk(e.payload.risk) };
@@ -219,7 +224,18 @@ export function useAiRequest() {
       ...s,
       tools: s.tools.map((t) => (t.call_id === callId ? { ...t, decision: approve ? "approved" : "denied" } : t)),
     }));
-    await aiConfirmTool(callId, approve).catch(() => {});
+    try {
+      await aiConfirmTool(callId, approve);
+    } catch {
+      // The answer didn't reach Lens Core (the step timed out or the request ended). Say so on
+      // the card instead of leaving it on "Approved · running…" for good.
+      setState((s) => ({
+        ...s,
+        tools: s.tools.map((t) =>
+          t.call_id === callId && !t.result ? { ...t, result: { id: s.id ?? "", call_id: callId, ok: false, message: ANSWER_LOST } } : t
+        ),
+      }));
+    }
   }, []);
 
   const reset = useCallback(() => {

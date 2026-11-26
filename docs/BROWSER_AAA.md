@@ -149,7 +149,12 @@ popup would not. Waits for a decision on whether a curated, opt-in list is worth
 ### 2.7 Reader view without AI
 
 Edge's Immersive Reader is switched off in WebView2. Lens has the page agent's `readable` text, so
-a local reader page is possible. Today the reader button uses the AI panel.
+a local reader page is possible. **Built (Fable pass, PR #114):** the toolbar's Reader button opens
+`ReaderPage` (`src/browser/Pages.tsx`, model in `reader.ts`): the page's own text as headings,
+paragraphs, lists and web links, with text size, column width and serif/sans saved in
+`appearance.reader`. It loads nothing (no images, fonts or scripts) and works with AI off;
+Summarise and Ask are side actions that open the AI panel. Esc closes it, and it closes when the
+tab moves on. Parity scene: `reader`.
 
 ## 3. What people expect in late 2026
 

@@ -140,8 +140,8 @@ export function iconSvg(a: CoreAppInfo): string {
 
 export const iconUrl = (a: CoreAppInfo) => `data:image/svg+xml,${encodeURIComponent(iconSvg(a))}`;
 
-export function openCoreApp(id: CoreAppId, view?: string): Promise<void> {
-  return invoke<void>("coreapp_open", { id, view: view ?? null });
+export function openCoreApp(id: CoreAppId, view?: string, find?: string): Promise<void> {
+  return invoke<void>("coreapp_open", { id, view: view ?? null, find: find ?? null });
 }
 
 /** Dock pin for a core app (the Dock opens it through `launch_app_cmd`). */

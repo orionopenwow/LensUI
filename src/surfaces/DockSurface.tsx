@@ -1100,6 +1100,8 @@ export const DockSurface: React.FC = () => {
   const alignment = resolveDockAlignment(dockStyle, dockExtras.alignment);
   const systemInDock = resolveSystemArea(config.dock) === "dock";
   const showLauncherButton = dockStyle === "taskbar" || dockStyle === "studio" || dockStyle === "islands";
+  // Magic button (wave M4): with the Taskbar style, the start button opens Lens Magic Start.
+  const startOpensMagic = dockStyle === "taskbar" && !!(config as { magicWaves?: { startButton?: boolean } } | null)?.magicWaves?.startButton;
   const unreadTotal = Object.values(notifCounts).reduce((a, b) => a + b, 0);
   const magnification = normalizeMagnification(dockExtras.magnification);
   const magScale = DOCK_MAGNIFICATION.find((m) => m.id === magnification)?.scale ?? 1;
@@ -2442,13 +2444,18 @@ export const DockSurface: React.FC = () => {
         <div className="dock-icons-row">
           {showLauncherButton && (
             <div className="dock-item-wrap dock-launcher-slot">
-              <span className="dock-tooltip">Launcher</span>
+              <span className="dock-tooltip">{startOpensMagic ? "Magic Start" : "Launcher"}</span>
               <button
                 type="button"
                 className={`dock-item dock-launcher-btn ${launchingId === "launcher" ? "is-launching" : ""}`}
-                aria-label="Open Launcher"
+                aria-label={startOpensMagic ? "Open Magic Start" : "Open Launcher"}
                 onClick={() => {
                   triggerLaunchAnim("launcher");
+                  if (startOpensMagic) {
+                    // The backend refuses while the Magic button is off; the Launcher is the fallback.
+                    invoke("toggle_magic_start").catch(() => invoke("toggle_surface", { label: "launcher" }).catch(() => {}));
+                    return;
+                  }
                   invoke("toggle_surface", { label: "launcher" }).catch(() => {});
                 }}
               >

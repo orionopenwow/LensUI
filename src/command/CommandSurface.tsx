@@ -32,6 +32,9 @@ import {
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
 import { answersInText, runDo } from "./doMode";
 import { isNewOpen, pendingOpen } from "./openSeq";
+import { whereItLives } from "./teach";
+import { DO_EXAMPLES } from "./examples";
+import { openSettingsAt } from "../update/useLensUpdate";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
@@ -108,6 +111,7 @@ interface ForegroundContext { process: string; appName: string; title: string; c
 export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
   const lens = useLensState();
   const dashboardOn = !!(lens.config as { magicWaves?: { dashboard?: boolean } } | null)?.magicWaves?.dashboard;
+  const notesOn = !!(lens.config as { magicWaves?: { shelfNotes?: boolean } } | null)?.magicWaves?.shelfNotes;
   const settings = useCommandSettings();
   const [mode, setMode] = useState<Mode>(initial?.mode ?? "ask");
   const [text, setText] = useState(initial?.text ?? "");
@@ -577,7 +581,18 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     | Extract<ThreadItem, { kind: "answer" }>
     | undefined;
 
+  // An example only types the phrase and hands the keyboard back: Enter still runs it, so the
+  // preview and the approval rules apply exactly as if it had been typed.
+  const pickExample = (phrase: string) => {
+    setText(phrase);
+    inputRef.current?.focus();
+  };
+
   const handlers: CardHandlers = {
+    onShowSetting: (target) => {
+      void hide();
+      void openSettingsAt(target);
+    },
     onCopy: (t) => navigator.clipboard.writeText(t).then(() => flash("Copied")).catch(() => flash("Couldn't copy", false)),
     onPaste: (t) => clipPasteText(t).catch((e) => flash(String(e), false)),
     onToShelf: (t, title) =>
@@ -667,7 +682,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       return;
     }
     if (out.kind === "intent") {
-      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now() } });
+      // "Teach me": the card also says where this setting lives, with a link.
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now(), where: whereItLives(out.intent.action) ?? undefined } });
       if (!answersInText(out.intent)) return;
     } else {
       dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: typed.slice(0, 60), detail: "Asked the AI", ok: true, ts: Date.now() } });
@@ -1041,6 +1057,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               ) : null}
               {mode === "do" ? (
                 <div className="cmd-do">
+                  {/* Screen readers hear the preview as it appears; sighted people see the row below. */}
+                  <span role="status" aria-live="polite" className="cmd-sr">
+                    {intent ? `${intent.summary}. Press Enter to do it.` : ""}
+                  </span>
                   {intent ? (
                     <button type="button" className="cmd-row is-active" onClick={() => runActive(false, false)}>
                       <span className="cmd-row-icon"><Zap size={14} /></span>
@@ -1053,6 +1073,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
                   ) : (
                     <div className="cmd-empty"><p>{text.trim() ? "Not sure what that means yet — Enter asks the AI to work it out." : "Type a command. Lens handles common ones instantly, offline."}</p></div>
                   )}
+                  {!intent && !text.trim() && !thread.length ? (
+                    <div className="cmd-starters" aria-label="Examples">
+                      {DO_EXAMPLES.map((ex) => (
+                        <button key={ex.phrase} type="button" className="cmd-starter" data-do-example onClick={() => pickExample(ex.phrase)}>
+                          <span className="cmd-pop-desc">{ex.phrase}</span>
+                          <ArrowUp size={12} className="cmd-starter-go" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {thread.length ? (
                     <div className="cmd-thread">
                       {thread.filter((t) => t.kind === "tool" || t.kind === "action" || (t.kind === "answer" && !!t.text)).slice(-4).map((it, i, arr) => (
@@ -1167,6 +1197,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               inputRef.current?.focus();
             }}
             onNotice={flash}
+            notesOn={notesOn}
           />
         ) : null}
       </div>

@@ -39,6 +39,36 @@ In order; any block wins over any ask.
    - settings changes ask unless you started them;
    - reading, navigating and window control are allowed.
 
+## Step tokens: an approval covers one exact step
+
+A yes/no flag from the UI says "something was approved". Lens does not accept that. When Lens
+Core shows a "Needs your OK" card it issues a **one-time token** (`agentsafe/step_token.rs`) and
+the executor refuses the step unless that token comes back with the approval.
+
+| Property | How |
+|---|---|
+| Bound to the step | The token is stored against a digest of (step id, action kind, target, SHA-256 of the canonical arguments). The executor rebuilds that digest from the step it is about to run. |
+| Single use | Redeeming removes the token, whether it matched or not. A token offered for the wrong step is burnt. |
+| Expires | 10 minutes after the card was shown (the same time a request may wait in the queue). |
+| Can't be made up | 256 random bits from the OS, kept in Core. Nothing is derived from the step. |
+
+Where it is checked:
+
+| Path | Step id | Kind | Target | Arguments | Executor |
+|---|---|---|---|---|---|
+| Browser agent (`browser_agent_act`) | tab + element number | click, type, select, submit, navigate, search | the page address + the element as the page describes it **at that moment** | text typed, value chosen, address | `commands/browser.rs`: `check_or_issue` before the page is touched |
+| Assistant (Command, Ask, voice, Snip, bridge inbox; `ai_confirm_tool`) | call id | tool name | request id | the validated arguments that will run | `ai/mod.rs approved_step`: redeemed right before `host.run` |
+| Cloud consent ("Send … to Claude?") | `<request>-consent` | `send_to_cloud` | request id | provider, model, context fields | same |
+| Shared queue (MCP tools, `run_action`, bridge, Lens Apps; `approve_mcp_action_cmd`) | queue id | kind + tool | client + the wording shown | the stored arguments | `win_mcp.rs approve_action` |
+
+What a refused approval does: the step does not run. The browser agent and the shared queue hand
+back a new card for the step as it is now ("The step changed after you approved it, so Lens is
+asking again"); the assistant tells the model the step didn't run. MCP clients are told a queued
+request's id and status, never its token.
+
+Known edge: a plain-language `run_action` is approved in Core and then carried out by the frontend
+router; the token covers the approval, and the router runs the stored text.
+
 ## Red-team results
 
 Run with `cargo test agentsafe` (CI), or locally without crates:

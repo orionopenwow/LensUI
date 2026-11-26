@@ -37,6 +37,29 @@ pub struct FailsafeReport {
     pub switches: Vec<FailsafeSwitch>,
 }
 
+/// The fixed safety facts Settings › About & Testing › Safety shows next to the live ones
+/// (`failsafe_status`, `changes_manifest_cmd`): read from the code that enforces them, so the
+/// card cannot drift from what Lens does.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SafetyFacts {
+    /// Keys that always reach Windows, whatever a Lens feature asks (`input::PROTECTED_KEYS`).
+    pub protected_keys: Vec<String>,
+    /// How many anti-cheat services and protected games Lens never touches (`win_rules`).
+    pub protected_apps: usize,
+    /// How long a sign-in launch waits for the desktop before starting anyway, in seconds.
+    pub signin_max_wait_secs: u64,
+}
+
+#[tauri::command]
+pub(crate) fn safety_facts() -> SafetyFacts {
+    SafetyFacts {
+        protected_keys: crate::input::PROTECTED_KEYS.iter().map(|k| k.0.to_string()).collect(),
+        protected_apps: crate::win_rules::ANTI_CHEAT_FRAGMENTS.len(),
+        signin_max_wait_secs: crate::app::signin_gate::MAX_WAIT_MS / 1000,
+    }
+}
+
 #[tauri::command]
 pub(crate) fn failsafe_status() -> FailsafeReport {
     let status = failsafe::status();

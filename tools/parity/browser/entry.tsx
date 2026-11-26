@@ -280,6 +280,25 @@ const manyTabs: Tab[] = [
 const dupState = withState({ tabs: manyTabs }).state;
 const planSeed = propose("tidy", dupState, NOW) ?? undefined;
 
+const readerSeed = [
+  "# A short guide to oysters",
+  "",
+  "Oysters taste of where they grew. Cold, salty water makes a firm, briny oyster; a river mouth makes a softer, sweeter one. That is most of what there is to know, and the rest is practice.",
+  "",
+  "## Choosing",
+  "Buy them closed and heavy for their size. A shell that stays open when tapped is past it. Ask when they came in: [the harvest tag](https://harborandvine.example/journal/tags) says the day and the bay.",
+  "",
+  "- Small and deep-cupped for eating raw",
+  "- Larger ones for the grill",
+  "- Anything gaping: leave it",
+  "",
+  "## Opening",
+  "Fold a towel, hold the oyster flat side up, and work the knife into the hinge. Twist, slide along the top shell, and keep the liquor in the cup. Go slowly the first dozen times.",
+  "",
+  "## Serving",
+  "Ice, a wedge of lemon, and nothing that shouts. A mignonette is shallot, vinegar and pepper; make it an hour ahead so it settles.",
+].join("\n");
+
 const scenes: Record<string, BrowserInitial> = {
   sidebar: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
   "sidebar-stack": { view: withSidebar({ mode: "stack" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
@@ -287,6 +306,8 @@ const scenes: Record<string, BrowserInitial> = {
   "sidebar-plan": { view: withState({ tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
   "sidebar-stack-plan": { view: withSidebar({ mode: "stack" }, { tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
   "sidebar-right": { view: withSidebar({ side: "right", width: 300 }), panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: [], startedAt: NOW, actions: 0, running: false } },
+  // ---- Reader view (local; text only) ----
+  reader: { view, panel: null, chats, now: NOW, nav: back, reader: { tabId: "t3", url: "https://harborandvine.example/journal/oysters", title: "A short guide to oysters", text: readerSeed } },
   // ---- AAA pass ----
   newtab: { view: withState({ closed: closedSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, start: true, history: historySeed, nav: back },
   // A fresh window on the new tab page: the tabs are there, none is open, the box is empty (the site's default).

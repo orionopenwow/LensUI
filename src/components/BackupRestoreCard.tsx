@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import type { ChangeInfo } from "../types/generated";
+import { removeAllPreview } from "../safety/model";
 
 interface BackupSummary {
   files: string[];
@@ -37,6 +39,21 @@ export const BackupRestoreCard: React.FC = () => {
   const [confirmText, setConfirmText] = useState("");
   const [deleteData, setDeleteData] = useState(false);
   const [steps, setSteps] = useState<UninstallStep[] | null>(null);
+  const [manifest, setManifest] = useState<ChangeInfo[]>([]);
+
+  // What Remove all will walk, read when the person opens the confirmation (the same registry
+  // the backend uses), so they see the list before typing the confirm word.
+  useEffect(() => {
+    if (!confirming || manifest.length > 0) return;
+    let live = true;
+    invoke<ChangeInfo[]>("changes_manifest_cmd")
+      .then((m) => live && Array.isArray(m) && setManifest(m))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [confirming, manifest.length]);
+  const preview = removeAllPreview(manifest);
 
   const exportBackup = async () => {
     setBusy(true);
@@ -160,6 +177,15 @@ export const BackupRestoreCard: React.FC = () => {
 
       {confirming && (
         <>
+          {preview && (
+            <div className="cc-desc" role="status" data-remove-all-preview>
+              <details>
+                <summary>{preview.line}</summary>
+                <div>{preview.labels.join(", ")}.</div>
+              </details>
+              <div>{preview.keeps}</div>
+            </div>
+          )}
           <div className="cc-row">
             <div className="cc-desc">Also delete Lens settings, themes and training data</div>
             <button

@@ -3,8 +3,20 @@
 
 use serde::{Deserialize, Serialize};
 
+/// The capture shortcut. One of Lens's Ctrl+Alt family, free of Windows' keys, the tiling keys and
+/// the shortcuts apps rely on (src/keys/shortcuts.ts).
+pub const DEFAULT_HOTKEY: &str = "Ctrl+Alt+X";
+/// The default until 0.3: Save As in most apps, so taking it globally broke Save As everywhere.
+pub const OLD_DEFAULT_HOTKEY: &str = "Ctrl+Shift+S";
+/// Bumped when a default shortcut changes; a settings file below it is migrated once.
+pub const HOTKEY_REV: u32 = 1;
+
 fn d_hotkey() -> String {
-    "Ctrl+Shift+S".into()
+    DEFAULT_HOTKEY.into()
+}
+/// A settings file written before `hotkeyRev` existed.
+fn d_rev_missing() -> u32 {
+    0
 }
 fn d_mode() -> String {
     "region".into()
@@ -51,9 +63,12 @@ fn d_mb() -> u32 {
 pub struct SnipSettings {
     /// Off until the user turns Lens Snip on.
     pub enabled: bool,
-    /// Capture hotkey, parsed like the other Lens hotkeys ("Ctrl+Shift+S").
+    /// Capture hotkey, parsed like the other Lens hotkeys ("Ctrl+Alt+X").
     #[serde(default = "d_hotkey")]
     pub hotkey: String,
+    /// Which default-shortcut change this file has been through (see `migrate`).
+    #[serde(default = "d_rev_missing")]
+    pub hotkey_rev: u32,
     /// Take over the Print Screen key (backs up and restores Windows' own setting).
     pub print_screen: bool,
     /// region | window | monitor | all | last | freeform
@@ -111,6 +126,7 @@ impl Default for SnipSettings {
         Self {
             enabled: false,
             hotkey: d_hotkey(),
+            hotkey_rev: HOTKEY_REV,
             print_screen: false,
             default_mode: d_mode(),
             delay_seconds: 0,
@@ -135,6 +151,21 @@ impl Default for SnipSettings {
             show_recent: true,
         }
     }
+}
+
+/// One-time move off the old default shortcut. A file that still has `Ctrl+Shift+S` and has never
+/// been migrated gets the new default; a shortcut the person chose is kept, and so is
+/// `Ctrl+Shift+S` if they pick it again afterwards. Returns whether anything changed.
+pub fn migrate(s: &mut SnipSettings) -> bool {
+    if s.hotkey_rev >= HOTKEY_REV {
+        return false;
+    }
+    let plain = |v: &str| v.chars().filter(|c| !c.is_whitespace()).collect::<String>().to_lowercase();
+    if plain(&s.hotkey) == plain(OLD_DEFAULT_HOTKEY) {
+        s.hotkey = d_hotkey();
+    }
+    s.hotkey_rev = HOTKEY_REV;
+    true
 }
 
 const MODES: &[&str] = &["region", "window", "monitor", "all", "last", "freeform"];
@@ -173,7 +204,44 @@ mod tests {
     fn defaults_are_off_and_local() {
         let s = SnipSettings::default();
         assert!(!s.enabled && !s.print_screen && s.record_mic.is_empty() && !s.pin_click_through);
-        assert_eq!(s.hotkey, "Ctrl+Shift+S");
+        assert_eq!(s.hotkey, "Ctrl+Alt+X");
+        assert_eq!(s.hotkey_rev, HOTKEY_REV);
+    }
+
+    /// The default must be a shortcut Lens can take: it parses, and it is not one of Lens's own
+    /// fixed keys or a tiling key.
+    #[test]
+    fn the_default_shortcut_is_free() {
+        let spec = crate::win_summon::parse_hotkey(DEFAULT_HOTKEY).expect("parses");
+        assert!(!crate::win_summon::reserved_hotkey(&spec));
+        assert!(!crate::win_tiler::TILING_HOTKEYS.iter().any(|t| t.keys.eq_ignore_ascii_case(DEFAULT_HOTKEY)));
+        assert_ne!(DEFAULT_HOTKEY, OLD_DEFAULT_HOTKEY);
+    }
+
+    #[test]
+    fn the_old_default_moves_once_and_a_chosen_shortcut_is_kept() {
+        // A file from before the change: still on the old default.
+        let mut old: SnipSettings = serde_json::from_str(r#"{"enabled":true,"hotkey":"Ctrl+Shift+S"}"#).unwrap();
+        assert_eq!(old.hotkey_rev, 0);
+        assert!(migrate(&mut old));
+        assert_eq!((old.hotkey.as_str(), old.hotkey_rev, old.enabled), (DEFAULT_HOTKEY, HOTKEY_REV, true));
+        // Spelled differently, or no hotkey in the file at all.
+        let mut spaced: SnipSettings = serde_json::from_str(r#"{"hotkey":"ctrl + shift + s"}"#).unwrap();
+        assert!(migrate(&mut spaced));
+        assert_eq!(spaced.hotkey, DEFAULT_HOTKEY);
+        let mut bare: SnipSettings = serde_json::from_str("{}").unwrap();
+        assert!(migrate(&mut bare));
+        assert_eq!(bare.hotkey, DEFAULT_HOTKEY);
+        // A shortcut the person chose is theirs.
+        let mut chosen: SnipSettings = serde_json::from_str(r#"{"hotkey":"Ctrl+Alt+Shift+4"}"#).unwrap();
+        assert!(migrate(&mut chosen));
+        assert_eq!((chosen.hotkey.as_str(), chosen.hotkey_rev), ("Ctrl+Alt+Shift+4", HOTKEY_REV));
+        // Picking the old shortcut again after the move is respected: no second migration.
+        let mut again: SnipSettings = serde_json::from_str(r#"{"hotkey":"Ctrl+Shift+S","hotkeyRev":1}"#).unwrap();
+        assert!(!migrate(&mut again));
+        assert_eq!(again.hotkey, "Ctrl+Shift+S");
+        // A new install starts migrated.
+        assert!(!migrate(&mut SnipSettings::default()));
     }
 
     #[test]
@@ -192,6 +260,6 @@ mod tests {
         assert_eq!(s.pin_opacity, 0.2);
         assert_eq!(s.record_fps, 60);
         assert_eq!(s.ocr_language, "auto");
-        assert_eq!(s.hotkey, "Ctrl+Shift+S");
+        assert_eq!(s.hotkey, "Ctrl+Alt+X");
     }
 }

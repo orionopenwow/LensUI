@@ -194,7 +194,7 @@ Starting with 0.3.0, the installers (`.exe` and `.msi`) are on [GitHub Releases]
 Requirements: Windows 10 (1809 or newer) or Windows 11, the [Rust toolchain](https://www.rust-lang.org/tools/install) (stable, MSVC) and [Bun](https://bun.sh).
 
 ```bat
-git clone https://github.com/orionopenwow/lensui
+git clone https://github.com/orionopenwow/LensUI
 cd lensui
 bun install
 bun run tauri dev

@@ -21,6 +21,7 @@ const SCENES = [
   { id: "dashboard", magic: "dashboard", expect: [".mdb", ".mdb-lane"] },
   { id: "dashboard-board", magic: "dashboard,widgets,learn", expect: [".mdb", '[data-lane="widgets"]'], click: '.mdb-layout:has-text("Board")' },
   { id: "start", magic: "startButton", expect: [".mstart"] },
+  { id: "start-window", magic: "startButton", surface: "magicstart", expect: [".mstart-window", ".mstart-search input", ".mstart-actions"] },
   { id: "notes", magic: "shelfNotes", expect: [".snp", ".snp-body"] },
   { id: "studio", magic: "studioV2", expect: [".sv2", '[role="tab"][aria-selected="true"]'] },
   // Magic Mouse (wave M3): the card with the pointer frames, high-contrast frames, the grab
@@ -50,10 +51,16 @@ for (const preset of PRESETS) {
     pg.on("pageerror", (e) => errors.push(e.message));
     pg.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
     const q = sc.magic === "" ? "" : `&magic=${sc.magic}`;
-    await pg.goto(`${base}/harness.html?surface=settings&tab=about%23magic&preset=${preset}${q}`);
+    await pg.goto(
+      sc.surface
+        ? `${base}/harness.html?surface=${sc.surface}&preset=${preset}${q}`
+        : `${base}/harness.html?surface=settings&tab=about%23magic&preset=${preset}${q}`
+    );
     await pg.waitForTimeout(1100);
     if (sc.hidden) {
       if (await pg.locator("[data-section='magic'], .mdb, .sv2, .mstart").count()) errors.push("Magic preview showed with every flag off and Tester mode off");
+    } else if (sc.surface) {
+      for (const sel of sc.expect) if (!(await pg.locator(sel).count())) errors.push(`missing ${sel}`);
     } else {
       await pg.locator("[data-section='magic']").first().scrollIntoViewIfNeeded({ timeout: 3000 }).catch(() => {});
       if (sc.click) await pg.locator(sc.click).first().click({ timeout: 3000 }).catch((e) => errors.push(`click: ${e.message.slice(0, 80)}`));

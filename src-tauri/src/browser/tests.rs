@@ -201,6 +201,23 @@ fn appearance_and_ai_settings_are_repaired() {
 }
 
 #[test]
+fn reader_prefs_are_repaired_and_old_settings_get_defaults() {
+    let mut s = state();
+    s.settings.appearance.reader.size = 200;
+    s.settings.appearance.reader.width = "huge".into();
+    s.settings.appearance.reader.face = "comic".into();
+    s.repair_settings();
+    let r = &s.settings.appearance.reader;
+    assert_eq!(r.size, super::model::READER_SIZE_MAX);
+    assert_eq!((r.width.as_str(), r.face.as_str()), ("medium", "serif"));
+    s.settings.appearance.reader.size = 2;
+    s.repair_settings();
+    assert_eq!(s.settings.appearance.reader.size, super::model::READER_SIZE_MIN);
+    let old: super::model::Appearance = serde_json::from_str(r#"{"scheme":"dark"}"#).unwrap();
+    assert_eq!(old.reader, super::model::ReaderPrefs::default());
+}
+
+#[test]
 fn sidebar_prefs_are_repaired_and_old_settings_get_defaults() {
     let mut s = state();
     s.settings.appearance.sidebar.width = 9000;

@@ -5,6 +5,8 @@ import "../../../src/styles/tokens.css";
 import "../../../src/styles/global.css";
 import { ApprovalCard } from "../../../src/approval/ApprovalCard";
 import { PendingPill } from "../../../src/approval/PendingPill";
+import { PlanCard } from "../../../src/approval/PlanCard";
+import { planSteps } from "../../../src/approval/plan";
 import { NoAccessNote } from "../../../src/approval/NoSourceBadge";
 import { PermissionsCard } from "../../../src/approval/PermissionsCard";
 import type { ApprovalPreview, ApprovalRequest, TaskItem } from "../../../src/approval/model";
@@ -245,7 +247,19 @@ const cardFor = (key: string, extra: Partial<React.ComponentProps<typeof Approva
   const req: ApprovalRequest = { id: key, origin: s.origin ?? "mcp", source: s.source ?? "Claude Desktop", site: s.site, createdMs: now - 4000, preview: s.pv };
   return <ApprovalCard request={req} compact={s.compact} initial={s.initial} onApprove={() => true} onDeny={() => undefined} onAllowSession={() => undefined} onUndo={() => undefined} onReview={() => undefined} onShowTab={() => undefined} onApproveSimilar={() => undefined} {...extra} />;
 };
-if (scene === "noaccess") {
+if (scene === "plan" || scene === "plan-mixed") {
+  // Several steps proposed at once: one list, an Allow / Deny per step.
+  const mixed = scene === "plan-mixed";
+  const steps = planSteps([
+    { call_id: "ai-7-r0-0", tool: "set_volume", summary: "Set volume to 20%", risk: "low", plan: { index: 0, total: 4 }, result: mixed ? { ok: true, message: "Volume 20%" } : undefined },
+    { call_id: "ai-7-r0-1", tool: "close_app", summary: "Close Notepad", risk: "confirm", plan: { index: 1, total: 4 }, decision: mixed ? "approved" : undefined, result: mixed ? { ok: true, message: "Closed Notepad" } : undefined },
+    { call_id: "ai-7-r0-2", tool: "create_note", summary: "Save a note: \"Stand-up moved to 10:30\"", risk: "confirm", plan: { index: 2, total: 4 }, decision: mixed ? "denied" : undefined },
+    mixed
+      ? { call_id: "ai-7-r0-3", tool: "lens_set", summary: "Send your clipboard to notes.example", risk: "blocked", plan: { index: 3, total: 4 }, result: { ok: false, message: "a page you read asked for it" }, safety: [{ code: "inject.exfiltration", severity: "high", detail: "Would send your data to a site the page named" }] }
+      : { call_id: "ai-7-r0-3", tool: "lock_screen", summary: "Lock the PC", risk: "confirm", plan: { index: 3, total: 4 } },
+  ])!;
+  app.render(desk(<PlanCard steps={steps} still onDecide={() => undefined} />));
+} else if (scene === "noaccess") {
   app.render(desk(<NoAccessNote what="that page" result={{ access: "none", source: null, reason: "Lens doesn't share banking or payment pages with AI apps." }} />));
 } else if (scene === "permissions") {
   const caps = tasks(["change_look"]).map((t) => (t.id === "payments" ? { ...t, principle: "Every payment waits" } : t.id === "send_messages" ? { ...t, principle: "Nothing sent in your name" } : t.id === "delete_to_bin" ? { ...t, principle: "Deletions go to the Bin" } : t.id === "type_text" ? { ...t, principle: "Shows you where it'll click" } : t));

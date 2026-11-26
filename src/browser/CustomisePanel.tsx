@@ -5,6 +5,7 @@ import { DEFAULT_APPEARANCE, DEFAULT_SIDEBAR, SIDEBAR_WIDTH, type Appearance, ty
 import { Toggle } from "./AiPanel";
 import { sidebarPrefs } from "./tabAi";
 import { Key } from "./ApprovalCard";
+import { oops } from "./oops";
 
 /** hsl → #rrggbb */
 export function hslHex(h: number, s: number, l: number): string {
@@ -183,7 +184,7 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
         </div>
         <footer className="lb-make-foot">
           <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => onChange(DEFAULT_APPEARANCE)}>Reset <Key k="R" /></button>
-          <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(() => {})}>
+          <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(oops("open Lens themes"))}>
             <Palette size={13} /> Customise <Key k="⏎" />
           </button>
         </footer>

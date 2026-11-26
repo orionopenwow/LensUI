@@ -177,13 +177,15 @@ describe("Shelf → Notes", () => {
   test("an empty Shelf says so", () => {
     expect(shelfToNote([], { title: "x" }).body).toContain("_The Shelf is empty._");
   });
-  test("exports md and txt; pdf is a later update", () => {
+  test("exports md, txt and a real pdf", () => {
     const n = shelfToNote(items, { title: 'My: "notes"' });
     expect(exportNote(n, "md")).toMatchObject({ name: "My- -notes-.md", mime: "text/markdown" });
     const txt = exportNote(n, "txt");
     expect(txt.name.endsWith(".txt")).toBe(true);
     expect(txt.contents).not.toContain("## ");
-    expect(() => exportNote(n, "pdf")).toThrow();
+    const pdf = exportNote(n, "pdf");
+    expect(pdf.name).toBe("My- -notes-.pdf");
+    expect(new TextDecoder().decode(pdf.bytes!.slice(0, 8))).toBe("%PDF-1.4");
     expect(noteToText("# T\n> q")).toBe("T\n  q");
     expect(fileNameFor("   ", "md")).toBe("Note.md");
   });
