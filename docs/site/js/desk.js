@@ -422,7 +422,9 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (!w) return;
     const p = pillBox(), bar = dstyle === "taskbar";
     const [ow, oh] = FLY[w.app] ?? FLY.settings;
-    const ww = Math.round(Math.max(320, Math.min(W - 24, bar ? Math.min(ow, 680) : Math.max(ow, p?.w ?? 0))));
+    // A wider pill is matched so the join lines up; a full-width row (Islands' container) is not a pill.
+    const pw = p && p.w <= W * 0.75 ? p.w : 0;
+    const ww = Math.round(Math.max(320, Math.min(W - 24, bar ? Math.min(ow, 680) : Math.max(ow, pw))));
     const top = p ? p.t : H - 64, gap = bar ? 12 : 0;
     const hh = Math.round(Math.max(300, Math.min(oh, top - gap - TOP - 4)));
     const x = Math.round(bar && dalign === "left" ? 12 : (W - ww) / 2);

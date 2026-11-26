@@ -205,14 +205,14 @@ rail.addEventListener("keydown", (e) => {
 $("[data-rail-prev]")?.addEventListener("click", () => rail.scrollBy({ left: -rail.clientWidth * 0.8, behavior: "smooth" }));
 $("[data-rail-next]")?.addEventListener("click", () => rail.scrollBy({ left: rail.clientWidth * 0.8, behavior: "smooth" }));
 pickDock(0, { apply: false });
-// Load the rail's docks one at a time once it's near the screen.
+// Load the rail's docks one at a time once it's on screen (not while the hero demo is all you see).
 new IntersectionObserver(([e], ob) => {
   if (!e.isIntersecting) return;
   ob.disconnect();
   const q = tiles.map((t) => t.querySelector("iframe"));
   const next = () => { const f = q.shift(); if (!f) return; f.addEventListener("load", () => setTimeout(next, 200), { once: true }); f.src = f.dataset.src; };
   next();
-}, { rootMargin: "300px" }).observe(rail);
+}, { rootMargin: "0px", threshold: 0.2 }).observe(rail);
 
 // ---- the rest loads when it comes near ------------------------------------------------------------
 const lazy = (sel, f) => { const el = $(sel); if (!el) return; new IntersectionObserver(([e], ob) => { if (e.isIntersecting) { ob.disconnect(); f(el); } }, { rootMargin: "500px" }).observe(el); };

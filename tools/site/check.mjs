@@ -206,7 +206,10 @@ async function waitDesk(page, sel = "#desk-host") {
   await page.goto(base + "index.html");
   await page.evaluate(() => document.getElementById("stage").scrollIntoView({ block: "start" }));
   await waitDesk(page);
+  // The demo plays on load: stop it and let its frames settle before measuring the drag.
   await page.evaluate(() => window.lensSite.shows.exit());
+  await page.waitForFunction(() => [...window.lensSite.desk.wins.values()].every((w) => w.ready), null, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(1500);
   const cdp = await ctx.newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   const bar = await dragSpot(page);
@@ -748,7 +751,7 @@ async function waitDesk(page, sel = "#desk-host") {
     if (!g) { problems.push(`pop-out: ${style}: the dock's gear doesn't open Settings`); continue; }
     if (style === "taskbar") {
       if (g.fused || Math.abs(g.pillTop - (g.y + g.h) - 12) > 2 || g.w > 680) problems.push(`pop-out: taskbar: Settings should open apart, 12 px above the bar, at most 680 px wide (${JSON.stringify(g)})`);
-    } else if (!g.fused || !g.pillFused || Math.abs(g.y + g.h - g.pillTop - 1) > 1.5 || g.w < 760 || Math.abs(g.x + g.w / 2 - g.W / 2) > 2) problems.push(`pop-out: ${style}: Settings should open joined to the dock, 760 px wide and centred (${JSON.stringify(g)})`);
+    } else if (!g.fused || !g.pillFused || Math.abs(g.y + g.h - g.pillTop - 1) > 1.5 || g.w < 760 || g.w > g.W * 0.75 || Math.abs(g.x + g.w / 2 - g.W / 2) > 2) problems.push(`pop-out: ${style}: Settings should open joined to the dock, 760 px wide and centred (${JSON.stringify(g)})`);
     await dockF().click("button[aria-label='Settings']");
     await page.waitForTimeout(700);
     if (await geo()) problems.push(`pop-out: ${style}: a second click on the gear doesn't close Settings`);
