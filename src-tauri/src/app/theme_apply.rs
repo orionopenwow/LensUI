@@ -48,6 +48,12 @@ pub(crate) fn cancel_accent_writes() -> std::sync::MutexGuard<'static, ()> {
     io
 }
 
+/// After Windows' accent was put back: forget the last value Lens wrote, so turning the
+/// setting on again writes the accent even if it's the same colour as before.
+pub(crate) fn forget_written_accent() {
+    LAST_ACCENT.lock().unwrap_or_else(|e| e.into_inner()).clear();
+}
+
 /// True when an accent write queued at `epoch` may still run.
 pub(crate) fn accent_write_current(epoch: u64) -> bool {
     ACCENT_EPOCH.load(Ordering::SeqCst) == epoch

@@ -108,7 +108,7 @@ pub(crate) fn apply_frames(cfg: &LensConfig) {
 /// The system-wide writes, each only when its value changed: the Windows accent (registry plus a
 /// settings broadcast every app repaints for) and the Windhawk mod (Windhawk recompiles on write).
 pub(crate) fn apply_system_wide(cfg: &LensConfig, write_win_accent: bool, epoch: u64) {
-    if write_win_accent && cfg.theme.accent_mode == "custom" {
+    if write_win_accent && cfg.theme.write_windows_accent && cfg.theme.accent_mode == "custom" {
         // Under the accent lock, and only if no "Remove all" ran since this was queued.
         let _io = crate::app::theme_apply::ACCENT_IO.lock().unwrap_or_else(|e| e.into_inner());
         if crate::app::theme_apply::accent_write_current(epoch)
@@ -182,7 +182,8 @@ pub(crate) fn save_config_cmd(
 
     // Only write Windows registry accent when accent color/mode actually changed
     let accent_changed = prev_config.theme.accent_mode != new_config.theme.accent_mode
-        || prev_config.theme.custom_accent != new_config.theme.custom_accent;
+        || prev_config.theme.custom_accent != new_config.theme.custom_accent
+        || prev_config.theme.write_windows_accent != new_config.theme.write_windows_accent;
 
     let dwm_changed = accent_changed
         || prev_config.theme.surface_hex != new_config.theme.surface_hex
@@ -194,6 +195,12 @@ pub(crate) fn save_config_cmd(
         || (prev_config.theme.accent_tint_strength - new_config.theme.accent_tint_strength).abs()
             > 0.005;
 
+    // "Also use this accent in Windows" turned off: put Windows' own accent back now.
+    if prev_config.theme.write_windows_accent && !new_config.theme.write_windows_accent {
+        let _io = crate::app::theme_apply::cancel_accent_writes();
+        let _ = crate::win_theme::restore_windows_accent();
+        crate::app::theme_apply::forget_written_accent();
+    }
     if dwm_changed {
         apply_theme_to_system(&new_config, accent_changed);
     }

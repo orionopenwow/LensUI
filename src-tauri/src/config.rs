@@ -40,6 +40,11 @@ pub struct ThemeConfig {
     /// "classic" | "expressive" | "dotmatrix": shape style layered on the colour pack.
     #[serde(default = "default_shape_style")]
     pub shape_style: String,
+    /// Also write a custom Lens accent into Windows' own accent colour (title bars, Start, the
+    /// Windows taskbar). A system-wide change, so off unless the person turns it on; "Remove all
+    /// Lens changes" puts Windows' accent back.
+    #[serde(default)]
+    pub write_windows_accent: bool,
 }
 
 fn default_shape_style() -> String {
@@ -418,6 +423,7 @@ impl Default for LensConfig {
                 contrast: "system".into(),
                 locale: "auto".into(),
                 shape_style: default_shape_style(),
+                write_windows_accent: false,
             },
             dock: DockConfig {
                 grounded_margin_bottom: 0,

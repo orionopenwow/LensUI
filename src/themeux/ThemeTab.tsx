@@ -460,6 +460,20 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
             </div>
           </div>
 
+          {config.theme.accentMode === "custom" && (
+            <label className="tux-check">
+              <input
+                type="checkbox"
+                checked={!!config.theme.writeWindowsAccent}
+                onChange={(e) => setTheme({ writeWindowsAccent: e.target.checked })}
+              />
+              <span>
+                Also use this accent in Windows
+                <span className="tux-help"> Colours Windows' title bars, Start and taskbar too. Turn it off to put Windows' own accent back.</span>
+              </span>
+            </label>
+          )}
+
           <div className="tux-sliders">
             <ValueSlider label="Glass opacity" value={Math.round(config.theme.glassOpacity * 100)} min={40} max={100} unit="%" onChange={(v) => setTheme({ glassOpacity: v / 100 })} />
             <ValueSlider label="Roundness" value={config.theme.borderRadius} min={0} max={20} unit="px" onChange={(v) => setTheme({ borderRadius: v })} />
