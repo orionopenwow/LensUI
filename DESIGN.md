@@ -144,9 +144,21 @@ Every interactive element declares one weight (`data-weight` or the UI-kit prop)
 
 ### 5.5 How it is enforced
 
-- **UI kit primitives** (`src/ui/press` and the kit components) implement §5.2–5.3, so apps get the feel by using the kit, not by hand-writing `:active` rules.
+- [x] **UI kit primitives** (`src/ui/press` and the kit components) implement §5.2–5.3, so apps get the feel by using the kit, not by hand-writing `:active` rules.
+  - [x] Tokens: `--lens-press-in` (70 ms), `--lens-press-release` (220 ms) / `--lens-press-release-heavy` (260 ms), `--lens-press-hold-min` (90 ms), `--lens-pending-delay` (300 ms), per-weight scale / travel / fill step / highlight, the light-pack fill direction, and their reduced-motion values (`src/styles/motion.css`, `src/ui/motion/tokens.ts`).
+  - [x] `src/ui/press`: `installPress()` (one delegate per window, attributes only, no re-renders), `usePress()` / `pressProps()`, `data-weight` CSS with the minimum hold, keyboard presses, clean cancel, `pending` (sunk, spinner after 300 ms, no layout change) and no press when disabled.
+  - [x] Kit: `Button` / `IconButton` (medium; primary and danger heavy; `pending`), `Toggle` (knob spring + 6 % squash), `Segmented` (sliding indicator, `useSlidingIndicator`), `Chip`, `Card` with `onClick` (heavy), `FlyoutClose`; fill sliders grow 1 px while grabbed (`data-grab`). Shared classes (`cc-btn`, `cc-chip`, `cc-nav-btn`, Quick settings tiles…) get their weight from `src/ui/press/weights.ts`; `global.css` no longer hand-writes `:active`.
+  - [x] Flows (`src/ui/motion/flow.ts`, `origin.ts`): `growFrom` / `returnTo`, `staggerIn` (first 6), `swapIn` (6 px, forward/back), and pop-outs that grow from their trigger across windows (`data-opens` on the trigger, `useGrowFromTrigger` on the pop-out's content root; the native window is never resized). Applied to Settings page swaps, setup steps, and the Quick settings, Settings and Search pop-outs.
 - **Guardrails:**
-  - a test fails when an interactive element in a migrated surface has no press weight or uses raw durations;
-  - the parity rig renders a "feel" scene (each weight at rest, hover, pressed, pending, disabled; light and dark);
-  - the perf rig measures press and flow frames.
+  - [x] a test fails when an interactive element in a migrated surface has no press weight or uses raw durations (`src/__tests__/feel.test.ts`, list in `tools/polish/feel-migrated.txt`);
+  - [x] the parity rig renders a "feel" scene (each weight at rest, hover, pressed, pending, disabled; light and dark; toggles mid-press; the segmented indicator) — `tools/parity/feel`, goldens `feel-*` in `tools/parity/golden`;
+  - [x] the perf rig measures press and flow frames (`feel-rapid-press`, `feel-settings-press`, `feel-popout-grow` in `tools/perf/run.mjs`).
 - **Review:** every Fable pass checks its area against §5.1–5.4.
+
+#### Adopting the feel (areas not migrated yet: Dock, Lens Browser, other apps)
+
+1. Use the kit (`Button`, `IconButton`, `Toggle`, `Segmented`, `Chip`, `Card`) or put `data-weight="light|medium|heavy"` on each control (`usePress()` when it starts work, for `pending`). Delete the area's `:active` scale rules.
+2. The Dock and Lens Browser windows opt out of class-based weights (`data-press-classes="off"` in `main.tsx`) so their pass decides; remove that line when the pass lands. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
+3. Pop-outs: add `data-opens="<surface label>"` to the button that opens one (Dock Quick settings, Settings and Search buttons still need it) and `useGrowFromTrigger(label, rootRef)` on the pop-out's root. In-window cards and panels use `growFrom(el, triggerRect)` / `returnTo(...)`.
+4. Lists: `staggerIn(items)` on arrival; content swaps: `data-swap="forward|back"` on a `.lens-swap` root, or `swapIn(el, dir)`.
+5. Add the area's files to `tools/polish/feel-migrated.txt` so the guardrail holds them.

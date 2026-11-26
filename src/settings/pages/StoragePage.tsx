@@ -33,7 +33,7 @@ export const StoragePage: React.FC<PageProps> = ({ section }) => {
           {system && <Meter label="System drive used" value={system.totalBytes - system.freeBytes} max={system.totalBytes} />}
         </HeroTile>
         <HeroTile icon={<Sparkles size={15} aria-hidden />} label="Lens Cleaner" sub="Free up space safely">
-          <button type="button" className="cc-chip sh-winlink compact" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(oops("open the Cleaner"))}>
+          <button data-weight="light" type="button" className="cc-chip sh-winlink compact" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(oops("open the Cleaner"))}>
             <span>Open Lens Cleaner</span>
           </button>
         </HeroTile>

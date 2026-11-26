@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { oops } from "./oops";
+import { usePress } from "./press";
 import "./ui.css";
 
 /** "Animated backdrop" → "animated backdrop"; names that start with an acronym ("Wi-Fi", "HDR") stay. */
@@ -26,15 +27,20 @@ export type ToggleProps = ToggleName & {
 export const Toggle: React.FC<ToggleProps> = ({ checked, disabled, className, onChange, onError, ...name }) => {
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
   useEffect(() => setOptimistic(null), [checked]);
+  // Pending (the change is being applied) keeps the knob pressed; this springs it back when done.
+  const press = usePress<HTMLButtonElement>({ weight: "light", pending: optimistic !== null });
   const shown = optimistic ?? checked;
   return (
     <button
+      ref={press.ref}
       type="button"
       role="switch"
       aria-checked={shown}
       aria-label={name.label}
       aria-labelledby={name.labelledBy}
       disabled={disabled}
+      data-weight="light"
+      data-pending={optimistic !== null ? "true" : undefined}
       className={`lens-toggle ${className ?? ""} ${shown ? "on" : ""} ${optimistic !== null ? "is-pending" : ""}`}
       onClick={() => {
         const next = !shown;

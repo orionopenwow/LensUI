@@ -57,6 +57,9 @@ export function poseKeyframe(p: Pose, origin?: string, additive = false): Keyfra
 export interface GlideHandle {
   finished: Promise<void>;
   cancel(): void;
+  /** Run the same animation backwards from where it is now (interrupting a flow mid-way).
+   *  Returns false when it had already finished (start a new animation instead). */
+  reverse?(): boolean;
 }
 
 const DONE: GlideHandle = { finished: Promise.resolve(), cancel() {} };
@@ -96,7 +99,19 @@ export function glide(el: Element | null | undefined, from: Pose, to: Pose, opts
     },
     () => {}
   );
-  return { finished, cancel: () => anim.cancel() };
+  return {
+    finished,
+    cancel: () => anim.cancel(),
+    reverse: () => {
+      try {
+        if (anim.playState !== "running") return false;
+        anim.reverse();
+        return true;
+      } catch {
+        return false; // element left the page
+      }
+    },
+  };
 }
 
 function applyPose(el: HTMLElement, p: Pose, additive = false) {

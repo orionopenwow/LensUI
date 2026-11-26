@@ -88,7 +88,7 @@ export const PowerPage: React.FC<PageProps> = ({ section }) => {
             ["restart", "Restart"],
             ["shutdown", "Shut down"],
           ].map(([id, label]) => (
-            <button key={id} type="button" className={`cc-btn ${confirm === id ? "sh-danger" : ""}`} onClick={() => action(id)}>
+            <button data-weight="heavy" key={id} type="button" className={`cc-btn ${confirm === id ? "sh-danger" : ""}`} onClick={() => action(id)}>
               {confirm === id ? `Click again to ${label.toLowerCase()}` : label}
             </button>
           ))}

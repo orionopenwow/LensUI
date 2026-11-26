@@ -1,0 +1,167 @@
+/* Press weights (DESIGN.md §5.1–5.2). Driven by src/ui/press: data-weight declares the weight,
+   data-press="in|out" is the live state, data-pending keeps a control sunk while its work runs.
+   Depth comes from the individual `scale` / `translate` properties, so a component's own
+   `transform` (anchoring, magnification) is never overwritten; the fill step, the highlight and the
+   inner shade are one inset box-shadow list, so nothing here changes layout. Token-only. */
+
+[data-weight="light"] {
+  --lens-p-scale: var(--lens-press-scale-light);
+  --lens-p-y: var(--lens-press-y-light);
+  --lens-p-fill: var(--lens-press-fill-light);
+  --lens-p-hl: var(--lens-press-highlight-light);
+  --lens-p-shade: 0px;
+  --lens-p-release: var(--lens-dur-fast);
+  --lens-p-release-ease: var(--lens-ease-out);
+}
+[data-weight="medium"] {
+  --lens-p-scale: var(--lens-press-scale-medium);
+  --lens-p-y: var(--lens-press-y-medium);
+  --lens-p-fill: var(--lens-press-fill-medium);
+  --lens-p-hl: var(--lens-press-highlight-medium);
+  --lens-p-shade: 0px;
+  --lens-p-release: var(--lens-press-release);
+  --lens-p-release-ease: var(--lens-ease-spring);
+}
+[data-weight="heavy"] {
+  --lens-p-scale: var(--lens-press-scale-heavy);
+  --lens-p-y: var(--lens-press-y-heavy);
+  --lens-p-fill: var(--lens-press-fill-heavy);
+  --lens-p-hl: var(--lens-press-highlight-heavy);
+  --lens-p-shade: var(--lens-press-shade-heavy);
+  --lens-p-release: var(--lens-press-release-heavy);
+  --lens-p-release-ease: var(--lens-ease-spring);
+}
+
+/* Disabled: no press, no hover lift, 40 % and the not-allowed cursor. */
+[data-weight]:is(:disabled, [aria-disabled="true"]) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Sunk: held down, or waiting for its work. Hover never scales; only a press does. */
+:root :is([data-weight][data-press="in"], [data-weight][data-pending]):not(:disabled, [aria-disabled="true"]) {
+  scale: var(--lens-p-scale);
+  translate: 0 var(--lens-p-y);
+  box-shadow:
+    inset 0 0 0 100vmax rgb(var(--lens-press-tint) / var(--lens-p-fill)),
+    inset 0 1px 0 rgb(var(--lens-ink) / calc(0.08 * var(--lens-p-hl))),
+    inset 0 var(--lens-p-shade) var(--lens-p-shade) rgb(0 0 0 / calc(0.28 * var(--lens-shade-k, 1)));
+}
+
+/* Press-in: fast and firm. !important: a component's own transition list must not slow the press. */
+:root :is([data-weight][data-press="in"], [data-weight][data-pending]) {
+  transition-property: scale, translate, box-shadow, background-color, border-color, color !important;
+  transition-duration: var(--lens-press-in), var(--lens-press-in), var(--lens-press-in), var(--lens-dur-fast), var(--lens-dur-fast), var(--lens-dur-fast) !important;
+  transition-timing-function: var(--lens-ease-out) !important;
+}
+
+/* Release: springs back with a tiny damped overshoot (light: a colour ease). */
+:root [data-weight][data-press="out"]:not([data-pending]) {
+  transition-property: scale, translate, box-shadow, background-color, border-color, color !important;
+  transition-duration: var(--lens-p-release), var(--lens-p-release), var(--lens-dur-fast), var(--lens-dur-fast), var(--lens-dur-fast), var(--lens-dur-fast) !important;
+  transition-timing-function: var(--lens-p-release-ease), var(--lens-p-release-ease), var(--lens-ease-out), var(--lens-ease-out), var(--lens-ease-out), var(--lens-ease-out) !important;
+}
+
+/* ── Toggles: the knob travels with the spring and squashes 6 % wide while pressed ──────────── */
+:is(.lens-toggle, .cc-toggle)[data-weight]::after,
+.qs-switch[data-weight] > .qs-switch-knob {
+  transition:
+    transform var(--lens-press-release) var(--lens-ease-spring),
+    scale var(--lens-press-in) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    opacity var(--lens-dur-fast) var(--lens-ease-out);
+}
+:is(.lens-toggle, .cc-toggle)[data-weight]:is([data-press="in"], [data-pending]):not(:disabled)::after,
+.qs-switch[data-weight]:is([data-press="in"], [data-pending]):not(:disabled) > .qs-switch-knob {
+  scale: var(--lens-press-knob-squash) calc(2 - var(--lens-press-knob-squash));
+}
+/* The switch itself never scales: depth is the knob's squash and the track's fill step. */
+:root :is(.lens-toggle, .cc-toggle, .qs-switch)[data-weight]:is([data-press], [data-pending]) {
+  scale: none;
+  translate: none;
+}
+
+/* ── Sliders and fill bars: what is grabbed grows 1px while held (DESIGN.md §5.2) ──────────────
+   Set data-grabbed on the thumb (or on a thumbless fill bar) and --lens-grab-size to its size in
+   px across the growth axis; the fill itself follows the pointer 1:1 and settles with ease-out. */
+:root [data-grab] {
+  transition:
+    scale var(--lens-press-release) var(--lens-ease-spring),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    box-shadow var(--lens-dur-fast) var(--lens-ease-out);
+}
+:root [data-grab][data-grabbed] {
+  scale: 1 calc(1 + (2 * var(--lens-press-thumb-grow)) / var(--lens-grab-size, 20));
+  transition:
+    scale var(--lens-press-in) var(--lens-ease-out),
+    background var(--lens-dur-fast) var(--lens-ease-out),
+    border-color var(--lens-dur-fast) var(--lens-ease-out),
+    box-shadow var(--lens-dur-instant) var(--lens-ease-out);
+}
+:root [data-grab="x"][data-grabbed] {
+  scale: calc(1 + (2 * var(--lens-press-thumb-grow)) / var(--lens-grab-size, 20)) 1;
+}
+
+/* ── Pending: an inline spinner in place of the icon after --lens-pending-delay ─────────────── */
+.lens-press-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.lens-press-slot > .lens-press-spinner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+}
+.lens-press-slot > .lens-press-spinner::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  animation: lens-press-spin var(--lens-spin-period) linear infinite;
+}
+@keyframes lens-press-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+.lens-press-slot > .lens-press-content {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+[data-pending] .lens-press-slot > .lens-press-spinner {
+  opacity: 1;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out) var(--lens-pending-delay);
+}
+[data-pending] .lens-press-slot > .lens-press-content {
+  opacity: 0;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out) var(--lens-pending-delay);
+}
+/* Reduced motion: the wait still shows after the delay (it is state, not motion); nothing spins. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) [data-pending] .lens-press-slot > :is(.lens-press-spinner, .lens-press-content) {
+    transition-delay: var(--lens-pending-delay) !important;
+  }
+  :root:not([data-motion="full"]) .lens-press-slot > .lens-press-spinner::before {
+    animation: none !important;
+    border-right-color: currentColor;
+    opacity: 0.6;
+  }
+}
+:root[data-motion="reduce"] [data-pending] .lens-press-slot > :is(.lens-press-spinner, .lens-press-content) {
+  transition-delay: var(--lens-pending-delay) !important;
+}
+:root[data-motion="reduce"] .lens-press-slot > .lens-press-spinner::before {
+  animation: none !important;
+  border-right-color: currentColor;
+  opacity: 0.6;
+}

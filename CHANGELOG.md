@@ -8,6 +8,18 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Controls you can feel.** Buttons, tiles, chips, switches and rows in Settings, setup, Quick
+  settings and Search now press like a well-made key: they sink the moment you press (mouse, touch
+  or Space/Enter), stay visibly pressed for at least 90 ms even on the fastest click, and spring
+  back with a small, damped settle. Three weights: rows and tabs only darken a step, buttons sink a
+  little, primary and destructive actions sink deeper. A button that starts work stays pressed
+  until it's done and shows a small spinner after 300 ms, without changing size. Switch knobs
+  squash slightly as you press and travel with the spring; segmented choices slide their
+  highlight to the new option; sliders grow a pixel while you hold them. With reduced motion,
+  presses show only the colour step.
+- **Things come from somewhere.** Quick settings and Search grow out of the Top Bar button that
+  opened them and shrink back into it when they close; Settings pages and setup steps slide in the
+  direction you're going. The windows themselves never move or resize during the motion.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that
