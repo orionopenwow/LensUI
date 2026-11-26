@@ -56,6 +56,12 @@ window.addEventListener("message", (e) => {
       W.__lensSetConfig(next);
       W.__lensEmit("lens://config-updated", next);
     }
+  } else if (m.lens === "settings") {
+    // The page's desk placed (or closed) the docked Settings pop-out: the dock fuses its top edge to it
+    // (or opens it apart, Windows-style, on the Taskbar style), as the backend tells the real Dock.
+    (W as any).__lensVisible = { ...((W as any).__lensVisible ?? {}), settings: !!m.open };
+    W.__lensEmit("lens://settings-docked", !!m.docked);
+    W.__lensEmit("lens://settings-open", !!m.open);
   } else if (m.lens === "ping") {
     window.parent?.postMessage({ lens: "ready" }, "*");
   } else if (m.lens === "search") {
