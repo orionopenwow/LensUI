@@ -756,7 +756,7 @@ export const ControlCenterSurface: React.FC = () => {
             </>
           )}
 
-          {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} />}
+          {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} section={section} />}
 
           {tab === "dock" && (
             <>

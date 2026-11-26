@@ -202,6 +202,10 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
                 pos.x, pos.y, size.width, bar_h + extra_h
             );
         }
+        // "Top Bar on every monitor": the extra bars make room for the main one wherever it is.
+        if cfg.func.per_monitor_bars {
+            crate::app::integration::place_extra_topbars(app, cfg, (pos.x, pos.y));
+        }
 
         // Widget Drawer positioned cleanly on the right below top bar
         if let Some(widgets) = app.get_webview_window("widgets") {

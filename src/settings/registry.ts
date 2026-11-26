@@ -108,7 +108,15 @@ export const PAGES: PageDef[] = [
     keywords: ["dock", "taskbar", "top bar", "menu bar", "magnification", "auto hide", "pin", "launcher", "clock", "tray", "labels", "slim", "floating", "islands"],
     sections: [
       { id: "style", label: "Dock style", keywords: ["floating", "slim", "taskbar", "studio", "minimal", "split"] },
-      { id: "behaviour", label: "Behaviour", keywords: ["auto hide", "magnification", "previews", "lock"] },
+      { id: "behaviour", label: "Behaviour", keywords: ["auto hide", "previews", "lock"] },
+      {
+        id: "advanced",
+        label: "Advanced",
+        keywords: [
+          "magnification", "magnify", "zoom wave", "launch animation", "bounce", "jelly", "minimise pulse", "app names", "labels",
+          "scroll to switch windows", "drop files", "middle click", "icon size per style", "dividers", "separators", "close pop-outs",
+        ],
+      },
       { id: "topbar", label: "Top bar", keywords: ["menu bar", "clock", "widgets", "tray"] },
     ],
   },

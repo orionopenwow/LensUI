@@ -1147,6 +1147,60 @@
    "source": "src/themeux/DockTab.tsx"
   },
   {
+   "id": "setting.dock.docktab.icon-size-for",
+   "kind": "setting",
+   "title": "Icon size for",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Icon size for"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Icon size for"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.other-styles-with-their-own-size",
+   "kind": "setting",
+   "title": "Other styles with their own size",
+   "text": "Press one to hand it back to the shared size.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Other styles with their own size"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Other styles with their own size"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.dividers",
+   "kind": "setting",
+   "title": "Dividers",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Dividers"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Dividers"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
    "id": "setting.dock.docktab.hide-the-windows-taskbar",
    "kind": "setting",
    "title": "Hide the Windows taskbar",
@@ -1215,6 +1269,114 @@
     "tab": "dock",
     "card": "DockTab",
     "label": "Suggest apps you usually open now"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.minimise-pulse",
+   "kind": "setting",
+   "title": "Minimise pulse",
+   "text": "An app's icon pulses once when one of its windows is minimised or brought back.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Minimise pulse"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Minimise pulse"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.show-app-names",
+   "kind": "setting",
+   "title": "Show app names",
+   "text": "Beside the icons on Taskbar and Studio, under them on the other styles.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Show app names"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Show app names"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.scroll-to-switch-windows",
+   "kind": "setting",
+   "title": "Scroll to switch windows",
+   "text": "Turn the mouse wheel over an app to step through its open windows.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Scroll to switch windows"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Scroll to switch windows"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.drop-files-on-apps",
+   "kind": "setting",
+   "title": "Drop files on apps",
+   "text": "Drop a file on an app in the Dock to open it with that app.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Drop files on apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Drop files on apps"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.middle-click-opens-a-new-window",
+   "kind": "setting",
+   "title": "Middle-click opens a new window",
+   "text": "Middle-click an app to start another window of it.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Middle-click opens a new window"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Middle-click opens a new window"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.close-pop-outs-when-the-pointer-leaves",
+   "kind": "setting",
+   "title": "Close pop-outs when the pointer leaves",
+   "text": "Quick Settings and Settings on the Dock close a moment after you move away. Never while the pointer is over them.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Close pop-outs when the pointer leaves"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Close pop-outs when the pointer leaves"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1754,7 +1916,7 @@
    "id": "card.system.monitorpickercard",
    "kind": "card",
    "title": "Monitor",
-   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on Every Monitor. Monitor picker. which monitor the Dock and Top Bar live on",
+   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on every monitor. Monitor picker. which monitor the Dock and Top Bar live on",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1772,20 +1934,20 @@
   {
    "id": "setting.system.monitorpickercard.top-bar-on-every-monitor",
    "kind": "setting",
-   "title": "Top Bar on Every Monitor",
+   "title": "Top Bar on every monitor",
    "text": "Show a Top Bar on each display. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Monitor",
-    "Top Bar on Every Monitor"
+    "Top Bar on every monitor"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "MonitorPickerCard",
-    "label": "Top Bar on Every Monitor"
+    "label": "Top Bar on every monitor"
    },
    "source": "src/components/MonitorPickerCard.tsx"
   },
