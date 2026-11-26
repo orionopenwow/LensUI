@@ -2,7 +2,9 @@
 // or files in; drag items out into other apps; drag to reorder.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { LensContextMenu, type MenuAt } from "../magic/LensContextMenu";
-import { Archive, Check, ClipboardCopy, Download, FileText, Globe, Image as ImageIcon, MessageSquare, Pin, Plus, Trash2, Captions, TextSelect, File } from "lucide-react";
+import { NotePreview } from "../shelf/NotePreview";
+import { noteSource } from "../shelf/NoteSheet.model";
+import { Archive, Check, NotebookPen, X, ClipboardCopy, Download, FileText, Globe, Image as ImageIcon, MessageSquare, Pin, Plus, Trash2, Captions, TextSelect, File } from "lucide-react";
 import {
   DEFAULT_SHELF, formatTokens, onShelfChanged, shelfAdd, shelfClear, shelfCreate, shelfDelete, shelfExport,
   shelfList, shelfPin, shelfRemove, shelfReorder, shelvesList, type ShelfInfo, type ShelfItem, type ShelfKind,
@@ -36,7 +38,7 @@ export function useShelf(shelf: string) {
 }
 
 export function ShelfDrawer({
-  shelf, setShelf, picked, togglePick, onUse, onNotice,
+  shelf, setShelf, picked, togglePick, onUse, onNotice, notesOn = false,
 }: {
   shelf: string;
   setShelf: (id: string) => void;
@@ -44,6 +46,8 @@ export function ShelfDrawer({
   togglePick: (id: string) => void;
   onUse: () => void;
   onNotice: (title: string, ok?: boolean) => void;
+  /** magicWaves.shelfNotes: shows "Make a note" (docs/SHELF.md "Shelf → Notes"). */
+  notesOn?: boolean;
 }) {
   const { items, shelves } = useShelf(shelf);
   const [naming, setNaming] = useState<string | null>(null);
@@ -52,6 +56,7 @@ export function ShelfDrawer({
   const [menu, setMenu] = useState<{ at: MenuAt; item: ShelfItem } | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
   const [over, setOver] = useState(false);
+  const [noting, setNoting] = useState(false);
   const info = shelves.find((s) => s.id === shelf);
   const pickedTokens = useMemo(() => items.filter((i) => picked.has(i.id)).reduce((n, i) => n + i.approx_tokens, 0), [items, picked]);
 
@@ -216,6 +221,11 @@ export function ShelfDrawer({
             <button type="button" className="ct-btn is-primary" disabled={picked.size === 0} onClick={onUse}>
               Use {picked.size || ""} as context{picked.size ? ` · ${formatTokens(pickedTokens)}` : ""}
             </button>
+            {notesOn ? (
+              <button type="button" className="ct-btn" disabled={items.length === 0} onClick={() => setNoting(true)}>
+                <NotebookPen size={13} strokeWidth={2.4} aria-hidden /> Make a note
+              </button>
+            ) : null}
             <span className="cmd-shelf-total">{info ? formatTokens(info.approx_tokens) : ""}</span>
             <button type="button" className="cmd-icon" aria-label="Clear shelf" onClick={() => setConfirm("clear")}><Trash2 size={14} /></button>
             {shelf !== DEFAULT_SHELF ? (
@@ -257,6 +267,14 @@ export function ShelfDrawer({
             },
           ]}
         />
+      ) : null}
+      {notesOn && noting ? (
+        <div className="cmd-note-sheet" role="dialog" aria-label="Make a note">
+          <button type="button" className="cmd-icon cmd-note-close" aria-label="Close the note" onClick={() => setNoting(false)}>
+            <X size={14} strokeWidth={2.4} />
+          </button>
+          <NotePreview items={noteSource(items, picked)} />
+        </div>
       ) : null}
     </aside>
   );

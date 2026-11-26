@@ -416,6 +416,14 @@ mod rt {
     /// Marks keys Lens sends itself (also ignored because they are flagged as injected).
     const LENS_EXTRA_INFO: usize = 0x4C45_4E53;
 
+    /// Debug builds only: `LENS_E2E_ACCEPT_INJECTED=1` lets the end-to-end tests press the Win key
+    /// with SendInput. Release builds always ignore injected keys (other tools' macros, remote
+    /// desktop), and Lens's own keys (LENS_EXTRA_INFO) are ignored either way.
+    fn accept_injected() -> bool {
+        static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        *ON.get_or_init(|| cfg!(debug_assertions) && std::env::var("LENS_E2E_ACCEPT_INJECTED").as_deref() == Ok("1"))
+    }
+
     type Callback = Box<dyn Fn(u64, HookEvent) + Send + Sync + 'static>;
     type PingCallback = Box<dyn Fn(u64) + Send + Sync + 'static>;
 
@@ -486,7 +494,7 @@ mod rt {
     /// service ignores the answer then). Runs the pure [`KeyMachine`], optionally sends one mask
     /// key, pushes an event onto a channel and returns.
     pub fn on_key(ev: &KeyEvent) -> bool {
-        let injected = ev.injected() || ev.extra == LENS_EXTRA_INFO;
+        let injected = (ev.injected() && !accept_injected()) || ev.extra == LENS_EXTRA_INFO;
         // try_lock: never block on the input thread.
         let decision = match machine().try_lock() {
             Ok(mut m) => m.on_key(ev.vk, ev.down(), injected, ev.paused),
@@ -659,6 +667,11 @@ mod rt {
         }
     }
 
+    /// Opens Windows' own Start with Ctrl+Esc (marked as Lens's own input, so the hook passes it).
+    pub fn send_ctrl_esc() {
+        send_keys(&[(VK_CONTROL, false), (VK_ESCAPE, false), (VK_ESCAPE, true), (VK_CONTROL, true)]);
+    }
+
     pub fn extend_deadline(ms: u64) {
         if let Ok(mut w) = watchdog().lock() {
             w.extend(now_ms() + ms);
@@ -726,6 +739,14 @@ pub fn ack(seq: u64) {
 }
 #[cfg(not(windows))]
 pub fn ack(_seq: u64) {}
+
+/// Opens Windows Start (Ctrl+Esc). Magic Start's "Windows Start" button and power menu use it.
+#[cfg(windows)]
+pub fn send_ctrl_esc() {
+    rt::send_ctrl_esc()
+}
+#[cfg(not(windows))]
+pub fn send_ctrl_esc() {}
 
 /// Give the UI longer for the current event (e.g. the Launcher window is being created).
 #[cfg(windows)]

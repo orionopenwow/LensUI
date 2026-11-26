@@ -14,6 +14,12 @@ up and migrates `%APPDATA%\LensUI` where it can.
   Windows' own accent back.
 
 ### Added
+- **Magic Start and Shelf to Notes (M4, off by default):** with the Magic button on, a Windows-key
+  tap opens Lens Magic Start (search, pinned apps, Magic actions, recent files and Shelf items, Lock
+  and Windows Start). Ctrl+Esc always opens Windows Start, Win+key shortcuts are untouched, and if
+  Lens doesn't answer within 300 ms Windows Start opens instead. With Shelf to Notes on, "Make a
+  note" in the Shelf saves a note to Lens Notes, exports it as Markdown, text or PDF, or sends it to
+  a Matrix room after you approve the exact text. See docs/MAGIC.md and docs/SHELF.md.
 - **Dashboard widgets and X (M2, off by default):** with Magic Dashboard and Widgets on, the
   Dashboard's Widgets lane takes widgets from a small gallery (weather, a news feed, a GitHub
   release, crypto prices, world clocks, this PC). Each one shows the sites it will fetch from and

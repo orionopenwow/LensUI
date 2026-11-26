@@ -60,6 +60,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
   // Magic Dashboard (docs/plans/MAGIC_WAVES.md; only opened while magicWaves.dashboard is on).
   dashboard: lazy(() => import("./dashboard/DashboardWindow").then((m) => ({ default: m.DashboardWindow }))),
+  // Magic Start (wave M4; only opened while magicWaves.startButton is on).
+  magicstart: lazy(() => import("./magic/start/MagicStartWindow").then((m) => ({ default: m.MagicStartWindow }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
