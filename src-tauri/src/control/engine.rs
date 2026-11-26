@@ -6,7 +6,7 @@ use super::{Capability, Risk};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 /// Whole settings stores (`config`, `wallpaper`, `windowStyling`, `cursorFx`, `clipboard`,
@@ -103,16 +103,93 @@ pub struct UndoRecord {
 }
 
 pub const UNDO_DEPTH: usize = 50;
+/// The undo journal on disk never grows past this; the oldest steps go first.
+pub const UNDO_JOURNAL_MAX_BYTES: usize = 512 * 1024;
+/// One step larger than this is not kept on disk (it stays undoable until Lens closes).
+pub const UNDO_RECORD_MAX_BYTES: usize = 128 * 1024;
+
+/// Reads an undo journal: one record per line, oldest first. Damaged lines are skipped, so one
+/// bad line never costs the rest. Window steps are left out: a window handle from before a
+/// restart may now belong to a different window, and Lens must not move that one.
+pub fn load_undo_journal(path: &Path) -> VecDeque<UndoRecord> {
+    let text = std::fs::read_to_string(path).unwrap_or_default();
+    let mut q: VecDeque<UndoRecord> = text
+        .lines()
+        .filter(|l| !l.trim().is_empty() && l.len() <= UNDO_RECORD_MAX_BYTES)
+        .filter_map(|l| serde_json::from_str::<UndoRecord>(l).ok())
+        .filter(|r| r.window.is_none() && !r.id.is_empty())
+        .collect();
+    while q.len() > UNDO_DEPTH {
+        q.pop_front();
+    }
+    q
+}
+
+/// The journal text for a stack: newest records kept, within the depth and byte limits.
+/// Window steps and oversized steps are not written.
+pub fn undo_journal_text(q: &VecDeque<UndoRecord>) -> String {
+    let mut lines: Vec<String> = Vec::new();
+    let mut bytes = 0usize;
+    for rec in q.iter().rev() {
+        if rec.window.is_some() {
+            continue;
+        }
+        let Ok(line) = serde_json::to_string(rec) else { continue };
+        if line.len() > UNDO_RECORD_MAX_BYTES {
+            continue;
+        }
+        if lines.len() >= UNDO_DEPTH || bytes + line.len() + 1 > UNDO_JOURNAL_MAX_BYTES {
+            break;
+        }
+        bytes += line.len() + 1;
+        lines.push(line);
+    }
+    lines.reverse();
+    let mut out = lines.join("\n");
+    if !out.is_empty() {
+        out.push('\n');
+    }
+    out
+}
+
+/// Replaces the journal in one step (write beside it, then rename), so a crash mid-write leaves
+/// the previous journal, never half of one. Failures are ignored: undo still works this session.
+fn save_undo_journal(path: &Path, q: &VecDeque<UndoRecord>) {
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let tmp = path.with_extension("jsonl.tmp");
+    if std::fs::write(&tmp, undo_journal_text(q)).is_ok() && std::fs::rename(&tmp, path).is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+}
 
 pub struct Engine {
     pub entries: Vec<Entry>,
     undo: Mutex<VecDeque<UndoRecord>>,
     next: Mutex<u64>,
+    /// Where the undo stack is kept between runs (`None`: in memory only, as in tests).
+    journal: Option<PathBuf>,
 }
 
 impl Engine {
     pub fn new(entries: Vec<Entry>) -> Engine {
-        Engine { entries, undo: Mutex::new(VecDeque::new()), next: Mutex::new(1) }
+        Engine { entries, undo: Mutex::new(VecDeque::new()), next: Mutex::new(1), journal: None }
+    }
+
+    /// An engine whose undo stack survives a restart: it is read from `journal` now and written
+    /// back after every change to it.
+    pub fn with_journal(entries: Vec<Entry>, journal: PathBuf) -> Engine {
+        let undo = load_undo_journal(&journal);
+        // Ids end in a counter; start past every one already used.
+        let next = undo.iter().filter_map(|r| r.id.rsplit('-').next()?.parse::<u64>().ok()).max().unwrap_or(0) + 1;
+        Engine { entries, undo: Mutex::new(undo), next: Mutex::new(next), journal: Some(journal) }
+    }
+
+    fn persist(&self, q: &VecDeque<UndoRecord>) {
+        if let Some(path) = &self.journal {
+            save_undo_journal(path, q);
+        }
     }
 
     pub fn entry(&self, path: &str) -> Option<&Entry> {
@@ -231,6 +308,7 @@ impl Engine {
         while q.len() > UNDO_DEPTH {
             q.pop_front();
         }
+        self.persist(&q);
     }
 
     /// Applies a plan. Returns the undo record (one per batch).
@@ -298,6 +376,7 @@ impl Engine {
         if let Some(r) = q.iter_mut().find(|r| r.id == id) {
             r.undone = true;
         }
+        self.persist(&q);
     }
 
     /// Every "look" value right now (a snapshot of the desktop's appearance).
