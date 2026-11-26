@@ -11,8 +11,8 @@
 //! after the last retry Lens brings the Windows taskbar back and tells the person once.
 //!
 //! A page that loaded can still die later (its WebView2 renderer crashes or is killed). Each of
-//! these pages sends a heartbeat; when a visible window's heartbeat has been missing for a few
-//! minutes the page is reloaded the same way (see "Liveness" below).
+//! these pages sends a heartbeat, and a page that misses it and does not answer a direct probe
+//! is reloaded the same way, visible or hidden (see "Liveness" below).
 
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -77,38 +77,205 @@ fn wait_ready(label: &str, timeout: Duration) -> bool {
     is_ready(label)
 }
 
+fn app_handle() -> &'static OnceLock<AppHandle> {
+    static APP: OnceLock<AppHandle> = OnceLock::new();
+    &APP
+}
+
+/// Labels whose watch thread is running (it removes itself on any exit, see [`Running`]).
+fn running() -> &'static Mutex<HashSet<String>> {
+    static SET: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    SET.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+/// When each watch thread last looked, and what it is doing now (diagnostics for B-31).
+fn ticks() -> &'static Mutex<std::collections::HashMap<String, Instant>> {
+    static MAP: OnceLock<Mutex<std::collections::HashMap<String, Instant>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
+fn doing() -> &'static Mutex<std::collections::HashMap<String, &'static str>> {
+    static MAP: OnceLock<Mutex<std::collections::HashMap<String, &'static str>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
+fn tick(label: &str, what: &'static str) {
+    ticks().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), Instant::now());
+    doing().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string(), what);
+}
+#[cfg_attr(test, allow(dead_code))]
+fn busy_with(label: &str) -> &'static str {
+    doing().lock().unwrap_or_else(|e| e.into_inner()).get(label).copied().unwrap_or("?")
+}
+
+/// Marks a watch thread as running for its whole life, whichever way it ends.
+struct Running(&'static str);
+impl Running {
+    fn claim(label: &'static str) -> Option<Self> {
+        running().lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()).then_some(Running(label))
+    }
+}
+impl Drop for Running {
+    fn drop(&mut self) {
+        running().lock().unwrap_or_else(|e| e.into_inner()).remove(self.0);
+        eprintln!("[Lens UI] The load guard stopped watching the {} page.", self.0);
+    }
+}
+
 /// Starts one watch thread per guarded surface. Call once from setup, after the windows exist.
 pub(crate) fn start(app: &AppHandle) {
+    let _ = app_handle().set(app.clone());
     for label in GUARDED {
         let app = app.clone();
         thread::spawn(move || watch(app, label));
     }
 }
 
-fn hide(app: &AppHandle, label: &str) {
-    if let Some(win) = app.get_webview_window(label) {
-        let _ = win.set_ignore_cursor_events(true);
-        let _ = win.hide();
+/// A guarded page's renderer exited (app::renderer). Its watch thread picks that up within a
+/// quarter second; if no watch thread is running for it (it ended, or never started), one is
+/// started now so the page is still reloaded.
+#[cfg_attr(test, allow(dead_code))]
+pub(crate) fn kick(label: &str) {
+    let Some(label) = GUARDED.iter().copied().find(|l| *l == label) else {
+        return;
+    };
+    let Some(app) = app_handle().get().cloned() else {
+        return;
+    };
+    if running().lock().unwrap_or_else(|e| e.into_inner()).contains(label) {
+        // A running watch thread in its keep-alive loop polls every quarter second and reloads the
+        // page itself. One still busy starting up (waiting for the first load, or showing the
+        // windows) would not get there in time (B-31): reload the page from here instead.
+        let busy = busy_with(label);
+        if matches!(busy, "waiting" | "probing" | "reloading") {
+            return;
+        }
+        let idle = ticks().lock().unwrap_or_else(|e| e.into_inner()).get(label).map(|t| t.elapsed()).unwrap_or_default();
+        let app2 = app.clone();
+        thread::spawn(move || {
+            let main = match main_thread_answers(&app2, Duration::from_secs(1)) {
+                Some(d) => format!("the main thread answers in {}ms", d.as_millis()),
+                None => "the main thread did not answer within 1s".to_string(),
+            };
+            eprintln!("[Lens UI] The load guard for the {label} page is busy ({busy}, {}ms); {main}. Reloading it directly.", idle.as_millis());
+            revive(&app2, label);
+        });
+        return;
     }
+    eprintln!("[Lens UI] No load guard was watching the {label} page; starting one to reload it.");
+    crate::tester::log("warn", "loadguard", &format!("no watch thread for {label}; restarted"));
+    thread::spawn(move || {
+        let Some(_running) = Running::claim(label) else {
+            return;
+        };
+        let original = app.get_webview_window(label).and_then(|w| page_url(&w, Duration::from_secs(2)));
+        keep_alive(&app, label, original.as_ref());
+    });
 }
 
-/// Puts the surfaces back on screen as soon as their pages are ready.
-fn show_now(app: &AppHandle) {
-    let cfg = app
-        .state::<crate::app::AppState>()
-        .config
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .clone();
-    crate::app::watcher::position_dock_and_bars(app, &cfg);
+/// Reloads a guarded page whose renderer exited while its watch thread was busy elsewhere.
+/// Consumes the "dead" mark first, so the watch thread does not reload it a second time.
+#[cfg_attr(test, allow(dead_code))]
+fn revive(app: &AppHandle, label: &'static str) {
+    static REVIVING: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    let set = REVIVING.get_or_init(|| Mutex::new(HashSet::new()));
+    if !set.lock().unwrap_or_else(|e| e.into_inner()).insert(label.to_string()) {
+        return;
+    }
+    if crate::app::renderer::take_dead(label) {
+        surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
+        if !recover_now(app, label, None, "stopped answering (its renderer exited)") {
+            eprintln!("[Lens UI] The {label} page did not come back after a direct reload.");
+        }
+        beat(label);
+        crate::app::renderer::watch_window(app, label);
+    }
+    set.lock().unwrap_or_else(|e| e.into_inner()).remove(label);
 }
 
-fn watch(app: AppHandle, label: &'static str) {
+/// The address of the page in `win`, or None if the main thread does not answer within `limit`.
+fn page_url(win: &tauri::WebviewWindow, limit: Duration) -> Option<tauri::Url> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let win = win.clone();
+    thread::spawn(move || {
+        let _ = tx.send(win.url().ok());
+    });
+    rx.recv_timeout(limit).ok().flatten()
+}
+
+/// Runs `f` on a helper thread and waits at most `limit` for it. Window calls made from a
+/// watch thread are answered by the main thread; at start-up the main thread can be busy for a
+/// long time (a start-up window build, B-31), and a watch thread that waited for it could not
+/// reload a page whose renderer died meanwhile. Returns whether `f` finished in time.
+fn bounded(limit: Duration, f: impl FnOnce() + Send + 'static) -> bool {
+    let (tx, rx) = std::sync::mpsc::channel();
+    thread::spawn(move || {
+        f();
+        let _ = tx.send(());
+    });
+    rx.recv_timeout(limit).is_ok()
+}
+
+/// How long a watch thread waits for a window call before moving on.
+const WINDOW_CALL_LIMIT: Duration = Duration::from_secs(3);
+
+fn hide(app: &AppHandle, label: &'static str) {
     let Some(win) = app.get_webview_window(label) else {
         return;
     };
-    let original = win.url().ok();
+    if !bounded(WINDOW_CALL_LIMIT, move || {
+        let _ = win.set_ignore_cursor_events(true);
+        let _ = win.hide();
+    }) {
+        eprintln!("[Lens UI] Hiding the {label} window is taking long; the load guard carries on.");
+    }
+}
+
+/// Puts the surfaces back on screen as soon as their pages are ready. Never holds up the watch
+/// thread for more than [`WINDOW_CALL_LIMIT`]: the positioning finishes on its own thread.
+fn show_now(app: &AppHandle) {
+    let app2 = app.clone();
+    if !bounded(WINDOW_CALL_LIMIT, move || {
+        let cfg = app2
+            .state::<crate::app::AppState>()
+            .config
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        crate::app::watcher::position_dock_and_bars(&app2, &cfg);
+    }) {
+        eprintln!("[Lens UI] Placing the Dock and bars is taking long (the main thread is busy); the load guard carries on.");
+    }
+}
+
+/// Whether the main thread runs a task within `limit` (B-31 diagnostic).
+#[cfg_attr(test, allow(dead_code))]
+fn main_thread_answers(app: &AppHandle, limit: Duration) -> Option<Duration> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let asked = Instant::now();
+    if app.run_on_main_thread(move || {
+        let _ = tx.send(());
+    }).is_err() {
+        return None;
+    }
+    rx.recv_timeout(limit).ok().map(|_| asked.elapsed())
+}
+
+fn watch(app: AppHandle, label: &'static str) {
+    let Some(_running) = Running::claim(label) else {
+        return;
+    };
+    let Some(win) = app.get_webview_window(label) else {
+        eprintln!("[Lens UI] The load guard found no {label} window.");
+        return;
+    };
+    // The page address is only needed to load a page that never came up. Reading it is a call the
+    // main thread answers; at start-up that answer sometimes never came, and this thread then sat
+    // here for good, so a Dock whose renderer died was never reloaded (B-31). Read it with a time
+    // limit instead.
+    tick(label, "reading the page address");
+    let original = page_url(&win, Duration::from_secs(2));
+    tick(label, "waiting for the first load");
     if wait_ready(label, READY_TIMEOUT) {
+        tick(label, "showing");
         show_now(&app);
     } else if !recover(&app, label, original.as_ref(), "did not load") {
         give_up();
@@ -134,8 +301,9 @@ fn recover_now(app: &AppHandle, label: &'static str, original: Option<&tauri::Ur
     hide(app, label);
     eprintln!("[Lens UI] The {label} page {what}; reloading it.");
     crate::tester::log("error", "loadguard", &format!("{label} page {what}"));
-    if let (Some(win), Some(url)) = (app.get_webview_window(label), original) {
-        let _ = win.navigate(url.clone());
+    // Reload through WebView2 (works on a dead renderer, needs no address).
+    if let Some(win) = app.get_webview_window(label) {
+        crate::app::renderer::reload_page(&win);
     }
     if wait_ready(label, READY_TIMEOUT) {
         return shown_again(app, label);
@@ -156,9 +324,14 @@ fn retry(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>) ->
         {
             continue;
         }
-        if let (Some(win), Some(url)) = (app.get_webview_window(label), original) {
+        if let Some(win) = app.get_webview_window(label) {
             surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
-            let _ = win.navigate(url.clone());
+            match original {
+                Some(url) => {
+                    let _ = win.navigate(url.clone());
+                }
+                None => crate::app::renderer::reload_page(&win),
+            }
         }
         if wait_ready(label, READY_TIMEOUT) {
             break;
@@ -185,18 +358,23 @@ fn shown_again(app: &AppHandle, label: &'static str) -> bool {
 // ---------------------------------------------------------------------------------------------
 // Liveness (docs/FAILSAFE.md §1): a page that loaded can still die later. If the WebView2
 // renderer behind the Dock crashes or is killed, the window stays on screen showing nothing,
-// and nothing in the page is left to notice. Each guarded page therefore sends a heartbeat
-// (`surface_alive_cmd`, every few seconds); when a visible window's heartbeat has been missing
-// for long enough, the page is reloaded the same way a page that never loaded is.
+// and nothing in the page is left to notice. Two paths catch it:
+//   * WebView2's ProcessFailed event (app::renderer) marks the page dead; it is reloaded within a
+//     quarter second, visible or not;
+//   * the backstop: each guarded page sends a heartbeat (`surface_alive_cmd`, every 5 s). When a
+//     whole check went by without one (a hidden page's timers are throttled, so that is normal
+//     while hidden), the page is asked directly: Lens runs one line in it that sends a heartbeat
+//     at once. A page that answers neither of two such probes is reloaded. This works while the
+//     window is hidden, which the old "visible and stale for minutes" rule did not
+//     (`webview-killed` E2E, B-31).
 // ---------------------------------------------------------------------------------------------
 
 /// How often the watch thread looks at the heartbeat.
 const ALIVE_CHECK: Duration = Duration::from_secs(20);
-/// A heartbeat older than this is "missing". Generous on purpose: a browser slows a hidden
-/// page's timers down to one a minute.
+/// Upper bound for the shortened check the end-to-end test asks for.
 const ALIVE_STALE_SECS: u64 = 150;
-/// This many checks in a row must see it missing before anything is done.
-const ALIVE_MISSES: u32 = 3;
+/// How long one probe waits for the page to answer (two probes are sent before reviving).
+const PROBE_WAIT: Duration = Duration::from_secs(5);
 /// A page revived this often in one run is not coming back: give up instead of looping.
 const MAX_REVIVES: u32 = 3;
 
@@ -217,102 +395,101 @@ fn beat_age(label: &str) -> Option<Duration> {
     heartbeats().lock().unwrap_or_else(|e| e.into_inner()).get(label).map(|t| t.elapsed())
 }
 
-/// The check interval and the "missing" threshold. The end-to-end test shortens both through
-/// `LENS_ALIVE_STALE_SECS` (never below 10 s) so it does not have to wait minutes.
+/// The check interval and how long a probe waits. The end-to-end test shortens both through
+/// `LENS_ALIVE_STALE_SECS` (never below 10 s) so it does not have to wait.
 fn alive_timing() -> (Duration, Duration) {
     match std::env::var("LENS_ALIVE_STALE_SECS").ok().and_then(|v| v.trim().parse::<u64>().ok()) {
         Some(secs) => {
             let stale = secs.clamp(10, ALIVE_STALE_SECS);
-            (Duration::from_secs((stale / 3).clamp(3, ALIVE_CHECK.as_secs())), Duration::from_secs(stale))
+            (Duration::from_secs((stale / 3).clamp(3, ALIVE_CHECK.as_secs())), Duration::from_millis(1500))
         }
-        None => (ALIVE_CHECK, Duration::from_secs(ALIVE_STALE_SECS)),
+        None => (ALIVE_CHECK, PROBE_WAIT),
     }
 }
 
-/// What one look at the heartbeat leads to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Liveness {
-    /// The page is answering, or there is no reason to judge it right now.
-    Fine,
-    /// Missing, but not for long enough yet.
-    Waiting,
-    /// Missing on [`ALIVE_MISSES`] checks in a row: reload the page.
-    Revive,
+/// Whether to ask the page directly after one check: only when a whole check went by without a
+/// heartbeat. A page that never reported (still loading) is not judged, nor a check that ran late
+/// (the PC slept, so the page's timers were paused too).
+pub(crate) fn needs_probe(age: Option<Duration>, check: Duration, late: bool) -> bool {
+    !late && matches!(age, Some(a) if a > check.max(Duration::from_secs(6)))
 }
 
-/// Pure decision for one check. `misses` is the count of consecutive checks that saw the
-/// heartbeat missing; `late` is true when this check itself ran late (the PC slept, or the
-/// thread was starved), in which case the page's timers were paused too and nothing is judged.
-pub(crate) fn liveness_step(misses: &mut u32, age: Option<Duration>, stale: Duration, visible: bool, late: bool) -> Liveness {
-    let missing = matches!(age, Some(a) if a > stale);
-    if late || !visible || !missing {
-        *misses = 0;
-        return Liveness::Fine;
+/// True if `label` sent a heartbeat after `since`.
+fn beat_since(label: &str, since: Instant) -> bool {
+    heartbeats().lock().unwrap_or_else(|e| e.into_inner()).get(label).is_some_and(|t| *t >= since)
+}
+
+/// Asks the page behind `label` to send a heartbeat right now, twice if needed. False when the
+/// page answered neither probe: its renderer is gone or its main thread is stuck.
+fn answers_probe(app: &AppHandle, label: &str, wait: Duration) -> bool {
+    for _ in 0..2 {
+        let sent = Instant::now();
+        let Some(win) = app.get_webview_window(label) else {
+            return true;
+        };
+        let _ = win.eval(format!(
+            "window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__.invoke('surface_alive_cmd', {{ label: '{label}' }}).catch(function () {{}})"
+        ));
+        while sent.elapsed() < wait {
+            if beat_since(label, sent) {
+                return true;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
     }
-    *misses += 1;
-    if *misses >= ALIVE_MISSES {
-        *misses = 0;
-        Liveness::Revive
-    } else {
-        Liveness::Waiting
-    }
+    false
 }
 
 fn keep_alive(app: &AppHandle, label: &'static str, original: Option<&tauri::Url>) {
-    let (check, stale) = alive_timing();
-    let mut misses = 0u32;
+    let (check, probe_wait) = alive_timing();
     let mut revives = 0u32;
+    crate::app::renderer::watch_window(app, label);
+    eprintln!("[Lens UI] The load guard is watching the {label} page (check every {}s).", check.as_secs());
     loop {
         let before = Instant::now();
         // Look every quarter second for a renderer that WebView2 reported as gone (app::renderer);
-        // that is reloaded at once, whether the window is visible or not. The heartbeat below
-        // stays as the backstop for a page that hangs without its process exiting.
-        let mut renderer_gone = false;
+        // that is reloaded at once, whether the window is visible or not.
+        let mut gone = None;
         while before.elapsed() < check {
+            tick(label, "waiting");
             if crate::app::renderer::take_dead(label) {
-                renderer_gone = true;
+                gone = Some("stopped answering (its renderer exited)");
                 break;
             }
             thread::sleep(Duration::from_millis(250));
-        }
-        if renderer_gone {
-            if revives >= MAX_REVIVES {
-                give_up();
-                return;
-            }
-            revives += 1;
-            misses = 0;
-            surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
-            if !recover_now(app, label, original, "stopped answering (its renderer exited)") {
-                give_up();
-                return;
-            }
-            beat(label);
-            continue;
         }
         let late = before.elapsed() > check * 3;
         if late {
             // Coming back from sleep: give the page a fresh start before judging it again.
             beat(label);
-        }
-        let Some(win) = app.get_webview_window(label) else {
-            return;
-        };
-        let visible = win.is_visible().unwrap_or(false);
-        if liveness_step(&mut misses, beat_age(label), stale, visible, late) != Liveness::Revive {
             continue;
         }
+        if app.get_webview_window(label).is_none() {
+            eprintln!("[Lens UI] The {label} window is gone; the load guard stops.");
+            return;
+        }
+        tick(label, "probing");
+        if gone.is_none() && needs_probe(beat_age(label), check, false) && !answers_probe(app, label, probe_wait) {
+            gone = Some("stopped answering (no heartbeat, no answer to a direct probe)");
+        }
+        let Some(what) = gone else { continue };
         if revives >= MAX_REVIVES {
             give_up();
             return;
         }
         revives += 1;
+        tick(label, "reloading");
         surface_ready_set().lock().unwrap_or_else(|e| e.into_inner()).remove(label);
-        if !recover(app, label, original, "stopped answering") {
+        if !recover_now(app, label, original, what) {
             give_up();
             return;
         }
         beat(label);
+        // A reload can come up on a new WebView2 controller; make sure it is watched too.
+        crate::app::renderer::watch_window(app, label);
+        if !crate::app::renderer::is_watched(label) {
+            eprintln!("[Lens UI] The {label} page is not watched for renderer exits yet; the heartbeat probe covers it.");
+        }
     }
 }
 
@@ -368,36 +545,19 @@ mod tests {
     }
 
     #[test]
-    fn a_page_is_revived_only_after_several_missed_checks_in_a_row() {
-        let stale = Duration::from_secs(150);
-        let old = Some(Duration::from_secs(400));
-        let mut misses = 0;
-        assert_eq!(liveness_step(&mut misses, old, stale, true, false), Liveness::Waiting);
-        assert_eq!(liveness_step(&mut misses, old, stale, true, false), Liveness::Waiting);
-        assert_eq!(liveness_step(&mut misses, old, stale, true, false), Liveness::Revive);
-        assert_eq!(misses, 0, "the count starts again after a revive");
+    fn a_page_is_probed_only_after_a_whole_check_without_a_heartbeat() {
+        let check = Duration::from_secs(20);
+        assert!(!needs_probe(Some(Duration::from_secs(4)), check, false), "fresh heartbeat");
+        assert!(needs_probe(Some(Duration::from_secs(25)), check, false), "missing for a whole check");
+        assert!(!needs_probe(Some(Duration::from_secs(400)), check, true), "the PC slept");
+        assert!(!needs_probe(None, check, false), "never reported (still loading)");
     }
 
     #[test]
-    fn a_heartbeat_in_between_starts_the_count_again() {
-        let stale = Duration::from_secs(150);
-        let mut misses = 0;
-        assert_eq!(liveness_step(&mut misses, Some(Duration::from_secs(400)), stale, true, false), Liveness::Waiting);
-        assert_eq!(liveness_step(&mut misses, Some(Duration::from_secs(4)), stale, true, false), Liveness::Fine);
-        assert_eq!(liveness_step(&mut misses, Some(Duration::from_secs(400)), stale, true, false), Liveness::Waiting);
-    }
-
-    #[test]
-    fn hidden_windows_sleep_and_pages_that_never_reported_are_not_judged() {
-        let stale = Duration::from_secs(150);
-        let old = Some(Duration::from_secs(4_000));
-        let mut misses = 2;
-        assert_eq!(liveness_step(&mut misses, old, stale, false, false), Liveness::Fine, "hidden");
-        assert_eq!(misses, 0);
-        misses = 2;
-        assert_eq!(liveness_step(&mut misses, old, stale, true, true), Liveness::Fine, "the PC slept");
-        misses = 2;
-        assert_eq!(liveness_step(&mut misses, None, stale, true, false), Liveness::Fine, "never reported");
+    fn short_test_checks_never_probe_a_page_between_two_normal_heartbeats() {
+        // The page beats every 5 s; with the E2E's 4 s check a 5 s gap must not trigger a probe.
+        assert!(!needs_probe(Some(Duration::from_secs(5)), Duration::from_secs(4), false));
+        assert!(needs_probe(Some(Duration::from_secs(7)), Duration::from_secs(4), false));
     }
 
     #[test]
@@ -406,6 +566,14 @@ mod tests {
         assert!(beat_age("settings").is_none());
         beat("desktopfolder");
         assert!(beat_age("desktopfolder").is_some_and(|a| a < Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn a_slow_window_call_never_holds_the_watch_thread() {
+        let started = Instant::now();
+        assert!(!bounded(Duration::from_millis(50), || thread::sleep(Duration::from_millis(400))));
+        assert!(started.elapsed() < Duration::from_millis(300), "returned after the limit, not after the call");
+        assert!(bounded(Duration::from_secs(2), || {}));
     }
 
     #[test]
