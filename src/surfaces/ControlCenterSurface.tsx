@@ -763,7 +763,7 @@ export const ControlCenterSurface: React.FC = () => {
               <div id="sec-topbar" className="sh-anchor">
                 <div className="cc-section-title">Top Bar</div>
                 <div className="cc-section-sub">
-                  Auto-hide on overlap keeps browser tabs and maximized titlebars clear, revealing smoothly when your cursor touches the top edge.
+                  The slim bar along the top. It hides when a window needs the space and comes back when the pointer touches the top edge.
                 </div>
               </div>
 
@@ -771,7 +771,7 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Enable Top Bar</div>
-                    <div className="cc-desc">Desktop sessions switcher, active app title, and clock</div>
+                    <div className="cc-desc">Desktops, the app in front, search, the clock and quick settings.</div>
                   </div>
                   <button
                     type="button"
@@ -784,18 +784,20 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Auto-Hide Mode</div>
-                    <div className="cc-desc">On Overlap dodges maximized or top-edge windows automatically</div>
+                    <div className="cc-label">Auto-hide</div>
+                    <div className="cc-desc">Hides when a window reaches the top of the screen, so tabs and title bars stay clear.</div>
                   </div>
-                  <div className="cc-chip-grid">
+                  <div className="cc-chip-grid" role="radiogroup" aria-label="Top Bar auto-hide">
                     {[
-                      { id: "overlap", label: "On Overlap" },
-                      { id: "never", label: "Always Visible" },
-                      { id: "always", label: "Always Auto-Hide" },
+                      { id: "overlap", label: "When a window overlaps" },
+                      { id: "never", label: "Always show" },
+                      { id: "always", label: "Always hide" },
                     ].map((m) => (
                       <button
                         key={m.id}
                         type="button"
+                        role="radio"
+                        aria-checked={(config.topBar?.autoHide ?? "overlap") === m.id}
                         className={`cc-chip ${(config.topBar?.autoHide ?? "overlap") === m.id ? "active" : ""}`}
                         onClick={() =>
                           updateConfig({
@@ -812,12 +814,14 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Bar Style</div>
-                    <div className="cc-desc">Full-width edge strip or floating rounded glass pill</div>
+                    <div className="cc-label">Bar style</div>
+                    <div className="cc-desc">A strip along the whole top edge, or a floating rounded pill.</div>
                   </div>
-                  <div className="cc-chip-grid">
+                  <div className="cc-chip-grid" role="radiogroup" aria-label="Top Bar style">
                     <button
                       type="button"
+                      role="radio"
+                      aria-checked={!config.topBar?.floating}
                       className={`cc-chip ${!(config.topBar?.floating) ? "active" : ""}`}
                       onClick={() =>
                         updateConfig({
@@ -826,10 +830,12 @@ export const ControlCenterSurface: React.FC = () => {
                         })
                       }
                     >
-                      Full-Width
+                      Full width
                     </button>
                     <button
                       type="button"
+                      role="radio"
+                      aria-checked={!!config.topBar?.floating}
                       className={`cc-chip ${config.topBar?.floating ? "active" : ""}`}
                       onClick={() =>
                         updateConfig({
@@ -838,15 +844,35 @@ export const ControlCenterSurface: React.FC = () => {
                         })
                       }
                     >
-                      Floating Pill
+                      Floating pill
                     </button>
                   </div>
                 </div>
 
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Media controls</div>
+                    <div className="cc-desc">Shows what is playing, with previous, play and next.</div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={config.topBar?.showMediaControls !== false}
+                    aria-label="Top Bar media controls"
+                    className={`cc-toggle ${config.topBar?.showMediaControls !== false ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        topBar: { ...(config.topBar ?? { enabled: true, autoHide: "overlap", revealDelayMs: 100, hideDelayMs: 350, height: 34, floating: false }), showMediaControls: config.topBar?.showMediaControls === false },
+                      })
+                    }
+                  />
+                </div>
+
                 <div style={{ height: 1, background: "var(--lens-border)", margin: "4px 0" }} />
                 <RotaryDial
-                  label="Bar Height"
-                  description="Vertical thickness of the top bar."
+                  label="Bar height"
+                  description="How tall the Top Bar is."
                   value={config.topBar?.height ?? 34}
                   min={28}
                   max={44}
@@ -865,8 +891,8 @@ export const ControlCenterSurface: React.FC = () => {
                 />
                 <div style={{ height: 1, background: "var(--lens-border)" }} />
                 <RotaryDial
-                  label="Reveal Delay"
-                  description="Wait time before sliding in when cursor hits the top edge."
+                  label="Reveal delay"
+                  description="How long the pointer rests on the top edge before the bar slides in."
                   value={config.topBar?.revealDelayMs ?? 100}
                   min={0}
                   max={500}
@@ -885,8 +911,8 @@ export const ControlCenterSurface: React.FC = () => {
                 />
                 <div style={{ height: 1, background: "var(--lens-border)" }} />
                 <RotaryDial
-                  label="Hide Delay"
-                  description="Wait time before auto-hiding again after cursor leaves."
+                  label="Hide delay"
+                  description="How long the bar stays after the pointer leaves."
                   value={config.topBar?.hideDelayMs ?? 350}
                   min={100}
                   max={1200}

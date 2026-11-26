@@ -1,6 +1,8 @@
 # Settings — feature dossier
 
 > Batch 1 of the feature dossiers for the Fable pass. Status words: **works**, **partly**, **broken**, **not built**. Reviewed against `main` on 2026-11-26.
+>
+> **Fable pass (PR #113, 2026-11-26):** quick wins 1 and 4 done (Notifications merged into Focus & Notifications, "Lens Apps"; B-39 theme choices restore exactly), B-40's duplicate switch name fixed, Dock & Bar gained an Advanced section, the Top Bar switch is one flag. 22 pages now. Left: B-41, the unmounting switches in B-40, swallowed errors, the "Recently changed" strip.
 
 ## Rundown
 
@@ -26,20 +28,20 @@ Settings is the one window where everything in Lens is changed. It opens from th
 | Auto-close when the pointer leaves (docked) | ~1.8 s | works | #101 |
 
 ### 2. Pages (registry order)
-Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & Command · Music · Apps (Lens Apps store) · Display · Sound · Network & Bluetooth · Power & Battery · Apps & Startup · Storage · Focus & Notifications · Privacy & Security · Update · Time & Language · Accessibility · Gaming · System & Tasks · Notifications · About & Testing (`registry.ts`).
+Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & Command · Music · Lens Apps · Display · Sound · Network & Bluetooth · Power & Battery · Apps & Startup · Storage · Focus & Notifications (with notification history, Feeds and Messages) · Privacy & Security · Update · Time & Language · Accessibility · Gaming · System & Tasks · About & Testing (`registry.ts`, 22 pages).
 
 | Page | Highlights | Status | Evidence |
 |---|---|---|---|
 | Quick settings | Hero tiles with matte icon chips (accent when on), Theme, Quick window layouts | works | `QuickPage.tsx`, #89 |
 | Appearance | Featured looks, packs, Dark/Light/Day & night, accent, "Also use this accent in Windows" (off by default), font/shape opt-in | works; B-39 | `ThemeTab.tsx`, #95, #102 |
-| Dock & Bar | Style cards, edge, alignment, system area, sizes, auto-hide, live previews, lock, suggested apps; Top Bar section | partly — several Dock/Top Bar fields have no row | `DockTab.tsx`, `ControlCenterSurface.tsx:755` |
+| Dock & Bar | Style cards, edge, alignment, system area, sizes, auto-hide, live previews, lock, suggested apps; Advanced (magnification, launch animation, app names, per-style size, dividers…); Top Bar section | works | `DockTab.tsx`, `src/dock/advanced.ts`, `ControlCenterSurface.tsx` |
 | Windows & Keys | Window buttons, shortcuts cheat sheet (rebind, conflicts, reset), hot corners | works; B-41 | `ShortcutsCard.tsx` (#99) |
 | AI & Command | Providers, Command, approvals, Lens Browser (site permissions list) | works | `AiCommandPage.tsx` |
 | Sound | Output/input, per-app mixer with Other apps listed directly | works | `SoundPage.tsx` (#89) |
 | Gaming / Accessibility | Game mode, "Use a controller" (ThumbDesk) card; animation effects, contrast | works; B-40 | `GamingPage.tsx`, `AccessibilityPage.tsx` |
 | About & Testing | Report a problem, Updates (+ What's new), Setup ("Run setup again"), Self-test, crash reports, backups, Remove all, Tester Hub, Magic (preview) section | works | `AboutPage.tsx` (#82, #85, #103) |
-| Focus & Notifications vs Notifications | Two pages: one for DND/focus/permissions, one for Messages and history | partly — confusing pair | `registry.ts:296,393` |
-| Apps vs Apps & Startup | "Apps" is the Lens Apps store, "Apps & Startup" is installed apps | partly — confusing pair | `registry.ts` |
+| Focus & Notifications | One page: DND/focus, notification history, Feeds, Messages, Windows notifications. Old ids and links (`messages`, `notifications#feeds`) still land | works | `registry.ts`, `settingsHub.test.ts` |
+| Lens Apps vs Apps & Startup | The store is "Lens Apps"; "Apps & Startup" is installed apps | works | `registry.ts` |
 
 ### 3. Simple mode
 | Feature | Sub | Status | Evidence |
@@ -54,13 +56,13 @@ Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & 
 | Damaged settings | Only damaged values reset; garbage file healed | works | E2E `config-damaged`, `config-garbage` |
 | Control catalogue | Every setting + tool with schema, risk, example; Magic (preview) flags | works | `catalogue.json`, `export_catalogue` |
 | Guide index | Every row searchable and linked | works | `guide.test.ts` |
-| Restore exactly | Going back to the first choice restores everything | partly | B-39 (folder colours, schedule) |
+| Restore exactly | Going back to the first choice restores everything | works for theme choices (B-39 fixed) | `src/themes/choiceUndo.ts`, `themeChoiceUndo.test.ts`, hyper |
 
 ## Quick wins (≤1 day each, ranked)
-1. **Merge the confusing page pairs**: "Notifications" (Messages/history) into "Focus & Notifications" as a section, and rename "Apps" (store) to "Lens Apps" in the sidebar so it can't be confused with "Apps & Startup".
+1. **Done (PR #113).** ~~Merge the confusing page pairs~~: "Notifications" (Messages/history) into "Focus & Notifications" as a section, and rename "Apps" (store) to "Lens Apps" in the sidebar so it can't be confused with "Apps & Startup".
 2. **Fix B-41**: the corner picker radio is covered by another element; find the overlap (likely the corner preview SVG) and make the radios clickable.
-3. **Fix B-40**: give the two "Animation effects" switches distinct names; keep Animated backdrop and startup-app switches mounted after a click (they unmount on state change).
-4. **Fix B-39**: when a theme choice is undone, restore `folderStyle.theme`, pinned-folder colours and `themeSchedule` from the snapshot taken before the first change.
+3. **Half done (PR #113): the duplicate name.** Fix B-40: give the two "Animation effects" switches distinct names; keep Animated backdrop and startup-app switches mounted after a click (they unmount on state change).
+4. **Done (PR #113).** ~~Fix B-39~~: when a theme choice is undone, restore `folderStyle.theme`, pinned-folder colours and `themeSchedule` from the snapshot taken before the first change.
 5. **Swallowed errors**: 27 `.catch(() => {})` in the shell and pages — route through the failsafe reporter so a failed save says why (B-18).
 
 ## Polish assessment
@@ -74,11 +76,11 @@ Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & 
 ## Bug assessment
 | Id | Sev | What | Evidence |
 |---|---|---|---|
-| B-39 | Low | Undoing a theme choice leaves folder colours / schedule changed | hyper `known.json` |
-| B-40 | Low | Switches unmount after one click; duplicate name | hyper `known.json` |
+| B-39 (fixed) | Low | Undoing a theme choice left folder colours / schedule changed | `themeChoiceUndo.test.ts`; removed from hyper `known.json` |
+| B-40 | Low | Switches unmount after one click (still open); the duplicate "Animation effects" name is fixed (the row is "Windows animation effects") | hyper `known.json` |
 | B-41 | Low | Corner picker radios not clickable where drawn | hyper `known.json` |
 | B-18 | Low | 27 swallowed errors in Settings | grep |
-| suspected | Med | Two Top Bar enable flags (see topbar.md) shown as one switch | `ControlCenterSurface.tsx:772` |
+| B-43 (fixed) | Med | Two Top Bar enable flags shown as one switch | see topbar.md |
 | suspected | Low | Search ranks a Guide row above its own page when the page label is a partial match ("Sound" vs "Sound output device") | `search.ts:83` scoring weights |
 
 ## One idea to push to main
@@ -110,8 +112,8 @@ Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & 
 FEATURE Settings — docs/features/settings.md
 STATE   works; one writer (#70), one mode pill (#99), gear → Quick (#89), sizes/join (#95)
 DO FIRST
- 1 Merge Notifications into Focus & Notifications; rename "Apps" → "Lens Apps"
- 2 Fix B-41 (corner picker overlap), B-40 (switch remount / duplicate name), B-39 (undo restores all keys)
+ 1 DONE #113  Merge Notifications into Focus & Notifications; rename "Apps" → "Lens Apps"
+ 2 DONE #113  B-39 (undo restores all keys), B-40 duplicate name;  LEFT B-41 (corner picker overlap), B-40 switch remount
  3 Route 27 swallowed catches through the failsafe reporter
 POLISH
  - 120 ms opacity cross-fade on page change; focus the page heading after navigation

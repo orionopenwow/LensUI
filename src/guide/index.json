@@ -5295,7 +5295,7 @@
    "id": "setting.dock.inline.enable-top-bar",
    "kind": "setting",
    "title": "Enable Top Bar",
-   "text": "Desktop sessions switcher, active app title, and clock",
+   "text": "Desktops, the app in front, search, the clock and quick settings.",
    "path": [
     "Settings",
     "Dock & Bar",
@@ -5310,38 +5310,56 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.dock.inline.auto-hide-mode",
+   "id": "setting.dock.inline.auto-hide",
    "kind": "setting",
-   "title": "Auto-Hide Mode",
-   "text": "On Overlap dodges maximized or top-edge windows automatically",
+   "title": "Auto-hide",
+   "text": "Hides when a window reaches the top of the screen, so tabs and title bars stay clear.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Auto-Hide Mode"
+    "Auto-hide"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Auto-Hide Mode"
+    "label": "Auto-hide"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.dock.inline.bar-style",
    "kind": "setting",
-   "title": "Bar Style",
-   "text": "Full-width edge strip or floating rounded glass pill",
+   "title": "Bar style",
+   "text": "A strip along the whole top edge, or a floating rounded pill.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Bar Style"
+    "Bar style"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Bar Style"
+    "label": "Bar style"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "setting.dock.inline.media-controls",
+   "kind": "setting",
+   "title": "Media controls",
+   "text": "Shows what is playing, with previous, play and next.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Top Bar",
+    "Media controls"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Media controls"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
