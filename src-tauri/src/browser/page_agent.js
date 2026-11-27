@@ -129,6 +129,113 @@
     };
   }
 
+  // ---- Compact snapshot: the page as a short outline for agents (docs/AGENT_CLI.md) ----
+  // Document order, accessibility-tree style: headings, short text lines and the interactive
+  // elements as "[n] role "name"" with the same numbers `act` and `describe` use. Repeated
+  // lines are dropped, every line is capped, and the whole outline stops at `max` characters.
+  function compact(max) {
+    refs.clear();
+    const cap = Math.max(800, Math.min(Number(max) || 6000, 40000));
+    const SEL = 'a[href],button,input,select,textarea,[role=button],[role=link],[role=checkbox],[role=tab],[role=switch],[role=menuitem],[contenteditable="true"],summary';
+    const skip = /^(script|style|noscript|svg|template|iframe|canvas|head)$/i;
+    const lines = [];
+    const seen = new Set();
+    let used = 0;
+    let n = 0;
+    let full = false;
+    const push = (line) => {
+      const l = line.length > 200 ? line.slice(0, 199) + "…" : line;
+      if (!l.trim() || seen.has(l)) return;
+      if (used + l.length + 1 > cap) { full = true; return; }
+      seen.add(l);
+      lines.push(l);
+      used += l.length + 1;
+    };
+    const short = (href) => {
+      try { const u = new URL(href); return u.origin === location.origin ? (u.pathname + u.search).slice(0, 80) : (u.host + u.pathname).slice(0, 80); } catch { return ""; }
+    };
+    const roleOf = (el) => {
+      const r = el.getAttribute("role");
+      if (r) return r;
+      const t = el.tagName;
+      if (t === "A") return "link";
+      if (t === "BUTTON" || t === "SUMMARY") return "button";
+      if (t === "SELECT") return "select";
+      if (t === "TEXTAREA") return "textbox";
+      if (el.isContentEditable) return "textbox";
+      const ty = (el.getAttribute("type") || "text").toLowerCase();
+      if (ty === "checkbox" || ty === "radio") return ty;
+      if (ty === "submit" || ty === "button" || ty === "reset" || ty === "image") return "button";
+      if (ty === "password") return "password";
+      if (ty === "hidden") return "";
+      return "textbox";
+    };
+    // A label's own words, without the text of the control inside it (a select's options).
+    const nameOf = (el) => {
+      const lab = el.labels && el.labels[0];
+      if (lab) {
+        const own = [...lab.childNodes].filter((c) => c.nodeType === 3 || !(c.matches && c.matches("select,input,textarea,button"))).map((c) => c.textContent).join(" ");
+        if (clean(own)) return own;
+      }
+      return labelOf(el) || (el.tagName === "SELECT" ? "" : el.innerText || el.value) || el.getAttribute("name") || "";
+    };
+    const element = (el, quiet) => {
+      const role = roleOf(el);
+      if (!role || n >= 250) return;
+      n += 1;
+      refs.set(n, el);
+      const name = clip(clean(nameOf(el)), 80);
+      let extra = "";
+      if (role === "link" && el.href) extra = ` → ${short(el.href)}`;
+      else if (role === "checkbox" || role === "radio") extra = el.checked ? " [x]" : " [ ]";
+      else if (role === "select") extra = ` = ${clip(clean(el.options[el.selectedIndex]?.text || ""), 40)} (${el.options.length} options)`;
+      else if (role === "password") extra = " (Lens never types here)";
+      else if (role === "textbox" && el.value) extra = ` = "${clip(clean(el.value), 40)}"`;
+      if (el.disabled) extra += " (disabled)";
+      if (isCaptcha(el)) extra += " (CAPTCHA: left to you)";
+      const line = `[${n}] ${role} "${name}"${extra}`;
+      if (quiet) return `[${n}] ${name || role}`;
+      push(line);
+    };
+    // Navigation bars and footers: their links on one line ("nav: [1] Home · [2] News …").
+    const landmark = (node, label) => {
+      const parts = [];
+      for (const el of node.querySelectorAll(SEL)) if (visible(el)) { const p = element(el, true); if (p) parts.push(p); }
+      if (!parts.length) return;
+      const line = `${label}: ${parts.join(" · ")}`;
+      const l = line.length > 600 ? line.slice(0, 599) + "…" : line;
+      if (used + l.length + 1 > cap) { full = true; return; }
+      lines.push(l);
+      used += l.length + 1;
+    };
+    const walk = (node) => {
+      if (full) return;
+      if (node.nodeType === 3) {
+        const t = clean(node.textContent);
+        if (t.length > 1) push(t);
+        return;
+      }
+      if (node.nodeType !== 1 || skip.test(node.tagName)) return;
+      if (node === menuHost) return;
+      if (!visible(node) && node.tagName !== "BODY") return;
+      if (node.matches(SEL)) { element(node); return; }
+      if (/^(NAV|FOOTER)$/.test(node.tagName) || node.getAttribute("role") === "navigation") { landmark(node, node.tagName === "FOOTER" ? "footer" : "nav"); const t = [...node.querySelectorAll("p")].map((p) => clean(p.innerText)).filter(Boolean).join(" "); if (t) push(t); return; }
+      // A label's words become the control's name; don't repeat them as text.
+      if (node.tagName === "LABEL" && node.querySelector("input,select,textarea")) { for (const el of node.querySelectorAll(SEL)) if (visible(el)) element(el); return; }
+      const h = /^H([1-6])$/.exec(node.tagName);
+      if (h) { push(`${"#".repeat(Number(h[1]))} ${clean(node.innerText)}`); return; }
+      for (const c of node.childNodes) walk(c);
+    };
+    push(`# ${clean(D.title) || location.host}`);
+    push(`url: ${location.href.slice(0, 200)}`);
+    if (D.body) walk(D.body);
+    const nts = notes();
+    if (nts.length) push(`notes: ${nts.join(" | ")}`);
+    if (pageHasPassword()) push("This page has a password field: signing in is left to you.");
+    if (full) lines.push(`… (outline cut at ${cap} characters; ${n} elements numbered)`);
+    return { url: location.href, title: D.title, text: lines.join("\n"), elements: n, truncated: full };
+  }
+
   // Everything the "Needs your OK" card shows about one element.
   function describe(ref) {
     const el = refs.get(ref);
@@ -391,6 +498,7 @@
 
   const handlers = {
     snapshot: () => snapshot(),
+    compact: (c) => compact(c.max),
     readable: () => ({ url: location.href, title: D.title, text: readable() }),
     describe: (c) => describe(Number(c.ref)),
     act: (c) => act(c.action || {}),

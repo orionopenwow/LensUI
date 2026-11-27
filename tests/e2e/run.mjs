@@ -24,6 +24,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { execFileSync, spawn } from "node:child_process";
 import { join, resolve } from "node:path";
 import { chromium } from "playwright";
+import { browserBench } from "../../tools/perf/browser-bench.mjs";
 
 const root = resolve(import.meta.dirname, "../..");
 const outDir = join(root, "tests/e2e/out");
@@ -612,6 +613,28 @@ const SCENARIOS = [
       }
       if (await cc.locator(".wiz").count()) throw new Error("the wizard never finished");
       if ((await invoke(cc, "get_config")).onboardingCompleted !== true) throw new Error("finishing the wizard did not set onboardingCompleted");
+    },
+  },
+  {
+    id: "browser-bench",
+    title: "Lens Browser benchmarks: cold open, RAM with 1 tab and 10 tabs (9 asleep), tab switch (docs/BENCHMARKS.md)",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const before = (await invoke(dock, "browser_state")).state.settings;
+      const report = await browserBench({ invoke, dock, sleep, waitForSurface: (name, ms) => waitForSurface(s, name, ms) });
+      writeFileSync(join(outDir, "browser-bench.json"), JSON.stringify(report, null, 2));
+      // One line per metric, easy to find in the CI log (docs/BENCHMARKS.md is filled from these).
+      for (const r of report.results) console.log(`BENCH|${r.id}|${r.unit}|median=${r.median}|p95=${r.p95}|n=${r.values.length}|${r.values.join(",")}`);
+      // Leave the browser as a fresh profile has it for the scenarios after this one.
+      const br = surfaces(s).browser;
+      if (br) {
+        const st = (await invoke(br, "browser_state")).state;
+        for (const t of st.tabs) await invoke(br, "browser_tab_close", { id: t.id }).catch(() => {});
+        await invoke(br, "browser_settings_set", { settings: { ...before, setupSeen: false } }).catch(() => {});
+        await br.evaluate(() => window.__TAURI_INTERNALS__.invoke("plugin:window|close", { label: "browser" }).catch(() => null)).catch(() => {});
+        await sleep(800);
+      }
+      if (!report.results.some((r) => r.id === "tab-switch-ms" && r.values.length)) throw new Error(`the benchmark did not finish: ${JSON.stringify(report.results.map((r) => r.id))}`);
     },
   },
   {

@@ -617,7 +617,7 @@ fn mcp_tool_list_snapshot() {
         vec![
             "lens_list_settings", "lens_get", "lens_set", "lens_windows", "lens_window_action", "lens_app", "lens_shelf",
             "lens_apply_preset", "lens_undo", "lens_snapshot_save", "lens_snapshot_restore", "lens_browser_tabs",
-            "lens_browser_read", "lens_browser_transcript", "lens_browser_navigate", "lens_browser_act",
+            "lens_browser_read", "lens_browser_screenshot", "lens_browser_transcript", "lens_browser_navigate", "lens_browser_act",
         ]
     );
     for d in tools::mcp_tool_defs() {
@@ -797,6 +797,9 @@ fn bcall(tool: &str, args: Value) -> Call {
 fn browser_parsing_and_needs() {
     assert!(matches!(bcall("lens_browser_read", json!({})), Call::Browser(BrowserCall::Read { .. })));
     assert!(tools::parse("lens_browser_read", &json!({ "mode": "raw" })).is_err());
+    assert!(matches!(bcall("lens_browser_read", json!({ "mode": "compact" })), Call::Browser(BrowserCall::Read { ref mode, .. }) if mode == "compact"));
+    assert!(matches!(bcall("lens_browser_screenshot", json!({})), Call::Browser(BrowserCall::Screenshot { tab: None })));
+    assert_eq!(br::needs(&BrowserCall::Screenshot { tab: None }, Some("https://news.example/a")).risk, Risk::Low);
     assert!(tools::parse("lens_browser_navigate", &json!({ "input": "javascript:alert(1)" })).is_err());
     assert!(tools::parse("lens_browser_navigate", &json!({ "input": "file:///c:/x" })).is_err());
     assert!(tools::parse("lens_browser_act", &json!({ "element": 0, "action": "click" })).is_err());
@@ -839,6 +842,9 @@ fn honest_no_access_for_banks_private_spaces_and_missing_browser() {
     assert_eq!(list.len(), 1, "bank and private tabs are left out for AI apps");
     let blocked = bcall("lens_browser_act", json!({ "element": 2, "action": "type", "text": "4111111111111111" }));
     assert!(tools::execute(&e, &ok, "internal", &blocked).is_err());
+    // A picture of a banking page is as private as its text.
+    let shot = bcall("lens_browser_screenshot", json!({}));
+    assert_eq!(tools::execute(&e, &bank, "cli: Claude Code · wt-1", &shot).unwrap().structured.unwrap()["access"], "none");
 }
 
 #[test]

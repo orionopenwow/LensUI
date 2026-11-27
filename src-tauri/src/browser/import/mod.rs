@@ -405,6 +405,8 @@ pub struct Applied {
     pub history: usize,
     pub tabs: usize,
     pub spaces: usize,
+    #[serde(default)]
+    pub rules: usize,
 }
 
 /// Merges imported data into Lens Browser. Bookmarks keep their folder path; history merges
@@ -422,9 +424,9 @@ pub fn apply(state: &mut crate::browser::model::BrowserState, history: &mut crat
         a.history += 1;
     }
     history.trim();
-    let place = |state: &mut crate::browser::model::BrowserState, name: &str, tabs: &[ImportedTab], color: Option<&str>, icon: Option<&str>| -> usize {
+    let place = |state: &mut crate::browser::model::BrowserState, name: &str, tabs: &[ImportedTab], color: Option<&str>, icon: Option<&str>| -> (usize, Option<String>) {
         if tabs.is_empty() {
-            return 0;
+            return (0, None);
         }
         let space = state.add_space(name);
         if let Some(sp) = state.spaces.iter_mut().find(|s| s.id == space) {
@@ -459,15 +461,30 @@ pub fn apply(state: &mut crate::browser::model::BrowserState, history: &mut crat
                 let _ = state.split_with(ids[0], ids[1]);
             }
         }
-        n
+        (n, Some(space))
     };
     if !data.tabs.is_empty() {
-        a.tabs += place(state, &format!("From {label}"), &data.tabs, None, None);
+        a.tabs += place(state, &format!("From {label}"), &data.tabs, None, None).0;
         a.spaces += 1;
     }
+    let mut made: Vec<(String, String)> = vec![];
     for s in &data.spaces {
-        a.tabs += place(state, &format!("{label} · {}", s.name), &s.tabs, s.color.as_deref(), s.icon.as_deref());
+        let (n, id) = place(state, &format!("{label} · {}", s.name), &s.tabs, s.color.as_deref(), s.icon.as_deref());
+        a.tabs += n;
         a.spaces += 1;
+        if let Some(id) = id {
+            made.push((s.name.clone(), id));
+        }
+    }
+    // Air Traffic Control rules become Lens link rules for the spaces just made. A rule for a
+    // space that came over empty has nowhere to go and is skipped. Undo removes them with the
+    // spaces (`repair_link_rules`).
+    for r in &data.rules {
+        if let Some((_, id)) = made.iter().find(|(name, _)| name == &r.space) {
+            if state.add_link_rule(&r.when, &r.value, id).is_ok() {
+                a.rules += 1;
+            }
+        }
     }
     a
 }
@@ -537,8 +554,12 @@ mod tests {
         assert_eq!(st.tab(&sp.right).unwrap().url, "https://chat.example/");
         assert!(st.folders.iter().any(|f| f.name == "Projects / Lens"));
         let r = receipt::receipt(&before, &st, &h, "Arc", 100);
+        assert_eq!(st.settings.link_rules.len(), 2, "Air Traffic Control rules become link rules");
+        let work_id = st.spaces.iter().find(|s| s.name == "Arc · Work").unwrap().id.clone();
+        assert_eq!(crate::browser::model::route_link(&st.settings.link_rules, "https://api.github.com/x", None), Some(work_id.as_str()));
         receipt::undo(&mut st, &mut h, &r);
         assert!(st.splits.is_empty(), "undo takes the split with its tabs");
+        assert!(st.settings.link_rules.is_empty(), "and the link rules with their spaces");
         assert_eq!(st.spaces.len(), 1);
     }
 

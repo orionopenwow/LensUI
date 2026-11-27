@@ -118,6 +118,15 @@ export interface BrowserSettings {
   favicons?: boolean;
   /** The first-open setup was finished or skipped. */
   setupSeen?: boolean;
+  /** "Send links from <app or site> to <space>". */
+  linkRules?: LinkRule[];
+}
+
+export interface LinkRule {
+  id: string;
+  when: "domain" | "contains" | "app";
+  value: string;
+  spaceId: string;
 }
 
 /** Two tabs side by side; `left` takes `ratio` of the width. */
@@ -359,7 +368,7 @@ export interface ImportProfile { id: string; label: string }
 export interface ImportSource { browser: string; label: string; engine: Engine; profiles: ImportProfile[] }
 export interface ImportKinds { bookmarks: boolean; history: boolean; tabs: boolean; spaces: boolean }
 export interface ImportCounts { bookmarks: number; history: number; openTabs: number; pinnedTabs: number; spaces: number; folders?: number; splits?: number; rules?: number; notes: string[] }
-export interface ImportApplied { bookmarks: number; history: number; tabs: number; spaces: number }
+export interface ImportApplied { bookmarks: number; history: number; tabs: number; spaces: number; rules?: number }
 export interface ImportProgress { browser: string; step: "bookmarks" | "history" | "tabs" | "spaces" | "done"; state: "running" | "done" | "skipped" | "failed"; count: number; note?: string | null }
 export const EVT_BROWSER_IMPORT = "lens://browser/import";
 export const importDetect = () => invoke<ImportSource[]>("browser_import_detect");
@@ -412,3 +421,5 @@ export const favicons = () => invoke<Record<string, string>>("browser_favicons")
 export const faviconsClear = () => invoke<void>("browser_favicons_clear");
 export interface SentRequest { purpose: "filter_list" | "favicon"; host: string; atMs: number; ok: boolean }
 export const sentRequests = () => invoke<SentRequest[]>("browser_sent");
+export const linkRuleAdd = (when: LinkRule["when"], value: string, space: string) => invoke<BrowserView>("browser_link_rule_add", { when, value, space });
+export const linkRuleRemove = (id: string) => invoke<BrowserView>("browser_link_rule_remove", { id });

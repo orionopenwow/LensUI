@@ -162,6 +162,29 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 - Site button beside the star lists the current site's answers with Forget; Settings › AI &
   Command › Lens Browser lists every site.
 
+### 2.8a Link rules, agent command line, benchmarks, privacy **[ardia, PR B]**
+- Link rules — works (unit): Settings › Lens Browser › Link rules ("Links to a site / from an app /
+  containing" → a space; first match wins; `model.rs route_link`, `linkRules.ts`). Applied when a
+  link reaches `browser_open` from outside (the caller names the app, or the window in front when
+  it isn't Lens). Arc's Air Traffic Control rules become link rules on import and go with undo.
+- Agent command line — works (unit, CI build) **not run on a real PC**: `lens-ui.exe --cli browse
+  …|computer …` (`agent_cli.rs`), a client of Lens's MCP endpoint named per terminal ("cli: Claude
+  Code · <terminal>"), using Lens Control tools; Lens Control's `lens_browser_*` tools are now wired
+  to the real browser (`browser/agent_control.rs`; before this they answered "isn't running").
+  Compact page outline (`page_agent.js compact`): about 7,000 tokens for 8 fixture pages vs 33,000
+  for the JSON snapshot (docs/AGENT_CLI.md, method and caveats). Screenshot to
+  `%APPDATA%\LensUI\cli\shots`. Selection and Magic actions from the CLI: **not built** (needs a
+  target-window design).
+- Benchmarks — works (CI): `tools/perf/browser-bench.mjs` in the Windows E2E job (cold open, RAM
+  with 1 tab and 10 tabs/9 asleep, tab switch); method, runner and numbers in docs/BENCHMARKS.md
+  (first run: cold open 1.7 s frame / 2.3 s first page, 275 MB with 1 tab, 324 MB with 10 tabs/9
+  asleep, tab switch 53 ms median: memory is above the LENS_BROWSER.md targets on the GPU-less
+  runner; to be checked on a real PC).
+  Lens-only numbers; no competitor comparison (not measurable the same way on CI).
+- Privacy — works: docs/LENS_BROWSER.md › Privacy and Settings › Lens Browser › Privacy list
+  exactly what Lens Browser sends (filter lists, site icons, update check) and show this
+  session's requests (`browser/net.rs` ledger).
+
 ### 2.8b First-open setup **[setup]**
 - Lens Browser setup — works (unit, harness, E2E `browser-setup`): Welcome → Bring your stuff
   (pick a browser, see counts, imported on Done with the usual receipt) → Look (tab position and

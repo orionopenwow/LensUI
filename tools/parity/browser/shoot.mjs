@@ -75,6 +75,16 @@ const check = (name, ok, detail = "") => { checks.push({ name, ok, detail }); co
   const party = snap.elements.find((e) => e.name === "party");
   check("submit button is reported in a form", submit && submit.inForm && submit.inputType === "submit");
   check("sign-in button's form has a password", signin && signin.formHasPassword === true);
+  // The compact outline (lens browse read) numbers the same elements act/describe use.
+  const comp = (await run(31, { op: "compact" })).data;
+  const m = /\[(\d+)\] button "Complete reservation"/.exec(comp.text || "");
+  check("compact outline lists the submit button", !!m, (comp.text || "").slice(0, 200));
+  if (m) {
+    const d = (await run(32, { op: "describe", ref: Number(m[1]) })).data;
+    check("compact numbers match describe", d.ok && d.target.text === "Complete reservation", JSON.stringify(d).slice(0, 160));
+  }
+  check("compact outline flags the password field", /password .*Lens never types here/.test(comp.text || ""), "");
+  await run(33, { op: "snapshot" });
   const typed = await run(12, { op: "act", action: { do: "type", ref: party.ref, text: "4" } });
   const val = await page.evaluate(() => document.querySelector('[name="party"]').value);
   check("typing uses the native setter", typed.data.ok && val === "4", JSON.stringify(typed));

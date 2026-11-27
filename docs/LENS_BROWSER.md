@@ -84,6 +84,23 @@ Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" |
 
 These figures are not measured yet: this branch was built in a Linux sandbox without WebView2.
 
+## Privacy: what Lens Browser sends
+
+The pages you open talk to their own sites, as in any browser. Lens Browser itself sends only
+this, and nothing else (no telemetry, no history, no page text):
+
+| What | To | When | Turn it off |
+|---|---|---|---|
+| Ad and tracker filter lists (EasyList, EasyPrivacy) | easylist.to | Once a week, only while "Lens blocks ads and trackers" is on; a failed download waits 6 hours | Settings › Lens Browser › Lens blocks ads and trackers |
+| Site icons | the site you visited (its `/favicon.ico` or its own icon on the same site) | Once per site, refreshed after 30 days | Settings › Lens Browser › Site icons |
+| Update check | github.com (Lens releases) | As set in Settings › About, for all of Lens | Settings › About |
+
+Every request Lens Browser's own code makes goes through one function (`browser/net.rs`): HTTPS
+only, redirects checked, nothing on this PC or the local network, size caps, no cookies. Settings ›
+Lens Browser › Privacy lists what was sent this session (time, purpose, host). AI requests are not
+Lens Browser's: they go only to the provider you chose in Settings › AI & Command, and only when
+you ask.
+
 ## Agent mode and approvals
 
 1. You give a goal ("Book seafood for four on Friday, Maya is vegan").

@@ -5104,6 +5104,46 @@
    "source": "src/components/BrowserCard.tsx"
   },
   {
+   "id": "setting.ai.browsercard.link-rules",
+   "kind": "setting",
+   "title": "Link rules",
+   "text": "Send links that arrive from another app or site to a space: \"links from Slack go to Work\", \"github.com goes to Code\". The first rule that fits wins.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Link rules"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Link rules",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.privacy-what-is-sent",
+   "kind": "setting",
+   "title": "Privacy: what is sent",
+   "text": "Besides the pages you open (which talk to their own sites, as in any browser), Lens Browser itself sends only these. No telemetry, no history, no page text.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Privacy: what is sent"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Privacy: what is sent",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
    "id": "setting.ai.browsercard.site-permissions",
    "kind": "setting",
    "title": "Site permissions",
@@ -8657,6 +8697,107 @@
    "source": "docs/SNIP_RESEARCH.md"
   },
   {
+   "id": "doc.agent-cli.0",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+   "text": "lens-ui.exe --cli … lets your own Claude Code, Codex or a script use Lens Browser (with the sign-ins you made there) and a few desktop actions. Lens itself never calls a model for this: the agent in your terminal does the thinking; Lens does the clicking, behind its usual safety rules. Learned from Ardia (ardia.dev, GPL-3.0): the idea of a browser CLI for coding agents and of publishing its token cost. Ideas only; no code was used (docs/THIRD PARTY NOTICES.md).",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "`lens` on the command line: your own agent drives Lens Browser and the desktop"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
+   "id": "doc.agent-cli.1",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop: Set up",
+   "text": "1. In Lens: Settings › AI & Command › MCP on (it's off by default). 2. In a terminal: \"%LOCALAPPDATA%\\Programs\\Lens\\lens-ui.exe\" --cli setup (use the path Lens is installed in). It writes %APPDATA%\\LensUI\\bin\\lens.cmd . Add that folder to your PATH yourself; Lens doesn't change PATH. 3. Try lens browse tabs . Claude Code : add a line to your project's CLAUDE.md : Codex : the same lines in AGENTS.md . Codex's sandbox must allow running lens.cmd and connecting to 127.0.0.1 (Lens's local endpoint). Prefer MCP? The same tools are on Lens's MCP server ( lens browser , docs/MCP.md); the command line is a thin client of it.",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+    "Set up"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "Set up"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
+   "id": "doc.agent-cli.2",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop: Commands",
+   "text": "Command Lens tool What it does --- --- --- lens browse tabs lens browser tabs Spaces and tabs (locked and private Spaces left out) lens browse open <url or words [--new-tab] lens browser navigate Open a page or search lens browse read [--mode compact\\ readable\\ snapshot] [--tab id] lens browser read The page: compact (default) is a short outline with numbered elements lens browse click N / type N text / select N value lens browser act Act on element N from the last read lens browse submit N lens browser act Submit; always shows Lens's approval card lens browse screenshot lens browser screenshot Saves a PNG under %APPDATA%\\LensUI\\cli\\shots (20 kept) and prints the path lens browse transcript lens browser transcript The video's captions lens computer windows lens windows Open windows lens computer focus <id / window <id <action lens window action Focus, minimise, maximise, restore, close (",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+    "Commands"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "Commands"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
+   "id": "doc.agent-cli.3",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop: What keeps it safe",
+   "text": "Per terminal. Each terminal is its own client (\"cli: Claude Code · <terminal \"), so what you allow in This task can for one terminal doesn't carry to another. One approval card. Steps that need your OK wait for the card in Lens; the command waits ( --wait , default 120 s) and reports the outcome. Submits always ask. Lens Browser still checks every step on the live page: sign-in pages, payments, card numbers, password and one-time-code fields and CAPTCHAs are never done; a click Lens thinks commits something is refused with \"send it as submit\" so the card shows it. Pages are data. Every read goes through the agent-safety scan; hidden instructions are set aside and the agent's next steps are checked against what the page tried. Sign-ins stay in Lens. No cookie, password or token ever leaves through these commands. AI off means off. With Lens Browser's AI switch off, agents can't act on pag",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+    "What keeps it safe"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "What keeps it safe"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
+   "id": "doc.agent-cli.4",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop: Token cost of reading a page",
+   "text": "Measured with node tools/agent-bench/run.mjs on 8 hand-made pages ( tools/agent-bench/pages : article, search results, product, booking form, dashboard table, API docs, forum thread, sign-in), each with a header nav of 12 links, a footer of 15 links and inline script/style, in headless Chromium with Lens Browser's real page agent injected. Method: tokens are estimated as characters ÷ 4 (rounded up), the usual rule of thumb for English text with GPT- and Claude-style tokenizers. It is not a tokenizer count; real counts differ by roughly ±15 % and more for code, numbers and non-English text. Page Raw HTML innerText Lens snapshot (JSON) Lens compact Numbered elements --- ---: ---: ---: ---: ---: 01 article 3,030 1,664 3,909 1,286 39 02 search results 2,143 601 3,585 769 49 03 product 2,340 759 3,019 815 40 04 booking form 1,495 141 2,195 246 36 05 dashboard table 2,532 535 5,094 776 73 06 A",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+    "Token cost of reading a page"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "Token cost of reading a page"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
+   "id": "doc.agent-cli.5",
+   "kind": "doc",
+   "title": "`lens` on the command line: your own agent drives Lens Browser and the desktop: Not done yet",
+   "text": "Reading the selection and Magic actions from the command line: when an agent runs, the app in front is its own terminal, so \"the selection\" needs a way to name the window it means and a per-app consent; not designed yet. Screenshots use PrintWindow ; if WebView2 draws nothing into it on some GPUs, the command falls back to what is on screen at the page's place. Not yet run on a real PC.",
+   "path": [
+    "Docs",
+    "`lens` on the command line: your own agent drives Lens Browser and the desktop",
+    "Not done yet"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_CLI.md",
+    "heading": "Not done yet"
+   },
+   "source": "docs/AGENT_CLI.md"
+  },
+  {
    "id": "doc.agent-safety.0",
    "kind": "doc",
    "title": "Agent safety (W8-O)",
@@ -11850,6 +11991,23 @@
   {
    "id": "doc.lens-browser.4",
    "kind": "doc",
+   "title": "Lens Browser: Privacy: what Lens Browser sends",
+   "text": "The pages you open talk to their own sites, as in any browser. Lens Browser itself sends only this, and nothing else (no telemetry, no history, no page text): What To When Turn it off --- --- --- --- Ad and tracker filter lists (EasyList, EasyPrivacy) easylist.to Once a week, only while \"Lens blocks ads and trackers\" is on; a failed download waits 6 hours Settings › Lens Browser › Lens blocks ads and trackers Site icons the site you visited (its /favicon.ico or its own icon on the same site) Once per site, refreshed after 30 days Settings › Lens Browser › Site icons Update check github.com (Lens releases) As set in Settings › About, for all of Lens Settings › About Every request Lens Browser's own code makes goes through one function ( browser/net.rs ): HTTPS only, redirects checked, nothing on this PC or the local network, size caps, no cookies. Settings › Lens Browser › Privacy lists w",
+   "path": [
+    "Docs",
+    "Lens Browser",
+    "Privacy: what Lens Browser sends"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md",
+    "heading": "Privacy: what Lens Browser sends"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "doc.lens-browser.5",
+   "kind": "doc",
    "title": "Lens Browser: Agent mode and approvals",
    "text": "1. You give a goal (\"Book seafood for four on Friday, Maya is vegan\"). 2. Lens reads the page ( browser page snapshot : readable text plus numbered interactive elements), scans it for text aimed at AI assistants ( src/browser/guard.ts ) and shows any it finds. The page goes to the model wrapped as untrusted data; the user's goal is the only source of intent. Text that only discusses prompt injection (an article quoting \"ignore previous instructions\" within 200 characters of \"prompt injection\", \"injection attack\" or \"jailbreak\") is noted at Low and left in the text, both here and in agentsafe/hidden text.rs , so it no longer makes every step ask or blocks the page. Everyday words like \"such as\" or \"for example\" are not enough. The same words aimed at the AI (\"dear AI agent…\"), any line that also asks to send data or call a tool, hidden or smuggled text, and text from a tool still count in",
    "path": [
@@ -11865,7 +12023,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.5",
+   "id": "doc.lens-browser.6",
    "kind": "doc",
    "title": "Lens Browser: Site permissions",
    "text": "Camera, microphone, location, notifications, reading the clipboard and several downloads at once. A page that asks gets a Lens bar under the address bar: Block (Esc), Allow once , Allow on this site (Enter). \"On this site\" and \"Block\" are kept per origin in state.json ( sitePermissions ); the site button beside the bookmark star shows them for the current site, and Settings › AI & Command › Lens Browser lists every site, each with Forget. No answer in 60 seconds is a Block; requests from non-web pages, unknown kinds, or a tab the agent acted on in the last 10 seconds are denied without asking. Rules: src-tauri/src/browser/permissions.rs (pure, tested); WebView2 wiring: its win module ( PermissionRequested + a deferral). Not yet run on a real PC; see docs/BROWSER AAA.md 2.1.",
@@ -11882,7 +12040,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.6",
+   "id": "doc.lens-browser.7",
    "kind": "doc",
    "title": "Lens Browser: Right-click menu (in pages)",
    "text": "Ask about this · Summarise · Explain simply · Translate · Rewrite · Extract… · Add to Shelf · Copy as Markdown · Copy into context · Transcribe video · YouTube transcript · Picture in picture. Items adapt to what you clicked. Shift+right-click (or a text field) shows the page's own menu. The menu can be turned off in Settings.",
@@ -11899,7 +12057,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.7",
+   "id": "doc.lens-browser.8",
    "kind": "doc",
    "title": "Lens Browser: YouTube transcripts",
    "text": "The page agent reads the caption track list the YouTube player itself loaded ( movie player.getPlayerResponse() or ytInitialPlayerResponse ) and fetches that track as json3 from the page (same origin). Tracks hosted anywhere but youtube.com are refused. The panel shows timestamped lines (click to seek), a find box, Summarise / Ask about it / Add to Shelf, and saves .txt , .srt or .md . With no captions it offers local whisper transcription through the existing transcribe url (needs yt-dlp set up by you, with a note about the site's terms).",
@@ -11916,7 +12074,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.8",
+   "id": "doc.lens-browser.9",
    "kind": "doc",
    "title": "Lens Browser: Commands",
    "text": "browser open(url?) , browser state , browser set viewport , browser set overlay , browser navigate(input, newTab) , browser tab {activate,close,move,pin,mute,sleep} , browser history nav(back forward reload) , browser zoom , browser find , browser space {add,remove,switch} , browser folder {add,remove,toggle} , browser bookmark toggle , browser history {search,clear} , browser downloads , browser download reveal , browser settings set , browser page(snapshot readable status) , browser events , browser agent {check,describe,act} , browser untrusted , browser captions , browser seek , browser pip . Events: lens://browser/state , lens://browser/downloads .",
@@ -11933,7 +12091,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.9",
+   "id": "doc.lens-browser.10",
    "kind": "doc",
    "title": "Lens Browser: Shared-file edits made on this branch",
    "text": "File Change --- --- src-tauri/Cargo.toml tauri gains the unstable feature (multi-webview). src-tauri/src/lib.rs mod browser; and 35 commands::browser:: registrations. src-tauri/src/commands/mod.rs pub(crate) mod browser; src-tauri/capabilities/browser.json New: capability for the browser-ui webview only. src/main.tsx browser surface route. .github/workflows/build.yml Parity job renders Lens Browser and runs the page-agent smoke test. .gitignore tools/parity/browser/{out,shots}/",
@@ -11950,7 +12108,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.11",
+   "id": "doc.lens-browser.12",
    "kind": "doc",
    "title": "Lens Browser: Native WebView2 extras (next step, `browser-native` feature)",
    "text": "Using Webview::with webview → controller().CoreWebView2() with webview2-com pinned to the version Tauri uses: ICoreWebView2Profile3::put PreferredTrackingPreventionLevel(STRICT) per space profile. ICoreWebView2 19::put MemoryUsageTargetLevel(LOW) for hidden live tabs, TrySuspend before sleeping instead of closing, Resume on activate. ICoreWebView2::CapturePreview → cropped PNG of the target element for the approval card. add ContextMenuRequested to put Lens items into the native menu (and drop the in-page one). add WebResourceRequested for a real sub-resource filter list. ICoreWebView2Controller::add AcceleratorKeyPressed so Ctrl+L/T/W/F/J work while a page has focus. ICoreWebView2 8::put IsMuted for true per-tab mute and IsDocumentPlayingAudio for the speaker badge.",
@@ -11967,7 +12125,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.12",
+   "id": "doc.lens-browser.13",
    "kind": "doc",
    "title": "Lens Browser: Research notes",
    "text": "Tauri 2.12: Webview exposes eval with callback , set bounds , with webview , hide/show , set zoom , navigate , reload ; the builder and add child sit behind the unstable feature (docs.rs: tauri::webview::Webview). WebView2: one environment per app is recommended; each extra user-data folder adds processes; MemoryUsageTargetLevel = Low and TrySuspend cut memory for hidden views (WebView2 performance). Tracking prevention is a per-profile level (ICoreWebView2Profile3). Extensions are supported unpacked only (ICoreWebView2Profile7). Agent approvals elsewhere: Perplexity's Comet stops for approval before logging in or buying, handles small steps on its own, and shows where it clicks with a stop button (Comet Assistant puts you in control). Lens goes further: payments and sign-ins are never done by the agent at all, and the rules run on the live element, not the model's description. Vertical ",
@@ -11984,7 +12142,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.13",
+   "id": "doc.lens-browser.14",
    "kind": "doc",
    "title": "Lens Browser: Style direction (v2)",
    "text": "Near-black canvas; the dither material (docs/DITHER.md) on backdrops and empty states only; cards with 1 px borders and 12–16 px radius; monospace for domains, timings, counts and captions (\"captured 3s ago\", \"Working · 1m 12s · 5 actions\"); small coloured status dots; a key chip on every button (⏎, Esc, hold ⏎); one light primary button per card.",
@@ -12001,7 +12159,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.14",
+   "id": "doc.lens-browser.15",
    "kind": "doc",
    "title": "Lens Browser: Make it yours",
    "text": "Settings › (gear in the sidebar) › Make it yours: a 2D accent field (x = hue, y = vivid → deep; arrow keys move it), Auto / Light / Dark, six two-tone presets, Dither and Grain (0–100), tabs tab position vertical / horizontal with five horizontal styles (Curved, Joined, Compact, Dynamic, Merged; src/browser/tabModes.ts ), density compact / comfortable, typeface Lens / System / Mono / Serif, Reset, and Customise (opens Lens Theme & Look). Stored in settings.appearance .",
@@ -12018,7 +12176,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.15",
+   "id": "doc.lens-browser.16",
    "kind": "doc",
    "title": "Lens Browser: Bring everything with you (import)",
    "text": "Chrome, Edge, Brave, Vivaldi, Opera / Opera GX, Firefox and Arc. detect() only checks folders. After you click Look inside and Allow and count , Lens reads one profile and shows counts; Import then runs step by step with a progress checklist. What Chromium browsers Firefox Arc --- --- --- --- Bookmarks (with folders) Bookmarks JSON places.sqlite (moz bookmarks) its Chromium profile History History (SQLite) places.sqlite (moz places) its Chromium profile Open + pinned tabs newest Sessions/Session (SNSS) sessionstore-backups/recovery.jsonlz4 — Spaces, pinned tabs, folders — — StorableSidebar.json SQLite is read by a small built-in reader ( import/sqlite.rs : b-tree pages, overflow, record types, row-id aliases); -wal files are not read, so a browser that's still open may lose the last few minutes of history. A file the browser holds locked gets \"Close X and try again\". mozLz4 is decoded by",
@@ -12035,7 +12193,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.16",
+   "id": "doc.lens-browser.17",
    "kind": "doc",
    "title": "Lens Browser: AI only if you want it / Free, bring your own model",
    "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, the reader view's Summarise and Ask buttons (the reader view itself is local and stays), Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
@@ -12052,7 +12210,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.17",
+   "id": "doc.lens-browser.18",
    "kind": "doc",
    "title": "Lens Browser: Agent run timeline",
    "text": "\"Working · 1m 12s ▾ · N actions\" (collapses the steps), Pause / Take over while running, grouped steps with an icon, a monospace sub-caption (\"search · sort · open ×6 · kept 3\") and a one-line why, a jump-to-tab chip, plain errors with Retry, an \"Acting in 1 tab\" card (\"+N kept, idle\"), \"Waiting for your OK to … · now\", then the approval card. Typing while a run is going steers it (the note joins the next turn's goal). Results render as cards: a comparison table with \"My pick\", a dithered map with numbered pins (no map tiles), and a place card with Add to calendar (downloads an .ics ) and Directions (an OpenStreetMap link).",
@@ -12069,7 +12227,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.18",
+   "id": "doc.lens-browser.19",
    "kind": "doc",
    "title": "Lens Browser: Approval cards",
    "text": "src/browser/approvalShape.ts builds a card model in the same shape as the shared approval model on feature/claude-control ( ApprovalRequest / ApprovalPreview , origin browser , kind element ), with four layouts: click/booking (element replica, details, \"I'll click this · captured 3s ago\"), delete (counts, \"Review all N\", Bin = undo, no hold), payment (amount in mono, card shown as last four only, warnings, always hold), send (TO recipient and the exact words, \"Don't send\"). When both branches merge, import the types from src/approval/model and delete the local copies. Payments are blocked by default. In \"This task can\", Pay or buy can be switched to \"Ask first\" for the current task by holding its chip; the agent then stops at the payment card and needs a hold to pay. Card numbers are never typed (field checks plus a Luhn check), with or without that switch, and sign-ins stay blocked.",
@@ -12086,7 +12244,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.19",
+   "id": "doc.lens-browser.20",
    "kind": "doc",
    "title": "Lens Browser: Delta items (docs/research/BROWSER_DELTA.md)",
    "text": "Item Status --- --- Steer, pause, take over Done (pause stops before the next step; take over focuses the page; steer adds a note). Glance link previews Done: Alt+click (or long-press) a link → a preview fills the content area with \"Open as tab ⏎ / Close Esc\"; optional ≤5 s local summary (provider local ). Tidy and auto-archive Done: Tidy (sidebar Lens row or Ctrl+Shift+K) shows its plan first (which tabs close, which archive) and changes nothing until Apply; it closes duplicates and archives tabs not opened today; tabs not opened for archiveAfterDays (default 14) auto-archive; archived tabs are listed and searchable in History and come back with a click. Space lock with Windows Hello Done: UserConsentVerifier ; if Hello isn't set up the space is hidden-only and unlocks on an explicit click. Needs real-hardware testing; the Hello prompt may open behind the window without the HWND interop",
@@ -12103,7 +12261,7 @@
    "source": "docs/LENS_BROWSER.md"
   },
   {
-   "id": "doc.lens-browser.20",
+   "id": "doc.lens-browser.21",
    "kind": "doc",
    "title": "Lens Browser: AAA pass",
    "text": "The feature map, what waits and why, and the real-hardware test list are in BROWSER AAA.md. In short, this pass added: Tab switching by keyboard, duplicate tab, a close button and arrow keys on the horizontal strip. Address suggestions from open tabs, bookmarks, history and search, with arrow keys. Back and forward that are only enabled when there is somewhere to go; a loading mark and Stop. Zoom in, out and reset, remembered per site. Find with previous and next. A new-tab page (most visited, bookmarks, recently closed) and Lens's own page when a site fails to load. History with search, days, remove one and clear; downloads that survive a restart. Import item by item, with a receipt so an import can be removed in one step. New commands: browser tab duplicate , browser history remove , browser downloads clear , browser import items , browser import receipts , browser import undo . browse",
@@ -12442,6 +12600,23 @@
   {
    "id": "doc.mcp.4",
    "kind": "doc",
+   "title": "Lens as an MCP server: From a terminal: `lens` (Claude Code, Codex, scripts)",
+   "text": "lens-ui.exe --cli browse read , … browse click 12 , … computer windows : a command-line client of this same server for your own coding agent, one client per terminal, using the Lens Control tools ( lens browser tabs/read/screenshot/transcript/navigate/act , lens windows , lens window action ). Setup for Claude Code and Codex, the commands, and measured token costs: AGENT CLI.md.",
+   "path": [
+    "Docs",
+    "Lens as an MCP server",
+    "From a terminal: `lens` (Claude Code, Codex, scripts)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MCP.md",
+    "heading": "From a terminal: `lens` (Claude Code, Codex, scripts)"
+   },
+   "source": "docs/MCP.md"
+  },
+  {
+   "id": "doc.mcp.5",
+   "kind": "doc",
    "title": "Lens as an MCP server: Security model",
    "text": "Off by default, loopback only, token-gated. The port binds to 127.0.0.1; a connection without the token from the endpoint file is closed before any message is read. The token file is in your user profile, so other programs running as you can read it — the same trust level as any app you run. No dangerous capabilities exist. There is no tool that runs commands or scripts, opens or deletes files, closes windows, kills processes, changes accounts or Windows settings beyond volume/brightness/night light. run action goes through the same router as Dock search and only after you click Approve. Validated input. Every argument is type- and range-checked (unknown tools are a protocol error); text is stripped of control characters and length-capped; window ids must belong to a window Lens currently lists. Rate-limited. 40 tool calls per minute per connection, 4 connections at once, 256 KB per mess",
    "path": [
@@ -12457,7 +12632,7 @@
    "source": "docs/MCP.md"
   },
   {
-   "id": "doc.mcp.5",
+   "id": "doc.mcp.6",
    "kind": "doc",
    "title": "Lens as an MCP server: Connect Claude Desktop",
    "text": "The card shows a ready-made snippet with the real path. It looks like:",
@@ -12474,7 +12649,7 @@
    "source": "docs/MCP.md"
   },
   {
-   "id": "doc.mcp.6",
+   "id": "doc.mcp.7",
    "kind": "doc",
    "title": "Lens as an MCP server: Windows 11 agent registry (not wired yet)",
    "text": "Windows 11 (build 26220.7262+, pre-release) has an On-device Agent Registry; local servers are added with odr.exe mcp add <mcpb-manifest.json , and unpackaged apps are expected to ship an MCP bundle (MCPB) manifest (Microsoft docs). Lens does not register itself yet. A manifest would point its stdio command at lens-ui.exe with --mcp-stdio ; check the MCPB schema (github.com/anthropics/mcpb) before shipping one — not verified here.",
@@ -12491,7 +12666,7 @@
    "source": "docs/MCP.md"
   },
   {
-   "id": "doc.mcp.7",
+   "id": "doc.mcp.8",
    "kind": "doc",
    "title": "Lens as an MCP server: Known limits",
    "text": "apply theme pack is applied by the Dock window (theme packs live in the frontend); if the Dock window isn't running the call reports success but nothing changes. search for apps is a simple name match; the Launcher's fuzzy ranking runs in the frontend. Night light toggling reads Lens' own night-light state, not Windows' built-in Night light.",

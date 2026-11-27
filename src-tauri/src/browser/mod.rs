@@ -11,6 +11,7 @@
 //! * `permissions` — site permissions (camera, microphone, location…) and their prompt.
 //! * `import` — bookmarks, history, tabs and Arc spaces from other browsers (never passwords).
 
+pub mod agent_control;
 pub mod blocklist;
 pub mod filter;
 pub mod gating;

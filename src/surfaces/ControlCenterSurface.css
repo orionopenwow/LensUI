@@ -1584,3 +1584,4 @@
 .cc-lists { margin-top: 6px; }
 .cc-num { font-variant-numeric: tabular-nums; }
 .cc-btn-row { display: inline-flex; gap: 8px; flex: none; }
+.cc-rules { display: grid; gap: 6px; margin-top: 6px; }
