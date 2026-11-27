@@ -50,6 +50,7 @@ Prices above are starting suggestions from the launch plan, not researched figur
 - The AI is also just **Lens** ("Ask Lens", "Lens is working on it"). Not "Lens Guide", not a persona name. The help system is **the Guide**.
 - Family members keep the prefix: **Lens Browser, Lens Music, Lens Cleaner, Lens Apps, Lens Feeds, Lens Messages, Lens Notes, Lens Snip**. Tools with their own names: **Backdrop Lab**, **Command**, **Shelf**, **Magic** (the right-click menu), **Redline** (planned review tool).
 - **Open:** whether other first-party apps (e.g. the TradingView rewrite as "Lens Trade") join the family on the site.
+- **Maker: Campton.** Lens launches under its maker's own name, **Campton**, together with Campton's other products (**Tribe Code**, **ThumbDesk**). It is written "Lens, made by Campton" in the About page, the site footer and the README. *Decided 26 November 2026.* The brand architecture, the projection ideas and what is still open (Tribe Code's description, a Campton GitHub organisation, "Lens Desktop" as a descriptor) are in [COMBINATOR.md §3](COMBINATOR.md#3-brand-projection-lens-by-campton).
 
 ---
 
