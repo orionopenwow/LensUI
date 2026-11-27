@@ -914,6 +914,9 @@ pub struct MagicWavesConfig {
     pub studio_v2: bool,
     /// Learned ordering on the Dashboard (local only, with "Why this is here").
     pub learn: bool,
+    /// Desktop widgets: widgets pinned on the desktop, above the wallpaper and below every app
+    /// window (docs/features/desktop-widgets.md). Local data only.
+    pub desktop_widgets: bool,
 }
 
 impl Default for MagicWavesConfig {
@@ -927,6 +930,7 @@ impl Default for MagicWavesConfig {
             shelf_notes: false,
             studio_v2: false,
             learn: false,
+            desktop_widgets: false,
         }
     }
 }
@@ -942,7 +946,7 @@ impl MagicWavesConfig {
 
     /// True when any Magic feature is on (used to skip all Magic work when everything is off).
     pub fn any_on(&self) -> bool {
-        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn
+        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn || self.desktop_widgets
     }
 }
 

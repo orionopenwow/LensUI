@@ -3,9 +3,9 @@
 // Stored in config.magicWaves (src-tauri/src/config.rs `MagicWavesConfig`).
 import type { MagicWavesConfig } from "../types/generated";
 
-export type MagicFlag = "dashboard" | "widgets" | "mouse" | "startButton" | "shelfNotes" | "studioV2" | "learn";
+export type MagicFlag = "dashboard" | "widgets" | "desktopWidgets" | "mouse" | "startButton" | "shelfNotes" | "studioV2" | "learn";
 
-export const MAGIC_FLAGS: readonly MagicFlag[] = ["dashboard", "widgets", "mouse", "startButton", "shelfNotes", "studioV2", "learn"];
+export const MAGIC_FLAGS: readonly MagicFlag[] = ["dashboard", "widgets", "desktopWidgets", "mouse", "startButton", "shelfNotes", "studioV2", "learn"];
 
 export const MAGIC_DEFAULTS: MagicWavesConfig = {
   dashboard: false,
@@ -16,12 +16,14 @@ export const MAGIC_DEFAULTS: MagicWavesConfig = {
   shelfNotes: false,
   studioV2: false,
   learn: false,
+  desktopWidgets: false,
 };
 
 /** Plain names for each flag, used by the preview section and the hyper-suite inventory. */
 export const MAGIC_LABELS: Record<MagicFlag, { label: string; desc: string }> = {
   dashboard: { label: "Magic Dashboard", desc: "Inbox, feeds, today, Shelf and widgets in one place. Opens from the Top Bar and Command." },
   widgets: { label: "Dashboard widgets", desc: "Small widgets on the Dashboard. Lens fetches only the sources you approve." },
+  desktopWidgets: { label: "Desktop widgets", desc: "Widgets on your desktop, below your windows: clock, today, notes, music, battery. Uses only what's on this PC." },
   mouse: { label: "Magic Mouse", desc: "The Lens pointer. Hold the left button, then drag, to grab part of the screen." },
   startButton: { label: "Magic button", desc: "A Windows-key tap opens Lens Magic Start. Ctrl+Esc still opens Windows Start." },
   shelfNotes: { label: "Shelf to Notes", desc: "Turn what's on the Shelf into a note you can export." },

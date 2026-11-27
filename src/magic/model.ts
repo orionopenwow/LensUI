@@ -26,6 +26,14 @@ export interface Caps {
   snip: boolean;
   /** Lens Browser is installed (feature/lens-browser). */
   browser: boolean;
+  /** Desktop widgets are on (magicWaves.desktopWidgets): the desktop gets "Edit widgets…". */
+  desktopWidgets?: boolean;
+}
+
+/** Rows for the desktop itself (right-click on the bare desktop). */
+export function desktopRows(t: MagicTarget, caps: Caps = NO_CAPS): Row[] {
+  if (t.kind !== "desktop" || !caps.desktopWidgets) return [];
+  return [{ id: "desk:widgets", label: "Edit widgets…", icon: "layout-grid", group: "lens", risk: "low", windowAction: "desktop-widgets" }];
 }
 
 export const NO_CAPS: Caps = { snip: false, browser: false };
@@ -152,7 +160,7 @@ export function rowsFor(
     .map(rowFromAction);
   const win = cfg.windowActions ? windowRows(t, caps) : [];
   // For a window, the window's own actions come first: that's why people right-click a window.
-  const all = t.kind === "window" ? [...win, ...fromCatalog] : [...fromCatalog, ...win];
+  const all = t.kind === "window" ? [...win, ...fromCatalog] : [...desktopRows(t, caps), ...fromCatalog, ...win];
   const max = Math.max(3, Math.min(9, cfg.maxRows || 7));
   return { top: all.slice(0, max), more: all.slice(max) };
 }

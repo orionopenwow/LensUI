@@ -62,6 +62,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
   // Magic Dashboard (docs/plans/MAGIC_WAVES.md; only opened while magicWaves.dashboard is on).
   dashboard: lazy(() => import("./dashboard/DashboardWindow").then((m) => ({ default: m.DashboardWindow }))),
+  // Desktop widgets host (only built while magicWaves.desktopWidgets is on; docs/features/desktop-widgets.md).
+  deskwidgets: lazy(() => import("./deskwidgets/DeskWidgetsSurface").then((m) => ({ default: m.DeskWidgetsWindow }))),
   // Magic Start (wave M4; only opened while magicWaves.startButton is on).
   magicstart: lazy(() => import("./magic/start/MagicStartWindow").then((m) => ({ default: m.MagicStartWindow }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
@@ -101,7 +103,7 @@ const Surface = surfaces[surfaceName] ?? surfaces.dock;
 import("./smooth/probe").then((m) => m.installSmoothProbe(surfaceName)).catch(() => {});
 // "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
 const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
-const withTwin = !["presence", "presencebar", "lyricsline"].includes(surfaceName);
+const withTwin = !["presence", "presencebar", "lyricsline", "deskwidgets"].includes(surfaceName);
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their
 // listen() calls. Windows built on first use wait for this before their opening command is replayed.

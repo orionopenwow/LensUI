@@ -67,6 +67,21 @@ const SCENARIOS = {
     warmBudget: DASHBOARD_WARM_MS,
     run: (p) => dashboardWarmOpens(p),
   },
+  // Desktop widgets (docs/features/desktop-widgets.md): resizing a widget reflows its neighbours
+  // with FLIP (transform only). Six size changes from the widget menu, plus a check that every
+  // widget shares one 1 s timer.
+  "deskwidgets-reflow": {
+    surface: "deskwidgets",
+    query: "magic=desktopWidgets&desk=sample",
+    run: async (p) => {
+      for (const size of ["Large", "Small", "Medium", "Large", "Small", "Medium"]) {
+        await p.locator('.dwg-item[data-kind="today"]').first().click({ button: "right" });
+        await p.waitForTimeout(120);
+        await p.locator(".dwg-menu-row", { hasText: size }).first().click();
+        await p.waitForTimeout(420);
+      }
+    },
+  },
   "dock-hover-sweep": { surface: "dock", run: (p) => sweep(p, ".dock-icons-row") },
   "dock-magnification": {
     surface: "dock",

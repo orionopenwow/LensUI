@@ -110,6 +110,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("magicWaves.startButton", "Magic button", "Makes a Windows-key tap open Lens Magic Start; Ctrl+Esc still opens Windows Start.", r#"{}"#),
     ("magicWaves.shelfNotes", "Shelf to Notes", "Turns on making a note from the Shelf and exporting it.", r#"{}"#),
     ("magicWaves.studioV2", "Lens Studio v2", "Turns on the new Dock, Theme and Desktop studio with undo.", r#"{}"#),
+    ("magicWaves.desktopWidgets", "Desktop widgets", "Pins widgets on the desktop, above the wallpaper and below your windows; local data only.", r#"{}"#),
     ("magicWaves.learn", "Learned ordering", "Lets the Dashboard reorder cards from how you use it, on this PC only, with a reason on each.", r#"{}"#),
     ("selectionBar.enabled", "Selection bar", "Shows the Magic selection bar after you select text: Cut, Copy, Paste, Magic Search and your actions. Off by default.", r#"{}"#),
     ("selectionBar.labels", "Button labels", "Icons only, labels on hover, or always labels on the selection bar.", r#"{"enum":["off","hover","always"]}"#),
