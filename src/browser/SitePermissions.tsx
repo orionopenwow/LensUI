@@ -39,9 +39,9 @@ export function PermissionBar({ ask, more, onAnswer }: { ask: PermissionAsk; mor
         {more ? <span className="lb-dim"> · {more} more waiting</span> : null}
       </span>
       <span className="lb-push" />
-      <button className="lb-btn lb-btn-sm" onClick={() => onAnswer("block")}>Block <Key k="Esc" /></button>
-      <button className="lb-btn lb-btn-sm" onClick={() => onAnswer("once")}>Allow once</button>
-      <button className="lb-btn lb-btn-sm lb-btn-primary" autoFocus onClick={() => onAnswer("site")}>Allow on this site <Key k="⏎" /></button>
+      <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={() => onAnswer("block")}>Block <Key k="Esc" /></button>
+      <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={() => onAnswer("once")}>Allow once</button>
+      <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" autoFocus onClick={() => onAnswer("site")}>Allow on this site <Key k="⏎" /></button>
     </div>
   );
 }
@@ -58,7 +58,7 @@ export function PermissionTimedOut({ ask, onClose }: { ask: PermissionAsk; onClo
       <span className="lb-perm-icon" aria-hidden><t.Icon size={14} /></span>
       <span className="lb-perm-text">{timedOutText(ask)}</span>
       <span className="lb-push" />
-      <button className="lb-btn lb-btn-sm" autoFocus onClick={onClose}>OK <Key k="Esc" /></button>
+      <button data-weight="medium" className="lb-btn lb-btn-sm" autoFocus onClick={onClose}>OK <Key k="Esc" /></button>
     </div>
   );
 }
@@ -80,7 +80,7 @@ export function SiteStrip({ origin, saved, onForget, onClose }: { origin: string
           return (
             <span key={k} className={`lb-perm-chip${allowed ? " is-on" : ""}`}>
               <t.Icon size={12} /> {t.name} · {allowed ? "Allowed" : "Blocked"}
-              <button className="lb-perm-x" aria-label={`Forget ${t.name} for ${hostOf(origin)}`} onClick={() => onForget(k)}><X size={11} /></button>
+              <button data-weight="medium" className="lb-perm-x" aria-label={`Forget ${t.name} for ${hostOf(origin)}`} onClick={() => onForget(k)}><X size={11} /></button>
             </span>
           );
         })
@@ -88,8 +88,8 @@ export function SiteStrip({ origin, saved, onForget, onClose }: { origin: string
         <span className="lb-dim">Nothing allowed or blocked. This site asks before using your camera, microphone, location and more.</span>
       )}
       <span className="lb-push" />
-      {kinds.length > 1 ? <button className="lb-btn lb-btn-sm" onClick={() => onForget(null)}>Forget all</button> : null}
-      <button className="lb-icon-btn sm" aria-label="Close site permissions" onClick={onClose}><X size={12} /></button>
+      {kinds.length > 1 ? <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={() => onForget(null)}>Forget all</button> : null}
+      <button data-weight="medium" className="lb-icon-btn sm" aria-label="Close site permissions" onClick={onClose}><X size={12} /></button>
     </div>
   );
 }
@@ -106,10 +106,10 @@ export function SitePermissionsList({ saved, onForget }: { saved: SitePermission
           {sitesKinds(saved, o).map(([k, allowed]) => (
             <span key={k} className={`lb-perm-chip${allowed ? " is-on" : ""}`}>
               {KIND_TEXT[k].name} · {allowed ? "Allowed" : "Blocked"}
-              <button className="lb-perm-x" aria-label={`Forget ${KIND_TEXT[k].name} for ${hostOf(o)}`} onClick={() => onForget(o, k)}><X size={11} /></button>
+              <button data-weight="medium" className="lb-perm-x" aria-label={`Forget ${KIND_TEXT[k].name} for ${hostOf(o)}`} onClick={() => onForget(o, k)}><X size={11} /></button>
             </span>
           ))}
-          <button className="cc-btn-ghost" onClick={() => onForget(o, null)}>Forget site</button>
+          <button data-weight="medium" className="cc-btn-ghost" onClick={() => onForget(o, null)}>Forget site</button>
         </li>
       ))}
     </ul>

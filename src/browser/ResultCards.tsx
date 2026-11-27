@@ -86,11 +86,11 @@ export function ResultView({ result, onOpen }: { result: ResultCard; onOpen?(url
       </div>
       <div className="lb-place-actions">
         {result.when ? (
-          <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => download(`${result.name.slice(0, 40)}.ics`, icsFor({ name: result.name, when: result.when!, address: result.address, url: result.url }), "text/calendar")}>
+          <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => download(`${result.name.slice(0, 40)}.ics`, icsFor({ name: result.name, when: result.when!, address: result.address, url: result.url }), "text/calendar")}>
             <CalendarPlus size={13} /> Add to calendar <Key k="⏎" />
           </button>
         ) : null}
-        <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => open(directionsUrl(result))}>
+        <button data-weight="medium" className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => open(directionsUrl(result))}>
           <Navigation size={13} /> Directions <Key k="D" />
         </button>
       </div>

@@ -119,7 +119,7 @@
 /* ── Press feedback, legacy fallback ─────────────────────────────────────────────────────────────
    Controls that declare a weight (data-weight, src/ui/press) get the weighted press instead
    (DESIGN.md §5.2). This zero-specificity :active scale only covers areas not migrated yet: older
-   apps, and every control in windows in "own" press mode (Dock, Lens Browser), weighted or not.
+   apps, and every control in a window in "own" press mode (none at present), weighted or not.
    Opt out with data-no-press. One selector per kind of control: a selector ending in
    :where(a, b, c) is tried on every element at every restyle (a theme switch restyles all of them);
    one ending in :where(a) only on elements that are an a. */

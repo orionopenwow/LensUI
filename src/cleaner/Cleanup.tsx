@@ -42,6 +42,7 @@ const Row: React.FC<{
         ref={ref}
         className="cl-cat-head"
         role="button"
+        data-weight="light"
         tabIndex={focused ? 0 : -1}
         aria-expanded={open}
         aria-controls={panelId}

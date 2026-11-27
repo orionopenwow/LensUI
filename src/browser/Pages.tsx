@@ -61,7 +61,7 @@ export function StartPage(p: StartProps) {
           <Key k="⏎" />
         </form>
         {p.ask ? (
-          <button className="lb-chip lb-newtab-ask" onClick={() => p.onAsk(input.current?.value.trim() || "What can you help me with here?")}>
+          <button data-weight="light" className="lb-chip lb-newtab-ask" onClick={() => p.onAsk(input.current?.value.trim() || "What can you help me with here?")}>
             <Sparkles size={12} /> Ask instead <Key k="Ctrl J" />
           </button>
         ) : null}
@@ -69,16 +69,16 @@ export function StartPage(p: StartProps) {
         {empty ? (
           <div className="lb-newtab-empty">
             <p>Nothing here yet. Sites you visit often will show up on this page.</p>
-            <button className="lb-btn lb-btn-sm" onClick={p.onImport}><Download size={13} /> Bring bookmarks from another browser</button>
+            <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={p.onImport}><Download size={13} /> Bring bookmarks from another browser</button>
           </div>
         ) : null}
 
         {sites.length ? (
           <section aria-label="Most visited">
-            <div className="lb-head"><span>Most visited</span><button className="lb-chip lb-head-right" onClick={p.onHistory}><HistoryIcon size={12} /> History <Key k="Ctrl H" /></button></div>
+            <div className="lb-head"><span>Most visited</span><button data-weight="light" className="lb-chip lb-head-right" onClick={p.onHistory}><HistoryIcon size={12} /> History <Key k="Ctrl H" /></button></div>
             <div className="lb-tiles">
               {sites.map((s) => (
-                <button key={s.host} className="lb-tile" onClick={() => p.onGo(s.url)} aria-label={`${s.host}, visited ${s.visits} times`}>
+                <button data-weight="heavy" key={s.host} className="lb-tile" onClick={() => p.onGo(s.url)} aria-label={`${s.host}, visited ${s.visits} times`}>
                   <Avatar url={s.url} title={s.title} size={28} />
                   <span className="lb-tile-name">{s.host}</span>
                 </button>
@@ -92,7 +92,7 @@ export function StartPage(p: StartProps) {
             <div className="lb-head"><span>Bookmarks</span></div>
             <div className="lb-tiles">
               {marks.map((b) => (
-                <button key={b.id} className="lb-tile" onClick={() => p.onGo(b.url)} aria-label={b.title || hostOf(b.url)}>
+                <button data-weight="heavy" key={b.id} className="lb-tile" onClick={() => p.onGo(b.url)} aria-label={b.title || hostOf(b.url)}>
                   <Avatar url={b.url} title={b.title} size={28} />
                   <span className="lb-tile-name">{b.title || hostOf(b.url)}</span>
                 </button>
@@ -103,10 +103,10 @@ export function StartPage(p: StartProps) {
 
         {closed.length ? (
           <section aria-label="Recently closed">
-            <div className="lb-head"><span>Recently closed</span><button className="lb-chip lb-head-right" onClick={p.onReopen}><Undo2 size={12} /> Reopen last <Key k="Ctrl Shift T" /></button></div>
+            <div className="lb-head"><span>Recently closed</span><button data-weight="light" className="lb-chip lb-head-right" onClick={p.onReopen}><Undo2 size={12} /> Reopen last <Key k="Ctrl Shift T" /></button></div>
             <div className="lb-newtab-list">
               {closed.map((c, i) => (
-                <button key={`${c.tab.id}-${i}`} className="lb-row" onClick={() => p.onGo(c.tab.url)}>
+                <button data-weight="light" key={`${c.tab.id}-${i}`} className="lb-row" onClick={() => p.onGo(c.tab.url)}>
                   <Avatar url={c.tab.url} title={c.tab.title} size={14} />
                   <span className="lb-tab-title">{c.tab.title || hostOf(c.tab.url)}</span>
                   <span className="lb-mono lb-dim">{c.closedMs ? relTime(c.closedMs, p.now) : hostOf(c.tab.url)}</span>
@@ -148,12 +148,12 @@ export function ErrorPage(p: ErrorProps) {
       <p className="lb-error-body">{info.body}</p>
       <div className="lb-error-actions">
         {info.unsafe && p.canBack ? (
-          <button className="lb-btn lb-btn-primary" onClick={p.onBack} autoFocus>Go back <Key k="⏎" /></button>
+          <button data-weight="heavy" className="lb-btn lb-btn-primary" onClick={p.onBack} autoFocus>Go back <Key k="⏎" /></button>
         ) : (
-          <button className="lb-btn lb-btn-primary" onClick={p.onRetry} autoFocus><RotateCw size={14} /> Try again <Key k="⏎" /></button>
+          <button data-weight="heavy" className="lb-btn lb-btn-primary" onClick={p.onRetry} autoFocus><RotateCw size={14} /> Try again <Key k="⏎" /></button>
         )}
-        {info.unsafe ? <button className="lb-btn" onClick={p.onRetry}>Try again</button> : p.canBack ? <button className="lb-btn" onClick={p.onBack}>Go back</button> : null}
-        {info.kind === "dns" && host ? <button className="lb-btn" onClick={() => p.onSearch(host)}><Search size={14} /> Search for {host}</button> : null}
+        {info.unsafe ? <button data-weight="medium" className="lb-btn" onClick={p.onRetry}>Try again</button> : p.canBack ? <button data-weight="medium" className="lb-btn" onClick={p.onBack}>Go back</button> : null}
+        {info.kind === "dns" && host ? <button data-weight="medium" className="lb-btn" onClick={() => p.onSearch(host)}><Search size={14} /> Search for {host}</button> : null}
       </div>
       <p className="lb-mono lb-dim">{host ? `${host} · ` : ""}{p.code}</p>
     </div>
@@ -222,25 +222,25 @@ export function ReaderPage(p: ReaderProps) {
       <div className="lb-reader-bar" role="toolbar" aria-label="Reader">
         <span className="lb-mono lb-dim lb-reader-meta">{[doc.host, label].filter(Boolean).join(" · ")}</span>
         <span className="lb-reader-tools">
-          <button className="lb-icon-btn sm" aria-label="Smaller text" disabled={prefs.size <= READER_SIZE.min} onClick={() => p.onPrefs(stepSize(prefs, -1))}><Minus size={12} /></button>
+          <button data-weight="medium" className="lb-icon-btn sm" aria-label="Smaller text" disabled={prefs.size <= READER_SIZE.min} onClick={() => p.onPrefs(stepSize(prefs, -1))}><Minus size={12} /></button>
           <span className="lb-mono lb-reader-size" aria-live="polite" aria-label={`Text size ${prefs.size}`}>{prefs.size}</span>
-          <button className="lb-icon-btn sm" aria-label="Larger text" disabled={prefs.size >= READER_SIZE.max} onClick={() => p.onPrefs(stepSize(prefs, 1))}><Plus size={12} /></button>
+          <button data-weight="medium" className="lb-icon-btn sm" aria-label="Larger text" disabled={prefs.size >= READER_SIZE.max} onClick={() => p.onPrefs(stepSize(prefs, 1))}><Plus size={12} /></button>
           <span className="lb-reader-seg" role="radiogroup" aria-label="Column width">
             {widths.map((w) => (
-              <button key={w} role="radio" aria-checked={prefs.width === w} className={`lb-chip${prefs.width === w ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, width: w })}>{w === "narrow" ? "Narrow" : w === "medium" ? "Medium" : "Wide"}</button>
+              <button data-weight="light" key={w} role="radio" aria-checked={prefs.width === w} className={`lb-chip${prefs.width === w ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, width: w })}>{w === "narrow" ? "Narrow" : w === "medium" ? "Medium" : "Wide"}</button>
             ))}
           </span>
           <span className="lb-reader-seg" role="radiogroup" aria-label="Typeface">
-            <button role="radio" aria-checked={prefs.face === "serif"} className={`lb-chip${prefs.face === "serif" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "serif" })}>Serif</button>
-            <button role="radio" aria-checked={prefs.face === "sans"} className={`lb-chip${prefs.face === "sans" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "sans" })}>Sans</button>
+            <button data-weight="light" role="radio" aria-checked={prefs.face === "serif"} className={`lb-chip${prefs.face === "serif" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "serif" })}>Serif</button>
+            <button data-weight="light" role="radio" aria-checked={prefs.face === "sans"} className={`lb-chip${prefs.face === "sans" ? " is-on" : ""}`} onClick={() => p.onPrefs({ ...prefs, face: "sans" })}>Sans</button>
           </span>
           {p.ask && doc.words ? (
             <>
-              <button className="lb-chip" onClick={p.onSummarise}><Sparkles size={12} /> Summarise</button>
-              <button className="lb-chip" onClick={p.onAsk}>Ask <Key k="Ctrl J" /></button>
+              <button data-weight="light" className="lb-chip" onClick={p.onSummarise}><Sparkles size={12} /> Summarise</button>
+              <button data-weight="light" className="lb-chip" onClick={p.onAsk}>Ask <Key k="Ctrl J" /></button>
             </>
           ) : null}
-          <button className="lb-chip" onClick={p.onClose}><X size={12} /> Close <Key k="Esc" /></button>
+          <button data-weight="light" className="lb-chip" onClick={p.onClose}><X size={12} /> Close <Key k="Esc" /></button>
         </span>
       </div>
       <article className="lb-reader-col">

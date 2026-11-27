@@ -336,6 +336,21 @@ button {
    medium …), or from data-weight where a surface declares it. The Dock uses it too (its menu rows
    declare data-weight). */
 
+/* Text selection: the person's accent, with its readable ink (src/themes/accentTokens.ts; >= 4.5:1
+   by construction), instead of the webview's fixed blue. With a white, black or grey accent the
+   tokens are the monochrome defaults, so selected text is ink-inverted. High contrast keeps the
+   system's own selection colours (unchanged), and so does Windows' contrast themes. */
+:root:not([data-contrast="high"]) ::selection {
+  background: var(--lens-accent-ui);
+  color: var(--lens-on-accent-ui);
+}
+@media (forced-colors: active) {
+  :root:not([data-contrast="high"]) ::selection {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
 /* ==================== ACCESSIBILITY ==================== */
 
 /* Keyboard focus ring on every interactive element. :where() keeps specificity at zero so no surface

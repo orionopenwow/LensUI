@@ -53,21 +53,21 @@ export const SpotifyConnectInline: React.FC<{ onConnected: () => void }> = ({ on
     music.spotifyStatus().then((s) => s.redirectUris?.length && setUris(s.redirectUris)).catch(() => {});
   }, [open]);
   if (!open) {
-    return <button type="button" className="lm-connect-btn" onClick={() => setOpen(true)}>Connect Spotify</button>;
+    return <button type="button" data-weight="medium" className="lm-connect-btn" onClick={() => setOpen(true)}>Connect Spotify</button>;
   }
   const ready = clientId.trim().length === 32;
   return (
     <div className="lm-connect" role="group" aria-label="Connect Spotify">
       <ol className="lm-connect-steps">
-        <li>Create a free app at <button type="button" className="lm-connect-link" onClick={() => openExternal("https://developer.spotify.com/dashboard")}>developer.spotify.com/dashboard</button>.</li>
+        <li>Create a free app at <button type="button" data-weight="light" className="lm-connect-link" onClick={() => openExternal("https://developer.spotify.com/dashboard")}>developer.spotify.com/dashboard</button>.</li>
         <li>Add the redirect URI <RedirectList uris={uris} /> and tick Web API.</li>
         <li>Paste the app's client ID below. The sign-in is stored encrypted on this PC.</li>
       </ol>
       <input className="lm-connect-input lm-mono" placeholder="Client ID (32 characters)" aria-label="Spotify client ID" value={clientId} spellCheck={false}
         onChange={(e) => setClientId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ready && !connecting && void connect(clientId)} />
       <div className="lm-connect-actions">
-        <button type="button" className="lm-connect-btn" disabled={connecting || !ready} onClick={() => void connect(clientId)}>{connecting ? "Waiting for Spotify…" : "Connect"}</button>
-        <button type="button" className="lm-connect-btn ghost" disabled={connecting} onClick={() => setOpen(false)}>Not now</button>
+        <button type="button" data-weight="heavy" className="lm-connect-btn" disabled={connecting || !ready} onClick={() => void connect(clientId)}>{connecting ? "Waiting for Spotify…" : "Connect"}</button>
+        <button type="button" data-weight="medium" className="lm-connect-btn ghost" disabled={connecting} onClick={() => setOpen(false)}>Not now</button>
       </div>
       {notice && <div className="lm-connect-note" role="status">{notice}</div>}
       {error && <div className="lm-connect-note error" role="alert">{error}</div>}

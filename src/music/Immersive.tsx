@@ -7,7 +7,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import { invoke } from "@tauri-apps/api/core";
 import { Languages, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { FlyoutClose } from "../ui/FlyoutClose";
-import { captureFlip, glide, reducedMotion } from "../ui/motion";
+import { captureFlip, glide, reducedMotion, staggerDelay } from "../ui/motion";
 import { music, type LyricsResult, type MusicConfig } from "./api";
 import { formatTime, type NowPlaying as NP, type RGB } from "./model";
 import { ambientField, controlsHidden, immersiveModel, originPose, type AmbientLayer, type LyricsView } from "./immersiveModel";
@@ -40,6 +40,9 @@ interface Props {
   /** The tinted accent and its text colour (tint.ts). */
   accent: string;
   onAccent: string;
+  /** The accent tokens for the field (useScopedAccent on the tint), so chips, the seek fill and
+   *  focus rings follow the theme's Accent strength and stay contrast-checked. */
+  accentVars?: Record<string, string>;
   light: boolean;
   from: ImmersiveFrom;
   /** Where the artwork was before (Now Playing's art), so it can grow from there. */
@@ -131,7 +134,7 @@ export const ImmersiveView: React.FC<Props> = (p) => {
     const o = originPose(p.from, p.trigger, { x: r.left, y: r.top, w: r.width, h: r.height });
     glide(el, { x: o.x, y: o.y, scale: o.scale, opacity: p.from === "nowplaying" ? 1 : 0 }, { x: 0, y: 0, scale: 1, opacity: 1 }, { duration: "slower", ease: "spring" });
     glide(root.current?.querySelector(".lm-imm-field"), { opacity: 0 }, { opacity: 1 }, { duration: "slower", ease: "out" });
-    glide(root.current?.querySelector(".lm-imm-text"), { y: 6, opacity: 0 }, { y: 0, opacity: 1 }, { duration: "slow", ease: "out", delay: 60 });
+    glide(root.current?.querySelector(".lm-imm-text"), { y: 6, opacity: 0 }, { y: 0, opacity: 1 }, { duration: "slow", ease: "out", delay: staggerDelay(2) });
     // Only on open.
   }, []);
 
@@ -235,6 +238,7 @@ export const ImmersiveView: React.FC<Props> = (p) => {
     ["--imm-accent" as string]: p.accent,
     ["--imm-on-accent" as string]: p.onAccent,
     ["--imm-base" as string]: field.base,
+    ...(p.accentVars ?? {}),
     ...(plan ? { ["--imm-g1" as string]: plan.colors[0], ["--imm-g2" as string]: plan.colors[1] } : {}),
   } as React.CSSProperties;
   const seekStyle = { ["--imm-pct" as string]: `${pct}%` } as React.CSSProperties;

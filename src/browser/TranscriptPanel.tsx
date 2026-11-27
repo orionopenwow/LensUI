@@ -52,7 +52,7 @@ export function TranscriptPanel({ url, seed, onAsk }: { url: string; seed?: Tran
         <AudioLines size={18} />
         <p>This video has no captions.</p>
         <p className="lb-dim">Lens can transcribe it on this PC with whisper. Downloading video from YouTube needs yt-dlp, which you set up in Settings › Transcription, and may be against the site's terms; only use it for videos you're allowed to save.</p>
-        <button
+        <button data-weight="medium"
           className="lb-btn"
           onClick={() => invoke<string>("transcribe_url", { url, options: { srt: true, translate: false, model: null, language: null } }).then(() => setWhisper("Started. You'll get a notification when it's done.")).catch((e) => setWhisper(String(e)))}
         >
@@ -71,13 +71,13 @@ export function TranscriptPanel({ url, seed, onAsk }: { url: string; seed?: Tran
           {reply.video?.author} · {reply.track?.name}{reply.track?.auto ? " (auto)" : ""} · {cues.length} lines
         </div>
         <div className="lb-tr-actions">
-          <button className="lb-chip" onClick={() => onAsk("Summarise this video: key points with timestamps", toMarkdown(cues, meta))}><Sparkles size={12} /> Summarise</button>
-          <button className="lb-chip" onClick={() => onAsk("Answer questions about this video", toMarkdown(cues, meta))}><MessageSquare size={12} /> Ask about it</button>
-          <button className="lb-chip" onClick={() => void shelfAdd({ kind: "transcript", title: reply.video?.title || "Transcript", text: toMarkdown(cues, meta), url }).catch(oops("add the transcript to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf</button>
+          <button data-weight="light" className="lb-chip" onClick={() => onAsk("Summarise this video: key points with timestamps", toMarkdown(cues, meta))}><Sparkles size={12} /> Summarise</button>
+          <button data-weight="light" className="lb-chip" onClick={() => onAsk("Answer questions about this video", toMarkdown(cues, meta))}><MessageSquare size={12} /> Ask about it</button>
+          <button data-weight="light" className="lb-chip" onClick={() => void shelfAdd({ kind: "transcript", title: reply.video?.title || "Transcript", text: toMarkdown(cues, meta), url }).catch(oops("add the transcript to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf</button>
           <span className="lb-push" />
-          <button className="lb-chip" aria-label="Save as text" onClick={() => save(`${base}.txt`, toText(cues), "text/plain")}><Download size={12} /> .txt</button>
-          <button className="lb-chip" aria-label="Save as SRT" onClick={() => save(`${base}.srt`, toSrt(cues), "application/x-subrip")}>.srt</button>
-          <button className="lb-chip" aria-label="Save as Markdown" onClick={() => save(`${base}.md`, toMarkdown(cues, meta), "text/markdown")}>.md</button>
+          <button data-weight="light" className="lb-chip" aria-label="Save as text" onClick={() => save(`${base}.txt`, toText(cues), "text/plain")}><Download size={12} /> .txt</button>
+          <button data-weight="light" className="lb-chip" aria-label="Save as SRT" onClick={() => save(`${base}.srt`, toSrt(cues), "application/x-subrip")}>.srt</button>
+          <button data-weight="light" className="lb-chip" aria-label="Save as Markdown" onClick={() => save(`${base}.md`, toMarkdown(cues, meta), "text/markdown")}>.md</button>
         </div>
         <input className="lb-input" placeholder="Find in transcript" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Find in transcript" />
       </div>
@@ -86,7 +86,7 @@ export function TranscriptPanel({ url, seed, onAsk }: { url: string; seed?: Tran
           const i = cues.indexOf(c);
           return (
             <li key={`${c.start}-${i}`} className={i === active ? "is-now" : ""}>
-              <button className="lb-cue-t lb-mono" onClick={() => void seek(c.start).catch(oops("jump to that moment"))} aria-label={`Play from ${clock(c.start)}`}>{clock(c.start)}</button>
+              <button data-weight="light" className="lb-cue-t lb-mono" onClick={() => void seek(c.start).catch(oops("jump to that moment"))} aria-label={`Play from ${clock(c.start)}`}>{clock(c.start)}</button>
               <span>{c.text}</span>
             </li>
           );

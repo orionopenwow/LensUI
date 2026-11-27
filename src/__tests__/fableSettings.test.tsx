@@ -376,10 +376,11 @@ describe("the Dock on the feel system", () => {
     }
   });
 
-  test("the Dock window runs the shared press; only Lens Browser keeps its own", () => {
+  test("the Dock window runs the shared press (and so does every other window now)", () => {
     const main = read("src/main.tsx");
-    expect(main).toContain('const ownPress = surfaceName === "browser";');
-    expect(main).not.toMatch(/ownPress = surfaceName === "dock"/);
+    // No window keeps "own" press mode any more: Lens Browser adopted the shared press too (B-143).
+    expect(main).toContain("const OWN_PRESS_SURFACES: readonly string[] = [];");
+    expect(main).not.toMatch(/ownPress = surfaceName === "(dock|browser)"/);
   });
 
   test("the buttons that open Settings and Quick settings say so, so the pop-outs grow from them", () => {

@@ -5,6 +5,7 @@
 import { useEffect, useRef } from "react";
 import { hexToRgb, mix, musicAccent, pickVivid, rgbToHex, type NowPlaying } from "./model";
 import { samplePalette } from "./art";
+import { followAccent, wornAccent } from "../themes/accentTokens";
 
 /** Minimum time between two accent changes (track skipping shouldn't strobe the desktop). */
 export const MIN_GAP_MS = 4000;
@@ -57,7 +58,18 @@ function fade(from: string, to: string, ms: number, apply: (hex: string) => void
   return () => cancelAnimationFrame(raf);
 }
 
-/** Applies the plan to this window's root `--lens-accent` (inline override only). */
+/** One step of the fade: the root `--lens-accent` and, from it, the contrast-checked accent tokens
+ *  (src/themes/accentTokens.ts) that switches, selected items and focus rings read. */
+export function setFollowedAccent(root: HTMLElement, hex: string | null): void {
+  // Going back puts the window's own accent back (B-140: removing the property left tokens.css's
+  // white in place of the theme's accent until the next theme change).
+  const own = hex ?? wornAccent();
+  if (own) root.style.setProperty("--lens-accent", own);
+  else root.style.removeProperty("--lens-accent");
+  followAccent(root, hex);
+}
+
+/** Applies the plan to this window's root `--lens-accent` and accent tokens (inline override only). */
 export function MusicAccentBridge(props: {
   now: NowPlaying | null;
   enabled: boolean;
@@ -96,15 +108,15 @@ export function MusicAccentBridge(props: {
       if (plan.target) {
         if (s.current === null) s.original = getComputedStyle(root).getPropertyValue("--lens-accent").trim();
         s.cancel();
-        s.cancel = fade(s.current ?? userAccent(), plan.target, 900, (hex) => root.style.setProperty("--lens-accent", hex), reduced);
+        s.cancel = fade(s.current ?? userAccent(), plan.target, 900, (hex) => setFollowedAccent(root, hex), reduced);
         s.current = plan.target;
         s.lastChange = Date.now();
       } else if (plan.restore && s.current) {
         s.cancel();
         const back = s.original;
-        s.cancel = fade(s.current, back || userAccent(), 900, (hex) => root.style.setProperty("--lens-accent", hex), reduced);
+        s.cancel = fade(s.current, back || userAccent(), 900, (hex) => setFollowedAccent(root, hex), reduced);
         s.current = null;
-        window.setTimeout(() => s.current === null && root.style.removeProperty("--lens-accent"), reduced ? 0 : 950);
+        window.setTimeout(() => s.current === null && setFollowedAccent(root, null), reduced ? 0 : 950);
       }
     };
     run();
@@ -118,7 +130,7 @@ export function MusicAccentBridge(props: {
   // Leaving the page (window closed, option toggled off) drops the override.
   useEffect(
     () => () => {
-      document.documentElement.style.removeProperty("--lens-accent");
+      setFollowedAccent(document.documentElement, null);
     },
     [],
   );

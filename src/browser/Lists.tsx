@@ -46,13 +46,13 @@ export function HistoryPanel(p: HistoryProps) {
         <label className="lb-filter">
           <Search size={13} className="lb-dim" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search history" aria-label="Search history" />
-          {query ? <button className="lb-icon-btn sm" aria-label="Clear search" onClick={() => setQuery("")}><X size={12} /></button> : null}
+          {query ? <button data-weight="medium" className="lb-icon-btn sm" aria-label="Clear search" onClick={() => setQuery("")}><X size={12} /></button> : null}
         </label>
         <div className="lb-list-actions">
-          <button className={`lb-chip${confirm === "hour" ? " is-warn" : ""}`} onClick={() => clear("hour")} onBlur={() => setConfirm(null)}>
+          <button data-weight="light" className={`lb-chip${confirm === "hour" ? " is-warn" : ""}`} onClick={() => clear("hour")} onBlur={() => setConfirm(null)}>
             {confirm === "hour" ? "Really clear the last hour?" : "Clear last hour"}
           </button>
-          <button className={`lb-chip${confirm === "all" ? " is-warn" : ""}`} onClick={() => clear("all")} onBlur={() => setConfirm(null)}>
+          <button data-weight="light" className={`lb-chip${confirm === "all" ? " is-warn" : ""}`} onClick={() => clear("all")} onBlur={() => setConfirm(null)}>
             {confirm === "all" ? "Really clear everything?" : "Clear all"}
           </button>
         </div>
@@ -66,12 +66,12 @@ export function HistoryPanel(p: HistoryProps) {
             <div className="lb-head"><span>{g.label}</span><span className="lb-mono lb-head-right">{g.items.length}</span></div>
             {g.items.map((h) => (
               <div key={h.url} className="lb-row lb-row-split" role="listitem">
-                <button className="lb-row-main" onClick={(e) => p.onOpen(h.url, e.ctrlKey || e.metaKey)} onAuxClick={(e) => e.button === 1 && p.onOpen(h.url, true)}>
+                <button data-weight="light" className="lb-row-main" onClick={(e) => p.onOpen(h.url, e.ctrlKey || e.metaKey)} onAuxClick={(e) => e.button === 1 && p.onOpen(h.url, true)}>
                   <Avatar url={h.url} title={h.title} size={14} />
                   <span className="lb-tab-title">{h.title || h.url}</span>
                   <span className="lb-mono lb-dim">{g.label === "Today" ? relTime(h.lastVisitMs, p.now) : new Date(h.lastVisitMs).toTimeString().slice(0, 5)}</span>
                 </button>
-                <button
+                <button data-weight="light"
                   className="lb-icon-btn sm lb-row-x"
                   aria-label={`Remove ${h.title || hostOf(h.url)} from history`}
                   onClick={() => {
@@ -87,7 +87,7 @@ export function HistoryPanel(p: HistoryProps) {
         ))}
         {p.archived.length ? <div className="lb-head"><span>Archived tabs</span><span className="lb-mono lb-head-right">{p.archived.length}</span></div> : null}
         {p.archived.map((a) => (
-          <button key={a.id} className="lb-row" onClick={() => p.onUnarchive(a.id)}>
+          <button data-weight="light" key={a.id} className="lb-row" onClick={() => p.onUnarchive(a.id)}>
             <Avatar url={a.url} title={a.title} size={14} />
             <span className="lb-tab-title">{a.title || a.url}</span>
             <span className="lb-mono lb-dim">{a.space}</span>
@@ -128,7 +128,7 @@ export function DownloadsPanel(p: DownloadsProps) {
         <div className="lb-list-tools">
           <div className="lb-list-actions">
             <span className="lb-mono lb-dim">{running ? `${p.items.length - finished} running · ` : ""}{finished} finished</span>
-            <button className="lb-chip lb-push" onClick={() => clear()}><Trash2 size={12} /> Clear list</button>
+            <button data-weight="light" className="lb-chip lb-push" onClick={() => clear()}><Trash2 size={12} /> Clear list</button>
           </div>
         </div>
       ) : null}
@@ -152,10 +152,10 @@ export function DownloadsPanel(p: DownloadsProps) {
                 {d.state === "downloading" ? <span className="lb-dl-bar" role="progressbar" aria-label={`Downloading ${name}`} /> : null}
               </div>
               {d.path && d.state === "done" ? (
-                <button className="lb-chip" onClick={() => void downloadReveal(d.id).catch((e) => p.onError(String(e)))}><FolderOpen size={12} /> Show in folder</button>
+                <button data-weight="light" className="lb-chip" onClick={() => void downloadReveal(d.id).catch((e) => p.onError(String(e)))}><FolderOpen size={12} /> Show in folder</button>
               ) : null}
-              {d.state === "failed" ? <button className="lb-chip" onClick={() => p.onRetry(d.url)}><RotateCw size={12} /> Try again</button> : null}
-              {d.state !== "downloading" ? <button className="lb-icon-btn sm" aria-label={`Remove ${name} from the list`} onClick={() => clear(d.id)}><X size={12} /></button> : null}
+              {d.state === "failed" ? <button data-weight="light" className="lb-chip" onClick={() => p.onRetry(d.url)}><RotateCw size={12} /> Try again</button> : null}
+              {d.state !== "downloading" ? <button data-weight="medium" className="lb-icon-btn sm" aria-label={`Remove ${name} from the list`} onClick={() => clear(d.id)}><X size={12} /></button> : null}
             </div>
           );
         })}

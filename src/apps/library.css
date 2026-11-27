@@ -41,7 +41,7 @@
   left: 2px;
   width: calc(50% - 2px);
   border-radius: 8px;
-  background: var(--lens-fg);
+  background: var(--lens-accent-fill);
   transition: transform var(--lens-dur-base) var(--lens-ease-out);
 }
 .la-tabs[data-view="library"] .la-tabs-ind {
@@ -70,7 +70,7 @@
   color: var(--lens-fg);
 }
 .la-tab[aria-selected="true"] {
-  color: var(--lens-on-fg, var(--lens-pack-base));
+  color: var(--lens-on-accent-fill);
 }
 .la-tab-badge {
   min-width: 18px;
@@ -90,7 +90,7 @@
 }
 .la-tab[aria-selected="true"] .la-tab-badge {
   /* On the selected (filled) tab the badge is an outline in the tab's own text colour. */
-  color: var(--lens-on-fg, var(--lens-pack-base));
+  color: var(--lens-on-accent-fill);
   background: none;
   box-shadow: inset 0 0 0 1px currentColor;
 }
@@ -516,7 +516,7 @@
   background: rgb(var(--lens-ink) / 0.5);
 }
 .la-shots-dot.on::before {
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
   transform: scale(1.3);
 }
 .la-shots-count {

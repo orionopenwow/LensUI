@@ -83,7 +83,7 @@
 .tm-bar span {
   display: block;
   height: 100%;
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
 }
 .tm-left {
   min-width: 80px;
@@ -106,8 +106,8 @@
   border: 2px solid var(--lens-border-strong);
 }
 .tm-rounds span.on {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
+  background: var(--lens-accent-ui);
+  border-color: var(--lens-accent-ui);
 }
 .tm-rounds span.now {
   border-color: var(--lens-fg);
@@ -148,9 +148,9 @@
   cursor: pointer;
 }
 .tm-day.on {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  border-color: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 .tm-alarm-time {
   font-size: 24px;
@@ -253,7 +253,7 @@
   border-radius: 6px;
 }
 .calc-hist:focus-visible {
-  outline: 2px solid var(--lens-focus-ring, var(--lens-accent));
+  outline: 2px solid var(--lens-focus-ring);
 }
 .calc-unit {
   all: unset;
@@ -269,7 +269,7 @@
   background: var(--lens-bg-hover);
 }
 .calc-unit:focus-visible {
-  outline: 2px solid var(--lens-focus-ring, var(--lens-accent));
+  outline: 2px solid var(--lens-focus-ring);
 }
 .calc-unit strong {
   font-size: 18px;
@@ -298,7 +298,7 @@
   border-radius: 6px;
 }
 .calc-base-val:focus-visible {
-  outline: 2px solid var(--lens-focus-ring, var(--lens-accent));
+  outline: 2px solid var(--lens-focus-ring);
 }
 
 /* ── Color ─────────────────────────────────────────────────────────────────────────────────── */
@@ -401,7 +401,7 @@
   color: #fff;
 }
 .col-chip.on {
-  outline: 2px solid var(--lens-fg);
+  outline: 2px solid var(--lens-accent-ui);
   outline-offset: 2px;
 }
 

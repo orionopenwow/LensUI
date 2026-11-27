@@ -150,8 +150,8 @@ export function ApprovalCard({ pending, onDeny, onApprove, now, model }: { pendi
       <footer className="lb-ok-actions">
         {m.review ? <span className="lb-ok-review lb-dim"><List size={12} /> {m.review}</span> : null}
         <span className="lb-push" />
-        <button className="lb-btn lb-btn-sm" onClick={onDeny}>{m.deny} <Key k="Esc" /></button>
-        <button className={`lb-btn lb-btn-sm lb-btn-primary${m.hold ? " lb-hold" : ""}`} {...primaryProps} aria-label={m.hold ? `Hold to ${m.verb}` : m.verb}>
+        <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={onDeny}>{m.deny} <Key k="Esc" /></button>
+        <button data-weight="heavy" className={`lb-btn lb-btn-sm lb-btn-primary${m.hold ? " lb-hold" : ""}`} {...primaryProps} aria-label={m.hold ? `Hold to ${m.verb}` : m.verb}>
           {m.hold ? <span className="lb-hold-fill" style={{ transform: `scaleX(${hold.progress})` }} aria-hidden /> : null}
           <span className="lb-hold-label">
             {m.variant === "payment" ? <CreditCard size={13} /> : m.variant === "delete" ? <Trash2 size={13} /> : null}
@@ -167,7 +167,7 @@ export function ApprovalCard({ pending, onDeny, onApprove, now, model }: { pendi
 /** One-line "Needs your OK" used at the bottom of a collapsed timeline. */
 export function CompactOk({ title, meta, onOpen }: { title: string; meta: string; onOpen(): void }) {
   return (
-    <button className="lb-ok-compact" onClick={onOpen}>
+    <button data-weight="medium" className="lb-ok-compact" onClick={onOpen}>
       <span className="lb-ok-tag"><Shield size={13} /> Needs your OK</span>
       <span className="lb-ok-compact-body">
         <span className="lb-ok-compact-icon"><Headphones size={16} /></span>
@@ -197,9 +197,9 @@ function PaymentsRow({ on, onChange }: { on: boolean; onChange(v: boolean): void
       <span className={`lb-can-box${on ? " is-on" : ""}`} aria-hidden>{on ? <Check size={11} /> : null}</span>
       <span>Pay or buy</span>
       {on ? (
-        <button className="lb-chip lb-push" onClick={() => onChange(false)}>Ask first · turn off <Key k="⏎" /></button>
+        <button data-weight="light" className="lb-chip lb-push" onClick={() => onChange(false)}>Ask first · turn off <Key k="⏎" /></button>
       ) : (
-        <button className="lb-chip lb-push lb-hold" {...hold.handlers} aria-label="Hold to let this task ask before paying">
+        <button data-weight="medium" className="lb-chip lb-push lb-hold" {...hold.handlers} aria-label="Hold to let this task ask before paying">
           <span className="lb-hold-fill" style={{ transform: `scaleX(${hold.progress})` }} aria-hidden />
           <span className="lb-hold-label lb-never">Blocked</span>
           <Key k="hold" />
@@ -217,7 +217,7 @@ export function TaskCan({ caps, onChange, open: openInit = false }: { caps: Capa
   const allowed = [caps.readPage && "read", caps.search && "search", caps.fillForms && "fill forms"].filter(Boolean).join(", ") || "nothing yet";
   return (
     <section className="lb-can" aria-label="This task can">
-      <button className="lb-can-sum" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button data-weight="light" className="lb-can-sum" aria-expanded={open} onClick={() => setOpen(!open)}>
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="lb-can-title">This task can</span>
         <span className="lb-dim lb-can-brief">
