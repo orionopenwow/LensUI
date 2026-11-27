@@ -24,6 +24,7 @@ import {
   setMiddleClickNewInstance,
   setMinimizeFeedback,
   setScrollCyclesWindows,
+  setScrollVolume,
   setShowLabels,
   setStyleIconSize,
   sharedStyleIconSize,
@@ -59,6 +60,7 @@ describe("Dock & Bar › Advanced: what the rows show", () => {
     expect(v.minimizeFeedback).toBe(false);
     expect(v.showLabels).toBe(false);
     expect(v.scrollCyclesWindows).toBe(false);
+    expect(v.scrollVolume).toBe(false);
     expect(v.fileDropOpen).toBe(false);
     expect(v.middleClickNewInstance).toBe(true);
     expect(v.autoClosePopouts).toBe(true);
@@ -97,6 +99,7 @@ describe("Dock & Bar › Advanced: each click changes its own setting only", () 
     ["minimise pulse", (c) => setMinimizeFeedback(c, true), "dock.minimizeFeedback", true],
     ["app names", (c) => setShowLabels(c, true), "dock.showLabels", true],
     ["scroll to switch", (c) => setScrollCyclesWindows(c, true), "dock.scrollCyclesWindows", true],
+    ["scroll for volume", (c) => setScrollVolume(c, true), "dock.scrollVolume", true],
     ["drop files", (c) => setFileDropOpen(c, true), "dock.fileDropOpen", true],
     ["middle-click", (c) => setMiddleClickNewInstance(c, false), "func.middleClickNewInstance", false],
     ["close pop-outs", (c) => setAutoClosePopouts(c, false), "func.autoClosePopouts", false],

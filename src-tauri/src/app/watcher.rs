@@ -1150,10 +1150,14 @@ pub(crate) fn spawn_watcher(
                         if cursor_over_pill || cursor_over_dock_window {
                             dock_pointer_seen = Some(Instant::now());
                         }
-                        let dock_focused = dock_focused
-                            && dock_pointer_seen
-                                .map(|t| t.elapsed().as_millis() < DOCK_FOCUS_GRACE_MS)
-                                .unwrap_or(false);
+                        // Held from the keyboard ("focus the Dock" hotkey, app::dock_keys): in use
+                        // while the Dock has the foreground, with no pointer needed.
+                        let dock_keys = crate::app::dock_keys::holds(dock_focused);
+                        let dock_focused = dock_keys
+                            || (dock_focused
+                                && dock_pointer_seen
+                                    .map(|t| t.elapsed().as_millis() < DOCK_FOCUS_GRACE_MS)
+                                    .unwrap_or(false));
                         let palette_in_use = palette_vis_now && {
                             let focused = watcher_handle
                                 .get_webview_window("palette")
@@ -1201,7 +1205,8 @@ pub(crate) fn spawn_watcher(
                                 .unwrap_or(false),
                             palette_visible: palette_in_use,
                         click_outside: !cursor_over_dock_window && !cursor_over_pill && clicked,
-                        foreground_other_app: foreground_is_other_app(),
+                        // The hotkey's hand-over: the app it came from is still in front for a frame or two.
+                        foreground_other_app: !dock_keys && foreground_is_other_app(),
                         }, &mut menu_idle_since, &mut settings_unfocused_since);
                     if menu_open && (tick % 8 == 0 || guard.clear_stale_menu) {
                         eprintln!(

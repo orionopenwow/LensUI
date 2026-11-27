@@ -68,8 +68,12 @@ function spawnLens(env = {}, args = []) {
   return { proc, logs };
 }
 
+/** The Lens started last, so a failed scenario can say how it ended and what it last printed. */
+let lastLens = null;
+
 async function startLens(env = {}, timeoutMs = 60000, args = []) {
   const { proc, logs } = spawnLens(env, args);
+  lastLens = { proc, logs };
   const t0 = Date.now();
   let up = false;
   while (Date.now() - t0 < timeoutMs) {
@@ -624,9 +628,13 @@ try {
     } catch (e) {
       problems.push(`threw: ${String(e && e.message ? e.message : e).slice(0, 1500)}`);
     }
+    // Diagnostics for a failure: how the last Lens ended before the clean-up kill.
+    const ended = lastLens ? `exit code ${lastLens.proc.exitCode ?? "(still running)"}, signal ${lastLens.proc.signalCode ?? "none"}` : "";
     if (lensProcessCount() > 0) killLens();
     await sleep(800);
     const ok = problems.length === 0;
+    if (!ok && lastLens) problems.push(`last Lens: ${ended}; output tail:\n${lastLens.logs.join("").slice(-1500)}`);
+    lastLens = null;
     results.push({ id: sc.id, title: sc.title, ok, seconds: (Date.now() - t0) / 1000, problems });
     console.log(`${ok ? "ok  " : "FAIL"} ${sc.id}: ${sc.title}${ok ? "" : "\n      " + problems.join("\n      ")}`);
   }

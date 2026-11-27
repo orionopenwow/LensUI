@@ -3,10 +3,11 @@
 // Dock decides what the item is (`DockItemView`) and what its gestures do; this file owns the
 // markup, so every style's CSS sees the same elements in the same order.
 import React from "react";
-import { X } from "lucide-react";
+import { Volume2, VolumeX, X } from "lucide-react";
 import type { RunningWindow } from "../types/lens";
 import { windowMarkClass } from "./marks";
 import { dockBadgeLabel, pickBadge } from "./model";
+import { volumeReadout } from "./volume";
 import "./DockAppItem.css";
 
 export interface DockItemView {
@@ -44,6 +45,8 @@ export interface DockAppItemProps {
   showLabels: boolean;
   isBar: boolean;
   onWheel?: (e: React.WheelEvent) => void;
+  /** Scroll-to-change-volume readout: a level (0-100), null for "No sound", undefined for none. */
+  volume?: number | null;
   onPointerDown: (e: React.PointerEvent) => void;
   onHover: (el: HTMLElement) => void;
   onLeave: () => void;
@@ -60,14 +63,14 @@ const BADGE_CLASS = {
   windows: "dock-instance-badge",
 } as const;
 
-export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pulsing, showLabels, isBar, onWheel, onPointerDown, onHover, onLeave, onCloseAll, onActivate, onContextMenu, onAuxClick }: DockAppItemProps) {
+export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pulsing, showLabels, isBar, onWheel, volume, onPointerDown, onHover, onLeave, onCloseAll, onActivate, onContextMenu, onAuxClick }: DockAppItemProps) {
   const { wins, primaryWin, urgent } = view;
   const pinned = view.pinnedId !== undefined;
   const state = primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : "";
   const badge = pickBadge({ coreBadge: view.coreBadge, unread: view.unread, urgentCount: urgent?.count ?? 0, windows: wins.length });
   return (
     <div
-      className={`dock-item-wrap ${dragging ? "is-dragging" : ""} ${dragOver ? "is-drag-over" : ""} ${fileDrop ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
+      className={`dock-item-wrap ${volume !== undefined ? "has-volume" : ""} ${dragging ? "is-dragging" : ""} ${dragOver ? "is-drag-over" : ""} ${fileDrop ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
       data-attention={urgent ? urgent.since.toFixed(0) : undefined}
       data-dock-drag-key={view.itemKey}
       data-dock-pinned={pinned ? "true" : "false"}
@@ -79,6 +82,18 @@ export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pul
       onMouseLeave={onLeave}
     >
       {pinned && !view.hasHoverCard && <span className="dock-tooltip">{view.name}</span>}
+      {volume !== undefined && (
+        <span className={`dock-volume-chip ${volume === null ? "is-silent" : ""}`} role="status" aria-label={`${view.name} volume ${volumeReadout(volume)}`}>
+          {volume === null || volume === 0 ? <VolumeX size={12} strokeWidth={2.6} aria-hidden="true" /> : <Volume2 size={12} strokeWidth={2.6} aria-hidden="true" />}
+          {volume !== null && (
+            <span className="dock-volume-meter" aria-hidden="true">
+              {/* Set on the element, not as a style object: one value, no re-created object per render. */}
+              <span className="dock-volume-fill" ref={(el) => el?.style.setProperty("transform", `scaleX(${volume / 100})`)} />
+            </span>
+          )}
+          <span className="dock-volume-num" aria-hidden="true">{volumeReadout(volume)}</span>
+        </span>
+      )}
       {wins.length > 0 && (
         <button
           type="button"

@@ -1345,6 +1345,24 @@
    "source": "src/themeux/DockTab.tsx"
   },
   {
+   "id": "setting.dock.docktab.scroll-to-change-volume",
+   "kind": "setting",
+   "title": "Scroll to change volume",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Scroll to change volume"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Scroll to change volume"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
    "id": "setting.dock.docktab.drop-files-on-apps",
    "kind": "setting",
    "title": "Drop files on apps",

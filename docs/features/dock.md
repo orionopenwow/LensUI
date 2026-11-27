@@ -12,6 +12,8 @@
 
 > **Feel adoption (`fable/settings-20261127`, 2026-11-27):** the Dock's own `:active` rules are removed and its window runs the shared weighted press (`main.tsx`); Settings and Quick settings grow from the gear and the system-area buttons (`data-opens`); the search filter highlight slides (`useSlidingIndicator`); the focused mark is the contrast-checked accent and running marks carry a hint of it. The Dock's search opens inside the Dock, so no button there opens the Search pop-out. Needs a look on a real PC: the press together with magnification.
 
+> **Quick wins (`feat/dock-quick-wins`, 2026-11-27):** a titles list in the hover card for apps with more than four windows (`dock.manyWindows`, B-150); scroll on an app to change its volume (`dock.scrollVolume`, off by default, B-151); a "focus the Dock" hotkey, Ctrl+Alt+D (`func.dockFocusHotkey`, B-152), so Dock keys need no click first. Checked headless (harness) and by unit tests; the hotkey, the foreground hand-back and the mixer calls need a real PC.
+
 ## Rundown
 
 The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and running apps, a system area, a search entry and a Settings gear, in eight styles on any screen edge. It is the first thing people see and the thing they touch most, so it carries most of Lens's perceived quality.
@@ -51,6 +53,7 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Launch animation | `launchAnimation` (none / lift / bounce / jelly) | works | Advanced › Launch animation |
 | Minimise feedback | `minimizeFeedback` | works | Advanced › Minimise pulse |
 | Scroll to cycle windows | `scrollCyclesWindows` | works | Advanced › Scroll to switch windows |
+| Scroll to change volume | `scrollVolume` (off by default): wheel over a running app steps its volume by 5 in Windows' mixer (Shift+wheel when scroll-to-switch is on); every audio session of the program; a readout with the level | works (harness); real-PC unconfirmed | `src/dock/volume.ts`, `hooks/useWheelVolume.ts`, `dockQuickWins.test.ts`, `dock-keys.mjs`; B-151 |
 | Drop a file on an app | `fileDropOpen` → `open_files_with_app_cmd` | works | Advanced › Drop files on apps |
 | Suggested apps | "Suggest apps you usually open now" (`suggestedApps`) | works | `DockTab.tsx:162` |
 
@@ -75,8 +78,8 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Move between icons | With an icon focused: the arrows along the Dock (←/→ on bottom and top, ↑/↓ on left and right), Home, End; stops at the ends | works (harness) | `src/dock/keys.ts`, `hooks/useDockKeys.ts`, `dockKeys.test.ts`, `dock-keys.mjs` |
 | Type to find | Typing focuses the best match (start of the name, then a word, then anywhere); other icons step back; a chip shows the text; the same letter again steps through; Backspace edits, Esc ends, a 0.9 s pause ends it | works (harness) | same; `DockFindChip.tsx` |
 | Window list from the keyboard | The arrow that points into the screen opens the focused app's card and moves into it; titles list: ↑/↓/Home/End, Enter switches, Delete closes, Esc returns focus to the icon; Tab out closes it | works (harness) | `DockHoverCard.tsx`, `listKeyAction` |
-| Titles list | Every window (scrolls past seven); was capped at seven | works (harness) | `DockHoverCard.tsx` |
-| Getting focus onto the Dock | Alt+Space (search) then Tab, a click, or Alt+1…9 | partly: there is no "focus the Dock" hotkey yet (needs a claim in the input service) | `input.rs` |
+| Titles list | Every window (scrolls past seven); was capped at seven. Also the default card for more than four windows with live previews on (`dock.manyWindows`: list / previews) | works (harness) | `DockHoverCard.tsx`, `cardMode.ts`; B-150 |
+| Getting focus onto the Dock | "Focus the Dock" hotkey, Ctrl+Alt+D (`func.dockFocusHotkey`, empty = off; on the shortcuts sheet): reveals the Dock, lands on the app you were in with a ring and a one-line key hint; Esc or the hotkey again gives the foreground back. A global hotkey (`tauri-plugin-global-shortcut`), not an input-service hook. Also Alt+Space then Tab, a click, Alt+1…9 | works (harness, Rust unit tests, E2E `dock-focus-keys`); real-PC unconfirmed | `app/dock_keys.rs`, `hooks/useDockFocusKeys.ts`; B-152 |
 
 ### 5. Context menu and Magic
 | Feature | Sub | Status | Evidence |
@@ -175,6 +178,9 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 10. Run something as administrator (Task Manager): it shows as its own icon, not on WhatsApp or another pinned app.
 11. Left Dock: right-click the top icon and the empty Dock; both menus are fully on screen and under the Top Bar.
 12. Unplug or rename a pinned app's file, click it: "Couldn't open …" appears beside the Dock and goes.
+13. Focus the Dock: in Notepad press Ctrl+Alt+D. The Dock comes up (also with auto-hide Always), Notepad's icon has the ring and the hint shows; arrows move; Esc puts you back in Notepad. Ctrl+Alt+D twice does the same.
+14. Open six Explorer or browser windows, hover the app: a titles list. Switch "More than 4 windows" to Previews: the carousel.
+15. Turn on Scroll to change volume, play music in a browser, scroll on its icon: the readout moves in 5s and the browser's level in Windows' volume mixer follows.
 
 ## Suggested overhaul
 **Phase 1 — structure (1 week):** split `DockSurface.tsx` into `dock/Pill.tsx`, `dock/AppButton.tsx`, `dock/ContextMenu.tsx`, `dock/SearchEntry.tsx`, `dock/SystemArea.tsx`; one `useDockState` store; move all window calls behind `dock/api.ts` with failsafe reporting.
@@ -196,7 +202,7 @@ DO FIRST
  5 DONE fable/dock-20261126  Split DockSurface.tsx; B-106..B-110; Dock keys; notice; flourishes
 LEFT (ranked)
  1 after #131 merges: drop the Dock's own :active rules, slide the filter-pill indicator
- 2 a "focus the Dock" hotkey (input service claim) so Dock keys need no click or Alt+Space first
+ 2 DONE feat/dock-quick-wins  "focus the Dock" hotkey (Ctrl+Alt+D), titles list past 4 windows, scroll for volume
  3 pinned folders on the Dock (setting exists, nothing draws them)
  4 split DockSurface.css (2,270 lines) along the same seams; search-panel glyph colours to tokens
  5 the "in 10 seconds" tour; cross-fade on style change; reuse DWM thumbnails between hovers

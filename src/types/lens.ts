@@ -79,6 +79,10 @@ export interface DockConfig {
   fileDropOpen?: boolean;
   /** Mouse wheel over an app icon cycles its windows. */
   scrollCyclesWindows?: boolean;
+  /** Mouse wheel over a running app changes its volume (Shift+wheel when scrolling switches windows). Off by default. */
+  scrollVolume?: boolean;
+  /** Hover card for an app with more than four windows, with live previews on: "list" (titles, default) or "previews". */
+  manyWindows?: "list" | "previews" | string;
   /** Suggest apps you usually open now (local predictor, no AI model). Off by default. */
   suggestedApps?: boolean;
   /** Set once pins are reordered in Lens; until then Windows' taskbar order is followed (B-22). */
@@ -96,6 +100,8 @@ export interface FuncConfig {
   autoClosePopouts?: boolean;
   /** How long a pop-out waits before closing: "short" | "normal" (default) | "long". */
   popoutCloseDelay?: "short" | "normal" | "long" | string;
+  /** Moves keyboard focus onto the Dock's icons. Missing = Ctrl+Alt+D; "" = off. */
+  dockFocusHotkey?: string;
   /** Legacy in-process window styling (loads a DLL into every app). Off by default. */
   injectedHook?: boolean;
   /** Lens hosts tray icons itself in the Top Bar (experimental). */

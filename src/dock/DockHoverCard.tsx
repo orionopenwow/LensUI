@@ -1,5 +1,6 @@
 // The card above a hovered Dock icon: the window carousel (2+ windows), the live preview strip,
-// the plain titles list, or the music card. The Dock owns which icon it belongs to and where it
+// the plain titles list (previews off, or more than four windows: src/dock/cardMode.ts), or the
+// music card. The Dock owns which icon it belongs to and where it
 // goes; this file owns what is in it.
 import React from "react";
 import { AppWindow, X } from "lucide-react";
@@ -59,7 +60,7 @@ export function DockHoverCard({ card: shownCard, cardRef, leaving, edge, livePre
           ref={cardRef}
           inert={leaving}
           className={`dock-hover-card dock-hover-edge-${edge} ${shownCard.isSpotify ? "is-music" : ""} ${
-            livePreviews && !shownCard.isSpotify && shownCard.windows.length > 0 ? "has-previews" : ""
+            livePreviews && (cardMode === "strip" || cardMode === "carousel") && shownCard.windows.length > 0 ? "has-previews" : ""
           } ${cardMode === "carousel" ? "has-carousel" : ""}`}
           style={style}
           onMouseEnter={onMouseEnter}
@@ -82,7 +83,7 @@ export function DockHoverCard({ card: shownCard, cardRef, leaving, edge, livePre
               onFocus={onFocusWindow}
               onClose={onCloseWindow}
             />
-          ) : livePreviews ? (
+          ) : cardMode === "strip" ? (
             <DockPreviewStrip
               key={shownCard.key}
               active={!leaving}

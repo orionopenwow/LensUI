@@ -207,6 +207,8 @@ export const DOCK_OPTIONS: readonly {
   { path: "dock.fileDropOpen", label: "Drop files on apps", kind: "toggle", defaultValue: false, description: "Drop files on a Dock app to open them with it." },
   { path: "func.middleClickNewInstance", label: "Middle-click opens a new window", kind: "toggle", defaultValue: true, description: "Middle-click an app to start another instance." },
   { path: "dock.scrollCyclesWindows", label: "Scroll to switch windows", kind: "toggle", defaultValue: false, description: "Mouse wheel over an app cycles through its windows." },
+  { path: "dock.scrollVolume", label: "Scroll to change volume", kind: "toggle", defaultValue: false, description: "Mouse wheel over a running app changes its volume (Shift+wheel when scrolling switches windows)." },
+  { path: "dock.manyWindows", label: "More than four windows", kind: "choice", defaultValue: "list", description: "With live previews on: a titles list (list) or the window carousel (previews)." },
 ];
 
 export { DockStylePreview } from "./DockStylePreview";

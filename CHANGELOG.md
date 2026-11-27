@@ -8,6 +8,16 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Dock: a list of titles for apps with many windows.** With live previews on, an app with more
+  than four windows now shows its window titles in the hover card, quicker to read than pictures one
+  at a time. Settings › Dock & Bar › "More than 4 windows" keeps the previews if you prefer them.
+- **Dock: scroll on an app to change its volume.** Off by default (it changes the app's level in
+  Windows' volume mixer); turn it on in Settings › Dock & Bar › Advanced. A small readout shows the
+  level as you scroll. With "Scroll to switch windows" also on, hold Shift for the volume.
+- **Dock: move the keyboard to the Dock with Ctrl+Alt+D.** The icon of the app you were in gets the
+  focus ring; the arrows move, Enter opens, Esc gives the keyboard back to the app you came from.
+  Works with an auto-hidden Dock too. Change it or turn it off in Settings › Windows & Keys ›
+  Keyboard shortcuts. Not yet confirmed on a real PC.
 - **Lens Apps updates: manual by default, automatic if you want it.** An app with a newer version
   shows "Update available" with a one-click Update. A new **Update apps automatically** switch in
   Settings › Apps (off by default) lets each check also update the apps Lens installed; apps you

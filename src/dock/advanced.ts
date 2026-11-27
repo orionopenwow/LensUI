@@ -16,6 +16,7 @@ import {
   type DockMagnification,
   type DockStyleId,
 } from "./styles";
+import { normalizeManyWindows } from "./cardMode";
 
 type Dock = LensConfig["dock"];
 
@@ -31,6 +32,8 @@ export interface DockAdvancedView {
   minimizeFeedback: boolean;
   showLabels: boolean;
   scrollCyclesWindows: boolean;
+  /** Wheel over a running app changes its volume (`dock.scrollVolume`, off by default). */
+  scrollVolume: boolean;
   fileDropOpen: boolean;
   middleClickNewInstance: boolean;
   autoClosePopouts: boolean;
@@ -60,6 +63,7 @@ export function dockAdvancedView(config: LensConfig): DockAdvancedView {
     minimizeFeedback: dock.minimizeFeedback === true,
     showLabels: dock.showLabels === true,
     scrollCyclesWindows: dock.scrollCyclesWindows === true,
+    scrollVolume: dock.scrollVolume === true,
     fileDropOpen: dock.fileDropOpen === true,
     middleClickNewInstance: config.func.middleClickNewInstance !== false,
     // On unless turned off: the same default Lens uses (FuncConfig.auto_close_popouts).
@@ -82,6 +86,8 @@ export const setLaunchAnimation = (config: LensConfig, id: string): LensConfig =
 export const setMinimizeFeedback = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { minimizeFeedback: on });
 export const setShowLabels = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { showLabels: on });
 export const setScrollCyclesWindows = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { scrollCyclesWindows: on });
+export const setScrollVolume = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { scrollVolume: on });
+export const setManyWindows = (config: LensConfig, id: string): LensConfig => withDockPatch(config, { manyWindows: normalizeManyWindows(id) });
 export const setFileDropOpen = (config: LensConfig, on: boolean): LensConfig => withDockPatch(config, { fileDropOpen: on });
 export const setMiddleClickNewInstance = (config: LensConfig, on: boolean): LensConfig => withFuncPatch(config, { middleClickNewInstance: on });
 export const setAutoClosePopouts = (config: LensConfig, on: boolean): LensConfig => withFuncPatch(config, { autoClosePopouts: on });
@@ -163,6 +169,7 @@ export const DOCK_ADVANCED_PATHS = [
   "dock.minimizeFeedback",
   "dock.showLabels",
   "dock.scrollCyclesWindows",
+  "dock.scrollVolume",
   "dock.fileDropOpen",
   "dock.iconSizes",
   "dock.separatorsAfter",
@@ -181,9 +188,17 @@ export function dockAdvancedSummary(view: DockAdvancedView): string {
   if (view.launchAnimation !== "lift") on.push(`${LAUNCH_CHOICES.find((c) => c.id === view.launchAnimation)?.label ?? ""} launch`.trim());
   if (view.showLabels) on.push("App names");
   if (view.scrollCyclesWindows) on.push("Scroll to switch");
+  if (view.scrollVolume) on.push("Scroll for volume");
   if (view.fileDropOpen) on.push("Drop files");
   if (view.customSizes.length) on.push(view.customSizes.length === 1 ? "1 style size" : `${view.customSizes.length} style sizes`);
   const dividers = view.separators.filter((s) => s.on).length;
   if (dividers) on.push(dividers === 1 ? "1 divider" : `${dividers} dividers`);
   return on.length ? on.slice(0, 3).join(" · ") + (on.length > 3 ? ` · +${on.length - 3}` : "") : "Magnification, launch animation, app names, dividers";
+}
+
+/** The note under "Scroll to change volume": which wheel does it, given scroll-to-switch. */
+export function scrollVolumeDesc(view: Pick<DockAdvancedView, "scrollCyclesWindows">): string {
+  return view.scrollCyclesWindows
+    ? "Hold Shift and turn the mouse wheel over a running app to change its volume in Windows' volume mixer. The plain wheel still switches windows."
+    : "Turn the mouse wheel over a running app to change its volume in Windows' volume mixer.";
 }

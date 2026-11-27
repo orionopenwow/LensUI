@@ -30,3 +30,4 @@
   font-weight: 500;
 }
 .ks-change { font-size: 12px; }
+.ks-keys.is-off { color: var(--lens-fg-secondary); font-weight: 500; }

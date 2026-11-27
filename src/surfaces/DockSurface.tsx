@@ -56,6 +56,10 @@ import { DockSearchDrawer } from "../dock/DockSearchDrawer";
 import { openMagicForDockItem } from "../dock/LensMenuHost";
 import { useDockBadges } from "../dock/hooks/useDockBadges";
 import { useDockKeys } from "../dock/hooks/useDockKeys";
+import { useDockFocusKeys } from "../dock/hooks/useDockFocusKeys";
+import { useWheelVolume } from "../dock/hooks/useWheelVolume";
+import { pickCardMode } from "../dock/cardMode";
+import { wheelIntent } from "../dock/volume";
 import { useFileDrop } from "../dock/hooks/useFileDrop";
 import { useMagnification } from "../dock/hooks/useMagnification";
 import { useMinimizePulse } from "../dock/hooks/useMinimizePulse";
@@ -321,17 +325,16 @@ export const DockSurface: React.FC = () => {
   // before they are removed (docs/SMOOTHNESS.md, G-06).
   const hoverLinger = useLingering(hoverCard && !ctxMenu && !settingsOpen && !dockSearchOpen ? hoverCard : null, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownCard = hoverLinger.value;
-  // Apps with two or more windows get the window carousel (live previews on); one window keeps
-  // today's card.
+  // Live previews on: one window gets the preview strip, two to four the window carousel, more
+  // than four the titles list unless the person chose previews (src/dock/cardMode.ts).
   const cardMode: DockCardMode | null = !shownCard
     ? null
-    : shownCard.isSpotify
-      ? "spotify"
-      : (config?.dock as DockExtras | undefined)?.livePreviews === true && shownCard.windows.length >= 2
-        ? "carousel"
-        : (config?.dock as DockExtras | undefined)?.livePreviews === true
-          ? "strip"
-          : "list";
+    : pickCardMode({
+        isSpotify: shownCard.isSpotify,
+        livePreviews: (config?.dock as DockExtras | undefined)?.livePreviews === true,
+        windows: shownCard.windows.length,
+        manyWindows: (config?.dock as DockExtras | undefined)?.manyWindows,
+      });
   // The card's measured size, so it can be kept on screen (read once per change, before paint).
   const [cardSize, setCardSize] = useState({ w: 0, h: 0 });
   useLayoutEffect(() => {
@@ -472,6 +475,10 @@ export const DockSurface: React.FC = () => {
     setCardFocusTick((n) => n + 1);
     return true;
   });
+  // "Focus the Dock" hotkey: lands on an icon, Esc gives the keyboard back.
+  const focusKeys = useDockFocusKeys(pillRef, normalizeEdge((config?.dock as DockExtras | undefined)?.position));
+  // Scroll on an icon to change its app's volume (dock.scrollVolume).
+  const wheelVolume = useWheelVolume((key) => itemInfoRef.current.get(key)?.title ?? "the app");
   // Opened from the keyboard: once the card is in the page, focus goes to its first window.
   useEffect(() => {
     if (!cardFocusTick) return;
@@ -712,6 +719,20 @@ export const DockSurface: React.FC = () => {
   launchMsRef.current = DOCK_LAUNCH_ANIMATIONS.find((a) => a.id === launchAnimation)?.durationMs || 190;
   const showLabels = dockExtras.showLabels === true;
   const scrollCycles = dockExtras.scrollCyclesWindows === true;
+  const scrollVolume = dockExtras.scrollVolume === true;
+  /** A wheel turn over an app: its volume or its windows (src/dock/volume.ts › wheelIntent). */
+  const onItemWheel =
+    scrollCycles || scrollVolume
+      ? (key: string, wins: RunningWindow[], appPath: string | undefined) => (e: React.WheelEvent) => {
+          const intent = wheelIntent({ scrollCycles, scrollVolume, shift: e.shiftKey });
+          if (intent === "windows") cycleWindows(key, wins, e.deltaY);
+          else if (intent === "volume" && wins.length > 0) {
+            setHoverCard(null);
+            wheelVolume.onWheel(key, wins, appPath, e);
+          }
+        }
+      : null;
+  const volumeFor = (key: string) => (wheelVolume.readout?.key === key ? wheelVolume.readout.level : undefined);
 
   /** Mouse wheel over an app: cycle through its windows (newest focus last). */
   const cycleWindows = (key: string, wins: RunningWindow[], deltaY: number) => {
@@ -1081,8 +1102,14 @@ export const DockSurface: React.FC = () => {
         }
         aria-label="Dock"
         data-finding={dockKeys.find ? "" : undefined}
-        onKeyDown={dockKeys.onKeyDown}
-        onBlur={dockKeys.onBlur}
+        onKeyDown={(e) => {
+          dockKeys.onKeyDown(e);
+          focusKeys.onKeyDown(e);
+        }}
+        onBlur={(e) => {
+          dockKeys.onBlur(e);
+          focusKeys.onBlur(e);
+        }}
         onMouseMove={magnification !== "off" ? (e) => mag.apply(e.clientX, e.clientY) : undefined}
         onMouseLeave={magnification !== "off" ? mag.clear : undefined}
         onContextMenu={(e) => {
@@ -1340,7 +1367,8 @@ export const DockSurface: React.FC = () => {
               pulsing={wins.some((w) => pulseHwnds.has(w.hwnd))}
               showLabels={showLabels}
               isBar={isBar}
-              onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
+              onWheel={onItemWheel?.(itemKey, wins, app.path)}
+              volume={volumeFor(itemKey)}
               onPointerDown={(e) => beginItemDrag(e, itemKey, true, app.id)}
               onHover={(el) => openHoverCardForItem(el, itemKey, app.name, isSpotify, wins, iconSrc)}
               onLeave={scheduleHoverClose}
@@ -1411,7 +1439,8 @@ export const DockSurface: React.FC = () => {
               pulsing={wins.some((w) => pulseHwnds.has(w.hwnd))}
               showLabels={showLabels}
               isBar={isBar}
-              onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
+              onWheel={onItemWheel?.(itemKey, wins, primaryWin.exePath)}
+              volume={volumeFor(itemKey)}
               onPointerDown={(e) => beginItemDrag(e, itemKey, false)}
               onHover={(el) => openHoverCardForItem(el, itemKey, cleanLabel, isSpotify, wins, primaryWin.iconDataUrl)}
               onLeave={scheduleHoverClose}
@@ -1538,7 +1567,7 @@ export const DockSurface: React.FC = () => {
           </>
         )}
         <DockNotice />
-        <DockFindChip find={dockKeys.find} />
+        <DockFindChip find={dockKeys.find} hint={focusKeys.hint} />
         {isBar && systemInDock && (
           <DockSystemArea
             trayHost={config.func.trayHost ?? false}
