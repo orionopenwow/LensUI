@@ -5,6 +5,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { PinInfo } from "./api";
 import { snipPinClickThrough, snipPinClose, snipPinInfo } from "./api";
 import { Tip } from "./Tip";
+import { logFail } from "../failsafe/calls";
 
 export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }) => {
   const [info, setInfo] = useState<PinInfo | null>(demo ?? null);
@@ -21,7 +22,7 @@ export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }
         setOpacity(i.opacity);
         if (i.clickThrough) {
           setThrough(true);
-          void snipPinClickThrough(label, true);
+          void snipPinClickThrough(label, true).catch(logFail("Snip", "make the pin click-through"));
         }
       })
       .catch(() => void getCurrentWindow().close());
@@ -45,7 +46,7 @@ export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }
       style={{ opacity }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest(".snip-pin-bar")) return;
-        void getCurrentWindow().startDragging().catch(() => {});
+        void getCurrentWindow().startDragging().catch(logFail("Snip", "move the pin"));
       }}
       onDoubleClick={close}
       onWheel={(e) => {
@@ -63,6 +64,7 @@ export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }
           <button
             type="button"
             className="snip-btn icon"
+            data-weight="medium"
             aria-label="Copy"
             onClick={async () => {
               try {
@@ -86,19 +88,23 @@ export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }
             aria-label="Click-through"
             onClick={() => {
               setThrough(true);
-              void snipPinClickThrough(label, true);
+              snipPinClickThrough(label, true).catch((e) => {
+                setThrough(false);
+                setMsg("Couldn't turn on click-through");
+                logFail("Snip", "make the pin click-through")(e);
+              });
             }}
           >
             <MousePointerClick size={14} />
           </button>
         </Tip>
         <Tip text="Close (Esc or double-click)" below>
-          <button type="button" className="snip-btn icon" aria-label="Close pin" onClick={close}>
+          <button type="button" className="snip-btn icon" data-weight="medium" aria-label="Close pin" onClick={close}>
             <X size={14} />
           </button>
         </Tip>
       </div>
-      {msg ? <div className="snip-toast" style={{ bottom: 8 }}>{msg}</div> : null}
+      {msg ? <div className="snip-toast" role="status" style={{ bottom: 8 }}>{msg}</div> : null}
       {zoom !== 1 ? <div className="snip-size" style={{ left: 8, bottom: 8 }}>{Math.round(zoom * 100)}%</div> : null}
     </div>
   );

@@ -10,6 +10,7 @@ import { Studio } from "./Studio";
 import { physicalToCss, type Rect } from "./geom";
 import { aiStatus } from "../ai/client";
 import type { AiStatus } from "../ai/contract";
+import { failLine, logFail, quiet, retryOnce } from "../failsafe/calls";
 
 type Phase =
   | { kind: "idle" }
@@ -28,7 +29,8 @@ export const Overlay: React.FC = () => {
   const close = useCallback(() => {
     setPhase({ kind: "idle" });
     setAnalysis(null);
-    void snipClose().catch(() => {});
+    // A refused close would leave the overlay window over the whole screen: try once more.
+    void retryOnce(() => snipClose(), "Snip", "close the snip window");
   }, []);
 
   const studioArea = useCallback((screen: Rect | null, session: SessionInfo | null): Rect => {
@@ -52,7 +54,7 @@ export const Overlay: React.FC = () => {
   );
 
   const begin = useCallback(async () => {
-    const [s, st] = await Promise.all([snipSession(), snipStatus().catch(() => null)]);
+    const [s, st] = await Promise.all([snipSession(), snipStatus().catch(() => null)]); // settings fall back to the last ones
     if (st) setSettings(st.settings);
     aiStatus().then(setAi).catch(() => setAi(null));
     if (s) {
@@ -66,14 +68,14 @@ export const Overlay: React.FC = () => {
     snipTakePending()
       .then((p) => {
         if (p) openStudio(p, null);
-        else void begin();
+        else void begin().catch(logFail("Snip", "start the snip"));
       })
-      .catch(() => void begin());
+      .catch(() => void begin().catch(logFail("Snip", "start the snip")));
     const uns = [
-      on(EVT.begin, () => void begin()),
+      on(EVT.begin, () => void begin().catch(logFail("Snip", "start the snip"))),
       on<SnipInfo>(EVT.studio, (info) => {
-        void snipTakePending().catch(() => {});
-        snipStatus().then((s) => setSettings(s.settings)).catch(() => {});
+        void snipTakePending().catch(quiet); // only clears the backend's "pending" slot
+        snipStatus().then((s) => setSettings(s.settings)).catch(quiet); // keeps the last settings
         aiStatus().then(setAi).catch(() => setAi(null));
         openStudio(info, lastSession.current);
       }),
@@ -81,7 +83,7 @@ export const Overlay: React.FC = () => {
       on<{ step: number }>(EVT.scroll, (p) => setPhase({ kind: "busy", message: `Scrolling… ${p.step} step${p.step === 1 ? "" : "s"}` })),
     ];
     return () => {
-      uns.forEach((u) => u.then((f) => f()).catch(() => {}));
+      uns.forEach((u) => u.then((f) => f()).catch(quiet));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -118,7 +120,7 @@ export const Overlay: React.FC = () => {
   const saveQuick = (patch: Partial<SnipSettings>) => {
     const next = { ...settings, ...patch };
     setSettings(next);
-    void snipSetSettings(next).catch(() => {});
+    void snipSetSettings(next).catch((e) => setPhase({ kind: "error", message: failLine("Snip", "save that setting", e) }));
   };
 
   if (phase.kind === "select") {
@@ -131,7 +133,7 @@ export const Overlay: React.FC = () => {
           saveQuick({ delaySeconds: d });
           if (d > 0) {
             // A delay needs a fresh capture after it runs: start over with the delay.
-            void snipClose().then(() => snipStart(phase.session.mode, d)).catch(() => {});
+            void snipClose().then(() => snipStart(phase.session.mode, d)).catch((e) => setPhase({ kind: "error", message: failLine("Snip", "start the delayed snip", e) }));
           }
         }}
         cursor={settings.includeCursor}
@@ -153,7 +155,7 @@ export const Overlay: React.FC = () => {
           mask={phase.mask}
           onClose={close}
           onNew={() => {
-            void snipClose().then(() => snipStart()).catch(() => {});
+            void snipClose().then(() => snipStart()).catch((e) => setPhase({ kind: "error", message: failLine("Snip", "start a new snip", e) }));
           }}
         />
       </div>
