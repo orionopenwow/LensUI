@@ -667,8 +667,10 @@
   user-select: none;
   touch-action: none;
   outline: none;
+  --lens-grab-size: 34;
 }
 .sh-fill-lg .sh-fill-bar {
+  --lens-grab-size: 40;
   height: 40px;
   border-radius: 12px;
 }
@@ -698,7 +700,8 @@
   background: var(--sh-fill-ink);
   border-radius: inherit;
   pointer-events: none;
-  transition: clip-path var(--lens-dur-instant) linear;
+  /* Follows the pointer 1:1 while dragging; settles with ease-out on release and wheel steps. */
+  transition: clip-path var(--lens-dur-fast) var(--lens-ease-out);
 }
 .sh-fill-bar.is-dragging .sh-fill-fill {
   transition: none;

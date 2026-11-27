@@ -1,0 +1,96 @@
+/* Layout of the feel scene only (not shipped). */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+/* Surfaces are see-through windows (global.css); the scene paints the pack's base itself. */
+html:root,
+html:root body {
+  background: var(--lens-pack-base, #09090b) !important;
+}
+body {
+  color: var(--lens-fg);
+  font-family: var(--lens-font, Arial, sans-serif);
+}
+.feel {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.feel-row {
+  display: grid;
+  grid-template-columns: 110px repeat(5, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.03);
+  padding: 4px 10px;
+}
+.feel-head {
+  background: none;
+  min-height: 20px;
+}
+.feel-row-title,
+.feel-state {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--lens-fg-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.feel-cell {
+  display: flex;
+  align-items: center;
+}
+.feel-wide {
+  grid-template-columns: 110px 1fr 1fr;
+}
+.feel-light {
+  width: 120px;
+}
+.feel-demo {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 28px;
+  padding: 40px;
+  align-items: center;
+  justify-content: start;
+  position: relative;
+}
+.feel-pop {
+  grid-column: 1 / -1;
+  width: 300px;
+  height: 180px;
+  border-radius: 14px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.06);
+  box-shadow: var(--lens-elev-3);
+  padding: 14px;
+  box-sizing: border-box;
+  opacity: 0;
+}
+.feel-pop.is-open {
+  opacity: 1;
+}
+.feel-pop-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.feel-pop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.feel-pop-grid span {
+  height: 52px;
+  border-radius: 10px;
+  background: rgb(var(--lens-ink) / 0.08);
+}
+.feel-trigger {
+  justify-self: start;
+}

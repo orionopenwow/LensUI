@@ -29,7 +29,7 @@ export class PageErrorBoundary extends React.Component<
         </div>
         <div className="sh-row-desc">{this.state.error.message || "Something went wrong on this page."} The rest of Settings still works.</div>
         <div>
-          <button type="button" className="cc-btn" onClick={() => this.setState({ error: null })}>
+          <button data-weight="medium" type="button" className="cc-btn" onClick={() => this.setState({ error: null })}>
             <RotateCcw size={13} aria-hidden /> Retry
           </button>
         </div>

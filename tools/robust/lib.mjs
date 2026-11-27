@@ -63,7 +63,8 @@ const IGNORE = [/favicon\.ico/i];
  *   errors      — uncaught exceptions, console.error, failed requests
  *   rejections  — unhandled promise rejections (recorded, not thrown, so chaos runs can count them)
  * Options: surface, preset, width/height, query (extra URL params), reducedMotion, colorScheme,
- * fixedTime (freezes Date for clocks), settle (ms to wait after load).
+ * fixedTime (freezes Date for clocks), settle (ms to wait after load), page (another page under the
+ * harness folder instead of harness.html, e.g. "feel/index.html" from tools/parity/feel/build.mjs).
  */
 export async function openSurface(browser, base, opts) {
   const { surface, preset = "obsidian", query = "", settle = 900 } = opts;
@@ -92,7 +93,7 @@ export async function openSurface(browser, base, opts) {
   page.on("response", (r) => {
     if (r.status() >= 400 && !IGNORE.some((re) => re.test(r.url()))) page.problems.errors.push(`http ${r.status()}: ${r.url()}`);
   });
-  await page.goto(`${base}/harness.html?surface=${surface}&preset=${preset}${query ? "&" + query : ""}`);
+  await page.goto(`${base}/${opts.page || "harness.html"}?surface=${surface}&preset=${preset}${query ? "&" + query : ""}`);
   await page.waitForTimeout(settle);
   page.collectRejections = async () => {
     const r = await page.evaluate(() => window.__lensRejections.splice(0));

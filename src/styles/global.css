@@ -103,10 +103,6 @@ button {
   filter: brightness(1.1);
 }
 
-.traffic-btn:active {
-  transform: scale(0.92);
-}
-
 .traffic-btn .glyph {
   opacity: 0;
   font-size: 10px;
@@ -228,6 +224,45 @@ button {
   animation: lens-tab-glide-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 
+/* Content swaps (DESIGN.md §5.3): a page change or a setup step crossfades with a 6px slide in the
+   direction of travel: forward comes from the right, back from the left (src/ui/motion/flow.ts
+   swapPose). Set data-swap on the new content's root; a new key restarts it from the new content. */
+@keyframes lens-swap-forward {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lens-swap-back {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lens-tab-stage[data-swap="forward"],
+.lens-swap[data-swap="forward"] {
+  animation: lens-swap-forward var(--lens-dur-base) var(--lens-ease-out) both;
+}
+.lens-tab-stage[data-swap="back"],
+.lens-swap[data-swap="back"] {
+  animation: lens-swap-back var(--lens-dur-base) var(--lens-ease-out) both;
+}
+
+/* Pop-outs that grow from their trigger (src/ui/motion/origin.ts): the start pose and origin come
+   from the trigger's rect, set on the root as --lens-glide-from / transform-origin, and win over
+   the per-edge defaults (shell/dockEdge.css) so opening and closing both use the trigger. */
+:is(.lens-glide-dock, .lens-glide-top, .lens-glide-right)[data-grow-from="trigger"]:is(.is-pre-open, .is-closing) {
+  transform: var(--lens-glide-from) !important;
+}
+
 /* ==================== POISED, WEIGHTED HOVER & TACTILE PRESS (ZERO AGGRESSIVE JUMPING) ==================== */
 .cc-nav-btn,
 .cc-chip,
@@ -295,29 +330,12 @@ button {
   filter: drop-shadow(0 5px 12px rgb(0 0 0 / calc(0.52 * var(--lens-shade-k))));
 }
 
-.lens-rotary-knob:active {
-  transform: scale(0.985);
-  transition-duration: var(--lens-dur-instant);
-}
-
-.cc-nav-btn:active,
-.cc-chip:active,
-.cc-btn:active,
-.cc-btn-ghost:active,
-.cc-btn-primary:active,
-.cc-theme-card:active,
-.pal-filter-pill:active,
-.pal-recent-row:active,
-.pal-folder-card:active,
-.pal-result-row:active,
-.qs-tile:active,
-.qs-win-item:active,
-.qs-expand-btn:active,
-.qs-popout-btn:active,
-.qs-seg-btn:active,
-.qs-preset-card:active,
-.dock-ctx-item:active,
-.topbar-clock:active {
+/* Presses: the weighted press from src/ui/press (DESIGN.md §5.2) replaced the per-class :active
+   scales that used to live here. These classes get their weight from src/ui/press/weights.ts
+   (cc-btn medium, cc-btn-primary heavy, cc-nav-btn / cc-chip / rows light, Quick settings tiles
+   medium …), or from data-weight where a surface declares it. The Dock keeps its own press until
+   its Fable pass (the Dock is not migrated in this wave). */
+.dock-ctx-item:active {
   transform: scale(var(--lens-press-scale));
   transition-duration: var(--lens-dur-instant);
 }

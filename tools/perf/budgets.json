@@ -109,6 +109,27 @@
       "cls": 0,
       "fcp": 932
     },
+    "feel-rapid-press": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 140
+    },
+    "feel-settings-press": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 1020
+    },
+    "feel-popout-grow": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "longTasks": 0,
+      "cls": 0,
+      "fcp": 1216
+    },
     "deskwidgets-reflow": {
       "p50": 16.7,
       "p95": 33.3,

@@ -1040,6 +1040,37 @@ const SCENARIOS = [
     },
   },
   {
+    id: "music-immersive",
+    title: "Immersive opens full screen from Command's path, renders, and Esc leaves it",
+    async run(s) {
+      const dock = await waitForSurface(s, "dock");
+      const before = await invoke(dock, "music_config_get");
+      await invoke(dock, "music_config_set", { config: { ...before, enabled: true } });
+      try {
+        await invoke(dock, "music_immersive_open", { from: "command" });
+        const np = await waitForSurface(s, "nowplaying", 30000);
+        const take = watchErrors(np);
+        await np.waitForSelector(".lm-imm", { timeout: 15000 });
+        await shot(np, "music-immersive");
+        // Nothing plays on the runner: the empty state shows, with its controls.
+        const text = await np.evaluate(() => document.querySelector(".lm-imm")?.textContent || "");
+        if (!text.trim()) throw new Error("Immersive rendered nothing");
+        await np.evaluate(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+        await np.waitForFunction(() => !document.querySelector(".lm-imm"), null, { timeout: 5000 });
+        const errs = take();
+        if (errs.length) throw new Error(`errors in Now Playing:\n${errs.join("\n")}`);
+      } finally {
+        // Leave nothing behind for the next scenario: out of full screen, the window hidden, Music
+        // (and its media-session watcher) back to how it was.
+        await invoke(dock, "music_immersive_close", { keepWindow: false }).catch(() => {});
+        await invoke(dock, "hide_surface", { label: "nowplaying" }).catch(() => {});
+        await invoke(dock, "music_config_set", { config: before }).catch(() => {});
+        for (let i = 0; i < 20 && (await invoke(dock, "is_surface_visible_cmd", { label: "nowplaying" }).catch(() => false)); i++) await sleep(100);
+        await sleep(500);
+      }
+    },
+  },
+  {
     id: "selection-bar",
     title: "selection bar: select in Notepad → bar without stealing focus → Copy → Esc; excluded app and password field get no bar; Magic Search opens",
     async run(s) {

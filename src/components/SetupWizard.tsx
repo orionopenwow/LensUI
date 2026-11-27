@@ -12,7 +12,7 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { PackCard } from "./ThemeGallery";
 import { DOCK_STYLES, DockScenePreview, dockStyleLabel, dockStyleOf } from "../dock/styles";
 import { enableAmbientBackdrop } from "../playground/ambient/controls";
-import { glideIn } from "../ui/motion";
+import { glideIn, swapDirection, swapIn } from "../ui/motion";
 import {
   applyChoices,
   describeChoices,
@@ -131,9 +131,16 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   const page = pages[Math.min(index, pages.length - 1)];
   const last = pages.length - 1;
 
+  // Steps swap in the direction of travel (DESIGN.md §5.3): forward from the right, back from the
+  // left; the first step just arrives. Interrupting (fast Alt+→) restarts from the new content.
+  const prevIndex = useRef(-1);
   useEffect(() => {
     headingRef.current?.focus();
-    glideIn(stageRef.current, { y: 8, opacity: 0 });
+    const dir = swapDirection(prevIndex.current, index);
+    prevIndex.current = index;
+    if (dir === "none") glideIn(stageRef.current, { y: 8, opacity: 0 });
+    else swapIn(stageRef.current, dir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const base = baseRef.current;
@@ -222,7 +229,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
         <ol className="wiz-steps" aria-label="Setup steps">
           {pages.map((p, i) => (
             <li key={p}>
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`wiz-step ${i === index ? "active" : i < index ? "done" : ""}`}
                 aria-current={i === index ? "step" : undefined}
@@ -234,7 +241,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             </li>
           ))}
         </ol>
-        <button type="button" className="cc-btn-ghost tux-small-btn" onClick={skipAll} data-setup-skip>
+        <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={skipAll} data-setup-skip>
           Skip setup
         </button>
       </header>
@@ -291,7 +298,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
               {DOCK_STYLES.filter((d) => SETUP_DOCKS.includes(d.id)).map((d) => {
                 const on = previewDock === d.id;
                 return (
-                  <button
+                  <button data-weight="medium"
                     key={d.id}
                     type="button"
                     role="radio"
@@ -314,7 +321,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
               {EDGES.map((e) => {
                 const on = (preview.dock.position || "bottom") === e.id;
                 return (
-                  <button
+                  <button data-weight="medium"
                     key={e.id}
                     type="button"
                     role="radio"
@@ -339,7 +346,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             </div>
             <div className="wiz-seg" role="radiogroup" aria-label="Light or dark">
               {SCHEMES.map((s) => (
-                <button
+                <button data-weight="medium"
                   key={s.id}
                   type="button"
                   role="radio"
@@ -368,7 +375,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
             </div>
             <div className="wiz-seg" role="radiogroup" aria-label="Accent colour">
               <span className="wiz-seg-label">Accent</span>
-              <button
+              <button data-weight="medium"
                 type="button"
                 role="radio"
                 aria-checked={!choices.accent}
@@ -377,7 +384,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
               >
                 Theme's own
               </button>
-              <button
+              <button data-weight="medium"
                 type="button"
                 role="radio"
                 aria-checked={choices.accent === "windows"}
@@ -387,7 +394,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                 Windows
               </button>
               {SWATCHES.map((hex, i) => (
-                <button
+                <button data-weight="light"
                   key={hex}
                   type="button"
                   role="radio"
@@ -423,7 +430,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
                         {x.windows && !blocked ? ` ${x.windows}` : ""}
                       </div>
                     </div>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       role="switch"
                       aria-checked={on}
@@ -484,16 +491,16 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       </div>
 
       <footer className="wiz-foot">
-        <button type="button" className="cc-btn-ghost tux-small-btn" onClick={back} disabled={index === 0}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={back} disabled={index === 0}>
           <ChevronLeft size={14} /> Back
         </button>
         <div className="wiz-foot-right">
           {page !== "welcome" && page !== "whatsnew" && index < last && (
-            <button type="button" className="tux-link wiz-skip" onClick={skipStep}>
+            <button data-weight="light" type="button" className="tux-link wiz-skip" onClick={skipStep}>
               Skip this step
             </button>
           )}
-          <button type="button" className="cc-btn tux-small-btn" data-wiz-next onClick={next}>
+          <button data-weight="heavy" type="button" className="cc-btn tux-small-btn" data-wiz-next onClick={next}>
             {nextLabel} {index < last && <ChevronRight size={14} />}
           </button>
         </div>

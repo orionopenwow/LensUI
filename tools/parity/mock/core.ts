@@ -387,6 +387,37 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
 export function convertFileSrc(p: string) { return p; }
 export function isTauri() { return false; }
 
+// Lens Music for the Now Playing window and Immersive (tools/visual/run.mjs, ?music=1): Music on, a
+// playing sample track with generated artwork and original placeholder lyrics. Without the flag the
+// music commands answer null as before, so other surfaces' goldens are unchanged.
+if (params.get("music") === "1") {
+  const T0 = Date.now();
+  const now = {
+    hasSession: true, sessionId: "Spotify.exe", sourceLabel: "Spotify", title: "Harbour Lights", artist: "The Placeholders", album: "Lens Sessions, Vol. 1",
+    artwork: placeholderArt("harbour-lights"), trackKey: "k-harbour", status: "playing", positionMs: 64_000, updatedMs: T0, durationMs: 224_000, rate: 1,
+    controls: { play: true, pause: true, next: true, prev: true, seek: true, shuffle: true, repeat: true }, shuffle: false, repeat: "list",
+    sessions: [{ id: "Spotify.exe", label: "Spotify", title: "Harbour Lights", playing: true, active: true }], sleepAtMs: null, sleepEndOfTrack: false,
+  };
+  const lines = ["Neon rain across the harbour", "Every window holds a light", "I keep the radio on low", "So I can hear the city breathe", "Turn the corner, find the morning", "Paper boats along the tide", "Every echo calls me home", "Harbour lights, harbour lights"]
+    .map((text, i) => ({ startMs: 48_000 + i * 6_500, text }));
+  Object.assign(handlers, {
+    music_config_get: () => ({
+      enabled: true, priority: ["spotify"], deny: [], allowOnly: [], miniPlayer: "dock", themeFollows: false, themeIntensity: 0.6, restoreDelayS: 20, lyrics: true, lyricsLrclib: true,
+      lyricsFolder: null, lyricsOffsetMs: 0, desktopLyrics: false, windowStyle: "expanded", dither: true, sceneReactive: false, history: true, lastfm: false, soundGlow: true, levelMeter: true,
+      artTint: true, immersiveIdleS: 3, immersiveGlow: false, immersiveLyrics: true, lyricsTranslate: false, lyricsTranslateTo: "", lyricsView: "original", discord: false, discordAppId: "",
+      discordPrivate: false, discordShowProgress: true, setupDone: true,
+    }),
+    music_now: () => now,
+    music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines, source: "lrclib", sourceUrl: null, note: null }),
+    music_history: () => [],
+    music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
+    music_translation_get: () => null,
+    music_spotify_status: () => ({ connected: false, clientId: null, redirectUri: "http://127.0.0.1:43117/callback", redirectUris: [], scopes: [] }),
+    music_immersive_open: () => null,
+    music_immersive_close: () => null,
+  });
+}
+
 // Dashboard widgets (docs/plans/MAGIC_WAVES.md, wave M2). An in-memory widget store and a mocked
 // fetch: nothing here touches the network. ?widgets=sample starts with one widget of each kind
 // (clearly invented data); without it the Widgets lane starts empty.

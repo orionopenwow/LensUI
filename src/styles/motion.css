@@ -28,8 +28,48 @@
   --lens-dur-exit: 120ms;
   --lens-stagger: 30ms;
 
-  --lens-press-scale: 0.98;
+  --lens-press-scale: 0.97;
   --lens-enter-scale: 0.96;
+
+  /* ── Press weights (DESIGN.md §5.1–5.2) ───────────────────────────────────────────────────────
+     Press-in is fast and firm; the release springs back; a press stays visible at least
+     --lens-press-hold-min. Applied by src/ui/press (data-weight + data-press), never by :active. */
+  --lens-press-in: 70ms;
+  --lens-press-release: 220ms;
+  --lens-press-release-heavy: 260ms;
+  /* State, not motion: kept under reduced motion so a press is always seen. */
+  --lens-press-hold-min: 90ms;
+  --lens-pending-delay: 300ms;
+  /* Depth per weight. light: fill only. medium: --lens-press-scale. heavy: deeper, highlight off. */
+  --lens-press-scale-light: 1;
+  --lens-press-scale-medium: var(--lens-press-scale);
+  --lens-press-scale-heavy: 0.955;
+  --lens-press-y-light: 0px;
+  --lens-press-y-medium: 1px;
+  --lens-press-y-heavy: 1.5px;
+  /* Fill step: an overlay of --lens-press-tint. Dark packs darken, light packs lighten (below). */
+  --lens-press-tint: 0 0 0;
+  --lens-press-fill-step: 0.1;
+  --lens-press-fill-light: var(--lens-press-fill-step);
+  --lens-press-fill-medium: var(--lens-press-fill-step);
+  --lens-press-fill-heavy: calc(var(--lens-press-fill-step) * 2);
+  /* Top highlight while pressed, as a share of its rest strength (medium 40 %, heavy off). */
+  --lens-press-highlight-light: 1;
+  --lens-press-highlight-medium: 0.4;
+  --lens-press-highlight-heavy: 0;
+  /* Heavy presses add a 1px inner shade along the top edge. */
+  --lens-press-shade-heavy: 1px;
+  /* Toggle knob squash while pressed; slider thumb growth while grabbed. */
+  --lens-press-knob-squash: 1.06;
+  /* px a grabbed slider thumb / fill bar grows by on each side (unitless, used in calc). */
+  --lens-press-thumb-grow: 1;
+  /* One turn of the pending spinner (a loop: off under reduced motion). */
+  --lens-spin-period: 700ms;
+}
+/* Light packs: a pressed fill lightens a step instead of darkening (DESIGN.md §5.1 rule 2). */
+:root[data-scheme="light"] {
+  --lens-press-tint: 255 255 255;
+  --lens-press-fill-step: 0.16;
 }
 
 /* Reduced motion: Windows "Animation effects" off (unless Lens forces full motion), or the Lens setting.
@@ -46,6 +86,14 @@
     --lens-stagger: 0ms;
     --lens-press-scale: 1;
     --lens-enter-scale: 1;
+    --lens-press-in: 1ms;
+    --lens-press-release: 1ms;
+    --lens-press-release-heavy: 1ms;
+    --lens-press-scale-heavy: 1;
+    --lens-press-y-medium: 0px;
+    --lens-press-y-heavy: 0px;
+    --lens-press-knob-squash: 1;
+    --lens-press-thumb-grow: 0;
   }
 }
 :root[data-motion="reduce"] {
@@ -58,19 +106,29 @@
   --lens-stagger: 0ms;
   --lens-press-scale: 1;
   --lens-enter-scale: 1;
+  --lens-press-in: 1ms;
+  --lens-press-release: 1ms;
+  --lens-press-release-heavy: 1ms;
+  --lens-press-scale-heavy: 1;
+  --lens-press-y-medium: 0px;
+  --lens-press-y-heavy: 0px;
+  --lens-press-knob-squash: 1;
+  --lens-press-thumb-grow: 0;
 }
 
-/* ── Press feedback ──────────────────────────────────────────────────────────────────────────────
-   A 0.98 press on every pressable, 140ms ease-out back. :where() keeps specificity at zero so any
-   component transform (Dock magnify, sliders) wins. Opt out with data-no-press. One selector per
-   kind of control: a selector ending in :where(a, b, c) is tried on every element at every restyle
-   (a theme switch restyles all of them); one ending in :where(a) only on elements that are an a. */
-:where(button):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active),
-:where([role="button"]):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active),
-:where(.cc-chip):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active),
-:where(.cc-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active),
-:where(.cc-btn-ghost):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active),
-:where(.lens-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active) {
+/* ── Press feedback, legacy fallback ─────────────────────────────────────────────────────────────
+   Controls that declare a weight (data-weight, src/ui/press) get the weighted press instead
+   (DESIGN.md §5.2). This zero-specificity :active scale only covers areas not migrated yet: older
+   apps, and every control in windows in "own" press mode (Dock, Lens Browser), weighted or not.
+   Opt out with data-no-press. One selector per kind of control: a selector ending in
+   :where(a, b, c) is tried on every element at every restyle (a theme switch restyles all of them);
+   one ending in :where(a) only on elements that are an a. */
+:where(button):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])),
+:where([role="button"]):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])),
+:where(.cc-chip):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])),
+:where(.cc-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])),
+:where(.cc-btn-ghost):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])),
+:where(.lens-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])) {
   transform: scale(var(--lens-press-scale));
 }
 

@@ -7,7 +7,7 @@
 // the glow or the meter is on and motion isn't reduced (soundGlow.ts › levelLoopActive).
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ListMusic, Music, Pause, Play, Search, SkipBack, SkipForward } from "lucide-react";
+import { Expand, ListMusic, Music, Pause, Play, Search, SkipBack, SkipForward } from "lucide-react";
 import type { MediaNowPlaying } from "../types/generated";
 import { music } from "./api";
 import { samplePalette } from "./art";
@@ -46,6 +46,7 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
   const [plan, setPlan] = useState<GlowPlan | null>(null);
   const [, setTick] = useState(0);
   const [drag, setDrag] = useState<number | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const reduced = useMemo(() => reducedMotion(), []);
   const cardRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
@@ -194,6 +195,17 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
           <div className="dmc-title">{title}</div>
           <div className="dmc-artist">{artist}</div>
         </div>
+        {prefs.musicOn && (
+          <button
+            type="button"
+            data-weight="medium"
+            className="dmc-btn dmc-imm"
+            aria-label="Immersive"
+            onClick={() => music.immersiveOpen("dock").then(() => setNote(null)).catch((e) => setNote(String(e)))}
+          >
+            <Expand size={14} strokeWidth={2.4} />
+          </button>
+        )}
         {prefs.meter && (
           <div ref={meterRef} className="dmc-meter" aria-hidden="true">
             <span />
@@ -205,6 +217,7 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
         )}
       </div>
 
+      {note && <div className="dmc-note" role="status">{note}</div>}
       <div className="dmc-progress">
         <span className="dmc-time">{labels.elapsed}</span>
         <div
