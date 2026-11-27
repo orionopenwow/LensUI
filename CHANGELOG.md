@@ -53,6 +53,9 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **The Top Bar no longer stays up after Lens was briefly busy.** If Lens's window watcher was held up
+  for a couple of seconds (most often right after start-up), an auto-hidden Top Bar could stay on
+  screen until the pointer touched the top edge; it now hides as soon as the watcher runs again.
 - **Text you cropped out of a snip no longer goes with it.** Copy text, Shelf, Paste to Claude, Ask
   and Translate now use only the words still inside the crop (and inside a freeform outline).
 - **Cropping in the Snip studio no longer stretches the picture or misplaces new marks.** The crop

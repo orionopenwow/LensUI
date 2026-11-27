@@ -538,6 +538,14 @@ pub(crate) fn spawn_watcher(
         // Whether the Top Bar currently lets clicks through (None until first decided).
         let mut topbar_through: Option<bool> = None;
         let mut topbar_halo_sent: Option<(i32, i32, bool)> = None;
+        // Re-apply the Top Bar's state on the next pass even if it did not change (after a stall).
+        let mut topbar_force_apply = false;
+        // The periodic restatement to the bar's page is timed, not counted in passes: passes slow
+        // down when the main thread is busy (start-up window builds), and 30 slow passes were far
+        // longer than the ~2 s it promises.
+        let mut topbar_restated_at = Instant::now();
+        // Why the Top Bar is in its current state (logged when it changes; read by the E2E).
+        let mut topbar_reason_logged: &'static str = "";
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -554,10 +562,13 @@ pub(crate) fn spawn_watcher(
                 // The supervisor made the Dock and Top Bar click-through while this thread was
                 // stuck: start from that state so the next pass re-applies the real one.
                 dock_ignoring_cursor = true;
-                // The bar's shown state lives in the shared flag (read each pass): flip it so
-                // the next pass sees a change and re-applies the real state.
-                let was = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
-                bg_topbar_visible.store(!was, std::sync::atomic::Ordering::Relaxed);
+                // The bar's shown state lives in the shared flag (read each pass). It used to be
+                // flipped here "so the next pass sees a change", but the next pass reads the
+                // flipped value as its starting point: a shown bar became "hidden" to the watcher
+                // while its page still drew it, and nothing told the page until the periodic
+                // restatement (a start-up stall left the bar up in CI, topbar-hides-idle). Keep
+                // the flag true to the page and re-apply it on the next pass instead.
+                topbar_force_apply = true;
                 topbar_through = None;
                 topbar_halo_sent = None;
             }
@@ -777,18 +788,32 @@ pub(crate) fn spawn_watcher(
                             };
 
                             let mut next_vis = topbar_visible;
+                            let reason: &'static str;
                             if !should_hide_when_idle {
                                 next_vis = true;
                                 topbar_edge_since = None;
                                 topbar_leave_since = None;
+                                reason = if palette_vis {
+                                    "held up: Search is open"
+                                } else if qs_in_use {
+                                    "held up: Quick Settings in use"
+                                } else if cfg.top_bar.auto_hide == "never" {
+                                    "auto-hide is off"
+                                } else {
+                                    "smart dodge: nothing covers it"
+                                };
                             } else if topbar_visible {
                                 if cursor_inside_bar {
                                     topbar_leave_since = None;
+                                    reason = "pointer on the bar";
                                 } else {
                                     let since = *topbar_leave_since.get_or_insert_with(Instant::now);
                                     if since.elapsed().as_millis() as u64 >= cfg.top_bar.hide_delay_ms {
                                         next_vis = false;
                                         topbar_leave_since = None;
+                                        reason = "pointer away for the hide delay";
+                                    } else {
+                                        reason = "pointer away, waiting out the hide delay";
                                     }
                                 }
                             } else if cursor_at_top_edge {
@@ -796,12 +821,41 @@ pub(crate) fn spawn_watcher(
                                 if since.elapsed().as_millis() as u64 >= cfg.top_bar.reveal_delay_ms {
                                     next_vis = true;
                                     topbar_edge_since = None;
+                                    reason = "pointer at the top edge for the reveal delay";
+                                } else {
+                                    reason = "pointer at the top edge, waiting out the reveal delay";
                                 }
                             } else {
                                 topbar_edge_since = None;
+                                reason = "hidden, pointer away from the top edge";
+                            }
+                            // Logged only when the reason changes (a handful of lines per reveal),
+                            // so the Tester log (and a failing E2E) says why the bar is where it is.
+                            if reason != topbar_reason_logged {
+                                topbar_reason_logged = reason;
+                                crate::tester::log(
+                                    "debug",
+                                    "topbar",
+                                    &format!(
+                                        "Top Bar {}: {} (autoHide={}, pointer={:?})",
+                                        if next_vis { "shown" } else { "hidden" },
+                                        reason,
+                                        cfg.top_bar.auto_hide,
+                                        cursor
+                                    ),
+                                );
                             }
 
-                            if next_vis != topbar_visible {
+                            if next_vis != topbar_visible || topbar_force_apply {
+                                if topbar_force_apply {
+                                    crate::tester::log(
+                                        "info",
+                                        "topbar",
+                                        &format!("Top Bar state re-applied after a watcher stall ({})", if next_vis { "shown" } else { "hidden" }),
+                                    );
+                                }
+                                topbar_force_apply = false;
+                                topbar_restated_at = Instant::now();
                                 topbar_visible = next_vis;
                                 bg_topbar_visible.store(
                                     topbar_visible,
@@ -826,10 +880,11 @@ pub(crate) fn spawn_watcher(
                                 let _ = topbar_win.unminimize();
                                 let _ = topbar_win.show();
                                 let _ = watcher_handle.emit("lens://topbar-visible", true);
-                        } else if tick % 30 == 0 {
-                            // About every 2 s, restate the current state to the bar only, so a page
+                        } else if topbar_restated_at.elapsed() >= Duration::from_millis(2000) {
+                            // Every 2 s, restate the current state to the bar only, so a page
                             // that missed an event (it reloaded, an emit was dropped) cannot stay
                             // drawn while Lens has it hidden, or the reverse.
+                            topbar_restated_at = Instant::now();
                             if !topbar_visible {
                                 let _ = topbar_win.set_ignore_cursor_events(true);
                             }

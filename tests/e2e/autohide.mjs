@@ -53,8 +53,9 @@ async function dockState(s) {
   }).catch(() => null);
   return { shown: pageHidden === false, pageHidden };
 }
-/** Waits until `read()` reports `shown === want`, up to `ms`. Returns the elapsed ms or throws. */
-async function expectWithin(label, read, want, ms) {
+/** Waits until `read()` reports `shown === want`, up to `ms`. Returns the elapsed ms or throws.
+ *  `diag` (optional) adds what Lens itself says to the failure message. */
+async function expectWithin(label, read, want, ms, diag) {
   const t0 = Date.now();
   let last;
   while (Date.now() - t0 <= ms) {
@@ -62,16 +63,37 @@ async function expectWithin(label, read, want, ms) {
     if (last.shown === want && (want || !last.hiddenTakesClicks)) return Date.now() - t0;
     await sleep(50);
   }
-  throw new Error(`${label}: expected ${want ? "shown" : "hidden"} within ${ms} ms, got ${JSON.stringify(last)}`);
+  const more = diag ? `\n${await diag().catch((e) => `(diagnostics failed: ${e})`)}` : "";
+  throw new Error(`${label}: expected ${want ? "shown" : "hidden"} within ${ms} ms, got ${JSON.stringify(last)}${more}`);
 }
 /** Stays in state `want` for `ms` (no stuck change, no surprise). */
-async function expectStays(label, read, want, ms) {
+async function expectStays(label, read, want, ms, diag) {
   const t0 = Date.now();
   while (Date.now() - t0 <= ms) {
     const st = await read();
-    if (st.shown !== want || (!want && st.hiddenTakesClicks)) throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms`);
+    if (st.shown !== want || (!want && st.hiddenTakesClicks)) {
+      const more = diag ? `\n${await diag().catch((e) => `(diagnostics failed: ${e})`)}` : "";
+      throw new Error(`${label}: expected to stay ${want ? "shown" : "hidden"}, got ${JSON.stringify(st)} after ${Date.now() - t0} ms${more}`);
+    }
     await sleep(100);
   }
+}
+/** What Lens itself thinks of the Top Bar: the watcher's shown flag, the real cursor, the last
+ *  Top Bar decisions (with their reason) and any watcher stall or window build from the Tester log. */
+async function barDiag(s) {
+  const dock = surfaces(s).dock;
+  const flag = dock ? await invoke(dock, "get_topbar_visible_cmd").catch((e) => `? (${e.message})`) : "?";
+  const pos = await d("pos").catch(() => null);
+  const log = dock ? await invoke(dock, "tester_log_get", { after: null, limit: 2000 }).catch(() => []) : [];
+  const lines = log
+    .filter((l) => /^(topbar|watcher|surface|setup|loadguard|renderer)$/.test(l.area))
+    .slice(-16)
+    .map((l) => `${new Date(l.atMs ?? l.at_ms ?? 0).toISOString().slice(11, 23)} [${l.area}] ${l.message}`);
+  const built = s.logs.join("").includes("Start-up windows built.");
+  return [
+    `      Lens: watcher has the bar ${flag === true ? "shown" : flag === false ? "hidden" : flag}; pointer at ${JSON.stringify(pos)}; start-up windows built: ${built}`,
+    ...(lines.length ? ["      Tester log (Top Bar / watcher / windows):", ...lines.map((l) => "        " + l)] : ["      Tester log: no Top Bar decisions recorded"]),
+  ].join("\n");
 }
 /** No flicker: at most one shown/hidden transition of the real window while `act` runs. */
 async function expectNoFlicker(label, act, ms = 900) {
@@ -196,22 +218,32 @@ function sideDockScenario(edge) {
 // ---- scenarios ------------------------------------------------------------------------------
 let SCREEN;
 const mid = () => [Math.round(SCREEN.w / 2), Math.round(SCREEN.h / 2)];
+const REVEAL_DELAY_MS = 100;
+const HIDE_DELAY_MS = 350;
 const topBarCfg = (mode) => (c) => {
   c.topBar.enabled = true;
   c.topBar.autoHide = mode;
-  c.topBar.revealDelayMs = 100;
-  c.topBar.hideDelayMs = 350;
+  c.topBar.revealDelayMs = REVEAL_DELAY_MS;
+  c.topBar.hideDelayMs = HIDE_DELAY_MS;
 };
+// How long an idle bar may take to hide: the hide delay, the watcher's ~2 s restatement (which
+// repairs a page that missed the hide event) and a margin for watcher passes on a slow runner.
+// The page's class flips at once; the slide itself is not waited for.
+const TOPBAR_HIDE_WITHIN_MS = HIDE_DELAY_MS + 2000 + 650;
 
 const SCENARIOS = [
   {
     id: "topbar-hides-idle",
     title: "Top Bar (always hide): hides when the pointer is away",
     async run(s) {
+      // Park the pointer in the middle of the screen, away from every edge and from the bar,
+      // before auto-hide is switched on, so no earlier pointer position can count as a reveal.
+      await d(`move ${mid().join(" ")}`);
       await setConfig(s, topBarCfg("always"));
       await d(`move ${mid().join(" ")}`);
-      await expectWithin("idle", () => barState(s), false, 2500);
-      await expectStays("idle", () => barState(s), false, 1200);
+      const diag = () => barDiag(s);
+      await expectWithin("idle", () => barState(s), false, TOPBAR_HIDE_WITHIN_MS, diag);
+      await expectStays("idle", () => barState(s), false, 1200, diag);
     },
   },
   {
@@ -413,6 +445,14 @@ try {
   s = await startLens();
   await page(s, "dock");
   await page(s, "topbar");
+  // The start-up windows (Settings, Search, Quick Settings, Launcher, ...) are built one after the
+  // other on the main thread after the Dock and Top Bar are up. While a build runs, every watcher
+  // pass that asks a window anything waits for the main thread, so auto-hide stalls for seconds.
+  // The first scenario used to run in the middle of that (the Search window was still being
+  // built when topbar-hides-idle failed). Wait for Lens to say they are built, as failsafe.mjs does.
+  const t0Built = Date.now();
+  while (!s.logs.join("").includes("Start-up windows") && Date.now() - t0Built < 90000) await sleep(250);
+  console.log(`      start-up windows: ${s.logs.join("").includes("Start-up windows built.") ? "built" : "still building"} after ${Date.now() - t0Built} ms`);
   await sleep(2000);
   // A fresh profile opens the first-run setup in Settings; a focused Settings window (rightly)
   // holds the Dock up, so finish it and close every flyout before measuring auto-hide.
@@ -438,6 +478,7 @@ try {
       const openNow = [];
       for (const f of ["settings", ...FLYOUTS]) if (await invoke(surfaces(s).dock, "is_surface_visible_cmd", { label: f }).catch(() => false)) openNow.push(f);
       console.log(`      state: topBar.autoHide=${cfgNow?.topBar?.autoHide} setupSeen=${cfgNow?.setupSeenVersion} open=[${openNow.join(", ")}]`);
+      if (sc.id.startsWith("topbar") && !/Lens: watcher has the bar/.test(String(e.message))) console.log(await barDiag(s).catch(() => ""));
       const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|palette|surface/i.test(l)).slice(-14);
       if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     } finally {
