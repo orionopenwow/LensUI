@@ -103,7 +103,7 @@ export const PreviewSheet: React.FC<{
             </h2>
             <p className="cl-meta">DRY RUN · NOTHING HAS BEEN TOUCHED YET</p>
           </div>
-          <button type="button" className="cl-icon-btn" aria-label="Close" onClick={onClose}>
+          <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Close" onClick={onClose}>
             <X size={16} />
           </button>
         </header>
@@ -161,7 +161,7 @@ export const PreviewSheet: React.FC<{
               </div>
             </div>
           ))}
-          <button type="button" className="cl-link cl-full" onClick={onFullList}>
+          <button data-weight="light" type="button" className="cl-link cl-full" onClick={onFullList}>
             <FileText size={13} aria-hidden /> See every file ({preview.entryCount.toLocaleString()}){extra > 0 ? "" : ""}
           </button>
         </div>
@@ -192,7 +192,7 @@ export const PreviewSheet: React.FC<{
                     onChange={(e) => setTyped(cleanCode(e.target.value, code.length))}
                   />
                 ) : codeError || step === "expired" ? (
-                  <button type="button" className="cl-btn is-ghost is-sm" onClick={newCode}>
+                  <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={newCode}>
                     Get a new code
                   </button>
                 ) : null}
@@ -216,10 +216,10 @@ export const PreviewSheet: React.FC<{
               <span className="cl-meta">WILL FREE</span>
               <span className="cl-num cl-strong">{fmtSize(preview.total)}</span>
             </span>
-            <button type="button" className="cl-btn is-ghost" onClick={onClose} disabled={busy}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onClose} disabled={busy}>
               Not now <Key>Esc</Key>
             </button>
-            <button type="button" className="cl-btn is-primary" onClick={() => onRun(null)} disabled={busy} autoFocus>
+            <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={() => onRun(null)} disabled={busy} autoFocus>
               {busy ? <Spinner /> : <Trash2 size={15} aria-hidden />} {busy ? "Cleaning…" : `Clean up ${fmtSize(preview.total)}`}
             </button>
           </footer>

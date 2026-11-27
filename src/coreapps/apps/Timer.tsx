@@ -13,6 +13,7 @@ import { clock, countdown } from "../shell/format";
 import { DAYS, PRESETS, STOPWATCH0, describeDays, elapsed, parseTime, progress, remainingOf, splits, stopwatch, toggleDay, tzOffsetMin, type Stopwatch } from "../models/timer";
 import { friendlyError } from "../models/load";
 import { coreApp } from "../registry";
+import { quiet } from "../../ui/oops";
 
 type View = "timers" | "pomodoro" | "stopwatch" | "alarms";
 type Face = "classic" | "dots" | "expressive";
@@ -97,8 +98,8 @@ export const Timer: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
     const un = listen<TimerItem[]>("lens://coreapp-timers", (e) => setItems(e.payload));
     const unView = listen<string>("lens://coreapp-view", (e) => setView(e.payload as View));
     return () => {
-      un.then((f) => f()).catch(() => {});
-      unView.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
+      unView.then((f) => f()).catch(quiet);
     };
   }, [demo]);
 
@@ -381,7 +382,7 @@ export const Timer: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
             </div>
             <div className="ca-row tm-days" role="group" aria-label="Repeat on" style={{ marginTop: 12 }}>
               {DAYS.map((d, i) => (
-                <button key={d} type="button" className={cx("tm-day", !!(alarmDays & (1 << i)) && "on")} aria-pressed={!!(alarmDays & (1 << i))} onClick={() => setAlarmDays((m) => toggleDay(m, i))}>
+                <button data-weight="light" key={d} type="button" className={cx("tm-day", !!(alarmDays & (1 << i)) && "on")} aria-pressed={!!(alarmDays & (1 << i))} onClick={() => setAlarmDays((m) => toggleDay(m, i))}>
                   {d}
                 </button>
               ))}

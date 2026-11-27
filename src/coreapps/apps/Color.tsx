@@ -9,6 +9,7 @@ import { Button, Card, Confirm, Hero, Mono, Pill, Toast, cx } from "../shell/ui"
 import { useStored, useVisiblePoll } from "../shell/hooks";
 import { addToPalette, formats, nudgeToContrast, normHex, parseHex, toHex, verdict, verdictText, type RGB } from "../models/color";
 import { coreApp } from "../registry";
+import { oops } from "../../ui/oops";
 
 export interface ColorDemo {
   current?: string;
@@ -96,7 +97,7 @@ export const Color: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
   const openThemeLab = () =>
     invoke("open_surface", { label: "settings" })
       .then(() => emit("lens://settings-tab", "theme"))
-      .catch(() => {});
+      .catch(oops("open the Theme lab"));
 
   const keys = [
     { keys: "Ctrl+P", label: "Pick from screen", match: (e: KeyboardEvent) => isKey(e, "p", { ctrl: true }), run: () => setPicking(true) },
@@ -203,7 +204,7 @@ export const Color: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
             {fix && (
               <>
                 {" "}
-                <button type="button" className="col-link" onClick={() => setFg(toHex(fix))}>
+                <button data-weight="light" type="button" className="col-link" onClick={() => setFg(toHex(fix))}>
                   Use {toHex(fix)} instead
                 </button>
               </>
@@ -228,7 +229,7 @@ export const Color: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
         ) : (
           <div className="col-palette" role="list">
             {palette.map((h) => (
-              <button key={h} type="button" role="listitem" className={cx("col-chip", h === cur && "on")} style={{ background: h }} onClick={() => setCurrent(h)} aria-label={`${h}${h === cur ? ", current" : ""}`}>
+              <button data-weight="light" key={h} type="button" role="listitem" className={cx("col-chip", h === cur && "on")} style={{ background: h }} onClick={() => setCurrent(h)} aria-label={`${h}${h === cur ? ", current" : ""}`}>
                 <span>{h}</span>
               </button>
             ))}

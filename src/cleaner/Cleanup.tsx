@@ -69,7 +69,7 @@ const Row: React.FC<{
           </p>
           {c.method === "elevated" && <p className="cl-meta">Runs Windows' own cleanup tool. Windows asks for permission first.</p>}
           {c.method === "openSettings" && c.action && (
-            <button type="button" className="cl-btn is-ghost is-sm" onClick={() => onOpen(c.action!)}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={() => onOpen(c.action!)}>
               <ExternalLink size={13} aria-hidden /> Open Windows' page
             </button>
           )}
@@ -85,11 +85,11 @@ const Row: React.FC<{
                   <span className="cl-item-age cl-meta">{it.ageDays > 0 ? ageLabel(it.ageDays) : ""}</span>
                   <span className="cl-num cl-item-size">{fmtSize(it.size)}</span>
                   {it.link ? (
-                    <button type="button" className="cl-icon-btn" aria-label={`Uninstall in Steam: ${it.note ?? it.path}`} onClick={() => onOpen(it.link!)}>
+                    <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Uninstall in Steam: ${it.note ?? it.path}`} onClick={() => onOpen(it.link!)}>
                       <ExternalLink size={13} />
                     </button>
                   ) : (
-                    <button type="button" className="cl-icon-btn" aria-label={`Show ${it.path} in File Explorer`} onClick={() => onReveal(it.path)}>
+                    <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Show ${it.path} in File Explorer`} onClick={() => onReveal(it.path)}>
                       <FolderOpen size={13} />
                     </button>
                   )}
@@ -150,7 +150,7 @@ export const Cleanup: React.FC<{
           {COPY.emptyTitle}
         </h1>
         <p className="cl-sub">{COPY.emptySub}</p>
-        <button type="button" className="cl-btn is-ghost" onClick={onRescan}>
+        <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onRescan}>
           <RotateCw size={14} aria-hidden /> Scan again
         </button>
       </section>
@@ -166,7 +166,7 @@ export const Cleanup: React.FC<{
           </h1>
           {h.review > 0 && <p className="cl-sub">{COPY.reviewLine(fmtSize(h.review))}</p>}
         </div>
-        <button type="button" className="cl-btn is-smart" onClick={onSmart} disabled={busy} aria-describedby="cl-smart-desc">
+        <button data-weight="medium" type="button" className="cl-btn is-smart" onClick={onSmart} disabled={busy} aria-describedby="cl-smart-desc">
           <Sparkles size={15} aria-hidden /> Smart Clean <Key>Ctrl</Key>
           <Key>Enter</Key>
         </button>
@@ -192,10 +192,10 @@ export const Cleanup: React.FC<{
           <Key>Space</Key> toggle <Key>Ctrl</Key>
           <Key>A</Key> all safe
         </span>
-        <button type="button" className="cl-btn is-ghost" onClick={onRescan} disabled={busy}>
+        <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onRescan} disabled={busy}>
           <RotateCw size={14} aria-hidden /> Scan again
         </button>
-        <button type="button" className="cl-btn is-primary" onClick={onClean} disabled={busy || sel === 0}>
+        <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={onClean} disabled={busy || sel === 0}>
           <Trash2 size={15} aria-hidden /> Clean up {fmtSize(sel)} <Key>Enter</Key>
         </button>
       </footer>
