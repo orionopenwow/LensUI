@@ -1,7 +1,10 @@
 /* src/ui primitives. Token-only: no hex colours, no raw durations (guardrail: polishGuardrails.test.ts). */
 
 /* ── Button ─────────────────────────────────────────────────────────────────────────────────── */
+/* Presses come from src/ui/press (data-weight): medium by default, heavy for primary and danger.
+   Hover only steps the fill; it never scales (DESIGN.md §5.2). */
 .lens-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -28,8 +31,8 @@
   border-color: rgb(var(--lens-ink) / 0.18);
 }
 .lens-btn:disabled {
-  opacity: 0.45;
-  cursor: default;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .lens-btn.is-primary {
   background: var(--lens-fg);
@@ -157,8 +160,9 @@ button.lens-chip:hover {
   height: 15px;
   border-radius: 999px;
   background: var(--lens-fg);
+  /* The knob travels with the spring; the track crossfades (press.css squashes it while pressed). */
   transition:
-    transform var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-press-release) var(--lens-ease-spring),
     background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .lens-toggle.on {
@@ -173,12 +177,13 @@ button.lens-chip:hover {
   opacity: 0.7;
 }
 .lens-toggle:disabled {
-  opacity: 0.45;
-  cursor: default;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ── Segmented ──────────────────────────────────────────────────────────────────────────────── */
 .lens-seg {
+  position: relative;
   display: inline-flex;
   padding: 2px;
   gap: 2px;
@@ -206,6 +211,29 @@ button.lens-chip:hover {
 .lens-seg-btn.active {
   background: var(--lens-fg);
   color: var(--lens-on-fg);
+}
+/* The selected pill is one element that slides between options (useSlidingIndicator). Until it
+   has measured itself the option paints its own background, so nothing ever blinks. */
+.lens-seg-ind {
+  position: absolute;
+  left: var(--lens-ind-x, 0);
+  top: var(--lens-ind-y, 0);
+  width: var(--lens-ind-w, 0);
+  height: var(--lens-ind-h, 0);
+  border-radius: 7px;
+  background: var(--lens-fg);
+  pointer-events: none;
+  opacity: 0;
+}
+.lens-seg-ind[data-on="true"] {
+  opacity: 1;
+}
+.lens-seg.has-ind .lens-seg-btn {
+  position: relative;
+  z-index: 1;
+}
+.lens-seg.has-ind:has(.lens-seg-ind[data-on="true"]) .lens-seg-btn.active {
+  background: transparent;
 }
 
 /* ── Card ───────────────────────────────────────────────────────────────────────────────────── */

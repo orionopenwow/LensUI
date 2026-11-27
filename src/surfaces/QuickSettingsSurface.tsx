@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { SWAP_SHIFT } from "../ui/motion/flow";
+import { useGrowFromTrigger } from "../ui/motion/origin";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { useStartupBlock } from "../hooks/useStartupBlock";
 import { invoke } from "@tauri-apps/api/core";
@@ -91,6 +93,9 @@ export const QuickSettingsSurface: React.FC = () => {
   const startupBlock = useStartupBlock();
   const { config, winTheme, updateConfig } = useLensState();
   const glidePhase = useSurfaceGlide("quicksettings");
+  // Opened from a bar or Dock button: grow from it and close back into it (DESIGN.md §5.3).
+  const panelRef = useRef<HTMLDivElement>(null);
+  useGrowFromTrigger("quicksettings", panelRef);
   const [activeTab, setActiveTab] = useState<QsTab>("quick");
   const [anchorMode, setAnchorMode] = useState<"top-right" | "bottom-right">("top-right");
   const [slideDir, setSlideDir] = useState<number>(1);
@@ -265,7 +270,7 @@ export const QuickSettingsSurface: React.FC = () => {
 
   return (
     <div className={`qs-shell ${anchorMode === "bottom-right" ? "is-bottom-right" : ""}`}>
-      <div className={`qs-panel lens-flyout-host ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+      <div ref={panelRef} className={`qs-panel lens-flyout-host ${anchorMode === "bottom-right" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
         <FlyoutClose onClose={() => void hideSurface("quicksettings")} />
         {/* Usable Flick Switcher only in Quick / Theme / All — zero title bar or header strip in dedicated popouts! */}
         {!isDedicatedArea && (
@@ -290,7 +295,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 className="qs-flick-thumb"
                 style={{ transform: `translateX(${Math.max(0, activeIdx) * 100}%)` }}
               />
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`qs-flick-btn ${activeTab === "quick" ? "active" : ""}`}
                 onClick={() => switchTab("quick")}
@@ -298,7 +303,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 <Zap size={12.5} strokeWidth={2.5} />
                 <span>Quick</span>
               </button>
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`qs-flick-btn ${activeTab === "theme" ? "active" : ""}`}
                 onClick={() => switchTab("theme")}
@@ -306,7 +311,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 <Sparkles size={12.5} strokeWidth={2.5} />
                 <span>Theme</span>
               </button>
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`qs-flick-btn ${activeTab === "all" ? "active" : ""}`}
                 onClick={() => switchTab("all")}
@@ -328,7 +333,7 @@ export const QuickSettingsSurface: React.FC = () => {
             <div
               key="pane-network"
               className="qs-pane"
-              style={{ ["--qs-slide-from" as string]: "10px" }}
+              style={{ ["--qs-slide-from" as string]: `${SWAP_SHIFT}px` }}
             >
               <WifiModule />
               <BluetoothModule />
@@ -340,7 +345,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   { label: "Ethernet", uri: "ms-settings:network-ethernet", icon: <Cable size={14} strokeWidth={2.3} color="#38BDF8" /> },
                   { label: "Proxy", uri: "ms-settings:network-proxy", icon: <Globe size={14} strokeWidth={2.3} color="#FB7185" /> },
                 ].map((item) => (
-                  <button
+                  <button data-weight="light"
                     key={item.label}
                     type="button"
                     className="qs-win-item"
@@ -359,7 +364,7 @@ export const QuickSettingsSurface: React.FC = () => {
             <div
               key="pane-audio"
               className="qs-pane"
-              style={{ ["--qs-slide-from" as string]: "10px" }}
+              style={{ ["--qs-slide-from" as string]: `${SWAP_SHIFT}px` }}
             >
               <div className="qs-bars" style={{ gap: 7 }}>
                 <PillFillBar
@@ -419,7 +424,7 @@ export const QuickSettingsSurface: React.FC = () => {
               <AudioDeviceModule flow="capture" />
 
               <div className="qs-win-grid" style={{ marginTop: 2 }}>
-                <button
+                <button data-weight="light"
                   type="button"
                   className="qs-win-item"
                   onClick={() => openSetting("ms-settings:sound")}
@@ -427,7 +432,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   <Headphones size={14} strokeWidth={2.3} color="#38BDF8" />
                   <span>Sound Settings</span>
                 </button>
-                <button
+                <button data-weight="light"
                   type="button"
                   className="qs-win-item"
                   onClick={() => openSetting("ms-settings:sound-devices")}
@@ -443,7 +448,7 @@ export const QuickSettingsSurface: React.FC = () => {
             <div
               key="pane-quick"
               className="qs-pane"
-              style={{ ["--qs-slide-from" as string]: `${slideDir * 16}px` }}
+              style={{ ["--qs-slide-from" as string]: `${slideDir * SWAP_SHIFT}px` }}
             >
               <BatteryModule />
               <KeyboardLayoutModule />
@@ -472,7 +477,7 @@ export const QuickSettingsSurface: React.FC = () => {
                       Sound &amp; Mixer {sessions.length > 0 ? `(${sessions.length})` : ""}
                     </span>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!qs.muted}
@@ -548,7 +553,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   { label: "Storage", uri: "ms-settings:storagesense", icon: <HardDrive size={12} color="#94A3B8" /> },
                   { label: "Updates", uri: "ms-settings:windowsupdate", icon: <RefreshCw size={12} color="#34D399" /> },
                 ].map((item) => (
-                  <button
+                  <button data-weight="light"
                     key={item.label}
                     type="button"
                     className="qs-win-item"
@@ -561,7 +566,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 ))}
               </div>
 
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="qs-popout-btn"
                 onClick={() => openSetting("ms-settings:")}
@@ -577,12 +582,12 @@ export const QuickSettingsSurface: React.FC = () => {
             <div
               key="pane-theme"
               className="qs-pane"
-              style={{ ["--qs-slide-from" as string]: `${slideDir * 16}px` }}
+              style={{ ["--qs-slide-from" as string]: `${slideDir * SWAP_SHIFT}px` }}
             >
               <div className="qs-section-label">Visual Master Theme</div>
               <div className="qs-preset-grid">
                 {THEME_PRESETS.map((p) => (
-                  <button
+                  <button data-weight="heavy"
                     key={p.id}
                     type="button"
                     className={`qs-preset-card ${config.theme.preset === p.id ? "active" : ""}`}
@@ -671,7 +676,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     <div className="qs-row-title">Window buttons</div>
                     <div className="qs-row-sub">Yellow · Green · Red across all windows</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!!(config.windowControls.enabled)}
@@ -701,7 +706,7 @@ export const QuickSettingsSurface: React.FC = () => {
                       const cur = config.windowControls.order;
                       const active = id === "yellow-green-red" ? cur !== "green-yellow-red" && cur !== "red-yellow-green" : cur === id;
                       return (
-                        <button
+                        <button data-weight="medium"
                           key={id}
                           type="button"
                           className={`qs-seg-btn ${active ? "active" : ""}`}
@@ -719,7 +724,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     <div className="qs-row-title">Top Bar Auto-Hide</div>
                     <div className="qs-row-sub">Hide smoothly when windows overlap</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!!(config.topBar.autoHide === "overlap")}
@@ -744,7 +749,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     <div className="qs-row-title">Floating Top Bar</div>
                     <div className="qs-row-sub">Detached pill style with margin</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!!(config.topBar.floating)}
@@ -766,7 +771,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     <div className="qs-row-title">Hide Native Taskbar</div>
                     <div className="qs-row-sub">Auto-restores safely on exit</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!!(config.func.hideNativeTaskbar)}
@@ -791,7 +796,7 @@ export const QuickSettingsSurface: React.FC = () => {
                     <div className="qs-row-title">Run on Startup</div>
                     <div className="qs-row-sub">{startupBlock ?? "Launch Lens automatically with Windows"}</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     role="switch"
                     aria-checked={!!(config.func.runOnStartup)}
@@ -815,7 +820,7 @@ export const QuickSettingsSurface: React.FC = () => {
               <div className="qs-card">
                 <div className="qs-seg-row">
                   {FOLDER_THEMES.map((ft) => (
-                    <button
+                    <button data-weight="medium"
                       key={ft.id}
                       type="button"
                       className={`qs-seg-btn ${
@@ -843,7 +848,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 )}
               </div>
 
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="qs-popout-btn"
                 onClick={() => {
@@ -862,7 +867,7 @@ export const QuickSettingsSurface: React.FC = () => {
             <div
               key="pane-all"
               className="qs-pane"
-              style={{ ["--qs-slide-from" as string]: `${slideDir * 16}px` }}
+              style={{ ["--qs-slide-from" as string]: `${slideDir * SWAP_SHIFT}px` }}
             >
               <AccountModule />
 
@@ -904,7 +909,7 @@ export const QuickSettingsSurface: React.FC = () => {
                   { label: "Updates", uri: "ms-settings:windowsupdate", icon: <RefreshCw size={14} color="#34D399" /> },
                   { label: "Security", uri: "ms-settings:windowsdefender", icon: <Shield size={14} color="#60A5FA" /> },
                 ].map((item) => (
-                  <button
+                  <button data-weight="light"
                     key={item.label}
                     type="button"
                     className="qs-win-item"
@@ -916,7 +921,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 ))}
               </div>
 
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="qs-expand-btn"
                 onClick={() => {
@@ -931,7 +936,7 @@ export const QuickSettingsSurface: React.FC = () => {
                 <span style={{ fontSize: 10.5, color: "var(--lens-fg-muted)" }}>{config?.func.widgetsHotkey || "Ctrl+Alt+W"}</span>
               </button>
 
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="qs-popout-btn"
                 onClick={() => {
