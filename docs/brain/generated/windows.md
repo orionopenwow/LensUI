@@ -36,7 +36,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `magic` | no (on demand) | 360×440 |
 | `deskwidgets` | no (on demand) | 1280×720 |
 
-## Frontend routes (34) — `index.html?surface=<id>`
+## Frontend routes (35) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -74,3 +74,4 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `voicehud` | `./surfaces/VoiceHudSurface` | declared |
 | `studio` | `./studio/StudioSurface` | declared |
 | `conversation` | `./surfaces/ConversationSurface` | declared |
+| `iconsheet` | `./icons/IconSheetSurface` | built at runtime |
