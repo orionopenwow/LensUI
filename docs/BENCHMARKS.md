@@ -37,7 +37,30 @@ didn't come from us.
 
 ## Results
 
-RESULTS_PLACEHOLDER
+Run of 2026-11-27 on PR #132 (commit `17c68ba`), GitHub `windows-latest`
+(image `windows-2025-vs2026` 20261116.315.1), debug E2E build, system WebView2 runtime:
+
+| Scenario | Median | p95 | Samples |
+|---|---:|---:|---:|
+| Cold open, frame painted | 1,689 ms | — | 1 |
+| Cold open, first page complete | 2,278 ms | — | 1 |
+| RAM, 1 live tab | 274.6 MB | 276.9 MB | 5 |
+| RAM, 10 tabs (9 asleep) | 324.2 MB | 324.4 MB | 5 |
+| Tab switch (2 live tabs) | 53.3 ms | 65.5 ms | 20 |
+
+Read honestly:
+
+* **Memory is above the targets** in docs/LENS_BROWSER.md (≤ 180 MB with one tab, ≤ 220 MB with
+  ten, nine asleep). Part of it is the runner (software rendering with no GPU makes WebView2's GPU
+  process larger) and part is the working-set sum counting shared pages in each process; the
+  targets stay open until measured on a real PC with a private-bytes count.
+* **Sleeping tabs work as intended:** nine more tabs added about 50 MB in total (the tenth tab
+  live, the nine asleep hold no renderer).
+* **Tab switch** times are the round trip through Lens's IPC and the core moving native webviews,
+  in a debug build; the alternating pattern in the raw values (≈ 60 ms / ≈ 40 ms) is the two
+  directions of the switch.
+* **Cold open** includes creating the browser window and its WebView2 environment for the first
+  time in the session (a later open reuses it).
 
 ## Caveats
 

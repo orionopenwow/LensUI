@@ -176,7 +176,10 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
   `%APPDATA%\LensUI\cli\shots`. Selection and Magic actions from the CLI: **not built** (needs a
   target-window design).
 - Benchmarks — works (CI): `tools/perf/browser-bench.mjs` in the Windows E2E job (cold open, RAM
-  with 1 tab and 10 tabs/9 asleep, tab switch); method, runner and numbers in docs/BENCHMARKS.md.
+  with 1 tab and 10 tabs/9 asleep, tab switch); method, runner and numbers in docs/BENCHMARKS.md
+  (first run: cold open 1.7 s frame / 2.3 s first page, 275 MB with 1 tab, 324 MB with 10 tabs/9
+  asleep, tab switch 53 ms median: memory is above the LENS_BROWSER.md targets on the GPU-less
+  runner; to be checked on a real PC).
   Lens-only numbers; no competitor comparison (not measurable the same way on CI).
 - Privacy — works: docs/LENS_BROWSER.md › Privacy and Settings › Lens Browser › Privacy list
   exactly what Lens Browser sends (filter lists, site icons, update check) and show this
