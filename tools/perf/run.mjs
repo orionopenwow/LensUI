@@ -59,7 +59,59 @@ async function dashboardWarmOpens(p, n = 7) {
   return 0;
 }
 
+/** Rapid presses (DESIGN.md §5.4): down/up pairs faster than the 90 ms minimum hold, across controls. */
+async function rapidPresses(p, selectors, n = 24) {
+  const boxes = [];
+  for (const s of selectors) {
+    const all = p.locator(s);
+    const count = Math.min(await all.count(), 4);
+    for (let i = 0; i < count; i++) {
+      const b = await all.nth(i).boundingBox({ timeout: 2000 }).catch(() => null);
+      if (b && b.width && b.y + b.height < (p.viewportSize()?.height ?? 9999)) boxes.push(b);
+    }
+  }
+  if (!boxes.length) throw new Error(`nothing to press: ${selectors.join(", ")}`);
+  for (let i = 0; i < n; i++) {
+    const b = boxes[i % boxes.length];
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await p.mouse.down();
+    await p.waitForTimeout(i % 3 === 0 ? 120 : 25);
+    await p.mouse.up();
+    await p.waitForTimeout(40);
+  }
+  await p.waitForTimeout(300);
+  return n;
+}
+
+/** A pop-out growing from its bar button and returning to it, as the backend drives it. */
+async function popoutGrow(p, label, n = 5) {
+  for (let i = 0; i < n; i++) {
+    await p.evaluate((l) => {
+      window.__lensEmit("lens://surface-origin", { label: l, left: window.screenX + window.innerWidth - 60, top: window.screenY - 30, width: 28, height: 26, at: Date.now() });
+      window.__lensEmit("lens://surface-glide", { label: l, state: "pre" });
+      requestAnimationFrame(() => window.__lensEmit("lens://surface-glide", { label: l, state: "open" }));
+    }, label);
+    await p.waitForTimeout(420);
+    await p.evaluate((l) => window.__lensEmit("lens://surface-glide", { label: l, state: "closing" }), label);
+    await p.waitForTimeout(260);
+  }
+  return n;
+}
+
 const SCENARIOS = {
+  // The feel (DESIGN.md §5.4): weighted presses on the kit and on Settings' own controls, and a
+  // Quick settings pop-out growing from its trigger, all within the frame budget.
+  "feel-rapid-press": {
+    surface: "feel",
+    page: "feel/index.html",
+    query: "mode=demo",
+    run: (p) => rapidPresses(p, ['[data-demo="medium"]', '[data-demo="heavy"]', '[role="switch"]', '[data-demo="trigger"]']),
+  },
+  "feel-settings-press": {
+    surface: "settings",
+    run: (p) => rapidPresses(p, [".sh-pagehead .cc-chip", ".cc-content [data-weight='medium']", ".cc-content [data-weight='light']"], 18),
+  },
+  "feel-popout-grow": { surface: "quicksettings", run: (p) => popoutGrow(p, "quicksettings") },
   "dashboard-warm-open": {
     surface: "dashboard",
     query: "magic=dashboard,widgets&dashdata=1",
@@ -193,7 +245,7 @@ const browser = await launch();
 
 async function measure(name, sc) {
   // Instrument and throttle, then reload so first paint is measured on the slow machine too.
-  const page = await openSurface(browser, server.base, { surface: sc.surface, query: sc.query || "", settle: 0 });
+  const page = await openSurface(browser, server.base, { surface: sc.surface, page: sc.page, query: sc.query || "", settle: 0 });
   await page.addInitScript(instrument);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: sc.throttle ?? THROTTLE });

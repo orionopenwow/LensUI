@@ -259,12 +259,8 @@ html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background:
 .lm-line-sub { display: block; margin-top: 4px; font-size: 0.55em; font-weight: 600; letter-spacing: 0; color: var(--lm-ink-2); }
 .lm-lyric-consent { margin: 4px 0 12px; max-width: 460px; }
 
-/* ---- press weight (DESIGN.md §5.2): sink on press, spring back on release; hover never scales */
-.lm-np [data-weight="medium"], .lm-np [data-weight="heavy"] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background-color var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-fast) var(--lens-ease-out); }
-.lm-np [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); filter: none; transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
-.lm-np [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.25); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
-.lm-np [data-weight="light"][data-pressed] { background-color: rgb(255 255 255 / 0.06); }
-.lm-np .lm-line[data-weight="light"][data-pressed] { background: none; opacity: 1; }
+/* Press weights come from the shared feel system (src/ui/press, DESIGN.md §5.2): controls here
+   only declare data-weight. */
 
 /* ---- Settings › Music additions (MusicSettingsExtras.tsx) */
 .lm-set-row { margin-top: 12px; gap: 16px; }
@@ -285,9 +281,6 @@ html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background:
 .lm-tweaks > summary::after { content: "›"; transition: transform var(--lens-dur-fast) var(--lens-ease-out); }
 .lm-tweaks[open] > summary::after { transform: rotate(90deg); }
 .lm-tweaks-group { margin-top: 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--lens-fg-secondary); }
-.cc-card [data-weight="medium"][data-pressed], .lm-setup [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); transition: transform var(--lens-dur-instant) var(--lens-ease-out); }
-.cc-card [data-weight="heavy"][data-pressed], .lm-setup [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); transition: transform var(--lens-dur-instant) var(--lens-ease-out); }
-.lm-setup [data-weight="medium"], .lm-setup [data-weight="heavy"] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring); }
 .lm-mode-compact .lm-lyric-head { display: none; }
 .lm-mode-fullscreen .lm-main { position: relative; }
 .lm-mode-fullscreen .lm-lyric-head { position: absolute; top: 24px; right: 24px; z-index: 2; padding: 0; }

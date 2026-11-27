@@ -221,7 +221,7 @@ export const SoundPage: React.FC<PageProps> = ({ section }) => {
           <div className="sh-mix-head">
             <span>Output</span>
             {switchTarget && (
-              <button type="button" className="cc-chip compact sh-switch" onClick={() => pickOutput(switchTarget.id)}>
+              <button data-weight="light" type="button" className="cc-chip compact sh-switch" onClick={() => pickOutput(switchTarget.id)}>
                 <ArrowLeftRight size={12} aria-hidden /> Switch to {switchTarget.name}
               </button>
             )}
@@ -229,7 +229,7 @@ export const SoundPage: React.FC<PageProps> = ({ section }) => {
           {outs.data && !outs.data.canSwitch && <StateNote kind="unavailable">This version of Windows doesn't let apps switch the output; pick it in Windows Settings.</StateNote>}
           <div className="sh-devices" role="radiogroup" aria-label="Output device">
             {outs.data?.devices.map((d) => (
-              <button
+              <button data-weight="medium"
                 key={d.id}
                 type="button"
                 role="radio"

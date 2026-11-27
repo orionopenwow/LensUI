@@ -29,6 +29,18 @@ up and migrates `%APPDATA%\LensUI` where it can.
   listening hides it.
 - **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
   time) and a Tweaks section that groups the advanced options.
+- **Controls you can feel.** Buttons, tiles, chips, switches and rows in Settings, setup, Quick
+  settings and Search now press like a well-made key: they sink the moment you press (mouse, touch
+  or Space/Enter), stay visibly pressed for at least 90 ms even on the fastest click, and spring
+  back with a small, damped settle. Three weights: rows and tabs only darken a step, buttons sink a
+  little, primary and destructive actions sink deeper. A button that starts work stays pressed
+  until it's done and shows a small spinner after 300 ms, without changing size. Switch knobs
+  squash slightly as you press and travel with the spring; segmented choices slide their
+  highlight to the new option; sliders grow a pixel while you hold them. With reduced motion,
+  presses show only the colour step.
+- **Things come from somewhere.** Quick settings and Search grow out of the Top Bar button that
+  opened them and shrink back into it when they close; Settings pages and setup steps slide in the
+  direction you're going. The windows themselves never move or resize during the motion.
 - **Magic selection bar and Magic Search (off by default).** Turn it on in Settings › AI &
   Command › Selection bar. Select text anywhere and a small matte bar appears just below it:
   Cut, Copy and Paste (only when they'd work, sent to the app you're in, which keeps the focus),

@@ -28,7 +28,7 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
       </Section>
       <Section id="setup" title="Setup" summary="Dock, colours and extras, nothing changes until Finish" forceOpen={section === "setup"}>
         <Row label="Run setup again" desc="Pick a Dock, colours and optional extras. Skipping keeps everything as it is.">
-          <button type="button" className="cc-btn" data-setup-open onClick={() => void emit("lens://setup-open", true)}>
+          <button data-weight="medium" type="button" className="cc-btn" data-setup-open onClick={() => void emit("lens://setup-open", true)}>
             Run setup
           </button>
         </Row>
@@ -39,7 +39,7 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
       </Section>
       <Section id="selftest" title="Self-test" summary="Checks Lens without changing anything" forceOpen={section === "selftest"}>
         <Row label="Run self-test" desc="Report a problem (above) can attach it for you.">
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn"
             disabled={running}
@@ -59,7 +59,7 @@ export const AboutPage: React.FC<PageProps> = ({ section, config, updateConfig }
       <Section id="backup" title="Back up & restore" summary="Settings, themes and Remove all Lens changes" defaultOpen={section === "backup"} forceOpen={section === "backup"}>
         <BackupRestoreCard />
         <Row label="Restore Windows settings changed here" desc="Startup apps and animation effects go back to how Windows had them.">
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn"
             onClick={() =>

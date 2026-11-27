@@ -8,7 +8,6 @@ import { ambientField, controlsHidden, immersiveModel, lineText, lyricWindow, or
 import { heroBackgrounds, pickTint, textOn, worstContrast } from "../music/tint";
 import { chooseProvider, defaultLanguage, numberedLines, parseTranslation, providerLabel, translatePrompt, translationKey } from "../music/translate";
 import { setupSteps, setupSummary } from "../music/setup";
-import { holdLeft, MIN_PRESS_MS } from "../music/press";
 import { isImmersivePhrase, immersiveTemplates, isImmersiveStub } from "../music/command";
 
 const rgb = (h: string) => hexToRgb(h)!;
@@ -191,13 +190,6 @@ describe("first-run setup, press weight, Command", () => {
     expect(off).toEqual(["Lens Music is off: turn it on at the top when you want it."]);
     const on = setupSummary({ enabled: true, lyrics: true, lyricsLrclib: false, lyricsFolder: "C:\\L", lastfm: true, discord: true });
     expect(on).toEqual(["Lens Music is on.", "Synced lyrics from your folder only.", "Scrobbling to Last.fm.", "Showing on Discord."]);
-  });
-
-  test("a press stays visible for at least 90 ms", () => {
-    expect(MIN_PRESS_MS).toBe(90);
-    expect(holdLeft(1000, 1010)).toBe(80);
-    expect(holdLeft(1000, 1200)).toBe(0);
-    expect(holdLeft(1000, 990)).toBe(90);
   });
 
   test("Command opens Immersive on exact phrases only, while Music is on", () => {

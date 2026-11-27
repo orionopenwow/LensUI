@@ -41,11 +41,11 @@ export const MoreOptions: React.FC<{
           <div className="ss-more-sub">{summary}</div>
         </div>
         {open && onReset && (
-          <button type="button" className="ss-more-reset" onClick={onReset}>
+          <button data-weight="medium" type="button" className="ss-more-reset" onClick={onReset}>
             <RotateCcw size={12} aria-hidden /> Reset
           </button>
         )}
-        <button type="button" className="ss-more-btn" aria-expanded={open} aria-controls="ss-more-body" onClick={() => onToggle(!open)}>
+        <button data-weight="medium" type="button" className="ss-more-btn" aria-expanded={open} aria-controls="ss-more-body" onClick={() => onToggle(!open)}>
           {open ? "Hide" : "Show"} <ChevronDown size={14} aria-hidden className="ss-more-chev" />
         </button>
       </div>

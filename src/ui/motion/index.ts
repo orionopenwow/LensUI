@@ -15,6 +15,11 @@ export { useSurfaceTransition, useSurfaceExitAck } from "./useSurfaceTransition"
 export type { SurfacePhase } from "./useSurfaceTransition";
 export { springAt, springDuration, springEasing } from "./spring";
 export type { SpringOptions } from "./spring";
-export { duration, ease, reducedMotion, parseMs, DURATION_MS, EASE } from "./tokens";
-export type { DurationToken, EaseToken } from "./tokens";
+export { duration, ease, reducedMotion, parseMs, pressMs, releaseMs, DURATION_MS, EASE, PRESS_MS, PRESS_WEIGHT } from "./tokens";
+export type { DurationToken, EaseToken, PressToken, PressWeight } from "./tokens";
 export { fillStyle } from "./fill";
+export { growPose, growFrom, returnTo, staggerDelay, staggerStep, staggerIn, swapDirection, swapPose, swapIn, STAGGER_CAP, SWAP_SHIFT, GROW_MIN_SCALE, GROW_MAX_SHIFT } from "./flow";
+export type { GrowPose, SwapDirection } from "./flow";
+export { installOriginBeacon, useGrowFromTrigger, localOrigin, layoutBox, ORIGIN_EVENT, ORIGIN_MAX_AGE_MS } from "./origin";
+export type { SurfaceOrigin } from "./origin";
+export { useSlidingIndicator, indicatorBox } from "./indicator";

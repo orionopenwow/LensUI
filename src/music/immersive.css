@@ -205,11 +205,9 @@
 .lm-imm-nudge, .lm-imm-views { display: inline-flex; align-items: center; gap: 6px; color: var(--imm-ink-2); }
 .lm-imm-nudge-val { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 56px; text-align: center; }
 
-/* ---- press weight (DESIGN.md §5.2): sink on press, spring back on release */
-.lm-imm [data-weight] { transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background-color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-base) var(--lens-ease-out); }
-.lm-imm [data-weight="medium"][data-pressed] { transform: translate3d(0, 1px, 0) scale(0.97); background-color: var(--imm-fill-press); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
-.lm-imm [data-weight="heavy"][data-pressed] { transform: translate3d(0, 1.5px, 0) scale(0.955); box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.25); transition-duration: var(--lens-dur-instant); transition-timing-function: var(--lens-ease-out); }
+/* Press weights: the shared feel system (src/ui/press); keyboard focus ring here. */
 .lm-imm [data-weight]:focus-visible { outline: 2px solid var(--imm-accent); outline-offset: 2px; }
+.lm-imm-btn, .lm-imm-chip { transition: background-color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-base) var(--lens-ease-out); }
 
 @media (max-width: 900px) {
   .lm-imm-stage { grid-template-columns: minmax(0, 1fr); gap: 3vh; padding: 6vh 6vw 22vh; justify-items: center; text-align: center; }

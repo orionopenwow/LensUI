@@ -69,6 +69,8 @@ export const FillSlider: React.FC<{
       <div
         ref={barRef}
         className={`sh-fill-bar ${dragging ? "is-dragging" : ""}`}
+        data-grab="y"
+        data-grabbed={dragging || undefined}
         role="slider"
         tabIndex={disabled ? -1 : 0}
         aria-label={label}
@@ -115,7 +117,7 @@ export const BarButton: React.FC<{ label: string; active?: boolean; onClick: () 
   onClick,
   children,
 }) => (
-  <button type="button" className={`sh-barbtn ${active ? "active" : ""}`} aria-label={label} aria-pressed={active} onClick={onClick}>
+  <button data-weight="medium" type="button" className={`sh-barbtn ${active ? "active" : ""}`} aria-label={label} aria-pressed={active} onClick={onClick}>
     {children}
   </button>
 );
