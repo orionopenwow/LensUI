@@ -53,7 +53,7 @@ Everything is off until opened, and nothing installs without a click.
 |---|---|
 | `apps_catalog` | The bundled catalogue. |
 | `apps_catalog_refresh` | Disabled until signed catalogues land; returns a plain message. |
-| `apps_settings_get` / `apps_settings_set` | `{autoUpdate: false, checkUpdates: "weekly", showNonOpenSource: true, liveThumbnails: true}`. `autoUpdate` and `checkUpdates` are stored but read by nothing and have no switch (B-122). |
+| `apps_settings_get` / `apps_settings_set` | `{autoUpdate: false, checkUpdates: "weekly", showNonOpenSource: true, liveThumbnails: true}`. `autoUpdate` is the opt-in "Update apps automatically" switch (off by default; read by `useAppsController` when Lens Apps checks, B-122). `checkUpdates` is stored but read by nothing and has no switch. |
 | `apps_installed` | One `winget list`, giving installed and available versions of catalogue apps. |
 | `apps_lens_installed` | Ids Lens installed. |
 | `apps_audit` | The audit log. |

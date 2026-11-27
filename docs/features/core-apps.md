@@ -124,7 +124,7 @@ Lens's look, keyboard map and safety rules.
   shelf and for winget not answering. Opens directly with `?surface=apps&view=library`.
 - **Credits and licence (new).** Detail page section: made by, publisher, source, licence family in
   plain words (`licence.ts`: permissive / weak copyleft / copyleft / network copyleft / free, not
-  open source / see the project), a caveat when `licenseVerified` is false (46 of 52 today), media
+  open source / see the project), a caveat when `licenseVerified` is false (4 of 53 today: Inkscape, Obsidian, Everything, LM Studio), media
   credit and the not-affiliated line. Never legal advice; never claims an unchecked licence.
 - **Gallery (new).** All official screenshots and the demo loop with previous/next, dots, arrow
   keys, image credit; auto-advance stops when you take over, pauses while hidden, off with reduced
@@ -138,12 +138,17 @@ Lens's look, keyboard map and safety rules.
   (checksum + signature) then asked again.
 - Queue + download tray + post-install checklist; keyboard (`/`, Enter, Ctrl+Enter, Esc, arrows).
 - Recipes reversible and in Remove all (B-08 fixed).
+- **Updates (B-122 decided):** manual by default. Lens checks when Lens Apps opens or on Check
+  again; an app with an update shows "Update available" and a one-click Update (winget apps; a
+  GitHub release still shows its checks first). **Update apps automatically** in Settings › Apps is
+  opt-in and off by default: when on, each check also updates the winget apps Lens installed, once
+  per app per session; apps you installed yourself always wait.
 - **not built:** catalogue refresh (`apps_catalog_refresh` disabled until a minisign-signed
-  `catalog.json` is published); background update checks and unattended updates (the two switches
-  that pretended to do this are removed, B-122; decision **open**); release notes per update;
-  wiring `parseAppsIntent` ("update all my apps", "/apps") into Command and voice (`src/command`
-  is owned by other open PRs); licence verification for the 46 unchecked entries
-  (`tools/apps/make_catalog.py`, owner: catalogue).
+  `catalog.json` is published); checks in the background while Lens Apps is closed; release notes
+  per update; wiring `parseAppsIntent` ("update all my apps", "/apps") into Command and voice
+  (`src/command` is owned by other open PRs); licence verification for the last 4 entries
+  (Inkscape's own repository is on GitLab, which Lens's checks couldn't read; Obsidian, Everything
+  and LM Studio are closed source, so their terms are on their sites).
 
 ### 2.14 Portable installs + ThumbDesk — works (harness)
 - `"portable": true` keeps the verified exe in `%APPDATA%\LensUI\apps\portable\<id>\`; Uninstall
@@ -182,15 +187,15 @@ Lens's look, keyboard map and safety rules.
 | S1 | — fixed (Fable pass) | `browser/titles.rs`, `messages/spaces.rs`, `commands/messages.rs` | `messages_space_title` had no caller; a WebView2 `DocumentTitleChanged` watcher on every tab now reports titles (count only). Tests: `messages/tests.rs`. Needs a real-PC check with signed-in Slack/Discord tabs |
 | S2 → B-124, B-125 | — fixed (deep Fable pass) | `coreapps/timers.rs`, `commands/coreapps.rs` | alarms kept the UTC offset they were set with, so they rang an hour off after a clock change; a ring after sleep didn't say it was late; one waiting alarm kept the thread ticking every second. Fixed with tests; needs a real sleep/resume and a clock change |
 | S3 | Low, eased | Notes stickies | a click-through sticky can only be made clickable again from Lens Notes. Notes now has a visible "Make stickies clickable" button (was shortcut only). Still true: with Notes closed you have to open it first; a tray or Command entry would close this (tray and Command are outside this pass's files) |
-| B-121, B-122, B-123 | — fixed (deep Fable pass) | `src/apps/*`, `src/components/AppsCard.tsx` | portable apps couldn't be removed from the store and failures were silent; two update settings did nothing; the detail page lost the keyboard |
+| B-121, B-122, B-123 | — fixed (deep Fable pass) | `src/apps/*`, `src/components/AppsCard.tsx` | portable apps couldn't be removed from the store and failures were silent; two update settings did nothing (now: manual by default, opt-in automatic updates); the detail page lost the keyboard |
 | S4 | — not a bug | `feeds/oauth.rs` loopback | checked in the Fable pass: Feeds binds port 0 (any free port) and reports a bind failure, so a busy port can't break it |
 | B-18 share | — fixed (deep Fable pass) | `src/coreapps`, `src/apps`, `src/feeds`, `src/messages`, cards | swallowed errors: zero left, kept there by `appsFamily.test.ts`. `MessagingHubPane.tsx` (9) is not part of this family's files and is still open |
 
 ### What is left (ranked, after the deep Fable pass)
 1. **Real-PC proof**: a winget install → update → Update all → uninstall; ThumbDesk Get → Remove; an alarm across sleep and across a clock change.
-2. **Licence verification for the catalogue** (46 of 52 are unchecked, and the app now says so on every one): read each LICENSE at the pinned commit in `tools/apps/make_catalog.py`.
+2. **Licence verification for the catalogue**: 49 of 53 read from each project's own repository (27 November 2026); left: Inkscape (GitLab), Obsidian, Everything and LM Studio (closed source, terms on their sites).
 3. **Agent-ready Library** (COMBINATOR §7): wire `parseAppsIntent` to Command and voice, add a control-catalogue entry and an MCP tool for "list updates" / "update all" (approval card already exists).
-4. **Decide B-122**: background update checks and unattended updates, or never.
+4. ~~**Decide B-122**~~: decided and built: manual by default, opt-in "Update apps automatically" (off by default).
 5. **Release notes per update** (needs the release page in each catalogue entry so `apps_open_link` allows it).
 6. **Today strip** (section 6) and core-app primitives onto `src/ui` once the feel system (#131) is merged.
 7. **Per-app bandwidth** in Network; Telegram; signed catalogue refresh.
