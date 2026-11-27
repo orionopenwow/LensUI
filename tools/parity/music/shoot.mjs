@@ -39,6 +39,8 @@ const SHOTS = [
   ["imm-small", "imm", 900, 640, null, false],
   ["np-theme-accent", "np-theme-accent", 1440, 860, null, false],
   ["card-setup", "card-setup", 760, 2400, null, false],
+  // Tester mode: Lens Remote on with its pairing code, and the Equalizer APO bridge.
+  ["card-tester", "card-tester", 760, 3200, null, false],
 ];
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".ini": "text/plain" };

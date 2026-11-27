@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type {
-  DiscordStatus, LastfmStatus, LyricOffset, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyBegin, SpotifyStatus, TrackItem,
+  DiscordStatus, EqStatus, LastfmStatus, RemoteInfo, LyricOffset, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyBegin, SpotifyStatus, TrackItem,
 } from "../types/generated";
 import { livePosition } from "./model";
 
-export type { DiscordStatus, LyricOffset };
+export type { DiscordStatus, EqStatus, LyricOffset, RemoteInfo };
 export type { MusicConfig, NowPlaying, LyricsResult, Played, Queue, TrackItem, PlaylistItem, SpotifyStatus, SpotifyBegin, LastfmStatus, SpicetifyPreview };
 
 export const EVENT_NOW = "lens://music/now";
@@ -45,7 +45,16 @@ export const music = {
   discordStatus: () => invoke<DiscordStatus>("music_discord_status"),
   /** Opens Immersive on the monitor under the pointer; rejects with a sentence when a fullscreen app is in front. */
   immersiveOpen: (from: "nowplaying" | "dock" | "command") => invoke<void>("music_immersive_open", { from }),
+  remoteStart: () => invoke<RemoteInfo>("music_remote_start"),
+  remoteStop: () => invoke<RemoteInfo>("music_remote_stop"),
+  remoteStatus: () => invoke<RemoteInfo>("music_remote_status"),
+  remotePair: () => invoke<RemoteInfo>("music_remote_pair"),
+  eqStatus: () => invoke<EqStatus>("music_eq_status"),
+  eqSet: (preset: string) => invoke<EqStatus>("music_eq_set", { preset }),
+  eqOpenEditor: () => invoke<void>("music_eq_open_editor"),
 };
+
+export const EVENT_REMOTE = "lens://music/remote";
 
 export interface SpicetifyTokens {
   base: string;

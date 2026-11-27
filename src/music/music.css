@@ -284,3 +284,12 @@ html.lm-desk-page, html.lm-desk-page body, html.lm-desk-page #root { background:
 .lm-mode-compact .lm-lyric-head { display: none; }
 .lm-mode-fullscreen .lm-main { position: relative; }
 .lm-mode-fullscreen .lm-lyric-head { position: absolute; top: 24px; right: 24px; z-index: 2; padding: 0; }
+
+/* ---- Lens Remote and Equalizer rows */
+.lm-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--lens-border, rgb(255 255 255 / 0.12)); font-size: 10px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--lens-fg-secondary); }
+.lm-remote-risk { margin-top: 6px; }
+.lm-remote-risk > summary { cursor: pointer; }
+.lm-remote-pair { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+.lm-remote-qr { width: 148px; height: 148px; border-radius: 8px; flex: 0 0 auto; image-rendering: pixelated; }
+.lm-eq-presets { margin-top: 10px; }
+.lm-remote-url { word-break: break-all; }

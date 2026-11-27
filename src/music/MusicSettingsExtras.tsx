@@ -3,7 +3,12 @@
 // program or service starts off and says what it sends. Rendered inside MusicCard.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { glide } from "../ui/motion";
-import { music, type DiscordStatus, type MusicConfig } from "./api";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { openExternal } from "../ai/open";
+import { EVENT_REMOTE, music, type DiscordStatus, type EqStatus, type MusicConfig, type RemoteInfo } from "./api";
+import { encodeQr, qrSvg } from "./qr";
+import { remoteLine } from "./remoteText";
 import { defaultLanguage } from "./translate";
 import { setupSteps, type SetupStep } from "./setup";
 
@@ -81,8 +86,8 @@ export const MusicSetup: React.FC<{ cfg: MusicConfig; save: Save; spotifyConnect
             <Row label="Discord" desc="Shows what you're listening to on your Discord profile, through the Discord app on this PC. Needs your own Discord application ID.">
               <button type="button" data-weight="medium" className="cc-btn cc-btn-ghost" onClick={() => scrollToGuide("music.discord")}>Set up…</button>
             </Row>
-            <Row label="Control from your phone" desc="Lens Remote, a small remote on your home network, is planned for a later update. Nothing listens on the network today.">
-              <span className="cc-desc">Later</span>
+            <Row label="Control from your phone" desc="Lens Remote, a small remote on your home network, is a Tester mode preview for now (Settings › About & Testing). It stays off until you turn it on further down.">
+              <span className="cc-desc">Preview</span>
             </Row>
           </>
         )}
@@ -200,6 +205,114 @@ export const MusicDiscordRows: React.FC<{ cfg: MusicConfig; save: Save; off: boo
           <div className="cc-desc">Artwork: Discord can only show pictures from the web, so it shows the album art when Spotify is connected (Discord loads it from Spotify) and no picture otherwise.</div>
         </>
       )}
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------------------ Lens Remote (Tester mode)
+
+export const MusicRemoteRows: React.FC<{ cfg: MusicConfig; save: Save; off: boolean; tester: boolean }> = ({ cfg, save, off, tester }) => {
+  const [info, setInfo] = useState<RemoteInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    music.remoteStatus().then(setInfo).catch(() => {});
+    const un = listen<RemoteInfo>(EVENT_REMOTE, (e) => setInfo(e.payload));
+    // Status text only: refreshed while this page is open (phones paired, the code used up).
+    const t = window.setInterval(() => music.remoteStatus().then(setInfo).catch(() => {}), 2000);
+    return () => {
+      window.clearInterval(t);
+      un.then((f) => f()).catch(() => {});
+    };
+  }, []);
+  if (!tester) return null;
+  const qr = info?.pairUrl ? qrDataUrl(info.pairUrl) : null;
+  const run = (p: Promise<RemoteInfo>) => p.then((i) => (setInfo(i), setError(null))).catch((e) => setError(String(e)));
+  return (
+    <div data-guide-id="music.remote">
+      <div className="cc-label lm-settings-head">Lens Remote <span className="lm-badge">Tester preview</span></div>
+      <div className="cc-desc">
+        Control the music from your phone on the same home network: play, pause, skip, seek, volume and what's playing. Off until you turn it on, it stops by itself after {cfg.remoteIdleMin} minutes without use, and a Remote pill shows in the Top Bar while it's on.
+      </div>
+      <details className="lm-remote-risk">
+        <summary className="cc-desc">What this does and doesn't protect</summary>
+        <ul className="cc-desc lm-set-steps">
+          <li>Plain HTTP on your home network: there's no certificate Lens could use, so the traffic isn't encrypted. Someone who can read your Wi-Fi traffic could copy a phone's session and control playback until the Remote stops.</li>
+          <li>The QR code holds a one-time code; once a phone uses it, it's gone. At most three phones.</li>
+          <li>Only devices on the same home network (same /24) are answered; requests from elsewhere, from other websites or with a wrong code are refused, and too many wrong codes block that device for 5 minutes.</li>
+          <li>It can only do what your media keys and volume slider do.</li>
+          <li>Lens doesn't change the Windows Firewall. Windows may ask once whether Lens may use the network: allow Private networks only.</li>
+        </ul>
+      </details>
+      <Row label="Lens Remote" desc={remoteLine(info)}>
+        <Toggle on={!!info?.on} label="Lens Remote" disabled={off} onChange={(v) => run(v ? music.remoteStart() : music.remoteStop())} />
+      </Row>
+      {info?.on && (
+        <div className="lm-remote-pair">
+          {qr ? (
+            <>
+              <img className="lm-remote-qr" src={qr} alt="Pairing code for Lens Remote" />
+              <div className="cc-desc">Scan with your phone's camera, or open <span className="lm-mono lm-remote-url">{info.pairUrl}</span>. The code works once.</div>
+            </>
+          ) : (
+            <div className="cc-desc">The code was used. <button type="button" data-weight="medium" className="cc-btn cc-btn-ghost" onClick={() => run(music.remotePair())}>Pair another phone</button></div>
+          )}
+        </div>
+      )}
+      <Row label="Stop after" desc={`${cfg.remoteIdleMin} minutes without a request`}>
+        <input type="range" min={5} max={60} step={5} value={cfg.remoteIdleMin} disabled={off} aria-label="Stop Lens Remote after" onChange={(e) => save({ remoteIdleMin: Number(e.target.value) })} />
+      </Row>
+      {error && <div className="cc-desc lm-card-note error" role="alert">{error}</div>}
+    </div>
+  );
+};
+
+/** The pairing QR as an image (generated on this PC; nothing is fetched). */
+export function qrDataUrl(text: string): string | null {
+  try {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(qrSvg(encodeQr(text)))}`;
+  } catch {
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------------------ Equalizer (Equalizer APO bridge)
+
+export const MusicEqualizerRows: React.FC = () => {
+  const [eq, setEq] = useState<EqStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    music.eqStatus().then(setEq).catch(() => {});
+  }, []);
+  const set = (id: string) => music.eqSet(id).then((s) => (setEq(s), setError(null))).catch((e) => setError(String(e)));
+  return (
+    <div data-guide-id="music.equalizer">
+      <div className="cc-label lm-settings-head">Equalizer</div>
+      <div className="cc-desc">
+        Lens doesn't process sound itself. It works with <button type="button" className="md-link" onClick={() => openExternal("https://sourceforge.net/projects/equalizerapo/")}>Equalizer APO</button>, a free system-wide equalizer by Jonas Thedering: Lens switches its presets (10 bands, 32 Hz – 16 kHz) by adding one marked line to its config and one file beside it. Off takes exactly those out again, and so does Remove all Lens changes.
+      </div>
+      {!eq ? null : eq.installed ? (
+        <>
+          <div className="cc-chip-grid lm-eq-presets" role="radiogroup" aria-label="Equalizer preset">
+            <button type="button" role="radio" aria-checked={eq.active === ""} data-weight="medium" className={`cc-chip ${eq.active === "" ? "active" : ""}`} onClick={() => set("off")}>Off</button>
+            {eq.presets.map(([id, name]) => (
+              <button key={id} type="button" role="radio" aria-checked={eq.active === id} data-weight="medium" className={`cc-chip ${eq.active === id ? "active" : ""}`} onClick={() => set(id)}>{name}</button>
+            ))}
+          </div>
+          <div className="cc-row lm-set-inline">
+            <button type="button" data-weight="medium" className="cc-btn cc-btn-ghost" onClick={() => music.eqOpenEditor().catch((e) => setError(String(e)))}>Open Equalizer APO</button>
+            <span className="cc-desc">For your own curves, devices and filters.</span>
+          </div>
+        </>
+      ) : (
+        <div className="cc-row lm-set-inline">
+          <span className="cc-desc">Equalizer APO isn't installed.</span>
+          <button type="button" data-weight="medium" className="cc-btn" onClick={() => invoke("open_surface", { label: "apps" }).catch(() => openExternal("https://sourceforge.net/projects/equalizerapo/"))}>Get it in Lens Apps</button>
+        </div>
+      )}
+      <Row label="Spatial sound" desc="Windows Sonic and other spatial sound formats are switched per device in Windows; apps can't change them. This opens the page where you can.">
+        <button type="button" data-weight="medium" className="cc-btn cc-btn-ghost" onClick={() => invoke("open_windows_setting_cmd", { uri: "ms-settings:sound" }).catch(() => {})}>Sound settings</button>
+      </Row>
+      {error && <div className="cc-desc lm-card-note error" role="alert">{error}</div>}
     </div>
   );
 };

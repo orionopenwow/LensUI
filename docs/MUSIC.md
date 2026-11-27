@@ -32,8 +32,8 @@ Apple Music has no public Windows API for Lens to use, so it's "now playing via 
 | Speaker peak level (one number; no audio) | `music/levels.rs` |
 | Spicetify theme generator (export only) | `music/spicetify.rs`, `color.rs` |
 | MD5 / SHA-256 / base64url (std-only) | `music/hash.rs` |
-| Immersive, per-song lyric timing, translation cache, Discord Rich Presence | `music/immersive.rs`, `offsets.rs`, `translate.rs`, `discord.rs` |
-| Commands (37) | `src-tauri/src/commands/music.rs` |
+| Immersive, per-song lyric timing, translation cache, Discord Rich Presence, Lens Remote, Equalizer APO bridge | `music/immersive.rs`, `offsets.rs`, `translate.rs`, `discord.rs`, `remote.rs`, `eq.rs` |
+| Commands (44) | `src-tauri/src/commands/music.rs` |
 | UI | `src/music/NowPlaying.tsx`, `Immersive.tsx` (+ `immersiveModel.ts`, `immersive.css`), `tint.ts`, `translate.ts`, `useTranslation.ts`, `press.ts`, `command.ts`, `setup.ts`, `MusicSettingsExtras.tsx`, `MiniPlayer.tsx`, `music.css`, `themeFollow.ts`, `scene.ts`, `art.ts`, `model.ts`, `api.ts`, `src/components/MusicCard.tsx` |
 | Tests | Rust tests in each `music/*.rs`; `src/__tests__/music.test.ts`; gallery `tools/parity/music/` |
 
@@ -211,6 +211,36 @@ Settings › Music › **Show on Discord**: "Listening to …" on your Discord p
 
 Until finished or skipped, Settings › Music opens with a three-step **Set up Lens Music**: where your music comes from (Windows media = Lens Music itself, Spotify, your .lrc folder), lyrics and scrobbling (LRCLIB, Last.fm), share and control (Discord; a phone remote is planned and nothing listens on the network today). Every choice is a normal switch; nothing is turned on for you. The advanced options sit in a collapsible **Tweaks** section grouped as Look, Sources, Lyrics, Immersive and Playground.
 
+## Lens Remote (Tester mode preview)
+
+Control the music from a phone on the same home network. **Tester mode only for now** (Settings › About & Testing › Tester mode), and off until you turn it on in Settings › Music › Lens Remote. Why a preview: it serves plain HTTP on the LAN and hasn't been tried on real networks yet.
+
+- `music/remote.rs`: a tiny HTTP server on this PC's private LAN address (`lan_address()` picks the route Windows would use; nothing is sent), port 43120 or a free one. Standard library only. The page (`/`, `/remote.css`, `/remote.js`) loads nothing from the web.
+- **Pairing**: Settings shows a QR code (`src/music/qr.ts`, generated on this PC) for `http://<address>/pair?t=<one-time code>` (32 random bytes from the OS). Opening it swaps the code for an HttpOnly, SameSite=Strict session cookie tied to the phone's address; the code is then gone ("Pair another phone" makes a new one). At most 3 phones.
+- **Who may connect**: private IPv4 addresses on the same /24 as this PC, never this PC itself; the `Host` header must be this PC's address (no DNS rebinding); `POST /api/control` needs the `X-Lens-Remote: 1` header, which other websites' forms can't send.
+- **Limits**: 40 requests per 10 s per device; 5 wrong codes or sessions block the device for 5 minutes; headers ≤ 8 KB, bodies ≤ 1 KB.
+- **What it can do**: play/pause, next, previous, seek, volume, and read the title, artist, position and artwork. Nothing else in Lens is reachable.
+- **Stops by itself** after 10 minutes without a request (5–60 in Settings), and when Lens exits. While on, a **Remote on** pill shows in the Top Bar (next to the TEST BUILD badge) and Settings shows the address and the number of phones.
+- **Threat model, honestly**: there is no certificate a home network can offer, so traffic isn't encrypted. Someone who can read your Wi-Fi traffic could copy a phone's session cookie and control playback until the Remote stops. They can't reach anything else, and the Remote stops on its own.
+- **Firewall**: Lens never adds a firewall rule, so nothing goes in the change registry. Windows may ask once whether Lens may use the network: allow Private networks only. If you refuse, phones can't reach it.
+
+Commands: `music_remote_start` (refuses unless Tester mode and Music are on), `music_remote_stop`, `music_remote_status`, `music_remote_pair`; event `lens://music/remote`.
+
+## Equalizer (Equalizer APO bridge)
+
+Lens has no audio engine and never processes sound, so it doesn't offer an equalizer of its own. Settings › Music › **Equalizer** works with [Equalizer APO](https://sourceforge.net/projects/equalizerapo/) (GPL-2.0, by Jonas Thedering), a separate program you install:
+
+- Detected by its `config\config.txt` under Program Files. If it isn't installed: **Get it in Lens Apps** (a link to its official page; Lens doesn't bundle or run it).
+- Presets (10 bands, 32 Hz – 16 kHz, a negative preamp equal to the biggest boost so nothing clips): Flat, More bass, Clear voices, More treble, Late night. Choosing one writes `lens-music.txt` beside `config.txt` and adds one marked `Include: lens-music.txt` line at the end of `config.txt` (once). The first time, a copy of `config.txt` is kept in `%APPDATA%\LensUI\music\eqapo-config.before-lens.txt` for reference.
+- **Off** removes exactly the marked line and Lens's file; anything you changed in `config.txt` meanwhile stays. **Remove all Lens changes** does the same (change registry row `equalizer-apo-preset`).
+- **Open Equalizer APO** starts its own Configuration Editor for anything more.
+- If Windows won't let Lens write there, Lens says so (open the Editor once, or give your account write access to that folder).
+- **Spatial sound** (Windows Sonic and others) is set per device by Windows and apps can't switch it, so Lens opens Sound settings instead of pretending.
+
+Commands: `music_eq_status`, `music_eq_set(preset | "off")`, `music_eq_open_editor`.
+
 ## Credits
+
+Equalizer presets run on **Equalizer APO** by Jonas Thedering (GPL-2.0), which Lens bridges to and never bundles.
 
 Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were **learned from Cider** (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.
