@@ -99,7 +99,7 @@ export const LooksPanel: React.FC<{
     <aside className="bd-left" aria-label="Looks and presets">
       <div className="bd-tabs" role="tablist">
         {(["looks", "presets", "mine"] as Tab[]).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
+          <button data-weight="light" key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
             {t === "looks" ? `Looks ${MODES.length}` : t === "presets" ? `Presets ${presets.length}` : `Mine ${mine.length}`}
           </button>
         ))}
@@ -137,7 +137,7 @@ export const LooksPanel: React.FC<{
         {tab === "looks" &&
           (looks.length ? (
             looks.map((m) => (
-              <button key={m.id} role="option" aria-selected={current.mode === m.id} className={`bd-item ${current.mode === m.id ? "on" : ""}`} onClick={() => onPickMode(m.id)}>
+              <button data-weight="light" key={m.id} role="option" aria-selected={current.mode === m.id} className={`bd-item ${current.mode === m.id ? "on" : ""}`} onClick={() => onPickMode(m.id)}>
                 <Thumb svc={svc} state={lookStates.get(m.id)!} name={m.name} />
                 <span className="bd-item-text">
                   <b>{m.name}</b>
@@ -155,7 +155,7 @@ export const LooksPanel: React.FC<{
                 <div className="bd-group-title">{g === "Packs" ? "From your theme packs" : g}</div>
                 <div className="bd-grid">
                   {list.map((p) => (
-                    <button key={p.id} role="option" aria-selected={current.name === p.name} className="bd-tile" onClick={() => onPickState(p.state, p.name)}>
+                    <button data-weight="light" key={p.id} role="option" aria-selected={current.name === p.name} className="bd-tile" onClick={() => onPickState(p.state, p.name)}>
                       <Thumb svc={svc} state={p.state} name={p.name} />
                       <span>{p.name}</span>
                     </button>
@@ -174,11 +174,11 @@ export const LooksPanel: React.FC<{
                 if (!s) return null;
                 return (
                   <div key={p.id} className="bd-tile-wrap">
-                    <button role="option" aria-selected={false} className="bd-tile" onClick={() => onPickState(s, p.name)}>
+                    <button data-weight="light" role="option" aria-selected={false} className="bd-tile" onClick={() => onPickState(s, p.name)}>
                       <Thumb svc={svc} state={s} name={p.name} />
                       <span>{p.name}</span>
                     </button>
-                    <button className="bd-icon-btn small bd-tile-del" aria-label={`Delete ${p.name}`} onClick={() => onRemoveMine(p.id)}>
+                    <button data-weight="medium" className="bd-icon-btn small bd-tile-del" aria-label={`Delete ${p.name}`} onClick={() => onRemoveMine(p.id)}>
                       <Trash2 size={11} aria-hidden />
                     </button>
                   </div>

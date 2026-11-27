@@ -97,7 +97,7 @@
   width: calc((100% - 6px) / 3);
   height: calc(100% - 6px);
   border-radius: 7.5px;
-  background: var(--lens-fg);
+  background: var(--lens-accent-fill);
   box-shadow: 0 2px 8px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k)));
   transition: transform var(--lens-dur-base) var(--lens-ease-out);
   pointer-events: none;
@@ -124,7 +124,7 @@
 }
 
 .qs-flick-btn.active {
-  color: var(--lens-on-fg);
+  color: var(--lens-on-accent-fill);
 }
 
 .qs-body {
@@ -182,8 +182,8 @@
 }
 
 .qs-tile.active {
-  background: rgb(var(--lens-ink) / 0.11);
-  border-color: rgb(var(--lens-ink) / 0.22);
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash), rgb(var(--lens-ink) / 0.11));
+  border-color: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.22));
   color: var(--lens-fg);
 }
 
@@ -233,11 +233,15 @@
 }
 
 .qs-switch.on {
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
 }
 
 .qs-switch.amber.on {
   background: #fbbf24;
+}
+/* The knob on the amber Night light track is always dark, whatever the accent's own ink is. */
+.qs-switch.amber.on .qs-switch-knob {
+  background: #09090b;
 }
 
 .qs-switch-knob {
@@ -254,7 +258,7 @@
 
 .qs-switch.on .qs-switch-knob {
   transform: translateX(17px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 
 .qs-preset-grid {
@@ -285,7 +289,7 @@
 
 .qs-preset-card.active {
   background: rgb(var(--lens-ink) / 0.12);
-  border-color: var(--lens-fg);
+  border-color: var(--lens-accent-fill);
   color: var(--lens-fg);
 }
 
@@ -321,8 +325,8 @@
 }
 
 .qs-seg-btn.active {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 
 .qs-expand-btn {

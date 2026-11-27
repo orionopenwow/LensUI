@@ -27,7 +27,7 @@ export const TrafficLights: React.FC<TrafficLightsProps> = ({
       onMouseDown={(e) => e.stopPropagation()}
     >
       {buttons.map((b) => (
-        <button
+        <button data-weight="medium"
           key={b.id}
           type="button"
           aria-label={b.label}

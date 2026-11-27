@@ -62,7 +62,7 @@ export const ExportSheet: React.FC<{ state: BackdropState; onClose: () => void; 
       <div className="bd-sheet" role="dialog" aria-modal="true" aria-label="Export">
         <div className="bd-sheet-head">
           <b>Export</b>
-          <button type="button" className="bd-icon-btn" aria-label="Close" onClick={onClose} disabled={!!busy}>
+          <button data-weight="medium" type="button" className="bd-icon-btn" aria-label="Close" onClick={onClose} disabled={!!busy}>
             <X size={14} aria-hidden />
           </button>
         </div>
@@ -72,7 +72,7 @@ export const ExportSheet: React.FC<{ state: BackdropState; onClose: () => void; 
             <div className="bd-field-label">Size</div>
             <div className="bd-size-grid" role="radiogroup" aria-label="Size">
               {SIZES.map((s) => (
-                <button key={s.id} type="button" role="radio" aria-checked={size === s.id} className={size === s.id ? "on" : ""} onClick={() => setSize(s.id)}>
+                <button data-weight="light" key={s.id} type="button" role="radio" aria-checked={size === s.id} className={size === s.id ? "on" : ""} onClick={() => setSize(s.id)}>
                   <b>{s.label}</b>
                   <small>
                     {s.w}×{s.h}

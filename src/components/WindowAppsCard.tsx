@@ -80,7 +80,7 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             alone; that can't be switched off.
           </div>
         </div>
-        <button type="button" className="cc-btn-ghost" onClick={refresh}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={refresh}>
           Refresh
         </button>
       </div>
@@ -95,7 +95,7 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         </div>
         <div className="cc-chip-grid" role="radiogroup" aria-label="Window button side">
           {SIDES.map((s) => (
-            <button
+            <button data-weight="light"
               key={s.id}
               type="button"
               role="radio"
@@ -135,7 +135,7 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             ) : r.leftAlone ? (
               <span className="wa-badge">Left alone</span>
             ) : (
-              <button
+              <button data-weight="light"
                 type="button"
                 role="switch"
                 aria-checked={r.buttons}
@@ -164,7 +164,7 @@ export const WindowAppsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
               if (e.key === "Enter") addManual();
             }}
           />
-          <button type="button" className="cc-btn-ghost" disabled={!appKey(manual)} onClick={addManual}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={!appKey(manual)} onClick={addManual}>
             Add
           </button>
         </div>

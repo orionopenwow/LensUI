@@ -88,7 +88,7 @@ const AppList: React.FC<{ apps: string[]; placeholder: string; onChange: (apps: 
       {apps.map((a) => (
         <span key={a} className="cc-chip lens-app-chip">
           {a.replace(/\.exe$/, "")}
-          <button type="button" className="lens-app-chip-x" aria-label={`Remove ${a}`} onClick={() => onChange(apps.filter((x) => x !== a))}>
+          <button data-weight="light" type="button" className="lens-app-chip-x" aria-label={`Remove ${a}`} onClick={() => onChange(apps.filter((x) => x !== a))}>
             <X size={11} strokeWidth={2.6} />
           </button>
         </span>
@@ -104,7 +104,7 @@ const AppList: React.FC<{ apps: string[]; placeholder: string; onChange: (apps: 
             if (e.key === "Enter") add();
           }}
         />
-        <button type="button" className="cc-btn-ghost" aria-label={label} onClick={add}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" aria-label={label} onClick={add}>
           <Plus size={13} strokeWidth={2.6} />
         </button>
       </span>
@@ -148,7 +148,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Workspaces</div>
           <div className="cc-desc">Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={wsCfg.enabled}
@@ -175,7 +175,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             { id: "virtual-desktops", label: "Windows desktops" },
             { id: "groups", label: "Lens groups" },
           ].map((m) => (
-            <button key={m.id} type="button" className={`cc-chip ${wsCfg.mode === m.id ? "active" : ""}`} onClick={() => save({ mode: m.id })}>
+            <button data-weight="light" key={m.id} type="button" className={`cc-chip ${wsCfg.mode === m.id ? "active" : ""}`} onClick={() => save({ mode: m.id })}>
               {m.label}
             </button>
           ))}
@@ -188,7 +188,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         {wsCfg.workspaces.map((w, i) => (
           <div key={w.id} className={`lens-ws-item ${wsCfg.enabled && i === active ? "active" : ""}`}>
             <div className="lens-ws-head">
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="lens-ws-num"
                 style={{ background: w.color }}
@@ -207,7 +207,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
               />
               <span className="lens-ws-colors" role="radiogroup" aria-label="Colour">
                 {COLORS.slice(0, 5).map((c) => (
-                  <button
+                  <button data-weight="light"
                     key={c}
                     type="button"
                     role="radio"
@@ -220,7 +220,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                 ))}
               </span>
               {wsCfg.workspaces.length > 1 && (
-                <button
+                <button data-weight="medium"
                   type="button"
                   className="cc-btn-ghost"
                   aria-label={`Remove ${w.name}`}
@@ -234,11 +234,11 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             <div className="lens-ws-field">
               <span className="cc-desc">Layout</span>
               <div className="cc-chip-grid">
-                <button type="button" className={`cc-chip ${w.layout === "" ? "active" : ""}`} onClick={() => saveWs(i, { layout: "" })}>
+                <button data-weight="light" type="button" className={`cc-chip ${w.layout === "" ? "active" : ""}`} onClick={() => saveWs(i, { layout: "" })}>
                   Default
                 </button>
                 {TILING_LAYOUTS.map((l) => (
-                  <button key={l.id} type="button" className={`cc-chip ${w.layout === l.id ? "active" : ""}`} onClick={() => saveWs(i, { layout: l.id })}>
+                  <button data-weight="light" key={l.id} type="button" className={`cc-chip ${w.layout === l.id ? "active" : ""}`} onClick={() => saveWs(i, { layout: l.id })}>
                     {l.label}
                   </button>
                 ))}
@@ -271,7 +271,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Follow apps to their workspace</div>
           <div className="cc-desc">When an app with an &ldquo;Opens here&rdquo; rule starts, switch to its workspace instead of leaving it there minimised.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={wsCfg.followAssigned}
@@ -282,7 +282,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="cc-btn" disabled={wsCfg.workspaces.length >= MAX_WORKSPACES} onClick={addWorkspace}>
+        <button data-weight="medium" type="button" className="cc-btn" disabled={wsCfg.workspaces.length >= MAX_WORKSPACES} onClick={addWorkspace}>
           <Plus size={13} strokeWidth={2.6} style={{ marginRight: 5 }} /> Add Workspace
         </button>
       </div>
@@ -311,11 +311,11 @@ export const WorkspaceStrip: React.FC = () => {
         switchTo(e.deltaY > 0 || e.deltaX > 0 ? "next" : "prev", setStatus);
       }}
     >
-      <button type="button" className="topbar-icon-btn" style={{ height: 22, padding: "0 5px" }} aria-label="Previous workspace" onClick={() => switchTo("prev", setStatus)}>
+      <button data-weight="medium" type="button" className="topbar-icon-btn" style={{ height: 22, padding: "0 5px" }} aria-label="Previous workspace" onClick={() => switchTo("prev", setStatus)}>
         <ChevronLeft size={14} strokeWidth={2.3} />
       </button>
       {status.workspaces.map((w) => (
-        <button
+        <button data-weight="light"
           key={w.id}
           type="button"
           role="tab"
@@ -327,10 +327,10 @@ export const WorkspaceStrip: React.FC = () => {
           <span className="lens-ws-pill-label">{w.index === status.active ? w.name : w.index + 1}</span>
         </button>
       ))}
-      <button type="button" className="topbar-icon-btn" style={{ height: 22, padding: "0 5px" }} aria-label="Next workspace" onClick={() => switchTo("next", setStatus)}>
+      <button data-weight="medium" type="button" className="topbar-icon-btn" style={{ height: 22, padding: "0 5px" }} aria-label="Next workspace" onClick={() => switchTo("next", setStatus)}>
         <ChevronRight size={14} strokeWidth={2.3} />
       </button>
-      <button
+      <button data-weight="medium"
         type="button"
         className="topbar-icon-btn"
         style={{ height: 22, padding: "0 5px" }}

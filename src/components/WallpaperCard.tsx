@@ -96,7 +96,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             is never changed and comes back as soon as this is off.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${s.enabled ? "on" : ""}`}
           aria-label="Lens wallpaper"
@@ -116,7 +116,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           {files.map((f) => {
             const active = f.name === s.file;
             return (
-              <button
+              <button data-weight="medium"
                 key={f.path}
                 type="button"
                 onClick={() => save({ file: f.name })}
@@ -173,10 +173,10 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
       )}
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" className="cc-btn-ghost" onClick={refresh}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={refresh}>
           Refresh
         </button>
-        <button
+        <button data-weight="medium"
           type="button"
           className="cc-btn-ghost"
           onClick={() => invoke("open_wallpapers_folder_cmd").catch(() => {})}
@@ -190,7 +190,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         <div className="cc-label">Fit</div>
         <div className="cc-chip-grid">
           {FITS.map((f) => (
-            <button
+            <button data-weight="light"
               key={f.id}
               type="button"
               className={`cc-chip ${s.fit === f.id ? "active" : ""}`}
@@ -239,7 +239,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Pause when a window fills the screen</div>
           <div className="cc-desc">Stops video and HTML wallpapers while you can't see them.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${s.pauseWhenCovered ? "on" : ""}`}
           aria-label="Pause when covered"
@@ -251,7 +251,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Pause on battery</div>
           <div className="cc-desc">Saves power when unplugged.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${s.pauseOnBattery ? "on" : ""}`}
           aria-label="Pause on battery"
@@ -282,7 +282,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn"
             disabled={!measured}
@@ -298,7 +298,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Follow wallpaper accent</div>
           <div className="cc-desc">Re-colour Lens automatically whenever the Lens wallpaper changes.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${s.followAccent ? "on" : ""}`}
           aria-label="Follow wallpaper accent"
@@ -310,7 +310,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Accent from my Windows wallpaper</div>
           <div className="cc-desc">Works without the Lens wallpaper: samples the picture Windows is showing.</div>
         </div>
-        <button
+        <button data-weight="medium"
           type="button"
           className="cc-btn-ghost"
           disabled={busy}

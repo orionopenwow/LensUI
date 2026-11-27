@@ -4497,6 +4497,12 @@ export interface ThemeConfig {
    * Lens changes" puts Windows' accent back.
    */
   writeWindowsAccent: boolean;
+  /**
+   * "subtle" | "balanced" | "vivid": how much of the accent Lens's own surfaces show (switches,
+   * running marks and focus rings; then selected items and main buttons; then tints and hover).
+   * Colours inside Lens only; nothing in Windows changes.
+   */
+  accentStrength: string;
 }
 
 /** Rust: `win_themes::ThemeFileInfo` */

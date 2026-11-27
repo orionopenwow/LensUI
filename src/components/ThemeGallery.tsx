@@ -170,7 +170,7 @@ const PackCardBase: React.FC<{
   const small = size === "small";
   const look = featuredLook(pack.id);
   const card = (
-    <button
+    <button data-weight="medium"
       type="button"
       className={`tux-pack ${active ? "active" : ""} ${small ? "small" : ""} ${small && describe && pack.description ? "has-desc" : ""}`}
       aria-pressed={active}
@@ -208,7 +208,7 @@ const PackCardBase: React.FC<{
         <span className="tux-pack-credit" aria-label={`From ${src.name} by ${src.author}, ${src.license}`}>
           {src.author}
         </span>
-        <button
+        <button data-weight="light"
           type="button"
           className="cc-btn-ghost tux-pack-link"
           aria-label={`Open the original ${pack.label} theme by ${src.author}`}
@@ -278,7 +278,7 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
           </div>
         </div>
         {onClose && (
-          <button type="button" className="cc-btn-ghost tux-icon-btn" aria-label="Close all themes" onClick={onClose}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost tux-icon-btn" aria-label="Close all themes" onClick={onClose}>
             <X size={14} />
           </button>
         )}
@@ -287,7 +287,7 @@ export const ThemeGallery: React.FC<Props> = ({ config, onApply, windowsAccent, 
       <div className="tux-gallery-tools">
         <div className="tux-seg" role="tablist" aria-label="Filter themes">
           {FILTERS.filter((f) => f.id !== "custom" || counts.custom > 0).map((f) => (
-            <button
+            <button data-weight="light"
               key={f.id}
               type="button"
               role="tab"

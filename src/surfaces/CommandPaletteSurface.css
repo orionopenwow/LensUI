@@ -84,9 +84,9 @@
 }
 
 .pal-filter-pill.active {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  border-color: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 
 .pal-filter-count {
@@ -101,8 +101,8 @@
 }
 
 .pal-filter-pill.active .pal-filter-count {
-  background: rgb(9 9 11 / 0.14);
-  color: var(--lens-on-fg);
+  background: color-mix(in srgb, var(--lens-on-accent-fill) 14%, transparent);
+  color: var(--lens-on-accent-fill);
 }
 
 /* Launcher Home Grid (parity with concept mockup) */
@@ -346,8 +346,8 @@
 }
 
 .pal-result-row.selected {
-  background: rgb(var(--lens-ink) / 0.1);
-  border-color: rgb(var(--lens-ink) / 0.16);
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash), rgb(var(--lens-ink) / 0.1));
+  border-color: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.16));
 }
 
 /* ---- Unified search results (src/search) ---- */

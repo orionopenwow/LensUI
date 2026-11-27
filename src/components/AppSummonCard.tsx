@@ -24,7 +24,7 @@ const newId = () => `sum-${Date.now().toString(36)}-${Math.random().toString(36)
 const KeyRecorder: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => {
   const [recording, setRecording] = useState(false);
   return (
-    <button
+    <button data-weight="medium"
       type="button"
       className={`as-keys ${recording ? "recording" : ""}`}
       aria-label={`${label} shortcut: ${value ? hotkeyParts(value).join(" + ") : "none"}. Click, then press the keys.`}
@@ -102,7 +102,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             isn't running. Great for a drop-down terminal.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={as.enabled}
@@ -112,7 +112,9 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         />
       </div>
 
-      <div className={as.enabled ? "" : "pi-off"} aria-disabled={!as.enabled} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* B-58: off means dimmed, never click-dead. These options are set-up for later, so they stay
+          usable (mouse and keyboard alike) while the feature is off. */}
+      <div className={as.enabled ? "" : "pi-dim"} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {as.bindings.length > 0 && (
           <div className="as-list">
             {as.bindings.map((b) => {
@@ -145,7 +147,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                     </div>
                   </div>
                   <div className="as-row-actions">
-                    <button
+                    <button data-weight="light"
                       type="button"
                       role="switch"
                       aria-checked={b.enabled}
@@ -154,10 +156,10 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                       onClick={() => update(b.id, { enabled: !b.enabled })}
                     />
                     <div style={{ display: "flex", gap: 2 }}>
-                      <button type="button" className="pi-icon-btn" aria-label={`Try ${b.name || "app"}`} disabled={!b.path} onClick={() => tryIt(b)}>
+                      <button data-weight="medium" type="button" className="pi-icon-btn" aria-label={`Try ${b.name || "app"}`} disabled={!b.path} onClick={() => tryIt(b)}>
                         <Play size={13} strokeWidth={2.4} />
                       </button>
-                      <button
+                      <button data-weight="medium"
                         type="button"
                         className="pi-icon-btn"
                         aria-label={`Remove ${b.name || "app"}`}
@@ -175,7 +177,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
         <div className="as-presets">
           {unusedPresets.map((p) => (
-            <button key={p.path} type="button" className="cc-chip" onClick={() => add(p)}>
+            <button data-weight="light" key={p.path} type="button" className="cc-chip" onClick={() => add(p)}>
               <Plus size={12} strokeWidth={2.6} style={{ marginRight: 4, verticalAlign: -2 }} />
               {p.name}
               <span className="as-msg" style={{ marginLeft: 6 }}>
@@ -183,7 +185,7 @@ export const AppSummonCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
               </span>
             </button>
           ))}
-          <button type="button" className="cc-btn-ghost" onClick={() => add()}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => add()}>
             <Plus size={13} strokeWidth={2.6} style={{ marginRight: 4, verticalAlign: -2 }} />
             Other app
           </button>

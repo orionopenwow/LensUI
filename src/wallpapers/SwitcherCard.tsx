@@ -49,7 +49,7 @@ export const SwitcherCard: React.FC<{ simple?: boolean }> = ({ simple }) => {
 
   return (
     <div className="wsc" data-wallpaper-switcher data-guide-id="wallpaper-switcher">
-      <button type="button" className="wsc-open" data-open-picker onClick={openWallpaperPicker}>
+      <button data-weight="medium" type="button" className="wsc-open" data-open-picker onClick={openWallpaperPicker}>
         <span>
           Open the wallpaper picker
           <small>{count ? `${count} in your library, plus Lens' own living wallpapers` : "Add a folder, or pick one of Lens' own living wallpapers"}</small>
@@ -64,13 +64,13 @@ export const SwitcherCard: React.FC<{ simple?: boolean }> = ({ simple }) => {
       {!simple && view && (
         <>
           <div className="wsc-quick">
-            <button type="button" className="lens-btn is-sm" onClick={() => step("next")} disabled={!count}>
+            <button data-weight="medium" type="button" className="lens-btn is-sm" onClick={() => step("next")} disabled={!count}>
               Next
             </button>
-            <button type="button" className="lens-btn is-sm" onClick={() => step("prev")} disabled={!count}>
+            <button data-weight="medium" type="button" className="lens-btn is-sm" onClick={() => step("prev")} disabled={!count}>
               Previous
             </button>
-            <button type="button" className="lens-btn is-sm" onClick={() => step("random")} disabled={!count}>
+            <button data-weight="medium" type="button" className="lens-btn is-sm" onClick={() => step("random")} disabled={!count}>
               Random
             </button>
           </div>

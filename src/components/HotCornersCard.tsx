@@ -53,7 +53,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             skipped, so moving across screens never sets one off.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={hc.enabled}
@@ -76,7 +76,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         <div className="hc-screen" role="radiogroup" aria-label="Corner to edit">
           <span className="hc-screen-label">Choose a corner</span>
           {CORNER_KEYS.map((k) => (
-            <button
+            <button data-weight="light"
               key={k}
               type="button"
               role="radio"
@@ -96,13 +96,13 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
       <div className={`hc-pick ${hc.enabled ? "" : "pi-dim"}`}>
         <div className="hc-pick-head">
           <div className="cc-label">{CORNER_LABELS[selected]} corner</div>
-          <button type="button" className="cc-btn-ghost" disabled={!hc.enabled || hc[selected] === "none"} onClick={tryAction}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={!hc.enabled || hc[selected] === "none"} onClick={tryAction}>
             Try it
           </button>
         </div>
         <div className="cc-chip-grid">
           {CORNER_ACTIONS.map((a) => (
-            <button
+            <button data-weight="light"
               key={a.id}
               type="button"
               className={`cc-chip ${hc[selected] === a.id ? "active" : ""}`}
@@ -131,7 +131,7 @@ export const HotCornersCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             <div className="cc-label">Every monitor</div>
             <div className="cc-desc">Off: only the main monitor's corners</div>
           </div>
-          <button
+          <button data-weight="light"
             type="button"
             role="switch"
             aria-checked={hc.allMonitors}

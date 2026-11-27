@@ -60,7 +60,7 @@ const Seg: React.FC<{
     </div>
     <div className="tux-seg" role="radiogroup" aria-label={label}>
       {options.map((o) => (
-        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className={value === o.id ? "active" : ""} disabled={disabled} onClick={() => onChange(o.id)}>
+        <button data-weight="light" key={o.id} type="button" role="radio" aria-checked={value === o.id} className={value === o.id ? "active" : ""} disabled={disabled} onClick={() => onChange(o.id)}>
           {o.label}
         </button>
       ))}
@@ -74,7 +74,7 @@ const Toggle: React.FC<{ label: string; desc: string; on: boolean; onChange: (v:
       <div className="cc-label">{label}</div>
       <div className="cc-desc">{desc}</div>
     </div>
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={() => onChange(!on)} />
+    <button data-weight="light" type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={() => onChange(!on)} />
   </div>
 );
 
@@ -101,7 +101,7 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig, section
         </div>
         <div className="tux-dock-grid" role="radiogroup" aria-label="Dock style">
           {DOCK_STYLES.map((d) => (
-            <button
+            <button data-weight="light"
               key={d.id}
               type="button"
               role="radio"
@@ -297,7 +297,7 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
             </div>
           </div>
           {view.styleIconSizeIsCustom && (
-            <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(setStyleIconSize(config, view.style, null))}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(setStyleIconSize(config, view.style, null))}>
               Use the shared size
             </button>
           )}
@@ -319,7 +319,7 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
             </div>
             <div className="cc-chip-grid">
               {otherSizes.map((s) => (
-                <button key={s.style} type="button" className="cc-chip" aria-label={`${s.label}: ${s.size} px. Use the shared size`} onClick={() => updateConfig(setStyleIconSize(config, s.style, null))}>
+                <button data-weight="light" key={s.style} type="button" className="cc-chip" aria-label={`${s.label}: ${s.size} px. Use the shared size`} onClick={() => updateConfig(setStyleIconSize(config, s.style, null))}>
                   {s.label} · {s.size} px
                 </button>
               ))}
@@ -339,7 +339,7 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
             </div>
           </div>
           {dividers > 0 && (
-            <button type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(clearSeparators(config))}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost tux-small-btn" onClick={() => updateConfig(clearSeparators(config))}>
               Remove all
             </button>
           )}
@@ -347,7 +347,7 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
         {view.separators.length > 0 && (
           <div className="cc-chip-grid" role="group" aria-label="Divider after">
             {view.separators.map((s) => (
-              <button
+              <button data-weight="light"
                 key={s.id}
                 type="button"
                 role="switch"

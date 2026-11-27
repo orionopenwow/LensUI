@@ -62,7 +62,7 @@ export const CursorSuiteCard: React.FC<Props> = ({ config }) => {
         </div>
         <div className="cs-tabs" role="tablist" aria-label="Mouse pointer">
           {tabs.map((t) => (
-            <button
+            <button data-weight="light"
               key={t.id}
               type="button"
               role="tab"
@@ -213,7 +213,7 @@ const LookTab: React.FC<{
     <div className="cs-pane">
       <div className="cs-family-grid" role="radiogroup" aria-label="Pointer set">
         {CURSOR_FAMILIES.map((f) => (
-          <button
+          <button data-weight="light"
             key={f.id}
             type="button"
             role="radio"
@@ -251,7 +251,7 @@ const LookTab: React.FC<{
             { id: true, label: "Dark" },
             { id: false, label: "Light" },
           ].map((o) => (
-            <button
+            <button data-weight="light"
               key={String(o.id)}
               type="button"
               role="radio"
@@ -306,10 +306,10 @@ const LookTab: React.FC<{
         <span className="cs-state">
           {applied ? `Using Lens ${CURSOR_FAMILIES.find((f) => f.id === st!.style.family)?.label ?? ""} pointers` : "Using your Windows pointers"}
         </span>
-        <button type="button" className="cc-btn-ghost cs-btn" disabled={busy || !status?.hasCursorBackup} onClick={restore}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost cs-btn" disabled={busy || !status?.hasCursorBackup} onClick={restore}>
           Restore my Windows pointers
         </button>
-        <button type="button" className="cc-btn" disabled={busy || matchesApplied} onClick={apply}>
+        <button data-weight="medium" type="button" className="cc-btn" disabled={busy || matchesApplied} onClick={apply}>
           {busy ? "Applying…" : matchesApplied ? "Applied" : "Apply"}
         </button>
       </div>
@@ -333,7 +333,7 @@ const ToggleRow: React.FC<{ label: string; desc?: string; on: boolean; onToggle:
       <div className="cc-label">{label}</div>
       {desc && <div className="cc-desc">{desc}</div>}
     </div>
-    <button
+    <button data-weight="light"
       type="button"
       role="switch"
       aria-checked={on}
@@ -496,7 +496,7 @@ const BehaviourTab: React.FC<{
 
       <div className="cs-actions">
         <span className="cs-state">{status?.hasPointerBackup ? "Your original settings are saved." : "Nothing changed yet."}</span>
-        <button type="button" className="cc-btn-ghost cs-btn" disabled={!status?.hasPointerBackup} onClick={reset}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost cs-btn" disabled={!status?.hasPointerBackup} onClick={reset}>
           Reset to my original settings
         </button>
       </div>
@@ -681,7 +681,7 @@ const EffectsTab: React.FC<{ onError: (e: string | null) => void }> = ({ onError
         <div className="cc-desc">{desc}</div>
         {extra}
       </div>
-      <button
+      <button data-weight="light"
         type="button"
         role="switch"
         aria-checked={s[demo]}
@@ -766,7 +766,7 @@ const EffectsTab: React.FC<{ onError: (e: string | null) => void }> = ({ onError
             { id: "#facc15", label: "Yellow" },
             { id: "#fb7185", label: "Rose" },
           ].map((o) => (
-            <button
+            <button data-weight="light"
               key={o.id}
               type="button"
               role="radio"

@@ -3,7 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LensConfig, WindowsThemeInfo, RunningWindow } from "../types/lens";
 import { packById, lighten } from "../themes/packs";
-import { liftsText } from "../themes/contrastAudit";
+import { liftsText, textTokensFor, TEXT_TOKENS } from "../themes/contrastAudit";
+import { applyAccentTokens, normalizeAccentStrength, paintedSurfaces } from "../themes/accentTokens";
 import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks";
 import { setLocale } from "../i18n";
 import { applyUiScale } from "../shell/uiScale";
@@ -55,6 +56,22 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
     root.style.removeProperty("--lens-pack-elevated");
   }
   root.style.setProperty("--lens-accent", activeAccent);
+  // The accent on Lens's own controls (switches, marks, rings, selected items): contrast-checked
+  // tokens for this accent on this pack's surfaces, at the chosen strength. Written before the
+  // living tint below, which re-derives them for its own colours.
+  {
+    const scheme = pack?.scheme === "light" ? "light" : "dark";
+    const text = pack ? textTokensFor(pack) : TEXT_TOKENS.dark;
+    applyAccentTokens(root, {
+      accent: activeAccent,
+      ...paintedSurfaces(pack?.base, scheme, activeAccent, cfg.theme.accentTintStrength),
+      scheme,
+      strength: normalizeAccentStrength(cfg.theme.accentStrength),
+      fg: text.fg,
+      secondary: text.secondary,
+      highContrast: cfg.theme.contrast === "high",
+    });
+  }
   applyShapeStyle(root, cfg.theme.shapeStyle, activeAccent, packById(cfg.theme.preset)?.base ?? "#09090B");
   root.style.setProperty("--lens-windows-accent", winTheme.accentHex);
   root.style.setProperty("--lens-glass-opacity", String(cfg.theme.glassOpacity));
@@ -121,7 +138,7 @@ export function applyThemeWithTransition(cfg: LensConfig, winTheme: WindowsTheme
 /** What a theme switch changes: when this differs, every colour on the page changes at once. */
 function themeKey(cfg: LensConfig, winTheme: WindowsThemeInfo): string {
   const t = cfg.theme;
-  return [t.preset, t.accentMode, t.customAccent, winTheme.accentHex, t.contrast, t.fontFamily, t.shapeStyle, t.glassOpacity, t.blurPx, t.borderRadius, t.accentTintStrength].join("|");
+  return [t.preset, t.accentMode, t.customAccent, winTheme.accentHex, t.contrast, t.fontFamily, t.shapeStyle, t.glassOpacity, t.blurPx, t.borderRadius, t.accentTintStrength, t.accentStrength ?? ""].join("|");
 }
 let lastThemeKey: string | null = null;
 let releaseTimer: number | null = null;

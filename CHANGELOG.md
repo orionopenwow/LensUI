@@ -21,6 +21,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
   on every pull request on CI's Windows runner, with the method and caveats: docs/BENCHMARKS.md.
 - **What Lens Browser sends, spelled out**: filter lists, site icons and the update check, nothing
   else; Settings › Lens Browser › Privacy shows this session's requests.
+- **Your accent, where it counts.** Pick an accent colour and Lens now shows it on the things that
+  are on or selected: switches, the mark under a running app (the focused one in full), keyboard
+  focus rings, sliders and meters, selected chips and tabs, the main button of a card or a setup
+  step, and a soft wash on the selected row in Settings and Search. A new **Accent strength** choice
+  in Settings › Appearance (Subtle, Balanced, Vivid; Balanced by default) shows a small sample of
+  each before you choose. Lens keeps the accent's hue and adjusts its shade for the theme you're
+  on, so it always reads (at least 3:1 as a control, 4.5:1 for text on it), checked for every
+  theme and for any colour on the wheel. A white, black or grey accent shows no colour, so the
+  default look is unchanged; High contrast keeps its plain chrome. Colours inside Lens only:
+  nothing in Windows changes.
+- **The Dock presses like the rest of Lens.** Dock icons, the system area and the Dock's menu use
+  the same weighted press as Settings; Settings and Quick settings grow out of the Dock button that
+  opened them; the highlight in the Dock's search filters slides to the option you pick.
 - **Lens Browser tab styles.** Make it yours › Tab position: Vertical (the sidebar) or Horizontal,
   with five styles drawn by Lens: Curved, Joined, Compact (one row, icon tabs), Dynamic (address
   bar, then tabs; the previous horizontal look) and Merged (the open tab is the address bar). Spaces,
@@ -166,6 +179,12 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- Alt+drag, Magic and App hotkeys: the options under each switch can be clicked while the feature
+  is off (they were dimmed and ignored the mouse, but still took keyboard focus) (B-58).
+- Text on an accent-coloured button or pill is always readable, the Night light switch keeps its
+  knob on light themes, and focus rings no longer vanish with a dark accent on a dark theme
+  (B-111 to B-113).
+- Settings buttons no longer sink twice on a press (B-114).
 - **The Top Bar no longer stays up after Lens was briefly busy.** If Lens's window watcher was held up
   for a couple of seconds (most often right after start-up), an auto-hidden Top Bar could stay on
   screen until the pointer touched the top edge; it now hides as soon as the watcher runs again.

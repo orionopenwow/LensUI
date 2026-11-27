@@ -44,6 +44,12 @@ const STATES = [
   { id: "settings-theme", surface: "settings", tab: /Appearance/, sizes: [[760, 560], [1024, 700]] },
   { id: "settings-dock", surface: "settings", tab: /Dock/, sizes: [[760, 560], [1024, 700]] },
   { id: "settings-ai", surface: "settings", tab: /AI/, sizes: [[760, 560], [1024, 700]] },
+  // The person's accent on Lens's own controls (src/themes/accentTokens.ts): Appearance with the
+  // Accent strength control and its samples, Quick settings, and the Dock's running marks.
+  { id: "settings-accent", surface: "settings", tab: /Appearance/, params: "accent=818CF8", sizes: [[760, 640], [1024, 700]] },
+  { id: "settings-accent-vivid", surface: "settings", tab: /Windows/, params: "accent=F59E0B&accentStrength=vivid", sizes: [[760, 560]] },
+  { id: "quicksettings-accent", surface: "quicksettings", params: "accent=818CF8", sizes: [[404, 580]] },
+  { id: "dock-accent", surface: "dock", params: "accent=F59E0B", sizes: [[1366, 640]] },
   { id: "palette", surface: "palette", sizes: [[660, 460], [760, 560]] },
   { id: "palette-query", surface: "palette", query: "spo", sizes: [[660, 460], [760, 560]] },
   { id: "launcher", surface: "launcher", sizes: [[780, 640], [1024, 720]] },

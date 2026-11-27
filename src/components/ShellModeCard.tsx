@@ -134,7 +134,7 @@ export const ShellModeCard: React.FC = () => {
                 }
               }}
             />
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn"
               disabled={busy || confirmText.trim().toUpperCase() !== CONFIRM_WORD}
@@ -146,7 +146,7 @@ export const ShellModeCard: React.FC = () => {
             >
               Turn on Shell Mode
             </button>
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn-ghost"
               onClick={() => {
@@ -162,7 +162,7 @@ export const ShellModeCard: React.FC = () => {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {status && !status.enabled && !confirming && (
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn"
             disabled={busy || !status.canEnable}
@@ -179,7 +179,7 @@ export const ShellModeCard: React.FC = () => {
           </button>
         )}
         {status && status.enabled && (
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn"
             disabled={busy}
@@ -191,7 +191,7 @@ export const ShellModeCard: React.FC = () => {
           </button>
         )}
         {status && !status.explorerRunningAsShell && (
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost"
             disabled={busy}
@@ -202,7 +202,7 @@ export const ShellModeCard: React.FC = () => {
             Start Explorer now
           </button>
         )}
-        <button type="button" className="cc-btn-ghost" disabled={busy} onClick={refresh}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={busy} onClick={refresh}>
           Refresh
         </button>
       </div>

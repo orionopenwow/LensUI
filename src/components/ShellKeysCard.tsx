@@ -69,7 +69,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Win key opens Lens Launcher</div>
           <div className="cc-desc">Tap the Windows key to open the Launcher instead of Start.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={!!func.winKeyLauncher}
@@ -84,7 +84,7 @@ export const ShellKeysCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           <div className="cc-label">Alt+Tab opens Lens Overview</div>
           <div className="cc-desc">Hold Alt, tap Tab to move, release Alt to switch. Esc cancels.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={!!func.altTabOverview}

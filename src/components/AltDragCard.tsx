@@ -37,7 +37,7 @@ const Toggle: React.FC<{ label: string; desc: string; on: boolean; onChange: () 
       <div className="cc-label">{label}</div>
       <div className="cc-desc">{desc}</div>
     </div>
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
+    <button data-weight="light" type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
   </div>
 );
 
@@ -85,13 +85,13 @@ export const AltDragCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">{mod.label} + Drag Windows</div>
+          <div className="cc-label">{mod.label} + drag windows</div>
           <div className="cc-desc">
             Hold {mod.label} and drag anywhere inside a window to move it. Drag with the right button to resize from the
             nearest edge or corner. Fullscreen apps, games and administrator windows are never touched.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={ad.enabled}
@@ -106,12 +106,14 @@ export const AltDragCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         {statusLine.text}
       </div>
 
-      <div className={ad.enabled ? "" : "pi-off"} aria-disabled={!ad.enabled} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* B-58: off means dimmed, never click-dead. These options are set-up for later, so they stay
+          usable (mouse and keyboard alike) while the feature is off. */}
+      <div className={ad.enabled ? "" : "pi-dim"} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
           <div className="cc-label">Hold</div>
           <div className="cc-chip-grid" style={{ marginTop: 8 }}>
             {MODIFIERS.map((m) => (
-              <button
+              <button data-weight="light"
                 key={m.id}
                 type="button"
                 className={`cc-chip ${ad.modifier === m.id ? "active" : ""}`}
@@ -153,7 +155,7 @@ export const AltDragCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
           {ad.exclude.map((app) => (
             <span key={app} className="cc-chip pi-app-chip">
               {app.replace(/\.exe$/, "")}
-              <button
+              <button data-weight="light"
                 type="button"
                 className="pi-app-chip-x"
                 aria-label={`Allow ${app} again`}
@@ -174,7 +176,7 @@ export const AltDragCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                 if (e.key === "Enter") addApp();
               }}
             />
-            <button type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
+            <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
               <Plus size={13} strokeWidth={2.6} />
             </button>
           </span>

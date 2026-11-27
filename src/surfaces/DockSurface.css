@@ -147,10 +147,6 @@
   transform: translateY(-1.5px) scale(1.06);
 }
 
-.dock-search-inline:not(.is-open) .dock-search-mag-btn:active {
-  transform: translateY(1px) scale(0.93);
-}
-
 /* Search opens inside the Dock at its existing width: the text box spreads out of the search icon,
    and every other icon slides to the right (shrinking only if the row would otherwise overflow). */
 .dock-pill.is-expanded-launcher .dock-icons-row > :not(.dock-search-slot) {
@@ -371,11 +367,6 @@
     0 0 12px rgb(var(--lens-ink) / 0.08);
 }
 
-.dock-search-trigger:active {
-  background: rgb(0 0 0 / calc(0.68 * var(--lens-well-k)));
-  border-color: rgb(var(--lens-ink) / 0.28);
-}
-
 /* Subtle, weighted neighbor poise (zero aggressive jumping) */
 .dock-item-wrap:has(+ .dock-item-wrap:hover) .dock-item,
 .dock-item-wrap:hover + .dock-item-wrap .dock-item {
@@ -470,14 +461,9 @@
   z-index: 10;
 }
 
-.dock-item:active {
-  transform: translateY(0.5px) scale(0.96) !important;
-  box-shadow:
-    inset 0 2px 5px rgb(0 0 0 / calc(0.72 * var(--lens-shade-k))),
-    0 2px 6px rgb(0 0 0 / calc(0.4 * var(--lens-shade-k))) !important;
-  filter: brightness(0.94);
-  transition-duration: var(--lens-dur-instant);
-}
+/* Presses: the shared weighted press (src/ui/press, DESIGN.md §5.2) draws them. Dock icons are
+   medium, on click only; it uses the separate `scale` / `translate` properties, so it composes
+   with the magnification `transform` above. No :active rules in the Dock. */
 
 @keyframes dock-launch-into-window {
   0% {
@@ -518,13 +504,14 @@
   height: 3px;
   width: 16px;
   border-radius: 999px;
-  background: rgb(var(--lens-ink) / 0.4);
+  /* Running: a hint of the accent (none on the monochrome look); focused: the accent itself. */
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.4));
   transition: transform var(--lens-dur-base) var(--lens-ease-out), background var(--lens-dur-base) var(--lens-ease-out);
 }
 
 .dock-indicator.focused {
   --dock-ind-k: 1;
-  background: var(--lens-accent, var(--lens-fg));
+  background: var(--lens-accent-ui);
 }
 
 .dock-instance-badge {
@@ -583,10 +570,6 @@
   border-color: #fb7185;
   color: #ffffff;
   transform: scale(1.12) !important;
-}
-
-.dock-close-badge:active {
-  transform: scale(0.92) !important;
 }
 
 /* Drag-to-Reorder Feedback */
@@ -1561,12 +1544,12 @@
 .dock-stage.is-bar .dock-indicator {
   bottom: -4px;
   --dock-ind-k: 0.375; /* 6px of 16px */
-  background: rgb(var(--lens-ink) / 0.5);
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.5));
 }
 
 .dock-stage.is-bar .dock-indicator.focused {
   --dock-ind-k: 1;
-  background: var(--lens-accent, var(--lens-fg));
+  background: var(--lens-accent-ui);
 }
 
 .dock-stage.is-bar .dock-launcher-btn {
@@ -1630,10 +1613,6 @@
 
 .dock-stage.dock-style-taskbar.is-bar .dock-item.is-focused:hover {
   background: rgb(var(--lens-ink) / 0.12);
-}
-
-.dock-stage.dock-style-taskbar.is-bar .dock-item:active {
-  background: rgb(var(--lens-ink) / 0.04);
 }
 
 /* Top edge bar. */
@@ -2255,7 +2234,7 @@
 
 /* Dots read lighter than a dash: a touch more ink when not focused. */
 .dock-stage.dock-stage .dock-icons-row .dock-item-wrap .dock-indicator.is-multi:not(.focused):not(.attention) {
-  background: rgb(var(--lens-ink) / 0.62);
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.62));
 }
 
 @media (prefers-reduced-motion: reduce) {

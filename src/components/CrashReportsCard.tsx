@@ -44,10 +44,10 @@ export const CrashReportsCard: React.FC = () => {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="cc-btn-ghost" onClick={refresh}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={refresh}>
             Refresh
           </button>
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost"
             onClick={() => invoke("open_crashes_folder_cmd").catch(() => {})}
@@ -69,7 +69,7 @@ export const CrashReportsCard: React.FC = () => {
                   {r.summary || "No message"}
                 </div>
               </div>
-              <button type="button" className="cc-btn" onClick={() => copy(r.name)}>
+              <button data-weight="medium" type="button" className="cc-btn" onClick={() => copy(r.name)}>
                 Copy report
               </button>
             </div>

@@ -6,6 +6,8 @@
 >
 > **Settings wave (2026-11-26):** contrast audit covers every pack (`src/themes/contrastAudit.ts`, `themeContrast.test.ts`, THEMES_AUDIT "Contrast, every pack"): body text 4.5:1, muted text, icons and accent 3:1, surface and cards. Fixes: dark packs with lighter bases get the lifted text tones by rule (`data-text-lift`), Everforest Light and Base16 Cupcake accents a shade darker. Left: Lens Cloud featured look, wallpaper quick wins.
 
+> **Fable pass (`fable/settings-20261127`, 2026-11-27):** the accent reads across Lens. `src/themes/accentTokens.ts` turns the accent, the pack's surfaces and the new `theme.accentStrength` (subtle / balanced / vivid, default balanced) into eight tokens (DESIGN §4.1) that switches, selected states, primary buttons, focus rings, running marks, meters and fill bars read. The accent keeps its hue and moves in lightness until it reaches 3:1; text on it is at least 4.5:1; the selected-row wash is capped so secondary text stays at 4.5:1. Checked for every pack at every strength and for 360 colours of the wheel on every pack. Grey accents write nothing (the monochrome look is unchanged, so are the default goldens); living looks re-derive the tokens for their own colours. No selector is keyed on the accent, so a theme switch costs nothing more (rig 31/31; perf within noise of main). Left: the Lens Cloud featured look, wallpaper quick wins (the palette chips sit inside the card button, so "copy hex" needs the card restructured to stay keyboard-reachable).
+
 ## Rundown
 
 Themes decide how Lens looks: colours, materials, accent, and (only when the person opts in) a look's font and shape. Since #95 a theme never changes the Dock's style, size or position. Around themes sit the creative tools: 12 featured looks plus ~36 more packs, Day & night scheduling, accent from wallpaper, `.lenstheme` import/export, community themes, Living Skies (time/weather-aware skies), Backdrop Lab (GPU gradients, live wallpaper, export), and the Wallpaper Switcher.
@@ -35,6 +37,9 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 | Accent from wallpaper | Dominant colour (local) — setup pre-pick and Appearance | works | `accentFromImage.ts`, #99 |
 | Write to Windows accent | Off by default; checkbox only for custom accents; turning off restores Windows' own; queued writes cancelled on undo | works | `ThemeTab.tsx:467`, `config.rs:47`, #102 |
 | Windows accent read | Setup reads it as a fallback | works | #99 |
+
+| Accent on Lens's own controls | Tokens per window; on / selected / focus / progress only | works (harness) | `accentTokens.ts`, `fableSettings.test.tsx`, goldens `settings-accent*`, `quicksettings-accent*`, `dock-accent*` |
+| Accent strength | Subtle / Balanced / Vivid with a live sample of each; `theme.accentStrength` in the catalogue | works (harness) | `ThemeTab.tsx`, `AccentStrengthPreview.tsx` |
 
 ### 3. Day & night
 | Feature | Sub | Status | Evidence |

@@ -11,6 +11,7 @@
  * desktop is covered (a fullscreen app or game, see lens://wallpaper-pause) the tint holds still.
  */
 import { contrastRatio } from "../packs";
+import { restoreAccent, retintAccent } from "../accentTokens";
 import { isDaytime, DEFAULT_THEME_SCHEDULE } from "../schedule";
 import { hslToRgb, rgbToHsl } from "../../playground/util";
 import type { RGB } from "../../playground/types";
@@ -162,6 +163,8 @@ function writeLook(root: HTMLElement, look: LivingLook) {
   root.style.setProperty("--lens-pack-base", look.base);
   root.style.setProperty("--lens-pack-elevated", look.elevated);
   root.style.setProperty("--lens-accent", look.accent);
+  // The accent on controls follows the look's colours, at the strength the theme asked for.
+  retintAccent(root, { accent: look.accent, surface: look.base, card: look.elevated, scheme: look.scheme });
 }
 
 function tick(force = false) {
@@ -202,6 +205,7 @@ function restoreOriginal() {
   put("--lens-pack-base", original.base);
   put("--lens-pack-elevated", original.elevated);
   put("--lens-accent", original.accent);
+  restoreAccent(root);
 }
 
 function stop() {

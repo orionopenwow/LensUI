@@ -89,7 +89,7 @@
 }
 
 .sysmod-switch.on {
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
 }
 
 .sysmod-switch:disabled {
@@ -111,7 +111,7 @@
 
 .sysmod-switch.on .sysmod-switch-knob {
   transform: translateX(17px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 
 .sysmod-list {
@@ -209,8 +209,8 @@
 }
 
 .sysmod-pill-btn.is-primary {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
 
@@ -300,8 +300,8 @@
 }
 
 .sysmod-seg-btn.active {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 
 /* Battery meter */
@@ -365,8 +365,8 @@
 }
 
 .sysmod-chip.active {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
 

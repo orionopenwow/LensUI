@@ -1,9 +1,10 @@
 // The panel above the Dock while searching: filter pills, then either the home grid (recent files
 // and windows, quick folders, installed apps) or the results list. The Dock owns the query, the
 // selection and opening things; this file draws them.
-import React from "react";
+import React, { useRef } from "react";
 import { Activity, AppWindow, FileText, Folder, Sparkles } from "lucide-react";
 import { FlyoutClose } from "../ui/FlyoutClose";
+import { useSlidingIndicator } from "../ui/motion/indicator";
 import type { InstalledApp } from "../types/lens";
 import { DockMatteFolderSvg } from "./DockIcons";
 import type { DockFilterTab, LauncherHomeData } from "./model";
@@ -47,10 +48,15 @@ export function DockSearchDrawer({
   openFolder,
   openApp,
 }: DockSearchDrawerProps) {
+  // The selected filter is one pill that slides between the options (DESIGN.md §5.2).
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const filterIndRef = useRef<HTMLSpanElement>(null);
+  useSlidingIndicator(filtersRef, filterIndRef, dockFilterTab);
   return (
           <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
             <FlyoutClose pinned label="Close search" onClose={closeInDockLauncher} />
-            <div className="pal-filter-bar dsd-filters" role="tablist" aria-label="What to list">
+            <div ref={filtersRef} className="pal-filter-bar dsd-filters" role="tablist" aria-label="What to list">
+              <span ref={filterIndRef} className="dsd-filter-ind" aria-hidden />
               {(
                 [
                   { id: "all", label: "Overview", count: null, color: "#38BDF8", icon: Sparkles },
@@ -75,7 +81,7 @@ export function DockSearchDrawer({
                     <IconComp
                       size={13.5}
                       strokeWidth={2.4}
-                      color={isActive ? "var(--lens-on-fg, #09090b)" : f.color}
+                      color={isActive ? "var(--lens-on-accent-fill)" : f.color}
                       className="dsd-fixed"
                     />
                     <span>{f.label}</span>

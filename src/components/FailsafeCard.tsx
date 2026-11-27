@@ -65,7 +65,7 @@ export const FailsafeCard: React.FC = () => {
                 : "Lens switched something off to keep your desktop working. Details are below."}
           </div>
         </div>
-        <button type="button" className="cc-btn-ghost" onClick={() => askSafeMode(!safeNext)}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => askSafeMode(!safeNext)}>
           {safeNext ? "Cancel Safe Mode" : "Start in Safe Mode next time"}
         </button>
       </div>
@@ -76,7 +76,7 @@ export const FailsafeCard: React.FC = () => {
             <div className="cc-label">{t.label} is paused</div>
             <div className="cc-desc">It stopped answering several times in a row. Last problem: {t.error}</div>
           </div>
-          <button type="button" className="cc-btn" onClick={() => turnBackOn(t.feature, t.label)}>
+          <button data-weight="medium" type="button" className="cc-btn" onClick={() => turnBackOn(t.feature, t.label)}>
             Turn back on
           </button>
         </div>

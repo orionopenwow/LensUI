@@ -406,6 +406,24 @@
    "source": "src/themeux/ThemeTab.tsx"
   },
   {
+   "id": "setting.theme.themetab.accent-strength",
+   "kind": "setting",
+   "title": "Accent strength",
+   "text": "",
+   "path": [
+    "Settings",
+    "Appearance",
+    "Accent strength"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "theme",
+    "card": "ThemeTab",
+    "label": "Accent strength"
+   },
+   "source": "src/themeux/ThemeTab.tsx"
+  },
+  {
    "id": "setting.theme.themetab.choose-a-theme",
    "kind": "setting",
    "title": "Choose a theme",
@@ -1993,19 +2011,19 @@
   {
    "id": "card.system.altdragcard",
    "kind": "card",
-   "title": "Drag Windows",
-   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. Drag Windows · Hold · Never move · Right-drag resizes · Bring to front · Drag maximised windows out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
+   "title": "drag windows",
+   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. drag windows · Hold · Never move · Right-drag resizes · Bring to front · Drag maximised windows out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows"
+    "drag windows"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Drag Windows"
+    "label": "drag windows"
    },
    "source": "src/components/AltDragCard.tsx"
   },
@@ -2018,7 +2036,7 @@
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows",
+    "drag windows",
     "Hold"
    ],
    "target": {
@@ -2038,7 +2056,7 @@
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows",
+    "drag windows",
     "Never move"
    ],
    "target": {
@@ -2058,7 +2076,7 @@
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows",
+    "drag windows",
     "Right-drag resizes"
    ],
    "target": {
@@ -2078,7 +2096,7 @@
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows",
+    "drag windows",
     "Bring to front"
    ],
    "target": {
@@ -2098,7 +2116,7 @@
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Drag Windows",
+    "drag windows",
     "Drag maximised windows out"
    ],
    "target": {

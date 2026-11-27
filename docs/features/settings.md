@@ -6,6 +6,8 @@
 >
 > **Settings wave (2026-11-26):** B-41 fixed (the corner picker sat under `pointer-events: none` while Hot corners was off; now dimmed, not dead), B-40 fixed (switches replaced their state with the backend's reply and vanished; `Resource.adopt` keeps them mounted and focused), B-18 done for `src/settings`, `src/themeux` and the shell (toast or inline note, `src/ui/oops.ts`), remaining Title Case labels sentence-cased, consistent hover/pressed/disabled states on cards, chips, buttons, switches and segments. Hyper: 0 known failures. Left: the "Recently changed" strip, B-58 (`.pi-off` on three other cards).
 
+> **Fable pass (`fable/settings-20261127`, 2026-11-27):** B-58 fixed (Alt+drag, Magic and App hotkeys options are dimmed, not dead, while off), B-111 to B-114 fixed. The person's accent now shows on switches, selected chips, tabs and rows, primary buttons, focus rings, meters and fill bars, through contrast-checked tokens, with **Accent strength** (Subtle / Balanced / Vivid) in Appearance and a sample of each. 45 more Settings files are held by the feel guardrail (every control has a press weight). Left: the "Recently changed" strip, focus on the page heading after navigation (needs a rule that keeps ↑/↓ in the sidebar), goldens for Simple view and About › Magic.
+
 ## Rundown
 
 Settings is the one window where everything in Lens is changed. It opens from the Dock gear (always on Quick settings since #89), docked to the Dock or free-floating, with a Simple mode (the fun, common settings) and Advanced mode (every page and card). It is backed by one settings writer, a registry that also feeds search, the Guide and the hyper test inventory, and a control catalogue that agents and Command use.
@@ -82,6 +84,8 @@ Quick settings · Appearance · Dock & Bar · Desktop · Windows & Keys · AI & 
 | B-40 | Low | Switches unmount after one click (still open); the duplicate "Animation effects" name is fixed (the row is "Windows animation effects") | hyper `known.json` |
 | B-41 | Low | Corner picker radios not clickable where drawn | hyper `known.json` |
 | B-18 | Low | 27 swallowed errors in Settings | grep |
+| B-58 (fixed) | Low | Alt+drag, Magic and App hotkeys options ignored the mouse while off | `fableSettings.test.tsx` |
+| B-111–B-114 (fixed) | Low | Unreadable text on accent fills; Night light knob on light themes; focus rings lost with a dark accent; double press on Settings buttons | `fableSettings.test.tsx` |
 | B-52 (fixed) | Med | Two Top Bar enable flags shown as one switch | see topbar.md |
 | suspected | Low | Search ranks a Guide row above its own page when the page label is a partial match ("Sound" vs "Sound output device") | `search.ts:83` scoring weights |
 

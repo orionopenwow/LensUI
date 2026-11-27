@@ -129,7 +129,7 @@ export const LabSlider: React.FC<{
           }}
         />
       ) : (
-        <button
+        <button data-weight="medium"
           type="button"
           className="bd-num"
           aria-label={`Type a value for ${label}`}
@@ -188,13 +188,13 @@ export const Section: React.FC<{
 }> = ({ id, title, open, onToggle, onReset, children, extra }) => (
   <section className={`bd-sec ${open ? "open" : ""}`} aria-labelledby={`bd-sec-${id}`}>
     <div className="bd-sec-head">
-      <button type="button" id={`bd-sec-${id}`} className="bd-sec-title" aria-expanded={open} onClick={onToggle}>
+      <button data-weight="medium" type="button" id={`bd-sec-${id}`} className="bd-sec-title" aria-expanded={open} onClick={onToggle}>
         <ChevronDown size={14} className="bd-chev" aria-hidden />
         {title}
       </button>
       {extra}
       {onReset && (
-        <button type="button" className="bd-icon-btn small" aria-label={`Reset ${title}`} onClick={onReset}>
+        <button data-weight="medium" type="button" className="bd-icon-btn small" aria-label={`Reset ${title}`} onClick={onReset}>
           <RotateCcw size={12} aria-hidden />
         </button>
       )}

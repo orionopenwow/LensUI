@@ -53,7 +53,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           <div className="cc-label">Sort new items automatically</div>
           <div className="cc-desc">Each item joins the first group whose types match, unless you placed it by hand.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${cfg.autoSort ? "on" : ""}`}
           aria-label="Sort automatically"
@@ -65,7 +65,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           <div className="cc-label">Show "Everything else"</div>
           <div className="cc-desc">A section for items no group claims.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           className={`cc-toggle ${cfg.showUnsorted ? "on" : ""}`}
           aria-label="Show everything else"
@@ -89,7 +89,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ display: "flex", gap: 4 }}>
               {COLORS.map((c) => (
-                <button
+                <button data-weight="medium"
                   key={c}
                   type="button"
                   aria-label={`Colour ${c}`}
@@ -115,10 +115,10 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
               aria-label="Group name"
               onChange={(e) => patchGroup(g.id, { name: e.target.value })}
             />
-            <button type="button" className="cc-btn-ghost" aria-label="Move up" disabled={idx === 0} onClick={() => move(idx, -1)}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" aria-label="Move up" disabled={idx === 0} onClick={() => move(idx, -1)}>
               <ArrowUp size={12} />
             </button>
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn-ghost"
               aria-label="Move down"
@@ -127,7 +127,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
             >
               <ArrowDown size={12} />
             </button>
-            <button
+            <button data-weight="medium"
               type="button"
               className="cc-btn-ghost"
               aria-label="Remove group"
@@ -138,7 +138,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           </div>
           <div className="cc-chip-grid">
             {DESKTOP_RULES.map((r) => (
-              <button
+              <button data-weight="light"
                 key={r.id}
                 type="button"
                 className={`cc-chip ${g.rules.includes(r.id) ? "active" : ""}`}
@@ -153,7 +153,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
               <span>
                 {g.paths.length} item{g.paths.length === 1 ? "" : "s"} placed here by hand.
               </span>
-              <button type="button" className="cc-btn-ghost" onClick={() => patchGroup(g.id, { paths: [] })}>
+              <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => patchGroup(g.id, { paths: [] })}>
                 Release
               </button>
             </div>
@@ -161,7 +161,7 @@ export const DesktopGroupsCard: React.FC<Props> = ({ config, onUpdateConfig }) =
         </div>
       ))}
 
-      <button
+      <button data-weight="medium"
         type="button"
         className="cc-btn"
         style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6 }}

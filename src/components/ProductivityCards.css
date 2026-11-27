@@ -22,11 +22,8 @@
   box-shadow: 0 0 0 3px rgb(251 191 36 / 0.16);
 }
 
-.pi-off {
-  opacity: 0.5;
-  pointer-events: none;
-}
-/* Off, but still usable for setting things up (B-41): dimmed, never click-dead. */
+/* Off, but still usable for setting things up (B-41, B-58): dimmed, never click-dead. There is no
+   `.pi-off` any more: it took the pointer away from controls that stayed enabled and focusable. */
 .pi-dim {
   opacity: 0.62;
   transition: opacity var(--lens-dur-fast) var(--lens-ease-out);
