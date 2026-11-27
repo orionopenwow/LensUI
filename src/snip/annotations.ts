@@ -3,7 +3,7 @@
 
 import type { Rect } from "./geom";
 
-export type Tool = "select" | "arrow" | "box" | "highlight" | "text" | "step" | "pixelate" | "blur" | "spotlight" | "pen" | "crop";
+export type Tool = "select" | "livetext" | "arrow" | "box" | "highlight" | "text" | "step" | "pixelate" | "blur" | "spotlight" | "pen" | "crop";
 
 interface Base {
   id: string;
@@ -32,6 +32,8 @@ export interface History {
 
 export type Action =
   | { type: "add"; shape: Shape }
+  /** Several shapes as one undo step (highlighting a selection that spans lines). */
+  | { type: "addMany"; shapes: Shape[] }
   | { type: "update"; id: string; patch: Partial<Shape> }
   | { type: "remove"; id: string }
   | { type: "crop"; rect: Rect | null }
@@ -64,6 +66,8 @@ export function reduce(h: History, a: Action): History {
   switch (a.type) {
     case "add":
       return commit(h, { ...h.doc, shapes: renumber([...h.doc.shapes, a.shape]) });
+    case "addMany":
+      return a.shapes.length ? commit(h, { ...h.doc, shapes: renumber([...h.doc.shapes, ...a.shapes]) }) : h;
     case "update": {
       if (!h.doc.shapes.some((s) => s.id === a.id)) return h;
       const shapes = h.doc.shapes.map((s) => (s.id === a.id ? ({ ...s, ...a.patch, id: s.id, kind: s.kind } as Shape) : s));
@@ -110,6 +114,7 @@ export const redactionCount = (doc: Doc) => doc.shapes.filter((s) => s.kind === 
 /** Keyboard shortcuts for tools. */
 export const TOOL_KEYS: Record<string, Tool> = {
   v: "select",
+  l: "livetext",
   a: "arrow",
   r: "box",
   h: "highlight",
@@ -122,11 +127,10 @@ export const TOOL_KEYS: Record<string, Tool> = {
   c: "crop",
 };
 
-/** OCR text with every word under an applied redaction replaced by "•••", so copying the text,
- *  sending it to the Shelf, Claude or a translator never leaks what the image hides. */
-export function redactedLines(lines: { words: { text: string; rect: Rect }[] }[], doc: Doc): string[] {
+/** True when a word box sits under an applied redaction (40 % of it or more is covered). */
+export function hiddenBy(doc: Doc): (r: Rect) => boolean {
   const boxes = doc.shapes.filter((s) => s.kind === "pixelate" || s.kind === "blur").map((s) => (s as { rect: Rect }).rect);
-  const hidden = (r: Rect) =>
+  return (r: Rect) =>
     boxes.some((b) => {
       const x = Math.max(r.x, b.x);
       const y = Math.max(r.y, b.y);
@@ -134,6 +138,21 @@ export function redactedLines(lines: { words: { text: string; rect: Rect }[] }[]
       const h = Math.min(r.y + r.h, b.y + b.h) - y;
       return w > 0 && h > 0 && w * h >= 0.4 * r.w * r.h;
     });
+}
+
+/**
+ * What the studio draws while you can still edit: every mark, but the whole frame. The crop is
+ * applied on export only; while editing it is shown as an outline with the rest dimmed, so the
+ * picture under the pointer and the editor's coordinates stay the same thing (B-117).
+ */
+export function editingDoc(doc: Doc): Doc {
+  return doc.crop ? { ...doc, crop: null } : doc;
+}
+
+/** OCR text with every word under an applied redaction replaced by "•••", so copying the text,
+ *  sending it to the Shelf, Claude or a translator never leaks what the image hides. */
+export function redactedLines(lines: { words: { text: string; rect: Rect }[] }[], doc: Doc): string[] {
+  const hidden = hiddenBy(doc);
   return lines.map((l) => {
     const out: string[] = [];
     for (const w of l.words) {

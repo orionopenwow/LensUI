@@ -38,6 +38,16 @@ export function desktopRows(t: MagicTarget, caps: Caps = NO_CAPS): Row[] {
 
 export const NO_CAPS: Caps = { snip: false, browser: false };
 
+/**
+ * What the Magic window can offer on this PC right now (B-70). Read at each open:
+ * "Snip this window" needs Lens Snip turned on; Lens Browser is part of Lens and opens on demand,
+ * so "Open in Lens Browser" is always there for a browser window; "Edit widgets…" needs desktop
+ * widgets on.
+ */
+export function runtimeCaps(now: { snipOn: boolean; desktopWidgets: boolean }): Caps {
+  return { snip: now.snipOn, browser: true, desktopWidgets: now.desktopWidgets };
+}
+
 const KIND_LABEL: Record<string, string> = {
   selection: "Selection", link: "Link", image: "Image", file: "File", folder: "Folder", listItem: "Item",
   window: "Window", app: "App", desktop: "Desktop", dockItem: "Dock", shelfItem: "Shelf", notification: "Notification",

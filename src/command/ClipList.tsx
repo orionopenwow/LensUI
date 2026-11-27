@@ -2,6 +2,7 @@
 // Ctrl+S sends to the Shelf, Ctrl+P pins, Delete removes, Ctrl+Enter attaches as context.
 import React, { useCallback, useEffect, useState } from "react";
 import { Archive, ClipboardPaste, Copy, Files, Image as ImageIcon, Link, Lock, Pin, Trash2, Type } from "lucide-react";
+import { quiet } from "../failsafe/calls";
 import {
   clipList, clipStatus, onClipChanged, relativeTime, sourceAppName, type ClipKind, type ClipStatus, type ClipView,
 } from "../clip/contract";
@@ -32,7 +33,7 @@ export function useClips(query: string, kind: ClipKind | "all") {
     reload();
     const un = onClipChanged(reload);
     return () => {
-      un.then((u) => u()).catch(() => {});
+      un.then((u) => u()).catch(quiet);
     };
   }, [reload]);
   return { clips, status, reload };

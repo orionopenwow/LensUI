@@ -49,7 +49,9 @@ export const MagicStartPanel: React.FC<MagicStartPanelProps> = (p) => {
         type="button"
         role="option"
         aria-selected={active}
+        id={`mstart-opt-${i}`}
         data-idx={i}
+        data-weight={variant === "tile" ? "medium" : "light"}
         className={`mstart-${variant}${active ? " is-active" : ""}`}
         onClick={() => p.onRun(e)}
       >
@@ -76,7 +78,10 @@ export const MagicStartPanel: React.FC<MagicStartPanelProps> = (p) => {
             onChange={(e) => p.onQuery(e.target.value)}
             placeholder="Search apps"
             aria-label="Search apps"
+            role="combobox"
+            aria-expanded="true"
             aria-controls="mstart-list"
+            aria-activedescendant={p.selected >= 0 ? `mstart-opt-${p.selected}` : undefined}
             spellCheck={false}
             autoComplete="off"
           />
@@ -88,7 +93,7 @@ export const MagicStartPanel: React.FC<MagicStartPanelProps> = (p) => {
           p.results.length ? (
             <div className="mstart-rows">{p.results.map((e) => row(e, "row"))}</div>
           ) : (
-            <p className="mstart-empty">No app called “{p.query.trim()}”.</p>
+            <p className="mstart-empty" role="status">No app called “{p.query.trim()}”. Windows Start, below, searches files and settings too.</p>
           )
         ) : (
           <>
@@ -114,10 +119,10 @@ export const MagicStartPanel: React.FC<MagicStartPanelProps> = (p) => {
         <span className="mstart-note" role="status">
           {p.status || "Ctrl+Esc always opens Windows Start."}
         </span>
-        <button type="button" className="mstart-btn" onClick={p.onLock}>
+        <button type="button" className="mstart-btn" data-weight="medium" onClick={p.onLock}>
           <Lock size={13} strokeWidth={2.4} aria-hidden="true" /> Lock
         </button>
-        <button type="button" className="mstart-btn" onClick={p.onWindowsStart} aria-label="Power and Windows Start">
+        <button type="button" className="mstart-btn" data-weight="medium" onClick={p.onWindowsStart} aria-label="Windows Start, for power and everything else">
           <Power size={13} strokeWidth={2.4} aria-hidden="true" /> Windows Start
         </button>
       </footer>
