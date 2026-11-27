@@ -35,7 +35,7 @@ export function DigestCard({ d, onClose, onOpenRef }: { d: DigestView; onClose?(
         <span>Last {d.hours} h · {d.itemCount} posts</span>
         <span className="lf-spacer" />
         <span className={`lf-badge ${local ? "local" : ""}`}>{local ? <><Lock size={10} /> On this PC</> : "Cloud (you allowed it)"}</span>
-        {onClose ? <button className="lf-ico" aria-label="Close digest" onClick={onClose}><X size={13} /></button> : null}
+        {onClose ? <button data-weight="medium" className="lf-ico" aria-label="Close digest" onClick={onClose}><X size={13} /></button> : null}
       </div>
       {d.status === "running" && !d.text ? <div className="lf-skel"><i /><i /><i /></div> : null}
       {d.status === "error" ? <div className="lf-status">{d.error ?? "The digest couldn't run."}</div> : null}
@@ -47,7 +47,7 @@ export function DigestCard({ d, onClose, onOpenRef }: { d: DigestView; onClose?(
               {l.refs.map((r) => {
                 const s = d.sources[r - 1];
                 return s ? (
-                  <button key={r} className="lf-ref" aria-label={`Open source ${r}: ${s[0]}`} onClick={() => onOpenRef?.(s[1])}>
+                  <button data-weight="light" key={r} className="lf-ref" aria-label={`Open source ${r}: ${s[0]}`} onClick={() => onOpenRef?.(s[1])}>
                     <SourceDot source={s[0].split(" · ")[0]} size={11} />
                   </button>
                 ) : null;

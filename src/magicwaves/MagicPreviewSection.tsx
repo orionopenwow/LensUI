@@ -9,6 +9,8 @@ import { DashboardSurface } from "../dashboard/DashboardSurface";
 import { StudioShell } from "../studio/v2/StudioShell";
 import { MagicStart } from "../magic/start/MagicStart";
 import { NotePreview } from "../shelf/NotePreview";
+import { editDesktopWidgets } from "../deskwidgets/api";
+import { MagicPointerPreview } from "./MagicPointerPreview";
 import "./magic-preview.css";
 
 const RISKY: ReadonlySet<MagicFlag> = new Set(["mouse", "startButton"]);
@@ -19,6 +21,7 @@ export function shouldShowMagicPreview(config: PageProps["config"]): boolean {
 
 export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateConfig" | "section">> = ({ config, updateConfig, section }) => {
   const [confirm, setConfirm] = useState<MagicFlag | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   if (!shouldShowMagicPreview(config)) return null;
   const flags = magicFlags(config);
 
@@ -33,7 +36,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
 
   return (
     <Section id="magic" title="Magic (preview)" summary="Early previews of the Magic features. Off unless you turn them on." defaultOpen={section === "magic"} forceOpen={section === "magic"}>
-      <StateNote kind="info">These are previews. Nothing here connects, fetches or changes Windows yet.</StateNote>
+      <StateNote kind="info">These are previews. Only Magic Mouse changes Windows (your pointer, put back when it is off), and it asks first.</StateNote>
       {MAGIC_FLAGS.map((f) => (
         <Row key={f} label={MAGIC_LABELS[f].label} desc={MAGIC_LABELS[f].desc}>
           <Toggle label={MAGIC_LABELS[f].label} checked={flags[f]} onChange={(v) => set(f, v)} />
@@ -53,6 +56,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
             : "The Magic button changes what a Windows-key tap does. Ctrl+Esc always opens Windows Start, and Windows Start opens if Lens doesn't answer."}
         </StateNote>
       )}
+      {(flags.mouse || confirm === "mouse") && <MagicPointerPreview />}
       {flags.mouse && (
         <Row label="Hold time" desc="How long to hold the left button before a drag becomes a grab.">
           <input
@@ -68,6 +72,18 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
           <span className="mpv-value">{flags.mouseHoldMs} ms</span>
         </Row>
       )}
+      {flags.desktopWidgets && (
+        <Row label="Arrange desktop widgets" desc="Opens the widget gallery on your desktop: add, resize, move or remove widgets. Esc or Done to finish.">
+          <button
+            type="button"
+            className="mpv-confirm"
+            onClick={() => void editDesktopWidgets().then((err) => setNote(err))}
+          >
+            Edit widgets…
+          </button>
+        </Row>
+      )}
+      {note && <StateNote kind="info">{note}</StateNote>}
       {flags.dashboard && (
         <div className="mpv-frame" aria-label="Dashboard preview">
           <DashboardSurface flags={{ widgets: flags.widgets, learn: flags.learn }} />
@@ -81,6 +97,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
       {flags.shelfNotes && (
         <div className="mpv-frame mpv-frame-small">
           <NotePreview
+            demo
             items={[
               { kind: "page", title: "Sample: a page you kept", text: "A line you highlighted.", url: "https://example.com/article", source_app: "Lens Browser" },
               { kind: "text", title: "Sample: a quick thought", text: "Call back about the design review." },

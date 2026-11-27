@@ -90,7 +90,7 @@ const ListView: React.FC<SpaceProps & { parentSize: number }> = (p) => {
           <span role="gridcell" className="cl-lname">
             <NodeIcon n={n} />
             {n.kind === "dir" && n.hasChildren ? (
-              <button type="button" className="cl-lname-btn" onClick={() => p.onOpenNode(n.id)}>
+              <button data-weight="medium" type="button" className="cl-lname-btn" onClick={() => p.onOpenNode(n.id)}>
                 {n.name}
               </button>
             ) : (
@@ -110,7 +110,7 @@ const ListView: React.FC<SpaceProps & { parentSize: number }> = (p) => {
           </span>
           <span role="gridcell" className="cl-lact">
             {n.path && (
-              <button type="button" className="cl-icon-btn" aria-label={`Open ${n.name} in File Explorer`} onClick={() => p.onReveal(n.path)}>
+              <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Open ${n.name} in File Explorer`} onClick={() => p.onReveal(n.path)}>
                 <FolderOpen size={13} />
               </button>
             )}
@@ -155,7 +155,7 @@ const TreemapView: React.FC<SpaceProps> = (p) => {
         const shade = 0.08 + 0.32 * Math.sqrt(n.size / max);
         const big = c.w > 84 && c.h > 40;
         return (
-          <button
+          <button data-weight="medium"
             key={`${n.id}-${n.name}`}
             ref={(el) => {
               refs.current[i] = el;
@@ -295,7 +295,7 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
         </h1>
         <div className="cl-pills" role="tablist" aria-label="Drive">
           {p.drives.map((d) => (
-            <button key={d.root} type="button" role="tab" aria-selected={d.root === p.root} className={`cl-dpill${d.root === p.root ? " is-on" : ""}`} onClick={() => p.onRoot(d.root)}>
+            <button data-weight="light" key={d.root} type="button" role="tab" aria-selected={d.root === p.root} className={`cl-dpill${d.root === p.root ? " is-on" : ""}`} onClick={() => p.onRoot(d.root)}>
               <HardDrive size={13} aria-hidden /> {driveName(d.root)} <span className="cl-meta cl-num">{fmtSize(d.total - d.free)}</span>
             </button>
           ))}
@@ -308,12 +308,12 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
               ["sunburst", PieChart, "Sunburst"],
             ] as const
           ).map(([m, I, label]) => (
-            <button key={m} type="button" role="tab" aria-selected={p.mode === m} className={p.mode === m ? "is-on" : ""} onClick={() => p.onMode(m)}>
+            <button data-weight="light" key={m} type="button" role="tab" aria-selected={p.mode === m} className={p.mode === m ? "is-on" : ""} onClick={() => p.onMode(m)}>
               <I size={13} aria-hidden /> {label}
             </button>
           ))}
         </div>
-        <button type="button" className="cl-btn is-ghost is-sm" onClick={p.onRescan}>
+        <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={p.onRescan}>
           <RotateCw size={13} aria-hidden /> Rescan
         </button>
       </header>
@@ -326,7 +326,7 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
             <CountSize bytes={p.progress?.bytes ?? 0} duration={200} /> in <span className="cl-num">{(p.progress?.files ?? 0).toLocaleString()}</span> files so far
           </p>
           <p className="cl-meta cl-mono cl-ellipsis">{p.progress?.current ?? ""}</p>
-          <button type="button" className="cl-btn is-ghost is-sm" onClick={p.onCancel}>
+          <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={p.onCancel}>
             Stop <Key>Esc</Key>
           </button>
         </div>
@@ -337,7 +337,7 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
               {crumbs.map((c, i) => (
                 <React.Fragment key={c.id}>
                   {i > 0 && <ChevronRight size={12} aria-hidden />}
-                  <button type="button" className={`cl-crumb${i === crumbs.length - 1 ? " is-here" : ""}`} aria-current={i === crumbs.length - 1 ? "location" : undefined} onClick={() => p.onOpenNode(c.id)}>
+                  <button data-weight="light" type="button" className={`cl-crumb${i === crumbs.length - 1 ? " is-here" : ""}`} aria-current={i === crumbs.length - 1 ? "location" : undefined} onClick={() => p.onOpenNode(c.id)}>
                     {i === 0 ? driveName(c.name) : c.name}
                   </button>
                 </React.Fragment>
@@ -362,7 +362,7 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
             <p className="cl-meta">THE SINGLE FILES TAKING UP THE MOST ROOM</p>
             <div className="cl-chips" role="radiogroup" aria-label="File type">
               {TYPE_FILTERS.map(([id, label]) => (
-                <button key={id} type="button" role="radio" aria-checked={p.filter === id} className={`cl-chip${p.filter === id ? " is-on" : ""}`} onClick={() => p.onFilter(id)}>
+                <button data-weight="light" key={id} type="button" role="radio" aria-checked={p.filter === id} className={`cl-chip${p.filter === id ? " is-on" : ""}`} onClick={() => p.onFilter(id)}>
                   {label}
                 </button>
               ))}
@@ -376,7 +376,7 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
                     <span className="cl-big-path cl-mono">{n.path.replace(/[\\/][^\\/]*$/, "")}</span>
                   </span>
                   <span className="cl-num cl-big-size">{fmtSize(n.size)}</span>
-                  <button type="button" className="cl-icon-btn" aria-label={`Show ${n.name} in File Explorer`} onClick={() => p.onReveal(n.path)}>
+                  <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Show ${n.name} in File Explorer`} onClick={() => p.onReveal(n.path)}>
                     <FolderOpen size={13} />
                   </button>
                 </li>
@@ -428,14 +428,14 @@ export const SpaceMap: React.FC<SpaceProps> = (p) => {
             <span className="cl-num cl-strong">{fmtSize(selSize)}</span>
           </span>
           {others.length > 0 && p.selected.length === 1 && (
-            <button type="button" className="cl-btn is-ghost" onClick={() => p.onMove(p.selected[0], others[0].root)}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={() => p.onMove(p.selected[0], others[0].root)}>
               <ArrowRightLeft size={14} aria-hidden /> Move to {driveName(others[0].root)}
             </button>
           )}
-          <button type="button" className="cl-btn is-ghost is-danger-text" onClick={() => p.onBin(p.selected, true)}>
+          <button data-weight="heavy" type="button" className="cl-btn is-ghost is-danger-text" onClick={() => p.onBin(p.selected, true)}>
             Delete for good…
           </button>
-          <button type="button" className="cl-btn is-primary" onClick={() => p.onBin(p.selected, false)}>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={() => p.onBin(p.selected, false)}>
             <Trash2 size={14} aria-hidden /> Move to Recycle Bin
           </button>
         </footer>

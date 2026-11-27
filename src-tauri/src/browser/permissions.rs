@@ -170,7 +170,8 @@ pub struct PermissionAsk {
 }
 
 pub const EVT_PERMISSION: &str = "lens://browser/permission";
-/// Sent when a request is settled without the bar (timed out, tab closed): `{ id }`.
+/// Sent when a request is settled without the bar (timed out, tab closed): `{ id }`, plus
+/// `reason: "timeout"` when nobody answered in time (the request was denied).
 pub const EVT_PERMISSION_DONE: &str = "lens://browser/permission-done";
 
 #[cfg(windows)]
@@ -285,7 +286,8 @@ pub mod win {
                         let app3 = app2.clone();
                         let _ = app2.run_on_main_thread(move || {
                             if settle(id, false) {
-                                let _ = app3.emit(EVT_PERMISSION_DONE, serde_json::json!({ "id": id }));
+                                // "timeout" lets the bar say so instead of just vanishing.
+                                let _ = app3.emit(EVT_PERMISSION_DONE, serde_json::json!({ "id": id, "reason": "timeout" }));
                             }
                         });
                     }

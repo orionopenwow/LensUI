@@ -1,8 +1,9 @@
-// Showcases: the hero desk's guided tours. Each one sets a look (theme, dock, windows), then walks
-// through a few steps at the visitor's pace. Every step shows a real Lens surface in a real state:
-// the window's frame loads that scene of the app's own component (see js/desk.js and
-// tools/site/live/). Nothing moves until the visitor asks. Back replays the earlier steps, Reset
-// starts over, Esc or "Exit" leaves the desk free to play with.
+// Showcases: the hero desk's demo. It plays by itself, slowly and on repeat: each part (the Dock, Lens
+// Browser, Right-click, Themes, the agentic desktop) sets a look, then shows its feature in three calm
+// steps, ~5 s each, and hands over to the next part. Pointing at the desk or focusing it holds the
+// current step; Pause stops it; doing anything on the desk yourself stops it until you press Play. With
+// reduced motion it shows the first step of the first part, still. Every step shows a real Lens surface
+// in a real state: the window's frame loads that scene of the app's own component (js/desk.js).
 import { reducedMotion } from "./site.js";
 import { getPacks } from "./desk.js";
 
@@ -12,6 +13,8 @@ const inApp = (desk, app, sel) => desk.doc(app)?.querySelector(sel) ?? null;
 const winEl = (desk, app) => desk.byApp(app)?.el ?? null;
 /** A desk point inside a window, as fractions of it (where a right-click lands). */
 const pointIn = (desk, app, fx, fy) => { const w = desk.byApp(app); return w ? { x: w.x + w.w * fx, y: w.y + w.h * fy } : { x: desk.W / 2, y: desk.H / 2 }; };
+void inApp;
+export const STEP_MS = 5200;
 
 /** Window layouts as fractions of the work area: [app, x, y, w, h, scene?]. */
 const LAYOUT = {
@@ -19,108 +22,85 @@ const LAYOUT = {
   browser: [["browser", 0.05, 0.03, 0.9, 0.94, "browser.html?scene=home"]],
   themes: [["browser", 0.04, 0.04, 0.56, 0.8, "browser.html?scene=home"], ["notes", 0.62, 0.1, 0.34, 0.66, "coreapps.html?app=notes"]],
   magic: [["browser", 0.02, 0.04, 0.6, 0.9, "browser.html?scene=frame"]],
-  agent: [["browser", 0.02, 0.04, 0.62, 0.9, "browser.html?scene=agent"]],
-  desktop: [["browser", 0.02, 0.04, 0.56, 0.84, "browser.html?scene=home"], ["notes", 0.6, 0.1, 0.38, 0.66, "coreapps.html?app=notes"]],
+  agent: [["browser", 0.02, 0.04, 0.62, 0.9, "browser.html?scene=dinner-plan"]],
 };
 
-/** Every dock style, in the order the tour shows them: [style, name, line, shape?, pack?]. */
+/** Dock styles the Dock part cycles through, one per loop: [style, name, line, shape?, pack]. */
 const DOCK_TOUR = [
   ["floating", "Floating", "the default: a glass pill above your windows", null, "obsidian"],
-  ["taskbar", "Taskbar", "full width with Windows 11 proportions", null, "obsidian"],
-  ["slim", "Slim", "the same dock, thinner and quieter", null, "obsidian"],
-  ["studio", "Studio", "labels and room to breathe on big screens", null, "obsidian"],
-  ["minimal", "Minimal", "just the icons, nothing else", null, "obsidian"],
-  ["split", "Split", "apps on one side, status on the other", null, "obsidian"],
+  ["taskbar", "Taskbar", "full width, at Windows 11 proportions", null, "obsidian"],
   ["islands", "Islands", "grouped pills", null, "catppuccin-mocha"],
-  ["islands", "Expressive", "soft, bold shapes with its own pack", "expressive", "lens-expressive"],
-  ["islands", "Dot Matrix", "drawn in dots, with its own pack", "dotmatrix", "lens-dot-matrix"],
+  ["slim", "Slim", "the same dock, thinner and quieter", null, "obsidian"],
+  ["split", "Split", "apps on one side, status on the other", null, "obsidian"],
+  ["unified", "Unified", "one floating pill with the tray and a two-line clock", null, "obsidian"],
 ];
 const setPack = async (d, id) => { const p = (await getPacks()).find((x) => x.id === id); if (p && d.pack?.id !== p.id) d.setPack(p); };
-const dockStep = ([style, name, line, shape, pack], k) => ({
-  cap: k === 0 ? `Pick your dock. ${name}: ${line}. Press Next to try the others on this desk.` : `${name}: ${line}.`,
-  target: (d) => d.frame,
-  run: async (d) => { const nx = DOCK_TOUR[k + 1]; if (!nx) return; await setPack(d, nx[4]); d.dockStyle(nx[0], nx[3] ?? "classic"); },
-});
-
-/** Theme tour stops: [pack, line]. */
-const THEME_TOUR = [
-  ["catppuccin-mocha", "Catppuccin Mocha: soft pastels on dark."],
-  ["alabaster-daylight", "Alabaster Daylight: a light look for bright rooms."],
-  ["living-sky", "Living Sky: the wallpaper follows the time of day."],
-  ["lens-expressive", "Lens Expressive: bold shapes, its own dock."],
-];
+let dockTurn = 0;
+const dockNow = () => DOCK_TOUR[dockTurn % DOCK_TOUR.length];
 
 /**
- * step: { cap, target?(desk) → element (may be inside a surface), run(desk) }
- * `run` must be quick to replay (Back replays earlier steps with no pauses).
- * Order follows the page: docks first, then Lens Browser, then themes and the rest.
+ * A part: { id, title, line, look, steps: [three × { cap, go(desk), target?(desk) }] }.
+ * `go` puts the desk into that step's state (it runs when the step begins).
+ * Order follows the page: the Dock first, then Lens Browser, Right-click, Themes, the agentic desktop.
  */
 export const SHOWCASES = [
   {
-    id: "docks", title: "Docks", line: "Nine styles. Floating by default.",
-    look: { pack: "obsidian", dock: "floating" },
-    steps: [...DOCK_TOUR.map(dockStep), { cap: "Keep the one you like in Settings › Dock. Floating stays the default.", target: (d) => d.frame }].map((st, k, all) => (k === all.length - 2 ? { ...st, run: undefined } : st)),
-  },
-  {
-    id: "browser", title: "Lens Browser", line: "Light, with an AI that asks first.",
+    id: "docks", title: "The Dock", line: "Ten styles, any edge.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: "Lens Browser opens on one box: search, an address, or a question. Most visited and recently closed sit underneath.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=suggest") },
-      { cap: "Typing searches your open tabs, bookmarks and history as you go.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
-      { cap: "Ask it to do something, and the AI works beside the page, not instead of it. Every click and every word it types is listed.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=approval") },
-      { cap: "Anything that books, pays or sends waits for you. Here a $25 no-show fee: you see the exact button and the details, then hold to approve.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=results") },
-      { cap: "Then it shows what it found: a map, a table and its pick, with why.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=permission") },
-      { cap: "Optional stop: a site that wants your camera or location asks under the address bar. Block, allow once, or allow for that site.", target: (d) => winEl(d, "browser"), run: (d) => d.scene("browser", "browser.html?scene=agent") },
-      { cap: "Optional stop: text hidden in a page that tries to steer the AI is flagged in the log, not obeyed. Look for “Flagged” in the panel.", target: (d) => winEl(d, "browser") },
+      { cap: () => `The Dock, ${dockNow()[1]}: ${dockNow()[2]}. Ten styles, on any edge of the screen.`, target: (d) => { try { return d.frame.contentDocument?.querySelector(".dock-pill"); } catch { return null; } },
+        go: async (d) => { const [style, , , shape, pack] = dockNow(); await setPack(d, pack); d.dockStyle(style, shape ?? "classic"); } },
+      { cap: () => (dockNow()[0] === "taskbar" ? "Settings opens from the gear like Windows' Start menu: its own size, just above the bar. A second click, its ×, or Esc closes it." : "Settings opens from the gear, joined to the dock as one shape, at its own size. A second click, its ×, or Esc closes it."),
+        go: (d) => d.openSettings() },
+      { cap: "Search opens from the dock too, in the same place: apps, files and answers as you type.",
+        go: async (d) => { d.closeSettings(); await sleep(300); d.search(true, "notes", { focus: false }); } },
+    ],
+    leave: (d) => { d.search(false, undefined, { focus: false }); d.closeSettings(); dockTurn++; },
+  },
+  {
+    id: "browser", title: "Lens Browser", line: "Light, with AI beside the page.",
+    look: { pack: "obsidian", dock: "floating" },
+    steps: [
+      { cap: "Lens Browser opens on one box: a search, an address, or a question.", target: (d) => winEl(d, "browser"), go: (d) => d.scene("browser", "browser.html?scene=home") },
+      { cap: "Ask it to do something: the AI works beside the page and lists every click and word.", target: (d) => winEl(d, "browser"), go: (d) => d.scene("browser", "browser.html?scene=agent") },
+      { cap: "Then it shows what it found: a map, a table and its pick, with why.", target: (d) => winEl(d, "browser"), go: (d) => d.scene("browser", "browser.html?scene=results") },
     ],
   },
   {
-    id: "themes", title: "Themes", line: "Every surface follows one look.",
-    look: { pack: "obsidian", dock: "floating" },
-    steps: [
-      ...THEME_TOUR.map(([id, line], k) => ({
-        cap: k === 0 ? "One theme colours everything: the top bar, the dock, every window. Press Next to switch." : THEME_TOUR[k - 1][1],
-        target: (d) => d.topbar,
-        run: async (d) => { await setPack(d, id); if (id === "lens-expressive") d.dockStyle("islands", "expressive"); },
-      })),
-      { cap: `${THEME_TOUR.at(-1)[1]} The Theme lab further down has all of them.`, target: (d) => d.topbar },
-    ],
-  },
-  {
-    id: "magic", title: "Right-click", line: "Right-click anything; Lens knows what it is.",
+    id: "magic", title: "Right-click", line: "Right-click anything.",
     look: { pack: "tokyo-night", dock: "floating" },
     steps: [
-      { cap: "Right-click a link in Lens Browser.", target: (d) => winEl(d, "browser"), run: (d) => d.openMagic("link", pointIn(d, "browser", 0.42, 0.3)) },
-      { cap: "The Lens menu opens right where you clicked. Pick Summarise: the answer appears in the same window.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("summary", pointIn(d, "browser", 0.42, 0.3)) },
-      { cap: "On a video page, the same menu gets the transcript.", target: (d) => d.overs.magic.el, run: (d) => { d.scene("browser", "browser.html?scene=transcript"); d.openMagic("transcript", pointIn(d, "browser", 0.42, 0.3)); } },
-      { cap: "Right-click an image and save it to your Shelf. Undo is right there.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("shelf", pointIn(d, "browser", 0.3, 0.42)) },
-      { cap: "Anything that would change your PC waits for your OK.", target: (d) => d.overs.magic.el, run: (d) => d.openMagic("approval", pointIn(d, "browser", 0.36, 0.36)) },
-      { cap: "Now try it yourself: right-click anywhere on the desk or in a window.", run: (d) => d.hideMenu() },
+      { cap: "Right-click a link: the Lens menu opens right where you clicked, and knows it's a link.", target: (d) => d.overs.magic.el, go: (d) => d.openMagic("link", pointIn(d, "browser", 0.42, 0.3)) },
+      { cap: "Pick Summarise: the answer appears in the same window.", target: (d) => d.overs.magic.el, go: (d) => d.openMagic("summary", pointIn(d, "browser", 0.42, 0.3)) },
+      { cap: "On a video page, the same menu gets the transcript.", target: (d) => d.overs.magic.el, go: (d) => { d.scene("browser", "browser.html?scene=transcript"); d.openMagic("transcript", pointIn(d, "browser", 0.42, 0.3)); } },
+    ],
+    leave: (d) => d.hideMenu(),
+  },
+  {
+    id: "themes", title: "Themes", line: "One look for everything.",
+    look: { pack: "obsidian", dock: "floating" },
+    steps: [
+      { cap: "One theme colours everything: the top bar, the dock, every window. Catppuccin Mocha.", target: (d) => d.topbar, go: (d) => setPack(d, "catppuccin-mocha") },
+      { cap: "Alabaster Daylight: a light look for bright rooms.", target: (d) => d.topbar, go: (d) => setPack(d, "alabaster-daylight") },
+      { cap: "Living Sky: the wallpaper follows the time of day. 89 looks in all.", target: (d) => d.topbar, go: (d) => setPack(d, "living-sky") },
     ],
   },
   {
-    id: "agent", title: "Your agent", line: "Claude or your own, across your apps.",
+    id: "agent", title: "Agentic desktop", line: "Your agent, across your apps.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: "Connect Claude Desktop, a local model or any MCP agent. It can use Lens's tools in your apps: here, Lens Browser.", target: (d) => winEl(d, "browser"), run: (d) => { const w = d.open("approval"); if (w) d.setRect(w, { x: d.W - 470, y: d.TOP + 40, w: 440, h: Math.min(520, d.H - d.TOP - 150) }); } },
-      { cap: "Before anything changes, Lens shows “Needs your OK”: who is asking, what it will do, and a preview.", target: (d) => winEl(d, "approval") },
+      { cap: "Claude Code, connected over MCP, asks Lens to book Friday dinner for 4. Lens Browser searches and picks a place.", target: (d) => winEl(d, "browser"), go: (d) => d.scene("browser", "browser.html?scene=dinner-plan") },
+      { cap: "Booking has a $25 no-show fee, so that step waits in the AI panel. Reading and searching ran on their own.", target: (d) => winEl(d, "browser"), go: (d) => d.scene("browser", "browser.html?scene=dinner") },
+      { cap: "“Needs your OK”: the form it will submit and what each step may do. Then the calendar and three messages, each asking first.", target: (d) => winEl(d, "approval"),
+        go: (d) => { d.scene("approval", "approval.html?scene=dinner&drag=0"); const w = d.byApp("approval"); if (w) d.setRect(w, { x: d.W - 480, y: d.TOP + 24, w: 460, h: Math.min(600, d.H - d.TOP - 140) }); } },
     ],
-  },
-  {
-    id: "desktop", title: "Desktop", line: "Windows, Quick Settings and Command.",
-    look: { pack: "obsidian", dock: "floating" },
-    steps: [
-      { cap: "Every window here is the app's real one. Snap Lens Browser to the left half.", target: (d) => winEl(d, "browser"), run: (d) => d.snap(d.byApp("browser")?.id, "left") },
-      { cap: "And Notes to the right.", target: (d) => winEl(d, "notes"), run: (d) => d.snap(d.byApp("notes")?.id, "right") },
-      { cap: "Quick Settings opens from the top bar: Wi-Fi, sound, battery, theme.", target: (d) => d.overs.qs.el, run: (d) => d.openFly() },
-      { cap: "Ctrl+Space opens Lens Command: one box to ask, search and run things.", target: (d) => d.overs.cmd.el, run: (d) => d.openCmd("compact") },
-      { cap: "That's the everyday desk. Close Command and play.", run: (d) => d.closeCmd() },
-    ],
+    leave: (d) => { const w = d.byApp("approval"); if (w) d.close(w.id); },
   },
 ];
 
 export function createShowcases(desk, { onChange } = {}) {
-  let sc = null, i = 0, busy = false, gen = 0;
+  let sc = null, i = 0, busy = false, gen = 0, timer = 0;
+  let paused = false, held = false, seen = false, stopped = false;
   const spot = document.createElement("div");
   spot.className = "lx-spot"; spot.setAttribute("aria-hidden", "true"); spot.hidden = true;
   desk.canvas.append(spot);
@@ -131,7 +111,7 @@ export function createShowcases(desk, { onChange } = {}) {
     if (p && desk.pack?.id !== p.id) desk.setPack(p);
     desk.dockStyle(s.look.dock, s.look.shape ?? "classic");
     desk.resetWallpaper?.();
-    desk.closeCmd(); desk.hideMenu(); desk.closeFly();
+    desk.closeCmd(); desk.hideMenu(); desk.closeFly(); desk.closeSettings?.();
     const want = LAYOUT[s.id] ?? [];
     for (const w of [...desk.wins.values()]) if (!want.some(([a]) => a === w.app)) desk.close(w.id);
     const wk = { x: 8, y: desk.TOP, w: desk.W - 16, h: desk.H - desk.TOP - 96 };
@@ -151,7 +131,6 @@ export function createShowcases(desk, { onChange } = {}) {
     const el = target();
     if (!el || !el.isConnected || el.hidden || !el.getBoundingClientRect().width) { spot.hidden = true; return; }
     let r = el.getBoundingClientRect();
-    // A target inside a real surface: add its frame's place on the page.
     const fe = el.ownerDocument !== document ? el.ownerDocument.defaultView?.frameElement : null;
     if (fe) { const f = fe.getBoundingClientRect(); r = { left: f.left + r.left * desk.k, top: f.top + r.top * desk.k, width: r.width * desk.k, height: r.height * desk.k }; }
     const c = desk.canvas.getBoundingClientRect(), k = desk.k, pad = 6;
@@ -159,67 +138,78 @@ export function createShowcases(desk, { onChange } = {}) {
     spot.hidden = false;
   }
   let raf = 0;
-  const follow = () => { cancelAnimationFrame(raf); const loop = () => { if (!sc) return; place(); raf = requestAnimationFrame(loop); }; raf = requestAnimationFrame(loop); };
+  const follow = () => { cancelAnimationFrame(raf); const loopF = () => { if (!sc) return; place(); raf = requestAnimationFrame(loopF); }; raf = requestAnimationFrame(loopF); };
 
-  const state = () => ({ showcase: sc, index: i, total: sc?.steps.length ?? 0, step: sc?.steps[i] ?? null, busy, done: !!sc && i >= sc.steps.length - 1 });
+  const capOf = (st) => (typeof st?.cap === "function" ? st.cap() : st?.cap ?? "");
+  const playing = () => !paused && !stopped && !held && seen && !document.hidden && !reducedMotion();
+  const state = () => ({ showcase: sc, index: i, total: sc?.steps.length ?? 0, step: sc?.steps[i] ?? null, cap: capOf(sc?.steps[i]), busy, paused: paused || stopped, playing: playing() });
   const changed = () => onChange?.(state());
 
-  async function start(id) {
+  async function enter(k) {
+    const st = sc?.steps[k];
+    i = k;
+    desk.auto = true;
+    try { await st?.go?.(desk); } catch (e) { console.warn(e); } finally { desk.auto = false; }
+  }
+  /** Shows a part from its first step. */
+  async function start(id, { user = false } = {}) {
     const s = SHOWCASES.find((x) => x.id === id);
     if (!s) return false;
     const my = ++gen;
+    clearTimeout(timer);
+    if (sc?.leave && sc !== s) try { sc.leave(desk); } catch { /* */ }
+    if (user) { paused = false; stopped = false; }
     sc = s; i = 0; busy = true; changed();
     await look(s);
     if (my !== gen) return true;
-    busy = false; changed(); follow();
+    await enter(0);
+    if (my !== gen) return true;
+    busy = false; changed(); follow(); arm();
     return true;
   }
-  async function runStep(k, { fast = false } = {}) {
-    const st = sc?.steps[k];
-    if (!st?.run) return;
-    try { await st.run(desk, { fast }); } catch (e) { console.warn(e); }
-  }
+  /** One beat: the next step of this part, or the next part. */
   async function next() {
-    if (!sc || busy || i >= sc.steps.length - 1) return;
-    busy = true; spot.hidden = true; changed();
+    if (!sc || busy) return;
     const my = gen;
-    await runStep(i);
-    await sleep(380);
-    if (my !== gen) return;
-    i++; busy = false; changed();
+    if (i < sc.steps.length - 1) {
+      busy = true; spot.hidden = true; changed();
+      await enter(i + 1);
+      if (my !== gen) return;
+      busy = false; changed(); arm();
+    } else {
+      const k = SHOWCASES.indexOf(sc);
+      await start(SHOWCASES[(k + 1) % SHOWCASES.length].id);
+    }
   }
-  async function back() {
-    if (!sc || busy || i === 0) return;
-    const to = i - 1, s = sc, my = ++gen;
-    busy = true; changed();
-    await look(s);
-    for (let k = 0; k < to; k++) { if (my !== gen) return; await runStep(k, { fast: true }); await sleep(120); }
-    if (my !== gen) return;
-    i = to; busy = false; changed(); follow();
-  }
+  function arm() { clearTimeout(timer); if (sc && playing()) timer = setTimeout(next, STEP_MS); }
+  function setPaused(p) { paused = p; stopped = false; changed(); arm(); }
   function exit() {
-    gen++; sc = null; i = 0; busy = false; spot.hidden = true; cancelAnimationFrame(raf);
+    gen++; clearTimeout(timer);
+    if (sc?.leave) try { sc.leave(desk); } catch { /* */ }
+    sc = null; i = 0; busy = false; spot.hidden = true; cancelAnimationFrame(raf);
     changed();
   }
+  /** The visitor did something on the desk: the demo steps aside until Play. */
+  function yieldTo() { if (stopped) return; stopped = true; clearTimeout(timer); spot.hidden = true; cancelAnimationFrame(raf); changed(); }
+  desk.on?.("user", () => { if (!busy) yieldTo(); });
 
-  // Doing the highlighted thing yourself counts as Next (a click, or a right-click where asked).
-  const hit = (e) => {
-    if (!sc || busy) return false;
-    const el = target();
-    return !!el && el.ownerDocument === document && (el === e.target || el.contains(e.target));
-  };
-  desk.canvas.addEventListener("click", (e) => {
-    if (sc?.steps[i]?.on === "contextmenu" || !hit(e) || !sc.steps[i].run) return;
-    e.preventDefault(); e.stopPropagation(); next();
-  }, true);
-  desk.canvas.addEventListener("contextmenu", (e) => {
-    if (sc?.steps[i]?.on !== "contextmenu" || !hit(e)) return;
-    e.preventDefault(); e.stopPropagation(); next();
-  }, true);
+  const host = desk.root.parentElement ?? desk.root;
+  const hold = (on) => { held = on; changed(); arm(); };
+  host.addEventListener("pointerenter", () => hold(true));
+  host.addEventListener("pointerleave", () => hold(false));
+  // Keyboard focus inside the desk holds the step (a script's focus doesn't).
+  let kb = 0;
+  addEventListener("keydown", () => { kb = Date.now(); }, true);
+  host.addEventListener("focusin", () => { if (Date.now() - kb < 1000) hold(true); });
+  host.addEventListener("focusout", (e) => { if (!host.contains(e.relatedTarget)) hold(false); });
+  document.addEventListener("visibilitychange", arm);
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; changed(); arm(); }, { threshold: 0.3 }).observe(host);
 
   return {
-    list: SHOWCASES, start, next, back, exit,
+    list: SHOWCASES, start, next, exit, setPaused,
+    play: () => { setPaused(false); if (!sc) start(SHOWCASES[0].id); else if (stopped || spot.hidden) follow(); },
+    pause: () => setPaused(true),
     reset: () => (sc ? start(sc.id) : null),
-    get current() { return sc; }, get index() { return i; }, get busy() { return busy; }, state,
+    get current() { return sc; }, get index() { return i; }, get busy() { return busy; }, get paused() { return paused || stopped; }, get playing() { return playing(); }, state,
   };
 }

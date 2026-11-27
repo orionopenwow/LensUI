@@ -1,10 +1,65 @@
 import React from "react";
 import { HardDrive, Map as MapIcon, ScanSearch, ShieldCheck } from "lucide-react";
-import { COPY, driveName, driveTone, fmtSize } from "./model";
+import { COPY, driveName, driveTone, fmtSize, sparkPath, sparkPoint, type TimelineRow } from "./model";
 import type { Overview } from "./types";
 import { Ambient, FillBar, Key } from "./ui";
 
-export const Home: React.FC<{ overview: Overview | null; error: string | null; onScan: () => void; onSpace: () => void; onOpen: (uri: string) => void }> = ({ overview, error, onScan, onSpace, onOpen }) => {
+const TL_W = 160;
+const TL_H = 32;
+
+/** "Where did my space go?": one quiet row per drive from the daily snapshots (opt-in). */
+const Timeline: React.FC<{ rows: TimelineRow[]; onOpenMap: (root: string, folder: string | null) => void }> = ({ rows, onOpenMap }) => (
+  <div className="cl-tl cl-enter d3" role="group" aria-labelledby="cl-tl-home">
+    <h2 id="cl-tl-home" className="cl-meta cl-tl-title">
+      WHERE DID MY SPACE GO?
+    </h2>
+    {rows.map((row) => {
+      const up = row.delta >= 0;
+      const change = `${up ? "+" : "−"}${fmtSize(Math.abs(row.delta))}`;
+      return (
+        <div key={row.root} className="cl-tl-row">
+          <button data-weight="medium" type="button" className="cl-tl-drive" aria-label={`Open the Space map for ${driveName(row.root)}`} onClick={() => onOpenMap(row.root, null)}>
+            {driveName(row.root)}
+          </button>
+          <svg viewBox={`0 0 ${TL_W} ${TL_H}`} className="cl-tl-spark" role="img" aria-label={`Used space on ${driveName(row.root)} over ${row.days} days: ${up ? "up" : "down"} ${fmtSize(Math.abs(row.delta))}`}>
+            <path d={sparkPath(row.used, TL_W, TL_H, 4)} className="cl-spark-line" />
+            {row.jumps.map((j) => {
+              const p = sparkPoint(row.used, j.index, TL_W, TL_H, 4);
+              return p ? <circle key={j.day} cx={p.x} cy={p.y} r={3} className="cl-tl-dot" /> : null;
+            })}
+          </svg>
+          <span className="cl-tl-change">
+            {row.delta !== 0 && <span className={`cl-delta cl-num ${up ? "is-up" : "is-down"}`}>{change}</span>}
+            <span className="cl-meta"> {row.delta === 0 ? "No change" : ""} in {row.days} days</span>
+          </span>
+          <span className="cl-tl-jumps">
+            {row.jumps.map((j) => (
+              <button data-weight="light"
+                key={j.day}
+                type="button"
+                className="cl-chip cl-tl-jump cl-num"
+                aria-label={`${j.label}. Open the Space map${j.folder ? " at that folder" : ""}`}
+                onClick={() => onOpenMap(row.root, j.folder)}
+              >
+                {j.label}
+              </button>
+            ))}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+);
+
+export const Home: React.FC<{
+  overview: Overview | null;
+  error: string | null;
+  onScan: () => void;
+  onSpace: () => void;
+  onOpen: (uri: string) => void;
+  timeline?: TimelineRow[];
+  onOpenMap?: (root: string, folder: string | null) => void;
+}> = ({ overview, error, onScan, onSpace, onOpen, timeline, onOpenMap }) => {
   const drives = overview?.drives ?? [];
   const sys = drives.find((d) => d.root.toUpperCase().startsWith("C")) ?? drives[0];
   const others = drives.filter((d) => d !== sys);
@@ -56,20 +111,22 @@ export const Home: React.FC<{ overview: Overview | null; error: string | null; o
           ))}
         </div>
 
+        {timeline && timeline.length > 0 && onOpenMap && <Timeline rows={timeline} onOpenMap={onOpenMap} />}
+
         {error && (
           <div className="cl-error cl-enter" role="alert">
             <span>{error}</span>
-            <button type="button" className="cl-btn is-ghost" onClick={onScan}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onScan}>
               Try again
             </button>
           </div>
         )}
 
         <div className="cl-home-actions cl-enter d3">
-          <button type="button" className="cl-btn is-primary is-xl" onClick={onScan} autoFocus>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary is-xl" onClick={onScan} autoFocus>
             <ScanSearch size={17} strokeWidth={2.4} aria-hidden /> Scan my PC <Key>Enter</Key>
           </button>
-          <button type="button" className="cl-btn is-ghost" onClick={onSpace}>
+          <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={onSpace}>
             <MapIcon size={15} aria-hidden /> Space map
           </button>
         </div>
@@ -79,7 +136,7 @@ export const Home: React.FC<{ overview: Overview | null; error: string | null; o
         {overview?.storageSense != null && (
           <p className="cl-meta cl-enter d4">
             Windows Storage Sense is {overview.storageSense ? "on" : "off"} ·{" "}
-            <button type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
+            <button data-weight="light" type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
               Storage Sense settings
             </button>
           </p>

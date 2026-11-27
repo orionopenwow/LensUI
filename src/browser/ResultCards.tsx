@@ -4,6 +4,7 @@ import { browserOpen } from "./api";
 import { directionsUrl, icsFor } from "./agent";
 import { Key } from "./ApprovalCard";
 import type { ResultCard } from "./guard";
+import { oops } from "./oops";
 
 function download(name: string, body: string, type: string) {
   const a = document.createElement("a");
@@ -31,7 +32,7 @@ export function DitherMap({ pins, title }: { pins: { label: string; pick?: boole
 }
 
 export function ResultView({ result, onOpen }: { result: ResultCard; onOpen?(url: string): void }) {
-  const open = onOpen ?? ((u: string) => void browserOpen(u).catch(() => {}));
+  const open = onOpen ?? ((u: string) => void browserOpen(u).catch(oops("open that link")));
   if (result.type === "table") {
     return (
       <div className="lb-card lb-result">

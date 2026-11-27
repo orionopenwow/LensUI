@@ -21,6 +21,7 @@ import { DEFAULT_MAGIC, magicGetConfig, magicOpen, type MagicConfig } from "./co
 import { inputFor, PAN_INTENT_MS, panelRows, panKey, type LensItem } from "./lensPanModel";
 import type { Row } from "./model";
 import "./lens-pan.css";
+import { logFail, quiet } from "../failsafe/calls";
 
 interface PanCtx {
   item: LensItem;
@@ -96,17 +97,17 @@ export function LensPan({
   useEffect(() => {
     if (!panned || loaded.current) return;
     loaded.current = true;
-    magicGetConfig().then((c) => c && setCfg(c)).catch(() => {});
+    magicGetConfig().then((c) => c && setCfg(c)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
         setUsage(s?.usage ?? {});
       })
-      .catch(() => {});
+      .catch(quiet);
   }, [panned]);
 
   const open = (run: string | null) => {
-    void magicOpen(inputFor(item, run)).catch(() => {});
+    void magicOpen(inputFor(item, run)).catch(logFail("Magic", "open the Magic window"));
     onClose();
   };
 
@@ -129,7 +130,7 @@ export function LensPan({
                 }
               }}
             >
-              <button type="button" role="menuitem" className={`${itemClassName} lens-pan-back`} onClick={() => back()}>
+              <button type="button" role="menuitem" data-weight="light" className={`${itemClassName} lens-pan-back`} onClick={() => back()}>
                 <ChevronLeft size={14} strokeWidth={2.4} aria-hidden />
                 <LensMark />
                 <span className="lens-pan-title">{item.label}</span>
@@ -140,6 +141,7 @@ export function LensPan({
                   key={r.id}
                   type="button"
                   role="menuitem"
+                  data-weight="light"
                   className={itemClassName}
                   data-lens-first={i === 0 ? "" : undefined}
                   onClick={() => open(r.id)}
@@ -152,6 +154,7 @@ export function LensPan({
               <button
                 type="button"
                 role="menuitem"
+                data-weight="light"
                 className={itemClassName}
                 data-lens-first={rows.length === 0 ? "" : undefined}
                 onClick={() => open(null)}
@@ -188,6 +191,7 @@ export function LensMenuRow({ className = "lens-pan-item", hint }: { className?:
       role="menuitem"
       aria-haspopup="menu"
       aria-expanded={ctx.panned}
+      data-weight="light"
       className={`${className} lens-pan-row`}
       onClick={() => {
         clear();

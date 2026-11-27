@@ -6,11 +6,12 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Eraser, Settings2, X } from "lucide-react";
 import { api, EVENTS, on } from "./api";
+import { openCoreApp } from "../coreapps/registry";
 import { AppsPanel, DownloadsPanel, TimelinePanel } from "./Extras";
 import { Cleanup } from "./Cleanup";
 import { Done, type DoneInfo } from "./Done";
 import { Home } from "./Home";
-import { flow, fmtSize, initialFlow, keyAction, selectionPayload, type CleanupTab, type FlowState } from "./model";
+import { flow, fmtSize, folderName, initialFlow, keyAction, selectionPayload, timelineRows, type CleanupTab, type FlowState } from "./model";
 import { PreviewSheet } from "./PreviewSheet";
 import { Scanning } from "./Scanning";
 import { SettingsPanel } from "./SettingsPanel";
@@ -18,6 +19,7 @@ import { SpaceMap, type MapView } from "./SpaceMap";
 import type { AppUsage, HistoryView, Overview, Preview, ScanProgress, SpaceNode, SpaceProgress, SpaceSummary, SpaceView, Verdict } from "./types";
 import { Ring } from "./ui";
 import "./cleaner.css";
+import { failText, quiet } from "../ui/oops";
 
 export interface CleanerDemo {
   flow?: Partial<FlowState>;
@@ -29,6 +31,7 @@ export interface CleanerDemo {
   settings?: boolean;
   space?: { root?: string; mode?: MapView; filter?: string; selected?: string[]; nodeId?: number; moving?: { path: string; done: number; total: number } };
   downloadsPicked?: string[];
+  timelines?: { root: string; view: HistoryView | null }[];
 }
 
 interface SheetState {
@@ -80,6 +83,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
   const [dlPicked, setDlPicked] = useState<string[]>(demo?.downloadsPicked ?? []);
 
   const say = useCallback((text: string, error = false, action?: { label: string; run: () => void }) => setToast({ text, error, action }), []);
+  // Stop is a promise to the person: if the scan can't be told to stop, say that it is still going.
+  const stopFailed = useCallback((e: unknown) => say(failText("stop the scan", e) + " It finishes by itself; nothing is deleted.", true), [say]);
 
   const loadOverview = useCallback(() => {
     api
@@ -88,6 +93,19 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
       .catch((e) => say(`Couldn't read your drives: ${e}`, true, { label: "Try again", run: () => loadOverview() }));
   }, [say]);
   useEffect(loadOverview, [loadOverview]);
+
+  // Home: "Where did my space go?" from the daily snapshots (only when the person turned them on).
+  const [timelines, setTimelines] = useState<{ root: string; view: HistoryView | null }[]>(demo?.timelines ?? []);
+  const driveRoots = (overview?.drives ?? []).map((d) => d.root).slice(0, 6).join("|");
+  useEffect(() => {
+    if (demo || !driveRoots || s.screen !== "home") return;
+    let alive = true;
+    Promise.all(driveRoots.split("|").map((r) => api.history(r).then((view) => ({ root: r, view })).catch(() => ({ root: r, view: null })))).then((t) => alive && setTimelines(t));
+    return () => {
+      alive = false;
+    };
+  }, [demo, driveRoots, s.screen]);
+  const timeline = useMemo(() => timelineRows(timelines), [timelines]);
 
   // ── scan ────────────────────────────────────────────────────────────────────────────────────
   const scan = useCallback(() => {
@@ -151,6 +169,9 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
 
   const sysDrive = useMemo(() => overview?.drives.find((d) => d.root.toUpperCase().startsWith("C")) ?? overview?.drives[0], [overview]);
 
+  const sheetId = sheet?.preview.id;
+  const confirmCodeFor = useCallback(() => (sheetId ? api.confirmCode(sheetId) : Promise.reject(new Error("That preview has expired; scan again."))), [sheetId]);
+
   const run = useCallback(
     async (confirm?: string | null) => {
       if (!sheet) return;
@@ -181,6 +202,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           freeAfter: after?.free ?? (before?.free ?? 0) + out.freed,
           binned: out.binned.length,
           skipped: out.skipped,
+          scanMs: s.report?.elapsedMs,
         });
         dispatch({ type: "cleaned", freed: out.freed });
       } catch (e) {
@@ -242,7 +264,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         setSpaceProgress(null);
         const v = await api.spaceChildren(r, demo?.space?.nodeId ?? 0, 1, 80);
         setView(v);
-        api.spaceChildren(r, v.node.id, 3, 24).then((d) => setNested(d.children)).catch(() => {});
+        // The second level only sharpens the treemap and sunburst; without it they draw one level.
+        api.spaceChildren(r, v.node.id, 3, 24).then((d) => setNested(d.children)).catch(quiet);
       } catch (e) {
         setSpaceProgress(null);
         say(`Couldn't map ${r}: ${e}`, true, { label: "Try again", run: () => mapDrive(r) });
@@ -254,6 +277,24 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
   useEffect(() => {
     if (s.screen === "space" && !summary && !spaceProgress) mapDrive(root);
   }, [s.screen, summary, spaceProgress, root, mapDrive]);
+
+  // From the Home timeline: open the Space map on a drive, at the folder that grew when known.
+  const openMapAt = useCallback(
+    async (r: string, folder: string | null) => {
+      dispatch({ type: "space" });
+      if (!summary || root !== r) await mapDrive(r);
+      if (!folder) return;
+      try {
+        const id = await api.spaceFind(r, folder);
+        if (id == null) return say(`${folderName(folder)} isn't on ${r} any more, so this is the whole drive.`);
+        setView(await api.spaceChildren(r, id, 1, 80));
+        api.spaceChildren(r, id, 3, 24).then((d) => setNested(d.children)).catch(quiet);
+      } catch {
+        // The map itself failed and already said so (with Try again).
+      }
+    },
+    [summary, root, mapDrive, say]
+  );
 
   useEffect(() => {
     if (!summary) return;
@@ -328,10 +369,10 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         if (sheet) return setSheet(null);
         if (settingsOpen) return setSettingsOpen(false);
         if (s.screen === "scanning") {
-          api.cancel().catch(() => {});
+          api.cancel().catch(stopFailed);
           return dispatch({ type: "cancel" });
         }
-        if (s.screen === "space" && spaceProgress) return void api.cancel().catch(() => {});
+        if (s.screen === "space" && spaceProgress) return void api.cancel().catch(stopFailed);
         if (s.screen === "done" && !document.querySelector(".cl-sheet")) return dispatch({ type: "home" });
         return;
       }
@@ -379,7 +420,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         {showTabs && (
           <nav className="cl-tabs" role="tablist" aria-label="Lens Cleaner">
             {TABS.map(([id, label]) => (
-              <button
+              <button data-weight="light"
                 key={id}
                 type="button"
                 role="tab"
@@ -393,23 +434,23 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           </nav>
         )}
         <span className="cl-top-sp" data-tauri-drag-region />
-        <button type="button" className="cl-icon-btn" aria-label="Lens Cleaner settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
+        <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Lens Cleaner settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
           <Settings2 size={15} />
         </button>
-        <button type="button" className="cl-icon-btn" aria-label="Close Lens Cleaner" onClick={() => api.close().catch(() => {})}>
+        <button type="button" className="cl-icon-btn" aria-label="Close Lens Cleaner" data-weight="medium" onClick={() => api.close().catch((e) => say(failText("close this window", e), true))}>
           <X size={16} />
         </button>
       </header>
 
       <main className="cl-main" id="cl-main">
-        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch(() => {})} />}
+        {s.screen === "home" && s.tab === "cleanup" && <Home overview={overview} error={s.error} onScan={scan} onSpace={() => dispatch({ type: "space" })} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} timeline={timeline} onOpenMap={openMapAt} />}
         {s.screen === "scanning" && (
           <Scanning
             checklist={overview?.checklist ?? []}
             done={scanDone}
             found={found}
             onCancel={() => {
-              api.cancel().catch(() => {});
+              api.cancel().catch(stopFailed);
               dispatch({ type: "cancel" });
             }}
           />
@@ -448,7 +489,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             onReveal={(p) => api.reveal(p).catch((e) => say(String(e), true))}
             onBin={binPaths}
             onMove={move}
-            onCancel={() => api.cancel().catch(() => {})}
+            onCancel={() => api.cancel().catch(stopFailed)}
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "apps" && (
@@ -460,8 +501,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
               setAppsErr(null);
               api.apps().then(setApps).catch((e) => setAppsErr(String(e)));
             }}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
-            onUninstall={(a) => api.appUninstall(a.key).catch((e) => say(String(e), true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
+            onUninstall={(a) => openCoreApp("startup", "uninstall", a.name).catch((e) => say(`Couldn't open Startup & Uninstall: ${e}`, true, { label: "Installed apps", run: () => api.open("ms-settings:appsfeatures") }))}
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "timeline" && (
@@ -469,7 +510,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             root={root}
             data={history}
             total={overview?.drives.find((d) => d.root === root)?.total ?? 0}
-            onReveal={(p) => api.reveal(p).catch(() => {})}
+            onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))}
             onEnable={() => {
               api
                 .settingsGet()
@@ -481,7 +522,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "downloads" && (
-          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch(() => {})} />
+          <DownloadsPanel items={downloads} picked={dlPicked} onToggle={(p) => setDlPicked((x) => (x.includes(p) ? x.filter((y) => y !== p) : [...x, p]))} onBin={() => binPaths(dlPicked, false)} onReveal={(p) => api.reveal(p).catch((e) => say(`Couldn't open that folder: ${e}`, true))} />
         )}
         {s.screen === "done" && done && <Done info={done} showShare={demo?.share} onDone={() => dispatch({ type: "home" })} onShare={(png) => api.share(png).then((p) => say(`Saved the card to ${p}`)).catch((e) => say(String(e), true))} />}
       </main>
@@ -490,15 +531,15 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         <aside className="cl-drawer" role="dialog" aria-label="Lens Cleaner settings">
           <header className="cl-sheet-head">
             <span className="cl-h3">Settings</span>
-            <button type="button" className="cl-icon-btn" aria-label="Close settings" onClick={() => setSettingsOpen(false)}>
+            <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Close settings" onClick={() => setSettingsOpen(false)}>
               <X size={16} />
             </button>
           </header>
-          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch(() => {})} />
+          <SettingsPanel initial={overview?.settings ?? null} storageSense={overview?.storageSense ?? null} onOpen={(u) => api.open(u).catch((e) => say(`Couldn't open that Windows page: ${e}`, true))} />
         </aside>
       )}
 
-      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} />}
+      {sheet && <PreviewSheet preview={sheet.preview} title={sheet.title} smart={sheet.smart} userFiles={sheet.userFiles} busy={busy} onRun={run} onClose={() => setSheet(null)} onFullList={() => api.fullList(sheet.preview.id).catch((e) => say(String(e), true))} onConfirmCode={confirmCodeFor} />}
 
       <div className="cl-toasts" aria-live="polite">
         {undoLeft > 0 && (
@@ -507,7 +548,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             <span>
               {undoCount} item{undoCount === 1 ? "" : "s"} went to the Recycle Bin.
             </span>
-            <button type="button" className="cl-btn is-ghost is-sm" onClick={undo}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={undo}>
               Restore from Recycle Bin
             </button>
           </div>
@@ -516,7 +557,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           <div className={`cl-toast${toast.error ? " is-error" : ""}`} role={toast.error ? "alert" : "status"}>
             <span>{toast.text}</span>
             {toast.action && (
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="cl-btn is-ghost is-sm"
                 onClick={() => {
@@ -527,7 +568,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
                 {toast.action.label}
               </button>
             )}
-            <button type="button" className="cl-icon-btn" aria-label="Dismiss" onClick={() => setToast(null)}>
+            <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Dismiss" onClick={() => setToast(null)}>
               <X size={14} />
             </button>
           </div>

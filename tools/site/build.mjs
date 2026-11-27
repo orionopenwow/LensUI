@@ -15,6 +15,7 @@ import { execFileSync } from "node:child_process";
 import { render, setLinkResolver, slugify, esc } from "./lib/markdown.mjs";
 import { page, REPO, setStars } from "./lib/layout.mjs";
 import { writePacks } from "./lib/packs.mjs";
+import { loadDockStyles } from "./lib/dockstyles.mjs";
 import { home, download } from "./pages.mjs";
 import { buildBrand } from "./lib/logo.mjs";
 import { writeIcons } from "./lib/icons.mjs";
@@ -62,6 +63,8 @@ if (existsSync(join(root, "docs/media/clips.json"))) {
 
 // Real icons and screenshots for the apps section, from the pinned commits in the Lens Apps catalogue.
 try { execFileSync("node", [join(here, "fetch-app-media.mjs")], { stdio: "inherit" }); } catch { console.warn("[site] app media not fetched; the apps section shows text only"); }
+// The Lens Apps cards' thumbnails: real screenshots from each project's repo, committed (tools/site/app-thumbs.mjs).
+if (existsSync(join(root, "docs/media/apps"))) { mkdirSync(join(site, "media/apps"), { recursive: true }); for (const f of readdirSync(join(root, "docs/media/apps"))) if (f.endsWith(".webp")) copyFileSync(join(root, "docs/media/apps", f), join(site, "media/apps", f)); }
 // App icons for the demo desktops (Lens's own, Simple Icons brand tiles, generic stand-ins).
 writeIcons(root, join(site, "media/icons"));
 const appMedia = existsSync(join(site, "data/app-media.json")) ? JSON.parse(readFileSync(join(site, "data/app-media.json"), "utf8")) : {};
@@ -167,7 +170,7 @@ const visionHref = read("docs/VISION.md") ? `${REPO}/blob/main/docs/VISION.md` :
 // The Apps pane reads the Lens Apps catalogue (feature/lens-apps; vendored until merged).
 const appsCat = read("catalog/apps/catalog.json") ? JSON.parse(read("catalog/apps/catalog.json")) : JSON.parse(read("tools/site/vendor/apps/catalog.json"));
 write("data/apps.json", JSON.stringify({ apps: (appsCat.apps ?? appsCat).map((a) => ({ name: a.name, category: a.category, pitch: a.pitch, openSource: a.openSource, license: a.license })) }));
-write("index.html", page({ title: "", desc: "Lens, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, packs, stars }), scripts: ["js/home.js"] }));
+write("index.html", page({ title: "", desc: "Lens, the everything desktop. The open-source desktop where look, apps and AI finally work as one, for Windows 10 and 11. Try it live.", path: "index.html", body: home({ visionHref, apps: appMedia, catalog: appsCat.apps ?? appsCat, packs, stars, dockStyles: await loadDockStyles() }), scripts: ["js/home.js"] }));
 write("download.html", page({ title: "Download", desc: "How to get Lens on Windows 10 and 11, where macOS and Linux stand, releases, and which Windows versions it works on.", path: "download.html", body: download({ log, stars }) }));
 
 // Testers: today's checklist from the daily notes.

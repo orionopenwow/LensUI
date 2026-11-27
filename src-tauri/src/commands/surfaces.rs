@@ -414,7 +414,7 @@ pub(crate) fn toggle_palette_anchored(app: AppHandle, state: State<AppState>, an
 
         let (x, y) = if anchor == "bottom-dock" {
             crate::app::integration::side_dock_flyout(
-                &cfg, scale, bar_h, bottom_edge, pal_w, pal_h,
+                &cfg, &mon, bar_h, bottom_edge, pal_w, pal_h,
                 win_monitors::FlyoutAlign::Center,
             )
             .unwrap_or((x, y))
@@ -517,7 +517,7 @@ pub(crate) fn open_quicksettings_tab_cmd(
             };
             let (x, y) = if anchor_mode == "bottom-right" {
                 crate::app::integration::side_dock_flyout(
-                    &cfg, scale, bar_h, bottom_edge, qs_w, qs_h,
+                    &cfg, &mon, bar_h, bottom_edge, qs_w, qs_h,
                     win_monitors::FlyoutAlign::End,
                 )
                 .unwrap_or((x, y))

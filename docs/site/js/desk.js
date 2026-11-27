@@ -27,7 +27,8 @@ export const APPS = {
   timer: { name: "Timer", icon: "lens-timer", src: "coreapps.html?app=timer", w: 420, h: 500, marker: ".ca-app-timer" },
   cleaner: { name: "Lens Cleaner", icon: "lens-cleaner", src: "cleaner.html?scene=cleanup", w: 860, h: 560, marker: ".cl-app" },
   store: { name: "Lens Apps", icon: "lens-apps", src: "shell.html?surface=apps", w: 900, h: 580, marker: ".lens-glass" },
-  settings: { name: "Settings", icon: "lens-settings", src: "shell.html?surface=settings&settingsMode=simple", w: 900, h: 580, marker: ".cc-shell" },
+  // Settings is the dock's pop-out in Lens, never a free window: it opens joined to the dock (see placeFly).
+  settings: { name: "Settings", icon: "lens-settings", src: "shell.html?surface=settings&settingsMode=simple&esc=1&drag=0", w: 760, h: 560, marker: ".cc-shell", fly: true },
   // Not pinned to the dock: opened from the core apps grid, Command, or a tour.
   calculator: { name: "Calculator", icon: "lens-calculator", src: "coreapps.html?app=calculator", w: 380, h: 560, marker: ".ca-app-calculator" },
   color: { name: "Color", icon: "lens-color", src: "coreapps.html?app=color", w: 520, h: 520, marker: ".ca-app-color" },
@@ -54,7 +55,7 @@ let uid = 0;
  * createDesk(host, { label, layout })
  * host: an element the desk fills (it sets its height from the 16:10 design size).
  */
-export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false } = {}) {
+export function createDesk(host, { label = "Lens desktop", layout = [["browser", 0.06, 0.06], ["notes", 0.56, 0.12]], fitViewport = false, accentLayer = false, ratio = 0.625, mobileRatio = 1.2, hint: showHint = true, running = [], minDesktop = 768, designW = 1600 } = {}) {
   const n = ++uid;
   host.classList.add("lx-host");
   host.innerHTML = `<div class="lx" tabindex="0" role="application" aria-roledescription="desktop" aria-label="${esc(label)}" aria-describedby="lx-help-${n}">
@@ -84,17 +85,34 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   let pack = null, accent = null, committed = null, visible = false;
   const packMsg = () => (pack ? { lens: "pack", pack: { id: pack.id, label: pack.label, base: baseOf(pack), accent: accent ?? pack.accent, radius: pack.radius, scheme: pack.scheme, frameStyle: pack.frameStyle, controlStyle: pack.controlStyle } } : null);
   const tell = (f, m) => { try { if (m) f?.contentWindow?.postMessage(m, location.origin); } catch { /* frame gone */ } };
+  // The Theme lab's accent layer (css/lab-accent.css): the accent at full strength on every real
+  // surface on this desk, easing from one colour to the next, with ink that reads on it.
+  const onAccent = (hex) => { const n = parseInt(String(hex).slice(1, 7), 16); if (Number.isNaN(n)) return "#09090b"; const l = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2] > 0.18 ? "#09090b" : "#fafafa"; };
+  function dress(f) {
+    if (!accentLayer) return;
+    try {
+      const doc = f?.contentDocument;
+      if (!doc?.head) return;
+      if (!doc.getElementById("lab-accent")) doc.head.append(Object.assign(doc.createElement("link"), { id: "lab-accent", rel: "stylesheet", href: new URL("css/lab-accent.css", SITE).href }));
+      const r = doc.documentElement;
+      r.style.setProperty("--lab-on-accent", onAccent(accent ?? pack?.accent ?? "#fafafa"));
+      r.classList.toggle("lab-still", reducedMotion());
+      r.classList.toggle("lab-motion", !reducedMotion());
+    } catch { /* not ready yet */ }
+  }
+  const dressAll = () => { for (const f of [frame, topbar, ...[...wins.values()].map((w) => w.frame), ...Object.values(overs).map((o) => o.frame)]) dress(f); };
 
   // ---- size: a 16:10 design canvas, scaled down on small screens --------------------------------
   let W = 1280, H = 800, k = 1, full = false;
   function fit() {
     const cw = host.clientWidth || 1280;
     if (full) { W = innerWidth; H = innerHeight; k = 1; }
-    else if (cw < 768) { W = 900; H = 1080; k = cw / W; }
+    else if (cw < minDesktop) { W = 900; H = Math.round(900 * mobileRatio); k = cw / W; }
     else {
       // Real Lens windows are desktop-sized, so the desk keeps a desktop's width (1600 design px at
-      // least) and scales down to fit the page, the way a screenshot of a monitor would.
-      W = Math.max(cw, 1600); k = cw / W; H = Math.round(W * 10 / 16);
+      // least) and scales down to fit the page, the way a screenshot of a monitor would. `ratio` is
+      // its height over width (16:10 by default; the dock widget is a short strip of desktop).
+      W = Math.max(cw, designW); k = cw / W; H = Math.round(W * ratio);
       /* tabs above + step bar below stay on screen */ if (fitViewport) H = Math.round(Math.max(560 / k, Math.min(H, (innerHeight - 280) / k)));
     }
     cv.style.width = `${W}px`; cv.style.height = `${H}px`;
@@ -102,6 +120,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     host.style.height = full ? "" : `${Math.round(H * k)}px`;
     for (const w of wins.values()) { clampWin(w); paint(w); }
     sizeFrame();
+    placeFly();
     topbar.style.height = `${TOP}px`;
   }
   const toDesk = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; };
@@ -119,6 +138,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function open(id, at) {
     const a = APPS[id];
     if (!a) return null;
+    if (a.fly && !open.raw) return openFly(id);
     const ex = [...wins.values()].find((w) => w.app === id);
     if (ex) { if (ex.min) restore(ex.id); focus(ex.id); return ex; }
     const el = document.createElement("section");
@@ -174,7 +194,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
       const b = [...d.querySelectorAll(".dock-item")].find((x) => (x.getAttribute("aria-label") ?? "").startsWith(name));
       if (!b) return null;
       const r = b.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: frame.offsetTop + r.top + r.height / 2 };
+      return { x: frame.offsetLeft + r.left + r.width / 2, y: frame.offsetTop + r.top + r.height / 2 };
     } catch { return null; }
   }
   function minimize(hwnd) {
@@ -205,6 +225,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = wins.get(hwnd);
     if (!w) return;
     wins.delete(hwnd);
+    if (fly?.id === hwnd) { fly = null; send({ lens: "settings", open: false, docked: dstyle !== "taskbar" }); }
     if (focusedId === hwnd) { const top = [...wins.values()].filter((x) => !x.min).sort((a, b) => +b.el.style.zIndex - +a.el.style.zIndex)[0]; top ? focus(top.id, { quiet: true }) : blurAll(); }
     const done = () => { w.el.remove(); w.cleanup?.(); };
     if (reducedMotion()) done(); else w.el.animate([{ opacity: 1 }, { opacity: 0, transform: `translate3d(${w.x}px, ${w.y}px, 0) scale(.96)` }], { duration: 160 }).finished.then(done, done);
@@ -252,12 +273,33 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (T) return "max";
     return null;
   }
+  /**
+   * The snap preview for a slot (null hides it). Called straight from the pointer handler when the
+   * slot changes, so it never waits for a frame. Only transform and opacity animate (IDENTITY §3.4):
+   * the size is set at once, the place glides, and a fresh preview fades in from 97 %.
+   */
+  let snapShown = null;
   function showSnap(slot) {
+    if (slot === snapShown) return;
+    const was = snapShown;
+    snapShown = slot;
     if (!slot) { snapEl.hidden = true; return; }
-    const r = SLOTS[slot](work());
-    snapEl.hidden = false;
-    snapEl.style.transform = `translate3d(${r.x}px, ${r.y}px, 0)`;
+    const r = SLOTS[slot](work()), t = `translate3d(${r.x}px, ${r.y}px, 0)`;
     snapEl.style.width = `${r.w}px`; snapEl.style.height = `${r.h}px`;
+    if (!was) snapEl.style.transition = "none"; // a new preview starts in place; only moves between slots glide
+    snapEl.style.transform = t;
+    snapEl.hidden = false;
+    if (!was) {
+      void snapEl.offsetWidth; snapEl.style.transition = "";
+      if (!reducedMotion() && snapEl.animate) snapEl.animate([{ opacity: 0, transform: `${t} scale(.97)` }, { opacity: 1, transform: t }], { duration: 140, easing: "cubic-bezier(.22,1,.36,1)" });
+    }
+  }
+  /** Shows the snap preview for a pointer on the desk while a window is moved. */
+  function snapFor(q) {
+    const d = dragging;
+    if (!d || d.mode !== "move" || !q) return;
+    d.slot = slotAt(q);
+    showSnap(d.slot);
   }
 
   // Pointer: the real surface's own title bar drags its window (the frame reports the pointer, see
@@ -285,31 +327,54 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function startDrag(w, mode, p, id) {
     dragging = { w, mode, start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id };
     root.classList.add("is-dragging");
-    calm(true);
+    calm(true, w);
     root.classList.toggle("is-pagedrag", id !== "frame"); // frames stay live while their own title bar drags
-    play?.setStill(true); // the window gets the frames while it moves
+    // The window gets the frames while it moves: the backdrop pauses on the frame it shows (setStill
+    // would draw that frame again, 18 ms at 4× in the drag's first task, for the same pixels).
+    play?.runner?.setPaused(true);
     emit("user", "drag");
   }
-  /** While a window moves, the embedded surfaces hold still and drop their glass blur: every blur
-   *  over a moving window would otherwise be recomputed each frame. Restored on drop. */
-  function calm(on) {
-    document.documentElement.classList.toggle("is-calm", on); // the page's own ambient loops pause too
-    for (const f of document.querySelectorAll("iframe")) {
-      try {
-        const doc = f.contentDocument;
-        if (!doc?.documentElement) continue;
-        if (on && !doc.getElementById("site-calm")) {
-          const st = doc.createElement("style");
-          st.id = "site-calm";
-          st.textContent = ".site-calm *, .site-calm *::before, .site-calm *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation-play-state: paused !important; }";
-          doc.head.appendChild(st);
-        }
-        doc.documentElement.classList.toggle("site-calm", on);
-      } catch { /* not ready yet */ }
+  /** While a window moves, the page and its embedded surfaces hold their CSS loops, and the moving
+   *  window's own surface drops its glass blur (a blur inside a moving frame is recomputed each
+   *  frame; a frame's blur only ever samples its own document, so the still windows keep theirs).
+   *  Restored on drop.
+   *  Done element by element: a class goes on each element that has a running CSS animation or a
+   *  blur, and only those restyle. A `.calm *` rule toggled on each document's root (as this used to
+   *  be) restyles every element of the page and of every frame at once, a 120 ms task at the drag's
+   *  first frame and another at the drop on a slow laptop (tools/site/check.mjs, 4× throttle). */
+  const CALM_CSS = ".lens-calm, .lens-calm::before, .lens-calm::after { animation-play-state: paused !important; }"
+    + " .lens-calm-glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }";
+  let calmed = null;
+  function calm(on, w) {
+    document.documentElement.classList.toggle("is-calm", on); // exhibits.js holds its own loop on this; no CSS hangs off it
+    if (!on) { calmed?.forEach(([el, c]) => el.classList.remove(c)); calmed = null; return; }
+    if (calmed) return;
+    calmed = [];
+    const hold = (el, c) => { if (el && !el.classList.contains(c)) { el.classList.add(c); calmed.push([el, c]); } };
+    const docs = [document];
+    for (const f of document.querySelectorAll("iframe")) { try { if (f.contentDocument?.head) docs.push(f.contentDocument); } catch { /* not ready yet */ } }
+    for (const doc of docs) {
+      // The rule's selectors are classes no element has yet, so adding the sheet restyles nothing.
+      if (doc !== document && !doc.getElementById("lens-calm")) doc.head.append(Object.assign(doc.createElement("style"), { id: "lens-calm", textContent: CALM_CSS }));
+      try { for (const a of doc.getAnimations()) if (a.animationName !== undefined && a.playState === "running") hold(a.effect?.target, "lens-calm"); } catch { /* no getAnimations */ }
     }
+    // The moving window's own surface: the elements that blur what is behind them. Their styles are
+    // clean here, so reading them is cheap (about 3 ms at 4×); pseudo-elements aren't read (asking for
+    // a ::before's style computes it, ten times the cost) and no surface blurs from one (src/**/*.css).
+    try {
+      const doc = w?.frame?.contentDocument, view = doc?.defaultView;
+      if (doc?.body) for (const el of doc.body.querySelectorAll("*")) {
+        const s = view.getComputedStyle(el);
+        if ((s.backdropFilter || "none") !== "none" || (s.webkitBackdropFilter || "none") !== "none") hold(el, "lens-calm-glass");
+      }
+    } catch { /* not ready yet */ }
   }
+  // No text selection on the page while a window is dragged (a user-select rule on the body would
+  // restyle the whole page, see css/site.css).
+  document.addEventListener("selectstart", (e) => { if (dragging) e.preventDefault(); }, true);
   let raf = 0, pending = null;
   function move(p) {
+    snapFor(p); // at once, not on the next frame: the preview answers the pointer itself
     pending = p;
     if (raf) return;
     raf = requestAnimationFrame(() => { raf = 0; apply(pending); });
@@ -332,8 +397,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
         d.vx = d.vx * 0.7 + vx * 0.3; d.last = q; d.t = now;
         const tilt = reducedMotion() ? 0 : Math.max(-3, Math.min(3, d.vx * 2.2));
         paint(w, tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
-        d.slot = slotAt(q);
-        showSnap(d.slot);
+        snapFor(q);
       } else {
         const o = d.orig, m = d.mode, minW = 280, minH = 170;
         let { x, y, w: ww, h: hh } = o;
@@ -357,6 +421,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     root.classList.remove("is-dragging", "is-pagedrag");
     calm(false);
     play?.setStill(still());
+    play?.runner?.setPaused(false);
     showSnap(null);
     const w = d.w;
     if (d.slot) snap(w.id, d.slot);
@@ -373,27 +438,37 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   let frameReady = false, tall = false;
   const outbox = [];
   const send = (m) => (frameReady ? frame.contentWindow?.postMessage(m, location.origin) : outbox.push(m));
+  // The dock's frame is a strip along its edge (as the app's dock window is), or the whole work area
+  // while something needs room (search, a menu, window previews).
+  let edge = "bottom";
   function sizeFrame() {
-    frame.style.height = `${tall ? H - TOP : DOCK_H}px`;
-    frame.style.top = `${tall ? TOP : H - DOCK_H}px`;
+    const side = edge === "left" || edge === "right";
+    const r = tall ? { l: 0, t: TOP, w: W, h: H - TOP }
+      : edge === "top" ? { l: 0, t: TOP, w: W, h: DOCK_H }
+      : side ? { l: edge === "left" ? 0 : W - DOCK_H, t: TOP, w: DOCK_H, h: H - TOP }
+      : { l: 0, t: H - DOCK_H, w: W, h: DOCK_H };
+    Object.assign(frame.style, { left: `${r.l}px`, top: `${r.t}px`, width: `${r.w}px`, height: `${r.h}px` });
   }
+  const bg = [...running];
   function sync() {
     const list = [...wins.values()].map((w) => ({ hwnd: w.id, app: w.app, title: APPS[w.app].name, focused: w.id === focusedId && !w.min, min: w.min }));
+    // Apps that run without a window on this desk (the Dock widget: so its running marks show).
+    bg.forEach((app, i) => { if (!list.some((x) => x.app === app)) list.push({ hwnd: 90000 + i, app, title: APPS[app].name, focused: false, min: true }); });
     send({ lens: "windows", list });
     emit("windows", list);
   }
   addEventListener("message", (e) => {
     if (e.source !== frame.contentWindow) return;
     const m = e.data ?? {};
-    if (m.lens === "ready" && !frameReady) { frameReady = true; root.classList.add("dock-live"); outbox.splice(0).forEach((x) => frame.contentWindow.postMessage(x, location.origin)); sync(); }
-    else if (m.lens === "tall") { tall = !!m.on; sizeFrame(); frame.classList.toggle("is-tall", tall); emit("dock-tall", tall); }
+    if (m.lens === "ready" && !frameReady) { frameReady = true; dress(frame); root.classList.add("dock-live"); outbox.splice(0).forEach((x) => frame.contentWindow.postMessage(x, location.origin)); sync(); }
+    else if (m.lens === "tall") { if (m.on) closeFly2(); tall = !!m.on; sizeFrame(); frame.classList.toggle("is-tall", tall); emit("dock-tall", tall); }
     else if (m.lens === "act") { emit("user", "dock"); act(m.cmd, m.args); }
   });
   frame.addEventListener("load", () => frame.contentWindow?.postMessage({ lens: "ping" }, location.origin));
   // The frame only takes the pointer over the dock itself, so windows under its empty band stay clickable.
   let pill = null;
   function pillRect() {
-    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); return { l: r.left - 12, r: r.right + 12, t: frame.offsetTop + r.top - 70, b: frame.offsetTop + r.bottom + 10 }; } catch { return null; }
+    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); const x0 = frame.offsetLeft, y0 = frame.offsetTop, side = edge === "left" || edge === "right"; return side ? { l: x0 + r.left - (edge === "right" ? 70 : 10), r: x0 + r.right + (edge === "left" ? 70 : 10), t: y0 + r.top - 12, b: y0 + r.bottom + 12 } : { l: x0 + r.left - 12, r: x0 + r.right + 12, t: y0 + r.top - (edge === "top" ? 10 : 70), b: y0 + r.bottom + (edge === "top" ? 70 : 10) }; } catch { return null; }
   }
   function pillTest(p) {
     pill = pillRect();
@@ -401,6 +476,52 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   }
   cv.addEventListener("pointermove", (e) => { if (!dragging && !tall) pillTest(toDesk(e)); });
   const post = (m) => send(m);
+
+
+  // ---- the dock's pop-outs: Settings (and Monitor) open joined to the dock --------------------------------
+  // Mirrors src-tauri/src/app/flyout_geom.rs: Settings has its own width (760 px; a wider pill is matched
+  // so the join lines up), sits centred on the dock and overlaps its top edge by 1 px so no seam shows.
+  // The Taskbar style opens it like Windows' Start menu instead: 680 px, 12 px above the bar, apart.
+  // A second click on its dock button, its own ×, or Esc closes it; opening search closes it.
+  let fly = null, dstyle = "floating", dalign = "center";
+  const FLY = { settings: [760, 560], monitor: [760, 520] };
+  function pillBox() {
+    try { const p = frame.contentDocument?.querySelector(".dock-pill"); if (!p) return null; const r = p.getBoundingClientRect(); if (!r.width) return null; return { l: frame.offsetLeft + r.left, r: frame.offsetLeft + r.right, t: frame.offsetTop + r.top, w: r.width }; } catch { return null; }
+  }
+  function placeFly() {
+    const w = fly && wins.get(fly.id);
+    if (!w) return;
+    const p = pillBox(), bar = dstyle === "taskbar";
+    const [ow, oh] = FLY[w.app] ?? FLY.settings;
+    // A wider pill is matched so the join lines up; a full-width row (Islands' container) is not a pill.
+    const pw = p && p.w <= W * 0.75 ? p.w : 0;
+    const ww = Math.round(Math.max(320, Math.min(W - 24, bar ? Math.min(ow, 680) : Math.max(ow, pw))));
+    const top = p ? p.t : H - 64, gap = bar ? 12 : 0;
+    const hh = Math.round(Math.max(300, Math.min(oh, top - gap - TOP - 4)));
+    const x = Math.round(bar && dalign === "left" ? 12 : (W - ww) / 2);
+    const y = Math.round(bar ? top - gap - hh : top - hh + 1);
+    Object.assign(w, { x, y, w: ww, h: hh }); paint(w);
+    w.el.classList.toggle("is-fused", !bar);
+    w.el.classList.add("is-fly");
+    send({ lens: "settings", open: true, docked: !bar });
+  }
+  function openFly(app = "settings") {
+    if (fly && wins.get(fly.id)?.app === app) { focus(fly.id); return wins.get(fly.id); }
+    if (fly) closeFly2();
+    // One pop-out at a time, as in the app: search and Quick Settings go when Settings opens.
+    if (tall) send({ lens: "search", open: false, focus: false });
+    closeOver("qs");
+    open.raw = true;
+    let w;
+    try { w = open(app); } finally { open.raw = false; }
+    if (!w) return null;
+    w.fly = true; fly = { id: w.id };
+    placeFly();
+    // The pill can settle a beat after a style change: place again once it has.
+    setTimeout(placeFly, 260);
+    return w;
+  }
+  function closeFly2() { if (fly) close(fly.id); }
 
 
   // ---- the real surfaces: what each frame asks of its window, and of the desk ---------------------------
@@ -414,12 +535,13 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   /** A real surface asked for something outside itself (the backend's job in the app). */
   function act(cmd, args = {}) {
     if (cmd === "launch_app_cmd") { const id = String(args.path ?? "").replace("lens://", "").split("/")[0]; open(APPS[id] ? id : "browser"); }
-    else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) return; if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
+    else if (cmd === "focus_window_cmd") { const w = wins.get(args.hwnd); if (!w) { const app = bg[args.hwnd - 90000]; if (app) open(app); return; } if (w.min) restore(w.id); else if (focusedId === w.id) minimize(w.id); else focus(w.id); }
     else if (cmd === "window_action_cmd") { const w = wins.get(args.hwnd); if (!w) return; ({ minimize: () => minimize(w.id), close: () => close(w.id), maximize: () => snap(w.id, "max"), restore: () => restore(w.id) })[args.action]?.(); }
     else if (cmd === "open_quicksettings_tab_cmd") openOver("qs", { toggle: true });
     // The dock's own Monitor and Settings buttons.
-    else if (cmd === "open_dock_popout_tab_cmd") open(args.tab === "monitor" ? "monitor" : "settings");
-    else if (cmd === "toggle_settings_docked") { const ws = [api.byApp("settings"), api.byApp("monitor")].filter(Boolean); ws.length ? ws.forEach((w) => close(w.id)) : open("settings"); }
+    else if (cmd === "open_dock_popout_tab_cmd") openFly(args.tab === "monitor" ? "monitor" : "settings");
+    else if (cmd === "toggle_settings_docked") fly ? closeFly2() : openFly("settings");
+    else if (cmd === "hide_surface") { if (args.label === "settings") closeFly2(); else if (args.label === "quicksettings") closeOver("qs"); }
     else if (cmd === "show_command_cmd") openCmd();
     else if (cmd === "browser_open") open("browser");
     else if (cmd === "open_surface" || cmd === "toggle_surface") {
@@ -436,6 +558,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     const w = who.w;
     if (m.a === "ready") {
       tell(e.source, packMsg());
+      dress(e.source.frameElement);
       if (w) { w.ready = true; w.el.classList.add("is-ready"); emit("ready", w); }
       else if (who.over) { overs[who.over].el.classList.add("is-ready"); emit("ready", { over: who.over }); }
       else { root.classList.add("top-live"); emit("ready", { top: true }); }
@@ -450,6 +573,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (m.a === "close" || m.a === "hide") close(w.id);
     else if (m.a === "min") minimize(w.id);
     else if (m.a === "max") snap(w.id, "max");
+    else if (m.a === "drag-start" && w.fly) return;
     else if (m.a === "drag-start") {
       // The frame reports screen px; the desk knows where its window is, so the two line up here.
       const at = { x: w.x + m.cx, y: w.y + m.cy };
@@ -472,7 +596,8 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     Object.assign(o.el.style, { transform: `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`, width: `${ww}px`, height: `${hh}px` });
     o.el.hidden = false;
     if (!reducedMotion()) o.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140 });
-    try { o.frame.focus({ preventScroll: true }); } catch { /* not focusable yet */ }
+    // The demo opening it by itself never takes the visitor's keyboard focus.
+    if (!api.auto) try { o.frame.focus({ preventScroll: true }); } catch { /* not focusable yet */ }
     emit("over", { which, open: true });
     return o;
   }
@@ -503,11 +628,13 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   });
   cv.addEventListener("pointerdown", (e) => { if (e.target === cv || e.target.closest(".lx-bg")) { for (const k2 of Object.keys(overs)) closeOver(k2); blurAll(); emit("user", "desktop"); } });
   // A one-time hint: right-click is the feature people miss.
-  let hint = document.createElement("div");
-  hint.className = "lx-hint";
-  hint.innerHTML = "Try right-click <b>✦</b>";
-  cv.append(hint);
-  setTimeout(() => { hint?.remove(); hint = null; }, 14000);
+  let hint = showHint ? document.createElement("div") : null;
+  if (hint) {
+    hint.className = "lx-hint";
+    hint.innerHTML = "Try right-click <b>✦</b>";
+    cv.append(hint);
+    setTimeout(() => { hint?.remove(); hint = null; }, 14000);
+  }
 
   // ---- keyboard ---------------------------------------------------------------------------------------
   root.addEventListener("keydown", (e) => {
@@ -521,7 +648,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     }
     if (e.key === "Delete" && w && document.activeElement === w.el) { e.preventDefault(); close(w.id); root.focus({ preventScroll: true }); }
     if (e.key.toLowerCase() === "t" && !e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement === root) { e.preventDefault(); api.shuffle(); }
-    if (e.key === "Escape") { for (const k2 of Object.keys(overs)) closeOver(k2); }
+    if (e.key === "Escape") { for (const k2 of Object.keys(overs)) closeOver(k2); closeFly2(); }
   });
 
   // ---- backdrop: the real ambient theme scene, with a cursor glow and a little parallax -----------
@@ -570,9 +697,23 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (!p.collection) document.documentElement.dataset.preset = p.id;
     send({ lens: "pack", pack: { id: p.id, label: p.label, base: baseOf(p), accent: acc ?? p.accent, radius: p.radius, scheme: p.scheme, frameStyle: p.frameStyle, controlStyle: p.controlStyle }, ...(dockStyle ? { dockStyle } : {}) });
     for (const f of [topbar, ...[...wins.values()].map((w) => w.frame), ...Object.values(overs).map((o) => o.frame)]) tell(f, packMsg());
+    dressAll();
     emit("theme", { p, acc, preview });
   }
   const revert = () => { if (committed) setPack(committed.p, { acc: committed.acc }); };
+  /** A short wash of the accent across the desk from a point (desk px; the centre by default). */
+  function wash(color, at) {
+    if (reducedMotion()) return;
+    const el = document.createElement("div");
+    el.className = "lx-wash";
+    el.setAttribute("aria-hidden", "true");
+    el.style.setProperty("--wash", color);
+    el.style.setProperty("--x", `${Math.round(at?.x ?? W / 2)}px`);
+    el.style.setProperty("--y", `${Math.round(at?.y ?? H / 2)}px`);
+    cv.append(el);
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 1500);
+  }
 
 
   // ---- visibility: frames load when the desk is near the screen; the backdrop pauses off-screen ---------
@@ -593,14 +734,27 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     root, canvas: cv, frame, topbar, wins, overs, light: isLight(), get W() { return W; }, get H() { return H; }, get k() { return k; }, TOP,
     on, open, scene, close, focus, minimize, restore, snap, setRect, openCmd, closeCmd, openMagic, hideMenu, openFly: () => openOver("qs"), closeFly, closeOver, post, revert,
     focused: () => wins.get(focusedId) ?? null,
+    /** The dock's Settings pop-out: open (joined to the dock), close, and whether it is open. */
+    openSettings: (tab) => openFly(tab === "monitor" ? "monitor" : "settings"), closeSettings: () => closeFly2(), get fly() { return fly ? wins.get(fly.id) ?? null : null; },
     byApp: (app) => [...wins.values()].find((w) => w.app === app) ?? null,
     /** The document of a real surface (a window's app id, or "qs" | "cmd" | "magic" | "top"), for tours and checks. */
     doc: (id) => { try { return (id === "top" ? topbar : overs[id]?.frame ?? api.byApp(id)?.frame)?.contentDocument ?? null; } catch { return null; } },
     get pack() { return pack; }, get committed() { return committed; },
-    setPack,
+    setPack, wash, toDesk,
     async setMode(m) { const ps = await getPacks(); setPack(ps.find((x) => x.id === (m === "light" ? "alabaster-daylight" : "obsidian"))); },
     async shuffle() { const ps = (await getPacks()).filter((x) => !x.collection || Math.random() < 0.25); const cur = pack?.id; let p; do p = ps[Math.floor(Math.random() * ps.length)]; while (p.id === cur && ps.length > 1); setPack(p); },
-    dockStyle(style, shape) {
+    /** Moves the dock to an edge of the screen (bottom, top, left, right), as Settings › Dock does. */
+    dockEdge(e) {
+      edge = ["top", "left", "right"].includes(e) ? e : "bottom";
+      sizeFrame();
+      const m = { lens: "config", patch: { dock: { position: edge } } };
+      send(m); tell(topbar, m);
+      setTimeout(placeFly, 60);
+    },
+    get edge() { return edge; },
+    dockStyle(style, shape, align) {
+      dstyle = String(style || "floating").toLowerCase(); if (align) dalign = align;
+      setTimeout(placeFly, 60); setTimeout(placeFly, 420);
       const m = { lens: "config", patch: { dock: { style }, ...(shape ? { theme: { shapeStyle: shape } } : {}) } };
       send(m);
       // The top bar hands its clock and system icons to a Taskbar-style dock, as in the app.

@@ -41,7 +41,7 @@ export const TimePage: React.FC<PageProps> = ({ section }) => {
               options={k.layouts.map((l) => ({ id: l.id, label: l.name }))}
               onChange={(id) =>
                 invoke<KeyboardState>("set_keyboard_layout_cmd", { id })
-                  .then(kb.set)
+                  .then(kb.adopt)
                   .catch((e) => setErr(`Couldn't switch keyboard: ${e}`))
               }
             />
@@ -67,12 +67,12 @@ export const TimePage: React.FC<PageProps> = ({ section }) => {
             {l.id === k.activeId ? (
               <span className="sh-pill live">In use</span>
             ) : (
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="cc-btn"
                 onClick={() =>
                   invoke<KeyboardState>("set_keyboard_layout_cmd", { id: l.id })
-                    .then(kb.set)
+                    .then(kb.adopt)
                     .catch((e) => setErr(`Couldn't switch keyboard: ${e}`))
                 }
               >

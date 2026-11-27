@@ -300,3 +300,14 @@
 .cmd-shelf-total { margin-left: auto; font-size: 11px; color: var(--lens-fg-secondary); }
 .cmd-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
 .cmd-confirm .is-danger { color: var(--lens-danger); }
+
+/* Heard, not seen: the live region that announces the Do-mode preview to screen readers. */
+.cmd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Undo for a removed Shelf item: rises above the footer for a few seconds. */
+.cmd-shelf-undo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; padding: 4px 8px 4px 16px; border-top: 1px solid rgb(var(--lens-ink) / 0.07); font-size: 12px; color: var(--lens-fg); animation: cmd-shelf-undo-in var(--lens-dur-base) var(--lens-ease-out); }
+.cmd-shelf-undo > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes cmd-shelf-undo-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}

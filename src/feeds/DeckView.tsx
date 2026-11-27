@@ -14,7 +14,7 @@ export function DeckView({ items, sources, now, onClose, actions }: { items: Ite
         <span className="lf-h1">Deck</span>
         <span className="lf-sub">{cols.length} lanes</span>
         <span className="lf-spacer" />
-        {onClose ? <button className="lf-ico" aria-label="Back to column" onClick={onClose}><X size={15} /></button> : null}
+        {onClose ? <button data-weight="medium" className="lf-ico" aria-label="Back to column" onClick={onClose}><X size={15} /></button> : null}
       </header>
       <div className="lf-lanes">
         {cols.map((c) => (

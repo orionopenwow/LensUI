@@ -342,11 +342,7 @@ pub(crate) fn run_setup(
     // Start native Win32 pixel-matched Green·Yellow·Red Caption Engine (works on Chrome, Electron, Explorer, Notepad!)
     #[cfg(windows)]
     {
-        win_caption_engine::set_caption_engine_config(
-            initial_config.window_controls.enabled,
-            &initial_config.window_controls.order,
-            initial_config.theme.border_radius,
-        );
+        win_caption_engine::set_caption_engine_config(&initial_config.window_controls, initial_config.theme.border_radius);
         win_caption_engine::start_caption_engine();
     }
 
@@ -386,6 +382,8 @@ pub(crate) fn run_setup(
     crate::commands::cleaner::start_background(handle.clone());
     // ThumbDesk: the badge on its Dock icon (idle unless it's installed and pinned).
     crate::commands::thumbdesk::start_badge(handle.clone());
+    // Desktop widgets (off by default): the host window just above the desktop.
+    crate::commands::desktop_widgets::start(handle.clone());
 
     // Auto-tiling + workspaces (both default off; inert until enabled)
     {

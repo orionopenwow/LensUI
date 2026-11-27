@@ -1,4 +1,5 @@
 import React, { Suspense, startTransition, useEffect, useRef, useState } from "react";
+import { topBarEnabled, withTopBarEnabled } from "../topbar/enabled";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { HookStatus } from "../components/HookStatus";
 import { useStartupBlock } from "../hooks/useStartupBlock";
@@ -7,7 +8,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { FOLDER_THEMES, FRAME_STYLES, applyThemePack } from "../themes/packs";
+import { chooseTheme } from "../themes/choiceUndo";
 import { WindowRulesCard } from "../components/WindowRulesCard";
+import { WindowAppsCard } from "../components/WindowAppsCard";
 import { SessionRestoreCard } from "../components/SessionRestoreCard";
 import { ShellModeCard } from "../components/ShellModeCard";
 import { TilingCard } from "../components/TilingCard";
@@ -82,7 +85,9 @@ import { DockTab } from "../themeux/DockTab";
 import { AgentsPane } from "../components/AgentsPane";
 import { MessagingHubPane } from "../components/MessagingHubPane";
 import "./ControlCenterSurface.css";
-import { getPage, resolveTarget, type PageId } from "../settings/registry";
+import { PAGES, getPage, resolveTarget, type PageId } from "../settings/registry";
+import { swapDirection, type SwapDirection } from "../ui/motion/flow";
+import { useGrowFromTrigger } from "../ui/motion/origin";
 import { PAGE_COMPONENTS } from "../settings/pages";
 import { GuideDrawer } from "../guide/GuideDrawer";
 import { openGuide } from "../guide/coach";
@@ -96,6 +101,7 @@ import { Section, WinLink } from "../settings/ui/primitives";
 const FeedsCard = React.lazy(() => import("../components/FeedsCard").then((m) => ({ default: m.FeedsCard })));
 const MessagesCard = React.lazy(() => import("../components/MessagesCard").then((m) => ({ default: m.MessagesCard })));
 import { PageErrorBoundary } from "../settings/ui/ErrorBoundary";
+import { markReported, oops, quiet } from "../ui/oops";
 import { systemTimeZone } from "../playground/living/settings";
 
 
@@ -108,7 +114,17 @@ interface ProcessEntry {
 
 export const ControlCenterSurface: React.FC = () => {
   const startupBlock = useStartupBlock();
-  const { config, winTheme, updateConfig } = useLensState();
+  const { config, winTheme, updateConfig: saveConfig } = useLensState();
+  // Every page saves through this: a save Lens refuses says so on the toast (B-18) instead of
+  // only showing up as an unhandled rejection. The rejection still reaches the caller.
+  const updateConfig = React.useCallback(
+    (next: Parameters<typeof saveConfig>[0]) =>
+      saveConfig(next).catch((e) => {
+        oops("save that change")(e);
+        throw markReported(e);
+      }),
+    [saveConfig]
+  );
   const runningWindows = useRunningWindows(1400);
   const glidePhase = useSurfaceGlide("settings");
   // `?tab=` lets the visual parity harness open a given tab; the app always starts on Theme & Look.
@@ -136,6 +152,15 @@ export const ControlCenterSurface: React.FC = () => {
   const [moreToggled, setMoreToggled] = useState<{ key: string; open: boolean } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  // Opened from a Dock or bar button: grow from it, and close back into it (DESIGN.md §5.3).
+  useGrowFromTrigger("settings", shellRef);
+  // Page swaps slide in the direction of travel through the nav (forward from the right).
+  const swap = useRef<{ tab: PageId; dir: SwapDirection }>({ tab, dir: "none" });
+  if (swap.current.tab !== tab) {
+    const at = (id: PageId) => PAGES.findIndex((p) => p.id === id);
+    swap.current = { tab, dir: swapDirection(at(swap.current.tab), at(tab)) };
+  }
   // The first time-zone lookup loads the browser's locale data (tens of milliseconds on a slow PC).
   // Do it while Settings is idle, not in the click that opens Appearance.
   useEffect(() => {
@@ -166,11 +191,11 @@ export const ControlCenterSurface: React.FC = () => {
     let alive = true;
     invoke<SetupStatus>("setup_status_cmd")
       .then((st) => alive && setSetupStatus(st))
-      .catch(() => {});
+      .catch(quiet); // no status: setup simply isn't offered this time
     const un = listen("lens://setup-open", () => setShowWizardManual(true));
     return () => {
       alive = false;
-      un.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
     };
   }, []);
   const autoReason = setupDismissed
@@ -210,13 +235,13 @@ export const ControlCenterSurface: React.FC = () => {
       modInstalledInWindhawk: boolean;
     }>("get_windhawk_status_cmd")
       .then(setWindhawkStatus)
-      .catch(() => {});
+      .catch(quiet); // background read; the card shows "not found" until one works
   };
 
   const refreshProcesses = () => {
     invoke<ProcessEntry[]>("list_top_processes_cmd")
       .then((p) => setTopProcesses(Array.isArray(p) ? p : []))
-      .catch(() => {});
+      .catch(quiet); // polled every 2.5 s
   };
 
   useEffect(() => {
@@ -227,7 +252,7 @@ export const ControlCenterSurface: React.FC = () => {
           setTelemetry(t);
           setCpuHistory((prev) => [...prev.slice(-17), Math.max(4, Math.min(100, Math.round(t.cpuUsage)))]);
         })
-        .catch(() => {});
+        .catch(quiet); // polled every 2.5 s
     };
     pollStats();
     if (tab === "tasks") {
@@ -243,7 +268,7 @@ export const ControlCenterSurface: React.FC = () => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        invoke("hide_surface", { label: "settings" }).catch(() => {});
+        invoke("hide_surface", { label: "settings" }).catch(oops("close Settings"));
       }
     };
     const unlistenTab = listen<string>("lens://settings-tab", (e) => {
@@ -285,7 +310,7 @@ export const ControlCenterSurface: React.FC = () => {
 
   // All theme application goes through the shared pack registry (src/themes/packs.ts)
   const applyPack = (packId: string) => {
-    const next = applyThemePack(config, packId);
+    const next = chooseTheme(config, (c) => applyThemePack(c, packId));
     updateConfig(next);
     setFolderThemeChoice(next.folderStyle?.theme ?? "accent");
   };
@@ -361,7 +386,7 @@ export const ControlCenterSurface: React.FC = () => {
   };
 
   return (
-    <div className={`cc-shell lens-glass lens-glide-dock ${glidePhase}`}>
+    <div ref={shellRef} className={`cc-shell lens-glass lens-glide-dock ${glidePhase}`}>
       {(showWizardManual || autoReason) && (
         <SetupWizard
           config={config}
@@ -396,12 +421,12 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="sh-pagehead-desc">{pageDef.description}</div>
             </div>
             {pageDef.winUri && <WinLink uri={pageDef.winUri} label="Windows Settings" compact />}
-            <button type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>
+            <button data-weight="light" type="button" className="cc-chip sh-help" data-guide-id="settings.help" aria-label="Guide" onClick={() => void openGuide()}>
               ?
             </button>
-            <FlyoutClose pinned inline label="Close Settings" onClose={() => invoke("hide_surface", { label: "settings" }).catch(() => {})} />
+            <FlyoutClose pinned inline label="Close Settings" onClose={() => invoke("hide_surface", { label: "settings" }).catch(oops("close Settings"))} />
           </header>
-          <div ref={stageRef} key={tab} className="lens-tab-stage">
+          <div ref={stageRef} key={tab} className="lens-tab-stage" data-swap={swap.current.dir === "none" ? undefined : swap.current.dir}>
           {modeUnchosen(config) && <ModeHint mode={mode} onChoose={setMode} />}
           {simpleCards && (
             <Suspense fallback={<Skeleton label="Loading" shape="page" rows={2} className="sh-page-loading" />}>
@@ -434,7 +459,26 @@ export const ControlCenterSurface: React.FC = () => {
           <PageErrorBoundary pageLabel={pageDef.label} resetKey={tab}>
           {PageComponent && (
             <Suspense fallback={<Skeleton label={`Loading ${pageDef.label}`} shape="page" rows={4} className="sh-page-loading" />}>
-              <PageComponent section={section} config={config} updateConfig={updateConfig} />
+              <PageComponent
+                section={section}
+                config={config}
+                updateConfig={updateConfig}
+                // Notification history, Feeds and Messages are part of Focus & Notifications (they
+                // were a page of their own). Built here: the history pane reads the live window list.
+                slot={tab === "focus" && (
+                  <>
+                    <MessagingHubPane runningWindows={runningWindows} />
+                    <Suspense fallback={null}>
+                      <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
+                        <FeedsCard />
+                      </Section>
+                      <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
+                        <MessagesCard />
+                      </Section>
+                    </Suspense>
+                  </>
+                )}
+              />
             </Suspense>
           )}
           {tab === "tasks" && (
@@ -448,7 +492,7 @@ export const ControlCenterSurface: React.FC = () => {
                       <Cpu size={14} color="#34D399" />
                       <span>CPU Load</span>
                     </span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "#34D399", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "var(--lens-positive)", fontVariantNumeric: "tabular-nums" }}>
                       {telemetry ? `${Math.round(telemetry.cpuUsage)}%` : "--"}
                     </span>
                   </div>
@@ -482,7 +526,7 @@ export const ControlCenterSurface: React.FC = () => {
                       <HardDrive size={14} color="#38BDF8" />
                       <span>Memory</span>
                     </span>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: "#38BDF8", fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--lens-link)", fontVariantNumeric: "tabular-nums" }}>
                       {telemetry ? `${Math.round((telemetry.memUsedGb / Math.max(1, telemetry.memTotalGb)) * 100)}%` : "--"}
                     </span>
                   </div>
@@ -514,11 +558,11 @@ export const ControlCenterSurface: React.FC = () => {
                       ? `${Math.floor(telemetry.uptimeMinutes / 60)}h ${telemetry.uptimeMinutes % 60}m`
                       : "--"}
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     className="cc-chip"
                     style={{ padding: "4px 8px", fontSize: 11, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5 }}
-                    onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" }).catch(() => {})}
+                    onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" }).catch(oops("open Task Manager"))}
                   >
                     <ExternalLink size={11} />
                     <span>Win TaskMgr</span>
@@ -530,7 +574,7 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="cc-card" style={{ gap: 10, padding: "12px 14px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       className={`cc-chip ${monitorMode === "windows" ? "active" : ""}`}
                       style={{ padding: "5px 11px", fontSize: 12, fontWeight: 600 }}
@@ -538,7 +582,7 @@ export const ControlCenterSurface: React.FC = () => {
                     >
                       Open Windows ({runningWindows.length})
                     </button>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       className={`cc-chip ${monitorMode === "processes" ? "active" : ""}`}
                       style={{ padding: "5px 11px", fontSize: 12, fontWeight: 600 }}
@@ -582,7 +626,7 @@ export const ControlCenterSurface: React.FC = () => {
                         onChange={(e) => setMonitorFilter(e.target.value)}
                       />
                     </div>
-                    <button aria-label="Refresh processes"
+                    <button data-weight="light" aria-label="Refresh processes"
                       type="button"
                       className="cc-chip"
                       style={{ height: 30, padding: "0 9px", display: "inline-flex", alignItems: "center" }}
@@ -630,7 +674,7 @@ export const ControlCenterSurface: React.FC = () => {
                               {w.processName} · {w.isFocused ? "Focused" : w.isMinimized ? "Minimized" : "Running"}
                             </div>
                           </div>
-                          <button
+                          <button data-weight="light"
                             type="button"
                             className="cc-chip"
                             style={{ padding: "4px 9px", fontSize: 11 }}
@@ -638,7 +682,7 @@ export const ControlCenterSurface: React.FC = () => {
                           >
                             Focus
                           </button>
-                          <button aria-label={`Minimise ${w.title || w.processName}`}
+                          <button data-weight="light" aria-label={`Minimise ${w.title || w.processName}`}
                             type="button"
                             className="cc-chip"
                             style={{ padding: "4px 7px" }}
@@ -646,10 +690,10 @@ export const ControlCenterSurface: React.FC = () => {
                           >
                             <Minus size={12} />
                           </button>
-                          <button aria-label={`Close ${w.title || w.processName}`}
+                          <button data-weight="heavy" aria-label={`Close ${w.title || w.processName}`}
                             type="button"
                             className="cc-chip"
-                            style={{ padding: "4px 8px", color: "#fb7185", borderColor: "rgb(251 113 133 / 0.22)" }}
+                            style={{ padding: "4px 8px", color: "var(--lens-danger)", borderColor: "color-mix(in srgb, var(--lens-danger) 25%, transparent)" }}
                             onClick={() => invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" })}
                           >
                             <X size={12} />
@@ -687,20 +731,20 @@ export const ControlCenterSurface: React.FC = () => {
                               PID {p.pid}
                             </div>
                           </div>
-                          <div style={{ fontSize: 11.5, fontWeight: 600, color: p.cpuUsage > 15 ? "#fb7185" : "#34D399", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, color: p.cpuUsage > 15 ? "var(--lens-danger)" : "var(--lens-positive)", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                             {p.cpuUsage.toFixed(1)}% CPU
                           </div>
-                          <div style={{ fontSize: 11.5, fontWeight: 600, color: "#38BDF8", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--lens-link)", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                             {p.memoryMb >= 1024 ? `${(p.memoryMb / 1024).toFixed(2)} GB` : `${Math.round(p.memoryMb)} MB`}
                           </div>
-                          <button
+                          <button data-weight="heavy"
                             type="button"
                             className="cc-chip"
-                            style={{ padding: "4px 8px", fontSize: 11, color: "#fb7185", borderColor: "rgb(251 113 133 / 0.25)", justifyContent: "center" }}
+                            style={{ padding: "4px 8px", fontSize: 11, color: "var(--lens-danger)", borderColor: "color-mix(in srgb, var(--lens-danger) 25%, transparent)", justifyContent: "center" }}
                             onClick={() => {
                               invoke("kill_process_pid_cmd", { pid: p.pid })
                                 .then(() => window.setTimeout(refreshProcesses, 250))
-                                .catch(() => {});
+                                .catch(oops(`end ${p.name}`));
                             }}
                           >
                             End Task
@@ -710,20 +754,6 @@ export const ControlCenterSurface: React.FC = () => {
                   </div>
                 )}
               </div>
-            </>
-          )}
-
-          {tab === "notifications" && (
-            <>
-              <MessagingHubPane runningWindows={runningWindows} />
-              <Suspense fallback={null}>
-                <Section id="feeds" title="Feeds" summary="News and social sources for Lens Feeds" defaultOpen={section === "feeds"} forceOpen={section === "feeds"}>
-                  <FeedsCard />
-                </Section>
-                <Section id="messages" title="Messages" summary="Messengers, focus and Matrix for Lens Messages" defaultOpen={section === "messages"} forceOpen={section === "messages"}>
-                  <MessagesCard />
-                </Section>
-              </Suspense>
             </>
           )}
 
@@ -749,14 +779,14 @@ export const ControlCenterSurface: React.FC = () => {
             </>
           )}
 
-          {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} />}
+          {tab === "dock" && <DockTab config={config} accent={activeAccentHex} updateConfig={updateConfig} section={section} />}
 
           {tab === "dock" && (
             <>
               <div id="sec-topbar" className="sh-anchor">
                 <div className="cc-section-title">Top Bar</div>
                 <div className="cc-section-sub">
-                  Auto-hide on overlap keeps browser tabs and maximized titlebars clear, revealing smoothly when your cursor touches the top edge.
+                  The slim bar along the top. It hides when a window needs the space and comes back when the pointer touches the top edge.
                 </div>
               </div>
 
@@ -764,36 +794,33 @@ export const ControlCenterSurface: React.FC = () => {
                 <div className="cc-row">
                   <div>
                     <div className="cc-label">Enable Top Bar</div>
-                    <div className="cc-desc">Desktop sessions switcher, active app title, and clock</div>
+                    <div className="cc-desc">Desktops, the app in front, search, the clock and quick settings.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.topBar?.enabled && config.dock.showTopBar)} aria-label="Enable Top Bar" className={`cc-toggle ${config.topBar?.enabled && config.dock.showTopBar ? "on" : ""}`}
+                    role="switch" aria-checked={topBarEnabled(config)} aria-label="Enable Top Bar" className={`cc-toggle ${topBarEnabled(config) ? "on" : ""}`}
                     onClick={() => {
-                      const next = !(config.topBar?.enabled && config.dock.showTopBar);
-                      updateConfig({
-                        ...config,
-                        dock: { ...config.dock, showTopBar: next },
-                        topBar: { ...(config.topBar ?? { enabled: true, autoHide: "overlap", revealDelayMs: 100, hideDelayMs: 350, height: 34, floating: false }), enabled: next },
-                      });
+                      updateConfig(withTopBarEnabled(config, !topBarEnabled(config)));
                     }}
                   />
                 </div>
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Auto-Hide Mode</div>
-                    <div className="cc-desc">On Overlap dodges maximized or top-edge windows automatically</div>
+                    <div className="cc-label">Auto-hide</div>
+                    <div className="cc-desc">Hides when a window reaches the top of the screen, so tabs and title bars stay clear.</div>
                   </div>
-                  <div className="cc-chip-grid">
+                  <div className="cc-chip-grid" role="radiogroup" aria-label="Top Bar auto-hide">
                     {[
-                      { id: "overlap", label: "On Overlap" },
-                      { id: "never", label: "Always Visible" },
-                      { id: "always", label: "Always Auto-Hide" },
+                      { id: "overlap", label: "When a window overlaps" },
+                      { id: "never", label: "Always show" },
+                      { id: "always", label: "Always hide" },
                     ].map((m) => (
-                      <button
+                      <button data-weight="light"
                         key={m.id}
                         type="button"
+                        role="radio"
+                        aria-checked={(config.topBar?.autoHide ?? "overlap") === m.id}
                         className={`cc-chip ${(config.topBar?.autoHide ?? "overlap") === m.id ? "active" : ""}`}
                         onClick={() =>
                           updateConfig({
@@ -810,12 +837,14 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Bar Style</div>
-                    <div className="cc-desc">Full-width edge strip or floating rounded glass pill</div>
+                    <div className="cc-label">Bar style</div>
+                    <div className="cc-desc">A strip along the whole top edge, or a floating rounded pill.</div>
                   </div>
-                  <div className="cc-chip-grid">
-                    <button
+                  <div className="cc-chip-grid" role="radiogroup" aria-label="Top Bar style">
+                    <button data-weight="light"
                       type="button"
+                      role="radio"
+                      aria-checked={!config.topBar?.floating}
                       className={`cc-chip ${!(config.topBar?.floating) ? "active" : ""}`}
                       onClick={() =>
                         updateConfig({
@@ -824,10 +853,12 @@ export const ControlCenterSurface: React.FC = () => {
                         })
                       }
                     >
-                      Full-Width
+                      Full width
                     </button>
-                    <button
+                    <button data-weight="light"
                       type="button"
+                      role="radio"
+                      aria-checked={!!config.topBar?.floating}
                       className={`cc-chip ${config.topBar?.floating ? "active" : ""}`}
                       onClick={() =>
                         updateConfig({
@@ -836,15 +867,59 @@ export const ControlCenterSurface: React.FC = () => {
                         })
                       }
                     >
-                      Floating Pill
+                      Floating pill
                     </button>
                   </div>
                 </div>
 
-                <div style={{ height: 1, background: "var(--lens-border)", margin: "4px 0" }} />
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Media controls</div>
+                    <div className="cc-desc">Shows what is playing, with previous, play and next.</div>
+                  </div>
+                  <button data-weight="light"
+                    type="button"
+                    role="switch"
+                    aria-checked={config.topBar?.showMediaControls !== false}
+                    aria-label="Top Bar media controls"
+                    className={`cc-toggle ${config.topBar?.showMediaControls !== false ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        topBar: { ...(config.topBar ?? { enabled: true, autoHide: "overlap", revealDelayMs: 100, hideDelayMs: 350, height: 34, floating: false }), showMediaControls: config.topBar?.showMediaControls === false },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-row">
+                  <div>
+                    <div className="cc-label">Pointer halo</div>
+                    <div className="cc-desc">
+                      {winTheme?.transparencyEnabled === false
+                        ? "Hidden while Windows' transparency effects are off."
+                        : "A soft see-through ring around the pointer where clicks pass through the bar."}
+                    </div>
+                  </div>
+                  <button data-weight="light"
+                    type="button"
+                    role="switch"
+                    aria-checked={config.topBar?.pointerHalo !== false}
+                    aria-label="Pointer halo"
+                    className={`cc-toggle ${config.topBar?.pointerHalo !== false ? "on" : ""}`}
+                    onClick={() =>
+                      updateConfig({
+                        ...config,
+                        topBar: { ...(config.topBar ?? { enabled: true, autoHide: "overlap", revealDelayMs: 100, hideDelayMs: 350, height: 34, floating: false }), pointerHalo: config.topBar?.pointerHalo === false },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="cc-divider" />
                 <RotaryDial
-                  label="Bar Height"
-                  description="Vertical thickness of the top bar."
+                  label="Bar height"
+                  description="How tall the Top Bar is."
                   value={config.topBar?.height ?? 34}
                   min={28}
                   max={44}
@@ -861,10 +936,10 @@ export const ControlCenterSurface: React.FC = () => {
                     })
                   }
                 />
-                <div style={{ height: 1, background: "var(--lens-border)" }} />
+                <div className="cc-divider" />
                 <RotaryDial
-                  label="Reveal Delay"
-                  description="Wait time before sliding in when cursor hits the top edge."
+                  label="Reveal delay"
+                  description="How long the pointer rests on the top edge before the bar slides in."
                   value={config.topBar?.revealDelayMs ?? 100}
                   min={0}
                   max={500}
@@ -881,10 +956,10 @@ export const ControlCenterSurface: React.FC = () => {
                     })
                   }
                 />
-                <div style={{ height: 1, background: "var(--lens-border)" }} />
+                <div className="cc-divider" />
                 <RotaryDial
-                  label="Hide Delay"
-                  description="Wait time before auto-hiding again after cursor leaves."
+                  label="Hide delay"
+                  description="How long the bar stays after the pointer leaves."
                   value={config.topBar?.hideDelayMs ?? 350}
                   min={100}
                   max={1200}
@@ -917,7 +992,7 @@ export const ControlCenterSurface: React.FC = () => {
               <PlaygroundCard config={config} onUpdateConfig={updateConfig} />
 
               <div id="sec-sessions" className="sh-anchor">
-                <div className="cc-section-title">Desktop Sessions Switching</div>
+                <div className="cc-section-title">Desktop sessions</div>
                 <div className="cc-section-sub">
                   Manage named workspace sessions synced with Windows Virtual Desktops.
                 </div>
@@ -925,26 +1000,26 @@ export const ControlCenterSurface: React.FC = () => {
 
               <div className="cc-card">
                 <div className="cc-chip-grid">
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn-ghost"
                     onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "left" })}
                   >
-                    ← Prev Desktop
+                    ← Previous desktop
                   </button>
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn-ghost"
                     onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "right" })}
                   >
-                    Next Desktop →
+                    Next desktop →
                   </button>
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn"
                     onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "new" })}
                   >
-                    + New Windows Desktop
+                    + New Windows desktop
                   </button>
                 </div>
 
@@ -956,7 +1031,7 @@ export const ControlCenterSurface: React.FC = () => {
                     value={newSessionName}
                     onChange={(e) => setNewSessionName(e.target.value)}
                   />
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn"
                     onClick={() => {
@@ -989,7 +1064,7 @@ export const ControlCenterSurface: React.FC = () => {
                         <span className="cc-label">{s.name}</span>
                       </div>
                       {config.sessions.length > 1 && (
-                        <button
+                        <button data-weight="medium"
                           type="button"
                           className="cc-btn-ghost"
                           onClick={() =>
@@ -1017,17 +1092,17 @@ export const ControlCenterSurface: React.FC = () => {
           {tab === "desktop" && (
             <>
               <div id="sec-folders" className="sh-anchor">
-                <div className="cc-section-title">Folder Themes</div>
+                <div className="cc-section-title">Folder themes</div>
                 <div className="cc-section-sub">
                   Apply sleek custom `.ico` folder themes natively via Windows `desktop.ini` — 100% reversible, zero system patching.
                 </div>
               </div>
 
               <div className="cc-card">
-                <div className="cc-label">Choose Folder Theme</div>
+                <div className="cc-label">Choose a folder theme</div>
                 <div className="cc-chip-grid">
                   {FOLDER_THEMES.map((ft) => (
-                    <button
+                    <button data-weight="light"
                       key={ft.id}
                       type="button"
                       className={`cc-chip ${folderThemeChoice === ft.id ? "active" : ""}`}
@@ -1040,14 +1115,14 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Replace ALL Windows Explorer Default Folders</div>
+                    <div className="cc-label">Replace every default folder icon in File Explorer</div>
                     <div className="cc-desc">Safe HKCU Shell Icons override (zero system file edits, 1-click revert)</div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button type="button" className="cc-btn" onClick={handleApplyGlobalExplorerFolders}>
+                    <button data-weight="medium" type="button" className="cc-btn" onClick={handleApplyGlobalExplorerFolders}>
                       Apply System-Wide
                     </button>
-                    <button type="button" className="cc-btn-ghost" onClick={handleRevertGlobalExplorerFolders}>
+                    <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={handleRevertGlobalExplorerFolders}>
                       Revert
                     </button>
                   </div>
@@ -1055,20 +1130,20 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Style All Core User Folders</div>
+                    <div className="cc-label">Style all core user folders</div>
                     <div className="cc-desc">Desktop, Documents, Downloads, Pictures, Music & Videos</div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button type="button" className="cc-btn" onClick={handleApplyAllUserFolders}>
+                    <button data-weight="medium" type="button" className="cc-btn" onClick={handleApplyAllUserFolders}>
                       Style All 6
                     </button>
-                    <button type="button" className="cc-btn-ghost" onClick={handleRevertAllUserFolders}>
+                    <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={handleRevertAllUserFolders}>
                       Revert All
                     </button>
                   </div>
                 </div>
 
-                <div className="cc-label" style={{ marginTop: 4 }}>Style Any Specific Folder</div>
+                <div className="cc-label" style={{ marginTop: 4 }}>Style a specific folder</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     className="cc-input"
@@ -1077,7 +1152,7 @@ export const ControlCenterSurface: React.FC = () => {
                     value={folderPathInput}
                     onChange={(e) => setFolderPathInput(e.target.value)}
                   />
-                  <button type="button" className="cc-btn" onClick={handleApplyFolderTheme}>
+                  <button data-weight="medium" type="button" className="cc-btn" onClick={handleApplyFolderTheme}>
                     Apply Theme
                   </button>
                 </div>
@@ -1094,7 +1169,7 @@ export const ControlCenterSurface: React.FC = () => {
                         <span style={{ fontSize: 12, fontFamily: "var(--font-mono)" }}>
                           {rec.path} ({rec.theme})
                         </span>
-                        <button
+                        <button data-weight="medium"
                           type="button"
                           className="cc-btn-ghost"
                           onClick={() => handleRevertFolder(rec.path)}
@@ -1112,7 +1187,7 @@ export const ControlCenterSurface: React.FC = () => {
           {tab === "desktop" && (
             <>
               <div id="sec-widgets" className="sh-anchor">
-                <div className="cc-section-title">Widget Access</div>
+                <div className="cc-section-title">Widget access</div>
                 <div className="cc-section-sub">
                   Toggle modular widgets in your Lens Widget Drawer ({config.func.widgetsHotkey || "Ctrl+Alt+W"}).
                 </div>
@@ -1129,7 +1204,7 @@ export const ControlCenterSurface: React.FC = () => {
                   return (
                     <div className="cc-row" key={w.id}>
                       <div className="cc-label">{w.label}</div>
-                      <button
+                      <button data-weight="light"
                         type="button"
                         role="switch" aria-checked={!!(isOn)} aria-label={w.label} className={`cc-toggle ${isOn ? "on" : ""}`}
                         onClick={() => {
@@ -1147,7 +1222,7 @@ export const ControlCenterSurface: React.FC = () => {
                 })}
 
                 <div>
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn"
                     onClick={() => invoke("toggle_surface", { label: "widgets" })}
@@ -1169,13 +1244,13 @@ export const ControlCenterSurface: React.FC = () => {
                   <div className="sh-row-desc">Switch or add Windows desktops. Lens workspaces are in Desktop.</div>
                 </div>
                 <div className="sh-row-control">
-                  <button type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "left" }).catch(() => {})}>
+                  <button data-weight="light" type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "left" }).catch(oops("switch desktop"))}>
                     ← Previous
                   </button>
-                  <button type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "right" }).catch(() => {})}>
+                  <button data-weight="light" type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "right" }).catch(oops("switch desktop"))}>
                     Next →
                   </button>
-                  <button type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "new" }).catch(() => {})}>
+                  <button data-weight="light" type="button" className="cc-chip compact" onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "new" }).catch(oops("add a desktop"))}>
                     + New
                   </button>
                 </div>
@@ -1186,10 +1261,10 @@ export const ControlCenterSurface: React.FC = () => {
                   <div className="sh-row-desc">Open Task Manager or File Explorer.</div>
                 </div>
                 <div className="sh-row-control">
-                  <button type="button" className="cc-chip compact" onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" }).catch(() => {})}>
+                  <button data-weight="light" type="button" className="cc-chip compact" onClick={() => invoke("launch_app_cmd", { path: "taskmgr.exe" }).catch(oops("open Task Manager"))}>
                     Task Manager
                   </button>
-                  <button type="button" className="cc-chip compact" onClick={() => invoke("launch_app_cmd", { path: "explorer.exe" }).catch(() => {})}>
+                  <button data-weight="light" type="button" className="cc-chip compact" onClick={() => invoke("launch_app_cmd", { path: "explorer.exe" }).catch(oops("open File Explorer"))}>
                     File Explorer
                   </button>
                 </div>
@@ -1211,12 +1286,12 @@ export const ControlCenterSurface: React.FC = () => {
               <div className="cc-card">
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Run Lens on Windows Startup</div>
+                    <div className="cc-label">Run Lens when Windows starts</div>
                     <div className="cc-desc">{startupBlock ?? "Starts Lens when you sign in to Windows"}</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens on Windows Startup" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.runOnStartup)} aria-label="Run Lens when Windows starts" className={`cc-toggle ${config.func.runOnStartup ? "on" : ""}`}
                     aria-disabled={!!startupBlock && !config.func.runOnStartup}
                     onClick={() =>
                       (!startupBlock || config.func.runOnStartup) &&
@@ -1230,7 +1305,7 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Legacy In-App Window Styling (experimental)</div>
+                    <div className="cc-label">Legacy in-app window styling (experimental)</div>
                     <div className="cc-desc">
                       Off by default: Lens already styles windows from outside each app. This loads a small helper
                       into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a
@@ -1239,9 +1314,9 @@ export const ControlCenterSurface: React.FC = () => {
                     </div>
                     <HookStatus enabled={!!config.func.injectedHook} />
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.injectedHook)} aria-label="Legacy In-App Window Styling" className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.injectedHook)} aria-label="Legacy in-app window styling" className={`cc-toggle ${config.func.injectedHook ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1253,12 +1328,12 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Create Rarely Used Windows on Demand</div>
+                    <div className="cc-label">Create rarely used windows on demand</div>
                     <div className="cc-desc">Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.lazyWindows)} aria-label="Create Rarely Used Windows on Demand" className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.lazyWindows)} aria-label="Create rarely used windows on demand" className={`cc-toggle ${config.func.lazyWindows ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1270,12 +1345,12 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">System Tray in Top Bar (experimental)</div>
+                    <div className="cc-label">System tray in the Top Bar (experimental)</div>
                     <div className="cc-desc">Lens collects tray icons itself and shows them in the Top Bar. Turn off if icons look wrong.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.trayHost)} aria-label="System Tray in Top Bar (experimental)" className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.trayHost)} aria-label="System tray in the Top Bar (experimental)" className={`cc-toggle ${config.func.trayHost ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1287,12 +1362,12 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Clipboard History</div>
+                    <div className="cc-label">Clipboard history</div>
                     <div className="cc-desc">Remembers the last 50 pieces of copied text in memory only (never saved to disk). Shown in the Widget Drawer.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.clipboardHistory)} aria-label="Clipboard History" className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.clipboardHistory)} aria-label="Clipboard history" className={`cc-toggle ${config.func.clipboardHistory ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1304,12 +1379,12 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Keyboard Tiling Shortcuts</div>
+                    <div className="cc-label">Keyboard tiling shortcuts</div>
                     <div className="cc-desc">Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.tilingHotkeys)} aria-label="Keyboard Tiling Shortcuts" className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.tilingHotkeys)} aria-label="Keyboard tiling shortcuts" className={`cc-toggle ${config.func.tilingHotkeys ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1321,12 +1396,12 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Alt+1–9 Opens Dock Apps</div>
+                    <div className="cc-label">Alt+1–9 opens Dock apps</div>
                     <div className="cc-desc">Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.</div>
                   </div>
-                  <button
+                  <button data-weight="light"
                     type="button"
-                    role="switch" aria-checked={!!(config.func.dockNumberHotkeys)} aria-label="Alt+1–9 Opens Dock Apps" className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
+                    role="switch" aria-checked={!!(config.func.dockNumberHotkeys)} aria-label="Alt+1–9 opens Dock apps" className={`cc-toggle ${config.func.dockNumberHotkeys ? "on" : ""}`}
                     onClick={() =>
                       updateConfig({
                         ...config,
@@ -1338,7 +1413,7 @@ export const ControlCenterSurface: React.FC = () => {
 
                 <div className="cc-row">
                   <div>
-                    <div className="cc-label">Global Shortcuts</div>
+                    <div className="cc-label">Global shortcuts</div>
                     <div className="cc-desc">Command Palette: {config.func.paletteHotkey || "Alt+Space"} · Widget Drawer: {config.func.widgetsHotkey || "Ctrl+Alt+W"}</div>
                   </div>
                   <span className="cc-chip active">Active</span>
@@ -1360,10 +1435,11 @@ export const ControlCenterSurface: React.FC = () => {
               <div id="sec-styling" className="sh-anchor">
                 <div className="cc-section-title">Window styling</div>
                 <div className="cc-section-sub">
-                  Focus dimming, the active-window border, pin on top and per-app rules.
+                  Focus dimming, the active-window border, pin on top, per-app rules and which apps get window buttons.
                 </div>
               </div>
               <WindowRulesCard />
+              <WindowAppsCard config={config} onUpdateConfig={updateConfig} />
 
               {/* Replacing Explorer as the shell is a Tester mode experiment only (docs/FAILSAFE.md §9). */}
               {config.tester?.enabled && (

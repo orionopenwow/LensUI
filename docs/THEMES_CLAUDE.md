@@ -2,6 +2,8 @@
 
 Lens ships **59 community theme packs** from the Claude Code ecosystem, in the Theme gallery under **Browse all › Claude Code**. Every card credits its author and has an **Original ↗** link.
 
+Two of the 59 are no longer listed as cards: **CRT** (now Green Phosphor) and **Claude Light Brand** (now Claude Light). Each differed from its twin only by the Dock style it came with, and a theme changes colours only now, so they were the same theme on screen. Their ids still work in settings, schedules and theme files, and their names find the twin (`MERGED_PACKS` in `src/themes/packs.ts`; [THEMES_AUDIT.md](THEMES_AUDIT.md) "Merged").
+
 All of these are **unofficial** in Lens: Lens copies only colour values (palettes are facts), never artwork, backdrop code, logos or the Claude wordmark. Anthropic's example themes are Apache-2.0; every community source below is MIT.
 
 How a pack is built:

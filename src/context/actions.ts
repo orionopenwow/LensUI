@@ -14,7 +14,9 @@ export type ContextKind =
 export type Provider = "local" | "default" | "claude" | "none";
 export type Risk = "low" | "confirm";
 export type Surface =
-  | "browser" | "lensBrowser" | "explorer" | "shelf" | "dock" | "mini" | "clipboard" | "notification";
+  | "browser" | "lensBrowser" | "explorer" | "shelf" | "dock" | "mini" | "clipboard" | "notification"
+  /** The Magic selection bar's "your actions" (docs/plans/SELECTION_BAR.md). */
+  | "selectionBar";
 
 export interface ActionDef {
   id: string;
@@ -100,7 +102,7 @@ export function customToDef(c: CustomAction): ActionDef {
   return {
     id: c.id, label: c.label, icon: "sparkles", group: "custom", contexts: c.contexts, provider: c.provider,
     risk: c.provider === "claude" ? "confirm" : "low",
-    surfaces: ["browser", "lensBrowser", "shelf", "dock", "mini", "clipboard", "notification"],
+    surfaces: ["browser", "lensBrowser", "shelf", "dock", "mini", "clipboard", "notification", "selectionBar"],
     prompt: c.prompt, custom: true,
   };
 }

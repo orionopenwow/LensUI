@@ -91,6 +91,14 @@ pub const RULES: &[Rule] = &[
     r("magicWaves", "Magic (preview)", C::ChangeSettings, L),
     r("magicWaves.mouse", "Magic (preview)", C::ChangeSettings, K),
     r("magicWaves.startButton", "Magic (preview)", C::ChangeSettings, K),
+    // The Magic selection bar (docs/plans/SELECTION_BAR.md): turning it on lets Lens read finished
+    // selections in other apps (through the selection rules), so it asks first; the rest is look
+    // and behaviour.
+    r("selectionBar", "Selection bar", C::ChangeSettings, L),
+    r("selectionBar.enabled", "Selection bar", C::ChangeSettings, K),
+    r("selectionBar.hotkeys", "Selection bar", C::ChangeSettings, K),
+    r("selectionBar.searchHotkey", "Selection bar", C::ChangeSettings, K),
+    r("selectionBar.webResults", "Selection bar", C::ChangeSettings, K),
 ];
 
 /// (path, label, description, extra schema). Schema keys are merged into the inferred schema.
@@ -102,7 +110,33 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("magicWaves.startButton", "Magic button", "Makes a Windows-key tap open Lens Magic Start; Ctrl+Esc still opens Windows Start.", r#"{}"#),
     ("magicWaves.shelfNotes", "Shelf to Notes", "Turns on making a note from the Shelf and exporting it.", r#"{}"#),
     ("magicWaves.studioV2", "Lens Studio v2", "Turns on the new Dock, Theme and Desktop studio with undo.", r#"{}"#),
+    ("magicWaves.desktopWidgets", "Desktop widgets", "Pins widgets on the desktop, above the wallpaper and below your windows; local data only.", r#"{}"#),
     ("magicWaves.learn", "Learned ordering", "Lets the Dashboard reorder cards from how you use it, on this PC only, with a reason on each.", r#"{}"#),
+    ("selectionBar.enabled", "Selection bar", "Shows the Magic selection bar after you select text: Cut, Copy, Paste, Magic Search and your actions. Off by default.", r#"{}"#),
+    ("selectionBar.labels", "Button labels", "Icons only, labels on hover, or always labels on the selection bar.", r#"{"enum":["off","hover","always"]}"#),
+    ("selectionBar.showCut", "Cut button", "Shows Cut on the selection bar when the text can be edited.", r#"{}"#),
+    ("selectionBar.showCopy", "Copy button", "Shows Copy on the selection bar.", r#"{}"#),
+    ("selectionBar.showPaste", "Paste button", "Shows Paste on the selection bar when the text can be edited and there is text to paste.", r#"{}"#),
+    ("selectionBar.showSearch", "Magic Search button", "Shows Magic Search on the selection bar.", r#"{}"#),
+    ("selectionBar.actions", "Your actions", "The actions on the selection bar, in order (ids from the action catalogue).", r#"{"maxItems":9}"#),
+    ("selectionBar.maxActions", "Actions before More", "How many of your actions the bar shows before More.", r#"{"minimum":3,"maximum":9}"#),
+    ("selectionBar.hotkeys", "Action hotkeys", "A global hotkey per selection-bar action (none by default); checked against Windows, Lens and app keys.", r#"{}"#),
+    ("selectionBar.searchHotkey", "Magic Search hotkey", "A global hotkey for Magic Search on the current selection (none by default).", r#"{"maxLength":40}"#),
+    ("selectionBar.triggerDrag", "Open after a drag", "A drag that selects text opens the bar.", r#"{}"#),
+    ("selectionBar.triggerDoubleClick", "Open after a double click", "Double-clicking a word opens the bar.", r#"{}"#),
+    ("selectionBar.triggerTripleClick", "Open after a triple click", "Triple-clicking a line or paragraph opens the bar.", r#"{}"#),
+    ("selectionBar.delayMs", "Selection bar delay", "How long after you let go of the mouse the bar appears, in milliseconds.", r#"{"minimum":0,"maximum":600}"#),
+    ("selectionBar.minChars", "Minimum characters", "Shorter selections don't open the bar.", r#"{"minimum":1,"maximum":50}"#),
+    ("selectionBar.placement", "Bar placement", "Below the selection, above it, or at the pointer.", r#"{"enum":["below","above","pointer"]}"#),
+    ("selectionBar.autoHideMs", "Auto-hide", "The bar hides on its own after this many milliseconds (0 = never).", r#"{"minimum":0,"maximum":30000}"#),
+    ("selectionBar.hideDistancePx", "Hide distance", "The bar hides when the pointer moves this many pixels away.", r#"{"minimum":40,"maximum":600}"#),
+    ("selectionBar.smart", "Smart actions", "Recognises links, e-mail addresses, sums, units, colours, paths and code, and shows a one-line preview. Local only.", r#"{}"#),
+    ("selectionBar.smartOff", "Smart kinds off", "Smart kinds that are turned off.", r#"{"maxItems":12}"#),
+    ("selectionBar.learn", "Learn from use", "Floats the actions you use most up the bar, from counts kept on this PC.", r#"{}"#),
+    ("selectionBar.perApp", "Per-app actions", "An action set of its own for some apps (app → actions).", r#"{}"#),
+    ("selectionBar.providers", "AI per action", "Which AI answers each action: local, default or Claude.", r#"{}"#),
+    ("selectionBar.webResults", "Web results", "Magic Search shows web results from your search engine; the selection is sent to it only when you press Magic Search.", r#"{}"#),
+    ("selectionBar.localResults", "Results from my files", "Magic Search also looks in your Shelf, clipboard history, notes and recent files, on this PC only.", r#"{}"#),
     ("theme.preset", "Theme pack", "The theme pack that sets colours, surfaces and window frames together.", r#"{"pattern":"pack"}"#),
     ("theme.accentMode", "Accent source", "Use the Windows accent colour or your own.", r#"{"enum":["windows","custom"]}"#),
     ("theme.customAccent", "Accent colour", "Your own accent colour, used when the accent source is custom.", r#"{"format":"hex-color"}"#),
@@ -117,7 +151,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("theme.motion", "Motion", "Follow Windows, reduce, or allow full animation.", r#"{"enum":["system","reduce","full"]}"#),
     ("theme.contrast", "Contrast", "Follow Windows or force high contrast.", r#"{"enum":["system","high"]}"#),
     ("theme.locale", "Language", "Lens interface language.", r#"{"enum":["auto","en","es","de"]}"#),
-    ("dock.style", "Dock style", "The Dock's shape: floating, slim, taskbar, studio, minimal or split.", r#"{"enum":["floating","slim","taskbar","studio","minimal","split"]}"#),
+    ("dock.style", "Dock style", "The Dock's shape: floating, slim, taskbar, studio, minimal, split, islands or unified.", r#"{"enum":["floating","slim","taskbar","studio","minimal","split","islands","unified"]}"#),
     ("dock.position", "Dock edge", "Which screen edge the Dock sits on.", r#"{"enum":["bottom","top","left","right"]}"#),
     ("dock.alignment", "Dock alignment", "Centre or left-align apps in the Taskbar style.", r#"{"enum":["center","left"]}"#),
     ("dock.systemArea", "Clock and system icons", "Whether the clock and system icons live in the Dock or the top bar.", r#"{"enum":["auto","dock","topbar"]}"#),
@@ -133,10 +167,12 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("dock.pinnedApps", "Pinned apps", "The apps pinned to the Dock (names and paths).", "{}"),
     ("topBar.autoHide", "Top bar auto-hide", "When the top bar hides.", r#"{"enum":["overlap","never","always"]}"#),
     ("topBar.height", "Top bar height", "Height of the top bar in pixels.", r#"{"minimum":24,"maximum":64}"#),
-    ("windowControls.style", "Window buttons", "The look of window buttons.", r#"{"enum":["traffic-classic","traffic-muted","minimal-dots","accent-pills"]}"#),
+    ("topBar.pointerHalo", "Pointer halo", "A see-through ring at the pointer where clicks pass through the top bar. Never shown while Windows' transparency effects are off.", "{}"),
+    ("windowControls.style", "Window button style", "The look of window buttons, in Lens windows and over other apps: classic, soft, small dots or pills.", r#"{"enum":["traffic-classic","traffic-muted","minimal-dots","accent-pills"]}"#),
     ("settingsMode", "Settings detail", "Simple shows the core settings with previews; Advanced shows every option.", r#"{"enum":["","simple","advanced"]}"#),
     ("windowControls.order", "Window button order", "Order of the window buttons.", r#"{"enum":["yellow-green-red","green-yellow-red","red-yellow-green"]}"#),
-    ("windowControls.position", "Window button side", "Which corner window buttons sit in.", r#"{"enum":["top-right","top-left"]}"#),
+    ("windowControls.position", "Window button side", "Which side window buttons sit on. Left is used where a title bar is free there; apps with tabs or tools in the title bar keep them on the right.", r#"{"enum":["top-right","top-left"]}"#),
+    ("windowControls.excludedProcesses", "Apps without window buttons", "Apps Lens never draws its window buttons over, by file name (notepad.exe). Anti-cheat games and fullscreen apps are always left alone.", "{}"),
     ("windowControls.frameStyle", "Window frame", "The frame style drawn around app windows.", r#"{"enum":["accent-glow","obsidian-hairline","neon","none"]}"#),
     ("iconStyle.theme", "Icon style", "How app icons are styled.", r#"{"enum":["obsidian-squircle","frosted-glass","monochrome","accent-duotone","native"]}"#),
     ("iconStyle.shape", "Icon shape", "The shape of icon backplates.", r#"{"enum":["squircle","rounded","circle","borderless"]}"#),
@@ -145,6 +181,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("func.hideNativeTaskbar", "Hide Windows taskbar", "Hides the Windows taskbar while Lens runs (restored when Lens quits).", "{}"),
     ("func.runOnStartup", "Start with Windows", "Starts Lens when you sign in.", "{}"),
     ("func.clipboardHistory", "Clipboard history", "Keeps a private clipboard history on this PC.", "{}"),
+    ("func.popoutCloseDelay", "Pop-out close delay", "How long Quick Settings and Settings on the Dock wait before closing when the pointer leaves.", r#"{"enum":["short","normal","long"]}"#),
     ("wallpaper.scene", "Playground scene", "The living wallpaper scene (empty = show the wallpaper image).", r#"{"enum":["","sand","ink","flow","constellation","aurora","rain","starfield","sky-clock"]}"#),
     ("wallpaper.fit", "Wallpaper fit", "How the wallpaper image fills the screen.", r#"{"enum":["cover","contain","fill","center"]}"#),
     ("wallpaper.blur", "Wallpaper blur", "Blur applied to the wallpaper, in pixels.", r#"{"minimum":0,"maximum":40}"#),
@@ -242,7 +279,7 @@ pub fn leaves(v: &Value, prefix: &str, out: &mut Vec<(String, Value)>) {
 fn is_free_map(path: &str) -> bool {
     matches!(
         path,
-        "dock.iconSizes" | "wallpaper.workspaceScenes" | "wallpaper.sceneOptions" | "command" | "desktopGroups"
+        "dock.iconSizes" | "wallpaper.workspaceScenes" | "wallpaper.sceneOptions" | "command" | "desktopGroups" | "selectionBar.hotkeys" | "selectionBar.perApp" | "selectionBar.providers"
     )
 }
 

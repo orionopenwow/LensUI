@@ -50,9 +50,26 @@ fn clean_view(v: &str) -> String {
 
 /// Opens (or focuses) a core app window. `view` picks a tab, e.g. "stopwatch".
 pub(crate) fn open_core_app(app: &AppHandle, id: &str, view: Option<&str>) -> Result<(), String> {
+    open_core_app_at(app, id, view, None)
+}
+
+/// Text to look for in the app that opens (an app name handed over by the Cleaner): printable,
+/// no control characters, at most 80 characters.
+pub(crate) fn clean_find(v: &str) -> String {
+    v.chars().filter(|c| !c.is_control()).take(80).collect::<String>().trim().to_string()
+}
+
+fn url_encode(v: &str) -> String {
+    v.bytes().map(|b| if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.') { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
+}
+
+/// Like `open_core_app`, and also hands the app something to find (Startup & Uninstall searches
+/// its installed apps for it).
+pub(crate) fn open_core_app_at(app: &AppHandle, id: &str, view: Option<&str>, find: Option<&str>) -> Result<(), String> {
     let a = coreapps::by_id(id).ok_or_else(|| format!("There's no Lens app called \"{id}\"."))?;
     let label = coreapps::window_label(a.id);
     let view = view.map(clean_view).filter(|v| !v.is_empty());
+    let find = find.map(clean_find).filter(|v| !v.is_empty());
     if let Some(w) = app.get_webview_window(&label) {
         let _ = w.unminimize();
         let _ = w.show();
@@ -60,12 +77,19 @@ pub(crate) fn open_core_app(app: &AppHandle, id: &str, view: Option<&str>) -> Re
         if let Some(v) = view {
             let _ = app.emit_to(label.as_str(), "lens://coreapp-view", v);
         }
+        if let Some(f) = find {
+            let _ = app.emit_to(label.as_str(), "lens://coreapp-find", f);
+        }
         return Ok(());
     }
     let mut url = format!("index.html?surface=coreapp&app={}", a.id);
     if let Some(v) = view {
         url.push_str("&view=");
         url.push_str(&v);
+    }
+    if let Some(f) = find {
+        url.push_str("&find=");
+        url.push_str(&url_encode(&f));
     }
     let win = WebviewWindowBuilder::new(app, &label, WebviewUrl::App(url.into()))
         .title(a.title)
@@ -85,8 +109,8 @@ pub(crate) fn open_core_app(app: &AppHandle, id: &str, view: Option<&str>) -> Re
 }
 
 #[tauri::command]
-pub(crate) async fn coreapp_open(app: AppHandle, id: String, view: Option<String>) -> Result<(), String> {
-    open_core_app(&app, &id, view.as_deref())
+pub(crate) async fn coreapp_open(app: AppHandle, id: String, view: Option<String>, find: Option<String>) -> Result<(), String> {
+    open_core_app_at(&app, &id, view.as_deref(), find.as_deref())
 }
 
 // ── stickies (Lens Notes "Pin to desktop") ─────────────────────────────────────────────────────
@@ -783,31 +807,36 @@ pub(crate) fn init_timers(app: &AppHandle) {
     }
     let app = app.clone();
     std::thread::spawn(move || {
-        let mut was_active = false;
+        let mut was_counting = false;
         loop {
-            let (fired, active) = {
+            let (fired, wait) = {
                 let mut st = timer_state().lock().unwrap_or_else(|e| e.into_inner());
-                let fired = st.store.tick(now_ms());
+                let now = now_ms();
+                let fired = st.store.tick(now);
                 for f in &fired {
                     if let Some(on) = f.dnd {
                         set_dnd(&app, &mut st, on);
                     }
                 }
-                if !fired.is_empty() {
+                // Daylight saving or a new time zone: alarms stay on local time (B-124).
+                let retimed = coreapps::local_offset_min().is_some_and(|tz| st.store.retime_alarms(tz, now));
+                if !fired.is_empty() || retimed {
                     save_timers(&st.store);
                 }
-                let active = st.store.active();
-                if active || was_active || !fired.is_empty() {
+                // Tell the windows and the Dock badge only when something they show changed: every
+                // second while a timer counts down, and once for a ring or a moved alarm. An alarm
+                // that is only waiting sends nothing (B-125).
+                let counting = st.store.counting();
+                if counting || was_counting || !fired.is_empty() || retimed {
                     publish(&app, &st.store);
                 }
-                (fired, active)
+                was_counting = counting;
+                (fired, st.store.sleep_ms(now, 5000))
             };
             for f in fired {
                 crate::commands::notifications::push_notification_cmd(app.clone(), f.title, f.body, Some("Lens Timer".into()), Some("system".into()));
             }
-            was_active = active;
-            // Tick every second while something counts down; otherwise check for alarms lazily.
-            std::thread::sleep(Duration::from_millis(if active { 1000 } else { 5000 }));
+            std::thread::sleep(Duration::from_millis(wait.max(50) as u64));
         }
     });
 }
@@ -1069,4 +1098,20 @@ pub(crate) async fn coreapp_speed_test(endpoint: String) -> Result<SpeedResult, 
 /// Dock icon for a "lens-app:<id>" pin.
 pub(crate) fn pin_icon(path: &str) -> Option<String> {
     coreapps::pin_target(path).and_then(coreapps::icon_data_url)
+}
+
+#[cfg(test)]
+mod handoff_tests {
+    use super::{clean_find, clean_view, url_encode};
+
+    #[test]
+    fn a_handed_over_app_name_is_text_only_and_survives_the_url() {
+        assert_eq!(clean_find("  Adobe Premiere Pro 2026  "), "Adobe Premiere Pro 2026");
+        assert_eq!(clean_find("Spot\u{0}ify\r\n"), "Spotify");
+        assert_eq!(clean_find(&"x".repeat(200)).len(), 80);
+        assert_eq!(url_encode("C++ & Friends (x64)"), "C%2B%2B%20%26%20Friends%20%28x64%29");
+        assert_eq!(url_encode("Füße"), "F%C3%BC%C3%9Fe");
+        // The view stays a plain tab id: nothing from a name can ride along in it.
+        assert_eq!(clean_view("uninstall&find=x"), "uninstallfindx");
+    }
 }

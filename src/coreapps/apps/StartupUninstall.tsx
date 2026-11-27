@@ -1,8 +1,9 @@
 // Lens Startup & Uninstall: startup apps with estimated impact (all reversible), installed apps
 // with size and last use, uninstall only through the app's own uninstaller (or winget) after a
 // confirm, and a review of leftover folders that go to the Recycle Bin.
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { InstalledProgram, LensConfig, Leftover, StartupEntry } from "../../types/generated";
 import { AppShell, isKey, usePresence } from "../shell/AppShell";
 import { Button, Card, Confirm, Empty, ErrorNote, Hero, Mono, Pill, Search, Skeleton, Switch, Tabs, Toast, cx } from "../shell/ui";
@@ -11,6 +12,7 @@ import { ago, bytes, plural, ymd } from "../shell/format";
 import { sortPrograms, sortStartup, totalKb, unusedFor, type ProgramSort } from "../models/startup";
 import { friendlyError } from "../models/load";
 import { coreApp } from "../registry";
+import { oops, quiet } from "../../ui/oops";
 
 type View = "startup" | "uninstall" | "leftovers";
 
@@ -20,10 +22,11 @@ export interface StartupDemo {
   leftovers: Leftover[];
 }
 
-export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfig: (c: LensConfig) => Promise<void>; initialView?: string; demo?: StartupDemo }> = ({
+export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfig: (c: LensConfig) => Promise<void>; initialView?: string; initialFind?: string; demo?: StartupDemo }> = ({
   config,
   updateConfig,
   initialView,
+  initialFind,
   demo,
 }) => {
   const app = coreApp("startup")!;
@@ -34,8 +37,24 @@ export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfi
   const st = demo ? { status: "ready" as const, data: demo.startup, error: null, reload: () => {} } : startup;
   const pr = demo ? { status: "ready" as const, data: demo.programs, error: null, reload: () => {} } : programs;
   const lo = demo ? { status: demo.leftovers.length ? ("ready" as const) : ("empty" as const), data: demo.leftovers, error: null, reload: () => {} } : leftovers;
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialFind ?? "");
   const [sort, setSort] = useState<ProgramSort>("name");
+  // The Cleaner's "Uninstall…" hands an app over by name: show Installed apps filtered to it. The
+  // uninstall itself still starts from this window's own confirmation.
+  useEffect(() => {
+    if (demo) return;
+    const unView = listen<string>("lens://coreapp-view", (e) => {
+      if (e.payload === "startup" || e.payload === "uninstall" || e.payload === "leftovers") setView(e.payload);
+    });
+    const unFind = listen<string>("lens://coreapp-find", (e) => {
+      setView("uninstall");
+      setQuery(String(e.payload ?? ""));
+    });
+    return () => {
+      unView.then((f) => f()).catch(quiet);
+      unFind.then((f) => f()).catch(quiet);
+    };
+  }, [demo]);
   const [confirm, setConfirm] = useState<{ p: InstalledProgram; method: "registered" | "winget" } | null>(null);
   const [recycle, setRecycle] = useState<Leftover | null>(null);
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "bad" } | null>(null);
@@ -248,7 +267,7 @@ export const StartupUninstall: React.FC<{ config: LensConfig | null; updateConfi
                         {plural(l.files, "file")} · {bytes(l.bytes)}
                       </div>
                     </div>
-                    <Button small onClick={() => invoke("launch_app_cmd", { path: l.path }).catch(() => {})}>
+                    <Button small onClick={() => invoke("launch_app_cmd", { path: l.path }).catch(oops("open that folder"))}>
                       Open
                     </Button>
                     <Button small variant="danger" onClick={() => setRecycle(l)}>

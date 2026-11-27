@@ -10,6 +10,7 @@ import { McpCard } from "../../components/McpCard";
 import { AgentsPane } from "../../components/AgentsPane";
 import { VoiceCard } from "../../components/VoiceCard";
 import { MagicCard } from "../../components/MagicCard";
+import { SelectionBarCard } from "../../magic/selection/SelectionBarCard";
 import { ContextMenuCard } from "../../context/ContextMenuCard";
 import { PackEditor } from "../../context/PackEditor";
 import { ClipperCard } from "../../context/templates/ClipperCard";
@@ -21,6 +22,7 @@ import { SnipCard } from "../../components/SnipCard";
 import { PresenceCard } from "../../presence/PresenceCard";
 import { Section, StateNote } from "../ui/primitives";
 import type { PageProps } from "./common";
+import { oops } from "../../ui/oops";
 
 /** Lens › AI & Command. Agents used to be a separate tab; it's a section here now. */
 export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConfig }) => (
@@ -28,7 +30,7 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     <StateNote kind="info">Everything here is off until you turn it on. Local models are used first; nothing leaves this PC unless you allow it.</StateNote>
     <BridgeInbox />
     <Section id="engine" title="AI engine" summary="Engine, privacy and keys" forceOpen={section === "engine"}>
-      <AiCard onTryIt={() => invoke("toggle_surface", { label: "palette" }).catch(() => {})} />
+      <AiCard onTryIt={() => invoke("toggle_surface", { label: "palette" }).catch(oops("open Command"))} />
     </Section>
     <Section id="command" title="Lens Command" summary="Hotkey, Mini, slash commands" forceOpen={section === "command"}>
       <CommandCard config={config} onUpdateConfig={updateConfig} />
@@ -53,6 +55,9 @@ export const AiCommandPage: React.FC<PageProps> = ({ section, config, updateConf
     </Section>
     <Section id="magic" title="Magic right-click" summary="Ctrl+Alt+right-click anywhere" defaultOpen={section === "magic"} forceOpen={section === "magic"}>
       <MagicCard config={config} />
+    </Section>
+    <Section id="selectionbar" title="Selection bar" summary="Select text → Cut, Copy, Paste, Magic Search, your actions" defaultOpen={section === "selectionbar"} forceOpen={section === "selectionbar"}>
+      <SelectionBarCard config={config} updateConfig={updateConfig} advanced={config?.settingsMode !== "simple"} />
     </Section>
     <Section id="rightclick" title="Right-click menu" summary="Order, pins, custom actions" defaultOpen={section === "rightclick"} forceOpen={section === "rightclick"}>
       <ContextMenuCard />

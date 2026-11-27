@@ -3,7 +3,10 @@
 # window state without starting PowerShell for every step.
 #
 #   screen                      -> {"x":..,"y":..,"w":..,"h":..} (primary monitor)
+#   work                        -> {"x":..,"y":..,"w":..,"h":..} (primary monitor's work area)
+#   explorer restart|count      -> restarts explorer.exe (waits for its taskbar), or counts it
 #   move X Y                    -> {"ok":true}
+#   pos                         -> {"x":..,"y":..} (where the cursor is now)
 #   click X Y                   -> left click at X,Y
 #   win TITLE                   -> {"found":true,"visible":..,"transparent":..,"x":..,"y":..,"w":..,"h":..}
 #   watch TITLE MS              -> samples the window every 16 ms for MS and returns
@@ -19,12 +22,17 @@ using System.Runtime.InteropServices;
 public static class Desk {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
   [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+  [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
+  public static string Pos() { POINT p; if (!GetCursorPos(out p)) return "{\"ok\":false}"; return "{\"x\":" + p.X + ",\"y\":" + p.Y + "}"; }
   [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint dx, uint dy, uint d, IntPtr e);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string c, string t);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
   [DllImport("user32.dll")] public static extern int GetWindowLongW(IntPtr h, int i);
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
+  [DllImport("user32.dll")] public static extern bool SystemParametersInfoW(uint a, uint b, out RECT r, uint c);
+  public static string Work() { RECT r; SystemParametersInfoW(0x30, 0, out r, 0); return "{\"x\":" + r.L + ",\"y\":" + r.T + ",\"w\":" + (r.R - r.L) + ",\"h\":" + (r.B - r.T) + "}"; }
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   public static void Click(int x, int y) { SetCursorPos(x, y); mouse_event(2, 0, 0, 0, IntPtr.Zero); mouse_event(4, 0, 0, 0, IntPtr.Zero); }
@@ -58,7 +66,21 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
   try {
     switch ($a[0]) {
       "screen" { $out = "{`"x`":0,`"y`":0,`"w`":$([Desk]::GetSystemMetrics(0)),`"h`":$([Desk]::GetSystemMetrics(1))}" }
+      "work" { $out = [Desk]::Work() }
+      "explorer" {
+        $before = @(Get-Process explorer -ErrorAction SilentlyContinue).Count
+        if ($a[1] -eq "restart" -and $before -gt 0) {
+          Get-Process explorer -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Milliseconds 800
+          # Windows usually restarts the shell itself; start it when it didn't.
+          if (@(Get-Process explorer -ErrorAction SilentlyContinue).Count -eq 0) { Start-Process explorer.exe }
+          $tray = [IntPtr]::Zero
+          for ($i = 0; $i -lt 100 -and $tray -eq [IntPtr]::Zero; $i++) { Start-Sleep -Milliseconds 150; $tray = [Desk]::FindWindowW("Shell_TrayWnd", $null) }
+          $out = "{`"ok`":true,`"before`":$before,`"tray`":$(if ($tray -ne [IntPtr]::Zero) { 'true' } else { 'false' })}"
+        } else { $out = "{`"ok`":true,`"before`":$before}" }
+      }
       "move" { [void][Desk]::SetCursorPos([int]$a[1], [int]$a[2]); $out = '{"ok":true}' }
+      "pos" { $out = [Desk]::Pos() }
       "click" { [Desk]::Click([int]$a[1], [int]$a[2]); $out = '{"ok":true}' }
       "win" { $out = [Desk]::Info($line.Substring(4)) }
       "watch" {

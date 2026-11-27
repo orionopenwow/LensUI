@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type {
-  LastfmStatus, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyStatus, TrackItem,
+  DiscordStatus, EqStatus, LastfmStatus, RemoteInfo, LyricOffset, LyricsResult, MusicConfig, NowPlaying, Played, PlaylistItem, Queue, SpicetifyPreview, SpotifyBegin, SpotifyStatus, TrackItem,
 } from "../types/generated";
 import { livePosition } from "./model";
 
-export type { MusicConfig, NowPlaying, LyricsResult, Played, Queue, TrackItem, PlaylistItem, SpotifyStatus, LastfmStatus, SpicetifyPreview };
+export type { DiscordStatus, EqStatus, LyricOffset, RemoteInfo };
+export type { MusicConfig, NowPlaying, LyricsResult, Played, Queue, TrackItem, PlaylistItem, SpotifyStatus, SpotifyBegin, LastfmStatus, SpicetifyPreview };
 
 export const EVENT_NOW = "lens://music/now";
 
@@ -26,7 +27,7 @@ export const music = {
   spicetifyPreview: (tokens: SpicetifyTokens) => invoke<SpicetifyPreview>("music_spicetify_preview", { tokens }),
   spicetifyExport: (tokens: SpicetifyTokens, install: boolean) => invoke<string[]>("music_spicetify_export", { tokens, install }),
   spotifyStatus: () => invoke<SpotifyStatus>("music_spotify_status"),
-  spotifyBegin: (clientId: string) => invoke<string>("music_spotify_begin", { clientId }),
+  spotifyBegin: (clientId: string) => invoke<SpotifyBegin>("music_spotify_begin", { clientId }),
   spotifyFinish: () => invoke<void>("music_spotify_finish"),
   spotifyDisconnect: () => invoke<void>("music_spotify_disconnect"),
   spotifyQueue: () => invoke<Queue>("music_spotify_queue"),
@@ -38,7 +39,22 @@ export const music = {
   lastfmBegin: (apiKey: string, secret: string) => invoke<string>("music_lastfm_begin", { apiKey, secret }),
   lastfmFinish: () => invoke<string>("music_lastfm_finish"),
   lastfmDisconnect: () => invoke<void>("music_lastfm_disconnect"),
+  lyricsOffset: () => invoke<LyricOffset>("music_lyrics_offset"),
+  lyricsNudge: (steps: number) => invoke<LyricOffset>("music_lyrics_nudge", { steps }),
+  lyricsOffsetReset: () => invoke<LyricOffset>("music_lyrics_offset_reset"),
+  discordStatus: () => invoke<DiscordStatus>("music_discord_status"),
+  /** Opens Immersive on the monitor under the pointer; rejects with a sentence when a fullscreen app is in front. */
+  immersiveOpen: (from: "nowplaying" | "dock" | "command") => invoke<void>("music_immersive_open", { from }),
+  remoteStart: () => invoke<RemoteInfo>("music_remote_start"),
+  remoteStop: () => invoke<RemoteInfo>("music_remote_stop"),
+  remoteStatus: () => invoke<RemoteInfo>("music_remote_status"),
+  remotePair: () => invoke<RemoteInfo>("music_remote_pair"),
+  eqStatus: () => invoke<EqStatus>("music_eq_status"),
+  eqSet: (preset: string) => invoke<EqStatus>("music_eq_set", { preset }),
+  eqOpenEditor: () => invoke<void>("music_eq_open_editor"),
 };
+
+export const EVENT_REMOTE = "lens://music/remote";
 
 export interface SpicetifyTokens {
   base: string;
@@ -87,7 +103,8 @@ export function useNowPlaying(fps = 4): { now: NowPlaying | null; position: numb
   }, []);
   useEffect(() => {
     if (now?.status !== "playing") return;
-    const t = window.setInterval(() => setTick((x) => x + 1), 1000 / fps);
+    // No re-render while the window is hidden or minimised (Immersive pauses with it).
+    const t = window.setInterval(() => !document.hidden && setTick((x) => x + 1), 1000 / fps);
     return () => window.clearInterval(t);
   }, [now?.status, fps]);
   return { now, position: now ? livePosition(now, Date.now()) : 0 };

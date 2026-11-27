@@ -43,7 +43,7 @@ pub enum Feature {
     Magic = 2,
     /// Hold-to-talk on Right Ctrl / Right Alt (`voice::keyhold`).
     VoiceHold = 3,
-    /// The selection bubble's "a drag just ended" detector (`clip::uia`).
+    /// The Magic selection bar: "a selection just ended" and, while it shows, what closes it (`clip::uia`).
     ClipBubble = 4,
     /// Clicks on the bare desktop for living wallpapers (`win_desktop_input`).
     DesktopInput = 5,
@@ -52,9 +52,12 @@ pub enum Feature {
     /// Esc stops a running agent (`presence::esc`). Claimed only while a run is active; it
     /// observes and never swallows.
     AgentStop = 7,
+    /// Magic Mouse: hold the left button, then drag to grab a region (`magic_waves::mouse_win`).
+    /// Only the button-up after an armed hold is ever swallowed; short clicks always pass.
+    MagicMouse = 8,
 }
 
-pub const FEATURES: usize = 8;
+pub const FEATURES: usize = 9;
 
 impl Feature {
     pub const ALL: [Feature; FEATURES] = [
@@ -66,6 +69,7 @@ impl Feature {
         Feature::DesktopInput,
         Feature::CursorFx,
         Feature::AgentStop,
+        Feature::MagicMouse,
     ];
 
     pub fn name(self) -> &'static str {
@@ -74,10 +78,11 @@ impl Feature {
             Feature::AltDrag => "Alt+drag",
             Feature::Magic => "Magic menu",
             Feature::VoiceHold => "Voice hold-to-talk",
-            Feature::ClipBubble => "Selection bubble",
+            Feature::ClipBubble => "Selection bar",
             Feature::DesktopInput => "Desktop input",
             Feature::CursorFx => "Pointer effects",
             Feature::AgentStop => "Esc stops an agent",
+            Feature::MagicMouse => "Magic Mouse",
         }
     }
 }
@@ -193,6 +198,18 @@ pub fn protected_combo(vk: u32, ctrl: bool, alt: bool, shift: bool, win: bool) -
     }
 }
 
+/// The same keys by name, for people (Settings › About & Testing › Safety) and for the test that
+/// keeps the names and [`protected_combo`] in step: (label, key, [ctrl, alt, shift, win]).
+pub const PROTECTED_KEYS: [(&str, u32, [bool; 4]); 7] = [
+    ("Ctrl+Alt+Del", 0x2E, [true, true, false, false]),
+    ("Ctrl+Shift+Esc", 0x1B, [true, false, true, false]),
+    ("Alt+Esc", 0x1B, [false, true, false, false]),
+    ("Alt+F4", 0x73, [false, true, false, false]),
+    ("Win+L", 0x4C, [false, false, false, true]),
+    ("Win+D", 0x44, [false, false, false, true]),
+    ("Win+Tab", 0x09, [false, false, false, true]),
+];
+
 /// Does a device need its hook installed? Yes while any claimed feature would be called.
 pub fn hook_wanted(claims: &[(bool, WhenPaused)], paused: bool) -> bool {
     claims.iter().any(|&(claimed, when)| claimed && (!paused || when == WhenPaused::Observe))
@@ -253,29 +270,35 @@ mod rt {
         WH_MOUSE_LL, WM_APP, WM_QUIT,
     };
 
-    /// Keyboard dispatch order. Only the Win key / Alt+Tab machine ever swallows a key.
-    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 4] = [
+    /// Keyboard dispatch order. Only the Win key / Alt+Tab machine swallows keys, plus the
+    /// selection bar's Esc while the bar is on screen.
+    const KEY_TABLE: [(Feature, KeyHandler, WhenPaused); 5] = [
         // First, so it sees Esc whatever the others do. It observes only, also while paused:
         // a run must be stoppable with a fullscreen app in front.
         (Feature::AgentStop, crate::presence::esc::input_key, WhenPaused::Observe),
+        // The selection bar, claimed only while it shows: Esc hides it (and is the one key it
+        // swallows); any other key hides it and goes on to the app.
+        (Feature::ClipBubble, crate::clip::uia::input_key, WhenPaused::Skip),
         (Feature::Keyhook, crate::win_keyhook::input_key, WhenPaused::Observe),
         (Feature::VoiceHold, crate::voice::keyhold::input_key, WhenPaused::Observe),
         (Feature::CursorFx, crate::win_cursor_fx::input_key, WhenPaused::Skip),
     ];
 
     /// Mouse dispatch order: the two features that can swallow a click first, observers after.
-    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 5] = [
+    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 6] = [
         (Feature::AltDrag, crate::win_altdrag::input_mouse, WhenPaused::Skip),
         (Feature::Magic, crate::magic::win::input_mouse, WhenPaused::Skip),
+        (Feature::MagicMouse, crate::magic_waves::mouse_win::input_mouse, WhenPaused::Skip),
         (Feature::ClipBubble, crate::clip::uia::input_mouse, WhenPaused::Skip),
         (Feature::DesktopInput, crate::win_desktop_input::input_mouse, WhenPaused::Skip),
         (Feature::CursorFx, crate::win_cursor_fx::input_mouse, WhenPaused::Skip),
     ];
 
     /// Told when the pause signal turns on, so a half-finished gesture is dropped.
-    const ON_PAUSE: [(Feature, fn()); 2] = [
+    const ON_PAUSE: [(Feature, fn()); 3] = [
         (Feature::AltDrag, crate::win_altdrag::input_paused),
         (Feature::Magic, crate::magic::win::input_paused),
+        (Feature::MagicMouse, crate::magic_waves::mouse_win::input_paused),
     ];
 
     const WM_INPUT_SYNC: u32 = WM_APP + 0x51;
@@ -349,14 +372,14 @@ mod rt {
         BENCHED_UNTIL[f as usize].load(Ordering::Relaxed) > now
     }
 
-    fn key_slots(now: u64) -> [Slot<KeyEvent>; 4] {
+    fn key_slots(now: u64) -> [Slot<KeyEvent>; 5] {
         KEY_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (KEY_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
         })
     }
 
-    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 5] {
+    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 6] {
         MOUSE_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (MOUSE_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
@@ -585,11 +608,17 @@ mod rt {
     fn foreground_blocks_input() -> bool {
         unsafe {
             if let Ok(state) = SHQueryUserNotificationState() {
-                if state == QUNS_RUNNING_D3D_FULL_SCREEN
-                    || state == QUNS_PRESENTATION_MODE
-                    || state == QUNS_BUSY
-                {
+                if state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE {
                     return true;
+                }
+                // QUNS_BUSY is "a window covers the whole screen". With the Windows taskbar hidden
+                // (which Lens can do) every maximised window does, so a maximised window is not a
+                // fullscreen app here; a borderless fullscreen one still is.
+                if state == QUNS_BUSY {
+                    let fg = GetForegroundWindow();
+                    if fg.0.is_null() || !windows::Win32::UI::WindowsAndMessaging::IsZoomed(fg).as_bool() {
+                        return true;
+                    }
                 }
             }
             let fg = GetForegroundWindow();

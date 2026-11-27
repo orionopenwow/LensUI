@@ -1,0 +1,16 @@
+/* The Dock's right-click menu rows (DockContextMenu.tsx); the menu's own box is in DockSurface.css. */
+.dock-ctx-menu .dcm-fixed { flex-shrink: 0; }
+.dock-ctx-menu .dcm-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-ctx-menu .dcm-grid { display: grid; gap: 3px; padding: 2px 0; }
+.dock-ctx-menu .dcm-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.dock-ctx-menu .dcm-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.dock-ctx-menu .dock-ctx-item.dcm-cell { justify-content: center; padding: 5px 4px; gap: 4px; font-size: 11px; background: rgb(var(--lens-ink) / 0.04); }
+.dock-ctx-menu .dock-ctx-item.dcm-size { padding: 4px 0; font-weight: 600; }
+.dock-ctx-menu .dock-ctx-item.dcm-size.is-on { font-weight: 700; background: rgb(var(--lens-ink) / 0.16); }
+/* Cells answer the pointer (their inline background used to hide the hover step). */
+.dock-ctx-menu .dock-ctx-item.dcm-cell:hover { background: rgb(var(--lens-ink) / 0.1); }
+.dock-ctx-menu .dock-ctx-item.dcm-size.is-on:hover { background: rgb(var(--lens-ink) / 0.2); }
+.dock-ctx-menu .dock-ctx-item.dcm-size { font-variant-numeric: tabular-nums; }
+/* A window row's glyph: the accent for the window in front, quiet for the rest. */
+.dock-ctx-menu .dcm-win { color: var(--lens-fg-secondary); }
+.dock-ctx-menu .dcm-win.is-focused { color: var(--lens-accent, var(--lens-fg)); }

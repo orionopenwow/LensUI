@@ -4,7 +4,7 @@
  * `DOCK_STYLES` and draws a `DockStylePreview` for each entry.
  */
 
-export type DockStyleId = "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands";
+export type DockStyleId = "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified";
 export type DockAlignment = "center" | "left";
 export type DockSystemAreaMode = "auto" | "dock" | "topbar";
 
@@ -77,6 +77,14 @@ export const DOCK_STYLES: readonly DockStyleInfo[] = [
     fullWidth: true,
     systemInDockByDefault: true,
   },
+  {
+    id: "unified",
+    label: "Unified",
+    description: "One floating pill: Launcher, apps, then tray, notifications and the clock with the date.",
+    recommendedIconSize: 38,
+    fullWidth: false,
+    systemInDockByDefault: true,
+  },
 ] as const;
 
 const STYLE_IDS = new Set<string>(DOCK_STYLES.map((s) => s.id));
@@ -90,6 +98,11 @@ export function dockStyleInfo(raw?: string | null): DockStyleInfo {
   return DOCK_STYLES.find((s) => s.id === id) ?? DOCK_STYLES[0];
 }
 
+/** Styles that show the Launcher button first in the Dock. */
+export function dockShowsLauncher(style: DockStyleId): boolean {
+  return style === "taskbar" || style === "studio" || style === "islands" || style === "unified";
+}
+
 /** Studio is always left-aligned; Taskbar follows `dock.alignment`; other styles are centred. */
 export function resolveDockAlignment(style: DockStyleId, raw?: string | null): DockAlignment {
   if (style === "studio") return "left";
@@ -100,32 +113,36 @@ export function resolveDockAlignment(style: DockStyleId, raw?: string | null): D
 interface DockLike {
   style?: string;
   systemArea?: string;
-  showTopBar?: boolean;
+}
+
+interface TopBarLike {
+  enabled?: boolean;
 }
 
 /**
  * Where the clock and system icons live, so they are never shown twice.
- * "auto" = in the Dock for Taskbar, Studio and Split; in the Top Bar otherwise.
+ * "auto" = in the Dock for Taskbar, Studio, Split, Islands and Unified; in the Top Bar otherwise.
  * If the Top Bar is turned off, the system icons fall back into the Dock for any style
  * that has a place for them (so they never disappear entirely).
  */
-export function resolveSystemArea(dock?: DockLike | null): "dock" | "topbar" {
+export function resolveSystemArea(dock?: DockLike | null, topBar?: TopBarLike | null): "dock" | "topbar" {
   const style = normalizeDockStyle(dock?.style);
   const info = dockStyleInfo(style);
   const mode = dock?.systemArea;
   if (mode === "dock") return "dock";
-  if (mode === "topbar") return dock?.showTopBar === false && info.systemInDockByDefault ? "dock" : "topbar";
+  if (mode === "topbar") return topBar?.enabled === false && info.systemInDockByDefault ? "dock" : "topbar";
   if (info.systemInDockByDefault) return "dock";
   return "topbar";
 }
 
-/** Icon size actually used: Slim caps at 32 px, the full-width bars at 36 px. */
+/** Icon size actually used: Slim caps at 32 px, the full-width bars at 36 px, Unified at 40 px. */
 export function dockStyleIconSize(style: DockStyleId, configured: number): number {
   // F2 (docs/TESTING.md): a hand-edited or restored config can hold 0, 5000 or NaN.
   configured = Number.isFinite(configured) ? Math.round(Math.min(96, Math.max(16, configured))) : 44;
   if (style === "slim") return Math.min(configured, 32);
   if (style === "taskbar" || style === "studio") return Math.min(configured, 36);
   if (style === "islands") return Math.min(configured, 34);
+  if (style === "unified") return Math.min(configured, 40);
   return configured;
 }
 

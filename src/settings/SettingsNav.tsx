@@ -36,6 +36,7 @@ import { buildIndex, search, type SearchEntry } from "./search";
 import { preloadSettingsPage } from "./pages";
 import { ModePill } from "./simple/ModePill";
 import { inSimpleNav, isAdvancedHit, morePages, type SettingsMode } from "./simple/mode";
+import { oops } from "../ui/oops";
 
 const ICONS: Record<string, React.FC<{ size?: number; strokeWidth?: number; color?: string; "aria-hidden"?: boolean }>> = {
   quick: SlidersHorizontal,
@@ -108,7 +109,7 @@ export const SettingsNav: React.FC<{
 
   const open = (r: SearchEntry) => {
     if (r.kind === "windows" && r.uri) {
-      invoke("open_windows_setting_cmd", { uri: r.uri }).catch(() => {});
+      invoke("open_windows_setting_cmd", { uri: r.uri }).catch(oops(`open ${r.label} in Windows Settings`));
     } else {
       onNavigate(r.page, r.section);
     }
@@ -159,7 +160,7 @@ export const SettingsNav: React.FC<{
           }}
         />
         {q && (
-          <button type="button" className="sh-search-clear" aria-label="Clear search" onClick={() => setQ("")}>
+          <button data-weight="medium" type="button" className="sh-search-clear" aria-label="Clear search" onClick={() => setQ("")}>
             <X size={12} aria-hidden />
           </button>
         )}
@@ -169,7 +170,7 @@ export const SettingsNav: React.FC<{
         <div className="sh-results" id="sh-search-results" role="listbox" aria-label="Search results">
           {results.length === 0 && <div className="sh-results-empty">No matches. Try "bluetooth" or "dock style".</div>}
           {results.map((r, i) => (
-            <button
+            <button data-weight="light"
               key={`${r.kind}-${r.page}-${r.section ?? r.uri ?? ""}-${r.label}`}
               id={`sh-res-${i}`}
               type="button"
@@ -195,7 +196,7 @@ export const SettingsNav: React.FC<{
             <div key={g.id} className="cc-nav-group" role="group" aria-label={g.label}>
               <div className="cc-nav-group-label">{g.label}</div>
               {pagesInGroup(g.id).filter((p) => visible(p.id)).map((p) => (
-                <button
+                <button data-weight="light"
                   key={p.id}
                   type="button"
                   data-page={p.id}
@@ -212,7 +213,7 @@ export const SettingsNav: React.FC<{
             </div>
           ))}
           {simple && folded > 0 && (
-            <button type="button" className="ss-nav-more" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
+            <button data-weight="medium" type="button" className="ss-nav-more" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
               <MoreHorizontal size={15} aria-hidden />
               <span>{showMore ? "Fewer pages" : `More (${folded} pages)`}</span>
               <ChevronDown size={13} className="chev" aria-hidden />
@@ -222,11 +223,11 @@ export const SettingsNav: React.FC<{
       )}
 
       <div className="sh-nav-foot">
-        <button type="button" className="cc-nav-btn" onClick={onWizard}>
+        <button data-weight="light" type="button" className="cc-nav-btn" onClick={onWizard}>
           <Sparkles size={15} strokeWidth={2.1} color="#F472B6" aria-hidden />
           <span>Setup Wizard</span>
         </button>
-        <button type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(() => {})}>
+        <button data-weight="light" type="button" className="cc-nav-btn sh-quit" onClick={() => invoke("quit_lens").catch(oops("quit Lens"))}>
           <Power size={15} strokeWidth={2.1} aria-hidden />
           <span>Quit Lens</span>
         </button>

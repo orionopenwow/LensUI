@@ -9,7 +9,7 @@ import {
 import { DEFAULT_TILES, SPECIAL_PROMPTS } from "../command/contextProviders";
 import type { Edge } from "../command/mini/edgeGeometry";
 
-interface SelectionPolicy { bubble: boolean; readOnRequest: boolean; mode: "allow" | "deny"; apps: string[]; maxChars: number }
+interface SelectionPolicy { bubble: boolean; readOnRequest: boolean; mode: "allow" | "deny"; apps: string[]; maxChars: number; version?: number }
 
 interface Props {
   config: LensConfig;
@@ -195,11 +195,9 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
         <>
           <div className="cc-row" style={{ marginTop: 24 }}>
             <div>
-              <div className="cc-label">Selection bubble</div>
-              <div className="cc-desc">After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.</div>
+              <div className="cc-label">Selection bar</div>
+              <div className="cc-desc">The selection bubble is now the Magic selection bar: Cut, Copy, Paste, Magic Search and your actions after you select text. Turn it on in AI & Command › Selection bar.</div>
             </div>
-            <button type="button" role="switch" aria-checked={policy.bubble} aria-label="Selection bubble"
-              className={`cc-toggle ${policy.bubble ? "on" : ""}`} onClick={() => savePolicy({ bubble: !policy.bubble })} />
           </div>
           <div className="cc-row" style={{ marginTop: 12 }}>
             <div>
@@ -209,7 +207,7 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             <button type="button" role="switch" aria-checked={policy.readOnRequest} aria-label="Read the selection when I open Mini"
               className={`cc-toggle ${policy.readOnRequest ? "on" : ""}`} onClick={() => savePolicy({ readOnRequest: !policy.readOnRequest })} />
           </div>
-          {policy.bubble || policy.readOnRequest ? (
+          {policy.readOnRequest ? (
             <>
               <div className="cc-chip-grid" style={{ marginTop: 8 }}>
                 <button type="button" className={`cc-chip ${policy.mode === "allow" ? "active" : ""}`} onClick={() => savePolicy({ mode: "allow" })}>Only these apps</button>
@@ -230,7 +228,7 @@ export const CommandCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                   <input className="cc-input" value={newApp} onChange={(e) => setNewApp(e.target.value)} placeholder="app.exe" aria-label="Add app" style={{ width: 120 }} />
                 </form>
               </div>
-              <div className="cc-desc">Browsers are left out by default: the Lens browser extension handles pages better.</div>
+              <div className="cc-desc">The same list decides where the selection bar works.</div>
             </>
           ) : null}
         </>

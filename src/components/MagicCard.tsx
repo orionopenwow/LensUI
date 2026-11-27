@@ -105,7 +105,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
     <div className="cc-card">
       <div className="cc-row">
         <div>
-          <div className="cc-label">Magic Right-Click</div>
+          <div className="cc-label">Magic right-click</div>
           <div className="cc-desc">
             One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box.
             Games, fullscreen apps and administrator windows are left alone.
@@ -128,7 +128,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
 
       <div className={m.enabled ? "" : "pi-off"} aria-disabled={!m.enabled} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
-          <div className="cc-label">Open With</div>
+          <div className="cc-label">Open with</div>
           <div className="magic-card-triggers" role="radiogroup" aria-label="Open with" style={{ marginTop: 8 }}>
             {TRIGGERS.map((t) => (
               <button
@@ -181,7 +181,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
         ) : null}
 
         <div>
-          <div className="cc-label">Starts In</div>
+          <div className="cc-label">Starts in</div>
           <div className="cc-chip-grid" style={{ marginTop: 8 }}>
             {(["do", "ask"] as const).map((x) => (
               <button
@@ -205,17 +205,17 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
           </span>
         </div>
 
-        <Toggle label="Window Actions" desc="Minimise, snap, move, pin and close for the window under the pointer" on={m.windowActions} onChange={() => save({ windowActions: !m.windowActions })} />
+        <Toggle label="Window actions" desc="Minimise, snap, move, pin and close for the window under the pointer" on={m.windowActions} onChange={() => save({ windowActions: !m.windowActions })} />
         <Toggle
-          label="AI in This Window"
+          label="AI in this window"
           desc="Ask box and AI actions. Uses your AI settings and privacy mode; off hides them here."
           on={m.ai}
           onChange={() => save({ ai: !m.ai, defaultMode: !m.ai ? m.defaultMode : "do" })}
         />
-        <Toggle label="Frequent First" desc="Actions you use most move up. Counts stay on this PC." on={m.learn} onChange={() => save({ learn: !m.learn })} />
+        <Toggle label="Frequent first" desc="Actions you use most move up. Counts stay on this PC." on={m.learn} onChange={() => save({ learn: !m.learn })} />
 
         <div>
-          <div className="cc-label">Leave These Apps Alone</div>
+          <div className="cc-label">Leave these apps alone</div>
           <div className="cc-desc">The gesture goes to the app as usual, e.g. games or design tools.</div>
         </div>
         <div className="cc-chip-grid">

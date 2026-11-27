@@ -26,6 +26,20 @@
   opacity: 0.5;
   pointer-events: none;
 }
+/* Off, but still usable for setting things up (B-41): dimmed, never click-dead. */
+.pi-dim {
+  opacity: 0.62;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out);
+}
+.pi-dim:hover,
+.pi-dim:focus-within {
+  opacity: 0.85;
+}
+.hc-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 /* --- Hot corners: a small screen with a button in each corner --- */
 .hc-screen {

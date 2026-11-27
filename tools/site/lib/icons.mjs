@@ -1,11 +1,14 @@
 // App icons for the website's demo desktops, written to docs/site/media/icons/<id>.svg.
-//   Lens's own apps     the Lens logo (Lens Browser) and Lens-style glyph tiles (Settings, Apps, Command)
+//   Lens's own apps     Lens's app-icon set (src/icons/lensApps.ts, the same module the app uses): bold
+//                       white glyphs on a plain matte tile, written as lens-<id>.svg; Lens Browser keeps
+//                       the Lens logo, drawn flat for icon sizes (lens-browser.svg)
 //   Third-party apps    Simple Icons brand marks (CC0, tools/site/vendor/simple-icons) on their brand colour
 //   Windows built-ins   original generic stand-ins (folder, terminal, notepad), not Microsoft's artwork
 // The open-source tools (Krita, Blender, OBS, Ollama, ArtCraft…) use the icons from each project's own
 // repository, already fetched into media/apps/ by fetch-app-media.mjs.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { LENS_APP_IDS, lensAppIconSvg } from "../../../src/icons/lensApps.ts";
 
 const BRANDS = {
   spotify: ["spotify", "#1DB954"],
@@ -22,23 +25,12 @@ const BRANDS = {
 
 const tile = (fill, inner, stroke = "rgb(255 255 255 / 0.14)") =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="0.5" y="0.5" width="63" height="63" rx="15" fill="${fill}" stroke="${stroke}"/>${inner}</svg>`;
-const obsidian = (glyph) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#27272a"/><stop offset="1" stop-color="#09090b"/></linearGradient><linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a5b4fc"/><stop offset="0.5" stop-color="#f0abfc"/><stop offset="1" stop-color="#67e8f9"/></linearGradient></defs><rect x="0.5" y="0.5" width="63" height="63" rx="15" fill="url(#g)" stroke="rgb(255 255 255 / 0.16)"/><g fill="none" stroke="url(#r)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${glyph}</g></svg>`;
 
 const ORIGINAL = {
-  // Lens's own surfaces
-  "lens-settings": obsidian(`<circle cx="32" cy="32" r="6"/><path d="M32 14v6M32 44v6M14 32h6M44 32h6M19.3 19.3l4.2 4.2M40.5 40.5l4.2 4.2M19.3 44.7l4.2-4.2M40.5 23.5l4.2-4.2"/><circle cx="32" cy="32" r="13"/>`),
-  "lens-apps": obsidian(`<rect x="16" y="16" width="13" height="13" rx="4"/><rect x="35" y="16" width="13" height="13" rx="4"/><rect x="16" y="35" width="13" height="13" rx="4"/><path d="M41.5 35v13M35 41.5h13"/>`),
-  "lens-command": obsidian(`<circle cx="28" cy="28" r="10"/><path d="M35.5 35.5L47 47"/><path d="M24 28h8M28 24v8"/>`),
   // Generic stand-ins for Windows built-ins (drawn here, not Microsoft's artwork)
   explorer: tile("#F5B83D", `<path d="M14 22a4 4 0 0 1 4-4h9l4 4h15a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#FFE3A3"/><path d="M14 28h36v16a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#FFD36B"/>`, "rgb(0 0 0 / 0.08)"),
   terminal: tile("#18181B", `<path d="M18 24l9 8-9 8" fill="none" stroke="#4ADE80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M31 42h15" stroke="#E4E4E7" stroke-width="4" stroke-linecap="round"/>`),
   notepad: tile("#3B82F6", `<rect x="18" y="13" width="28" height="38" rx="4" fill="#F8FAFC"/><path d="M24 23h16M24 30h16M24 37h10" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>`, "rgb(0 0 0 / 0.08)"),
-  "lens-notes": obsidian(`<path d="M20 15h18l8 8v26H20z"/><path d="M38 15v8h8M26 32h14M26 39h10"/>`),
-  "lens-music": obsidian(`<path d="M26 44V20l18-4v24"/><circle cx="22" cy="44" r="4.5"/><circle cx="40" cy="40" r="4.5"/>`),
-  "lens-monitor": obsidian(`<path d="M14 38h8l5-12 6 20 6-14 3 6h8"/>`),
-  "lens-cleaner": obsidian(`<path d="M22 46h20M24 46l2-18h12l2 18"/><path d="M32 28V16M27 20l5-4 5 4"/><path d="M28 36v6M32 36v6M36 36v6"/>`),
-  "lens-timer": obsidian(`<circle cx="32" cy="35" r="13"/><path d="M32 35v-7M28 16h8M32 16v6"/>`),
   // File-type icons for the Files app (originals)
   "file-doc": tile("#F8FAFC", `<path d="M22 14h14l8 8v28H22z" fill="#fff" stroke="#CBD5E1" stroke-width="2"/><path d="M27 30h12M27 36h12M27 42h8" stroke="#64748B" stroke-width="2.6" stroke-linecap="round"/>`, "rgb(0 0 0 / 0.1)"),
   "file-video": tile("#F43F5E", `<rect x="14" y="20" width="36" height="24" rx="5" fill="#fff"/><path d="M29 26l9 6-9 6z" fill="#F43F5E"/>`, "rgb(0 0 0 / 0.08)"),
@@ -61,8 +53,7 @@ export function writeIcons(root, out) {
     ids.push(id);
   }
   for (const [id, svg] of Object.entries(ORIGINAL)) { writeFileSync(join(out, `${id}.svg`), svg); ids.push(id); }
-  // Lens Browser wears the Lens logo itself.
-  const logo = join(root, "docs/brand/lens-logo-small.svg");
-  if (existsSync(logo)) { writeFileSync(join(out, "lens-browser.svg"), readFileSync(logo)); ids.push("lens-browser"); }
+  // Lens's own apps, from the app's own icon module; Lens Browser is the one that wears the Lens logo.
+  for (const id of [...LENS_APP_IDS, "browser"]) { writeFileSync(join(out, `lens-${id}.svg`), lensAppIconSvg(id)); ids.push(`lens-${id}`); }
   return ids;
 }

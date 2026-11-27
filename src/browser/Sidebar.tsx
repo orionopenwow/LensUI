@@ -8,6 +8,7 @@ import { captureFlip, type FlipCapture } from "../ui/motion";
 import { DEFAULT_SIDEBAR, media as mediaCmd, SLEEP_SAVING_MB, type BrowserView, type SidebarPrefs, type Tab } from "./api";
 import { avatar, hostOf, relTime, sidebarModel, tabLabel } from "./model";
 import { duplicateTabs, tabSections, type TabActionKind, type TabProposal } from "./tabAi";
+import { oops } from "./oops";
 
 export interface ChatRef {
   id: string;
@@ -403,7 +404,7 @@ export function Sidebar(props: Props) {
         <div className="lb-mini-player" aria-label="Playing">
           <Avatar url={props.media.url} title={props.media.title} size={16} />
           <span className="lb-tab-title">{props.media.title}</span>
-          <button className="lb-icon-btn sm" aria-label="Play or pause" onClick={() => void mediaCmd(props.media!.id, "toggle").catch(() => {})}><Pause size={12} /></button>
+          <button className="lb-icon-btn sm" aria-label="Play or pause" onClick={() => void mediaCmd(props.media!.id, "toggle").catch(oops("play or pause"))}><Pause size={12} /></button>
           <button className="lb-icon-btn sm" aria-label={props.media.muted ? "Unmute" : "Mute"} onClick={() => props.onMute(props.media!.id, !props.media!.muted)}>{props.media.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}</button>
         </div>
       ) : null}

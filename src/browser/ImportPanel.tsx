@@ -7,6 +7,7 @@ import {
 } from "./api";
 import { Key } from "./ApprovalCard";
 import { hostOf, relTime } from "./model";
+import { oops } from "./oops";
 
 export const BROWSER_TINT: Record<string, string> = {
   chrome: "#4285f4", edge: "#0c8ad8", brave: "#fb542b", firefox: "#ff7139", opera: "#ff1b2d", opera_gx: "#fa1e4e", vivaldi: "#ef3939", arc: "#5e5ce6",
@@ -106,7 +107,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
   useEffect(() => {
     if (seed) return;
     importDetect().then(setSources).catch((e) => setErr(String(e)));
-    importReceipts().then(setReceipts).catch(() => {});
+    importReceipts().then(setReceipts).catch(oops("load past imports"));
     const un = listen<ImportProgress>(EVT_BROWSER_IMPORT, (e) => {
       if (e.payload.step !== "done") setProgress((p) => ({ ...p, [e.payload.step]: e.payload.state }));
     });
@@ -131,7 +132,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
     try {
       setCounts(await importPreview(browser, profile, { bookmarks: true, history: true, tabs: true, spaces: true }));
       // The rows to tick and the defaults that can carry over; the counts above don't depend on it.
-      importItems(browser, profile).then(setItems).catch(() => {});
+      importItems(browser, profile).then(setItems).catch(oops("read that browser's data"));
     } catch (e) {
       setErr(String(e));
     } finally {

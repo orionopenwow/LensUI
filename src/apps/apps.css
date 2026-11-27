@@ -1,5 +1,20 @@
 /* Lens Apps. Lens tokens only; 4 px grid; one light primary per view; monospace metadata;
    respects reduced motion and light packs. */
+/* Derived from the pack (no colours of our own): a light plate for icons drawn for light
+   backgrounds, a caution tone that stays readable, and text on the danger fill. Set wherever Lens
+   Apps draws, including its layers on <body>. */
+.la,
+.la-floating,
+.la-card-settings {
+  --la-plate: color-mix(in srgb, var(--lens-fg) 92%, var(--lens-pack-base, var(--lens-bg-base)));
+  --la-caution: color-mix(in srgb, var(--lens-danger, #fb7185) 45%, var(--lens-fg));
+  --la-on-danger: var(--lens-pack-base, var(--lens-bg-base));
+}
+:root[data-scheme="light"] .la,
+:root[data-scheme="light"] .la-floating,
+:root[data-scheme="light"] .la-card-settings {
+  --la-plate: color-mix(in srgb, var(--lens-pack-base, var(--lens-bg-base)) 94%, var(--lens-fg));
+}
 .la {
   display: flex;
   flex-direction: column;
@@ -240,7 +255,8 @@ kbd {
   object-fit: contain;
 }
 .la-icon-plate {
-  background: #f4f4f5;
+  /* A light plate for icons drawn for light backgrounds: the pack's own lightest tone. */
+  background: var(--la-plate);
 }
 .la-icon-plate img {
   width: 74%;
@@ -250,13 +266,6 @@ kbd {
   color: hsl(var(--la-hue) 60% 78%);
   background: linear-gradient(145deg, hsl(var(--la-hue) 32% 26%), hsl(var(--la-hue) 30% 16%));
   border: 1px solid hsl(var(--la-hue) 30% 34% / 0.6);
-}
-:root[data-scheme="light"] .la-icon-plate {
-  background: #f4f4f5;
-}
-.la-icon-plate img {
-  width: 74%;
-  height: 74%;
 }
 .la-icon-glyph {
   color: hsl(var(--la-hue) 45% 34%);
@@ -301,7 +310,7 @@ kbd {
   object-fit: cover;
   object-position: top center;
   opacity: 0;
-  transition: opacity 500ms var(--lens-ease-out);
+  transition: opacity var(--lens-dur-slower) var(--lens-ease-out);
 }
 .la-thumb-large .la-thumb-media {
   object-fit: contain;
@@ -328,7 +337,7 @@ kbd {
   background: rgb(255 255 255 / 0.45);
 }
 .la-thumb-dots span.on {
-  background: #fff;
+  background: rgb(255 255 255 / 1);
 }
 .la-shimmer {
   background-image: linear-gradient(100deg, rgb(var(--lens-ink) / 0.03) 30%, rgb(var(--lens-ink) / 0.1) 50%, rgb(var(--lens-ink) / 0.03) 70%) !important;
@@ -373,8 +382,10 @@ kbd {
 .la-pill:hover {
   background: rgb(var(--lens-ink) / 0.16);
 }
-.la-pill:active {
-  transform: scale(0.96);
+/* Presses come from the press primitive (data-weight, DESIGN §5.2); until it is in this window the
+   pill still sinks on :active. Hover never scales. */
+.la-pill:active:not([data-press]) {
+  transform: scale(var(--lens-press-scale));
 }
 .la-pill-get,
 .la-pill-getExternal,
@@ -502,7 +513,7 @@ kbd {
   gap: 10px;
   z-index: 7;
   cursor: default;
-  animation: la-pop-in 140ms ease-out;
+  animation: la-pop-in var(--lens-dur-fast) var(--lens-ease-out);
 }
 .la-pop::before {
   content: "";
@@ -899,7 +910,7 @@ kbd {
 }
 .la-btn-danger {
   background: var(--lens-danger, #fb7185);
-  color: #fff;
+  color: var(--la-on-danger);
 }
 .la-btn-ghost {
   background: transparent;
@@ -907,103 +918,7 @@ kbd {
   color: var(--lens-fg-muted);
 }
 
-/* Install sheet */
-.la-sheet {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 48px;
-  background: rgb(0 0 0 / calc(0.45 * var(--lens-shade-k, 1)));
-  z-index: 5;
-}
-.la-sheet-card {
-  width: min(520px, calc(100% - 32px));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 14px;
-  background: var(--lens-pack-elevated, var(--lens-surface-solid, #111114));
-  border: 1px solid rgb(var(--lens-ink) / 0.14);
-  box-shadow: 0 16px 48px rgb(0 0 0 / calc(0.45 * var(--lens-shade-k, 1)));
-}
-.la-sheet-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-.la-sheet-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-.la-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.la-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.la-agreements {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: rgb(var(--lens-ink) / 0.04);
-  border: 1px solid var(--lens-border);
-  max-height: 120px;
-  overflow: auto;
-}
-.la-agreement {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 8px;
-  font-size: 11.5px;
-}
-.la-agreement-label {
-  color: var(--lens-fg-muted);
-}
-.la-agreement-text {
-  overflow-wrap: anywhere;
-}
-.la-steps {
-  display: flex;
-  gap: 16px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex-wrap: wrap;
-}
-.la-step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: var(--lens-fg-muted);
-}
-.la-step-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background: rgb(var(--lens-ink) / 0.18);
-}
-.la-step.now {
-  color: var(--lens-fg);
-}
-.la-step.now .la-step-dot {
-  background: var(--lens-link, #60a5fa);
-  box-shadow: 0 0 0 3px rgb(96 165 250 / 0.25);
-}
-.la-step.done .la-step-dot {
-  background: var(--lens-positive, #4ade80);
-}
+/* Progress bar, checks and notices */
 .la-bar {
   height: 8px;
   border-radius: 4px;
@@ -1018,14 +933,6 @@ kbd {
   transform-origin: left center;
   transform: scaleX(var(--fill, 0));
   transition: transform var(--lens-dur-slower) var(--lens-ease-out);
-}
-.la-recipe {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 .la-check {
   display: flex;
@@ -1046,46 +953,12 @@ kbd {
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--lens-danger, #fb7185);
-  background: rgb(251 113 133 / 0.08);
-  border: 1px solid rgb(251 113 133 / 0.25);
+  background: color-mix(in srgb, var(--lens-danger, #fb7185) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lens-danger, #fb7185) 25%, transparent);
   line-height: 17px;
 }
 .la-warn-inline {
-  color: #f59e0b;
-}
-:root[data-scheme="light"] .la-warn-inline {
-  color: #b45309;
-}
-
-/* Settings card */
-.la-card-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.la-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.la-setting-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.la-audit {
-  max-height: 180px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.la-audit-line {
-  display: grid;
-  grid-template-columns: 120px 128px 1fr 60px;
-  gap: 8px;
+  color: var(--la-caution);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1102,17 +975,4 @@ kbd {
   .la-pop {
     animation: none;
   }
-}
-
-/* Voice confirmation strip (shown by the voice HUD when a phrase targets Lens Apps) */
-.la-voice-heard {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--lens-border);
-  background: rgb(var(--lens-ink) / 0.05);
-  font-size: 13px;
 }

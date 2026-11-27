@@ -28,6 +28,19 @@ const SHOTS = [
   ["scene", "scene", 960, 540, null, false],
   ["card", "card", 760, 1900, null, false],
   ["spicetify", "spicetify", 1280, 760, null, true],
+  // Learned from Cider: Immersive (dark and light via the presets), no artwork, long lyrics,
+  // original + translation, nothing playing, the sound glow; Now Playing tinted vs theme accent.
+  ["imm", "imm", 1440, 860, null, false],
+  ["imm-noart", "imm-noart", 1440, 860, null, false],
+  ["imm-long", "imm-long", 1440, 860, null, false],
+  ["imm-both", "imm-both", 1440, 860, null, false],
+  ["imm-empty", "imm-empty", 1440, 860, null, false],
+  ["imm-glow", "imm-glow", 1440, 860, null, false],
+  ["imm-small", "imm", 900, 640, null, false],
+  ["np-theme-accent", "np-theme-accent", 1440, 860, null, false],
+  ["card-setup", "card-setup", 760, 2400, null, false],
+  // Tester mode: Lens Remote on with its pairing code, and the Equalizer APO bridge.
+  ["card-tester", "card-tester", 760, 3200, null, false],
 ];
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".ini": "text/plain" };

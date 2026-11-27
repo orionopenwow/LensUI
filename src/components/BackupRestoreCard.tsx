@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import type { ChangeInfo } from "../types/generated";
+import { removeAllPreview } from "../safety/model";
 
 interface BackupSummary {
   files: string[];
@@ -37,6 +39,21 @@ export const BackupRestoreCard: React.FC = () => {
   const [confirmText, setConfirmText] = useState("");
   const [deleteData, setDeleteData] = useState(false);
   const [steps, setSteps] = useState<UninstallStep[] | null>(null);
+  const [manifest, setManifest] = useState<ChangeInfo[]>([]);
+
+  // What Remove all will walk, read when the person opens the confirmation (the same registry
+  // the backend uses), so they see the list before typing the confirm word.
+  useEffect(() => {
+    if (!confirming || manifest.length > 0) return;
+    let live = true;
+    invoke<ChangeInfo[]>("changes_manifest_cmd")
+      .then((m) => live && Array.isArray(m) && setManifest(m))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [confirming, manifest.length]);
+  const preview = removeAllPreview(manifest);
 
   const exportBackup = async () => {
     setBusy(true);
@@ -93,7 +110,7 @@ export const BackupRestoreCard: React.FC = () => {
 
   return (
     <div className="cc-card">
-      <div className="cc-label">Back Up &amp; Restore</div>
+      <div className="cc-label">Back up &amp; restore</div>
       <div className="cc-desc">
         Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved
         keys and tokens are always left out.
@@ -145,7 +162,7 @@ export const BackupRestoreCard: React.FC = () => {
 
       <div className="cc-row" style={{ marginTop: 6 }}>
         <div>
-          <div className="cc-label">Remove All Lens Changes</div>
+          <div className="cc-label">Remove all Lens changes</div>
           <div className="cc-desc">
             Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell
             mode and start-with-Windows. Use before uninstalling.
@@ -160,6 +177,15 @@ export const BackupRestoreCard: React.FC = () => {
 
       {confirming && (
         <>
+          {preview && (
+            <div className="cc-desc" role="status" data-remove-all-preview>
+              <details>
+                <summary>{preview.line}</summary>
+                <div>{preview.labels.join(", ")}.</div>
+              </details>
+              <div>{preview.keeps}</div>
+            </div>
+          )}
           <div className="cc-row">
             <div className="cc-desc">Also delete Lens settings, themes and training data</div>
             <button

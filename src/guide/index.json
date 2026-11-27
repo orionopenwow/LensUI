@@ -31,7 +31,7 @@
   },
   {
    "id": "store",
-   "label": "Apps"
+   "label": "Lens Apps"
   },
   {
    "id": "display",
@@ -86,46 +86,42 @@
    "label": "System & Tasks"
   },
   {
-   "id": "messages",
-   "label": "Notifications"
-  },
-  {
    "id": "about",
    "label": "About & Testing"
   }
  ],
  "entries": [
   {
-   "id": "card.messages.messaginghubpane",
+   "id": "card.focus.messaginghubpane",
    "kind": "card",
    "title": "Messaging hub",
    "text": "Messaging hub",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messaging hub"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagingHubPane",
     "label": "Messaging hub"
    },
    "source": "src/components/MessagingHubPane.tsx"
   },
   {
-   "id": "card.messages.feedscard",
+   "id": "card.focus.feedscard",
    "kind": "card",
    "title": "Feeds",
    "text": "One slim column for RSS, Bluesky, Mastodon, Reddit, GitHub and YouTube — official APIs and feeds only, no scraping. Tokens are sealed on this PC. Feeds · Sources · Mute words · Quiet hours · Refresh every · AI digest · OPML. Feeds. Settings › Feeds. Credentials go straight to the sealed vault; this card never reads them back",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Feeds",
     "section": "feeds"
@@ -133,19 +129,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.sources",
+   "id": "setting.focus.feedscard.sources",
    "kind": "setting",
    "title": "Sources",
    "text": "",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Sources"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Sources",
     "section": "feeds"
@@ -153,19 +149,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.mute-words",
+   "id": "setting.focus.feedscard.mute-words",
    "kind": "setting",
    "title": "Mute words",
    "text": "Words, @handles, or source:reddit — one per line. Muted posts are hidden everywhere, including the digest.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Mute words"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Mute words",
     "section": "feeds"
@@ -173,19 +169,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.quiet-hours",
+   "id": "setting.focus.feedscard.quiet-hours",
    "kind": "setting",
    "title": "Quiet hours",
    "text": "No refreshes and no \"new\" pill between these times.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Quiet hours"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Quiet hours",
     "section": "feeds"
@@ -193,19 +189,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.refresh-every",
+   "id": "setting.focus.feedscard.refresh-every",
    "kind": "setting",
    "title": "Refresh every",
    "text": "Each network also has its own polite rate limit.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "Refresh every"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "Refresh every",
     "section": "feeds"
@@ -213,19 +209,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.ai-digest",
+   "id": "setting.focus.feedscard.ai-digest",
    "kind": "setting",
    "title": "AI digest",
    "text": "Five bullets with sources. Runs on your local model unless your AI privacy setting allows cloud.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "AI digest"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "AI digest",
     "section": "feeds"
@@ -233,19 +229,19 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "setting.messages.feedscard.opml",
+   "id": "setting.focus.feedscard.opml",
    "kind": "setting",
    "title": "OPML",
    "text": "Bring your subscriptions from Feedly, Inoreader, NetNewsWire or any reader.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Feeds",
     "OPML"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "FeedsCard",
     "label": "OPML",
     "section": "feeds"
@@ -253,18 +249,18 @@
    "source": "src/components/FeedsCard.tsx"
   },
   {
-   "id": "card.messages.messagescard",
+   "id": "card.focus.messagescard",
    "kind": "card",
    "title": "Messages",
    "text": "One inbox over the messengers you already use. Each runs as its own web app in a separate space with its own sign-in — Lens sees only the unread count. Messages · Mirror notifications · Show previews · Badges on Dock icons · VIPs · Alert keywords · Matrix (advanced). Messages. Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens reads only the unread badge. Matrix is the one place Lens can read and send (with approval)",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Messages",
     "section": "messages"
@@ -272,19 +268,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.mirror-notifications",
+   "id": "setting.focus.messagescard.mirror-notifications",
    "kind": "setting",
    "title": "Mirror notifications",
    "text": "Use Windows notifications from these apps for badges and mention alerts. Needs notification access for Lens.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Mirror notifications"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Mirror notifications",
     "section": "messages"
@@ -292,19 +288,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.show-previews",
+   "id": "setting.focus.messagescard.show-previews",
    "kind": "setting",
    "title": "Show previews",
    "text": "Show the first line of new messages in the inbox where the source provides it.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Show previews"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Show previews",
     "section": "messages"
@@ -312,19 +308,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.badges-on-dock-icons",
+   "id": "setting.focus.messagescard.badges-on-dock-icons",
    "kind": "setting",
    "title": "Badges on Dock icons",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Badges on Dock icons"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Badges on Dock icons",
     "section": "messages"
@@ -332,19 +328,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.vips",
+   "id": "setting.focus.messagescard.vips",
    "kind": "setting",
    "title": "VIPs",
    "text": "Conversation names that always get through Focus, separated by commas.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "VIPs"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "VIPs",
     "section": "messages"
@@ -352,19 +348,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.alert-keywords",
+   "id": "setting.focus.messagescard.alert-keywords",
    "kind": "setting",
    "title": "Alert keywords",
    "text": "Your name, project names — a message containing one counts as a mention.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Alert keywords"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Alert keywords",
     "section": "messages"
@@ -372,19 +368,19 @@
    "source": "src/components/MessagesCard.tsx"
   },
   {
-   "id": "setting.messages.messagescard.matrix-advanced",
+   "id": "setting.focus.messagescard.matrix-advanced",
    "kind": "setting",
    "title": "Matrix (advanced)",
    "text": "Connect your own Matrix homeserver — including bridges you run yourself — to read rooms and reply from Lens. Every reply shows you the exact text and waits for you to hold Send.",
    "path": [
     "Settings",
-    "Notifications",
+    "Focus & Notifications",
     "Messages",
     "Matrix (advanced)"
    ],
    "target": {
     "surface": "settings",
-    "tab": "messages",
+    "tab": "focus",
     "card": "MessagesCard",
     "label": "Matrix (advanced)",
     "section": "messages"
@@ -448,19 +444,19 @@
   {
    "id": "card.theme.themeschedulecard",
    "kind": "card",
-   "title": "Day & Night Themes",
-   "text": "Switch packs automatically. A pack you pick by hand stays until the next switch. Day & Night Themes · Day · Night · Switch at. Theme schedule. Day pack / night pack, switched at fixed times or at local sunrise and sunset",
+   "title": "Day & night themes",
+   "text": "Switch packs automatically. A pack you pick by hand stays until the next switch. Day & night themes · Day · Night · Switch at. Theme schedule. Day pack / night pack, switched at fixed times or at local sunrise and sunset",
    "path": [
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes"
+    "Day & night themes"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "ThemeScheduleCard",
-    "label": "Day & Night Themes",
+    "label": "Day & night themes",
     "section": "schedule"
    },
    "source": "src/components/ThemeScheduleCard.tsx"
@@ -474,7 +470,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Day"
    ],
    "target": {
@@ -495,7 +491,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Night"
    ],
    "target": {
@@ -516,7 +512,7 @@
     "Settings",
     "Appearance",
     "Schedule",
-    "Day & Night Themes",
+    "Day & night themes",
     "Switch at"
    ],
    "target": {
@@ -552,7 +548,7 @@
    "id": "card.theme.wallpapercard",
    "kind": "card",
    "title": "Lens Wallpaper",
-   "text": "Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off. Lens Wallpaper · Wallpapers · Fit · Pause when a window fills the screen · Pause on battery · Wallpaper Accent · Follow wallpaper accent · Accent from my Windows wallpaper. Wallpaper. Lens wallpaper behind the icons, plus accent-from-wallpaper",
+   "text": "Image, looping video or HTML wallpaper drawn behind your desktop icons. Your Windows wallpaper is never changed and comes back as soon as this is off. Lens Wallpaper · Wallpapers · Fit · Pause when a window fills the screen · Pause on battery · Wallpaper accent · Follow wallpaper accent · Accent from my Windows wallpaper. Wallpaper. Lens wallpaper behind the icons, plus accent-from-wallpaper",
    "path": [
     "Settings",
     "Appearance",
@@ -655,20 +651,20 @@
   {
    "id": "setting.theme.wallpapercard.wallpaper-accent",
    "kind": "setting",
-   "title": "Wallpaper Accent",
+   "title": "Wallpaper accent",
    "text": "",
    "path": [
     "Settings",
     "Appearance",
     "Wallpaper",
     "Lens Wallpaper",
-    "Wallpaper Accent"
+    "Wallpaper accent"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "WallpaperCard",
-    "label": "Wallpaper Accent",
+    "label": "Wallpaper accent",
     "section": "wallpaper"
    },
    "source": "src/components/WallpaperCard.tsx"
@@ -718,19 +714,19 @@
   {
    "id": "card.theme.accessibilitycard",
    "kind": "card",
-   "title": "Accessibility & Language",
-   "text": "Accessibility & Language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module",
+   "title": "Accessibility & language",
+   "text": "Accessibility & language. Accessibility. motion, contrast and language. Applied by applyThemeToDocument (data-motion, data-contrast on <html>) and by the i18n module",
    "path": [
     "Settings",
     "Appearance",
     "Accessibility",
-    "Accessibility & Language"
+    "Accessibility & language"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "AccessibilityCard",
-    "label": "Accessibility & Language",
+    "label": "Accessibility & language",
     "section": "a11y"
    },
    "source": "src/components/AccessibilityCard.tsx"
@@ -1077,19 +1073,19 @@
   {
    "id": "card.theme.savedthemescard",
    "kind": "card",
-   "title": "Saved Themes",
-   "text": "Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own. To use someone else's theme, drop their file into the themes folder and press Refresh. Saved Themes. Saved themes. Save the current look as a `.lenstheme` file, and apply, share or remove saved ones",
+   "title": "Saved themes",
+   "text": "Save your current look as a .lenstheme file. Add a surface color to make it a pack of your own. To use someone else's theme, drop their file into the themes folder and press Refresh. Saved themes. Saved themes. Save the current look as a `.lenstheme` file, and apply, share or remove saved ones",
    "path": [
     "Settings",
     "Appearance",
     "Saved & shared themes",
-    "Saved Themes"
+    "Saved themes"
    ],
    "target": {
     "surface": "settings",
     "tab": "theme",
     "card": "SavedThemesCard",
-    "label": "Saved Themes",
+    "label": "Saved themes",
     "section": "saved"
    },
    "source": "src/components/SavedThemesCard.tsx"
@@ -1147,6 +1143,60 @@
     "tab": "dock",
     "card": "DockTab",
     "label": "Size"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.icon-size-for",
+   "kind": "setting",
+   "title": "Icon size for",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Icon size for"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Icon size for"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.other-styles-with-their-own-size",
+   "kind": "setting",
+   "title": "Other styles with their own size",
+   "text": "Press one to hand it back to the shared size.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Other styles with their own size"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Other styles with their own size"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.dividers",
+   "kind": "setting",
+   "title": "Dividers",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Dividers"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Dividers"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1219,6 +1269,114 @@
     "tab": "dock",
     "card": "DockTab",
     "label": "Suggest apps you usually open now"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.minimise-pulse",
+   "kind": "setting",
+   "title": "Minimise pulse",
+   "text": "An app's icon pulses once when one of its windows is minimised or brought back.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Minimise pulse"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Minimise pulse"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.show-app-names",
+   "kind": "setting",
+   "title": "Show app names",
+   "text": "Beside the icons on Taskbar and Studio, under them on the other styles.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Show app names"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Show app names"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.scroll-to-switch-windows",
+   "kind": "setting",
+   "title": "Scroll to switch windows",
+   "text": "Turn the mouse wheel over an app to step through its open windows.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Scroll to switch windows"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Scroll to switch windows"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.drop-files-on-apps",
+   "kind": "setting",
+   "title": "Drop files on apps",
+   "text": "Drop a file on an app in the Dock to open it with that app.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Drop files on apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Drop files on apps"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.middle-click-opens-a-new-window",
+   "kind": "setting",
+   "title": "Middle-click opens a new window",
+   "text": "Middle-click an app to start another window of it.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Middle-click opens a new window"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Middle-click opens a new window"
+   },
+   "source": "src/themeux/DockTab.tsx"
+  },
+  {
+   "id": "setting.dock.docktab.close-pop-outs-when-the-pointer-leaves",
+   "kind": "setting",
+   "title": "Close pop-outs when the pointer leaves",
+   "text": "Quick Settings and Settings on the Dock close a moment after you move away. Never while the pointer is over them.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Close pop-outs when the pointer leaves"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "card": "DockTab",
+    "label": "Close pop-outs when the pointer leaves"
    },
    "source": "src/themeux/DockTab.tsx"
   },
@@ -1404,19 +1562,19 @@
   {
    "id": "card.sessions.tilingcard",
    "kind": "card",
-   "title": "Automatic Tiling",
-   "text": "New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left alone, and a window you move yourself starts floating. Automatic Tiling · Default Layout · New Windows Open · Always Float · Tiling Shortcuts. Tiling. automatic tiling (opt-in)",
+   "title": "Automatic tiling",
+   "text": "New windows snap into the layout by themselves. Maximised, minimised, fullscreen and game windows are left alone, and a window you move yourself starts floating. Automatic tiling · Default Layout · New windows open · Always float · Tiling shortcuts. Tiling. automatic tiling (opt-in)",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling"
+    "Desktop sessions",
+    "Automatic tiling"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Automatic Tiling"
+    "label": "Automatic tiling"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1428,8 +1586,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
+    "Desktop sessions",
+    "Automatic tiling",
     "Default Layout"
    ],
    "target": {
@@ -1443,60 +1601,60 @@
   {
    "id": "setting.sessions.tilingcard.new-windows-open",
    "kind": "setting",
-   "title": "New Windows Open",
+   "title": "New windows open",
    "text": "Where a window you just opened goes in the layout",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "New Windows Open"
+    "Desktop sessions",
+    "Automatic tiling",
+    "New windows open"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "New Windows Open"
+    "label": "New windows open"
    },
    "source": "src/components/TilingCard.tsx"
   },
   {
    "id": "setting.sessions.tilingcard.always-float",
    "kind": "setting",
-   "title": "Always Float",
+   "title": "Always float",
    "text": "These apps are never tiled.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "Always Float"
+    "Desktop sessions",
+    "Automatic tiling",
+    "Always float"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Always Float"
+    "label": "Always float"
    },
    "source": "src/components/TilingCard.tsx"
   },
   {
    "id": "setting.sessions.tilingcard.tiling-shortcuts",
    "kind": "setting",
-   "title": "Tiling Shortcuts",
-   "text": "Work after turning on Keyboard Tiling Shortcuts and restarting Lens.",
+   "title": "Tiling shortcuts",
+   "text": "Work after turning on Keyboard Tiling shortcuts and restarting Lens.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Automatic Tiling",
-    "Tiling Shortcuts"
+    "Desktop sessions",
+    "Automatic tiling",
+    "Tiling shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "TilingCard",
-    "label": "Tiling Shortcuts"
+    "label": "Tiling shortcuts"
    },
    "source": "src/components/TilingCard.tsx"
   },
@@ -1504,11 +1662,11 @@
    "id": "card.sessions.workspacescard",
    "kind": "card",
    "title": "Workspaces",
-   "text": "Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3. Workspaces · Built On · Follow Apps To Their Workspace. Workspaces. named workspaces with their own layout and app rules (opt-in)",
+   "text": "Named spaces with their own tiling layout and apps. Switch from the Top Bar or Alt+Shift+1–3. Workspaces · Built on · Follow apps to their workspace. Workspaces. named workspaces with their own layout and app rules (opt-in)",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces"
    ],
    "target": {
@@ -1522,78 +1680,78 @@
   {
    "id": "setting.sessions.workspacescard.built-on",
    "kind": "setting",
-   "title": "Built On",
+   "title": "Built on",
    "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces",
-    "Built On"
+    "Built on"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Built On"
+    "label": "Built on"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
   {
    "id": "setting.sessions.workspacescard.follow-apps-to-their-workspace",
    "kind": "setting",
-   "title": "Follow Apps To Their Workspace",
+   "title": "Follow apps to their workspace",
    "text": "When an app with an &ldquo;Opens here&rdquo; rule starts, switch to its workspace instead of leaving it there minimised.",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Workspaces",
-    "Follow Apps To Their Workspace"
+    "Follow apps to their workspace"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "WorkspacesCard",
-    "label": "Follow Apps To Their Workspace"
+    "label": "Follow apps to their workspace"
    },
    "source": "src/components/WorkspacesCard.tsx"
   },
   {
    "id": "card.sessions.sessionrestorecard",
    "kind": "card",
-   "title": "Session Restore",
-   "text": "A session remembers which apps were open and how they were arranged. Restore reopens the ones that are missing, then tiles them. Session Restore. Session restore. Save the apps that are open now as a session, and bring a session back with one click",
+   "title": "Session restore",
+   "text": "A session remembers which apps were open and how they were arranged. Restore reopens the ones that are missing, then tiles them. Session restore. Session restore. Save the apps that are open now as a session, and bring a session back with one click",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Session Restore"
+    "Desktop sessions",
+    "Session restore"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "SessionRestoreCard",
-    "label": "Session Restore"
+    "label": "Session restore"
    },
    "source": "src/components/SessionRestoreCard.tsx"
   },
   {
    "id": "card.sessions.desktopgroupscard",
    "kind": "card",
-   "title": "Desktop Groups",
-   "text": "Named sections in the Desktop drawer. They only change how items are shown: nothing on your desktop is moved, renamed or deleted. Desktop Groups · Sort new items automatically · Show \"Everything else\". Desktop groups. Control Center card for desktop groups. Groups are a view: files never move",
+   "title": "Desktop groups",
+   "text": "Named sections in the Desktop drawer. They only change how items are shown: nothing on your desktop is moved, renamed or deleted. Desktop groups · Sort new items automatically · Show \"Everything else\". Desktop groups. Control Center card for desktop groups. Groups are a view: files never move",
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups"
+    "Desktop sessions",
+    "Desktop groups"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
     "card": "DesktopGroupsCard",
-    "label": "Desktop Groups"
+    "label": "Desktop groups"
    },
    "source": "src/components/DesktopGroupsCard.tsx"
   },
@@ -1605,8 +1763,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups",
+    "Desktop sessions",
+    "Desktop groups",
     "Sort new items automatically"
    ],
    "target": {
@@ -1625,8 +1783,8 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
-    "Desktop Groups",
+    "Desktop sessions",
+    "Desktop groups",
     "Show \"Everything else\""
    ],
    "target": {
@@ -1645,7 +1803,7 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Plugins"
    ],
    "target": {
@@ -1664,7 +1822,7 @@
    "path": [
     "Settings",
     "Desktop",
-    "Desktop Sessions Switching",
+    "Desktop sessions",
     "Plugins",
     "wants to"
    ],
@@ -1698,59 +1856,59 @@
   {
    "id": "card.system.shellkeyscard",
    "kind": "card",
-   "title": "Start Key & Alt+Tab",
-   "text": "Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher. Start Key & Alt+Tab · Win Key Opens Lens Launcher · Alt+Tab Opens Lens Overview. Shell keys. let Lens answer the Win key (Launcher) and Alt+Tab (Overview). Both are off by default. Windows' own Start and Alt+Tab take over automatically whenever Lens doesn't respond within 300 ms, and the hook stands aside while a fullscreen game is in front",
+   "title": "Start key & Alt+Tab",
+   "text": "Let Lens answer the Windows keys. Win+E, Win+L, Win+Shift+S and every other Win combination keep working; only a single tap of the Win key opens the Launcher. Start key & Alt+Tab · Win key opens Lens Launcher · Alt+Tab opens Lens Overview. Shell keys. let Lens answer the Win key (Launcher) and Alt+Tab (Overview). Both are off by default. Windows' own Start and Alt+Tab take over automatically whenever Lens doesn't respond within 300 ms, and the hook stands aside while a fullscreen game is in front",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab"
+    "Start key & Alt+Tab"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Start Key & Alt+Tab"
+    "label": "Start key & Alt+Tab"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
   {
    "id": "setting.system.shellkeyscard.win-key-opens-lens-launcher",
    "kind": "setting",
-   "title": "Win Key Opens Lens Launcher",
+   "title": "Win key opens Lens Launcher",
    "text": "Tap the Windows key to open the Launcher instead of Start.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab",
-    "Win Key Opens Lens Launcher"
+    "Start key & Alt+Tab",
+    "Win key opens Lens Launcher"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Win Key Opens Lens Launcher"
+    "label": "Win key opens Lens Launcher"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
   {
    "id": "setting.system.shellkeyscard.alt-tab-opens-lens-overview",
    "kind": "setting",
-   "title": "Alt+Tab Opens Lens Overview",
+   "title": "Alt+Tab opens Lens Overview",
    "text": "Hold Alt, tap Tab to move, release Alt to switch. Esc cancels.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Start Key & Alt+Tab",
-    "Alt+Tab Opens Lens Overview"
+    "Start key & Alt+Tab",
+    "Alt+Tab opens Lens Overview"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellKeysCard",
-    "label": "Alt+Tab Opens Lens Overview"
+    "label": "Alt+Tab opens Lens Overview"
    },
    "source": "src/components/ShellKeysCard.tsx"
   },
@@ -1758,7 +1916,7 @@
    "id": "card.system.monitorpickercard",
    "kind": "card",
    "title": "Monitor",
-   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on Every Monitor. Monitor picker. which monitor the Dock and Top Bar live on",
+   "text": "One display connected — the Dock and Top Bar are on it. Monitor · Top Bar on every monitor. Monitor picker. which monitor the Dock and Top Bar live on",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1776,59 +1934,59 @@
   {
    "id": "setting.system.monitorpickercard.top-bar-on-every-monitor",
    "kind": "setting",
-   "title": "Top Bar on Every Monitor",
+   "title": "Top Bar on every monitor",
    "text": "Show a Top Bar on each display. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Monitor",
-    "Top Bar on Every Monitor"
+    "Top Bar on every monitor"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "MonitorPickerCard",
-    "label": "Top Bar on Every Monitor"
+    "label": "Top Bar on every monitor"
    },
    "source": "src/components/MonitorPickerCard.tsx"
   },
   {
    "id": "card.system.hotcornerscard",
    "kind": "card",
-   "title": "Hot Corners",
-   "text": "Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off. Hot Corners · Every Monitor. Hot corners. hot corners (opt-in). Pick a corner on the little screen, then its action",
+   "title": "Hot corners",
+   "text": "Push the pointer into a screen corner and rest it there to open something. Corners between two monitors are skipped, so moving across screens never sets one off. Hot corners · Every monitor. Hot corners. hot corners (opt-in). Pick a corner on the little screen, then its action",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Hot Corners"
+    "Hot corners"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Hot Corners"
+    "label": "Hot corners"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
   {
    "id": "setting.system.hotcornerscard.every-monitor",
    "kind": "setting",
-   "title": "Every Monitor",
+   "title": "Every monitor",
    "text": "Off: only the main monitor's corners",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "Hot Corners",
-    "Every Monitor"
+    "Hot corners",
+    "Every monitor"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "HotCornersCard",
-    "label": "Every Monitor"
+    "label": "Every monitor"
    },
    "source": "src/components/HotCornersCard.tsx"
   },
@@ -1836,7 +1994,7 @@
    "id": "card.system.altdragcard",
    "kind": "card",
    "title": "Drag Windows",
-   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. Drag Windows · Hold · Never Move · Right-Drag Resizes · Bring to Front · Drag Maximised Windows Out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
+   "text": "Hold and drag anywhere inside a window to move it. Drag with the right button to resize from the nearest edge or corner. Fullscreen apps, games and administrator windows are never touched. Drag Windows · Hold · Never move · Right-drag resizes · Bring to front · Drag maximised windows out. Alt drag. Alt + drag to move and Alt + right-drag to resize windows (opt-in)",
    "path": [
     "Settings",
     "Windows & Keys",
@@ -1874,118 +2032,118 @@
   {
    "id": "setting.system.altdragcard.never-move",
    "kind": "setting",
-   "title": "Never Move",
+   "title": "Never move",
    "text": "Apps that use + drag themselves, like drawing or 3D apps.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Never Move"
+    "Never move"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Never Move"
+    "label": "Never move"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.right-drag-resizes",
    "kind": "setting",
-   "title": "Right-Drag Resizes",
+   "title": "Right-drag resizes",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Right-Drag Resizes"
+    "Right-drag resizes"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Right-Drag Resizes"
+    "label": "Right-drag resizes"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.bring-to-front",
    "kind": "setting",
-   "title": "Bring to Front",
+   "title": "Bring to front",
    "text": "The window you grab comes to the front",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Bring to Front"
+    "Bring to front"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Bring to Front"
+    "label": "Bring to front"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "setting.system.altdragcard.drag-maximised-windows-out",
    "kind": "setting",
-   "title": "Drag Maximised Windows Out",
+   "title": "Drag maximised windows out",
    "text": "A maximised window shrinks back and follows the pointer",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
     "Drag Windows",
-    "Drag Maximised Windows Out"
+    "Drag maximised windows out"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AltDragCard",
-    "label": "Drag Maximised Windows Out"
+    "label": "Drag maximised windows out"
    },
    "source": "src/components/AltDragCard.tsx"
   },
   {
    "id": "card.system.appsummoncard",
    "kind": "card",
-   "title": "App Hotkeys",
-   "text": "One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal. App Hotkeys. App summon. one hotkey per app that shows it, hides it, or starts it (opt-in)",
+   "title": "App hotkeys",
+   "text": "One shortcut per app: it brings the app forward, hides it again if it's already in front, and starts it if it isn't running. Great for a drop-down terminal. App hotkeys. App summon. one hotkey per app that shows it, hides it, or starts it (opt-in)",
    "path": [
     "Settings",
     "Windows & Keys",
     "Keys, corners & monitors",
-    "App Hotkeys"
+    "App hotkeys"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "AppSummonCard",
-    "label": "App Hotkeys"
+    "label": "App hotkeys"
    },
    "source": "src/components/AppSummonCard.tsx"
   },
   {
    "id": "card.system.windowrulescard",
    "kind": "card",
-   "title": "Per-App Window Rules",
-   "text": "Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely. Per-App Window Rules · Add a rule · Focus & Borders · Dim inactive windows · Leave fullscreen apps alone · Never decorate · Pin a window on top. Window rules. Focus & Borders, then the per-app rules. Mounted as one card group in Settings › Windows",
+   "title": "Per-app window rules",
+   "text": "Give one app its own opacity, frame and corners — or have Lens leave its windows alone entirely. Per-app window rules · Add a rule · Focus & borders · Dim inactive windows · Leave fullscreen apps alone · Never decorate · Pin a window on top. Window rules. Focus & Borders, then the per-app rules. Mounted as one card group in Settings › Windows",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules"
+    "Per-app window rules"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Per-App Window Rules"
+    "label": "Per-app window rules"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -1998,7 +2156,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Add a rule"
    ],
    "target": {
@@ -2012,20 +2170,20 @@
   {
    "id": "setting.system.windowrulescard.focus-and-borders",
    "kind": "setting",
-   "title": "Focus & Borders",
+   "title": "Focus & borders",
    "text": "Dim what you're not using and outline the window you are. Lens draws this on top of your windows — nothing inside your apps changes, and fullscreen games and videos are left alone.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
-    "Focus & Borders"
+    "Per-app window rules",
+    "Focus & borders"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "WindowRulesCard",
-    "label": "Focus & Borders"
+    "label": "Focus & borders"
    },
    "source": "src/components/WindowRulesCard.tsx"
   },
@@ -2038,7 +2196,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Dim inactive windows"
    ],
    "target": {
@@ -2058,7 +2216,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Leave fullscreen apps alone"
    ],
    "target": {
@@ -2078,7 +2236,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Never decorate"
    ],
    "target": {
@@ -2098,7 +2256,7 @@
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Per-App Window Rules",
+    "Per-app window rules",
     "Pin a window on top"
    ],
    "target": {
@@ -2110,21 +2268,80 @@
    "source": "src/components/WindowRulesCard.tsx"
   },
   {
-   "id": "card.system.shellmodecard",
+   "id": "card.system.windowappscard",
    "kind": "card",
-   "title": "Shell Mode (advanced)",
-   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell Mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "title": "Apps and window buttons",
+   "text": "Choose which apps get Lens's window buttons. Games with anti-cheat, fullscreen apps and Windows' own shell are always left alone; that can't be switched off. Apps and window buttons · Buttons on the · Another app. Window apps. Settings › Windows › Apps and window buttons. One list of the apps Lens has seen: a switch for Lens's window buttons per app (stored in `windowControls.excludedProcesses`), which apps a rule leaves alone, and a locked \"Protected\" badge on the apps Lens never touches (anti-cheat games, Windows shell",
    "path": [
     "Settings",
     "Windows & Keys",
     "Window styling",
-    "Shell Mode (advanced)"
+    "Apps and window buttons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Apps and window buttons"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.buttons-on-the",
+   "kind": "setting",
+   "title": "Buttons on the",
+   "text": "Left is used where a window's title bar is free there. Apps with tabs or tools in the title bar (browsers, File Explorer, Terminal) keep their buttons on the right.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Buttons on the"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Buttons on the"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "setting.system.windowappscard.another-app",
+   "kind": "setting",
+   "title": "Another app",
+   "text": "Type its file name to keep Lens's buttons off it, e.g. obs64.exe.",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Apps and window buttons",
+    "Another app"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "system",
+    "card": "WindowAppsCard",
+    "label": "Another app"
+   },
+   "source": "src/components/WindowAppsCard.tsx"
+  },
+  {
+   "id": "card.system.shellmodecard",
+   "kind": "card",
+   "title": "Shell mode (advanced)",
+   "text": "Start Lens instead of the Windows taskbar and desktop when you sign in. This account only. Shell mode (advanced). Shell mode. Control Center card for opt-in Shell Mode (Lens instead of Explorer as the Windows shell). Backend: src-tauri/src/win_shell.rs. Full explanation: docs/SHELL_MODE.md",
+   "path": [
+    "Settings",
+    "Windows & Keys",
+    "Window styling",
+    "Shell mode (advanced)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
     "card": "ShellModeCard",
-    "label": "Shell Mode (advanced)"
+    "label": "Shell mode (advanced)"
    },
    "source": "src/components/ShellModeCard.tsx"
   },
@@ -2448,21 +2665,21 @@
    "source": "src/components/CommandCard.tsx"
   },
   {
-   "id": "setting.ai.commandcard.selection-bubble",
+   "id": "setting.ai.commandcard.selection-bar",
    "kind": "setting",
-   "title": "Selection bubble",
-   "text": "After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.",
+   "title": "Selection bar",
+   "text": "The selection bubble is now the Magic selection bar: Cut, Copy, Paste, Magic Search and your actions after you select text. Turn it on in AI & Command › Selection bar.",
    "path": [
     "Settings",
     "AI & Command",
     "Lens Command",
-    "Selection bubble"
+    "Selection bar"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "CommandCard",
-    "label": "Selection bubble",
+    "label": "Selection bar",
     "section": "command"
    },
    "source": "src/components/CommandCard.tsx"
@@ -3472,19 +3689,18 @@
   {
    "id": "card.ai.magiccard",
    "kind": "card",
-   "title": "Magic Right-Click",
-   "text": "One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone. Magic Right-Click · Open With · Starts In · Leave These Apps Alone · Preview · Window Actions · AI in This Window · Frequent First. Magic. Control Center card for the magic right-click window. Off by default",
+   "title": "Magic right-click",
+   "text": "One Lens window at the pointer, anywhere: what's under it, the right actions, window controls and an Ask box. Games, fullscreen apps and administrator windows are left alone. Magic right-click · Open with · Starts in · Leave these apps alone · Preview · Window actions · AI in this window · Frequent first. Magic. Control Center card for the magic right-click window. Off by default",
    "path": [
     "Settings",
     "AI & Command",
-    "Magic right-click",
-    "Magic Right-Click"
+    "Magic right-click"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Magic Right-Click",
+    "label": "Magic right-click",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3492,20 +3708,19 @@
   {
    "id": "setting.ai.magiccard.open-with",
    "kind": "setting",
-   "title": "Open With",
+   "title": "Open with",
    "text": "",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Open With"
+    "Open with"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Open With",
+    "label": "Open with",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3513,20 +3728,19 @@
   {
    "id": "setting.ai.magiccard.starts-in",
    "kind": "setting",
-   "title": "Starts In",
+   "title": "Starts in",
    "text": "",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Starts In"
+    "Starts in"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Starts In",
+    "label": "Starts in",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3534,20 +3748,19 @@
   {
    "id": "setting.ai.magiccard.leave-these-apps-alone",
    "kind": "setting",
-   "title": "Leave These Apps Alone",
+   "title": "Leave these apps alone",
    "text": "The gesture goes to the app as usual, e.g. games or design tools.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Leave These Apps Alone"
+    "Leave these apps alone"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Leave These Apps Alone",
+    "label": "Leave these apps alone",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3561,7 +3774,6 @@
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
     "Preview"
    ],
    "target": {
@@ -3576,20 +3788,19 @@
   {
    "id": "setting.ai.magiccard.window-actions",
    "kind": "setting",
-   "title": "Window Actions",
+   "title": "Window actions",
    "text": "Minimise, snap, move, pin and close for the window under the pointer",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Window Actions"
+    "Window actions"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Window Actions",
+    "label": "Window actions",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3597,20 +3808,19 @@
   {
    "id": "setting.ai.magiccard.ai-in-this-window",
    "kind": "setting",
-   "title": "AI in This Window",
+   "title": "AI in this window",
    "text": "Ask box and AI actions. Uses your AI settings and privacy mode; off hides them here.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "AI in This Window"
+    "AI in this window"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "AI in This Window",
+    "label": "AI in this window",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
@@ -3618,23 +3828,521 @@
   {
    "id": "setting.ai.magiccard.frequent-first",
    "kind": "setting",
-   "title": "Frequent First",
+   "title": "Frequent first",
    "text": "Actions you use most move up. Counts stay on this PC.",
    "path": [
     "Settings",
     "AI & Command",
     "Magic right-click",
-    "Magic Right-Click",
-    "Frequent First"
+    "Frequent first"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "MagicCard",
-    "label": "Frequent First",
+    "label": "Frequent first",
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "card.ai.selectionbarcard",
+   "kind": "card",
+   "title": "Selection bar",
+   "text": "After you select text anywhere, a small bar offers Cut, Copy and Paste (when they'd work), Magic Search and your actions. It never takes the keyboard from the app. Selection bar · Button labels · Cut button · Copy button · Paste button · Magic Search button · Your actions · Actions before More. Selection bar",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Selection bar",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.button-labels",
+   "kind": "setting",
+   "title": "Button labels",
+   "text": "Icons only, a label when you point at a button, or always.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Button labels"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Button labels",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.cut-button",
+   "kind": "setting",
+   "title": "Cut button",
+   "text": "Only where the text can be edited.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Cut button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Cut button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.copy-button",
+   "kind": "setting",
+   "title": "Copy button",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Copy button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Copy button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.paste-button",
+   "kind": "setting",
+   "title": "Paste button",
+   "text": "Only in editable text, when there's text to paste. Pointing at it shows the first line, unless a password manager marked it private.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Paste button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Paste button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.magic-search-button",
+   "kind": "setting",
+   "title": "Magic Search button",
+   "text": "A quick, cited answer with web results and matches from your own Lens, in a pop-out by the selection.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Magic Search button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Magic Search button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.your-actions",
+   "kind": "setting",
+   "title": "Your actions",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Your actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Your actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.actions-before-more",
+   "kind": "setting",
+   "title": "Actions before More",
+   "text": "The rest are one click away under ⋯.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Actions before More"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Actions before More",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.apps",
+   "kind": "setting",
+   "title": "Apps",
+   "text": "Everywhere except the apps below (the default), or only in the apps below.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Apps",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.per-app-actions",
+   "kind": "setting",
+   "title": "Per-app actions",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Per-app actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Per-app actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-drag",
+   "kind": "setting",
+   "title": "Open after a drag",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a drag"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a drag",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-double-click",
+   "kind": "setting",
+   "title": "Open after a double click",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a double click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a double click",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-triple-click",
+   "kind": "setting",
+   "title": "Open after a triple click",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a triple click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a triple click",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.selection-bar-delay",
+   "kind": "setting",
+   "title": "Selection bar delay",
+   "text": "How long after you let go of the mouse the bar appears.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Selection bar delay"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Selection bar delay",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.minimum-characters",
+   "kind": "setting",
+   "title": "Minimum characters",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Minimum characters"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Minimum characters",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.bar-placement",
+   "kind": "setting",
+   "title": "Bar placement",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Bar placement"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Bar placement",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.hide-on-its-own",
+   "kind": "setting",
+   "title": "Hide on its own",
+   "text": "Pointing at the bar keeps it open.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Hide on its own"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Hide on its own",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.auto-hide",
+   "kind": "setting",
+   "title": "Auto-hide",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Auto-hide"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Auto-hide",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.hide-distance",
+   "kind": "setting",
+   "title": "Hide distance",
+   "text": "The bar goes away when the pointer moves this far from it.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Hide distance"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Hide distance",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.smart-actions",
+   "kind": "setting",
+   "title": "Smart actions",
+   "text": "Recognises links, e-mail addresses, sums, units, colours, file paths and code, and shows a one-line preview. Worked out on this PC.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Smart actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Smart actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.learn-from-use",
+   "kind": "setting",
+   "title": "Learn from use",
+   "text": "Floats the actions you use most up the bar, from counts kept on this PC.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Learn from use"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Learn from use",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.web-results",
+   "kind": "setting",
+   "title": "Web results",
+   "text": "From your Lens Browser search engine (DuckDuckGo by default) and Wikipedia, only when you press Magic Search. The panel lists every source.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Web results"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Web results",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.results-from-my-files",
+   "kind": "setting",
+   "title": "Results from my files",
+   "text": "Your Shelf, clipboard history, notes and recent files, searched on this PC and never sent anywhere.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Results from my files"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Results from my files",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.ai-for-magic-search",
+   "kind": "setting",
+   "title": "AI for Magic Search",
+   "text": "The local model when it can answer; Claude only if your AI privacy setting allows it.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "AI for Magic Search"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "AI for Magic Search",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.magic-search-hotkey",
+   "kind": "setting",
+   "title": "Magic Search hotkey",
+   "text": "Runs Magic Search on the selection anywhere, with or without the bar. None by default.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Magic Search hotkey"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Magic Search hotkey",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
   },
   {
    "id": "card.ai.contextmenucard",
@@ -3823,7 +4531,7 @@
    "id": "setting.ai.snipcard.shortcut",
    "kind": "setting",
    "title": "Shortcut",
-   "text": "A modifier plus a key, e.g. Ctrl+Shift+S. Press it again while recording to stop.",
+   "text": "A modifier plus a key, e.g. Ctrl+Alt+X. Press it again while recording to stop.",
    "path": [
     "Settings",
     "AI & Command",
@@ -4477,19 +5185,19 @@
   {
    "id": "card.ai.agentspane",
    "kind": "card",
-   "title": "Connected Agents & MCP Servers",
-   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected Agents & MCP Servers · AGENTS.md — Global Agent Safety & Consistency Rules. Agents",
+   "title": "Connected agents & MCP servers",
+   "text": "Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools. Connected agents & MCP servers · AGENTS.md — global agent safety & consistency rules. Agents",
    "path": [
     "Settings",
     "AI & Command",
     "Agents",
-    "Connected Agents & MCP Servers"
+    "Connected agents & MCP servers"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "AgentsPane",
-    "label": "Connected Agents & MCP Servers",
+    "label": "Connected agents & MCP servers",
     "section": "agents"
    },
    "source": "src/components/AgentsPane.tsx"
@@ -4497,20 +5205,20 @@
   {
    "id": "setting.ai.agentspane.agents-md-global-agent-safety-and-consistency-rules",
    "kind": "setting",
-   "title": "AGENTS.md — Global Agent Safety & Consistency Rules",
+   "title": "AGENTS.md — global agent safety & consistency rules",
    "text": "Saved to %APPDATA%\\LensUI\\AGENTS.md and injected automatically into connected agents.",
    "path": [
     "Settings",
     "AI & Command",
     "Agents",
-    "Connected Agents & MCP Servers",
-    "AGENTS.md — Global Agent Safety & Consistency Rules"
+    "Connected agents & MCP servers",
+    "AGENTS.md — global agent safety & consistency rules"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "AgentsPane",
-    "label": "AGENTS.md — Global Agent Safety & Consistency Rules",
+    "label": "AGENTS.md — global agent safety & consistency rules",
     "section": "agents"
    },
    "source": "src/components/AgentsPane.tsx"
@@ -4538,22 +5246,42 @@
   {
    "id": "card.about.crashreportscard",
    "kind": "card",
-   "title": "Crash Reports",
-   "text": "Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded. Crash Reports. Crash reports. crash reports Lens wrote on this PC (%APPDATA%\\LensUI\\crashes, newest 10). Nothing is uploaded; \"Copy report\" puts one on the clipboard so it can be pasted into an issue. Backend: win_crash.rs",
+   "title": "Crash reports",
+   "text": "Kept on this PC only (newest 10). User names and personal paths are removed. Nothing is uploaded. Crash reports. Crash reports. crash reports Lens wrote on this PC (%APPDATA%\\LensUI\\crashes, newest 10). Nothing is uploaded; \"Copy report\" puts one on the clipboard so it can be pasted into an issue. Backend: win_crash.rs",
    "path": [
     "Settings",
     "About & Testing",
     "Updates & crash reports",
-    "Crash Reports"
+    "Crash reports"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "CrashReportsCard",
-    "label": "Crash Reports",
+    "label": "Crash reports",
     "section": "updates"
    },
    "source": "src/components/CrashReportsCard.tsx"
+  },
+  {
+   "id": "card.about.safetycard",
+   "kind": "card",
+   "title": "Safety",
+   "text": "What Lens changes on this PC, what it never touches, and the ways back to plain Windows. Safety. Safety. Settings › About & Testing › Safety. One card for trust you can see: what Lens changes on this PC (the change registry), what it never touches, the keys that always reach Windows, Safe Mode, the Shift-at-sign-in skip, and the two ways out: Report a problem and Remove all. Everything shown is read fr",
+   "path": [
+    "Settings",
+    "About & Testing",
+    "Safety net",
+    "Safety"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "about",
+    "card": "SafetyCard",
+    "label": "Safety",
+    "section": "safety"
+   },
+   "source": "src/components/SafetyCard.tsx"
   },
   {
    "id": "card.about.failsafecard",
@@ -4657,19 +5385,18 @@
   {
    "id": "card.about.backuprestorecard",
    "kind": "card",
-   "title": "Back Up & Restore",
-   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back Up & Restore · Include workflow recordings and training data · Remove All Lens Changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
+   "title": "Back up & restore",
+   "text": "Saves your settings, themes, window rules and agent rules to one .lensbackup file in Documents. Saved keys and tokens are always left out. Back up & restore · Include workflow recordings and training data · Remove all Lens changes. Backup restore. back up / restore all Lens settings (.lensbackup), and \"Remove all Lens changes\" (puts Windows back as it was). Backend: win_backup.rs, win_uninstall.rs",
    "path": [
     "Settings",
     "About & Testing",
-    "Back up & restore",
-    "Back Up & Restore"
+    "Back up & restore"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "BackupRestoreCard",
-    "label": "Back Up & Restore",
+    "label": "Back up & restore",
     "section": "backup"
    },
    "source": "src/components/BackupRestoreCard.tsx"
@@ -4683,7 +5410,6 @@
     "Settings",
     "About & Testing",
     "Back up & restore",
-    "Back Up & Restore",
     "Include workflow recordings and training data"
    ],
    "target": {
@@ -4698,20 +5424,19 @@
   {
    "id": "setting.about.backuprestorecard.remove-all-lens-changes",
    "kind": "setting",
-   "title": "Remove All Lens Changes",
+   "title": "Remove all Lens changes",
    "text": "Restores folder icons, the Windows taskbar and desktop icons, window borders, and turns off shell mode and start-with-Windows. Use before uninstalling.",
    "path": [
     "Settings",
     "About & Testing",
     "Back up & restore",
-    "Back Up & Restore",
-    "Remove All Lens Changes"
+    "Remove all Lens changes"
    ],
    "target": {
     "surface": "settings",
     "tab": "about",
     "card": "BackupRestoreCard",
-    "label": "Remove All Lens Changes",
+    "label": "Remove all Lens changes",
     "section": "backup"
    },
    "source": "src/components/BackupRestoreCard.tsx"
@@ -4743,8 +5468,8 @@
    "text": "Apps",
    "path": [
     "Settings",
-    "Apps",
-    "Apps settings",
+    "Lens Apps",
+    "Lens Apps settings",
     "Apps"
    ],
    "target": {
@@ -4760,7 +5485,7 @@
    "id": "card.music.musiccard",
    "kind": "card",
    "title": "Mini player",
-   "text": "Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, \"More by\" and saving songs. It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Dither texture · Sources · Theme follows the music. Music",
+   "text": "Hover Spotify in the Dock. These work even with Music off. Mini player · Now Playing window · Connect Spotify (optional) · Spotify theme for Spicetify (optional) · Music · Sound glow · Level meter · Media controls in the Top Bar. Music",
    "path": [
     "Settings",
     "Music",
@@ -4851,40 +5576,59 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
-   "id": "setting.music.musiccard.dither-texture",
+   "id": "setting.music.musiccard.sound-glow",
    "kind": "setting",
-   "title": "Dither texture",
-   "text": "Lens's halftone grain over the blurred artwork.",
+   "title": "Sound glow",
+   "text": "A soft glow in the artwork's colours rises from the Dock and breathes with the music. Still when motion is reduced.",
    "path": [
     "Settings",
     "Music",
     "Mini player",
-    "Dither texture"
+    "Sound glow"
    ],
    "target": {
     "surface": "settings",
     "tab": "music",
     "card": "MusicCard",
-    "label": "Dither texture"
+    "label": "Sound glow"
    },
    "source": "src/components/MusicCard.tsx"
   },
   {
-   "id": "setting.music.musiccard.sources",
+   "id": "setting.music.musiccard.level-meter",
    "kind": "setting",
-   "title": "Sources",
-   "text": "Apps shown first when several are playing. Hidden apps are never shown.",
+   "title": "Level meter",
+   "text": "Five small bars beside the song title. Both read your speakers' volume level, a single number, only while the pop-out is open and music plays. No sound is recorded.",
    "path": [
     "Settings",
     "Music",
     "Mini player",
-    "Sources"
+    "Level meter"
    ],
    "target": {
     "surface": "settings",
     "tab": "music",
     "card": "MusicCard",
-    "label": "Sources"
+    "label": "Level meter"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.media-controls-in-the-top-bar",
+   "kind": "setting",
+   "title": "Media controls in the Top Bar",
+   "text": "Previous, play and next in the Top Bar when the mini player isn't there.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Media controls in the Top Bar"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Media controls in the Top Bar"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -4961,6 +5705,120 @@
     "tab": "music",
     "card": "MusicCard",
     "label": "Synced lyrics"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.lyrics-on-the-desktop",
+   "kind": "setting",
+   "title": "Lyrics on the desktop",
+   "text": "Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Lyrics on the desktop"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Lyrics on the desktop"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.recently-played-in-lens",
+   "kind": "setting",
+   "title": "Recently played in Lens",
+   "text": "Keeps the last 100 songs on this PC so the Now Playing window can list them.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played in Lens"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played in Lens"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.recently-played",
+   "kind": "setting",
+   "title": "Recently played",
+   "text": "",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Recently played"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Recently played"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.scrobble-to-last-fm",
+   "kind": "setting",
+   "title": "Scrobble to Last.fm",
+   "text": "Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Scrobble to Last.fm"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Scrobble to Last.fm"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.dither-texture",
+   "kind": "setting",
+   "title": "Dither texture",
+   "text": "Lens's halftone grain over the artwork-coloured background.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Dither texture"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Dither texture"
+   },
+   "source": "src/components/MusicCard.tsx"
+  },
+  {
+   "id": "setting.music.musiccard.sources",
+   "kind": "setting",
+   "title": "Sources",
+   "text": "Apps shown first when several are playing. Hidden apps are never shown.",
+   "path": [
+    "Settings",
+    "Music",
+    "Mini player",
+    "Sources"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "music",
+    "card": "MusicCard",
+    "label": "Sources"
    },
    "source": "src/components/MusicCard.tsx"
   },
@@ -5060,63 +5918,6 @@
    "source": "src/components/MusicCard.tsx"
   },
   {
-   "id": "setting.music.musiccard.recently-played-in-lens",
-   "kind": "setting",
-   "title": "Recently played in Lens",
-   "text": "Keeps the last 100 songs on this PC so the Now Playing window can list them.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Recently played in Lens"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Recently played in Lens"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.recently-played",
-   "kind": "setting",
-   "title": "Recently played",
-   "text": "",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Recently played"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Recently played"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
-   "id": "setting.music.musiccard.scrobble-to-last-fm",
-   "kind": "setting",
-   "title": "Scrobble to Last.fm",
-   "text": "Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.",
-   "path": [
-    "Settings",
-    "Music",
-    "Mini player",
-    "Scrobble to Last.fm"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "music",
-    "card": "MusicCard",
-    "label": "Scrobble to Last.fm"
-   },
-   "source": "src/components/MusicCard.tsx"
-  },
-  {
    "id": "setting.monitor.inline.uptime",
    "kind": "setting",
    "title": "Uptime",
@@ -5137,7 +5938,7 @@
    "id": "setting.dock.inline.enable-top-bar",
    "kind": "setting",
    "title": "Enable Top Bar",
-   "text": "Desktop sessions switcher, active app title, and clock",
+   "text": "Desktops, the app in front, search, the clock and quick settings.",
    "path": [
     "Settings",
     "Dock & Bar",
@@ -5152,254 +5953,290 @@
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.dock.inline.auto-hide-mode",
+   "id": "setting.dock.inline.auto-hide",
    "kind": "setting",
-   "title": "Auto-Hide Mode",
-   "text": "On Overlap dodges maximized or top-edge windows automatically",
+   "title": "Auto-hide",
+   "text": "Hides when a window reaches the top of the screen, so tabs and title bars stay clear.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Auto-Hide Mode"
+    "Auto-hide"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Auto-Hide Mode"
+    "label": "Auto-hide"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.dock.inline.bar-style",
    "kind": "setting",
-   "title": "Bar Style",
-   "text": "Full-width edge strip or floating rounded glass pill",
+   "title": "Bar style",
+   "text": "A strip along the whole top edge, or a floating rounded pill.",
    "path": [
     "Settings",
     "Dock & Bar",
     "Top Bar",
-    "Bar Style"
+    "Bar style"
    ],
    "target": {
     "surface": "settings",
     "tab": "dock",
-    "label": "Bar Style"
+    "label": "Bar style"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.choose-folder-theme",
+   "id": "setting.dock.inline.media-controls",
    "kind": "setting",
-   "title": "Choose Folder Theme",
+   "title": "Media controls",
+   "text": "Shows what is playing, with previous, play and next.",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Top Bar",
+    "Media controls"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Media controls"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "setting.dock.inline.pointer-halo",
+   "kind": "setting",
+   "title": "Pointer halo",
+   "text": "",
+   "path": [
+    "Settings",
+    "Dock & Bar",
+    "Top Bar",
+    "Pointer halo"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Pointer halo"
+   },
+   "source": "src/surfaces/ControlCenterSurface.tsx"
+  },
+  {
+   "id": "setting.sessions.inline.choose-a-folder-theme",
+   "kind": "setting",
+   "title": "Choose a folder theme",
    "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Choose Folder Theme"
+    "Folder themes",
+    "Choose a folder theme"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Choose Folder Theme"
+    "label": "Choose a folder theme"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.replace-all-windows-explorer-default-folders",
+   "id": "setting.sessions.inline.replace-every-default-folder-icon-in-file-explorer",
    "kind": "setting",
-   "title": "Replace ALL Windows Explorer Default Folders",
+   "title": "Replace every default folder icon in File Explorer",
    "text": "Safe HKCU Shell Icons override (zero system file edits, 1-click revert)",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Replace ALL Windows Explorer Default Folders"
+    "Folder themes",
+    "Replace every default folder icon in File Explorer"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Replace ALL Windows Explorer Default Folders"
+    "label": "Replace every default folder icon in File Explorer"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.sessions.inline.style-all-core-user-folders",
    "kind": "setting",
-   "title": "Style All Core User Folders",
+   "title": "Style all core user folders",
    "text": "Desktop, Documents, Downloads, Pictures, Music & Videos",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Style All Core User Folders"
+    "Folder themes",
+    "Style all core user folders"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Style All Core User Folders"
+    "label": "Style all core user folders"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.sessions.inline.style-any-specific-folder",
+   "id": "setting.sessions.inline.style-a-specific-folder",
    "kind": "setting",
-   "title": "Style Any Specific Folder",
+   "title": "Style a specific folder",
    "text": "",
    "path": [
     "Settings",
     "Desktop",
-    "Folder Themes",
-    "Style Any Specific Folder"
+    "Folder themes",
+    "Style a specific folder"
    ],
    "target": {
     "surface": "settings",
     "tab": "sessions",
-    "label": "Style Any Specific Folder"
+    "label": "Style a specific folder"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.run-lens-on-windows-startup",
+   "id": "setting.system.inline.run-lens-when-windows-starts",
    "kind": "setting",
-   "title": "Run Lens on Windows Startup",
+   "title": "Run Lens when Windows starts",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Run Lens on Windows Startup"
+    "Run Lens when Windows starts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Run Lens on Windows Startup"
+    "label": "Run Lens when Windows starts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.legacy-in-app-window-styling-experimental",
    "kind": "setting",
-   "title": "Legacy In-App Window Styling (experimental)",
+   "title": "Legacy in-app window styling (experimental)",
    "text": "Off by default: Lens already styles windows from outside each app. This loads a small helper into other apps to restyle a window that keeps its old titlebar. Lens keeps it out while a fullscreen app or an anti-cheat protected game is running, and removes it the moment you switch this off, quit, or use Remove all.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Legacy In-App Window Styling (experimental)"
+    "Legacy in-app window styling (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Legacy In-App Window Styling (experimental)"
+    "label": "Legacy in-app window styling (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.create-rarely-used-windows-on-demand",
    "kind": "setting",
-   "title": "Create Rarely Used Windows on Demand",
+   "title": "Create rarely used windows on demand",
    "text": "Saves memory: Control Center, Launcher, Overview and other panels load the first time you open them. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Create Rarely Used Windows on Demand"
+    "Create rarely used windows on demand"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Create Rarely Used Windows on Demand"
+    "label": "Create rarely used windows on demand"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
-   "id": "setting.system.inline.system-tray-in-top-bar-experimental",
+   "id": "setting.system.inline.system-tray-in-the-top-bar-experimental",
    "kind": "setting",
-   "title": "System Tray in Top Bar (experimental)",
+   "title": "System tray in the Top Bar (experimental)",
    "text": "Lens collects tray icons itself and shows them in the Top Bar. Turn off if icons look wrong.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "System Tray in Top Bar (experimental)"
+    "System tray in the Top Bar (experimental)"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "System Tray in Top Bar (experimental)"
+    "label": "System tray in the Top Bar (experimental)"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.clipboard-history",
    "kind": "setting",
-   "title": "Clipboard History",
+   "title": "Clipboard history",
    "text": "Remembers the last 50 pieces of copied text in memory only (never saved to disk). Shown in the Widget Drawer.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Clipboard History"
+    "Clipboard history"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Clipboard History"
+    "label": "Clipboard history"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.keyboard-tiling-shortcuts",
    "kind": "setting",
-   "title": "Keyboard Tiling Shortcuts",
+   "title": "Keyboard tiling shortcuts",
    "text": "Ctrl+Alt+Arrows snap, Alt+Shift+Arrows move focus. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Keyboard Tiling Shortcuts"
+    "Keyboard tiling shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Keyboard Tiling Shortcuts"
+    "label": "Keyboard tiling shortcuts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.alt-1-9-opens-dock-apps",
    "kind": "setting",
-   "title": "Alt+1–9 Opens Dock Apps",
+   "title": "Alt+1–9 opens Dock apps",
    "text": "Alt+1 is the first Dock app, and so on. These keys stop reaching other apps. Applies after restarting Lens.",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Alt+1–9 Opens Dock Apps"
+    "Alt+1–9 opens Dock apps"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Alt+1–9 Opens Dock Apps"
+    "label": "Alt+1–9 opens Dock apps"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
   {
    "id": "setting.system.inline.global-shortcuts",
    "kind": "setting",
-   "title": "Global Shortcuts",
+   "title": "Global shortcuts",
    "text": "",
    "path": [
     "Settings",
     "Windows & Keys",
     "Windows integration & shortcuts",
-    "Global Shortcuts"
+    "Global shortcuts"
    ],
    "target": {
     "surface": "settings",
     "tab": "system",
-    "label": "Global Shortcuts"
+    "label": "Global shortcuts"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -5511,11 +6348,11 @@
   {
    "id": "tab.store",
    "kind": "tab",
-   "title": "Apps",
-   "text": "The Apps tab in Settings.",
+   "title": "Lens Apps",
+   "text": "The Lens Apps tab in Settings.",
    "path": [
     "Settings",
-    "Apps"
+    "Lens Apps"
    ],
    "target": {
     "surface": "settings",
@@ -5715,21 +6552,6 @@
    "target": {
     "surface": "settings",
     "tab": "monitor"
-   },
-   "source": "src/surfaces/ControlCenterSurface.tsx"
-  },
-  {
-   "id": "tab.messages",
-   "kind": "tab",
-   "title": "Notifications",
-   "text": "The Notifications tab in Settings.",
-   "path": [
-    "Settings",
-    "Notifications"
-   ],
-   "target": {
-    "surface": "settings",
-    "tab": "messages"
    },
    "source": "src/surfaces/ControlCenterSurface.tsx"
   },
@@ -6244,6 +7066,24 @@
     "Dock & Top Bar",
     "Dock style",
     "Islands"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "dock",
+    "label": "Dock style"
+   },
+   "source": "src/dock/styles.ts"
+  },
+  {
+   "id": "dock-style.unified",
+   "kind": "dock-style",
+   "title": "Unified dock style",
+   "text": "One floating pill: Launcher, apps, then tray, notifications and the clock with the date. A dock style.",
+   "path": [
+    "Settings",
+    "Dock & Top Bar",
+    "Dock style",
+    "Unified"
    ],
    "target": {
     "surface": "settings",
@@ -7287,7 +8127,7 @@
    "id": "hotkey.ctrl-c",
    "kind": "hotkey",
    "title": "Ctrl+C",
-   "text": "It never uses Ctrl+C or the clipboard.",
+   "text": "It never uses Ctrl+C or the clipboard to read.",
    "path": [
     "Keyboard",
     "Ctrl+C"
@@ -7599,6 +8439,21 @@
    "source": "docs/MAGIC.md"
   },
   {
+   "id": "hotkey.ctrl-esc",
+   "kind": "hotkey",
+   "title": "Ctrl+Esc",
+   "text": "- Lock and Windows Start: power stays with Windows; \"Windows Start\" sends Ctrl+Esc.",
+   "path": [
+    "Keyboard",
+    "Ctrl+Esc"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
    "id": "hotkey.shift-1",
    "kind": "hotkey",
    "title": "Shift+1",
@@ -7769,6 +8624,23 @@
   {
    "id": "doc.agent-safety.2",
    "kind": "doc",
+   "title": "Agent safety (W8-O): Step tokens: an approval covers one exact step",
+   "text": "A yes/no flag from the UI says \"something was approved\". Lens does not accept that. When Lens Core shows a \"Needs your OK\" card it issues a one-time token ( agentsafe/step token.rs ) and the executor refuses the step unless that token comes back with the approval. Property How --- --- Bound to the step The token is stored against a digest of (step id, action kind, target, SHA-256 of the canonical arguments). The executor rebuilds that digest from the step it is about to run. Single use Redeeming removes the token, whether it matched or not. A token offered for the wrong step is burnt. Expires 10 minutes after the card was shown (the same time a request may wait in the queue). Can't be made up 256 random bits from the OS, kept in Core. Nothing is derived from the step. Where it is checked: Path Step id Kind Target Arguments Executor --- --- --- --- --- --- Browser agent ( browser agent ac",
+   "path": [
+    "Docs",
+    "Agent safety (W8-O)",
+    "Step tokens: an approval covers one exact step"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/AGENT_SAFETY.md",
+    "heading": "Step tokens: an approval covers one exact step"
+   },
+   "source": "docs/AGENT_SAFETY.md"
+  },
+  {
+   "id": "doc.agent-safety.3",
+   "kind": "doc",
    "title": "Agent safety (W8-O): Red-team results",
    "text": "Run with cargo test agentsafe (CI), or locally without crates: Results: Suite Cases Result --- --- --- Scam and look-alike URLs ( fixtures/scam urls.txt ) 35 35 flagged high or critical Popular sites, false-positive budget 2 ( fixtures/top sites.txt ) 209 0 flagged medium or above Injection pages ( fixtures/pages/ .txt ) 18 malicious, 7 clean all as expected Pipeline cases ( fixtures/redteam.txt ) 60 all verdicts as expected Wrapped text never contains quarantined instructions 18 pass Fuzz: random URLs, text, styles, actions, clients (4,000) plus parser fuzz (20,000) 24,000 no panics; invariants hold (login always blocked, untrusted payments always blocked, send never silently allowed, every ask/block has reasons, spans on char boundaries) Total red-team cases: 120 . The fuzzer found a real panic during development: slicing a URL tail inside a multi-byte character. It was fixed, and the ",
    "path": [
@@ -7784,7 +8656,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.3",
+   "id": "doc.agent-safety.4",
    "kind": "doc",
    "title": "Agent safety (W8-O): Where the check sits (Fable wave 1)",
    "text": "Every agent path goes through one adapter, agentsafe::gate : Call What it answers --- --- gate::decide(&GateInput) May this client do this action now? Allow, ask (with reasons) or block (with reasons). gate::scan text(text, source, label) Scans one piece of untrusted text and sets flagged spans aside before any model sees it. Set-aside snippets go to the viewer in Settings (memory only). gate::taint note / taint for Remembers for ten minutes that a client was handed untrusted content, so a write it asks for next is treated as possibly planned from that content. It is called from the two places every path already passes, so callers inherit it without doing anything: 1. Lens Control — control::lens::gate , preview and legacy decision , through control::safety (which maps a Call to the pipeline's action word). That covers every MCP client (Claude Desktop, Claude Code, others), every lens to",
@@ -7801,7 +8673,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.5",
+   "id": "doc.agent-safety.6",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Browser (feature/lens-browser)",
    "text": "1. Agent profile. In src-tauri/src/browser/host.rs , where an agent run opens or reuses a tab webview, pick the data folder from the grants: When a run ends: call crate::commands::agentsafe::agentsafe run ended(run id) , close the agent webviews and delete profiles root.join(\"agent\") . Never navigate a signed-in webview to a different site than the grant's ( grant.site == registrable domain(new url) ); otherwise reopen in the sandbox. 2. Before each page action. In browser/gating.rs classify(action, caps) , after the existing capability decision: 3. Reading pages. Replace gating::untrusted block(url, text) with the collector plus scan: COLLECTOR JS is collectorScript() from src/agentsafe/collector.ts . Pass it from the UI once at start-up with browser set collector(js) , or build it into the binary with include str! of a generated file. 4. Banner. In the browser frame, above the page:",
@@ -7818,7 +8690,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.6",
+   "id": "doc.agent-safety.7",
    "kind": "doc",
    "title": "Agent safety (W8-O): Claude control (feature/claude-control)",
    "text": "1. Run the pipeline in control::lens::gate before the grant decision: 2. MCP tool and resource text is untrusted. Scan it with agentsafe scan(nodes, \"tool:<client \") before it reaches the internal model. 3. Approval card. In src/approval/ApprovalCard.tsx , under the one-line question: Use hold-to-confirm whenever holdToConfirm is true.",
@@ -7835,7 +8707,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.7",
+   "id": "doc.agent-safety.8",
    "kind": "doc",
    "title": "Agent safety (W8-O): Lens Snip (feature/lens-snip)",
    "text": "Before Paste to Claude , Ask and Translate , scan the OCR text. Pass the OCR's own contrast estimate per line if it has one ( collectorHelpers.contrastRatio on the line's sampled text and background colours):",
@@ -7852,7 +8724,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.8",
+   "id": "doc.agent-safety.9",
    "kind": "doc",
    "title": "Agent safety (W8-O): Right-click and the extension (feature/rightclick-context, feature/ai-bridges)",
    "text": "- Page text from the extension ( page text , selections, YouTube transcripts) is untrusted. In the bridge's LensAi adapter, scan it first with agentsafe scan([{ id: 0, text, source: \"dom\" }], url) and pass wrapped as page text . - The content script can also run lensTextCollector(4000) ; bundle src/agentsafe/collector.ts into the content script. That gives full style facts instead of plain text. - The \"Copy page into context\" and \"Add to Shelf\" actions store the raw text, but mark the Shelf item source = page so packs re-scan it when sent to a model.",
@@ -7869,7 +8741,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.9",
+   "id": "doc.agent-safety.10",
    "kind": "doc",
    "title": "Agent safety (W8-O): Voice and the internal AI (feature/voice, feature/ai-core)",
    "text": "- Voice commands the user spoke are origin: \"user\" . - Steps an AI proposes after reading pages, files or tool output are origin: \"untrusted\" . - In ai/tools.rs 's runner, call agentsafe check with the tool's kind before executing.",
@@ -7886,7 +8758,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.10",
+   "id": "doc.agent-safety.11",
    "kind": "doc",
    "title": "Agent safety (W8-O): Control Center",
    "text": "Mount the card in AI & Command , below the approvals or permissions card:",
@@ -7903,7 +8775,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.12",
+   "id": "doc.agent-safety.13",
    "kind": "doc",
    "title": "Agent safety (W8-O): Third-party data",
    "text": "agentsafe/confusables.rs uses a hand-picked subset of the prototype mappings in Unicode's confusables.txt (UTS #39, \"Unicode Security Mechanisms\"). Copyright © 1991-2026 Unicode, Inc. Distributed under the Unicode License v3 (https://www.unicode.org/license.txt), which permits copying and modification provided the copyright and permission notice are included. The brand list, lure words and risky-TLD list were compiled by hand from public phishing-trend reporting. There is no third-party list.",
@@ -7920,7 +8792,7 @@
    "source": "docs/AGENT_SAFETY.md"
   },
   {
-   "id": "doc.agent-safety.13",
+   "id": "doc.agent-safety.14",
    "kind": "doc",
    "title": "Agent safety (W8-O): Privacy",
    "text": "- Grants and settings are saved under %APPDATA%\\LensUI\\agentsafe\\ . Grants are saved as site names and times only. - The set-aside viewer is in memory only, keeps the last 200 entries, and is never written to disk. - No check makes a network request.",
@@ -7956,7 +8828,7 @@
    "id": "doc.ai.2",
    "kind": "doc",
    "title": "Lens Intelligence (AI core): Commands",
-   "text": "Command Args (JS) Returns --- --- --- ai status – AiStatus { providers: ProviderInfo[], active, privacy } ai set config { cfg: AiConfig } void (sanitised, saved to LensConfig.ai , emits lens://config-updated ) ai set secret { provider: \"claude\" \\ \"local\", secret } void . The key is DPAPI-encrypted under %APPDATA%\\LensUI\\secrets\\ai-<provider .bin . It is never returned or logged; only has key is exposed ai clear secret { provider } void ai ask { req: AiRequest } request id ( string ). Output arrives as events ai cancel { id } boolean (false if the id is unknown or already finished) ai confirm tool { callId, approve } void ; errors if nothing is waiting under that id ai intent { text } Intent \\ null . Instant and offline (script engine only) ai run intent { intent: Intent } request id. Runs a parsed intent through the same tool registry and risk gating , with no model and no network: low t",
+   "text": "Command Args (JS) Returns --- --- --- ai status – AiStatus { providers: ProviderInfo[], active, privacy } ai set config { cfg: AiConfig } void (sanitised, saved to LensConfig.ai , emits lens://config-updated ) ai set secret { provider: \"claude\" \\ \"local\", secret } void . The key is DPAPI-encrypted under %APPDATA%\\LensUI\\secrets\\ai-<provider .bin . It is never returned or logged; only has key is exposed ai clear secret { provider } void ai ask { req: AiRequest } request id ( string ). Output arrives as events ai cancel { id } boolean (false if the id is unknown or already finished) ai confirm tool { callId, approve, token } void ; errors if nothing is waiting under that id. token is the proposal's approval token ; an approval without that step's own token does not run the step (docs/AGENT SAFETY.md \"Step tokens\"). Declining needs no token ai intent { text } Intent \\ null . Instant and off",
    "path": [
     "Docs",
     "Lens Intelligence (AI core)",
@@ -7973,7 +8845,7 @@
    "id": "doc.ai.3",
    "kind": "doc",
    "title": "Lens Intelligence (AI core): Events",
-   "text": "Event Payload --- --- lens://ai/delta { id, text } : streamed text, in order lens://ai/done { id, provider, model, usage?: { input tokens, output tokens }, error? } : always the last event of a request. error: \"Cancelled.\" means it was cancelled lens://ai/tool-proposal { id, call id, tool, args, summary, risk: \"low\"\\ \"confirm\"\\ \"blocked\" } lens://ai/tool-result { id, call id, ok, message } Each tool call follows the same sequence: 1. A tool-proposal is emitted for every call, so the UI can show a timeline. 2. Next comes: - low : runs straight away. - confirm : waits for ai confirm tool (2-minute timeout, which counts as declined). - blocked , or arguments that fail validation: never runs. 3. A tool-result is emitted with the outcome. In ask each time mode, a cloud request first emits a consent proposal. Its tool is \"send to cloud\" , its risk is \"confirm\" , and its args are { provider, la",
+   "text": "Event Payload --- --- lens://ai/delta { id, text } : streamed text, in order lens://ai/done { id, provider, model, usage?: { input tokens, output tokens }, error? } : always the last event of a request. error: \"Cancelled.\" means it was cancelled lens://ai/tool-proposal { id, call id, tool, args, summary, risk: \"low\"\\ \"confirm\"\\ \"blocked\", approval token?, plan?: { index, total } } lens://ai/tool-result { id, call id, ok, message } Each tool call follows the same sequence: 1. A tool-proposal is emitted for every call, so the UI can show a timeline. 2. Next comes: - low : runs straight away. - confirm : waits for ai confirm tool with the proposal's approval token (2-minute timeout, which counts as declined). - When the model proposes several calls in one turn, they are a plan : every call is validated, gated and proposed first (each with plan: { index, total } , each waiting step with its ",
    "path": [
     "Docs",
     "Lens Intelligence (AI core)",
@@ -9123,7 +9995,7 @@
    "id": "doc.claude-control.23",
    "kind": "doc",
    "title": "Lens Control: Claude control over every desktop detail: Not yet covered",
-   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack lives in memory, so it is lost on restart. The audit log keeps the record. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
+   "text": "- Per-app window rules ( window-rules.json ) and pointer sets ( win cursors state). Add them as stores in lens.rs plus RULES entries. - Typing text ( type text ) has a capability and a default, but no tool: Lens never types for an AI yet. - Window thumbnails in the card need a capture command ( win previews ); the card already accepts window.thumbnail . - The undo stack survives a restart: the last 50 settings changes (at most 512 KB) are kept in %APPDATA%\\LensUI\\control\\undo.jsonl and read back when Lens starts. Window moves are undoable only until Lens closes (a window handle from before a restart may belong to another window). Damaged lines in the journal are skipped. - A theme-pack change is applied by the frontend ( lens://mcp-apply-pack ). Undoing a pack and custom tweaks in one batch restores the config first and the pack's tokens second.",
    "path": [
     "Docs",
     "Lens Control: Claude control over every desktop detail",
@@ -9207,7 +10079,7 @@
    "id": "doc.cleaner.4",
    "kind": "doc",
    "title": "Lens Cleaner: Automatic features (all off by default)",
-   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. Explorer drive verb HKCU\\Software\\Classes\\Drive\\shell\\LensUI.Clean , removed when you turn it off or remove all Lens changes.",
+   "text": "Setting What it does --- --- Weekly tidy-up Once a week, cleans SAFE pre-ticked categories except the Recycle Bin , then sends a notification. The first run is a week after you turn it on. Low-space alert Below 10% or 10 GB free: shows the Top Bar pill ( LowSpacePill ) and one notification a day. Daily snapshots Powers \"Where did my space go?\": drive usage once a day, plus your top folders after each Space map scan, in cleaner\\history.txt (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. The Home screen shows one row per drive that has at least two snapshots: a 30-day sparkline, the change over the period and up to two of the biggest day-to-day jumps (≥ 1 GB or ≥ 1% of the drive, history::jumps ), labelled with the folder that grew most when the drive was mapped before and after. A jump opens the Space map at that folder ( cleaner space find ). Nothing shows until snapshot",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9224,7 +10096,7 @@
    "id": "doc.cleaner.5",
    "kind": "doc",
    "title": "Lens Cleaner: Standout features",
-   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" asks first, then opens the app's own uninstaller (quoted exe or MsiExec /X{GUID} only, no shell). - Downloads review (\"What's safe to delete in Downloads?\")",
+   "text": "- Space map: - views: list, squarified treemap (arrow keys move to the nearest cell) and a DaisyDisk-style sunburst (←/→ around a ring, Enter opens, Backspace or the centre goes up, slivers merge into one \"Smaller items\" petal); - Biggest files, with type filters; - locked system items are dimmed and can't be selected; - the Windows folder carries a hard-link note. - Large-file tray: drag a big file onto \"Move to D:\", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites ( film (2).mkv ). - Per-app storage: reads the Uninstall keys ( reg query , read-only) and uses real icons ( extract icon for path ). Each app shows app size plus caches & data. \"Uninstall…\" hands the app over to Startup & Uninstall (opened on Installed apps, filtered to that app), which checks the uninstaller ( validate uninstall ), asks, runs ",
    "path": [
     "Docs",
     "Lens Cleaner",
@@ -9476,17 +10348,17 @@
   {
    "id": "doc.command.6",
    "kind": "doc",
-   "title": "Lens Command: Lens Mini, Edge Shelf and selection bubble",
+   "title": "Lens Command: Lens Mini, Edge Shelf and selection bar",
    "text": "Everything here is off by default , local and reversible. It never runs in fullscreen apps or games, and follows AGENTS.md.",
    "path": [
     "Docs",
     "Lens Command",
-    "Lens Mini, Edge Shelf and selection bubble"
+    "Lens Mini, Edge Shelf and selection bar"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/COMMAND.md",
-    "heading": "Lens Mini, Edge Shelf and selection bubble"
+    "heading": "Lens Mini, Edge Shelf and selection bar"
    },
    "source": "docs/COMMAND.md"
   },
@@ -9561,7 +10433,7 @@
    "id": "doc.core-apps.2",
    "kind": "doc",
    "title": "Lens core apps: Safety",
-   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
+   "text": "- Everything destructive is confirmed and audited to %APPDATA%\\LensUI\\coreapps-audit.jsonl : End task, uninstall, Recycle Bin and the speed test. - OS changes made here (startup entries, power mode) go through the existing reversible commands. - Uninstall can't be undone, so it always runs the vendor's own uninstaller. This is the only place Lens starts an uninstaller: Lens Cleaner's per-app \"Uninstall…\" opens this window on that app ( coreapp open with find ). - Leftovers go to the Recycle Bin and can be restored from there. - Nothing contacts the network unless you press Get rates or Run speed test .",
    "path": [
     "Docs",
     "Lens core apps",
@@ -9814,6 +10686,23 @@
   {
    "id": "doc.cursors.15",
    "kind": "doc",
+   "title": "Cursor Suite: Magic Mouse pointer (preview, off by default)",
+   "text": "Magic Mouse ( config.magicWaves.mouse , docs/plans/MAGIC WAVES.md §4.2, wave M3) applies its own set through this suite's registry layer, so it shares the suite's backup and exact restore. The set ( src-tauri/src/magic waves/cursor art.rs ): the Lens cloud (the logo's six hues) breathing inside a dark ring, with a short pointer tip that carries the hotspot. Arrow and AppStarting are an 8-frame .ani (6 fps); Wait is the ring alone (hotspot in the middle). Every frame holds all five Windows sizes (32/48/64/96/128). Text, hand, resize and the rest use the familiar Obsidian shapes. High contrast on in Windows → the high-contrast variant (white rim, black halo). The files are built at run time into cursors/magic/<magic magic-hc , outside cursors/sets/ so a Look change can't prune them. Before Windows is pointed at a file, Lens loads it with Windows' own LoadCursorFromFile and keeps the first ",
+   "path": [
+    "Docs",
+    "Cursor Suite",
+    "Magic Mouse pointer (preview, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/CURSORS.md",
+    "heading": "Magic Mouse pointer (preview, off by default)"
+   },
+   "source": "docs/CURSORS.md"
+  },
+  {
+   "id": "doc.cursors.16",
+   "kind": "doc",
    "title": "Cursor Suite: Persistence and exit",
    "text": "Pointer sets and pointer settings are Windows settings, so — like Windows' own Mouse control panel — they stay after Lens closes. They are undone by Restore my Windows pointers , Reset to my original settings , and Remove all Lens changes . The effects overlay and both hooks exist only while Lens runs and are removed on exit and from the panic hook.",
    "path": [
@@ -9829,10 +10718,10 @@
    "source": "docs/CURSORS.md"
   },
   {
-   "id": "doc.cursors.16",
+   "id": "doc.cursors.17",
    "kind": "doc",
    "title": "Cursor Suite: Testing",
-   "text": "cargo test --lib win cursor — encoders (byte-for-byte), rasteriser (hotspots on the shape, clear edges, anti-aliasing, retro blocks, spinner frames, high visibility), registry plans, backup / apply / restore against an in-memory registry and a temp dir, SPI mapping and minimal writes, pointer backup / reset, JSON round trips, hook message filtering, throttling, shake detection, key-label privacy, monitor picking, pause rules and frame building. Both modules also compile and test without Cargo: rustc --edition 2021 --test --cfg lens standalone lib t.rs where lib t.rs declares the two modules (the lens standalone cfg drops the serde derives). Adding --cfg lens win check with --emit=metadata type-checks the Win32 code on any OS. Needs real Windows hardware: the registry apply / restore round trip and how Explorer and apps pick the new pointers up, CursorBaseSize on Windows 10 1903+ and Wind",
+   "text": "cargo test --lib win cursor — encoders (byte-for-byte), rasteriser (hotspots on the shape, clear edges, anti-aliasing, retro blocks, spinner frames, high visibility), registry plans, backup / apply / restore against an in-memory registry and a temp dir, SPI mapping and minimal writes, pointer backup / reset, JSON round trips, hook message filtering, throttling, shake detection, key-label privacy, monitor picking, pause rules and frame building. Both modules also compile and test without Cargo: rustc --edition 2021 --test --cfg lens standalone lib t.rs where lib t.rs declares the two modules (the lens standalone cfg drops the serde derives). Adding --cfg lens win check with --emit=metadata type-checks the Win32 code on any OS. Magic Mouse: cargo test --lib magic waves covers the gesture machine (short click, early drag, hold, grab, tiny grab, cancel, hold time, \"only an armed up is ever s",
    "path": [
     "Docs",
     "Cursor Suite",
@@ -9849,7 +10738,7 @@
    "id": "doc.dashboard.0",
    "kind": "doc",
    "title": "Magic Dashboard",
-   "text": "Status: scaffold (M0) , off by default. Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
+   "text": "Status: M2: widgets, the X lane, connect flows and Ask about this , off by default ( magicWaves.dashboard ; widgets and X also need magicWaves.widgets ). Plan and decisions: plans/MAGIC WAVES.md. One slim Lens surface for what matters now: Inbox , Feeds , Today , Shelf , Widgets , X and Now playing , in three layouts ( Glance , Focus , Board ), with a one-line context strip built when it opens.",
    "path": [
     "Docs",
     "Magic Dashboard"
@@ -9865,7 +10754,7 @@
    "id": "doc.dashboard.1",
    "kind": "doc",
    "title": "Magic Dashboard: How it opens",
-   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). - Command: \"dashboard\". - No Dock icon and no new hotkey (owner decision).",
+   "text": "- The Top Bar's Dashboard button (only while magicWaves.dashboard is on). It calls toggle dashboard , so a second press closes it. - Command: \"dashboard\", \"open dashboard\" or /dashboard (offered only while the flag is on). - Rust refuses open dashboard while the flag is off, and never builds the window at start-up.",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -9881,8 +10770,127 @@
   {
    "id": "doc.dashboard.2",
    "kind": "doc",
+   "title": "Magic Dashboard: How it closes",
+   "text": "Esc, the ×, a second press of the button, clicking another window (it hides on blur like the pop-outs), or turning the flag off.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "How it closes"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "How it closes"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.3",
+   "kind": "doc",
+   "title": "Magic Dashboard: Lanes in M1",
+   "text": "All from Lens's own data, read when the window opens; no network calls. - Inbox : unread Lens Messages conversations ( messages inbox ). - Feeds : the cached Feeds timeline ( feeds timeline ; feeds refresh is never called). - Today : today's open items from the Lens calendar. - Shelf : pinned first, then newest. - Now playing : the current media session; the card plays or pauses. - Widgets (M2, needs magicWaves.widgets ): see below. - X (M2, needs magicWaves.widgets ): see below. Empty lanes say so and offer a button to the place you'd fill them: Inbox → Lens Messages setup, Feeds → Lens Feeds, Today → the Lens calendar.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Lanes in M1"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Lanes in M1"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.4",
+   "kind": "doc",
+   "title": "Magic Dashboard: Ask about this (M2)",
+   "text": "Each card has an Ask button. It opens Command in Ask with only that card's words in the box (source, title, detail; nothing else from the Dashboard). Nothing is sent until you press Enter, so you see exactly what goes out first.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Ask about this (M2)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Ask about this (M2)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.5",
+   "kind": "doc",
+   "title": "Magic Dashboard: Widgets (M2)",
+   "text": "The Widgets lane holds widgets from a curated gallery. Each widget is data, not code: Lens fetches what it needs and turns it into an Adaptive Card from a small, safe subset (text, facts, containers, columns, links). Links open in Lens Browser. Widget Fetches from Notes --- --- --- Weather api.open-meteo.com Free, no key. Latitude and longitude, °C or °F. News feed the feed's own site RSS or Atom, https only. GitHub release api.github.com Latest release of one public repository. Crypto prices api.coingecko.com Public endpoint, no key. World clocks nothing Your PC's clock and time zones. This PC nothing Lens's own processor, memory and uptime readings. Add: Add a widget → pick one → settings → a consent screen that lists every site Lens will fetch from, how often, and that the widget never gets network access itself → Allow and add . Reorder with the arrows; remove with ×. Sources lists e",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Widgets (M2)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Widgets (M2)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.6",
+   "kind": "doc",
+   "title": "Magic Dashboard: Desktop widgets",
+   "text": "The Widgets lane's header has a Desktop widgets switch ( magicWaves.desktopWidgets ) and, while it's on, Edit widgets… , which closes the Dashboard and opens the widget gallery on the desktop. A Weather or other gallery widget you added here can also sit on the desktop: it is the same widget with the same approved sites, fetched by Lens under the rules above while it is on screen ( widgets fetch is allowed while magicWaves.widgets is on and either the Dashboard or desktop widgets is on). See features/desktop-widgets.md.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Desktop widgets"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Desktop widgets"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.7",
+   "kind": "doc",
+   "title": "Magic Dashboard: X (M2)",
+   "text": "Embed-only, by owner decision. With your OK and a handle, the lane shows X's own public timeline embed ( syndication.twitter.com ) in an isolated, sandboxed frame; Open X opens the X web app in Lens Browser with your own sign-in. No API key, no scraping; Lens stores only the handle, on this PC, and hides the embed while widget fetching is off.",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "X (M2)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "X (M2)"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.8",
+   "kind": "doc",
+   "title": "Magic Dashboard: Speed",
+   "text": "Warm open (Lens says \"open\" → lanes rebuilt and painted) is budgeted at < 150 ms : tools/perf/run.mjs scenario dashboard-warm-open fails above that, and the magic-widgets E2E logs the real-window number. - No Dock icon and no new hotkey (owner decision).",
+   "path": [
+    "Docs",
+    "Magic Dashboard",
+    "Speed"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/DASHBOARD.md",
+    "heading": "Speed"
+   },
+   "source": "docs/DASHBOARD.md"
+  },
+  {
+   "id": "doc.dashboard.9",
+   "kind": "doc",
    "title": "Magic Dashboard: Privacy",
-   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard is open. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
+   "text": "- Everything stays on this PC. Nothing is captured in the background; the context strip is built from Lens's own data at the moment the Dashboard opens. - Each source connects only after you choose it, and can be disconnected. - X/Twitter: official embeds and the web app with your own sign-in only. No API key, no scraping. - Widgets never get network access. Lens fetches their data only from hosts you approved for that widget, and only while the Dashboard (or that widget on your desktop) is showing. - Learned ordering ( magicWaves.learn ) is off by default; moved cards say why (\"Why this is here\"); turning it off forgets what it learned.",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -9896,10 +10904,10 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.3",
+   "id": "doc.dashboard.10",
    "kind": "doc",
    "title": "Magic Dashboard: Code",
-   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widget manifests src/widgets/format.ts , AdaptiveCard.tsx ; Rust magic waves/widgets.rs Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src-tauri/src/magic waves/tests.rs , tools/parity/magicwaves/shoot.mjs",
+   "text": "Piece Where --- --- Flags src/magicwaves/flags.ts , Rust config::MagicWavesConfig Model (lanes, layouts, learning, context strip) src/dashboard/store.ts Window, sources, saved layout and counts src/dashboard/DashboardWindow.tsx , sources.ts , memory.ts ; Rust commands/dashboard.rs Command phrases src/dashboard/command.ts Shell src/dashboard/DashboardSurface.tsx , Lane.tsx , ContextStrip.tsx , dashboard.css Top Bar button src/dashboard/TopBarDashboardButton.tsx Widgets src/widgets/format.ts (card subset, feed reader), AdaptiveCard.tsx , gallery.ts , WidgetsLane.tsx , api.ts , widgets.css ; Rust magic waves/widgets.rs (store, rules, fetch), commands/widgets.rs X lane src/widgets/XLane.tsx ; CSP frame-src in tauri.conf.json Ask about this src/dashboard/ask.ts Layout store Rust magic waves/dashboard.rs Tests src/ tests /magicWaves.test.ts , src/ tests /dashboardM1.test.ts , src/ tests /widge",
    "path": [
     "Docs",
     "Magic Dashboard",
@@ -9913,19 +10921,19 @@
    "source": "docs/DASHBOARD.md"
   },
   {
-   "id": "doc.dashboard.4",
+   "id": "doc.dashboard.11",
    "kind": "doc",
-   "title": "Magic Dashboard: Next (M1)",
-   "text": "Register the Dashboard window and Command intent, mount the Top Bar button, fill Inbox/Feeds/Today/Shelf from Lens Messages, Feeds, connected calendars and the Shelf, and add hyper-suite inventory rows for every flag.",
+   "title": "Magic Dashboard: Next",
+   "text": "- A DNS resolver that refuses private addresses before connecting (today a private answer is discarded after the fact). - Remote images in cards through Lens (fetched under the same rules). - Today from calendar connectors; per-widget size options.",
    "path": [
     "Docs",
     "Magic Dashboard",
-    "Next (M1)"
+    "Next"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/DASHBOARD.md",
-    "heading": "Next (M1)"
+    "heading": "Next"
    },
    "source": "docs/DASHBOARD.md"
   },
@@ -10236,7 +11244,7 @@
    "id": "doc.failsafe.11",
    "kind": "doc",
    "title": "Failsafe engineering: 10. Monitors and pop-outs",
-   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default).",
+   "text": "- The Dock and Top Bar are placed again whenever the monitor they belong on changes in any way (added or removed, resolution, scaling, work area, after sleep). They used to be placed only at start-up and on a setting change. - Follow the pointer (Settings › Dock & Bar › Monitor): the bars stay on their monitor until the pointer is pushed into the top or bottom edge of another one. - Pop-outs close by themselves: Quick Settings after 1.5 s and Settings on the Dock after 1.8 s with the pointer away and no keyboard focus in them; never under the pointer, never while a mouse button is held. Settings dragged off the Dock is a window and stays. The setting is func.autoClosePopouts (on by default). - A move onto a monitor with other scaling is checked and done again when Windows resized the window on the way (B-62), and an idle Dock goes back to its place about every 2 s, also while auto-hidden",
    "path": [
     "Docs",
     "Failsafe engineering",
@@ -10246,6 +11254,23 @@
     "surface": "doc",
     "doc": "docs/FAILSAFE.md",
     "heading": "10. Monitors and pop-outs"
+   },
+   "source": "docs/FAILSAFE.md"
+  },
+  {
+   "id": "doc.failsafe.12",
+   "kind": "doc",
+   "title": "Failsafe engineering: Stuck states: what closes each pop-out",
+   "text": "Way out Dock menus, hover card, search Live previews Quick Settings, Widgets, Search, Launcher, Overview Settings on the Dock Magic window, Dashboard --- --- --- --- --- --- Focus to another app, Alt+Tab, Win key (Start takes focus) watcher: other app in front → closed at once ( dock guard ) close 260 ms after the pointer leaves the card page blur → hide (retried once) 1.8 s away and unfocused (with \"Close pop-outs when the pointer leaves\") focus change → hide Click outside watcher click check as above page blur ; watcher for Search as above focus change Display sleep / resume, monitor unplugged re-placed with the bars; menus go stale after 1.2 s (no pointer) owner hidden or pointer unknown → closed blur when focus moves pointer unknown → closes after 1.8 s focus change Lock / unlock (Win+L) no foreground and no pointer → stale after 1.2 s pointer unknown → closed blur closes after 1.8 s",
+   "path": [
+    "Docs",
+    "Failsafe engineering",
+    "Stuck states: what closes each pop-out"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/FAILSAFE.md",
+    "heading": "Stuck states: what closes each pop-out"
    },
    "source": "docs/FAILSAFE.md"
   },
@@ -10521,7 +11546,7 @@
    "id": "doc.lens-apps.3",
    "kind": "doc",
    "title": "Lens Apps: Commands and events",
-   "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, then runs the installer. apps release discard(token) Deletes a prepared download. apps ope",
+   "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} . autoUpdate and checkUpdates are stored but read by nothing and have no switch (B-122). apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, t",
    "path": [
     "Docs",
     "Lens Apps",
@@ -10945,7 +11970,7 @@
    "id": "doc.lens-browser.16",
    "kind": "doc",
    "title": "Lens Browser: AI only if you want it / Free, bring your own model",
-   "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, reader view, Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
+   "text": "settings.ai : a master switch plus Agent in new tabs, Page summaries, Ask in address bar and Transcripts. With the master off: the Ask and Transcript panels, approve pill, the reader view's Summarise and Ask buttons (the reader view itself is local and stays), Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; \"ask …\" in the address bar becomes a web search; and browser agent act refuses to run. The provider row lists what ai status reports (offline commands, local models, Claude, OpenAI-compatible endpoints) with no tiers, and links to Settings › AI & Command.",
    "path": [
     "Docs",
     "Lens Browser",
@@ -11248,8 +12273,25 @@
   {
    "id": "doc.magic.9",
    "kind": "doc",
+   "title": "Magic right-click window: Magic Start (Magic waves M4, off by default)",
+   "text": "With Magic button on (Settings › About & Testing › Magic (preview), confirmed once), a clean tap of the Windows key opens Lens Magic Start instead of Windows Start: - Search box over installed apps (name start, then word start, then anywhere; accents ignored). - Pinned — the Dock's own pins. Magic — Ask Magic, Snip, Dashboard (when on), Shelf → Note (when on), Open the Shelf. Recent — recent files and the newest Shelf items. - Lock and Windows Start : power stays with Windows; \"Windows Start\" sends Ctrl+Esc. - Esc clears the search, then closes. It also closes when another app takes the focus. Rules that never change: - Ctrl+Esc always opens Windows Start. Win+L, Win+D, Win+Tab and every other Win+key combination are never touched; the hook never swallows the Win key itself. - Watchdog: the page must acknowledge each open within 300 ms (2.5 s the first time, while the window is built) or",
+   "path": [
+    "Docs",
+    "Magic right-click window",
+    "Magic Start (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MAGIC.md",
+    "heading": "Magic Start (Magic waves M4, off by default)"
+   },
+   "source": "docs/MAGIC.md"
+  },
+  {
+   "id": "doc.magic.10",
+   "kind": "doc",
    "title": "Magic right-click window: Needs real hardware",
-   "text": "- Hook behaviour under load and with high-poll-rate mice. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated targets (UIPI refusals).",
+   "text": "- Hook behaviour under load and with high-poll-rate mice. - Magic Start: Win tap on a real keyboard (incl. Win held then released with no other key), the first-build watchdog extension, Ctrl+Esc and Win+L while Magic Start is open, multi-monitor and high-DPI placement, and the Taskbar-style start button. - The watchdog re-install. - Hold-mode replay in apps that use right-drag (browsers' gestures, games, CAD). - UI Automation facts in Chrome, Edge, Firefox, Electron, Office and Explorer (Windows 10 and 11). In particular: - link Value exposure; - Explorer's address band name; - desktop icon names. - Open latency on mid-range hardware (target ≤ 80 ms), and the transparent window over Mica/acrylic on Windows 10. - Placement on mixed-DPI multi-monitor setups and with the taskbar on other edges. - Snapping, monitor moves and workspace moves on maximised and fixed-size windows. - Elevated tar",
    "path": [
     "Docs",
     "Magic right-click window",
@@ -11533,10 +12575,27 @@
    "source": "docs/MESSAGES.md"
   },
   {
+   "id": "doc.messages.8",
+   "kind": "doc",
+   "title": "Lens Messages: Title watcher (how web-app badges update)",
+   "text": "Every Lens Browser tab has a WebView2 DocumentTitleChanged handler ( src-tauri/src/browser/titles.rs ). When a title changes, the handler passes the tab id, the page address and the title to commands::messages::space title changed . messages::spaces::app for url decides which messenger the page belongs to (https and the app's own hosts only), badges::unread from title parses the count, and the title text is dropped. Counts are kept per tab and summed per messenger, so two Slack workspaces add up and closing or sleeping a tab takes only its share away ( browser::titles::gone ). Pages of messengers you haven't turned on in Messages are ignored. When Messages settings change, open tabs are read once so a messenger you just turned on shows its badge straight away. A change emits lens://messages/unread and, when \"Badges on Dock icons\" is on, lens://coreapp-badge for the Lens Messages pin. Not",
+   "path": [
+    "Docs",
+    "Lens Messages",
+    "Title watcher (how web-app badges update)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MESSAGES.md",
+    "heading": "Title watcher (how web-app badges update)"
+   },
+   "source": "docs/MESSAGES.md"
+  },
+  {
    "id": "doc.music.0",
    "kind": "doc",
    "title": "Lens Music",
-   "text": "One now-playing layer for every app that shows up in Windows' media controls — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a frosted Now Playing window, an optional \"theme follows the music\" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: MUSIC RESEARCH.md. Everything is off by default. Settings → Music turns it on. Lyrics (network), Spotify, Last.fm and the audio-reactive scene are separate opt-ins.",
+   "text": "One now-playing layer for every app that shows up in Windows' media controls — Spotify, Apple Music, Edge/Chrome/Firefox tabs, VLC (with its SMTC plugin) and more — with synced lyrics, a matte artwork-tinted Now Playing window and its full-screen Immersive mode, an optional \"theme follows the music\" accent, a Playground scene, and optional connectors for Spotify's Web API and Last.fm. Research and the safety model: MUSIC RESEARCH.md. Everything is off by default. Settings → Music turns it on. Lyrics (network), lyric translation (AI), Spotify, Last.fm, Discord and the audio-reactive scene are separate opt-ins.",
    "path": [
     "Docs",
     "Lens Music"
@@ -11569,7 +12628,7 @@
    "id": "doc.music.2",
    "kind": "doc",
    "title": "Lens Music: Pieces",
-   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback , DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Commands (26) src-tauri/src/commands/music.rs UI src/music/NowPlaying.tsx , MiniPlayer.tsx , m",
+   "text": "Area Files --- --- Media-session watcher (GSMTC, event-driven; 1 s tick only while playing for the sleep timer and scrobbling) src-tauri/src/music/service.rs (Windows) Session choice, timeline maths, history, sleep timer, config music/session.rs , timeline.rs , history.rs , mod.rs Lyrics: LRC parser, LRCLIB client (User-Agent, cache, 429 Retry-After + jitter), local .lrc folder music/lrc.rs , lyrics.rs Spotify Web API (OAuth PKCE, user's own client ID, loopback http://127.0.0.1:43117/callback with fallbacks on 43118 and 43119, DPAPI tokens) music/spotify.rs Last.fm (user's own API key/secret, desktop auth, scrobble rules) music/lastfm.rs , scrobble.rs Speaker peak level (one number; no audio) music/levels.rs Spicetify theme generator (export only) music/spicetify.rs , color.rs MD5 / SHA-256 / base64url (std-only) music/hash.rs Immersive, per-song lyric timing, translation cache, Discord ",
    "path": [
     "Docs",
     "Lens Music",
@@ -11603,7 +12662,7 @@
    "id": "doc.music.4",
    "kind": "doc",
    "title": "Lens Music: Connect Spotify",
-   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback , ticks Web API, and pastes the client ID. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's February 2026 Development Mode rules apply and are stated in the card: the app owner needs Premium, a new app allows 5 allow-listed users, artist top-tracks and batch metadata were removed (Lens uses artist albums for \"More by\"), library save/remove moved to /me/library , playlist",
+   "text": "1. The user creates an app at developer.spotify.com/dashboard, adds the redirect URI http://127.0.0.1:43117/callback (and, optionally, the same address on ports 43118 and 43119, used only when 43117 is busy), ticks Web API, and pastes the client ID. Lens binds the port before the browser opens: if 43117 is taken it uses the next free one and says so; if all three are taken, Connect fails straight away with a message naming the ports. 2. Lens opens Spotify's consent page (PKCE S256, state checked), waits up to 3 minutes for the loopback redirect (127.0.0.1 only), exchanges the code without a client secret, and seals the tokens with DPAPI. Refresh is automatic. 3. Scopes, each explained in the card: user-read-playback-state , user-read-currently-playing , user-modify-playback-state , user-read-recently-played , playlist-read-private , user-library-read , user-library-modify . Spotify's Feb",
    "path": [
     "Docs",
     "Lens Music",
@@ -11671,7 +12730,7 @@
    "id": "doc.music.10",
    "kind": "doc",
    "title": "Lens Music: 5. Playground scene (src/playground/registry.ts)",
-   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on.",
+   "text": "The scene's \"Move to the music\" toggle only polls music level while the scene is running, and the backend returns 0 unless Settings → Music → audio-reactive is on. The Dock's music pop-out (hover Spotify; src/music/DockMusicCard.tsx ) reads the same peak through music glow level for its sound glow and level meter. It asks at most ~30 times a second, only while the pop-out is open, something is playing, one of the two is on (Settings → Music → Sound glow / Level meter, both on by default) and motion isn't reduced; the command returns 0 when both are off. It works with Music off, using Windows' media session directly ( get media now playing cmd , which now carries position, length and whether seeking works; media control cmd takes seek with a position in ms).",
    "path": [
     "Docs",
     "Lens Music",
@@ -11749,6 +12808,176 @@
     "surface": "doc",
     "doc": "docs/MUSIC.md",
     "heading": "Needs real hardware"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.15",
+   "kind": "doc",
+   "title": "Lens Music: Lyrics on the desktop (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Lyrics on the desktop (off by default) shows the line being sung under the Top Bar, in the artwork's colour, fading from line to line. - Window lyricsline ( src-tauri/src/music/desktop lyrics.rs , src/music/LyricsLineSurface.tsx ): transparent, always on top, never focused ( WS EX NOACTIVATE ), every click passes through ( set ignore cursor events ). It is created only while the switch, Music and lyrics are all on, and closed when any goes off or Lens exits. - On screen only while something is playing, and hidden whenever the window in front is fullscreen (a game, a film). Nothing is hooked or injected into other apps. - Shows nothing when there are no synced lyrics, before the first line and in instrumental gaps. Motion is opacity and transform only, and none with reduced motion. - Not yet confirmed on a real PC (focus, multi-monitor placement, fullscr",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyrics on the desktop (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyrics on the desktop (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.16",
+   "kind": "doc",
+   "title": "Lens Music: Immersive (learned from Cider)",
+   "text": "Now Playing full screen on one monitor: the artwork large, a field of four soft gradients in its colours drifting slowly behind it, and the synced lyrics large with the current line bright. Open it with the Immersive button in Now Playing's player bar (or F11 there), the ⤢ button on the Dock music card (while Lens Music is on), or by typing \"immersive\" (or /immersive ) in Lens Command. Esc , F11 or × leaves; the artwork returns to where it came from. - music immersive open(from) puts the nowplaying window full screen on the monitor under the pointer, shows it and tells the page ( lens://music/immersive , plus music immersive pending for a page that mounts later). It refuses with a sentence when the window in front is full screen and isn't Lens ( music::immersive::may open ): Immersive never covers a game or a film. music immersive close(keepWindow) leaves full screen and hides the window",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Immersive (learned from Cider)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Immersive (learned from Cider)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.17",
+   "kind": "doc",
+   "title": "Lens Music: Artwork tint",
+   "text": "Now Playing's accents (active buttons, the seek fill, chips) come from the artwork when one of its colours can be lifted to 4.5:1 against every background it sits on: the hero gradient's top, middle and base ( tint.ts › pickTint , heroBackgrounds ). Greys, rare specks and colours that would have to be washed out to white or black are skipped; then the theme accent is used, lifted the same way. Text on an accent fill is near-black or near-white, whichever reads better. Settings › Music › Immersive › Artwork colours in Now Playing (on by default; local only). The window is matte: the artwork's colours as a gradient, solid panels, no blurred copy of the art and no backdrop-filter .",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Artwork tint"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Artwork tint"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.18",
+   "kind": "doc",
+   "title": "Lens Music: Lyric timing per song",
+   "text": "LRCLIB timings drift on live versions and radio edits. The lyrics header (and Immersive) has −0.5 s / +0.5 s / Reset , and [ / ] do the same. The nudge is saved for that song ( music lyrics offset , music lyrics nudge(steps) , music lyrics offset reset ) in music\\offsets.tsv , keyed by title and artist so it follows the song from Spotify to a browser tab, at most 500 songs, ±10 s, and is added to the global Timing in Settings.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyric timing per song"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyric timing per song"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.19",
+   "kind": "doc",
+   "title": "Lens Music: Lyric translation (opt-in)",
+   "text": "Settings › Music › Synced lyrics › Offer translations adds Translate to the lyrics header. Translating: 1. Looks for a saved translation of these lines into this language first ( music translation get(key) ; the key is made from the lines and the language, translate.ts › translationKey , 32 hex characters). 2. Otherwise asks Lens AI ( ai ask , tools off): the local model when one is running on this PC, else the provider chosen in Settings › AI. The privacy mode applies unchanged: Local only refuses cloud providers; Ask each time shows the shared Send / Don't send card in Now Playing; the usage log records it. Only the numbered lyric lines are sent. 3. Saves the answer ( music translation put ) with the provider's name, which is shown under the lyrics (\"Translated by Ollama · llama3.2, on this PC · saved on this PC\"). \"Translate into\" defaults to the Windows display language. Original / T",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lyric translation (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lyric translation (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.20",
+   "kind": "doc",
+   "title": "Lens Music: Discord Rich Presence (opt-in)",
+   "text": "Settings › Music › Show on Discord : \"Listening to …\" on your Discord profile with the song, the artist and the time left. - Lens talks only to the Discord app on this PC, through its local named pipe ( \\\\.\\pipe\\discord-ipc-0 … -9 ), with Discord's RPC framing ( opcode u32 LE , length u32 LE , JSON): handshake with the application ID, then SET ACTIVITY with Lens's process id. A small hand-written client ( music/discord.rs , standard library only): no crate, and Lens itself makes no network call for this. The Discord app shares it with whoever can see your profile. - Discord needs an application ID to show an activity. Lens has none of its own, so you create one (discord.com/developers/applications, any name; Discord shows \"Listening to <name \") and paste its ID, like Spotify's client ID. - Private listening clears the activity until you turn it off. Paused or stopped clears it too. \"Show",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Discord Rich Presence (opt-in)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Discord Rich Presence (opt-in)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.21",
+   "kind": "doc",
+   "title": "Lens Music: Music setup and Tweaks",
+   "text": "Until finished or skipped, Settings › Music opens with a three-step Set up Lens Music : where your music comes from (Windows media = Lens Music itself, Spotify, your .lrc folder), lyrics and scrobbling (LRCLIB, Last.fm), share and control (Discord; a phone remote is planned and nothing listens on the network today). Every choice is a normal switch; nothing is turned on for you. The advanced options sit in a collapsible Tweaks section grouped as Look, Sources, Lyrics, Immersive and Playground.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Music setup and Tweaks"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Music setup and Tweaks"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.22",
+   "kind": "doc",
+   "title": "Lens Music: Lens Remote (Tester mode preview)",
+   "text": "Control the music from a phone on the same home network. Tester mode only for now (Settings › About & Testing › Tester mode), and off until you turn it on in Settings › Music › Lens Remote. Why a preview: it serves plain HTTP on the LAN and hasn't been tried on real networks yet. - music/remote.rs : a tiny HTTP server on this PC's private LAN address ( lan address() picks the route Windows would use; nothing is sent), port 43120 or a free one. Standard library only. The page ( / , /remote.css , /remote.js ) loads nothing from the web. - Pairing : Settings shows a QR code ( src/music/qr.ts , generated on this PC) for http://<address /pair?t=<one-time code (32 random bytes from the OS). Opening it swaps the code for an HttpOnly, SameSite=Strict session cookie tied to the phone's address; the code is then gone (\"Pair another phone\" makes a new one). At most 3 phones. - Who may connect : pri",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Lens Remote (Tester mode preview)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Lens Remote (Tester mode preview)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.23",
+   "kind": "doc",
+   "title": "Lens Music: Equalizer (Equalizer APO bridge)",
+   "text": "Lens has no audio engine and never processes sound, so it doesn't offer an equalizer of its own. Settings › Music › Equalizer works with Equalizer APO (GPL-2.0, by Jonas Thedering), a separate program you install: - Detected by its config\\config.txt under Program Files. If it isn't installed: Get it in Lens Apps (a link to its official page; Lens doesn't bundle or run it). - Presets (10 bands, 32 Hz – 16 kHz, a negative preamp equal to the biggest boost so nothing clips): Flat, More bass, Clear voices, More treble, Late night. Choosing one writes lens-music.txt beside config.txt and adds one marked Include: lens-music.txt line at the end of config.txt (once). The first time, a copy of config.txt is kept in %APPDATA%\\LensUI\\music\\eqapo-config.before-lens.txt for reference. - Off removes exactly the marked line and Lens's file; anything you changed in config.txt meanwhile stays. Remove all",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Equalizer (Equalizer APO bridge)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Equalizer (Equalizer APO bridge)"
+   },
+   "source": "docs/MUSIC.md"
+  },
+  {
+   "id": "doc.music.24",
+   "kind": "doc",
+   "title": "Lens Music: Credits",
+   "text": "Equalizer presets run on Equalizer APO by Jonas Thedering (GPL-2.0), which Lens bridges to and never bundles. Immersive, the artwork-tinted pages, lyric translation, Discord presence and the setup/Tweaks pages were learned from Cider (cider.sh), a community Apple Music client, from its public site and behaviour only (clean-room; no code, assets or copy). See docs/features/music.md › 10.",
+   "path": [
+    "Docs",
+    "Lens Music",
+    "Credits"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/MUSIC.md",
+    "heading": "Credits"
    },
    "source": "docs/MUSIC.md"
   },
@@ -13307,6 +14536,40 @@
   {
    "id": "doc.shelf.3",
    "kind": "doc",
+   "title": "Shelf and clipboard history — contract: Removing and Undo",
+   "text": "Removing an item from the Shelf drawer shows \"Removed “title”. Undo\" for six seconds. Undo adds the same content back ( src/shelf/restore.ts ); the item gets a new id and goes to the end of its shelf, and a pinned item is pinned again. The Menu key or Shift+F10 on a Shelf item opens its menu with \"Lens ›\" focused.",
+   "path": [
+    "Docs",
+    "Shelf and clipboard history — contract",
+    "Removing and Undo"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SHELF.md",
+    "heading": "Removing and Undo"
+   },
+   "source": "docs/SHELF.md"
+  },
+  {
+   "id": "doc.shelf.4",
+   "kind": "doc",
+   "title": "Shelf and clipboard history — contract: Shelf → Notes (Magic waves M4, off by default)",
+   "text": "With Shelf to Notes on, the Shelf drawer has Make a note . It builds one note from the ticked items (or the whole shelf when none are ticked) and shows it before anything happens: - Save to Notes — a text item tagged lens-note in the \"Notes\" shelf, like any note made in Lens Notes. - Export .md / .txt / PDF — written by save note export into Downloads (or %APPDATA%\\LensUI\\exports when there is no Downloads folder). Names are cleaned, nothing is overwritten, PDFs must be real PDFs ( src/shelf/pdf.ts , A4, Helvetica, Windows-1252 text). - Send to a contact — Matrix rooms you can reply in only. The exact text is shown on an approval card; nothing is sent until you hold Send , and \"Don't send\" withdraws the request ( messages send request → feeds approve → send, once). The optional AI summary is not built yet. Tests: src/ tests /shelfNotes.test.ts .",
+   "path": [
+    "Docs",
+    "Shelf and clipboard history — contract",
+    "Shelf → Notes (Magic waves M4, off by default)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SHELF.md",
+    "heading": "Shelf → Notes (Magic waves M4, off by default)"
+   },
+   "source": "docs/SHELF.md"
+  },
+  {
+   "id": "doc.shelf.5",
+   "kind": "doc",
    "title": "Shelf and clipboard history — contract: Clipboard history v2",
    "text": "Command What it does --- --- clip status() Enabled, paused-until, skip-next, counts and settings. It also wires change events on first use. clip set settings(settings) Saves %APPDATA%\\LensUI\\clip\\settings.json . Turning history on starts the listener; turning it off stops recording immediately. clip list(query?, kind?) ClipView[] : pinned first. The preview is capped at 240 characters, and the full text never goes to the list. clip get text(id) The full text, for previews and context chips. clip pin , clip rename , clip delete Single-clip edits. clip clear(minutes?, includePinned?) Clears recent clips. Pinned clips stay unless includePinned . clip wipe() Deletes everything, in memory and the sealed file. clip pause(minutes) , clip ignore next() Pause recording ( 0 resumes) or skip one copy. clip copy(id, mode?) Puts the clip back on the clipboard. clip paste(id, mode?) Hides Command, the",
    "path": [
@@ -13322,7 +14585,7 @@
    "source": "docs/SHELF.md"
   },
   {
-   "id": "doc.shelf.4",
+   "id": "doc.shelf.6",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract: Retiring the old in-memory history",
    "text": "win clipboard.rs (the text-only, in-memory history behind the Clipboard pane) still runs on its own func.clipboardHistory switch. Both listeners can run side by side. Once Command ships: 1. Point ClipboardPane.tsx at clip list / clip copy . 2. Map func.clipboardHistory onto ClipSettings.enabled once (a migration in config.rs ). 3. Remove start clipboard history from setup.",
@@ -13610,6 +14873,23 @@
   {
    "id": "doc.snip.2",
    "kind": "doc",
+   "title": "Lens Snip: Live text: where it comes from",
+   "text": "Rewrite-light of an idea several tools share, built from their public behaviour and docs only (no code copied): Live Text in macOS, Text actions in the Windows Snipping Tool, and PowerToys Text Extractor (MIT, microsoft/PowerToys). Lens goes further in two places: a selection can be highlighted or hidden exactly, and it follows the studio's rules (hidden words stay hidden, cropped words are gone). Model: src/snip/liveText.ts ; UI: src/snip/LiveTextLayer.tsx . Windows OCR runs on this PC; nothing is sent.",
+   "path": [
+    "Docs",
+    "Lens Snip",
+    "Live text: where it comes from"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SNIP.md",
+    "heading": "Live text: where it comes from"
+   },
+   "source": "docs/SNIP.md"
+  },
+  {
+   "id": "doc.snip.3",
+   "kind": "doc",
    "title": "Lens Snip: What Lens Snip won't do",
    "text": "- Upload anything, make links, or send messages on its own. - Capture in the background or on a timer you didn't start. - Work around windows that protect themselves from capture ( SetWindowDisplayAffinity ) — they come out black or missing, as Windows intends. - Keep an unredacted copy of a snip you redacted (history stores what you exported).",
    "path": [
@@ -13625,7 +14905,7 @@
    "source": "docs/SNIP.md"
   },
   {
-   "id": "doc.snip.4",
+   "id": "doc.snip.5",
    "kind": "doc",
    "title": "Lens Snip: Shared-file edits made in this PR (kept minimal)",
    "text": "File Change Why --- --- --- src-tauri/Cargo.toml windows features: ApplicationModel DataTransfer , Globalization , Graphics Imaging , Media Ocr , Storage , Win32 Storage Xps , Win32 System DataExchange , Win32 System SystemInformation Share sheet, OCR, PrintWindow, clipboard, local time. No new crates. src-tauri/src/lib.rs mod snip; + 32 commands::snip:: entries Registration. src-tauri/src/commands/mod.rs pub(crate) mod snip; Registration. src-tauri/src/app/integration.rs commands::snip::init(&handle) in setup ; commands::snip::shutdown() in shutdown Hotkey at startup; Print Screen handed back and recording stopped on exit. src-tauri/capabilities/default.json windows \"snip\" , \"snip- \" The overlay, pins and recording frame call commands. src/main.tsx snip surface Route for the Snip windows. src/types/generated.ts regenerated IPC types. .github/workflows/build.yml \"Render Lens Snip scenes\"",
@@ -13642,10 +14922,10 @@
    "source": "docs/SNIP.md"
   },
   {
-   "id": "doc.snip.6",
+   "id": "doc.snip.7",
    "kind": "doc",
    "title": "Lens Snip: Needs real hardware",
-   "text": "- Capture on mixed-DPI multi-monitor setups (overlay spans monitors with different scale; Lens re-applies the window rect after Windows' DPI change), negative coordinates, HDR displays (BitBlt returns SDR). - PrintWindow(PW RENDERFULLCONTENT) on Chromium, UWP and DirectX apps; fallback to on-screen pixels. - UI Automation element snapping latency (150 ms budget) on heavy apps. - Windows OCR language packs and accuracy on small text; auto-redact false positives in real screenshots. - Clipboard image paste into Office, Discord, Slack, Claude Desktop (CF DIB + PNG). - Share sheet from the overlay window (desktop-app IDataTransferManagerInterop ), targets that only accept files. - Print Screen takeover with and without the \"Make Print Screen key yieldable\" policy. - ffmpeg gdigrab recording at 60 fps, mic devices, WDA EXCLUDEFROMCAPTURE keeping the border out of the video (Windows 10 2004+).",
+   "text": "- Capture on mixed-DPI multi-monitor setups (overlay spans monitors with different scale; Lens re-applies the window rect after Windows' DPI change), negative coordinates, HDR displays (BitBlt returns SDR). - PrintWindow(PW RENDERFULLCONTENT) on Chromium, UWP and DirectX apps; fallback to on-screen pixels. - UI Automation element snapping latency (150 ms budget) on heavy apps. - Live text: OCR word boxes line up with the words at 100 %, 150 % and 200 % scale; drag-select across two columns; highlight and hide land on the words. - Windows OCR language packs and accuracy on small text; auto-redact false positives in real screenshots. - Clipboard image paste into Office, Discord, Slack, Claude Desktop (CF DIB + PNG). - Share sheet from the overlay window (desktop-app IDataTransferManagerInterop ), targets that only accept files. - Print Screen takeover with and without the \"Make Print Scree",
    "path": [
     "Docs",
     "Lens Snip",
@@ -13983,7 +15263,7 @@
    "id": "doc.themes-audit.0",
    "kind": "doc",
    "title": "Theme audit",
-   "text": "Generated by bun tools/themes/audit.ts from src/themes/distance.ts and src/themes/featured.ts . Do not edit by hand; src/ tests /featuredThemes.test.ts fails when it is out of date. 89 packs were compared pair by pair. The distance adds up how far apart two packs are in surface colour and accent (OKLab), light or dark, corner radius and shape style, Dock style, window chrome (frame, buttons, icons) and animated backdrop. Under 0.30 two packs read as the same theme with a tweak.",
+   "text": "Generated by bun tools/themes/audit.ts from src/themes/distance.ts and src/themes/featured.ts . Do not edit by hand; src/ tests /featuredThemes.test.ts fails when it is out of date. 87 packs were compared pair by pair. The distance adds up how far apart two packs are in surface colour and accent (OKLab), light or dark, corner radius and shape style, window chrome (frame, buttons, icons) and animated backdrop. Under 0.30 two packs read as the same theme with a tweak.",
    "path": [
     "Docs",
     "Theme audit"
@@ -13999,7 +15279,7 @@
    "id": "doc.themes-audit.1",
    "kind": "doc",
    "title": "Theme audit: The featured twelve",
-   "text": "Each is a whole look: palette, accent, glass, corners, Dock style and motion, window frame and buttons, icons, font, its own animated backdrop and a pointer family. No two share a backdrop. Look Character Surface · accent Corners Glass Dock Frame · buttons Icons Font Backdrop Pointer Feel --- --- --- --- --- --- --- --- --- --- --- --- Obsidian Matte black glass with white chrome. The Lens default. #09090B · #FAFAFA 8px 96%, 20px blur floating, no magnify, lift launch obsidian-hairline · traffic-classic obsidian-squircle, squircle Rounded waves obsidian Calm Alabaster Daylight Bright daylight, white cards and one clear blue. #EEEEF0 · #2563EB (light) 10px 98%, 16px blur floating, subtle magnify, lift launch obsidian-hairline · traffic-classic native, squircle Modern sans paper outline Crisp Sky The real sky, live. Light by day, dark at night. #0B1230 · #A9B8EE 16px 80%, 28px blur floatin",
+   "text": "Each is a whole look: palette, accent, glass, corners, window frame and buttons, icons, font, its own animated backdrop and a pointer family. No two share a backdrop. A look never changes the Dock: themes are colours and materials only. Look Character Surface · accent Corners Glass Frame · buttons Icons Font Backdrop Pointer Feel --- --- --- --- --- --- --- --- --- --- --- Obsidian Matte black glass with white chrome. The Lens default. #09090B · #FAFAFA 8px 96%, 20px blur obsidian-hairline · traffic-classic obsidian-squircle, squircle Rounded waves obsidian Calm Alabaster Daylight Bright daylight, white cards and one clear blue. #EEEEF0 · #2563EB (light) 10px 98%, 16px blur obsidian-hairline · traffic-classic native, squircle Modern sans paper outline Crisp Sky The real sky, live. Light by day, dark at night. #0B1230 · #A9B8EE 16px 80%, 28px blur obsidian-hairline · traffic-muted frosted",
    "path": [
     "Docs",
     "Theme audit",
@@ -14032,8 +15312,25 @@
   {
    "id": "doc.themes-audit.3",
    "kind": "doc",
+   "title": "Theme audit: Contrast, every pack",
+   "text": "What each pack really paints: its surface (with the accent tint mixed in) and its raised cards, under the text tones of its scheme (tokens.css). Body text (primary and secondary) must reach 4.5:1 on both; muted text (hints, icons) and the accent must reach 3:1. Dark packs with lighter bases get brighter secondary and muted tones (marked ↑). Packs that follow the Windows accent are checked for text only. src/ tests /themeContrast.test.ts fails on any pack below these lines. 87 packs, 0 below a line. Pack Scheme Surface · card Text Secondary Muted Accent --- --- --- --- --- --- --- Alabaster Daylight light #EEEEF0 · #FFFFFF 15.3:1 6.7:1 5.1:1 4.5:1 Amber Monitor dark #0A0500 · #15100B 18.1:1 7.4:1 3.9:1 10.3:1 Aurora (Claude) dark #14123A · #1F1D43 15.3:1 6.2:1 3.3:1 5.1:1 Base16 Cupcake light #FBF1F2 · #FFFFFF 16.0:1 7.0:1 5.4:1 3.0:1 Base16 Eighties dark ↑ #2D2D2D · #363636 11.6:1 7.0:1 ",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Contrast, every pack"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Contrast, every pack"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.4",
+   "kind": "doc",
    "title": "Theme audit: Near-duplicates",
-   "text": "Pairs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.20 Green Phosphor CRT dock, shape, accent 0.20 Claude Light Claude Light Brand dock, accent 0.20 Paper Minimal Plotter Tide shape, chrome, accent 0.21 Catppuccin Mocha Catppuccin Macchiato accent, base 0.22 Catppuccin Macchiato Rosé Pine Moon accent, base, shape 0.24 Weather Window Tides of Light backdrop, accent, ",
+   "text": "Pairs of listed packs closer than 0.30, closest first. None of these is deleted: the featured one of a pair leads, the other sits under More themes. Pairs under 0.08 are the same theme on screen and are merged instead (next section), so none appears here. Distance Pack Almost the same as What still differs --- --- --- --- 0.09 GitHub Light Daltonized Light accent, shape 0.13 Catppuccin Frappé Catppuccin Macchiato base 0.13 Catppuccin Mocha Rosé Pine Moon base, accent, shape 0.14 GitHub Dark Daltonized Dark accent, shape, base 0.15 Alabaster Daylight Catppuccin Latte chrome, shape, accent 0.16 Night Reef Braille Stars backdrop, accent 0.16 Paper Garden Claude Light accent, chrome, shape, base 0.17 Plotter Tide Dither Dunes backdrop, base 0.17 Rosé Pine Dawn Base16 Cupcake accent, shape, base 0.17 Halftone Dawn Dither Dunes backdrop, accent, base 0.18 GitHub Light One Half Light accent, ba",
    "path": [
     "Docs",
     "Theme audit",
@@ -14047,10 +15344,27 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.4",
+   "id": "doc.themes-audit.5",
+   "kind": "doc",
+   "title": "Theme audit: Merged",
+   "text": "Packs closer than 0.08 to another one. They only looked different because each came with its own Dock style; a theme changes colours only now, so they are the same theme on screen. The merged pack is no longer listed, its name finds the pack that stays, and settings or theme files that name it keep working with their exact colours. Merged pack Now listed as Distance What still differs --- --- --- --- CRT Green Phosphor 0.06 shape, accent Claude Light Brand Claude Light 0.06 accent",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Merged"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Merged"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.6",
    "kind": "doc",
    "title": "Theme audit: More themes, by family",
-   "text": "The other 77 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
+   "text": "The other 75 packs, filed under the featured look each is closest to. Community packs keep their credit and link in the gallery.",
    "path": [
     "Docs",
     "Theme audit",
@@ -14064,10 +15378,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.5",
+   "id": "doc.themes-audit.7",
    "kind": "doc",
    "title": "Theme audit: Like Obsidian (5)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Desert Day (0.35) GitHub Dark 0.65 Daltonized Dark (0.14) Daltonized Dark 0.66 GitHub Dark (0.14) Claude Midnight 1.02 Claude Dark Brand (0.73)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- City Night 0.48 Golden Hour (0.33) Claude Dark 0.49 Claude Dark Brand (0.26) GitHub Dark 0.51 Daltonized Dark (0.14) Daltonized Dark 0.52 GitHub Dark (0.14) Claude Midnight 0.88 Claude Dark Brand (0.59)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14081,78 +15395,78 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.6",
-   "kind": "doc",
-   "title": "Theme audit: Like Alabaster Daylight (13)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) One Half Light 0.26 Alabaster Daylight (0.26) Daltonized Light 0.34 GitHub Light (0.09) GitHub Light 0.35 Daltonized Light (0.09) Base16 Cupcake 0.37 Rosé Pine Dawn (0.18) Rosé Pine Dawn 0.40 Base16 Cupcake (0.18) Circit 0.43 Koi Mosaic (0.38) Claude Light 0.50 Claude Light Brand (0.20) Honu Lagoon 0.50 Koi Mosaic (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31) Solarized Light 0.55 One Half Light (0.40) Lens Expressive Light 0.57 Alabaster Daylight (0.57) Gruvbox Light 0.63 GitHub Light (0.43)",
-   "path": [
-    "Docs",
-    "Theme audit",
-    "Like Alabaster Daylight (13)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Alabaster Daylight (13)"
-   },
-   "source": "docs/THEMES_AUDIT.md"
-  },
-  {
-   "id": "doc.themes-audit.7",
-   "kind": "doc",
-   "title": "Theme audit: Like Sky (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Sky (0.27) Tides of Light 0.31 Weather Window (0.24) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Braille Stars 0.46 Night Reef (0.30) Seasons 0.49 Tides of Light (0.31) Northern Lights 0.50 Tides of Light (0.33)",
-   "path": [
-    "Docs",
-    "Theme audit",
-    "Like Sky (8)"
-   ],
-   "target": {
-    "surface": "doc",
-    "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Sky (8)"
-   },
-   "source": "docs/THEMES_AUDIT.md"
-  },
-  {
    "id": "doc.themes-audit.8",
    "kind": "doc",
-   "title": "Theme audit: Like Catppuccin Mocha (17)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Aurora (Claude) 0.39 Night Reef (0.34) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 Catppuccin Mocha (0.50) Snow Pines 0.50 Golden Hour (0.35) Tokyo Night 0.53 One Dark (0.42) Desert Day 0.55 Golden Hour (0.31) Dither Dunes Night 0.55 Halftone Dusk (0.28) Plotter Tide, Night 0.56 Ember (0.45) Ember 0.57 Dither Dunes Night (0.32) Nature 0.60 Seasons (0.35) Windows Mesh 0.71 Daltonized Dark (0.46)",
+   "title": "Theme audit: Like Alabaster Daylight (12)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Catppuccin Latte 0.15 Alabaster Daylight (0.15) Daltonized Light 0.20 GitHub Light (0.09) GitHub Light 0.21 Daltonized Light (0.09) One Half Light 0.26 GitHub Light (0.18) Base16 Cupcake 0.36 Rosé Pine Dawn (0.17) Rosé Pine Dawn 0.40 Base16 Cupcake (0.17) Solarized Light 0.41 One Half Light (0.26) Lens Expressive Light 0.43 Alabaster Daylight (0.43) Circit 0.43 Daltonized Light (0.36) Gruvbox Light 0.49 Base16 Cupcake (0.32) Honu Lagoon 0.50 Base16 Cupcake (0.31) Koi Mosaic 0.51 Honu Lagoon (0.31)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Catppuccin Mocha (17)"
+    "Like Alabaster Daylight (12)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Catppuccin Mocha (17)"
+    "heading": "Like Alabaster Daylight (12)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-audit.9",
    "kind": "doc",
-   "title": "Theme audit: Like Hyprland Neon (4)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Midnight 0.72 Braille Stars (0.41) Block Clouds 0.75 Vector Range (0.42) High Contrast 0.82 CGA-4 (0.44) Synthwave 0.82 White-Label Cyberpunk (0.28)",
+   "title": "Theme audit: Like Sky (7)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Night Reef 0.27 Braille Stars (0.16) Tides of Light 0.31 Weather Window (0.24) Braille Stars 0.32 Night Reef (0.16) Weather Window 0.32 Tides of Light (0.24) Moonlight 0.35 Tides of Light (0.32) Golden Hour 0.45 Desert Day (0.31) Seasons 0.49 Tides of Light (0.31)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Hyprland Neon (4)"
+    "Like Sky (7)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Hyprland Neon (4)"
+    "heading": "Like Sky (7)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
    "id": "doc.themes-audit.10",
    "kind": "doc",
+   "title": "Theme audit: Like Catppuccin Mocha (15)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Rosé Pine Moon 0.13 Catppuccin Mocha (0.13) Catppuccin Macchiato 0.21 Catppuccin Frappé (0.13) Rosé Pine 0.28 Rosé Pine Moon (0.26) Catppuccin Frappé 0.31 Catppuccin Macchiato (0.13) Tokyo Night 0.39 One Dark (0.28) Aurora (Claude) 0.39 Braille Stars (0.30) Plotter Tide, Night 0.42 Ember (0.31) Deep Water 0.45 Catppuccin Macchiato (0.37) Dracula Glass 0.47 Halftone Dusk (0.42) Halftone Dusk 0.48 Dither Dunes Night (0.28) Sequoia Frost 0.50 GitHub Dark Dimmed (0.45) Snow Pines 0.50 Golden Hour (0.35) Graphite 0.53 Weather Window (0.38) Desert Day 0.55 Golden Hour (0.31) Windows Mesh 0.57 Daltonized Dark (0.46)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Catppuccin Mocha (15)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Catppuccin Mocha (15)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.11",
+   "kind": "doc",
+   "title": "Theme audit: Like Hyprland Neon (3)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Northern Lights 0.50 Tides of Light (0.33) Midnight 0.58 Daltonized Dark (0.37) High Contrast 0.68 CGA-4 (0.44)",
+   "path": [
+    "Docs",
+    "Theme audit",
+    "Like Hyprland Neon (3)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THEMES_AUDIT.md",
+    "heading": "Like Hyprland Neon (3)"
+   },
+   "source": "docs/THEMES_AUDIT.md"
+  },
+  {
+   "id": "doc.themes-audit.12",
+   "kind": "doc",
    "title": "Theme audit: Like Cyberpunk Amber (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 CRT (0.20) Departure Board 0.53 Amber Monitor (0.36) High Contrast Pro 0.56 High Contrast (0.52) CRT 0.60 Green Phosphor (0.20) CGA-4 0.81 High Contrast (0.44) White-Label Cyberpunk 0.88 Synthwave (0.28)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Paper-White Mono 0.31 Cyberpunk Amber (0.31) Amber Monitor 0.32 Cyberpunk Amber (0.32) Green Phosphor 0.44 Cyberpunk Amber (0.44) Departure Board 0.53 Desert Day (0.32) High Contrast Pro 0.56 High Contrast (0.52) Block Clouds 0.65 Snow Pines (0.36) White-Label Cyberpunk 0.74 Synthwave (0.28) CGA-4 0.81 High Contrast (0.44)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14166,10 +15480,10 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.11",
+   "id": "doc.themes-audit.13",
    "kind": "doc",
    "title": "Theme audit: Like Paper Minimal (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Paper Minimal (0.20) Warm Neutral 0.39 Plotter Tide (0.28) Terracotta 0.49 Claude Light (0.27) Dither Dunes 0.51 Halftone Dawn (0.17) Halftone Dawn 0.53 Dither Dunes (0.17) Everforest Light 0.54 Warm Neutral (0.33) Paper Garden 0.54 Claude Light Brand (0.29) Claude Light Brand 0.55 Claude Light (0.20)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Plotter Tide 0.20 Dither Dunes (0.17) Terracotta 0.35 Paper Garden (0.24) Dither Dunes 0.37 Plotter Tide (0.17) Warm Neutral 0.39 Plotter Tide (0.28) Halftone Dawn 0.39 Dither Dunes (0.17) Paper Garden 0.40 Claude Light (0.16) Claude Light 0.47 Paper Garden (0.16) Everforest Light 0.52 Warm Neutral (0.30)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14183,27 +15497,27 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.12",
+   "id": "doc.themes-audit.14",
    "kind": "doc",
-   "title": "Theme audit: Like Everforest (8)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.47 Base16 Ocean (0.31) Monokai Pro 0.50 Blueprint (0.43) Base16 Ocean 0.54 Base16 Eighties (0.24) One Dark 0.55 Base16 Eighties (0.37) Paper Garden, Kraft 0.56 Plotter Tide, Night (0.50) Monokai 0.61 Monokai Pro (0.45) Blueprint 0.61 Monokai Pro (0.43) Graphite 0.62 Kanagawa Wave (0.47)",
+   "title": "Theme audit: Like Everforest (7)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Nord Frost 0.33 Base16 Ocean (0.31) Monokai Pro 0.36 Blueprint (0.29) Base16 Ocean 0.40 Base16 Eighties (0.24) One Dark 0.41 Base16 Eighties (0.23) Monokai 0.47 Monokai Pro (0.45) Blueprint 0.47 Monokai Pro (0.29) Nature 0.55 Seasons (0.35)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Everforest (8)"
+    "Like Everforest (7)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Everforest (8)"
+    "heading": "Like Everforest (7)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.13",
+   "id": "doc.themes-audit.15",
    "kind": "doc",
    "title": "Theme audit: Like Solarized Matte (2)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.59 Base16 Ocean (0.24) GitHub Dark Dimmed 0.64 GitHub Dark (0.25)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Base16 Eighties 0.45 One Dark (0.23) GitHub Dark Dimmed 0.50 GitHub Dark (0.25)",
    "path": [
     "Docs",
     "Theme audit",
@@ -14217,19 +15531,19 @@
    "source": "docs/THEMES_AUDIT.md"
   },
   {
-   "id": "doc.themes-audit.14",
+   "id": "doc.themes-audit.16",
    "kind": "doc",
-   "title": "Theme audit: Like Gruvbox Warm (4)",
-   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.52 Kanagawa Wave (0.44) Claude Dark Brand 0.60 Claude Dark (0.40) Kanagawa Wave 0.61 Claude Dusk (0.44) Vector Range 0.65 Block Clouds (0.42)",
+   "title": "Theme audit: Like Gruvbox Warm (8)",
+   "text": "Pack Distance from the featured look Its closest pack overall --- --- --- Claude Dusk 0.38 Kanagawa Wave (0.30) Kanagawa Wave 0.47 Claude Dusk (0.30) Paper Garden, Kraft 0.48 Plotter Tide, Night (0.36) Dither Dunes Night 0.49 Halftone Dusk (0.28) Ember 0.51 Plotter Tide, Night (0.31) Vector Range 0.51 Departure Board (0.38) Claude Dark Brand 0.60 Claude Dark (0.26) Synthwave 0.70 White-Label Cyberpunk (0.28)",
    "path": [
     "Docs",
     "Theme audit",
-    "Like Gruvbox Warm (4)"
+    "Like Gruvbox Warm (8)"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/THEMES_AUDIT.md",
-    "heading": "Like Gruvbox Warm (4)"
+    "heading": "Like Gruvbox Warm (8)"
    },
    "source": "docs/THEMES_AUDIT.md"
   },
@@ -14237,7 +15551,7 @@
    "id": "doc.themes-claude.0",
    "kind": "doc",
    "title": "Claude Code community themes in Lens",
-   "text": "Lens ships 59 community theme packs from the Claude Code ecosystem, in the Theme gallery under Browse all › Claude Code . Every card credits its author and has an Original ↗ link. All of these are unofficial in Lens: Lens copies only colour values (palettes are facts), never artwork, backdrop code, logos or the Claude wordmark. Anthropic's example themes are Apache-2.0; every community source below is MIT. How a pack is built: - Surface: the theme's background, or, for Anthropic's scene themes, the theme's own glass tint (the colour the app lays over the scene). - Accent: read from the palette file, or for scene themes the scene's signature colour (\"palette derived from the scene\"). - Animated backdrops are not copied. Where a theme has one, the pack suggests the closest Lens Playground scene and links the original. - Contrast: every pack meets the 4.5:1 body-text bar as published, so no",
+   "text": "Lens ships 59 community theme packs from the Claude Code ecosystem, in the Theme gallery under Browse all › Claude Code . Every card credits its author and has an Original ↗ link. Two of the 59 are no longer listed as cards: CRT (now Green Phosphor) and Claude Light Brand (now Claude Light). Each differed from its twin only by the Dock style it came with, and a theme changes colours only now, so they were the same theme on screen. Their ids still work in settings, schedules and theme files, and their names find the twin ( MERGED PACKS in src/themes/packs.ts ; THEMES AUDIT.md \"Merged\"). All of these are unofficial in Lens: Lens copies only colour values (palettes are facts), never artwork, backdrop code, logos or the Claude wordmark. Anthropic's example themes are Apache-2.0; every community source below is MIT. How a pack is built: - Surface: the theme's background, or, for Anthropic's s",
    "path": [
     "Docs",
     "Claude Code community themes in Lens"
@@ -14466,6 +15780,74 @@
     "surface": "doc",
     "doc": "docs/THIRD_PARTY_NOTICES.md",
     "heading": "Simple Icons — website demo only"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.6",
+   "kind": "doc",
+   "title": "Third-party notices: Cider — learned from, nothing used",
+   "text": "Lens Music's Immersive mode, artwork-tinted pages, lyric translation, Discord presence and its setup/Tweaks pages were inspired by Cider (cider.sh), a community Apple Music client. Its licence for reuse is unclear, so nothing of it is in Lens: no code, assets or copy. The Lens versions were built from Cider's public site and observed behaviour (docs/features/music.md › 10). Credit only.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Cider — learned from, nothing used"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Cider — learned from, nothing used"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.7",
+   "kind": "doc",
+   "title": "Third-party notices: Discord RPC — protocol only",
+   "text": "src-tauri/src/music/discord.rs speaks Discord's documented local RPC framing to the Discord app on the same PC. It is Lens's own code (standard library only); no Discord SDK or library is bundled or linked.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Discord RPC — protocol only"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Discord RPC — protocol only"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.8",
+   "kind": "doc",
+   "title": "Third-party notices: Equalizer APO — bridged, not bundled",
+   "text": "Lens Music's Equalizer works with Equalizer APO (https://sourceforge.net/projects/equalizerapo/, GPL-2.0, by Jonas Thedering). It's a separate program you install; Lens never bundles, links or runs it. Lens writes one marked Include: line in its config.txt and one preset file beside it, both removed by Equalizer › Off and Remove all Lens changes. Credit only (COMBINATOR §5, \"Bridge\").",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Equalizer APO — bridged, not bundled"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Equalizer APO — bridged, not bundled"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.9",
+   "kind": "doc",
+   "title": "Third-party notices: QR code encoder",
+   "text": "src/music/qr.ts is Lens's own encoder, written from the QR Code specification (ISO/IEC 18004). Its structure follows the widely described algorithm of Project Nayuki's QR Code generator (MIT License, Copyright (c) Project Nayuki). No file of that project is included. \"QR Code\" is a registered trademark of DENSO WAVE INCORPORATED.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "QR code encoder"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "QR code encoder"
    },
    "source": "docs/THIRD_PARTY_NOTICES.md"
   },
@@ -15214,6 +16596,23 @@
   {
    "id": "doc.window-styling.8",
    "kind": "doc",
+   "title": "Window styling 2.0: Window buttons: which windows, which look, which side",
+   "text": "One decision per window, caption rules::skip reason (pure, tested on any machine), strongest reason first: 1. Protected — Lens itself, Windows shell hosts and every name on win rules::ANTI CHEAT FRAGMENTS , matched against the process's full path, plus any process Windows will not name. The engine has no list of its own. Two source tests in tests/win rules.rs fail the build if any file under src-tauri/src names an anti-cheat process itself, or if an engine that touches other apps' windows (window buttons, DWM styling, dimming, tiling, Alt+drag, the key hook, pointer effects) stops asking win rules . 2. Excluded — windowControls.excludedProcesses (Settings › Windows & Keys › Window styling › Apps and window buttons). \"Notepad.exe\", \"notepad\" and a full path all mean the same app; whole names only, so excluding Notepad does not exclude Notepad++. 3. Left alone by a rule — a per-app rule wi",
+   "path": [
+    "Docs",
+    "Window styling 2.0",
+    "Window buttons: which windows, which look, which side"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/WINDOW_STYLING.md",
+    "heading": "Window buttons: which windows, which look, which side"
+   },
+   "source": "docs/WINDOW_STYLING.md"
+  },
+  {
+   "id": "doc.window-styling.9",
+   "kind": "doc",
    "title": "Window styling 2.0: Window buttons blend into every title bar",
    "text": "Lens's coloured window buttons on other apps' windows are drawn by win caption engine.rs : a small layered window laid over each window's own minimise/maximise/close buttons. It has to be opaque (the native buttons are underneath), so it only blends if every pixel that is not one of the three dots is exactly the title bar's colour on that row. The pixels come from src-tauri/src/caption paint.rs , which is pure and tested on any machine. Why a strip used to show (the \"new window options don't blend\" report): - One colour for the whole overlay. The old engine read five pixels and painted their median everywhere. A gradient or Mica title bar, a caption shorter than the overlay (maximised windows, apps with a thin caption) or title text near the sample points left a visible box. - Read once, too early. Colours were re-read only at activation and at the end of a move. DWM fades the caption be",
    "path": [
@@ -15392,7 +16791,7 @@
    "id": "lesson.keyboard-map",
    "kind": "lesson",
    "title": "Keyboard map",
-   "text": "The shortcuts worth remembering. Open things. Windows. Pointer and effects. Everywhere",
+   "text": "The shortcuts worth remembering. Open things. The Dock. Windows. Pointer and effects. Everywhere",
    "path": [
     "Guide",
     "Lessons",
@@ -15960,6 +17359,15 @@
     },
     {
      "n": 2,
+     "title": "The Dock",
+     "text": "With a Dock icon focused (Alt+Space, then Tab, or after a click), the arrow keys move along the Dock and typing a name finds an app. The arrow that points into the screen opens that app's windows: Up and Down choose, Enter switches, Delete closes one, Esc goes back. Alt+1–9 opens the first nine apps when that shortcut is on.",
+     "show": "dock",
+     "target": {
+      "surface": "dock"
+     }
+    },
+    {
+     "n": 3,
      "title": "Windows",
      "text": "Hold Alt and drag to move a window; Alt+right-drag to resize. In Overview, Shift+←/→ or Shift+1–9 moves the selected window to another workspace.",
      "show": "settings:system:Drag Windows",
@@ -15970,7 +17378,7 @@
      }
     },
     {
-     "n": 3,
+     "n": 4,
      "title": "Pointer and effects",
      "text": "Ctrl+Shift+F8 toggles the pointer spotlight when pointer effects are on.",
      "show": "settings:theme:Mouse pointer",
@@ -15981,7 +17389,7 @@
      }
     },
     {
-     "n": 4,
+     "n": 5,
      "title": "Everywhere",
      "text": "Esc always steps back one level. Ask the Guide \"what's the shortcut for…\" any time.",
      "show": "guide",

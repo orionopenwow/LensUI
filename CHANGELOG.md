@@ -7,13 +7,295 @@ up and migrates `%APPDATA%\LensUI` where it can.
 
 ## [Unreleased]
 
+### Added
+- **Immersive: Now Playing full screen (learned from Cider).** Big artwork, its colours drifting
+  slowly behind it as soft gradients, and big synced lyrics with the line being sung bright. Open
+  it from Now Playing (or F11 there), the Dock music card, or by typing "immersive" in Lens
+  Command; Esc leaves. The cursor and controls hide after a few seconds without the mouse moving.
+  It opens on the monitor you're using and never over a full-screen game or film, stays still
+  when motion is reduced, and stops drawing while it's hidden. An optional sound glow is in
+  Settings › Music › Tweaks.
+- **Now Playing takes its colours from the artwork**, and only where they read: every accent is
+  checked at 4.5:1 against the background it sits on, otherwise your theme accent is used. The
+  window is matte now (no blurred copy of the cover, no glass panels).
+- **Lyric timing per song.** −0.5 s / +0.5 s (or `[` / `]`) when a song's lyrics run early or
+  late; Lens remembers it for that song.
+- **Lyric translation (opt-in).** Settings › Music › Synced lyrics › Offer translations. Lens AI
+  translates the lyric lines: your local model when one is running, otherwise the AI you chose,
+  under its privacy mode ("Ask each time" asks first). It says who translated, keeps the result on
+  this PC, and you can show the original, the translation or both.
+- **Show what you're listening to on Discord (opt-in).** Through the Discord app on this PC only;
+  Lens itself sends nothing over the internet. Needs your own Discord application ID; Private
+  listening hides it.
+- **Equalizer, the honest way.** Lens has no audio engine of its own, so Settings › Music ›
+  Equalizer works with Equalizer APO (free, by Jonas Thedering): pick Flat, More bass, Clear
+  voices, More treble or Late night and Lens switches its preset with one marked line; Off and
+  Remove all Lens changes take it out again. Not installed? Get it from Lens Apps. Spatial sound
+  opens Windows' Sound settings, because apps can't switch it.
+- **Lens Remote (Tester mode preview).** Control the music from your phone on the same home
+  network after scanning a one-time code. Off by default, home network only, stops by itself after
+  10 minutes without use, with a "Remote on" pill in the Top Bar. It's plain HTTP on your network
+  (no certificate is possible there), which is why it's a preview; Settings explains the limits.
+- **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
+  time) and a Tweaks section that groups the advanced options.
+- **Controls you can feel.** Buttons, tiles, chips, switches and rows in Settings, setup, Quick
+  settings and Search now press like a well-made key: they sink the moment you press (mouse, touch
+  or Space/Enter), stay visibly pressed for at least 90 ms even on the fastest click, and spring
+  back with a small, damped settle. Three weights: rows and tabs only darken a step, buttons sink a
+  little, primary and destructive actions sink deeper. A button that starts work stays pressed
+  until it's done and shows a small spinner after 300 ms, without changing size. Switch knobs
+  squash slightly as you press and travel with the spring; segmented choices slide their
+  highlight to the new option; sliders grow a pixel while you hold them. With reduced motion,
+  presses show only the colour step.
+- **Things come from somewhere.** Quick settings and Search grow out of the Top Bar button that
+  opened them and shrink back into it when they close; Settings pages and setup steps slide in the
+  direction you're going. The windows themselves never move or resize during the motion.
+- **Magic selection bar and Magic Search (off by default).** Turn it on in Settings › AI &
+  Command › Selection bar. Select text anywhere and a small matte bar appears just below it:
+  Cut, Copy and Paste (only when they'd work, sent to the app you're in, which keeps the focus),
+  Magic Search, and up to nine of your own actions from the right-click catalogue, each with an
+  optional hotkey (none by default, checked against Windows, Lens and app keys). It recognises
+  links, e-mail addresses, sums, units, colours, paths and code and shows a one-line preview,
+  worked out on this PC. **Magic Search** opens a pop-out by the selection with a short cited
+  answer (your local model first; a cloud AI only as your AI settings allow, and it says which
+  answered), web results from your Lens Browser search engine and Wikipedia, and matches from your
+  Shelf, clipboard history, notes and recent files (found on this PC, never sent). Follow-ups,
+  copy with or without sources, save to the Shelf or as a note, and replace the selection (asks
+  first). Also from Command ("magic search …") and the Magic window. It works everywhere except
+  terminals, consoles, remote-desktop and VM windows, password managers, password fields,
+  elevated apps and games, and you can change the list. It replaces the selection bubble; if the
+  bubble was on, the bar is on. Not yet confirmed on a real PC.
+- **Lens Apps has a Library.** A second view next to Discover lists everything from the catalogue
+  that's on this PC, with the installed version, what an update would bring ("4.5.1 → 4.5.3"), who
+  made each app and its licence. **Update all** asks once, on the same approval card as everything
+  else, and shows every app, its version change and its source; updates then run one at a time and
+  any that hasn't started can be cancelled. Nothing updates by itself. If winget can't be asked,
+  the Library says so instead of showing an empty list.
+- **Credits and licences in plain words.** Every app page now has a "Credits and licence" section:
+  who made it, where the source is, and what the licence means for you in one or two sentences
+  (permissive, copyleft, network copyleft, weak copyleft, or free but not open source). When Lens
+  hasn't read the licence in the project's own repository yet, it says that too. Cards and Library
+  rows carry the same licence chip, and each page ends with "Names belong to each project. Lens
+  isn't affiliated with them."
+- **A real screenshot gallery on app pages.** Previous / next, dots and the arrow keys, with a line
+  saying which project each image comes from. It moves on by itself only until you take over, never
+  while the window is hidden, and not at all with reduced motion.
+- **Remind me, on any to-do in Lens Notes.** A small bell at the end of an unticked to-do offers
+  "In an hour", "This evening" and "Tomorrow morning" and sets a Lens Timer reminder named after the
+  to-do. It rings whether or not Notes or Timer is open.
+- **"Make stickies clickable" is a button in Lens Notes**, not only Ctrl+Shift+U, so a click-through
+  sticky always has a visible way back.
+- **Live text in Lens Snip.** In the studio, press L (or the new Select text tool) and the words
+  Windows OCR found become selectable on the image: drag across them, double-click a line, or use
+  the arrow keys with Shift. Copy just those words, highlight them, or hide them, each snapped to
+  the text. Links, email addresses, phone numbers and sign-in codes in the snip get a one-press
+  copy. Everything is read on this PC and nothing is sent. Not yet confirmed on a real PC (OCR word
+  boxes come from Windows).
+- **Undo when you remove a snip from history or an item from the Shelf.** A snip is really deleted
+  five seconds after Remove; a Shelf item can be put back for six.
+- **The Menu key and Shift+F10 open a Shelf item's menu** with "Lens ›" focused, and focus returns
+  to the item when the menu closes.
+- **Dock keys: the Dock works from the keyboard.** With a Dock icon focused (Tab from search, or
+  after a click) the arrow keys along the Dock move between icons, Home and End jump to the ends,
+  and typing finds an app by name: the others step back and a small chip shows what you typed
+  (the same letter again steps through apps that start with it). The arrow that points into the
+  screen opens the app's window list and moves into it: Up and Down between windows, Enter to
+  switch, Delete to close one, Esc back to the icon. The titles list now shows every window (it
+  stopped at seven). No setting and nothing changed in Windows. Not yet confirmed on a real PC.
+- **The Dock says when something didn't work.** Opening an app, switching or closing a window, or
+  opening Settings from the Dock used to fail without a word; a short line now appears beside the
+  Dock ("Couldn't open Spotify.") and goes by itself.
+- **Small touches on the Dock:** a newly pinned app drops into place and settles; badge counts roll
+  when they change; the search panel's rows arrive in order. All still with reduced motion.
+- **Desktop widgets (preview, off by default).** Widgets pinned on the desktop in a snapping grid,
+  above the wallpaper and below every app window: an analog clock and a world clock, today's list
+  from the Lens calendar (tick items off in place), your latest Lens Notes, Now playing with
+  play/pause and skip, this PC's battery, and the Dashboard widgets you already approved (weather, a
+  feed…). Right-click a widget for Small, Medium or Large, Edit and Remove; Edit Widgets… dims the
+  desktop and opens a gallery with search, kinds and size previews to click or drag onto the
+  desktop. Neighbours glide out of the way (transform only; still with reduced motion). The widgets
+  never take the focus, stay out of Alt+Tab and the taskbar, let clicks through between them, hide
+  for fullscreen apps and anti-cheat games, and stop their one shared clock while hidden or covered.
+  Turn it on in Settings › About & Testing › Magic (preview) or the Dashboard's Widgets lane; Command
+  "edit widgets" opens the gallery. Uses only data on this PC; layouts are kept per monitor in
+  `%APPDATA%\LensUI\desktop-widgets.json`.
+- **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
+  artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
+  the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that
+  opens Spotify's search. A soft "sound glow" in the artwork's colours (or your accent, with no
+  artwork) rises from the Dock edge and breathes with the music. It stays matte and opaque (no
+  blur), is still when motion is reduced, and keeps text at 4.5:1 or moves below the controls.
+  Both are on by default and can be turned off in Settings › Music › Dock music pop-out; they read
+  the speakers' level (one number, no sound) only while the pop-out is open and music plays.
+  "Media controls in the Top Bar" moved from the pop-out to the same page.
+
+### Fixed
+- **The Top Bar no longer stays up after Lens was briefly busy.** If Lens's window watcher was held up
+  for a couple of seconds (most often right after start-up), an auto-hidden Top Bar could stay on
+  screen until the pointer touched the top edge; it now hides as soon as the watcher runs again.
+- **A click outside the Launcher closes it even when Windows didn't give it the focus.** It used to
+  stay open behind your apps until you opened and closed it again.
+- **Alarms keep their time when the clocks change.** A Lens Timer alarm set for 07:00 rang at 06:00
+  or 08:00 after daylight saving started or ended, or after a move to another time zone. Alarms now
+  follow the PC's local time. A timer or alarm that comes due while the PC is asleep says it is
+  late when it rings. Not yet confirmed on a real PC.
+- **An alarm that is only waiting no longer wakes Lens every second.** The timer thread used to
+  tick and notify every Lens window once a second for as long as any alarm was switched on.
+- **Apps Lens keeps itself can be removed from Lens Apps.** ThumbDesk and other portable releases
+  had no Remove in the ⋯ menu. Failed removals, "Undo Lens setup", Open and Show in folder now say
+  when they didn't work, and Retry on a failed update retries the update.
+- **Two Lens Apps settings that did nothing are gone.** "Update apps Lens installed automatically"
+  and "Check for updates" were saved but never read. The card now says how updates really work.
+- **Lens Apps keeps the keyboard.** Opening an app's page moves focus to it, Esc goes back from
+  anywhere on the page, and focus returns to the card you came from.
+- **Failures in the Lens apps no longer pass silently.** Core apps (Monitor, Startup & Uninstall,
+  Timer, Calculator, Color, Notes, Power, Network, Clipboard), Lens Cleaner, Feeds, Messages and
+  their Settings cards now say when something you asked for didn't happen. A Stop that didn't reach
+  a scan says the scan is still running; a reply that couldn't be sent stays on screen until you
+  close it.
+- **Text you cropped out of a snip no longer goes with it.** Copy text, Shelf, Paste to Claude, Ask
+  and Translate now use only the words still inside the crop (and inside a freeform outline).
+- **Cropping in the Snip studio no longer stretches the picture or misplaces new marks.** The crop
+  is an outline while you edit and is applied when you copy, save or share.
+- **Enter on a focused Snip studio button no longer also runs Copy**, and typing in the language
+  list no longer triggers shortcuts.
+- **Snip history shows the newest search** when answers arrive out of order, and says so when
+  Keep, Remove or opening a snip fails.
+- **Voice conversation no longer leaves a listener behind when interrupted**, and its hidden
+  window no longer redraws every second.
+- **Failures in Snip, voice, Magic Start and the Shelf no longer pass silently.** They are said
+  where you are, or written to the log with what was being done.
+- **Magic Start keeps the selected row in view and announces it** to screen readers.
+- **"Snip this window" and "Open in Lens Browser" now appear in the Magic window** (Snip while
+  Lens Snip is on; Lens Browser for browser windows). Snip opens in window mode with that window
+  under the pointer, so one click takes it.
+- **Windows on the wrong Dock icon.** A window Lens couldn't name (an app running as
+  administrator) could sit on any pinned app with "app" in its name, such as WhatsApp, and one
+  window could show on two pins (Notepad on both Notepad and Notepad++). A window now sits on one
+  pin: the one that is exactly its program, and only otherwise the closest name.
+- **The Dock's right-click menu could open partly off the screen** on a Dock at the left or right
+  edge, and under the Top Bar. It is placed from its real size now.
+- **Icon sizes in the Dock's right-click menu did nothing on some styles** (Slim, Taskbar, Studio,
+  Islands, Unified, or any style given its own size) and marked the wrong size. They change the
+  size you see, on every style.
+- **Top Bar buttons could stay click-through after a refused report.** The bar tells Lens where
+  its buttons are; a report Lens refused was remembered as sent and never tried again.
+- **The Launcher closed before it could say an app didn't open.** It now closes once the app has
+  been asked to open, and stays with the reason when that fails.
+- **The Top Bar redrew itself every second** to show a clock that changes once a minute. It and the
+  Dock's clock now wake on the minute, and not while hidden.
+- **Plainer names on the Dock.** Menu rows are in sentence case and say what they do ("Run as
+  administrator", "Open file location", "Add divider after", "Close all 3 windows"), the menu is a
+  real menu for screen readers, and its icons follow the theme.
+- **The hot-corner picker couldn't be clicked while Hot corners was off.** It's dimmed now, not
+  dead, so you can set corners up first; only "Try it" needs the feature on.
+- **Some Settings switches vanished or stopped responding after one click** (Animated backdrop,
+  startup apps, Animation effects). They now stay put, keep keyboard focus, and say why when
+  Windows refuses.
+- **Failures in Settings no longer pass silently.** A refused save, a page action or a Windows
+  setting that didn't change now says so in the toast or next to the control.
+- **Contrast in every theme pack.** All 87 packs now keep body text at 4.5:1 and hints, icons and
+  the accent at 3:1 on surfaces and cards. Lighter dark packs (Catppuccin, One Dark, Monokai and
+  others) get brighter secondary text, and two light packs' accents are a shade darker. The full
+  table is in docs/THEMES_AUDIT.md.
+- **The Dock could fail to show on another monitor.** Moving a window onto a monitor with other
+  scaling makes Windows resize it on the way, so the Dock (and the extra Top Bars) could end up the
+  wrong size, with the Dock pushed off the screen. Every placement is now checked and done again
+  when it didn't land, and an idle Dock goes back to its place about every two seconds, also while
+  it is auto-hidden.
+- **Pop-outs from a Dock on the left or right edge** now open on the Dock's own monitor with
+  "Follow the pointer", never over the Dock, and use the top of the screen when there is no Top Bar.
+- **Settings and Search could cover the Dock on small, highly scaled screens** (1280×720 at 150 %).
+- **After Explorer restarts, apps asking for attention still show on the Dock.**
+- **A refused window call no longer leaves the Dock or a pop-out stuck.** Closing a pop-out, the
+  Dock's click-through and its "menu closed" report are tried again, and what failed is logged.
+- **Lens's window buttons could be drawn over anti-cheat games.** The engine that draws them kept
+  its own list of four names; the shared list has 42. It now uses the shared list, as do tiling,
+  Alt+drag, the keyboard hook and pointer effects, and a test fails the build if any of them names
+  a process itself again. Fullscreen windows are skipped even when they keep a title-bar style.
+- **Apps on the window-button exclusion list still got buttons.** The list is now honoured, and
+  has a home: Settings › Windows & Keys › Window styling › Apps and window buttons, where
+  protected apps show a locked "Protected" badge.
+- **Window button styles did nothing outside Lens's own windows.** Soft, Small dots and Pills are
+  now drawn over other apps too.
+
 ### Changed
+- **Lens's own app icons are simpler and bolder.** Monitor, Timer, Notes, Calculator, Color, Power,
+  Network, Clipboard, Startup, Feeds and Messages (in the Dock, Search, Command and their title
+  bars), and Lens's apps on the website, now share one set: a thick white glyph on a plain dark
+  tile, with no colours, gradients or glow, so they stay readable at small sizes. Lens Browser keeps
+  the Lens logo, redrawn flat so it is crisp in the Dock. Other apps' icons are unchanged.
+- **Lens Apps, the core apps, Cleaner, Feeds and Messages feel like the rest of Lens.** Every button
+  declares a press weight for the new press system, small controls have 32 px targets, Lens Cleaner
+  uses the shared motion timings, and Lens Apps draws only with theme colours (the danger button's
+  white text and two fixed ambers are gone).
+- **Sentence case** for the Top Bar's button names ("Previous desktop", "Wi-Fi and network") and
+  the remaining Title Case labels in Settings; Settings controls also got consistent hover,
+  pressed and disabled states.
+- **Top Bar buttons are named in sentence case** for screen readers ("Previous track", "Volume and
+  audio mixer"). Lens Command's results and Magic's "what to act on" changes are announced.
+- **Snip's shortcut is Ctrl+Alt+X** (was Ctrl+Shift+S, which is Save As in most apps). If you never
+  changed it, it moves once; a shortcut you chose is kept. Snip's settings warn when a shortcut
+  would break a common app shortcut, and the shortcuts sheet shows the one Snip really has.
+- **The Updates card says so when updates can't run.** A build without an update key (releases
+  aren't signed yet, or a development build) shows why and a button to the Releases page instead
+  of a "Check now" that could never find anything.
 - **Lens no longer changes Windows' accent colour on its own.** Picking a Lens accent used to
   write it into Windows' accent (title bars, Start, the taskbar) as well. That's now a separate
   "Also use this accent in Windows" option under Appearance, off by default; turning it off puts
   Windows' own accent back.
 
 ### Added
+- **Magic Mouse (M3, off by default):** turning it on (Settings asks first) gives you the Lens
+  Magic pointer, the Lens cloud in a ring, at every Windows pointer size, with a high-contrast
+  variant. Hold the left button, then drag, to grab part of the screen and copy it, copy its
+  text, save it, put it on the Shelf or ask Claude about it (Claude asks before anything leaves
+  your PC). Hold and let go to open Magic. A quick click is still a click. Your own pointers come
+  back when it's off, on exit, after a crash, with Remove all, and while a game or fullscreen app
+  is in front. See docs/CURSORS.md.
+- **Unified Dock style.** One floating pill: the Launcher first, your apps, then the tray, a
+  notification bell with a count and a two-line clock (the time, and "Thu 26 Nov" below it). Pick
+  it in Settings › Dock & Bar or in the setup wizard. Settings and Search open above it at the same
+  width as on Floating.
+- **Window carousel.** Pointing at an app with two or more windows shows them as a carousel: the
+  current window large in the middle with its title and a close button, its neighbours peeking in,
+  and dots below. Scroll, use ‹ ›, the arrow keys or the dots to move; click to switch to it.
+- **Window-count marks on every Dock style.** A short dash under an app with one window, three
+  small dots under one with several.
+- **The Dock reflows smoothly** when apps are pinned, unpinned, reordered, opened or closed
+  (instant with reduced motion).
+- **Pin glyphs in the Launcher.** Apps pinned to the Dock show a small pin; right-click to pin or
+  unpin.
+- **Pointer halo switch** (Settings › Dock & Bar › Top Bar). The see-through ring that shows where
+  clicks pass through the Top Bar can be turned off, and it is never drawn while Windows'
+  transparency effects are off.
+- **How long pop-outs wait before closing** (Settings › Dock & Bar › Advanced › Close after): Short,
+  Normal (the old 1.5 s / 1.8 s) or Long, for Quick Settings and Settings on the Dock.
+- **Safety card** (Settings › About & Testing › Safety net): what Lens changes on this PC, from
+  the same list Remove all walks; what it never touches; the keys that always reach Windows; Safe
+  Mode; holding Shift at sign-in to skip Lens; and buttons to Report a problem and Remove all.
+- **Window buttons on the left** (Apps and window buttons › Buttons on the): used where a window's
+  title bar is free on the left; apps with tabs or tools there keep their buttons on the right.
+- **Command teaches where settings live.** After Command changes a setting, the card says where to
+  find it ("Settings › Dock & Bar › Dock style") with a "Show me" link.
+- **Magic Start and Shelf to Notes (M4, off by default):** with the Magic button on, a Windows-key
+  tap opens Lens Magic Start (search, pinned apps, Magic actions, recent files and Shelf items, Lock
+  and Windows Start). Ctrl+Esc always opens Windows Start, Win+key shortcuts are untouched, and if
+  Lens doesn't answer within 300 ms Windows Start opens instead. With Shelf to Notes on, "Make a
+  note" in the Shelf saves a note to Lens Notes, exports it as Markdown, text or PDF, or sends it to
+  a Matrix room after you approve the exact text. See docs/MAGIC.md and docs/SHELF.md.
+- **Dashboard widgets and X (M2, off by default):** with Magic Dashboard and Widgets on, the
+  Dashboard's Widgets lane takes widgets from a small gallery (weather, a news feed, a GitHub
+  release, crypto prices, world clocks, this PC). Each one shows the sites it will fetch from and
+  asks before it's added; Sources lists every approved site with Remove and a switch that stops all
+  widget fetching. Lens does the fetching (https only, never this PC or the local network). The X
+  lane shows X's own timeline embed with your OK, plus an Open X button. Every card has "Ask about
+  this", which puts only that card's words into Ask. Empty Inbox, Feeds and Today lanes open the
+  place that fills them. See docs/DASHBOARD.md.
+- **Magic Dashboard (M1, off by default):** with Magic Dashboard on, "dashboard" in Command or the
+  Top Bar button opens a slim panel with Inbox, Feeds, Today, Shelf and Now playing lanes filled
+  from Lens's own data, in Glance, Focus or Board. Nothing is fetched from the network. Learned
+  ordering stays off unless you turn it on, and can be forgotten. See docs/DASHBOARD.md.
 - **Magic previews (off by default):** the groundwork for the Magic Dashboard, Magic Mouse, the
   Magic button, Shelf to Notes and Lens Studio v2. Nothing changes unless you turn one on in
   Settings › About & Testing › Magic (preview), which only appears in Tester mode. See
@@ -66,6 +348,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
   self-test, which features are on), see exactly what will be shared with user names, e-mail
   addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
   uploads nothing itself.
+
+### Developer
+- **Lens Mission Control** (dev builds only, docs/MISSION_CONTROL.md): the maintainer's admin
+  window for running the project. Pulse (main CI, Pages, PRs, release, dev folder, bugs, research
+  top 3, trends), a PR board with READY / WAIT / BLOCKED and known-flake detection, one bugs
+  inbox, ranked suggestions from research, the combinator and Fable notes, real-PC checklists,
+  roadmap, quality (tests, flaky-test leaderboard, perf budgets, goldens), releases, dev folder,
+  the local Lens, schedules and agents with "Copy brief", and the project brain. Read-only by
+  default; every write is shown exactly and confirmed, and goes to a local audit log. The GitHub
+  token stays in Windows Credential Manager. It is compiled only with the `admin` feature that
+  Launch-Lens-UI.bat's dev build turns on; release builds can't include it, and CI checks that.
 
 ## [0.3.0] - 2026-11-24
 

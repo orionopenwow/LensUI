@@ -273,7 +273,7 @@ export const WallpaperCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
             }}
           />
           <div>
-            <div className="cc-label">Wallpaper Accent</div>
+            <div className="cc-label">Wallpaper accent</div>
             <div className="cc-desc">
               {measured
                 ? `${measured}, taken from the Lens wallpaper.`

@@ -1,11 +1,13 @@
 // The magic right-click window: one compact window at the cursor with what's under the pointer,
 // the matching actions, window actions, an Ask box, and inline answers and approvals.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { editDesktopWidgets } from "../deskwidgets/api";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Bookmark, BookmarkPlus, Globe, Layers, Lightbulb, Maximize2, Minus, Monitor, PanelLeft, PanelRight, Palette, Pin,
   Scissors, X, ArrowUpRight, Copy, CornerDownLeft, type LucideIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import { useAiRequest } from "../ai/client";
@@ -20,14 +22,15 @@ import {
   type MagicConfig, type MagicOpen, type MagicTarget,
 } from "./contract";
 import {
-  attachedSummary, buildRequest, initialKeys, kindLabel, localKind, markdownFor, NO_CAPS, onKey, openLatency,
+  attachedSummary, buildRequest, initialKeys, kindLabel, localKind, markdownFor, onKey, runtimeCaps, openLatency,
   rowsFor, toneOf, visibleRows, appName, type Caps, type KeyState, type Mode, type Row,
 } from "./model";
 import "./magic.css";
+import { logFail, quiet, retryOnce } from "../failsafe/calls";
 
 const EXTRA_ICONS: Record<string, LucideIcon> = {
   minus: Minus, maximize: Maximize2, "panel-left": PanelLeft, "panel-right": PanelRight, monitor: Monitor, layers: Layers,
-  pin: Pin, palette: Palette, scissors: Scissors, "bookmark-plus": BookmarkPlus, globe: Globe, lightbulb: Lightbulb, x: X,
+  pin: Pin, palette: Palette, scissors: Scissors, "bookmark-plus": BookmarkPlus, globe: Globe, lightbulb: Lightbulb, x: X, "layout-grid": LayoutGrid,
 };
 
 function RowIcon({ name }: { name: string }) {
@@ -41,6 +44,9 @@ type Result =
   | { type: "note"; text: string; ok: boolean; undo?: { label: string; action: string } }
   | { type: "confirm"; row: Row; title: string; detail: string; verb: string }
   | { type: "workspace" };
+
+/** Time for the Magic window to leave the screen before Snip freezes it. */
+const SNIP_AFTER_HIDE_MS = 140;
 
 export interface MagicInitial {
   open: MagicOpen;
@@ -149,7 +155,10 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const [provider, setProvider] = useState(initial?.provider ?? { label: "Local", local: true });
   const ai = useAiRequest();
   const run: AiRunState = initial?.run ?? (result?.type === "ai" ? ai : INITIAL_RUN);
-  const caps = initial?.caps ?? NO_CAPS;
+  const [deskOn, setDeskOn] = useState(false);
+  const [snipOn, setSnipOn] = useState(false);
+  // The preview passes its own; at runtime they are read on each open (B-70).
+  const caps = useMemo(() => initial?.caps ?? runtimeCaps({ snipOn, desktopWidgets: deskOn }), [initial?.caps, snipOn, deskOn]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const targets = open?.targets ?? [];
@@ -158,25 +167,27 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const rows = visibleRows(set, keys);
 
   const hide = useCallback(() => {
-    if (!preview) void magicHide().catch(() => {});
+    if (!preview) void retryOnce(magicHide, "Magic", "close the Magic window");
   }, [preview]);
 
   // Settings, right-click order and usage are read each time the window opens (cheap, local).
   const refresh = useCallback(() => {
     if (preview) return;
-    magicGetConfig().then((c) => setCfg(c)).catch(() => {});
+    magicGetConfig().then((c) => setCfg(c)).catch(quiet);
+    invoke<boolean>("desktop_widgets_available").then((v) => setDeskOn(!!v)).catch(quiet);
+    invoke<{ settings?: { enabled?: boolean } }>("snip_status").then((s) => setSnipOn(!!s?.settings?.enabled)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
         setUsage(s?.usage ?? {});
       })
-      .catch(() => {});
+      .catch(quiet);
     invoke<{ active: string; providers: { id: string; label: string; is_local: boolean }[] }>("ai_status")
       .then((s) => {
         const p = s.providers.find((x) => x.id === s.active);
         if (p) setProvider({ label: p.label, local: p.is_local });
       })
-      .catch(() => {});
+      .catch(quiet);
   }, [preview]);
 
   // A row already picked in a Lens menu's "Lens ›" panel (src/magic/LensPan.tsx): run it once
@@ -194,7 +205,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       refresh();
       requestAnimationFrame(() => {
         inputRef.current?.focus();
-        void magicReportOpen(openLatency(p.atMs, Date.now()), p.resolveMs).catch(() => {});
+        void magicReportOpen(openLatency(p.atMs, Date.now()), p.resolveMs).catch(quiet);
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,14 +217,14 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
     let un: (() => void) | undefined;
     let alive = true;
     onMagicOpen(accept).then((u) => (alive ? (un = u) : u()));
-    magicLast().then((p) => p && alive && accept(p)).catch(() => {});
+    magicLast().then((p) => p && alive && accept(p)).catch(quiet);
     let unFocus: (() => void) | undefined;
     getCurrentWindow()
       .onFocusChanged(({ payload }) => {
         if (!payload) hide();
       })
       .then((u) => (alive ? (unFocus = u) : u()))
-      .catch(() => {});
+      .catch(logFail("Magic", "watch for focus leaving the window"));
     return () => {
       alive = false;
       un?.();
@@ -225,7 +236,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
 
   const runRow = async (row: Row) => {
     if (!t) return;
-    if (row.action && !preview) void contextMenuRecordUse(row.action.id).catch(() => {});
+    if (row.action && !preview) void contextMenuRecordUse(row.action.id).catch(quiet);
     if (preview) return;
     const kind = localKind(row);
     try {
@@ -235,8 +246,13 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
           return setResult({ type: "confirm", row, title: `Close ${appName(t)}?`, detail: "The app may ask to save first.", verb: "Close" });
         }
         if (verb === "workspace") return setResult({ type: "workspace" });
+        if (verb === "desktop-widgets") {
+          hide();
+          const err = await editDesktopWidgets();
+          return err ? note(err, false) : undefined;
+        }
         if (verb === "rule") {
-          await invoke("open_surface", { label: "settings" }).catch(() => {});
+          await invoke("open_surface", { label: "settings" }).catch(logFail("Magic", "open Settings"));
           return note("Opened Settings › Windows & Quick to style this app.");
         }
         if (verb === "shelf") {
@@ -245,8 +261,13 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
         }
         if (verb === "tips") return ask(`Give me five practical tips for ${appName(t)}.`, "Tips");
         if (verb === "snip") {
-          await invoke("snip_window", { hwnd: t.window });
-          return hide();
+          // Magic steps aside first so it is not in the picture, then Snip opens in window mode
+          // with this window under the pointer: one click takes it. (There was no `snip_window`
+          // command; this row could never have run.)
+          hide();
+          await new Promise((r) => setTimeout(r, SNIP_AFTER_HIDE_MS));
+          await invoke("snip_start", { mode: "window", delay: null });
+          return;
         }
         if (verb === "browser") {
           await invoke("browser_open", { url: null });
@@ -276,6 +297,11 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
           return note("Transcribing… you'll find it in Lens Command.");
         }
         return note("Use “Get transcript” from the Lens browser extension for web videos.", false);
+      }
+      if (kind === "search") {
+        // Lens Magic Search in its own pop-out (or Lens Browser's side panel when it is in front).
+        await invoke("magic_search_open", { query: t.text ?? t.url ?? t.path ?? t.label, action: null });
+        return hide();
       }
       if (kind === "command") {
         await invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: t.text ?? t.url ?? t.path ?? t.label } });
@@ -382,7 +408,8 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
       aria-label={`Lens — ${kindLabel(t.kind)}: ${t.label}`}
     >
       <header className="magic-head">
-        <div className="magic-target">
+        {/* Announced when ← → or a chip changes what Magic acts on (screen readers). */}
+        <div className="magic-target" aria-live="polite" aria-atomic="true">
           <span className={`magic-dot is-${tone}`} aria-hidden />
           <span className="magic-mono magic-kind">{kindLabel(t.kind).toUpperCase()}</span>
           <span className="magic-label">{t.label}</span>
@@ -516,7 +543,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
                   type="button"
                   className="magic-btn is-primary"
                   onClick={() =>
-                    void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: keys.query } }).then(hide).catch(() => {})
+                    void invoke("show_command_cmd", { payload: { layout: "full", mode: "ask", text: keys.query } }).then(hide).catch(logFail("Magic", "open Lens Command"))
                   }
                 >
                   Continue in Command <ArrowUpRight size={14} aria-hidden />
@@ -586,7 +613,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
           type="button"
           className="magic-link"
           onClick={() =>
-            !preview && void invoke("show_command_cmd", { payload: { layout: "full", text: keys.query || undefined } }).then(hide).catch(() => {})
+            !preview && void invoke("show_command_cmd", { payload: { layout: "full", text: keys.query || undefined } }).then(hide).catch(logFail("Magic", "open Lens Command"))
           }
         >
           Expand to Command <ArrowUpRight size={12} aria-hidden />

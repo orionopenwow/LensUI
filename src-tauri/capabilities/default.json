@@ -19,9 +19,13 @@
     "command",
     "edgeshelf",
     "bubble",
+    "magicsearch",
     "snip",
     "snip-*",
     "magic",
+    "dashboard",
+    "deskwidgets",
+    "magicstart",
     "topbar-*",
     "testerhub",
     "studio",
@@ -33,7 +37,8 @@
     "cleaner",
     "presence",
     "coreapp-*",
-    "presencebar"
+    "presencebar",
+    "missioncontrol"
   ],
   "permissions": [
     "core:default",

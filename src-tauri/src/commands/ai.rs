@@ -36,7 +36,7 @@ impl AiSink for TauriSink {
         // the pill, the approval window and the surface that asked all show the same request.
         if ev.risk == crate::ai::tools::Risk::Confirm {
             let preview = proposal_preview(&self.app, ev);
-            if crate::win_mcp::enqueue_local("ai", &ev.call_id, &ev.tool, &ev.args, &ev.summary, "Lens", preview).is_ok() {
+            if crate::win_mcp::enqueue_local_with("ai", &ev.call_id, &ev.tool, &ev.args, &ev.summary, "Lens", preview, ev.approval_token.clone()).is_ok() {
                 let _ = self.app.emit("lens://mcp-changed", ());
             }
         }
@@ -288,8 +288,10 @@ pub(crate) fn ai_cancel(id: String) -> bool {
 }
 
 #[tauri::command]
-pub(crate) fn ai_confirm_tool(call_id: String, approve: bool) -> Result<(), String> {
-    ai::runtime().approvals.resolve(&call_id, approve)
+pub(crate) fn ai_confirm_tool(call_id: String, approve: bool, token: Option<String>) -> Result<(), String> {
+    // An approval carries the one-time token from the proposal; the runner refuses the step if
+    // it isn't that step's own (agentsafe::step_token). Declining needs none.
+    ai::runtime().approvals.resolve(&call_id, approve, token.as_deref())
 }
 
 #[tauri::command]

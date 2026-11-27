@@ -295,8 +295,8 @@ After you click **Look inside** and **Allow and count**, Lens reads one profile 
 ## AI only if you want it / Free, bring your own model
 
 `settings.ai`: a master switch plus Agent in new tabs, Page summaries, Ask in address bar and
-Transcripts. With the master off: the Ask and Transcript panels, approve pill, reader view,
-Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; "ask …"
+Transcripts. With the master off: the Ask and Transcript panels, approve pill, the reader view's Summarise
+and Ask buttons (the reader view itself is local and stays), Ask-on-Find, Glance summaries and every AI item in the page's right-click menu are hidden; "ask …"
 in the address bar becomes a web search; and `browser_agent_act` refuses to run. The provider
 row lists what `ai_status` reports (offline commands, local models, Claude, OpenAI-compatible
 endpoints) with no tiers, and links to Settings › AI & Command.

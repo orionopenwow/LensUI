@@ -12,7 +12,7 @@ import "./settings.css";
 export const WinLink: React.FC<{ uri: string; label?: string; compact?: boolean }> = ({ uri, label = "Open in Windows Settings", compact }) => {
   const [err, setErr] = useState<string | null>(null);
   return (
-    <button
+    <button data-weight="light"
       type="button"
       className={`cc-chip sh-winlink ${compact ? "compact" : ""}`}
       onClick={() => {
@@ -68,7 +68,7 @@ export const HeroTile: React.FC<{
     </>
   );
   return onClick ? (
-    <button
+    <button data-weight="medium"
       type="button"
       className={`sh-hero-tile clickable ${active ? "active" : ""}`}
       aria-pressed={active}
@@ -100,7 +100,7 @@ export const Section: React.FC<{
   return (
     <section className={`tux-section sh-section ${open ? "open" : ""}`} data-section={id} id={`sec-${id}`}>
       <div className="sh-section-headrow">
-        <button
+        <button data-weight="medium"
           type="button"
           className="tux-section-head"
           aria-expanded={open}

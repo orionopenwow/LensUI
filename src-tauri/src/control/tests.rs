@@ -273,6 +273,120 @@ fn batch_applies_atomically_with_one_undo() {
     assert!(e.undo_settings(&m, &e.undo_target(Some(&rec.id)).unwrap()).is_err(), "can't undo twice");
 }
 
+fn journal_engine(path: &std::path::Path) -> Engine {
+    Engine::with_journal(catalogue::build(&default_stores()), path.to_path_buf())
+}
+
+fn journal_dir(tag: &str) -> PathBuf {
+    let dir = std::env::temp_dir().join(format!("lens-undo-{}-{}", tag, std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    dir
+}
+
+#[test]
+fn undo_survives_a_restart() {
+    let path = journal_dir("restart").join("control").join("undo.jsonl");
+    let m = Mem::new();
+    let before = m.snapshot();
+    let first_id;
+    {
+        let e = journal_engine(&path);
+        let plan = e.plan(&m, &changes(json!({ "theme.preset": "nord-frost", "dock.style": "slim" }))).unwrap();
+        first_id = e.apply(&m, &plan, "Claude Desktop", "Nord", 1_000).unwrap().id;
+        let plan = e.plan(&m, &changes(json!({ "windowStyling.dimInactive": 20 }))).unwrap();
+        e.apply(&m, &plan, "Claude Desktop", "Dim", 2_000).unwrap();
+    }
+    // "Restart": a new engine on the same journal; the stores kept their changed values.
+    let e = journal_engine(&path);
+    assert_eq!(e.history().len(), 2);
+    let newest = e.undo_target(None).unwrap();
+    assert_eq!(newest.summary, "Dim");
+    e.undo_settings(&m, &newest).unwrap();
+    let older = e.undo_target(None).unwrap();
+    assert_eq!(older.id, first_id);
+    e.undo_settings(&m, &older).unwrap();
+    assert_eq!(m.snapshot(), before, "undo after a restart restores exactly");
+    // "Undone" is remembered too: a third engine has nothing left to undo.
+    let e = journal_engine(&path);
+    assert!(e.undo_target(None).is_none());
+    assert!(e.undo_settings(&m, &e.undo_target(Some(&first_id)).unwrap()).is_err(), "can't undo twice, even across restarts");
+    // New ids never repeat one from the journal.
+    let plan = e.plan(&m, &changes(json!({ "dock.style": "slim" }))).unwrap();
+    let rec = e.apply(&m, &plan, "x", "again", 1_000).unwrap();
+    assert!(e.history().iter().filter(|r| r.id == rec.id).count() == 1);
+    assert_ne!(rec.id, first_id);
+    let _ = std::fs::remove_dir_all(path.parent().unwrap().parent().unwrap());
+}
+
+#[test]
+fn the_undo_journal_is_bounded() {
+    let path = journal_dir("bound").join("undo.jsonl");
+    let e = journal_engine(&path);
+    let m = Mem::new();
+    for i in 0..(engine::UNDO_DEPTH + 15) {
+        let style = if i % 2 == 0 { "slim" } else { "floating" };
+        let plan = e.plan(&m, &changes(json!({ "dock.style": style }))).unwrap();
+        e.apply(&m, &plan, "x", &format!("step {}", i), i as u64).unwrap();
+    }
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(text.lines().count(), engine::UNDO_DEPTH);
+    assert!(text.len() <= engine::UNDO_JOURNAL_MAX_BYTES);
+    let back = engine::load_undo_journal(&path);
+    assert_eq!(back.len(), engine::UNDO_DEPTH);
+    assert_eq!(back.back().unwrap().summary, format!("step {}", engine::UNDO_DEPTH + 14), "the newest steps are the ones kept");
+    assert!(!path.with_extension("jsonl.tmp").exists(), "no half-written file is left behind");
+
+    // The byte limit drops the oldest steps first, and one huge step is not written at all.
+    let big = |id: &str, n: usize| engine::UndoRecord {
+        id: id.into(),
+        client: "x".into(),
+        summary: "s".into(),
+        ts: 1,
+        changes: vec![engine::Change { path: "p".into(), label: "l".into(), before: json!("a".repeat(n)), after: json!(1) }],
+        window: None,
+        capabilities: vec![],
+        undone: false,
+    };
+    let mut q = std::collections::VecDeque::new();
+    for i in 0..8 {
+        q.push_back(big(&format!("undo-1-{}", i), 100 * 1024));
+    }
+    q.push_back(big("undo-1-huge", engine::UNDO_RECORD_MAX_BYTES + 10));
+    let text = engine::undo_journal_text(&q);
+    assert!(text.len() <= engine::UNDO_JOURNAL_MAX_BYTES);
+    assert!(!text.contains("undo-1-huge"));
+    assert!(text.contains("undo-1-7") && !text.contains("undo-1-0\""), "newest kept, oldest dropped");
+    let _ = std::fs::remove_dir_all(path.parent().unwrap());
+}
+
+#[test]
+fn a_damaged_undo_journal_costs_only_the_damaged_lines() {
+    let dir = journal_dir("damaged");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("undo.jsonl");
+    let good = |id: &str| json!({ "id": id, "client": "c", "summary": "s", "ts": 1, "changes": [{ "path": "dock.style", "label": "Dock style", "before": "floating", "after": "slim" }], "capabilities": [], "undone": false }).to_string();
+    let window = json!({ "id": "undo-1-9", "client": "c", "summary": "Moved Word", "ts": 1, "changes": [], "window": { "hwnd": 101, "action": { "action": "restore" } }, "capabilities": [], "undone": false }).to_string();
+    std::fs::write(&path, format!("{}\nnot json at all\n{{\"id\": 5}}\n\n{}\n{}\n{{\"id\":\"undo-1-3\",\"cli", good("undo-1-1"), window, good("undo-1-2"))).unwrap();
+    let q = engine::load_undo_journal(&path);
+    assert_eq!(q.iter().map(|r| r.id.as_str()).collect::<Vec<_>>(), ["undo-1-1", "undo-1-2"]);
+    // A window step from before a restart is never replayed: the handle may be another window now.
+    assert!(q.iter().all(|r| r.window.is_none()));
+    // No journal at all is an empty stack, not an error.
+    assert!(engine::load_undo_journal(&dir.join("missing.jsonl")).is_empty());
+    assert!(journal_engine(&dir.join("missing.jsonl")).undo_target(None).is_none());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn window_steps_stay_in_memory_only() {
+    let path = journal_dir("window").join("undo.jsonl");
+    let e = journal_engine(&path);
+    e.record_window("x", "Moved Word", engine::WindowUndo { hwnd: 101, action: json!({ "action": "restore" }) }, vec![Capability::ArrangeWindows], 5);
+    assert!(e.undo_target(None).unwrap().window.is_some(), "undoable now");
+    assert_eq!(std::fs::read_to_string(&path).unwrap_or_default(), "", "but not written down");
+    let _ = std::fs::remove_dir_all(path.parent().unwrap());
+}
+
 #[test]
 fn failed_store_rolls_back_everything() {
     let e = engine();

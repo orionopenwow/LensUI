@@ -7,6 +7,8 @@ import { PendingPill, useApprovalHotkey, usePendingApprovals } from "../approval
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { captureFlip, type FlipCapture } from "../ui/motion";
 import { invoke } from "@tauri-apps/api/core";
+import { logFail, quiet, retryOnce } from "../failsafe/calls";
+import { useMinuteClock } from "../hooks/useMinuteClock";
 import { listen } from "@tauri-apps/api/event";
 import {
   ChevronLeft,
@@ -36,20 +38,22 @@ import { BatteryTopBarModule } from "../components/BatteryModule";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { resolveSystemArea } from "../dock/styles";
 import { TesterBadge } from "../tester/TesterHub";
+import { RemotePill } from "../music/RemotePill";
 import "./TopBarSurface.css";
-import { useTopbarClickThrough } from "../topbar/clickThrough";
+import { haloAllowed, useTopbarClickThrough } from "../topbar/clickThrough";
 import { TopBarDashboardButton } from "../dashboard/TopBarDashboardButton";
 
 export const TopBarSurface: React.FC = () => {
-  const { config } = useLensState();
+  const { config, winTheme } = useLensState();
   // Taskbar / Studio / Split (or systemArea "dock") show the clock and system icons in the Dock.
-  const systemInDock = !!config && resolveSystemArea(config.dock) === "dock";
-  const [now, setNow] = useState(() => new Date());
+  const systemInDock = !!config && resolveSystemArea(config.dock, config.topBar) === "dock";
   const approvals = usePendingApprovals();
   // The global hotkey for the approval window, once Lens has registered one (B-14).
   const approvalKey = useApprovalHotkey();
   const musicMini = useMiniPlacement();
   const [visible, setVisible] = useState(true);
+  // The clock shows hours and minutes: it wakes on the minute, and not while the bar is hidden.
+  const now = useMinuteClock(visible);
   // Phase-driven (src/topbar/searchMachine.ts): searchOpen is derived, so the bubble can't flicker.
   const [searchPhase, setSearchPhase] = useState<SearchPhase>("closed");
   const searchOpen = isExpanded(searchPhase);
@@ -60,15 +64,17 @@ export const TopBarSurface: React.FC = () => {
   const barRef = React.useRef<HTMLElement>(null);
   // Click-through: empty parts of the bar pass clicks to the app behind; the halo shows where.
   const halo = useTopbarClickThrough(barRef);
+  const haloOk = haloAllowed(config?.topBar, winTheme);
   useLayoutEffect(() => {
     const bar = barRef.current;
     if (!bar) return;
-    bar.dataset.halo = halo.on ? "on" : "off";
-    if (halo.on) {
+    const on = halo.on && haloOk;
+    bar.dataset.halo = on ? "on" : "off";
+    if (on) {
       bar.style.setProperty("--tb-hx", `${halo.x}px`);
       bar.style.setProperty("--tb-hy", `${halo.y}px`);
     }
-  }, [halo]);
+  }, [halo, haloOk]);
   const searchFlip = React.useRef<FlipCapture | null>(null);
   const searchDo = (ev: SearchEvent, query = "") => {
     const r = searchStep(searchPhaseRef.current, ev);
@@ -80,8 +86,9 @@ export const TopBarSurface: React.FC = () => {
     }
     searchPhaseRef.current = r.phase;
     setSearchPhase(r.phase);
-    if (r.effect === "sync-open") invoke("sync_topbar_search_cmd", { query, open: true }).catch(() => {});
-    if (r.effect === "sync-close") invoke("sync_topbar_search_cmd", { query: "", open: false }).catch(() => {});
+    // Keeps the bar and Search in step: retried once, so a refused call can't leave Search open.
+    if (r.effect === "sync-open") void retryOnce(() => invoke("sync_topbar_search_cmd", { query, open: true }), "Top Bar", "open Search");
+    if (r.effect === "sync-close") void retryOnce(() => invoke("sync_topbar_search_cmd", { query: "", open: false }), "Top Bar", "close Search");
     if (r.phase === "opening") window.setTimeout(() => searchDo("opened"), 220);
     if (r.phase === "closing") window.setTimeout(() => searchDo("closed"), 220);
   };
@@ -112,7 +119,8 @@ export const TopBarSurface: React.FC = () => {
         .then((m) => {
           if (alive) setMedia(m.hasSession ? m : null);
         })
-        .catch(() => {});
+        // A poll: the next one asks again.
+        .catch(quiet);
     };
     pollMedia();
     const mt = window.setInterval(pollMedia, 2000);
@@ -125,8 +133,8 @@ export const TopBarSurface: React.FC = () => {
   useEffect(() => {
     invoke<boolean>("get_topbar_visible_cmd")
       .then((v) => setVisible(v))
-      .catch(() => {});
-    const t = window.setInterval(() => setNow(new Date()), 1000);
+      // Stays "shown" until the watcher's next lens://topbar-visible says otherwise.
+      .catch(quiet);
     const unlisten = listen<boolean>("lens://topbar-visible", (e) => {
       setVisible(e.payload);
     });
@@ -141,7 +149,6 @@ export const TopBarSurface: React.FC = () => {
     const onBlur = () => {};
     window.addEventListener("blur", onBlur);
     return () => {
-      window.clearInterval(t);
       window.removeEventListener("blur", onBlur);
       unlisten.then((fn) => fn());
       unlistenSearch.then((fn) => fn());
@@ -163,7 +170,7 @@ export const TopBarSurface: React.FC = () => {
           type="button"
           className="topbar-icon-btn"
           style={{ height: 22, padding: "0 6px" }}
-          onClick={() => invoke("toggle_surface", { label: "launcher" }).catch(() => {})}
+          onClick={() => invoke("toggle_surface", { label: "launcher" }).catch(logFail("Top Bar", "open the Launcher"))}
           aria-label="Open Launcher"
         >
           <LayoutGrid size={14} strokeWidth={2.5} />
@@ -172,7 +179,7 @@ export const TopBarSurface: React.FC = () => {
           type="button"
           className="topbar-icon-btn"
           style={{ height: 22, padding: "0 6px" }}
-          onClick={() => invoke("toggle_surface", { label: "overview" }).catch(() => {})}
+          onClick={() => invoke("toggle_surface", { label: "overview" }).catch(logFail("Top Bar", "show all windows"))}
           aria-label="Show all windows"
         >
           <Layers size={14} strokeWidth={2.5} />
@@ -186,7 +193,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "left" })}
-      aria-label="Previous Desktop"
+      aria-label="Previous desktop"
     >
       <ChevronLeft size={14} strokeWidth={2.3} />
     </button>
@@ -196,7 +203,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 8px", fontSize: 11.5, fontWeight: 500 }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "overview" })}
-      aria-label="Desktops Overview"
+      aria-label="Desktops overview"
     >
       <Layers size={13} strokeWidth={2.2} />
       <span>Desktops</span>
@@ -207,7 +214,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "right" })}
-      aria-label="Next Desktop"
+      aria-label="Next desktop"
     >
       <ChevronRight size={14} strokeWidth={2.3} />
     </button>
@@ -217,7 +224,7 @@ export const TopBarSurface: React.FC = () => {
       className="topbar-icon-btn"
       style={{ height: 22, padding: "0 5px" }}
       onClick={() => invoke("switch_virtual_desktop_cmd", { direction: "new" })}
-      aria-label="New Desktop"
+      aria-label="New desktop"
     >
       <Plus size={14} strokeWidth={2.3} />
     </button>
@@ -244,13 +251,13 @@ export const TopBarSurface: React.FC = () => {
               <button
                 type="button"
                 className="topbar-media-btn"
-                aria-label="Previous Track"
+                aria-label="Previous track"
                 onClick={() => {
-                  invoke("media_control_cmd", { action: "prev" }).catch(() => {});
+                  invoke("media_control_cmd", { action: "prev" }).catch(logFail("Top Bar", "go to the previous track"));
                   window.setTimeout(() => {
                     invoke<MediaNowPlaying>("get_media_now_playing_cmd")
                       .then((m) => setMedia(m.hasSession ? m : null))
-                      .catch(() => {});
+                      .catch(quiet);
                   }, 250);
                 }}
               >
@@ -262,7 +269,7 @@ export const TopBarSurface: React.FC = () => {
                 aria-label={media.isPlaying ? "Pause" : "Play"}
                 onClick={() => {
                   setMedia((prev) => (prev ? { ...prev, isPlaying: !prev.isPlaying } : prev));
-                  invoke("media_control_cmd", { action: "play_pause" }).catch(() => {});
+                  invoke("media_control_cmd", { action: "play_pause" }).catch(logFail("Top Bar", "play or pause"));
                 }}
               >
                 {media.isPlaying ? (
@@ -274,13 +281,13 @@ export const TopBarSurface: React.FC = () => {
               <button
                 type="button"
                 className="topbar-media-btn"
-                aria-label="Next Track"
+                aria-label="Next track"
                 onClick={() => {
-                  invoke("media_control_cmd", { action: "next" }).catch(() => {});
+                  invoke("media_control_cmd", { action: "next" }).catch(logFail("Top Bar", "go to the next track"));
                   window.setTimeout(() => {
                     invoke<MediaNowPlaying>("get_media_now_playing_cmd")
                       .then((m) => setMedia(m.hasSession ? m : null))
-                      .catch(() => {});
+                      .catch(quiet);
                   }, 250);
                 }}
               >
@@ -295,10 +302,10 @@ export const TopBarSurface: React.FC = () => {
         {/* Magic Dashboard (renders nothing while magicWaves.dashboard is off; docs/plans/MAGIC_WAVES.md). */}
         <TopBarDashboardButton config={config} />
         {/* Music mini player (shows only while something plays; docs/MUSIC.md §3). */}
-        {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})} />}
+        {musicMini === "topbar" && <MiniPlayer variant="topbar" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(logFail("Top Bar", "open Now Playing"))} />}
         {/* "Approve N actions" (shows only when an AI app is waiting; docs/CLAUDE_CONTROL.md §3). */}
         {approvals.requests.length > 0 && (
-          <PendingPill count={approvals.requests.length} shortcut={approvalKey} onOpen={() => invoke("open_surface", { label: "approval" }).catch(() => {})} />
+          <PendingPill count={approvals.requests.length} shortcut={approvalKey} onOpen={() => invoke("open_surface", { label: "approval" }).catch(logFail("Top Bar", "open the approval card"))} />
         )}
         {/* "C: · 9.6 GB left" (only with Lens Cleaner's low-space alert on; docs/CLEANER.md). */}
         <LowSpacePill />
@@ -309,6 +316,7 @@ export const TopBarSurface: React.FC = () => {
         </button>
         <div
           className={`topbar-search-well ${searchOpen ? "is-open" : ""}`}
+          data-opens="palette"
           onClick={() => {
             if (!searchOpen) {
               setSearchQuery("");
@@ -332,7 +340,7 @@ export const TopBarSurface: React.FC = () => {
             onChange={(e) => {
               const v = e.target.value;
               setSearchQuery(v);
-              invoke("sync_topbar_search_cmd", { query: v, open: true }).catch(() => {});
+              invoke("sync_topbar_search_cmd", { query: v, open: true }).catch(logFail("Top Bar", "search for that"));
             }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
@@ -342,7 +350,7 @@ export const TopBarSurface: React.FC = () => {
                 topSearchInputRef.current?.blur();
               } else if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") {
                 e.preventDefault();
-                invoke("dock_search_nav_cmd", { key: e.key }).catch(() => {});
+                invoke("dock_search_nav_cmd", { key: e.key }).catch(logFail("Top Bar", "move through the results"));
                 if (e.key === "Enter") {
                   searchPhaseRef.current = "closing";
                   setSearchPhase("closing");
@@ -373,6 +381,7 @@ export const TopBarSurface: React.FC = () => {
         {config?.tester?.enabled && (
           <TesterBadge onClick={() => invoke("toggle_surface", { label: "testerhub" }).catch(() => {})} />
         )}
+        {config?.tester?.enabled && <RemotePill />}
         {!systemInDock && (
           <>
           <div className="topbar-utility-group">
@@ -382,7 +391,7 @@ export const TopBarSurface: React.FC = () => {
               <button
                 type="button"
                 className="topbar-util-icon"
-                onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(() => {})}
+                onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(logFail("Top Bar", "show the system tray"))}
                 aria-label="Show system tray for a few seconds"
               >
                 <ChevronUp size={16} strokeWidth={2.6} />
@@ -391,6 +400,7 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "notifications", section: "notifications" })
@@ -407,33 +417,36 @@ export const TopBarSurface: React.FC = () => {
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "network", section: "network" })
               }
-              aria-label="Wi-Fi and Network"
+              aria-label="Wi-Fi and network"
             >
               <Wifi size={16} strokeWidth={2.6} />
             </button>
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "audio", section: "audio" })
               }
-              aria-label="Volume and Audio Mixer"
+              aria-label="Volume and audio mixer"
             >
               <Volume2 size={16} strokeWidth={2.6} />
             </button>
 
             <button
               type="button"
+              data-opens="quicksettings"
               className="topbar-util-icon"
               onClick={() =>
                 invoke("open_quicksettings_tab_cmd", { tab: "quick", section: "quick" })
               }
-              aria-label="Quick Settings"
+              aria-label="Quick settings"
             >
               <Settings size={15.5} strokeWidth={2.55} />
             </button>
@@ -441,6 +454,7 @@ export const TopBarSurface: React.FC = () => {
 
           <button
             type="button"
+              data-opens="quicksettings"
             className="topbar-clock"
             onClick={() =>
               invoke("open_quicksettings_tab_cmd", { tab: "calendar", section: "calendar" })

@@ -29,7 +29,6 @@ export type PageId =
   | "gaming"
   // Status
   | "tasks"
-  | "notifications"
   | "about";
 
 export interface SectionDef {
@@ -106,10 +105,18 @@ export const PAGES: PageDef[] = [
     icon: "dock",
     color: "#60A5FA",
     controls: ["Dock style", "Screen edge", "Auto-hide"],
-    keywords: ["dock", "taskbar", "top bar", "menu bar", "magnification", "auto hide", "pin", "launcher", "clock", "tray", "labels", "slim", "floating", "islands"],
+    keywords: ["dock", "taskbar", "top bar", "menu bar", "magnification", "auto hide", "pin", "launcher", "clock", "tray", "labels", "slim", "floating", "islands", "unified"],
     sections: [
-      { id: "style", label: "Dock style", keywords: ["floating", "slim", "taskbar", "studio", "minimal", "split"] },
-      { id: "behaviour", label: "Behaviour", keywords: ["auto hide", "magnification", "previews", "lock"] },
+      { id: "style", label: "Dock style", keywords: ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified", "one pill"] },
+      { id: "behaviour", label: "Behaviour", keywords: ["auto hide", "previews", "lock"] },
+      {
+        id: "advanced",
+        label: "Advanced",
+        keywords: [
+          "magnification", "magnify", "zoom wave", "launch animation", "bounce", "jelly", "minimise pulse", "app names", "labels",
+          "scroll to switch windows", "drop files", "middle click", "icon size per style", "dividers", "separators", "close pop-outs",
+        ],
+      },
       { id: "topbar", label: "Top bar", keywords: ["menu bar", "clock", "widgets", "tray"] },
     ],
   },
@@ -166,6 +173,7 @@ export const PAGES: PageDef[] = [
       { id: "agents", label: "Agents", keywords: ["automations", "macros"] },
       { id: "voice", label: "Voice", keywords: ["voice", "speech", "hold to talk", "wake word", "lens", "dictation", "conversation"] },
       { id: "magic", label: "Magic right-click", keywords: ["magic menu", "ctrl alt right click", "context window"] },
+      { id: "selectionbar", label: "Selection bar", keywords: ["selection bar", "select text", "cut copy paste", "magic search", "selection bubble", "popclip", "mini menu"] },
       { id: "rightclick", label: "Right-click menu", keywords: ["context menu", "actions", "custom actions", "explorer verbs"] },
       { id: "packs", label: "Context packs & clipper", keywords: ["packs", "micro save", "obsidian", "clipper", "templates"] },
       { id: "snip", label: "Lens Snip", keywords: ["screenshot", "snipping", "capture", "redact", "ocr", "record", "pin"] },
@@ -186,16 +194,17 @@ export const PAGES: PageDef[] = [
     keywords: ["music", "spotify", "apple music", "lyrics", "now playing", "media", "last.fm", "spicetify", "sleep timer"],
     sections: [],
   },
+  // "Lens Apps", not "Apps": "Apps & Startup" (installed Windows apps) sits further down.
   {
     id: "store",
     group: "lens",
-    label: "Apps",
+    label: "Lens Apps",
     description: "Free and open-source tools, one click to install, nothing without your OK.",
     icon: "grid",
     color: "#34D399",
     controls: ["Browse", "Install", "Update all"],
-    keywords: ["apps", "install", "store", "catalogue", "open source", "artcraft", "concat", "winget", "download"],
-    sections: [{ id: "settings", label: "Apps settings", keywords: ["auto update", "activity log", "remove installed"] }],
+    keywords: ["apps", "lens apps", "install", "store", "catalogue", "open source", "artcraft", "concat", "winget", "download"],
+    sections: [{ id: "settings", label: "Lens Apps settings", keywords: ["auto update", "activity log", "remove installed"] }],
   },
   // ---------------- Windows
   {
@@ -294,12 +303,21 @@ export const PAGES: PageDef[] = [
     id: "focus",
     group: "windows",
     label: "Focus & Notifications",
-    description: "Do not disturb, focus sessions and which apps can notify you.",
+    // One page for everything about being notified. "Notifications" (history, Feeds, Messages)
+    // used to be a second page under Status; its sections live here and old links still land.
+    description: "Do not disturb, focus sessions, notification history, Feeds and Messages.",
     icon: "bell",
     color: "#60A5FA",
-    controls: ["Do not disturb", "Focus session", "App notifications"],
-    keywords: ["do not disturb", "dnd", "focus", "focus assist", "notifications", "quiet hours", "banners"],
-    sections: [{ id: "windows", label: "Windows notifications" }],
+    controls: ["Do not disturb", "Focus session", "Notification history", "App notifications"],
+    keywords: [
+      "do not disturb", "dnd", "focus", "focus assist", "notifications", "quiet hours", "banners",
+      "messages", "history", "inbox", "feeds", "rss", "news", "bluesky", "mastodon", "matrix",
+    ],
+    sections: [
+      { id: "feeds", label: "Feeds", keywords: ["rss", "news", "bluesky", "mastodon", "github", "sources", "quiet hours", "opml"] },
+      { id: "messages", label: "Messages", keywords: ["messengers", "discord", "slack", "matrix", "unread", "focus", "vip"] },
+      { id: "windows", label: "Windows notifications" },
+    ],
     winUri: "ms-settings:notifications",
   },
   {
@@ -388,20 +406,6 @@ export const PAGES: PageDef[] = [
     sections: [{ id: "processes", label: "Windows & processes" }],
   },
   {
-    id: "notifications",
-    group: "status",
-    label: "Notifications",
-    description: "Messages and notification history.",
-    icon: "message",
-    color: "#60A5FA",
-    controls: ["Notification history", "Feeds", "Messages"],
-    keywords: ["messages", "notifications", "history", "inbox", "feeds", "rss", "news", "bluesky", "mastodon", "matrix"],
-    sections: [
-      { id: "feeds", label: "Feeds", keywords: ["rss", "news", "bluesky", "mastodon", "github", "sources", "quiet hours", "opml"] },
-      { id: "messages", label: "Messages", keywords: ["messengers", "discord", "slack", "matrix", "unread", "focus", "vip"] },
-    ],
-  },
-  {
     id: "about",
     group: "status",
     label: "About & Testing",
@@ -414,7 +418,7 @@ export const PAGES: PageDef[] = [
       { id: "report", label: "Report a problem", keywords: ["bug", "report a bug", "feedback", "issue", "something broke"] },
       { id: "updates", label: "Updates & crash reports", keywords: ["restart to update", "update lens", "what's new", "release notes"] },
       { id: "setup", label: "Setup", keywords: ["setup", "welcome", "first run", "wizard", "what's new", "onboarding"] },
-      { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch"] },
+      { id: "safety", label: "Safety net", keywords: ["safe mode", "paused feature", "turn back on", "kill switch", "safety", "what lens touches", "what lens changes", "protected keys", "anti-cheat", "skip lens at sign-in", "shift"] },
       { id: "selftest", label: "Self-test" },
       { id: "backup", label: "Back up & restore", keywords: ["remove all lens changes"] },
       { id: "tester", label: "Tester Hub" },
@@ -502,7 +506,9 @@ export const LEGACY_TABS: Record<string, PageId> = {
   ai: "ai",
   agents: "ai",
   monitor: "tasks",
-  messages: "notifications",
+  messages: "focus",
+  // The old "Notifications" page; `notifications#feeds` and `notifications#messages` still land.
+  notifications: "focus",
   about: "about",
 };
 

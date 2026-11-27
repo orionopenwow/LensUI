@@ -10,6 +10,8 @@ import type { LensConfig } from "../../types/generated";
 import { iconUrl, pinEntry, PIN_PREFIX, type CoreAppInfo } from "../registry";
 import { cx } from "./ui";
 import "./shell.css";
+import { oops, quiet } from "../../ui/oops";
+import { ToastHost } from "../../ui/Toast";
 
 export interface KeyBinding {
   /** Shown in the keyboard map, e.g. "Ctrl+F". */
@@ -70,9 +72,8 @@ export const AppShell: React.FC<{
 
   useEffect(() => {
     document.title = app.title;
-    getCurrentWindow()
-      .show()
-      .catch(() => {});
+    // The window is built hidden and shown once its page is ready; a refusal means it is already up.
+    getCurrentWindow().show().catch(quiet);
   }, [app.title]);
 
   const togglePin = useCallback(() => {
@@ -80,14 +81,14 @@ export const AppShell: React.FC<{
     const path = `${PIN_PREFIX}${app.id}`;
     const list = config.dock.pinnedApps ?? [];
     const next = pinned ? list.filter((p) => p.path !== path) : [...list, pinEntry(app)];
-    updateConfig({ ...config, dock: { ...config.dock, pinnedApps: next } }).catch(() => {});
+    updateConfig({ ...config, dock: { ...config.dock, pinnedApps: next } }).catch(oops(pinned ? `unpin ${app.title} from the Dock` : `pin ${app.title} to the Dock`));
   }, [config, updateConfig, app, pinned]);
 
   const openSettings = useCallback(() => {
     if (!app.settingsTab) return;
     invoke("open_surface", { label: "settings" })
       .then(() => emit("lens://settings-tab", app.settingsTab))
-      .catch(() => {});
+      .catch(oops("open Settings"));
   }, [app.settingsTab]);
 
   const guide = useCallback(() => openGuide({ query: app.short }), [app.short]);
@@ -101,7 +102,7 @@ export const AppShell: React.FC<{
       }
       if (isKey(e, "w", { ctrl: true })) {
         e.preventDefault();
-        getCurrentWindow().close().catch(() => {});
+        getCurrentWindow().close().catch(oops("close this window"));
         return;
       }
       if (e.key === "F1") {
@@ -150,35 +151,35 @@ export const AppShell: React.FC<{
             {working}
           </span>
         )}
-        <button type="button" className={cx("ca-icon-btn", pinned && "on")} aria-pressed={pinned} aria-label={pinned ? "Unpin from Dock" : "Pin to Dock"} onClick={togglePin} disabled={!updateConfig || !config}>
+        <button data-weight="medium" type="button" className={cx("ca-icon-btn", pinned && "on")} aria-pressed={pinned} aria-label={pinned ? "Unpin from Dock" : "Pin to Dock"} onClick={togglePin} disabled={!updateConfig || !config}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
             <path d="M9 3h6l-1 6 4 3v2h-5v7l-1 1-1-1v-7H6v-2l4-3z" fill={pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
           </svg>
         </button>
         {app.settingsTab && (
-          <button type="button" className="ca-icon-btn" aria-label="Open in Lens Settings" onClick={openSettings}>
+          <button data-weight="medium" type="button" className="ca-icon-btn" aria-label="Open in Lens Settings" onClick={openSettings}>
             <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
               <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </button>
         )}
-        <button type="button" className="ca-icon-btn" aria-label="Keyboard shortcuts" aria-expanded={showKeys} onClick={() => setShowKeys((v) => !v)}>
+        <button data-weight="medium" type="button" className="ca-icon-btn" aria-label="Keyboard shortcuts" aria-expanded={showKeys} onClick={() => setShowKeys((v) => !v)}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
             <rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
             <path d="M7 10h1M11 10h1M15 10h2M7 14h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
-        <button type="button" className="ca-icon-btn ca-guide" aria-label={`Guide: help with ${app.short}`} data-guide-id={`coreapp.${app.id}.guide`} onClick={guide}>
+        <button data-weight="medium" type="button" className="ca-icon-btn ca-guide" aria-label={`Guide: help with ${app.short}`} data-guide-id={`coreapp.${app.id}.guide`} onClick={guide}>
           ?
         </button>
         <span className="ca-sep" aria-hidden />
-        <button type="button" className="ca-icon-btn" aria-label="Minimise" onClick={() => getCurrentWindow().minimize().catch(() => {})}>
+        <button data-weight="medium" type="button" className="ca-icon-btn" aria-label="Minimise" onClick={() => getCurrentWindow().minimize().catch(oops("minimise this window"))}>
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
             <path d="M6 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
-        <button type="button" className="ca-icon-btn ca-close" aria-label="Close" onClick={() => getCurrentWindow().close().catch(() => {})}>
+        <button data-weight="medium" type="button" className="ca-icon-btn ca-close" aria-label="Close" onClick={() => getCurrentWindow().close().catch(oops("close this window"))}>
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
             <path d="M7 7l10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
@@ -192,6 +193,8 @@ export const AppShell: React.FC<{
           <div className="ca-actionbar-actions">{actions}</div>
         </footer>
       )}
+      {/* Failures of things you asked for (pin, open Settings, close) show here. */}
+      <ToastHost />
       {showKeys && (
         <div className="ca-scrim" onMouseDown={(e) => e.target === e.currentTarget && setShowKeys(false)}>
           <div className="ca-dialog ca-keys" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -209,7 +212,7 @@ export const AppShell: React.FC<{
               ))}
             </dl>
             <div className="ca-dialog-actions">
-              <button type="button" className="ca-btn ca-btn-primary" autoFocus onClick={() => setShowKeys(false)}>
+              <button data-weight="heavy" type="button" className="ca-btn ca-btn-primary" autoFocus onClick={() => setShowKeys(false)}>
                 Done
               </button>
             </div>

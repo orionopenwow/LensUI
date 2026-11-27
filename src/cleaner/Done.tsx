@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Share2, X } from "lucide-react";
-import { COPY, driveName, fmtSize } from "./model";
+import { COPY, driveName, fmtScanTime, fmtSize } from "./model";
 import { Ambient, CountSize, FillBar, Key } from "./ui";
 
 export interface DoneInfo {
@@ -11,6 +11,8 @@ export interface DoneInfo {
   freeAfter: number;
   binned: number;
   skipped: [string, string][];
+  /** How long the scan before this clean took, measured in Rust. */
+  scanMs?: number;
 }
 
 /** Draws the "Share my result" card (1200×630 PNG) from the pack's own colours. Local only. */
@@ -126,11 +128,16 @@ export const Done: React.FC<{ info: DoneInfo; onShare: (png: string) => void; on
             )}
           </div>
         )}
+        {info.scanMs !== undefined && info.scanMs > 0 && (
+          <p className="cl-meta cl-done-scan">
+            Scanned your PC in <span className="cl-num">{fmtScanTime(info.scanMs)}</span>
+          </p>
+        )}
         <div className="cl-home-actions">
-          <button type="button" className="cl-btn is-ghost" onClick={() => setCard(drawShareCard(info))}>
+          <button data-weight="medium" type="button" className="cl-btn is-ghost" onClick={() => setCard(drawShareCard(info))}>
             <Share2 size={15} aria-hidden /> Share my result
           </button>
-          <button type="button" className="cl-btn is-primary" onClick={onDone} autoFocus>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={onDone} autoFocus>
             Done <Key>Enter</Key>
           </button>
         </div>
@@ -140,14 +147,14 @@ export const Done: React.FC<{ info: DoneInfo; onShare: (png: string) => void; on
           <div className="cl-sheet is-share" role="dialog" aria-modal="true" aria-label="Share my result" onClick={(e) => e.stopPropagation()}>
             <header className="cl-sheet-head">
               <span className="cl-h3">Share my result</span>
-              <button type="button" className="cl-icon-btn" aria-label="Close" onClick={() => setCard(null)}>
+              <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Close" onClick={() => setCard(null)}>
                 <X size={16} />
               </button>
             </header>
             <img className="cl-share-img" src={card} alt={`${COPY.doneTitle(fmtSize(info.freed))}. Before and after bars.`} />
             <p className="cl-meta">Made on this PC. Lens doesn't upload it; Windows' share sheet lets you pick where it goes.</p>
             <footer className="cl-sheet-foot">
-              <button type="button" className="cl-btn is-primary" onClick={() => onShare(card)}>
+              <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={() => onShare(card)}>
                 <Share2 size={15} aria-hidden /> Share…
               </button>
             </footer>

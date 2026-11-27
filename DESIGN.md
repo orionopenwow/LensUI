@@ -71,8 +71,16 @@
 ### 3.6 Control Center & First-Run Setup Wizard
 - **Unified Theme Control Array:** Color Wheel sits on the left (`212px`), paired directly inside the same card with the 3 brushed-metal rotary knobs on top and the Icon Style & Icon Shape chips tucked right beneath a `1px` hairline divider — zero dead vertical whitespace.
 - **Obvious Left-Pane Navigation:** Plain-English, scannable labels (`Theme & Look`, `Bottom Dock`, `Top Bar`, `Window Buttons`, `Folder Icons`, `Virtual Desktops`, `Widgets & Stats`, `Taskbar & Startup`, plus `Setup Wizard` & `Quit Lens`).
-- **Startup Setup Wizard (`SetupWizard.tsx`):** Greets first-run users (`onboardingCompleted === false`) and is re-launchable anytime from the sidebar. 5 live-preview steps: *Welcome → Pick a look (6 recommended packs) → Pick a Dock (Floating, Slim, Taskbar, Split) → Work with Windows (hide taskbar, start with Windows) → Done (summary, self-test, where settings live)*. Every step can be skipped (skipping also undoes that step's changes), Back always works, Alt+←/→ change step and Esc leaves.
+- **Startup Setup Wizard (`SetupWizard.tsx`):** Greets first-run users (`onboardingCompleted === false`) and is re-launchable anytime from the sidebar. 5 live-preview steps: *Welcome → Pick a look (6 recommended packs) → Pick a Dock (Floating, Slim, Taskbar, Split, Unified) → Work with Windows (hide taskbar, start with Windows) → Done (summary, self-test, where settings live)*. Every step can be skipped (skipping also undoes that step's changes), Back always works, Alt+←/→ change step and Esc leaves.
 - **Theme & Look tab:** top to bottom — *Current theme* hero (live preview, accent swatches + wheel, Dark/Light/Auto, glass opacity, roundness, blur, tint) → *Choose a theme* (6 recommended, "Browse all" with filters and search) → *Customise* collapsible sections that show a one-line summary when closed. Dock and shell options live in Dock & Top Bar.
+
+### 3.7 Lens's Own App Icons
+- **One set, one source:** every Lens app that shows up *as an app* (Dock pins, Lens Apps, Search, Command, the core-app title bar, the website's demo desks) draws its icon from `src/icons/lensApps.ts`; the Rust Dock-pin icons (`src-tauri/src/coreapps/mod.rs`) and the site (`tools/site/lib/icons.mjs`) use the same tile and glyphs, and a test keeps them identical.
+- **The look:** a bold white glyph (`#FAFAFA`, stroke `2.5` on a 24 px grid, round caps and joins, one idea per icon) on a plain matte tile (`#18181B`, 15/64 corner radius) with one faint `10 %` white hairline. **No effects:** no gradient, glow, shadow, inner highlight, filter, colour or per-app tint. Icons must stay distinct at 16–24 px.
+- **Every theme, same tile:** the dark tile is kept on light themes too. On a dark dock the hairline separates it; on a light dock the tile itself is the edge (~15:1), and the glyph is ~17:1 on the tile either way. A light tile would vanish into a light dock (~1.1:1).
+- **Lens Browser is the one exception:** it keeps the Lens logo (a silver lens with the colour inside), drawn flat on the same tile so it stays crisp at icon sizes: solid ring, soft colour, no turbulence, blur, drop shadow, stars or pinstripe rims.
+- **The full rainbow logo is for brand moments only** (site hero and logo, About, installer, tray, the Lens orb): never as an app icon.
+- **Third-party app icons are untouched:** full colour, never filtered (§1).
 
 ---
 
@@ -89,9 +97,76 @@
 
 ## 5. Motion & Feel
 
-- **Primary Easing:** `cubic-bezier(0.22, 1, 0.36, 1)` (fast crisp start, silky deceleration, zero overshoot bounce).
-- **Durations:**
-  - Micro hover/scale: `140ms–160ms`.
-  - Panel flow-out & flick transitions: `180ms–220ms`.
-  - Auto-hide bar slide: `220ms`.
-- **Feedback:** Every clickable element has an immediate hover state and clear cursor (`pointer` / `grab` / `grabbing`). No dead clicks, no layout shifts, and **no ugly native HTML `title="..."` browser tooltips** (use `aria-label` or custom obsidian pills only where needed).
+The motion tokens live in `src/styles/motion.css` and `src/ui/motion/tokens.ts`. Use them, never raw values (the `polishGuardrails` test and `bun run lint:motion` enforce this).
+
+- **Primary easing:** `--lens-ease-out` = `cubic-bezier(0.22, 1, 0.36, 1)` (fast, crisp start, silky stop, no overshoot) for entering and changing state; `--lens-ease-in-out` for moving across the screen; `--lens-ease-exit` for leaving; `--lens-ease-spring` only for the release of a press (§5.2) and signature moments.
+- **Durations:** hover and micro-scale `--lens-dur-fast` (140 ms); panel flow-out `--lens-dur-base`–`--lens-dur-slow` (180–240 ms); auto-hide slide 220 ms; leaving is always quicker than arriving (`--lens-dur-exit`, 120 ms).
+- **Feedback:** every clickable element has an immediate hover state and the right cursor (`pointer` / `grab` / `grabbing`). No dead clicks, no layout shifts, no native `title="..."` tooltips (use `aria-label`, or custom Obsidian pills only where needed).
+
+### 5.1 The feel: light to look at, weighty to touch
+
+Lens looks minimal and quiet, but **controls have weight**. A press should feel like pressing a well-made physical key: it gives, holds, and springs back. It should never feel like a flat web link that only changes colour. Three rules:
+
+1. **Every press is seen.** Pressing starts the press-in within one frame (no waiting for `click`), and the pressed state stays visible for at least **90 ms** even on the fastest click, so it never "flashes" invisibly.
+2. **Weight comes from depth, not decoration.** The control sinks: scale down, move 1 px towards the surface, its top highlight dims and its fill darkens a step (or lightens a step on light themes). There's no glow, no ripple, no colour flash.
+3. **The release springs back.** Press-in is fast and firm (`--lens-press-in`, 70 ms, `--lens-ease-out`). The release uses the spring (`--lens-press-release`, 220 ms, `--lens-ease-spring`), so the control settles with a tiny, damped overshoot. The overshoot gives the weight; it is never a bounce.
+
+### 5.2 Press weights
+
+Every interactive element declares one weight (`data-weight` or the UI-kit prop). If it doesn't, the kit default applies (**medium** for buttons, **light** for rows).
+
+| Weight | Use for | Press-in | Depth | Release |
+|---|---|---|---|---|
+| **light** | list rows, menu items, tabs, sidebar entries, chips in dense lists | fill steps one shade; no scale | none | `--lens-dur-fast` colour ease |
+| **medium** (default) | buttons, icon buttons, segmented options, Quick settings tiles, dock icons (on click, not hover) | scale `--lens-press-scale` (0.97), translateY 1 px, fill one shade, top highlight to 40 % | 1 px | spring 220 ms |
+| **heavy** | primary actions (Done, Install, Approve), destructive actions, big tiles and cards that open something | scale 0.955, translateY 1.5 px, fill two shades, highlight off, inner shade 1 px | 1.5 px | spring 260 ms |
+
+- **Hover** never scales a control. It only steps the fill or brightens the icon (`--lens-dur-fast`). The dock's magnification is its own system.
+- **Keyboard** presses (Space/Enter) play the same press as the pointer.
+- **Disabled** controls have no press and no hover, at 40 % opacity, with the `not-allowed` cursor.
+- **Pending work:** a press that starts work (install, search, apply) keeps the control **sunk** until the work answers. After 300 ms it shows a small inline spinner in place of the icon. No layout change; the width is fixed beforehand.
+- **Toggles:** the knob travels with the spring (220 ms) and squashes 6 % wide while pressed; the track colour crossfades over `--lens-dur-fast`.
+- **Segmented controls and tabs:** the selected indicator *slides* to the new option (FLIP, transform only) with `--lens-ease-out`; it never jumps.
+- **Sliders and fill bars:** the thumb grows 1 px wide while grabbed; the fill follows the pointer 1:1 (no easing while dragging) and settles with `--lens-ease-out` on release or on wheel steps.
+
+### 5.3 Flows: everything comes from somewhere
+
+- **Continuity.** A thing that opens grows from what opened it, using transform from the trigger's rect (FLIP, `src/ui/motion/flip.ts`):
+  - a pop-out from its dock icon or bar button;
+  - a card into its panel;
+  - a search result into its page;
+  - a tab into the page.
+
+  Closing returns it to the same place, quicker.
+- **One shape.** Flow-outs that leave a bar or dock are one shape with it during the motion too: no seam appears mid-animation (§3.1).
+- **Lists arrive in order.** Items stagger by `--lens-stagger` (30 ms), first 6 items only, then the rest appear together. Leaving lists don't stagger.
+- **Content swaps** (a page change in Settings, a step in a setup flow) crossfade with a 6 px slide in the direction of travel (forward → from the right, back → from the left), using `--lens-dur-base`.
+- **Interruptible.** Any animation can be reversed mid-way from where it is (glide/Presence), never restarted from the end. Rapid toggling never queues animations.
+- **Nothing moves the layout.** Only transform, opacity and colour animate. Width, height and position changes are measured and expressed as transforms (FLIP), or happen instantly while hidden.
+- **Calm by default.** Things used 100+ times a day (dock hover, list hover, tab switch) get the shortest durations or none. Signature moments (setup Done, Immersive mode, Magic opening) may use `--lens-dur-slower` and the spring.
+
+### 5.4 Reduced motion and performance
+
+- Reduced motion (Windows "Animation effects" off, or the Lens setting) collapses durations to 1 ms and press scales to 1. Presses then show depth only through the fill step, so feedback stays.
+- Budgets: p95 frame ≤ 16.7 ms at 60 Hz during any of the above; no animation may trigger layout or paint of large layers (no `filter: blur` on large layers, no `backdrop-filter` in new code).
+
+### 5.5 How it is enforced
+
+- [x] **UI kit primitives** (`src/ui/press` and the kit components) implement §5.2–5.3, so apps get the feel by using the kit, not by hand-writing `:active` rules.
+  - [x] Tokens: `--lens-press-in` (70 ms), `--lens-press-release` (220 ms) / `--lens-press-release-heavy` (260 ms), `--lens-press-hold-min` (90 ms), `--lens-pending-delay` (300 ms), per-weight scale / travel / fill step / highlight, the light-pack fill direction, and their reduced-motion values (`src/styles/motion.css`, `src/ui/motion/tokens.ts`).
+  - [x] `src/ui/press`: `installPress()` (one delegate per window, attributes only, no re-renders), `usePress()` / `pressProps()`, `data-weight` CSS with the minimum hold, keyboard presses, clean cancel, `pending` (sunk, spinner after 300 ms, no layout change) and no press when disabled.
+  - [x] Kit: `Button` / `IconButton` (medium; primary and danger heavy; `pending`), `Toggle` (knob spring + 6 % squash), `Segmented` (sliding indicator, `useSlidingIndicator`), `Chip`, `Card` with `onClick` (heavy), `FlyoutClose`; fill sliders grow 1 px while grabbed (`data-grab`). Shared classes (`cc-btn`, `cc-chip`, `cc-nav-btn`, Quick settings tiles…) get their weight from `src/ui/press/weights.ts`; `global.css` no longer hand-writes `:active`.
+  - [x] Flows (`src/ui/motion/flow.ts`, `origin.ts`): `growFrom` / `returnTo`, `staggerIn` (first 6), `swapIn` (6 px, forward/back), and pop-outs that grow from their trigger across windows (`data-opens` on the trigger, `useGrowFromTrigger` on the pop-out's content root; the native window is never resized). Applied to Settings page swaps, setup steps, and the Quick settings, Settings and Search pop-outs.
+- **Guardrails:**
+  - [x] a test fails when an interactive element in a migrated surface has no press weight or uses raw durations (`src/__tests__/feel.test.ts`, list in `tools/polish/feel-migrated.txt`);
+  - [x] the parity rig renders a "feel" scene (each weight at rest, hover, pressed, pending, disabled; light and dark; toggles mid-press; the segmented indicator) — `tools/parity/feel`, goldens `feel-*` in `tools/parity/golden`;
+  - [x] the perf rig measures press and flow frames (`feel-rapid-press`, `feel-settings-press`, `feel-popout-grow` in `tools/perf/run.mjs`).
+- **Review:** every Fable pass checks its area against §5.1–5.4.
+
+#### Adopting the feel (areas not migrated yet: Dock, Lens Browser, other apps)
+
+1. Use the kit (`Button`, `IconButton`, `Toggle`, `Segmented`, `Chip`, `Card`) or put `data-weight="light|medium|heavy"` on each control (`usePress()` when it starts work, for `pending`). Delete the area's `:active` scale rules.
+2. The Dock and Lens Browser windows run in "own" press mode (`data-press-mode="own"` in `main.tsx`): no weighted press there yet, so it can't stack on their own `:active` rules (the Dock's controls already declare `data-weight`). Their pass deletes those `:active` rules and drops the `ownPress` line in `main.tsx`. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
+3. Pop-outs: add `data-opens="<surface label>"` to the button that opens one (Dock Quick settings, Settings and Search buttons still need it) and `useGrowFromTrigger(label, rootRef)` on the pop-out's root. In-window cards and panels use `growFrom(el, triggerRect)` / `returnTo(...)`.
+4. Lists: `staggerIn(items)` on arrival; content swaps: `data-swap="forward|back"` on a `.lens-swap` root, or `swapIn(el, dir)`.
+5. Add the area's files to `tools/polish/feel-migrated.txt` so the guardrail holds them.

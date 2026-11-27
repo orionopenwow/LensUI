@@ -2,34 +2,95 @@
 // Download. Text lives here and in content/features.mjs; theme values come from the real packs.
 import { esc } from "./lib/markdown.mjs";
 import { WORKS_ON } from "./content/features.mjs";
-import { thumbdeskSection } from "./content/thumbdesk.mjs";
+import { THUMBDESK } from "./content/thumbdesk.mjs";
 import { REPO } from "./lib/layout.mjs";
 
 
-// The magic right-click exhibit's steps: [scene of the real magic window, label, what it shows].
+// The big hero demo desk (js/showcases.js tours) is off for now: the page opens on the Dock widget.
+// Set to true to bring it back; the code stays.
+export const HERO_DESK = false;
+// Each exhibit plays three steps, slowly and on repeat: [step id, step label, caption].
 const MAGIC_STEPS = [
-  ["link", "It knows what you clicked", "A link, so: link actions"],
-  ["summary", "Summarise", "The answer, in the same window"],
-  ["transcript", "Get the transcript", "From a video page"],
-  ["approval", "Send to Claude", "Waits for your OK"],
+  ["hold", "Hold", "Hold the pointer still on anything, a link here: Magic opens right at the pointer, and knows what it is."],
+  ["drag", "Hold, then drag", "Hold the left button a moment, then drag: you grab an area of the screen, once, only when you do."],
+  ["grab", "Into Snip", "Let go: the area opens in Snip, ready to copy, copy its text, save, put on the Shelf or ask Claude."],
 ];
-// Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx), in the order of a first visit.
+// The agentic desktop: [step id, step label, caption].
+const AGENT_STEPS = [
+  ["voice", "Say it", "Hold the voice key and say what you want. The Lens cursor opens Lens Browser from the dock on its own."],
+  ["type", "It drives", "The Lens cursor clicks into the page and types. Every click and word lands in the trail beside it."],
+  ["ask", "Big steps wait", "Booking has a $25 no-show fee, so that step stops on “Needs your OK” until you say yes."],
+];
+// The Dock widget's pickers, drawn here so the section has its full height before js/home.js runs
+// (no layout shift); js/home.js wires them from the cards' data attributes. The styles are the app's
+// own list (src/dock/styles.ts via lib/dockstyles.mjs), each drawn with the app's DockStylePreview,
+// so a new style gets a card here with no site change. Accents follow the lab's ACCENTS.
+const DOCK_EDGES = [["bottom", "Bottom", "Along the bottom, under your windows."], ["top", "Top", "Under the top bar, across the top."], ["left", "Left", "Up the left side of the screen."], ["right", "Right", "Up the right side of the screen."]];
+/** A tiny screen with the dock on one edge, in the same drawing language as the style cards. */
+function edgeSvg(edge) {
+  const W = 112, H = 64, T = 5, side = edge === "left" || edge === "right";
+  let dock;
+  if (side) {
+    const h = 6 * 6 + 5 * 2 + 8, y = T + (H - T - h) / 2, x = edge === "left" ? 3 : W - 3 - 11;
+    dock = `<rect class="dsp-pill" x="${x}" y="${y}" width="11" height="${h}" rx="3"/>` + Array.from({ length: 6 }, (_, i) => `<rect class="dsp-icon" x="${x + 2.5}" y="${y + 4 + i * 8}" width="6" height="6" rx="1.5"/>`).join("");
+  } else {
+    const w = 6 * 6 + 5 * 2 + 8, x = (W - w) / 2, y = edge === "top" ? T + 3 : H - 11 - 3;
+    dock = `<rect class="dsp-pill" x="${x}" y="${y}" width="${w}" height="11" rx="3"/>` + Array.from({ length: 6 }, (_, i) => `<rect class="dsp-icon" x="${x + 4 + i * 8}" y="${y + 2.5}" width="6" height="6" rx="1.5"/>`).join("");
+  }
+  const arrow = { bottom: "M56 40v8m-3-3 3 3 3-3", top: "M56 32v-8m-3 3 3-3 3 3", left: "M42 34.5h-8m3-3-3 3 3 3", right: "M70 34.5h8m-3-3 3 3-3 3" }[edge];
+  return `<svg class="dsp dsp-edge" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false"><rect class="dsp-screen" x="0.5" y="0.5" width="111" height="63" rx="3"/><rect class="dsp-topbar" x="0.5" y="0.5" width="111" height="${T}"/><path class="dsp-arrow" d="${arrow}"/>${dock}</svg>`;
+}
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
+const word = (n) => WORDS[n] ?? String(n);
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const PICK_ACCENTS = [["", "Theme's own"], ["#FAFAFA", "Snow"], ["#818CF8", "Iris"], ["#38BDF8", "Sky"], ["#34D399", "Mint"], ["#FBBF24", "Amber"], ["#FB923C", "Tangerine"], ["#FB7185", "Coral"], ["#C084FC", "Violet"]];
+const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const inkOn = (h) => { const n = parseInt(h.slice(1, 7), 16); return (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? "#09090b" : "#fafafa"; };
+const radio = (i, inner, cls, extra = "") => `<button type="button" role="radio" class="${cls}" aria-checked="${i === 0}" tabindex="${i ? -1 : 0}"${extra}>${inner}</button>`;
+// The Dock widget's capabilities, as one short line of chips.
+const DOCK_CHIPS = (n) => [`${cap(word(n))} styles`, "Any edge", "Live window previews", "Calm attention", "Magic from the dock", "Settings joined to the dock"];
+// Scenes of the real BrowserSurface (tools/parity/browser/entry.tsx).
 const BROWSER_STEPS = [
-  ["home", "One box", "Search, an address, or a question"],
-  ["agent", "AI beside the page", "Every step it takes, listed"],
-  ["approval", "Needs your OK", "Before it books, pays or sends"],
-  ["results", "What it found", "A map, a table, its pick"],
-  ["permission", "Site permissions", "Camera, mic, location: you decide"],
+  ["home", "One box", "One box for a search, an address or a question."],
+  ["agent", "AI beside the page", "Ask it to do something: the AI works beside the page and lists every step."],
+  ["results", "Its pick, with why", "Then it shows what it found: a map, a table and its pick, with why."],
 ];
 const S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 // What Lens Browser does differently, true on main today (docs/BROWSER_AAA.md, docs/LENS_BROWSER.md,
 // docs/BROWSER_RESEARCH.md for what other AI browsers do).
 const WHY_BROWSER = [
-  [S('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'), "It asks before it acts", "Reading runs. Booking, paying, sending and submitting wait for you. Passwords: never."],
   [S('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/>'), "AI beside the page", "The page stays yours. The panel lists every click and word, and Esc stops it."],
+  [S('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'), "Big steps stay yours", "Booking, paying, sending and submitting wait for you. Passwords: never."],
   [S('<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'), "Hidden instructions get flagged", "Text on a page that tries to steer the AI is shown to you, not obeyed."],
   [S('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'), "You decide what sites get", "Camera, mic, location and notifications ask under the address bar, once or per site."],
-  [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Light, and easy to leave for", "Bring bookmarks and tabs from Chrome, Edge, Arc and more, item by item, never passwords. Undo in one step."],
+  [S('<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'), "Light, and easy to move to", "Bring bookmarks and tabs from Chrome, Edge, Arc and more, item by item, never passwords."],
+];
+// The Dock: what it does (docs/brain/FEATURES.md › Desktop shell and docks). Shown as tiles when the
+// hero desk is on; the Dock widget shows DOCK_CHIPS instead.
+export const DOCK_CAPS = [
+  [S('<rect x="3" y="15" width="18" height="5" rx="2.5"/><rect x="6" y="5" width="12" height="6" rx="2"/>'), "Ten styles", "Floating by default; Taskbar, Slim, Studio, Minimal, Split, Islands, Unified and two with their own packs."],
+  [S('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 21v-3h10v3M3 7h3v10H3"/>'), "Any edge", "Bottom, top, left or right, with auto-hide that always comes back."],
+  [S('<rect x="4" y="4" width="16" height="10" rx="2"/><path d="M9 18h6M12 14v4"/>'), "Live window previews", "Hover a running app to see its windows, anchored to the icon."],
+  [S('<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4"/>'), "Attention, calmly", "An app that needs you flashes once, bounces once, and stays highlighted until you look."],
+  [S('<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/>'), "Magic from the dock", "Right-click any icon: a new window, run as admin, window controls, and the Lens menu."],
+  [S('<rect x="5" y="4" width="14" height="11" rx="2"/><rect x="8" y="16" width="8" height="4" rx="2"/>'), "Settings and Search, joined", "They open from the dock as one shape, each at its own size, with a × and Esc to close."],
+];
+// The agentic exhibit's action trail: what the Lens cursor does, and which steps wait for you.
+const AGENT_PLAN = [
+  ["Heard: “book Friday dinner for four near me”", "Voice", "runs"],
+  ["Open Lens Browser from the dock", "Click", "runs"],
+  ["Type the search in the one box", "Type", "runs"],
+  ["Pick Harbor & Vine: free at 8:00", "Reads only", "runs"],
+  ["Book the table ($25 no-show fee)", "Asks first", "ask"],
+];
+// The small apps, all real Lens surfaces: [id, name, line, picture, opens on the desk?].
+const SMALL = [
+  ["music", "Lens Music", "Now Playing for any app", "surface-music", true],
+  ["cleaner", "Lens Cleaner", "Free space safely, undo in one click", "surface-cleaner", true],
+  ["notes", "Notes", "Checklists and stickies", "core-notes", true],
+  ["feeds", "Lens Feeds", "Your feeds in calm columns", "surface-feeds", false],
+  ["messages", "Lens Messages", "Every inbox, one list", "surface-messages", false],
+  ["thumbdesk", "ThumbDesk", "The PC from a controller", "shot-thumbdesk-studio", false],
 ];
 const CORE = [["monitor", "Monitor", "What's slowing your PC"], ["timer", "Timer", "Timers, pomodoro, alarms"], ["notes", "Notes", "Checklists and stickies"], ["calculator", "Calculator", "Units and history"], ["color", "Color", "Pick any pixel"], ["power", "Power", "Battery health"], ["network", "Network", "Who's using the network"], ["clipboard", "Clipboard", "History, pins"], ["startup", "Startup", "What runs at sign-in"]];
 const SUITE = ["artcraft", "wordcraft", "deckcraft", "gridcraft"];
@@ -53,8 +114,11 @@ export function home(o) {
   // A stage reserves its room before its frames load (no layout shift).
   return homeHtml(o).replace(/data-w="(\d+)" data-h="(\d+)"/g, (m, w, h) => `${m} style="aspect-ratio:${w}/${h}"`);
 }
-function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
+function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = null, dockStyles = [] }) {
   void packs;
+  const PAUSE = `<button type="button" class="sb-btn x-pause" data-xpause aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span class="sr">Pause</span></button>`;
+  // The caption strip under each exhibit: a solid matte bar, the step's label and one clear sentence.
+  const xbar = (label, [step, first]) => `<div class="xbar"><p class="xcap" aria-live="off"><span class="xcap-n"><span class="xcap-k">1 of 3</span><span class="xcap-l">${esc(step)}</span></span><span class="xcap-t">${esc(first)}</span></p><span class="xdots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>${PAUSE.replace('<span class="sr">Pause</span>', `<span class="sr">Pause ${esc(label)}</span>`)}</div>`;
   return `
 <section class="hero" aria-labelledby="hero-h">
   <div class="inner hero-copy">
@@ -68,73 +132,94 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
     <p class="dl-more" aria-label="Other ways to install"><a href="${REPO}/releases">Installer .exe &amp; .msi</a><a href="download.html#platforms">Build from source</a><span class="soon" title="Coming later">winget</span><span class="soon">Portable .zip</span><a class="os" href="download.html#platforms">${OS_ICON.mac}${OS_ICON.linux}macOS &amp; Linux: on the roadmap</a></p>
     <p class="dl-fine">Windows 10 &amp; 11 · free and open source · installers from 0.3.0 on GitHub Releases · winget and .zip later</p>
   </div>
-  <div class="stage-wrap">
+  ${HERO_DESK ? `<div class="stage-wrap">
     <div class="stage" id="stage">
       <div id="desk-host" class="desk-host"></div>
       <div class="sc-bar" id="sc-bar">
-        <div class="sc-cap" aria-live="polite"><span class="sc-n">Free play</span><span class="sc-t">Every window here is the real Lens app on sample data. Drag, snap, right-click, open apps from the dock. Or start with the docks below and go step by step.</span></div>
+        <div class="sc-cap" aria-live="off"><span class="sc-n">The Dock</span><span class="sc-t">Every window here is the real Lens app on sample data.</span></div>
         <div class="sc-ctl">
           <span class="sc-dots" aria-hidden="true"></span>
-          <button type="button" class="sb-btn sc-b" data-back disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>Back</span></button>
-          <button type="button" class="sb-btn sc-b sc-next" data-next disabled><span>Next</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-          <button type="button" class="sb-btn sc-b" data-reset disabled>Reset</button>
-          <button type="button" class="sb-btn sc-b" data-exit disabled>Exit</button>
+          <button type="button" class="sb-btn sc-play" data-play aria-pressed="false"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg><span class="lbl">Pause</span></button>
           <button type="button" class="sb-btn sb-fs" data-fs aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/></svg><span class="lbl">Fullscreen</span></button>
         </div>
       </div>
     </div>
-    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="Guided tours"></div>
-    <div class="docks-row" id="docks" aria-labelledby="docks-h">
-      <div class="dr-head"><h2 id="docks-h" class="h-sm">Nine docks</h2><p id="dock-info" class="dr-info" aria-live="polite"></p>
-        <span class="dr-nav"><button type="button" class="sb-btn" data-rail-prev aria-label="Scroll the docks left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="sb-btn" data-rail-next aria-label="Scroll the docks right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></span></div>
-      <div class="dock-rail" id="dock-rail" role="radiogroup" aria-labelledby="docks-h"></div>
+    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="What the demo shows"></div>
+  </div>` : ""}
+</section>
+
+<section id="f-dock" class="sec xsec feature dockw-sec" aria-labelledby="f-dock-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.dock}</span>Magic Dock + Top Dock</p><h2 id="f-dock-h">One dock, ${word(dockStyles.length)} ways.</h2><p>The real Lens top bar and dock, live. Pick a style, then an edge, then an accent: the dock changes in place.</p></div>
+    <div class="dockw" id="dockw">
+      <div class="dockw-frame"><div id="dock-desk" class="desk-host"></div></div>
+      <p class="dw-info" id="dock-info" aria-live="polite"><span class="dw-info-t"><b>${esc(dockStyles[0]?.label ?? "Floating")}</b> on the bottom edge. ${esc(dockStyles[0]?.description ?? "")}</span></p>
+      <div class="dockw-ctl" role="group" aria-label="Dock controls">
+        <div class="dw-step dw-step-style">
+          <div class="dw-h"><span class="dw-n" aria-hidden="true">1</span><p class="dw-l" id="dw-style-l">Style</p><p class="dw-hint" id="dw-style-hint" aria-hidden="true">${esc(dockStyles[0]?.description ?? "")}</p></div>
+          <div class="dw-cards dw-styles" id="dw-styles" role="radiogroup" aria-labelledby="dw-style-l"><span class="dw-ind" aria-hidden="true"></span>${dockStyles.map((d, i) => radio(i, `<span class="dw-pic">${d.svg}</span><span class="dw-name">${esc(d.label)}</span><span class="dw-mark" aria-hidden="true">${CHECK_SVG}</span>`, "dw-card dw-style", ` data-id="${d.id}" data-style="${d.style}" data-label="${esc(d.label)}" data-line="${esc(d.description)}"${d.shape ? ` data-shape="${d.shape}"` : ""}${d.pack ? ` data-pack="${d.pack}"` : ""} aria-describedby="dw-d-${d.id}" data-weight="medium"`)).join("")}</div>
+          <div hidden>${dockStyles.map((d) => `<span id="dw-d-${d.id}">${esc(d.description)}</span>`).join("")}</div>
+        </div>
+        <div class="dw-side">
+          <div class="dw-step dw-step-edge">
+            <div class="dw-h"><span class="dw-n" aria-hidden="true">2</span><p class="dw-l" id="dw-edge-l">Edge</p></div>
+            <div class="dw-cards dw-edges" id="dw-edges" role="radiogroup" aria-labelledby="dw-edge-l"><span class="dw-ind" aria-hidden="true"></span>${DOCK_EDGES.map(([id, n, line], i) => radio(i, `<span class="dw-pic">${edgeSvg(id)}</span><span class="dw-name">${esc(n)}</span><span class="dw-mark" aria-hidden="true">${CHECK_SVG}</span>`, "dw-card dw-edge", ` data-edge="${id}" data-label="${esc(n)}" data-line="${esc(line)}" data-weight="medium"`)).join("")}</div>
+          </div>
+          <div class="dw-step dw-step-acc">
+            <div class="dw-h"><span class="dw-n" aria-hidden="true">3</span><p class="dw-l" id="dw-acc-l">Accent</p><p class="dw-hint" id="dw-acc-name" aria-hidden="true">Theme's own</p></div>
+            <div class="dw-acc" id="dw-acc" role="radiogroup" aria-labelledby="dw-acc-l">${PICK_ACCENTS.map(([h, n], i) => radio(i, CHECK_SVG, h ? "" : "auto", ` data-acc="${h}" data-name="${esc(n)}" aria-label="${esc(n)}" style="--c:${h || "#fafafa"};--on:${inkOn(h || "#fafafa")}"`)).join("")}</div>
+          </div>
+        </div>
+      </div>
     </div>
+    <ul class="dw-chips" aria-label="What the dock does">${DOCK_CHIPS(dockStyles.length).map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
   </div>
 </section>
 
 <section id="f-browser" class="sec xsec feature" aria-labelledby="f-browser-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">The light browser with an AI that asks first.</h2><p>Ask in the one box. The AI works beside the page, shows every step, and stops before anything that books, pays or sends.</p></div>
-    <div class="bx" data-exhibit="browser">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.browser}</span>Lens Browser</p><h2 id="f-browser-h">A light browser, with AI beside the page.</h2><p>Ask in the one box. The AI works next to the page and lists every step it takes.</p></div>
+    <div class="bx xmain" data-exhibit="browser">
       <div class="xstage" data-w="1180" data-h="660"><div class="xf" data-xf="browser.html?scene=home" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, on its new tab page: one box for search, addresses and questions"></div></div>
-      <div class="xsteps" role="tablist" aria-label="Lens Browser, step by step">
-        ${BROWSER_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
-      </div>
+      ${xbar("Lens Browser", BROWSER_STEPS[0].slice(1))}
+      <script type="application/json" class="xdata">${JSON.stringify(BROWSER_STEPS)}</script>
     </div>
     <ul class="why">
       ${WHY_BROWSER.map(([ic, t, d]) => `<li><span class="why-ic">${ic}</span><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join("")}
     </ul>
-    <p class="xnote"><button type="button" class="link-btn" data-play-scene="browser">Take the tour on the desk ↑</button></p>
   </div>
 </section>
 
 <section id="f-magic" class="sec xsec" aria-labelledby="f-magic-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Right-click</p><h2 id="f-magic-h">Right-click anything.</h2><p>The Lens menu opens right where you clicked, and knows what it is.</p></div>
-    <div class="mx" id="mx" data-exhibit="magic">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic Mouse</p><h2 id="f-magic-h">Hold for Magic. Drag to grab.</h2><p>An optional pointer that works like your normal one, plus two moves: hold to open Magic where you point, or hold and drag to grab any area into Snip. It's off by default, and Lens asks before it turns on.</p></div>
+    <div class="mx xmain" id="mx" data-exhibit="magic">
       <div class="xstage" data-w="1180" data-h="640">
-        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-xf-magic="1" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open. Right-click it."></div>
+        <div class="xf mx-target" data-xf="browser.html?scene=frame" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open"></div>
         <div class="mx-dim" aria-hidden="true" hidden></div>
-        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens magic window"></div></div>
+        <div class="mm-grab" aria-hidden="true" hidden></div>
+        <div class="mm-ptr" aria-hidden="true"><span class="mm-cloud"><span class="lens-cloud"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><svg class="mm-ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"/></svg></div>
+        <div class="mx-menu" hidden><div class="xf" data-xf="magic.html?scene=link&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;magic-&#39;]" data-eager="1" role="img" aria-label="The Lens Magic window"></div></div>
       </div>
-      <div class="xsteps" role="tablist" aria-label="What right-click can do">
-        ${MAGIC_STEPS.map(([id, t, d], i) => `<button type="button" role="tab" class="xstep" data-step="${id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}"><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join("")}
-      </div>
+      ${xbar("Magic Mouse", MAGIC_STEPS[0].slice(1))}
+      <script type="application/json" class="xdata">${JSON.stringify(MAGIC_STEPS)}</script>
     </div>
+    <p class="fine center-fine">Today, Ctrl + Alt + right-click opens the same Magic window, and every Lens menu ends with a “Lens ›” row.</p>
   </div>
 </section>
 
 <section id="themes" class="sec extras-start" aria-labelledby="themes-h">
   <div class="inner">
-    <div class="head"><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} looks. Point to preview, click to keep, or press <kbd>T</kbd> to shuffle.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.theme}</span>Themes</p><h2 id="themes-h">Every theme, live.</h2><p>${packs.length || 89} looks for the whole desktop. Point to preview, click to keep, or press <kbd>T</kbd> to shuffle.</p></div>
     <div class="lab">
       <div id="lab-desk" class="desk-host"></div>
       <aside class="lab-side" aria-label="Theme controls">
         <div class="lab-picks" role="group" aria-label="Themes"></div>
         <div class="lab-row"><button type="button" class="btn small" data-all aria-expanded="false" aria-controls="lab-pop">All ${packs.length || 80} themes…</button><button type="button" class="btn small" data-shuffle>Shuffle <kbd>T</kbd></button></div>
         <div class="lab-pop" id="lab-pop" role="dialog" aria-label="All themes" hidden><label class="sr" for="lab-q">Search themes</label><input id="lab-q" type="search" placeholder="Search ${packs.length || 89} themes…"><div class="grid"></div></div>
-        <p class="lab-label" id="acc-l">Accent <span>click, or drag onto the desk</span></p>
-        <div class="lab-acc" role="group" aria-labelledby="acc-l"></div>
+        <p class="lab-label" id="acc-l">Accent <span>click a colour, or drag one onto the desk</span></p>
+        <div class="lab-acc" role="radiogroup" aria-labelledby="acc-l"></div>
+        <p class="lab-acc-now" aria-live="polite"></p>
         <div class="lab-row"><button type="button" class="btn small" data-export>Download .lenstheme</button></div>
         <p class="lab-now" aria-live="polite"></p>
       </aside>
@@ -151,27 +236,25 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 
 <section id="byo" class="sec xsec" aria-labelledby="byo-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Your agent</p><h2 id="byo-h">Bring Claude into your desktop.</h2><p>Connect Claude Desktop, a local model or any MCP agent. It can use Lens in all your apps, and asks before it changes anything.</p></div>
-    <div class="agent-x" data-exhibit="agent">
-      <ol class="agent-flow" aria-label="How it works">
-        <li><span class="byo-ic" style="--c:#d97757">C</span><b>Connect</b><span>Claude Desktop, a local model, or MCP</span></li>
-        <li><span class="byo-ic" style="--c:#818cf8">${IC.apps}</span><b>Lens in every app</b><span>Windows, browser, files, settings</span></li>
-        <li><span class="byo-ic" style="--c:#34d399">${IC.check}</span><b>Needs your OK</b><span>Who asks, what changes, a preview</span></li>
-      </ol>
-      <div class="xstage agent-stage" data-w="470" data-h="500"><div class="xf" data-xf="approval.html?scene=window&amp;drag=0&amp;magic=0" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card: who is asking, what it will do, a preview, Deny and Approve"></div></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.agent}</span>Agentic desktop</p><h2 id="byo-h">Say it. Lens does it, where you can see.</h2><p>Speak, or connect Claude Code, Claude Desktop, a local model or any MCP agent. The Lens cursor works the desktop on its own, in plain sight, and leaves a trail of every step.</p></div>
+    <div class="agent-x xmain" data-exhibit="agent">
+      <div class="agent-main">
+        <div class="ag-desk-wrap"><div id="agent-desk" class="desk-host"></div></div>
+        <div class="ag-card" hidden><div class="xstage" data-w="470" data-h="660"><div class="xf" data-xf="approval.html?scene=dinner&amp;drag=0&amp;magic=0" data-eager="1" data-marker="[class^=&#39;ap-&#39;]" role="img" aria-label="The real “Needs your OK” card for the booking step: the reservation form and its $25 no-show fee, Deny and hold to Book"></div></div></div>
+      </div>
+      <aside class="ag-side">
+        <p class="ag-ask"><span class="ag-who">You, by voice</span>“Lens, book Friday dinner for four near me.”</p>
+        <ol class="ag-plan" aria-label="The action trail, step by step">
+          ${AGENT_PLAN.map(([t, r, k], i) => `<li class="is-${k}" data-i="${i}"><span class="ag-n">${i + 1}</span><span class="ag-t">${esc(t)}</span><span class="ag-r">${esc(r)}</span></li>`).join("")}
+        </ol>
+        <p class="ag-note">Reading and clicking run on their own. Anything that books, sends or pays waits on the real “Needs your OK” card.</p>
+      </aside>
+      ${xbar("Agentic desktop", AGENT_STEPS[0].slice(1))}
+      <script type="application/json" class="xdata">${JSON.stringify(AGENT_STEPS)}</script>
     </div>
-  </div>
-</section>
-
-<section id="overlays" class="sec xsec" aria-labelledby="ov-h">
-  <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Also in Lens</p><h2 id="ov-h">Small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. Click one to open it on the desk.</p></div>
-    <div class="ov-pair">
-      <article class="ov"><button type="button" class="ov-media" data-open-app="music" aria-label="Open Lens Music on the desk"><img src="media/surface-music.webp" alt="Lens Music: now playing, lyrics and up next, coloured by the album art" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Music</h3><p>Now Playing for any app, coloured by the album art.</p></div></article>
-      <article class="ov"><button type="button" class="ov-media" data-open-app="cleaner" aria-label="Open Lens Cleaner on the desk"><img src="media/surface-cleaner.webp" alt="Lens Cleaner: 32.5 GB safe to clean, sorted by how safe each item is" loading="lazy" width="1100" height="660"></button><div class="ov-body"><h3>Lens Cleaner</h3><p>See what's taking space. Clean safely, undo in one click.</p></div></article>
-    </div>
-    <div class="core-grid" id="core-grid" data-cycle>
-      ${CORE.map(([id, t, d]) => `<button type="button" class="core" data-open-app="${id}"><img src="media/core-${id}.webp" alt="${esc(t)}: ${esc(d)}" loading="lazy" width="760" height="520"><span class="core-cap"><b>${esc(t)}</b><span>${esc(d)}</span></span></button>`).join("")}
+    <div class="learn">
+      <span class="learn-ic" aria-hidden="true">${IC.learn}</span>
+      <div><h3>Learns as you go <span class="tag">Coming</span></h3><p>Opt in, and Lens learns your habits on this PC: which apps you open when, how you lay out your windows. Each suggestion says why it's there, and one click forgets it. Nothing leaves your PC.</p></div>
     </div>
   </div>
 </section>
@@ -179,14 +262,20 @@ function homeHtml({ visionHref, apps = {}, packs = [], stars = null }) {
 <section id="apps" class="sec xsec" aria-labelledby="apps-h">
   <div class="inner">
     <div class="head center"><p class="kicker"><span class="k-ic">${IC.apps}</span>Lens Apps</p><h2 id="apps-h">Free and open-source apps, one click away.</h2><p>Official releases, checked before they install.</p></div>
-    <h3 class="apps-h">The ArtCraft suite</h3>
-    <div class="suite-row">${SUITE.map((id) => appTile(id, apps, true)).join("")}</div>
-    <h3 class="apps-h">More picks</h3>
-    <div class="app-grid">${PICKS.map((id) => appTile(id, apps, false)).join("")}</div>
-    <p class="fine">Icons and screenshots come from each project's own repository, under that project's licence. Lens isn't affiliated with these projects.</p>
+    <div class="app-grid">${[...SUITE, ...PICKS].map((id) => appTile(id, catalog.find((a) => a.id === id), apps[id])).join("")}</div>
+    <p class="fine apps-fine">Names, screenshots and trademarks belong to each project; Lens isn't affiliated with any of them. Each screenshot comes from the project's own repository; where a repository has none, the tile is Lens's own drawing.</p>
   </div>
 </section>
-${thumbdeskSection()}
+
+<section id="overlays" class="sec xsec" aria-labelledby="ov-h">
+  <div class="inner">
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.layers}</span>Also in Lens</p><h2 id="ov-h">Small apps, already there.</h2><p>Themed tools for the jobs Windows makes awkward. Click one to open it on the theme desk.</p></div>
+    <div class="mini-grid" id="core-grid" data-cycle>
+      ${SMALL.map(([id, t, d, img, live]) => miniTile(id, t, d, img, live)).join("")}
+      ${CORE.filter(([id]) => id !== "notes").map(([id, t, d]) => miniTile(id, t, d, `core-${id}`, true)).join("")}
+    </div>
+  </div>
+</section>
 
 <section id="more" class="sec" aria-labelledby="more-h">
   <div class="inner">
@@ -213,6 +302,13 @@ ${thumbdeskSection()}
   </div>
 </section>`;
 }
+/** A small app in the compact grid: a small real picture, its name, one line. */
+function miniTile(id, t, d, img, live) {
+  const how = id === "thumbdesk" ? "From the makers of Lens: opens its website" : live ? "Opens on the desk above" : "";
+  const pic = `<span class="mini-pic"><img src="media/${img}.webp" alt="" loading="lazy" width="320" height="200"></span><span class="mini-cap"><b>${esc(t)}</b><span>${esc(d)}</span>${how ? `<span class="sr">. ${esc(how)}</span>` : ""}</span>`;
+  if (id === "thumbdesk") return `<a class="mini" href="${THUMBDESK.home}">${pic}</a>`;
+  return live ? `<button type="button" class="mini" data-open-app="${id}">${pic}</button>` : `<div class="mini">${pic}</div>`;
+}
 /** A short clip that plays only when asked (click, or hover with a mouse). */
 const clip = (id, label) => `<figure class="clip" data-clip><video preload="none" muted playsinline loop poster="media/poster-${id}.webp" aria-label="${esc(label)}"><source src="media/${id}.mp4" type="video/mp4"></video><button type="button" class="clip-play" aria-label="Play: ${esc(label)}"><span aria-hidden="true">▶</span></button></figure>`;
 const IC = {
@@ -222,17 +318,53 @@ const IC = {
   layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>`,
   apps: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/></svg>`,
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
+  dock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="15" width="18" height="5" rx="2.5"/><path d="M7 17.5h.01M10.5 17.5h.01M14 17.5h.01M17.5 17.5h.01"/><rect x="5" y="4" width="14" height="8" rx="2"/></svg>`,
+  theme: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><path d="M7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01"/></svg>`,
+  learn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18c3-1 5-4 8-4s5 3 8 4"/><path d="M4 12c3-1 5-4 8-4s5 3 8 4" opacity=".55"/><circle cx="12" cy="5" r="1.4" fill="currentColor"/></svg>`,
+};
+// Lens Apps: one icon set drawn for Lens (not the projects' logos), a monochrome glyph on a matte tile
+// with a single accent mark. [glyph in currentColor, accent mark in var(--a), accent colour].
+const G = (main, acc, a) => ({ main, acc, a });
+const APP_GLYPH = {
+  artcraft: G('<rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 16l4.5-4.5 3.5 3.5 2.5-2.5L20 17.5"/>', '<circle cx="15.5" cy="9" r="1.7"/>', "#f59e0b"),
+  wordcraft: G('<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5A.5.5 0 0 1 6.5 20V4a.5.5 0 0 1 .5-.5z"/><path d="M9.5 12h5M9.5 15h5"/>', '<path d="M9.5 9h3"/>', "#60a5fa"),
+  deckcraft: G('<rect x="3.5" y="4.5" width="17" height="11" rx="2"/><path d="M12 15.5v4M8.5 20h7"/>', '<path d="M8 12l2.5-3 2 2 3-3.5"/>', "#f97316"),
+  gridcraft: G('<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M4 14.5h16M10 4v16"/>', '<path d="M13 12h4"/>', "#34d399"),
+  thumbdesk: G('<path d="M7 8.5h10a4 4 0 0 1 3.9 4.9l-.8 3.3a2.2 2.2 0 0 1-3.8 1L14.6 15.5H9.4l-1.7 2.2a2.2 2.2 0 0 1-3.8-1l-.8-3.3A4 4 0 0 1 7 8.5z"/><path d="M8 11.5v2.5M6.8 12.75h2.4"/>', '<circle cx="16" cy="12.5" r="1"/>', "#a78bfa"),
+  concat: G('<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17M3.5 15h17M8 5v4M12 5v4M16 5v4M8 15v4M12 15v4M16 15v4"/>', '<path d="M10.5 10.6v2.8l2.6-1.4z"/>', "#f43f5e"),
+  degenview: G('<path d="M4 4v16h16"/><path d="M8 10v5M12 7v9M16 11v4"/>', '<path d="M7 14l4-4 3 2 5-5"/>', "#22d3ee"),
+  ollama: G('<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M9.5 3.5v3M14.5 3.5v3M9.5 17.5v3M14.5 17.5v3M3.5 9.5h3M3.5 14.5h3M17.5 9.5h3M17.5 14.5h3"/>', '<circle cx="12" cy="12" r="1.8"/>', "#e5e7eb"),
+  "obs-studio": G('<circle cx="12" cy="12" r="8"/>', '<circle cx="12" cy="12" r="3"/>', "#ef4444"),
+  krita: G('<path d="M14.5 4.5l5 5-9.5 9.5H5v-5z"/><path d="M12.5 6.5l5 5"/>', '<path d="M5 19l3-3"/>', "#ec4899"),
+  blender: G('<path d="M12 3.5l7.5 4.25v8.5L12 20.5l-7.5-4.25v-8.5z"/><path d="M4.5 7.75L12 12l7.5-4.25M12 12v8.5"/>', '<circle cx="12" cy="12" r="1.2"/>', "#fb923c"),
+  affine: G('<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 9h6M7 12.5h4"/>', '<rect x="13.5" y="11" width="4" height="4" rx="1"/>', "#818cf8"),
+};
+export const appGlyph = (id) => {
+  const g = APP_GLYPH[id];
+  if (!g) return "";
+  return `<span class="app-ic" style="--a:${g.a}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g>${g.main}</g><g class="acc">${g.acc}</g></svg></span>`;
 };
 const extra = (t, line, { clip: c, img, alt } = {}) => `<article class="ex">${c ? clip(c, t) : img ? `<figure class="clip still"><img src="media/${img}" alt="${esc(alt ?? t)}" loading="lazy" width="1100" height="619"></figure>` : ""}<h3>${esc(t)}</h3><p>${esc(line)}</p></article>`;
 
-/** One app, once: a real thumbnail (the project's screenshot, or its icon), its licence, and Get. */
-function appTile(id, apps, big) {
-  const a = apps[id];
-  if (!a) return "";
-  const shot = a.files?.shot0, icon = a.files?.icon;
-  return `<article class="apt${big ? " big" : ""}" data-app-card="${esc(id)}">
-  <a class="apt-thumb${shot ? "" : " icon"}" href="${esc(a.repo ?? a.homepage)}" aria-label="${esc(a.name)} on its project page">${shot ? `<img src="media/apps/${shot}" alt="${esc(a.name)} screenshot" loading="lazy" width="1100" height="619">` : icon ? `<img src="media/apps/${icon}" alt="" loading="lazy" width="72" height="72">` : `<span class="mono-ic" style="--h:200">${esc(a.name[0])}</span>`}</a>
-  <div class="apt-body">${shot && icon ? `<img class="apt-ic" src="media/apps/${icon}" alt="" width="32" height="32" loading="lazy">` : ""}<div class="apt-t"><h4>${esc(a.name)}</h4><span>${esc(LINES[id] ?? "")}</span><span class="meta">${esc(a.license)}</span></div><button class="get-pill" type="button" data-get="${esc(a.name)}" aria-live="polite">Get</button></div>
+/** One app, once: a real screenshot from its own repository (or Lens's drawn tile when the repo has
+ *  none), its name and line, who makes it (linked to the source), its licence, the credit, and Get. */
+function appTile(id, c, m = {}) {
+  if (!c && !m.name) return "";
+  const name = c?.name ?? m.name, license = c?.license ?? m.license, repo = c?.repo ?? m.repo ?? c?.homepage ?? m.homepage;
+  const author = c?.author ?? c?.publisher ?? "";
+  const thumb = c?.thumb?.site ? c.thumb.site.replace(/^docs\//, "") : null;
+  const shot = thumb
+    ? `<figure class="apt-shot"><img src="${esc(thumb)}" alt="Screenshot of ${esc(name)}" loading="lazy" decoding="async" width="640" height="400"></figure>`
+    : `<div class="apt-shot is-glyph">${appGlyph(id)}</div>`;
+  return `<article class="apt" data-app-card="${esc(id)}">
+  ${shot}
+  <div class="apt-body">
+    <div class="apt-t"><h3><a href="${esc(c?.homepage ?? repo)}">${esc(name)}</a></h3><span class="apt-line">${esc(LINES[id] ?? "")}</span>
+      <span class="apt-by">${author ? `by <a href="${esc(repo)}" aria-label="${esc(author)}: ${esc(name)} source code">${esc(author)}</a> · ` : ""}<span class="apt-lic">${esc(license)}</span></span>
+    </div>
+    <button class="get-pill" type="button" data-get="${esc(name)}" aria-live="polite">Get</button>
+  </div>
+  ${thumb ? `<p class="apt-credit">Screenshot: ${esc(name)}, ${esc(license)}</p>` : ""}
 </article>`;
 }
 

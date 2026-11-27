@@ -50,6 +50,7 @@ Prices above are starting suggestions from the launch plan, not researched figur
 - The AI is also just **Lens** ("Ask Lens", "Lens is working on it"). Not "Lens Guide", not a persona name. The help system is **the Guide**.
 - Family members keep the prefix: **Lens Browser, Lens Music, Lens Cleaner, Lens Apps, Lens Feeds, Lens Messages, Lens Notes, Lens Snip**. Tools with their own names: **Backdrop Lab**, **Command**, **Shelf**, **Magic** (the right-click menu), **Redline** (planned review tool).
 - **Open:** whether other first-party apps (e.g. the TradingView rewrite as "Lens Trade") join the family on the site.
+- **Maker: Campton.** Lens launches under its maker's own name, **Campton**, together with Campton's other products (**Tribe Code**, **ThumbDesk**). It is written "Lens, made by Campton" in the About page, the site footer and the README. *Decided 26 November 2026.* The brand architecture, the projection ideas and what is still open (Tribe Code's description, a Campton GitHub organisation, "Lens Desktop" as a descriptor) are in [COMBINATOR.md §3](COMBINATOR.md#3-brand-projection-lens-by-campton).
 
 ---
 
@@ -77,12 +78,14 @@ Prices above are starting suggestions from the launch plan, not researched figur
 - Lucide-style line icons, bold strokes (~2–2.6), no bubbles or double borders around standalone utility icons.
 - Icon chips (26 px, 8 px radius, matte fill + hairline) only where an icon names a control (Quick settings tiles); filled with the accent when that control is on.
 - App icons keep their own colours. Dock attention uses Windows-orange by default.
+- Lens's own app icons are one set (`src/icons/lensApps.ts`, DESIGN.md §3.7): a bold white glyph on a plain matte tile, no effects. Lens Browser alone wears the Lens logo; the rainbow logo is otherwise kept for brand moments, not app icons.
 
 ### 3.4 Motion
 
 - **Transform and opacity only.** No animating width, height, top/left or layout; no native window resizes mid-animation. One motion system: `src/ui/motion` (glide, usePresence, FLIP) and the duration/easing tokens (`--lens-dur-*`, `--lens-ease-*`). A lint (`bun run lint:motion`) blocks regressions.
 - **Quick slides, never snaps.** Panels glide in and out (~180–220 ms ease-out); the dock slides away on auto-hide and the window hides only after the slide ends; interrupted motion reverses from where it is.
 - **Settle, don't bounce** — except one deliberate bounce: an app asking for attention, once.
+- **Light to look at, weighty to touch.** Presses sink and spring back with weight (three press weights: light, medium, heavy); everything that opens grows from what opened it. The binding spec is [`DESIGN.md` §5.1–5.5](../../DESIGN.md#5-motion--feel).
 - **Reduced motion respected** (Windows "Animation effects" off or the Lens setting): motion collapses to instant, nothing loops.
 - Budgets: p95 frame ≤ 16.7 ms at 60 Hz, no frame over 33 ms during an animation; tested by the perf and smoothness rigs.
 

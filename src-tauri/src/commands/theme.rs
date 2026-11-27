@@ -155,6 +155,8 @@ pub(crate) fn save_config_cmd(
     }
     save_config(&new_config)?;
     crate::app::integration::on_config_saved(&app, &prev_config, &new_config);
+    crate::commands::dashboard::on_flag_changed(&app, prev_config.magic_waves.dashboard, new_config.magic_waves.dashboard);
+    crate::commands::desktop_widgets::on_flag_changed(&app, prev_config.magic_waves.desktop_widgets, new_config.magic_waves.desktop_widgets);
 
     // Only touch taskbar/startup/window geometry when those specific settings actually changed!
     // Never call set_size/set_position/backdrop on every Opacity/Roundness/Color dial tick (eliminates flicker!).
@@ -170,7 +172,6 @@ pub(crate) fn save_config_cmd(
         || prev_config.dock.grounded_margin_bottom != new_config.dock.grounded_margin_bottom
         || prev_config.dock.icon_size != new_config.dock.icon_size
         || prev_config.dock.position != new_config.dock.position
-        || prev_config.dock.show_top_bar != new_config.dock.show_top_bar
         || prev_config.top_bar.enabled != new_config.top_bar.enabled
         || prev_config.top_bar.height != new_config.top_bar.height
         || prev_config.top_bar.floating != new_config.top_bar.floating
@@ -253,13 +254,12 @@ pub(crate) fn save_config_cmd(
     #[cfg(windows)]
     if prev_config.window_controls.enabled != new_config.window_controls.enabled
         || prev_config.window_controls.order != new_config.window_controls.order
+        || prev_config.window_controls.style != new_config.window_controls.style
+        || prev_config.window_controls.position != new_config.window_controls.position
+        || prev_config.window_controls.excluded_processes != new_config.window_controls.excluded_processes
         || prev_config.theme.border_radius != new_config.theme.border_radius
     {
-        win_caption_engine::set_caption_engine_config(
-            new_config.window_controls.enabled,
-            &new_config.window_controls.order,
-            new_config.theme.border_radius,
-        );
+        win_caption_engine::set_caption_engine_config(&new_config.window_controls, new_config.theme.border_radius);
     }
 
     {

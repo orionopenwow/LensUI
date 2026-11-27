@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { messagesApi } from "../messages/api";
 import type { AppDto, MessagesSettings } from "../messages/model";
 import { AppGlyph } from "../messages/Inbox";
+import { oops, quiet } from "../ui/oops";
 
 /** Settings › Messages. Messengers run as their own official web apps in sandboxed spaces; Lens
  *  reads only the unread badge. Matrix is the one place Lens can read and send (with approval). */
@@ -10,9 +11,26 @@ export function MessagesCard() {
   const [apps, setApps] = useState<AppDto[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [pw, setPw] = useState("");
+  // Why the notification mirror shows nothing (for example: this build isn't packaged).
+  const [mirrorNote, setMirrorNote] = useState("");
+  const mirrorOn = !!s?.mirrorToasts;
   useEffect(() => {
-    messagesApi.settings().then(setS).catch(() => {});
-    messagesApi.catalogue().then(setApps).catch(() => {});
+    setMirrorNote("");
+    if (!mirrorOn) return;
+    let alive = true;
+    // After the switch has been saved, so Rust sees it as on.
+    const t = window.setTimeout(() => {
+      messagesApi.mirrorStatus().then((r) => alive && setMirrorNote(r.note)).catch(quiet); // the note is extra; the switch itself already saved
+    }, 400);
+    return () => {
+      alive = false;
+      window.clearTimeout(t);
+    };
+  }, [mirrorOn]);
+  useEffect(() => {
+    // The card shows nothing until its settings arrive, so a failed load has to say so.
+    messagesApi.settings().then(setS).catch(oops("load the Messages settings"));
+    messagesApi.catalogue().then(setApps).catch(oops("load the list of messengers"));
   }, []);
   if (!s) return null;
   const save = (patch: Partial<MessagesSettings>) => {
@@ -21,7 +39,7 @@ export function MessagesCard() {
     void messagesApi.setSettings(next).then(setS).catch((e) => setMsg(String(e)));
   };
   const toggle = (on: boolean, label: string, onChange: () => void) => (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
+    <button data-weight="medium" type="button" role="switch" aria-checked={on} aria-label={label} className={`cc-toggle ${on ? "on" : ""}`} onClick={onChange} />
   );
   const list = (v: string[]) => v.join(", ");
   const parse = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
@@ -60,6 +78,7 @@ export function MessagesCard() {
         </div>
         {toggle(s.mirrorToasts, "Mirror notifications", () => save({ mirrorToasts: !s.mirrorToasts }))}
       </div>
+      {s.mirrorToasts && mirrorNote && <div className="cc-desc" role="status">{mirrorNote}</div>}
       <div className="cc-row" style={{ marginTop: 12 }}>
         <div>
           <div className="cc-label">Show previews</div>
@@ -93,8 +112,8 @@ export function MessagesCard() {
         </div>
         <div className="cc-row" style={{ gap: 6, marginTop: 6 }}>
           <input className="cc-input" aria-label="Matrix password" type="password" placeholder="Password (not stored — only the session token is)" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="off" />
-          <button className="cc-btn" onClick={() => void messagesApi.matrixLogin(pw).then(() => { setPw(""); setMsg("Matrix connected."); }).catch((e) => setMsg(String(e)))}>Sign in</button>
-          <button className="cc-btn" onClick={() => void messagesApi.matrixLogout().then(() => setMsg("Signed out of Matrix.")).catch((e) => setMsg(String(e)))}>Sign out</button>
+          <button data-weight="medium" className="cc-btn" onClick={() => void messagesApi.matrixLogin(pw).then(() => { setPw(""); setMsg("Matrix connected."); }).catch((e) => setMsg(String(e)))}>Sign in</button>
+          <button data-weight="medium" className="cc-btn" onClick={() => void messagesApi.matrixLogout().then(() => setMsg("Signed out of Matrix.")).catch((e) => setMsg(String(e)))}>Sign out</button>
         </div>
       </div>
       {msg ? <div className="cc-desc" role="status" style={{ marginTop: 10 }}>{msg}</div> : null}

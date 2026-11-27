@@ -7,7 +7,9 @@ export { convertFileSrc, isTauri } from "../mock/core";
 const p = new URLSearchParams(location.search);
 const scene = p.get("scene") || "";
 const spotify = scene.includes("spotify");
-const empty = scene === "np-empty";
+const empty = scene === "np-empty" || scene === "imm-empty";
+const noArt = scene.includes("noart");
+const long = scene.includes("long");
 
 const T0 = Date.now();
 export const SAMPLE = {
@@ -17,10 +19,10 @@ export const SAMPLE = {
   title: "Harbour Lights [From Lens: Original Score]",
   artist: "The Placeholders, Mira Vale & North Arcade",
   album: "Lens Sessions, Vol. 1",
-  artwork: placeholderArt("harbour-lights"),
+  artwork: noArt ? null : placeholderArt("harbour-lights"),
   trackKey: "k-harbour",
   status: "playing",
-  positionMs: 64_000,
+  positionMs: long ? 200_500 : 64_000,
   updatedMs: T0,
   durationMs: 224_000,
   rate: 1,
@@ -46,6 +48,12 @@ const LYRICS = [
   "Harbour lights, harbour lights",
 ].map((text, i) => ({ startMs: 48_000 + i * 6_500, text }));
 
+// A long song with long lines (original placeholder text), for the long-lyrics scene.
+const LONG = Array.from({ length: 140 }, (_, i) => ({
+  startMs: 2_000 + i * 3_000,
+  text: i % 7 === 3 ? "" : `${["Somewhere past the lighthouse and the last of the ferries", "We counted every window that was still awake", "And the radio kept singing what we couldn't say", "Harbour lights"][i % 4]} (${i + 1})`,
+}));
+
 const track = (n: number, title: string, artists: string, album: string, ms: number, explicit = false) => ({
   uri: `spotify:track:t${n}`, title, artists, album, durationMs: ms, explicit, image: placeholderArt(`q-${n}`, 96),
 });
@@ -54,12 +62,27 @@ const handlers: Record<string, (a: any) => any> = {
   music_config_get: () => ({
     enabled: true, priority: ["spotify", "applemusic"], deny: ["teams"], allowOnly: [], miniPlayer: "dock", themeFollows: true, themeIntensity: 0.6,
     restoreDelayS: 20, lyrics: true, lyricsLrclib: true, lyricsFolder: null, lyricsOffsetMs: 0, windowStyle: "expanded", dither: true,
-    sceneReactive: false, history: true, lastfm: false,
+    sceneReactive: false, history: true, lastfm: false, artTint: scene !== "np-theme-accent", immersiveIdleS: 3, immersiveGlow: scene.includes("glow"), immersiveLyrics: true,
+    lyricsTranslate: scene.includes("both"), lyricsTranslateTo: "French", lyricsView: scene.includes("both") ? "both" : "original", discord: false, discordAppId: "", discordPrivate: false,
+    discordShowProgress: true, setupDone: !scene.includes("setup"), remoteIdleMin: 10, soundGlow: true, levelMeter: true, desktopLyrics: false,
+  }),
+  music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
+  music_lyrics_nudge: (a) => ({ songMs: (a?.steps ?? 0) * 500, key: "0123456789abcdef0123456789abcdef" }),
+  music_translation_get: () => null,
+  music_discord_status: () => ({ status: "Off", pipes: ["\\\\.\\pipe\\discord-ipc-0"] }),
+  music_glow_level: () => 0.5,
+  // Tester mode scene: Lens Remote on with a pairing code waiting, Equalizer APO installed.
+  music_remote_status: () => scene === "card-tester"
+    ? { on: true, pairUrl: "http://192.168.1.20:43120/pair?t=" + "0123456789abcdef".repeat(4), address: "192.168.1.20:43120", phones: 0, idleMin: 10, note: null }
+    : { on: false, pairUrl: null, address: "", phones: 0, idleMin: 10, note: null },
+  music_eq_status: () => ({
+    installed: scene === "card-tester", configDir: scene === "card-tester" ? "C:\\Program Files\\EqualizerAPO\\config" : null, active: scene === "card-tester" ? "bass" : "",
+    presets: [["flat", "Flat"], ["bass", "More bass"], ["vocal", "Clear voices"], ["treble", "More treble"], ["night", "Late night (softer peaks)"]], bands: [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000],
   }),
   music_config_set: (a) => a.config,
   music_now: () => SAMPLE,
   music_control: () => true,
-  music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines: LYRICS, source: "lrclib", sourceUrl: "https://lrclib.net/api/get/1", note: null }),
+  music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines: long ? LONG : LYRICS, source: "lrclib", sourceUrl: "https://lrclib.net/api/get/1", note: null }),
   music_history: () => [
     { title: "Harbour Lights [From Lens: Original Score]", artist: "The Placeholders", album: "Lens Sessions, Vol. 1", sourceLabel: "Spotify", durationMs: 224_000, atMs: T0 },
     { title: "Glass Canyon", artist: "Mira Vale", album: "Echo Field", sourceLabel: "Spotify", durationMs: 201_000, atMs: T0 - 4e5 },
@@ -67,7 +90,7 @@ const handlers: Record<string, (a: any) => any> = {
     { title: "Slow Static", artist: "North Arcade", album: "Low Orbit", sourceLabel: "Spotify", durationMs: 188_000, atMs: T0 - 1.2e6 },
     { title: "Paper Tides", artist: "The Placeholders", album: "Lens Sessions, Vol. 1", sourceLabel: "Spotify", durationMs: 236_000, atMs: T0 - 1.5e6 },
   ],
-  music_spotify_status: () => ({ connected: spotify, clientId: spotify ? "0123456789abcdef0123456789abcdef" : null, redirectUri: "http://127.0.0.1:43117/callback",
+  music_spotify_status: () => ({ connected: spotify, clientId: spotify ? "0123456789abcdef0123456789abcdef" : null, redirectUri: "http://127.0.0.1:43117/callback", redirectUris: ["http://127.0.0.1:43117/callback", "http://127.0.0.1:43118/callback", "http://127.0.0.1:43119/callback"],
     scopes: [["user-read-playback-state", "See what's playing and your queue"], ["user-modify-playback-state", "Play, pause, skip and add to your queue"], ["playlist-read-private", "List your playlists in the sidebar"], ["user-library-modify", "Save (like) a track when you ask"]] }),
   music_spotify_queue: () => ({
     current: track(0, "Harbour Lights", "The Placeholders", "Lens Sessions, Vol. 1", 224_000),

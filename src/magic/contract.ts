@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { ConflictDto, LensTargetInput, MagicConfig, MagicOpen, MagicStatus, MagicTarget } from "../types/generated";
+import { logFail } from "../failsafe/calls";
 
 export type { ConflictDto, LensTargetInput, MagicConfig, MagicOpen, MagicStatus, MagicTarget };
 
@@ -36,7 +37,7 @@ export function magicOpenFor(
   path: string | null = null,
   run: string | null = null,
 ): Promise<void> {
-  return magicOpen({ kind, id, label, path, run }).catch(() => {});
+  return magicOpen({ kind, id, label, path, run }).catch(logFail("Magic", `open the Magic window for ${kind}`));
 }
 export const magicLast = () => invoke<MagicOpen | null>("magic_last");
 export const magicHide = () => invoke<void>("magic_hide");

@@ -1,9 +1,11 @@
 // Lens Command's view of Lens Intelligence: the real ai-core client (src/ai/client.ts,
 // src/ai/contract.ts) plus an all-requests event hook for the Command thread.
 // (This replaced the local aiShim.ts once feature/ai-core landed.)
+import { rememberStepToken } from "../ai/stepTokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { aiAsk, aiCancel } from "../ai/client";
+import { quiet } from "../failsafe/calls";
 import type {
   AiDoneEvent,
   AiDeltaEvent,
@@ -40,11 +42,15 @@ export function useAiEvents(handlers: AiStreamHandlers) {
     const subs = [
       listen<AiDelta>(EVT_AI_DELTA, (e) => ref.current.onDelta?.(e.payload)),
       listen<AiDone>(EVT_AI_DONE, (e) => ref.current.onDone?.(e.payload)),
-      listen<ToolProposal>(EVT_AI_TOOL_PROPOSAL, (e) => ref.current.onToolProposal?.(e.payload)),
+      listen<ToolProposal>(EVT_AI_TOOL_PROPOSAL, (e) => {
+        // Keep the step's one-time approval token for the answer (src/ai/stepTokens.ts).
+        rememberStepToken(e.payload.call_id, (e.payload as { approval_token?: string }).approval_token);
+        ref.current.onToolProposal?.(e.payload);
+      }),
       listen<ToolResult>(EVT_AI_TOOL_RESULT, (e) => ref.current.onToolResult?.(e.payload)),
     ];
     return () => {
-      subs.forEach((p) => p.then((u) => u()).catch(() => {}));
+      subs.forEach((p) => p.then((u) => u()).catch(quiet));
     };
   }, []);
 }

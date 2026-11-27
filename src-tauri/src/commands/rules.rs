@@ -29,6 +29,14 @@ pub(crate) fn set_window_styling_cmd(settings: WindowStyling) -> Result<WindowSt
     Ok(clean)
 }
 
+/// For each process (a full path or a file name): is it on Lens's built-in protected lists
+/// (Lens itself, Windows shell hosts, anti-cheat services and protected games)? Settings shows
+/// those apps with a locked "Protected" badge instead of switches.
+#[tauri::command]
+pub(crate) fn protected_processes_cmd(processes: Vec<String>) -> Vec<bool> {
+    processes.iter().take(512).map(|p| win_rules::is_protected_process(p)).collect()
+}
+
 /// Hover peek: fades everything except `hwnd` for up to `durationMs` (default 3 s, max 10 s).
 /// Call again to extend; call `end_peek_cmd` on mouse-out.
 #[tauri::command]

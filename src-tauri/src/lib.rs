@@ -6,6 +6,7 @@ mod voice;
 mod ffi;
 mod sys_telemetry;
 mod caption_paint;
+mod caption_rules;
 mod win_caption_engine;
 mod win_dwm_engine;
 #[cfg(windows)]
@@ -82,6 +83,12 @@ mod snip;
 mod studio;
 // Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
 mod magic_waves;
+// Magic Search's web results (docs/plans/SELECTION_BAR.md §3.4).
+mod magic_search;
+// Lens Mission Control: the maintainer's dev-only admin window (docs/MISSION_CONTROL.md).
+// Compiled only with `--features admin` (Launch-Lens-UI.bat's dev build); never in a release.
+#[cfg(feature = "admin")]
+mod mission;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]
@@ -140,6 +147,12 @@ use app::{setup::*, tray::*, watcher::*, AppState};
 use commands::{
     mcp::*, notifications::*, surfaces::*, system::*, theme::*, wallpaper::*, workspaces::*,
 };
+
+/// Gives a `generate_handler!` closure its type, so two handlers can be composed (Mission
+/// Control's `mc_` commands exist only with the `admin` feature).
+fn ipc_handler<F: Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static>(f: F) -> F {
+    f
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -259,7 +272,7 @@ pub fn run() {
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
             commands::coreapps::init_timers(app.handle());
-            crate::app::setup::run_setup(
+            let ready = crate::app::setup::run_setup(
                 app,
                 initial_config,
                 running_as_shell,
@@ -268,9 +281,13 @@ pub fn run() {
                 bg_dock_menu_open,
                 bg_topbar_visible,
                 bg_topbar_search_open,
-            )
+            );
+            #[cfg(feature = "admin")]
+            mission::setup(app.handle());
+            ready
         })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler({
+        let lens_handler = ipc_handler(tauri::generate_handler![
             commands::control::control_catalogue,
             commands::control::control_get,
             commands::control::control_preview,
@@ -297,6 +314,8 @@ pub fn run() {
             commands::magic::magic_hide,
             commands::magic::magic_window_action,
             commands::magic::magic_report_open,
+            commands::magic_mouse::magic_mouse_status,
+            commands::magic_mouse::magic_mouse_preview,
             commands::coreapps::coreapp_list,
             commands::coreapps::coreapp_open,
             commands::coreapps::coreapp_sticky_open,
@@ -353,6 +372,18 @@ pub fn run() {
             commands::clip::selection_read,
             commands::clip::selection_take,
             commands::clip::selection_to_shelf,
+            // The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md)
+            commands::selection_bar::selection_bar_fit,
+            commands::selection_bar::selection_bar_state,
+            commands::selection_bar::selection_bar_hide,
+            commands::selection_bar::selection_bar_paste_preview,
+            commands::selection_bar::selection_bar_run,
+            commands::magic_search::magic_search_open,
+            commands::magic_search::magic_search_last,
+            commands::magic_search::magic_search_hide,
+            commands::magic_search::magic_search_layout,
+            commands::magic_search::magic_search_web,
+            commands::magic_search::magic_search_replace,
             commands::clip::context_foreground,
             commands::clip::context_remember,
             commands::clip::command_layout,
@@ -447,6 +478,7 @@ pub fn run() {
             commands::messages::messages_get_settings,
             commands::messages::messages_set_settings,
             commands::messages::messages_inbox,
+            commands::messages::messages_mirror_status,
             commands::messages::messages_unread,
             commands::messages::messages_space_title,
             commands::messages::messages_focus,
@@ -839,9 +871,27 @@ pub fn run() {
             commands::music::music_sleep,
             commands::music::music_lyrics,
             commands::music::music_lyrics_clear_cache,
+            commands::music::music_lyrics_offset,
+            commands::music::music_lyrics_nudge,
+            commands::music::music_lyrics_offset_reset,
+            commands::music::music_translation_get,
+            commands::music::music_translation_put,
+            commands::music::music_discord_status,
+            commands::music::music_immersive_open,
+            commands::music::music_immersive_close,
+            commands::music::music_immersive_pending,
+            commands::music::music_remote_start,
+            commands::music::music_remote_stop,
+            commands::music::music_remote_status,
+            commands::music::music_remote_pair,
+            commands::music::music_eq_status,
+            commands::music::music_eq_set,
+            commands::music::music_eq_open_editor,
             commands::music::music_history,
             commands::music::music_history_clear,
             commands::music::music_level,
+            commands::music::music_glow_level,
+            commands::music::music_open_search,
             commands::music::music_spicetify_preview,
             commands::music::music_spicetify_export,
             commands::music::music_spotify_status,
@@ -864,14 +914,15 @@ pub fn run() {
             commands::cleaner::cleaner_preview_paths,
             commands::cleaner::cleaner_full_list,
             commands::cleaner::cleaner_run,
+            commands::cleaner::cleaner_confirm_code,
             commands::cleaner::cleaner_undo,
             commands::cleaner::cleaner_space_scan,
             commands::cleaner::cleaner_space_children,
             commands::cleaner::cleaner_biggest,
+            commands::cleaner::cleaner_space_find,
             commands::cleaner::cleaner_reveal,
             commands::cleaner::cleaner_open,
             commands::cleaner::cleaner_apps,
-            commands::cleaner::cleaner_app_uninstall,
             commands::cleaner::cleaner_downloads_review,
             commands::cleaner::cleaner_move,
             commands::cleaner::cleaner_history,
@@ -894,6 +945,29 @@ pub fn run() {
             commands::apps::apps_open,
             commands::apps::apps_portable_remove,
             commands::thumbdesk::thumbdesk_info,
+            commands::dashboard::dashboard_available,
+            commands::dashboard::open_dashboard,
+            commands::dashboard::toggle_dashboard,
+            commands::dashboard::dashboard_hide,
+            commands::desktop_widgets::desktop_widgets_available,
+            commands::desktop_widgets::desktop_widgets_state,
+            commands::desktop_widgets::desktop_widgets_save,
+            commands::desktop_widgets::desktop_widgets_hits,
+            commands::desktop_widgets::desktop_widgets_status,
+            commands::desktop_widgets::desktop_widgets_edit,
+            commands::magic_start::magic_start_available,
+            commands::magic_start::toggle_magic_start,
+            commands::magic_start::magic_start_hide,
+            commands::magic_start::open_windows_start,
+            commands::magic_start::save_note_export,
+            commands::widgets::widgets_state,
+            commands::widgets::widgets_add,
+            commands::widgets::widgets_remove,
+            commands::widgets::widgets_move,
+            commands::widgets::widgets_set_params,
+            commands::widgets::widgets_revoke_host,
+            commands::widgets::widgets_set_fetch_off,
+            commands::widgets::widgets_fetch,
             commands::thumbdesk::thumbdesk_open,
             commands::apps::apps_open_link,
             commands::apps::apps_recipe_preview,
@@ -946,11 +1020,53 @@ pub fn run() {
             commands::tester::tester_reveal_report,
             commands::tester::tester_open_issue,
             commands::failsafe::failsafe_status,
+            commands::failsafe::safety_facts,
+            commands::rules::protected_processes_cmd,
             commands::failsafe::failsafe_take_notices,
             commands::failsafe::failsafe_reset_feature,
             commands::failsafe::failsafe_safe_mode_next,
             commands::failsafe::failsafe_ui_crash,
-        ])
+        ]);
+        // Mission Control's commands exist only in admin (dev) builds: a second handler for the
+        // `mc_` names, consulted first. Release builds compile `lens_handler` alone.
+        #[cfg(feature = "admin")]
+        let mission_handler = ipc_handler(tauri::generate_handler![
+            mission::commands::mc_status,
+            mission::commands::mc_token_set,
+            mission::commands::mc_token_forget,
+            mission::commands::mc_token_probe,
+            mission::commands::mc_set_hotkey,
+            mission::commands::mc_open,
+            mission::commands::mc_gh,
+            mission::commands::mc_job_log,
+            mission::commands::mc_prs,
+            mission::commands::mc_pr_files,
+            mission::commands::mc_merged_prs,
+            mission::commands::mc_quality,
+            mission::commands::mc_release_config,
+            mission::commands::mc_git,
+            mission::commands::mc_branches,
+            mission::commands::mc_docs,
+            mission::commands::mc_doc,
+            mission::commands::mc_brain_index,
+            mission::commands::mc_local,
+            mission::commands::mc_log_since,
+            mission::commands::mc_crash,
+            mission::commands::mc_state_get,
+            mission::commands::mc_state_set,
+            mission::commands::mc_audit,
+            mission::commands::mc_plan,
+            mission::commands::mc_cancel,
+            mission::commands::mc_apply,
+        ]);
+        move |invoke: tauri::ipc::Invoke<tauri::Wry>| {
+            #[cfg(feature = "admin")]
+            if invoke.message.command().starts_with("mc_") {
+                return mission_handler(invoke);
+            }
+            lens_handler(invoke)
+        }
+        })
         .build(tauri::generate_context!())
         .expect("error while building Lens")
         .run(|_app_handle, event| {

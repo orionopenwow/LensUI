@@ -4,6 +4,7 @@ import { Bot, Captions, FileText, Search, Settings2 } from "lucide-react";
 import { aiStatus, type AiStatus } from "../ai/client";
 import { DEFAULT_BROWSER_AI, type BrowserAi } from "./api";
 import { Key } from "./ApprovalCard";
+import { oops } from "./oops";
 
 export function Toggle({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange(v: boolean): void }) {
   return (
@@ -69,7 +70,7 @@ export function AiPanel({ value, onChange, status }: { value: BrowserAi; onChang
         <div className="lb-ok-actions">
           <span className="lb-mono lb-dim">{st ? `privacy: ${st.privacy.replace(/_/g, " ")}` : ""}</span>
           <span className="lb-push" />
-          <button className="lb-btn lb-btn-sm" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "ai" }).catch(() => {})}>
+          <button className="lb-btn lb-btn-sm" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "ai" }).catch(oops("open AI settings"))}>
             <Settings2 size={13} /> AI settings <Key k="⏎" />
           </button>
         </div>

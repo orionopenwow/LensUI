@@ -57,9 +57,9 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
 - **Checked twice:** at scan time and again right before each file is touched, after re-reading it with `symlink_metadata`. A file that became a link in between is skipped.
 - **Your files:** they go to the Recycle Bin (`SHFileOperationW` with `FOF_ALLOWUNDO | FOF_WANTNUKEWARNING`). A permanent delete needs:
   1. "Delete for good…";
-  2. an "I understand" step;
+  2. typing a 4-digit one-time code shown only in the confirm step ("Type 4827 to continue");
   3. the hold-to-confirm approval card;
-  4. a confirm token that ties the delete to the exact list you saw. Without the token it falls back to the bin.
+  4. Rust checking that code before anything is touched. The code is random, minted in Rust (`cleaner/confirm.rs`, `cleaner_confirm_code`), handed only to the Cleaner window and never part of the preview. It is tied to that plan and the hash of its exact list (`plan::token_for`), works once, expires after two minutes and is thrown away after three wrong tries. Without the right code `cleaner_run` refuses and nothing is touched; the plan stays so you can get a new code. The list hash alone is never accepted: anything that knows the list could compute it.
 - **Undo:** for 30 s after a clean, "Restore from Recycle Bin" puts back exactly the items that clean binned. It reads `$I`/`$R` pairs in your `$Recycle.Bin\<SID>` and never overwrites. The server allows 60 s.
 - **Elevation:** one helper, `lens-ui.exe --cleaner-elevated <component-cleanup|delivery-optimization>`, with exactly three arguments and fixed argv in `elevated.rs`. It is started with `ShellExecuteExW("runas")`, so Windows shows UAC. Nothing from the UI reaches its command line.
 - **Audit log:** `%APPDATA%\LensUI\cleaner\log\YYYY-MM-DD.log` records every delete, bin, step, skip, undo, move and settings change. Paths only. It is kept for 90 days.
@@ -72,7 +72,7 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
 |---|---|
 | Weekly tidy-up | Once a week, cleans SAFE pre-ticked categories **except the Recycle Bin**, then sends a notification. The first run is a week after you turn it on. |
 | Low-space alert | Below 10% or 10 GB free: shows the Top Bar pill (`LowSpacePill`) and one notification a day. |
-| Daily snapshots | Powers "Where did my space go?": drive usage once a day, plus your top folders after each Space map scan, in `cleaner\history.txt` (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. |
+| Daily snapshots | Powers "Where did my space go?": drive usage once a day, plus your top folders after each Space map scan, in `cleaner\history.txt` (120 days, local only). Flags a jump of ≥ 5 GB or ≥ 3% in a day. The Home screen shows one row per drive that has at least two snapshots: a 30-day sparkline, the change over the period and up to two of the biggest day-to-day jumps (≥ 1 GB or ≥ 1% of the drive, `history::jumps`), labelled with the folder that grew most when the drive was mapped before and after. A jump opens the Space map at that folder (`cleaner_space_find`). Nothing shows until snapshots are on. |
 | Explorer drive verb | `HKCU\Software\Classes\Drive\shell\LensUI.Clean`, removed when you turn it off or remove all Lens changes. |
 
 ## Standout features
@@ -83,7 +83,7 @@ includes REVIEW items, ADMIN items or shader caches, and it shows the exact list
   - locked system items are dimmed and can't be selected;
   - the Windows folder carries a hard-link note.
 - **Large-file tray:** drag a big file onto "Move to D:", or press Move. The file is copied with a progress ring and checked; then the original goes to the Recycle Bin. It never overwrites (`film (2).mkv`).
-- **Per-app storage:** reads the Uninstall keys (`reg query`, read-only) and uses real icons (`extract_icon_for_path`). Each app shows app size plus caches & data. "Uninstall…" asks first, then opens the app's own uninstaller (quoted exe or `MsiExec /X{GUID}` only, no shell).
+- **Per-app storage:** reads the Uninstall keys (`reg query`, read-only) and uses real icons (`extract_icon_for_path`). Each app shows app size plus caches & data. "Uninstall…" hands the app over to **Startup & Uninstall** (opened on Installed apps, filtered to that app), which checks the uninstaller (`validate_uninstall`), asks, runs it and writes the one audit log (`coreapps-audit.jsonl`). The Cleaner never starts an uninstaller itself.
 - **Downloads review** ("What's safe to delete in Downloads?"):
   - every file is judged locally by type, age and last opened, with a plain reason;
   - suggestions are pre-picked, and you confirm through the approval card;

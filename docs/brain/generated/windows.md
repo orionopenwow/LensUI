@@ -2,7 +2,7 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (23)
+## Declared windows (30)
 
 | Label | Visible at start | Size |
 |---|---|---|
@@ -20,8 +20,10 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `cursorfx` | no (on demand) | 1920×1080 |
 | `command` | no (on demand) | 1000×640 |
 | `edgeshelf` | no (on demand) | 6×96 |
-| `bubble` | no (on demand) | 32×32 |
+| `bubble` | no (on demand) | 360×48 |
+| `magicsearch` | no (on demand) | 420×520 |
 | `testerhub` | no (on demand) | 760×860 |
+| `missioncontrol` | no (on demand) | 1180×760 |
 | `studio` | no (on demand) | 1280×820 |
 | `voicehud` | no (on demand) | 480×560 |
 | `conversation` | no (on demand) | 960×640 |
@@ -29,8 +31,13 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `nowplaying` | no (on demand) | 1280×800 |
 | `apps` | no (on demand) | 1040×760 |
 | `cleaner` | no (on demand) | 1040×760 |
+| `magicstart` | no (on demand) | 640×680 |
+| `dashboard` | no (on demand) | 440×720 |
+| `snip` | no (on demand) | 800×600 |
+| `magic` | no (on demand) | 360×440 |
+| `deskwidgets` | no (on demand) | 1280×720 |
 
-## Frontend routes (30) — `index.html?surface=<id>`
+## Frontend routes (36) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -48,14 +55,19 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `cursorfx` | `./surfaces/CursorFxSurface` | declared |
 | `command` | `./command/CommandSurface` | declared |
 | `edgeshelf` | `./command/mini/EdgeShelfSurface` | declared |
-| `bubble` | `./command/mini/BubbleSurface` | declared |
+| `bubble` | `./magic/selection/SelectionBar` | declared |
+| `magicsearch` | `./magic/search/MagicSearch` | declared |
 | `browser` | `./browser/BrowserSurface` | built at runtime |
-| `snip` | `./snip/SnipSurface` | built at runtime |
-| `magic` | `./magic/MagicSurface` | built at runtime |
+| `snip` | `./snip/SnipSurface` | declared |
+| `magic` | `./magic/MagicSurface` | declared |
+| `dashboard` | `./dashboard/DashboardWindow` | declared |
+| `deskwidgets` | `./deskwidgets/DeskWidgetsSurface` | declared |
+| `magicstart` | `./magic/start/MagicStartWindow` | declared |
 | `testerhub` | `./tester/TesterHubSurface` | declared |
 | `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
 | `approval` | `./approval/ApprovalSurface` | declared |
 | `nowplaying` | `./music/NowPlayingSurface` | declared |
+| `lyricsline` | `./music/LyricsLineSurface` | built at runtime |
 | `apps` | `./apps/AppsSurface` | declared |
 | `cleaner` | `./cleaner/CleanerSurface` | declared |
 | `coreapp` | `./coreapps/CoreAppSurface` | built at runtime |
@@ -64,3 +76,4 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `voicehud` | `./surfaces/VoiceHudSurface` | declared |
 | `studio` | `./studio/StudioSurface` | declared |
 | `conversation` | `./surfaces/ConversationSurface` | declared |
+| `iconsheet` | `./icons/IconSheetSurface` | built at runtime |

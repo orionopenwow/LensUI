@@ -1,0 +1,43 @@
+/* Lens Magic Start (src/magic/start/MagicStart.tsx). Obsidian monochrome, flush, bold icons. */
+.mstart-window { width: 100vw; height: 100vh; padding: 0; animation: mstart-in var(--lens-dur-base, 180ms) var(--lens-ease-out, ease-out) both; }
+@keyframes mstart-in {
+  from { opacity: 0; transform: translateY(8px) scale(var(--lens-enter-scale, 0.96)); }
+  to { opacity: 1; transform: none; }
+}
+.mstart-window > .mstart { height: 100%; padding: 14px; border-radius: var(--lens-radius, 14px); background: var(--lens-bg-surface, #09090b); box-shadow: inset 0 0 0 1px rgb(var(--lens-ink) / 0.1); }
+.mstart { display: flex; flex-direction: column; gap: 10px; min-height: 0; color: var(--lens-fg); font-family: var(--lens-font, "Arial Rounded MT Bold", Arial, sans-serif); }
+.mstart-head { display: flex; align-items: center; gap: 10px; }
+.mstart-orb { position: relative; flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; }
+.mstart-search { flex: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgb(var(--lens-ink) / 0.06); color: var(--lens-fg-secondary); }
+.mstart-search:focus-within { box-shadow: inset 0 0 0 2px var(--lens-accent); }
+.mstart-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--lens-fg); font: inherit; font-size: 14px; }
+.mstart-body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.mstart-h { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--lens-fg-secondary); }
+.mstart-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.mstart-actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
+.mstart-rows { display: flex; flex-direction: column; gap: 2px; }
+.mstart-tile, .mstart-row { border: 0; border-radius: 8px; background: none; color: var(--lens-fg); font: inherit; cursor: pointer; transition: background-color var(--lens-dur-fast, 140ms) var(--lens-ease-out, ease-out); }
+.mstart-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; font-size: 12px; text-align: center; }
+.mstart-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; font-size: 13px; text-align: left; }
+/* Rows arrive in order: the first six, 30 ms apart (DESIGN.md §5.3). Tiles are the home view and stay still. */
+.mstart-rows > .mstart-row:nth-child(-n + 6) { animation: mstart-row-in var(--lens-dur-base, 180ms) var(--lens-ease-out, ease-out) backwards; }
+.mstart-rows > .mstart-row:nth-child(2) { animation-delay: calc(1 * var(--lens-stagger, 30ms)); }
+.mstart-rows > .mstart-row:nth-child(3) { animation-delay: calc(2 * var(--lens-stagger, 30ms)); }
+.mstart-rows > .mstart-row:nth-child(4) { animation-delay: calc(3 * var(--lens-stagger, 30ms)); }
+.mstart-rows > .mstart-row:nth-child(5) { animation-delay: calc(4 * var(--lens-stagger, 30ms)); }
+.mstart-rows > .mstart-row:nth-child(6) { animation-delay: calc(5 * var(--lens-stagger, 30ms)); }
+@keyframes mstart-row-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.mstart-tile:hover, .mstart-row:hover, .mstart-tile.is-active, .mstart-row.is-active { background: rgb(var(--lens-ink) / 0.08); }
+.mstart-tile:focus-visible, .mstart-row:focus-visible, .mstart-btn:focus-visible { outline: 2px solid var(--lens-accent); outline-offset: 1px; }
+.mstart-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; }
+.mstart-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.mstart-row .mstart-label { flex: 1; }
+.mstart-hint-r { font-size: 11px; color: var(--lens-fg-secondary); }
+.mstart-empty { margin: 0; padding: 4px 2px; font-size: 12px; color: var(--lens-fg-secondary); }
+.mstart-foot { display: flex; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid rgb(var(--lens-ink) / 0.08); }
+.mstart-note { flex: 1; min-width: 0; font-size: 12px; color: var(--lens-fg-secondary); }
+.mstart-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; min-height: 32px; padding: 5px 10px; border-radius: 6px; background: rgb(var(--lens-ink) / 0.07); color: var(--lens-fg); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.mstart-btn:hover { background: rgb(var(--lens-ink) / 0.12); }

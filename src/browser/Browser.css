@@ -1012,14 +1012,15 @@
 .lb-glow::before {
   width: min(900px, 120%); aspect-ratio: 16 / 9; left: 50%; top: -6%;
   background:
-    radial-gradient(closest-side at 22% 55%, hsl(0 95% 60% / 0.55), transparent),
-    radial-gradient(closest-side at 40% 35%, hsl(45 95% 58% / 0.45), transparent),
-    radial-gradient(closest-side at 58% 60%, hsl(140 90% 52% / 0.40), transparent),
-    radial-gradient(closest-side at 72% 38%, hsl(195 95% 58% / 0.50), transparent),
-    radial-gradient(closest-side at 84% 60%, hsl(255 95% 66% / 0.50), transparent),
-    radial-gradient(closest-side at 50% 80%, hsl(306 95% 62% / 0.40), transparent);
-  filter: blur(64px) saturate(1.2);
-  opacity: var(--lb-glow-k, 0.32);
+    radial-gradient(closest-side at 22% 55%, hsl(0 95% 60% / 0.5), hsl(0 95% 60% / 0.18) 45%, transparent),
+    radial-gradient(closest-side at 40% 35%, hsl(45 95% 58% / 0.42), hsl(45 95% 58% / 0.15) 45%, transparent),
+    radial-gradient(closest-side at 58% 60%, hsl(140 90% 52% / 0.38), hsl(140 90% 52% / 0.13) 45%, transparent),
+    radial-gradient(closest-side at 72% 38%, hsl(195 95% 58% / 0.46), hsl(195 95% 58% / 0.16) 45%, transparent),
+    radial-gradient(closest-side at 84% 60%, hsl(255 95% 66% / 0.46), hsl(255 95% 66% / 0.16) 45%, transparent),
+    radial-gradient(closest-side at 50% 80%, hsl(306 95% 62% / 0.38), hsl(306 95% 62% / 0.13) 45%, transparent);
+  /* No blur filter: the radial gradients are already soft, and a 64 px blur on a drifting layer
+     cost a full-area re-raster every frame (the site's demo desk dropped to ~7 fps while dragging). */
+  opacity: var(--lb-glow-k, 0.36);
   transform: translateX(-50%);
   animation: lb-glow-drift 28s ease-in-out infinite alternate;
 }
@@ -1032,3 +1033,49 @@
   from { transform: translateX(-52%) translateY(0) rotate(-4deg) scale(1); }
   to { transform: translateX(-48%) translateY(3%) rotate(4deg) scale(1.08); }
 }
+
+/* Reader view: the page's text, set by Lens. Text only; nothing is loaded. */
+.lb-reader {
+  position: absolute; inset: 0; overflow-y: auto; outline: none;
+  background: var(--lens-pack-base, var(--lens-bg-base)); color: var(--lens-fg);
+  --lb-reader-size: 18px; --lb-reader-col: 680px;
+}
+.lb-reader-bar {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--lens-pack-base, var(--lens-bg-base)); border-bottom: 1px solid var(--lens-border);
+}
+.lb-reader-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-reader-tools { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lb-reader-size { min-width: 18px; text-align: center; font-variant-numeric: tabular-nums; color: var(--lens-fg-secondary); }
+.lb-reader-seg { display: inline-flex; gap: 2px; margin: 0 4px; }
+.lb-reader-seg .lb-chip { border-color: transparent; }
+.lb-reader-seg .lb-chip.is-on { color: var(--lens-fg); background: var(--lens-bg-hover); border-color: var(--lens-border); }
+.lb-reader .lb-icon-btn:disabled { opacity: 0.35; }
+.lb-reader-col {
+  box-sizing: border-box; width: 100%; max-width: var(--lb-reader-col); margin: 0 auto; padding: 40px 24px 96px;
+  font-size: var(--lb-reader-size); line-height: 1.65; text-align: left; overflow-wrap: anywhere;
+}
+.lb-reader-w-narrow { --lb-reader-col: 560px; }
+.lb-reader-w-medium { --lb-reader-col: 680px; }
+.lb-reader-w-wide { --lb-reader-col: 820px; }
+.lb-reader-s-14 { --lb-reader-size: 14px; }
+.lb-reader-s-16 { --lb-reader-size: 16px; }
+.lb-reader-s-18 { --lb-reader-size: 18px; }
+.lb-reader-s-20 { --lb-reader-size: 20px; }
+.lb-reader-s-22 { --lb-reader-size: 22px; }
+.lb-reader-s-24 { --lb-reader-size: 24px; }
+.lb-reader-s-26 { --lb-reader-size: 26px; }
+.lb-reader-serif .lb-reader-col { font-family: Charter, "Bitstream Charter", Cambria, Georgia, "Times New Roman", serif; }
+.lb-reader-sans .lb-reader-col { font-family: var(--lens-font, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif); }
+.lb-reader-col h1 { margin: 0 0 0.9em; font-size: 1.7em; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.lb-reader-col h2, .lb-reader-col h3, .lb-reader-col h4, .lb-reader-col h5, .lb-reader-col h6 { margin: 1.7em 0 0.5em; line-height: 1.3; font-weight: 600; }
+.lb-reader-col h2 { font-size: 1.3em; }
+.lb-reader-col h3 { font-size: 1.12em; }
+.lb-reader-col h4, .lb-reader-col h5, .lb-reader-col h6 { font-size: 1em; color: var(--lens-fg-secondary); }
+.lb-reader-col p { margin: 0 0 1.05em; }
+.lb-reader-col ul { margin: 0 0 1.05em; padding-left: 1.3em; }
+.lb-reader-col li { margin: 0.25em 0; }
+.lb-reader-col a { color: inherit; text-decoration: underline; text-decoration-color: var(--lens-fg-muted); text-underline-offset: 0.18em; }
+.lb-reader-col a:hover { text-decoration-color: currentColor; }
+.lb-reader-col a:focus-visible { outline: 2px solid var(--lens-fg); outline-offset: 2px; border-radius: 2px; }
+.lb-reader-note { color: var(--lens-fg-muted); font-size: 0.8em; }

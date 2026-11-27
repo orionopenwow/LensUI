@@ -68,6 +68,12 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | `Ctrl+Shift+U` | Pin to desktop opens an always-on-top sticky (coreapp-sticky-) with a click-through toggle;  in Notes makes every sticky clickable again. |
 | `Ctrl+Shift+F8` | Toggle with Ctrl + Shift + F8 (no Alt, so AltGr layouts never trigger it). |
 | `Alt+Tab` | WSEXAPPWINDOW: click-through, never focused, never in  or the taskbar. |
+| `Ctrl+Shift+Esc` | pass through the keyboard hook untouched: Ctrl+Alt+Del, , Alt+Esc, Alt+F4, Win+L, |
+| `Alt+Esc` | pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, , Alt+F4, Win+L, |
+| `Alt+F4` | pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, , Win+L, |
+| `Win+L` | pass through the keyboard hook untouched: Ctrl+Alt+Del, Ctrl+Shift+Esc, Alt+Esc, Alt+F4, , |
+| `Win+D` | , Win+Tab. |
+| `Win+Tab` | Win+D, . |
 | `Alt+L` | Docs / Notion / Google Docs Selection button and  (their pages draw text on canvas) Send to Claude, Save as note, Summarise |
 | `Ctrl+L` | Keyboard shortcuts (, Ctrl+T, Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has |
 | `Ctrl+T` | Keyboard shortcuts (Ctrl+L, , Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has |
@@ -78,13 +84,12 @@ Type these in Lens Command, the palette (Alt+Space) or the dock's Ask field. The
 | `Ctrl+Alt+Q` | Ctrl + Alt + Q hotkey ✓ Works in every mode and opens at the pointer. |
 | `Ctrl+Alt+Shift+S` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L,  and Ctrl+Alt+M are Lens shortcuts. |
 | `Ctrl+Alt+M` | - Ctrl+Alt+S, Ctrl+Alt+Space, Alt+Shift+S/L, Ctrl+Alt+Shift+S and  are Lens shortcuts. |
+| `Ctrl+Esc` | - Lock and Windows Start: power stays with Windows; "Windows Start" sends . |
 | `Shift+1` | Overview: move windows between workspaces OverviewSurface.tsx Shown only when Lens workspaces are on in groups mode, with 2 or more workspaces Drag a tile onto a workspace, or press Shift + ← / →, or Shift + 1–9. |
+| `Shift+F10` | Windows 11's compact menu. Everything above is the classic registry menu, so on Windows 11 it appears under Show more options (). |
 | `Ctrl+V` | clippaste(id, mode?) Hides Command, then sends  to the window you came from. |
 | `Win+E` | Win key shortcuts (, Win+R, Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them |
 | `Win+R` | Win key shortcuts (Win+E, , Win+D, Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them |
-| `Win+D` | Win key shortcuts (Win+E, Win+R, , Win+Tab, snap layouts…) Mostly unavailable; Explorer handles them |
-| `Win+Tab` | Win key shortcuts (Win+E, Win+R, Win+D, , snap layouts…) Mostly unavailable; Explorer handles them |
-| `Ctrl+Shift+Esc` | Task Manager. Press  → Run new task → type the full path to |
 | `Ctrl+Alt+Shift+E` | , and quitting Lens — all three bring Explorer's desktop back immediately. |
 | `Ctrl+Shift+C` | Actions bar 1 Copy · 2 Copy text · 3 Save · 4 Pin · 5 Shelf · 6 Paste to Claude · 7 Ask · 8 Translate · 9 Share · 0 Send to…, plus Ctrl+C /  / Ctrl+S, arrows + Enter, Esc. |
 | `Ctrl+0` | Pins Always-on-top windows: drag to move, Ctrl+wheel zoom,  reset, opacity, click-through (turn off from the card: "Make pins clickable"), copy, Esc / double-click to close. |

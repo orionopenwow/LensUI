@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useGrowFromTrigger } from "../ui/motion/origin";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface } from "../failsafe/calls";
 import { listen } from "@tauri-apps/api/event";
 import {
   Search,
@@ -93,6 +95,9 @@ function FileTypeIcon({ ext }: { ext?: string }) {
 export const CommandPaletteSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
   const glidePhase = useSurfaceGlide("palette");
+  // Search grows from the bar's search field (or the Dock's) that opened it (DESIGN.md §5.3).
+  const shellRef = useRef<HTMLDivElement>(null);
+  useGrowFromTrigger("palette", shellRef);
   const runningWindows = useRunningWindows(1500);
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [homeData, setHomeData] = useState<LauncherHomeData>({ recentFiles: [], folders: [] });
@@ -134,7 +139,7 @@ export const CommandPaletteSurface: React.FC = () => {
     const onBlur = () => {
       window.setTimeout(() => {
         if (!document.hasFocus()) {
-          invoke("hide_surface", { label: "palette" }).catch(() => {});
+          void hideSurface("palette");
         }
       }, 150);
     };
@@ -190,7 +195,7 @@ export const CommandPaletteSurface: React.FC = () => {
       return;
     }
     setAskPrompt(null);
-    invoke("hide_surface", { label: "palette" }).catch(() => {});
+    void hideSurface("palette");
   };
 
   // Same ranking as the Launcher and the Dock search (src/search).
@@ -334,7 +339,7 @@ export const CommandPaletteSurface: React.FC = () => {
       className={`pal-root ${anchor === "bottom-dock" ? "is-bottom-dock" : "is-top-left"}`}
       onKeyDown={onKeyDown}
     >
-      <div className={`pal-shell ${anchor === "bottom-dock" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
+      <div ref={shellRef} className={`pal-shell ${anchor === "bottom-dock" ? "lens-glide-dock" : "lens-glide-top"} ${glidePhase}`}>
         {/* Filter Pills Row (Search input lives directly inside the gliding Top Bar or Bottom Dock — zero double search bars!) */}
         <div className="pal-filter-bar">
           {(
@@ -349,7 +354,7 @@ export const CommandPaletteSurface: React.FC = () => {
             const isActive = filterTab === f.id;
             const IconComp = f.icon;
             return (
-              <button
+              <button data-weight="light"
                 key={f.id}
                 type="button"
                 className={`pal-filter-pill ${isActive ? "active" : ""}`}
@@ -372,7 +377,7 @@ export const CommandPaletteSurface: React.FC = () => {
               </button>
             );
           })}
-          <FlyoutClose pinned inline label="Close Search" onClose={() => invoke("hide_surface", { label: "palette" }).catch(() => {})} />
+          <FlyoutClose pinned inline label="Close Search" onClose={() => void hideSurface("palette")} />
         </div>
 
         {/* Main Content: Mockup-Parity Launcher Home Grid OR Live Filtered Results */}
@@ -387,7 +392,7 @@ export const CommandPaletteSurface: React.FC = () => {
                 { label: "System & Tasks", color: "#34D399", run: () => { hide(); invoke("open_dock_popout_tab_cmd", { tab: "monitor" }).catch(() => {}); } },
                 { label: "Messages", color: "#60A5FA", run: () => { hide(); invoke("open_dock_popout_tab_cmd", { tab: "messages" }).catch(() => {}); } },
               ].map((qa) => (
-                <button
+                <button data-weight="light"
                   key={qa.label}
                   type="button"
                   className="pal-filter-pill"
@@ -410,7 +415,7 @@ export const CommandPaletteSurface: React.FC = () => {
                     </div>
                   ) : (
                     recentAndRunning.map((item, idx) => (
-                      <button
+                      <button data-weight="light"
                         key={item.id}
                         type="button"
                         className={`pal-recent-row ${idx === 0 ? "first" : ""}`}
@@ -437,7 +442,7 @@ export const CommandPaletteSurface: React.FC = () => {
                 <div className="pal-col-title">Folders &amp; Files</div>
                 <div className="pal-folder-grid">
                   {homeData.folders.map((folder) => (
-                    <button
+                    <button data-weight="medium"
                       key={folder.path}
                       type="button"
                       className="pal-folder-card"
@@ -458,7 +463,7 @@ export const CommandPaletteSurface: React.FC = () => {
               <div className="pal-col-title">Apps</div>
               <div className="pal-apps-row">
                 {quickApps.map((app) => (
-                  <button
+                  <button data-weight="medium"
                     key={app.id}
                     type="button"
                     className="pal-app-card"
@@ -494,7 +499,7 @@ export const CommandPaletteSurface: React.FC = () => {
             {filtered.map((item, idx) => {
               const armed = search.armedKey === item.key;
               return (
-                <button
+                <button data-weight="light"
                   key={item.key}
                   type="button"
                   className={`pal-result-row ${idx === selected ? "selected" : ""} ${armed ? "armed" : ""} kind-${item.kind}`}

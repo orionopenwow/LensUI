@@ -80,7 +80,7 @@ export const FillBar: React.FC<{ value: number; max: number; tone?: "ink" | "dan
 };
 
 export const Check3: React.FC<{ state: "checked" | "mixed" | "unchecked"; onToggle: () => void; label: string; disabled?: boolean }> = ({ state, onToggle, label, disabled }) => (
-  <button
+  <button data-weight="medium"
     type="button"
     role="checkbox"
     aria-checked={state === "mixed" ? "mixed" : state === "checked"}

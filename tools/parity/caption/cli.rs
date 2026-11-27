@@ -3,7 +3,10 @@
 // Built and driven by tools/parity/caption/run.mjs; no crates, so plain `rustc` builds it.
 //
 // Input on stdin, one case per line (space separated):
-//   <out.ppm> <dpi> <order> <hovered 0|1> <corner 0|4|8> <caption_hex> <base_h> <caption_rows> <gradient 0|1> <content_hex> [single]
+//   <out.ppm> <dpi> <order> <hovered 0|1> <corner 0|4|8> <caption_hex> <base_h> <caption_rows> <gradient 0|1> <content_hex> [single] [style=0..3] [side=0|1]
+//   style: 0 classic, 1 soft, 2 small dots, 3 pills (windowControls.style); side: 0 right, 1 left
+//   (windowControls.position). On the left the overlay is at the window's left edge and the title
+//   bar is sampled to its right.
 //   `single` paints one colour for the whole overlay, as Lens did before this change; run.mjs uses it to
 //   prove the check catches a strip that doesn't blend.
 //   caption_rows: how many rows of the overlay are really caption (the rest is window content);
@@ -49,12 +52,17 @@ fn run_case(a: &[String]) -> (i32, u64) {
     let gradient = a[9] == "1";
     let content = hex(&a[10]);
 
+    let opt = |key: &str| -> u8 { a.iter().find_map(|v| v.strip_prefix(key)).and_then(|v| v.parse().ok()).unwrap_or(0) };
+    let (style, side) = (opt("style="), opt("side="));
+    let on_left = side == p::SIDE_LEFT;
+
     let (w, h) = p::overlay_size(dpi, base_h);
     let scale = p::scale_for(w);
     let caption_rows = ((caption_rows96 as f32) * scale).round() as i32;
     let (gap, cols) = p::sample_strip(w);
-    let left = gap + cols + 24; // screen area left of the overlay
-    let sw = left + w;
+    let beside = gap + cols + 24; // screen area beside the overlay (left of it; right of it on the left side)
+    let left = if on_left { 0 } else { beside }; // where the overlay starts
+    let sw = beside + w;
 
     // The simulated screen: caption rows (optionally a vertical gradient), then window content;
     // a bright title-text blob sits in the sampled strip on a few rows (the median must ignore it).
@@ -77,12 +85,12 @@ fn run_case(a: &[String]) -> (i32, u64) {
         }
     }
     let ink = if p::scale_for(w) > 0.0 && rgb(caption).iter().sum::<i32>() > 384 { 0x101010 } else { 0xF0F0F0 };
-    let sx = left - gap - cols;
+    let sx = if on_left { w + gap } else { left - gap - cols };
     for y in (h / 3)..(h / 3 + 3).min(caption_rows) {
         screen[(y * sw + sx + 1) as usize] = ink;
     }
 
-    // Sample exactly as the engine does: the strip left of the overlay, every row owned.
+    // Sample exactly as the engine does: the strip beside the overlay, every row owned.
     let mut block = Vec::with_capacity((cols * h) as usize);
     for y in 0..h {
         for x in sx..sx + cols {
@@ -96,13 +104,13 @@ fn run_case(a: &[String]) -> (i32, u64) {
         rows = vec![sorted[sorted.len() / 2]; rows.len()];
     }
     let corner = corner96 * scale;
-    let px = p::render(w, h, &rows, hovered, order, corner);
+    let px = p::render_with(w, h, &rows, hovered, order, corner, style, side);
 
     // Composite (premultiplied over) and compare with the screen outside the buttons and the
     // rounded corner (the window's own corner is not part of the title bar).
-    let r_btn = p::button_radius(w) + 1.5;
+    let (half_w, half_h) = p::button_half_extent(w, style);
     let cy = h as f32 * 0.5;
-    let centres = p::button_centres(w);
+    let centres: Vec<f32> = (0..3).map(|slot| p::centre_of_slot(w, slot, side)).collect();
     let mut composed = screen.clone();
     let mut max_delta = 0;
     let mut checked = 0u64;
@@ -120,8 +128,9 @@ fn run_case(a: &[String]) -> (i32, u64) {
             composed[si] = ((out[0].clamp(0, 255) as u32) << 16) | ((out[1].clamp(0, 255) as u32) << 8) | out[2].clamp(0, 255) as u32;
             let fx = x as f32 + 0.5;
             let fy = y as f32 + 0.5;
-            let in_btn = centres.iter().any(|&c| ((fx - c).powi(2) + (fy - cy).powi(2)).sqrt() <= r_btn);
-            let in_corner = corner > 0.5 && fx >= w as f32 - corner - 1.0 && fy <= corner + 1.0;
+            let in_btn = centres.iter().any(|&c| (fx - c).abs() <= half_w + 1.5 && (fy - cy).abs() <= half_h + 1.5);
+            let from_corner_edge = if on_left { fx } else { w as f32 - fx };
+            let in_corner = corner > 0.5 && from_corner_edge <= corner + 1.0 && fy <= corner + 1.0;
             if in_btn || in_corner {
                 continue;
             }

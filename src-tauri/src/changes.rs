@@ -281,6 +281,17 @@ pub const CHANGES: &[Change] = &[
         undo: undo_spicetify,
     },
     Change {
+        id: "equalizer-apo-preset",
+        label: "Equalizer APO preset (Lens Music)",
+        scope: Scope::Persistent,
+        writes: &[
+            "%ProgramFiles%\\EqualizerAPO\\config\\config.txt",
+            "%ProgramFiles%\\EqualizerAPO\\config\\lens-music.txt",
+        ],
+        sources: &["music/eq.rs", "commands/music.rs"],
+        undo: undo_equalizer_apo,
+    },
+    Change {
         id: "print-screen",
         label: "Print Screen key",
         scope: Scope::Persistent,
@@ -462,8 +473,11 @@ fn undo_windhawk_mod(_: &mut LensConfig) -> Result<String, String> {
     }
 }
 
-fn undo_cursors(_: &mut LensConfig) -> Result<String, String> {
+fn undo_cursors(config: &mut LensConfig) -> Result<String, String> {
     crate::win_cursor_fx::stop();
+    // Magic Mouse first: its flag goes off and its pointer set comes down, then the backup below
+    // puts the person's own pointers back.
+    crate::commands::magic_mouse::remove_all(config);
     // Restored from the backup Lens took before its first change.
     let mut done: Vec<String> = Vec::new();
     let mut failed: Vec<String> = Vec::new();
@@ -532,6 +546,10 @@ fn undo_spicetify(_: &mut LensConfig) -> Result<String, String> {
         Some(themes) => crate::music::spicetify::remove_installed_theme(&themes),
         None => Ok("Not exported to Spicetify.".to_string()),
     }
+}
+
+fn undo_equalizer_apo(_: &mut LensConfig) -> Result<String, String> {
+    crate::music::eq::undo()
 }
 
 fn undo_print_screen(_: &mut LensConfig) -> Result<String, String> {

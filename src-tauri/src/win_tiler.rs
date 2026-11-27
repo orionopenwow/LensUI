@@ -939,21 +939,6 @@ pub fn rect_differs(a: TileRect, b: TileRect, tol: i32) -> bool {
         || ((a.y + a.h) - (b.y + b.h)).abs() > tol
 }
 
-/// Processes the tiler never touches (anti-cheat and competitive games), matching the
-/// DWM engine's exclusions.
-pub const NEVER_TILE: [&str; 10] = [
-    "lens-ui.exe",
-    "easyanticheat",
-    "beservice",
-    "vgc.exe",
-    "valorant",
-    "cs2.exe",
-    "fortnite",
-    "searchhost.exe",
-    "shellexperiencehost.exe",
-    "startmenuexperiencehost.exe",
-];
-
 /// Window classes that are never tiles (shell surfaces, dialogs, IME and overflow popups).
 pub const NEVER_TILE_CLASSES: [&str; 9] = [
     "Shell_TrayWnd",
@@ -967,9 +952,10 @@ pub const NEVER_TILE_CLASSES: [&str; 9] = [
     "ForegroundStaging",
 ];
 
+/// Processes the tiler never touches: Lens itself, Windows shell hosts, anti-cheat services and
+/// protected games. One shared list for every engine (`win_rules`), never a private copy.
 pub fn process_never_tiled(path_or_name: &str) -> bool {
-    let p = path_or_name.to_ascii_lowercase();
-    NEVER_TILE.iter().any(|s| p.contains(s))
+    crate::win_rules::is_protected_process(path_or_name)
 }
 
 /// Live status for the Control Center card and the Top Bar.

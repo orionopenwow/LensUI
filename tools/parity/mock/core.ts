@@ -5,12 +5,13 @@ import { applyThemePack } from "../../../src/themes/packs";
 import { applyFeaturedLook, isFeatured } from "../../../src/themes/featured";
 import { wallpaperHandlers } from "./wallpapers";
 import { emitLocal } from "./event";
+import { placeholderArt } from "../../../src/music/art";
 const params = new URLSearchParams(location.search);
 const preset = params.get("preset") || "obsidian";
 const W = (globalThis as any);
 const base = {
   theme: { preset: "obsidian", accentMode: "custom", customAccent: "#FAFAFA", glassOpacity: 0.96, blurPx: 20, borderRadius: 8, accentTintStrength: 0, customCss: "", fontFamily: "rounded-arial", uiScale: 100, surfaceHex: "" },
-  dock: { groundedMarginBottom: 0, iconSize: 40, hoverScale: 1.24, hoverLift: 8, autoHide: "never", showTopBar: true,
+  dock: { groundedMarginBottom: 0, iconSize: 40, hoverScale: 1.24, hoverLift: 8, autoHide: "never",
     pinnedApps: [
       { id: "explorer", name: "File Explorer", path: "C:\\Windows\\explorer.exe", iconHint: "folder" },
       { id: "terminal", name: "Terminal", path: "wt.exe", iconHint: "terminal" },
@@ -70,6 +71,8 @@ const running = [
   win(103, "Spotify Premium", "Spotify.exe", "C:\\x\\Spotify.exe"),
   win(104, "Downloads - File Explorer", "explorer.exe", "C:\\Windows\\explorer.exe"),
 ];
+// ?multi=1: Chrome has three windows (the Dock's window-count dots and window carousel).
+if (params.get("multi")) running.push(win(105, "Lens docs — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(106, "Pull request #120 — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"));
 const apps = ["Blender 5.1", "Audacity", "Android Studio", "7-Zip File Manager", "Adobe Photoshop 2023", "Google Chrome", "Notepad", "Spotify", "Steam", "Visual Studio Code", "Discord", "OBS Studio"].map((n) => ({ name: n, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${n}.lnk`, category: "App" }));
 // ?ws=groups: Lens workspaces in groups mode, so the Overview shows its workspace strip.
 const wsGroups = params.get("ws") === "groups";
@@ -122,7 +125,26 @@ const handlers: Record<string, (a: any) => any> = {
   ai_run_intent: () => "ai-mock-1",
   clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
   clip_list: () => [],
-  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),
+  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "deny", apps: ["windowsterminal.exe", "cmd.exe", "powershell.exe", "mstsc.exe", "vmconnect.exe"], maxChars: 20000, version: 2 }),
+  // The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md).
+  selection_bar_state: () => ({ seq: 1, chars: 86, app: "C:\\Program Files\\Microsoft Office\\WINWORD.EXE", category: "office", cut: true, copy: true, paste: true, pastePreview: true, editable: true, smart: { kind: "quantity", preview: "≈ 7.77 mi", value: "12.5 km in mi", action: "smart:convert" } }),
+  selection_bar_fit: () => ({ shown: true, above: false }),
+  selection_bar_paste_preview: () => "Ship it behind a setting",
+  magic_search_last: () => ({ seq: 1, query: "calm technology", action: null, app: "C:\\x\\WINWORD.EXE", editable: true, origin: null, above: false, atMs: 0 }),
+  magic_search_web: () => ({
+    results: [
+      { title: "Calm technology", url: "https://calmtech.com/", snippet: "Technology should require the smallest possible amount of attention.", site: "calmtech.com", favicon: "", sources: ["duckduckgo", "wikipedia"] },
+      { title: "Calm technology — Wikipedia", url: "https://en.wikipedia.org/wiki/Calm_technology", snippet: "Interaction designed to occur in the user's periphery.", site: "en.wikipedia.org", favicon: "", sources: ["wikipedia"] },
+      { title: "Designing Calm Technology", url: "https://people.csail.mit.edu/rudolph/Teaching/weiser.pdf", snippet: "Weiser and Brown, Xerox PARC, 1995.", site: "people.csail.mit.edu", favicon: "", sources: ["duckduckgo"] },
+    ],
+    sources: [
+      { id: "duckduckgo", label: "DuckDuckGo", host: "html.duckduckgo.com", ok: true, count: 2, error: null },
+      { id: "wikipedia", label: "Wikipedia", host: "en.wikipedia.org", ok: true, count: 2, error: null },
+    ],
+    engineUrl: "https://duckduckgo.com/?q=calm+technology",
+    engineName: "DuckDuckGo",
+    stub: true,
+  }),
   command_templates: () => ({ templates: [], error: null, path: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\commands.json" }),
   shelves_list: () => [{ id: "default", name: "Shelf", created_ms: Date.now(), item_count: 0, approx_tokens: 0 }],
   shelf_list: () => [],
@@ -218,7 +240,18 @@ const handlers: Record<string, (a: any) => any> = {
   get_windows_theme: () => ({ accentHex: "#2D7D9A", accentR: 45, accentG: 125, accentB: 154, appsUseLightTheme: false, systemUsesLightTheme: false, transparencyEnabled: true }),
   get_running_windows: () => running,
   get_icon_for_path: () => null,
-  get_media_now_playing_cmd: () => ({ hasSession: true, isPlaying: true, title: "Midnight City", artist: "M83", album: "", sourceApp: "Spotify", thumbnailDataUrl: null }),
+  // A playing Spotify track with a timeline, for the Dock's music pop-out (DockMusicCard). `?musicArt=1`
+  // adds generated artwork (src/music/art.ts, never real album art) so the sound glow takes its
+  // colours; without it the glow falls back to the theme accent. `?musicPaused=1` pauses it.
+  get_media_now_playing_cmd: () => ({
+    hasSession: true, isPlaying: !params.get("musicPaused"), title: "Midnight City", artist: "M83", album: "", sourceApp: "Spotify",
+    thumbnailDataUrl: params.get("musicArt") ? placeholderArt("Midnight City", 128) : null,
+    positionMs: 74_000, durationMs: 243_000, updatedMs: Date.now(), canSeek: true,
+  }),
+  media_control_cmd: () => null,
+  // Speaker peak for the sound glow and level meter (one number; the pop-out asks ~30×/s while open).
+  music_glow_level: () => 0.45 + 0.35 * Math.abs(Math.sin(Date.now() / 260)),
+  music_open_search: () => null,
   get_quick_state_cmd: () => ({ volume: 62, muted: false, brightness: 80, nightLightEnabled: false, nightLightWarmth: 40 }),
   list_audio_sessions_cmd: () => [
     { pid: 1, name: "Spotify", volume: 70, muted: false },
@@ -275,6 +308,71 @@ const handlers: Record<string, (a: any) => any> = {
         ? { version: "0.3.0", seenVersion: "", onboardingCompleted: true, forced: false }
         : { version: "0.3.0", seenVersion: "0.3.0", onboardingCompleted: true, forced: false },
 };
+// Magic Dashboard (docs/plans/MAGIC_WAVES.md, wave M1): the window's commands, and with
+// ?dashdata=1 a little clearly-invented local data for its lanes (Messages, Feeds, Shelf and
+// today's calendar), so the parity scenes show filled lanes. Without it the lanes stay empty.
+handlers.dashboard_available = () => !!(config as any).magicWaves?.dashboard;
+handlers.open_dashboard = () => null;
+handlers.toggle_dashboard = () => true;
+handlers.dashboard_hide = () => null;
+// Magic Mouse (wave M3): the pointer frames are drawn by Rust; the mock returns simple SVG
+// stand-ins (a ring with a tip) so the card renders and animates in the harness.
+handlers.magic_mouse_preview = (a: any) => {
+  const hc = !!a?.highContrast;
+  const frame = (i: number, tip: boolean) => {
+    const r = 9 + Math.sin((i / 8) * Math.PI * 2);
+    const rim = hc ? "#ffffff" : "#d4d4d8";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32"><circle cx="18" cy="18" r="${r.toFixed(2)}" fill="#18181b" stroke="${rim}" stroke-width="${hc ? 2 : 1}"/><circle cx="16" cy="16" r="3" fill="#f43f5e"/><circle cx="20" cy="17" r="3" fill="#22c55e"/><circle cx="18" cy="21" r="3" fill="#3b82f6"/>${tip ? `<path d="M2 2 L10 6 L6 10 Z" fill="#18181b" stroke="${rim}"/>` : ""}</svg>`;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  };
+  return [
+    { role: "Arrow", label: "Magic pointer", size: 64, hotX: 4, hotY: 4, frames: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => frame(i, true)) },
+    { role: "Wait", label: "Busy", size: 64, hotX: 36, hotY: 36, frames: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => frame(i, false)) },
+  ];
+};
+handlers.magic_mouse_status = () => ({ wanted: !!(config as any).magicWaves?.mouse, pointerApplied: !!(config as any).magicWaves?.mouse, gesturesOn: !!(config as any).magicWaves?.mouse, hookLive: false, steppedAside: false, holds: 0, grabs: 0, last: "" });
+// Magic Start and Shelf → Notes (wave M4).
+handlers.magic_start_available = () => !!(config as any).magicWaves?.startButton;
+handlers.toggle_magic_start = () => {
+  if (!(config as any).magicWaves?.startButton) throw new Error("The Magic button is off");
+  return true;
+};
+handlers.magic_start_hide = () => null;
+handlers.open_windows_start = () => null;
+handlers.save_note_export = (a: any) => {
+  if (!(config as any).magicWaves?.shelfNotes) throw new Error("Shelf to Notes is off");
+  return `C:\\Users\\Sample\\Downloads\\${a?.stem ?? "note"}.${a?.ext ?? "md"}`;
+};
+if (params.get("dashdata")) {
+  const now = Date.now();
+  const min = 60_000;
+  handlers.messages_inbox = () => [
+    { id: "c1", source: "matrix", app: "Matrix", title: "Sample: Design team", unread: 3, mentions: 1, lastPreview: "Sample: can you check the new icons?", lastTs: now - 6 * min, url: "", vip: false, canReply: true },
+    { id: "c2", source: "space:discord", app: "Discord", title: "Sample: Lens testers", unread: 12, mentions: 0, lastPreview: null, lastTs: now - 40 * min, url: "", vip: false, canReply: false },
+    { id: "c3", source: "space:slack", app: "Slack", title: "Sample: read thread", unread: 0, mentions: 0, lastPreview: null, lastTs: now - 90 * min, url: "", vip: false, canReply: false },
+  ];
+  handlers.feeds_timeline = () => ({
+    items: [
+      { key: "f1", source: "Bluesky", kind: "post", author: "Sample Author", authorHandle: null, title: null, text: "Sample: a post you follow about matte desktop design.", media: [], url: "https://example.com/post/1", ts: now - 20 * min, reply: false, replies: null, reposts: null, likes: null, repostedBy: [] },
+      { key: "f2", source: "RSS · Sample Blog", kind: "article", author: "", authorHandle: null, title: "Sample: Release notes for a tool you use", text: "What changed this week.", media: [], url: "https://example.com/post/2", ts: now - 3 * 60 * min, reply: false, replies: null, reposts: null, likes: null, repostedBy: [] },
+    ],
+    hiddenByMutes: 0,
+    quiet: false,
+    sources: [],
+  });
+  handlers.shelf_list = () => [
+    { id: "sh1", shelf: "default", kind: "selection", title: "Sample: clipped quote", text: "Sample: the quote you saved earlier.", tags: [], pinned: true, local_only: false, created_ms: now - 2 * 60 * min, updated_ms: now, order: 0, chars: 36, approx_tokens: 9, source_app: "Lens Browser" },
+  ];
+  try {
+    const d = new Date();
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const later = new Date(now + 45 * min);
+    const hhmm = `${String(later.getHours()).padStart(2, "0")}:${String(later.getMinutes()).padStart(2, "0")}`;
+    if (later.getDate() === d.getDate()) localStorage.setItem("lens_calendar_events_v1", JSON.stringify([{ id: "e1", dateKey: key, time: hhmm, title: "Sample: Design review", done: false }]));
+  } catch {
+    /* no storage in this context */
+  }
+}
 export const calls: string[] = [];
 (W as any).__lensCalls = calls;
 /** Commands with their arguments, for checks that care which window a call names. */
@@ -288,3 +386,158 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
 }
 export function convertFileSrc(p: string) { return p; }
 export function isTauri() { return false; }
+
+// Lens Music for the Now Playing window and Immersive (tools/visual/run.mjs, ?music=1): Music on, a
+// playing sample track with generated artwork and original placeholder lyrics. Without the flag the
+// music commands answer null as before, so other surfaces' goldens are unchanged.
+if (params.get("music") === "1") {
+  const T0 = Date.now();
+  const now = {
+    hasSession: true, sessionId: "Spotify.exe", sourceLabel: "Spotify", title: "Harbour Lights", artist: "The Placeholders", album: "Lens Sessions, Vol. 1",
+    artwork: placeholderArt("harbour-lights"), trackKey: "k-harbour", status: "playing", positionMs: 64_000, updatedMs: T0, durationMs: 224_000, rate: 1,
+    controls: { play: true, pause: true, next: true, prev: true, seek: true, shuffle: true, repeat: true }, shuffle: false, repeat: "list",
+    sessions: [{ id: "Spotify.exe", label: "Spotify", title: "Harbour Lights", playing: true, active: true }], sleepAtMs: null, sleepEndOfTrack: false,
+  };
+  const lines = ["Neon rain across the harbour", "Every window holds a light", "I keep the radio on low", "So I can hear the city breathe", "Turn the corner, find the morning", "Paper boats along the tide", "Every echo calls me home", "Harbour lights, harbour lights"]
+    .map((text, i) => ({ startMs: 48_000 + i * 6_500, text }));
+  Object.assign(handlers, {
+    music_config_get: () => ({
+      enabled: true, priority: ["spotify"], deny: [], allowOnly: [], miniPlayer: "dock", themeFollows: false, themeIntensity: 0.6, restoreDelayS: 20, lyrics: true, lyricsLrclib: true,
+      lyricsFolder: null, lyricsOffsetMs: 0, desktopLyrics: false, windowStyle: "expanded", dither: true, sceneReactive: false, history: true, lastfm: false, soundGlow: true, levelMeter: true,
+      artTint: true, immersiveIdleS: 3, immersiveGlow: false, immersiveLyrics: true, lyricsTranslate: false, lyricsTranslateTo: "", lyricsView: "original", discord: false, discordAppId: "",
+      discordPrivate: false, discordShowProgress: true, setupDone: true,
+    }),
+    music_now: () => now,
+    music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines, source: "lrclib", sourceUrl: null, note: null }),
+    music_history: () => [],
+    music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
+    music_translation_get: () => null,
+    music_spotify_status: () => ({ connected: false, clientId: null, redirectUri: "http://127.0.0.1:43117/callback", redirectUris: [], scopes: [] }),
+    music_immersive_open: () => null,
+    music_immersive_close: () => null,
+  });
+}
+
+// Dashboard widgets (docs/plans/MAGIC_WAVES.md, wave M2). An in-memory widget store and a mocked
+// fetch: nothing here touches the network. ?widgets=sample starts with one widget of each kind
+// (clearly invented data); without it the Widgets lane starts empty.
+{
+  type W = { id: string; galleryId: string; title: string; params: Record<string, string>; hosts: string[]; addedMs: number };
+  const store: { fetchOff: boolean; widgets: W[] } = { fetchOff: false, widgets: [] };
+  let n = 0;
+  const add = (galleryId: string, title: string, params: Record<string, string>, hosts: string[]) => {
+    store.widgets.push({ id: `w${++n}`, galleryId, title, params, hosts, addedMs: Date.now() });
+  };
+  if (params.get("widgets") === "sample") {
+    add("weather", "Weather", { place: "Sample City", lat: "33.45", lon: "-112.07", units: "c" }, ["api.open-meteo.com"]);
+    add("rss", "News feed", { url: "https://example.com/feed.xml" }, ["example.com"]);
+    add("crypto", "Crypto prices", { ids: "bitcoin,ethereum", currency: "usd" }, ["api.coingecko.com"]);
+    add("clocks", "World clocks", { zones: "UTC,Europe/London,Asia/Tokyo" }, []);
+    add("system", "This PC", {}, []);
+  }
+  const snap = () => {
+    const s = JSON.parse(JSON.stringify(store));
+    emitLocal("lens://widgets-changed", s);
+    return s;
+  };
+  const SAMPLE: Record<string, string> = {
+    "api.open-meteo.com": JSON.stringify({ current: { temperature_2m: 21.4, weather_code: 2, wind_speed_10m: 9.3 }, daily: { temperature_2m_max: [26.1], temperature_2m_min: [14.8] } }),
+    "example.com": `<?xml version="1.0"?><rss><channel><title>Sample Blog</title><item><title>Sample: Release notes for a tool you use</title><link>https://example.com/post/1</link></item><item><title>Sample: Matte desktops are back</title><link>https://example.com/post/2</link></item></channel></rss>`,
+    "api.coingecko.com": JSON.stringify({ bitcoin: { usd: 12345.67, usd_24h_change: 1.8 }, ethereum: { usd: 1234.5, usd_24h_change: -0.6 } }),
+    "api.github.com": JSON.stringify({ tag_name: "v0.0.0-sample", name: "Sample release", published_at: "2026-01-01T00:00:00Z", html_url: "https://github.com/orionopenwow/LensUI/releases" }),
+  };
+  handlers.widgets_state = () => JSON.parse(JSON.stringify(store));
+  handlers.widgets_add = (a) => (add(a.galleryId, a.title, a.params ?? {}, a.hosts ?? []), snap());
+  handlers.widgets_remove = (a) => ((store.widgets = store.widgets.filter((w) => w.id !== a.id)), snap());
+  handlers.widgets_move = (a) => {
+    const i = store.widgets.findIndex((w) => w.id === a.id);
+    const j = i + Math.sign(a.delta);
+    if (i >= 0 && j >= 0 && j < store.widgets.length) [store.widgets[i], store.widgets[j]] = [store.widgets[j], store.widgets[i]];
+    return snap();
+  };
+  handlers.widgets_set_params = (a) => (store.widgets.forEach((w) => w.id === a.id && (w.params = a.params)), snap());
+  handlers.widgets_revoke_host = (a) => (store.widgets.forEach((w) => w.id === a.id && (w.hosts = w.hosts.filter((h) => h !== a.host))), snap());
+  handlers.widgets_set_fetch_off = (a) => ((store.fetchOff = !!a.off), snap());
+  handlers.widgets_fetch = (a) => {
+    const w = store.widgets.find((x) => x.id === a.id);
+    const host = (() => { try { return new URL(a.url).hostname; } catch { return ""; } })();
+    if (store.fetchOff) return Promise.reject("Widget fetching is turned off.");
+    if (!w || !w.hosts.includes(host)) return Promise.reject(`${host || "That site"} isn't approved for this widget.`);
+    return { body: SAMPLE[host] ?? "", contentType: "text/plain", fetchedMs: Date.now(), fromCache: false };
+  };
+}
+
+// Desktop widgets (docs/features/desktop-widgets.md). An in-memory layout for the `deskwidgets`
+// surface. ?desk=sample starts with one widget of each local kind (and a Weather widget from the
+// Dashboard sample when ?widgets=sample is set too); ?desk=edit opens edit mode as well. Notes and
+// today's calendar get clearly invented sample data. Nothing here touches the network.
+{
+  // The host window only exists while the flag is on, so opening it bare (the hyper suite) turns
+  // the flag on and shows the sample layout.
+  if (params.get("surface") === "deskwidgets" && !params.get("magic")) (config as any).magicWaves = { ...((config as any).magicWaves ?? {}), desktopWidgets: true };
+  const desk = params.get("desk") ?? (params.get("surface") === "deskwidgets" ? "sample" : null);
+  const sample = [
+    { id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} },
+    { id: "today-1", kind: "today", size: "medium", col: -1, row: -1, params: {} },
+    { id: "music-1", kind: "music", size: "medium", col: -1, row: -1, params: {} },
+    { id: "batteries-1", kind: "batteries", size: "small", col: -1, row: -1, params: {} },
+    { id: "notes-1", kind: "notes", size: "small", col: -1, row: -1, params: {} },
+    { id: "clock-2", kind: "clock", size: "medium", col: -1, row: -1, params: { zones: "local,America/New_York,Europe/London,Asia/Tokyo" } },
+    ...(params.get("widgets") === "sample" ? [{ id: "weather-1", kind: "weather", size: "small", col: -1, row: -1, params: { ref: "w1" } }] : []),
+  ];
+  const state = {
+    key: "DISPLAY1@1920x1080",
+    items: desk === "sample" || desk === "edit" ? sample : [{ id: "clock-1", kind: "clock", size: "small", col: -1, row: -1, params: {} }],
+    editing: desk === "edit",
+  };
+  const on = () => !!(config as any).magicWaves?.desktopWidgets;
+  handlers.desktop_widgets_available = () => on();
+  handlers.desktop_widgets_state = () => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    return { key: state.key, items: JSON.parse(JSON.stringify(state.items)), editing: state.editing, shown: true, covered: false };
+  };
+  handlers.desktop_widgets_save = (a) => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    state.items = JSON.parse(JSON.stringify(a.items ?? []));
+    return state.items;
+  };
+  handlers.desktop_widgets_hits = (a) => {
+    (W as any).__deskHits = a;
+    return null;
+  };
+  handlers.desktop_widgets_edit = (a) => {
+    if (!on()) return Promise.reject("Turn on desktop widgets first.");
+    state.editing = a.on === null || a.on === undefined ? !state.editing : !!a.on;
+    emitLocal("lens://deskwidgets-edit", state.editing);
+    return state.editing;
+  };
+  handlers.desktop_widgets_status = () => ({ running: on(), shown: on(), editing: state.editing, covered: false, clickThrough: true, hiddenReason: null, key: state.key, rect: [0, 0, 1920, 1040], hwnd: 0, widgets: state.items.length });
+  if (desk) {
+    const now = Date.now();
+    handlers.shelves_list = () => [
+      { id: "default", name: "Shelf", created_ms: now, item_count: 0, approx_tokens: 0 },
+      { id: "notes", name: "Notes", created_ms: now, item_count: 2, approx_tokens: 20 },
+    ];
+    handlers.shelf_list = (a) =>
+      a?.shelf === "notes"
+        ? [
+            { id: "n1", shelf: "notes", kind: "text", title: "Sample: Groceries", text: "Sample: Groceries\nOat milk, lemons, coffee", tags: ["lens-note"], pinned: false, local_only: false, created_ms: now - 3_600_000, updated_ms: now - 60_000, order: 0, chars: 40, approx_tokens: 10 },
+            { id: "n2", shelf: "notes", kind: "text", title: "Sample: Design review", text: "Sample: Design review\nBring the new Dock sketches", tags: ["lens-note"], pinned: false, local_only: false, created_ms: now - 7_200_000, updated_ms: now - 600_000, order: 1, chars: 44, approx_tokens: 11 },
+          ]
+        : [];
+    try {
+      const d = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      localStorage.setItem(
+        "lens_calendar_events_v1",
+        JSON.stringify([
+          { id: "e1", dateKey: key, time: "09:30", title: "Sample: Stand-up", done: false },
+          { id: "e2", dateKey: key, time: "13:00", title: "Sample: Design review", done: false },
+          { id: "e3", dateKey: key, time: "", title: "Sample: Water the plants", done: false },
+        ]),
+      );
+    } catch {
+      /* no storage in this context */
+    }
+  }
+}

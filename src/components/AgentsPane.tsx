@@ -568,21 +568,21 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "red-yellow-green" },
       });
-      return "Switched window traffic lights to Red · Yellow · Green.";
+      return "Switched the window buttons to Red · Yellow · Green.";
     }
     if (p.includes("yellow green red")) {
       onUpdateConfig({
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "yellow-green-red" },
       });
-      return "Switched window traffic lights to Yellow · Green · Red.";
+      return "Switched the window buttons to Yellow · Green · Red.";
     }
     if (p.includes("green yellow red")) {
       onUpdateConfig({
         ...config,
         windowControls: { ...config.windowControls, enabled: true, order: "green-yellow-red" },
       });
-      return "Switched window traffic lights to Green · Yellow · Red.";
+      return "Switched the window buttons to Green · Yellow · Red.";
     }
     if (p.includes("windows default") && p.includes("button")) {
       onUpdateConfig({
@@ -1342,7 +1342,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
           <div className="cc-card" style={{ gap: 10 }}>
             <div className="cc-row">
               <div>
-                <div className="cc-label">Connected Agents &amp; MCP Servers</div>
+                <div className="cc-label">Connected agents &amp; MCP servers</div>
                 <div className="cc-desc">
                   Manage local LLMs, Claude Desktop MCP servers, or custom stdio/HTTP tools.
                 </div>
@@ -1509,7 +1509,7 @@ export const AgentsPane: React.FC<AgentsPaneProps> = ({ config, onUpdateConfig }
         <div className="cc-card" style={{ flex: 1, minHeight: 360, gap: 10 }}>
           <div className="cc-row">
             <div>
-              <div className="cc-label">AGENTS.md — Global Agent Safety &amp; Consistency Rules</div>
+              <div className="cc-label">AGENTS.md — global agent safety &amp; consistency rules</div>
               <div className="cc-desc">
                 Saved to %APPDATA%\LensUI\AGENTS.md and injected automatically into connected agents.
               </div>

@@ -7,6 +7,8 @@ import "./styles/global.css";
 import { CrashProbe, QuietBoundary, SurfaceBoundary } from "./failsafe/SurfaceBoundary";
 import { installGlobalHandlers } from "./failsafe/report";
 import { FailsafeNotices } from "./failsafe/FailsafeNotices";
+import { installPress } from "./ui/press";
+import { installOriginBeacon } from "./ui/motion/origin";
 
 // Each surface is its own window, so each window only downloads, parses and runs its own code.
 // (The Dock no longer carries the Control Center, and so on.)
@@ -51,13 +53,21 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   edgeshelf: lazy(() =>
     import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
   ),
-  bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // The Magic selection bar (formerly the selection bubble) and Magic Search (docs/plans/SELECTION_BAR.md).
+  bubble: lazy(() => import("./magic/selection/SelectionBar").then((m) => ({ default: m.SelectionBar }))),
+  magicsearch: lazy(() => import("./magic/search/MagicSearch").then((m) => ({ default: m.MagicSearch }))),
   // Lens Browser frame UI (docs/LENS_BROWSER.md).
   browser: lazy(() => import("./browser/BrowserSurface").then((m) => ({ default: m.BrowserSurface }))),
   // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).
   snip: lazy(() => import("./snip/SnipSurface").then((m) => ({ default: m.SnipSurface }))),
   // Magic right-click window at the pointer (docs/MAGIC.md).
   magic: lazy(() => import("./magic/MagicSurface").then((m) => ({ default: m.MagicSurface }))),
+  // Magic Dashboard (docs/plans/MAGIC_WAVES.md; only opened while magicWaves.dashboard is on).
+  dashboard: lazy(() => import("./dashboard/DashboardWindow").then((m) => ({ default: m.DashboardWindow }))),
+  // Desktop widgets host (only built while magicWaves.desktopWidgets is on; docs/features/desktop-widgets.md).
+  deskwidgets: lazy(() => import("./deskwidgets/DeskWidgetsSurface").then((m) => ({ default: m.DeskWidgetsWindow }))),
+  // Magic Start (wave M4; only opened while magicWaves.startButton is on).
+  magicstart: lazy(() => import("./magic/start/MagicStartWindow").then((m) => ({ default: m.MagicStartWindow }))),
   // Tester Hub: what's new, checklist, session log, redacted report (docs/TESTER_HUB.md).
   testerhub: lazy(() => import("./tester/TesterHubSurface").then((m) => ({ default: m.TesterHubSurface }))),
   // Full-size focus-dimming preview page (docs/WINDOW_STYLING.md).
@@ -68,6 +78,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   approval: lazy(() => import("./approval/ApprovalSurface").then((m) => ({ default: m.ApprovalSurface }))),
   // Now Playing (docs/MUSIC.md §2).
   nowplaying: lazy(() => import("./music/NowPlayingSurface").then((m) => ({ default: m.NowPlayingSurface }))),
+  // Lyrics on the desktop: one click-through line (opt-in; docs/MUSIC.md).
+  lyricsline: lazy(() => import("./music/LyricsLineSurface").then((m) => ({ default: m.LyricsLineSurface }))),
   // Lens Apps window (docs/LENS_APPS.md §2).
   apps: lazy(() => import("./apps/AppsSurface").then((m) => ({ default: m.AppsSurface }))),
   cleaner: lazy(() => import("./cleaner/CleanerSurface").then((m) => ({ default: m.CleanerSurface }))),
@@ -80,6 +92,17 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),
+  // Test-only: Lens's app-icon sheet for the visual suite (src/icons/lensApps.ts).
+  iconsheet: lazy(() => import("./icons/IconSheetSurface").then((m) => ({ default: m.IconSheetSurface }))),
+  // Lens Mission Control (docs/MISSION_CONTROL.md): dev builds only. `__LENS_ADMIN__` is false in
+  // every `vite build`, so this entry and its chunk are not in any release bundle.
+  ...(typeof __LENS_ADMIN__ !== "undefined" && __LENS_ADMIN__
+    ? {
+        missioncontrol: lazy(() =>
+          import("./missioncontrol/MissionControlSurface").then((m) => ({ default: m.MissionControlSurface }))
+        ),
+      }
+    : {}),
 };
 
 const params = new URLSearchParams(window.location.search);
@@ -89,11 +112,19 @@ const params = new URLSearchParams(window.location.search);
 installGlobalHandlers();
 const surfaceName = params.get("surface") || "dock";
 const Surface = surfaces[surfaceName] ?? surfaces.dock;
+// The feel (DESIGN.md §5): weighted presses for every control that declares a weight, and pop-outs
+// that grow from the control that opened them. The Dock and Lens Browser still draw their own
+// presses (:active rules) until their pass removes them, so their windows keep "own" press mode:
+// no weighted press there yet, or the two would stack (DESIGN.md §5.5, "Adopting the feel").
+const ownPress = surfaceName === "dock" || surfaceName === "browser";
+if (ownPress) document.documentElement.dataset.pressMode = "own";
+else installPress();
+installOriginBeacon();
 // Smoothness probe (docs/SMOOTHNESS.md): idle until Tester Hub starts a check.
 import("./smooth/probe").then((m) => m.installSmoothProbe(surfaceName)).catch(() => {});
 // "Lens at work" in-app twin (docs/PRESENCE.md): not on the overlay windows themselves.
 const PresenceTwin = lazy(() => import("./presence/PresenceTwin").then((m) => ({ default: m.PresenceTwin })));
-const withTwin = !["presence", "presencebar"].includes(surfaceName);
+const withTwin = !["presence", "presencebar", "lyricsline", "deskwidgets"].includes(surfaceName);
 
 // Rendered after <Surface/>, so its effect runs after the surface's own effects have issued their
 // listen() calls. Windows built on first use wait for this before their opening command is replayed.

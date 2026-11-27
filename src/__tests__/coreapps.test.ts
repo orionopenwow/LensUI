@@ -10,6 +10,7 @@ mock.module("@tauri-apps/api/core", () => ({
 }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {} }));
 
+import { LENS_APP_GLYPHS } from "../icons/lensApps";
 import { CORE_APPS, coreAppMatches, coreAppSearchItems, coreAppTemplates, iconUrl, isCoreAppStub, pinEntry, SLASH } from "../coreapps/registry";
 import { friendlyError, loadReducer, type Load } from "../coreapps/models/load";
 import { cpuShare, push, slowHints, sortApps } from "../coreapps/models/monitor";
@@ -30,8 +31,7 @@ describe("registry", () => {
     for (const a of CORE_APPS) {
       expect(rs).toContain(`id: "${a.id}"`);
       expect(rs).toContain(`title: "${a.title}"`);
-      expect(rs).toContain(`glyph: "${a.glyph}"`);
-      expect(rs).toContain(`tint: ("${a.tint[0]}", "${a.tint[1]}")`);
+      expect(rs).toContain(`glyph: "${LENS_APP_GLYPHS[a.id]}"`);
     }
     expect((rs.match(/CoreApp \{\s+id:/g) ?? []).length).toBe(CORE_APPS.length);
   });
@@ -382,5 +382,17 @@ describe("format", () => {
     expect(ago(0)).toBe("—");
     expect(ymd("20260902")).not.toBe("—");
     expect(ymd("bad")).toBe("—");
+  });
+});
+
+describe("Monitor: copy a process line", () => {
+  test("name, PID, usage and path on one line", async () => {
+    const { processLine } = await import("../coreapps/models/monitor");
+    expect(processLine({ name: "chrome", pids: [4120], cpu: 12.34, memMb: 812.6, path: "C:\\Program Files\\Google\\Chrome\\chrome.exe" })).toBe(
+      "chrome · PID 4120 · CPU 12.3% · RAM 813 MB · C:\\Program Files\\Google\\Chrome\\chrome.exe"
+    );
+    expect(processLine({ name: "idle", pids: [4] })).toBe("idle · PID 4");
+    const many = processLine({ name: "msedge", pids: Array.from({ length: 30 }, (_, i) => i + 1), path: null });
+    expect(many).toBe("msedge · PID 1, 2, 3, 4, 5, 6, 7, 8, … (30 processes)");
   });
 });

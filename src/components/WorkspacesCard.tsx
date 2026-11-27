@@ -160,7 +160,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">Built On</div>
+          <div className="cc-label">Built on</div>
           <div className="cc-desc">
             {status?.enabled
               ? status.mode === "groups"
@@ -268,7 +268,7 @@ export const WorkspacesCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
 
       <div className="cc-row">
         <div>
-          <div className="cc-label">Follow Apps To Their Workspace</div>
+          <div className="cc-label">Follow apps to their workspace</div>
           <div className="cc-desc">When an app with an &ldquo;Opens here&rdquo; rule starts, switch to its workspace instead of leaving it there minimised.</div>
         </div>
         <button

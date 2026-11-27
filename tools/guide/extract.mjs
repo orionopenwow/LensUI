@@ -69,10 +69,10 @@ const LABEL_CLASSES = [
 ];
 
 /** Settings pages, in nav order: [{id,label}]. Since the Settings hub (src/settings/registry.ts)
- *  pages have new ids; the index keeps the older tab ids (theme, system, sessions, monitor,
- *  messages) so lesson and golden-query ids stay stable, and LEGACY_TABS in the registry maps them
+ *  pages have new ids; the index keeps the older tab ids (theme, system, sessions, monitor)
+ *  so lesson and golden-query ids stay stable, and LEGACY_TABS in the registry maps them
  *  back when a Show me opens Settings. */
-const PAGE_TO_LEGACY = { appearance: "theme", keys: "system", desktop: "sessions", tasks: "monitor", notifications: "messages" };
+const PAGE_TO_LEGACY = { appearance: "theme", keys: "system", desktop: "sessions", tasks: "monitor" };
 const legacy = (id) => PAGE_TO_LEGACY[id] ?? id;
 const REGISTRY = "src/settings/registry.ts";
 export function extractTabs(root) {
@@ -498,7 +498,7 @@ export function extractHotkeys(root) {
 // ---------------------------------------------------------------------------------------------
 
 // Developer-only docs (plans, research, integration notes) are not user help.
-const DEV_DOCS = /^(BROWSER_AAA|INTEGRATION_NOTES|DESIGN_AUDIT|PERF_REPORT|BUG_REPORT|NEXT_STEPS|CORE_PATCH_PLAN|COMPETITIVE_STRATEGY|FEATURE_RESEARCH|COMMAND_RESEARCH|VOICE_RESEARCH|ROBUSTNESS|RELEASING|ROADMAP|THEMES_ROADMAP|KEYHOOK|TESTING|MASTERPLAN|AI_SURFACES|GUIDE|DOCK_SMOOTHNESS)\.md$/;
+const DEV_DOCS = /^(BROWSER_AAA|INTEGRATION_NOTES|DESIGN_AUDIT|PERF_REPORT|BUG_REPORT|NEXT_STEPS|CORE_PATCH_PLAN|COMPETITIVE_STRATEGY|FEATURE_RESEARCH|COMMAND_RESEARCH|VOICE_RESEARCH|ROBUSTNESS|RELEASING|ROADMAP|THEMES_ROADMAP|KEYHOOK|TESTING|MASTERPLAN|AI_SURFACES|GUIDE|DOCK_SMOOTHNESS|MISSION_CONTROL)\.md$/;
 // Sections inside user docs that are for developers.
 const DEV_HEADING = /wiring|integrat|snippet|\btests?\b|\bci\b|files|build|commands? \(backend\)|ipc|contract|implementation|architecture|for developers|internals|verification|known gaps|todo/i;
 export function docFiles(root) {

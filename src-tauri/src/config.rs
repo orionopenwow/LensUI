@@ -86,7 +86,6 @@ pub struct DockConfig {
     pub hover_scale: f32,
     pub hover_lift: u32,
     pub auto_hide: String, // "never" | "smart" | "always"
-    pub show_top_bar: bool,
     pub pinned_apps: Vec<PinnedApp>,
     pub pinned_folders: Vec<PinnedFolder>,
     /// Screen edge: "bottom" (default) | "top" | "left" | "right"
@@ -101,7 +100,7 @@ pub struct DockConfig {
     /// Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default.
     #[serde(default = "default_true")]
     pub live_previews: bool,
-    /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
+    /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified".
     #[serde(default = "default_dock_style")]
     pub style: String,
     /// Icon alignment for the Taskbar style: "center" | "left".
@@ -153,6 +152,17 @@ fn default_dock_magnification_range() -> u32 {
 
 fn default_dock_launch_animation() -> String {
     "lift".into()
+}
+
+/// Every Dock style the frontend draws (`src/dock/styles.ts` DOCK_STYLES, same order).
+pub const DOCK_STYLES: [&str; 8] = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"];
+
+/// A configured Dock style as one the frontend knows; anything else (typo, older or newer build)
+/// is "floating", the same rule as `normalizeDockStyle` in styles.ts.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn normalize_dock_style(raw: &str) -> &'static str {
+    let t = raw.trim();
+    DOCK_STYLES.iter().copied().find(|s| s.eq_ignore_ascii_case(t)).unwrap_or("floating")
 }
 
 fn default_dock_style() -> String {
@@ -216,6 +226,14 @@ pub struct FuncConfig {
     /// themselves when the pointer has been away for a moment and they don't have keyboard focus.
     #[serde(default = "default_true")]
     pub auto_close_popouts: bool,
+    /// How long those pop-outs wait: "short" | "normal" | "long" (Settings › Dock & Bar ›
+    /// Advanced). "normal" is the original 1.5 s / 1.8 s; see `app::watcher::popout_delays`.
+    #[serde(default = "default_popout_close_delay")]
+    pub popout_close_delay: String,
+}
+
+fn default_popout_close_delay() -> String {
+    "normal".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -299,16 +317,20 @@ pub struct StyledFolderRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct TopBarConfig {
+    /// The one switch for the Top Bar (config v4). `dock.showTopBar` used to be a second one;
+    /// `win_backup::fold_legacy_top_bar_flag` folds it in here on load.
     pub enabled: bool,
     pub auto_hide: String, // "overlap" | "never" | "always"
     pub reveal_delay_ms: u64,
     pub hide_delay_ms: u64,
     pub height: u32,
     pub floating: bool,
-    #[serde(default)]
     pub show_media_controls: bool,
+    /// The see-through ring around the pointer while clicks pass through the bar. Never drawn
+    /// while Windows' "Transparency effects" is off, whatever this says.
+    pub pointer_halo: bool,
 }
 
 impl Default for TopBarConfig {
@@ -321,6 +343,7 @@ impl Default for TopBarConfig {
             height: 34,
             floating: false,
             show_media_controls: true,
+            pointer_halo: true,
         }
     }
 }
@@ -401,6 +424,10 @@ pub struct LensConfig {
     /// shown, started, hooked or fetched.
     #[serde(default)]
     pub magic_waves: MagicWavesConfig,
+    /// The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md). Off by default;
+    /// where it may read is the selection policy (`clip/selection_rules.rs`, selection.json).
+    #[serde(default)]
+    pub selection_bar: SelectionBarConfig,
 }
 
 impl Default for LensConfig {
@@ -431,7 +458,6 @@ impl Default for LensConfig {
                 hover_scale: 1.24,
                 hover_lift: 8,
                 auto_hide: "never".into(),
-                show_top_bar: true,
                 pinned_apps: vec![
                     PinnedApp {
                         id: "explorer".into(),
@@ -506,6 +532,7 @@ impl Default for LensConfig {
                 alt_tab_overview: false,
                 per_monitor_bars: false,
                 auto_close_popouts: true,
+                popout_close_delay: default_popout_close_delay(),
             },
             window_controls: WindowControlsConfig {
                 enabled: true,
@@ -574,6 +601,7 @@ impl Default for LensConfig {
             command: serde_json::Value::Null,
             tester: TesterConfig::default(),
             magic_waves: MagicWavesConfig::default(),
+            selection_bar: SelectionBarConfig::default(),
         }
     }
 }
@@ -886,6 +914,9 @@ pub struct MagicWavesConfig {
     pub studio_v2: bool,
     /// Learned ordering on the Dashboard (local only, with "Why this is here").
     pub learn: bool,
+    /// Desktop widgets: widgets pinned on the desktop, above the wallpaper and below every app
+    /// window (docs/features/desktop-widgets.md). Local data only.
+    pub desktop_widgets: bool,
 }
 
 impl Default for MagicWavesConfig {
@@ -899,6 +930,7 @@ impl Default for MagicWavesConfig {
             shelf_notes: false,
             studio_v2: false,
             learn: false,
+            desktop_widgets: false,
         }
     }
 }
@@ -914,10 +946,121 @@ impl MagicWavesConfig {
 
     /// True when any Magic feature is on (used to skip all Magic work when everything is off).
     pub fn any_on(&self) -> bool {
-        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn
+        self.dashboard || self.widgets || self.mouse || self.start_button || self.shelf_notes || self.studio_v2 || self.learn || self.desktop_widgets
     }
 }
 
 #[cfg(test)]
 #[path = "tests/config_writer.rs"]
 mod config_writer_tests;
+
+/// Settings › Magic › Selection bar (docs/plans/SELECTION_BAR.md §4). Everything here is about
+/// how the bar looks and behaves; *whether Lens may read a selection in an app* stays in the
+/// selection policy (selection.json), checked by `clip::selection_rules::may_read` every time.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SelectionBarConfig {
+    /// The bar after a finished text selection. Off by default.
+    pub enabled: bool,
+    /// Button labels: "off" (icons only), "hover", "always".
+    pub labels: String,
+    pub show_cut: bool,
+    pub show_copy: bool,
+    pub show_paste: bool,
+    /// The Magic Search button.
+    pub show_search: bool,
+    /// Your actions, in order: catalogue ids (`src/context/actions.catalog.json`, surface
+    /// "selectionBar") or `custom:…` prompt actions.
+    pub actions: Vec<String>,
+    /// Actions shown before ⋯ More (3–9).
+    pub max_actions: u32,
+    /// Direct global hotkeys: action id → "Ctrl+Alt+T". None by default; conflict-checked.
+    pub hotkeys: std::collections::BTreeMap<String, String>,
+    /// Magic Search's own global hotkey ("" = none, the default).
+    pub search_hotkey: String,
+    pub trigger_drag: bool,
+    pub trigger_double_click: bool,
+    pub trigger_triple_click: bool,
+    /// Wait after the mouse is released, 0–600 ms.
+    pub delay_ms: u32,
+    /// Shortest selection that opens the bar.
+    pub min_chars: u32,
+    /// "below" (flips above at the edge), "above", "pointer".
+    pub placement: String,
+    /// Hides on its own after this long (0 = never). 1.5–30 s.
+    pub auto_hide_ms: u32,
+    /// Hides when the pointer moves this far from it (physical px, 40–600).
+    pub hide_distance_px: u32,
+    /// Smart actions and the inline preview line (local only).
+    pub smart: bool,
+    /// Smart kinds turned off (`clip::smart::SmartKind` ids).
+    pub smart_off: Vec<String>,
+    /// Frequent actions float up within the unpinned ones (local counts). Off by default.
+    pub learn: bool,
+    /// Per-app action sets: exe name → action ids (replaces `actions` in that app).
+    pub per_app: std::collections::BTreeMap<String, Vec<String>>,
+    /// AI provider per action ("local" | "default" | "claude"); unset = the action's own.
+    pub providers: std::collections::BTreeMap<String, String>,
+    /// Magic Search: web results through the configured search engine (shown with every source).
+    pub web_results: bool,
+    /// Magic Search: matches from Shelf, clipboard history, notes and recent files (local only).
+    pub local_results: bool,
+}
+
+impl Default for SelectionBarConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            labels: "hover".into(),
+            show_cut: true,
+            show_copy: true,
+            show_paste: true,
+            show_search: true,
+            actions: vec!["ask".into(), "translate".into(), "explain".into(), "shelf_add".into()],
+            max_actions: 4,
+            hotkeys: Default::default(),
+            search_hotkey: String::new(),
+            trigger_drag: true,
+            trigger_double_click: true,
+            trigger_triple_click: true,
+            delay_ms: 120,
+            min_chars: 2,
+            placement: "below".into(),
+            auto_hide_ms: 4000,
+            hide_distance_px: 120,
+            smart: true,
+            smart_off: Vec::new(),
+            learn: false,
+            per_app: Default::default(),
+            providers: Default::default(),
+            web_results: true,
+            local_results: true,
+        }
+    }
+}
+
+impl SelectionBarConfig {
+    /// Values from disk or an import, pulled into their allowed ranges.
+    pub fn sanitized(mut self) -> Self {
+        if !matches!(self.labels.as_str(), "off" | "hover" | "always") {
+            self.labels = "hover".into();
+        }
+        if !matches!(self.placement.as_str(), "below" | "above" | "pointer") {
+            self.placement = "below".into();
+        }
+        self.max_actions = self.max_actions.clamp(3, 9);
+        self.delay_ms = crate::clip::bar::clamp_delay(self.delay_ms);
+        self.min_chars = self.min_chars.clamp(1, 50);
+        self.auto_hide_ms = crate::clip::bar::clamp_auto_hide(self.auto_hide_ms);
+        self.hide_distance_px = crate::clip::bar::clamp_away(self.hide_distance_px);
+        let ok_id = |s: &String| !s.is_empty() && s.len() <= 64 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':'));
+        self.actions.retain(ok_id);
+        self.actions.dedup();
+        self.actions.truncate(9);
+        self.hotkeys.retain(|k, v| ok_id(k) && v.len() <= 40);
+        self.search_hotkey = self.search_hotkey.trim().chars().take(40).collect();
+        self.per_app.retain(|k, v| !k.is_empty() && k.len() <= 120 && v.len() <= 9);
+        self.providers.retain(|k, v| ok_id(k) && matches!(v.as_str(), "local" | "default" | "claude"));
+        self
+    }
+}

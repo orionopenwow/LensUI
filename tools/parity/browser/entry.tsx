@@ -1,4 +1,4 @@
-// Renders Lens Browser scenes for screenshots: ?scene=frame|agent|approval|transcript|address&preset=…
+// Renders Lens Browser scenes for screenshots: ?scene=frame|agent|approval|dinner-plan|dinner|transcript|address&preset=…
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
@@ -162,6 +162,17 @@ const pending: PendingOk = {
 };
 
 
+// The website's agentic-desktop exhibit: Claude Code, connected over MCP, books Friday dinner. Reading
+// and searching run; the reservation (a no-show fee) waits for an OK; the calendar and messages come next.
+const dinnerAsk = "Book Friday dinner for 4 near me and add it to my calendar, then message Maya, Sam and Priya";
+const dinnerItems: AgentItem[] = [
+  { kind: "user", key: "du", text: dinnerAsk, at: NOW - 150_000 },
+  { kind: "group", key: "dg1", title: "Searched places near you", icon: "search", host: "tables.example", verbs: ["search", "open", "open", "open", "read"], why: "Kept places free Friday at 7:30–8:30 with plant mains for Maya.", tabId: "t3", at: NOW - 120_000 },
+  { kind: "say", key: "ds1", text: "Harbor & Vine is free at 8:00 and has nine plant mains. I'll fill the reservation, then add it to your calendar and message Maya, Sam and Priya. Each of those asks you first.", at: NOW - 90_000 },
+  { kind: "action", key: "da1", text: "Clicked “Harbor & Vine”.", ok: true, at: NOW - 70_000 },
+  { kind: "action", key: "da2", text: "Typed into “Party size”.", ok: true, at: NOW - 50_000 },
+  { kind: "action", key: "da3", text: "Typed into “Name”.", ok: true, at: NOW - 30_000 },
+];
 const ytDesc = (over: any) => ({ ...pending.desc, ...over, target: { ...pending.desc.target, ...(over.target ?? {}) } });
 const payPending: PendingOk = {
   step: { do: "click", ref: 7 },
@@ -280,6 +291,25 @@ const manyTabs: Tab[] = [
 const dupState = withState({ tabs: manyTabs }).state;
 const planSeed = propose("tidy", dupState, NOW) ?? undefined;
 
+const readerSeed = [
+  "# A short guide to oysters",
+  "",
+  "Oysters taste of where they grew. Cold, salty water makes a firm, briny oyster; a river mouth makes a softer, sweeter one. That is most of what there is to know, and the rest is practice.",
+  "",
+  "## Choosing",
+  "Buy them closed and heavy for their size. A shell that stays open when tapped is past it. Ask when they came in: [the harvest tag](https://harborandvine.example/journal/tags) says the day and the bay.",
+  "",
+  "- Small and deep-cupped for eating raw",
+  "- Larger ones for the grill",
+  "- Anything gaping: leave it",
+  "",
+  "## Opening",
+  "Fold a towel, hold the oyster flat side up, and work the knife into the hinge. Twist, slide along the top shell, and keep the liquor in the cup. Go slowly the first dozen times.",
+  "",
+  "## Serving",
+  "Ice, a wedge of lemon, and nothing that shouts. A mignonette is shallot, vinegar and pepper; make it an hour ahead so it settles.",
+].join("\n");
+
 const scenes: Record<string, BrowserInitial> = {
   sidebar: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
   "sidebar-stack": { view: withSidebar({ mode: "stack" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
@@ -287,6 +317,8 @@ const scenes: Record<string, BrowserInitial> = {
   "sidebar-plan": { view: withState({ tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
   "sidebar-stack-plan": { view: withSidebar({ mode: "stack" }, { tabs: manyTabs }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, proposal: planSeed },
   "sidebar-right": { view: withSidebar({ side: "right", width: 300 }), panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: [], startedAt: NOW, actions: 0, running: false } },
+  // ---- Reader view (local; text only) ----
+  reader: { view, panel: null, chats, now: NOW, nav: back, reader: { tabId: "t3", url: "https://harborandvine.example/journal/oysters", title: "A short guide to oysters", text: readerSeed } },
   // ---- AAA pass ----
   newtab: { view: withState({ closed: closedSeed }), panel: null, chats, mockPage: <MockPage />, now: NOW, start: true, history: historySeed, nav: back },
   // A fresh window on the new tab page: the tabs are there, none is open, the box is empty (the site's default).
@@ -306,6 +338,8 @@ const scenes: Record<string, BrowserInitial> = {
   permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
   "permission-site": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, perms: { [new URL(activeUrl).origin]: { location: true, notifications: false } } },
   agent: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems, startedAt: NOW - 196_000, actions: 23, running: false } },
+  "dinner-plan": { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: dinnerItems.slice(0, 3), startedAt: NOW - 150_000, actions: 6, running: true } },
+  dinner: { view: { ...view, state: { ...view.state, tabs: view.state.tabs.map((x) => (x.id === "t3" ? { ...x, badge: "approve" } : x)) } }, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: dinnerItems, startedAt: NOW - 150_000, actions: 9, running: true, pending } },
   approval: { view, panel: "ask", chats, mockPage: <MockPage />, now: NOW, agent: { items: agentItems.slice(0, 3), startedAt: NOW - 196_000, actions: 23, running: true, pending } },
   transcript: {
     view,

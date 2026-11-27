@@ -26,9 +26,27 @@ export interface Caps {
   snip: boolean;
   /** Lens Browser is installed (feature/lens-browser). */
   browser: boolean;
+  /** Desktop widgets are on (magicWaves.desktopWidgets): the desktop gets "Edit widgets…". */
+  desktopWidgets?: boolean;
+}
+
+/** Rows for the desktop itself (right-click on the bare desktop). */
+export function desktopRows(t: MagicTarget, caps: Caps = NO_CAPS): Row[] {
+  if (t.kind !== "desktop" || !caps.desktopWidgets) return [];
+  return [{ id: "desk:widgets", label: "Edit widgets…", icon: "layout-grid", group: "lens", risk: "low", windowAction: "desktop-widgets" }];
 }
 
 export const NO_CAPS: Caps = { snip: false, browser: false };
+
+/**
+ * What the Magic window can offer on this PC right now (B-70). Read at each open:
+ * "Snip this window" needs Lens Snip turned on; Lens Browser is part of Lens and opens on demand,
+ * so "Open in Lens Browser" is always there for a browser window; "Edit widgets…" needs desktop
+ * widgets on.
+ */
+export function runtimeCaps(now: { snipOn: boolean; desktopWidgets: boolean }): Caps {
+  return { snip: now.snipOn, browser: true, desktopWidgets: now.desktopWidgets };
+}
 
 const KIND_LABEL: Record<string, string> = {
   selection: "Selection", link: "Link", image: "Image", file: "File", folder: "Folder", listItem: "Item",
@@ -152,7 +170,7 @@ export function rowsFor(
     .map(rowFromAction);
   const win = cfg.windowActions ? windowRows(t, caps) : [];
   // For a window, the window's own actions come first: that's why people right-click a window.
-  const all = t.kind === "window" ? [...win, ...fromCatalog] : [...fromCatalog, ...win];
+  const all = t.kind === "window" ? [...win, ...fromCatalog] : [...desktopRows(t, caps), ...fromCatalog, ...win];
   const max = Math.max(3, Math.min(9, cfg.maxRows || 7));
   return { top: all.slice(0, max), more: all.slice(max) };
 }
@@ -228,8 +246,11 @@ export function onKey(s: KeyState, key: string, set: RowSet, targets: number): K
 
 // ---- requests -------------------------------------------------------------------------------------
 
-const PROMPTS: Record<string, string> = {
+/** The instruction each catalogue action sends with the item (shared with the selection bar's
+ *  answers in Magic Search). */
+export const PROMPTS: Record<string, string> = {
   ask: "Answer the question about this.",
+  define: "Define this word or term in one or two short sentences, then give one example sentence.",
   summarize: "Summarise this as a short TL;DR and 3–5 key points.",
   explain: "Explain this simply, with one example.",
   translate: "Translate this into English (or into the user's language if it is already English).",
@@ -282,9 +303,10 @@ export function markdownFor(t: MagicTarget): string {
 }
 
 /** Which actions the surface can run itself without the AI (and how). */
-export function localKind(row: Row): "window" | "copy" | "shelf" | "command" | "media" | "ai" {
+export function localKind(row: Row): "window" | "copy" | "shelf" | "command" | "media" | "search" | "ai" {
   if (row.windowAction) return "window";
   const id = row.action?.id ?? "";
+  if (id === "magic_search") return "search";
   if (id === "copy_md") return "copy";
   if (id === "micro_save" || id === "shelf_add") return "shelf";
   if (id === "transcribe" || id === "yt_transcript") return "media";

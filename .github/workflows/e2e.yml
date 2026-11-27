@@ -81,7 +81,8 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Build harness
-        run: node tools/robust/build.mjs
+        # The feel scene (DESIGN.md §5.5) is built next to the harness, into tools/robust/out/feel/.
+        run: node tools/robust/build.mjs && node tools/parity/feel/build.mjs
 
       - name: Perf budgets (4× CPU throttle)
         run: node tools/perf/run.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.update_baselines) && '--update' || '' }}
@@ -116,6 +117,10 @@ jobs:
       - name: Dock search and docked Settings never stay open
         if: always()
         run: node tools/robust/dock-dismiss.mjs
+
+      - name: Dock keys, menus, notice and flourishes
+        if: always()
+        run: node tools/robust/dock-keys.mjs
 
       - name: Dock auto-hide slides (no one-frame jumps)
         if: always()
@@ -175,6 +180,7 @@ jobs:
             tools/soak/out/
             tools/a11y/out/
             tools/robust/out/theme-rig/
+            tools/robust/out/dock-scenes/
             tools/hyper/out/
             tools/visual/out/report.json
             tools/visual/out/diff/

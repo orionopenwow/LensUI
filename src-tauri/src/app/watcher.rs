@@ -100,7 +100,7 @@ fn dock_window_target(cfg: &LensConfig, pos: (i32, i32), size: (u32, u32), botto
         let dock_h = (depth_css * scale) as u32;
         return (pos.0, bottom_edge - dock_h as i32 - margin_bottom, size.0, dock_h);
     }
-    let top_inset = if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+    let top_inset = if cfg.top_bar.enabled {
         ((cfg.top_bar.height as f64) * scale) as i32 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 }
     } else {
         0
@@ -167,10 +167,13 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let (x, y, dock_w, dock_h) = dock_window_target(cfg, (pos.x, pos.y), (size.width, size.height), bottom_edge, scale);
             // One native call, and none at all when the Dock is already there (G-02, G-03).
             crate::app::place::place_window(&dock, x, y, dock_w, dock_h);
-            let _ = dock.set_always_on_top(true);
+            if let Err(e) = dock.set_always_on_top(true) {
+                eprintln!("[Lens UI] dock: always-on-top refused ({}); the next placement tries again", e);
+            }
             // Shown only once its page has loaded (B-21); the load guard shows it later otherwise.
+            // A refused show is retried once and then by the watcher, which re-shows a hidden Dock.
             if crate::app::loadguard::may_show("dock") {
-                let _ = dock.show();
+                crate::app::place::show_window(&dock);
             }
             eprintln!(
                 "[Lens UI] Dock positioned at ({}, {}) size {}x{} (bottom_edge={}, scale={})",
@@ -184,23 +187,27 @@ pub(crate) fn position_dock_and_bars(app: &AppHandle, cfg: &LensConfig) {
             let extra_h = if cfg.top_bar.floating { (10.0 * scale) as u32 } else { 0 };
             crate::app::place::place_window(&topbar, pos.x, pos.y, size.width, bar_h + extra_h);
             let _ = topbar.set_always_on_top(true);
-            if cfg.top_bar.enabled && cfg.dock.show_top_bar && crate::app::loadguard::may_show("topbar") {
+            if cfg.top_bar.enabled && crate::app::loadguard::may_show("topbar") {
                 // Repositioning (every settings save, theme change or reload) keeps the bar in the
                 // state the auto-hide watcher has it in. Forcing "shown" here used to pop an
                 // auto-hidden bar back up behind the watcher's back, where it stayed stuck until
                 // the pointer touched the top edge.
                 let shown = topbar_shown_state(app);
-                let _ = topbar.set_ignore_cursor_events(!shown);
+                crate::app::place::set_click_through(&topbar, !shown);
                 let _ = topbar.unminimize();
-                let _ = topbar.show();
+                crate::app::place::show_window(&topbar);
                 let _ = app.emit("lens://topbar-visible", shown);
             } else {
-                let _ = topbar.hide();
+                crate::app::place::hide_window(&topbar);
             }
             eprintln!(
                 "[Lens UI] TopBar positioned at ({}, {}) size {}x{}",
                 pos.x, pos.y, size.width, bar_h + extra_h
             );
+        }
+        // "Top Bar on every monitor": the extra bars make room for the main one wherever it is.
+        if cfg.func.per_monitor_bars {
+            crate::app::integration::place_extra_topbars(app, cfg, (pos.x, pos.y));
         }
 
         // Widget Drawer positioned cleanly on the right below top bar
@@ -304,6 +311,7 @@ pub(crate) fn position_settings_docked_with_height(
         // Exact bottom dock pill height (padding-top 8 + padding-bottom 10 + icon_size + 1px bottom border)
         let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
         let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
+        // (The Unified style's floating gap is added by flyout_geom::pill_top.)
         // Settings has its own size (app/flyout_geom.rs): a Dock style never makes it narrow or
         // full-screen wide, and the Taskbar style opens it like the Windows 11 Start menu.
         let geom_mon = crate::app::flyout_geom::Monitor {
@@ -348,7 +356,7 @@ pub(crate) fn position_settings_docked_with_height(
             None => y,
         };
         let (x, y) = crate::app::integration::side_dock_flyout(
-            cfg, scale, bar_h, bottom_edge, target_w, target_h,
+            cfg, &mon, bar_h, bottom_edge, target_w, target_h,
             win_monitors::FlyoutAlign::Center,
         )
         .unwrap_or((x, y));
@@ -530,6 +538,16 @@ pub(crate) fn spawn_watcher(
         // Whether the Top Bar currently lets clicks through (None until first decided).
         let mut topbar_through: Option<bool> = None;
         let mut topbar_halo_sent: Option<(i32, i32, bool)> = None;
+        // Re-apply the Top Bar's state on the next pass even if it did not change (after a stall).
+        let mut topbar_force_apply = false;
+        // The periodic restatement to the bar's page is timed, not counted in passes: passes slow
+        // down when the main thread is busy (start-up window builds), and 30 slow passes were far
+        // longer than the ~2 s it promises.
+        let mut topbar_restated_at = Instant::now();
+        // Why the Top Bar is in its current state (logged when it changes; read by the E2E).
+        let mut topbar_reason_logged: &'static str = "";
+        // When the Launcher was last seen appear (for closing an unfocused one on a click outside).
+        let mut launcher_shown_since: Option<Instant> = None;
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -546,10 +564,13 @@ pub(crate) fn spawn_watcher(
                 // The supervisor made the Dock and Top Bar click-through while this thread was
                 // stuck: start from that state so the next pass re-applies the real one.
                 dock_ignoring_cursor = true;
-                // The bar's shown state lives in the shared flag (read each pass): flip it so
-                // the next pass sees a change and re-applies the real state.
-                let was = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
-                bg_topbar_visible.store(!was, std::sync::atomic::Ordering::Relaxed);
+                // The bar's shown state lives in the shared flag (read each pass). It used to be
+                // flipped here "so the next pass sees a change", but the next pass reads the
+                // flipped value as its starting point: a shown bar became "hidden" to the watcher
+                // while its page still drew it, and nothing told the page until the periodic
+                // restatement (a start-up stall left the bar up in CI, topbar-hides-idle). Keep
+                // the flag true to the page and re-apply it on the next pass instead.
+                topbar_force_apply = true;
                 topbar_through = None;
                 topbar_halo_sent = None;
             }
@@ -651,6 +672,38 @@ pub(crate) fn spawn_watcher(
                         })
                         .unwrap_or(false);
 
+                    // Launcher: it closes itself on blur, but a Launcher that never got the focus
+                    // (Windows refused to bring it forward) gets no blur, and a click outside it
+                    // left it open behind everything (B-128, seen in topbar-quicksettings-dismiss).
+                    // A click outside an unfocused Launcher closes it, as for Search.
+                    // Only once it has been up for a moment, so the click that opened it can't close it.
+                    let launcher_up = watcher_handle
+                        .get_webview_window("launcher")
+                        .map(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false))
+                        .unwrap_or(false);
+                    if !launcher_up {
+                        launcher_shown_since = None;
+                    } else if launcher_shown_since.is_none() {
+                        launcher_shown_since = Some(Instant::now());
+                    }
+                    let launcher_settled = launcher_shown_since.map(|t| t.elapsed() >= Duration::from_millis(400)).unwrap_or(false);
+                    if clicked && launcher_settled {
+                        if let Some(lau) = watcher_handle.get_webview_window("launcher") {
+                            if !is_foreground(&lau) {
+                                let inside = match (lau.outer_position(), lau.outer_size(), cursor) {
+                                    (Ok(p), Ok(sz), Some((cx, cy))) => {
+                                        cx >= p.x && cx < p.x + sz.width as i32 && cy >= p.y && cy < p.y + sz.height as i32
+                                    }
+                                    _ => true,
+                                };
+                                if !inside {
+                                    crate::tester::log("info", "surface", "Launcher closed: a click outside it while it did not have the focus");
+                                    crate::commands::surfaces::glide_hide_surface(&watcher_handle, "launcher");
+                                }
+                            }
+                        }
+                    }
+
                     // --- TOP BAR AUTO-HIDE ON OVERLAP ---
                     if let Some(topbar_win) = watcher_handle
                         .get_webview_window("topbar")
@@ -660,7 +713,7 @@ pub(crate) fn spawn_watcher(
                     // save) may show the bar by setting it; the watcher adopts that here, so it can
                     // still hide the bar later instead of believing it is already hidden.
                     let mut topbar_visible = bg_topbar_visible.load(std::sync::atomic::Ordering::Relaxed);
-                        if cfg.top_bar.enabled && cfg.dock.show_top_bar {
+                        if cfg.top_bar.enabled {
                             let bar_h = ((cfg.top_bar.height as f64) * scale) as i32
                                 + if cfg.top_bar.floating { (10.0 * scale) as i32 } else { 0 };
                             let cursor_in_mon_x = cursor
@@ -744,12 +797,12 @@ pub(crate) fn spawn_watcher(
                                     _ => false,
                                 };
                                 let pointer_on = qs.as_ref().map(over).unwrap_or(false) || cursor_inside_bar;
-                                active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), FLYOUT_IDLE_MS)
+                                active_within(focused || pointer_on, &mut qs_idle_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).0)
                             };
                             if !qs_vis {
                                 qs_idle_since = None;
                             } else if !qs_in_use && popout_may_auto_close(&watcher_handle, "quicksettings") {
-                                // Pointer away (and no keyboard focus) for FLYOUT_IDLE_MS: a
+                                // Pointer away (and no keyboard focus) for the pop-out delay: a
                                 // Quick Settings panel left open closes by itself.
                                 crate::commands::surfaces::glide_hide_surface(&watcher_handle, "quicksettings");
                             }
@@ -769,18 +822,32 @@ pub(crate) fn spawn_watcher(
                             };
 
                             let mut next_vis = topbar_visible;
+                            let reason: &'static str;
                             if !should_hide_when_idle {
                                 next_vis = true;
                                 topbar_edge_since = None;
                                 topbar_leave_since = None;
+                                reason = if palette_vis {
+                                    "held up: Search is open"
+                                } else if qs_in_use {
+                                    "held up: Quick Settings in use"
+                                } else if cfg.top_bar.auto_hide == "never" {
+                                    "auto-hide is off"
+                                } else {
+                                    "smart dodge: nothing covers it"
+                                };
                             } else if topbar_visible {
                                 if cursor_inside_bar {
                                     topbar_leave_since = None;
+                                    reason = "pointer on the bar";
                                 } else {
                                     let since = *topbar_leave_since.get_or_insert_with(Instant::now);
                                     if since.elapsed().as_millis() as u64 >= cfg.top_bar.hide_delay_ms {
                                         next_vis = false;
                                         topbar_leave_since = None;
+                                        reason = "pointer away for the hide delay";
+                                    } else {
+                                        reason = "pointer away, waiting out the hide delay";
                                     }
                                 }
                             } else if cursor_at_top_edge {
@@ -788,12 +855,41 @@ pub(crate) fn spawn_watcher(
                                 if since.elapsed().as_millis() as u64 >= cfg.top_bar.reveal_delay_ms {
                                     next_vis = true;
                                     topbar_edge_since = None;
+                                    reason = "pointer at the top edge for the reveal delay";
+                                } else {
+                                    reason = "pointer at the top edge, waiting out the reveal delay";
                                 }
                             } else {
                                 topbar_edge_since = None;
+                                reason = "hidden, pointer away from the top edge";
+                            }
+                            // Logged only when the reason changes (a handful of lines per reveal),
+                            // so the Tester log (and a failing E2E) says why the bar is where it is.
+                            if reason != topbar_reason_logged {
+                                topbar_reason_logged = reason;
+                                crate::tester::log(
+                                    "debug",
+                                    "topbar",
+                                    &format!(
+                                        "Top Bar {}: {} (autoHide={}, pointer={:?})",
+                                        if next_vis { "shown" } else { "hidden" },
+                                        reason,
+                                        cfg.top_bar.auto_hide,
+                                        cursor
+                                    ),
+                                );
                             }
 
-                            if next_vis != topbar_visible {
+                            if next_vis != topbar_visible || topbar_force_apply {
+                                if topbar_force_apply {
+                                    crate::tester::log(
+                                        "info",
+                                        "topbar",
+                                        &format!("Top Bar state re-applied after a watcher stall ({})", if next_vis { "shown" } else { "hidden" }),
+                                    );
+                                }
+                                topbar_force_apply = false;
+                                topbar_restated_at = Instant::now();
                                 topbar_visible = next_vis;
                                 bg_topbar_visible.store(
                                     topbar_visible,
@@ -805,7 +901,9 @@ pub(crate) fn spawn_watcher(
                                     let _ = topbar_win.show();
                                     let _ = watcher_handle.emit("lens://topbar-visible", true);
                                 } else {
-                                    let _ = topbar_win.set_ignore_cursor_events(true);
+                                    // A hidden bar must never take clicks: retried once, and the
+                                    // ~2 s restatement below applies it again if Windows refused.
+                                    crate::app::place::set_click_through(&topbar_win, true);
                                     let _ = watcher_handle.emit("lens://topbar-visible", false);
                                 }
                             } else if topbar_visible
@@ -816,10 +914,11 @@ pub(crate) fn spawn_watcher(
                                 let _ = topbar_win.unminimize();
                                 let _ = topbar_win.show();
                                 let _ = watcher_handle.emit("lens://topbar-visible", true);
-                        } else if tick % 30 == 0 {
-                            // About every 2 s, restate the current state to the bar only, so a page
+                        } else if topbar_restated_at.elapsed() >= Duration::from_millis(2000) {
+                            // Every 2 s, restate the current state to the bar only, so a page
                             // that missed an event (it reloaded, an emit was dropped) cannot stay
                             // drawn while Lens has it hidden, or the reverse.
+                            topbar_restated_at = Instant::now();
                             if !topbar_visible {
                                 let _ = topbar_win.set_ignore_cursor_events(true);
                             }
@@ -848,13 +947,21 @@ pub(crate) fn spawn_watcher(
                                 _ => !crate::app::topbar_hit::rects().is_empty(),
                             };
                             if topbar_through != Some(through) {
-                                topbar_through = Some(through);
-                                let _ = topbar_win.set_ignore_cursor_events(through);
+                                // Remembered only once applied, so a refused change is tried again
+                                // on the next pass instead of being taken as done (B-18).
+                                if crate::app::place::set_click_through(&topbar_win, through) {
+                                    topbar_through = Some(through);
+                                }
                             }
-                            let halo = match local {
-                                Some((lx, ly)) if over_bar && through => (lx.round() as i32, ly.round() as i32, true),
-                                _ => (0, 0, false),
-                            };
+                            // No halo when it is switched off or Windows' transparency effects
+                            // are off (`last_theme` is re-read every ~2 s above).
+                            let halo = crate::app::topbar_hit::halo_for(
+                                local,
+                                over_bar,
+                                through,
+                                cfg.top_bar.pointer_halo,
+                                last_theme.transparency_enabled,
+                            );
                             if topbar_halo_sent != Some(halo) {
                                 topbar_halo_sent = Some(halo);
                                 let _ = watcher_handle.emit_to(
@@ -1011,7 +1118,7 @@ pub(crate) fn spawn_watcher(
                         }
                     // Without the Top Bar nothing above closes an abandoned Search: same rule here
                     // (another app has the foreground and the pointer is away, or a click outside).
-                    if palette_vis_now && !(cfg.top_bar.enabled && cfg.dock.show_top_bar) {
+                    if palette_vis_now && !(cfg.top_bar.enabled) {
                         if let Some(pal) = watcher_handle.get_webview_window("palette") {
                             let pointer_in = match (pal.outer_position(), pal.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {
@@ -1075,7 +1182,7 @@ pub(crate) fn spawn_watcher(
                                 _ => false,
                             };
                             let in_use = settings_focused || pointer_on_settings || cursor_over_pill || cursor_over_dock_window;
-                            if !active_within(in_use, &mut settings_away_since, Instant::now(), POPOUT_AWAY_MS)
+                            if !active_within(in_use, &mut settings_away_since, Instant::now(), popout_delays(&cfg.func.popout_close_delay).1)
                                 && popout_may_auto_close(&watcher_handle, "settings")
                             {
                                 settings_away_since = None;
@@ -1152,7 +1259,7 @@ pub(crate) fn spawn_watcher(
                                 || dock_win.is_minimized().unwrap_or(false))
                         {
                             let _ = dock_win.unminimize();
-                            let _ = dock_win.show();
+                            crate::app::place::show_window(&dock_win);
                             let _ = watcher_handle.emit("lens://dock-visible", true);
                         }
 
@@ -1172,6 +1279,20 @@ pub(crate) fn spawn_watcher(
                             || win_previews::flyout_rect_css().2 > 0
                             || dock_vis_changed_at.elapsed().as_millis() < 800
                             || dock_pill_changed_at.elapsed().as_millis() < 600;
+                        // Self-heal about every 2 s while idle: a Dock window that was moved or
+                        // resized behind Lens's back (a scaling change on the way to another
+                        // monitor, Explorer restarting, a display waking up) goes back to its
+                        // place. Nothing happens when it is already there (B-62).
+                        // Also while auto-hidden: the reveal strip is measured from the window, so
+                        // a misplaced hidden Dock could never be brought back.
+                        let dock_settled = !menu_open
+                            && !dock_flyout_open
+                            && !cursor_over_pill
+                            && win_previews::flyout_rect_css().2 == 0
+                            && dock_vis_changed_at.elapsed().as_millis() >= 800;
+                        if tick % 30 == 15 && dock_settled {
+                            resize_dock_window(&watcher_handle, &cfg);
+                        }
                         let depth_now = win_previews::dock_depth_css();
                         let depth_wanted = win_previews::dock_depth_for_pill(&cfg.dock.position, pill_now);
                         if let Some(depth) = dock_sizer.step(watcher_started.elapsed().as_millis() as u64, depth_now, depth_wanted, dock_busy) {
@@ -1187,8 +1308,12 @@ pub(crate) fn spawn_watcher(
                         // Click-through everywhere except over the visible dock pill (or when context menu/search/hover card is open)
                         let want_ignore = !menu_open && (!dock_visible || !cursor_over_pill);
                         if want_ignore != dock_ignoring_cursor {
-                            dock_ignoring_cursor = want_ignore;
-                            let _ = dock_win.set_ignore_cursor_events(want_ignore);
+                            // Remembered only once applied: a refused change (the window was busy
+                            // being rebuilt or moved) used to be taken as done, leaving a hidden
+                            // Dock that took clicks or a shown one that let them through (B-18).
+                            if crate::app::place::set_click_through(&dock_win, want_ignore) {
+                                dock_ignoring_cursor = want_ignore;
+                            }
                         }
                     }
 
@@ -1342,6 +1467,17 @@ pub(crate) const DOCK_FOCUS_GRACE_MS: u128 = 4000;
 pub(crate) const FLYOUT_IDLE_MS: u128 = 1500;
 /// How long Settings on the Dock may sit with the pointer away and no keyboard focus.
 pub(crate) const POPOUT_AWAY_MS: u128 = 1800;
+
+/// How long pop-outs wait before closing by themselves, for `func.popoutCloseDelay`:
+/// (Quick Settings, Settings on the Dock) in ms. "normal" (and anything unknown) is the original
+/// FLYOUT_IDLE_MS / POPOUT_AWAY_MS pair.
+pub(crate) fn popout_delays(preset: &str) -> (u128, u128) {
+    match preset {
+        "short" => (800, 1000),
+        "long" => (3000, 3600),
+        _ => (FLYOUT_IDLE_MS, POPOUT_AWAY_MS),
+    }
+}
 
 /// Pure: `active` now, or within `grace_ms` of the last time it was. Tracks the moment it stopped.
 pub(crate) fn active_within(active: bool, idle_since: &mut Option<std::time::Instant>, now: std::time::Instant, grace_ms: u128) -> bool {
@@ -1510,6 +1646,20 @@ mod hide_robustness_tests {
         // Used again: counts again at once.
         assert!(active_within(true, &mut since, t0 + Duration::from_millis(5000), FLYOUT_IDLE_MS));
         assert_eq!(since, None);
+    }
+
+    #[test]
+    fn popout_delay_presets_keep_normal_as_it_was() {
+        assert_eq!(popout_delays("normal"), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS));
+        assert_eq!(popout_delays(""), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS), "missing or unknown is normal");
+        assert_eq!(popout_delays("bogus"), (FLYOUT_IDLE_MS, POPOUT_AWAY_MS));
+        let (qs_short, st_short) = popout_delays("short");
+        let (qs_long, st_long) = popout_delays("long");
+        assert!(qs_short < FLYOUT_IDLE_MS && FLYOUT_IDLE_MS < qs_long);
+        assert!(st_short < POPOUT_AWAY_MS && POPOUT_AWAY_MS < st_long);
+        // Short still gives a person time to move the pointer back.
+        assert!(qs_short >= 600 && st_short >= 600);
+        assert_eq!(crate::config::LensConfig::default().func.popout_close_delay, "normal");
     }
 
     #[test]

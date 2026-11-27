@@ -12,6 +12,7 @@ import {
   type ThemePack,
 } from "../themes/packs";
 import { applyFeaturedLook, featuredPacks, isFeatured } from "../themes/featured";
+import { chooseTheme } from "../themes/choiceUndo";
 import { matchLookPointer } from "../themes/featuredPointer";
 import { readSchedule } from "../themes/schedule";
 import { SHAPE_STYLES, normalizeShapeStyle } from "../themes/shapes/shapes";
@@ -28,6 +29,7 @@ import { CursorSuiteCard } from "../components/CursorSuiteCard";
 import { DockScenePreview, dockStyleLabel, dockStyleOf, dockAlignmentOf } from "../dock/styles";
 import type { WallpaperState } from "../surfaces/wallpaperTypes";
 import { LivingThemesRow } from "../themes/living/LivingThemesRow";
+import { quiet } from "../ui/oops";
 
 interface Props {
   config: LensConfig;
@@ -267,7 +269,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const [undo, setUndo] = useState<LensConfig | null>(null);
 
   useEffect(() => {
-    invoke<WallpaperState>("get_wallpaper_state_cmd").then(setWallpaper).catch(() => {});
+    // Only the Wallpaper section's one-line summary reads this; it says "—" until a read works.
+    invoke<WallpaperState>("get_wallpaper_state_cmd").then(setWallpaper).catch(quiet);
   }, [open.wallpaper]);
 
   // Close the accent popover on Escape or a click outside it.
@@ -290,7 +293,8 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
   const apply = (packId: string) => {
     setUndo(config);
     // A theme changes colours and materials only; the Dock stays exactly as the person set it.
-    onApplyPack(isFeatured(packId) ? applyFeaturedLook(config, packId, { withFontAndShape: alsoFont }) : applyThemePack(config, packId, { withFontAndShape: alsoFont }));
+    // Coming back to the theme this run of choices started from restores it exactly (B-39).
+    onApplyPack(chooseTheme(config, (c) => (isFeatured(packId) ? applyFeaturedLook(c, packId, { withFontAndShape: alsoFont }) : applyThemePack(c, packId, { withFontAndShape: alsoFont }))));
     if (isFeatured(packId)) void matchLookPointer(packId);
   };
 
@@ -308,10 +312,14 @@ export const ThemeTab: React.FC<Props> = ({ config, winTheme, updateConfig, onAp
     const dayPack = isLightPack(current) ? current : isLightPack(schedule.dayPack) ? schedule.dayPack : "alabaster-daylight";
     const nightPack = !isLightPack(current) && packById(current) ? current : !isLightPack(schedule.nightPack) ? schedule.nightPack : "obsidian";
     const sched = { ...schedule, dayPack, nightPack, enabled: next === "auto" };
-    let out: LensConfig = { ...config, themeSchedule: sched };
-    if (next === "light" && !isLightPack(current)) out = applyThemePack(out, dayPack);
-    if (next === "dark" && isLightPack(current)) out = applyThemePack(out, nightPack);
-    onApplyPack(out);
+    onApplyPack(
+      chooseTheme(config, (c) => {
+        let out: LensConfig = { ...c, themeSchedule: sched };
+        if (next === "light" && !isLightPack(current)) out = applyThemePack(out, dayPack);
+        if (next === "dark" && isLightPack(current)) out = applyThemePack(out, nightPack);
+        return out;
+      }),
+    );
   };
 
   const modified =

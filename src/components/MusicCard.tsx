@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { currentTokens, music, type LastfmStatus, type MusicConfig, type SpicetifyPreview, type SpotifyStatus } from "../music/api";
 import { openExternal } from "../ai/open";
+import { DEFAULT_REDIRECTS, RedirectList, useSpotifyConnect } from "../music/spotifyConnect";
 import "../music/music.css";
+import type { LensConfig } from "../types/lens";
+import { MusicDiscordRows, MusicEqualizerRows, MusicImmersiveRows, MusicRemoteRows, MusicImmersiveTweaks, MusicLyricExtras, MusicSetup } from "../music/MusicSettingsExtras";
 
 const DEFAULT: MusicConfig = {
   enabled: false,
@@ -18,11 +21,27 @@ const DEFAULT: MusicConfig = {
   lyricsLrclib: true,
   lyricsFolder: null,
   lyricsOffsetMs: 0,
+  desktopLyrics: false,
   windowStyle: "expanded",
   dither: true,
   sceneReactive: false,
   history: true,
   lastfm: false,
+  soundGlow: true,
+  levelMeter: true,
+  artTint: true,
+  immersiveIdleS: 3,
+  immersiveGlow: false,
+  immersiveLyrics: true,
+  lyricsTranslate: false,
+  lyricsTranslateTo: "",
+  lyricsView: "original",
+  discord: false,
+  discordAppId: "",
+  discordPrivate: false,
+  discordShowProgress: true,
+  setupDone: false,
+  remoteIdleMin: 10,
 };
 
 const Toggle: React.FC<{ on: boolean; label: string; onChange: (v: boolean) => void; disabled?: boolean }> = ({ on, label, onChange, disabled }) => (
@@ -39,12 +58,17 @@ const Row: React.FC<{ label: string; desc?: React.ReactNode; children: React.Rea
   </div>
 );
 
-export const MusicCard: React.FC = () => {
+interface Props {
+  /** Lens settings, for the "media controls in the Top Bar" switch (Settings › Music passes them). */
+  config?: LensConfig;
+  updateConfig?: (c: LensConfig) => void;
+}
+
+export const MusicCard: React.FC<Props> = ({ config, updateConfig }) => {
   const [cfg, setCfg] = useState<MusicConfig>(DEFAULT);
   const [error, setError] = useState<string | null>(null);
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [clientId, setClientId] = useState("");
-  const [connecting, setConnecting] = useState(false);
   const [lastfm, setLastfm] = useState<LastfmStatus | null>(null);
   const [lfKey, setLfKey] = useState("");
   const [lfSecret, setLfSecret] = useState("");
@@ -67,29 +91,22 @@ export const MusicCard: React.FC = () => {
   };
   const off = !cfg.enabled;
 
-  const connectSpotify = async () => {
+  const spotifyConnect = useSpotifyConnect(setSpotify);
+  const connecting = spotifyConnect.connecting;
+  const connectSpotify = () => {
     setError(null);
-    try {
-      const url = await music.spotifyBegin(clientId);
-      setConnecting(true);
-      openExternal(url);
-      await music.spotifyFinish();
-      setSpotify(await music.spotifyStatus());
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setConnecting(false);
-    }
+    void spotifyConnect.connect(clientId);
   };
 
   return (
-    <div className="cc-card">
+    <div className="cc-card" data-guide-id="music.card">
       <Row label="Music" top={0} desc="One now-playing view for every app that shows up in Windows' media controls: Spotify, Apple Music, your browser, VLC and more.">
         <Toggle on={cfg.enabled} label="Music" onChange={(v) => save({ enabled: v })} />
       </Row>
       <div className="cc-desc" style={{ marginTop: 8 }}>
-        Lens reads the title, artist, artwork and position Windows already shares, and controls playback the same way your media keys do. Nothing leaves this PC unless you turn on lyrics, Spotify or Last.fm below.
+        Lens reads the title, artist, artwork and position Windows already shares, and controls playback the same way your media keys do. Nothing leaves this PC unless you turn on lyrics, translation, Spotify, Last.fm or Discord below.
       </div>
+      {!cfg.setupDone && <MusicSetup cfg={cfg} save={save} spotifyConnected={!!spotify?.connected} lastfmConnected={!!lastfm?.connected} />}
 
       <div className="cc-label" style={{ marginTop: 16 }}>Mini player</div>
       <div className="cc-chip-grid">
@@ -100,6 +117,21 @@ export const MusicCard: React.FC = () => {
         ))}
       </div>
 
+      <div className="cc-label lm-settings-head">Dock music pop-out</div>
+      <div className="cc-desc">Hover Spotify in the Dock. These work even with Music off.</div>
+      <Row label="Sound glow" desc="A soft glow in the artwork's colours rises from the Dock and breathes with the music. Still when motion is reduced.">
+        <Toggle on={cfg.soundGlow} label="Sound glow" onChange={(v) => save({ soundGlow: v })} />
+      </Row>
+      <Row label="Level meter" desc="Five small bars beside the song title. Both read your speakers' volume level, a single number, only while the pop-out is open and music plays. No sound is recorded.">
+        <Toggle on={cfg.levelMeter} label="Level meter" onChange={(v) => save({ levelMeter: v })} />
+      </Row>
+      {config && updateConfig && (
+        <Row label="Media controls in the Top Bar" desc="Previous, play and next in the Top Bar when the mini player isn't there.">
+          <Toggle on={config.topBar?.showMediaControls ?? true} label="Media controls in the Top Bar"
+            onChange={(v) => updateConfig({ ...config, topBar: { ...config.topBar, showMediaControls: v } })} />
+        </Row>
+      )}
+
       <div className="cc-label" style={{ marginTop: 16 }}>Now Playing window</div>
       <div className="cc-chip-grid">
         {(["compact", "expanded", "fullscreen"] as const).map((m) => (
@@ -108,35 +140,7 @@ export const MusicCard: React.FC = () => {
           </button>
         ))}
       </div>
-      <Row label="Dither texture" desc="Lens's halftone grain over the blurred artwork.">
-        <Toggle on={cfg.dither} label="Dither texture" disabled={off} onChange={(v) => save({ dither: v })} />
-      </Row>
 
-      <Row label="Sources" desc="Apps shown first when several are playing. Hidden apps are never shown.">
-        <span />
-      </Row>
-      <div className="cc-chip-grid">
-        {cfg.priority.map((p, i) => (
-          <span key={`p-${p}`} className="cc-chip active">
-            {i + 1}. {p}
-            <button type="button" aria-label={`Remove ${p}`} disabled={off} style={{ marginLeft: 6, background: "none", border: 0, color: "inherit", cursor: "pointer" }}
-              onClick={() => save({ priority: cfg.priority.filter((x) => x !== p) })}>×</button>
-          </span>
-        ))}
-        {cfg.deny.map((p) => (
-          <span key={`d-${p}`} className="cc-chip">
-            Hidden: {p}
-            <button type="button" aria-label={`Show ${p} again`} disabled={off} style={{ marginLeft: 6, background: "none", border: 0, color: "inherit", cursor: "pointer" }}
-              onClick={() => save({ deny: cfg.deny.filter((x) => x !== p) })}>×</button>
-          </span>
-        ))}
-      </div>
-      <div className="cc-row" style={{ marginTop: 8, gap: 8, justifyContent: "flex-start" }}>
-        <input className="cc-input" style={{ width: 180 }} placeholder="e.g. spotify, msedge, vlc" aria-label="App name" value={newSource} disabled={off}
-          onChange={(e) => setNewSource(e.target.value)} />
-        <button type="button" className="cc-btn" disabled={off || !newSource.trim()} onClick={() => (save({ priority: [...cfg.priority, newSource.trim().toLowerCase()] }), setNewSource(""))}>Prefer</button>
-        <button type="button" className="cc-btn cc-btn-ghost" disabled={off || !newSource.trim()} onClick={() => (save({ deny: [...cfg.deny, newSource.trim().toLowerCase()] }), setNewSource(""))}>Hide</button>
-      </div>
 
       <Row label="Theme follows the music" desc="Fades your accent towards the artwork's colour while something plays, then back. Never during games or full-screen apps, and nothing is saved.">
         <Toggle on={cfg.themeFollows} label="Theme follows the music" disabled={off} onChange={(v) => save({ themeFollows: v })} />
@@ -157,29 +161,13 @@ export const MusicCard: React.FC = () => {
       </Row>
       {cfg.lyrics && !off && (
         <>
-          <Row label="Use LRCLIB" desc="Turn off to use only your own .lrc files.">
-            <Toggle on={cfg.lyricsLrclib} label="Use LRCLIB" onChange={(v) => save({ lyricsLrclib: v })} />
+          <MusicLyricExtras cfg={cfg} save={save} />
+          <Row label="Lyrics on the desktop" desc="Shows the line being sung under the Top Bar, in the artwork's colour. Clicks pass straight through it. Hidden when nothing is playing and whenever a fullscreen app or game is in front.">
+            <Toggle on={cfg.desktopLyrics} label="Lyrics on the desktop" onChange={(v) => save({ desktopLyrics: v })} />
           </Row>
-          <Row label="Your .lrc folder" desc='Files named "Artist - Title.lrc" or "Title.lrc" win over LRCLIB.'>
-            <input className="cc-input" style={{ width: 220 }} defaultValue={cfg.lyricsFolder ?? ""} placeholder="C:\Music\Lyrics" aria-label="Lyrics folder"
-              onBlur={(e) => save({ lyricsFolder: e.target.value.trim() || null })} />
-          </Row>
-          <Row label="Timing" desc={`${cfg.lyricsOffsetMs > 0 ? "+" : ""}${(cfg.lyricsOffsetMs / 1000).toFixed(1)} s (positive shows lines earlier)`}>
-            <span style={{ display: "inline-flex", gap: 4 }}>
-              <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: cfg.lyricsOffsetMs - 250 })} aria-label="Lyrics later">−0.25 s</button>
-              <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: 0 })}>Reset</button>
-              <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: cfg.lyricsOffsetMs + 250 })} aria-label="Lyrics earlier">+0.25 s</button>
-            </span>
-          </Row>
-          <div className="cc-row" style={{ marginTop: 8, justifyContent: "flex-start" }}>
-            <button type="button" className="cc-btn cc-btn-ghost" onClick={() => music.clearLyricsCache().catch((e) => setError(String(e)))}>Clear lyrics cache</button>
-          </div>
         </>
       )}
 
-      <Row label="Now Playing wallpaper moves to the music" desc="The Playground scene reads your speakers' volume level, a single number. No sound is recorded or stored.">
-        <Toggle on={cfg.sceneReactive} label="Audio-reactive scene" disabled={off} onChange={(v) => save({ sceneReactive: v })} />
-      </Row>
       <Row label="Recently played in Lens" desc="Keeps the last 100 songs on this PC so the Now Playing window can list them.">
         <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
           <button type="button" className="cc-btn cc-btn-ghost" disabled={off} onClick={() => music.clearHistory().catch((e) => setError(String(e)))}>Clear</button>
@@ -187,8 +175,10 @@ export const MusicCard: React.FC = () => {
         </span>
       </Row>
 
+      <MusicImmersiveRows cfg={cfg} save={save} off={off} />
+
       {/* ---------------------------------------------------------------- Spotify */}
-      <div className="cc-label" style={{ marginTop: 20 }}>Connect Spotify (optional)</div>
+      <div className="cc-label" style={{ marginTop: 20 }} data-guide-id="music.spotify">Connect Spotify (optional)</div>
       <div className="cc-desc">
         Windows only shares the current song. Connecting Spotify's official Web API adds your real queue, add to queue, your playlists, "More by" and saving songs.
         It uses your own free Spotify developer app; the sign-in is stored encrypted on this PC.
@@ -202,7 +192,7 @@ export const MusicCard: React.FC = () => {
         <>
           <ol className="cc-desc" style={{ margin: "8px 0 0", paddingLeft: 18 }}>
             <li>Create an app at <button type="button" className="md-link" onClick={() => openExternal("https://developer.spotify.com/dashboard")}>developer.spotify.com/dashboard</button>.</li>
-            <li>Add the redirect URI <span className="lm-mono">{spotify?.redirectUri ?? "http://127.0.0.1:43117/callback"}</span> and tick Web API.</li>
+            <li>Add the redirect URI <RedirectList uris={spotify?.redirectUris?.length ? spotify.redirectUris : DEFAULT_REDIRECTS} /> and tick Web API.</li>
             <li>Paste its client ID here. Spotify asks you to approve these permissions:</li>
           </ol>
           <ul className="cc-desc" style={{ margin: "4px 0 0", paddingLeft: 18 }}>
@@ -213,6 +203,8 @@ export const MusicCard: React.FC = () => {
             <input className="cc-input" style={{ width: 280 }} placeholder="Client ID (32 characters)" aria-label="Spotify client ID" value={clientId} onChange={(e) => setClientId(e.target.value)} />
             <button type="button" className="cc-btn" disabled={connecting || clientId.trim().length !== 32} onClick={connectSpotify}>{connecting ? "Waiting for Spotify…" : "Connect"}</button>
           </div>
+          {spotifyConnect.notice && <div className="cc-desc lm-card-note" role="status">{spotifyConnect.notice}</div>}
+          {spotifyConnect.error && <div className="cc-desc lm-card-note error" role="alert">{spotifyConnect.error}</div>}
         </>
       )}
       <div className="cc-desc" style={{ marginTop: 8 }}>
@@ -220,6 +212,7 @@ export const MusicCard: React.FC = () => {
       </div>
 
       {/* ---------------------------------------------------------------- Last.fm */}
+      <span data-guide-id="music.lastfm" />
       <Row label="Scrobble to Last.fm" desc="Sends songs you listened to (more than half, or 4 minutes) to your own Last.fm account.">
         <Toggle on={cfg.lastfm} label="Scrobble to Last.fm" disabled={off || !lastfm?.connected} onChange={(v) => save({ lastfm: v })} />
       </Row>
@@ -239,6 +232,10 @@ export const MusicCard: React.FC = () => {
           )}
         </div>
       )}
+
+      <MusicDiscordRows cfg={cfg} save={save} off={off} />
+      <MusicRemoteRows cfg={cfg} save={save} off={off} tester={!!config?.tester?.enabled} />
+      <MusicEqualizerRows />
 
       {/* ---------------------------------------------------------------- Spicetify */}
       <div className="cc-label" style={{ marginTop: 20 }}>Spotify theme for Spicetify (optional)</div>
@@ -267,6 +264,72 @@ export const MusicCard: React.FC = () => {
           </details>
         </div>
       )}
+
+      {/* ---------------------------------------------------------------- Tweaks */}
+      <details className="lm-tweaks" data-guide-id="music.tweaks">
+        <summary className="cc-label lm-settings-head">Tweaks</summary>
+        <div className="cc-desc">Advanced options, grouped. The defaults suit most people.</div>
+        <div className="lm-tweaks-group">Look</div>
+      <Row label="Dither texture" desc="Lens's halftone grain over the artwork-coloured background.">
+        <Toggle on={cfg.dither} label="Dither texture" disabled={off} onChange={(v) => save({ dither: v })} />
+      </Row>
+        <div className="lm-tweaks-group">Sources</div>
+      <Row label="Sources" desc="Apps shown first when several are playing. Hidden apps are never shown.">
+        <span />
+      </Row>
+      <div className="cc-chip-grid">
+        {cfg.priority.map((p, i) => (
+          <span key={`p-${p}`} className="cc-chip active">
+            {i + 1}. {p}
+            <button type="button" aria-label={`Remove ${p}`} disabled={off} style={{ marginLeft: 6, background: "none", border: 0, color: "inherit", cursor: "pointer" }}
+              onClick={() => save({ priority: cfg.priority.filter((x) => x !== p) })}>×</button>
+          </span>
+        ))}
+        {cfg.deny.map((p) => (
+          <span key={`d-${p}`} className="cc-chip">
+            Hidden: {p}
+            <button type="button" aria-label={`Show ${p} again`} disabled={off} style={{ marginLeft: 6, background: "none", border: 0, color: "inherit", cursor: "pointer" }}
+              onClick={() => save({ deny: cfg.deny.filter((x) => x !== p) })}>×</button>
+          </span>
+        ))}
+      </div>
+      <div className="cc-row" style={{ marginTop: 8, gap: 8, justifyContent: "flex-start" }}>
+        <input className="cc-input" style={{ width: 180 }} placeholder="e.g. spotify, msedge, vlc" aria-label="App name" value={newSource} disabled={off}
+          onChange={(e) => setNewSource(e.target.value)} />
+        <button type="button" className="cc-btn" disabled={off || !newSource.trim()} onClick={() => (save({ priority: [...cfg.priority, newSource.trim().toLowerCase()] }), setNewSource(""))}>Prefer</button>
+        <button type="button" className="cc-btn cc-btn-ghost" disabled={off || !newSource.trim()} onClick={() => (save({ deny: [...cfg.deny, newSource.trim().toLowerCase()] }), setNewSource(""))}>Hide</button>
+      </div>
+        <div className="lm-tweaks-group">Lyrics</div>
+        {cfg.lyrics && !off ? (
+          <>
+      <Row label="Use LRCLIB" desc="Turn off to use only your own .lrc files.">
+        <Toggle on={cfg.lyricsLrclib} label="Use LRCLIB" onChange={(v) => save({ lyricsLrclib: v })} />
+      </Row>
+      <Row label="Your .lrc folder" desc='Files named "Artist - Title.lrc" or "Title.lrc" win over LRCLIB.'>
+        <input className="cc-input" style={{ width: 220 }} defaultValue={cfg.lyricsFolder ?? ""} placeholder="C:\Music\Lyrics" aria-label="Lyrics folder"
+          onBlur={(e) => save({ lyricsFolder: e.target.value.trim() || null })} />
+      </Row>
+      <Row label="Timing" desc={`${cfg.lyricsOffsetMs > 0 ? "+" : ""}${(cfg.lyricsOffsetMs / 1000).toFixed(1)} s (positive shows lines earlier)`}>
+        <span style={{ display: "inline-flex", gap: 4 }}>
+          <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: cfg.lyricsOffsetMs - 250 })} aria-label="Lyrics later">−0.25 s</button>
+          <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: 0 })}>Reset</button>
+          <button type="button" className="cc-btn cc-btn-ghost" onClick={() => save({ lyricsOffsetMs: cfg.lyricsOffsetMs + 250 })} aria-label="Lyrics earlier">+0.25 s</button>
+        </span>
+      </Row>
+      <div className="cc-row" style={{ marginTop: 8, justifyContent: "flex-start" }}>
+        <button type="button" className="cc-btn cc-btn-ghost" onClick={() => music.clearLyricsCache().catch((e) => setError(String(e)))}>Clear lyrics and translations</button>
+      </div>
+          </>
+        ) : (
+          <div className="cc-desc">Turn on synced lyrics above for these.</div>
+        )}
+        <div className="lm-tweaks-group">Immersive</div>
+        <MusicImmersiveTweaks cfg={cfg} save={save} off={off} />
+        <div className="lm-tweaks-group">Playground</div>
+      <Row label="Now Playing wallpaper moves to the music" desc="The Playground scene reads your speakers' volume level, a single number. No sound is recorded or stored.">
+        <Toggle on={cfg.sceneReactive} label="Audio-reactive scene" disabled={off} onChange={(v) => save({ sceneReactive: v })} />
+      </Row>
+      </details>
 
       {error && <div className="cc-desc" role="alert" style={{ marginTop: 12, color: "var(--lens-danger)" }}>{error}</div>}
     </div>

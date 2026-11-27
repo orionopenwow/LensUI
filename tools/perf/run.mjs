@@ -3,12 +3,15 @@
 //   frame p50/p95 (ms between animation frames), long tasks > 50 ms, layout shift (CLS),
 //   and first contentful paint of the surface.
 // Then compares with tools/perf/budgets.json: a metric more than 20 % (plus a small absolute
-// allowance for timer noise) above its baseline fails the run.
+// allowance for timer noise) above its baseline fails the run. Scenarios made of repeated steps
+// (theme-switch) are measured one step at a time after a warm-up and gated on the median step, with
+// a cap on the slowest (STEP_GATES, STEP_CAPS).
 //
 //   node tools/robust/build.mjs && node tools/perf/run.mjs            # check
 //   node tools/perf/run.mjs --update                                  # re-baseline from this machine
 //   PERF_ONLY=dock-hover-sweep,theme-switch node tools/perf/run.mjs   # a subset
 //   PERF_SCENE_MS=5000 (default) — how long each Playground scene runs
+//   PERF_RETRIES=2 (default) — extra tries for a scenario over budget (0: one run, e.g. to sample noise)
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { serve, launch, openSurface, setConfig, settingsTabs, pct, here as robustDir } from "../robust/lib.mjs";
@@ -20,13 +23,24 @@ const UPDATE = process.argv.includes("--update");
 const ONLY = (process.env.PERF_ONLY || "").split(",").filter(Boolean);
 const SCENE_MS = Number(process.env.PERF_SCENE_MS || 5000);
 const THROTTLE = Number(process.env.PERF_THROTTLE || 4);
+const RETRIES = Number(process.env.PERF_RETRIES ?? 2);
 
 /** Regression rule: fail when measured > baseline × 1.2 + allowance. */
 const TOLERANCE = 0.2;
 // Frame times are quantised to display frames (16.7 ms at 60 Hz): one frame of allowance on p50/p95.
 // First paint on the shared CI runners swings by ~300 ms between identical runs; it is a
 // coarse regression guard, not a precise gate.
-const ALLOW = { p50: 17, p95: 17, longTasks: 3, cls: 0.02, fcp: 350 };
+const ALLOW = { p50: 17, p95: 17, longTasks: 3, cls: 0.02, fcp: 350, switchMs: 17, longPerStep: 1 };
+// Scenarios measured step by step (theme-switch, see its comment) are gated on the median step
+// instead of the run's total long tasks: `switchMs` (median time from the change to the painted
+// frame) and `longPerStep` (median long tasks per step; the allowance of one lets the switch frame
+// itself be one long task at 4×, never two). The slowest step only has to stay under a cap.
+const STEP_GATES = ["p50", "p95", "longPerStep", "switchMs", "cls", "fcp"];
+const STEP_CAPS = {
+  switchMsMax: (b) => b.switchMs * 3, // no single switch more than 3× the baseline median
+  longPerStepMax: () => 3, // nor more than three long tasks in one switch
+};
+const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor((s.length - 1) / 2)] : 0; };
 
 async function sweep(page, selector, passes = 2, steps = 40) {
   const box = await page.locator(selector).first().boundingBox();
@@ -43,7 +57,122 @@ async function sweep(page, selector, passes = 2, steps = 40) {
   await page.mouse.move(box.x + box.width / 2, box.y - 300);
 }
 
+/**
+ * One theme switch, as Settings makes it (config saved, then broadcast). Resolves with the time from
+ * the change to the first frame painted in the new theme (the root's data-preset is set in the same
+ * commit as the re-rendered window; the second animation frame after it starts once that frame has
+ * been painted), and the long tasks seen in the next 300 ms.
+ */
+async function switchTheme(p, preset) {
+  const before = await p.evaluate(() => window.__perf.longList.length);
+  const ms = await p.evaluate((id) => new Promise((resolve) => {
+    const root = document.documentElement;
+    const t0 = performance.now();
+    const painted = () => requestAnimationFrame(() => requestAnimationFrame(() => resolve(performance.now() - t0)));
+    const mo = new MutationObserver(() => { if (root.dataset.preset === id) { mo.disconnect(); painted(); } });
+    mo.observe(root, { attributes: true, attributeFilter: ["data-preset"] });
+    const next = JSON.parse(JSON.stringify(window.__lensConfig()));
+    next.theme.preset = id;
+    window.__lensSetConfig(next);
+    window.__lensEmit("lens://config-updated", next);
+    setTimeout(() => { mo.disconnect(); resolve(performance.now() - t0); }, 3000);
+  }), preset);
+  await p.waitForTimeout(300);
+  const longs = await p.evaluate((n) => window.__perf.longList.slice(n), before);
+  return { ms: +ms.toFixed(1), longTasks: longs.length, longest: Math.round(Math.max(0, ...longs)) };
+}
+
+// Magic Dashboard warm open (wave M2): Lens says "open", the window rebuilds its lanes from local
+// data and paints. Budget: under 150 ms, unthrottled (it's a wall-clock promise, not a frame metric).
+const DASHBOARD_WARM_MS = 150;
+async function dashboardWarmOpens(p, n = 7) {
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    await p.evaluate(() => { delete document.documentElement.dataset.dashboardWarmMs; window.__lensEmit("lens://dashboard-open", null); });
+    await p.waitForFunction(() => document.documentElement.dataset.dashboardWarmMs !== undefined, null, { timeout: 5000 });
+    times.push(Number(await p.evaluate(() => document.documentElement.dataset.dashboardWarmMs)));
+    await p.waitForTimeout(150);
+  }
+  times.sort((a, b) => a - b);
+  await p.evaluate((ms) => (window.__perf.warm = ms), times[Math.floor(times.length / 2)]);
+  return 0;
+}
+
+/** Rapid presses (DESIGN.md §5.4): down/up pairs faster than the 90 ms minimum hold, across controls. */
+async function rapidPresses(p, selectors, n = 24) {
+  const boxes = [];
+  for (const s of selectors) {
+    const all = p.locator(s);
+    const count = Math.min(await all.count(), 4);
+    for (let i = 0; i < count; i++) {
+      const b = await all.nth(i).boundingBox({ timeout: 2000 }).catch(() => null);
+      if (b && b.width && b.y + b.height < (p.viewportSize()?.height ?? 9999)) boxes.push(b);
+    }
+  }
+  if (!boxes.length) throw new Error(`nothing to press: ${selectors.join(", ")}`);
+  for (let i = 0; i < n; i++) {
+    const b = boxes[i % boxes.length];
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await p.mouse.down();
+    await p.waitForTimeout(i % 3 === 0 ? 120 : 25);
+    await p.mouse.up();
+    await p.waitForTimeout(40);
+  }
+  await p.waitForTimeout(300);
+  return n;
+}
+
+/** A pop-out growing from its bar button and returning to it, as the backend drives it. */
+async function popoutGrow(p, label, n = 5) {
+  for (let i = 0; i < n; i++) {
+    await p.evaluate((l) => {
+      window.__lensEmit("lens://surface-origin", { label: l, left: window.screenX + window.innerWidth - 60, top: window.screenY - 30, width: 28, height: 26, at: Date.now() });
+      window.__lensEmit("lens://surface-glide", { label: l, state: "pre" });
+      requestAnimationFrame(() => window.__lensEmit("lens://surface-glide", { label: l, state: "open" }));
+    }, label);
+    await p.waitForTimeout(420);
+    await p.evaluate((l) => window.__lensEmit("lens://surface-glide", { label: l, state: "closing" }), label);
+    await p.waitForTimeout(260);
+  }
+  return n;
+}
+
 const SCENARIOS = {
+  // The feel (DESIGN.md §5.4): weighted presses on the kit and on Settings' own controls, and a
+  // Quick settings pop-out growing from its trigger, all within the frame budget.
+  "feel-rapid-press": {
+    surface: "feel",
+    page: "feel/index.html",
+    query: "mode=demo",
+    run: (p) => rapidPresses(p, ['[data-demo="medium"]', '[data-demo="heavy"]', '[role="switch"]', '[data-demo="trigger"]']),
+  },
+  "feel-settings-press": {
+    surface: "settings",
+    run: (p) => rapidPresses(p, [".sh-pagehead .cc-chip", ".cc-content [data-weight='medium']", ".cc-content [data-weight='light']"], 18),
+  },
+  "feel-popout-grow": { surface: "quicksettings", run: (p) => popoutGrow(p, "quicksettings") },
+  "dashboard-warm-open": {
+    surface: "dashboard",
+    query: "magic=dashboard,widgets&dashdata=1",
+    throttle: 1,
+    warmBudget: DASHBOARD_WARM_MS,
+    run: (p) => dashboardWarmOpens(p),
+  },
+  // Desktop widgets (docs/features/desktop-widgets.md): resizing a widget reflows its neighbours
+  // with FLIP (transform only). Six size changes from the widget menu, plus a check that every
+  // widget shares one 1 s timer.
+  "deskwidgets-reflow": {
+    surface: "deskwidgets",
+    query: "magic=desktopWidgets&desk=sample",
+    run: async (p) => {
+      for (const size of ["Large", "Small", "Medium", "Large", "Small", "Medium"]) {
+        await p.locator('.dwg-item[data-kind="today"]').first().click({ button: "right" });
+        await p.waitForTimeout(120);
+        await p.locator(".dwg-menu-row", { hasText: size }).first().click();
+        await p.waitForTimeout(420);
+      }
+    },
+  },
   "dock-hover-sweep": { surface: "dock", run: (p) => sweep(p, ".dock-icons-row") },
   "dock-magnification": {
     surface: "dock",
@@ -86,13 +215,23 @@ const SCENARIOS = {
       }
     },
   },
+  // Theme switch (docs/TESTING.md › Perf). Method, like the site's drag check (tools/site/check.mjs):
+  // one warm-up switch that isn't measured (first-switch work: JIT, first render of code paths),
+  // then six measured switches, each on its own. Per switch: the time from the change to the first
+  // frame painted in the new theme (`switchMs`), and its long tasks. The gate is on the MEDIAN
+  // switch (switchMs and long tasks per switch, see STEP_GATES), so one switch that a noisy CI
+  // neighbour stretches over the 50 ms long-task line doesn't fail the run, while a cost every switch
+  // pays (a slow selector, a whole-tree re-render) shows in the median and still fails. The slowest
+  // switch has its own, generous cap (STEP_CAPS) so a one-off stall can't hide behind the median.
   "theme-switch": {
     surface: "settings",
+    warmup: (p) => switchTheme(p, "rose-pine"),
     run: async (p) => {
+      const steps = [];
       for (const preset of ["catppuccin-mocha", "alabaster-daylight", "tokyo-night", "nord-frost", "obsidian", "paper-minimal"]) {
-        await setConfig(p, new Function("c", `c.theme.preset = ${JSON.stringify(preset)};`));
-        await p.waitForTimeout(300);
+        steps.push(await switchTheme(p, preset));
       }
+      return steps;
     },
   },
   "settings-tab-switch": {
@@ -131,7 +270,7 @@ for (const scene of ["sand", "fluid", "flow", "constellation", "aurora", "rain",
 
 /** Installed before the page loads: frame times, long tasks, layout shifts, paint timing. */
 function instrument() {
-  const st = (window.__perf = { frames: [], long: 0, longMs: 0, cls: 0, recording: false, last: 0 });
+  const st = (window.__perf = { frames: [], long: 0, longMs: 0, longList: [], cls: 0, recording: false, last: 0 });
   const tick = (t) => {
     if (st.recording && st.last) st.frames.push(t - st.last);
     st.last = t;
@@ -141,7 +280,7 @@ function instrument() {
   try {
     new PerformanceObserver((l) => {
       if (!st.recording) return;
-      for (const e of l.getEntries()) { st.long++; st.longMs += e.duration; }
+      for (const e of l.getEntries()) { st.long++; st.longMs += e.duration; st.longList.push(e.duration); }
     }).observe({ type: "longtask", buffered: false });
     new PerformanceObserver((l) => {
       if (!st.recording) return;
@@ -155,16 +294,20 @@ const browser = await launch();
 
 async function measure(name, sc) {
   // Instrument and throttle, then reload so first paint is measured on the slow machine too.
-  const page = await openSurface(browser, server.base, { surface: sc.surface, query: sc.query || "", settle: 0 });
+  const page = await openSurface(browser, server.base, { surface: sc.surface, page: sc.page, query: sc.query || "", settle: 0 });
   await page.addInitScript(instrument);
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Emulation.setCPUThrottlingRate", { rate: THROTTLE });
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: sc.throttle ?? THROTTLE });
   await page.reload();
   await page.waitForTimeout(1200);
   if (sc.setup) { await sc.setup(page); await page.waitForTimeout(400); }
+  if (sc.warmup) { await sc.warmup(page); await page.waitForTimeout(400); }
   const fcp = await page.evaluate(() => performance.getEntriesByType("paint").find((e) => e.name === "first-contentful-paint")?.startTime ?? 0);
   await page.evaluate(() => { window.__perf.frames = []; window.__perf.recording = true; });
-  const steps = (await sc.run(page)) || 0;
+  const ran = (await sc.run(page)) || 0;
+  // A scenario that returns per-step samples (theme-switch) is gated on its median step.
+  const perStep = Array.isArray(ran) ? ran : null;
+  const steps = perStep ? perStep.length : ran;
   const st = await page.evaluate(() => { window.__perf.recording = false; return window.__perf; });
   // Drop the first frame (it straddles the start) and anything over 1 s (tab was idle).
   const frames = st.frames.slice(1).filter((f) => f < 1000);
@@ -178,6 +321,14 @@ async function measure(name, sc) {
     frames: frames.length,
     errors: page.problems.errors.length,
     steps,
+    ...(st.warm !== undefined ? { warm: st.warm } : {}),
+    ...(perStep ? {
+      switchMs: median(perStep.map((x) => x.ms)),
+      switchMsMax: Math.max(...perStep.map((x) => x.ms)),
+      longPerStep: median(perStep.map((x) => x.longTasks)),
+      longPerStepMax: Math.max(...perStep.map((x) => x.longTasks)),
+      perStep: perStep.map((x) => `${x.ms}ms/${x.longTasks}lt${x.longest ? `/${x.longest}` : ""}`).join(" "),
+    } : {}),
   };
   await page.context().close();
   return r;
@@ -188,9 +339,12 @@ let baseline0 = {};
 try { baseline0 = JSON.parse(readFileSync(budgetsPath0, "utf8")).baseline || {}; } catch {}
 const limitFor = (name, k, r, b) => {
   const per = k === "longTasks" && SCENARIOS[name]?.longTasksPerStep;
-  return per && r.steps ? r.steps * per : b[k] * (1 + TOLERANCE) + ALLOW[k];
+  if (STEP_CAPS[k]) return STEP_CAPS[k](b);
+  return per && r.steps ? r.steps * per : (b[k] ?? 0) * (1 + TOLERANCE) + ALLOW[k];
 };
-const over = (name, r, b) => b && ["p50", "p95", "longTasks", "cls", "fcp"].some((k) => r[k] > limitFor(name, k, r, b));
+/** The metrics a scenario is gated on: per-step scenarios on their median step and caps. */
+const gatedKeys = (r) => (r.switchMs !== undefined ? [...STEP_GATES, ...Object.keys(STEP_CAPS)] : ["p50", "p95", "longTasks", "cls", "fcp"]);
+const over = (name, r, b) => b && gatedKeys(r).some((k) => r[k] > limitFor(name, k, r, b));
 
 const results = {};
 for (const [name, sc] of Object.entries(SCENARIOS)) {
@@ -199,10 +353,11 @@ for (const [name, sc] of Object.entries(SCENARIOS)) {
   // Shared CI runners have noisy neighbours, and a few scenarios are bimodal there (settings-tab-switch
   // lands on 9 or 17 long tasks for the same commit). A scenario over budget gets up to two more
   // tries and each metric keeps its best run. A real regression fails all three.
-  for (let attempt = 0; attempt < 2 && !UPDATE && over(name, r, baseline0[name]); attempt++) {
+  for (let attempt = 0; attempt < RETRIES && !UPDATE && over(name, r, baseline0[name]); attempt++) {
     const again = await measure(name, sc);
     console.log(`  retried ${name} (${attempt + 1})${again.steps ? `, ${again.steps} steps, ${again.longTasks} long tasks` : ""}`);
-    r = Object.fromEntries(Object.keys(r).map((k) => [k, k === "frames" || k === "steps" ? Math.max(r[k], again[k]) : Math.min(r[k], again[k])]));
+    if (again.switchMs !== undefined) console.log(`    switches (ms/long tasks/longest): ${again.perStep}`);
+    r = Object.fromEntries(Object.keys(r).map((k) => [k, typeof r[k] !== "number" ? (again.switchMs < r.switchMs ? again[k] : r[k]) : k === "frames" || k === "steps" ? Math.max(r[k], again[k]) : Math.min(r[k], again[k])]));
   }
   results[name] = r;
 }
@@ -219,11 +374,20 @@ for (const [name, r] of Object.entries(results)) {
   const b = base[name];
   const flags = [];
   if (b) {
-    for (const k of ["p50", "p95", "longTasks", "cls", "fcp"]) {
+    for (const k of gatedKeys(r)) {
       const limit = limitFor(name, k, r, b);
       if (r[k] > limit) flags.push(`${k} ${r[k]} > ${limit.toFixed(k === "cls" ? 3 : 1)}`);
     }
   } else if (!UPDATE) flags.push("no baseline");
+  if (r.switchMs !== undefined) {
+    const lim = (k) => (b ? ` (≤ ${limitFor(name, k, r, b).toFixed(1)})` : "");
+    console.log(`  ${name}: median switch ${r.switchMs} ms${lim("switchMs")}, slowest ${r.switchMsMax} ms${lim("switchMsMax")}; long tasks per switch: median ${r.longPerStep}${lim("longPerStep")}, most ${r.longPerStepMax}${lim("longPerStepMax")}\n    switches (ms/long tasks/longest): ${r.perStep}`);
+  }
+  const warmBudget = SCENARIOS[name]?.warmBudget;
+  if (warmBudget) {
+    if (r.warm === undefined || r.warm > warmBudget) failures.push(`${name}: warm open ${r.warm ?? "not measured"} ms > ${warmBudget} ms`);
+    flags.push(`warm open ${r.warm} ms (budget ${warmBudget})`);
+  }
   if (r.errors) flags.push(`${r.errors} page errors`);
   if (flags.length && b) failures.push(`${name}: ${flags.join(", ")}`);
   rows.push(`| ${name} | ${r.p50} | ${r.p95} | ${r.longTasks} | ${r.cls} | ${r.fcp} | ${r.frames} | ${flags.join("; ") || "ok"} |`);
@@ -243,7 +407,7 @@ if (UPDATE) {
   const next = {
     _note: "Baseline per scenario from `node tools/perf/run.mjs --update`. A run fails when a metric exceeds baseline × 1.2 plus a small allowance (see run.mjs). Re-baseline only after an intended change, on the CI runner's numbers (perf-report artifact).",
     throttle: THROTTLE,
-    baseline: { ...base, ...Object.fromEntries(Object.entries(results).map(([k, r]) => [k, { p50: r.p50, p95: r.p95, longTasks: r.longTasks, cls: r.cls, fcp: r.fcp }])) },
+    baseline: { ...base, ...Object.fromEntries(Object.entries(results).map(([k, r]) => [k, { p50: r.p50, p95: r.p95, longTasks: r.longTasks, cls: r.cls, fcp: r.fcp, ...(r.switchMs !== undefined ? { switchMs: r.switchMs, longPerStep: r.longPerStep } : {}) }])) },
   };
   writeFileSync(budgetsPath, JSON.stringify(next, null, 2) + "\n");
   console.log(`[perf] baseline written to ${budgetsPath}`);

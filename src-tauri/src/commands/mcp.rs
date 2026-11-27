@@ -173,8 +173,8 @@ pub(crate) fn list_mcp_actions_cmd() -> Vec<win_mcp::PendingAction> {
 }
 
 #[tauri::command]
-pub(crate) async fn approve_mcp_action_cmd(app: AppHandle, id: String) -> Result<win_mcp::PendingAction, String> {
-    tauri::async_runtime::spawn_blocking(move || win_mcp::approve_action(&id, &mcp_host(&app)))
+pub(crate) async fn approve_mcp_action_cmd(app: AppHandle, id: String, token: Option<String>) -> Result<win_mcp::PendingAction, String> {
+    tauri::async_runtime::spawn_blocking(move || win_mcp::approve_action(&id, token.as_deref(), &mcp_host(&app)))
         .await
         .map_err(|e| e.to_string())?
 }

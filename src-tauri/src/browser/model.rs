@@ -132,6 +132,8 @@ pub struct Appearance {
     pub typeface: String,
     /// How the vertical tab sidebar looks.
     pub sidebar: SidebarPrefs,
+    /// How the reader view sets its text.
+    pub reader: ReaderPrefs,
 }
 
 impl Default for Appearance {
@@ -145,7 +147,29 @@ impl Default for Appearance {
             density: "comfortable".into(),
             typeface: "lens".into(),
             sidebar: SidebarPrefs::default(),
+            reader: ReaderPrefs::default(),
         }
+    }
+}
+
+pub const READER_SIZE_MIN: u8 = 14;
+pub const READER_SIZE_MAX: u8 = 26;
+
+/// The reader view (a page's text set by Lens, with nothing loaded from the network).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ReaderPrefs {
+    /// Text size in px, 14–26.
+    pub size: u8,
+    /// Column width: "narrow" | "medium" | "wide"
+    pub width: String,
+    /// "serif" | "sans"
+    pub face: String,
+}
+
+impl Default for ReaderPrefs {
+    fn default() -> Self {
+        Self { size: 18, width: "medium".into(), face: "serif".into() }
     }
 }
 
@@ -935,6 +959,15 @@ impl BrowserState {
         }
         if !["time", "site", "none"].contains(&sb.group.as_str()) {
             sb.group = sd.group;
+        }
+        let rd = &mut a.reader;
+        let rdd = ReaderPrefs::default();
+        rd.size = rd.size.clamp(READER_SIZE_MIN, READER_SIZE_MAX);
+        if !["narrow", "medium", "wide"].contains(&rd.width.as_str()) {
+            rd.width = rdd.width;
+        }
+        if !["serif", "sans"].contains(&rd.face.as_str()) {
+            rd.face = rdd.face;
         }
     }
 }

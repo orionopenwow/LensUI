@@ -19,9 +19,9 @@ fn migration_secret_scrub_and_backup_round_trip() {
     assert_eq!(t.get("customAccent").unwrap().as_str(), Some("#FAFAFA"));
     assert_eq!(t.get("accentTintStrength").unwrap().as_f64(), Some(0.5));
     assert_eq!(v2.get("func").unwrap().get("targetMonitor").unwrap().as_str(), Some("primary"));
-    assert_eq!(v2.get("configVersion").unwrap().as_u64(), Some(3));
+    assert_eq!(v2.get("configVersion").unwrap().as_u64(), Some(4));
     assert_eq!(v2.get("dock").unwrap().get("livePreviews").unwrap().as_bool(), Some(true));
-    let (v2b, from2) = migrate_config_value(v2.clone()).unwrap(); assert_eq!(from2, 3); assert_eq!(v2b, v2);
+    let (v2b, from2) = migrate_config_value(v2.clone()).unwrap(); assert_eq!(from2, 4); assert_eq!(v2b, v2);
     // Previews turned off after the migration stay off.
     let off: Value = serde_json::from_str(r##"{"configVersion":3,"dock":{"livePreviews":false}}"##).ok().unwrap();
     let (off2, _) = migrate_config_value(off).unwrap();
@@ -66,7 +66,7 @@ fn migration_secret_scrub_and_backup_round_trip() {
     assert_eq!(rep.restored.len(), 4, "{:?}", rep);
     assert!(fs::read_to_string(std::path::Path::new(&rep.previous_saved_to).join("config.json")).unwrap().contains("old"));
     let restored_cfg = fs::read_to_string(dst.join("config.json")).unwrap();
-    assert!(restored_cfg.contains("nord-frost") && restored_cfg.contains("\"configVersion\": 3"));
+    assert!(restored_cfg.contains("nord-frost") && restored_cfg.contains("\"configVersion\": 4"));
     assert_eq!(fs::read_to_string(dst.join("AGENTS.md")).unwrap(), "# rules\nline \"two\"\n");
     assert!(dst.join("themes").join("My Dusk.lenstheme").is_file());
     assert!(!dst.join("agents.json").exists());
@@ -96,4 +96,88 @@ fn migration_secret_scrub_and_backup_round_trip() {
     write_atomic(&dst.join("x.json"), b"1").unwrap(); write_atomic(&dst.join("x.json"), b"2").unwrap();
     assert_eq!(fs::read_to_string(dst.join("x.json")).unwrap(), "2"); assert!(!dst.join("x.json.tmp").exists());
     let _ = fs::remove_dir_all(&root);
+}
+
+// ---- config v4: one Top Bar switch (`topBar.enabled`); `dock.showTopBar` is folded in and dropped.
+
+fn top_bar_after(doc: &str) -> (Value, u32) {
+    migrate_config_value(serde_json::from_str::<Value>(doc).unwrap()).unwrap()
+}
+
+fn enabled_of(v: &Value) -> Option<bool> {
+    v.get("topBar").and_then(|t| t.get("enabled")).and_then(Value::as_bool)
+}
+
+#[test]
+fn v4_folds_the_two_top_bar_flags_into_one() {
+    // The bar used to show only when both were on, so the single flag is their AND.
+    for (enabled, show, want) in [(true, true, true), (true, false, false), (false, true, false), (false, false, false)] {
+        let doc = format!(
+            r##"{{"configVersion":3,"dock":{{"showTopBar":{show},"style":"slim"}},"topBar":{{"enabled":{enabled},"height":40}}}}"##
+        );
+        let (v, from) = top_bar_after(&doc);
+        assert_eq!(from, 3);
+        assert_eq!(enabled_of(&v), Some(want), "enabled={enabled} showTopBar={show}");
+        assert!(v["dock"].get("showTopBar").is_none(), "the old flag is dropped");
+        // Nothing else in either section is touched.
+        assert_eq!(v["dock"]["style"].as_str(), Some("slim"));
+        assert_eq!(v["topBar"]["height"].as_u64(), Some(40));
+        assert_eq!(v["configVersion"].as_u64(), Some(4));
+    }
+}
+
+#[test]
+fn v4_top_bar_fold_handles_missing_sections_and_old_versions() {
+    // Unversioned (v1) config with the bar turned off through the old flag only.
+    let (v, from) = top_bar_after(r##"{"dock":{"showTopBar":false},"topBar":{"enabled":true}}"##);
+    assert_eq!(from, 1);
+    assert_eq!(enabled_of(&v), Some(false));
+    // No topBar section at all: the off choice still survives.
+    let (v, _) = top_bar_after(r##"{"configVersion":3,"dock":{"showTopBar":false}}"##);
+    assert_eq!(enabled_of(&v), Some(false));
+    // Old flag on and no topBar section: nothing is invented (the default, on, applies on load).
+    let (v, _) = top_bar_after(r##"{"configVersion":3,"dock":{"showTopBar":true}}"##);
+    assert!(v.get("topBar").is_none());
+    assert!(v["dock"].get("showTopBar").is_none());
+    // No old flag: topBar.enabled is left exactly as it was.
+    let (v, _) = top_bar_after(r##"{"configVersion":3,"dock":{},"topBar":{"enabled":false}}"##);
+    assert_eq!(enabled_of(&v), Some(false));
+    // A wrong-typed old flag is dropped without changing the switch.
+    let (v, _) = top_bar_after(r##"{"configVersion":3,"dock":{"showTopBar":"no"},"topBar":{"enabled":true}}"##);
+    assert_eq!(enabled_of(&v), Some(true));
+    assert!(v["dock"].get("showTopBar").is_none());
+}
+
+#[test]
+fn a_stray_old_top_bar_flag_is_folded_at_the_current_version_too() {
+    // A hand-edited file, an older tool or an import can still write the old key into a v4 file.
+    let (v, from) = top_bar_after(r##"{"configVersion":4,"dock":{"showTopBar":false},"topBar":{"enabled":true}}"##);
+    assert_eq!(from, 4);
+    assert_eq!(enabled_of(&v), Some(false));
+    assert!(v["dock"].get("showTopBar").is_none());
+    // Folding is idempotent.
+    let (again, _) = migrate_config_value(v.clone()).unwrap();
+    assert_eq!(again, v);
+}
+
+#[test]
+fn the_settings_struct_has_one_top_bar_flag() {
+    let defaults = serde_json::to_value(crate::config::LensConfig::default()).unwrap();
+    assert!(defaults["dock"].get("showTopBar").is_none(), "dock.showTopBar must not come back");
+    assert_eq!(defaults["topBar"]["enabled"].as_bool(), Some(true));
+    // A migrated old config loads as settings, with the bar off and the rest of the section kept.
+    let mut doc = defaults.clone();
+    doc["configVersion"] = serde_json::json!(3);
+    doc["dock"]["showTopBar"] = serde_json::json!(false);
+    doc["topBar"]["height"] = serde_json::json!(40);
+    let (v, _) = migrate_config_value(doc).unwrap();
+    let cfg: crate::config::LensConfig = serde_json::from_value(v).unwrap();
+    assert!(!cfg.top_bar.enabled);
+    assert_eq!(cfg.top_bar.height, 40);
+    // A Top Bar section holding only the flag reads with defaults for the rest.
+    let mut doc = defaults;
+    doc["topBar"] = serde_json::json!({ "enabled": false });
+    let cfg: crate::config::LensConfig = serde_json::from_value(doc).unwrap();
+    assert!(!cfg.top_bar.enabled);
+    assert_eq!(cfg.top_bar.auto_hide, "overlap");
 }

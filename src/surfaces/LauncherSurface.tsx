@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { invoke } from "@tauri-apps/api/core";
+import { hideSurface, logFail } from "../failsafe/calls";
+import { failText } from "../ui/oops";
 import { listen } from "@tauri-apps/api/event";
 import { ackKeyhook, type KeyhookMessage } from "../shell/keyhookResponder";
 import {
@@ -11,6 +13,7 @@ import {
   RotateCcw,
   LogOut,
   Pin,
+  PinOff,
   ShieldCheck,
   Folder,
   FileText,
@@ -116,16 +119,16 @@ export const LauncherSurface: React.FC = () => {
 
   const hide = useCallback(() => {
     setMenu(null);
-    invoke("hide_surface", { label: "launcher" }).catch(() => {});
+    void hideSurface("launcher");
   }, []);
 
   const refresh = useCallback(() => {
     invoke<InstalledApp[]>("scan_installed_apps_cmd")
       .then((list) => setApps([...list].sort((a, b) => a.name.localeCompare(b.name))))
-      .catch(() => {});
+      .catch(logFail("Launcher", "list installed apps"));
     invoke<LauncherHomeData>("get_launcher_home_cmd")
       .then(setHome)
-      .catch(() => {});
+      .catch(logFail("Launcher", "load recent files and folders"));
   }, []);
 
   useEffect(() => {
@@ -203,8 +206,17 @@ export const LauncherSurface: React.FC = () => {
       const call = mode
         ? invoke("launch_app_advanced_cmd", { path, mode })
         : invoke("launch_app_cmd", { path });
-      call.catch((e) => setStatus(`Couldn't open: ${String(e)}`));
-      if (mode !== "reveal") hide();
+      // The Launcher closes once the app has been asked to open; if that fails it stays, so the
+      // line that says why can be read (it used to close first and say it to nobody).
+      call.then(
+        () => {
+          if (mode !== "reveal") hide();
+        },
+        (e) => {
+          logFail("Launcher", "open that")(e);
+          setStatus(failText("open that", e));
+        },
+      );
       setMenu(null);
     },
     [hide]
@@ -241,7 +253,10 @@ export const LauncherSurface: React.FC = () => {
     setArmed(null);
     invoke("power_action_cmd", { action })
       .then(() => hide())
-      .catch((e) => setStatus(`Couldn't ${action}: ${String(e)}`));
+      .catch((e) => {
+        logFail("Launcher", action)(e);
+        setStatus(failText(POWER_ACTIONS.find((p) => p.id === action)?.label.toLowerCase() ?? action, e));
+      });
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -301,7 +316,7 @@ export const LauncherSurface: React.FC = () => {
   return (
     <div className="ln-root" onKeyDown={onKeyDown} onClick={() => setMenu(null)}>
       <div className={`ln-shell lens-flyout-host lens-glide-dock ${glidePhase}`}>
-        <FlyoutClose onClose={() => invoke("hide_surface", { label: "launcher" }).catch(() => {})} />
+        <FlyoutClose onClose={() => void hideSurface("launcher")} />
         <div className="ln-search">
           <Search size={16} strokeWidth={2.55} />
           <input
@@ -325,6 +340,7 @@ export const LauncherSurface: React.FC = () => {
             <button
               key={c}
               type="button"
+              data-weight="light"
               className={`ln-cat ${category === c ? "active" : ""}`}
               onClick={() => {
                 setCategory(c);
@@ -350,6 +366,7 @@ export const LauncherSurface: React.FC = () => {
                     key={item.key}
                     type="button"
                     data-idx={idx}
+                    data-weight="light"
                     className={`ln-result ${idx === selected ? "selected" : ""} ${armed ? "armed" : ""} kind-${item.kind}`}
                     onMouseEnter={() => setSelected(idx)}
                     onClick={() => search.activate(item)}
@@ -363,7 +380,14 @@ export const LauncherSurface: React.FC = () => {
                       <ResultIcon item={item} size={18} />
                     </span>
                     <span className="ln-result-text">
-                      <span className="ln-result-title">{item.title}</span>
+                      <span className="ln-result-title">
+                        {item.title}
+                        {item.kind === "app" && item.path && isPinned(item.path) && (
+                          <span className="ln-pin ln-pin-inline" role="img" aria-label="Pinned to Dock">
+                            <Pin size={10} strokeWidth={2.6} />
+                          </span>
+                        )}
+                      </span>
                       <span className="ln-result-sub">{armed && item.confirm ? item.confirm : item.subtitle}</span>
                     </span>
                     <span className="ln-result-badge">{armed ? "Confirm ↵" : resultBadge(item)}</span>
@@ -382,6 +406,7 @@ export const LauncherSurface: React.FC = () => {
                   <button
                     key={p.id}
                     type="button"
+                    data-weight="medium"
                     className="ln-chip"
                     onClick={() => launch(p.path)}
                     onContextMenu={(e) => openMenu(e, p.name, p.path)}
@@ -402,6 +427,7 @@ export const LauncherSurface: React.FC = () => {
                   <button
                     key={f.path}
                     type="button"
+                    data-weight="medium"
                     className="ln-chip"
                     onClick={() => launch(f.path)}
                     onContextMenu={(e) => openMenu(e, f.name, f.path)}
@@ -435,6 +461,7 @@ export const LauncherSurface: React.FC = () => {
                   key={app.path}
                   type="button"
                   data-idx={idx}
+                  data-weight="medium"
                   className={`ln-tile ${idx === selected ? "selected" : ""}`}
                   onMouseEnter={() => setSelected(idx)}
                   onClick={() => launch(app.path)}
@@ -442,6 +469,11 @@ export const LauncherSurface: React.FC = () => {
                 >
                   <LazyIcon path={app.path} size={36} />
                   <span className="ln-tile-label">{app.name}</span>
+                  {isPinned(app.path) && (
+                    <span className="ln-pin" role="img" aria-label="Pinned to Dock">
+                      <Pin size={10} strokeWidth={2.6} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -466,6 +498,7 @@ export const LauncherSurface: React.FC = () => {
               <button
                 key={p.id}
                 type="button"
+                data-weight="heavy"
                 className={`ln-power-btn ${armed === p.id ? "armed" : ""}`}
                 aria-label={p.label}
                 onClick={(e) => {
@@ -488,21 +521,23 @@ export const LauncherSurface: React.FC = () => {
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="ln-menu-title">{menu.name}</div>
-            <button type="button" className="ln-menu-item" onClick={() => launch(menu.path)}>
+            <button type="button" data-weight="light" className="ln-menu-item" onClick={() => launch(menu.path)}>
               <AppWindow size={13} strokeWidth={2.3} /> Open
             </button>
-            <button type="button" className="ln-menu-item" onClick={() => launch(menu.path, "admin")}>
+            <button type="button" data-weight="light" className="ln-menu-item" onClick={() => launch(menu.path, "admin")}>
               <ShieldCheck size={13} strokeWidth={2.3} /> Run as administrator
             </button>
-            <button type="button" className="ln-menu-item" onClick={() => launch(menu.path, "reveal")}>
+            <button type="button" data-weight="light" className="ln-menu-item" onClick={() => launch(menu.path, "reveal")}>
               <Folder size={13} strokeWidth={2.3} /> Show in folder
             </button>
             <button
               type="button"
+              data-weight="light"
               className="ln-menu-item"
               onClick={() => togglePin(menu.name, menu.path)}
             >
-              <Pin size={13} strokeWidth={2.3} /> {isPinned(menu.path) ? "Unpin from Dock" : "Pin to Dock"}
+              {isPinned(menu.path) ? <PinOff size={13} strokeWidth={2.3} /> : <Pin size={13} strokeWidth={2.3} />}{" "}
+              {isPinned(menu.path) ? "Unpin from Dock" : "Pin to Dock"}
             </button>
           </div>
         )}

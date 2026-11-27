@@ -5,6 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   AppUsage,
   CleanerSettings,
+  ConfirmCode,
   HistoryView,
   Outcome,
   Overview,
@@ -19,6 +20,7 @@ import type {
   UndoResult,
   Verdict,
 } from "./types";
+import { quiet } from "../ui/oops";
 
 export const EVENTS = {
   progress: "lens://cleaner/progress",
@@ -35,15 +37,17 @@ export const api = {
   preview: (categories: string[], picks: Pick[], smart = false) => invoke<Preview>("cleaner_preview", { categories, picks, smart }),
   previewPaths: (paths: string[], permanent: boolean) => invoke<Preview>("cleaner_preview_paths", { paths, permanent }),
   fullList: (id: string) => invoke<string>("cleaner_full_list", { id }),
+  /** One-time code for a permanent delete. Only the Cleaner window is given one. */
+  confirmCode: (id: string) => invoke<ConfirmCode>("cleaner_confirm_code", { id }),
   run: (id: string, confirm?: string | null) => invoke<Outcome>("cleaner_run", { id, confirm: confirm ?? null }),
   undo: () => invoke<UndoResult>("cleaner_undo"),
   spaceScan: (root: string) => invoke<SpaceSummary>("cleaner_space_scan", { root }),
   spaceChildren: (root: string, id: number, depth = 1, limit = 60) => invoke<SpaceView>("cleaner_space_children", { root, id, depth, limit }),
+  spaceFind: (root: string, path: string) => invoke<number | null>("cleaner_space_find", { root, path }),
   biggest: (root: string, kind: string, limit = 40) => invoke<SpaceNode[]>("cleaner_biggest", { root, kind, limit }),
   reveal: (path: string) => invoke<void>("cleaner_reveal", { path }),
   open: (uri: string) => invoke<void>("cleaner_open", { uri }),
   apps: () => invoke<AppUsage[]>("cleaner_apps"),
-  appUninstall: (key: string) => invoke<void>("cleaner_app_uninstall", { key }),
   downloadsReview: () => invoke<Verdict[]>("cleaner_downloads_review"),
   move: (path: string, destDir: string) => invoke<string>("cleaner_move", { path, destDir }),
   history: (root: string) => invoke<HistoryView>("cleaner_history", { root }),
@@ -61,7 +65,8 @@ export function on<T>(event: string, fn: (payload: T) => void): () => void {
       if (dead) u();
       else un = u;
     })
-    .catch(() => {});
+    // No event bridge (tests, a closing window): the screen keeps what it has.
+    .catch(quiet);
   return () => {
     dead = true;
     un?.();

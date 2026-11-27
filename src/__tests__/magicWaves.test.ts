@@ -42,9 +42,11 @@ describe("Magic flags", () => {
     expect(block).toContain("mouse_hold_ms: 400");
   });
 
-  test("nothing outside the preview mounts Magic UI, and no new window is registered", () => {
-    // With every flag off nothing new may appear: the only entry points are the Tester-only
-    // preview section and the Top Bar button, which renders nothing while its flag is off.
+  test("nothing outside the preview mounts Magic UI, and the Dashboard window only opens with its flag on", () => {
+    // With every flag off nothing new may appear: the entry points are the Tester-only preview
+    // section, the Top Bar button (renders nothing while its flag is off), Command's /dashboard
+    // (offered only when Rust says the flag is on) and the Dashboard surface route, whose window is
+    // built only by open_dashboard, which refuses while the flag is off.
     const src = join(import.meta.dir, "..");
     const users: string[] = [];
     const walk = (dir: string) => {
@@ -60,12 +62,27 @@ describe("Magic flags", () => {
       }
     };
     walk(src);
-    const allowed = new Set(["settings/pages/AboutPage.tsx", "surfaces/TopBarSurface.tsx", "types/lens.ts"]);
+    const allowed = new Set(["settings/pages/AboutPage.tsx", "surfaces/TopBarSurface.tsx", "types/lens.ts", "command/CommandSurface.tsx"]);
     expect(users.filter((u) => !allowed.has(u.replace(/\\/g, "/")))).toEqual([]);
-    const main = readFileSync(join(src, "main.tsx"), "utf8");
-    expect(main).not.toContain("dashboard:");
     const lib = readFileSync(join(import.meta.dir, "../../src-tauri/src/lib.rs"), "utf8");
     expect(lib).not.toMatch(/magic_waves::\w+::\w+\s*,/); // no commands registered from the scaffold
+    // The Dashboard window: built only by show_dashboard (reached only from open_dashboard, after the
+    // flag check) or by on_flag_changed when the flag has just been turned on; nothing at start-up
+    // (setup, watcher, tray) creates or opens it.
+    const dash = readFileSync(join(import.meta.dir, "../../src-tauri/src/commands/dashboard.rs"), "utf8");
+    const open = dash.slice(dash.indexOf("pub(crate) fn open_dashboard"), dash.indexOf("fn show_dashboard"));
+    expect(open.indexOf("if !enabled(")).toBeGreaterThan(-1);
+    expect(open.indexOf("if !enabled(")).toBeLessThan(open.indexOf("show_dashboard("));
+    expect(dash.match(/show_dashboard\(/g)?.length).toBe(2); // the definition and open_dashboard's call
+    const calls = [...dash.matchAll(/ensure_window\((app|&a)\)/g)];
+    expect(calls.length).toBe(2);
+    const flagOn = dash.slice(dash.indexOf("pub(crate) fn on_flag_changed"));
+    expect(flagOn.indexOf("if now && !was")).toBeGreaterThan(-1);
+    expect(flagOn.indexOf("if now && !was")).toBeLessThan(flagOn.indexOf("ensure_window(&a)"));
+    for (const f of ["app/setup.rs", "app/watcher.rs", "app/tray.rs", "app/integration.rs"]) {
+      const t = readFileSync(join(import.meta.dir, "../../src-tauri/src", f), "utf8");
+      expect(t).not.toMatch(/dashboard::(open_dashboard|toggle_dashboard|ensure_window)/);
+    }
   });
 });
 
@@ -92,8 +109,8 @@ describe("Magic Mouse gesture (hold, then drag)", () => {
     ]);
     expect(r).toEqual([{ kind: "armed" }, { kind: "grab", rect: { x: 40, y: 100, w: 60, h: 80 } }]);
   });
-  test("holding without dragging stays a click; a tiny grab is ignored", () => {
-    expect(run([{ type: "down", x: 0, y: 0, t: 0 }, { type: "tick", t: 500 }, { type: "up", x: 0, y: 0, t: 600 }])).toEqual([{ kind: "armed" }, { kind: "click" }]);
+  test("holding without dragging opens Magic at the press point; a tiny grab is ignored", () => {
+    expect(run([{ type: "down", x: 3, y: 4, t: 0 }, { type: "tick", t: 500 }, { type: "up", x: 3, y: 4, t: 600 }])).toEqual([{ kind: "armed" }, { kind: "hold", x: 3, y: 4 }]);
     expect(run([{ type: "down", x: 0, y: 0, t: 0 }, { type: "tick", t: 500 }, { type: "move", x: 20, y: 3, t: 520 }, { type: "up", x: 20, y: 3, t: 540 }])).toEqual([{ kind: "armed" }]);
   });
   test("right and middle buttons are never grabbed; cancel resets", () => {
@@ -160,13 +177,15 @@ describe("Shelf → Notes", () => {
   test("an empty Shelf says so", () => {
     expect(shelfToNote([], { title: "x" }).body).toContain("_The Shelf is empty._");
   });
-  test("exports md and txt; pdf is a later update", () => {
+  test("exports md, txt and a real pdf", () => {
     const n = shelfToNote(items, { title: 'My: "notes"' });
     expect(exportNote(n, "md")).toMatchObject({ name: "My- -notes-.md", mime: "text/markdown" });
     const txt = exportNote(n, "txt");
     expect(txt.name.endsWith(".txt")).toBe(true);
     expect(txt.contents).not.toContain("## ");
-    expect(() => exportNote(n, "pdf")).toThrow();
+    const pdf = exportNote(n, "pdf");
+    expect(pdf.name).toBe("My- -notes-.pdf");
+    expect(new TextDecoder().decode(pdf.bytes!.slice(0, 8))).toBe("%PDF-1.4");
     expect(noteToText("# T\n> q")).toBe("T\n  q");
     expect(fileNameFor("   ", "md")).toBe("Note.md");
   });

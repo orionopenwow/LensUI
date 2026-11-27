@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Bump when a migration step is added to `MIGRATIONS`.
-pub const CURRENT_CONFIG_VERSION: u32 = 3;
+pub const CURRENT_CONFIG_VERSION: u32 = 4;
 pub const BACKUP_FORMAT: u32 = 1;
 pub const BACKUP_EXT: &str = "lensbackup";
 const MAX_BACKUP_BYTES: usize = 16 * 1024 * 1024;
@@ -30,7 +30,7 @@ type Step = fn(&mut Map<String, Value>);
 
 /// MIGRATIONS[i] upgrades version (i + 1) to (i + 2). Configs written before versioning existed
 /// have no `configVersion` and count as version 1.
-const MIGRATIONS: &[Step] = &[migrate_v1_to_v2, migrate_v2_to_v3];
+const MIGRATIONS: &[Step] = &[migrate_v1_to_v2, migrate_v2_to_v3, migrate_v3_to_v4];
 
 /// v1 -> v2: introduce `configVersion`; clamp values to the ranges AGENTS.md guarantees
 /// (opacity 40–100 %, roundness 0–20 px); repair an invalid accent; "" monitor -> "primary".
@@ -70,6 +70,42 @@ fn migrate_v2_to_v3(cfg: &mut Map<String, Value>) {
     if let Some(Value::Object(dock)) = cfg.get_mut("dock") {
         dock.insert("livePreviews".into(), json!(true));
     }
+}
+
+/// v3 -> v4: one switch for the Top Bar. It used to show only when `topBar.enabled` AND
+/// `dock.showTopBar` were both on, so a config (or an agent, or an import) that set just one of
+/// them left Settings showing a switch that did not match the screen. `topBar.enabled` is now the
+/// only flag; the old one is folded into it (off if either was off) and dropped.
+fn migrate_v3_to_v4(cfg: &mut Map<String, Value>) {
+    fold_legacy_top_bar_flag(cfg);
+}
+
+/// Folds a `dock.showTopBar` left in a document into `topBar.enabled` and removes it. Runs on
+/// every load, not only as the v4 step: a hand-edited file, an older backup or a tool that still
+/// writes the old key must not bring the second flag back. Returns true when the document changed.
+///
+/// The bar was visible only when both flags were on, so `false` in the old key turns the bar off
+/// and `true` changes nothing (it never could turn the bar on by itself).
+pub fn fold_legacy_top_bar_flag(cfg: &mut Map<String, Value>) -> bool {
+    let Some(Value::Object(dock)) = cfg.get_mut("dock") else {
+        return false;
+    };
+    let Some(old) = dock.remove("showTopBar") else {
+        return false;
+    };
+    if old.as_bool() == Some(false) {
+        match cfg.get_mut("topBar") {
+            Some(Value::Object(top_bar)) => {
+                top_bar.insert("enabled".into(), json!(false));
+            }
+            // No (usable) Top Bar section: write just the flag; the other fields take their
+            // defaults when the section is read (`TopBarConfig` is `serde(default)`).
+            _ => {
+                cfg.insert("topBar".into(), json!({ "enabled": false }));
+            }
+        }
+    }
+    true
 }
 
 fn clamp_number(obj: &mut Map<String, Value>, key: &str, lo: f64, hi: f64) {
@@ -119,6 +155,8 @@ pub fn migrate_config_value(mut v: Value) -> Result<(Value, u32), String> {
             .ok_or_else(|| format!("No migration from config version {}.", version))?;
         step(obj);
     }
+    // Also for documents already at the current version (see the function's doc).
+    fold_legacy_top_bar_flag(obj);
     obj.insert("configVersion".into(), json!(CURRENT_CONFIG_VERSION));
     Ok((v, from))
 }

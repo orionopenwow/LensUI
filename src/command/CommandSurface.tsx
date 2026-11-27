@@ -2,6 +2,7 @@
 // Layout: a single calm column (input + context strip + body + hints) with an optional Shelf drawer.
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { isMissionControlPhrase } from "./missionPhrase";
 import { listen } from "@tauri-apps/api/event";
 import {
   AppWindow, Archive, ArrowUp, ClipboardList, Command as CommandIcon, CornerDownLeft, File as FileIcon, Globe, Lock,
@@ -32,11 +33,18 @@ import {
 import { DEFAULT_SHELF, approxTokens, formatTokens, shelfAdd, shelfAsContext, type ShelfItem } from "../shelf/contract";
 import { answersInText, runDo } from "./doMode";
 import { isNewOpen, pendingOpen } from "./openSeq";
+import { whereItLives } from "./teach";
+import { DO_EXAMPLES } from "./examples";
+import { openSettingsAt } from "../update/useLensUpdate";
 import "./Command.css";
 import { coreAppTemplates, isCoreAppStub, runCoreAppSlash } from "../coreapps/registry";
 import { backdropTemplate, isBackdropStub, runBackdropSlash } from "../studio/backdrop/command";
 import { isWallpaperStub, parseWallpaperSlash, runWallpaperSlash, wallpaperTemplate } from "../wallpapers/command";
 import { isLensAppStub, lensAppTemplates, runLensAppSlash } from "../report/command";
+import { dashboardTemplates, isDashboardPhrase, isDashboardStub, openDashboard } from "../dashboard/command";
+import { immersiveTemplates, isImmersivePhrase, isImmersiveStub, openImmersive } from "../music/command";
+import { isSearchThat, magicSearchQuery, openMagicSearch } from "../magic/search/command";
+import { editDesktopWidgets, isEditWidgetsPhrase } from "../deskwidgets/api";
 
 const MODE_ICON: Record<Mode, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   ask: Sparkles,
@@ -105,7 +113,9 @@ export interface CommandInitial {
 interface ForegroundContext { process: string; appName: string; title: string; category: string; fullscreen: boolean; tiles: string[] }
 
 export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
-  useLensState();
+  const lens = useLensState();
+  const dashboardOn = !!(lens.config as { magicWaves?: { dashboard?: boolean } } | null)?.magicWaves?.dashboard;
+  const notesOn = !!(lens.config as { magicWaves?: { shelfNotes?: boolean } } | null)?.magicWaves?.shelfNotes;
   const settings = useCommandSettings();
   const [mode, setMode] = useState<Mode>(initial?.mode ?? "ask");
   const [text, setText] = useState(initial?.text ?? "");
@@ -146,11 +156,30 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
         const withApps = [...list, ...extra, ...coreAppTemplates([...list, ...extra])];
         const withBackdrop = [...withApps, ...backdropTemplate(withApps)];
         const withWallpaper = [...withBackdrop, ...wallpaperTemplate(withBackdrop)];
-        setTemplates([...withWallpaper, ...lensAppTemplates(withWallpaper)]);
+        const withLensApps = [...withWallpaper, ...lensAppTemplates(withWallpaper)];
+        setTemplates(withLensApps);
       })
       .catch(() => setTemplates([]));
     aiStatus().then(setAi).catch(() => setAi(null));
   }, []);
+  // /immersive only while Lens Music is on (its settings live in music.json, read once here).
+  const [musicOn, setMusicOn] = useState(false);
+  useEffect(() => {
+    invoke<{ enabled?: boolean } | null>("music_config_get").then((c) => setMusicOn(!!c?.enabled)).catch(() => {});
+  }, []);
+  useEffect(() => {
+    setTemplates((list) => {
+      const base = list.filter((t) => !isImmersiveStub(t));
+      return musicOn ? [...base, ...immersiveTemplates(base, true)] : base;
+    });
+  }, [musicOn, templates.length === 0]);
+  // /dashboard only while the Magic Dashboard is on (docs/plans/MAGIC_WAVES.md); follows the flag live.
+  useEffect(() => {
+    setTemplates((list) => {
+      const base = list.filter((t) => !isDashboardStub(t));
+      return dashboardOn ? [...base, ...dashboardTemplates(base, true)] : base;
+    });
+  }, [dashboardOn, templates.length === 0]);
   useEffect(() => {
     if (initial) return; // a scripted start (tests, parity) keeps its own mode
     setMode(settings.defaultMode);
@@ -415,6 +444,49 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     const parsed = parseSlash(rest, templates);
     const template = parsed?.command ?? null;
 
+    // "magic search <query>" (Lens Magic Search, docs/plans/SELECTION_BAR.md §3.4).
+    const msQuery = !template ? magicSearchQuery(rest) : null;
+    if (msQuery || (!template && isSearchThat(rest))) {
+      setText("");
+      await hide();
+      void openMagicSearch(msQuery).then((err) => err && flash(err, false));
+      return;
+    }
+
+    // "dashboard", "open the dashboard" or /dashboard, while the Magic Dashboard is on.
+    // Rust has the last word on the flag, so a Command opened before it was turned on still works.
+    const dashboardAsked = isDashboardStub(template) || (!template && isDashboardPhrase(rest) && (await invoke<boolean>("dashboard_available").catch(() => false)));
+    // "edit widgets" while desktop widgets are on: the widget gallery on the desktop.
+    if (!template && isEditWidgetsPhrase(rest) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {
+      setText("");
+      await hide();
+      void editDesktopWidgets().then((err) => err && flash(err, false));
+      return;
+    }
+    if (dashboardAsked) {
+      // Hide Command first and wait, so its hide can't hand the focus back to another app after
+      // the Dashboard has taken it.
+      setText("");
+      await hide();
+      void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
+    // "immersive" or /immersive while Lens Music is on: Now Playing full screen.
+    if (isImmersiveStub(template) || (!template && musicOn && isImmersivePhrase(rest))) {
+      setText("");
+      await hide();
+      void openImmersive().then((err) => err && flash(err, false));
+      return;
+    }
+
+    // "mission control" opens Lens Mission Control in dev builds (docs/MISSION_CONTROL.md).
+    if (typeof __LENS_ADMIN__ !== "undefined" && __LENS_ADMIN__ && !template && isMissionControlPhrase(rest)) {
+      setText("");
+      await hide();
+      void invoke("mc_open").catch(() => {});
+      return;
+    }
+
     // Commands that are actions, not prompts.
     if (template && !template.template) {
       const arg = parsed?.args ?? "";
@@ -555,7 +627,18 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     | Extract<ThreadItem, { kind: "answer" }>
     | undefined;
 
+  // An example only types the phrase and hands the keyboard back: Enter still runs it, so the
+  // preview and the approval rules apply exactly as if it had been typed.
+  const pickExample = (phrase: string) => {
+    setText(phrase);
+    inputRef.current?.focus();
+  };
+
   const handlers: CardHandlers = {
+    onShowSetting: (target) => {
+      void hide();
+      void openSettingsAt(target);
+    },
     onCopy: (t) => navigator.clipboard.writeText(t).then(() => flash("Copied")).catch(() => flash("Couldn't copy", false)),
     onPaste: (t) => clipPasteText(t).catch((e) => flash(String(e), false)),
     onToShelf: (t, title) =>
@@ -621,6 +704,22 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
     const typed = raw.trim();
     bump("commandRun");
     setText("");
+    // "dashboard" in Do mode opens the Magic Dashboard when it is on, the same as in Ask.
+    if ((isDashboardPhrase(typed) || typed.toLowerCase() === "/dashboard") && (await invoke<boolean>("dashboard_available").catch(() => false))) {
+      await hide();
+      void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
+    if (musicOn && isImmersivePhrase(typed)) {
+      await hide();
+      void openImmersive().then((err) => err && flash(err, false));
+      return;
+    }
+    if (isEditWidgetsPhrase(typed) && (await invoke<boolean>("desktop_widgets_available").catch(() => false))) {
+      await hide();
+      void editDesktopWidgets().then((err) => err && flash(err, false));
+      return;
+    }
     const out = await runDo(
       typed,
       {
@@ -639,7 +738,8 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       return;
     }
     if (out.kind === "intent") {
-      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now() } });
+      // "Teach me": the card also says where this setting lives, with a link.
+      dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: out.intent.summary, detail: "Offline · no AI needed", ok: true, ts: Date.now(), where: whereItLives(out.intent.action) ?? undefined } });
       if (!answersInText(out.intent)) return;
     } else {
       dispatch({ type: "push", item: { kind: "action", key: newKey("act"), title: typed.slice(0, 60), detail: "Asked the AI", ok: true, ts: Date.now() } });
@@ -1013,6 +1113,10 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               ) : null}
               {mode === "do" ? (
                 <div className="cmd-do">
+                  {/* Screen readers hear the preview as it appears; sighted people see the row below. */}
+                  <span role="status" aria-live="polite" className="cmd-sr">
+                    {intent ? `${intent.summary}. Press Enter to do it.` : ""}
+                  </span>
                   {intent ? (
                     <button type="button" className="cmd-row is-active" onClick={() => runActive(false, false)}>
                       <span className="cmd-row-icon"><Zap size={14} /></span>
@@ -1025,6 +1129,16 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
                   ) : (
                     <div className="cmd-empty"><p>{text.trim() ? "Not sure what that means yet — Enter asks the AI to work it out." : "Type a command. Lens handles common ones instantly, offline."}</p></div>
                   )}
+                  {!intent && !text.trim() && !thread.length ? (
+                    <div className="cmd-starters" aria-label="Examples">
+                      {DO_EXAMPLES.map((ex) => (
+                        <button key={ex.phrase} type="button" className="cmd-starter" data-do-example onClick={() => pickExample(ex.phrase)}>
+                          <span className="cmd-pop-desc">{ex.phrase}</span>
+                          <ArrowUp size={12} className="cmd-starter-go" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {thread.length ? (
                     <div className="cmd-thread">
                       {thread.filter((t) => t.kind === "tool" || t.kind === "action" || (t.kind === "answer" && !!t.text)).slice(-4).map((it, i, arr) => (
@@ -1139,6 +1253,7 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
               inputRef.current?.focus();
             }}
             onNotice={flash}
+            notesOn={notesOn}
           />
         ) : null}
       </div>

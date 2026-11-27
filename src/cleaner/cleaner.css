@@ -8,13 +8,17 @@
 
 .cl-app {
   /* Motion tokens (Fluent-derived: entrances fast-out/slow-in, exits quicker than entrances). */
-  --cl-t-fast: 120ms;
-  --cl-t-base: 220ms;
-  --cl-t-slow: 420ms;
+  /* These are the global Lens motion tokens under Cleaner's old names (DESIGN §5), so the app
+     moves like the rest of Lens and collapses with reduced motion. --cl-ease-in is the entrance
+     curve (fast start, soft stop); --cl-ease-out is the exit curve. */
+  --cl-t-fast: var(--lens-dur-fast);
+  --cl-t-base: var(--lens-dur-base);
+  --cl-t-slow: var(--lens-dur-slower);
+  /* The freed-space number counts up: a signature moment, longer than any transition. */
   --cl-t-count: 900ms;
-  --cl-ease-in: cubic-bezier(0, 0, 0, 1);
-  --cl-ease-out: cubic-bezier(0.3, 0, 1, 1);
-  --cl-ease-move: cubic-bezier(0.2, 0, 0, 1);
+  --cl-ease-in: var(--lens-ease-out);
+  --cl-ease-out: var(--lens-ease-exit);
+  --cl-ease-move: var(--lens-ease-in-out);
   /* Space (4 px grid) */
   --cl-1: 4px;
   --cl-2: 8px;
@@ -1050,6 +1054,27 @@
 .cl-perm span {
   flex: 1;
 }
+.cl-code {
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.cl-code-input {
+  width: 72px;
+  height: 32px;
+  padding: 0 var(--cl-2);
+  border-radius: var(--cl-radius);
+  border: 1px solid color-mix(in srgb, var(--cl-danger), transparent 40%);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+.cl-code-input:focus-visible {
+  outline: 2px solid var(--cl-danger);
+  outline-offset: 2px;
+}
 .cl-sheet-groups {
   display: grid;
   gap: var(--cl-2);
@@ -1153,6 +1178,9 @@
 }
 .cl-done-notes {
   margin-top: var(--cl-4);
+}
+.cl-done-scan {
+  margin: var(--cl-3) 0 0;
 }
 .cl-skipped summary {
   cursor: pointer;
@@ -1622,6 +1650,75 @@
 .cl-delta.is-down {
   color: var(--cl-safe);
 }
+/* Home: "Where did my space go?" — one row per drive, quiet until there is something to show. */
+.cl-tl {
+  display: grid;
+  gap: var(--cl-2);
+  margin-top: var(--cl-5);
+}
+.cl-tl-title {
+  margin: 0;
+  font-weight: 600;
+}
+.cl-tl-row {
+  display: grid;
+  grid-template-columns: 48px 160px auto 1fr;
+  align-items: center;
+  gap: var(--cl-4);
+  min-height: 48px;
+  padding: var(--cl-2) var(--cl-5);
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+}
+.cl-tl-drive {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.cl-tl-spark {
+  width: 160px;
+  height: 32px;
+  overflow: visible;
+}
+.cl-tl-dot {
+  fill: var(--cl-danger);
+  stroke: var(--cl-surface);
+  stroke-width: 1.5;
+}
+.cl-tl-change {
+  white-space: nowrap;
+}
+.cl-tl-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--cl-2);
+  min-width: 0;
+}
+.cl-tl-jump {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cl-tl-jump:hover {
+  color: var(--lens-fg);
+  border-color: rgb(var(--lens-ink) / 0.28);
+}
+.cl-tl-drive:focus-visible,
+.cl-tl-jump:focus-visible {
+  outline: 2px solid var(--lens-fg);
+  outline-offset: 2px;
+}
 .cl-growth li {
   display: grid;
   grid-template-columns: 1fr auto 32px;
@@ -1819,11 +1916,15 @@
 :root[data-shape="expressive"] .cl-btn {
   border-radius: 999px;
 }
-:root[data-shape="expressive"] :is(.cl-caticon, .cl-drive-icon, .cl-empty-icon) {
+:root[data-shape="expressive"] .cl-caticon,
+:root[data-shape="expressive"] .cl-drive-icon,
+:root[data-shape="expressive"] .cl-empty-icon {
   position: relative;
   background: none;
 }
-:root[data-shape="expressive"] :is(.cl-caticon, .cl-drive-icon, .cl-empty-icon)::before {
+:root[data-shape="expressive"] .cl-caticon::before,
+:root[data-shape="expressive"] .cl-drive-icon::before,
+:root[data-shape="expressive"] .cl-empty-icon::before {
   content: "";
   position: absolute;
   inset: -2px;

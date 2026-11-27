@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LensConfig, WindowsThemeInfo, RunningWindow } from "../types/lens";
 import { packById, lighten } from "../themes/packs";
+import { liftsText } from "../themes/contrastAudit";
 import { ensurePackLoaded, loadCustomPacksFromDisk } from "../themes/customPacks";
 import { setLocale } from "../i18n";
 import { applyUiScale } from "../shell/uiScale";
@@ -15,6 +16,13 @@ import { syncLivingTint } from "../themes/living/tint";
 import { useSurfaceExitAck } from "../ui/motion/useSurfaceTransition";
 import { readSchedule } from "../themes/schedule";
 
+/** Sets `data-<key>` on the root, or removes it when the value is empty; untouched when unchanged. */
+function setRootFlag(root: HTMLElement, key: string, value: string) {
+  if (value) {
+    if (root.dataset[key] !== value) root.dataset[key] = value;
+  } else if (key in root.dataset) delete root.dataset[key];
+}
+
 export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo) {
   const root = document.documentElement;
   const activeAccent =
@@ -22,10 +30,15 @@ export function applyThemeToDocument(cfg: LensConfig, winTheme: WindowsThemeInfo
 
   root.dataset.preset = cfg.theme.preset;
   root.dataset.scheme = packById(cfg.theme.preset)?.scheme ?? "dark";
-  // Accessibility: Lens overrides for motion and contrast (empty = follow Windows)
-  root.dataset.motion =
-    cfg.theme.motion === "reduce" || cfg.theme.motion === "full" ? cfg.theme.motion : "";
-  root.dataset.contrast = cfg.theme.contrast === "high" ? "high" : "";
+  // Lighter dark bases get brighter secondary and muted text (tokens.css, contrast audit).
+  if (liftsText(packById(cfg.theme.preset))) root.dataset.textLift = "";
+  else delete root.dataset.textLift;
+  // Accessibility: Lens overrides for motion and contrast (absent = follow Windows). The attributes
+  // are removed rather than left empty: the style engine skips every `:root[data-motion="reduce"] …`
+  // and `:root[data-contrast="high"] …` rule (a few hundred, all matched against every element)
+  // at almost no cost only when the attribute is missing from the ancestors (perf: theme-switch).
+  setRootFlag(root, "motion", cfg.theme.motion === "reduce" || cfg.theme.motion === "full" ? cfg.theme.motion : "");
+  setRootFlag(root, "contrast", cfg.theme.contrast === "high" ? "high" : "");
   setLocale(cfg.theme.locale);
 
   // Theme pack surface colors (Obsidian and unknown presets fall back to tokens.css defaults)

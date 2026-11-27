@@ -101,13 +101,13 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
   return (
     <div className={`qsl-night ${open ? "is-open" : ""}`}>
       <div className="qsl-night-head">
-        <button type="button" className="qsl-night-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <button data-weight="medium" type="button" className="qsl-night-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <Moon size={15} />
           <span>Night light</span>
           <span className="qsl-night-state">{enabled ? `On · ${warmth}%` : sched?.mode === "custom" ? `Scheduled ${sched.from}–${sched.to}` : "Off"}</span>
           <ChevronRight size={14} className="qsl-chev" />
         </button>
-        <button type="button" aria-label="Turn Night light on or off" className={`qs-switch amber ${enabled ? "on" : ""}`} onClick={onToggle}>
+        <button data-weight="light" type="button" aria-label="Turn Night light on or off" className={`qs-switch amber ${enabled ? "on" : ""}`} onClick={onToggle}>
           <span className="qs-switch-knob" />
         </button>
       </div>
@@ -117,7 +117,7 @@ export const NightLightPanel: React.FC<{ enabled: boolean; warmth: number; onTog
           <PillFillBar label="Warmth" value={warmth} fillColor="#FB923C" icon={<Moon size={15} />} onChange={onWarmth} />
           <div className="qsl-seg" role="radiogroup" aria-label="Night light schedule">
             {(["off", "custom"] as const).map((m) => (
-              <button
+              <button data-weight="medium"
                 key={m}
                 type="button"
                 role="radio"
@@ -172,14 +172,14 @@ export const ConnectionTiles: React.FC<{ volume: number | null; muted: boolean; 
   const s = soundTile(volume, muted);
   const tile = (key: string, icon: React.ReactNode, label: string, t: typeof w, onTap: () => void, uri: string) => (
     <div key={key} className={`qsl-tile ${t.active ? "is-on" : ""} ${t.disabled ? "is-disabled" : ""}`}>
-      <button type="button" className="qsl-tile-main" disabled={t.disabled} onClick={onTap} aria-pressed={t.active}>
+      <button data-weight="medium" type="button" className="qsl-tile-main" disabled={t.disabled} onClick={onTap} aria-pressed={t.active}>
         {icon}
         <span className="qsl-tile-text">
           <span className="qsl-tile-label">{label}</span>
           <span className="qsl-tile-sub">{t.sub}</span>
         </span>
       </button>
-      <button type="button" className="qsl-tile-more" aria-label={`${label} settings`} onClick={() => open(uri)}>
+      <button data-weight="medium" type="button" className="qsl-tile-more" aria-label={`${label} settings`} onClick={() => open(uri)}>
         <ChevronRight size={14} />
       </button>
     </div>
@@ -231,7 +231,7 @@ export const WindowThumbs: React.FC = () => {
   return (
     <div className="qsl-thumbs" aria-label="Open windows">
       {shown.map((w) => (
-        <button
+        <button data-weight="medium"
           key={w.hwnd}
           type="button"
           className={`qsl-thumb ${w.isFocused ? "is-focused" : ""}`}
