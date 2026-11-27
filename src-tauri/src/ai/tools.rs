@@ -27,7 +27,7 @@ pub struct ToolSpec {
 }
 
 pub const WINDOW_ACTIONS: [&str; 5] = ["minimize", "maximize", "restore", "pin", "unpin"];
-pub const DOCK_STYLE_IDS: [&str; 6] = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
+pub const DOCK_STYLE_IDS: [&str; 8] = crate::config::DOCK_STYLES;
 
 pub const TILE_LAYOUTS: [&str; 5] = ["focus-stack", "split", "thirds", "grid", "smart-group"];
 pub const SNAP_SLOTS: [&str; 10] = [
@@ -58,7 +58,7 @@ pub const REGISTRY: &[ToolSpec] = &[
     ToolSpec { name: "window_action", risk: Risk::Low, description: "Minimises, maximises, restores, pins on top or unpins a window. Use name \"focused\" for the current window." },
     ToolSpec { name: "move_window", risk: Risk::Low, description: "Moves the focused window to the next or previous monitor, or to a workspace (1-9)." },
     ToolSpec { name: "open_overview", risk: Risk::Low, description: "Opens the Lens Overview of all windows." },
-    ToolSpec { name: "set_dock_style", risk: Risk::Low, description: "Switches the Dock style: floating, slim, taskbar, studio, minimal or split." },
+    ToolSpec { name: "set_dock_style", risk: Risk::Low, description: "Switches the Dock style: floating, slim, taskbar, studio, minimal, split, islands or unified." },
     ToolSpec { name: "next_wallpaper", risk: Risk::Low, description: "Moves to the next wallpaper in the user's rotation." },
     ToolSpec { name: "set_wallpaper_scene", risk: Risk::Low, description: "Shows a Playground living-wallpaper scene by id." },
     ToolSpec { name: "make_backdrop", risk: Risk::Low, description: "Opens Backdrop Lab with a backdrop made from a short description (e.g. calm blue aurora). Nothing is applied until the user chooses." },

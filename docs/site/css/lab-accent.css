@@ -1,0 +1,69 @@
+/* The Theme lab's accent layer. js/desk.js links this into every real surface on the lab's desk (the
+   dock, the top bar, each window and pop-out) so the accent you pick shows where Lens can carry it:
+   the dock's running marks and hover, the selected tab, selected items and switches, primary buttons,
+   icon-button and window-button hover, and focus rings (the desk's own glow and the wash on a pick
+   live in site.css). The surfaces already paint these from
+   --lens-accent; here they take it at full strength so a pick is obvious at a glance. The page sets
+   --lab-on-accent (dark or light ink for text on the accent) and .lab-still for reduced motion. */
+
+/* The accent eases from one colour to the next instead of snapping (registered, so it interpolates
+   and every color-mix() that reads it follows). Lens's own theme-switch hold only stops descendants. */
+@property --lens-accent { syntax: "<color>"; inherits: true; initial-value: #fafafa; }
+:root { transition: --lens-accent var(--lens-dur-slower, 360ms) var(--lens-ease-out, cubic-bezier(0.22, 1, 0.36, 1)); }
+:root.lab-still { transition: none; }
+@media (prefers-reduced-motion: reduce) { :root:not(.lab-motion) { transition: none; } }
+
+/* Dock: every running mark in the accent (the focused one full width, as in Lens), accent hover. */
+.dock-indicator, .dock-stage.is-bar .dock-indicator { background: var(--lens-accent) !important; }
+.dock-indicator:not(.focused) { --dock-ind-k: 0.5; }
+.dock-item:hover, .dock-item:focus-visible {
+  background: color-mix(in srgb, var(--lens-accent) 22%, transparent) !important;
+  border-color: color-mix(in srgb, var(--lens-accent) 70%, transparent) !important;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--lens-accent) 60%, transparent), 0 6px 18px color-mix(in srgb, var(--lens-accent) 30%, transparent) !important;
+}
+.dock-pill { outline: 1px solid color-mix(in srgb, var(--lens-accent) 40%, transparent); outline-offset: -1px; }
+.dock-search-mag-btn:hover, .dock-launcher-btn:hover { color: var(--lens-accent) !important; }
+
+/* Top bar and icon buttons everywhere: hover in the accent. */
+.topbar-icon-btn:hover, .lb-icon-btn:hover, .lm-icon-btn:hover {
+  color: var(--lens-accent) !important;
+  background: color-mix(in srgb, var(--lens-accent) 16%, transparent) !important;
+}
+
+/* Window buttons (Lens's TrafficLights and the surfaces' own close buttons): an accent ring on hover. */
+.traffic-btn:hover, [aria-label^="Close"]:hover, [aria-label^="Minimi"]:hover, [aria-label^="Maximi"]:hover {
+  box-shadow: 0 0 0 2px var(--lens-accent) !important;
+}
+
+/* The selected tab, and selected or pressed items in lists, rails and pop-outs. */
+.lb-tab.is-active, .lb-htab.is-active, .lb-stile.is-active, [role="tab"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--lens-accent) 20%, var(--lens-bg-elevated, transparent)) !important;
+  box-shadow: inset 3px 0 0 var(--lens-accent), inset 0 0 0 1px color-mix(in srgb, var(--lens-accent) 45%, transparent) !important;
+}
+[role="tab"][aria-selected="true"] { box-shadow: inset 0 -2px 0 var(--lens-accent) !important; }
+[role="option"][aria-selected="true"], [aria-current="page"], [aria-current="true"], [role="radio"][aria-checked="true"], .lm-side-section .active {
+  background: color-mix(in srgb, var(--lens-accent) 18%, transparent) !important;
+  box-shadow: inset 0 0 0 1.5px var(--lens-accent) !important;
+}
+.lm-icon-btn.on, .lm-q-toggles .on { color: var(--lens-accent) !important; }
+.lb-space-dot { background: var(--lens-accent) !important; }
+/* The browser's one box, ringed as when it has focus. */
+.lb-newtab-search { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lens-accent) 55%, transparent), 0 0 24px -6px color-mix(in srgb, var(--lens-accent) 45%, transparent) !important; }
+
+/* Switches that are on, and primary buttons: filled with the accent. */
+[role="switch"][aria-checked="true"], input[type="checkbox"][role="switch"]:checked, .cc-toggle.on, .cl-switch.is-on {
+  background: var(--lens-accent) !important;
+  border-color: var(--lens-accent) !important;
+}
+input[type="range"], input[type="checkbox"], input[type="radio"], progress { accent-color: var(--lens-accent); }
+.lm-pill-primary, .lens-btn-primary, .cc-btn-primary, .ap-btn-primary, .cl-btn-primary, .btn-primary {
+  background: var(--lens-accent) !important;
+  color: var(--lab-on-accent, #09090b) !important;
+  border-color: transparent !important;
+}
+.lm-pill-outline:hover, .lb-chip:hover, .lb-newtab-ask:hover { box-shadow: inset 0 0 0 1.5px var(--lens-accent) !important; }
+
+/* Focus rings and the text caret. */
+:focus-visible { outline: 2px solid var(--lens-accent) !important; outline-offset: 2px; }
+input, textarea, [contenteditable="true"] { caret-color: var(--lens-accent); }
+input:focus, textarea:focus { border-color: var(--lens-accent) !important; }

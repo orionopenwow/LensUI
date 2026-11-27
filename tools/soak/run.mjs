@@ -60,7 +60,7 @@ const BOOL_PATHS = [
   ["func", "gamingPause", [true, false]],
   ["windowControls", "frameBorderEnabled", [true, false]],
   ["dock", "magnification", ["off", "subtle", "classic"]],
-  ["dock", "style", ["floating", "slim", "taskbar", "studio", "minimal", "split"]],
+  ["dock", "style", ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"]],
 ];
 const PACKS = ["obsidian", "catppuccin-mocha", "alabaster-daylight", "tokyo-night", "nord-frost", "gruvbox-warm", "paper-minimal", "windows-mesh"];
 

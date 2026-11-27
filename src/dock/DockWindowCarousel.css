@@ -1,0 +1,223 @@
+/* Dock window carousel (src/dock/DockWindowCarousel.tsx). Transform and opacity only; durations
+   and curves from the motion tokens, so reduced motion makes every slide instant. */
+.dock-hover-card.has-carousel {
+  width: auto;
+  padding: 10px 10px 8px;
+}
+
+.dwc {
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dwc-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.dwc-head-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  color: var(--lens-fg-secondary);
+}
+
+.dwc-head-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dwc-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lens-fg-muted);
+  font-variant-numeric: tabular-nums;
+  padding-right: 2px;
+}
+
+.dwc-nav {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg);
+  cursor: pointer;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+.dwc-nav:hover {
+  background: rgb(var(--lens-ink) / 0.1);
+}
+
+.dwc-stage {
+  position: relative;
+  height: 172px;
+  overflow: hidden;
+  /* Neighbours fade out towards the card's sides. */
+  mask-image: linear-gradient(90deg, transparent 0, #000 17%, #000 83%, transparent 100%);
+}
+
+.dwc-slide {
+  --dwc-d: 0;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 248px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transform-origin: 50% 40%;
+  transform: translateX(calc(-50% + var(--dwc-d) * 176px)) scale(0.72);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--lens-dur-slow) var(--lens-ease-out),
+    opacity var(--lens-dur-base) var(--lens-ease-out);
+}
+
+/* Offset from the current window (src/dock/carousel.ts slideOffset), capped at two places. */
+.dwc-at-m2 { --dwc-d: -2; }
+.dwc-at-m1 { --dwc-d: -1; }
+.dwc-at-1 { --dwc-d: 1; }
+.dwc-at-2 { --dwc-d: 2; }
+
+.dwc-slide.is-current {
+  z-index: 2;
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dwc-slide.is-side {
+  z-index: 1;
+  opacity: 0.55;
+  pointer-events: auto;
+}
+
+.dwc-slide.no-anim {
+  transition: none;
+}
+
+.dwc-shot {
+  height: 140px;
+  border-radius: 8px;
+  /* Opaque, so a neighbour tucked under the current window never shows through. */
+  background: var(--lens-pack-base, #141418);
+  box-shadow: 0 6px 18px rgb(0 0 0 / calc(0.35 * var(--lens-shade-k, 1)));
+  border: 1px solid rgb(var(--lens-ink) / 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lens-fg-muted);
+}
+
+.dwc-slide.is-current.focused .dwc-shot {
+  border-color: rgb(var(--lens-ink) / 0.22);
+}
+
+.dwc-fallback-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.dwc-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.dwc-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dwc-close {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--lens-fg-secondary);
+  cursor: pointer;
+  transition: background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+.dwc-close:hover {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.dwc-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.dwc-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dwc-dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--lens-ink) / 0.28);
+  transform: scale(0.85);
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out);
+}
+
+.dwc-dot:hover::before {
+  background: rgb(var(--lens-ink) / 0.5);
+}
+
+.dwc-dot.is-on::before {
+  background: var(--lens-fg);
+  transform: scale(1);
+}
+
+.dwc-nav:focus-visible,
+.dwc-dot:focus-visible,
+.dwc-close:focus-visible {
+  outline: 1px solid rgb(var(--lens-ink) / 0.45);
+  outline-offset: 1px;
+}
+
+/* Only the current window's title shows; neighbours are just pictures peeking in. */
+.dwc-slide:not(.is-current) .dwc-caption {
+  visibility: hidden;
+}
