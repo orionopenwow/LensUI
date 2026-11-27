@@ -10,7 +10,9 @@
   --la-caution: color-mix(in srgb, var(--lens-danger, #fb7185) 45%, var(--lens-fg));
   --la-on-danger: var(--lens-pack-base, var(--lens-bg-base));
 }
-:root[data-scheme="light"] :is(.la, .la-floating, .la-card-settings) {
+:root[data-scheme="light"] .la,
+:root[data-scheme="light"] .la-floating,
+:root[data-scheme="light"] .la-card-settings {
   --la-plate: color-mix(in srgb, var(--lens-pack-base, var(--lens-bg-base)) 94%, var(--lens-fg));
 }
 .la {
