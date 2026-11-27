@@ -11,6 +11,7 @@ import { openLink, prepareRelease, removePortable, runRelease, discardRelease } 
 import type { PreparedRelease } from "../apps/types";
 import type { LensConfig } from "../types/lens";
 import { controllerLine, thumbdeskPin, type ThumbDeskInfo } from "./controller";
+import { oops } from "../ui/oops";
 
 const HOME = "https://orionopenwow.github.io/ThumbDesk/";
 
@@ -117,7 +118,7 @@ export const ControllerCard: React.FC<{ config: LensConfig; updateConfig: (c: Le
       {msg && <StateNote kind={msg.kind}>{msg.text}</StateNote>}
 
       <div className="sh-controller-links">
-        <button type="button" className="cc-btn-ghost" onClick={() => openLink("thumbdesk", HOME).catch(() => undefined)}>
+        <button type="button" className="cc-btn-ghost" onClick={() => openLink("thumbdesk", HOME).catch(oops("open ThumbDesk's page"))}>
           About ThumbDesk
         </button>
         {info?.installed && (

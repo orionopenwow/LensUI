@@ -23,6 +23,26 @@ up and migrates `%APPDATA%\LensUI` where it can.
   views and the favourites row; Air Traffic Control rules are found and counted. Zen workspaces,
   essentials, folders and splits come over too. Still undoable in one step. (Ideas learned from
   Ardia; no code used.)
+- **Lens Apps has a Library.** A second view next to Discover lists everything from the catalogue
+  that's on this PC, with the installed version, what an update would bring ("4.5.1 → 4.5.3"), who
+  made each app and its licence. **Update all** asks once, on the same approval card as everything
+  else, and shows every app, its version change and its source; updates then run one at a time and
+  any that hasn't started can be cancelled. Nothing updates by itself. If winget can't be asked,
+  the Library says so instead of showing an empty list.
+- **Credits and licences in plain words.** Every app page now has a "Credits and licence" section:
+  who made it, where the source is, and what the licence means for you in one or two sentences
+  (permissive, copyleft, network copyleft, weak copyleft, or free but not open source). When Lens
+  hasn't read the licence in the project's own repository yet, it says that too. Cards and Library
+  rows carry the same licence chip, and each page ends with "Names belong to each project. Lens
+  isn't affiliated with them."
+- **A real screenshot gallery on app pages.** Previous / next, dots and the arrow keys, with a line
+  saying which project each image comes from. It moves on by itself only until you take over, never
+  while the window is hidden, and not at all with reduced motion.
+- **Remind me, on any to-do in Lens Notes.** A small bell at the end of an unticked to-do offers
+  "In an hour", "This evening" and "Tomorrow morning" and sets a Lens Timer reminder named after the
+  to-do. It rings whether or not Notes or Timer is open.
+- **"Make stickies clickable" is a button in Lens Notes**, not only Ctrl+Shift+U, so a click-through
+  sticky always has a visible way back.
 - **Live text in Lens Snip.** In the studio, press L (or the new Select text tool) and the words
   Windows OCR found become selectable on the image: drag across them, double-click a line, or use
   the arrow keys with Shift. Copy just those words, highlight them, or hide them, each snapped to
@@ -68,6 +88,24 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **Alarms keep their time when the clocks change.** A Lens Timer alarm set for 07:00 rang at 06:00
+  or 08:00 after daylight saving started or ended, or after a move to another time zone. Alarms now
+  follow the PC's local time. A timer or alarm that comes due while the PC is asleep says it is
+  late when it rings. Not yet confirmed on a real PC.
+- **An alarm that is only waiting no longer wakes Lens every second.** The timer thread used to
+  tick and notify every Lens window once a second for as long as any alarm was switched on.
+- **Apps Lens keeps itself can be removed from Lens Apps.** ThumbDesk and other portable releases
+  had no Remove in the ⋯ menu. Failed removals, "Undo Lens setup", Open and Show in folder now say
+  when they didn't work, and Retry on a failed update retries the update.
+- **Two Lens Apps settings that did nothing are gone.** "Update apps Lens installed automatically"
+  and "Check for updates" were saved but never read. The card now says how updates really work.
+- **Lens Apps keeps the keyboard.** Opening an app's page moves focus to it, Esc goes back from
+  anywhere on the page, and focus returns to the card you came from.
+- **Failures in the Lens apps no longer pass silently.** Core apps (Monitor, Startup & Uninstall,
+  Timer, Calculator, Color, Notes, Power, Network, Clipboard), Lens Cleaner, Feeds, Messages and
+  their Settings cards now say when something you asked for didn't happen. A Stop that didn't reach
+  a scan says the scan is still running; a reply that couldn't be sent stays on screen until you
+  close it.
 - **Text you cropped out of a snip no longer goes with it.** Copy text, Shelf, Paste to Claude, Ask
   and Translate now use only the words still inside the crop (and inside a freeform outline).
 - **Cropping in the Snip studio no longer stretches the picture or misplaces new marks.** The crop
@@ -135,6 +173,10 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Lens Apps, the core apps, Cleaner, Feeds and Messages feel like the rest of Lens.** Every button
+  declares a press weight for the new press system, small controls have 32 px targets, Lens Cleaner
+  uses the shared motion timings, and Lens Apps draws only with theme colours (the danger button's
+  white text and two fixed ambers are gone).
 - **Sentence case** for the Top Bar's button names ("Previous desktop", "Wi-Fi and network") and
   the remaining Title Case labels in Settings; Settings controls also got consistent hover,
   pressed and disabled states.
@@ -254,6 +296,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
   self-test, which features are on), see exactly what will be shared with user names, e-mail
   addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
   uploads nothing itself.
+
+### Developer
+- **Lens Mission Control** (dev builds only, docs/MISSION_CONTROL.md): the maintainer's admin
+  window for running the project. Pulse (main CI, Pages, PRs, release, dev folder, bugs, research
+  top 3, trends), a PR board with READY / WAIT / BLOCKED and known-flake detection, one bugs
+  inbox, ranked suggestions from research, the combinator and Fable notes, real-PC checklists,
+  roadmap, quality (tests, flaky-test leaderboard, perf budgets, goldens), releases, dev folder,
+  the local Lens, schedules and agents with "Copy brief", and the project brain. Read-only by
+  default; every write is shown exactly and confirmed, and goes to a local audit log. The GitHub
+  token stays in Windows Credential Manager. It is compiled only with the `admin` feature that
+  Launch-Lens-UI.bat's dev build turns on; release builds can't include it, and CI checks that.
 
 ## [0.3.0] - 2026-11-24
 

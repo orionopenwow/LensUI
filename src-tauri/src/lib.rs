@@ -83,6 +83,10 @@ mod snip;
 mod studio;
 // Magic waves scaffold (docs/plans/MAGIC_WAVES.md): pure state only, every flag off.
 mod magic_waves;
+// Lens Mission Control: the maintainer's dev-only admin window (docs/MISSION_CONTROL.md).
+// Compiled only with `--features admin` (Launch-Lens-UI.bat's dev build); never in a release.
+#[cfg(feature = "admin")]
+mod mission;
 // Property and fuzz tests over the pure logic above (docs/TESTING.md). Test builds only.
 #[cfg(test)]
 #[path = "tests/robustness/mod.rs"]
@@ -141,6 +145,12 @@ use app::{setup::*, tray::*, watcher::*, AppState};
 use commands::{
     mcp::*, notifications::*, surfaces::*, system::*, theme::*, wallpaper::*, workspaces::*,
 };
+
+/// Gives a `generate_handler!` closure its type, so two handlers can be composed (Mission
+/// Control's `mc_` commands exist only with the `admin` feature).
+fn ipc_handler<F: Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static>(f: F) -> F {
+    f
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -260,7 +270,7 @@ pub fn run() {
             bridge::autostart(commands::bridge::emitter(app.handle()));
             voice::init(app.handle());
             commands::coreapps::init_timers(app.handle());
-            crate::app::setup::run_setup(
+            let ready = crate::app::setup::run_setup(
                 app,
                 initial_config,
                 running_as_shell,
@@ -269,9 +279,13 @@ pub fn run() {
                 bg_dock_menu_open,
                 bg_topbar_visible,
                 bg_topbar_search_open,
-            )
+            );
+            #[cfg(feature = "admin")]
+            mission::setup(app.handle());
+            ready
         })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler({
+        let lens_handler = ipc_handler(tauri::generate_handler![
             commands::control::control_catalogue,
             commands::control::control_get,
             commands::control::control_preview,
@@ -990,7 +1004,47 @@ pub fn run() {
             commands::failsafe::failsafe_reset_feature,
             commands::failsafe::failsafe_safe_mode_next,
             commands::failsafe::failsafe_ui_crash,
-        ])
+        ]);
+        // Mission Control's commands exist only in admin (dev) builds: a second handler for the
+        // `mc_` names, consulted first. Release builds compile `lens_handler` alone.
+        #[cfg(feature = "admin")]
+        let mission_handler = ipc_handler(tauri::generate_handler![
+            mission::commands::mc_status,
+            mission::commands::mc_token_set,
+            mission::commands::mc_token_forget,
+            mission::commands::mc_token_probe,
+            mission::commands::mc_set_hotkey,
+            mission::commands::mc_open,
+            mission::commands::mc_gh,
+            mission::commands::mc_job_log,
+            mission::commands::mc_prs,
+            mission::commands::mc_pr_files,
+            mission::commands::mc_merged_prs,
+            mission::commands::mc_quality,
+            mission::commands::mc_release_config,
+            mission::commands::mc_git,
+            mission::commands::mc_branches,
+            mission::commands::mc_docs,
+            mission::commands::mc_doc,
+            mission::commands::mc_brain_index,
+            mission::commands::mc_local,
+            mission::commands::mc_log_since,
+            mission::commands::mc_crash,
+            mission::commands::mc_state_get,
+            mission::commands::mc_state_set,
+            mission::commands::mc_audit,
+            mission::commands::mc_plan,
+            mission::commands::mc_cancel,
+            mission::commands::mc_apply,
+        ]);
+        move |invoke: tauri::ipc::Invoke<tauri::Wry>| {
+            #[cfg(feature = "admin")]
+            if invoke.message.command().starts_with("mc_") {
+                return mission_handler(invoke);
+            }
+            lens_handler(invoke)
+        }
+        })
         .build(tauri::generate_context!())
         .expect("error while building Lens")
         .run(|_app_handle, event| {

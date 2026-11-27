@@ -8,13 +8,17 @@
 
 .cl-app {
   /* Motion tokens (Fluent-derived: entrances fast-out/slow-in, exits quicker than entrances). */
-  --cl-t-fast: 120ms;
-  --cl-t-base: 220ms;
-  --cl-t-slow: 420ms;
+  /* These are the global Lens motion tokens under Cleaner's old names (DESIGN §5), so the app
+     moves like the rest of Lens and collapses with reduced motion. --cl-ease-in is the entrance
+     curve (fast start, soft stop); --cl-ease-out is the exit curve. */
+  --cl-t-fast: var(--lens-dur-fast);
+  --cl-t-base: var(--lens-dur-base);
+  --cl-t-slow: var(--lens-dur-slower);
+  /* The freed-space number counts up: a signature moment, longer than any transition. */
   --cl-t-count: 900ms;
-  --cl-ease-in: cubic-bezier(0, 0, 0, 1);
-  --cl-ease-out: cubic-bezier(0.3, 0, 1, 1);
-  --cl-ease-move: cubic-bezier(0.2, 0, 0, 1);
+  --cl-ease-in: var(--lens-ease-out);
+  --cl-ease-out: var(--lens-ease-exit);
+  --cl-ease-move: var(--lens-ease-in-out);
   /* Space (4 px grid) */
   --cl-1: 4px;
   --cl-2: 8px;

@@ -5,6 +5,7 @@ import { Eraser as BrushCleaning } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { SettingsPanel } from "../cleaner/SettingsPanel";
 import "../cleaner/cleaner.css";
+import { oops } from "../ui/oops";
 
 export const CleanerCard: React.FC = () => (
   <div className="cc-card cl-card">
@@ -16,10 +17,10 @@ export const CleanerCard: React.FC = () => (
         <strong>Lens Cleaner</strong>
         <span className="cl-meta-line">Find what's safe to remove and see what's taking up space. Nothing is deleted until you say so.</span>
       </span>
-      <button type="button" className="cl-btn is-primary is-sm" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(() => {})}>
+      <button data-weight="heavy" type="button" className="cl-btn is-primary is-sm" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(oops("open Lens Cleaner"))}>
         Open Lens Cleaner
       </button>
     </div>
-    <SettingsPanel onOpen={(uri) => invoke("open_windows_setting_cmd", { uri }).catch(() => {})} />
+    <SettingsPanel onOpen={(uri) => invoke("open_windows_setting_cmd", { uri }).catch(oops("open that Windows page"))} />
   </div>
 );

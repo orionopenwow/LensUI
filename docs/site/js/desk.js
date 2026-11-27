@@ -273,12 +273,33 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (T) return "max";
     return null;
   }
+  /**
+   * The snap preview for a slot (null hides it). Called straight from the pointer handler when the
+   * slot changes, so it never waits for a frame. Only transform and opacity animate (IDENTITY §3.4):
+   * the size is set at once, the place glides, and a fresh preview fades in from 97 %.
+   */
+  let snapShown = null;
   function showSnap(slot) {
+    if (slot === snapShown) return;
+    const was = snapShown;
+    snapShown = slot;
     if (!slot) { snapEl.hidden = true; return; }
-    const r = SLOTS[slot](work());
-    snapEl.hidden = false;
-    snapEl.style.transform = `translate3d(${r.x}px, ${r.y}px, 0)`;
+    const r = SLOTS[slot](work()), t = `translate3d(${r.x}px, ${r.y}px, 0)`;
     snapEl.style.width = `${r.w}px`; snapEl.style.height = `${r.h}px`;
+    if (!was) snapEl.style.transition = "none"; // a new preview starts in place; only moves between slots glide
+    snapEl.style.transform = t;
+    snapEl.hidden = false;
+    if (!was) {
+      void snapEl.offsetWidth; snapEl.style.transition = "";
+      if (!reducedMotion() && snapEl.animate) snapEl.animate([{ opacity: 0, transform: `${t} scale(.97)` }, { opacity: 1, transform: t }], { duration: 140, easing: "cubic-bezier(.22,1,.36,1)" });
+    }
+  }
+  /** Shows the snap preview for a pointer on the desk while a window is moved. */
+  function snapFor(q) {
+    const d = dragging;
+    if (!d || d.mode !== "move" || !q) return;
+    d.slot = slotAt(q);
+    showSnap(d.slot);
   }
 
   // Pointer: the real surface's own title bar drags its window (the frame reports the pointer, see
@@ -353,6 +374,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   document.addEventListener("selectstart", (e) => { if (dragging) e.preventDefault(); }, true);
   let raf = 0, pending = null;
   function move(p) {
+    snapFor(p); // at once, not on the next frame: the preview answers the pointer itself
     pending = p;
     if (raf) return;
     raf = requestAnimationFrame(() => { raf = 0; apply(pending); });
@@ -375,8 +397,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
         d.vx = d.vx * 0.7 + vx * 0.3; d.last = q; d.t = now;
         const tilt = reducedMotion() ? 0 : Math.max(-3, Math.min(3, d.vx * 2.2));
         paint(w, tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
-        d.slot = slotAt(q);
-        showSnap(d.slot);
+        snapFor(q);
       } else {
         const o = d.orig, m = d.mode, minW = 280, minH = 170;
         let { x, y, w: ww, h: hh } = o;

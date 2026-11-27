@@ -88,6 +88,15 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),
+  // Lens Mission Control (docs/MISSION_CONTROL.md): dev builds only. `__LENS_ADMIN__` is false in
+  // every `vite build`, so this entry and its chunk are not in any release bundle.
+  ...(typeof __LENS_ADMIN__ !== "undefined" && __LENS_ADMIN__
+    ? {
+        missioncontrol: lazy(() =>
+          import("./missioncontrol/MissionControlSurface").then((m) => ({ default: m.MissionControlSurface }))
+        ),
+      }
+    : {}),
 };
 
 const params = new URLSearchParams(window.location.search);
