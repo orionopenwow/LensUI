@@ -118,9 +118,10 @@
 
 /* ── Press feedback, legacy fallback ─────────────────────────────────────────────────────────────
    Controls that declare a weight (data-weight, src/ui/press) get the weighted press instead
-   (DESIGN.md §5.2). This zero-specificity :active scale only covers areas not migrated yet (Dock,
-   Lens Browser, older apps). Opt out with data-no-press. */
-:where(button, [role="button"], .cc-chip, .cc-btn, .cc-btn-ghost, .lens-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press], [data-weight])):where(:active) {
+   (DESIGN.md §5.2). This zero-specificity :active scale only covers areas not migrated yet: older
+   apps, and every control in windows in "own" press mode (Dock, Lens Browser), weighted or not.
+   Opt out with data-no-press. */
+:where(button, [role="button"], .cc-chip, .cc-btn, .cc-btn-ghost, .lens-btn):where(:not(:disabled, [aria-disabled="true"], [data-no-press])):where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight])) {
   transform: scale(var(--lens-press-scale));
 }
 

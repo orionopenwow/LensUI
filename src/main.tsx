@@ -100,10 +100,12 @@ installGlobalHandlers();
 const surfaceName = params.get("surface") || "dock";
 const Surface = surfaces[surfaceName] ?? surfaces.dock;
 // The feel (DESIGN.md §5): weighted presses for every control that declares a weight, and pop-outs
-// that grow from the control that opened them. The Dock and Lens Browser keep their own presses
-// for shared classes until their Fable pass (DESIGN.md §5.5, "Adopting the feel").
-if (surfaceName === "dock" || surfaceName === "browser") document.documentElement.dataset.pressClasses = "off";
-installPress();
+// that grow from the control that opened them. The Dock and Lens Browser still draw their own
+// presses (:active rules) until their pass removes them, so their windows keep "own" press mode:
+// no weighted press there yet, or the two would stack (DESIGN.md §5.5, "Adopting the feel").
+const ownPress = surfaceName === "dock" || surfaceName === "browser";
+if (ownPress) document.documentElement.dataset.pressMode = "own";
+else installPress();
 installOriginBeacon();
 // Smoothness probe (docs/SMOOTHNESS.md): idle until Tester Hub starts a check.
 import("./smooth/probe").then((m) => m.installSmoothProbe(surfaceName)).catch(() => {});

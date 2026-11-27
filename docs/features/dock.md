@@ -8,15 +8,17 @@
 >
 > **Robustness wave (branch `wave/robustness`, 2026-11-26):** quick win 3 done (E2E `dock-left`, `dock-right`: every style, hit zone, Settings and Quick Settings beside the pill inside the work area, auto-hide); quick win 4 done (B-18 Dock share, `src/failsafe/calls.ts`); multi-monitor: B-62 (Dock rescaled by a DPI change on the way to another monitor, never put back — likely the "Dock doesn't appear on other monitors" report), B-63 (side-Dock pop-outs on the wrong monitor / over the pill), B-64 (Settings over the Dock on small high-DPI screens), B-65 (attention hook after an Explorer restart). Needs a real-PC check with two monitors at different scaling. Left: quick win 5, the tour.
 
+> **Fable pass (Dock family, `fable/dock-20261126`, 2026-11-26):** `DockSurface.tsx` split along the MODULES.md seams (2,916 → about 1,500 lines; rendered output byte-identical on every Dock visual state before any intended change). Bugs B-106 to B-110 fixed. Big win: **Dock keys** (arrows, type to find, window list from the keyboard). Flourishes: a pin drops in, badges roll, the search home arrives in order, the Dock's notice. Press weights (`data-weight`) on every Dock, Launcher and carousel control, ready for the feel primitives (PR #131). Everything below marked "(harness)" was checked headless only.
+
 ## Rundown
 
 The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and running apps, a system area, a search entry and a Settings gear, in eight styles on any screen edge. It is the first thing people see and the thing they touch most, so it carries most of Lens's perceived quality.
 
 - **Who it's for:** everyone who runs Lens; it is on by default (`dock` window, `src-tauri/tauri.conf.json`).
-- **Front end:** `src/surfaces/DockSurface.tsx` (2,928 lines) and `DockSurface.css` (2,293 lines); `src/dock/` (styles, previews, attention, system area, style picking); `src/magic/LensPan.tsx` (the Lens › Magic pan in the app menu).
+- **Front end:** `src/surfaces/DockSurface.tsx` (about 1,500 lines: state, window calls, the row) and `DockSurface.css` (2,270 lines, not split yet); `src/dock/`: `model.ts` (types and pure rules), `DockAppItem.tsx` (one drawing for pinned and running apps), `DockContextMenu.tsx`, `DockHoverCard.tsx`, `DockSearchDrawer.tsx` + `searchItems.ts`, `DockNotice.tsx`, `DockFindChip.tsx`, `keys.ts`, `act.ts`, `LensMenuHost.tsx` (the one file that reaches Magic), `hooks/` (magnification, badges, keys, file drop, minimise pulse, pill report), plus styles, previews, attention, system area, style picking. `src/magic/LensPan.tsx` is the Lens › pan the host wraps.
 - **Native:** `src-tauri/src/app/watcher.rs` (placement, auto-hide, focus, click-through, pop-out dismissal, 1,714 lines), `app/flyout_geom.rs` (Settings/Search sizes), `app/place.rs`, `win_previews.rs` (live thumbnails, 1,243 lines), `attention.rs` (taskbar flash), `commands/dock.rs`, `commands/surfaces.rs` (toggle/glide), `config.rs` (`DockConfig`).
 - **Settings:** Settings › Dock & Bar (`src/themeux/DockTab.tsx`), Simple mode's style picker (`src/settings/simple/SimpleView.tsx`), the monitor card (`src/components/MonitorPickerCard.tsx`).
-- **Tests:** `src/__tests__/dockAttention.test.ts`, `lensPan.test.ts`, `topbarClickThrough.test.ts`, `smoothness.test.ts`; perf `dock-hover-sweep`, `dock-magnification`, `dock-search-glide`, `dock-style-switch`; E2E `dock-style`, `dock-bottom`, `dock-top`, `dock-search-dismiss`; `tools/robust/dock-layout.mjs`; Rust tests for `flyout_geom`, `attention`, `win_previews` placement.
+- **Tests:** `src/__tests__/dockModel.test.ts`, `dockKeys.test.ts`, `tools/robust/dock-keys.mjs` (robustness job), `src/__tests__/dockAttention.test.ts`, `lensPan.test.ts`, `topbarClickThrough.test.ts`, `smoothness.test.ts`; perf `dock-hover-sweep`, `dock-magnification`, `dock-search-glide`, `dock-style-switch`; E2E `dock-style`, `dock-bottom`, `dock-top`, `dock-search-dismiss`; `tools/robust/dock-layout.mjs`; Rust tests for `flyout_geom`, `attention`, `win_previews` placement.
 
 ## Feature tree
 
@@ -39,9 +41,10 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Feature | Sub / minute features | Status | Evidence |
 |---|---|---|---|
 | Pinned apps | Mirror the Windows taskbar pins and their order; `pinsUserOrdered` once you reorder | works | B-22 fixed (`config.rs:scan_windows_taskbar_pins`) |
-| Pinned folders | `pinnedFolders` stacks | works | `DockSurface.tsx` |
+| Pinned folders | `pinnedFolders` stacks | **not built in the Dock** (found in the Fable pass): the setting, the type and a folder menu exist, but nothing draws pinned folders on the Dock and nothing opens that menu | `config.dock.pinnedFolders`, `DockContextMenu.tsx` (`kind: "folder"`) |
 | Reorder by drag | Pointer drag, FLIP motion; locked Dock refuses | works | `dock.locked` (`DockTab.tsx:160`) |
 | Smooth reflow | Pin, unpin, reorder, open, close: icons glide along the Dock (transform only, two layout reads per change), new icons grow in; reduced motion = instant | works (headless) | `src/dock/reflow.ts`, `dockUnified.test.ts` |
+| Window on its pin | A window sits on exactly one pin: its own program first (path, name, known aliases), then the closest name; a window Lens can't name is never matched by name | works | B-107, `src/dock/model.ts` (`assignWindows`), `dockModel.test.ts` |
 | Running indicators | One short dash = one window, three small dots = several, on every style and edge; focused = accent, urgent = attention colour | works | `src/dock/marks.ts`, `DockSurface.css` (`.dock-indicator.is-multi`) |
 | Launch animation | `launchAnimation` (none / lift / bounce / jelly) | works | Advanced › Launch animation |
 | Minimise feedback | `minimizeFeedback` | works | Advanced › Minimise pulse |
@@ -64,10 +67,21 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | Close a window from its thumbnail | × on the thumbnail | partly — needs real-PC check | #102 notes |
 | Window carousel (2+ windows) | Header (icon, name, n/N, ‹ ›); current window large with title + ×, neighbours peek; dots; wheel / ‹ › / ←→ / dots switch; click focuses. One native thumbnail over the centre tile, hidden as a slide starts and re-shown at rest. Card kept inside the usable area on every edge (`src/dock/placement.ts`) | works (headless); native handover needs a real-PC check | `src/dock/DockWindowCarousel.tsx`, `carousel.ts`, `dockUnified.test.ts` |
 
+### 4b. Dock keys (keyboard)
+| Feature | Sub | Status | Evidence |
+|---|---|---|---|
+| Move between icons | With an icon focused: the arrows along the Dock (←/→ on bottom and top, ↑/↓ on left and right), Home, End; stops at the ends | works (harness) | `src/dock/keys.ts`, `hooks/useDockKeys.ts`, `dockKeys.test.ts`, `dock-keys.mjs` |
+| Type to find | Typing focuses the best match (start of the name, then a word, then anywhere); other icons step back; a chip shows the text; the same letter again steps through; Backspace edits, Esc ends, a 0.9 s pause ends it | works (harness) | same; `DockFindChip.tsx` |
+| Window list from the keyboard | The arrow that points into the screen opens the focused app's card and moves into it; titles list: ↑/↓/Home/End, Enter switches, Delete closes, Esc returns focus to the icon; Tab out closes it | works (harness) | `DockHoverCard.tsx`, `listKeyAction` |
+| Titles list | Every window (scrolls past seven); was capped at seven | works (harness) | `DockHoverCard.tsx` |
+| Getting focus onto the Dock | Alt+Space (search) then Tab, a click, or Alt+1…9 | partly: there is no "focus the Dock" hotkey yet (needs a claim in the input service) | `input.rs` |
+
 ### 5. Context menu and Magic
 | Feature | Sub | Status | Evidence |
 |---|---|---|---|
-| App menu | Open, new window, pin/unpin, close, quit, keep on top, Quick Controls | works | `DockSurface.tsx` (`window_action_cmd`, `set_window_pinned_cmd`) |
+| App menu | Windows, Min / Max / Top, New window, Run as administrator, Lens ›, Open file location, divider, pin/unpin, Close; a real menu (roles, names), sentence case, kept on screen and under the Top Bar (B-110) | works | `src/dock/DockContextMenu.tsx`, `placement.ts` (`placeDockMenu`) |
+| Dock menu | Quick settings, Theme and look, Dock and Top Bar, Search, icon size (the size in use, B-109), Windows taskbar, Dock position, window previews, lock | works | `DockContextMenu.tsx`, `advanced.ts` (`pickMenuIconSize`) |
+| Failures | Anything the person did that Lens Core refuses is said beside the Dock and logged (B-106) | works (harness) | `src/dock/act.ts`, `DockNotice.tsx` |
 | Launcher pins | Pinned apps carry a small pin glyph in the Launcher grid and results; right-click offers Pin to Dock / Unpin from Dock | works | `src/surfaces/LauncherSurface.tsx` |
 | Lens › row | Hover 160 ms / → / Enter pans into the app's Magic actions; ← / Esc / Backspace back; first six + "More in Lens (n)…" | works | `src/magic/LensPan.tsx`, `lensPan.test.ts` (#84) |
 | Alt+right-click | Straight to the Magic window | works | #84 |
@@ -111,14 +125,16 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 1. **Done (PR #113).** ~~Expose the hidden Dock settings~~ in Dock & Bar › Advanced: magnification mode + range, launch animation, minimise feedback, labels, scroll to cycle windows, drop a file on an app, per-app icon size, separators. They already work in the Dock and in the control catalogue; people can't find them.
 2. **Done (PR #113), toggle only.** "Close pop-outs when the pointer leaves" for `func.autoClosePopouts`; the delay is still fixed in `watcher.rs` (needs a new setting).
 3. **Done (robustness wave).** ~~Left/right edge E2E~~: `dock-left`, `dock-right` in `tests/e2e/autohide.mjs`, every style.
-4. **Done (robustness wave).** ~~Swallowed errors~~ in `DockSurface.tsx` and `src/dock` go through `src/failsafe/calls.ts` (retried and logged; B-18 Dock share). A visible "couldn't" notice on the Dock is still open (the Dock has no toast host).
-5. **Split DockSurface.tsx** context menu into its own component file (it's the largest surface; easier reviews, fewer conflicts).
+4. **Done (robustness wave; notice in the Fable pass).** ~~Swallowed errors~~ in `DockSurface.tsx` and `src/dock` go through `src/failsafe/calls.ts` (retried and logged; B-18 Dock share). The visible "couldn't" notice is built (`DockNotice.tsx`, B-106).
+5. **Done (Fable pass).** ~~Split DockSurface.tsx~~: context menu, hover card, search panel, app item, model and hooks are their own files (see Rundown).
 
 ## Polish assessment
 - **Motion:** auto-hide, magnification and reorder are transform-only (#83, motion lint). Style switching still re-lays out the whole pill in one frame; a cross-fade of the pill on style change would hide the jump.
 - **Copy:** setting labels are plain. "Smart" auto-hide needs a one-line explanation ("Hides when a window touches the Dock").
 - **Visual parity:** each style has goldens; the attention state and live previews have parity scenes only for the default style.
-- **A11y:** app buttons named, menu keyboard paths done (B-16). Live-preview thumbnails need names and keyboard access (Tab into the preview row).
+- **A11y:** app buttons named, menu keyboard paths done (B-16), menu roles and names, Dock keys (Fable pass). The carousel and preview strip already take focus and arrows; the "Lens ›" row inside the menu is a plain button (owned by Magic).
+- **Feel:** every Dock, system-area, carousel and Launcher control declares a press weight (`data-weight`). Until PR #131 (`src/ui/press`) merges the Dock's own `:active` rules still draw the press; after it merges, remove `.dock-item:active` and friends so the primitives take over (no markup change needed). The filter pills' indicator does not slide yet (wants `src/ui/motion/indicator.ts` from #131).
+- **Colour:** the search panel still uses fixed category colours for file, folder and app glyphs (shared with the Command Palette's rows); moving them to tokens belongs with the Palette.
 - **Perf:** `dock-hover-sweep` and `dock-magnification` are in budget; previews create DWM thumbnails per hover — reuse them between hovers (#79 note).
 - **Consistency:** Dock pop-out × and Settings/Search × now share one component; the ThumbDesk badge and attention badge use different positions on Islands.
 
@@ -129,8 +145,11 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 | B-30 | Low | Desktop tab and edge shelf still resize their native windows | `DesktopFolderSurface.tsx`, `EdgeShelfSurface.tsx` |
 | B-31b | Low | A renderer that dies during a start-up window build waits for the build | `app/setup.rs` |
 | B-53 (fixed) | Med | Per-monitor bars + Follow the pointer: there is one Dock, so nothing fights over the reveal zone; the real fault was the extra Top Bars staying where they were built (two bars on one monitor, none on another). Fixed by `extra_topbar_plan`; needs a two-display real-PC check | `integration.rs`, `win_monitors.rs` tests |
-| suspected | Low | Islands style with attention badge + ThumbDesk badge on the same icon overlap | `DockSurface.css` badge rules |
-| suspected | Low | Live previews on a Dock placed left/right open beside the icon but the hover card's arrow is drawn for bottom | `win_previews.rs` placement, no left/right test |
+| B-106 – B-110 | — | Fixed in the Fable pass: silent actions, windows on the wrong pin, menu icon sizes, menu off screen (and B-108 in the Top Bar) | BUGS.md |
+| closed | Low | ~~Islands: attention badge + ThumbDesk badge overlap~~: an icon shows one badge at a time (text, then unread, then attention, then windows), now a pure rule | `model.ts` (`pickBadge`), `dockModel.test.ts` |
+| open | Low | Pinned folders are not drawn on the Dock (see the tree) | `DockSurface.tsx` |
+| open | Low | Not the Dock's: `src/failsafe/FailsafeNotices.tsx` loops over a null reply (unhandled rejection 2.5 s after load when `failsafe_take_notices` answers null); seen in the harness | `FailsafeNotices.tsx:22` |
+| closed | Low | ~~Hover card arrow drawn for bottom on left/right~~: the card has no arrow and is placed per edge (`placement.ts`, #117); `dock-keys.mjs` checks the card on all four edges | `placement.ts` |
 
 ## One idea to push to main
 **"Dock in 10 seconds" onboarding peek.** When the Dock style changes (setup, Settings, or Command "set dock style"), show a 3-step ghost tour on the real Dock for 10 seconds: hover an app (preview), right-click (Lens › Magic), press the gear (Quick settings). Uses existing surfaces; no new windows. Buildable now in `DockSurface.tsx` + a tiny state in `src/dock/tour.ts`.
@@ -150,6 +169,10 @@ The Dock is Lens's replacement for the Windows taskbar: one bar of pinned and ru
 6. Two monitors: Follow the pointer, push into each edge.
 7. Sleep and resume — the Dock is on the right monitor.
 8. Auto-hide always: leave a maximised browser in front, reveal and leave fast and slow.
+9. Dock keys: press Alt+Space, then Tab until a Dock icon has the ring. Arrows move; type "sp" and Spotify gets the ring while the others dim; ↑ on a running app opens its windows, ↓ moves, Enter switches, Esc returns to the icon.
+10. Run something as administrator (Task Manager): it shows as its own icon, not on WhatsApp or another pinned app.
+11. Left Dock: right-click the top icon and the empty Dock; both menus are fully on screen and under the Top Bar.
+12. Unplug or rename a pinned app's file, click it: "Couldn't open …" appears beside the Dock and goes.
 
 ## Suggested overhaul
 **Phase 1 — structure (1 week):** split `DockSurface.tsx` into `dock/Pill.tsx`, `dock/AppButton.tsx`, `dock/ContextMenu.tsx`, `dock/SearchEntry.tsx`, `dock/SystemArea.tsx`; one `useDockState` store; move all window calls behind `dock/api.ts` with failsafe reporting.
@@ -168,6 +191,13 @@ DO FIRST
  2 DONE #113  Toggle for func.autoClosePopouts (delay still fixed)
  3 DONE wave/robustness  E2E dock-left / dock-right, every style
  4 DONE wave/robustness  Swallowed catches in DockSurface → src/failsafe/calls.ts (B-18)
+ 5 DONE fable/dock-20261126  Split DockSurface.tsx; B-106..B-110; Dock keys; notice; flourishes
+LEFT (ranked)
+ 1 after #131 merges: drop the Dock's own :active rules, slide the filter-pill indicator
+ 2 a "focus the Dock" hotkey (input service claim) so Dock keys need no click or Alt+Space first
+ 3 pinned folders on the Dock (setting exists, nothing draws them)
+ 4 split DockSurface.css (2,270 lines) along the same seams; search-panel glyph colours to tokens
+ 5 the "in 10 seconds" tour; cross-fade on style change; reuse DWM thumbnails between hovers
 POLISH
  - cross-fade the pill on style change; name + keyboard for preview thumbnails
  - "Smart" auto-hide one-line explanation; badge positions on Islands

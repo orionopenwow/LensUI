@@ -158,7 +158,7 @@ Every interactive element declares one weight (`data-weight` or the UI-kit prop)
 #### Adopting the feel (areas not migrated yet: Dock, Lens Browser, other apps)
 
 1. Use the kit (`Button`, `IconButton`, `Toggle`, `Segmented`, `Chip`, `Card`) or put `data-weight="light|medium|heavy"` on each control (`usePress()` when it starts work, for `pending`). Delete the area's `:active` scale rules.
-2. The Dock and Lens Browser windows opt out of class-based weights (`data-press-classes="off"` in `main.tsx`) so their pass decides; remove that line when the pass lands. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
+2. The Dock and Lens Browser windows run in "own" press mode (`data-press-mode="own"` in `main.tsx`): no weighted press there yet, so it can't stack on their own `:active` rules (the Dock's controls already declare `data-weight`). Their pass deletes those `:active` rules and drops the `ownPress` line in `main.tsx`. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
 3. Pop-outs: add `data-opens="<surface label>"` to the button that opens one (Dock Quick settings, Settings and Search buttons still need it) and `useGrowFromTrigger(label, rootRef)` on the pop-out's root. In-window cards and panels use `growFrom(el, triggerRect)` / `returnTo(...)`.
 4. Lists: `staggerIn(items)` on arrival; content swaps: `data-swap="forward|back"` on a `.lens-swap` root, or `swapIn(el, dir)`.
 5. Add the area's files to `tools/polish/feel-migrated.txt` so the guardrail holds them.

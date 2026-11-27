@@ -32,8 +32,6 @@ export function pressableFrom(target: EventTarget | null): Element | null {
   if (!el) return null;
   if (el.closest("[data-no-press]")) return null;
   if (!el.hasAttribute("data-weight")) {
-    // Windows that adopt the press in their own pass (Dock, Lens Browser) opt out of class weights.
-    if (el.ownerDocument?.documentElement.dataset.pressClasses === "off") return null;
     const w = classWeight((s) => el.matches(s));
     if (!w) return null;
     el.setAttribute("data-weight", w);

@@ -32,8 +32,12 @@
   --lens-p-release-ease: var(--lens-ease-spring);
 }
 
+/* Windows in "own" press mode (html[data-press-mode="own"]: the Dock and Lens Browser until their
+   pass) never get a press here, since installPress() isn't run there; the rest-state rules below
+   are scoped out of them too, so this file changes nothing in those windows. */
+
 /* Disabled: no press, no hover lift, 40 % and the not-allowed cursor. */
-[data-weight]:is(:disabled, [aria-disabled="true"]) {
+:root:not([data-press-mode="own"]) [data-weight]:is(:disabled, [aria-disabled="true"]) {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -63,8 +67,8 @@
 }
 
 /* ── Toggles: the knob travels with the spring and squashes 6 % wide while pressed ──────────── */
-:is(.lens-toggle, .cc-toggle)[data-weight]::after,
-.qs-switch[data-weight] > .qs-switch-knob {
+:root:not([data-press-mode="own"]) :is(.lens-toggle, .cc-toggle)[data-weight]::after,
+:root:not([data-press-mode="own"]) .qs-switch[data-weight] > .qs-switch-knob {
   transition:
     transform var(--lens-press-release) var(--lens-ease-spring),
     scale var(--lens-press-in) var(--lens-ease-out),
@@ -84,14 +88,14 @@
 /* ── Sliders and fill bars: what is grabbed grows 1px while held (DESIGN.md §5.2) ──────────────
    Set data-grabbed on the thumb (or on a thumbless fill bar) and --lens-grab-size to its size in
    px across the growth axis; the fill itself follows the pointer 1:1 and settles with ease-out. */
-:root [data-grab] {
+:root:not([data-press-mode="own"]) [data-grab] {
   transition:
     scale var(--lens-press-release) var(--lens-ease-spring),
     background var(--lens-dur-fast) var(--lens-ease-out),
     border-color var(--lens-dur-fast) var(--lens-ease-out),
     box-shadow var(--lens-dur-fast) var(--lens-ease-out);
 }
-:root [data-grab][data-grabbed] {
+:root:not([data-press-mode="own"]) [data-grab][data-grabbed] {
   scale: 1 calc(1 + (2 * var(--lens-press-thumb-grow)) / var(--lens-grab-size, 20));
   transition:
     scale var(--lens-press-in) var(--lens-ease-out),
@@ -99,7 +103,7 @@
     border-color var(--lens-dur-fast) var(--lens-ease-out),
     box-shadow var(--lens-dur-instant) var(--lens-ease-out);
 }
-:root [data-grab="x"][data-grabbed] {
+:root:not([data-press-mode="own"]) [data-grab="x"][data-grabbed] {
   scale: calc(1 + (2 * var(--lens-press-thumb-grow)) / var(--lens-grab-size, 20)) 1;
 }
 

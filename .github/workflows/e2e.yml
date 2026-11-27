@@ -118,6 +118,10 @@ jobs:
         if: always()
         run: node tools/robust/dock-dismiss.mjs
 
+      - name: Dock keys, menus, notice and flourishes
+        if: always()
+        run: node tools/robust/dock-keys.mjs
+
       - name: Dock auto-hide slides (no one-frame jumps)
         if: always()
         run: node tools/robust/dock-slide.mjs
@@ -176,6 +180,7 @@ jobs:
             tools/soak/out/
             tools/a11y/out/
             tools/robust/out/theme-rig/
+            tools/robust/out/dock-scenes/
             tools/hyper/out/
             tools/visual/out/report.json
             tools/visual/out/diff/

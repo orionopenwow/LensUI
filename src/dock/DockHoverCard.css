@@ -1,0 +1,15 @@
+/* The titles list in the Dock's hover card (DockHoverCard.tsx). */
+.dock-hover-card .dock-win-row-icon { flex-shrink: 0; }
+.dock-hover-card img.dock-win-row-icon { width: 14px; height: 14px; object-fit: contain; }
+.dock-hover-card .dock-win-row-icon.is-fallback { color: var(--lens-fg-secondary); }
+/* Every window is listed; past seven the list scrolls inside the card. */
+.dock-hover-card .dock-win-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 216px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+/* Keyboard focus on a row reads like hover, plus the ring from global.css. */
+.dock-hover-card .dock-win-row:focus-within { background: rgb(var(--lens-ink) / 0.08); }

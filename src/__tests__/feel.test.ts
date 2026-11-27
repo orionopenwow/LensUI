@@ -392,7 +392,10 @@ describe("feel guardrail (migrated surfaces)", () => {
     // Only the Dock's context menu keeps its own press until the Dock's pass.
     expect(actives).toEqual([".dock-ctx-item"]);
     // The legacy :active fallback skips anything that declares a weight.
-    expect(readFileSync(join(ROOT, "src/styles/motion.css"), "utf8")).toContain("[data-no-press], [data-weight])):where(:active)");
+    expect(readFileSync(join(ROOT, "src/styles/motion.css"), "utf8")).toContain(':where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight]))');
+    // Windows in "own" press mode (Dock, Lens Browser, until their pass) get no weighted press.
+    const main = readFileSync(join(ROOT, "src/main.tsx"), "utf8");
+    expect(main).toMatch(/if \(ownPress\) document\.documentElement\.dataset\.pressMode = "own";\s*else installPress\(\);/);
   });
 
   test("kit components declare their weights", () => {
