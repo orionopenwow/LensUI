@@ -45,7 +45,7 @@ export function homeRows(s: DockSearchSources): DockHomeRow[] {
     ...s.windows.slice(0, 3).map((w) => ({
       id: `rr-w-${w.hwnd}`,
       title: w.title || appName(w),
-      sub: `${appName(w)} · Running Window`,
+      sub: `${appName(w)} · Window`,
       badge: w.isFocused ? "Active" : "Open",
       iconUrl: w.iconDataUrl as string | null | undefined,
       isDir: false,
@@ -69,7 +69,7 @@ export function browseRows(s: DockSearchSources): DockResultRow[] {
     ...s.windows.map((w) => ({
       id: `sw-${w.hwnd}`,
       title: w.title,
-      subtitle: `${appName(w)} · Running Window`,
+      subtitle: `${appName(w)} · Window`,
       badge: w.isFocused ? "Active" : "Open",
       kind: "recent" as const,
       iconUrl: w.iconDataUrl as string | null | undefined,

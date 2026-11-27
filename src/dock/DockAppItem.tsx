@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import type { RunningWindow } from "../types/lens";
 import { windowMarkClass } from "./marks";
 import { dockBadgeLabel, pickBadge } from "./model";
+import "./DockAppItem.css";
 
 export interface DockItemView {
   /** Drag / hover / reflow key ("pin-<id>" or "unpin-<process>"). */
@@ -52,6 +53,13 @@ export interface DockAppItemProps {
   onAuxClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
+const BADGE_CLASS = {
+  text: "dock-notif-badge dock-text-badge",
+  unread: "dock-notif-badge",
+  attention: "dock-notif-badge dock-attention-badge",
+  windows: "dock-instance-badge",
+} as const;
+
 export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pulsing, showLabels, isBar, onWheel, onPointerDown, onHover, onLeave, onCloseAll, onActivate, onContextMenu, onAuxClick }: DockAppItemProps) {
   const { wins, primaryWin, urgent } = view;
   const pinned = view.pinnedId !== undefined;
@@ -75,6 +83,7 @@ export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pul
         <button
           type="button"
           className="dock-close-badge"
+          data-weight="medium"
           aria-label={`Close ${view.closeName}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
@@ -88,24 +97,18 @@ export function DockAppItem({ view, dragging, dragOver, fileDrop, launching, pul
       <button
         type="button"
         aria-label={`${view.ariaName}${state}${dockBadgeLabel(view.unread, wins.length)}`}
+        data-weight="medium"
         className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launching ? "is-launching" : ""} ${pulsing ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
         onClick={onActivate}
         onContextMenu={onContextMenu}
         onAuxClick={onAuxClick}
       >
         {view.icon}
-        {badge?.kind === "text" ? (
-          <span className="dock-notif-badge dock-text-badge" aria-hidden="true">
+        {/* Keyed by its text: a count that changes rolls in (DockAppItem.css), it doesn't flick. */}
+        {badge && (
+          <span key={badge.text} className={`${BADGE_CLASS[badge.kind]} dock-badge-roll`} aria-hidden="true">
             {badge.text}
           </span>
-        ) : badge?.kind === "unread" ? (
-          <span className="dock-notif-badge" aria-hidden="true">
-            {badge.text}
-          </span>
-        ) : badge?.kind === "attention" ? (
-          <span className="dock-notif-badge dock-attention-badge" aria-hidden="true">{badge.text}</span>
-        ) : (
-          badge?.kind === "windows" && <span className="dock-instance-badge" aria-hidden="true">{badge.text}</span>
         )}
         {showLabels && isBar && <span className="dock-label">{view.barLabel}</span>}
       </button>

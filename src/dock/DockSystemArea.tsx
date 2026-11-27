@@ -76,6 +76,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const clockBtn = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-clock"
       aria-label={`${longDate}, ${fullTime}. Open calendar`}
       onClick={() => openQs("calendar")}
@@ -87,6 +88,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const stackedClockBtn = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-clock dock-sys-clock-stacked"
       aria-label={`${longDate}, ${two.time}. Open calendar`}
       onClick={() => openQs("calendar")}
@@ -98,6 +100,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const bell = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-icon dock-sys-bell"
       aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
       onClick={() => openQs("notifications")}
@@ -122,6 +125,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
           {!trayHost && (
             <button
               type="button"
+              data-weight="medium"
               className="dock-sys-btn dock-sys-icon"
               aria-label="Show system tray for a few seconds"
               onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(logFail("Dock", "show the system tray"))}
@@ -134,8 +138,9 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
       )}
       <button
         type="button"
+        data-weight="medium"
         className="dock-sys-btn dock-sys-quick"
-        aria-label={`Quick Settings: Wi-Fi, volume${hasBattery ? `, battery ${battery?.percent} percent` : ""}`}
+        aria-label={`Quick settings: Wi-Fi, volume${hasBattery ? `, battery ${battery?.percent} percent` : ""}`}
         onClick={() => openQs("quick")}
       >
         <Wifi size={iconPx} strokeWidth={2.4} />

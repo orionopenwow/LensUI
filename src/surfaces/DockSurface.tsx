@@ -46,6 +46,7 @@ import { DockSystemArea } from "../dock/DockSystemArea";
 import { appLabel, dockDo, dockFail } from "../dock/act";
 import { menuIconSize, pickMenuIconSize } from "../dock/advanced";
 import { DockAppItem } from "../dock/DockAppItem";
+import { DockFindChip } from "../dock/DockFindChip";
 import { DockNotice } from "../dock/DockNotice";
 import { DockContextMenu } from "../dock/DockContextMenu";
 import { DockHoverCard, type DockCardMode } from "../dock/DockHoverCard";
@@ -53,6 +54,7 @@ import { FallbackAppIcon } from "../dock/DockIcons";
 import { DockSearchDrawer } from "../dock/DockSearchDrawer";
 import { openMagicForDockItem } from "../dock/LensMenuHost";
 import { useDockBadges } from "../dock/hooks/useDockBadges";
+import { useDockKeys } from "../dock/hooks/useDockKeys";
 import { useFileDrop } from "../dock/hooks/useFileDrop";
 import { useMagnification } from "../dock/hooks/useMagnification";
 import { useMinimizePulse } from "../dock/hooks/useMinimizePulse";
@@ -450,6 +452,38 @@ export const DockSurface: React.FC = () => {
     void setDockMenuOpen(true);
   };
 
+  // Dock keys (src/dock/keys.ts): arrows between icons, type to find an app, and the arrow that
+  // points into the screen opens the focused app's window list and moves into it.
+  const itemInfoRef = useRef(new Map<string, { title: string; isSpotify: boolean; wins: RunningWindow[]; iconUrl?: string | null }>());
+  const cardOpenerRef = useRef<HTMLElement | null>(null);
+  const [cardFocusTick, setCardFocusTick] = useState(0);
+  const dockKeys = useDockKeys(pillRef, normalizeEdge((config?.dock as DockExtras | undefined)?.position), (icon) => {
+    const wrap = icon.closest<HTMLElement>("[data-dock-drag-key]");
+    const key = wrap?.dataset.dockDragKey;
+    const info = key ? itemInfoRef.current.get(key) : undefined;
+    if (!wrap || !key || !info || (!info.isSpotify && info.wins.length === 0)) return false;
+    cardOpenerRef.current = icon;
+    openHoverCardForItem(wrap, key, info.title, info.isSpotify, info.wins, info.iconUrl, true);
+    setCardFocusTick((n) => n + 1);
+    return true;
+  });
+  // Opened from the keyboard: once the card is in the page, focus goes to its first window.
+  useEffect(() => {
+    if (!cardFocusTick) return;
+    const id = requestAnimationFrame(() => {
+      (hoverLinger.ref.current as HTMLElement | null)?.querySelector<HTMLElement>('button:not([tabindex="-1"]), [tabindex="0"]')?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardFocusTick, hoverLinger.mounted]);
+  const closeCard = (refocus: boolean) => {
+    setHoverCard(null);
+    if (!ctxMenu && !dockSearchOpenRef.current) void setDockMenuOpen(false);
+    const opener = cardOpenerRef.current;
+    cardOpenerRef.current = null;
+    if (refocus && opener?.isConnected) opener.focus({ preventScroll: true });
+  };
+
   const triggerLaunchAnim = (id: string) => {
     setLaunchingId(null);
     requestAnimationFrame(() => {
@@ -703,7 +737,8 @@ export const DockSurface: React.FC = () => {
     ].join(","),
     () => pillRef.current?.querySelector(".dock-icons-row"),
     isVertical ? "y" : "x",
-    !dragKey && !dragPinOrder && !dockSearchOpen && !dockSearchClosing && dockVisible
+    !dragKey && !dragPinOrder && !dockSearchOpen && !dockSearchClosing && dockVisible,
+    edge
   );
 
   const captureReorderFlip = () => {
@@ -932,6 +967,7 @@ export const DockSurface: React.FC = () => {
     : browseResults(searchSources, dockFilterTab);
 
   const showHomeGrid = qLower === "" && dockFilterTab === "all";
+  itemInfoRef.current.clear();
 
   return (
     <div
@@ -1021,6 +1057,7 @@ export const DockSurface: React.FC = () => {
               prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
             );
           }}
+          onBack={closeCard}
           musicCard={<DockMusicCard edge={edge} fallbackTitle={shownCard.windows[0]?.title || "Spotify"} />}
         />
       )}
@@ -1037,7 +1074,10 @@ export const DockSurface: React.FC = () => {
               ? { width: lockedDockWidth, minWidth: lockedDockWidth }
               : undefined
         }
-        aria-label="Lens Grounded Dock"
+        aria-label="Dock"
+        data-finding={dockKeys.find ? "" : undefined}
+        onKeyDown={dockKeys.onKeyDown}
+        onBlur={dockKeys.onBlur}
         onMouseMove={magnification !== "off" ? (e) => mag.apply(e.clientX, e.clientY) : undefined}
         onMouseLeave={magnification !== "off" ? mag.clear : undefined}
         onContextMenu={(e) => {
@@ -1049,7 +1089,7 @@ export const DockSurface: React.FC = () => {
           }
         }}
       >
-        {/* TIER 1: In-Dock Expanded Launcher Drawer (Directly above the single unified Dock row!) */}
+        {/* The search panel, above the Dock row. */}
         {dockSearchOpen && askMode.mode !== "ask" && (
           <DockSearchDrawer
             closing={dockSearchClosing}
@@ -1078,7 +1118,7 @@ export const DockSurface: React.FC = () => {
           />
         )}
 
-        {/* TIER 2: Single Unified Grounded Dock Row — original Magnifying Glass glides open IN-PLACE into the search input! */}
+        {/* The Dock row. The search icon opens in place into the search field. */}
         {isBar && <div className="dock-bar-spacer" aria-hidden="true" />}
         <div className="dock-icons-row">
           {showLauncherButton && (
@@ -1087,7 +1127,8 @@ export const DockSurface: React.FC = () => {
               <button
                 type="button"
                 className={`dock-item dock-launcher-btn ${launchingId === "launcher" ? "is-launching" : ""}`}
-                aria-label={startOpensMagic ? "Open Magic Start" : "Open Launcher"}
+                data-weight="medium"
+                aria-label={startOpensMagic ? "Magic Start" : "Launcher"}
                 onClick={() => {
                   triggerLaunchAnim("launcher");
                   if (startOpensMagic) {
@@ -1103,7 +1144,7 @@ export const DockSurface: React.FC = () => {
             </div>
           )}
           <div className={`dock-item-wrap dock-search-slot ${dockSearchOpen ? "is-open" : ""} ${dockSearchClosing ? "is-closing" : ""}`} data-reflow-key="search">
-            {!dockSearchOpen && <span className="dock-tooltip">Lens Search (Alt+Space)</span>}
+            {!dockSearchOpen && <span className="dock-tooltip">Search (Alt+Space)</span>}
             <div
               className={`dock-search-inline ${dockSearchOpen ? "is-open" : ""}`}
               onClick={() => {
@@ -1118,7 +1159,9 @@ export const DockSurface: React.FC = () => {
               <button
                 type="button"
                 className={`dock-search-mag-btn ${dockSearchOpen ? "" : "dock-item"}`}
-                aria-label="Toggle Lens Search"
+                data-weight="medium"
+                aria-label="Search"
+                aria-expanded={dockSearchOpen}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (dockSearchOpenRef.current) {
@@ -1136,6 +1179,7 @@ export const DockSurface: React.FC = () => {
                   <input
                     ref={searchInputRef}
                     className="dock-search-glide-input"
+                    aria-label={askMode.mode === "ask" ? "Ask Lens" : "Search apps, files and settings"}
                     data-guide-id="dock.search"
                     value={dockSearchQuery}
                     placeholder={askMode.mode === "ask" ? "Ask anything…" : "Search…"}
@@ -1170,6 +1214,8 @@ export const DockSurface: React.FC = () => {
                   <button
                     type="button"
                     className="dock-search-esc"
+                    data-weight="light"
+                    aria-label="Close search"
                     onClick={(e) => {
                       e.stopPropagation();
                       closeInDockLauncher();
@@ -1258,6 +1304,7 @@ export const DockSurface: React.FC = () => {
             app.name.toLowerCase().includes("spotify") ||
             app.path.toLowerCase().includes("spotify") ||
             wins.some((w) => w.processName.toLowerCase().includes("spotify"));
+          itemInfoRef.current.set(itemKey, { title: app.name, isSpotify, wins, iconUrl: iconSrc });
           const launch = () => {
             if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
             void dockDo("launch_app_cmd", { path: app.path }, `open ${app.name}`);
@@ -1334,6 +1381,7 @@ export const DockSurface: React.FC = () => {
           const itemKey = `unpin-${key}`;
           const isSpotify = primaryWin.processName.toLowerCase().includes("spotify");
           const cleanLabel = primaryWin.processName.replace(/\.exe$/i, "");
+          itemInfoRef.current.set(itemKey, { title: cleanLabel, isSpotify, wins, iconUrl: primaryWin.iconDataUrl });
           return (
             <DockAppItem
               key={key}
@@ -1396,14 +1444,16 @@ export const DockSurface: React.FC = () => {
 
         <div className="dock-divider" data-reflow-key="tail-divider" />
 
-        {/* Live Computer Stats & Obsidian Task Manager Graph Icon (left of Settings gear!) */}
+        {/* Plug-in icons, then System and tasks and the Settings gear. */}
         <PluginSlot slot="dock" />
 
         <div className="dock-item-wrap">
-          <span className="dock-tooltip">System Stats &amp; Task Manager</span>
+          <span className="dock-tooltip">System and tasks</span>
           <button
             type="button"
             aria-label="System and tasks"
+            data-weight="medium"
+            aria-expanded={settingsOpen && activeSettingsTab === "monitor"}
             className={`dock-item ${settingsOpen && activeSettingsTab === "monitor" ? "is-running" : ""} ${launchingId === "monitor" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("monitor");
@@ -1417,17 +1467,18 @@ export const DockSurface: React.FC = () => {
               }
             }}
           >
-            <Activity size={19} strokeWidth={2.15} color="#34D399" />
+            <Activity size={19} strokeWidth={2.15} className="dock-monitor-glyph" />
           </button>
           {settingsOpen && activeSettingsTab === "monitor" && <span className="dock-indicator focused" />}
         </div>
 
-        {/* Unified Dock-Wide Windows Settings & Lens Control Center Gear (way-right of Dock!) */}
-        <div className="dock-item-wrap">
-          <span className="dock-tooltip">Settings &amp; Control Center</span>
+                <div className="dock-item-wrap">
+          <span className="dock-tooltip">Settings</span>
           <button
             type="button"
             aria-label="Settings"
+            data-weight="medium"
+            aria-expanded={settingsOpen && activeSettingsTab !== "monitor"}
             className={`dock-item ${settingsOpen && activeSettingsTab !== "monitor" ? "is-running" : ""} ${launchingId === "settings" ? "is-launching" : ""}`}
             onClick={() => {
               triggerLaunchAnim("settings");
@@ -1480,6 +1531,7 @@ export const DockSurface: React.FC = () => {
           </>
         )}
         <DockNotice />
+        <DockFindChip find={dockKeys.find} />
         {isBar && systemInDock && (
           <DockSystemArea
             trayHost={config.func.trayHost ?? false}

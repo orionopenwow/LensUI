@@ -19,7 +19,8 @@
   gap: 7px;
   padding: 7px 11px;
   border-radius: 10px;
-  background: var(--lens-pack-base, var(--lens-bg));
+  /* Same fallback as tokens.css gives packs that set no base (Obsidian). */
+  background: var(--lens-pack-base, #08080b);
   border: 1px solid rgb(var(--lens-ink) / 0.14);
   box-shadow: 0 8px 22px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)));
   color: var(--lens-fg);
@@ -29,3 +30,6 @@
 }
 .dock-notice > svg { flex-shrink: 0; color: var(--lens-fg-secondary); }
 .dock-notice.is-error > svg { color: var(--lens-danger); }
+/* A name tooltip under the pointer steps aside while the notice is up (they share the spot). */
+.dock-pill:has(.dock-notice) .dock-tooltip,
+.dock-pill:has(.dock-find-chip) .dock-tooltip { opacity: 0; }

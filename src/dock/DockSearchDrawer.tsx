@@ -49,8 +49,8 @@ export function DockSearchDrawer({
 }: DockSearchDrawerProps) {
   return (
           <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
-            <FlyoutClose pinned label="Close Search" onClose={closeInDockLauncher} />
-            <div className="pal-filter-bar dsd-filters">
+            <FlyoutClose pinned label="Close search" onClose={closeInDockLauncher} />
+            <div className="pal-filter-bar dsd-filters" role="tablist" aria-label="What to list">
               {(
                 [
                   { id: "all", label: "Overview", count: null, color: "#38BDF8", icon: Sparkles },
@@ -66,6 +66,9 @@ export function DockSearchDrawer({
                   <button
                     key={f.id}
                     type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    data-weight="light"
                     className={`pal-filter-pill ${isActive ? "active" : ""}`}
                     onClick={() => pickFilterTab(f.id)}
                   >
@@ -91,14 +94,15 @@ export function DockSearchDrawer({
                   <div className="dock-launcher-card-head">
                     <span className="dock-launcher-card-title">
                       <FileText size={15} strokeWidth={2.4} color="#60A5FA" className="dsd-fixed" />
-                      <span>Recent Files &amp; Active Windows</span>
+                      <span>Recent files and windows</span>
                     </span>
                     <button
                       type="button"
+                      data-weight="light"
                       className="dock-launcher-card-link"
                       onClick={() => setDockFilterTab("files")}
                     >
-                      All Files →
+                      All files
                     </button>
                   </div>
                   <div className="pal-recent-list dsd-recent-list">
@@ -106,6 +110,7 @@ export function DockSearchDrawer({
                       <button
                         key={item.id}
                         type="button"
+                        data-weight="light"
                         className={`pal-recent-row dsd-recent-row ${idx === 0 ? "first" : ""}`}
                         onClick={item.run}
                       >
@@ -140,14 +145,15 @@ export function DockSearchDrawer({
                     <div className="dock-launcher-card-head">
                       <span className="dock-launcher-card-title">
                         <Folder size={15} strokeWidth={2.4} color="#FBBF24" className="dsd-fixed" />
-                        <span>Quick Folders</span>
+                        <span>Quick folders</span>
                       </span>
                       <button
                         type="button"
-                        className="dock-launcher-card-link"
+                        data-weight="light"
+                      className="dock-launcher-card-link"
                         onClick={() => setDockFilterTab("folders")}
                       >
-                        Folders →
+                        All folders
                       </button>
                     </div>
                     <div className="pal-folder-grid dsd-folder-grid">
@@ -155,6 +161,7 @@ export function DockSearchDrawer({
                         <button
                           key={folder.path}
                           type="button"
+                          data-weight="medium"
                           className="pal-folder-card dsd-folder-card"
                           onClick={() => openFolder(folder.path)}
                         >
@@ -175,14 +182,15 @@ export function DockSearchDrawer({
                     <div className="dock-launcher-card-head">
                       <span className="dock-launcher-card-title">
                         <AppWindow size={15} strokeWidth={2.4} color="#A78BFA" className="dsd-fixed" />
-                        <span>Installed Apps</span>
+                        <span>Installed apps</span>
                       </span>
                       <button
                         type="button"
-                        className="dock-launcher-card-link"
+                        data-weight="light"
+                      className="dock-launcher-card-link"
                         onClick={() => setDockFilterTab("apps")}
                       >
-                        All ({installedApps.length}) →
+                        All {installedApps.length} apps
                       </button>
                     </div>
                     <div className="pal-recent-list dsd-app-list">
@@ -190,6 +198,7 @@ export function DockSearchDrawer({
                         <button
                           key={app.path}
                           type="button"
+                          data-weight="light"
                           className="pal-recent-row dsd-app-row"
                           onClick={() => openApp(app)}
                         >
@@ -213,6 +222,7 @@ export function DockSearchDrawer({
                     <button
                       key={item.id}
                       type="button"
+                      data-weight="light"
                       className={`pal-result-row dsd-result-row ${idx === dockSelectedIdx ? "selected" : ""}`}
                       onMouseEnter={() => setDockSelectedIdx(idx)}
                       onClick={item.run}
@@ -245,7 +255,7 @@ export function DockSearchDrawer({
                   ))}
                   {filteredResults.length === 0 && (
                     <div className="dsd-empty">
-                      No matching apps, files, or folders.
+                      Nothing here matches. Try fewer letters, or another filter.
                     </div>
                   )}
                 </div>

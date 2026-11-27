@@ -71,3 +71,24 @@
   flex-shrink: 0;
 }
 .dock-stage .dock-launcher-drawer .dsd-empty { padding: 48px; text-align: center; color: var(--lens-fg-muted); font-size: 13.5px; }
+
+/* A row with no age to show has no pill. */
+.dock-stage .dock-launcher-drawer .dsd-age:empty { display: none; }
+
+/* The home grid arrives in order: the first six rows, 30 ms apart, then the rest together
+ * (DESIGN §5.3). Opacity and transform only; reduced motion sets the stagger to 0 and 1 ms. */
+@keyframes dsd-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(-n + 6) {
+  animation: dsd-row-in var(--lens-dur-base) var(--lens-ease-out) both;
+  animation-delay: calc(var(--lens-stagger) * (var(--dsd-i, 1) - 1));
+}
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(2) { --dsd-i: 2; }
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(3) { --dsd-i: 3; }
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(4) { --dsd-i: 4; }
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(5) { --dsd-i: 5; }
+.dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(6) { --dsd-i: 6; }
