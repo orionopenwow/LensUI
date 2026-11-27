@@ -240,7 +240,7 @@ describe("class weights (shared classes inherit the feel)", () => {
     expect(classWeight(has(["cc-nav-btn"]))).toBe("light");
     expect(classWeight(has(["qs-tile"]))).toBe("medium");
     expect(classWeight(has(["dock-item"]))).toBeNull();
-    // The Dock and Lens Browser adopt in their own pass.
+    // The Dock and Lens Browser declare data-weight on their own controls instead.
     expect(CLASS_WEIGHTS.some(([s]) => /dock|browser|lb-/.test(s))).toBe(false);
   });
 });
@@ -393,7 +393,7 @@ describe("feel guardrail (migrated surfaces)", () => {
     expect(actives).toEqual([]);
     // The legacy :active fallback skips anything that declares a weight.
     expect(readFileSync(join(ROOT, "src/styles/motion.css"), "utf8")).toContain(':where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight]))');
-    // Windows in "own" press mode (Lens Browser, until its pass) get no weighted press.
+    // A window in "own" press mode (none at present) gets no weighted press.
     const main = readFileSync(join(ROOT, "src/main.tsx"), "utf8");
     expect(main).toMatch(/if \(ownPress\) document\.documentElement\.dataset\.pressMode = "own";\s*else installPress\(\);/);
   });

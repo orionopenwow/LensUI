@@ -5,7 +5,8 @@
 // accent sits on, without being washed out to plain white or black. Otherwise the theme accent is
 // used (also lifted to 4.5:1). Text on an accent fill gets whichever of near-black or near-white
 // reads best, and it is checked too.
-import { contrast, ensureContrast, hexToRgb, mix, rgbToHex, type RGB } from "./model";
+import { contrast, ensureContrast, hexToRgb, luminance, mix, rgbToHex, type RGB } from "./model";
+import type { PlainInk, ScopedLook } from "../themes/accentTokens";
 
 export interface Tint {
   /** The accent (hex). */
@@ -83,3 +84,19 @@ export function heroBackgrounds(palette: { color: RGB; weight: number }[], base:
   const v = vivid ?? a;
   return [rgbToHex(mix(b, v, 0.62)), rgbToHex(mix(b, a, 0.38)), rgbToHex(b)];
 }
+
+/**
+ * The look the accent tokens are computed for on a tinted page (src/themes/accentTokens.ts,
+ * scopedAccentVariables): the tint as the accent, on the two lightest of the backgrounds it was
+ * checked against (the hardest for a light accent on a dark page, and the other way round on a
+ * light one). The artwork tint feeds the tokens; it never bypasses them.
+ */
+export function tintLook(tint: Tint, backgrounds: string[], scheme: "light" | "dark"): ScopedLook {
+  const bgs = backgrounds.filter((b) => hexToRgb(b));
+  const byLight = [...(bgs.length ? bgs : ["#09090B"])].sort((a, b) => luminance(hexToRgb(b)!) - luminance(hexToRgb(a)!));
+  const order = scheme === "dark" ? byLight : byLight.reverse();
+  return { accent: tint.accent, surface: order[0], card: order[1] ?? order[0], scheme };
+}
+
+/** The tint's own monochrome ink, for when the tokens show no colour (a grey tint, High contrast). */
+export const tintInk = (tint: Tint): PlainInk => ({ ui: tint.accent, onUi: tint.onAccent });

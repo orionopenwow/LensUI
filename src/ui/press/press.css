@@ -40,9 +40,9 @@
   --lens-p-release-ease: var(--lens-ease-spring);
 }
 
-/* Windows in "own" press mode (html[data-press-mode="own"]: the Dock and Lens Browser until their
-   pass) never get a press here, since installPress() isn't run there; the rest-state rules below
-   are scoped out of them too, so this file changes nothing in those windows. */
+/* Windows in "own" press mode (html[data-press-mode="own"]; none at present, see main.tsx) never
+   get a press here, since installPress() isn't run there; the rest-state rules below are scoped
+   out of them too, so this file changes nothing in those windows. */
 
 /* Disabled: no press, no hover lift, 40 % and the not-allowed cursor. */
 html:not([data-press-mode="own"]) [data-weight]:disabled,

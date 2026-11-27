@@ -262,37 +262,30 @@
   color: var(--lens-fg);
   background: transparent;
   cursor: pointer;
-  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-instant) var(--lens-ease-out);
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 
 .dmc-btn:hover {
   background: rgb(var(--lens-ink) / 0.1);
 }
 
-.dmc-btn:active {
-  transform: scale(0.92);
-}
-
+/* Presses come from the shared press (data-weight, src/ui/press): no :active scale here. */
 .dmc-btn:focus-visible {
   outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring);
   outline-offset: 1px;
 }
 
+/* Play / pause is the card's one main action: the accent fill and its ink (accentTokens.ts). */
 .dmc-play {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 
 .dmc-play:hover {
-  background: var(--lens-fg);
-  transform: scale(1.05);
-}
-
-.dmc-play:active {
-  transform: scale(0.94);
+  background: var(--lens-accent-fill);
 }
 
 /* Immersive (only while Lens Music is on): opens Now Playing full screen on this monitor. */

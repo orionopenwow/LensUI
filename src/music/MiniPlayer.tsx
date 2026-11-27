@@ -24,7 +24,7 @@ export const MiniPlayer: React.FC<Props> = ({ variant = "dock", onOpen, fixed })
   const art = now.artwork || placeholderArt(now.trackKey || now.title, 96);
   return (
     <div className={`lm-mini lm-mini-${variant}`} role="group" aria-label={`Now playing: ${s.label}`}>
-      <button type="button" className="lm-mini-open" onClick={onOpen} aria-label="Open Now Playing">
+      <button type="button" data-weight="medium" className="lm-mini-open" onClick={onOpen} aria-label="Open Now Playing">
         <img className="lm-mini-art" src={art} alt="" />
         <span className={`lm-mini-label ${s.marquee ? "lm-marquee" : ""}`}>
           <span>{s.label}</span>
@@ -32,10 +32,10 @@ export const MiniPlayer: React.FC<Props> = ({ variant = "dock", onOpen, fixed })
         </span>
       </button>
       {variant === "dock" && <span className="lm-mini-source lm-mono">{s.source}</span>}
-      <button type="button" className="lm-icon-btn" aria-label={s.icon === "pause" ? "Pause" : "Play"} disabled={!s.canToggle} onClick={() => music.control("play_pause")}>
+      <button type="button" data-weight="medium" className="lm-icon-btn" aria-label={s.icon === "pause" ? "Pause" : "Play"} disabled={!s.canToggle} onClick={() => music.control("play_pause")}>
         {s.icon === "pause" ? <Pause size={14} /> : <Play size={14} />}
       </button>
-      <button type="button" className="lm-icon-btn" aria-label="Next" disabled={!now.controls.next} onClick={() => music.control("next")}>
+      <button type="button" data-weight="medium" className="lm-icon-btn" aria-label="Next" disabled={!now.controls.next} onClick={() => music.control("next")}>
         <SkipForward size={14} />
       </button>
       <div className="lm-mini-scrub" aria-hidden={!now.controls.seek}>

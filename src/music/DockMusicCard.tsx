@@ -265,24 +265,24 @@ export const DockMusicCard: React.FC<Props> = ({ edge, fallbackTitle }) => {
 
       <div className="dmc-controls">
         {prefs.musicOn ? (
-          <button type="button" className="dmc-btn dmc-side" aria-label="Up next" onClick={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})}>
+          <button type="button" data-weight="medium" className="dmc-btn dmc-side" aria-label="Up next" onClick={() => invoke("open_surface", { label: "nowplaying" }).catch(() => {})}>
             <ListMusic size={16} strokeWidth={2.4} />
           </button>
         ) : (
           <span className="dmc-side" aria-hidden="true" />
         )}
         <div className="dmc-transport">
-          <button type="button" className="dmc-btn" aria-label="Previous" onClick={() => control("prev")}>
+          <button type="button" data-weight="medium" className="dmc-btn" aria-label="Previous" onClick={() => control("prev")}>
             <SkipBack size={16} fill="currentColor" strokeWidth={2} />
           </button>
-          <button type="button" className="dmc-btn dmc-play" aria-label={playing ? "Pause" : "Play"} onClick={() => control("play_pause")}>
+          <button type="button" data-weight="heavy" className="dmc-btn dmc-play" aria-label={playing ? "Pause" : "Play"} onClick={() => control("play_pause")}>
             {playing ? <Pause size={18} fill="currentColor" strokeWidth={2} /> : <Play size={18} fill="currentColor" strokeWidth={2} />}
           </button>
-          <button type="button" className="dmc-btn" aria-label="Next" onClick={() => control("next")}>
+          <button type="button" data-weight="medium" className="dmc-btn" aria-label="Next" onClick={() => control("next")}>
             <SkipForward size={16} fill="currentColor" strokeWidth={2} />
           </button>
         </div>
-        <button type="button" className="dmc-btn dmc-side" aria-label="Search Spotify" onClick={() => invoke("music_open_search").catch(() => {})}>
+        <button type="button" data-weight="medium" className="dmc-btn dmc-side" aria-label="Search Spotify" onClick={() => invoke("music_open_search").catch(() => {})}>
           <Search size={16} strokeWidth={2.4} />
         </button>
       </div>

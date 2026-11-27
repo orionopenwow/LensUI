@@ -53,7 +53,7 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
   return (
     <div className="lb-seg" role="radiogroup" aria-label={label}>
       {options.map(([v, text, icon]) => (
-        <button key={v} role="radio" aria-checked={value === v} className={value === v ? "is-on" : ""} onClick={() => onChange(v)}>
+        <button data-weight="medium" key={v} role="radio" aria-checked={value === v} className={value === v ? "is-on" : ""} onClick={() => onChange(v)}>
           {icon}
           {text}
         </button>
@@ -134,7 +134,7 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
           {PRESETS.map((p) => {
             const on = (a.accent ?? null) === p.accent && (!p.scheme || p.scheme === a.scheme);
             return (
-              <button
+              <button data-weight="medium"
                 key={p.id}
                 role="radio"
                 aria-checked={on}
@@ -185,8 +185,8 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
           ))}
         </div>
         <footer className="lb-make-foot">
-          <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => onChange(DEFAULT_APPEARANCE)}>Reset <Key k="R" /></button>
-          <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(oops("open Lens themes"))}>
+          <button data-weight="medium" className="lb-btn lb-btn-sm lb-btn-ghost" onClick={() => onChange(DEFAULT_APPEARANCE)}>Reset <Key k="R" /></button>
+          <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void invoke("open_dock_popout_tab_cmd", { tab: "theme" }).catch(oops("open Lens themes"))}>
             <Palette size={13} /> Customise <Key k="⏎" />
           </button>
         </footer>

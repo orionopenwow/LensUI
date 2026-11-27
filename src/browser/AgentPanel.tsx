@@ -311,7 +311,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
               {it.why ? <span className="lb-dim lb-tl-why">{it.why}</span> : null}
             </span>
             {it.tabId ? (
-              <button className="lb-chip" onClick={() => void tabActivate(it.tabId!).catch(oops("switch to that tab"))} aria-label="Jump to tab">
+              <button data-weight="light" className="lb-chip" onClick={() => void tabActivate(it.tabId!).catch(oops("switch to that tab"))} aria-label="Jump to tab">
                 <CornerDownRight size={12} /> tab
               </button>
             ) : it.host ? <span className="lb-mono lb-dim">in Lens</span> : null}
@@ -322,8 +322,8 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           <div className="lb-msg lb-msg-answer">
             <div className="lb-answer-text">{it.text}</div>
             <div className="lb-answer-actions">
-              <button className="lb-chip" onClick={() => navigator.clipboard?.writeText(it.text).catch(oops("copy that"))}><Copy size={12} /> Copy <Key k="C" /></button>
-              <button className="lb-chip" onClick={() => void shelfAdd({ kind: "answer", title: it.text.slice(0, 60), text: it.text }).catch(oops("add that to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf <Key k="S" /></button>
+              <button data-weight="light" className="lb-chip" onClick={() => navigator.clipboard?.writeText(it.text).catch(oops("copy that"))}><Copy size={12} /> Copy <Key k="C" /></button>
+              <button data-weight="light" className="lb-chip" onClick={() => void shelfAdd({ kind: "answer", title: it.text.slice(0, 60), text: it.text }).catch(oops("add that to the Shelf"))}><BookmarkPlus size={12} /> Add to Shelf <Key k="S" /></button>
             </div>
           </div>
         );
@@ -334,7 +334,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           <div className={`lb-tl-step lb-tl-small${it.ok ? "" : " is-failed"}`}>
             <span className="lb-dot is-red" />
             <span className="lb-tl-text">{it.text}</span>
-            {it.retry ? <button className="lb-chip" onClick={() => retry(it.retry!)}><RotateCw size={12} /> Retry <Key k="R" /></button> : null}
+            {it.retry ? <button data-weight="light" className="lb-chip" onClick={() => retry(it.retry!)}><RotateCw size={12} /> Retry <Key k="R" /></button> : null}
           </div>
         );
       case "blocked":
@@ -368,7 +368,7 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           const prevTimeline = idx > 0 && TIMELINE.has(items[idx - 1].kind);
           const header =
             startedAt && TIMELINE.has(it.kind) && !prevTimeline ? (
-              <button className="lb-run-head lb-mono" aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>
+              <button data-weight="light" className="lb-run-head lb-mono" aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>
                 {running ? <Loader size={13} className="lb-spin" /> : <Sparkles size={13} />}
                 <span>{running ? "Working" : "Worked"} · {elapsed(t - startedAt)}</span>
                 {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
@@ -378,8 +378,8 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           const controls =
             header && running ? (
               <div className="lb-run-controls">
-                <button className="lb-chip" onClick={togglePause}>{isPaused ? <Play size={12} /> : <Pause size={12} />} {isPaused ? "Resume" : "Pause"} <Key k="P" /></button>
-                <button className="lb-chip" onClick={takeOver}><Hand size={12} /> Take over <Key k="T" /></button>
+                <button data-weight="light" className="lb-chip" onClick={togglePause}>{isPaused ? <Play size={12} /> : <Pause size={12} />} {isPaused ? "Resume" : "Pause"} <Key k="P" /></button>
+                <button data-weight="light" className="lb-chip" onClick={takeOver}><Hand size={12} /> Take over <Key k="T" /></button>
               </div>
             ) : null;
           return (
@@ -437,13 +437,13 @@ export function AgentPanel({ seed, quick, onAwaiting, now, acting, onOpenUrl }: 
           setInput("");
         }}
       >
-        <button type="button" className="lb-icon-btn" aria-label="Attach"><Plus size={16} /></button>
+        <button data-weight="medium" type="button" className="lb-icon-btn" aria-label="Attach"><Plus size={16} /></button>
         <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={running ? "Steer: tell Ask what to change…" : "Ask, or give me a task on this page…"} aria-label="Ask Lens" />
-        <button type="button" className="lb-icon-btn" aria-label="Voice"><Mic size={16} /></button>
+        <button data-weight="medium" type="button" className="lb-icon-btn" aria-label="Voice"><Mic size={16} /></button>
         {running && !input.trim() ? (
-          <button type="button" className="lb-send" aria-label="Stop" onClick={stop}><Square size={12} /></button>
+          <button data-weight="heavy" type="button" className="lb-send" aria-label="Stop" onClick={stop}><Square size={12} /></button>
         ) : (
-          <button type="submit" className="lb-send" aria-label={running ? "Steer" : "Send"} disabled={!input.trim()}><ArrowUp size={16} /></button>
+          <button data-weight="heavy" type="submit" className="lb-send" aria-label={running ? "Steer" : "Send"} disabled={!input.trim()}><ArrowUp size={16} /></button>
         )}
       </form>
     </div>

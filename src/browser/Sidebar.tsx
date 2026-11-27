@@ -127,19 +127,19 @@ function TabRow({ t, active, p, nested }: { t: Tab; active: boolean; p: RowProps
           {/* Quiet details: only while the row is hovered or focused. */}
           {sleeping ? <MoonStar size={12} className="lb-dim lb-tab-quiet" aria-label="Sleeping" /> : null}
           {t.audible || t.muted ? (
-            <button className="lb-icon-btn sm lb-tab-quiet" aria-label={t.muted ? "Unmute tab" : "Mute tab"} onClick={(e) => { e.stopPropagation(); p.onMute(t.id, !t.muted); }}>
+            <button data-weight="medium" className="lb-icon-btn sm lb-tab-quiet" aria-label={t.muted ? "Unmute tab" : "Mute tab"} onClick={(e) => { e.stopPropagation(); p.onMute(t.id, !t.muted); }}>
               {t.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
             </button>
           ) : null}
-          <button className="lb-icon-btn sm lb-tab-act" aria-label={t.pinned ? "Unpin tab" : "Pin tab"} onClick={(e) => { e.stopPropagation(); p.arm(); p.onPin(t.id, !t.pinned); }}>
+          <button data-weight="medium" className="lb-icon-btn sm lb-tab-act" aria-label={t.pinned ? "Unpin tab" : "Pin tab"} onClick={(e) => { e.stopPropagation(); p.arm(); p.onPin(t.id, !t.pinned); }}>
             {t.pinned ? <PinOff size={12} /> : <Pin size={12} />}
           </button>
           {p.onDuplicate ? (
-            <button className="lb-icon-btn sm lb-tab-act" aria-label="Duplicate tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onDuplicate!(t.id); }}>
+            <button data-weight="medium" className="lb-icon-btn sm lb-tab-act" aria-label="Duplicate tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onDuplicate!(t.id); }}>
               <Copy size={12} />
             </button>
           ) : null}
-          <button className="lb-icon-btn sm lb-tab-x" aria-label="Close tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onClose(t.id); }}>
+          <button data-weight="medium" className="lb-icon-btn sm lb-tab-x" aria-label="Close tab" onClick={(e) => { e.stopPropagation(); p.arm(); p.onClose(t.id); }}>
             <X size={12} />
           </button>
         </>
@@ -167,12 +167,12 @@ function LensRow({ p, duplicates }: { p: RowProps; duplicates: number }) {
   return (
     <div className={`lb-lens${open || proposal ? " is-open" : ""}`}>
       {p.stack ? (
-        <button className="lb-stile lb-lens-tile" aria-label="Lens: tidy, group or summarise tabs" aria-expanded={open} aria-controls="lb-lens-actions" onClick={() => setOpen((o) => !o)}>
+        <button data-weight="medium" className="lb-stile lb-lens-tile" aria-label="Lens: tidy, group or summarise tabs" aria-expanded={open} aria-controls="lb-lens-actions" onClick={() => setOpen((o) => !o)}>
           <LensMark />
           {duplicates ? <span className="lb-stile-badge" aria-hidden>{duplicates}</span> : null}
         </button>
       ) : (
-        <button className="lb-lens-row" aria-expanded={open} aria-controls="lb-lens-actions" onClick={() => setOpen((o) => !o)}>
+        <button data-weight="light" className="lb-lens-row" aria-expanded={open} aria-controls="lb-lens-actions" onClick={() => setOpen((o) => !o)}>
           <LensMark />
           <span className="lb-lens-text">Lens</span>
           <span className="lb-lens-hint">{duplicates ? `${duplicates} duplicate${duplicates === 1 ? "" : "s"}` : "Tidy · group · ask"}</span>
@@ -180,10 +180,10 @@ function LensRow({ p, duplicates }: { p: RowProps; duplicates: number }) {
       )}
       {open && !proposal ? (
         <div className="lb-lens-actions" id="lb-lens-actions" role="menu" aria-label="Lens tab actions">
-          <button role="menuitem" onClick={() => pick("tidy")}>Tidy tabs <kbd className="lb-kbd">Ctrl Shift K</kbd></button>
-          <button role="menuitem" onClick={() => pick("duplicates")} disabled={!duplicates}>Close duplicates{duplicates ? ` (${duplicates})` : ""}</button>
-          <button role="menuitem" onClick={() => pick("group-site")}>Group by site</button>
-          {p.ai ? <button role="menuitem" onClick={() => pick("summarise")}>Summarise open tabs</button> : null}
+          <button data-weight="light" role="menuitem" onClick={() => pick("tidy")}>Tidy tabs <kbd className="lb-kbd">Ctrl Shift K</kbd></button>
+          <button data-weight="light" role="menuitem" onClick={() => pick("duplicates")} disabled={!duplicates}>Close duplicates{duplicates ? ` (${duplicates})` : ""}</button>
+          <button data-weight="light" role="menuitem" onClick={() => pick("group-site")}>Group by site</button>
+          {p.ai ? <button data-weight="light" role="menuitem" onClick={() => pick("summarise")}>Summarise open tabs</button> : null}
         </div>
       ) : null}
       {proposal ? (
@@ -201,8 +201,8 @@ function LensRow({ p, duplicates }: { p: RowProps; duplicates: number }) {
           </ul>
           <p className="lb-plan-note">Nothing changes until you apply. Closed tabs can be reopened with Ctrl Shift T.</p>
           <div className="lb-plan-actions">
-            <button className="lb-btn lb-btn-sm lb-btn-ghost" onClick={p.onCancelProposal}>Cancel</button>
-            <button ref={applyRef} className="lb-btn lb-btn-sm lb-btn-primary" onClick={p.onApplyProposal}>Apply</button>
+            <button data-weight="medium" className="lb-btn lb-btn-sm lb-btn-ghost" onClick={p.onCancelProposal}>Cancel</button>
+            <button data-weight="heavy" ref={applyRef} className="lb-btn lb-btn-sm lb-btn-primary" onClick={p.onApplyProposal}>Apply</button>
           </div>
         </div>
       ) : null}
@@ -256,7 +256,7 @@ export function Sidebar(props: Props) {
     <nav className={`lb-side${stack ? " is-stack" : ""}`} aria-label="Tabs and spaces">
       <div className="lb-side-top">
         {stack ? null : (
-          <button className="lb-space-btn" aria-label={`Space: ${space?.name ?? "Space"}. Switch space`} onClick={() => {
+          <button data-weight="medium" className="lb-space-btn" aria-label={`Space: ${space?.name ?? "Space"}. Switch space`} onClick={() => {
             const i = s.spaces.findIndex((x) => x.id === s.activeSpace);
             p.onSpace(s.spaces[(i + 1) % s.spaces.length].id);
           }}>
@@ -266,20 +266,20 @@ export function Sidebar(props: Props) {
           </button>
         )}
         {stack ? null : (
-          <button className="lb-icon-btn lb-side-quiet" aria-label={space?.locked ? "Unlock space settings" : "Lock this space"} onClick={p.onLock}>
+          <button data-weight="medium" className="lb-icon-btn lb-side-quiet" aria-label={space?.locked ? "Unlock space settings" : "Lock this space"} onClick={p.onLock}>
             {space?.locked ? <Lock size={14} /> : <LockOpen size={14} />}
           </button>
         )}
         {props.onPrefs ? (
-          <button className="lb-icon-btn" aria-label={stack ? "Show tab titles" : "Show icons only"} aria-pressed={stack} onClick={() => props.onPrefs!({ mode: stack ? "full" : "stack" })}>
+          <button data-weight="medium" className="lb-icon-btn" aria-label={stack ? "Show tab titles" : "Show icons only"} aria-pressed={stack} onClick={() => props.onPrefs!({ mode: stack ? "full" : "stack" })}>
             {stack ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
           </button>
         ) : null}
-        {stack ? null : <button className="lb-icon-btn" aria-label="Hide sidebar" onClick={p.onCollapse}><PanelLeft size={16} /></button>}
+        {stack ? null : <button data-weight="medium" className="lb-icon-btn" aria-label="Hide sidebar" onClick={p.onCollapse}><PanelLeft size={16} /></button>}
       </div>
 
       {stack ? (
-        <button className="lb-stile" aria-label="Find a tab (Ctrl Shift A)" onClick={() => props.onPrefs?.({ mode: "full" })}>
+        <button data-weight="medium" className="lb-stile" aria-label="Find a tab (Ctrl Shift A)" onClick={() => props.onPrefs?.({ mode: "full" })}>
           <Search size={15} />
         </button>
       ) : (
@@ -300,14 +300,14 @@ export function Sidebar(props: Props) {
               if (e.key === "ArrowDown") { e.preventDefault(); listRef.current?.querySelector<HTMLElement>(".lb-tab")?.focus(); }
             }}
           />
-          {find ? <button className="lb-icon-btn sm" aria-label="Clear" onClick={() => setFind("")}><X size={12} /></button> : <kbd className="lb-kbd">Ctrl Shift A</kbd>}
+          {find ? <button data-weight="medium" className="lb-icon-btn sm" aria-label="Clear" onClick={() => setFind("")}><X size={12} /></button> : <kbd className="lb-kbd">Ctrl Shift A</kbd>}
         </label>
       )}
 
       {m.pinned.length || pins.length ? (
         <div className="lb-stiles" aria-label="Pinned">
           {m.pinned.filter(match).map((t) => (
-            <button
+            <button data-weight="medium"
               key={t.id}
               className={`lb-stile${t.id === s.activeTab ? " is-active" : ""}`}
               aria-label={`Pinned: ${tabLabel(t)}`}
@@ -320,7 +320,7 @@ export function Sidebar(props: Props) {
             </button>
           ))}
           {pins.map((b) => (
-            <button key={b.id} className="lb-stile is-bookmark" aria-label={b.title || b.url} onClick={(e) => p.onOpenUrl(b.url, e.ctrlKey || e.metaKey)} onAuxClick={(e) => e.button === 1 && p.onOpenUrl(b.url, true)}>
+            <button data-weight="medium" key={b.id} className="lb-stile is-bookmark" aria-label={b.title || b.url} onClick={(e) => p.onOpenUrl(b.url, e.ctrlKey || e.metaKey)} onAuxClick={(e) => e.button === 1 && p.onOpenUrl(b.url, true)}>
               <Avatar url={b.url} title={b.title} size={18} />
             </button>
           ))}
@@ -339,7 +339,7 @@ export function Sidebar(props: Props) {
             </div>
           ))}
           {q && !sections.some((x) => x.tabs.length) && !foldersShown.length ? <p className="lb-find-none">No tab matches “{find}”.</p> : null}
-          <button className={stack ? "lb-stile lb-new-tab" : "lb-new-tab"} aria-label="New tab" onClick={p.onNewTab}>
+          <button data-weight="medium" className={stack ? "lb-stile lb-new-tab" : "lb-new-tab"} aria-label="New tab" onClick={p.onNewTab}>
             <Plus size={14} />
             {stack ? null : <span>New tab</span>}
           </button>
@@ -362,7 +362,7 @@ export function Sidebar(props: Props) {
                   if (id) { e.stopPropagation(); arm(); props.onDrop(id, null, folder.id); }
                 }}
               >
-                <button
+                <button data-weight="light"
                   className={stack ? "lb-stile lb-folder-head" : "lb-folder-head"}
                   aria-expanded={open}
                   aria-label={stack ? `Folder ${folder.name}, ${tabs.length} tabs` : undefined}
@@ -383,7 +383,7 @@ export function Sidebar(props: Props) {
             );
           })}
           {stack ? null : (
-            <button className="lb-folder-add" onClick={props.onNewFolder}>
+            <button data-weight="medium" className="lb-folder-add" onClick={props.onNewFolder}>
               <FolderPlus size={13} />
               <span>New folder</span>
             </button>
@@ -392,14 +392,14 @@ export function Sidebar(props: Props) {
 
         {prefs.showChats && props.chats.length && !stack ? (
           <div className="lb-chats">
-            <button className="lb-folder-head lb-chats-head" aria-expanded={chatsOpen} onClick={() => setChatsOpen((o) => !o)}>
+            <button data-weight="light" className="lb-folder-head lb-chats-head" aria-expanded={chatsOpen} onClick={() => setChatsOpen((o) => !o)}>
               {chatsOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               <span className="lb-folder-name">Chats</span>
               <span className="lb-mono lb-dim lb-push">{props.chats.length}</span>
             </button>
             {chatsOpen
               ? props.chats.map((c) => (
-                  <button key={c.id} className={`lb-chat${c.id === props.activeChat ? " is-active" : ""}`} onClick={() => props.onChat(c.id)}>
+                  <button data-weight="light" key={c.id} className={`lb-chat${c.id === props.activeChat ? " is-active" : ""}`} onClick={() => props.onChat(c.id)}>
                     <span className="lb-tab-title">{c.title}</span>
                     <span className="lb-mono lb-dim">{relTime(c.at, props.now)}</span>
                   </button>
@@ -413,26 +413,26 @@ export function Sidebar(props: Props) {
         <div className="lb-mini-player" aria-label="Playing">
           <Avatar url={props.media.url} title={props.media.title} size={16} />
           <span className="lb-tab-title">{props.media.title}</span>
-          <button className="lb-icon-btn sm" aria-label="Play or pause" onClick={() => void mediaCmd(props.media!.id, "toggle").catch(oops("play or pause"))}><Pause size={12} /></button>
-          <button className="lb-icon-btn sm" aria-label={props.media.muted ? "Unmute" : "Mute"} onClick={() => props.onMute(props.media!.id, !props.media!.muted)}>{props.media.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}</button>
+          <button data-weight="medium" className="lb-icon-btn sm" aria-label="Play or pause" onClick={() => void mediaCmd(props.media!.id, "toggle").catch(oops("play or pause"))}><Pause size={12} /></button>
+          <button data-weight="medium" className="lb-icon-btn sm" aria-label={props.media.muted ? "Unmute" : "Mute"} onClick={() => props.onMute(props.media!.id, !props.media!.muted)}>{props.media.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}</button>
         </div>
       ) : null}
 
       <div className="lb-side-foot">
         {prefs.showSpaces && !stack && s.spaces.length > 1
           ? s.spaces.map((sp) => (
-              <button key={sp.id} className={`lb-space-pick${sp.id === s.activeSpace ? " is-active" : ""}`} aria-label={`Space: ${sp.name}`} aria-pressed={sp.id === s.activeSpace} onClick={() => p.onSpace(sp.id)}>
+              <button data-weight="light" key={sp.id} className={`lb-space-pick${sp.id === s.activeSpace ? " is-active" : ""}`} aria-label={`Space: ${sp.name}`} aria-pressed={sp.id === s.activeSpace} onClick={() => p.onSpace(sp.id)}>
                 {sp.name.slice(0, 1).toUpperCase()}
               </button>
             ))
           : null}
-        {prefs.showSpaces && !stack ? <button className="lb-icon-btn sm" aria-label="New space" onClick={p.onNewSpace}><Plus size={13} /></button> : null}
+        {prefs.showSpaces && !stack ? <button data-weight="medium" className="lb-icon-btn sm" aria-label="New space" onClick={p.onNewSpace}><Plus size={13} /></button> : null}
         {stack ? null : (
           <span className="lb-mono lb-dim lb-sleep-stat">
             {props.view.live.length} awake{props.sleeping ? ` · ${props.sleeping} asleep · ~${(props.sleeping * SLEEP_SAVING_MB / 1000).toFixed(1)} GB saved` : ""}
           </span>
         )}
-        {p.onSettings ? <button className="lb-icon-btn sm lb-push" aria-label="Browser settings" onClick={p.onSettings}><Settings size={14} /></button> : null}
+        {p.onSettings ? <button data-weight="medium" className="lb-icon-btn sm lb-push" aria-label="Browser settings" onClick={p.onSettings}><Settings size={14} /></button> : null}
       </div>
     </nav>
   );

@@ -1,5 +1,7 @@
 # Lens Cleaner — feature dossier
 
+> **Accent tokens pass (`feat/accent-tokens-apps`, 2026-11-27):** switches, checkboxes, selected chips and pills, the main button, meters, the space map and the progress ring read the accent tokens; the `:active` scales are gone (shared press). B-141, B-143.
+
 Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** permanent delete needs a random one-time code minted in Rust and typed by the person (S1 fixed), the measured scan time shows on Done and in Tester Hub (quick win 1), "Uninstall…" hands over to Startup & Uninstall, and Home has the "Where did my space go?" timeline (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC. **Deep Fable pass (apps, 26 November 2026):** the app moves on the global motion tokens (brief item 1), every swallowed error is reported (quick win 3; a Stop that doesn't reach the scan says the scan is still going), every button declares a press weight. Sources: `docs/CLEANER.md`, `docs/CLEANER_RESEARCH.md`,
 `docs/brain/BUGS.md`, Redline review, code below.
 

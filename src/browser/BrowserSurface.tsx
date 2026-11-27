@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { glideIn, useLingering, usePresence, type Pose } from "../ui/motion";
 import { useLensState } from "../hooks/useLensState";
+import { useScopedAccent } from "../themes/useScopedAccent";
+import { browserAccentLook, SCHEME_TOKENS } from "./accentLook";
 import { shelfAdd } from "../shelf/contract";
 import { applyDither } from "../style/dither";
 import "../style/dither.css";
@@ -155,20 +157,6 @@ const SETTINGS_PANELS: PanelDef[] = [
   ["ai", "AI", Sparkles],
 ];
 
-/** Light/dark tokens for when the browser's own scheme differs from Lens's. */
-const SCHEME_TOKENS: Record<"light" | "dark", Record<string, string>> = {
-  dark: {
-    "--lens-pack-base": "#0a0a0b", "--lens-bg-base": "#0a0a0b", "--lens-bg-surface": "#111113", "--lens-bg-elevated": "#18181b", "--lens-bg-hover": "rgba(255,255,255,.06)",
-    "--lens-fg": "#ededef", "--lens-fg-strong": "#fafafa", "--lens-fg-secondary": "#b4b4b9", "--lens-fg-muted": "#86868c", "--lens-border": "rgba(255,255,255,.08)",
-    "--lens-border-strong": "rgba(255,255,255,.14)", "--lens-on-fg": "#0a0a0b",
-  },
-  light: {
-    "--lens-pack-base": "#f5f5f3", "--lens-bg-base": "#f5f5f3", "--lens-bg-surface": "#fbfbfa", "--lens-bg-elevated": "#ffffff", "--lens-bg-hover": "rgba(0,0,0,.05)",
-    "--lens-fg": "#1c1c1e", "--lens-fg-strong": "#0a0a0b", "--lens-fg-secondary": "#4a4a50", "--lens-fg-muted": "#6e6e75", "--lens-border": "rgba(0,0,0,.08)",
-    "--lens-border-strong": "rgba(0,0,0,.14)", "--lens-on-fg": "#ffffff",
-  },
-};
-
 const TYPEFACES: Record<Appearance["typeface"], string> = {
   lens: "",
   system: '"Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif',
@@ -216,6 +204,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const tab = s?.tabs.find((t) => t.id === s.activeTab) ?? null;
   const url = tab?.url ?? "";
   const appearance: Appearance = { ...DEFAULT_APPEARANCE, ...(s?.settings.appearance ?? {}) };
+  const accentVars = useScopedAccent(browserAccentLook(appearance));
   const ai: BrowserAi = { ...DEFAULT_BROWSER_AI, ...(s?.settings.ai ?? {}) };
   const aiOn = ai.enabled;
   const space = s?.spaces.find((x) => x.id === s.activeSpace);
@@ -753,6 +742,8 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
   const rootStyle = {
     ...schemeVars,
     ...(appearance.accent ? { "--lens-accent": appearance.accent } : {}),
+    // The browser's own accent and scheme feed the accent tokens; never the raw --lens-accent.
+    ...accentVars,
     ...(TYPEFACES[appearance.typeface] ? { "--lens-font": TYPEFACES[appearance.typeface] } : {}),
     "--lb-side": `${sidePrefs.mode === "stack" ? 56 : sidePrefs.width}px`,
     ...cssVars(geo),
@@ -795,7 +786,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
           {showKind ? <Key k={showKind.kind === "ask" ? "Ask ⏎" : showKind.kind === "url" ? "Go ⏎" : "Search ⏎"} /> : null}
         </>
       ) : (
-        <button className="lb-addr-view" onClick={() => { setAddress(url); setEditing(true); window.setTimeout(() => addrRef.current?.select(), 0); }} aria-label="Edit address">
+        <button data-weight="light" className="lb-addr-view" onClick={() => { setAddress(url); setEditing(true); window.setTimeout(() => addrRef.current?.select(), 0); }} aria-label="Edit address">
           {tab ? <Avatar url={url} title={tab.title} size={14} /> : null}
           <span className="lb-crumbs">
             {crumbs.map((c, i) => (
@@ -808,7 +799,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         </button>
       )}
       {!editing && tab && origin ? (
-        <button className={`lb-icon-btn sm${siteOpen ? " is-on" : ""}`} aria-label={`Site permissions for ${hostOf(url)}`} aria-expanded={siteOpen} onClick={() => setSiteOpen((o) => !o)}>
+        <button data-weight="medium" className={`lb-icon-btn sm${siteOpen ? " is-on" : ""}`} aria-label={`Site permissions for ${hostOf(url)}`} aria-expanded={siteOpen} onClick={() => setSiteOpen((o) => !o)}>
           <SlidersHorizontal size={13} />
         </button>
       ) : null}
@@ -824,7 +815,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         />
       ) : null}
       {!editing && tab ? (
-        <button className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
+        <button data-weight="medium" className={`lb-icon-btn sm${view.bookmarked ? " is-on" : ""}`} aria-label={view.bookmarked ? "Remove bookmark" : "Bookmark"} onClick={() => combo("ctrl+d")}>
           <Star size={14} fill={view.bookmarked ? "currentColor" : "none"} />
         </button>
       ) : null}
@@ -834,7 +825,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             const Icon = SUGGEST_ICON[r.kind];
             const on = r === active;
             return (
-              <li key={r.key} id={`lb-sg-${i}`} role="option" aria-selected={on} className={on ? "is-on" : undefined} onMouseEnter={() => setSel(i)} onMouseDown={(e) => { e.preventDefault(); pick(r, e.ctrlKey || e.metaKey); }}>
+              <li data-weight="light" key={r.key} id={`lb-sg-${i}`} role="option" aria-selected={on} className={on ? "is-on" : undefined} onMouseEnter={() => setSel(i)} onMouseDown={(e) => { e.preventDefault(); pick(r, e.ctrlKey || e.metaKey); }}>
                 {r.url && r.kind !== "url" ? <Avatar url={r.url} title={r.title} size={14} /> : <Icon size={14} className="lb-dim" />}
                 <span className="lb-tab-title">{r.title}</span>
                 <span className="lb-mono lb-dim">{r.detail}</span>
@@ -916,16 +907,16 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         {horizontal && geo.rows[0] === "strip" ? strip : null}
         <header className={`lb-top lb-top-${geo.mode}`} data-tauri-drag-region>
           {sideOpen && !horizontal ? null : (
-            <button className="lb-icon-btn" aria-label="Show sidebar" onClick={() => { setSideOpen(true); if (horizontal) saveSettings({ appearance: { ...appearance, tabsLayout: "vertical" } }); }}>
+            <button data-weight="medium" className="lb-icon-btn" aria-label="Show sidebar" onClick={() => { setSideOpen(true); if (horizontal) saveSettings({ appearance: { ...appearance, tabsLayout: "vertical" } }); }}>
               <PanelLeft size={16} />
             </button>
           )}
-          <button className="lb-icon-btn" aria-label="Back" disabled={!nav.canBack} onClick={() => combo("alt+left")}><ArrowLeft size={16} /></button>
-          <button className="lb-icon-btn" aria-label="Forward" disabled={!nav.canForward} onClick={() => combo("alt+right")}><ArrowRight size={16} /></button>
+          <button data-weight="medium" className="lb-icon-btn" aria-label="Back" disabled={!nav.canBack} onClick={() => combo("alt+left")}><ArrowLeft size={16} /></button>
+          <button data-weight="medium" className="lb-icon-btn" aria-label="Forward" disabled={!nav.canForward} onClick={() => combo("alt+right")}><ArrowRight size={16} /></button>
           {nav.loading ? (
-            <button className="lb-icon-btn" aria-label="Stop loading" onClick={() => combo("esc")}><X size={15} /></button>
+            <button data-weight="medium" className="lb-icon-btn" aria-label="Stop loading" onClick={() => combo("esc")}><X size={15} /></button>
           ) : (
-            <button className="lb-icon-btn" aria-label="Reload" disabled={!tab} onClick={reload}><RotateCw size={15} /></button>
+            <button data-weight="medium" className="lb-icon-btn" aria-label="Reload" disabled={!tab} onClick={reload}><RotateCw size={15} /></button>
           )}
 
           {geo.merged ? null : addressBox}
@@ -933,13 +924,13 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
 
           {Math.abs(zoom - 1) > 0.01 ? (
             <span className="lb-zoom" role="group" aria-label="Zoom">
-              <button className="lb-icon-btn sm" aria-label="Zoom out" onClick={() => zoomTo(zoomStep(zoom, -1))}><Minus size={12} /></button>
-              <button className="lb-zoom-val lb-mono" aria-label={`Zoom ${zoomPct}%. Reset to 100%`} onClick={() => zoomTo(1)}>{zoomPct}%</button>
-              <button className="lb-icon-btn sm" aria-label="Zoom in" onClick={() => zoomTo(zoomStep(zoom, 1))}><Plus size={12} /></button>
+              <button data-weight="medium" className="lb-icon-btn sm" aria-label="Zoom out" onClick={() => zoomTo(zoomStep(zoom, -1))}><Minus size={12} /></button>
+              <button data-weight="medium" className="lb-zoom-val lb-mono" aria-label={`Zoom ${zoomPct}%. Reset to 100%`} onClick={() => zoomTo(1)}>{zoomPct}%</button>
+              <button data-weight="medium" className="lb-icon-btn sm" aria-label="Zoom in" onClick={() => zoomTo(zoomStep(zoom, 1))}><Plus size={12} /></button>
             </span>
           ) : null}
           {downloads.length ? (
-            <button className={`lb-icon-btn lb-tray${panel === "downloads" ? " is-on" : ""}`} aria-label={running ? `Downloads: ${running} running` : "Downloads"} onClick={() => setPanel(panel === "downloads" ? null : "downloads")}>
+            <button data-weight="medium" className={`lb-icon-btn lb-tray${panel === "downloads" ? " is-on" : ""}`} aria-label={running ? `Downloads: ${running} running` : "Downloads"} onClick={() => setPanel(panel === "downloads" ? null : "downloads")}>
               <Download size={15} />
               {running ? <span className="lb-tray-n" aria-hidden>{running}</span> : null}
             </button>
@@ -955,17 +946,17 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             />
           ) : null}
           {tab && !showStart ? (
-            <button className={`lb-icon-btn${reader ? " is-on" : ""}`} aria-label={reader ? "Close reader view" : "Reader view"} aria-pressed={!!reader} onClick={() => void toggleReader()}>
+            <button data-weight="medium" className={`lb-icon-btn${reader ? " is-on" : ""}`} aria-label={reader ? "Close reader view" : "Reader view"} aria-pressed={!!reader} onClick={() => void toggleReader()}>
               <BookOpen size={15} />
             </button>
           ) : null}
-          <button className="lb-icon-btn" aria-label={live && !nav.hasVideo ? "Picture in picture (no video on this page)" : "Picture in picture"} disabled={live && !nav.hasVideo} onClick={() => void pip().then((ok) => { if (!ok) flash("This page doesn't allow picture in picture"); }).catch(oops("start picture in picture"))}><PictureInPicture2 size={15} /></button>
+          <button data-weight="medium" className="lb-icon-btn" aria-label={live && !nav.hasVideo ? "Picture in picture (no video on this page)" : "Picture in picture"} disabled={live && !nav.hasVideo} onClick={() => void pip().then((ok) => { if (!ok) flash("This page doesn't allow picture in picture"); }).catch(oops("start picture in picture"))}><PictureInPicture2 size={15} /></button>
           {aiOn && awaiting ? (
-            <button className="lb-approve-pill" onClick={() => setPanel("ask")}>
+            <button data-weight="medium" className="lb-approve-pill" onClick={() => setPanel("ask")}>
               <Sparkles size={12} /> Approve {awaiting} action{awaiting > 1 ? "s" : ""} <Key k="Ctrl J" />
             </button>
           ) : null}
-          <button className={`lb-icon-btn${panel ? " is-on" : ""}`} aria-label={panel ? "Hide side panel" : "Show side panel"} onClick={() => setPanel(panel ? null : aiOn ? "ask" : "bookmarks")}>
+          <button data-weight="medium" className={`lb-icon-btn${panel ? " is-on" : ""}`} aria-label={panel ? "Hide side panel" : "Show side panel"} onClick={() => setPanel(panel ? null : aiOn ? "ask" : "bookmarks")}>
             <PanelRight size={15} />
           </button>
           {nav.loading ? <span className="lb-loadbar" role="status" aria-label="Loading page" /> : null}
@@ -991,7 +982,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               <>
                 <span className="lb-mono lb-dim">no matches</span>
                 {aiOn ? (
-                  <button className="lb-chip" onClick={() => { setPanel("ask"); setQuick({ prompt: `This page doesn't contain the words "${find}". Answer what I'm looking for from the page: ${find}`, url, page: true }); }}>
+                  <button data-weight="light" className="lb-chip" onClick={() => { setPanel("ask"); setQuick({ prompt: `This page doesn't contain the words "${find}". Answer what I'm looking for from the page: ${find}`, url, page: true }); }}>
                     <Sparkles size={12} /> Ask about this page <Key k="⏎" />
                   </button>
                 ) : null}
@@ -999,9 +990,9 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             ) : (
               <span className="lb-mono lb-dim" aria-live="polite">{find && findInfo ? `${findInfo.total} found` : ""}</span>
             )}
-            <button className="lb-icon-btn sm" aria-label="Previous match" disabled={!find || !findInfo?.total} onClick={() => findStep(true)}><ChevronUp size={13} /></button>
-            <button className="lb-icon-btn sm" aria-label="Next match" disabled={!find || !findInfo?.total} onClick={() => findStep(false)}><ChevronDown size={13} /></button>
-            <button className="lb-icon-btn sm" aria-label="Close find" onClick={() => { setFind(null); setFindInfo(null); }}><X size={12} /></button>
+            <button data-weight="medium" className="lb-icon-btn sm" aria-label="Previous match" disabled={!find || !findInfo?.total} onClick={() => findStep(true)}><ChevronUp size={13} /></button>
+            <button data-weight="medium" className="lb-icon-btn sm" aria-label="Next match" disabled={!find || !findInfo?.total} onClick={() => findStep(false)}><ChevronDown size={13} /></button>
+            <button data-weight="medium" className="lb-icon-btn sm" aria-label="Close find" onClick={() => { setFind(null); setFindInfo(null); }}><X size={12} /></button>
           </div>
         ) : null}
 
@@ -1010,11 +1001,11 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             <span className="lb-ok-tag"><ExternalLink size={13} /> Glance</span>
             <span className="lb-mono lb-dim">{hostOf(view.glance)}</span>
             {aiOn && ai.pageSummaries && glanceSummary === null ? (
-              <button className="lb-chip" onClick={() => void glanceSummarise(setGlanceSummary)}><Sparkles size={12} /> 5-second summary <Key k="S" /></button>
+              <button data-weight="light" className="lb-chip" onClick={() => void glanceSummarise(setGlanceSummary)}><Sparkles size={12} /> 5-second summary <Key k="S" /></button>
             ) : null}
             <span className="lb-push" />
-            <button className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void glance("promote").catch((e) => flash(String(e)))}>Open as tab <Key k="⏎" /></button>
-            <button className="lb-btn lb-btn-sm" onClick={() => { setGlanceSummary(null); void glance("close").catch(quiet); }}>Close <Key k="Esc" /></button>
+            <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" onClick={() => void glance("promote").catch((e) => flash(String(e)))}>Open as tab <Key k="⏎" /></button>
+            <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={() => { setGlanceSummary(null); void glance("close").catch(quiet); }}>Close <Key k="Esc" /></button>
             {glanceSummary ? <p className="lb-glance-sum">{glanceSummary}</p> : null}
           </div>
         ) : null}
@@ -1042,7 +1033,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
               <Lock size={22} />
               <h1>{space?.name} is locked</h1>
               <p className="lb-dim">Its tabs stay hidden until you unlock it.</p>
-              <button className="lb-btn lb-btn-primary" onClick={() => space && void spaceLock(space.id, false).then((how) => { if (how === "unavailable") flash("Windows Hello isn't set up, so this space only hides its tabs."); return browserState().then(setView); }).catch((e) => flash(String(e)))}>
+              <button data-weight="heavy" className="lb-btn lb-btn-primary" onClick={() => space && void spaceLock(space.id, false).then((how) => { if (how === "unavailable") flash("Windows Hello isn't set up, so this space only hides its tabs."); return browserState().then(setView); }).catch((e) => flash(String(e)))}>
                 <Fingerprint size={14} /> Unlock with Windows Hello <Key k="⏎" />
               </button>
             </div>
@@ -1050,7 +1041,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
             <div className="lb-start lens-dither lens-dither-vignette">
               <h1>This tab stopped responding</h1>
               <p className="lb-dim">{hostOf(url)} crashed or froze. Your other tabs are fine.</p>
-              <button className="lb-btn lb-btn-primary" onClick={() => { setCrashed(false); failures.current = 0; void historyNav("reload").catch(oops("reload the page")); }}>
+              <button data-weight="heavy" className="lb-btn lb-btn-primary" onClick={() => { setCrashed(false); failures.current = 0; void historyNav("reload").catch(oops("reload the page")); }}>
                 <RotateCw size={14} /> Reload <Key k="⏎" />
               </button>
             </div>
@@ -1135,7 +1126,7 @@ export function BrowserSurface({ initial }: { initial?: BrowserInitial }) {
         <aside className="lb-panel" ref={panelP.ref} aria-label={panelTabs.find((p) => p[0] === shown)?.[1]} aria-hidden={panel ? undefined : true}>
           <div className={`lb-panel-head${panelTabs.length > 4 ? " is-tight" : ""}`} role="tablist" aria-label="Side panel">
             {panelTabs.map(([id, label, Icon]) => (
-              <button key={id} role="tab" aria-selected={shown === id} aria-label={label} className={`lb-ptab${shown === id ? " is-on" : ""}`} onClick={() => setPanel(id)}>
+              <button data-weight="light" key={id} role="tab" aria-selected={shown === id} aria-label={label} className={`lb-ptab${shown === id ? " is-on" : ""}`} onClick={() => setPanel(id)}>
                 <Icon size={13} />
                 <span>{label}</span>
               </button>

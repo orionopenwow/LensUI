@@ -159,7 +159,7 @@ export const Clipboard: React.FC<{ config: LensConfig | null; updateConfig: (c: 
             <Card key={g.label} title={g.label} meta={`${g.items.length}`}>
               <ul className="ca-list" role="listbox" aria-label={g.label}>
                 {g.items.map((c) => (
-                  <li
+                  <li data-weight="light"
                     key={c.id}
                     id={`clip-${c.id}`}
                     role="option"

@@ -132,7 +132,7 @@
 .lm-imm-line-text { font-size: clamp(22px, 3vw, 46px); line-height: 1.18; font-weight: 700; overflow-wrap: anywhere; }
 .lm-imm-line-sub { font-size: clamp(14px, 1.5vw, 22px); line-height: 1.3; color: var(--imm-ink-2); font-weight: 600; }
 .lm-imm-line[data-role="current"] { transform: scale(1.04); }
-.lm-imm-line[data-role="current"] .lm-imm-line-text { color: var(--imm-ink); text-shadow: 0 0 0.6em color-mix(in srgb, var(--imm-accent) 35%, transparent); }
+.lm-imm-line[data-role="current"] .lm-imm-line-text { color: var(--imm-ink); text-shadow: 0 0 0.6em color-mix(in srgb, var(--lens-accent-ui) 35%, transparent); }
 .lm-imm.is-light .lm-imm-line[data-role="current"] .lm-imm-line-text { text-shadow: none; }
 @keyframes lm-imm-line-in {
   from { opacity: 0; transform: translate3d(0, 6px, 0); }
@@ -162,7 +162,7 @@
   appearance: none;
   height: 6px;
   border-radius: 6px;
-  background: linear-gradient(90deg, var(--imm-accent) var(--imm-pct, 0%), var(--imm-line) var(--imm-pct, 0%));
+  background: linear-gradient(90deg, var(--lens-accent-ui) var(--imm-pct, 0%), var(--imm-line) var(--imm-pct, 0%));
   cursor: pointer;
   margin: 0;
 }
@@ -201,12 +201,12 @@
   cursor: pointer;
 }
 .lm-imm-chip:hover { background: var(--imm-fill); color: var(--imm-ink); }
-.lm-imm-chip.is-on { background: var(--imm-accent); border-color: transparent; color: var(--imm-on-accent); }
+.lm-imm-chip.is-on { background: var(--lens-accent-fill); border-color: transparent; color: var(--lens-on-accent-fill); }
 .lm-imm-nudge, .lm-imm-views { display: inline-flex; align-items: center; gap: 6px; color: var(--imm-ink-2); }
 .lm-imm-nudge-val { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 56px; text-align: center; }
 
 /* Press weights: the shared feel system (src/ui/press); keyboard focus ring here. */
-.lm-imm [data-weight]:focus-visible { outline: 2px solid var(--imm-accent); outline-offset: 2px; }
+.lm-imm [data-weight]:focus-visible { outline: 2px solid var(--lens-focus-ring); outline-offset: 2px; }
 .lm-imm-btn, .lm-imm-chip { transition: background-color var(--lens-dur-fast) var(--lens-ease-out), opacity var(--lens-dur-base) var(--lens-ease-out); }
 
 @media (max-width: 900px) {

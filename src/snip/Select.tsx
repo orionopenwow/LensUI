@@ -247,7 +247,7 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
           </mask>
         </defs>
         <rect x="0" y="0" width={vw} height={vh} fill="rgba(0,0,0,0.45)" mask="url(#snip-cut)" />
-        {lassoCss ? <polyline points={lassoCss} fill="none" stroke="var(--lens-accent)" strokeWidth={1.5} /> : null}
+        {lassoCss ? <polyline points={lassoCss} fill="none" stroke="var(--lens-accent-ui)" strokeWidth={1.5} /> : null}
       </svg>
       <div
         className={`snip-select mode-${mode}`}

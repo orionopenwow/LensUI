@@ -81,7 +81,7 @@ export const Pin: React.FC<{ label: string; demo?: PinInfo }> = ({ label, demo }
           </button>
         </Tip>
         <Tip text="Click-through: clicks go to the window underneath. Open Lens Snip to turn it off." below>
-          <button
+          <button data-weight="medium"
             type="button"
             className={`snip-btn icon ${through ? "on" : ""}`}
             aria-pressed={through}

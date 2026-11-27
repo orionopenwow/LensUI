@@ -296,7 +296,7 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
               {list.map((n) => {
                 const p = todoProgress(n.text);
                 return (
-                  <li
+                  <li data-weight="light"
                     key={n.id}
                     role="option"
                     aria-selected={n.id === current?.id}

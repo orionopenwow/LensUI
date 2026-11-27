@@ -50,6 +50,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
   theme and for any colour on the wheel. A white, black or grey accent shows no colour, so the
   default look is unchanged; High contrast keeps its plain chrome. Colours inside Lens only:
   nothing in Windows changes.
+- **Your accent in Lens's own apps too.** Lens Browser, Lens Music, Cleaner, Lens Apps (and the
+  apps it opens: Notes, Timer, Calculator…) and Snip now show your accent the same way Settings
+  does: on switches, selected chips and tabs, the main button, focus rings, progress and meters,
+  and the selected row, at your Accent strength, adjusted so it always reads (a navy accent on a
+  dark theme, or a pale yellow on a light one, no longer disappears). Lens Music's artwork colours
+  go through the same check, and "Theme follows music" now recolours these controls as well.
+  Selected text uses your accent with readable text on it instead of a fixed blue. A white, black
+  or grey accent shows no colour; High contrast is unchanged.
+- **Lens Browser presses like the rest of Lens.** Every button, tab and row in Lens Browser uses the
+  shared weighted press (light for rows and tabs, heavier for the main actions); Cleaner, Lens Apps
+  and the Dock's music card no longer sink twice on a click.
 - **The Dock presses like the rest of Lens.** Dock icons, the system area and the Dock's menu use
   the same weighted press as Settings; Settings and Quick settings grow out of the Dock button that
   opened them; the highlight in the Dock's search filters slides to the option you pick.
@@ -200,6 +211,8 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ### Fixed
 - Wallpaper Switcher: Enter on a focused button (Favourite, Hide, Fit…) also set the focused
   wallpaper on the desktop. Now it only presses the button (B-145).
+- "Theme follows music" no longer leaves white in place of your accent when the music stops; it
+  puts your own accent back (B-140).
 - Alt+drag, Magic and App hotkeys: the options under each switch can be clicked while the feature
   is off (they were dimmed and ignored the mouse, but still took keyboard focus) (B-58).
 - Text on an accent-coloured button or pill is always readable, the Night light switch keeps its

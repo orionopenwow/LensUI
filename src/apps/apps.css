@@ -119,12 +119,12 @@ kbd {
   background: rgb(var(--lens-ink) / 0.09);
 }
 .la-filter.active {
-  color: var(--lens-on-fg, #09090b);
-  background: var(--lens-fg);
+  color: var(--lens-on-accent-fill);
+  background: var(--lens-accent-fill);
 }
 .la-filter-toggle input {
   margin: 0;
-  accent-color: var(--lens-fg);
+  accent-color: var(--lens-accent-ui);
 }
 
 /* Blocks and rails */
@@ -377,16 +377,12 @@ kbd {
   cursor: pointer;
   color: var(--lens-fg);
   background: rgb(var(--lens-ink) / 0.1);
-  transition: background var(--lens-dur-fast) var(--lens-ease-out), transform var(--lens-dur-fast) var(--lens-ease-out);
+  transition: background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .la-pill:hover {
   background: rgb(var(--lens-ink) / 0.16);
 }
-/* Presses come from the press primitive (data-weight, DESIGN §5.2); until it is in this window the
-   pill still sinks on :active. Hover never scales. */
-.la-pill:active:not([data-press]) {
-  transform: scale(var(--lens-press-scale));
-}
+/* Presses come from the press primitive (data-weight, DESIGN §5.2). Hover never scales. */
 .la-pill-get,
 .la-pill-getExternal,
 .la-pill-update,
@@ -394,8 +390,8 @@ kbd {
   color: var(--lens-link, #60a5fa);
 }
 .la-pill-run {
-  color: var(--lens-on-fg, #09090b);
-  background: var(--lens-fg);
+  color: var(--lens-on-accent-fill);
+  background: var(--lens-accent-fill);
 }
 .la-pill-retry {
   color: var(--lens-danger, #fb7185);
@@ -901,12 +897,12 @@ kbd {
   cursor: default;
 }
 .la-btn-primary {
-  color: var(--lens-on-fg, #09090b);
-  background: var(--lens-fg);
+  color: var(--lens-on-accent-fill);
+  background: var(--lens-accent-fill);
   border-color: transparent;
 }
 .la-btn-primary:hover:not(:disabled) {
-  background: var(--lens-fg-strong, var(--lens-fg));
+  background: color-mix(in srgb, var(--lens-accent-fill), var(--lens-on-accent-fill) 8%);
 }
 .la-btn-danger {
   background: var(--lens-danger, #fb7185);
@@ -928,7 +924,7 @@ kbd {
 .la-bar span {
   display: block;
   height: 100%;
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
   width: 100%;
   transform-origin: left center;
   transform: scaleX(var(--fill, 0));
@@ -943,7 +939,7 @@ kbd {
 }
 .la-check input {
   margin: 2px 0 0;
-  accent-color: var(--lens-fg);
+  accent-color: var(--lens-accent-ui);
 }
 .la-ok {
   color: var(--lens-positive, #4ade80);

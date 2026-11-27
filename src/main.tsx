@@ -113,11 +113,13 @@ installGlobalHandlers();
 const surfaceName = params.get("surface") || "dock";
 const Surface = surfaces[surfaceName] ?? surfaces.dock;
 // The feel (DESIGN.md §5): weighted presses for every control that declares a weight, and pop-outs
-// that grow from the control that opened them. Lens Browser still draws its own presses (:active
-// rules) until its pass removes them, so its window keeps "own" press mode: no weighted press
-// there yet, or the two would stack (DESIGN.md §5.5, "Adopting the feel"). The Dock adopted the
-// shared press in the Settings and themes Fable pass.
-const ownPress = surfaceName === "browser";
+// that grow from the control that opened them. A window that still draws its own presses (:active
+// rules) would list itself here and keep "own" press mode, so the two never stack (DESIGN.md §5.5,
+// "Adopting the feel"). None does now: the Dock adopted the shared press in the Settings and themes
+// pass, and Lens Browser in the accent-tokens pass (its :active rules are gone, every control
+// declares a weight).
+const OWN_PRESS_SURFACES: readonly string[] = [];
+const ownPress = OWN_PRESS_SURFACES.includes(surfaceName);
 if (ownPress) document.documentElement.dataset.pressMode = "own";
 else installPress();
 installOriginBeacon();

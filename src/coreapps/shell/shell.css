@@ -131,7 +131,7 @@ body,
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--lens-accent);
+  background: var(--lens-accent-ui);
   animation: ca-pulse 1.2s ease-in-out infinite;
 }
 @keyframes ca-pulse {
@@ -329,7 +329,7 @@ body,
   background: var(--ca-card-hover);
 }
 .ca-item.selected {
-  background: rgb(var(--lens-ink) / 0.08);
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash), rgb(var(--lens-ink) / 0.08));
 }
 .ca-item.disabled {
   opacity: 0.55;
@@ -391,7 +391,7 @@ body,
   border-radius: 4px;
 }
 .ca-table-head button:focus-visible {
-  outline: 2px solid var(--lens-focus-ring, var(--lens-accent));
+  outline: 2px solid var(--lens-focus-ring);
 }
 .ca-table-head button[aria-sort="descending"],
 .ca-table-head button[aria-sort="ascending"] {
@@ -428,13 +428,12 @@ body,
   cursor: default;
 }
 .ca-btn-primary {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  border-color: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 .ca-btn-primary:hover:not(:disabled) {
-  background: var(--lens-fg-strong, var(--lens-fg));
-  filter: brightness(1.04);
+  background: color-mix(in srgb, var(--lens-accent-fill), var(--lens-on-accent-fill) 8%);
 }
 .ca-btn-danger {
   background: var(--lens-danger);
@@ -450,7 +449,7 @@ body,
   color: var(--lens-fg-secondary);
 }
 .ca-root :is(button, input, select, textarea, [tabindex]):focus-visible {
-  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent));
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring);
   outline-offset: 2px;
 }
 .ca-pill {
@@ -502,8 +501,8 @@ body,
   gap: 8px;
 }
 .ca-tab.on {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 .ca-tab-count {
   font-size: 11px;
@@ -564,7 +563,7 @@ select.ca-input option {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
   width: 100%;
   transform-origin: left center;
   transform: scaleX(var(--fill, 0));
@@ -845,12 +844,12 @@ select.ca-input option {
   transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ca-switch.on {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
+  background: var(--lens-accent-ui);
+  border-color: var(--lens-accent-ui);
 }
 .ca-switch.on span {
   transform: translateX(16px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 .ca-switch:disabled {
   opacity: 0.4;

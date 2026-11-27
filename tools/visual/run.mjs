@@ -68,6 +68,11 @@ const STATES = [
     sizes: [[1280, 800], [1024, 700]],
   })),
   { id: "browser-setup", surface: "browser", init: "window.__lensBrowserSetup = true;", sizes: [[1280, 800], [1024, 700]] },
+  // The accent tokens in Lens Browser (src/themes/accentTokens.ts): a dark navy accent (the raw colour
+  // fails on dark packs) and a pale yellow one (fails on light packs) must still give readable
+  // switches, selected options, primary buttons and running marks.
+  { id: "browser-accent", surface: "browser", params: "accent=1E3A8A", init: `window.__lensBrowserAppearance = ${JSON.stringify({ tabsLayout: "vertical" })};`, sizes: [[1280, 800]] },
+  { id: "browser-setup-accent", surface: "browser", params: "accent=FDE68A", init: "window.__lensBrowserSetup = true;", sizes: [[1280, 800]] },
   // Lens Music (?music=1 in the mock): Now Playing tinted by the artwork, and Immersive.
   { id: "nowplaying", surface: "nowplaying", params: "music=1", sizes: [[1280, 800], [1024, 700]] },
   { id: "nowplaying-immersive", surface: "nowplaying", params: "music=1&immersive=1", sizes: [[1440, 860], [1024, 700]] },

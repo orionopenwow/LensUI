@@ -190,12 +190,49 @@ function write(root: Root, t: AccentTokens | null) {
 
 /** What the theme last asked for, so a living look can re-derive the tokens for its own colours. */
 let fromTheme: AccentInput | null = null;
+/** What the window wears now: the theme's input, or the living look's re-derivation of it. */
+let live: AccentInput | null = null;
+/** An accent that overrides the window's own for a while ("Theme follows music"), or null. */
+let followed: string | null = null;
+
+/** Body and secondary text of a scheme (tokens.css), for a look that switched scheme. */
+export const SCHEME_TEXT: Record<"light" | "dark", { fg: string; secondary: string }> = {
+  dark: { fg: "#FAFAFA", secondary: "#A1A1AA" },
+  light: { fg: "#18181B", secondary: "#52525B" },
+};
+
+// Subtrees that compute their own tokens (scopedAccentVariables) re-render when the theme's input
+// changes: a tiny version counter they subscribe to (useScopedAccent).
+let version = 0;
+const listeners = new Set<() => void>();
+const bump = () => {
+  version++;
+  listeners.forEach((l) => l());
+};
+export function onAccentChange(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+export const accentVersion = () => version;
+
+const sameInput = (a: AccentInput | null, b: AccentInput) =>
+  !!a && a.accent === b.accent && a.surface === b.surface && a.card === b.card && a.scheme === b.scheme && a.strength === b.strength && a.fg === b.fg && a.secondary === b.secondary && !!a.highContrast === !!b.highContrast;
+
+function wear(root: Root, input: AccentInput) {
+  live = input;
+  write(root, accentTokens(followed ? { ...input, accent: followed } : input));
+}
 
 /** Writes the accent tokens for the theme on the document root (applyThemeToDocument). */
 export function applyAccentTokens(root: Root, input: AccentInput): AccentTokens | null {
+  const changed = !sameInput(fromTheme, input);
   fromTheme = input;
+  // applyThemeToDocument rewrites --lens-accent with the theme's own, so a followed accent ends too.
+  followed = null;
+  live = input;
   const t = accentTokens(input);
   write(root, t);
+  if (changed) bump();
   return t;
 }
 
@@ -203,18 +240,92 @@ export function applyAccentTokens(root: Root, input: AccentInput): AccentTokens 
 export function retintAccent(root: Root, look: { accent: string; surface: string; card: string; scheme: "light" | "dark" }): void {
   if (!fromTheme) return;
   const sameScheme = look.scheme === fromTheme.scheme;
-  write(
-    root,
-    accentTokens({
-      ...fromTheme,
-      ...look,
-      fg: sameScheme ? fromTheme.fg : look.scheme === "light" ? "#18181B" : "#FAFAFA",
-      secondary: sameScheme ? fromTheme.secondary : look.scheme === "light" ? "#52525B" : "#A1A1AA",
-    })
-  );
+  wear(root, {
+    ...fromTheme,
+    ...look,
+    fg: sameScheme ? fromTheme.fg : SCHEME_TEXT[look.scheme].fg,
+    secondary: sameScheme ? fromTheme.secondary : SCHEME_TEXT[look.scheme].secondary,
+  });
 }
 
 /** The living look let go: back to the theme's own tokens. */
 export function restoreAccent(root: Root): void {
-  if (fromTheme) write(root, accentTokens(fromTheme));
+  if (fromTheme) wear(root, fromTheme);
 }
+
+/**
+ * Another accent for this window's controls for a while, on the surfaces it already wears, at the
+ * same strength (Lens Music's "Theme follows music" fades --lens-accent towards the artwork and
+ * calls this on every step), or null to go back. The artwork's colour goes through the same
+ * contrast fitting as any accent, so a dark cover on a dark theme still gives readable controls.
+ */
+export function followAccent(root: Root, accent: string | null): void {
+  followed = accent;
+  const base = live ?? fromTheme;
+  if (base) write(root, accentTokens(followed ? { ...base, accent: followed } : base));
+}
+
+/** The look a subtree paints for itself: its accent, its surfaces and its scheme. */
+export interface ScopedLook {
+  accent: string;
+  surface: string;
+  card: string;
+  scheme: "light" | "dark";
+  fg?: string;
+  secondary?: string;
+}
+
+/** Monochrome ink for a subtree, used where its accent shows no colour (grey, High contrast). */
+export interface PlainInk {
+  ui: string;
+  onUi: string;
+}
+
+const DEFAULT_INPUT: AccentInput = {
+  accent: "#FAFAFA",
+  surface: STOCK_BASE,
+  card: STOCK_CARD,
+  scheme: "dark",
+  strength: DEFAULT_ACCENT_STRENGTH,
+  fg: SCHEME_TEXT.dark.fg,
+  secondary: SCHEME_TEXT.dark.secondary,
+};
+
+/**
+ * Every accent variable for a subtree that paints its own accent or scheme (Lens Browser's own
+ * look, Lens Music's artwork tint), at the theme's strength and High contrast: written on the
+ * subtree's root, so nothing leaks in from the window's tokens (computed for other colours).
+ * `plain` is the monochrome ink there (the subtree's own --lens-fg / --lens-on-fg by default).
+ */
+export function scopedAccentVariables(look: ScopedLook, plain: PlainInk = { ui: "var(--lens-fg)", onUi: "var(--lens-on-fg)" }): Record<string, string> {
+  const base = fromTheme ?? DEFAULT_INPUT;
+  const text = SCHEME_TEXT[look.scheme];
+  const t = accentTokens({
+    strength: base.strength,
+    highContrast: base.highContrast,
+    accent: look.accent,
+    surface: look.surface,
+    card: look.card,
+    scheme: look.scheme,
+    fg: look.fg ?? text.fg,
+    secondary: look.secondary ?? text.secondary,
+  });
+  const out: Record<string, string> = {
+    "--lens-accent-ui": plain.ui,
+    "--lens-on-accent-ui": plain.onUi,
+    "--lens-accent-fill": plain.ui,
+    "--lens-on-accent-fill": plain.onUi,
+    "--lens-accent-wash": "0%",
+    "--lens-accent-edge": "0%",
+    "--lens-accent-hover": "0%",
+    "--lens-focus-ring": plain.ui,
+    ...(t ? accentCssVariables(t) : {}),
+  };
+  return out;
+}
+
+/** The accent the window wears without a followed one (the theme's, or the living look's). */
+export const wornAccent = (): string | null => (live ?? fromTheme)?.accent ?? null;
+
+/** The theme's own accent input in this window (null before the theme was applied). */
+export const themeAccentInput = (): AccentInput | null => fromTheme;

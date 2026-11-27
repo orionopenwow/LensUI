@@ -12,7 +12,7 @@
 - **Intentional Color:** Color is reserved strictly for:
   1. Full-color application icons in the Dock (**never** strip color or apply monochrome filters to app icons).
   2. Minimal semantic accents on active quick-control tiles and fill bars (Volume blue `#60A5FA`, Night Mode amber `#FBBF24`, Audio cyan `#38BDF8`, Power emerald `#34D399`).
-  3. The person's accent (the Color Wheel, or the Windows accent). Inside Lens it appears only on things that are **on or selected**: switch tracks, the mark under a running app, focus rings, slider and meter fills, selected chips and tabs, the one primary button of a card or step, and a soft wash on the selected row. How much is the **Accent strength** setting (Subtle · Balanced · Vivid, default Balanced). Surfaces, text and resting controls stay monochrome, and a white, black or grey accent shows no colour at all. Always through the accent tokens (§4.1), never the raw `--lens-accent`.
+  3. The person's accent (the Color Wheel, or the Windows accent). Inside Lens it appears only on things that are **on or selected**: switch tracks, the mark under a running app, focus rings, slider and meter fills, selected chips and tabs, the one primary button of a card or step, a soft wash on the selected row, and selected text (`::selection`, the accent with its readable ink). How much is the **Accent strength** setting (Subtle · Balanced · Vivid, default Balanced). Surfaces, text and resting controls stay monochrome, and a white, black or grey accent shows no colour at all. Always through the accent tokens (§4.1), never the raw `--lens-accent`.
   4. Window buttons (**Yellow `#FEBC2E` · Green `#28C840` · Red `#FF5F57`** by default).
 - **Zero Visual Clutter:** Never wrap standalone utility icons in unnecessary pill boxes or double borders. Let bold pure-white iconography breathe directly on the obsidian glass.
 
@@ -105,6 +105,8 @@ Computed per window by `src/themes/accentTokens.ts` from the accent, the surface
 
 Rules: never pair an accent fill with `--lens-on-fg`; never key a selector on the accent or its strength (values only, so a theme switch costs nothing more); a plain filled button (`.cc-btn`) stays ink, and only the one main action is `-primary`.
 
+A subtree that paints its own accent or scheme computes its own tokens and writes all of them on its root, so none leak in from the window: `useScopedAccent(look, plain)` (`src/themes/useScopedAccent.ts`, `scopedAccentVariables`) at the theme's strength and High contrast. Lens Browser does this for "Make it yours" (`src/browser/accentLook.ts`), Lens Music for the artwork tint on Now Playing and Immersive (`tintLook` in `src/music/tint.ts`); "Theme follows music" re-derives the window's tokens on every step of its fade (`followAccent`). The artwork colour feeds the tokens; it never bypasses them.
+
 ---
 
 ## 5. Motion & Feel
@@ -175,10 +177,10 @@ Every interactive element declares one weight (`data-weight` or the UI-kit prop)
   - [x] the perf rig measures press and flow frames (`feel-rapid-press`, `feel-settings-press`, `feel-popout-grow` in `tools/perf/run.mjs`).
 - **Review:** every Fable pass checks its area against §5.1–5.4.
 
-#### Adopting the feel (areas not migrated yet: Lens Browser, other apps)
+#### Adopting the feel (areas not migrated yet: older apps outside the feel guardrail list)
 
 1. Use the kit (`Button`, `IconButton`, `Toggle`, `Segmented`, `Chip`, `Card`) or put `data-weight="light|medium|heavy"` on each control (`usePress()` when it starts work, for `pending`). Delete the area's `:active` scale rules.
-2. The Lens Browser window runs in "own" press mode (`data-press-mode="own"` in `main.tsx`): no weighted press there yet, so it can't stack on its own `:active` rules. Its pass deletes those rules and drops the `ownPress` line in `main.tsx`. **The Dock is done** (Settings and themes Fable pass): no `:active` rules, the shared press draws its presses, its gear and system buttons carry `data-opens`, and its search filter is a sliding pill. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
+2. A window that still draws its own presses can run in "own" press mode (`OWN_PRESS_SURFACES` in `main.tsx`, `data-press-mode="own"`) so the two never stack; none does now. **Lens Browser is done** (accent-tokens pass): its `:active` rules are gone and every control declares a weight (rows, tabs, chips and menu items light; buttons medium; primary actions and Start page tiles heavy); Lens Music, Cleaner, Lens Apps, the core apps and Snip are on the guardrail list too. **The Dock is done** (Settings and themes Fable pass): no `:active` rules, the shared press draws its presses, its gear and system buttons carry `data-opens`, and its search filter is a sliding pill. Dock icons are **medium on click only**; magnification stays the Dock's own system (the press uses the separate `scale` / `translate` properties, so it composes with the magnify `transform`).
 3. Pop-outs: add `data-opens="<surface label>"` to the button that opens one (the Dock's Settings and Quick settings buttons have it; its search opens inside the Dock, so there is no pop-out to grow) and `useGrowFromTrigger(label, rootRef)` on the pop-out's root. In-window cards and panels use `growFrom(el, triggerRect)` / `returnTo(...)`.
 4. Lists: `staggerIn(items)` on arrival; content swaps: `data-swap="forward|back"` on a `.lens-swap` root, or `swapIn(el, dir)`.
 5. Add the area's files to `tools/polish/feel-migrated.txt` so the guardrail holds them.
