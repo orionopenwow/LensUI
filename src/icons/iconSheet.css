@@ -1,0 +1,4 @@
+/* Test-only icon sheet (IconSheetSurface): Lens's app icons on the theme's dock colour. */
+.lens-iconsheet { min-height: 100vh; padding: 16px; box-sizing: border-box; background: var(--lens-bg-base); color: var(--lens-fg); font: 11px ui-monospace, monospace; }
+.lens-iconsheet-grid { display: grid; grid-template-columns: 96px repeat(4, 56px); gap: 6px 10px; align-items: center; }
+.lens-iconsheet-size { color: var(--lens-fg-secondary); }

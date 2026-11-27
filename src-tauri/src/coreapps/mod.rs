@@ -22,10 +22,8 @@ pub struct CoreApp {
     pub names: &'static [&'static str],
     /// Default window size (logical px).
     pub size: (f64, f64),
-    /// SVG path data on a 24×24 grid, stroked.
+    /// SVG path data on a 24×24 grid, stroked (src/icons/lensApps.ts `LENS_APP_GLYPHS`).
     pub glyph: &'static str,
-    /// Two-stop tint for the icon tile.
-    pub tint: (&'static str, &'static str),
 }
 
 pub const APPS: &[CoreApp] = &[
@@ -34,88 +32,77 @@ pub const APPS: &[CoreApp] = &[
         title: "Lens Monitor",
         names: &["monitor", "system monitor", "lens monitor", "resource monitor lens", "whats slowing my pc", "what's slowing my pc"],
         size: (920.0, 680.0),
-        glyph: "M3 12h4l3-8 4 16 3-8h4",
-        tint: ("#3B82F6", "#1E3A8A"),
+        glyph: "M3 12h4l2.5-6 5 12 2.5-6H21",
     },
     CoreApp {
         id: "startup",
         title: "Lens Startup & Uninstall",
         names: &["startup apps", "startup", "lens startup", "uninstall", "uninstaller", "lens uninstall", "uninstall apps"],
         size: (900.0, 680.0),
-        glyph: "M12 3v9M7.5 6.5a7 7 0 1 0 9 0",
-        tint: ("#F97316", "#9A3412"),
+        glyph: "M12 16V4M7 9l5-5 5 5M5 20h14",
     },
     CoreApp {
         id: "timer",
         title: "Lens Timer",
         names: &["timer", "timers", "lens timer", "stopwatch", "pomodoro", "alarm", "alarms", "lens alarms"],
         size: (760.0, 620.0),
-        glyph: "M12 8v5l3 2M9 2h6M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
-        tint: ("#EF4444", "#7F1D1D"),
+        glyph: "M19 14a7 7 0 1 1-14 0 7 7 0 0 1 14 0zM12 14v-3.5M10 3h4",
     },
     CoreApp {
         id: "calculator",
         title: "Lens Calculator",
         names: &["lens calculator", "lens calc", "unit converter", "converter", "programmer calculator"],
         size: (760.0, 640.0),
-        glyph: "M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM8 7h8M8 12h1M12 12h1M16 12h0M8 16h1M12 16h1M16 16h0",
-        tint: ("#64748B", "#1E293B"),
+        glyph: "M7 4v6M4 7h6M14 7h6M14 15h6M14 19h6M5 15l4 4M9 15l-4 4",
     },
     CoreApp {
         id: "color",
         title: "Lens Color",
         names: &["color picker", "colour picker", "lens color", "lens colour", "eyedropper", "contrast checker"],
         size: (760.0, 640.0),
-        glyph: "M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1-.8-1.4-.8-2.3 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.6 17 3 12 3zM7.5 11.5h0M10 7.5h0M14.5 7.5h0",
-        tint: ("#A855F7", "#581C87"),
+        glyph: "M12 3.5c3 3.5 6 6.9 6 10.5a6 6 0 0 1-12 0c0-3.6 3-7 6-10.5z",
     },
     CoreApp {
         id: "notes",
         title: "Lens Notes",
         names: &["lens notes", "lens note", "lens todo", "lens to do", "lens to-do", "to do list", "todo list"],
         size: (820.0, 640.0),
-        glyph: "M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h5",
-        tint: ("#EAB308", "#713F12"),
+        glyph: "M13 20h7M4 20l1-4L15.5 5.5a2.1 2.1 0 0 1 3 3L8 19z",
     },
     CoreApp {
         id: "power",
         title: "Lens Power",
         names: &["power", "battery", "battery health", "lens power", "lens battery"],
         size: (820.0, 640.0),
-        glyph: "M4 8h14v8H4zM18 11h2v2h-2M9 9.5 7.5 12h3L9 14.5",
-        tint: ("#22C55E", "#14532D"),
+        glyph: "M5 7h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM21 10.5v3",
     },
     CoreApp {
         id: "network",
         title: "Lens Network",
         names: &["network", "lens network", "who's using my internet", "whos using my internet", "connections", "wi-fi details", "wifi details"],
         size: (860.0, 660.0),
-        glyph: "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h0",
-        tint: ("#06B6D4", "#164E63"),
+        glyph: "M3.5 9.5a12 12 0 0 1 17 0M7 13.2a7 7 0 0 1 10 0M12 18h.01",
     },
     CoreApp {
         id: "clipboard",
         title: "Lens Clipboard",
         names: &["clipboard", "clipboard history", "lens clipboard"],
         size: (760.0, 640.0),
-        glyph: "M9 3h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h6",
-        tint: ("#14B8A6", "#134E4A"),
+        glyph: "M8 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1M9 3h6v4H9z",
     },
     CoreApp {
         id: "feeds",
         title: "Lens Feeds",
         names: &["lens feeds", "feeds", "news feed", "my feeds"],
         size: (440.0, 720.0),
-        glyph: "M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14M6 18h0",
-        tint: ("#F59E0B", "#78350F"),
+        glyph: "M5 11a8 8 0 0 1 8 8M5 4a15 15 0 0 1 15 15M5.5 18.5h.01",
     },
     CoreApp {
         id: "messages",
         title: "Lens Messages",
         names: &["lens messages", "lens inbox", "unified inbox"],
         size: (440.0, 720.0),
-        glyph: "M4 5h16v11H9l-5 4z",
-        tint: ("#6366F1", "#312E81"),
+        glyph: "M6 4h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4V6a2 2 0 0 1 2-2z",
     },
 ];
 
@@ -164,15 +151,16 @@ pub fn voice_target(name: &str) -> Option<&'static str> {
     APPS.iter().find(|a| a.names.iter().any(|x| *x == n) || n == a.id && !matches!(a.id, "calculator" | "notes")).map(|a| a.id)
 }
 
-/// The app icon as an SVG data URL (Dock, Launcher, window badge).
+/// Lens's own app-icon tile around one glyph: a plain matte tile, a faint hairline and a bold white
+/// stroke (DESIGN.md §6). Identical to `TILE_OPEN` / `TILE_CLOSE` in src/icons/lensApps.ts (a bun
+/// test compares them).
+pub const ICON_OPEN: &str = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='2' y='2' width='60' height='60' rx='15' fill='#18181B'/><rect x='2.5' y='2.5' width='59' height='59' rx='14.5' fill='none' stroke='white' stroke-opacity='.1'/><g transform='translate(12.5 12.5) scale(1.625)' fill='none' stroke='#FAFAFA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'>";
+pub const ICON_CLOSE: &str = "</g></svg>";
+
+/// The app icon as SVG (Dock, Launcher, window badge).
 pub fn icon_svg(id: &str) -> Option<String> {
     let a = by_id(id)?;
-    Some(format!(
-        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='{a}'/><stop offset='1' stop-color='{b}'/></linearGradient></defs><rect x='2' y='2' width='60' height='60' rx='16' fill='url(#g)'/><rect x='2.5' y='2.5' width='59' height='59' rx='15.5' fill='none' stroke='white' stroke-opacity='.18'/><g transform='translate(14 14) scale(1.5)' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='{p}'/></g></svg>",
-        a = a.tint.0,
-        b = a.tint.1,
-        p = a.glyph
-    ))
+    Some(format!("{ICON_OPEN}<path d='{}'/>{ICON_CLOSE}", a.glyph))
 }
 
 pub fn icon_data_url(id: &str) -> Option<String> {
