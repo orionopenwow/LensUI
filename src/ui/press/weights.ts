@@ -1,8 +1,8 @@
 // Default weights for the shared classes that predate the kit (DESIGN.md §5.2): a control with one
 // of these classes and no data-weight gets this weight on its first press, so every surface built
 // from the shared classes inherits the feel. The kit components (src/ui) and migrated surfaces
-// declare data-weight themselves. The Dock and Lens Browser are not listed: they adopt the press
-// in their own Fable pass (DESIGN.md §5.5, "Adopting the feel").
+// declare data-weight themselves (the Dock and Lens Browser do, so their classes are not listed;
+// DESIGN.md §5.5, "Adopting the feel").
 import type { PressWeight } from "../motion/tokens";
 
 export const CLASS_WEIGHTS: readonly (readonly [string, PressWeight])[] = [

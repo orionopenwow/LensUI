@@ -12,7 +12,8 @@ import {
 import { ProposalApproval } from "../approval/LocalApproval";
 import { ImmersiveView, type ImmersiveFrom, type Rect } from "./Immersive";
 import type { LyricsView } from "./immersiveModel";
-import { heroBackgrounds, pickTint } from "./tint";
+import { heroBackgrounds, pickTint, tintInk, tintLook } from "./tint";
+import { useScopedAccent } from "../themes/useScopedAccent";
 import { useLyricTranslation } from "./useTranslation";
 import { music, useNowPlaying, type LyricsResult, type MusicConfig, type Played, type PlaylistItem, type Queue } from "./api";
 import {
@@ -24,6 +25,10 @@ import { SpotifyConnectInline } from "./spotifyConnect";
 import "./music.css";
 
 export type NowPlayingMode = "compact" | "expanded" | "fullscreen";
+
+/** The field Immersive's accent sits on: paper on light themes, near-black on dark. */
+const IMM_FIELD_LIGHT = ["#f3f3f5", "#e4e4e8"];
+const IMM_FIELD_DARK = ["#060607", "#1a1a1f"];
 
 /** Lens's own accent (the theme's), read from the page. */
 function themeAccent(): string {
@@ -199,21 +204,22 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
   const base = typeof document !== "undefined" ? cssBase() : "#09090b";
   const hero = useMemo(() => heroGradient(palette, base), [palette, base]);
   // Accents from the artwork, checked for 4.5:1 on every part of the hero; the theme accent otherwise.
-  const tint = useMemo(
-    () => pickTint(cfg?.artTint === false ? [] : palette, heroBackgrounds(palette, base, pickVivid(palette)), themeAccent()),
-    [palette, base, cfg?.artTint]
-  );
+  const heroBgs = useMemo(() => heroBackgrounds(palette, base, pickVivid(palette)), [palette, base]);
+  const tint = useMemo(() => pickTint(cfg?.artTint === false ? [] : palette, heroBgs, themeAccent()), [palette, heroBgs, cfg?.artTint]);
+  // The tint feeds the accent tokens (switches, selected chips, fills, focus rings) at the theme's
+  // strength, so they are contrast-checked on the hero like the rest of Lens's controls.
+  const accentVars = useScopedAccent(tintLook(tint, heroBgs, "dark"), tintInk(tint));
   const rootStyle = {
     ["--lm-hero" as string]: hero,
     ["--lens-accent" as string]: tint.accent,
     ["--lm-on-accent" as string]: tint.onAccent,
+    ...accentVars,
   } as React.CSSProperties;
   const light = typeof document !== "undefined" && document.documentElement.dataset.scheme === "light";
   // Immersive sits on its own field (paper on light themes, near-black on dark): checked against that.
-  const immTint = useMemo(
-    () => pickTint(cfg?.artTint === false ? [] : palette, light ? ["#f3f3f5", "#e4e4e8"] : ["#060607", "#1a1a1f"], themeAccent()),
-    [palette, light, cfg?.artTint]
-  );
+  const immField = light ? IMM_FIELD_LIGHT : IMM_FIELD_DARK;
+  const immTint = useMemo(() => pickTint(cfg?.artTint === false ? [] : palette, immField, themeAccent()), [palette, immField, cfg?.artTint]);
+  const immAccentVars = useScopedAccent(tintLook(immTint, immField, light ? "light" : "dark"), tintInk(immTint));
   const totalOffset = (cfg?.lyricsOffsetMs ?? 0) + songOffset;
   const { main, sub } = splitTitle(now?.title ?? "", now?.album ?? "");
   const artists = splitArtists(now?.artist ?? "");
@@ -238,6 +244,7 @@ export const NowPlayingView: React.FC<Props> = ({ mode: modeProp, onMode, onClos
         onView={changeView}
         accent={immTint.accent}
         onAccent={immTint.onAccent}
+        accentVars={immAccentVars}
         light={light}
         from={immersive.from}
         trigger={immersive.trigger}

@@ -40,6 +40,8 @@ Themes decide how Lens looks: colours, materials, accent, and (only when the per
 
 | Accent on Lens's own controls | Tokens per window; on / selected / focus / progress only | works (harness) | `accentTokens.ts`, `fableSettings.test.tsx`, goldens `settings-accent*`, `quicksettings-accent*`, `dock-accent*` |
 | Accent strength | Subtle / Balanced / Vivid with a live sample of each; `theme.accentStrength` in the catalogue | works (harness) | `ThemeTab.tsx`, `AccentStrengthPreview.tsx` |
+| Accent in Lens's own apps | Lens Browser, Lens Music, Cleaner, Lens Apps + core apps, Snip read the tokens; Browser's own look and Music's artwork tint compute scoped tokens (`useScopedAccent`); "Theme follows music" re-derives them (`followAccent`) | works (harness) | `accentApps.test.ts`, goldens `browser-accent*`, `browser-setup-accent*` |
+| Text selection | `::selection` in the accent with its readable ink; High contrast and Windows contrast themes keep the system's | works (harness) | `global.css`, `accentApps.test.ts` › B-144 |
 
 ### 3. Day & night
 | Feature | Sub | Status | Evidence |

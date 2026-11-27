@@ -199,7 +199,7 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
             ) : (
               <ul className="ca-list" role="listbox" aria-label="Apps" tabIndex={0} onKeyDown={onListKey} aria-activedescendant={sel ? `mon-row-${apps.findIndex((a) => a.name === sel)}` : undefined}>
                 {apps.slice(0, 200).map((a, i) => (
-                  <li
+                  <li data-weight="light"
                     key={a.name}
                     id={`mon-row-${i}`}
                     role="option"

@@ -288,7 +288,7 @@ export const MusicEqualizerRows: React.FC = () => {
     <div data-guide-id="music.equalizer">
       <div className="cc-label lm-settings-head">Equalizer</div>
       <div className="cc-desc">
-        Lens doesn't process sound itself. It works with <button type="button" className="md-link" onClick={() => openExternal("https://sourceforge.net/projects/equalizerapo/")}>Equalizer APO</button>, a free system-wide equalizer by Jonas Thedering: Lens switches its presets (10 bands, 32 Hz – 16 kHz) by adding one marked line to its config and one file beside it. Off takes exactly those out again, and so does Remove all Lens changes.
+        Lens doesn't process sound itself. It works with <button type="button" data-weight="light" className="md-link" onClick={() => openExternal("https://sourceforge.net/projects/equalizerapo/")}>Equalizer APO</button>, a free system-wide equalizer by Jonas Thedering: Lens switches its presets (10 bands, 32 Hz – 16 kHz) by adding one marked line to its config and one file beside it. Off takes exactly those out again, and so does Remove all Lens changes.
       </div>
       {!eq ? null : eq.installed ? (
         <>

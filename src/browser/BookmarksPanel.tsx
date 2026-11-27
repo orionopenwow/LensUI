@@ -51,20 +51,20 @@ function Row({ b, onOpen, onView, live }: { b: Bookmark; onOpen(url: string, bg:
         <input className="lb-input lb-mono" value={folder} onChange={(e) => setFolder(e.target.value)} aria-label="Folder (use / to nest)" placeholder="Folder / Subfolder" />
         <div className="lb-ok-actions">
           <span className="lb-push" />
-          <button type="button" className="lb-btn lb-btn-sm" onClick={() => setEdit(false)}>Cancel <Key k="Esc" /></button>
-          <button type="submit" className="lb-btn lb-btn-sm lb-btn-primary">Save <Key k="⏎" /></button>
+          <button data-weight="medium" type="button" className="lb-btn lb-btn-sm" onClick={() => setEdit(false)}>Cancel <Key k="Esc" /></button>
+          <button data-weight="heavy" type="submit" className="lb-btn lb-btn-sm lb-btn-primary">Save <Key k="⏎" /></button>
         </div>
       </form>
     );
   }
   return (
     <div className="lb-row lb-bm" onAuxClick={(e) => e.button === 1 && onOpen(b.url, true)}>
-      <button className="lb-bm-open" onClick={(e) => onOpen(b.url, e.ctrlKey || e.metaKey)}>
+      <button data-weight="light" className="lb-bm-open" onClick={(e) => onOpen(b.url, e.ctrlKey || e.metaKey)}>
         <Avatar url={b.url} title={b.title} size={14} />
         <span className="lb-tab-title">{b.title || b.url}</span>
       </button>
-      <button className="lb-icon-btn sm" aria-label={`Edit ${b.title}`} onClick={() => setEdit(true)}><Pencil size={12} /></button>
-      <button className="lb-icon-btn sm" aria-label={`Remove ${b.title}`} onClick={() => live && void bookmarkRemove(b.id).then(onView).catch(oops("remove the bookmark"))}><Trash2 size={12} /></button>
+      <button data-weight="medium" className="lb-icon-btn sm" aria-label={`Edit ${b.title}`} onClick={() => setEdit(true)}><Pencil size={12} /></button>
+      <button data-weight="medium" className="lb-icon-btn sm" aria-label={`Remove ${b.title}`} onClick={() => live && void bookmarkRemove(b.id).then(onView).catch(oops("remove the bookmark"))}><Trash2 size={12} /></button>
     </div>
   );
 }
@@ -73,7 +73,7 @@ function Folder({ n, depth, ...p }: { n: Node; depth: number; onOpen(url: string
   const [open, setOpen] = useState(depth < 1);
   return (
     <div className="lb-bm-folder" style={{ marginLeft: depth ? 12 : 0 }}>
-      <button className="lb-folder-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button data-weight="light" className="lb-folder-head" aria-expanded={open} onClick={() => setOpen(!open)}>
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span>{n.name}</span>
         <span className="lb-mono lb-dim lb-push">{n.marks.length + n.children.length}</span>

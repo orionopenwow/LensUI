@@ -247,31 +247,30 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform var(--cl-t-fast) var(--cl-ease-move), background var(--cl-t-fast) var(--cl-ease-move), opacity var(--cl-t-fast);
+  transition: background var(--cl-t-fast) var(--cl-ease-move), opacity var(--cl-t-fast);
 }
 .cl-btn:hover {
   background: color-mix(in srgb, var(--cl-surface), rgb(var(--lens-ink)) 6%);
 }
-.cl-btn:active {
-  transform: scale(0.97);
-}
+/* Presses come from the shared press (data-weight, src/ui/press): no :active scale here. */
 .cl-btn:disabled {
   opacity: 0.5;
   cursor: default;
   transform: none;
 }
+/* The one main action: the accent fill and its ink (src/themes/accentTokens.ts). */
 .cl-btn.is-primary {
-  background: var(--lens-fg);
+  background: var(--lens-accent-fill);
   border-color: transparent;
-  color: var(--lens-on-fg);
+  color: var(--lens-on-accent-fill);
 }
 .cl-btn.is-primary:hover {
-  background: color-mix(in srgb, var(--lens-fg), var(--lens-pack-base, #000) 10%);
+  background: color-mix(in srgb, var(--lens-accent-fill), var(--lens-pack-base, #000) 10%);
 }
 .cl-btn.is-primary .cl-key {
   background: rgb(var(--lens-ink) / 0);
-  border-color: color-mix(in srgb, var(--lens-on-fg), transparent 70%);
-  color: var(--lens-on-fg);
+  border-color: color-mix(in srgb, var(--lens-on-accent-fill), transparent 70%);
+  color: var(--lens-on-accent-fill);
 }
 .cl-btn.is-ghost {
   background: transparent;
@@ -346,7 +345,7 @@
   padding: 0;
   background: transparent;
   cursor: pointer;
-  color: var(--lens-on-fg);
+  color: var(--lens-on-accent-ui);
 }
 .cl-check::before {
   content: "";
@@ -355,7 +354,7 @@
   border-radius: 6px;
   border: 1.5px solid var(--lens-border-strong);
   background: transparent;
-  transition: background var(--cl-t-fast) var(--cl-ease-move), border-color var(--cl-t-fast), transform var(--cl-t-fast) var(--cl-ease-move);
+  transition: background var(--cl-t-fast) var(--cl-ease-move), border-color var(--cl-t-fast);
 }
 .cl-check svg {
   position: relative;
@@ -363,11 +362,8 @@
 }
 .cl-check.is-checked::before,
 .cl-check.is-mixed::before {
-  background: var(--lens-fg);
-  border-color: var(--lens-fg);
-}
-.cl-check:active::before {
-  transform: scale(0.88);
+  background: var(--lens-accent-ui);
+  border-color: var(--lens-accent-ui);
 }
 .cl-check.is-checked svg {
   animation: cl-pop var(--cl-t-base) var(--cl-ease-in);
@@ -434,8 +430,8 @@
   cursor: pointer;
 }
 .cl-chip.is-on {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
 .cl-chip.is-static {
@@ -467,7 +463,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: inherit;
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
   width: 100%;
   transform-origin: left center;
   transform: scaleX(var(--fill, 0));
@@ -567,7 +563,7 @@
 .cl-pool.b {
   right: -160px;
   bottom: -260px;
-  background: var(--lens-accent);
+  background: var(--lens-accent-ui);
   animation-delay: -9s;
 }
 .cl-ambient.is-warn .cl-pool.b {
@@ -722,7 +718,7 @@
 }
 .cl-orb-ring .arc {
   fill: none;
-  stroke: var(--lens-fg);
+  stroke: var(--lens-accent-ui);
   stroke-width: 6;
   stroke-linecap: round;
   stroke-dasharray: 80 247;
@@ -1225,8 +1221,8 @@
   font-weight: 700;
 }
 .cl-dpill.is-on {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
 .cl-dpill.is-on .cl-meta {
@@ -1385,14 +1381,14 @@
   filter: brightness(1.15);
 }
 .cl-tm.is-file {
-  background: color-mix(in srgb, var(--lens-accent), transparent calc(100% - var(--shade, 0.2) * 100%));
+  background: color-mix(in srgb, var(--lens-accent-ui), transparent calc(100% - var(--shade, 0.2) * 100%));
 }
 .cl-tm.is-locked,
 .cl-tm.is-smaller {
   background: repeating-linear-gradient(135deg, rgb(var(--lens-ink) / 0.06) 0 6px, rgb(var(--lens-ink) / 0.1) 6px 12px);
 }
 .cl-tm.is-on {
-  outline: 2px solid var(--lens-fg);
+  outline: 2px solid var(--lens-accent-ui);
   outline-offset: -2px;
 }
 .cl-tm-name {
@@ -1424,7 +1420,7 @@
   animation-delay: calc(var(--d, 0) * 80ms);
 }
 .cl-arc.is-file {
-  fill: color-mix(in srgb, var(--lens-accent), transparent 50%);
+  fill: color-mix(in srgb, var(--lens-accent-ui), transparent 50%);
 }
 .cl-arc.is-small {
   fill: rgb(var(--lens-ink) / 0.08);
@@ -1876,7 +1872,7 @@
   transition: background var(--cl-t-base) var(--cl-ease-move);
 }
 .cl-switch.is-on {
-  background: var(--lens-fg);
+  background: var(--lens-accent-ui);
 }
 .cl-switch-knob {
   position: absolute;
@@ -1890,7 +1886,7 @@
 }
 .cl-switch.is-on .cl-switch-knob {
   transform: translateX(18px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 
 /* Low-space pill (Top Bar) */
@@ -1930,7 +1926,7 @@
   inset: -2px;
   -webkit-mask: var(--lens-shape-cookie) center / contain no-repeat;
   mask: var(--lens-shape-cookie) center / contain no-repeat;
-  background: color-mix(in srgb, var(--lens-x-active, var(--lens-accent)), transparent 72%);
+  background: color-mix(in srgb, var(--lens-x-active, var(--lens-accent-ui)), transparent 72%);
 }
 :root[data-shape="expressive"] :is(.cl-caticon, .cl-drive-icon, .cl-empty-icon) svg {
   position: relative;

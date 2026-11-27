@@ -42,7 +42,7 @@ export function hitTest(s: Shape, p: { x: number; y: number }) {
 export const SelBox: React.FC<{ shape?: Shape; scale: number }> = ({ shape, scale }) => {
   if (!shape) return null;
   const b = bbox(shape);
-  return <rect x={b.x - 6} y={b.y - 6} width={b.w + 12} height={b.h + 12} fill="none" stroke="var(--lens-accent)" strokeDasharray="4 3" strokeWidth={Math.max(1, scale * 1.5)} />;
+  return <rect x={b.x - 6} y={b.y - 6} width={b.w + 12} height={b.h + 12} fill="none" stroke="var(--lens-accent-ui)" strokeDasharray="4 3" strokeWidth={Math.max(1, scale * 1.5)} />;
 };
 
 export const DraftShape: React.FC<{ s: Shape; crop: boolean }> = ({ s, crop }) => {
@@ -57,7 +57,7 @@ export const DraftShape: React.FC<{ s: Shape; crop: boolean }> = ({ s, crop }) =
     case "blur":
       return <rect x={s.rect.x} y={s.rect.y} width={s.rect.w} height={s.rect.h} fill="rgba(0,0,0,0.35)" stroke="#fff" strokeDasharray="4 3" />;
     case "spotlight":
-      return <rect x={s.rect.x} y={s.rect.y} width={s.rect.w} height={s.rect.h} fill="none" stroke={crop ? "var(--lens-accent)" : "#fff"} strokeWidth={2} strokeDasharray="6 4" />;
+      return <rect x={s.rect.x} y={s.rect.y} width={s.rect.w} height={s.rect.h} fill="none" stroke={crop ? "var(--lens-accent-ui)" : "#fff"} strokeWidth={2} strokeDasharray="6 4" />;
     case "pen":
       return <polyline points={s.points.reduce<string[]>((a, v, i) => (i % 2 ? (a[a.length - 1] += `,${v}`, a) : [...a, String(v)]), []).join(" ")} fill="none" stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round" />;
     default:

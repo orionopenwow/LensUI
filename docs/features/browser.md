@@ -1,5 +1,7 @@
 # Lens Browser — feature dossier
 
+> **Accent tokens pass (`feat/accent-tokens-apps`, 2026-11-27):** Lens Browser reads the accent tokens (DESIGN §4.1) instead of the raw `--lens-accent`; "Make it yours" (its own accent and scheme) computes scoped tokens on the browser's own surfaces (`src/browser/accentLook.ts`). The window runs the shared press now (no "own" press mode, no `:active` rules; every control declares a weight). B-141, B-143. Not yet seen on a real PC.
+
 Status date: 2026-11-26 (main at `6e7abb0`; Fable pass in PR #114: step-bound approvals, local reader view, failure toasts, permission timeout).
 **Ardia lessons pass** (branch `feature/browser-ardia-lessons`): real content blocking from filter lists, a fuller Arc/Zen import, split view and real favicons; marked **[ardia]**. Learned from Ardia (ardia.dev, GPL-3.0): ideas only, no code or assets (credit in `docs/THIRD_PARTY_NOTICES.md`). Verified by unit tests, parity scenes and CI's Windows build, not yet by hand on a real PC.
 Fable pass status lines are marked **[#114]**; they describe the PR branch and are verified by unit tests, the headless parity harness and CI, not yet by hand on a real PC. Sources: `docs/BROWSER_AAA.md`, `docs/LENS_BROWSER.md`,

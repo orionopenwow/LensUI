@@ -1,5 +1,7 @@
 # Magic — feature dossier (right-click Magic and the Magic waves)
 
+> **Accent tokens pass (`feat/accent-tokens-apps`, 2026-11-27):** Snip's selection box, handles, crop and lasso outlines, primary and toggled buttons and focus rings read the accent tokens instead of the raw accent. B-141.
+
 Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/MAGIC.md`, `docs/RIGHTCLICK.md`,
 `docs/plans/MAGIC_WAVES.md`, `docs/DASHBOARD.md`, `docs/brain/BUGS.md`, code below.
 Merged since: **#108** (M2 widgets), **#109** (M3 Magic Mouse), **#107** (M4 Magic Start and Shelf → Notes). In flight: **#123** (desktop widgets),

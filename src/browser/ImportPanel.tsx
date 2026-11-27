@@ -63,8 +63,8 @@ function ItemPicker({ label, items, skip, onSkip }: { label: string; items: Impo
           <Search size={13} className="lb-dim" />
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Filter ${label}`} aria-label={`Filter ${label}`} />
         </label>
-        <button className="lb-chip" onClick={() => setAll(true)}>All</button>
-        <button className="lb-chip" onClick={() => setAll(false)}>None</button>
+        <button data-weight="light" className="lb-chip" onClick={() => setAll(true)}>All</button>
+        <button data-weight="light" className="lb-chip" onClick={() => setAll(false)}>None</button>
       </div>
       <p className="lb-mono lb-dim" aria-live="polite">{kept.toLocaleString()} of {items.length.toLocaleString()} will come across</p>
       <ul className="lb-pick-items">
@@ -200,7 +200,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
             ) : (
               <span className="lb-mono lb-dim">{s.profiles[0]?.label}</span>
             )}
-            <button
+            <button data-weight="medium"
               className="lb-btn lb-btn-sm lb-push"
               onClick={() => {
                 const sel = document.getElementById(`lb-prof-${s.browser}`) as HTMLSelectElement | null;
@@ -222,8 +222,8 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
           </p>
           <div className="lb-ok-actions">
             <span className="lb-push" />
-            <button className="lb-btn lb-btn-sm" onClick={() => setConsent(null)}>Not now <Key k="Esc" /></button>
-            <button className="lb-btn lb-btn-sm lb-btn-primary" disabled={busy} onClick={() => void look(pick.browser, pick.profile)}>
+            <button data-weight="medium" className="lb-btn lb-btn-sm" onClick={() => setConsent(null)}>Not now <Key k="Esc" /></button>
+            <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" disabled={busy} onClick={() => void look(pick.browser, pick.profile)}>
               {busy ? <Loader2 size={13} className="lb-spin" /> : null} Allow and count <Key k="⏎" />
             </button>
           </div>
@@ -251,7 +251,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
                     </span>
                   </label>
                   {canPick ? (
-                    <button className="lb-chip" aria-expanded={open === listKey} onClick={() => setOpen(open === listKey ? null : listKey)}>
+                    <button data-weight="light" className="lb-chip" aria-expanded={open === listKey} onClick={() => setOpen(open === listKey ? null : listKey)}>
                       {open === listKey ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Choose
                     </button>
                   ) : null}
@@ -267,7 +267,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
           <div className="lb-ok-actions">
             <span className="lb-mono lb-dim">History may miss the last few minutes if {src?.label} is open.</span>
             <span className="lb-push" />
-            <button className="lb-btn lb-btn-sm lb-btn-primary" disabled={busy || !Object.values(kinds).some(Boolean)} onClick={() => void run()}>
+            <button data-weight="heavy" className="lb-btn lb-btn-sm lb-btn-primary" disabled={busy || !Object.values(kinds).some(Boolean)} onClick={() => void run()}>
               {busy ? <Loader2 size={13} className="lb-spin" /> : null} Import <Key k="⏎" />
             </button>
           </div>
@@ -322,7 +322,7 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
                   {[r.bookmarks && `${r.bookmarks.toLocaleString()} bookmarks`, r.tabs && `${r.tabs} tabs`, r.history && `${r.history.toLocaleString()} history pages`, r.searchChanged && "search engine"].filter(Boolean).join(" · ") || "Nothing left"}
                 </span>
               </span>
-              <button className={`lb-chip${removing === r.id ? " is-warn" : ""}`} onClick={() => void remove(r.id)} onBlur={() => setRemoving(null)}>
+              <button data-weight="light" className={`lb-chip${removing === r.id ? " is-warn" : ""}`} onClick={() => void remove(r.id)} onBlur={() => setRemoving(null)}>
                 <Undo2 size={12} /> {removing === r.id ? "Really remove all of it?" : "Remove"}
               </button>
             </div>

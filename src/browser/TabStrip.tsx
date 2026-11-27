@@ -90,7 +90,7 @@ export function TabStrip(p: StripProps) {
           if (active && p.addressSlot) {
             // Merged: the open tab is the address box itself.
             return (
-              <div key={t.id} role="tab" aria-selected tabIndex={-1} className="lb-stab is-active is-address" aria-label={`${tabLabel(t)} (current tab, address)`}>
+              <div data-weight="light" key={t.id} role="tab" aria-selected tabIndex={-1} className="lb-stab is-active is-address" aria-label={`${tabLabel(t)} (current tab, address)`}>
                 {p.addressSlot}
               </div>
             );

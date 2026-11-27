@@ -478,7 +478,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
           ))}
           <span className="sep" />
           <Tip text="Line width" below>
-            <button type="button" className="snip-btn" onClick={() => setWidth((w) => (w >= 8 ? 2 : w + 2))} aria-label={`Line width ${width}`}>
+            <button data-weight="medium" type="button" className="snip-btn" onClick={() => setWidth((w) => (w >= 8 ? 2 : w + 2))} aria-label={`Line width ${width}`}>
               {width}px
             </button>
           </Tip>
@@ -542,7 +542,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
                   )
                 )}
                 {doc.crop ? <path className="snip-crop-dim" fillRule="evenodd" d={`M0 0H${W}V${H}H0Z M${doc.crop.x} ${doc.crop.y}h${doc.crop.w}v${doc.crop.h}h${-doc.crop.w}Z`} /> : null}
-                {doc.crop ? <rect x={doc.crop.x} y={doc.crop.y} width={doc.crop.w} height={doc.crop.h} fill="none" stroke="var(--lens-accent)" strokeWidth={Math.max(2, W / 400)} strokeDasharray="8 6" /> : null}
+                {doc.crop ? <rect x={doc.crop.x} y={doc.crop.y} width={doc.crop.w} height={doc.crop.h} fill="none" stroke="var(--lens-accent-ui)" strokeWidth={Math.max(2, W / 400)} strokeDasharray="8 6" /> : null}
                 {selected ? <SelBox shape={doc.shapes.find((s) => s.id === selected)} scale={W / 600} /> : null}
                 {draft ? <DraftShape s={draft} crop={tool === "crop"} /> : null}
               </svg>
@@ -563,7 +563,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
               />
             ) : null}
             <Tip text="Drag into any app to drop the image" className="drag-out">
-              <button type="button" className="snip-btn icon" draggable onDragStart={dragStart} aria-label="Drag the image out">
+              <button data-weight="medium" type="button" className="snip-btn icon" draggable onDragStart={dragStart} aria-label="Drag the image out">
                 <GripVertical size={15} />
               </button>
             </Tip>
@@ -629,7 +629,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
                 <ShieldCheck size={13} /> Hide sensitive details
               </span>
               {suggestions.length ? (
-                <button type="button" className="snip-btn" style={{ height: 24 }} onClick={acceptAll}>
+                <button data-weight="medium" type="button" className="snip-btn" style={{ height: 24 }} onClick={acceptAll}>
                   Hide all
                 </button>
               ) : null}
@@ -660,7 +660,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
             <h4>
               Text
               {avail.hasText ? (
-                <button type="button" className="snip-btn" style={{ height: 24 }} onClick={() => void runAction("copyText")}>
+                <button data-weight="medium" type="button" className="snip-btn" style={{ height: 24 }} onClick={() => void runAction("copyText")}>
                   <Copy size={12} /> Copy
                 </button>
               ) : null}
@@ -670,7 +670,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
             {avail.hasText ? <div className="snip-ocr">{ocrText}</div> : ocrReady && !analysis?.error ? <div className="snip-muted">{cut && analysis?.ocr?.lines.length ? "No text in the part you kept." : "No text found."}</div> : null}
             {avail.hasText && editable && tool !== "livetext" ? <div className="snip-muted">Press L to select words on the image.</div> : null}
             {translation.length ? (
-              <button type="button" className="snip-btn" onClick={() => setTranslation([])}>
+              <button data-weight="medium" type="button" className="snip-btn" onClick={() => setTranslation([])}>
                 <Languages size={13} /> Show original text
               </button>
             ) : null}

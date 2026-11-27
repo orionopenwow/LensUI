@@ -35,7 +35,7 @@
 
 .snip-sel-box {
   position: absolute;
-  outline: 1px solid var(--lens-accent);
+  outline: 1px solid var(--lens-accent-ui);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
@@ -45,7 +45,7 @@
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  background: var(--lens-accent);
+  background: var(--lens-accent-ui);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
@@ -144,12 +144,12 @@
   white-space: nowrap;
 }
 .snip-btn:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.08)); color: var(--lens-fg); }
-.snip-btn.on { background: var(--lens-fg); color: var(--lens-on-fg, #09090b); }
-.snip-btn.primary { background: var(--lens-fg); color: var(--lens-on-fg, #09090b); font-weight: 600; }
-.snip-btn.primary:hover { background: var(--lens-fg-strong, var(--lens-fg)); color: var(--lens-on-fg, #09090b); }
+.snip-btn.on { background: var(--lens-accent-fill); color: var(--lens-on-accent-fill); }
+.snip-btn.primary { background: var(--lens-accent-fill); color: var(--lens-on-accent-fill); font-weight: 600; }
+.snip-btn.primary:hover { background: color-mix(in srgb, var(--lens-accent-fill), var(--lens-on-accent-fill) 8%); color: var(--lens-on-accent-fill); }
 .snip-btn.danger { color: var(--lens-danger, #ef4444); }
 .snip-btn:disabled { opacity: 0.4; cursor: default; }
-.snip-btn:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
+.snip-btn:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 1px; }
 .snip-btn.icon { padding: 0; width: 32px; }
 
 .snip-tip-wrap { position: relative; display: inline-flex; }
@@ -219,7 +219,7 @@
 }
 /* The swatch stays small; what you can hit is 32 px tall. */
 .snip-color::before { content: ""; position: absolute; inset: -8px -3px; }
-.snip-color:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 2px; }
+.snip-color:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 2px; }
 .snip-color.on { border-color: var(--lens-fg); }
 .snip-title {
   font-size: 12px;
@@ -295,7 +295,7 @@
   cursor: pointer;
 }
 .snip-sugg:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.06)); }
-.snip-sugg input { margin: 0; accent-color: var(--lens-accent); }
+.snip-sugg input { margin: 0; accent-color: var(--lens-accent-ui); }
 .snip-sugg .p { font-family: var(--lens-font-mono, ui-monospace, monospace); font-size: 11px; color: var(--lens-fg-secondary); }
 .snip-conf { font-size: 11px; color: var(--lens-fg-muted, var(--lens-fg-secondary)); }
 
@@ -327,7 +327,7 @@
   color: var(--lens-fg-secondary);
 }
 .snip-badge.local { color: var(--lens-positive, #22c55e); border-color: currentColor; }
-.snip-badge.cloud { color: var(--lens-accent); border-color: currentColor; }
+.snip-badge.cloud { color: var(--lens-fg); border-color: var(--lens-accent-ui); }
 .snip-input {
   height: 32px;
   border-radius: 8px;
@@ -339,7 +339,7 @@
   font-size: 13px;
   width: 100%;
 }
-.snip-input:focus { outline: none; border-color: var(--lens-accent); }
+.snip-input:focus { outline: none; border-color: var(--lens-accent-ui); }
 
 .snip-actions {
   grid-column: 1 / 3;
@@ -378,12 +378,12 @@
   font: 600 11px/1 var(--lens-font-mono, ui-monospace, monospace);
 }
 .snip-chip:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.06)); }
-.snip-chip.focus { border-color: var(--lens-accent); box-shadow: 0 0 0 1px var(--lens-accent) inset; }
+.snip-chip.focus { border-color: var(--lens-accent-ui); box-shadow: 0 0 0 1px var(--lens-accent-ui) inset; }
 .snip-chip:disabled { opacity: 0.4; cursor: default; }
 .snip-chip.done .k { background: var(--lens-positive, #22c55e); color: #fff; }
 /* Done: the tick lands with a little weight, once. */
 .snip-chip.done .k svg { animation: snip-tick var(--lens-dur-slow) var(--lens-ease-spring); }
-.snip-chip:focus-visible, .snip-recent:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
+.snip-chip:focus-visible, .snip-recent:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 1px; }
 .snip-actions .sep { width: 1px; height: 24px; background: var(--lens-border); margin: 0 4px; flex: none; }
 .snip-recent {
   height: 28px;
@@ -445,7 +445,7 @@
 .snip-option b { font-size: 13px; font-weight: 600; }
 .snip-option span:not(.snip-badge) { color: var(--lens-fg-secondary); }
 .snip-option:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.06)); border-color: var(--lens-border-strong, var(--lens-border)); }
-.snip-option:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
+.snip-option:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 1px; }
 
 /* ---------------------------------------------------------------- pin */
 
@@ -466,7 +466,7 @@
 }
 .snip-pin:hover .snip-pin-bar, .snip-pin:focus-within .snip-pin-bar { opacity: 1; }
 .snip-pin-bar .snip-btn { height: 32px; min-width: 32px; }
-.snip-pin-bar input[type="range"] { width: 72px; accent-color: var(--lens-accent); }
+.snip-pin-bar input[type="range"] { width: 72px; accent-color: var(--lens-accent-ui); }
 
 /* ---------------------------------------------------------------- recording */
 
@@ -514,7 +514,7 @@
 .snip-thumb .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity var(--lens-dur-fast) var(--lens-ease-out); }
 .snip-thumb:hover .tools, .snip-thumb:focus-within .tools { opacity: 1; }
 .snip-thumb .tools .snip-btn { height: 32px; min-width: 32px; background: var(--lens-surface-solid, var(--lens-bg-surface)); }
-.snip-thumb.pinned { border-color: var(--lens-accent); }
+.snip-thumb.pinned { border-color: var(--lens-accent-ui); }
 
 /* ---------------------------------------------------------------- live text */
 
@@ -562,7 +562,7 @@
   animation: snip-rise var(--lens-dur-base) var(--lens-ease-out) backwards;
 }
 .snip-entity:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.06)); }
-.snip-entity:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
+.snip-entity:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: 1px; }
 .snip-entity .k { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lens-fg-secondary); }
 .snip-entity .v { font-family: var(--lens-font-mono, ui-monospace, monospace); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snip-entity svg { flex: none; opacity: 0.6; }
@@ -582,9 +582,9 @@
 .snip-thumb:nth-child(n + 6),
 .snip-entity:nth-child(n + 6) { animation-delay: calc(5 * var(--lens-stagger)); }
 .snip-thumb-open { all: unset; cursor: pointer; display: block; width: 100%; }
-.snip-thumb-open:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: -2px; }
+.snip-thumb-open:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring); outline-offset: -2px; }
 .snip-rectime { font-variant-numeric: tabular-nums; }
-.snip-card.is-consent { border-color: var(--lens-accent); }
+.snip-card.is-consent { border-color: var(--lens-accent-ui); }
 .snip-applist-label { margin-top: 4px; }
 .snip-app-title { margin-left: 6px; overflow: hidden; text-overflow: ellipsis; }
 .snip-undo {
