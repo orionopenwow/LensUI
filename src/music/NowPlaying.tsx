@@ -415,12 +415,26 @@ const Lyrics: React.FC<{
   const lines = result?.lines ?? [];
   const synced = !!result?.synced;
   const cur = synced ? currentLine(lines, position, offset) : -1;
-  useEffect(() => {
-    const el = box.current?.querySelector<HTMLElement>(`[data-i="${Math.max(0, cur)}"]`);
-    if (!el || !box.current || !synced) return;
+  const curRef = useRef(cur);
+  curRef.current = cur;
+  const scrollToCurrent = (smooth: boolean) => {
+    const b = box.current;
+    const el = b?.querySelector<HTMLElement>(`[data-i="${Math.max(0, curRef.current)}"]`);
+    if (!el || !b || !synced) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    box.current.scrollTo({ top: Math.max(0, el.offsetTop - box.current.clientHeight * 0.3), behavior: reduced ? "auto" : "smooth" });
-  }, [cur, synced]);
+    b.scrollTo({ top: Math.max(0, el.offsetTop - b.clientHeight * 0.3), behavior: smooth && !reduced ? "smooth" : "auto" });
+  };
+  useEffect(() => scrollToCurrent(true), [cur, synced]);
+  // The box settles after the hero and the lines lay out (fonts, artwork, a window resize): keep
+  // the current line in place then too, without animating.
+  useEffect(() => {
+    const b = box.current;
+    if (!b || !synced || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => scrollToCurrent(false));
+    ro.observe(b);
+    if (b.firstElementChild) ro.observe(b.firstElementChild);
+    return () => ro.disconnect();
+  }, [synced, result]);
   if (!enabled) return <div className="lm-lyrics lm-lyrics-empty">Turn on lyrics in Settings → Music to see synced lyrics here.</div>;
   if (!result) return <div className="lm-lyrics lm-lyrics-empty">Looking for lyrics…</div>;
   if (result.instrumental) return <div className="lm-lyrics lm-lyrics-empty">Instrumental</div>;
