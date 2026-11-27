@@ -633,17 +633,43 @@ async function waitDesk(page, sel = "#lab-desk") {
     const missed = [];
     // The music window is the active one, as when the lab opens (earlier checks moved windows around).
     await D(() => window.lensSite.lab.reset());
-    await page.waitForFunction(() => { const d = window.lensSite.lab; return d.wins.size >= 2 && [...d.wins.values()].every((w) => w.ready); }, null, { timeout: 15000 }).catch(() => {});
-    await D(() => { const d = window.lensSite.lab, w = d.byApp("music"); if (w) d.focus(w.id); });
-    await page.waitForTimeout(600);
-    for (const [hex, name] of accents) {
+    // Ready means every window has said so and holds its real surface, and each element the probe
+    // reads is there: the dock's running marks, the music window's primary button, the browser's
+    // space dot. Returns what isn't ready yet, by name.
+    const labUnready = () => D(() => {
+      const L = window.lensSite, d = L.lab, bad = [];
+      const doc = (f) => { try { return f?.contentDocument ?? null; } catch { return null; } };
+      for (const app of ["browser", "music"]) if (!d.byApp(app)) bad.push(`${app} window (not open)`);
+      for (const w of d.wins.values()) { const dc = doc(w.frame); if (!w.ready) bad.push(`${w.app} window (not ready)`); else if (!dc?.querySelector(L.APPS[w.app].marker)) bad.push(`${w.app} window (no ${L.APPS[w.app].marker})`); }
+      for (const [n, f, sel] of [["dock", d.frame, ".dock-indicator"], ["music window", d.byApp("music")?.frame, ".lm-pill-primary"], ["browser window", d.byApp("browser")?.frame, ".lb-space-dot"]]) if (f && !doc(f)?.querySelector(sel)) bad.push(`${n} (no ${sel})`);
+      return [...new Set(bad)];
+    });
+    const waitLab = async (ms) => { const end = Date.now() + ms; let bad = await labUnready(); while (bad.length && Date.now() < end) { await page.waitForTimeout(200); bad = await labUnready(); } return bad; };
+    const probe = async (hex) => {
       await page.click(`.lab-acc [data-acc="${hex}"]`);
       let hits = [];
       for (let t = 0; t < 30 && hits.length < 4; t++) { await page.waitForTimeout(150); hits = await painted(hex); }
+      return hits;
+    };
+    const unready = [];
+    await waitLab(20000);
+    await D(() => { const d = window.lensSite.lab, w = d.byApp("music"); if (w) d.focus(w.id); });
+    await page.waitForTimeout(600);
+    for (const [hex, name] of accents) {
+      let hits = await probe(hex);
+      // A window that isn't ready can't show the accent: wait for it and try this accent once more. If it
+      // still isn't ready, say which window, not that the accent failed.
+      if (hits.length < 4 && (await labUnready()).length) {
+        const bad = await waitLab(15000);
+        if (bad.length) { unready.push(`${name} ${hex}: ${bad.join(", ")}`); continue; }
+        await D(() => { const d = window.lensSite.lab, w = d.byApp("music"); if (w && d.focused()?.id !== w.id) d.focus(w.id); });
+        hits = await probe(hex);
+      }
       const shown = await D(() => document.querySelector(".lab-acc-now")?.textContent ?? "");
       const checked = await D((h) => document.querySelector(`.lab-acc [data-acc="${h}"]`).getAttribute("aria-checked"), hex);
       if (hits.length < 4 || !shown.includes(name) || checked !== "true") missed.push(`${name} ${hex}: ${hits.join("+") || "nothing"} in the accent, label “${shown}”, checked=${checked}`);
     }
+    expect(!unready.length, "the lab's windows are ready for the accent check (each window's real surface, dock marks, primary button, space dot)", unready.join("; "));
     expect(!missed.length, "each accent visibly repaints the desk (dock marks, primary button, space dot, focus border) and shows its name", missed.join("; "));
     await page.click('.lab-acc [data-acc=""]'); await page.waitForTimeout(300);
     expect((await D(() => window.lensSite.lab.committed?.acc)) == null, "the theme's own accent can be picked back");
