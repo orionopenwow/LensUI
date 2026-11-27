@@ -300,6 +300,11 @@ export interface Appearance {
   grain: number;
   /** "vertical" | "horizontal" */
   tabsLayout: string;
+  /**
+   * Horizontal tab style: "curved" | "joined" | "compact" | "dynamic" | "merged"
+   * (src/browser/tabModes.ts). "dynamic" is the toolbar-then-tabs layout Lens always had.
+   */
+  tabStyle: string;
   /** "compact" | "comfortable" */
   density: string;
   /** "lens" | "system" | "mono" | "serif" */
@@ -657,6 +662,11 @@ export interface BrowserSettings {
   blockingAllow: string[];
   /** Fetch real site icons (once per site, from the site itself). On by default. */
   favicons: boolean;
+  /**
+   * The Lens Browser setup (first open) was finished or skipped. People who already have
+   * tabs never see it on upgrade (`repair`).
+   */
+  setupSeen: boolean;
 }
 
 /** Rust: `browserel::BrowserState` */

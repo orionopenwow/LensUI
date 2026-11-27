@@ -6,6 +6,7 @@ import { Toggle } from "./AiPanel";
 import { sidebarPrefs } from "./tabAi";
 import { Key } from "./ApprovalCard";
 import { oops } from "./oops";
+import { TAB_STYLES, validStyle, type TabStyle } from "./tabModes";
 
 /** hsl → #rrggbb */
 export function hslHex(h: number, s: number, l: number): string {
@@ -149,9 +150,10 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
         <Slider label="Grain" value={a.grain} onChange={(grain) => set({ grain })} />
         <div className="lb-rule" />
         <div className="lb-make-row">
-          <span className="lb-label">Tabs</span>
-          <Seg label="Tabs" value={a.tabsLayout} onChange={(tabsLayout) => set({ tabsLayout })} options={[["vertical", "Vertical"], ["horizontal", "Horizontal"]]} />
+          <span className="lb-label">Tab position</span>
+          <Seg label="Tab position" value={a.tabsLayout} onChange={(tabsLayout) => set({ tabsLayout })} options={[["vertical", "Vertical"], ["horizontal", "Horizontal"]]} />
         </div>
+        <TabModePicker value={a.tabsLayout === "horizontal" ? validStyle(a.tabStyle) : "vertical"} onChange={(m) => set(m === "vertical" ? { tabsLayout: "vertical" } : { tabsLayout: "horizontal", tabStyle: m })} />
         <div className="lb-make-row">
           <span className="lb-label">Density</span>
           <Seg label="Density" value={a.density} onChange={(density) => set({ density })} options={[["compact", "Compact"], ["comfortable", "Comfortable"]]} />
@@ -190,6 +192,49 @@ export function CustomisePanel({ value, onChange }: { value: Appearance; onChang
         </footer>
       </section>
       <p className="lb-hint">Change tabs, the sidebar, density, theme and type. Don't like the dither? Slide it to 0.</p>
+    </div>
+  );
+}
+
+/** A small Lens-drawn picture of each tab mode (no images), like the dock style picker. */
+export function ModeThumb({ mode }: { mode: "vertical" | TabStyle }) {
+  const parts: Record<string, React.ReactNode> = {
+    vertical: <><i className="side" /><i className="bar" /><i className="addr" /><i className="t on" /><i className="t" /><i className="t" /></>,
+    curved: <><i className="strip" /><i className="bar" /><i className="addr" /><i className="t on" /><i className="t" /><i className="t" /></>,
+    joined: <><i className="strip" /><i className="bar" /><i className="addr" /><i className="t on" /><i className="t" /><i className="t" /></>,
+    compact: <><i className="bar" /><i className="addr" /><i className="t on" /><i className="t" /><i className="t" /><i className="t" /></>,
+    dynamic: <><i className="bar" /><i className="addr" /><i className="strip" /><i className="t on" /><i className="t" /><i className="t" /></>,
+    merged: <><i className="bar" /><i className="addr" /><i className="t" /><i className="t" /><i className="t" /></>,
+  };
+  return <span className={`lb-mode-pic m-${mode}`} aria-hidden>{parts[mode]}</span>;
+}
+
+/** Vertical plus the five horizontal styles, as a radio group of thumbnails. */
+export function TabModePicker({ value, onChange }: { value: "vertical" | TabStyle; onChange(m: "vertical" | TabStyle): void }) {
+  const modes: { id: "vertical" | TabStyle; label: string; line: string }[] = [{ id: "vertical", label: "Vertical", line: "Tabs in the sidebar, with spaces and folders." }, ...TAB_STYLES];
+  const pick = (i: number) => onChange(modes[(i + modes.length) % modes.length].id);
+  const at = modes.findIndex((m) => m.id === value);
+  return (
+    <div className="lb-modes" role="radiogroup" aria-label="Tab style">
+      {modes.map((m, i) => (
+        <button
+          key={m.id}
+          role="radio"
+          aria-checked={m.id === value}
+          aria-label={`${m.label}: ${m.line}`}
+          tabIndex={m.id === value ? 0 : -1}
+          data-weight="medium"
+          className="lb-mode"
+          onClick={() => onChange(m.id)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); pick(at + 1); }
+            if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); pick(at - 1); }
+          }}
+        >
+          <ModeThumb mode={m.id} />
+          <span>{m.label}</span>
+        </button>
+      ))}
     </div>
   );
 }

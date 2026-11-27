@@ -268,7 +268,7 @@ every button (⏎, Esc, hold ⏎); one light primary button per card.
 
 Settings › (gear in the sidebar) › Make it yours: a 2D accent field (x = hue, y = vivid → deep;
 arrow keys move it), Auto / Light / Dark, six two-tone presets, Dither and Grain (0–100), tabs
-vertical / horizontal, density compact / comfortable, typeface Lens / System / Mono / Serif,
+tab position vertical / horizontal with five horizontal styles (Curved, Joined, Compact, Dynamic, Merged; `src/browser/tabModes.ts`), density compact / comfortable, typeface Lens / System / Mono / Serif,
 Reset, and Customise (opens Lens Theme & Look). Stored in `settings.appearance`.
 
 ## Bring everything with you (import)

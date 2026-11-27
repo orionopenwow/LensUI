@@ -1583,3 +1583,4 @@
 /* Lens Browser card: filter-list status line. */
 .cc-lists { margin-top: 6px; }
 .cc-num { font-variant-numeric: tabular-nums; }
+.cc-btn-row { display: inline-flex; gap: 8px; flex: none; }

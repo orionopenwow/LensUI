@@ -305,6 +305,9 @@ const manyTabs: Tab[] = [
   t("m8", "https://news.ycombinator.com/", "Hacker News", { order: 17, lastActiveMs: NOW - 4 * 86_400_000 }),
 ];
 const dupState = withState({ tabs: manyTabs }).state;
+const withAppearance = (a: Partial<typeof DEFAULT_APPEARANCE>): BrowserView =>
+  withState({ settings: { ...view.state.settings, appearance: { ...DEFAULT_APPEARANCE, ...a } }, spaces: view.state.spaces, splits: [{ left: "t1", right: "t9", ratio: 0.5 }] });
+const setupView: BrowserView = withState({ tabs: [], activeTab: null, settings: { ...view.state.settings, setupSeen: false } }, { live: [] });
 const planSeed = propose("tidy", dupState, NOW) ?? undefined;
 
 const readerSeed = [
@@ -355,6 +358,21 @@ const scenes: Record<string, BrowserInitial> = {
   "split-drop": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, dragTab: "t9" },
   shield: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, shield: { on: true, site: "tables.example", allowed: false, blocked: 27 } },
   "shield-off": { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, shield: { on: true, site: "tables.example", allowed: true, blocked: 0 } },
+  // ---- Tab position and the five horizontal styles (src/browser/tabModes.ts) ----
+  "tabs-vertical": { view: withAppearance({ tabsLayout: "vertical" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-curved": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "curved" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-joined": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "joined" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-compact": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "compact" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-dynamic": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "dynamic" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-merged": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "merged" }), panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back },
+  "tabs-customise": { view: withAppearance({ tabsLayout: "horizontal", tabStyle: "joined" }), panel: "customise", chats, mockPage: <MockPage />, now: NOW, nav: back },
+  // ---- First-open setup, one scene per step ----
+  "setup-welcome": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "welcome" } },
+  "setup-import": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "import", sources: importSources, draft: { importFrom: { browser: "arc", profile: "arc", label: "Arc" } }, counts: { bookmarks: 412, history: 18_204, openTabs: 0, pinnedTabs: 23, spaces: 3, notes: [] } } },
+  "setup-look": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "look", draft: { tabsLayout: "horizontal", tabStyle: "compact" } } },
+  "setup-privacy": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "privacy" } },
+  "setup-ai": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "ai", provider: "Ollama (llama3.2:3b, on this PC)" } },
+  "setup-done": { view: setupView, panel: null, chats: [], now: NOW, setup: { step: "done", draft: { importFrom: { browser: "arc", profile: "arc", label: "Arc" }, tabsLayout: "horizontal", tabStyle: "compact" } } },
   "import-arc": { view, panel: "import", chats, mockPage: <MockPage />, now: NOW, importSeed: { sources: importSources, pick: { browser: "arc", profile: "arc" }, counts: { bookmarks: 412, history: 18_204, openTabs: 0, pinnedTabs: 23, spaces: 3, folders: 9, splits: 2, rules: 4, notes: [] } } },
   // Site permissions: a page asks for the camera; the site strip with remembered answers.
   permission: { view, panel: null, chats, mockPage: <MockPage />, now: NOW, nav: back, asks: [{ id: 1, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "camera" }, { id: 2, tab: view.state.activeTab ?? "", origin: new URL(activeUrl).origin, kind: "location" }] },
