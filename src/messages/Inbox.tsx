@@ -16,7 +16,7 @@ export function AppGlyph({ app, title, size = 30 }: { app: string; title: string
 
 export function InboxRow({ c, now, active, onOpen }: { c: Conversation; now: number; active?: boolean; onOpen?(c: Conversation): void }) {
   return (
-    <button className={`lm-row ${active ? "on" : ""} ${c.unread ? "unread" : ""}`} onClick={() => onOpen?.(c)} aria-label={`${c.title}${c.unread ? `, ${c.unread} unread` : ""}`}>
+    <button data-weight="light" className={`lm-row ${active ? "on" : ""} ${c.unread ? "unread" : ""}`} onClick={() => onOpen?.(c)} aria-label={`${c.title}${c.unread ? `, ${c.unread} unread` : ""}`}>
       <AppGlyph app={c.app} title={c.title} />
       <span className="lm-row-main">
         <span className="lm-row-head">
@@ -66,7 +66,7 @@ export function Inbox({ rows, now, activeId, focus, onFocus, onOpen, width = 352
       </label>
       <nav className="lf-tabs" role="tablist" aria-label="Inbox filter">
         {(["all", "unread", "mentions", "vip"] as InboxTab[]).map((id) => (
-          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
+          <button data-weight="light" key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
             {id === "all" ? "All" : id === "unread" ? "Unread" : id === "mentions" ? `Mentions${tot.mentions ? ` ${tot.mentions}` : ""}` : "VIP"}
           </button>
         ))}

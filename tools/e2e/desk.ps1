@@ -6,6 +6,7 @@
 #   work                        -> {"x":..,"y":..,"w":..,"h":..} (primary monitor's work area)
 #   explorer restart|count      -> restarts explorer.exe (waits for its taskbar), or counts it
 #   move X Y                    -> {"ok":true}
+#   pos                         -> {"x":..,"y":..} (where the cursor is now)
 #   click X Y                   -> left click at X,Y
 #   win TITLE                   -> {"found":true,"visible":..,"transparent":..,"x":..,"y":..,"w":..,"h":..}
 #   watch TITLE MS              -> samples the window every 16 ms for MS and returns
@@ -21,6 +22,9 @@ using System.Runtime.InteropServices;
 public static class Desk {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
   [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+  [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
+  public static string Pos() { POINT p; if (!GetCursorPos(out p)) return "{\"ok\":false}"; return "{\"x\":" + p.X + ",\"y\":" + p.Y + "}"; }
   [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint dx, uint dy, uint d, IntPtr e);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowW(string c, string t);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
@@ -76,6 +80,7 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         } else { $out = "{`"ok`":true,`"before`":$before}" }
       }
       "move" { [void][Desk]::SetCursorPos([int]$a[1], [int]$a[2]); $out = '{"ok":true}' }
+      "pos" { $out = [Desk]::Pos() }
       "click" { [Desk]::Click([int]$a[1], [int]$a[2]); $out = '{"ok":true}' }
       "win" { $out = [Desk]::Info($line.Substring(4)) }
       "watch" {

@@ -273,12 +273,33 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     if (T) return "max";
     return null;
   }
+  /**
+   * The snap preview for a slot (null hides it). Called straight from the pointer handler when the
+   * slot changes, so it never waits for a frame. Only transform and opacity animate (IDENTITY §3.4):
+   * the size is set at once, the place glides, and a fresh preview fades in from 97 %.
+   */
+  let snapShown = null;
   function showSnap(slot) {
+    if (slot === snapShown) return;
+    const was = snapShown;
+    snapShown = slot;
     if (!slot) { snapEl.hidden = true; return; }
-    const r = SLOTS[slot](work());
-    snapEl.hidden = false;
-    snapEl.style.transform = `translate3d(${r.x}px, ${r.y}px, 0)`;
+    const r = SLOTS[slot](work()), t = `translate3d(${r.x}px, ${r.y}px, 0)`;
     snapEl.style.width = `${r.w}px`; snapEl.style.height = `${r.h}px`;
+    if (!was) snapEl.style.transition = "none"; // a new preview starts in place; only moves between slots glide
+    snapEl.style.transform = t;
+    snapEl.hidden = false;
+    if (!was) {
+      void snapEl.offsetWidth; snapEl.style.transition = "";
+      if (!reducedMotion() && snapEl.animate) snapEl.animate([{ opacity: 0, transform: `${t} scale(.97)` }, { opacity: 1, transform: t }], { duration: 140, easing: "cubic-bezier(.22,1,.36,1)" });
+    }
+  }
+  /** Shows the snap preview for a pointer on the desk while a window is moved. */
+  function snapFor(q) {
+    const d = dragging;
+    if (!d || d.mode !== "move" || !q) return;
+    d.slot = slotAt(q);
+    showSnap(d.slot);
   }
 
   // Pointer: the real surface's own title bar drags its window (the frame reports the pointer, see
@@ -306,31 +327,54 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function startDrag(w, mode, p, id) {
     dragging = { w, mode, start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id };
     root.classList.add("is-dragging");
-    calm(true);
+    calm(true, w);
     root.classList.toggle("is-pagedrag", id !== "frame"); // frames stay live while their own title bar drags
-    play?.setStill(true); // the window gets the frames while it moves
+    // The window gets the frames while it moves: the backdrop pauses on the frame it shows (setStill
+    // would draw that frame again, 18 ms at 4× in the drag's first task, for the same pixels).
+    play?.runner?.setPaused(true);
     emit("user", "drag");
   }
-  /** While a window moves, the embedded surfaces hold still and drop their glass blur: every blur
-   *  over a moving window would otherwise be recomputed each frame. Restored on drop. */
-  function calm(on) {
-    document.documentElement.classList.toggle("is-calm", on); // the page's own ambient loops pause too
-    for (const f of document.querySelectorAll("iframe")) {
-      try {
-        const doc = f.contentDocument;
-        if (!doc?.documentElement) continue;
-        if (on && !doc.getElementById("site-calm")) {
-          const st = doc.createElement("style");
-          st.id = "site-calm";
-          st.textContent = ".site-calm *, .site-calm *::before, .site-calm *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation-play-state: paused !important; }";
-          doc.head.appendChild(st);
-        }
-        doc.documentElement.classList.toggle("site-calm", on);
-      } catch { /* not ready yet */ }
+  /** While a window moves, the page and its embedded surfaces hold their CSS loops, and the moving
+   *  window's own surface drops its glass blur (a blur inside a moving frame is recomputed each
+   *  frame; a frame's blur only ever samples its own document, so the still windows keep theirs).
+   *  Restored on drop.
+   *  Done element by element: a class goes on each element that has a running CSS animation or a
+   *  blur, and only those restyle. A `.calm *` rule toggled on each document's root (as this used to
+   *  be) restyles every element of the page and of every frame at once, a 120 ms task at the drag's
+   *  first frame and another at the drop on a slow laptop (tools/site/check.mjs, 4× throttle). */
+  const CALM_CSS = ".lens-calm, .lens-calm::before, .lens-calm::after { animation-play-state: paused !important; }"
+    + " .lens-calm-glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }";
+  let calmed = null;
+  function calm(on, w) {
+    document.documentElement.classList.toggle("is-calm", on); // exhibits.js holds its own loop on this; no CSS hangs off it
+    if (!on) { calmed?.forEach(([el, c]) => el.classList.remove(c)); calmed = null; return; }
+    if (calmed) return;
+    calmed = [];
+    const hold = (el, c) => { if (el && !el.classList.contains(c)) { el.classList.add(c); calmed.push([el, c]); } };
+    const docs = [document];
+    for (const f of document.querySelectorAll("iframe")) { try { if (f.contentDocument?.head) docs.push(f.contentDocument); } catch { /* not ready yet */ } }
+    for (const doc of docs) {
+      // The rule's selectors are classes no element has yet, so adding the sheet restyles nothing.
+      if (doc !== document && !doc.getElementById("lens-calm")) doc.head.append(Object.assign(doc.createElement("style"), { id: "lens-calm", textContent: CALM_CSS }));
+      try { for (const a of doc.getAnimations()) if (a.animationName !== undefined && a.playState === "running") hold(a.effect?.target, "lens-calm"); } catch { /* no getAnimations */ }
     }
+    // The moving window's own surface: the elements that blur what is behind them. Their styles are
+    // clean here, so reading them is cheap (about 3 ms at 4×); pseudo-elements aren't read (asking for
+    // a ::before's style computes it, ten times the cost) and no surface blurs from one (src/**/*.css).
+    try {
+      const doc = w?.frame?.contentDocument, view = doc?.defaultView;
+      if (doc?.body) for (const el of doc.body.querySelectorAll("*")) {
+        const s = view.getComputedStyle(el);
+        if ((s.backdropFilter || "none") !== "none" || (s.webkitBackdropFilter || "none") !== "none") hold(el, "lens-calm-glass");
+      }
+    } catch { /* not ready yet */ }
   }
+  // No text selection on the page while a window is dragged (a user-select rule on the body would
+  // restyle the whole page, see css/site.css).
+  document.addEventListener("selectstart", (e) => { if (dragging) e.preventDefault(); }, true);
   let raf = 0, pending = null;
   function move(p) {
+    snapFor(p); // at once, not on the next frame: the preview answers the pointer itself
     pending = p;
     if (raf) return;
     raf = requestAnimationFrame(() => { raf = 0; apply(pending); });
@@ -353,8 +397,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
         d.vx = d.vx * 0.7 + vx * 0.3; d.last = q; d.t = now;
         const tilt = reducedMotion() ? 0 : Math.max(-3, Math.min(3, d.vx * 2.2));
         paint(w, tilt ? ` rotate(${tilt.toFixed(2)}deg)` : "");
-        d.slot = slotAt(q);
-        showSnap(d.slot);
+        snapFor(q);
       } else {
         const o = d.orig, m = d.mode, minW = 280, minH = 170;
         let { x, y, w: ww, h: hh } = o;
@@ -378,6 +421,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     root.classList.remove("is-dragging", "is-pagedrag");
     calm(false);
     play?.setStill(still());
+    play?.runner?.setPaused(false);
     showSnap(null);
     const w = d.w;
     if (d.slot) snap(w.id, d.slot);

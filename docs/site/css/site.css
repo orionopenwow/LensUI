@@ -376,8 +376,10 @@ tr:last-child td { border-bottom: 0; }
 /* While a window is dragged or resized the embedded surfaces don't take pointer events (so the
    drag never falls into an iframe) and only the moving window is promoted to its own layer. */
 .lx.is-dragging iframe { pointer-events: none; }
-/* While a window is being moved the page's ambient loops hold, so every frame goes to the window. */
-html.is-calm *, html.is-calm *::before, html.is-calm *::after { animation-play-state: paused !important; }
+/* While a window is being moved the page's ambient loops hold, so every frame goes to the window:
+   js/desk.js calm() puts .lens-calm on just the elements with a running CSS animation (never a
+   `html.is-calm *` rule, which restyles the whole page at the drag's first frame and at the drop). */
+.lens-calm, .lens-calm::before, .lens-calm::after { animation-play-state: paused !important; }
 .lx-wall canvas { width: 100% !important; height: 100% !important; display: block; }
 .lx-glow { position: absolute; left: 0; top: 0; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--lx-accent) 18%, transparent), transparent); pointer-events: none; opacity: .7; will-change: transform; }
 .lx-canvas.is-night::after { content: ""; position: absolute; inset: 0; background: rgb(255 140 40 / .12); mix-blend-mode: multiply; pointer-events: none; z-index: 40; }
@@ -406,9 +408,10 @@ html.is-calm *, html.is-calm *::before, html.is-calm *::after { animation-play-s
 .rz-n, .rz-s { left: 8px; right: 8px; height: 6px; cursor: ns-resize; } .rz-n { top: -3px; } .rz-s { bottom: -3px; }
 .rz-e, .rz-w { top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; } .rz-e { right: -3px; } .rz-w { left: -3px; }
 .rz-ne, .rz-nw, .rz-se, .rz-sw { width: 12px; height: 12px; } .rz-ne { right: -3px; top: -3px; cursor: nesw-resize; } .rz-sw { left: -3px; bottom: -3px; cursor: nesw-resize; } .rz-nw { left: -3px; top: -3px; cursor: nwse-resize; } .rz-se { right: -3px; bottom: -3px; cursor: nwse-resize; }
-.lx-snap { position: absolute; left: 0; top: 0; z-index: 3; border-radius: calc(var(--lx-radius) + 2px); background: color-mix(in srgb, var(--lx-accent) 14%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lx-accent) 55%, transparent); transition: transform .14s, width .14s, height .14s; pointer-events: none; }
+.lx-snap { position: absolute; left: 0; top: 0; z-index: 3; border-radius: calc(var(--lx-radius) + 2px); background: color-mix(in srgb, var(--lx-accent) 14%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lx-accent) 55%, transparent); transition: transform var(--lens-dur-fast) var(--lens-ease-out); pointer-events: none; }
 /* top bar */
-body:has(.lx.is-dragging) { user-select: none; -webkit-user-select: none; }
+/* No `body:has(.lx.is-dragging)` user-select rule: user-select inherits, so it restyled the whole page
+   at the drag's first frame. js/desk.js cancels selectstart while a window is dragged instead. */
 :root .lx :focus-visible { outline: 2px solid var(--lx-accent); outline-offset: 1px; box-shadow: none; }
 /* flyouts */
 .lx[data-scheme="light"] .qt.on { color: #fff; }

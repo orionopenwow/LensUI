@@ -25,7 +25,9 @@ await build({
     "@tauri-apps/api/event": join(root, "tools/parity/mock/event.ts"),
     "@tauri-apps/api/window": join(root, "tools/parity/mock/window.ts"),
   },
-  define: { "process.env.NODE_ENV": '"production"' },
+  // The harness renders Lens Mission Control too (dev-only surface, docs/MISSION_CONTROL.md):
+  // tools/visual/run.mjs and tools/parity/mission/shoot.mjs open it with ?mcmock=1. Never a release.
+  define: { "process.env.NODE_ENV": '"production"', __LENS_ADMIN__: "true" },
   logLevel: "warning",
 });
 

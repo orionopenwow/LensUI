@@ -53,8 +53,8 @@ export function FeedRow({ it, now, actions, compact }: { it: ItemDto; now: numbe
             </span>
           ) : null}
           <span className="lf-spacer" />
-          <button className="lf-ico" aria-label="Read later (Shelf)" onClick={(e) => { e.stopPropagation(); actions?.onReadLater?.(it); }}><Clock3 size={13} /></button>
-          <button className="lf-ico" aria-label="Save to context pack" onClick={(e) => { e.stopPropagation(); actions?.onSave?.(it); }}><BookmarkPlus size={13} /></button>
+          <button data-weight="medium" className="lf-ico" aria-label="Read later (Shelf)" onClick={(e) => { e.stopPropagation(); actions?.onReadLater?.(it); }}><Clock3 size={13} /></button>
+          <button data-weight="medium" className="lf-ico" aria-label="Save to context pack" onClick={(e) => { e.stopPropagation(); actions?.onSave?.(it); }}><BookmarkPlus size={13} /></button>
         </div>
       </div>
     </article>
@@ -100,15 +100,15 @@ export function FeedColumn(p: FeedColumnProps) {
         <span className="lf-h1">Feeds</span>
         {fresh ? <span className="lf-new">{fresh} new</span> : null}
         <span className="lf-spacer" />
-        <button className="lf-ico" aria-label="AI digest" onClick={p.onDigest}><Sparkles size={15} /></button>
-        <button className="lf-ico" aria-label="New post" onClick={p.onCompose}><PenLine size={15} /></button>
-        <button className="lf-ico" aria-label="Deck view" onClick={p.onDeck}><Columns3 size={15} /></button>
-        <button className={`lf-ico ${p.busy ? "spin" : ""}`} aria-label="Refresh" onClick={p.onRefresh}><RefreshCw size={15} /></button>
+        <button data-weight="medium" className="lf-ico" aria-label="AI digest" onClick={p.onDigest}><Sparkles size={15} /></button>
+        <button data-weight="medium" className="lf-ico" aria-label="New post" onClick={p.onCompose}><PenLine size={15} /></button>
+        <button data-weight="medium" className="lf-ico" aria-label="Deck view" onClick={p.onDeck}><Columns3 size={15} /></button>
+        <button data-weight="medium" className={`lf-ico ${p.busy ? "spin" : ""}`} aria-label="Refresh" onClick={p.onRefresh}><RefreshCw size={15} /></button>
       </header>
       {chips.length ? (
         <div className="lf-chips" role="group" aria-label="Sources">
           {chips.map((k) => (
-            <button key={k} className={`lf-chip ${off.has(k) ? "off" : ""}`} aria-pressed={!off.has(k)} onClick={() => toggle(k)}>
+            <button data-weight="light" key={k} className={`lf-chip ${off.has(k) ? "off" : ""}`} aria-pressed={!off.has(k)} onClick={() => toggle(k)}>
               <SourceDot source={k} size={12} /> {sourceMeta(k).label}
             </button>
           ))}
@@ -116,7 +116,7 @@ export function FeedColumn(p: FeedColumnProps) {
       ) : null}
       <nav className="lf-tabs" role="tablist" aria-label="Filter">
         {FILTERS.map((f) => (
-          <button key={f.id} role="tab" aria-selected={p.filter === f.id} className={p.filter === f.id ? "on" : ""} onClick={() => p.onFilter(f.id)}>
+          <button data-weight="light" key={f.id} role="tab" aria-selected={p.filter === f.id} className={p.filter === f.id ? "on" : ""} onClick={() => p.onFilter(f.id)}>
             {f.label}
           </button>
         ))}

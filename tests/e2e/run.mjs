@@ -79,12 +79,27 @@ async function waitForSurface(s, name, ms = 20000) {
   while (Date.now() - t0 < ms) {
     const p = surfaces(s)[name];
     if (p) {
-      await p.waitForFunction(() => (document.getElementById("root")?.innerHTML.length || 0) > 0, null, { timeout: 15000 });
+      try {
+        await p.waitForFunction(() => (document.getElementById("root")?.innerHTML.length || 0) > 0, null, { timeout: 15000 });
+      } catch (e) {
+        // Say what the page was doing, so a slow first render explains itself.
+        const st = await p.evaluate(() => ({ url: location.href, readyState: document.readyState, root: document.getElementById("root")?.innerHTML.length ?? -1, hidden: document.hidden })).catch((x) => ({ evaluate: String(x).slice(0, 120) }));
+        const all = s.logs.join("");
+        const said = all.split("\n").filter((l) => l.includes(name) || /Start-up windows|load guard/i.test(l)).slice(-6);
+        throw new Error(`${String(e.message || e).split("\n")[0]} (the ${name} page: ${JSON.stringify(st)}; start-up windows built: ${all.includes("Start-up windows built.")})${said.length ? "\n      Lens said:\n        " + said.join("\n        ") : ""}`);
+      }
       return p;
     }
     await sleep(400);
   }
   throw new Error(`no "${name}" window after ${ms} ms (have: ${Object.keys(surfaces(s)).join(", ")})`);
+}
+
+/** Waits (up to 90 s) for Lens to log that its start-up windows are built. */
+async function waitStartupBuilt(s) {
+  const t0 = Date.now();
+  while (!s.logs.join("").includes("Start-up windows") && Date.now() - t0 < 90000) await sleep(250);
+  if (!s.logs.join("").includes("Start-up windows built.")) console.log(`note  start-up windows still building after ${Date.now() - t0} ms`);
 }
 
 /** Shows a surface through the same command the Dock and hotkeys use, and waits until it settles
@@ -171,6 +186,10 @@ const SCENARIOS = [
     id: "control-center",
     title: "Control Center opens and every tab renders without errors",
     async run(s) {
+      // Settings is the first start-up window Lens builds (on the main thread, one after another);
+      // opening it in the middle of those builds once left its page blank for over 15 s. Wait for
+      // Lens to say they are built, as failsafe.mjs and autohide.mjs do.
+      await waitStartupBuilt(s);
       const cc = await showSurface(s, "settings");
       const take = watchErrors(cc);
       // The first-run wizard has its own scenario.
