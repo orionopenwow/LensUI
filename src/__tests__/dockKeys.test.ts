@@ -101,3 +101,21 @@ describe("a pin drops in with weight", () => {
     expect(enterPose("sys", "left").spring).toBe(false);
   });
 });
+
+describe("clocks that show minutes wake on the minute", () => {
+  test("the wait runs to the next whole minute and is never zero", async () => {
+    const { msToNextMinute } = await import("../hooks/useMinuteClock");
+    expect(msToNextMinute(new Date(2026, 10, 26, 10, 30, 0, 0))).toBe(60_000);
+    expect(msToNextMinute(new Date(2026, 10, 26, 10, 30, 59, 900))).toBe(100);
+    expect(msToNextMinute(new Date(2026, 10, 26, 10, 30, 12, 500))).toBe(47_500);
+  });
+
+  test("neither bar keeps a per-second or 15-second clock timer", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const src = (p: string) => readFileSync(join(import.meta.dir, "..", p), "utf8");
+    expect(src("surfaces/TopBarSurface.tsx")).not.toMatch(/setInterval\(\(\) => setNow/);
+    expect(src("dock/DockSystemArea.tsx")).not.toMatch(/setInterval\(\(\) => setNow/);
+    expect(src("surfaces/TopBarSurface.tsx")).toContain("useMinuteClock(visible)");
+  });
+});

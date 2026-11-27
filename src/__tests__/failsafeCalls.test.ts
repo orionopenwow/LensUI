@@ -88,6 +88,12 @@ describe("no silent failures left in the Dock, Magic and the Dashboard", () => {
     }
   });
 
+  test("the Top Bar's own calls say what failed (B-18, Top Bar share)", () => {
+    // One call is left for the PR that is changing that line (the Tester badge, #130).
+    const left = (src("surfaces/TopBarSurface.tsx").match(silent) ?? []).length;
+    expect(left).toBeLessThanOrEqual(1);
+  });
+
   test("every pop-out closes through the retrying hide", () => {
     for (const f of ["surfaces/DockSurface.tsx", "surfaces/QuickSettingsSurface.tsx", "surfaces/WidgetDrawerSurface.tsx", "surfaces/CommandPaletteSurface.tsx", "surfaces/LauncherSurface.tsx", "surfaces/OverviewSurface.tsx", "surfaces/NotificationOverlaySurface.tsx"]) {
       expect({ f, raw: src(f).match(/invoke\("hide_surface"/g) ?? [] }).toEqual({ f, raw: [] });
