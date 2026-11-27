@@ -22,7 +22,7 @@ import {
   type MagicConfig, type MagicOpen, type MagicTarget,
 } from "./contract";
 import {
-  attachedSummary, buildRequest, initialKeys, kindLabel, localKind, markdownFor, NO_CAPS, onKey, openLatency,
+  attachedSummary, buildRequest, initialKeys, kindLabel, localKind, markdownFor, onKey, runtimeCaps, openLatency,
   rowsFor, toneOf, visibleRows, appName, type Caps, type KeyState, type Mode, type Row,
 } from "./model";
 import "./magic.css";
@@ -44,6 +44,9 @@ type Result =
   | { type: "note"; text: string; ok: boolean; undo?: { label: string; action: string } }
   | { type: "confirm"; row: Row; title: string; detail: string; verb: string }
   | { type: "workspace" };
+
+/** Time for the Magic window to leave the screen before Snip freezes it. */
+const SNIP_AFTER_HIDE_MS = 140;
 
 export interface MagicInitial {
   open: MagicOpen;
@@ -153,7 +156,9 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const ai = useAiRequest();
   const run: AiRunState = initial?.run ?? (result?.type === "ai" ? ai : INITIAL_RUN);
   const [deskOn, setDeskOn] = useState(false);
-  const caps = useMemo(() => ({ ...(initial?.caps ?? NO_CAPS), desktopWidgets: initial?.caps?.desktopWidgets ?? deskOn }), [initial?.caps, deskOn]);
+  const [snipOn, setSnipOn] = useState(false);
+  // The preview passes its own; at runtime they are read on each open (B-70).
+  const caps = useMemo(() => initial?.caps ?? runtimeCaps({ snipOn, desktopWidgets: deskOn }), [initial?.caps, snipOn, deskOn]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const targets = open?.targets ?? [];
@@ -170,6 +175,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
     if (preview) return;
     magicGetConfig().then((c) => setCfg(c)).catch(quiet);
     invoke<boolean>("desktop_widgets_available").then((v) => setDeskOn(!!v)).catch(quiet);
+    invoke<{ settings?: { enabled?: boolean } }>("snip_status").then((s) => setSnipOn(!!s?.settings?.enabled)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
@@ -255,8 +261,13 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
         }
         if (verb === "tips") return ask(`Give me five practical tips for ${appName(t)}.`, "Tips");
         if (verb === "snip") {
-          await invoke("snip_window", { hwnd: t.window });
-          return hide();
+          // Magic steps aside first so it is not in the picture, then Snip opens in window mode
+          // with this window under the pointer: one click takes it. (There was no `snip_window`
+          // command; this row could never have run.)
+          hide();
+          await new Promise((r) => setTimeout(r, SNIP_AFTER_HIDE_MS));
+          await invoke("snip_start", { mode: "window", delay: null });
+          return;
         }
         if (verb === "browser") {
           await invoke("browser_open", { url: null });

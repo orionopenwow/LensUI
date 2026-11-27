@@ -60,6 +60,13 @@ Source: <url>        (or File: <path>)
 
 **Token estimate.** About four characters per token for Latin script, one per character for CJK and other wide scripts. Rust (`approx_tokens`) and TS (`approxTokens`) use the same rule, and both are tested.
 
+## Removing and Undo
+
+Removing an item from the Shelf drawer shows "Removed “title”. Undo" for six seconds. Undo adds the
+same content back (`src/shelf/restore.ts`); the item gets a new id and goes to the end of its shelf,
+and a pinned item is pinned again. The Menu key or Shift+F10 on a Shelf item opens its menu with
+"Lens ›" focused.
+
 ## Shelf → Notes (Magic waves M4, off by default)
 
 With **Shelf to Notes** on, the Shelf drawer has **Make a note**. It builds one note from the ticked
