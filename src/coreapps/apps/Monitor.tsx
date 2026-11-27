@@ -112,7 +112,7 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
   );
 
   const sortBtn = (k: SortKey, label: string) => (
-    <button type="button" aria-sort={sort === k ? "descending" : "none"} onClick={() => setSort(k)}>
+    <button data-weight="medium" type="button" aria-sort={sort === k ? "descending" : "none"} onClick={() => setSort(k)}>
       {label}
       {sort === k ? " ↓" : ""}
     </button>
@@ -128,10 +128,10 @@ export const Monitor: React.FC<{ config: LensConfig | null; updateConfig: (c: Le
       meta={sample ? `${plural(sample.processCount, "process", "processes")} · ${cores} cores · sampled every second · paused while hidden` : "Starting…"}
       actions={
         <>
-          <button type="button" className="ca-btn" disabled={!selected} onClick={copySelected}>
+          <button data-weight="medium" type="button" className="ca-btn" disabled={!selected} onClick={copySelected}>
             Copy line
           </button>
-        <button
+        <button data-weight="heavy"
           ref={endRef}
           type="button"
           className="ca-btn ca-btn-primary"

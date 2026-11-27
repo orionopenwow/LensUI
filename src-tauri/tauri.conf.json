@@ -281,6 +281,23 @@
         "create": false
       },
       {
+        "label": "missioncontrol",
+        "title": "Lens Mission Control",
+        "url": "index.html?surface=missioncontrol",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 860,
+        "minHeight": 560,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
+        "skipTaskbar": false,
+        "resizable": true,
+        "shadow": true,
+        "visible": false,
+        "create": false
+      },
+      {
         "label": "studio",
         "title": "Lens Studio",
         "url": "index.html?surface=studio",

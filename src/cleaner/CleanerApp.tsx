@@ -19,6 +19,7 @@ import { SpaceMap, type MapView } from "./SpaceMap";
 import type { AppUsage, HistoryView, Overview, Preview, ScanProgress, SpaceNode, SpaceProgress, SpaceSummary, SpaceView, Verdict } from "./types";
 import { Ring } from "./ui";
 import "./cleaner.css";
+import { failText, quiet } from "../ui/oops";
 
 export interface CleanerDemo {
   flow?: Partial<FlowState>;
@@ -82,6 +83,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
   const [dlPicked, setDlPicked] = useState<string[]>(demo?.downloadsPicked ?? []);
 
   const say = useCallback((text: string, error = false, action?: { label: string; run: () => void }) => setToast({ text, error, action }), []);
+  // Stop is a promise to the person: if the scan can't be told to stop, say that it is still going.
+  const stopFailed = useCallback((e: unknown) => say(failText("stop the scan", e) + " It finishes by itself; nothing is deleted.", true), [say]);
 
   const loadOverview = useCallback(() => {
     api
@@ -261,7 +264,8 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         setSpaceProgress(null);
         const v = await api.spaceChildren(r, demo?.space?.nodeId ?? 0, 1, 80);
         setView(v);
-        api.spaceChildren(r, v.node.id, 3, 24).then((d) => setNested(d.children)).catch(() => {});
+        // The second level only sharpens the treemap and sunburst; without it they draw one level.
+        api.spaceChildren(r, v.node.id, 3, 24).then((d) => setNested(d.children)).catch(quiet);
       } catch (e) {
         setSpaceProgress(null);
         say(`Couldn't map ${r}: ${e}`, true, { label: "Try again", run: () => mapDrive(r) });
@@ -284,7 +288,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         const id = await api.spaceFind(r, folder);
         if (id == null) return say(`${folderName(folder)} isn't on ${r} any more, so this is the whole drive.`);
         setView(await api.spaceChildren(r, id, 1, 80));
-        api.spaceChildren(r, id, 3, 24).then((d) => setNested(d.children)).catch(() => {});
+        api.spaceChildren(r, id, 3, 24).then((d) => setNested(d.children)).catch(quiet);
       } catch {
         // The map itself failed and already said so (with Try again).
       }
@@ -365,10 +369,10 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         if (sheet) return setSheet(null);
         if (settingsOpen) return setSettingsOpen(false);
         if (s.screen === "scanning") {
-          api.cancel().catch(() => {});
+          api.cancel().catch(stopFailed);
           return dispatch({ type: "cancel" });
         }
-        if (s.screen === "space" && spaceProgress) return void api.cancel().catch(() => {});
+        if (s.screen === "space" && spaceProgress) return void api.cancel().catch(stopFailed);
         if (s.screen === "done" && !document.querySelector(".cl-sheet")) return dispatch({ type: "home" });
         return;
       }
@@ -416,7 +420,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         {showTabs && (
           <nav className="cl-tabs" role="tablist" aria-label="Lens Cleaner">
             {TABS.map(([id, label]) => (
-              <button
+              <button data-weight="light"
                 key={id}
                 type="button"
                 role="tab"
@@ -430,10 +434,10 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           </nav>
         )}
         <span className="cl-top-sp" data-tauri-drag-region />
-        <button type="button" className="cl-icon-btn" aria-label="Lens Cleaner settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
+        <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Lens Cleaner settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((v) => !v)}>
           <Settings2 size={15} />
         </button>
-        <button type="button" className="cl-icon-btn" aria-label="Close Lens Cleaner" onClick={() => api.close().catch(() => {})}>
+        <button type="button" className="cl-icon-btn" aria-label="Close Lens Cleaner" data-weight="medium" onClick={() => api.close().catch((e) => say(failText("close this window", e), true))}>
           <X size={16} />
         </button>
       </header>
@@ -446,7 +450,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             done={scanDone}
             found={found}
             onCancel={() => {
-              api.cancel().catch(() => {});
+              api.cancel().catch(stopFailed);
               dispatch({ type: "cancel" });
             }}
           />
@@ -485,7 +489,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             onReveal={(p) => api.reveal(p).catch((e) => say(String(e), true))}
             onBin={binPaths}
             onMove={move}
-            onCancel={() => api.cancel().catch(() => {})}
+            onCancel={() => api.cancel().catch(stopFailed)}
           />
         )}
         {s.screen !== "space" && s.screen !== "scanning" && s.screen !== "done" && s.tab === "apps" && (
@@ -527,7 +531,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
         <aside className="cl-drawer" role="dialog" aria-label="Lens Cleaner settings">
           <header className="cl-sheet-head">
             <span className="cl-h3">Settings</span>
-            <button type="button" className="cl-icon-btn" aria-label="Close settings" onClick={() => setSettingsOpen(false)}>
+            <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Close settings" onClick={() => setSettingsOpen(false)}>
               <X size={16} />
             </button>
           </header>
@@ -544,7 +548,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
             <span>
               {undoCount} item{undoCount === 1 ? "" : "s"} went to the Recycle Bin.
             </span>
-            <button type="button" className="cl-btn is-ghost is-sm" onClick={undo}>
+            <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={undo}>
               Restore from Recycle Bin
             </button>
           </div>
@@ -553,7 +557,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
           <div className={`cl-toast${toast.error ? " is-error" : ""}`} role={toast.error ? "alert" : "status"}>
             <span>{toast.text}</span>
             {toast.action && (
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="cl-btn is-ghost is-sm"
                 onClick={() => {
@@ -564,7 +568,7 @@ export const CleanerApp: React.FC<{ demo?: CleanerDemo }> = ({ demo }) => {
                 {toast.action.label}
               </button>
             )}
-            <button type="button" className="cl-icon-btn" aria-label="Dismiss" onClick={() => setToast(null)}>
+            <button data-weight="medium" type="button" className="cl-icon-btn" aria-label="Dismiss" onClick={() => setToast(null)}>
               <X size={14} />
             </button>
           </div>

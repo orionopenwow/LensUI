@@ -14,6 +14,7 @@ export function approvalReference(appId: string, mode: PopoverMode): string {
 export function approvalText(app: Pick<CatalogApp, "name"> & { install?: CatalogApp["install"] }, mode: PopoverMode): string {
   const portable = !!(app.install as { portable?: boolean } | undefined)?.portable;
   if (mode === "run") return portable ? `Keep ${app.name} in Lens's apps folder` : `Run the installer for ${app.name}`;
+  if (mode === "uninstall" && portable) return `Remove ${app.name}`;
   return `${VERB[mode]} ${app.name}`;
 }
 
@@ -48,7 +49,7 @@ export function appApprovalPreview(target: CatalogApp, mode: PopoverMode, prepar
             ? "Downloaded from its GitHub release and checked. Lens keeps it in its own apps folder; nothing runs until you open it."
             : "Downloaded from its GitHub release and checked. Nothing runs until you say so."
           : "Installs from the source below after it is checked.",
-    verb: mode === "run" && (target.install as { portable?: boolean }).portable ? "Keep it" : VERB[mode],
+    verb: (target.install as { portable?: boolean }).portable ? (mode === "run" ? "Keep it" : mode === "uninstall" ? "Remove" : VERB[mode]) : VERB[mode],
     denyLabel: "Cancel",
     kind: "none",
     details,

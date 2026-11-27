@@ -51,7 +51,8 @@ export function parseChangelog(md) {
     if (h) {
       flush();
       section = { title: h[1].trim(), items: [] };
-      rel.sections.push(section);
+      // "Developer" entries (dev-only tools such as Mission Control) are not shown to people.
+      if (section.title !== "Developer") rel.sections.push(section);
       continue;
     }
     if (/^- /.test(line)) {

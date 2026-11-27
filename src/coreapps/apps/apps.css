@@ -473,6 +473,59 @@
   margin-top: 6px;
   accent-color: var(--lens-fg);
 }
+/* "Remind me" on a to-do: a quiet bell at the end of the row, a small menu under it */
+.nt-todo-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.nt-todo-row .nt-todo {
+  flex: 1;
+  min-width: 0;
+}
+.nt-remind {
+  flex: none;
+  width: 32px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--lens-fg-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), background var(--lens-dur-fast) var(--lens-ease-out), color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.nt-todo-row:hover .nt-remind,
+.nt-todo-row.open .nt-remind,
+.nt-remind:focus-visible {
+  opacity: 1;
+}
+.nt-remind:hover,
+.nt-todo-row.open .nt-remind {
+  color: var(--lens-fg);
+  background: rgb(var(--lens-ink) / 0.08);
+}
+.nt-remind-menu {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 4px 24px;
+  /* Opens from the bell: grows from the row's right end. */
+  transform-origin: 100% 0;
+  animation: nt-remind-in var(--lens-dur-base) var(--lens-ease-out) both;
+}
+@keyframes nt-remind-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(var(--lens-enter-scale));
+  }
+}
 .nt-todo.done span {
   color: var(--lens-fg-muted);
   text-decoration: line-through;
