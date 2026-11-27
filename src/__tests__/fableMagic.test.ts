@@ -17,6 +17,8 @@ import { removedLine, restoreInput } from "../shelf/restore";
 import type { ShelfItem } from "../shelf/contract";
 import { shouldTick } from "../voice/convoState";
 import { moveVertical, type Box } from "../magic/start/model";
+import { runtimeCaps, windowRows } from "../magic/model";
+import type { MagicTarget } from "../magic/contract";
 
 /** Lays words out left to right, 10 px per character, 20 px line height. */
 function page(rows: string[], x0 = 10, y0 = 10): Line[] {
@@ -360,5 +362,27 @@ describe("Magic Start: Up and Down follow the layout", () => {
     expect(moveVertical(boxes, 2, -1)).toBe(2);
     expect(moveVertical(boxes, 7, 1)).toBe(7);
     expect(moveVertical([], 0, 1)).toBe(0);
+  });
+});
+
+describe("B-70: the Magic window's capabilities are read at runtime", () => {
+  const win = (app: string): MagicTarget => ({ kind: "window", label: "A window", app, window: 42, text: null, url: null, path: null, bounds: null, detail: "", id: null });
+  const ids = (app: string, snipOn: boolean) => windowRows(win(app), runtimeCaps({ snipOn, desktopWidgets: false })).map((r) => r.id);
+  test("Snip this window shows while Lens Snip is on, and only then", () => {
+    expect(ids("notepad.exe", true).some((id) => id.endsWith("snip"))).toBe(true);
+    expect(ids("notepad.exe", false).some((id) => id.endsWith("snip"))).toBe(false);
+  });
+  test("Open in Lens Browser shows for a browser window", () => {
+    expect(ids("chrome.exe", false).some((id) => id.endsWith("browser"))).toBe(true);
+    expect(ids("notepad.exe", false).some((id) => id.endsWith("browser"))).toBe(false);
+  });
+  test("the window reads them on each open and runs a command that exists", () => {
+    const src = readFileSync(join(import.meta.dir, "../magic/MagicSurface.tsx"), "utf8");
+    expect(src).toContain('"snip_status"');
+    expect(src).toContain("runtimeCaps(");
+    expect(src).not.toContain('"snip_window"');
+    const lib = readFileSync(join(import.meta.dir, "../../src-tauri/src/lib.rs"), "utf8");
+    expect(lib).toContain("commands::snip::snip_start");
+    expect(lib).toContain("commands::snip::snip_status");
   });
 });

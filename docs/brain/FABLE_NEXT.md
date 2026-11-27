@@ -1,3 +1,5 @@
+> **Superseded (26 Nov 2026):** every Fable pass now follows [FABLE_BRIEF.md](FABLE_BRIEF.md), the standing contract. This page is kept for history.
+
 # Next Claude Fable 5.2 pass
 
 Updated 22 November 2026 from `/mnt/user-data/outputs/FABLE_RUN.md` and the project doc `claude/FABLE_RUN.md`, against `main` at `5a4a5b2`. The earlier plan's wave 1 items that landed since (waves 7–8 integration, Lens at work, Feeds & Messages, Remove-all coverage for the bridge and Print Screen) are dropped; what is left is folded into the waves below.
