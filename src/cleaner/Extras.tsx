@@ -32,7 +32,7 @@ export const AppsPanel: React.FC<{ apps: AppUsage[] | null; error: string | null
       {error && (
         <div className="cl-error" role="alert">
           <span>{error}</span>
-          <button type="button" className="cl-btn is-ghost is-sm" onClick={onRetry}>
+          <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" onClick={onRetry}>
             Try again
           </button>
         </div>
@@ -66,12 +66,12 @@ export const AppsPanel: React.FC<{ apps: AppUsage[] | null; error: string | null
               <span className="cl-num cl-app-size">{fmtSize(a.size + a.dataSize)}</span>
               <span className="cl-app-act">
                 {a.dataDirs[0] && (
-                  <button type="button" className="cl-icon-btn" aria-label={`Open ${a.name}'s data folder`} onClick={() => onReveal(a.dataDirs[0])}>
+                  <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Open ${a.name}'s data folder`} onClick={() => onReveal(a.dataDirs[0])}>
                     <FolderOpen size={13} />
                   </button>
                 )}
                 {a.canUninstall && (
-                  <button type="button" className="cl-btn is-ghost is-sm" aria-label={`Uninstall ${a.name} in Startup & Uninstall`} onClick={() => onUninstall(a)}>
+                  <button data-weight="medium" type="button" className="cl-btn is-ghost is-sm" aria-label={`Uninstall ${a.name} in Startup & Uninstall`} onClick={() => onUninstall(a)}>
                     Uninstall…
                   </button>
                 )}
@@ -109,7 +109,7 @@ export const TimelinePanel: React.FC<{ root: string; data: HistoryView | null; t
             <strong>Turn on daily snapshots</strong>
             <p className="cl-sub">Lens notes how full each drive is once a day, and the size of your biggest folders when you map a drive. Nothing leaves your PC.</p>
           </div>
-          <button type="button" className="cl-btn is-primary" onClick={onEnable}>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={onEnable}>
             Turn on
           </button>
         </div>
@@ -144,7 +144,7 @@ export const TimelinePanel: React.FC<{ root: string; data: HistoryView | null; t
                 <li key={g.path}>
                   <span className="cl-mono cl-ellipsis">{g.path}</span>
                   <span className="cl-num cl-delta is-up">+{fmtSize(g.delta)}</span>
-                  <button type="button" className="cl-icon-btn" aria-label={`Open ${g.path}`} onClick={() => onReveal(g.path)}>
+                  <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Open ${g.path}`} onClick={() => onReveal(g.path)}>
                     <FolderOpen size={13} />
                   </button>
                 </li>
@@ -188,7 +188,7 @@ export const DownloadsPanel: React.FC<{ items: Verdict[] | null; picked: string[
               </span>
               <span className="cl-meta">{ageLabel(v.ageDays)}</span>
               <span className="cl-num">{fmtSize(v.size)}</span>
-              <button type="button" className="cl-icon-btn" aria-label={`Show ${v.name} in File Explorer`} onClick={() => onReveal(v.path)}>
+              <button data-weight="medium" type="button" className="cl-icon-btn" aria-label={`Show ${v.name} in File Explorer`} onClick={() => onReveal(v.path)}>
                 <ExternalLink size={13} />
               </button>
             </li>
@@ -201,7 +201,7 @@ export const DownloadsPanel: React.FC<{ items: Verdict[] | null; picked: string[
             <span className="cl-meta">{picked.length} PICKED</span>
             <span className="cl-num cl-strong">{fmtSize(size)}</span>
           </span>
-          <button type="button" className="cl-btn is-primary" onClick={onBin}>
+          <button data-weight="heavy" type="button" className="cl-btn is-primary" onClick={onBin}>
             <Trash2 size={14} aria-hidden /> Move to Recycle Bin
           </button>
         </footer>

@@ -130,7 +130,7 @@ function Scene() {
         { id: "s3", title: "Groceries", text: "# Groceries\n\n- [ ] Oat milk\n- [ ] Coffee beans\n- [x] Lemons", pinned: false, updated_ms: NOW - 3 * 86_400_000, tags: ["lens-note"] },
       ];
       if (scene === "sticky") return <Sticky noteId="s1" demo={notes[0]} />;
-      return <Notes {...props} demo={{ notes, selected: "s1", packs: [{ id: "default", name: "Default", created_ms: 0, item_count: 4, approx_tokens: 900 }] }} />;
+      return <Notes {...props} demo={{ notes, selected: "s1", remindLine: scene === "remind" ? 4 : undefined, packs: [{ id: "default", name: "Default", created_ms: 0, item_count: 4, approx_tokens: 900 }] }} />;
     }
     case "power":
       return (

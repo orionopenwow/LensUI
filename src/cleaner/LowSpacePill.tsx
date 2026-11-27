@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { EVENTS, on } from "./api";
 import { driveName, fmtSize } from "./model";
 import "./cleaner.css";
+import { oops } from "../ui/oops";
 
 export const LowSpacePill: React.FC = () => {
   const [low, setLow] = useState<[string, number][]>([]);
@@ -13,7 +14,7 @@ export const LowSpacePill: React.FC = () => {
   if (!low.length) return null;
   const [root, free] = low[0];
   return (
-    <button type="button" className="cl-lowpill" aria-label={`${driveName(root)} is almost full, ${fmtSize(free)} free. Open Lens Cleaner.`} onClick={() => invoke("open_surface", { label: "cleaner" }).catch(() => {})}>
+    <button type="button" className="cl-lowpill" aria-label={`${driveName(root)} is almost full, ${fmtSize(free)} free. Open Lens Cleaner.`} data-weight="medium" onClick={() => invoke("open_surface", { label: "cleaner" }).catch(oops("open Lens Cleaner"))}>
       <HardDrive size={12} strokeWidth={2.6} aria-hidden /> {driveName(root)} · {fmtSize(free)} left
     </button>
   );

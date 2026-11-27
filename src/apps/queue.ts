@@ -83,3 +83,8 @@ export function traySummary(q: QueueState): string {
   if (!parts.length && q.items.length) parts.push("All done");
   return parts.join(" · ");
 }
+
+/** What a failed pill should try again: the same thing that failed, as a confirmation mode. */
+export function retryMode(op: QueueOp | undefined): "get" | "update" | "uninstall" {
+  return op === "upgrade" ? "update" : op === "uninstall" ? "uninstall" : "get";
+}

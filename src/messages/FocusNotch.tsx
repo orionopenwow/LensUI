@@ -9,14 +9,14 @@ export function FocusNotch({ focus, onFocus, open: openInit = false }: { focus: 
   const label = focus === "snoozed" ? "Snoozed" : focus === "vip" ? "VIP" : "All";
   return (
     <span className="lm-notch-wrap">
-      <button className={`lm-notch ${focus}`} aria-haspopup="menu" aria-expanded={open} aria-label={`Focus: ${label}`} onClick={() => setOpen((o) => !o)}>
+      <button data-weight="medium" className={`lm-notch ${focus}`} aria-haspopup="menu" aria-expanded={open} aria-label={`Focus: ${label}`} onClick={() => setOpen((o) => !o)}>
         {icon}
         <span>{label}</span>
       </button>
       {open ? (
         <div className="lm-notch-menu" role="menu">
           {FOCUS_MODES.filter((m) => m.id !== "snooze").map((m) => (
-            <button
+            <button data-weight="medium"
               key={m.id}
               role="menuitemradio"
               aria-checked={(m.id === "all" && focus === "all") || (m.id === "vip" && focus === "vip")}
@@ -33,7 +33,7 @@ export function FocusNotch({ focus, onFocus, open: openInit = false }: { focus: 
           <div className="lm-menu-hint lm-menu-pad">Snooze for</div>
           <div className="lm-snooze">
             {SNOOZE_OPTIONS.map((m) => (
-              <button
+              <button data-weight="medium"
                 key={m}
                 onClick={() => {
                   onFocus("snooze", m);
