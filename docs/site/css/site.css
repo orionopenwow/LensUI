@@ -408,7 +408,7 @@ tr:last-child td { border-bottom: 0; }
 .rz-n, .rz-s { left: 8px; right: 8px; height: 6px; cursor: ns-resize; } .rz-n { top: -3px; } .rz-s { bottom: -3px; }
 .rz-e, .rz-w { top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; } .rz-e { right: -3px; } .rz-w { left: -3px; }
 .rz-ne, .rz-nw, .rz-se, .rz-sw { width: 12px; height: 12px; } .rz-ne { right: -3px; top: -3px; cursor: nesw-resize; } .rz-sw { left: -3px; bottom: -3px; cursor: nesw-resize; } .rz-nw { left: -3px; top: -3px; cursor: nwse-resize; } .rz-se { right: -3px; bottom: -3px; cursor: nwse-resize; }
-.lx-snap { position: absolute; left: 0; top: 0; z-index: 3; border-radius: calc(var(--lx-radius) + 2px); background: color-mix(in srgb, var(--lx-accent) 14%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lx-accent) 55%, transparent); transition: transform .14s, width .14s, height .14s; pointer-events: none; }
+.lx-snap { position: absolute; left: 0; top: 0; z-index: 3; border-radius: calc(var(--lx-radius) + 2px); background: color-mix(in srgb, var(--lx-accent) 14%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lx-accent) 55%, transparent); transition: transform var(--lens-dur-fast) var(--lens-ease-out); pointer-events: none; }
 /* top bar */
 /* No `body:has(.lx.is-dragging)` user-select rule: user-select inherits, so it restyled the whole page
    at the drag's first frame. js/desk.js cancels selectstart while a window is dragged instead. */
