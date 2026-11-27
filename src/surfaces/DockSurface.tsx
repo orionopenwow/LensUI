@@ -20,49 +20,11 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { captureFlip, glideOut, useLingering, type FlipCapture } from "../ui/motion";
 import { attentionFor, useAttention } from "../dock/attention";
 import { FlyoutClose } from "../ui/FlyoutClose";
-import {
-  Search,
-  Folder,
-  Terminal,
-  Globe,
-  FileText,
-  Activity,
-  AppWindow,
-  Pin,
-  PinOff,
-  ExternalLink,
-  Minus,
-  Square,
-  X,
-  PlusSquare,
-  Trash2,
-  Settings,
-  Shield,
-  FolderOpen,
-  ArrowUpToLine,
-  Palette,
-  PanelBottom,
-  Monitor,
-  Sparkles,
-  PanelTop,
-  PanelLeft,
-  PanelRight,
-  Lock,
-  Unlock,
-  SeparatorVertical,
-  LayoutGrid,
-} from "lucide-react";
-import { magicOpenFor } from "../magic/contract";
-import { LensMenuRow, LensPan } from "../magic/LensPan";
+import { Search, Activity, AppWindow, Settings, LayoutGrid } from "lucide-react";
 import { useLensState, useRunningWindows } from "../hooks/useLensState";
-import {
-  executeNaturalLanguagePlan,
-  parseNaturalLanguageActions,
-} from "../utils/nlActionRouter";
-import type { InstalledApp, PinnedApp, PinnedFolder, RunningWindow } from "../types/lens";
+import type { InstalledApp, RunningWindow } from "../types/lens";
 import "./CommandPaletteSurface.css";
 import { useThemeSchedule } from "../themes/schedule";
-import { DockPreviewStrip } from "../components/DockPreviewStrip";
 import "./DockSurface.css";
 import {
   DOCK_LAUNCH_ANIMATIONS,
@@ -77,264 +39,38 @@ import {
   resolveSystemArea,
   dockShowsLauncher,
 } from "../dock/styles";
-import { DockWindowCarousel } from "../dock/DockWindowCarousel";
-import { windowMarkClass } from "../dock/marks";
 import { placeHoverCard } from "../dock/placement";
 import { useDockReflow } from "../dock/reflow";
 import { topBarEnabled } from "../topbar/enabled";
 import { DockSystemArea } from "../dock/DockSystemArea";
+import { DockAppItem } from "../dock/DockAppItem";
+import { DockContextMenu } from "../dock/DockContextMenu";
+import { DockHoverCard, type DockCardMode } from "../dock/DockHoverCard";
+import { FallbackAppIcon } from "../dock/DockIcons";
+import { DockSearchDrawer } from "../dock/DockSearchDrawer";
+import { openMagicForDockItem } from "../dock/LensMenuHost";
+import { useDockBadges } from "../dock/hooks/useDockBadges";
+import { useFileDrop } from "../dock/hooks/useFileDrop";
+import { useMagnification } from "../dock/hooks/useMagnification";
+import { useMinimizePulse } from "../dock/hooks/useMinimizePulse";
+import { usePillReport } from "../dock/hooks/usePillReport";
+import {
+  assignWindows,
+  finishedOrGiveUp,
+  matchesPinnedApp,
+  normalizeEdge,
+  notifBadgeFor,
+  orderGroups,
+  prefersReducedMotion,
+  type DockContextMenu as DockMenuState,
+  type DockExtras,
+  type DockFilterTab,
+  type DockHoverCardState,
+  type LauncherHomeData,
+} from "../dock/model";
+import { DOCK_RESULT_LIMIT, browseResults, homeRows } from "../dock/searchItems";
 import { hideSurface, logFail, quiet, retryOnce, setDockMenuOpen } from "../failsafe/calls";
 
-interface RecentFileItem {
-  name: string;
-  path: string;
-  ext: string;
-  ageLabel: string;
-  sizeLabel?: string;
-  folderName?: string;
-  isDir?: boolean;
-}
-
-interface QuickFolderItem {
-  name: string;
-  path: string;
-  color: string;
-  itemCount?: number;
-}
-
-interface LauncherHomeData {
-  recentFiles: RecentFileItem[];
-  folders: QuickFolderItem[];
-}
-
-type DockFilterTab = "all" | "apps" | "files" | "folders" | "recent";
-
-function DockMatteFolderSvg({ color }: { color: string }) {
-  const map: Record<string, { back: string; top: string; bot: string }> = {
-    cobalt: { back: "#0284c7", top: "#38bdf8", bot: "#0369a1" },
-    amber: { back: "#b45309", top: "#fbbf24", bot: "#d97706" },
-    emerald: { back: "#047857", top: "#34d399", bot: "#059669" },
-    minimal: { back: "#a1a1aa", top: "#fafafa", bot: "#d4d4d8" },
-  };
-  const p = map[color] ?? map.cobalt;
-  const gid = `dmf-${color}`;
-  return (
-    <svg viewBox="0 0 64 56" width="34" height="30" style={{ display: "block", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.45))" }}>
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={p.top} />
-          <stop offset="100%" stopColor={p.bot} />
-        </linearGradient>
-      </defs>
-      <path
-        d="M4 12C4 8.7 6.7 6 10 6H23C24.9 6 26.7 6.9 27.8 8.4L30 11.2C30.8 12.1 31.9 12.6 33 12.6H54C57.3 12.6 60 15.3 60 18.6V46C60 49.3 57.3 52 54 52H10C6.7 52 4 49.3 4 46V12Z"
-        fill={p.back}
-      />
-      <rect x="4" y="17" width="56" height="35" rx="7" fill={`url(#${gid})`} />
-      <path d="M11 18H53" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function GlassFolderIcon({ theme }: { theme: string }) {
-  const palettes: Record<string, { back: string; frontTop: string; frontBot: string; rim: string }> = {
-    obsidian: { back: "#1e2028", frontTop: "#323542", frontBot: "#181920", rim: "rgba(255,255,255,0.28)" },
-    cobalt: { back: "#1d4ed8", frontTop: "#3b82f6", frontBot: "#1e40af", rim: "rgba(191,219,254,0.55)" },
-    emerald: { back: "#047857", frontTop: "#10b981", frontBot: "#065f46", rim: "rgba(167,243,208,0.55)" },
-    amber: { back: "#b45309", frontTop: "#f59e0b", frontBot: "#92400e", rim: "rgba(254,243,199,0.55)" },
-    rose: { back: "#be123c", frontTop: "#f43f5e", frontBot: "#9f1239", rim: "rgba(254,205,211,0.55)" },
-    minimal: { back: "#32343c", frontTop: "#525562", frontBot: "#272930", rim: "rgba(255,255,255,0.38)" },
-    neon: { back: "#0f172a", frontTop: "#1e293b", frontBot: "#090d16", rim: "#38bdf8" },
-    accent: {
-      back: "color-mix(in oklch, #1c1f28, var(--lens-accent) 42%)",
-      frontTop: "color-mix(in oklch, #2b303e, var(--lens-accent) 62%)",
-      frontBot: "color-mix(in oklch, #13151d, var(--lens-accent) 42%)",
-      rim: "color-mix(in oklch, #ffffff, var(--lens-accent) 40%)",
-    },
-  };
-  const p = palettes[theme] ?? palettes.obsidian;
-  const gid = `gf-${theme}`;
-
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      style={{
-        width: "78%",
-        height: "78%",
-        display: "block",
-        filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.45))",
-        pointerEvents: "none",
-      }}
-    >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={p.frontTop} />
-          <stop offset="100%" stopColor={p.frontBot} />
-        </linearGradient>
-      </defs>
-      {/* Backplate + rounded tab */}
-      <path
-        d="M6 16C6 12.686 8.686 10 12 10H24.5C26.4 10 28.1 10.9 29.2 12.4L31.4 15.2C32.1 16.1 33.2 16.6 34.4 16.6H52C55.314 16.6 58 19.286 58 22.6V48C58 51.314 55.314 54 52 54H12C8.686 54 6 51.314 6 48V16Z"
-        fill={p.back}
-      />
-      {/* Subtle frosted paper sheet peeking */}
-      <rect x="11" y="19" width="42" height="6" rx="3" fill="rgba(255,255,255,0.16)" />
-      {/* Matte glassware front flap */}
-      <rect x="5" y="22" width="54" height="33" rx="7" fill={`url(#${gid})`} />
-      {/* Top specular glass rim */}
-      <path
-        d="M12 22.75H52"
-        stroke={p.rim}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      {/* Minimalist centered notch */}
-      <rect x="25" y="37" width="14" height="2.6" rx="1.3" fill="rgba(255,255,255,0.28)" />
-    </svg>
-  );
-}
-
-function FallbackAppIcon({ hint }: { hint?: string | null }) {
-  switch (hint) {
-    case "folder":
-      return <Folder size={20} strokeWidth={1.8} />;
-    case "terminal":
-      return <Terminal size={20} strokeWidth={1.8} />;
-    case "globe":
-      return <Globe size={20} strokeWidth={1.8} />;
-    case "file-text":
-      return <FileText size={20} strokeWidth={1.8} />;
-    default:
-      return <AppWindow size={20} strokeWidth={1.8} />;
-  }
-}
-
-const PROCESS_ALIASES: Record<string, string[]> = {
-  "wt.exe": ["windowsterminal.exe", "wt.exe"],
-  "terminal": ["windowsterminal.exe", "wt.exe"],
-  "windows terminal": ["windowsterminal.exe", "wt.exe"],
-  "explorer.exe": ["explorer.exe"],
-  "file explorer": ["explorer.exe"],
-  "notepad.exe": ["notepad.exe"],
-  "code.exe": ["code.exe"],
-  "visual studio code": ["code.exe"],
-  "vs code": ["code.exe"],
-  "antigravity": ["antigravity.exe"],
-  "chrome.exe": ["chrome.exe"],
-  "google chrome": ["chrome.exe"],
-  "msedge.exe": ["msedge.exe"],
-  "microsoft edge": ["msedge.exe"],
-  "spotify": ["spotify.exe"],
-  "discord": ["discord.exe"],
-  "steam": ["steam.exe", "steamwebhelper.exe"],
-  "obs studio": ["obs64.exe"],
-  "claude": ["claude.exe"],
-};
-
-function matchesPinnedApp(app: PinnedApp, win: RunningWindow): boolean {
-  const appPathLower = app.path.toLowerCase();
-  const winPathLower = win.exePath.toLowerCase();
-  if (appPathLower && winPathLower && appPathLower === winPathLower) return true;
-
-  const appExe = appPathLower.split("\\").pop() ?? "";
-  const winProc = win.processName.toLowerCase();
-  if (appExe && winProc === appExe) return true;
-
-  const appNameLower = app.name.toLowerCase().trim();
-  const aliases = PROCESS_ALIASES[appExe] || PROCESS_ALIASES[appNameLower];
-  if (aliases && aliases.includes(winProc)) return true;
-
-  const appStem = appExe.replace(/\.(exe|lnk|url)$/i, "");
-  const winStem = winProc.replace(/\.exe$/i, "");
-  if (appStem.length >= 3 && (appStem === winStem || appStem.includes(winStem) || winStem.includes(appStem))) {
-    return true;
-  }
-  if (appNameLower.length >= 3 && (appNameLower === winStem || appNameLower.includes(winStem))) {
-    return true;
-  }
-
-  return false;
-}
-
-type DockContextMenu =
-  | {
-      kind: "app";
-      x: number;
-      y: number;
-      title: string;
-      pinnedApp?: PinnedApp;
-      windows: RunningWindow[];
-      launchPath: string;
-    }
-  | {
-      kind: "folder";
-      x: number;
-      y: number;
-      folder: PinnedFolder;
-    }
-  | {
-      kind: "dock";
-      x: number;
-      y: number;
-    };
-
-/** Which screen edge the Dock sits on. */
-type DockEdge = "bottom" | "top" | "left" | "right";
-
-/** Dock settings added for edge placement, locking, separators and live previews. They are
- *  optional so older config files keep working (missing = bottom, unlocked, none, off). */
-interface DockExtras {
-  position?: string;
-  locked?: boolean;
-  separatorsAfter?: string[];
-  livePreviews?: boolean;
-  style?: string;
-  alignment?: string;
-  systemArea?: string;
-  magnification?: string;
-  magnificationRange?: number;
-  launchAnimation?: string;
-  minimizeFeedback?: boolean;
-  iconSizes?: Record<string, number>;
-  showLabels?: boolean;
-  fileDropOpen?: boolean;
-  scrollCyclesWindows?: boolean;
-}
-
-/** Shape of Tauri's window drag-and-drop events (physical pixels). */
-interface DragDropPayload {
-  paths?: string[];
-  position?: { x: number; y: number };
-}
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-const normalizeEdge = (raw?: string): DockEdge =>
-  raw === "top" || raw === "left" || raw === "right" ? raw : "bottom";
-
-/** Lower-case letters and digits only, without ".exe" — for matching app names loosely. */
-const normName = (s: string) =>
-  s.toLowerCase().replace(/\.exe$/, "").replace(/[^a-z0-9]/g, "");
-
-interface NotificationLite {
-  id?: string;
-  appName?: string;
-}
-
-/** Spoken form of the Dock badge (the badge itself is aria-hidden): the same number it shows. */
-function dockBadgeLabel(unread: number, windows: number): string {
-  if (unread > 0) return `, ${unread > 99 ? "99+" : unread} notifications`;
-  if (windows > 1) return `, ${windows} windows`;
-  return "";
-}
-
-/** Resolves when an animation finishes, or after `ms` if it never does (a window hidden mid-glide
- *  stops its animations): a failsafe, not the animation's clock. */
-function finishedOrGiveUp(finished: Promise<unknown>, ms: number): Promise<unknown> {
-  return Promise.race([finished, new Promise((resolve) => window.setTimeout(resolve, ms))]);
-}
 
 export const DockSurface: React.FC = () => {
   const { config, updateConfig } = useLensState();
@@ -369,14 +105,9 @@ export const DockSurface: React.FC = () => {
   const splitPillRef = useRef<HTMLDivElement>(null);
   /** How long the current launch animation runs (ms), so the class is not removed mid-animation. */
   const launchMsRef = useRef<number>(190);
-  /** Windows that were just minimised or restored (pulse feedback), by hwnd. */
-  const [pulseHwnds, setPulseHwnds] = useState<Set<number>>(() => new Set());
-  const minimizedRef = useRef<Map<number, boolean>>(new Map());
   /** Per-app index for wheel window cycling. */
   const wheelIdxRef = useRef<Record<string, number>>({});
   const wheelAtRef = useRef<number>(0);
-  /** Dock app currently under a file drag (key = data-dock-drag-key). */
-  const [dropKey, setDropKey] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Settings can be dragged off the Dock: the fused top edge follows where it actually is.
   const [settingsDocked, setSettingsDocked] = useState(true);
@@ -384,33 +115,9 @@ export const DockSurface: React.FC = () => {
   const settingsOpenRef = useRef(false);
   settingsOpenRef.current = settingsOpen;
   const [launchingId, setLaunchingId] = useState<string | null>(null);
-  const [ctxMenu, setCtxMenu] = useState<DockContextMenu | null>(null);
-  const [hoverCard, setHoverCard] = useState<{
-    key: string;
-    x: number;
-    y: number;
-    title: string;
-    isSpotify: boolean;
-    windows: RunningWindow[];
-    iconUrl?: string | null;
-  } | null>(null);
-  // Unread notification counts per app (normalised name -> count), shown as dock badges.
-  const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
-  // Text badges for pinned Lens core apps ("12:04" on Lens Timer), keyed by pin path.
-  const [coreBadges, setCoreBadges] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const un = listen<{ path: string; text: string | null }>("lens://coreapp-badge", (e) =>
-      setCoreBadges((b) => {
-        const next = { ...b };
-        if (e.payload.text) next[e.payload.path] = e.payload.text;
-        else delete next[e.payload.path];
-        return next;
-      })
-    );
-    return () => {
-      un.then((f) => f()).catch(quiet);
-    };
-  }, []);
+  const [ctxMenu, setCtxMenu] = useState<DockMenuState | null>(null);
+  const [hoverCard, setHoverCard] = useState<DockHoverCardState | null>(null);
+  const { notifCounts, coreBadges } = useDockBadges();
   // Alt+1..9 activation (the backend emits the index; the latest render's rows handle it).
   const activateRef = useRef<(n: number) => void>(() => {});
   const hoverTimerRef = useRef<number | null>(null);
@@ -422,16 +129,6 @@ export const DockSurface: React.FC = () => {
   const dragPinOrderRef = useRef<string[] | null>(null);
   /** Icons that moved during a reorder glide from where they were (FLIP). */
   const reorderFlip = useRef<FlipCapture | null>(null);
-  /** Magnification state (see applyMagnification): one rAF per frame, cached icon centres. */
-  const magRef = useRef<{
-    raf: number;
-    pos: number | null;
-    kids: HTMLElement[];
-    centres: number[];
-    eligible: boolean[];
-    written: string[];
-  }>({ raf: 0, pos: null, kids: [], centres: [], eligible: [], written: [] });
-  useEffect(() => () => { if (magRef.current.raf) cancelAnimationFrame(magRef.current.raf); }, []);
   const isVerticalRef = useRef(false);
   /** Latest config for handlers created earlier (pointer drags). */
   const configRef = useRef(config as NonNullable<typeof config>);
@@ -454,6 +151,7 @@ export const DockSurface: React.FC = () => {
   } | null>(null);
   const suppressClickRef = useRef<boolean>(false);
   const pillRef = useRef<HTMLElement>(null);
+  const mag = useMagnification(pillRef);
   // Search opens and closes by FLIP (docs/SMOOTHNESS.md, G-04): layout changes in one frame and the
   // icons glide from where they were, instead of animating width/height on every icon.
   const searchFlip = useRef<FlipCapture | null>(null);
@@ -615,7 +313,7 @@ export const DockSurface: React.FC = () => {
   const shownCard = hoverLinger.value;
   // Apps with two or more windows get the window carousel (live previews on); one window keeps
   // today's card.
-  const cardMode: "spotify" | "carousel" | "strip" | "list" | null = !shownCard
+  const cardMode: DockCardMode | null = !shownCard
     ? null
     : shownCard.isSpotify
       ? "spotify"
@@ -646,7 +344,7 @@ export const DockSurface: React.FC = () => {
     if (opener && opener.isConnected && document.activeElement && opener.ownerDocument.activeElement?.closest(".dock-ctx-menu")) opener.focus({ preventScroll: true });
   };
 
-  const openMenu = (menu: DockContextMenu) => {
+  const openMenu = (menu: DockMenuState) => {
     setHoverCard(null);
     menuOpenerRef.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     setCtxMenu(menu);
@@ -662,22 +360,6 @@ export const DockSurface: React.FC = () => {
     });
     return () => cancelAnimationFrame(id);
   }, [ctxMenu]);
-
-  /** Up/Down/Home/End move between menu rows, like a native context menu. */
-  const onMenuKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>(".dock-ctx-item:not(:disabled)"));
-    if (!items.length) return;
-    const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    let next = -1;
-    if (e.key === "ArrowDown") next = i < 0 ? 0 : (i + 1) % items.length;
-    else if (e.key === "ArrowUp") next = i < 0 ? items.length - 1 : (i - 1 + items.length) % items.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = items.length - 1;
-    if (next >= 0) {
-      e.preventDefault();
-      items[next].focus({ preventScroll: true });
-    }
-  };
 
   const cancelHoverClose = () => {
     if (hoverTimerRef.current !== null) {
@@ -902,39 +584,6 @@ export const DockSurface: React.FC = () => {
     };
   }, [hoverCard, ctxMenu, dockSearchOpen, dockSearchClosing]);
 
-  // Unread notification badges: Windows toasts and Lens history, counted once per id.
-  useEffect(() => {
-    let alive = true;
-    const load = () => {
-      invoke<{ items?: NotificationLite[]; windows?: { items?: NotificationLite[] } } | null>(
-        "get_notification_center_cmd"
-      )
-        .then((state) => {
-          if (!alive || !state) return;
-          const seen = new Set<string>();
-          const counts: Record<string, number> = {};
-          [...(state.windows?.items ?? []), ...(state.items ?? [])].forEach((n, i) => {
-            const id = n.id ?? `idx-${i}`;
-            if (seen.has(id)) return;
-            seen.add(id);
-            const k = normName(n.appName ?? "");
-            if (!k || k === "lensui") return;
-            counts[k] = (counts[k] ?? 0) + 1;
-          });
-          setNotifCounts(counts);
-        })
-        .catch(quiet);
-    };
-    load();
-    const unlisten = listen("lens://notifications-changed", load);
-    const timer = window.setInterval(load, 60000);
-    return () => {
-      alive = false;
-      window.clearInterval(timer);
-      unlisten.then((fn) => fn());
-    };
-  }, []);
-
   // Alt+1..9 (registered by the backend when enabled) activates the Nth dock app.
   useEffect(() => {
     const unlisten = listen<number>("lens://dock-activate-index", (e) =>
@@ -945,138 +594,13 @@ export const DockSurface: React.FC = () => {
     };
   }, []);
 
-  // Minimise/restore feedback: pulse an icon when one of its windows changes minimised state.
-  const minimizeFeedbackOn = (config?.dock as DockExtras | undefined)?.minimizeFeedback === true;
-  useEffect(() => {
-    const prev = minimizedRef.current;
-    const changed: number[] = [];
-    const next = new Map<number, boolean>();
-    for (const w of runningWindows) {
-      next.set(w.hwnd, w.isMinimized);
-      const before = prev.get(w.hwnd);
-      if (before !== undefined && before !== w.isMinimized) changed.push(w.hwnd);
-    }
-    minimizedRef.current = next;
-    if (!minimizeFeedbackOn || changed.length === 0 || prefersReducedMotion()) return;
-    setPulseHwnds((cur) => new Set([...cur, ...changed]));
-    const t = window.setTimeout(() => {
-      setPulseHwnds((cur) => {
-        const n = new Set(cur);
-        changed.forEach((h) => n.delete(h));
-        return n;
-      });
-    }, 460);
-    return () => window.clearTimeout(t);
-  }, [runningWindows, minimizeFeedbackOn]);
+  const pulseHwnds = useMinimizePulse(runningWindows, (config?.dock as DockExtras | undefined)?.minimizeFeedback === true);
+  const dropKey = useFileDrop((config?.dock as DockExtras | undefined)?.fileDropOpen === true, aiOn, setAiDropPaths);
 
-  // Drop files on a Dock app to open them with it. Tauri delivers OS file drags as window
-  // events with physical-pixel positions; we hit-test the app under the pointer.
-  const fileDropOn = (config?.dock as DockExtras | undefined)?.fileDropOpen === true;
-  useEffect(() => {
-    // Also active while AI is on, for dropping files on the sparkle (drop-to-AI).
-    if (!fileDropOn && !aiOn) return;
-    const target = (p?: { x: number; y: number }) => {
-      if (!p) return null;
-      const dpr = window.devicePixelRatio || 1;
-      const el = document.elementFromPoint(p.x / dpr, p.y / dpr) as HTMLElement | null;
-      return el?.closest<HTMLElement>(fileDropOn ? "[data-dock-launch-path],[data-dock-ai-drop]" : "[data-dock-ai-drop]") ?? null;
-    };
-    const offs = [
-      listen<DragDropPayload>("tauri://drag-over", (e) => {
-        setDropKey(target(e.payload?.position)?.dataset.dockDragKey ?? null);
-      }),
-      listen<DragDropPayload>("tauri://drag-leave", () => setDropKey(null)),
-      listen<DragDropPayload>("tauri://drag-drop", (e) => {
-        const t = target(e.payload?.position);
-        setDropKey(null);
-        const files = e.payload?.paths ?? [];
-        if (t?.dataset.dockAiDrop && files.length) {
-          setAiDropPaths(files.slice(0, 20));
-          return;
-        }
-        const appPath = t?.dataset.dockLaunchPath;
-        if (!appPath || files.length === 0) return;
-        invoke("open_files_with_app_cmd", { appPath, files }).catch(logFail("Dock", "open the dropped files"));
-      }),
-    ];
-    return () => offs.forEach((u) => u.then((fn) => fn()));
-  }, [fileDropOn, aiOn]);
-
-  useEffect(() => {
-    const el = pillRef.current;
-    if (!el) return;
-    const report = () => {
-      if (dockSearchOpenRef.current) return;
-      // A hidden Dock is slid off its edge: keep the last resting rect. The backend hit-tests
-      // every style against this rect, so it must never be the off-screen one.
-      if (el.classList.contains("is-hidden")) return;
-      const rect = el.getBoundingClientRect();
-      if (rect.width > 0) {
-        // Split: the backend hit-tests one rect, so report the union of both pills. On the bottom
-        // edge it uses a width centred on the screen, so report a width symmetric about the centre.
-        const extra = splitPillRef.current?.getBoundingClientRect();
-        let left = rect.left;
-        let top = rect.top;
-        let right = rect.right;
-        let bottom = rect.bottom;
-        if (extra && extra.width > 0) {
-          left = Math.min(left, extra.left);
-          top = Math.min(top, extra.top);
-          right = Math.max(right, extra.right);
-          bottom = Math.max(bottom, extra.bottom);
-        }
-        // Magnified icons grow past the Dock's edge: include that headroom in the hit-test rect.
-        const dockCfg = config?.dock as DockExtras | undefined;
-        const magId = normalizeMagnification(dockCfg?.magnification);
-        if (magId !== "off") {
-          const scale = DOCK_MAGNIFICATION.find((m) => m.id === magId)?.scale ?? 1;
-          const iconPx = el.querySelector(".dock-item")?.getBoundingClientRect().width ?? 40;
-          const head = Math.ceil((scale - 1) * iconPx);
-          const e = normalizeEdge(dockCfg?.position);
-          if (e === "bottom") top -= head;
-          else if (e === "top") bottom += head;
-          else if (e === "left") right += head;
-          else left -= head;
-        }
-        const mid = window.innerWidth / 2;
-        const symmetricW = 2 * Math.max(mid - left, right - mid);
-        invoke("set_dock_pill_width", { width: extra ? symmetricW : rect.width }).catch(quiet);
-        // Full rect (CSS px within this window) lets the backend hit-test Docks on any edge.
-        void retryOnce(() => invoke("set_dock_pill_rect_cmd", {
-          x: left,
-          y: top,
-          w: right - left,
-          h: bottom - top,
-        }), "Dock", "report where it is");
-      }
-    };
-    report();
-    const ro = new ResizeObserver(report);
-    ro.observe(el);
-    if (splitPillRef.current) ro.observe(splitPillRef.current);
-    // The backend sizes this window from the reported pill (plus flyout room) once the Dock is
-    // idle. The pill keeps its place on screen but moves inside the window, so report again.
-    window.addEventListener("resize", report);
-    // After the Dock has slid back in, report where it came to rest.
-    const onSettled = (e: TransitionEvent) => {
-      if (e.target === el) report();
-    };
-    el.addEventListener("transitionend", onSettled);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", report);
-      el.removeEventListener("transitionend", onSettled);
-    };
-  }, [
+  usePillReport(pillRef, splitPillRef, dockSearchOpenRef, config?.dock as (DockExtras & { iconSize?: number }) | undefined, [
     dockVisible,
     config?.dock.pinnedApps.length,
-    config?.dock.iconSize,
     runningWindows.length,
-    (config?.dock as DockExtras | undefined)?.style,
-    (config?.dock as DockExtras | undefined)?.systemArea,
-    (config?.dock as DockExtras | undefined)?.position,
-    (config?.dock as DockExtras | undefined)?.magnification,
-    (config?.dock as DockExtras | undefined)?.showLabels,
   ]);
 
   useEffect(() => {
@@ -1138,77 +662,6 @@ export const DockSurface: React.FC = () => {
   const showLabels = dockExtras.showLabels === true;
   const scrollCycles = dockExtras.scrollCyclesWindows === true;
 
-  /** Magnification: icons near the pointer grow (transform only, so the Dock's size and the
-   *  native click region never change); neighbours are pushed apart so nothing overlaps.
-   *  Low latency by construction (docs/DOCK_SMOOTHNESS.md › Frontend):
-   *   - pointer moves are coalesced to one update per frame (rAF), however fast the mouse reports;
-   *   - icon centres are measured once when the pointer enters (transforms don't move layout),
-   *     so a move is pure arithmetic with no layout reads;
-   *   - a value is written only when it changed, so icons far from the pointer aren't restyled. */
-  const measureMagnification = () => {
-    const m = magRef.current;
-    const row = pillRef.current?.querySelector(".dock-icons-row");
-    m.kids = row ? (Array.from(row.children) as HTMLElement[]) : [];
-    m.eligible = m.kids.map((el) => el.classList.contains("dock-item-wrap") && !el.classList.contains("dock-search-slot"));
-    m.centres = m.kids.map((el) => (isVertical ? el.offsetTop + el.offsetHeight / 2 : el.offsetLeft + el.offsetWidth / 2));
-    m.written = m.kids.map(() => "");
-  };
-  const clearMagnification = () => {
-    const m = magRef.current;
-    if (m.raf) cancelAnimationFrame(m.raf);
-    m.raf = 0;
-    m.pos = null;
-    const row = pillRef.current?.querySelector(".dock-icons-row");
-    if (row) {
-      for (const el of Array.from(row.children) as HTMLElement[]) {
-        el.style.removeProperty("--mag-s");
-        el.style.removeProperty("--mag-x");
-      }
-    }
-    m.kids = [];
-  };
-  const paintMagnification = () => {
-    const m = magRef.current;
-    m.raf = 0;
-    if (m.pos === null) return;
-    // The row changed under the pointer (an app opened or closed): measure again.
-    const row = pillRef.current?.querySelector(".dock-icons-row");
-    if (!row || row.children.length !== m.kids.length || !m.kids[0]?.isConnected) measureMagnification();
-    const unit = effectiveIconSize + 6;
-    const reach = (magRange + 0.5) * unit;
-    const scales = m.centres.map((c, i) => {
-      if (!m.eligible[i]) return 1;
-      const d = Math.abs((m.pos as number) - c);
-      if (d >= reach) return 1;
-      const t = Math.cos((d / reach) * (Math.PI / 2));
-      return 1 + (magScale - 1) * t * t;
-    });
-    const extras = scales.map((sc) => (sc - 1) * effectiveIconSize);
-    const total = extras.reduce((a, b) => a + b, 0);
-    let before = 0;
-    m.kids.forEach((el, i) => {
-      const shift = before + extras[i] / 2 - total / 2;
-      before += extras[i];
-      const sv = scales[i].toFixed(3);
-      const xv = `${shift.toFixed(1)}px`;
-      const key = `${sv}|${xv}`;
-      if (m.written[i] === key) return;
-      m.written[i] = key;
-      el.style.setProperty("--mag-s", sv);
-      el.style.setProperty("--mag-x", xv);
-    });
-  };
-  const applyMagnification = (clientX: number, clientY: number) => {
-    const pill = pillRef.current;
-    if (!pill || magnification === "off" || dockSearchOpen || ctxMenu) return;
-    const m = magRef.current;
-    if (!m.kids.length) measureMagnification();
-    const pr = pill.getBoundingClientRect();
-    // Centres are relative to the row's offset parent; the pill is that parent for every style.
-    m.pos = isVertical ? clientY - pr.top : clientX - pr.left;
-    if (!m.raf) m.raf = requestAnimationFrame(paintMagnification);
-  };
-
   /** Mouse wheel over an app: cycle through its windows (newest focus last). */
   const cycleWindows = (key: string, wins: RunningWindow[], deltaY: number) => {
     if (!scrollCycles || wins.length === 0) return;
@@ -1223,41 +676,10 @@ export const DockSurface: React.FC = () => {
   const updateDockExtras = (patch: DockExtras) =>
     updateConfig({ ...config, dock: { ...config.dock, ...patch } as typeof config.dock });
 
-  // Match ALL running windows belonging to each pinned app so apps appear open ON their pinned area (zero duplicates!)
-  const matchedHwnds = new Set<number>();
-  const pinnedRows = pinnedApps.map((app) => {
-    const wins = runningWindows.filter((w) => matchesPinnedApp(app, w));
-    wins.forEach((w) => matchedHwnds.add(w.hwnd));
-    const focusedWin = wins.find((w) => w.isFocused) ?? wins[0];
-    return { app, wins, primaryWin: focusedWin };
-  });
-
-  // Group remaining unpinned running windows by processName
-  const extraGroupsRaw: { key: string; primaryWin: RunningWindow; wins: RunningWindow[] }[] = [];
-  const groupMap = new Map<string, { key: string; primaryWin: RunningWindow; wins: RunningWindow[] }>();
-  for (const w of runningWindows) {
-    if (matchedHwnds.has(w.hwnd)) continue;
-    const key = w.processName.toLowerCase();
-    const existing = groupMap.get(key);
-    if (existing) {
-      existing.wins.push(w);
-      if (w.isFocused) existing.primaryWin = w;
-    } else {
-      const entry = { key, primaryWin: w, wins: [w] };
-      groupMap.set(key, entry);
-      extraGroupsRaw.push(entry);
-    }
-  }
-
-  // Respect user drag-to-reorder order for unpinned running window groups
-  const extraGroups = [...extraGroupsRaw].sort((a, b) => {
-    const ia = unpinnedOrder.indexOf(a.key);
-    const ib = unpinnedOrder.indexOf(b.key);
-    if (ia === -1 && ib === -1) return 0;
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
+  // Running windows sit on their pinned app's slot; the rest are grouped by process, in the
+  // order the person dragged them into (src/dock/model.ts).
+  const { pinnedRows, extraGroups: extraGroupsRaw } = assignWindows(pinnedApps, runningWindows);
+  const extraGroups = orderGroups(extraGroupsRaw, unpinnedOrder);
 
   reflow.render(
     [
@@ -1401,19 +823,10 @@ export const DockSurface: React.FC = () => {
   const gapBudget = totalItems * 6 + 34;
   const rawFit = Math.floor((maxAvailable - gapBudget) / Math.max(1, totalItems));
   const effectiveIconSize = Math.max(22, Math.min(resolveDockIconSize(config.dock, dockStyle), rawFit));
+  mag.params.current = { enabled: magnification !== "off" && !dockSearchOpen && !ctxMenu, vertical: isVertical, iconSize: effectiveIconSize, scale: magScale, range: magRange };
 
-  /** Unread notifications for an app, matched loosely by any of its names. */
-  const notifBadgeFor = (...names: (string | undefined)[]) => {
-    const keys = names.map((n) => normName(n ?? "")).filter((k) => k.length >= 3);
-    if (keys.length === 0) return 0;
-    let total = 0;
-    for (const [k, n] of Object.entries(notifCounts)) {
-      if (keys.some((x) => x === k || (k.length >= 4 && x.length >= 4 && (x.includes(k) || k.includes(x))))) {
-        total += n;
-      }
-    }
-    return total;
-  };
+  const closeWindows = (wins: RunningWindow[]) =>
+    wins.forEach((w) => invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" }));
 
   activateRef.current = (n: number) => {
     const items = [
@@ -1486,124 +899,25 @@ export const DockSurface: React.FC = () => {
   const iconTheme = config.iconStyle?.theme ?? "obsidian-squircle";
   const iconShape = config.iconStyle?.shape ?? "squircle";
 
-  // In-Dock Launcher items & filtering
-  const recentAndRunning = [
-    ...runningWindows.slice(0, 3).map((w) => ({
-      id: `rr-w-${w.hwnd}`,
-      title: w.title || w.processName.replace(/\.exe$/i, ""),
-      sub: `${w.processName.replace(/\.exe$/i, "")} · Running Window`,
-      badge: w.isFocused ? "Active" : "Open",
-      iconUrl: w.iconDataUrl,
-      isDir: false,
-      run: () => {
-        closeInDockLauncher();
-        invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
-      },
-    })),
-    ...homeData.recentFiles.slice(0, 12).map((rf) => ({
-      id: `rr-f-${rf.path}`,
-      title: rf.name,
-      sub: `${rf.folderName || "Recent"} · ${rf.sizeLabel || (rf.ext ? rf.ext.toUpperCase() : "File")}`,
-      badge: rf.ageLabel,
-      iconUrl: null as string | null | undefined,
-      isDir: Boolean(rf.isDir),
-      run: () => {
-        closeInDockLauncher();
-        invoke("launch_app_cmd", { path: rf.path });
-      },
-    })),
-  ].slice(0, 12);
-
-  const searchableItems = [
-    ...runningWindows.map((w) => ({
-      id: `sw-${w.hwnd}`,
-      title: w.title,
-      subtitle: `${w.processName.replace(/\.exe$/i, "")} · Running Window`,
-      badge: w.isFocused ? "Active" : "Open",
-      kind: "recent" as const,
-      iconUrl: w.iconDataUrl,
-      run: () => {
-        closeInDockLauncher();
-        invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
-      },
-    })),
-    ...homeData.folders.map((f) => ({
-      id: `sf-${f.path}`,
-      title: f.name,
-      subtitle: `${f.itemCount ?? 0} items · ${f.path}`,
-      badge: "Folder",
-      kind: "folders" as const,
-      iconUrl: null as string | null | undefined,
-      run: () => {
-        closeInDockLauncher();
-        invoke("launch_app_cmd", { path: f.path });
-      },
-    })),
-    ...homeData.recentFiles.map((rf) => ({
-      id: `srf-${rf.path}`,
-      title: rf.name,
-      subtitle: `${rf.folderName || "Recent"} · ${rf.sizeLabel || (rf.ext ? rf.ext.toUpperCase() : "File")} · ${rf.path}`,
-      badge: rf.ageLabel,
-      kind: rf.isDir ? ("folders" as const) : ("files" as const),
-      iconUrl: null as string | null | undefined,
-      run: () => {
-        closeInDockLauncher();
-        invoke("launch_app_cmd", { path: rf.path });
-      },
-    })),
-    ...installedApps.map((a) => ({
-      id: `sa-${a.path}`,
-      title: a.name,
-      subtitle: `Application · ${a.path}`,
-      badge: "App",
-      kind: "apps" as const,
-      iconUrl: null as string | null | undefined,
-      run: () => {
-        closeInDockLauncher();
-        invoke("launch_app_cmd", { path: a.path });
-      },
-    })),
-  ];
-
+  // What the search panel lists (src/dock/searchItems.ts); typed queries rank like the Launcher.
+  const searchSources = {
+    windows: runningWindows,
+    home: homeData,
+    installedApps,
+    focus: (hwnd: number) => {
+      closeInDockLauncher();
+      invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
+    },
+    open: (path: string) => {
+      closeInDockLauncher();
+      invoke("launch_app_cmd", { path });
+    },
+  };
+  const recentAndRunning = homeRows(searchSources);
   const qLower = dockSearchQuery.trim().toLowerCase();
-  const nlActions = parseNaturalLanguageActions(dockSearchQuery);
-  const nlItems =
-    nlActions.length > 0
-      ? [
-          {
-            id: "nl-action-plan",
-            title: `⚡ Run: ${nlActions.map((a) => a.label).join("  ·  ")}`,
-            subtitle: `Natural-Language Action Router (${nlActions.length} ${nlActions.length === 1 ? "step" : "steps"}) · Logs to DPO dataset`,
-            badge: "Run ↵",
-            kind: "action" as const,
-            iconUrl: null as string | null | undefined,
-            run: () => {
-              closeInDockLauncher();
-              executeNaturalLanguagePlan(
-                dockSearchQuery,
-                nlActions,
-                config,
-                updateConfig,
-                "dock-search"
-              ).catch(logFail("Dock", "run that"));
-            },
-          },
-        ]
-      : [];
-
   const filteredResults = qLower
-    ? toDockResults(dockSearch.results, dockFilterTab, dockSearch.activate, dockSearch.armedKey).slice(0, 28)
-    : [
-    ...nlItems,
-    ...searchableItems.filter((item) => {
-      if (dockFilterTab === "apps" && item.kind !== "apps") return false;
-      if (dockFilterTab === "files" && item.kind !== "files") return false;
-      if (dockFilterTab === "folders" && item.kind !== "folders") return false;
-      if (dockFilterTab === "recent" && item.kind !== "recent" && item.kind !== "files") return false;
-      if (!qLower) return true;
-      return item.title.toLowerCase().includes(qLower) || item.subtitle.toLowerCase().includes(qLower);
-    }),
-  ].slice(0, 28);
+    ? toDockResults(dockSearch.results, dockFilterTab, dockSearch.activate, dockSearch.armedKey).slice(0, DOCK_RESULT_LIMIT)
+    : browseResults(searchSources, dockFilterTab);
 
   const showHomeGrid = qLower === "" && dockFilterTab === "all";
 
@@ -1624,14 +938,12 @@ export const DockSurface: React.FC = () => {
       <McpBridge config={config} updateConfig={updateConfig} />
       <AiApplyBridge config={config} updateConfig={updateConfig} />
       {shownMenu && menuLinger.mounted && (
-        <>
-          {!menuLinger.leaving && <div className="dock-ctx-backdrop" onClick={closeMenu} onContextMenu={(e) => { e.preventDefault(); closeMenu(); }} />}
-          <div
-            ref={menuLinger.ref}
-            inert={menuLinger.leaving}
-            className={`dock-ctx-menu dock-ctx-edge-${edge}`}
-            onKeyDown={onMenuKeyDown}
-            style={
+        <DockContextMenu
+          menu={shownMenu}
+          menuRef={menuLinger.ref}
+          leaving={menuLinger.leaving}
+          edge={edge}
+          style={
               edge === "left"
                 ? { left: (pillRef.current?.getBoundingClientRect().right ?? 60) + 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
                 : edge === "right"
@@ -1640,399 +952,33 @@ export const DockSurface: React.FC = () => {
                     ? { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y + effectiveIconSize + 18 }
                     : { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y - 12 }
             }
-          >
-            {shownMenu.kind === "app" && (
-              <LensPan
-                item={{
-                  kind: "dockItem",
-                  id: shownMenu.pinnedApp?.id ?? (shownMenu.windows[0] ? `win-${shownMenu.windows[0].hwnd}` : shownMenu.launchPath),
-                  label: shownMenu.pinnedApp?.name ?? shownMenu.title,
-                  path: shownMenu.launchPath || null,
-                }}
-                itemClassName="dock-ctx-item"
-                onClose={closeMenu}
-              >
-                {shownMenu.windows.length > 0 ? (
-                  <>
-                    {shownMenu.windows.slice(0, 3).map((w) => (
-                      <button
-                        key={w.hwnd}
-                        type="button"
-                        className="dock-ctx-item"
-                        onClick={() => {
-                          invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
-                          closeMenu();
-                        }}
-                      >
-                        <AppWindow size={14} strokeWidth={2.4} color={w.isFocused ? "#38BDF8" : "#A1A1AA"} style={{ flexShrink: 0 }} />
-                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {w.title || w.processName.replace(/\.exe$/i, "")}
-                        </span>
-                      </button>
-                    ))}
-
-                    {/* Compact 3-Button Window Control Pill Bar: Minimize · Maximize · Top */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3, padding: "2px 0" }}>
-                      <button
-                        type="button"
-                        className="dock-ctx-item"
-                        style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
-                        onClick={() => {
-                          invoke("window_action_cmd", { hwnd: shownMenu.windows[0].hwnd, action: "minimize" });
-                          closeMenu();
-                        }}
-                      >
-                        <Minus size={13} strokeWidth={2.6} />
-                        <span>Min</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="dock-ctx-item"
-                        style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
-                        onClick={() => {
-                          invoke("window_action_cmd", { hwnd: shownMenu.windows[0].hwnd, action: "maximize" });
-                          closeMenu();
-                        }}
-                      >
-                        <Square size={11.5} strokeWidth={2.6} />
-                        <span>Max</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="dock-ctx-item"
-                        style={{ justifyContent: "center", padding: "5px 4px", gap: 4, fontSize: 11, background: "rgb(var(--lens-ink) / 0.04)" }}
-                        onClick={() => {
-                          // Tracked pin: Lens unpins it again on quit (docs/WINDOW_STYLING.md §2).
-                          const hwnd = shownMenu.windows[0].hwnd;
-                          invoke<{ hwnd: number }[]>("list_pinned_windows_cmd")
-                            .then((list) => invoke("set_window_pinned_cmd", { hwnd, pinned: !list.some((p) => p.hwnd === hwnd) }))
-                            .catch(logFail("Dock", "keep the window on top"));
-                          closeMenu();
-                        }}
-                      >
-                        <ArrowUpToLine size={13} strokeWidth={2.5} />
-                        <span>Top</span>
-                      </button>
-                    </div>
-
-                    <div className="dock-ctx-sep" />
-
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        invoke("launch_app_cmd", { path: shownMenu.launchPath });
-                        closeMenu();
-                      }}
-                    >
-                      <PlusSquare size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>New Window</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "admin" });
-                        closeMenu();
-                      }}
-                    >
-                      <Shield size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>Run as Admin</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        invoke("launch_app_cmd", { path: shownMenu.launchPath });
-                        closeMenu();
-                      }}
-                    >
-                      <ExternalLink size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>Open</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "admin" });
-                        closeMenu();
-                      }}
-                    >
-                      <Shield size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>Run as Admin</span>
-                    </button>
-                  </>
-                )}
-
-                <LensMenuRow className="dock-ctx-item" />
-
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    invoke("launch_app_advanced_cmd", { path: shownMenu.launchPath, mode: "reveal" });
-                    closeMenu();
-                  }}
-                >
-                  <FolderOpen size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                  <span>File Location</span>
-                </button>
-
-                {shownMenu.pinnedApp && !locked && (
-                  <button
-                    type="button"
-                    className="dock-ctx-item"
-                    onClick={() => {
-                      const id = shownMenu.pinnedApp!.id;
-                      updateDockExtras({
-                        separatorsAfter: separatorsAfter.includes(id)
-                          ? separatorsAfter.filter((x) => x !== id)
-                          : [...separatorsAfter, id],
-                      });
-                      closeMenu();
-                    }}
-                  >
-                    <SeparatorVertical size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                    <span>{separatorsAfter.includes(shownMenu.pinnedApp.id) ? "Remove Separator" : "Add Separator After"}</span>
-                  </button>
-                )}
-
-                {shownMenu.pinnedApp ? (
-                  !locked && (
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        unpinApp(shownMenu.pinnedApp!.id);
-                        closeMenu();
-                      }}
-                    >
-                      <PinOff size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>Unpin</span>
-                    </button>
-                  )
-                ) : (
-                  shownMenu.windows[0] && (
-                    <button
-                      type="button"
-                      className="dock-ctx-item"
-                      onClick={() => {
-                        pinWindow(shownMenu.windows[0]);
-                        closeMenu();
-                      }}
-                    >
-                      <Pin size={14} strokeWidth={2.4} style={{ flexShrink: 0 }} />
-                      <span>Pin to Dock</span>
-                    </button>
-                  )
-                )}
-
-                {shownMenu.windows.length > 0 && (
-                  <>
-                    <div className="dock-ctx-sep" />
-                    <button
-                      type="button"
-                      className="dock-ctx-item danger"
-                      onClick={() => {
-                        shownMenu.windows.forEach((w) =>
-                          invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" })
-                        );
-                        closeMenu();
-                      }}
-                    >
-                      <X size={14} strokeWidth={2.6} style={{ flexShrink: 0 }} />
-                      <span>Close {shownMenu.windows.length > 1 ? `All (${shownMenu.windows.length})` : "Window"}</span>
-                    </button>
-                  </>
-                )}
-              </LensPan>
-            )}
-
-            {shownMenu.kind === "folder" && (
-              <>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    invoke("launch_app_cmd", { path: shownMenu.folder.path });
-                    closeMenu();
-                  }}
-                >
-                  <ExternalLink size={14} strokeWidth={2.4} />
-                  <span>Open Folder</span>
-                </button>
-                {!locked && (
-                  <button
-                    type="button"
-                    className="dock-ctx-item danger"
-                    onClick={() => {
-                      removeFolder(shownMenu.folder.id);
-                      closeMenu();
-                    }}
-                  >
-                    <Trash2 size={14} strokeWidth={2.4} />
-                    <span>Remove</span>
-                  </button>
-                )}
-              </>
-            )}
-
-            {shownMenu.kind === "dock" && (
-              <>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    setSettingsOpen(true);
-                    setActiveSettingsTab("quick");
-                    invoke("open_dock_popout_tab_cmd", { tab: "quick" });
-                    closeMenu();
-                  }}
-                >
-                  <Monitor size={14} strokeWidth={2.4} color="#38BDF8" />
-                  <span>Quick Controls</span>
-                </button>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    setSettingsOpen(true);
-                    setActiveSettingsTab("theme");
-                    invoke("open_dock_popout_tab_cmd", { tab: "theme" });
-                    closeMenu();
-                  }}
-                >
-                  <Palette size={14} strokeWidth={2.4} color="#A78BFA" />
-                  <span>Theme &amp; Look</span>
-                </button>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    setSettingsOpen(true);
-                    setActiveSettingsTab("dock");
-                    invoke("open_dock_popout_tab_cmd", { tab: "dock" });
-                    closeMenu();
-                  }}
-                >
-                  <PanelBottom size={14} strokeWidth={2.4} color="#60A5FA" />
-                  <span>Dock &amp; Top Bar</span>
-                </button>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    closeMenu();
-                    openInDockLauncher();
-                  }}
-                >
-                  <Search size={14} strokeWidth={2.4} color="#34D399" />
-                  <span>Search</span>
-                </button>
-
-                <div className="dock-ctx-sep" />
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 3, padding: "2px 0" }}>
-                  {[34, 40, 46, 52].map((val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      className="dock-ctx-item"
-                      style={{
-                        justifyContent: "center",
-                        padding: "4px 0",
-                        fontSize: 11,
-                        fontWeight: config.dock.iconSize === val ? 700 : 600,
-                        background: config.dock.iconSize === val ? "rgb(var(--lens-ink) / 0.16)" : "rgb(var(--lens-ink) / 0.04)",
-                      }}
-                      onClick={() => {
-                        updateConfig({ ...config, dock: { ...config.dock, iconSize: val } });
-                      }}
-                    >
-                      {val}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    updateConfig({
-                      ...config,
-                      func: { ...config.func, hideNativeTaskbar: !config.func.hideNativeTaskbar },
-                    });
-                    closeMenu();
-                  }}
-                >
-                  <PanelBottom size={14} strokeWidth={2.4} />
-                  <span>{config.func.hideNativeTaskbar ? "Show Taskbar" : "Hide Taskbar"}</span>
-                </button>
-
-                <div className="dock-ctx-sep" />
-                <div className="dock-ctx-label">Dock Position</div>
-                <div className="dock-ctx-edge-row">
-                  {(
-                    [
-                      { id: "left", label: "Left", Icon: PanelLeft },
-                      { id: "bottom", label: "Bottom", Icon: PanelBottom },
-                      { id: "top", label: "Top", Icon: PanelTop },
-                      { id: "right", label: "Right", Icon: PanelRight },
-                    ] as { id: DockEdge; label: string; Icon: typeof PanelLeft }[]
-                  ).map(({ id, label, Icon }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className={`dock-ctx-edge-btn ${edge === id ? "active" : ""}`}
-                      aria-label={`Dock on ${label.toLowerCase()} edge`}
-                      onClick={() => {
-                        updateDockExtras({ position: id });
-                        closeMenu();
-                      }}
-                    >
-                      <Icon size={14} strokeWidth={2.3} />
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    updateDockExtras({ livePreviews: !livePreviews });
-                    closeMenu();
-                  }}
-                >
-                  <AppWindow size={14} strokeWidth={2.4} />
-                  <span>{livePreviews ? "Hide Window Previews" : "Show Window Previews"}</span>
-                </button>
-                <button
-                  type="button"
-                  className="dock-ctx-item"
-                  onClick={() => {
-                    updateDockExtras({ locked: !locked });
-                    closeMenu();
-                  }}
-                >
-                  {locked ? <Unlock size={14} strokeWidth={2.4} /> : <Lock size={14} strokeWidth={2.4} />}
-                  <span>{locked ? "Unlock Dock Items" : "Lock Dock Items"}</span>
-                </button>
-              </>
-            )}
-          </div>
-        </>
+          config={config}
+          updateConfig={updateConfig}
+          locked={locked}
+          separatorsAfter={separatorsAfter}
+          livePreviews={livePreviews}
+          closeMenu={closeMenu}
+          updateDockExtras={updateDockExtras}
+          unpinApp={unpinApp}
+          pinWindow={pinWindow}
+          removeFolder={removeFolder}
+          openPopoutTab={(tab) => {
+            setSettingsOpen(true);
+            setActiveSettingsTab(tab);
+            invoke("open_dock_popout_tab_cmd", { tab });
+          }}
+          openSearch={openInDockLauncher}
+        />
       )}
 
-      {/* Lightweight Hover Popover: Spotify Media Controls + Album Thumbnail OR Running Windows Switcher for Any Dock Icon / Folder */}
       {shownCard && hoverLinger.mounted && (
-        <div
-          ref={hoverLinger.ref}
-          inert={hoverLinger.leaving}
-          className={`dock-hover-card dock-hover-edge-${edge} ${shownCard.isSpotify ? "is-music" : ""} ${
-            livePreviews && !shownCard.isSpotify && shownCard.windows.length > 0 ? "has-previews" : ""
-          } ${cardMode === "carousel" ? "has-carousel" : ""}`}
+        <DockHoverCard
+          card={shownCard}
+          cardRef={hoverLinger.ref}
+          leaving={hoverLinger.leaving}
+          edge={edge}
+          livePreviews={livePreviews}
+          mode={cardMode}
           // Kept inside the usable area on every edge and style, from the card's measured size.
           style={placeHoverCard({
             edge,
@@ -2046,100 +992,19 @@ export const DockSurface: React.FC = () => {
           })}
           onMouseEnter={cancelHoverClose}
           onMouseLeave={scheduleHoverClose}
-        >
-          {shownCard.isSpotify ? (
-            <DockMusicCard edge={edge} fallbackTitle={shownCard.windows[0]?.title || "Spotify"} />
-          ) : cardMode === "carousel" ? (
-            <DockWindowCarousel
-              key={shownCard.key}
-              title={shownCard.title}
-              active={!hoverLinger.leaving}
-              windows={shownCard.windows}
-              iconUrl={shownCard.iconUrl}
-              onFocus={(hwnd) => {
-                setHoverCard(null);
-                void setDockMenuOpen(false);
-                invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
-              }}
-              onClose={(hwnd) => {
-                invoke("window_action_cmd", { hwnd, action: "close" });
-                setHoverCard((prev) =>
-                  prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
-                );
-              }}
-            />
-          ) : livePreviews ? (
-            <DockPreviewStrip
-              key={shownCard.key}
-              active={!hoverLinger.leaving}
-              windows={shownCard.windows}
-              iconUrl={shownCard.iconUrl}
-              onFocus={(hwnd) => {
-                setHoverCard(null);
-                void setDockMenuOpen(false);
-                invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
-              }}
-              onClose={(hwnd) => {
-                invoke("window_action_cmd", { hwnd, action: "close" });
-                setHoverCard((prev) =>
-                  prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
-                );
-              }}
-            />
-          ) : (
-            <div className="dock-win-list">
-              <div className="dock-win-list-head">
-                <span>{shownCard.title}</span>
-                <span className="dock-win-count">{shownCard.windows.length}</span>
-              </div>
-              {shownCard.windows.slice(0, 7).map((w) => (
-                <div key={w.hwnd} className={`dock-win-row ${w.isFocused ? "focused" : ""}`}>
-                  <button
-                    type="button"
-                    className="dock-win-row-main"
-                    onClick={() => {
-                      setHoverCard(null);
-                      void setDockMenuOpen(false);
-                      invoke("focus_window_cmd", { hwnd: w.hwnd }).catch(logFail("Dock", "switch to that window"));
-                    }}
-                  >
-                    {w.iconDataUrl || shownCard.iconUrl ? (
-                      <img
-                        src={w.iconDataUrl || shownCard.iconUrl || ""}
-                        alt=""
-                        style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }}
-                      />
-                    ) : (
-                      <AppWindow size={13} color="#38BDF8" style={{ flexShrink: 0 }} />
-                    )}
-                    <span className="dock-win-row-title">
-                      {w.title || w.processName.replace(/\.exe$/i, "")}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="dock-win-row-close"
-                    aria-label="Close window"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" });
-                      setHoverCard((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              windows: prev.windows.filter((x) => x.hwnd !== w.hwnd),
-                            }
-                          : null
-                      );
-                    }}
-                  >
-                    <X size={11} strokeWidth={2.8} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          onFocusWindow={(hwnd) => {
+            setHoverCard(null);
+            void setDockMenuOpen(false);
+            invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
+          }}
+          onCloseWindow={(hwnd) => {
+            invoke("window_action_cmd", { hwnd, action: "close" });
+            setHoverCard((prev) =>
+              prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
+            );
+          }}
+          musicCard={<DockMusicCard edge={edge} fallbackTitle={shownCard.windows[0]?.title || "Spotify"} />}
+        />
       )}
 
       <nav
@@ -2155,8 +1020,8 @@ export const DockSurface: React.FC = () => {
               : undefined
         }
         aria-label="Lens Grounded Dock"
-        onMouseMove={magnification !== "off" ? (e) => applyMagnification(e.clientX, e.clientY) : undefined}
-        onMouseLeave={magnification !== "off" ? clearMagnification : undefined}
+        onMouseMove={magnification !== "off" ? (e) => mag.apply(e.clientX, e.clientY) : undefined}
+        onMouseLeave={magnification !== "off" ? mag.clear : undefined}
         onContextMenu={(e) => {
           const target = e.target as HTMLElement;
           if (!target.closest("[data-dock-drag-key]")) {
@@ -2168,254 +1033,31 @@ export const DockSurface: React.FC = () => {
       >
         {/* TIER 1: In-Dock Expanded Launcher Drawer (Directly above the single unified Dock row!) */}
         {dockSearchOpen && askMode.mode !== "ask" && (
-          <div className={`dock-launcher-drawer ${dockSearchClosing ? "is-closing" : ""}`}>
-            <FlyoutClose pinned label="Close Search" onClose={closeInDockLauncher} />
-            <div className="pal-filter-bar" style={{ padding: "4px 36px 6px 6px" }}>
-              {(
-                [
-                  { id: "all", label: "Overview", count: null, color: "#38BDF8", icon: Sparkles },
-                  { id: "files", label: "Files", count: homeData.recentFiles.length, color: "#60A5FA", icon: FileText },
-                  { id: "folders", label: "Folders", count: homeData.folders.length, color: "#FBBF24", icon: Folder },
-                  { id: "apps", label: "Apps", count: installedApps.length, color: "#A78BFA", icon: AppWindow },
-                  { id: "recent", label: "Running", count: runningWindows.length, color: "#34D399", icon: Activity },
-                ] as const
-              ).map((f) => {
-                const isActive = dockFilterTab === f.id;
-                const IconComp = f.icon;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`pal-filter-pill ${isActive ? "active" : ""}`}
-                    onClick={() => {
-                      setDockFilterTab(f.id);
-                      setDockSelectedIdx(0);
-                      searchInputRef.current?.focus();
-                    }}
-                  >
-                    <IconComp
-                      size={13.5}
-                      strokeWidth={2.4}
-                      color={isActive ? "var(--lens-on-fg, #09090b)" : f.color}
-                      style={{ flexShrink: 0 }}
-                    />
-                    <span>{f.label}</span>
-                    {f.count !== null && (
-                      <span className="pal-filter-count">{f.count}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {showHomeGrid ? (
-              <div
-                className="pal-two-col"
-                style={{
-                  padding: "4px 6px 8px 6px",
-                  gridTemplateColumns: "1.28fr 1fr",
-                  gap: 14,
-                  minHeight: 520,
-                  alignItems: "stretch",
-                }}
-              >
-                {/* Left Card: Recent Files & Active Windows */}
-                <div className="dock-launcher-card">
-                  <div className="dock-launcher-card-head">
-                    <span className="dock-launcher-card-title">
-                      <FileText size={15} strokeWidth={2.4} color="#60A5FA" style={{ flexShrink: 0 }} />
-                      <span>Recent Files &amp; Active Windows</span>
-                    </span>
-                    <button
-                      type="button"
-                      className="dock-launcher-card-link"
-                      onClick={() => setDockFilterTab("files")}
-                    >
-                      All Files →
-                    </button>
-                  </div>
-                  <div className="pal-recent-list" style={{ maxHeight: 495, overflowY: "auto", paddingRight: 4, gap: 5 }}>
-                    {recentAndRunning.map((item, idx) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={`pal-recent-row ${idx === 0 ? "first" : ""}`}
-                        style={{ padding: "9px 11px", gap: 11 }}
-                        onClick={item.run}
-                      >
-                        <span className="pal-recent-icon" style={{ width: 26, height: 26 }}>
-                          {item.iconUrl ? (
-                            <img src={item.iconUrl} alt="" style={{ width: 24, height: 24 }} />
-                          ) : item.isDir ? (
-                            <Folder size={19} color="#FBBF24" />
-                          ) : (
-                            <FileText size={19} color="#60A5FA" />
-                          )}
-                        </span>
-                        <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                          <div className="pal-recent-name" style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>
-                            {item.title}
-                          </div>
-                          <div style={{ fontSize: 11.5, color: "var(--lens-fg-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
-                            {item.sub}
-                          </div>
-                        </div>
-                        <span
-                          className="pal-recent-age"
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "3px 8px",
-                            borderRadius: 7,
-                            background:
-                              item.badge === "Active"
-                                ? "rgb(52 211 153 / 0.16)"
-                                : item.badge === "Open"
-                                  ? "rgb(96 165 250 / 0.14)"
-                                  : "rgb(var(--lens-ink) / 0.06)",
-                            color:
-                              item.badge === "Active"
-                                ? "var(--lens-badge-active, #34D399)"
-                                : item.badge === "Open"
-                                  ? "var(--lens-badge-open, #93C5FD)"
-                                  : "var(--lens-fg-secondary)",
-                          }}
-                        >
-                          {item.badge}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right Column: Quick Folders Card + Spacious Single-Column Installed Apps Card */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
-                  <div className="dock-launcher-card">
-                    <div className="dock-launcher-card-head">
-                      <span className="dock-launcher-card-title">
-                        <Folder size={15} strokeWidth={2.4} color="#FBBF24" style={{ flexShrink: 0 }} />
-                        <span>Quick Folders</span>
-                      </span>
-                      <button
-                        type="button"
-                        className="dock-launcher-card-link"
-                        onClick={() => setDockFilterTab("folders")}
-                      >
-                        Folders →
-                      </button>
-                    </div>
-                    <div className="pal-folder-grid" style={{ gap: 10 }}>
-                      {homeData.folders.map((folder) => (
-                        <button
-                          key={folder.path}
-                          type="button"
-                          className="pal-folder-card"
-                          style={{ padding: "12px 10px 10px 10px", gap: 5 }}
-                          onClick={() => {
-                            closeInDockLauncher();
-                            invoke("launch_app_cmd", { path: folder.path });
-                          }}
-                        >
-                          <DockMatteFolderSvg color={folder.color} />
-                          <span className="pal-folder-label" style={{ fontSize: 13, fontWeight: 600, color: "var(--lens-fg)" }}>
-                            {folder.name}
-                          </span>
-                          <span style={{ fontSize: 11.5, color: "var(--lens-fg-muted)", fontWeight: 500 }}>
-                            {folder.itemCount ?? 0} items
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Installed Apps Card: Spacious single-column list so no app name or header ever clips */}
-                  <div className="dock-launcher-card" style={{ flex: 1 }}>
-                    <div className="dock-launcher-card-head">
-                      <span className="dock-launcher-card-title">
-                        <AppWindow size={15} strokeWidth={2.4} color="#A78BFA" style={{ flexShrink: 0 }} />
-                        <span>Installed Apps</span>
-                      </span>
-                      <button
-                        type="button"
-                        className="dock-launcher-card-link"
-                        onClick={() => setDockFilterTab("apps")}
-                      >
-                        All ({installedApps.length}) →
-                      </button>
-                    </div>
-                    <div className="pal-recent-list" style={{ gap: 4, overflowY: "auto", maxHeight: 265, paddingRight: 2 }}>
-                      {installedApps.slice(0, 7).map((app) => (
-                        <button
-                          key={app.path}
-                          type="button"
-                          className="pal-recent-row"
-                          style={{ padding: "8px 10px", gap: 10 }}
-                          onClick={() => {
-                            closeInDockLauncher();
-                            if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
-                    invoke("launch_app_cmd", { path: app.path });
-                          }}
-                        >
-                          <AppWindow size={16} strokeWidth={2.2} color="#A78BFA" style={{ flexShrink: 0 }} />
-                          <span className="pal-recent-name" style={{ fontSize: 13, fontWeight: 600 }}>
-                            {app.name}
-                          </span>
-                          <span style={{ fontSize: 11, color: "var(--lens-fg-muted)", flexShrink: 0 }}>
-                            Open
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="dock-launcher-card" style={{ margin: "2px 6px 8px 6px", padding: "10px" }}>
-                <div className="pal-results" style={{ maxHeight: 530, minHeight: 470, padding: "2px 4px", gap: 4 }}>
-                  {filteredResults.map((item, idx) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={`pal-result-row ${idx === dockSelectedIdx ? "selected" : ""}`}
-                      style={{ padding: "10px 12px" }}
-                      onMouseEnter={() => setDockSelectedIdx(idx)}
-                      onClick={item.run}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-                        <span className="pal-recent-icon" style={{ width: 26, height: 26 }}>
-                          {item.iconUrl ? (
-                            <img src={item.iconUrl} alt="" style={{ width: 24, height: 24 }} />
-                          ) : item.kind === "folders" ? (
-                            <Folder size={19} color="#FBBF24" />
-                          ) : item.kind === "files" ? (
-                            <FileText size={19} color="#60A5FA" />
-                          ) : (
-                            <AppWindow size={19} color="#A78BFA" />
-                          )}
-                        </span>
-                        <div style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--lens-fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.title}
-                          </div>
-                          <div style={{ fontSize: 11.5, color: "var(--lens-fg-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
-                            {item.subtitle}
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--lens-fg-secondary)", padding: "3px 9px", borderRadius: 7, background: "rgb(var(--lens-ink) / 0.06)", flexShrink: 0 }}>
-                          {item.badge}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                  {filteredResults.length === 0 && (
-                    <div style={{ padding: 48, textAlign: "center", color: "var(--lens-fg-muted)", fontSize: 13.5 }}>
-                      No matching apps, files, or folders.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <DockSearchDrawer
+            closing={dockSearchClosing}
+            onClose={closeInDockLauncher}
+            homeData={homeData}
+            installedApps={installedApps}
+            runningCount={runningWindows.length}
+            filterTab={dockFilterTab}
+            pickFilterTab={(tab) => {
+              setDockFilterTab(tab);
+              setDockSelectedIdx(0);
+              searchInputRef.current?.focus();
+            }}
+            setFilterTab={setDockFilterTab}
+            showHomeGrid={showHomeGrid}
+            recentAndRunning={recentAndRunning}
+            results={filteredResults}
+            selectedIdx={dockSelectedIdx}
+            setSelectedIdx={setDockSelectedIdx}
+            openFolder={searchSources.open}
+            openApp={(app) => {
+              closeInDockLauncher();
+              if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
+              invoke("launch_app_cmd", { path: app.path });
+            }}
+          />
         )}
 
         {/* TIER 2: Single Unified Grounded Dock Row — original Magnifying Glass glides open IN-PLACE into the search input! */}
@@ -2590,7 +1232,7 @@ export const DockSurface: React.FC = () => {
             </div>
           )}
 
-        {/* Pinned Apps (open windows appear directly ON their pinned slot, drag to reorder, hover for windows/Spotify controls & X to close!) */}
+        {/* Pinned apps (open windows sit on their pinned slot), then running apps that aren't pinned. */}
         {pinnedRows.map(({ app, wins, primaryWin }) => {
           const iconSrc = primaryWin?.iconDataUrl || pinnedIcons[app.path];
           const itemKey = `pin-${app.id}`;
@@ -2598,208 +1240,139 @@ export const DockSurface: React.FC = () => {
             app.name.toLowerCase().includes("spotify") ||
             app.path.toLowerCase().includes("spotify") ||
             wins.some((w) => w.processName.toLowerCase().includes("spotify"));
-          const hasHoverCard = isSpotify || wins.length > 0;
-          const unread = notifBadgeFor(app.name, primaryWin?.processName, app.path.split(/[\\/]/).pop());
-          const urgent = attentionFor(attention, app.path, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName));
+          const launch = () => {
+            if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
+            invoke("launch_app_cmd", { path: app.path });
+          };
           return (
             <React.Fragment key={app.id}>
-            <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
-              data-attention={urgent ? urgent.since.toFixed(0) : undefined}
-              data-dock-drag-key={itemKey}
-              data-dock-pinned="true"
-              data-dock-pinned-id={app.id}
-              data-dock-launch-path={app.path}
+            <DockAppItem
+              view={{
+                itemKey,
+                pinnedId: app.id,
+                launchPath: app.path,
+                name: app.name,
+                ariaName: app.name,
+                closeName: app.name,
+                wins,
+                primaryWin,
+                icon: iconSrc ? <img src={iconSrc} alt={app.name} /> : <FallbackAppIcon hint={app.iconHint} />,
+                barLabel: primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name,
+                hasHoverCard: isSpotify || wins.length > 0,
+                unread: notifBadgeFor(notifCounts, app.name, primaryWin?.processName, app.path.split(/[\\/]/).pop()),
+                urgent: attentionFor(attention, app.path, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName)),
+                coreBadge: coreBadges[app.path],
+              }}
+              dragging={dragKey === itemKey}
+              dragOver={dragOverKey === itemKey}
+              fileDrop={dropKey === itemKey}
+              launching={launchingId === app.id}
+              pulsing={wins.some((w) => pulseHwnds.has(w.hwnd))}
+              showLabels={showLabels}
+              isBar={isBar}
               onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
               onPointerDown={(e) => beginItemDrag(e, itemKey, true, app.id)}
-              onMouseEnter={(e) =>
-                openHoverCardForItem(e.currentTarget, itemKey, app.name, isSpotify, wins, iconSrc)
-              }
-              onMouseLeave={scheduleHoverClose}
-            >
-              {!hasHoverCard && <span className="dock-tooltip">{app.name}</span>}
-              {wins.length > 0 && (
-                <button
-                  type="button"
-                  className="dock-close-badge"
-                  aria-label={`Close ${app.name}`}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    wins.forEach((w) =>
-                      invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" })
-                    );
-                  }}
-                >
-                  <X size={9} strokeWidth={3} />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-label={`${app.name}${primaryWin?.isFocused ? " (focused)" : wins.length ? " (running)" : ""}${dockBadgeLabel(unread, wins.length)}`}
-                className={`dock-item ${primaryWin?.isFocused ? "is-focused" : ""} ${launchingId === app.id ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
-                onClick={() => {
-                  if (suppressClickRef.current) return;
-                  setHoverCard(null);
-                  triggerLaunchAnim(app.id);
-                  if (primaryWin) {
-                    invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
-                  } else {
-                    if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
-                    invoke("launch_app_cmd", { path: app.path });
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  if (e.altKey) {
-                    magicOpenFor("dockItem", app.id, app.name, primaryWin?.exePath || app.path);
-                    return;
-                  }
-                  const r = e.currentTarget.getBoundingClientRect();
-                  openMenu({
-                    kind: "app",
-                    x: r.left + r.width / 2,
-                    y: r.top,
-                    title: primaryWin ? primaryWin.title : app.name,
-                    pinnedApp: app,
-                    windows: wins,
-                    launchPath: primaryWin?.exePath || app.path,
-                  });
-                }}
-                onAuxClick={(e) => {
-                  if (e.button === 1 && config.func.middleClickNewInstance) {
-                    if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
-                    invoke("launch_app_cmd", { path: app.path });
-                  }
-                }}
-              >
-                {iconSrc ? (
-                  <img src={iconSrc} alt={app.name} />
-                ) : (
-                  <FallbackAppIcon hint={app.iconHint} />
-                )}
-                {coreBadges[app.path] ? (
-                  <span className="dock-notif-badge dock-text-badge" aria-hidden="true">
-                    {coreBadges[app.path]}
-                  </span>
-                ) : unread > 0 ? (
-                  <span className="dock-notif-badge" aria-hidden="true">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                ) : urgent && urgent.count > 1 ? (
-                  <span className="dock-notif-badge dock-attention-badge" aria-hidden="true">{urgent.count > 99 ? "99+" : urgent.count}</span>
-                ) : (
-                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
-                )}
-                {showLabels && isBar && <span className="dock-label">{primaryWin?.title && wins.length === 1 ? primaryWin.title : app.name}</span>}
-              </button>
-              {showLabels && !isBar && <span className="dock-label">{app.name}</span>}
-              {(wins.length > 0 || urgent) && (
-                <span className={`dock-indicator ${windowMarkClass(wins.length)} ${primaryWin?.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
-              )}
-              {urgent && <span className="dock-attention-sr">{app.name} needs your attention</span>}
-            </div>
+              onHover={(el) => openHoverCardForItem(el, itemKey, app.name, isSpotify, wins, iconSrc)}
+              onLeave={scheduleHoverClose}
+              onCloseAll={() => closeWindows(wins)}
+              onActivate={() => {
+                if (suppressClickRef.current) return;
+                setHoverCard(null);
+                triggerLaunchAnim(app.id);
+                if (primaryWin) {
+                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
+                } else {
+                  launch();
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (e.altKey) {
+                  openMagicForDockItem(app.id, app.name, primaryWin?.exePath || app.path);
+                  return;
+                }
+                const r = e.currentTarget.getBoundingClientRect();
+                openMenu({
+                  kind: "app",
+                  x: r.left + r.width / 2,
+                  y: r.top,
+                  title: primaryWin ? primaryWin.title : app.name,
+                  pinnedApp: app,
+                  windows: wins,
+                  launchPath: primaryWin?.exePath || app.path,
+                });
+              }}
+              onAuxClick={(e) => {
+                if (e.button === 1 && config.func.middleClickNewInstance) launch();
+              }}
+            />
             {separatorsAfter.includes(app.id) && <div className="dock-divider dock-user-sep" data-reflow-key={`sep-${app.id}`} />}
             </React.Fragment>
           );
         })}
 
-        {/* Running Non-Pinned Windows (drag to reorder, hover for windows/Spotify controls & X to close!) */}
         {extraGroups.length > 0 && <div className="dock-divider" data-reflow-key="extras-divider" />}
         {extraGroups.map(({ key, primaryWin, wins }) => {
           const itemKey = `unpin-${key}`;
           const isSpotify = primaryWin.processName.toLowerCase().includes("spotify");
           const cleanLabel = primaryWin.processName.replace(/\.exe$/i, "");
-          const unread = notifBadgeFor(cleanLabel, primaryWin.title);
-          const urgent = attentionFor(attention, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName));
           return (
-            <div
-              className={`dock-item-wrap ${dragKey === itemKey ? "is-dragging" : ""} ${dragOverKey === itemKey ? "is-drag-over" : ""} ${dropKey === itemKey ? "is-file-drop" : ""} ${urgent ? "is-attention" : ""}`}
-              data-attention={urgent ? urgent.since.toFixed(0) : undefined}
+            <DockAppItem
               key={key}
-              data-dock-drag-key={itemKey}
-              data-dock-pinned="false"
-              data-dock-launch-path={primaryWin.exePath}
+              view={{
+                itemKey,
+                launchPath: primaryWin.exePath,
+                name: cleanLabel,
+                ariaName: primaryWin.title || "Window",
+                closeName: primaryWin.processName,
+                wins,
+                primaryWin,
+                icon: primaryWin.iconDataUrl ? <img src={primaryWin.iconDataUrl} alt={primaryWin.processName} /> : <AppWindow size={19} strokeWidth={1.8} />,
+                barLabel: wins.length === 1 ? primaryWin.title : cleanLabel,
+                hasHoverCard: true,
+                unread: notifBadgeFor(notifCounts, cleanLabel, primaryWin.title),
+                urgent: attentionFor(attention, ...wins.map((w) => w.exePath), ...wins.map((w) => w.processName)),
+              }}
+              dragging={dragKey === itemKey}
+              dragOver={dragOverKey === itemKey}
+              fileDrop={dropKey === itemKey}
+              launching={launchingId === `win-${primaryWin.hwnd}`}
+              pulsing={wins.some((w) => pulseHwnds.has(w.hwnd))}
+              showLabels={showLabels}
+              isBar={isBar}
               onWheel={scrollCycles ? (e) => cycleWindows(itemKey, wins, e.deltaY) : undefined}
               onPointerDown={(e) => beginItemDrag(e, itemKey, false)}
-              onMouseEnter={(e) =>
-                openHoverCardForItem(
-                  e.currentTarget,
-                  itemKey,
-                  cleanLabel,
-                  isSpotify,
-                  wins,
-                  primaryWin.iconDataUrl
-                )
-              }
-              onMouseLeave={scheduleHoverClose}
-            >
-              <button
-                type="button"
-                className="dock-close-badge"
-                aria-label={`Close ${primaryWin.processName}`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  wins.forEach((w) =>
-                    invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" })
-                  );
-                }}
-              >
-                <X size={9} strokeWidth={3} />
-              </button>
-              <button
-                type="button"
-                aria-label={`${primaryWin.title || "Window"}${primaryWin.isFocused ? " (focused)" : " (running)"}${dockBadgeLabel(unread, wins.length)}`}
-                className={`dock-item ${primaryWin.isFocused ? "is-focused" : ""} ${launchingId === `win-${primaryWin.hwnd}` ? "is-launching" : ""} ${wins.some((w) => pulseHwnds.has(w.hwnd)) ? "is-pulse" : ""} ${showLabels && isBar ? "has-label" : ""}`}
-                onClick={() => {
-                  if (suppressClickRef.current) return;
-                  setHoverCard(null);
-                  triggerLaunchAnim(`win-${primaryWin.hwnd}`);
-                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  if (e.altKey) {
-                    magicOpenFor("dockItem", `win-${primaryWin.hwnd}`, primaryWin.title, primaryWin.exePath || null);
-                    return;
-                  }
-                  const r = e.currentTarget.getBoundingClientRect();
-                  openMenu({
-                    kind: "app",
-                    x: r.left + r.width / 2,
-                    y: r.top,
-                    title: primaryWin.title,
-                    windows: wins,
-                    launchPath: primaryWin.exePath,
-                  });
-                }}
-                onAuxClick={(e) => {
-                  if (e.button === 1 && config.func.middleClickNewInstance && primaryWin.exePath) {
-                    invoke("launch_app_cmd", { path: primaryWin.exePath });
-                  }
-                }}
-              >
-                {primaryWin.iconDataUrl ? (
-                  <img src={primaryWin.iconDataUrl} alt={primaryWin.processName} />
-                ) : (
-                  <AppWindow size={19} strokeWidth={1.8} />
-                )}
-                {unread > 0 ? (
-                  <span className="dock-notif-badge" aria-hidden="true">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                ) : urgent && urgent.count > 1 ? (
-                  <span className="dock-notif-badge dock-attention-badge" aria-hidden="true">{urgent.count > 99 ? "99+" : urgent.count}</span>
-                ) : (
-                  wins.length > 1 && <span className="dock-instance-badge" aria-hidden="true">{wins.length}</span>
-                )}
-                {showLabels && isBar && <span className="dock-label">{wins.length === 1 ? primaryWin.title : cleanLabel}</span>}
-              </button>
-              {showLabels && !isBar && <span className="dock-label">{cleanLabel}</span>}
-              <span className={`dock-indicator ${windowMarkClass(wins.length)} ${primaryWin.isFocused ? "focused" : ""} ${urgent ? "attention" : ""}`} />
-              {urgent && <span className="dock-attention-sr">{cleanLabel} needs your attention</span>}
-            </div>
+              onHover={(el) => openHoverCardForItem(el, itemKey, cleanLabel, isSpotify, wins, primaryWin.iconDataUrl)}
+              onLeave={scheduleHoverClose}
+              onCloseAll={() => closeWindows(wins)}
+              onActivate={() => {
+                if (suppressClickRef.current) return;
+                setHoverCard(null);
+                triggerLaunchAnim(`win-${primaryWin.hwnd}`);
+                invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (e.altKey) {
+                  openMagicForDockItem(`win-${primaryWin.hwnd}`, primaryWin.title, primaryWin.exePath || null);
+                  return;
+                }
+                const r = e.currentTarget.getBoundingClientRect();
+                openMenu({
+                  kind: "app",
+                  x: r.left + r.width / 2,
+                  y: r.top,
+                  title: primaryWin.title,
+                  windows: wins,
+                  launchPath: primaryWin.exePath,
+                });
+              }}
+              onAuxClick={(e) => {
+                if (e.button === 1 && config.func.middleClickNewInstance && primaryWin.exePath) {
+                  invoke("launch_app_cmd", { path: primaryWin.exePath });
+                }
+              }}
+            />
           );
         })}
 

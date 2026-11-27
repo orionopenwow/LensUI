@@ -1,0 +1,73 @@
+/* The Dock's search panel (DockSearchDrawer.tsx). These sizes used to be inline styles; they sit
+ * on top of the shared palette rows (.pal-*), hence the scoping under the drawer. */
+.dock-stage .dock-launcher-drawer .dsd-filters { padding: 4px 36px 6px 6px; }
+.dock-stage .dock-launcher-drawer .dsd-fixed { flex-shrink: 0; }
+
+.dock-stage .dock-launcher-drawer .dsd-home {
+  padding: 4px 6px 8px 6px;
+  grid-template-columns: 1.28fr 1fr;
+  gap: 14px;
+  min-height: 520px;
+  align-items: stretch;
+}
+.dock-stage .dock-launcher-drawer .dsd-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.dock-stage .dock-launcher-drawer .dsd-grow { flex: 1; }
+
+.dock-stage .dock-launcher-drawer .dsd-recent-list { max-height: 495px; overflow-y: auto; padding-right: 4px; gap: 5px; }
+.dock-stage .dock-launcher-drawer .dsd-recent-row { padding: 9px 11px; gap: 11px; }
+.dock-stage .dock-launcher-drawer .dsd-icon { width: 26px; height: 26px; }
+.dock-stage .dock-launcher-drawer .dsd-icon-img { width: 24px; height: 24px; }
+.dock-stage .dock-launcher-drawer .dsd-text { flex: 1; min-width: 0; text-align: left; }
+.dock-stage .dock-launcher-drawer .dsd-recent-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.dock-stage .dock-launcher-drawer .dsd-sub {
+  font-size: 11.5px;
+  color: var(--lens-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+.dock-stage .dock-launcher-drawer .dsd-age {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgb(var(--lens-ink) / 0.06);
+  color: var(--lens-fg-secondary);
+}
+.dock-stage .dock-launcher-drawer .dsd-age.is-active { background: rgb(52 211 153 / 0.16); color: var(--lens-badge-active, #34D399); }
+.dock-stage .dock-launcher-drawer .dsd-age.is-open { background: rgb(96 165 250 / 0.14); color: var(--lens-badge-open, #93C5FD); }
+
+.dock-stage .dock-launcher-drawer .dsd-folder-grid { gap: 10px; }
+.dock-stage .dock-launcher-drawer .dsd-folder-card { padding: 12px 10px 10px 10px; gap: 5px; }
+.dock-stage .dock-launcher-drawer .dsd-folder-label { font-size: 13px; font-weight: 600; color: var(--lens-fg); }
+.dock-stage .dock-launcher-drawer .dsd-folder-count { font-size: 11.5px; color: var(--lens-fg-muted); font-weight: 500; }
+.dock-stage .dock-launcher-drawer .dsd-folder-svg { display: block; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
+
+.dock-stage .dock-launcher-drawer .dsd-app-list { gap: 4px; overflow-y: auto; max-height: 265px; padding-right: 2px; }
+.dock-stage .dock-launcher-drawer .dsd-app-row { padding: 8px 10px; gap: 10px; }
+.dock-stage .dock-launcher-drawer .dsd-app-name { font-size: 13px; font-weight: 600; }
+.dock-stage .dock-launcher-drawer .dsd-app-open { font-size: 11px; color: var(--lens-fg-muted); flex-shrink: 0; }
+
+.dock-stage .dock-launcher-drawer .dsd-results-card { margin: 2px 6px 8px 6px; padding: 10px; }
+.dock-stage .dock-launcher-drawer .dsd-results { max-height: 530px; min-height: 470px; padding: 2px 4px; gap: 4px; }
+.dock-stage .dock-launcher-drawer .dsd-result-row { padding: 10px 12px; }
+.dock-stage .dock-launcher-drawer .dsd-result-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.dock-stage .dock-launcher-drawer .dsd-result-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dock-stage .dock-launcher-drawer .dsd-result-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lens-fg-secondary);
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: rgb(var(--lens-ink) / 0.06);
+  flex-shrink: 0;
+}
+.dock-stage .dock-launcher-drawer .dsd-empty { padding: 48px; text-align: center; color: var(--lens-fg-muted); font-size: 13.5px; }

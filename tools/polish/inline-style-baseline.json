@@ -102,7 +102,7 @@
   "src/surfaces/CommandPaletteSurface.tsx": 9,
   "src/surfaces/ControlCenterSurface.tsx": 64,
   "src/surfaces/DesktopFolderSurface.tsx": 28,
-  "src/surfaces/DockSurface.tsx": 59,
+  "src/surfaces/DockSurface.tsx": 1,
   "src/surfaces/FocusDimSurface.tsx": 11,
   "src/surfaces/LauncherSurface.tsx": 3,
   "src/surfaces/OverviewSurface.tsx": 2,

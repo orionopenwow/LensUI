@@ -1,0 +1,3 @@
+/* The titles list in the Dock's hover card (DockHoverCard.tsx). */
+.dock-hover-card .dock-win-row-icon { flex-shrink: 0; }
+.dock-hover-card img.dock-win-row-icon { width: 14px; height: 14px; object-fit: contain; }
