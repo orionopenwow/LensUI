@@ -5,11 +5,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import catalogJson from "../../catalog/apps/catalog.json";
 import { stepIndex } from "../apps/Gallery";
-import { viewParam, digitsOf, libraryModel, librarySummary, sourceOf, updatable, updateAllPreview, updateAllReference, updateAllText, versionLine } from "../apps/libraryModel";
+import { autoUpdateRows, viewParam, digitsOf, libraryModel, librarySummary, sourceOf, updatable, updateAllPreview, updateAllReference, updateAllText, versionLine } from "../apps/libraryModel";
 import { creditFor, licenceFamily, licenceInfo, NOT_AFFILIATED } from "../apps/licence";
 import { approvalText, appApprovalPreview } from "../apps/approval";
 import { reduceQueue, emptyQueue, retryMode } from "../apps/queue";
 import type { Catalog, CatalogApp, InstalledInfo } from "../apps/types";
+import { DEFAULT_SETTINGS } from "../apps/types";
 import { toastBus } from "../ui/toastBus";
 
 const catalog = catalogJson as unknown as Catalog;
@@ -200,18 +201,38 @@ describe("B-121: apps Lens keeps itself can be removed from the store, and failu
   });
 });
 
-describe("B-122: no Lens Apps setting that does nothing", () => {
-  test("the two update switches nothing read are gone from the card; the card says how updates work", () => {
-    const card = readFileSync(join(import.meta.dir, "..", "components", "AppsCard.tsx"), "utf8");
-    expect(card).not.toContain("autoUpdate:");
+describe("B-122: updates are manual by default, automatic only when asked", () => {
+  const card = readFileSync(join(import.meta.dir, "..", "components", "AppsCard.tsx"), "utf8");
+  test("Settings › Apps has one clearly named switch, off by default; the never-read check schedule stays gone", () => {
+    expect(card).toContain("Update apps automatically");
+    expect(card).toContain("Off by default.");
+    expect(card).toContain("update({ autoUpdate: e.target.checked })");
     expect(card).not.toContain("checkUpdates:");
-    expect(card).toContain("Nothing updates by itself");
+    expect(DEFAULT_SETTINGS.autoUpdate).toBe(false);
   });
 
-  test("nothing in Lens reads those settings (if that changes, bring the switches back with it)", () => {
+  test("an update shows as Update available, and Update is one click for winget apps", () => {
+    expect(src("Library.tsx")).toContain("Update available");
+    const ctl = src("useAppsController.ts");
+    expect(ctl).toContain('dispatch({ type: "enqueue", appId: target.id, op: "upgrade" })');
+    // Only the switch turns automatic updates on.
+    expect(ctl).toContain("if (demo || !autoUpdate) return;");
+  });
+
+  test("automatic updates cover winget apps Lens installed, once per session, never a busy one", () => {
+    const m = libraryModel(catalog.apps, { ollama: { version: "0.40.10", available: "0.40.16" }, blender: { version: "4.5.1", available: "4.5.3" } });
+    // Blender was installed by the person, not Lens: it waits.
+    expect(autoUpdateRows(m, emptyQueue, ["ollama"], new Set()).map((r) => r.app.id)).toEqual(["ollama"]);
+    // Tried already this session (say it failed): not again until Lens Apps is opened anew.
+    expect(autoUpdateRows(m, emptyQueue, ["ollama"], new Set(["ollama"]))).toEqual([]);
+    // Already queued: not twice.
+    const q = reduceQueue(emptyQueue, { type: "enqueue", appId: "ollama", op: "upgrade" });
+    expect(autoUpdateRows(m, q, ["ollama", "blender"], new Set()).map((r) => r.app.id)).toEqual(["blender"]);
+  });
+
+  test("Rust still doesn't run updates on its own (the switch works through the Lens Apps check)", () => {
     const rust = readFileSync(join(import.meta.dir, "..", "..", "src-tauri", "src", "commands", "apps.rs"), "utf8");
     const uses = (name: string) => (rust.match(new RegExp(`\\b${name}\\b`, "g")) ?? []).length;
-    // Declared, defaulted and validated only.
     expect(uses("auto_update")).toBeLessThanOrEqual(3);
     expect(uses("check_updates")).toBeLessThanOrEqual(5);
   });

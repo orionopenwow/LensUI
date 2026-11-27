@@ -13,6 +13,8 @@ import {
   cancelJob,
   discardRelease,
   installedState,
+  lensInstalled,
+  loadSettings,
   onProgress,
   openApp,
   openLink,
@@ -26,7 +28,7 @@ import {
   showApp,
 } from "./api";
 import { reduceJobs, type Jobs } from "./jobs";
-import { libraryModel, updatable, updateAllPreview, updateAllReference, updateAllText, type LibraryRow } from "./libraryModel";
+import { autoUpdateRows, libraryModel, updatable, updateAllPreview, updateAllReference, updateAllText, type LibraryRow } from "./libraryModel";
 import { emptyQueue, itemFor, nextToStart, reduceQueue, retryMode, type QueueOp, type QueueState } from "./queue";
 import type { AppShow, Catalog, CatalogApp, InstalledInfo, PreparedRelease, RecipeStepView } from "./types";
 
@@ -90,10 +92,35 @@ export function useAppsController(catalog: Catalog | null, demo: AppsDemo | unde
     void refresh();
   }, [refresh]);
 
+  // "Update apps automatically" (Settings › Apps) is off by default (B-122). Off, an update only
+  // shows as "Update available" and waits for the person's click. On, each check (opening Lens Apps
+  // or Check again) also starts the updates for winget apps Lens installed, once per app per session.
+  const [autoUpdate, setAutoUpdate] = useState(false);
+  const [ours, setOurs] = useState<string[]>([]);
+  const autoTried = useRef(new Set<string>());
+  useEffect(() => {
+    if (demo) return;
+    loadSettings().then((s) => alive.current && setAutoUpdate(s.autoUpdate === true));
+    lensInstalled().then((ids) => alive.current && setOurs(ids));
+  }, [demo]);
+
   useEffect(() => {
     if (demo?.bulk) setBulk(library.updates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (demo || !autoUpdate) return;
+    const rows = autoUpdateRows(library, queue, ours, autoTried.current);
+    if (!rows.length) return;
+    for (const r of rows) {
+      autoTried.current.add(r.app.id);
+      dispatch({ type: "enqueue", appId: r.app.id, op: "upgrade" });
+    }
+    toast(rows.length === 1 ? `Updating ${rows[0].app.name} automatically.` : `Updating ${rows.length} apps automatically.`);
+    // Runs when a check brings new results, not on every queue step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [library, ours, autoUpdate, demo]);
 
   // Progress events → jobs; job end → queue.
   useEffect(() => {
@@ -183,8 +210,16 @@ export function useAppsController(catalog: Catalog | null, demo: AppsDemo | unde
         case "getExternal":
           openLink(app.id, (app.install as { url: string }).url).catch(oops(`open ${app.name}'s site`));
           return;
-        case "update":
-          return openPopover(app, "update");
+        case "update": {
+          // One click: the person already has the app, and winget updates it from the same source
+          // (hash-checked). Other kinds (a release download) still show their check first.
+          const target = viaOf(app) ?? app;
+          if (target.install.method !== "winget" || demo) return openPopover(app, "update");
+          setPopover(null);
+          setBulk(null);
+          dispatch({ type: "enqueue", appId: target.id, op: "upgrade" });
+          return;
+        }
         case "run":
           return openPopover(app, "run");
         case "retry":
@@ -193,7 +228,7 @@ export function useAppsController(catalog: Catalog | null, demo: AppsDemo | unde
           return openPopover(app, "get");
       }
     },
-    [installed, openPopover, queue, viaOf],
+    [installed, openPopover, queue, viaOf, demo],
   );
 
   const confirm = useCallback(() => {
@@ -299,6 +334,8 @@ export function useAppsController(catalog: Catalog | null, demo: AppsDemo | unde
     installed,
     installedError,
     checking,
+    /** "Update apps automatically" is on (Settings › Apps; off by default). */
+    autoUpdate,
     refresh,
     library,
     queue,

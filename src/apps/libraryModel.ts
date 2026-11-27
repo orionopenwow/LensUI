@@ -54,6 +54,14 @@ export function updatable(m: LibraryModel, queue: QueueState): LibraryRow[] {
   return m.updates.filter((r) => !busy.has(r.app.id));
 }
 
+/** The updates "Update apps automatically" (Settings › Apps, off by default) starts on its own when
+ *  Lens checks: winget apps that Lens installed, not already busy, and not already tried this session
+ *  (so a failed update isn't retried in a loop). Apps you installed yourself always wait for you. */
+export function autoUpdateRows(m: LibraryModel, queue: QueueState, lensInstalledIds: readonly string[], tried: ReadonlySet<string>): LibraryRow[] {
+  const ours = new Set(lensInstalledIds);
+  return updatable(m, queue).filter((r) => r.app.install.method === "winget" && ours.has(r.app.id) && !tried.has(r.app.id));
+}
+
 /** Stable id for the open "Update all" confirmation: the same set of apps is the same request. */
 export function updateAllReference(rows: LibraryRow[]): string {
   return `apps:update-all:${rows.map((r) => r.app.id).sort().join(",")}`;

@@ -8,6 +8,12 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Lens Apps updates: manual by default, automatic if you want it.** An app with a newer version
+  shows "Update available" with a one-click Update. A new **Update apps automatically** switch in
+  Settings › Apps (off by default) lets each check also update the apps Lens installed; apps you
+  installed yourself always wait for you (B-122).
+- **Website: icons on the tour tabs**, drawn like Lens's own app icons (a bold white glyph on a plain
+  dark tile; Lens Browser keeps the Lens logo).
 - **Link rules in Lens Browser.** Send links to a space by site ("github.com goes to Code"), by the
   app they came from ("links from Slack go to Work") or by words in the address. Arc's Air Traffic
   Control rules come over with an Arc import and leave with its undo.
@@ -275,6 +281,10 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Lens Apps licences checked.** 49 of 53 catalogue licences are now read from each project's own
+  repository (the ArtCraft apps are MIT OR Apache-2.0; Blender and Kdenlive GPL-3.0; OBS, VLC
+  GPL-2.0-or-later; Zed GPL-3.0-or-later; Joplin AGPL-3.0-or-later; 7-Zip LGPL-2.1-or-later), so
+  their "not checked" caveat is gone.
 - **Lens's own app icons are simpler and bolder.** Monitor, Timer, Notes, Calculator, Color, Power,
   Network, Clipboard, Startup, Feeds and Messages (in the Dock, Search, Command and their title
   bars), and Lens's apps on the website, now share one set: a thick white glyph on a plain dark
