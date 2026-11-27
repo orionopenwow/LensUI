@@ -17,6 +17,7 @@ import { contextOrigin } from "../magic/LensContextMenu";
 import { removedLine, restoreInput } from "../shelf/restore";
 import type { ShelfItem } from "../shelf/contract";
 import { shouldTick } from "../voice/useConversation";
+import { moveVertical, type Box } from "../magic/start/model";
 
 /** Lays words out left to right, 10 px per character, 20 px line height. */
 function page(rows: string[], x0 = 10, y0 = 10): Line[] {
@@ -340,5 +341,25 @@ describe("B-18 share: no swallowed errors in the Magic family's own files", () =
   test("user actions report; background calls say `quiet`", () => {
     const bad = files.filter((f) => /\.catch\(\(\)\s*=>\s*\{\s*\}\)/.test(readFileSync(join(root, f), "utf8")));
     expect(bad).toEqual([]);
+  });
+});
+
+describe("Magic Start: Up and Down follow the layout", () => {
+  // Six tiles in a 3-column grid, then two full-width rows.
+  const tile = (c: number, r: number): Box => ({ x: c * 100, y: r * 80, w: 96, h: 76 });
+  const boxes: Box[] = [tile(0, 0), tile(1, 0), tile(2, 0), tile(0, 1), tile(1, 1), tile(2, 1), { x: 0, y: 180, w: 296, h: 36 }, { x: 0, y: 220, w: 296, h: 36 }];
+  test("down goes to the tile underneath, not the next tile", () => {
+    expect(moveVertical(boxes, 1, 1)).toBe(4);
+    expect(moveVertical(boxes, 4, -1)).toBe(1);
+  });
+  test("from the grid into the list, and back up to the tile above the row's middle", () => {
+    expect(moveVertical(boxes, 5, 1)).toBe(6);
+    expect(moveVertical(boxes, 6, 1)).toBe(7);
+    expect(moveVertical(boxes, 6, -1)).toBe(4);
+  });
+  test("stays put at the edges", () => {
+    expect(moveVertical(boxes, 2, -1)).toBe(2);
+    expect(moveVertical(boxes, 7, 1)).toBe(7);
+    expect(moveVertical([], 0, 1)).toBe(0);
   });
 });

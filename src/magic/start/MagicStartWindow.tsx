@@ -16,7 +16,7 @@ import type { InstalledApp, RecentFileItem } from "../../types/generated";
 import { MagicStartPanel } from "./MagicStart";
 import { failLine, logFail, quiet, retryOnce } from "../../failsafe/calls";
 import {
-  magicActions, moveSelection, navOrder, pinnedEntries, recentEntries, searchApps,
+  magicActions, moveSelection, moveVertical, navOrder, pinnedEntries, recentEntries, searchApps,
   type ShelfLike, type StartEntry,
 } from "./model";
 
@@ -150,7 +150,14 @@ export const MagicStartWindow: React.FC = () => {
     // Left/Right move the caret while typing; only Up/Down walk the results.
     if (step && !(query && (e.key === "ArrowLeft" || e.key === "ArrowRight"))) {
       e.preventDefault();
-      setSelected((s) => moveSelection(s, step, order.length));
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        // Up/Down follow the layout (a grid of tiles, then rows), measured where it is drawn.
+        const boxes = Array.from(document.querySelectorAll<HTMLElement>("#mstart-list [data-idx]")).map((el) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.left, y: r.top, w: r.width, h: r.height };
+        });
+        setSelected((s) => (boxes.length === order.length ? moveVertical(boxes, s, step as 1 | -1) : moveSelection(s, step, order.length)));
+      } else setSelected((s) => moveSelection(s, step, order.length));
       return;
     }
     if (e.key === "Enter" && order[selected]) {

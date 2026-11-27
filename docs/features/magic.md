@@ -2,8 +2,26 @@
 
 Status date: 2026-11-26 (main at `6e7abb0`). Sources: `docs/MAGIC.md`, `docs/RIGHTCLICK.md`,
 `docs/plans/MAGIC_WAVES.md`, `docs/DASHBOARD.md`, `docs/brain/BUGS.md`, code below.
-In flight: **#108** (M2 widgets, X lane, connect flows, Ask about this), **#109** (M3 Magic Mouse),
-**#107** (M4 Magic Start + Shelf → Notes). Studio v2 is scaffold only.
+Merged since: **#108** (M2 widgets), **#109** (M3 Magic Mouse), **#107** (M4 Magic Start and Shelf → Notes). In flight: **#123** (desktop widgets),
+**#128** (selection bar and Magic Search). Studio v2 is scaffold only.
+
+> **Fable pass, 26 November 2026 (Magic family: Magic, Magic Start, Magic Mouse, Snip, Shelf, Command, voice).**
+> Status after the pass, "(harness)" where it has not been seen on a real PC:
+> - **Lens › from the keyboard: works (harness)** for Shelf items. The Menu key or Shift+F10 opens the item's menu on the item with "Lens ›" focused and a visible ring; focus returns to the item when the menu closes (`LensContextMenu.tsx` `contextOrigin`). Dock icons and notifications still need the same two lines in their own surfaces (below).
+> - **Magic Start: works (harness).** The selected row is announced (`aria-activedescendant`), stays in view, results arrive in order, Up and Down follow the tiles' rows and columns, a refused hide is retried, and failures to list apps or open Windows Start are said in the footer.
+> - **Snip: works (harness), with live text new.** See [docs/SNIP.md](../SNIP.md). B-116 to B-119 fixed.
+> - **Shelf drawer: works (harness).** Undo for a removed item; pin, remove and copy failures are said.
+> - **Voice conversation: works (harness).** B-120 fixed.
+> - **Magic Mouse: unchanged** (merged in #109 the same day; its native gesture and the owner's hold rule were left alone).
+> - **Press weights** are marked with `data-weight` on every control in these files, ready for `src/ui/press` (#131).
+>
+> **What is left, ranked:**
+> 1. Notification toast gets a two-row menu (Dismiss, Lens ›) and the Dock icon answers the Menu key the same way: `contextOrigin` and `byKeyboard` are ready; the call sites are `NotificationOverlaySurface.tsx` and `DockSurface.tsx` (other passes' files).
+> 2. Command: 10 s Undo toast and "Did you mean…" (need `CommandSurface.tsx`, changed by five open PRs); its 11 swallowed errors and `BubbleSurface.tsx`'s 4.
+> 3. Tester Hub: Magic open-latency p50/p95 from `magic_report_open`.
+> 4. B-58 for `MagicCard.tsx` (controls reachable by keyboard while Magic is off).
+> 5. Live text next steps: QR codes, "Open link" through the approved-site path, word boxes for the scrolling capture.
+> 6. Real-PC checks listed in PR "Fable pass (Magic family)".
 
 ## 1. Rundown
 
@@ -151,7 +169,7 @@ this into a Dashboard, a Magic Mouse mode, a Magic Start button, Shelf → Notes
 | Suspected S4 | Low | Lens › on notifications | right-click opens the window directly; keyboard users have no equivalent (no context-menu key path) |
 
 ## 6. One idea to push to main
-**Magic everywhere via the keyboard:** the Menu key / Shift+F10 on any focused Lens item (dock
+**Partly built (Fable pass, 26 Nov): Shelf items.** **Magic everywhere via the keyboard:** the Menu key / Shift+F10 on any focused Lens item (dock
 icon, Shelf, notification, Dashboard card) opens its menu with the "Lens ›" row focused. Small
 change in `LensPan` + item handlers; makes Magic fully keyboard-reachable and fixes S4.
 

@@ -8,6 +8,16 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Live text in Lens Snip.** In the studio, press L (or the new Select text tool) and the words
+  Windows OCR found become selectable on the image: drag across them, double-click a line, or use
+  the arrow keys with Shift. Copy just those words, highlight them, or hide them, each snapped to
+  the text. Links, email addresses, phone numbers and sign-in codes in the snip get a one-press
+  copy. Everything is read on this PC and nothing is sent. Not yet confirmed on a real PC (OCR word
+  boxes come from Windows).
+- **Undo when you remove a snip from history or an item from the Shelf.** A snip is really deleted
+  five seconds after Remove; a Shelf item can be put back for six.
+- **The Menu key and Shift+F10 open a Shelf item's menu** with "Lens ›" focused, and focus returns
+  to the item when the menu closes.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that
@@ -19,6 +29,19 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **Text you cropped out of a snip no longer goes with it.** Copy text, Shelf, Paste to Claude, Ask
+  and Translate now use only the words still inside the crop (and inside a freeform outline).
+- **Cropping in the Snip studio no longer stretches the picture or misplaces new marks.** The crop
+  is an outline while you edit and is applied when you copy, save or share.
+- **Enter on a focused Snip studio button no longer also runs Copy**, and typing in the language
+  list no longer triggers shortcuts.
+- **Snip history shows the newest search** when answers arrive out of order, and says so when
+  Keep, Remove or opening a snip fails.
+- **Voice conversation no longer leaves a listener behind when interrupted**, and its hidden
+  window no longer redraws every second.
+- **Failures in Snip, voice, Magic Start and the Shelf no longer pass silently.** They are said
+  where you are, or written to the log with what was being done.
+- **Magic Start keeps the selected row in view and announces it** to screen readers.
 - **The hot-corner picker couldn't be clicked while Hot corners was off.** It's dimmed now, not
   dead, so you can set corners up first; only "Try it" needs the feature on.
 - **Some Settings switches vanished or stopped responding after one click** (Animated backdrop,
