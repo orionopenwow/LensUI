@@ -498,8 +498,16 @@ pub fn start_bubble(get_policy: impl Fn() -> (SelectionPolicy, Vec<String>) + Se
                 break;
             }
             let (policy, excluded) = get_policy();
-            let Ok(facts) = read_facts(&policy, &excluded, Trigger::Bubble, g.up) else { continue };
+            // Diagnostics name the gesture and the refusal only; never the text.
+            let facts = match read_facts(&policy, &excluded, Trigger::Bubble, g.up) {
+                Ok(f) => f,
+                Err(r) => {
+                    eprintln!("[Lens UI] selection bar: not shown after a {}-click gesture ({r:?})", g.clicks);
+                    continue;
+                }
+            };
             if !bar::long_enough(facts.text.chars().count(), options().min_chars) {
+                eprintln!("[Lens UI] selection bar: not shown (selection shorter than the minimum)");
                 continue;
             }
             set_pending(facts.text.clone(), facts.fg.clone());

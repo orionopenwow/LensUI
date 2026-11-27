@@ -910,7 +910,10 @@ const SCENARIOS = [
         ps("Set-Clipboard -Value 'lens-e2e-sentinel'");
         drag(x1, y, x2);
         // The first selection builds the bar's window, so it may take a moment longer than later ones.
-        const ms = await waitBar(true, "after a drag-select in Notepad", 15000);
+        const ms = await waitBar(true, "after a drag-select in Notepad", 15000).catch(async (e) => {
+          const st = await invoke(dock, "input_status_cmd").catch((x) => String(x));
+          throw new Error(`${e.message} (foreground: ${foreground()}; Notepad at ${rect}; input: ${JSON.stringify(st)})`);
+        });
         console.log(`note  selection-bar: shown ${ms} ms after the mouse was released`);
         const fg = foreground();
         if (!/notepad/i.test(fg)) throw new Error(`the bar took the focus: the foreground is "${fg}", not Notepad`);
@@ -1010,7 +1013,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart|selection bar|input/i.test(l)).slice(-16);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }

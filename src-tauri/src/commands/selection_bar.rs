@@ -172,6 +172,13 @@ pub(crate) fn on_found(app: &AppHandle, found: crate::clip::uia::BarFound) {
     if let Ok(mut s) = SESSION.lock() {
         *s = Some(Session { show: show.clone(), release: found.release, lines: f.lines, owner: f.owner, rect: None });
     }
+    eprintln!(
+        "[Lens UI] selection bar: offering #{seq} in {} (cut {}, paste {}, smart {})",
+        crate::clip::appctx::file_name(&show.app),
+        show.cut,
+        show.paste,
+        show.smart.as_ref().map(|s| s.kind.as_str()).unwrap_or("-")
+    );
     if app.get_webview_window(LABEL).is_none() {
         // First selection since start: build the window (from its tauri.conf.json entry); its
         // page asks for the state when it mounts.
@@ -185,8 +192,12 @@ pub(crate) fn on_found(app: &AppHandle, found: crate::clip::uia::BarFound) {
 pub(crate) fn selection_bar_fit(app: AppHandle, seq: u64, width: f64, height: f64) -> BarPlaced {
     #[cfg(windows)]
     {
-        let Some(sess) = session().filter(|s| s.show.seq == seq) else { return BarPlaced::default() };
+        let Some(sess) = session().filter(|s| s.show.seq == seq) else {
+            eprintln!("[Lens UI] selection bar: fit for #{seq} ignored (a newer selection replaced it)");
+            return BarPlaced::default();
+        };
         if !(width.is_finite() && height.is_finite() && width >= 8.0 && height >= 8.0 && width <= 1200.0 && height <= 800.0) {
+            eprintln!("[Lens UI] selection bar: fit for #{seq} refused ({width}×{height})");
             return BarPlaced::default();
         }
         let Some(win) = app.get_webview_window(LABEL) else { return BarPlaced::default() };
@@ -194,8 +205,10 @@ pub(crate) fn selection_bar_fit(app: AppHandle, seq: u64, width: f64, height: f6
         let (work, scale) = work_area_at(sess.release);
         let p = bar::place(sess.lines, sess.release, (width, height), work, scale, bar::Placement::parse(&cfg.placement));
         if !show_no_activate(&win, p.x, p.y, p.w, p.h) {
+            eprintln!("[Lens UI] selection bar: #{seq} couldn't be shown");
             return BarPlaced::default();
         }
+        eprintln!("[Lens UI] selection bar: #{seq} shown at {},{} {}×{}{}", p.x, p.y, p.w, p.h, if p.above { " (above)" } else { "" });
         let rect = bar::Rect::new(p.x, p.y, p.w, p.h);
         if let Ok(mut s) = SESSION.lock() {
             if let Some(s) = s.as_mut() {
@@ -258,7 +271,8 @@ pub(crate) fn hide(app: &AppHandle, reason: &str) {
     crate::clip::uia::bar_hidden();
     if let Some(w) = app.get_webview_window(LABEL) {
         if w.is_visible().unwrap_or(false) {
-            crate::app::place::hide_window(&w);
+            eprintln!("[Lens UI] selection bar: hidden ({reason})");
+            let _ = crate::app::place::hide_window(&w);
         }
     }
     let _ = app.emit_to(LABEL, EVT_HIDE, reason);
