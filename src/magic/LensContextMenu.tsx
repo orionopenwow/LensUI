@@ -4,7 +4,9 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { glideIn } from "../ui/motion";
 import { LensMenuRow, LensPan } from "./LensPan";
-import type { LensItem } from "./lensPanModel";
+import type { LensItem, MenuAt } from "./lensPanModel";
+
+export { contextOrigin, type MenuAt } from "./lensPanModel";
 import "./lens-pan.css";
 
 export interface MenuAction {
@@ -15,10 +17,6 @@ export interface MenuAction {
   onSelect: () => void;
 }
 
-export interface MenuAt {
-  x: number;
-  y: number;
-}
 
 /** Keeps a menu of size w×h inside the viewport, opening down-right of the pointer when it fits. */
 export function placeMenu(at: MenuAt, w: number, h: number, vw: number, vh: number, margin = 6): { left: number; top: number } {
@@ -27,13 +25,17 @@ export function placeMenu(at: MenuAt, w: number, h: number, vw: number, vh: numb
   return { left: Math.max(margin, Math.min(left, vw - w - margin)), top: Math.max(margin, Math.min(top, vh - h - margin)) };
 }
 
+
 export function LensContextMenu({
   at,
   item,
   actions,
   onClose,
   initialPanned = false,
+  byKeyboard = false,
 }: {
+  /** Opened with the Menu key or Shift+F10: focus starts on "Lens ›", with a ring. */
+  byKeyboard?: boolean;
   at: MenuAt;
   item: LensItem;
   actions: MenuAction[];
@@ -51,8 +53,18 @@ export function LensContextMenu({
     setPos(placeMenu(at, r.width, r.height, window.innerWidth, window.innerHeight));
     glideIn(el, { scale: 0.97, opacity: 0 }, { duration: "fast" });
     // Focus goes into the menu for the keyboard, without a ring for a menu opened by the mouse.
-    el.querySelector<HTMLElement>("[role=menuitem]")?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
-  }, [at]);
+    const first = byKeyboard ? el.querySelector<HTMLElement>(".lens-pan-row") ?? el.querySelector<HTMLElement>("[role=menuitem]") : el.querySelector<HTMLElement>("[role=menuitem]");
+    first?.focus({ preventScroll: true, focusVisible: byKeyboard } as FocusOptions);
+  }, [at, byKeyboard]);
+
+  // Focus goes back to where it was when the menu closes, so the keyboard never loses its place.
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    return () => {
+      const now = document.activeElement;
+      if (before && before.isConnected && (!now || now === document.body || !now.isConnected)) before.focus({ preventScroll: true });
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -99,6 +111,7 @@ export function LensContextMenu({
               key={a.id}
               type="button"
               role="menuitem"
+              data-weight="light"
               className={`lens-pan-item${a.danger ? " is-danger" : ""}`}
               onClick={() => {
                 a.onSelect();

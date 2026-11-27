@@ -1,0 +1,36 @@
+/* Dock keys: type to find an app. The chip sits where the Dock's notice does; icons that don't
+ * match step back (opacity only). */
+.dock-find-anchor {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 61;
+  width: max-content;
+  max-width: min(420px, 80vw);
+}
+.dock-edge-top .dock-find-anchor { bottom: auto; top: calc(100% + 10px); }
+.dock-edge-left .dock-find-anchor { left: calc(100% + 10px); bottom: auto; top: 50%; transform: translateY(-50%); }
+.dock-edge-right .dock-find-anchor { left: auto; right: calc(100% + 10px); bottom: auto; top: 50%; transform: translateY(-50%); }
+
+.dock-find-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  /* Same fallback as tokens.css gives packs that set no base (Obsidian). */
+  background: var(--lens-pack-base, #08080b);
+  border: 1px solid rgb(var(--lens-ink) / 0.16);
+  box-shadow: 0 8px 22px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)));
+  color: var(--lens-fg);
+  font-size: 12px;
+  font-weight: 700;
+}
+.dock-find-chip > svg { color: var(--lens-fg-secondary); flex-shrink: 0; }
+.dock-find-text { white-space: pre; }
+.dock-find-none { font-weight: 500; color: var(--lens-fg-secondary); }
+
+.dock-item-wrap[data-find] { transition: opacity var(--lens-dur-fast) var(--lens-ease-out); }
+.dock-item-wrap[data-find="miss"] { opacity: 0.38; }

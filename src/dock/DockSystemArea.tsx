@@ -1,24 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { logFail, quiet } from "../failsafe/calls";
+import { quiet } from "../failsafe/calls";
 import { Bell, ChevronUp, Volume2, Wifi } from "lucide-react";
 import { TrayStrip } from "../components/TrayStrip";
 import { KeyboardTopBarModule } from "../components/KeyboardLayoutModule";
 import { BatteryIcon } from "../components/BatteryModule";
 import { usePolled, type BatteryStatus } from "../components/SystemModuleShared";
+import { dockFail } from "./act";
 import { stackedClock } from "./clock";
+import { useMinuteClock } from "../hooks/useMinuteClock";
 import "./DockSystemArea.css";
 
-const openQs = (tab: string) => invoke("open_quicksettings_tab_cmd", { tab, section: tab }).catch(logFail("Dock", "open Quick Settings"));
+const openQs = (tab: string) => invoke("open_quicksettings_tab_cmd", { tab, section: tab }).catch(dockFail("open Quick settings"));
 
-function useClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 15000);
-    return () => window.clearInterval(id);
-  }, []);
-  return now;
-}
 
 export interface DockSystemAreaProps {
   trayHost: boolean;
@@ -59,7 +53,7 @@ function useClock24(enabled: boolean): boolean | null {
  * clock/date (calendar) and notifications. Shown in the Dock instead of the Top Bar, never both.
  */
 export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread, vertical, variant, clock = "default", reflowKey }) => {
-  const now = useClock();
+  const now = useMinuteClock();
   const stacked = clock === "stacked";
   const clock24 = useClock24(stacked);
   const [battery] = usePolled<BatteryStatus>("get_battery_cmd", undefined, 60000);
@@ -76,6 +70,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const clockBtn = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-clock"
       aria-label={`${longDate}, ${fullTime}. Open calendar`}
       onClick={() => openQs("calendar")}
@@ -87,6 +82,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const stackedClockBtn = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-clock dock-sys-clock-stacked"
       aria-label={`${longDate}, ${two.time}. Open calendar`}
       onClick={() => openQs("calendar")}
@@ -98,6 +94,7 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
   const bell = (
     <button
       type="button"
+      data-weight="medium"
       className="dock-sys-btn dock-sys-icon dock-sys-bell"
       aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
       onClick={() => openQs("notifications")}
@@ -122,9 +119,10 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
           {!trayHost && (
             <button
               type="button"
+              data-weight="medium"
               className="dock-sys-btn dock-sys-icon"
               aria-label="Show system tray for a few seconds"
-              onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(logFail("Dock", "show the system tray"))}
+              onClick={() => invoke("peek_native_taskbar_cmd", { seconds: 8 }).catch(dockFail("show the system tray"))}
             >
               <ChevronUp size={iconPx} strokeWidth={2.4} />
             </button>
@@ -134,8 +132,9 @@ export const DockSystemArea: React.FC<DockSystemAreaProps> = ({ trayHost, unread
       )}
       <button
         type="button"
+        data-weight="medium"
         className="dock-sys-btn dock-sys-quick"
-        aria-label={`Quick Settings: Wi-Fi, volume${hasBattery ? `, battery ${battery?.percent} percent` : ""}`}
+        aria-label={`Quick settings: Wi-Fi, volume${hasBattery ? `, battery ${battery?.percent} percent` : ""}`}
         onClick={() => openQs("quick")}
       >
         <Wifi size={iconPx} strokeWidth={2.4} />

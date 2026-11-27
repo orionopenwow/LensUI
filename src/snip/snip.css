@@ -92,11 +92,10 @@
   gap: 4px;
   padding: 4px;
   border-radius: calc(var(--lens-radius, 8px) + 6px);
-  background: var(--lens-bg-surface);
-  backdrop-filter: blur(var(--lens-blur, 20px)) saturate(1.3);
+  background: var(--lens-surface-solid, var(--lens-bg-surface));
   border: 1px solid var(--lens-border);
   box-shadow: var(--lens-shadow-panel);
-  animation: snip-drop 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: snip-drop var(--lens-dur-base) var(--lens-ease-out);
 }
 .snip-modebar .sep { width: 1px; height: 20px; background: var(--lens-border); margin: 0 4px; }
 .snip-hint {
@@ -106,8 +105,7 @@
   transform: translateX(-50%);
   padding: 4px 12px;
   border-radius: 999px;
-  background: var(--lens-bg-surface);
-  backdrop-filter: blur(var(--lens-blur, 20px));
+  background: var(--lens-surface-solid, var(--lens-bg-surface));
   border: 1px solid var(--lens-border);
   color: var(--lens-fg-secondary);
   font-size: 12px;
@@ -173,7 +171,7 @@
   white-space: normal;
   pointer-events: none;
   z-index: 20;
-  animation: snip-fade 120ms ease-out;
+  animation: snip-fade var(--lens-dur-exit) var(--lens-ease-out);
 }
 .snip-tip.below { bottom: auto; top: calc(100% + 8px); }
 
@@ -183,20 +181,19 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.42);
-  animation: snip-fade 160ms ease-out;
+  animation: snip-fade var(--lens-dur-fast) var(--lens-ease-out);
 }
 .snip-studio {
   position: absolute;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  background: var(--lens-bg-surface);
-  backdrop-filter: blur(var(--lens-blur, 20px)) saturate(1.3);
+  background: var(--lens-surface-solid, var(--lens-bg-surface));
   border: 1px solid var(--lens-border);
   border-radius: calc(var(--lens-radius, 8px) + 6px);
   box-shadow: var(--lens-shadow-panel);
   overflow: hidden;
-  animation: snip-pop 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: snip-pop var(--lens-dur-base) var(--lens-ease-out);
 }
 .snip-studio.no-panel { grid-template-columns: minmax(0, 1fr) 0; }
 
@@ -212,6 +209,7 @@
 .snip-toolbar .grow { flex: 1; }
 .snip-toolbar .sep { width: 1px; height: 20px; background: var(--lens-border); margin: 0 4px; }
 .snip-color {
+  position: relative;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -219,6 +217,9 @@
   cursor: pointer;
   padding: 0;
 }
+/* The swatch stays small; what you can hit is 32 px tall. */
+.snip-color::before { content: ""; position: absolute; inset: -8px -3px; }
+.snip-color:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 2px; }
 .snip-color.on { border-color: var(--lens-fg); }
 .snip-title {
   font-size: 12px;
@@ -306,7 +307,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  animation: snip-pop 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: snip-pop var(--lens-dur-fast) var(--lens-ease-out);
 }
 .snip-card .q { font-size: 14px; font-weight: 600; line-height: 20px; color: var(--lens-fg-strong, var(--lens-fg)); }
 .snip-card table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -380,6 +381,9 @@
 .snip-chip.focus { border-color: var(--lens-accent); box-shadow: 0 0 0 1px var(--lens-accent) inset; }
 .snip-chip:disabled { opacity: 0.4; cursor: default; }
 .snip-chip.done .k { background: var(--lens-positive, #22c55e); color: #fff; }
+/* Done: the tick lands with a little weight, once. */
+.snip-chip.done .k svg { animation: snip-tick var(--lens-dur-slow) var(--lens-ease-spring); }
+.snip-chip:focus-visible, .snip-recent:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
 .snip-actions .sep { width: 1px; height: 24px; background: var(--lens-border); margin: 0 4px; flex: none; }
 .snip-recent {
   height: 28px;
@@ -408,7 +412,7 @@
   font-size: 12px;
   max-width: 520px;
   text-align: center;
-  animation: snip-fade 140ms ease-out;
+  animation: snip-fade var(--lens-dur-fast) var(--lens-ease-out);
   z-index: 30;
 }
 
@@ -455,14 +459,13 @@
   gap: 2px;
   padding: 2px;
   border-radius: 10px;
-  background: var(--lens-bg-surface);
-  backdrop-filter: blur(var(--lens-blur, 20px));
+  background: var(--lens-surface-solid, var(--lens-bg-surface));
   border: 1px solid var(--lens-border);
   opacity: 0;
-  transition: opacity 120ms ease-out;
+  transition: opacity var(--lens-dur-fast) var(--lens-ease-out);
 }
 .snip-pin:hover .snip-pin-bar, .snip-pin:focus-within .snip-pin-bar { opacity: 1; }
-.snip-pin-bar .snip-btn { height: 28px; min-width: 28px; }
+.snip-pin-bar .snip-btn { height: 32px; min-width: 32px; }
 .snip-pin-bar input[type="range"] { width: 72px; accent-color: var(--lens-accent); }
 
 /* ---------------------------------------------------------------- recording */
@@ -508,16 +511,109 @@
 .snip-thumb img { width: 100%; height: 88px; object-fit: cover; display: block; }
 .snip-thumb .meta { padding: 6px 8px; font-size: 11px; line-height: 16px; color: var(--lens-fg-secondary); }
 .snip-thumb .meta b { display: block; color: var(--lens-fg); font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.snip-thumb .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity 120ms; }
+.snip-thumb .tools { position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity var(--lens-dur-fast) var(--lens-ease-out); }
 .snip-thumb:hover .tools, .snip-thumb:focus-within .tools { opacity: 1; }
-.snip-thumb .tools .snip-btn { height: 24px; min-width: 24px; background: var(--lens-bg-surface); }
+.snip-thumb .tools .snip-btn { height: 32px; min-width: 32px; background: var(--lens-surface-solid, var(--lens-bg-surface)); }
 .snip-thumb.pinned { border-color: var(--lens-accent); }
+
+/* ---------------------------------------------------------------- live text */
+
+/* Over the image, so these must read on any picture and in any theme: the familiar selection
+   blue with a light edge, like the red of the hide suggestions. */
+.snip-live-word { stroke: #3b82f6; opacity: 0.7; stroke-linecap: round; pointer-events: none; }
+.snip-live-sel rect { fill: #3b82f6; fill-opacity: 0.34; stroke: rgb(255 255 255 / 0.55); stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; }
+.snip-live-sel.is-copied { animation: snip-wash var(--lens-dur-slower) var(--lens-ease-out); }
+.snip-crop-dim { fill: rgb(0 0 0 / 0.5); pointer-events: none; }
+.snip-live-pill {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 0 2px 0 10px;
+  border-radius: 10px;
+  background: var(--lens-surface-solid, #18181b);
+  border: 1px solid var(--lens-border);
+  box-shadow: var(--lens-shadow-panel);
+  color: var(--lens-fg);
+  white-space: nowrap;
+  transform-origin: 50% 100%;
+  animation: snip-rise var(--lens-dur-fast) var(--lens-ease-out);
+}
+.snip-canvas-wrap .snip-live-pill svg { position: static; inset: auto; width: 13px; height: 13px; flex: none; }
+.snip-live-pill.is-below { transform-origin: 50% 0; animation-name: snip-sink; }
+.snip-live-count { font-size: 11px; color: var(--lens-fg-secondary); font-variant-numeric: tabular-nums; padding-right: 6px; }
+.snip-entities { display: flex; flex-wrap: wrap; gap: 4px; }
+.snip-entity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  max-width: 100%;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--lens-border);
+  background: transparent;
+  color: var(--lens-fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  animation: snip-rise var(--lens-dur-base) var(--lens-ease-out) backwards;
+}
+.snip-entity:hover { background: var(--lens-bg-hover, rgba(255, 255, 255, 0.06)); }
+.snip-entity:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: 1px; }
+.snip-entity .k { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lens-fg-secondary); }
+.snip-entity .v { font-family: var(--lens-font-mono, ui-monospace, monospace); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.snip-entity svg { flex: none; opacity: 0.6; }
+
+/* ---------------------------------------------------------------- history: undo, empty */
+
+/* Lists arrive in order: the first six, one stagger apart; the rest together (DESIGN.md §5.3). */
+.snip-thumb, .snip-entity { animation: snip-rise var(--lens-dur-base) var(--lens-ease-out) backwards; }
+:is(.snip-thumb, .snip-entity):nth-child(2) { animation-delay: calc(1 * var(--lens-stagger)); }
+:is(.snip-thumb, .snip-entity):nth-child(3) { animation-delay: calc(2 * var(--lens-stagger)); }
+:is(.snip-thumb, .snip-entity):nth-child(4) { animation-delay: calc(3 * var(--lens-stagger)); }
+:is(.snip-thumb, .snip-entity):nth-child(5) { animation-delay: calc(4 * var(--lens-stagger)); }
+:is(.snip-thumb, .snip-entity):nth-child(n + 6) { animation-delay: calc(5 * var(--lens-stagger)); }
+.snip-thumb-open { all: unset; cursor: pointer; display: block; width: 100%; }
+.snip-thumb-open:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: -2px; }
+.snip-rectime { font-variant-numeric: tabular-nums; }
+.snip-card.is-consent { border-color: var(--lens-accent); }
+.snip-applist-label { margin-top: 4px; }
+.snip-app-title { margin-left: 6px; overflow: hidden; text-overflow: ellipsis; }
+.snip-undo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 4px 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lens-border);
+  background: var(--lens-surface-solid, #18181b);
+  font-size: 12px;
+  color: var(--lens-fg);
+  animation: snip-rise var(--lens-dur-base) var(--lens-ease-out);
+}
+.snip-undo .grow { flex: 1; }
+.snip-empty { display: grid; justify-items: center; gap: 6px; padding: 20px 12px; text-align: center; color: var(--lens-fg-secondary); font-size: 12px; line-height: 18px; }
+.snip-empty b { color: var(--lens-fg); font-size: 13px; font-weight: 600; }
+.snip-empty-frame { width: 56px; height: 40px; border-radius: 6px; border: 2px dashed var(--lens-border-strong, var(--lens-border)); position: relative; }
+.snip-empty-frame::after { content: ""; position: absolute; right: -5px; bottom: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--lens-fg-secondary); }
+
+/* A pin lands: it settles from slightly large, once. */
+.snip-pin img { animation: snip-land var(--lens-dur-slow) var(--lens-ease-spring); }
 
 /* ---------------------------------------------------------------- motion */
 
 @keyframes snip-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes snip-pop { from { opacity: 0; transform: scale(0.985) translateY(4px); } to { opacity: 1; transform: none; } }
 @keyframes snip-drop { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translateX(-50%); } }
+@keyframes snip-rise { from { opacity: 0; transform: translateY(4px) scale(var(--lens-enter-scale)); } to { opacity: 1; transform: none; } }
+@keyframes snip-sink { from { opacity: 0; transform: translateY(-4px) scale(var(--lens-enter-scale)); } to { opacity: 1; transform: none; } }
+@keyframes snip-wash { from { opacity: 0.35; } 40% { opacity: 1; } to { opacity: 1; } }
+@keyframes snip-tick { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes snip-land { from { opacity: 0.6; scale: 1.04; } to { opacity: 1; scale: 1; } }
 @keyframes snip-blink { to { visibility: hidden; } }
 :root[data-motion="reduce"] .snip-root *,
 :root[data-motion="reduce"] .snip-root { animation: none !important; transition: none !important; }

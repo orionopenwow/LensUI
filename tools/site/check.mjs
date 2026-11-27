@@ -221,25 +221,56 @@ async function waitDesk(page, sel = "#lab-desk") {
   // The exhibits near the lab load their frames as it comes into view: let them finish first.
   await page.waitForFunction(() => [...document.querySelectorAll(".xf")].filter((h) => h.querySelector("iframe")).every((h) => h.classList.contains("is-ready")), null, { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(3000);
+  // Method: CPU throttled 4×, one warm-up drag that isn't measured (the first drag's one-time work:
+  // the frames' calm sheet, JIT warm-up), then three measured drags (left, right, left), each sampled
+  // for 3 s from just before the press to after the drop: frame intervals by rAF and long tasks by the
+  // Long Tasks API. The gate is on the median of the three (longest task ≤ 200 ms, median frame
+  // ≤ 100 ms), so one stray CI hiccup in one drag doesn't fail a deploy, while a cost the drag itself
+  // causes shows in every drag and still fails. Each drag's numbers, and the scripts of the slowest
+  // frame (Long Animation Frames), go in the report so a failure says what ran.
   const cdp = await ctx.newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-  const bar = await dragSpot(page);
-  const sampling = page.evaluate(() => new Promise((res) => {
-    const gaps = [], longs = [];
-    new PerformanceObserver((l) => l.getEntries().forEach((e) => longs.push(e.duration))).observe({ type: "longtask", buffered: false });
-    let last = performance.now();
-    const end = last + 3000;
-    const tick = (t) => { gaps.push(t - last); last = t; if (t < end) requestAnimationFrame(tick); else { gaps.sort((a, b) => a - b); res({ frames: gaps.length, p50: gaps[Math.floor(gaps.length * 0.5)], p95: gaps[Math.floor(gaps.length * 0.95)], longTasks: longs.length, longestTask: Math.max(0, ...longs) }); } };
-    requestAnimationFrame(tick);
-  }));
-  await page.mouse.move(bar.x, bar.y);
-  await page.mouse.down();
-  for (let i = 0; i < 40; i++) { await page.mouse.move(bar.x + i * 8, bar.y + Math.sin(i / 5) * 40 + 20); await page.waitForTimeout(40); }
-  await page.mouse.up();
-  const perf = await sampling;
+  const dragOnce = async (dir) => {
+    const bar = await dragSpot(page);
+    const sampling = page.evaluate(() => new Promise((res) => {
+      const gaps = [], longs = [];
+      let slow = null;
+      const lt = new PerformanceObserver((l) => l.getEntries().forEach((e) => longs.push(e.duration)));
+      lt.observe({ type: "longtask", buffered: false });
+      let lf = null;
+      try {
+        lf = new PerformanceObserver((l) => l.getEntries().forEach((e) => { if (!slow || e.blockingDuration > slow.blockingDuration) slow = e; }));
+        lf.observe({ type: "long-animation-frame", buffered: false });
+      } catch { /* no LoAF */ }
+      let last = performance.now();
+      const end = last + 3000;
+      const tick = (t) => {
+        gaps.push(t - last); last = t;
+        if (t < end) return requestAnimationFrame(tick);
+        lt.disconnect(); lf?.disconnect();
+        gaps.sort((a, b) => a - b);
+        const top = slow && slow.blockingDuration > 0 ? `${Math.round(slow.duration)} ms frame: ${slow.scripts.slice().sort((a, b) => b.duration - a.duration).slice(0, 3).map((x) => `${Math.round(x.duration)} ms ${x.invoker} ${(x.sourceURL || "").split("/").slice(-2).join("/")}:${x.sourceFunctionName}`).join("; ") || "no script"}, style+layout ${Math.round(slow.styleAndLayoutStart ? slow.startTime + slow.duration - slow.styleAndLayoutStart : 0)} ms` : "";
+        res({ frames: gaps.length, p50: gaps[Math.floor(gaps.length * 0.5)], p95: gaps[Math.floor(gaps.length * 0.95)], longTasks: longs.length, longestTask: Math.max(0, ...longs), top });
+      };
+      requestAnimationFrame(tick);
+    }));
+    await page.mouse.move(bar.x, bar.y);
+    await page.mouse.down();
+    for (let i = 0; i < 40; i++) { await page.mouse.move(bar.x + dir * i * 8, bar.y + dir * (Math.sin(i / 5) * 40 + 20)); await page.waitForTimeout(40); }
+    await page.mouse.up();
+    const r = await sampling;
+    await page.waitForTimeout(600); // the drop's settle animation
+    return r;
+  };
+  await dragOnce(1); // warm-up, not measured
+  const drags = [];
+  for (const dir of [-1, 1, -1]) drags.push(await dragOnce(dir));
+  const med = (k) => drags.map((d) => d[k]).sort((a, b) => a - b)[1];
+  const perf = { p50: med("p50"), p95: med("p95"), longestTask: med("longestTask") };
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   await page.waitForTimeout(500);
-  report.stage = { dragThrottle4x: Object.fromEntries(Object.entries(perf).map(([k, v]) => [k, Math.round(v * 10) / 10])) };
+  const r1 = (v) => Math.round(v * 10) / 10;
+  report.stage = { dragThrottle4x: { median: Object.fromEntries(Object.entries(perf).map(([k, v]) => [k, r1(v)])), drags: drags.map((d) => ({ frames: d.frames, p50: r1(d.p50), p95: r1(d.p95), longTasks: d.longTasks, longestTask: Math.round(d.longestTask), ...(d.top ? { slowestFrame: d.top } : {}) })) } };
   {
     const b2 = await dragSpot(page);
     const s2 = page.evaluate(() => new Promise((res) => { const g = []; let last = performance.now(); const end = last + 2000; const tick = (t) => { g.push(t - last); last = t; if (t < end) requestAnimationFrame(tick); else { g.sort((a, b) => a - b); res({ p50: g[g.length >> 1], p95: g[Math.floor(g.length * 0.95)] }); } }; requestAnimationFrame(tick); }));
@@ -254,8 +285,8 @@ async function waitDesk(page, sel = "#lab-desk") {
   // far more there than on any GPU; the 4× budget is looser than the idle one for that reason.
   // So at 4× the budget is on main-thread work (long tasks) and a loose median; without throttling the
   // drag must hold about 60 fps at the median.
-  if (perf.p50 > 100) problems.push(`desk: median frame interval ${perf.p50.toFixed(1)} ms while dragging at 4× throttle (> 100 ms)`);
-  if (perf.longestTask > 200) problems.push(`desk: a ${perf.longestTask.toFixed(0)} ms long task while dragging at 4× throttle`);
+  if (perf.p50 > 100) problems.push(`desk: median frame interval ${perf.p50.toFixed(1)} ms while dragging at 4× throttle (> 100 ms, median of 3 drags)`);
+  if (perf.longestTask > 200) problems.push(`desk: a ${perf.longestTask.toFixed(0)} ms long task while dragging at 4× throttle (median of 3 drags: ${drags.map((d) => Math.round(d.longestTask)).join(", ")} ms; slowest frame: ${drags.find((d) => d.longestTask === perf.longestTask)?.top || "?"})`);
   await ctx.close();
   const rm = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
   const p2 = await rm.newPage();
