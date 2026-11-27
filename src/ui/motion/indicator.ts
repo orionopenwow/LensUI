@@ -20,9 +20,33 @@ export function indicatorBox(option: { offsetLeft: number; offsetTop: number; of
   return { left: option.offsetLeft, top: option.offsetTop, width: option.offsetWidth, height: option.offsetHeight };
 }
 
+function place(ind: HTMLElement, b: Box) {
+  ind.style.setProperty("--lens-ind-x", `${b.left}px`);
+  ind.style.setProperty("--lens-ind-y", `${b.top}px`);
+  ind.style.setProperty("--lens-ind-w", `${b.width}px`);
+  ind.style.setProperty("--lens-ind-h", `${b.height}px`);
+}
+
 export function useSlidingIndicator(container: RefObject<HTMLElement | null>, indicator: RefObject<HTMLElement | null>, activeKey: unknown) {
   const last = useRef<Box | null>(null);
   const running = useRef<GlideHandle | null>(null);
+  // Options change size without a selection change (fonts arriving, labels, zoom): follow at once.
+  useLayoutEffect(() => {
+    const box = container.current;
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      const ind = indicator.current;
+      const opt = box.querySelector<HTMLElement>(ACTIVE);
+      if (!ind || !opt) return;
+      const b = indicatorBox(opt);
+      last.current = b;
+      place(ind, b);
+    });
+    ro.observe(box);
+    for (const c of Array.from(box.children)) ro.observe(c);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useLayoutEffect(() => {
     const box = container.current;
     const ind = indicator.current;
@@ -34,10 +58,7 @@ export function useSlidingIndicator(container: RefObject<HTMLElement | null>, in
       return;
     }
     const next = indicatorBox(opt);
-    ind.style.setProperty("--lens-ind-x", `${next.left}px`);
-    ind.style.setProperty("--lens-ind-y", `${next.top}px`);
-    ind.style.setProperty("--lens-ind-w", `${next.width}px`);
-    ind.style.setProperty("--lens-ind-h", `${next.height}px`);
+    place(ind, next);
     ind.dataset.on = "true";
     const prev = last.current;
     last.current = next;
