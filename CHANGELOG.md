@@ -152,6 +152,17 @@ up and migrates `%APPDATA%\LensUI` where it can.
   addresses and keys removed, then open a prefilled GitHub issue, copy it, or save it. Lens
   uploads nothing itself.
 
+### Developer
+- **Lens Mission Control** (dev builds only, docs/MISSION_CONTROL.md): the maintainer's admin
+  window for running the project. Pulse (main CI, Pages, PRs, release, dev folder, bugs, research
+  top 3, trends), a PR board with READY / WAIT / BLOCKED and known-flake detection, one bugs
+  inbox, ranked suggestions from research, the combinator and Fable notes, real-PC checklists,
+  roadmap, quality (tests, flaky-test leaderboard, perf budgets, goldens), releases, dev folder,
+  the local Lens, schedules and agents with "Copy brief", and the project brain. Read-only by
+  default; every write is shown exactly and confirmed, and goes to a local audit log. The GitHub
+  token stays in Windows Credential Manager. It is compiled only with the `admin` feature that
+  Launch-Lens-UI.bat's dev build turns on; release builds can't include it, and CI checks that.
+
 ## [0.3.0] - 2026-11-24
 
 First release built by the release workflow. It includes everything listed under 0.2.0-beta,

@@ -54,6 +54,13 @@ const STATES = [
   { id: "overview", surface: "overview", sizes: [[1120, 700], [1366, 768]] },
   { id: "command-mini", surface: "command", open: { layout: "mini" }, sizes: [[376, 456], [440, 520]] },
   { id: "command-full", surface: "command", open: { layout: "full" }, sizes: [[1000, 640], [760, 560]] },
+  // Lens Mission Control (dev builds only, docs/MISSION_CONTROL.md), every page on sample data.
+  ...["pulse", "prs", "bugs", "suggestions", "checks", "roadmap", "quality", "releases", "dev", "local", "agents", "brain", "setup"].map((p) => ({
+    id: `mission-${p}`,
+    surface: "missioncontrol",
+    url: `mcmock=1&page=${p}`,
+    sizes: [[1180, 760]],
+  })),
 ];
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta
@@ -102,7 +109,7 @@ for (const preset of PRESET_LIST) {
     if (ONLY.length && !ONLY.includes(st.surface) && !ONLY.includes(st.id)) continue;
     for (const [width, height] of st.sizes) {
       const name = `${st.id}-${preset}-${width}x${height}`;
-      const page = await openSurface(browser, server.base, { surface: st.surface, preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark" });
+      const page = await openSurface(browser, server.base, { surface: st.surface, preset, width, height, query: st.url || "", reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark" });
       if (st.config) {
         await page.evaluate((src) => { const c = JSON.parse(JSON.stringify(window.__lensConfig())); new Function("c", src)(c); window.__lensSetConfig(c); window.__lensEmit("lens://config-updated", c); }, st.config);
       }

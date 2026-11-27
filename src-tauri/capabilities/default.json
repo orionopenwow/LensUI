@@ -35,7 +35,8 @@
     "cleaner",
     "presence",
     "coreapp-*",
-    "presencebar"
+    "presencebar",
+    "missioncontrol"
   ],
   "permissions": [
     "core:default",
