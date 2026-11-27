@@ -21,6 +21,21 @@ up and migrates `%APPDATA%\LensUI` where it can.
 - **The Dock presses like the rest of Lens.** Dock icons, the system area and the Dock's menu use
   the same weighted press as Settings; Settings and Quick settings grow out of the Dock button that
   opened them; the highlight in the Dock's search filters slides to the option you pick.
+- **Lens Browser blocks ads and trackers inside pages.** Scripts, images and frames from ad and
+  tracker hosts are filtered with EasyList and EasyPrivacy (downloaded weekly from easylist.to,
+  credited in THIRD_PARTY_NOTICES) on top of Lens's own short list. A shield in the address bar
+  shows how many requests were blocked on the page; click it to allow ads on that site. On by
+  default; it only changes what Lens Browser's own tabs load. Not yet run on a real PC.
+- **Split view in Lens Browser.** Drag a tab onto the page to open it beside the current one, or
+  press Ctrl+Shift+S; Ctrl+Shift+X swaps sides; drag the divider (or use the arrow keys on it) to
+  resize. Click into either page to work there. Not yet run on a real PC.
+- **Real site icons in Lens Browser.** Lens fetches each site's icon once, from that site, and keeps
+  it on this PC; the frame only ever sees a checked image. Letter icons when there is none, or
+  with Settings › Lens Browser › Site icons off.
+- **A fuller import from Arc and Zen.** Arc spaces keep their colour and emoji, nested folders, split
+  views and the favourites row; Air Traffic Control rules are found and counted. Zen workspaces,
+  essentials, folders and splits come over too. Still undoable in one step. (Ideas learned from
+  Ardia; no code used.)
 - **Immersive: Now Playing full screen (learned from Cider).** Big artwork, its colours drifting
   slowly behind it as soft gradients, and big synced lyrics with the line being sung bright. Open
   it from Now Playing (or F11 there), the Dock music card, or by typing "immersive" in Lens

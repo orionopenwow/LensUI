@@ -1,6 +1,7 @@
 # Lens Browser — feature dossier
 
 Status date: 2026-11-26 (main at `6e7abb0`; Fable pass in PR #114: step-bound approvals, local reader view, failure toasts, permission timeout).
+**Ardia lessons pass** (branch `feature/browser-ardia-lessons`): real content blocking from filter lists, a fuller Arc/Zen import, split view and real favicons; marked **[ardia]**. Learned from Ardia (ardia.dev, GPL-3.0): ideas only, no code or assets (credit in `docs/THIRD_PARTY_NOTICES.md`). Verified by unit tests, parity scenes and CI's Windows build, not yet by hand on a real PC.
 Fable pass status lines are marked **[#114]**; they describe the PR branch and are verified by unit tests, the headless parity harness and CI, not yet by hand on a real PC. Sources: `docs/BROWSER_AAA.md`, `docs/LENS_BROWSER.md`,
 `docs/BROWSER_RESEARCH.md`, `docs/IN_PAGE_LENS.md`, `docs/brain/BUGS.md`, the code paths below.
 
@@ -47,6 +48,13 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
   stay visible.
 - Sleeping tabs, tidy, archive — works (`model.rs`).
 - Spaces (separate profiles), locked spaces — works; spaces strip shows only with >1 space.
+- Split view — works (unit, harness) **[ardia]**: two tabs of one space side by side
+  (`model.rs Split`, `host.rs placements`); drag a tab from the sidebar onto the page (the page
+  hides and shows two drop halves), Ctrl+Shift+S splits with the most recent tab or closes the
+  split, Ctrl+Shift+X swaps; toolbar pill (switch side, swap, close); the divider in the 6 px gap
+  drags or takes arrows/Home/End/5; a press inside either page makes it the active tab (page
+  agent `focus` event). Closing one side leaves the other; the side beside the active tab never
+  sleeps. Not run on a real PC.
 - Glance (peek a link) — works, Alt+click (`host.rs`).
 - Horizontal tab strip (Make it yours) — works: close button, arrows, loading mark.
 
@@ -76,8 +84,21 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 - Error pages (offline, DNS, refused, timeout, certificate, blocked) — **partly**: detected from
   inside Chromium's error page (`nav.ts`, `Pages.tsx ErrorPage`); the correct core signal
   (`NavigationCompleted.WebErrorStatus`) is not wired (AAA §2.3).
-- Real favicons — **partly**: letter avatars only by design (`Sidebar.tsx:59 Avatar`); core
-  fetch + cache + data-URL not built (AAA §2.4).
+- Real favicons — works (unit, harness) **[ardia]**: after a page loads the core fetches its icon once
+  (`browser/icons.rs`: the page's declared icon if same-site https, else `/favicon.ico`; ≤ 64 KB,
+  6 s, sniffed as PNG/ICO/GIF/JPEG/WebP/SVG, through `browser/net.rs`), caches it by host in
+  `favicons.json` (400 hosts, 30-day refresh, failures retried after a day) and sends the frame a
+  data URL (`icons.ts`: only `data:image/…` accepted). Letter avatar when there is none. Setting:
+  Site icons (on). Not run on a real PC.
+- Ads and trackers — works (unit, CI build) **[ardia]**: `browser/blocklist/` filters every request
+  a page makes through WebView2 `WebResourceRequested` (frames and workers too on runtimes with
+  `ICoreWebView2_22`), using EasyList + EasyPrivacy downloaded weekly from easylist.to and Lens's
+  built-in host list (always on, works offline). Matcher is Lens's own (`rules.rs`: `||`, `|`,
+  `*`, `^`, `@@`, third-party, types, `domain=`, `important`; cosmetic/regex/redirect rules
+  skipped). Address-bar shield with the page's blocked count; click allows ads on that site
+  (registrable domain) and reloads. **On by default** (IDENTITY "off by default" covers features
+  that change Windows or listen; this only changes what Lens Browser's own tabs load). Not run on a
+  real PC; cost per request on the UI thread to be measured (BENCHMARKS).
 
 ### 2.5 New tab page
 - Search box + "Ask instead" (Ctrl+J), most visited, bookmarks, recently closed with Reopen last
@@ -129,7 +150,15 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
   Command › Lens Browser lists every site.
 
 ### 2.9 Import (and undo)
-- Detect Chrome, Edge, Brave, Vivaldi, Opera, Firefox, Arc — works (`import/mod.rs`).
+- Detect Chrome, Edge, Brave, Vivaldi, Opera, Firefox, Arc — works (`import/mod.rs`); **[ardia]**
+  also Zen (`%APPDATA%\zen\Profiles`) and Dia (Chromium folder, path unconfirmed on Windows).
+- Arc: spaces with colour and emoji, pinned/unpinned tabs, nested folders ("A / B"), split views,
+  the favourites row, and Air Traffic Control rules where the file carries them — works (unit, with
+  hand-written fixtures `import/fixtures/arc_sidebar_full.json`) **[ardia]**. The rules are counted
+  in the preview; applying them as Lens link rules comes with link routing (PR B). Arc's file shape
+  is taken from public exporters, not from Arc documentation.
+- Zen: workspaces → spaces (with icon), essentials → pinned, tab groups → folders, split pairs —
+  works (unit, `fixtures/zen_session.json`) **[ardia]**; plain Firefox tab groups become folders too.
 - Preview with counts; choose item by item (bookmarks, open tabs; history all-or-nothing) — works.
 - Never passwords or cookies (`ALLOWED` / `NEVER` lists, tested) — works.
 - Defaults carried: search engine (on request, undone with import), home page shown — works.
@@ -144,7 +173,7 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 - Picture in picture — partly: disabled when the page has no video; pages may refuse.
 
 ### 2.11 Not built (by decision or pending)
-- Split view (AAA §2.5) — proposed, changes the owner's chosen layout.
+- Split view (AAA §2.5) — **built [ardia]** (see 2.1). Default layout unchanged: a split exists only when you make one.
 - Extensions beyond content scripts (AAA §2.6) — awaiting decision.
 - Reader view without AI (AAA §2.7) — **built in #114** (see 2.7).
 - Passwords/passkeys — not handled by design (Windows Hello handles passkeys).
@@ -185,6 +214,7 @@ the headless parity harness or CI's Windows runner, not yet by hand on a real PC
 | Id | Severity | Where | Issue |
 |---|---|---|---|
 | B-18 (browser share) | — | `src/browser/*` | **fixed in #114**: failures on user actions show in the browser toast (`oops.ts`) |
+| Risk (ardia) | — | `blocklist/mod.rs win` | the request handler runs on the UI thread for every request; measure page-load cost on a real PC before calling it done |
 | B-07 | Medium | `media/setup.rs` | Whisper/ffmpeg/yt-dlp unpinned → transcription setup refuses |
 | S1 → B-50 | — | `commands/browser.rs` | **fixed in #114**: step-bound one-time approval tokens |
 | Suspected S2 | Low | `host.rs` icons-mode | page webview hidden while the floating Lens menu is open; if the menu loses focus without a close event the page could stay hidden — verify the restore path on blur |

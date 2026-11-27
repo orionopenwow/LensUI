@@ -18,8 +18,14 @@ const STEPS: { id: Step; title: string; icon: React.ReactNode; sub: (c: ImportCo
   { id: "bookmarks", title: "Bookmarks", icon: <Bookmark size={15} />, sub: (c) => `${c.bookmarks.toLocaleString()} bookmarks, folders kept` },
   { id: "history", title: "History", icon: <History size={15} />, sub: (c) => `${c.history.toLocaleString()} pages` },
   { id: "tabs", title: "Open and pinned tabs", icon: <PanelsTopLeft size={15} />, sub: (c) => `${c.openTabs} open · ${c.pinnedTabs} pinned · they arrive asleep` },
-  { id: "spaces", title: "Spaces & pinned tabs", icon: <LayoutGrid size={15} />, sub: (c) => `${c.spaces} spaces with their folders` },
+  { id: "spaces", title: "Spaces & pinned tabs", icon: <LayoutGrid size={15} />, sub: spacesLine },
 ];
+
+/** "3 spaces · 12 folders · 2 split views · colours kept" — only the parts the import has. */
+export function spacesLine(c: ImportCounts): string {
+  const n = (k: number | undefined, one: string, many: string) => (k ? `${k.toLocaleString()} ${k === 1 ? one : many}` : "");
+  return [n(c.spaces, "space", "spaces") || "0 spaces", n(c.folders, "folder", "folders"), n(c.splits, "split view", "split views"), n(c.rules, "link rule", "link rules"), c.spaces ? "colours and icons kept" : ""].filter(Boolean).join(" · ");
+}
 
 export interface ImportSeed {
   sources: ImportSource[];
@@ -116,7 +122,9 @@ export function ImportPanel({ seed, searchUrl, onChanged }: { seed?: ImportSeed;
 
   const src = sources?.find((s) => s.browser === pick?.browser);
   const isArc = src?.engine === "arc";
-  const steps = STEPS.filter((s) => (s.id === "spaces" ? isArc : s.id === "tabs" ? !isArc : true));
+  // Arc: spaces instead of open tabs. Zen: both (its workspaces become spaces).
+  const isZen = src?.browser === "zen";
+  const steps = STEPS.filter((s) => (s.id === "spaces" ? isArc || isZen : s.id === "tabs" ? !isArc : true));
 
   const look = async (browser: string, profile: string) => {
     setPick({ browser, profile });

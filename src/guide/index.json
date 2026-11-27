@@ -4948,7 +4948,7 @@
    "id": "card.ai.browsercard",
    "kind": "card",
    "title": "Lens Browser",
-   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Block known ad and tracker sites · Lens right-click menu on pages · Lens buttons on pages · Site permissions. Browser. Settings › AI & Command › Lens Browser",
+   "text": "Spaces, vertical tabs, the Lens right-click menu, YouTube transcripts, and an agent that always asks before it submits. It keeps its own sign-ins, separate from your main browser, and nothing syncs. Lens Browser · Sleep tabs after · Tabs awake at most · Search with · Lens blocks ads and trackers · Site icons · Lens right-click menu on pages · Lens buttons on pages. Browser. Settings › AI & Command › Lens Browser",
    "path": [
     "Settings",
     "AI & Command",
@@ -5007,7 +5007,7 @@
    "id": "setting.ai.browsercard.search-with",
    "kind": "setting",
    "title": "Search with",
-   "text": "Stops tabs from opening them. It doesn't filter ads inside pages.",
+   "text": "Filters what pages load (scripts, images, frames) with EasyList and EasyPrivacy, downloaded from easylist.to and refreshed weekly, plus Lens's own short list. Only Lens Browser's tabs are affected. Turn it off for one site with the shield in the address bar.",
    "path": [
     "Settings",
     "AI & Command",
@@ -5024,21 +5024,41 @@
    "source": "src/components/BrowserCard.tsx"
   },
   {
-   "id": "setting.ai.browsercard.block-known-ad-and-tracker-sites",
+   "id": "setting.ai.browsercard.lens-blocks-ads-and-trackers",
    "kind": "setting",
-   "title": "Block known ad and tracker sites",
-   "text": "Stops tabs from opening them. It doesn't filter ads inside pages.",
+   "title": "Lens blocks ads and trackers",
+   "text": "Filters what pages load (scripts, images, frames) with EasyList and EasyPrivacy, downloaded from easylist.to and refreshed weekly, plus Lens's own short list. Only Lens Browser's tabs are affected. Turn it off for one site with the shield in the address bar.",
    "path": [
     "Settings",
     "AI & Command",
     "Lens Browser",
-    "Block known ad and tracker sites"
+    "Lens blocks ads and trackers"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "BrowserCard",
-    "label": "Block known ad and tracker sites",
+    "label": "Lens blocks ads and trackers",
+    "section": "browser"
+   },
+   "source": "src/components/BrowserCard.tsx"
+  },
+  {
+   "id": "setting.ai.browsercard.site-icons",
+   "kind": "setting",
+   "title": "Site icons",
+   "text": "Lens fetches each site's icon once, from that site, and keeps it on this PC. Off: letter icons, nothing fetched.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Lens Browser",
+    "Site icons"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "BrowserCard",
+    "label": "Site icons",
     "section": "browser"
    },
    "source": "src/components/BrowserCard.tsx"
@@ -8389,6 +8409,36 @@
    "path": [
     "Keyboard",
     "Ctrl+J"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "hotkey.ctrl-shift-s",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+S",
+   "text": "Drag a tab onto the page, or Ctrl+Shift+S; Ctrl+Shift+X",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+S"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/LENS_BROWSER.md"
+   },
+   "source": "docs/LENS_BROWSER.md"
+  },
+  {
+   "id": "hotkey.ctrl-shift-x",
+   "kind": "hotkey",
+   "title": "Ctrl+Shift+X",
+   "text": "Drag a tab onto the page, or Ctrl+Shift+S; Ctrl+Shift+X",
+   "path": [
+    "Keyboard",
+    "Ctrl+Shift+X"
    ],
    "target": {
     "surface": "doc",
@@ -11767,7 +11817,7 @@
    "id": "doc.lens-browser.2",
    "kind": "doc",
    "title": "Lens Browser: Honest limits",
-   "text": "Overlays. Child webviews always draw above the UI webview, so Lens menus can't float over a page. The address suggestions hide the page while open ( browser set overlay ); everything else sits in the sidebar, top bar or side panel by design. Keyboard shortcuts (Ctrl+L, Ctrl+T, Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has focus. While a page has focus, the page gets the keys. Fixing that needs WebView2's AcceleratorKeyPressed (see \"Native WebView2 extras\"). Content blocking stops tabs from navigating to a built-in list of ad/tracker hosts (plus your own). It does not filter a page's sub-resources; WebView2's own \"strict\" tracking prevention does that once the native extras are on. The approval card shows a replica, not a screenshot. It redraws the exact element (its text and colours, measured live) and the form's fields. A real cropped capture needs ICoreWebView2::CapturePreview (",
+   "text": "Overlays. Child webviews always draw above the UI webview, so Lens menus can't float over a page. The address suggestions hide the page while open ( browser set overlay ); everything else sits in the sidebar, top bar or side panel by design. Keyboard shortcuts (Ctrl+L, Ctrl+T, Ctrl+W, Ctrl+F, Ctrl+J) work when the Lens frame has focus. While a page has focus, the page gets the keys. Fixing that needs WebView2's AcceleratorKeyPressed (see \"Native WebView2 extras\"). Content blocking (\"Lens blocks ads and trackers\", on by default): every request a page makes goes through WebView2's WebResourceRequested and Lens's own matcher ( browser/blocklist/ ) with EasyList and EasyPrivacy (downloaded weekly from easylist.to, credited in THIRD PARTY NOTICES) plus the built-in host list, which also still stops top-level navigations. Cosmetic rules (hiding page elements), regex and redirect rules are not ",
    "path": [
     "Docs",
     "Lens Browser",
@@ -15866,6 +15916,40 @@
     "surface": "doc",
     "doc": "docs/THIRD_PARTY_NOTICES.md",
     "heading": "QR code encoder"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.10",
+   "kind": "doc",
+   "title": "Third-party notices: EasyList and EasyPrivacy — filter lists, downloaded at runtime",
+   "text": "- Source: <https://easylist.to/ (EasyList, EasyPrivacy). Authors: The EasyList authors. - Licence: dual-licensed, GNU GPL v3 or Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0). - Used for: \"Lens blocks ads and trackers\" in Lens Browser. Lens downloads the two lists at runtime from easylist.to (weekly, through src-tauri/src/browser/net.rs ), keeps them in %APPDATA%\\LensUI\\browser\\filters\\ , and reads them as data. Lens does not ship, bundle or modify the lists ; they stay the EasyList authors' work under their licence. - The matcher that reads them ( src-tauri/src/browser/blocklist/rules.rs ) is Lens's own MIT code, written from the public filter syntax documentation. No code from uBlock Origin, Adblock Plus, Brave's adblock crate or any other blocker was used.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "EasyList and EasyPrivacy — filter lists, downloaded at runtime"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "EasyList and EasyPrivacy — filter lists, downloaded at runtime"
+   },
+   "source": "docs/THIRD_PARTY_NOTICES.md"
+  },
+  {
+   "id": "doc.third-party-notices.11",
+   "kind": "doc",
+   "title": "Third-party notices: Ardia — ideas only (learned from, nothing used)",
+   "text": "- Project: Ardia (ardia.dev), a Chromium browser for macOS. Licence: GPL-3.0. - Lens Browser's split view, Arc/Zen import of colours and splits, link rules, the agent command line for the person's own Claude Code / Codex, published benchmarks with their method, and a plain list of what the browser sends were learned from Ardia's public description . No code, assets, text or designs were copied; Lens's versions are its own and MIT-licensed.",
+   "path": [
+    "Docs",
+    "Third-party notices",
+    "Ardia — ideas only (learned from, nothing used)"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/THIRD_PARTY_NOTICES.md",
+    "heading": "Ardia — ideas only (learned from, nothing used)"
    },
    "source": "docs/THIRD_PARTY_NOTICES.md"
   },

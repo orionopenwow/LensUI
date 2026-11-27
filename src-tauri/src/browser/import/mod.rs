@@ -102,6 +102,12 @@ pub struct Counts {
     pub open_tabs: usize,
     pub pinned_tabs: usize,
     pub spaces: usize,
+    #[serde(default)]
+    pub folders: usize,
+    #[serde(default)]
+    pub splits: usize,
+    #[serde(default)]
+    pub rules: usize,
     /// Per-kind reasons something couldn't be read (e.g. "History: close Chrome and try again").
     pub notes: Vec<String>,
 }
@@ -130,18 +136,36 @@ pub struct ImportedVisit {
     pub last_ms: u64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ImportedTab {
     pub url: String,
     pub title: String,
     pub pinned: bool,
+    /// Folder path inside the space ("Work / Daily" for nested folders).
     pub folder: Option<String>,
+    /// Tabs with the same number were side by side in a split view.
+    pub split: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ImportedSpace {
     pub name: String,
     pub tabs: Vec<ImportedTab>,
+    /// The space's colour as `#rrggbb`, when the other browser had one.
+    pub color: Option<String>,
+    /// An emoji or short icon name.
+    pub icon: Option<String>,
+}
+
+/// A link rule from the other browser ("links from github.com open in Work").
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportedRule {
+    /// "domain" (host and its subdomains) or "contains" (text in the address).
+    pub when: String,
+    pub value: String,
+    /// The space's name in the other browser.
+    pub space: String,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -150,6 +174,7 @@ pub struct Imported {
     pub history: Vec<ImportedVisit>,
     pub tabs: Vec<ImportedTab>,
     pub spaces: Vec<ImportedSpace>,
+    pub rules: Vec<ImportedRule>,
     pub notes: Vec<String>,
 }
 
@@ -161,6 +186,10 @@ impl Imported {
             open_tabs: self.tabs.len(),
             pinned_tabs: self.tabs.iter().filter(|t| t.pinned).count() + self.spaces.iter().map(|s| s.tabs.iter().filter(|t| t.pinned).count()).sum::<usize>(),
             spaces: self.spaces.len(),
+            folders: self.spaces.iter().flat_map(|s| s.tabs.iter().filter_map(|t| t.folder.clone()).map(move |f| (s.name.clone(), f))).collect::<std::collections::HashSet<_>>().len(),
+            splits: self.spaces.iter().map(|s| s.tabs.iter().filter_map(|t| t.split).collect::<std::collections::HashSet<_>>().len()).sum::<usize>()
+                + self.tabs.iter().filter_map(|t| t.split).collect::<std::collections::HashSet<_>>().len(),
+            rules: self.rules.len(),
             notes: self.notes.clone(),
         }
     }
@@ -197,13 +226,16 @@ pub fn detect() -> Vec<Source> {
     let local = env_dir("LOCALAPPDATA");
     let roaming = env_dir("APPDATA");
     let mut out = vec![];
-    let chromium: [(&str, &str, Option<PathBuf>); 6] = [
+    let chromium: [(&str, &str, Option<PathBuf>); 7] = [
         ("chrome", "Google Chrome", local.as_ref().map(|l| l.join("Google").join("Chrome").join("User Data"))),
         ("edge", "Microsoft Edge", local.as_ref().map(|l| l.join("Microsoft").join("Edge").join("User Data"))),
         ("brave", "Brave", local.as_ref().map(|l| l.join("BraveSoftware").join("Brave-Browser").join("User Data"))),
         ("vivaldi", "Vivaldi", local.as_ref().map(|l| l.join("Vivaldi").join("User Data"))),
         ("opera", "Opera", roaming.as_ref().map(|r| r.join("Opera Software").join("Opera Stable"))),
         ("opera_gx", "Opera GX", roaming.as_ref().map(|r| r.join("Opera Software").join("Opera GX Stable"))),
+        // Dia is Chromium-based; this is where a Windows build would keep its profile (not yet
+        // confirmed on a real install: no folder, no entry).
+        ("dia", "Dia", local.as_ref().map(|l| l.join("TheBrowserCompany").join("Dia").join("User Data"))),
     ];
     for (id, label, dir) in chromium {
         if let Some(d) = dir.filter(|d| d.is_dir()) {
@@ -228,6 +260,24 @@ pub fn detect() -> Vec<Source> {
         profiles.sort_by(|a, b| a.id.cmp(&b.id));
         if !profiles.is_empty() {
             out.push(Source { browser: "firefox".into(), label: "Firefox".into(), engine: Engine::Firefox, profiles });
+        }
+    }
+    // Zen keeps a Firefox-style profile folder of its own.
+    if let Some(dir) = roaming.as_ref().map(|r| r.join("zen").join("Profiles")).filter(|d| d.is_dir()) {
+        let mut profiles = vec![];
+        if let Ok(rd) = std::fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                let p = e.path();
+                if p.join("places.sqlite").exists() {
+                    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+                    let label = name.split_once('.').map(|(_, n)| n.to_string()).unwrap_or_else(|| name.clone());
+                    profiles.push(Profile { id: name, label, dir: p });
+                }
+            }
+        }
+        profiles.sort_by(|a, b| a.id.cmp(&b.id));
+        if !profiles.is_empty() {
+            out.push(Source { browser: "zen".into(), label: "Zen".into(), engine: Engine::Firefox, profiles });
         }
     }
     if let Some(pkgs) = local.as_ref().map(|l| l.join("Packages")).filter(|d| d.is_dir()) {
@@ -290,8 +340,11 @@ pub fn read_profile(source: &Source, profile: &Profile, kinds: &Kinds) -> Import
                 }
             }
             if kinds.spaces && source.engine == Engine::Arc {
-                match read(&profile.dir.join("StorableSidebar.json"), label).and_then(|b| parse::arc_sidebar(&b)) {
-                    Ok(s) => out.spaces = s,
+                match read(&profile.dir.join("StorableSidebar.json"), label).and_then(|b| parse::arc_sidebar_full(&b)) {
+                    Ok((s, rules)) => {
+                        out.spaces = s;
+                        out.rules = rules;
+                    }
                     Err(e) => note(&mut out, "Spaces", e),
                 }
             }
@@ -310,8 +363,13 @@ pub fn read_profile(source: &Source, profile: &Profile, kinds: &Kinds) -> Import
                 let p = profile.dir.join("sessionstore-backups").join("recovery.jsonlz4");
                 let p = if p.exists() { p } else { profile.dir.join("sessionstore.jsonlz4") };
                 if p.exists() {
-                    match read(&p, label).and_then(|b| lz4::decode_mozlz4(&b)).and_then(|j| parse::firefox_session(&j)) {
-                        Ok(t) => out.tabs = t,
+                    match read(&p, label).and_then(|b| lz4::decode_mozlz4(&b)).and_then(|j| parse::firefox_session_full(&j)) {
+                        // Zen workspaces become spaces when spaces were asked for, else plain tabs.
+                        Ok((t, spaces)) if kinds.spaces => {
+                            out.tabs = t;
+                            out.spaces = spaces;
+                        }
+                        Ok((t, spaces)) => out.tabs = t.into_iter().chain(spaces.into_iter().flat_map(|s| s.tabs)).collect(),
                         Err(e) => note(&mut out, "Open tabs", e),
                     }
                 }
@@ -364,12 +422,17 @@ pub fn apply(state: &mut crate::browser::model::BrowserState, history: &mut crat
         a.history += 1;
     }
     history.trim();
-    let place = |state: &mut crate::browser::model::BrowserState, name: &str, tabs: &[ImportedTab]| -> usize {
+    let place = |state: &mut crate::browser::model::BrowserState, name: &str, tabs: &[ImportedTab], color: Option<&str>, icon: Option<&str>| -> usize {
         if tabs.is_empty() {
             return 0;
         }
         let space = state.add_space(name);
+        if let Some(sp) = state.spaces.iter_mut().find(|s| s.id == space) {
+            sp.color = color.filter(|c| crate::browser::model::valid_hex(c)).map(str::to_string);
+            sp.icon = icon.map(str::to_string);
+        }
         let mut folders: Vec<(String, String)> = vec![];
+        let mut split_tabs: Vec<(u32, String)> = vec![];
         let mut n = 0;
         for t in tabs {
             let fid = match &t.folder {
@@ -379,18 +442,31 @@ pub fn apply(state: &mut crate::browser::model::BrowserState, history: &mut crat
                 },
                 None => None,
             };
-            if state.add_sleeping_tab(&space, fid.as_deref(), &t.url, &t.title, t.pinned).is_some() {
+            if let Some(id) = state.add_sleeping_tab(&space, fid.as_deref(), &t.url, &t.title, t.pinned) {
                 n += 1;
+                if let Some(g) = t.split {
+                    split_tabs.push((g, id));
+                }
+            }
+        }
+        // Split views come back as pairs (a split of three keeps its first two).
+        let mut groups: Vec<u32> = split_tabs.iter().map(|(g, _)| *g).collect();
+        groups.sort_unstable();
+        groups.dedup();
+        for g in groups {
+            let ids: Vec<&String> = split_tabs.iter().filter(|(x, _)| *x == g).map(|(_, id)| id).collect();
+            if ids.len() >= 2 {
+                let _ = state.split_with(ids[0], ids[1]);
             }
         }
         n
     };
     if !data.tabs.is_empty() {
-        a.tabs += place(state, &format!("From {label}"), &data.tabs);
+        a.tabs += place(state, &format!("From {label}"), &data.tabs, None, None);
         a.spaces += 1;
     }
     for s in &data.spaces {
-        a.tabs += place(state, &format!("{label} · {}", s.name), &s.tabs);
+        a.tabs += place(state, &format!("{label} · {}", s.name), &s.tabs, s.color.as_deref(), s.icon.as_deref());
         a.spaces += 1;
     }
     a
@@ -419,11 +495,12 @@ mod tests {
                 ImportedBookmark { url: "https://b.test/".into(), title: "B".into(), folder: "Bookmarks bar / Recipes".into() },
             ],
             history: vec![ImportedVisit { url: "https://a.test/".into(), title: "A".into(), visits: 9, last_ms: 5 }],
-            tabs: vec![ImportedTab { url: "https://mail.test/".into(), title: "Mail".into(), pinned: true, folder: None }],
+            tabs: vec![ImportedTab { url: "https://mail.test/".into(), title: "Mail".into(), pinned: true, folder: None, ..Default::default() }],
             spaces: vec![ImportedSpace { name: "Work".into(), tabs: vec![
-                ImportedTab { url: "https://meet.test/".into(), title: "Meet".into(), pinned: true, folder: Some("Daily".into()) },
-                ImportedTab { url: "https://docs.test/".into(), title: "Docs".into(), pinned: true, folder: Some("Daily".into()) },
-            ] }],
+                ImportedTab { url: "https://meet.test/".into(), title: "Meet".into(), pinned: true, folder: Some("Daily".into()), ..Default::default() },
+                ImportedTab { url: "https://docs.test/".into(), title: "Docs".into(), pinned: true, folder: Some("Daily".into()), ..Default::default() },
+            ], ..Default::default() }],
+            rules: vec![],
             notes: vec![],
         };
         let active = st.active_space.clone();
@@ -437,6 +514,32 @@ mod tests {
         assert_eq!(st.folders.iter().filter(|f| f.name == "Daily").count(), 1);
         assert!(st.tabs.iter().all(|t| t.life == TabLife::Sleeping));
         assert_eq!(st.active_space, active, "importing doesn't switch spaces");
+    }
+
+    #[test]
+    fn apply_carries_colours_icons_and_splits_and_undo_removes_them() {
+        use crate::browser::model::{BrowserState, History};
+        let (spaces, rules) = parse::arc_sidebar_full(include_bytes!("fixtures/arc_sidebar_full.json")).unwrap();
+        let data = Imported { spaces, rules, ..Default::default() };
+        assert_eq!(data.counts().splits, 1);
+        assert_eq!(data.counts().rules, 2);
+        assert!(data.counts().folders >= 2);
+        let mut st = BrowserState::default();
+        let mut h = History::default();
+        let before = receipt::snapshot(&st, &h);
+        apply(&mut st, &mut h, &data, "Arc", 100);
+        let work = st.spaces.iter().find(|s| s.name == "Arc · Work").unwrap();
+        assert_eq!(work.color.as_deref(), Some("#3366cc"));
+        assert_eq!(work.icon.as_deref(), Some("💼"));
+        assert_eq!(st.splits.len(), 1);
+        let sp = &st.splits[0];
+        assert_eq!(st.tab(&sp.left).unwrap().url, "https://docs.example/");
+        assert_eq!(st.tab(&sp.right).unwrap().url, "https://chat.example/");
+        assert!(st.folders.iter().any(|f| f.name == "Projects / Lens"));
+        let r = receipt::receipt(&before, &st, &h, "Arc", 100);
+        receipt::undo(&mut st, &mut h, &r);
+        assert!(st.splits.is_empty(), "undo takes the split with its tabs");
+        assert_eq!(st.spaces.len(), 1);
     }
 
     #[test]
