@@ -313,10 +313,7 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
     start.current = p;
     if (tool === "livetext") {
       const hit = wordAt(shown, p);
-      if (hit && e.detail >= 2) {
-        setSel(lineSel(shown, hit.line));
-        textDrag.current = null;
-      } else if (hit && e.shiftKey && textSel) {
+      if (hit && e.shiftKey && textSel) {
         setSel({ anchor: textSel.anchor, focus: hit });
         textDrag.current = { anchor: textSel.anchor, from: p };
       } else {
@@ -529,6 +526,13 @@ export const Studio: React.FC<StudioProps> = ({ info, settings, ai, area, analys
                 onPointerDown={onDown}
                 onPointerMove={onMove}
                 onPointerUp={onUp}
+                onDoubleClick={(e) => {
+                  // Double-click a word: its whole line.
+                  if (tool !== "livetext") return;
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const hit = wordAt(shown, { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H });
+                  if (hit) setSel(lineSel(shown, hit.line));
+                }}
                 style={{ cursor: tool === "select" ? "default" : tool === "livetext" ? "text" : "crosshair" }}
               >
                 {tool === "livetext" ? <LiveTextLayer lines={shown} sel={textSel} hidden={hidden} flash={copiedFlash} stroke={Math.max(1, W / 900)} /> : null}
