@@ -134,29 +134,47 @@ const PROCESS_ALIASES: Record<string, string[]> = {
   "claude": ["claude.exe"],
 };
 
-export function matchesPinnedApp(app: PinnedApp, win: RunningWindow): boolean {
+/** The name Lens Core gives a window whose process Windows won't name (an app running as
+ *  administrator, a protected process): `win_windows.rs` falls back to it with an empty path. */
+export const UNKNOWN_PROCESS = "app.exe";
+
+/** Whether Lens knows which program a window belongs to. */
+export const processKnown = (win: RunningWindow): boolean => win.exePath !== "" || (win.processName !== "" && win.processName.toLowerCase() !== UNKNOWN_PROCESS);
+
+/** The window is this pin's own program: same file, same program name, or a known other name for it. */
+export function matchesPinExactly(app: PinnedApp, win: RunningWindow): boolean {
   const appPathLower = app.path.toLowerCase();
   const winPathLower = win.exePath.toLowerCase();
   if (appPathLower && winPathLower && appPathLower === winPathLower) return true;
+  if (!processKnown(win)) return false;
 
   const appExe = appPathLower.split("\\").pop() ?? "";
   const winProc = win.processName.toLowerCase();
   if (appExe && winProc === appExe) return true;
 
+  const aliases = PROCESS_ALIASES[appExe] || PROCESS_ALIASES[app.name.toLowerCase().trim()];
+  return !!aliases && aliases.includes(winProc);
+}
+
+/**
+ * The window probably belongs to this pin: one name contains the other ("Visual Studio Code" and
+ * code.exe, a shortcut called "Spotify" and spotify.exe). Never for a window Lens can't name
+ * (B-107: "app" is inside "WhatsApp"), and never on fewer than three letters.
+ */
+export function matchesPinLoosely(app: PinnedApp, win: RunningWindow): boolean {
+  if (!processKnown(win)) return false;
+  const appExe = app.path.toLowerCase().split("\\").pop() ?? "";
   const appNameLower = app.name.toLowerCase().trim();
-  const aliases = PROCESS_ALIASES[appExe] || PROCESS_ALIASES[appNameLower];
-  if (aliases && aliases.includes(winProc)) return true;
-
   const appStem = appExe.replace(/\.(exe|lnk|url)$/i, "");
-  const winStem = winProc.replace(/\.exe$/i, "");
-  if (appStem.length >= 3 && (appStem === winStem || appStem.includes(winStem) || winStem.includes(appStem))) {
-    return true;
-  }
-  if (appNameLower.length >= 3 && (appNameLower === winStem || appNameLower.includes(winStem))) {
-    return true;
-  }
+  const winStem = win.processName.toLowerCase().replace(/\.exe$/i, "");
+  if (winStem.length < 3) return false;
+  if (appStem.length >= 3 && (appStem.includes(winStem) || winStem.includes(appStem))) return true;
+  return appNameLower.length >= 3 && appNameLower.includes(winStem);
+}
 
-  return false;
+/** Whether a window could sit on a pin at all (used to refuse pinning the same app twice). */
+export function matchesPinnedApp(app: PinnedApp, win: RunningWindow): boolean {
+  return matchesPinExactly(app, win) || matchesPinLoosely(app, win);
 }
 
 export interface PinnedRow {
@@ -171,12 +189,24 @@ export interface WindowGroup {
   wins: RunningWindow[];
 }
 
-/** Every running window on its pinned app's slot; the rest grouped by process, in first-seen order. */
+/**
+ * Every running window on its pinned app's slot; the rest grouped by process, in first-seen order.
+ * A window sits on one pin only (DESIGN §3.4, zero duplicates): the pin that is exactly its
+ * program wins, and only a window no pin claims that way is matched by name (B-107: Notepad
+ * windows showed on both Notepad and Notepad++).
+ */
 export function assignWindows(pinnedApps: PinnedApp[], windows: RunningWindow[]): { pinnedRows: PinnedRow[]; extraGroups: WindowGroup[] } {
-  const matchedHwnds = new Set<number>();
-  const pinnedRows = pinnedApps.map((app) => {
-    const wins = windows.filter((w) => matchesPinnedApp(app, w));
-    wins.forEach((w) => matchedHwnds.add(w.hwnd));
+  const owner = new Map<number, number>();
+  for (const pass of [matchesPinExactly, matchesPinLoosely]) {
+    for (const w of windows) {
+      if (owner.has(w.hwnd)) continue;
+      const i = pinnedApps.findIndex((app) => pass(app, w));
+      if (i >= 0) owner.set(w.hwnd, i);
+    }
+  }
+  const matchedHwnds = new Set(owner.keys());
+  const pinnedRows = pinnedApps.map((app, i) => {
+    const wins = windows.filter((w) => owner.get(w.hwnd) === i);
     const focusedWin = wins.find((w) => w.isFocused) ?? wins[0];
     return { app, wins, primaryWin: focusedWin };
   });

@@ -39,11 +39,14 @@ import {
   resolveSystemArea,
   dockShowsLauncher,
 } from "../dock/styles";
-import { placeHoverCard } from "../dock/placement";
+import { placeDockMenu, placeHoverCard } from "../dock/placement";
 import { useDockReflow } from "../dock/reflow";
 import { topBarEnabled } from "../topbar/enabled";
 import { DockSystemArea } from "../dock/DockSystemArea";
+import { appLabel, dockDo, dockFail } from "../dock/act";
+import { menuIconSize, pickMenuIconSize } from "../dock/advanced";
 import { DockAppItem } from "../dock/DockAppItem";
+import { DockNotice } from "../dock/DockNotice";
 import { DockContextMenu } from "../dock/DockContextMenu";
 import { DockHoverCard, type DockCardMode } from "../dock/DockHoverCard";
 import { FallbackAppIcon } from "../dock/DockIcons";
@@ -333,6 +336,15 @@ export const DockSurface: React.FC = () => {
   }, [shownCard?.key, shownCard?.windows.length, cardMode, hoverLinger.mounted]);
   const menuLinger = useLingering(ctxMenu, { animateEnter: false, exit: { scale: 0.98, opacity: 0 }, exitOptions: { additive: true }, enterOptions: { additive: true }, enter: { scale: 0.98, opacity: 0 } });
   const shownMenu = menuLinger.value;
+  // The menu's measured size, so it is kept on screen (read once per menu, before paint).
+  const [menuSize, setMenuSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = menuLinger.ref.current as HTMLElement | null;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    setMenuSize((p) => (Math.abs(p.w - w) < 1 && Math.abs(p.h - h) < 1 ? p : { w, h }));
+  }, [ctxMenu, menuLinger.mounted]);
 
   // Keyboard: the element that opened the menu gets focus back when it closes.
   const menuOpenerRef = useRef<HTMLElement | null>(null);
@@ -671,7 +683,7 @@ export const DockSurface: React.FC = () => {
     const cur = wheelIdxRef.current[key] ?? Math.max(0, wins.findIndex((w) => w.isFocused));
     const next = (cur + (deltaY > 0 ? 1 : -1) + wins.length) % wins.length;
     wheelIdxRef.current[key] = next;
-    invoke("focus_window_cmd", { hwnd: wins[next].hwnd }).catch(logFail("Dock", "switch to the next window"));
+    invoke("focus_window_cmd", { hwnd: wins[next].hwnd }).catch(dockFail("switch to the next window"));
   };
   const updateDockExtras = (patch: DockExtras) =>
     updateConfig({ ...config, dock: { ...config.dock, ...patch } as typeof config.dock });
@@ -826,7 +838,7 @@ export const DockSurface: React.FC = () => {
   mag.params.current = { enabled: magnification !== "off" && !dockSearchOpen && !ctxMenu, vertical: isVertical, iconSize: effectiveIconSize, scale: magScale, range: magRange };
 
   const closeWindows = (wins: RunningWindow[]) =>
-    wins.forEach((w) => invoke("window_action_cmd", { hwnd: w.hwnd, action: "close" }));
+    wins.forEach((w) => void dockDo("window_action_cmd", { hwnd: w.hwnd, action: "close" }, "close the window"));
 
   activateRef.current = (n: number) => {
     const items = [
@@ -842,16 +854,16 @@ export const DockSurface: React.FC = () => {
     if (!it) return;
     triggerLaunchAnim(it.id);
     if (!it.primary) {
-      invoke("launch_app_cmd", { path: it.path });
+      void dockDo("launch_app_cmd", { path: it.path }, `open ${appLabel(it.path)}`);
       return;
     }
     const focusedIdx = it.wins.findIndex((w) => w.isFocused);
     if (focusedIdx >= 0 && it.wins.length > 1) {
       // Pressing again cycles through that app's windows.
-      invoke("focus_window_cmd", { hwnd: it.wins[(focusedIdx + 1) % it.wins.length].hwnd }).catch(logFail("Dock", "switch to that window"));
+      invoke("focus_window_cmd", { hwnd: it.wins[(focusedIdx + 1) % it.wins.length].hwnd }).catch(dockFail("switch to that window"));
     } else {
       // Same as clicking: focuses, or minimizes when already in front.
-      invoke("focus_window_cmd", { hwnd: it.primary.hwnd }).catch(logFail("Dock", "switch to that window"));
+      invoke("focus_window_cmd", { hwnd: it.primary.hwnd }).catch(dockFail("switch to that window"));
     }
   };
 
@@ -906,11 +918,11 @@ export const DockSurface: React.FC = () => {
     installedApps,
     focus: (hwnd: number) => {
       closeInDockLauncher();
-      invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
+      invoke("focus_window_cmd", { hwnd }).catch(dockFail("switch to that window"));
     },
     open: (path: string) => {
       closeInDockLauncher();
-      invoke("launch_app_cmd", { path });
+      void dockDo("launch_app_cmd", { path }, `open ${appLabel(path)}`);
     },
   };
   const recentAndRunning = homeRows(searchSources);
@@ -943,15 +955,21 @@ export const DockSurface: React.FC = () => {
           menuRef={menuLinger.ref}
           leaving={menuLinger.leaving}
           edge={edge}
-          style={
-              edge === "left"
-                ? { left: (pillRef.current?.getBoundingClientRect().right ?? 60) + 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
-                : edge === "right"
-                  ? { left: (pillRef.current?.getBoundingClientRect().left ?? window.innerWidth - 60) - 12, top: Math.max(170, Math.min(window.innerHeight - 170, shownMenu.y + effectiveIconSize / 2)) }
-                  : edge === "top"
-                    ? { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y + effectiveIconSize + 18 }
-                    : { left: Math.max(100, Math.min(window.innerWidth - 100, shownMenu.x)), top: shownMenu.y - 12 }
-            }
+          // Kept on screen and under the Top Bar from the menu's measured size (B-110).
+          style={placeDockMenu({
+            edge,
+            x: shownMenu.x,
+            y: shownMenu.y,
+            pill: { left: pillRef.current?.getBoundingClientRect().left ?? window.innerWidth - 60, right: pillRef.current?.getBoundingClientRect().right ?? 60 },
+            icon: effectiveIconSize,
+            w: menuSize.w,
+            h: menuSize.h,
+            viewW: window.innerWidth,
+            viewH: window.innerHeight,
+            topInset: edge !== "top" && topBarEnabled(config) ? (config.topBar?.height ?? 34) : 0,
+          })}
+          iconSize={menuIconSize(config)}
+          pickIconSize={(size) => updateConfig(pickMenuIconSize(config, size))}
           config={config}
           updateConfig={updateConfig}
           locked={locked}
@@ -965,7 +983,7 @@ export const DockSurface: React.FC = () => {
           openPopoutTab={(tab) => {
             setSettingsOpen(true);
             setActiveSettingsTab(tab);
-            invoke("open_dock_popout_tab_cmd", { tab });
+            void dockDo("open_dock_popout_tab_cmd", { tab }, "open Settings");
           }}
           openSearch={openInDockLauncher}
         />
@@ -995,10 +1013,10 @@ export const DockSurface: React.FC = () => {
           onFocusWindow={(hwnd) => {
             setHoverCard(null);
             void setDockMenuOpen(false);
-            invoke("focus_window_cmd", { hwnd }).catch(logFail("Dock", "switch to that window"));
+            invoke("focus_window_cmd", { hwnd }).catch(dockFail("switch to that window"));
           }}
           onCloseWindow={(hwnd) => {
-            invoke("window_action_cmd", { hwnd, action: "close" });
+            void dockDo("window_action_cmd", { hwnd, action: "close" }, "close the window");
             setHoverCard((prev) =>
               prev ? { ...prev, windows: prev.windows.filter((x) => x.hwnd !== hwnd) } : null
             );
@@ -1055,7 +1073,7 @@ export const DockSurface: React.FC = () => {
             openApp={(app) => {
               closeInDockLauncher();
               if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
-              invoke("launch_app_cmd", { path: app.path });
+              void dockDo("launch_app_cmd", { path: app.path }, `open ${app.name}`);
             }}
           />
         )}
@@ -1074,10 +1092,10 @@ export const DockSurface: React.FC = () => {
                   triggerLaunchAnim("launcher");
                   if (startOpensMagic) {
                     // The backend refuses while the Magic button is off; the Launcher is the fallback.
-                    invoke("toggle_magic_start").catch(() => invoke("toggle_surface", { label: "launcher" }).catch(logFail("Dock", "open the Launcher")));
+                    invoke("toggle_magic_start").catch(() => invoke("toggle_surface", { label: "launcher" }).catch(dockFail("open the Launcher")));
                     return;
                   }
-                  invoke("toggle_surface", { label: "launcher" }).catch(logFail("Dock", "open the Launcher"));
+                  invoke("toggle_surface", { label: "launcher" }).catch(dockFail("open the Launcher"));
                 }}
               >
                 <LayoutGrid size={19} strokeWidth={2.15} />
@@ -1176,7 +1194,7 @@ export const DockSurface: React.FC = () => {
                 const dpr = window.devicePixelRatio || 1;
                 const x = Math.round((window.screenX + r.left + r.width / 2) * dpr);
                 const top = Math.round((window.screenY + r.top) * dpr);
-                invoke("show_command_cmd", { payload: { layout: "mini", anchor: `dock:${x}:${top}` } }).catch(logFail("Dock", "open Lens Mini"));
+                invoke("show_command_cmd", { payload: { layout: "mini", anchor: `dock:${x}:${top}` } }).catch(dockFail("open Lens Mini"));
               }}
             >
               <DropSparkle
@@ -1198,7 +1216,7 @@ export const DockSurface: React.FC = () => {
               iconFor={(p) => pinnedIcons[p]}
               onLaunch={(sug) => {
                 recordDockLaunch({ key: sug.path.toLowerCase(), name: sug.name, path: sug.path });
-                invoke("launch_app_cmd", { path: sug.path });
+                void dockDo("launch_app_cmd", { path: sug.path }, `open ${sug.name}`);
               }}
             />
           )}
@@ -1213,7 +1231,7 @@ export const DockSurface: React.FC = () => {
               onOpenSettings={() => {
                 invoke("open_surface", { label: "settings" })
                   .then(() => emit("lens://settings-tab", "ai"))
-                  .catch(logFail("Dock", "open Settings"));
+                  .catch(dockFail("open Settings"));
               }}
             />
           )}
@@ -1242,7 +1260,7 @@ export const DockSurface: React.FC = () => {
             wins.some((w) => w.processName.toLowerCase().includes("spotify"));
           const launch = () => {
             if (config?.dock?.suggestedApps) recordDockLaunch({ key: app.path.toLowerCase(), name: app.name, path: app.path });
-            invoke("launch_app_cmd", { path: app.path });
+            void dockDo("launch_app_cmd", { path: app.path }, `open ${app.name}`);
           };
           return (
             <React.Fragment key={app.id}>
@@ -1280,7 +1298,7 @@ export const DockSurface: React.FC = () => {
                 setHoverCard(null);
                 triggerLaunchAnim(app.id);
                 if (primaryWin) {
-                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
+                  invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(dockFail("switch to that window"));
                 } else {
                   launch();
                 }
@@ -1349,7 +1367,7 @@ export const DockSurface: React.FC = () => {
                 if (suppressClickRef.current) return;
                 setHoverCard(null);
                 triggerLaunchAnim(`win-${primaryWin.hwnd}`);
-                invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(logFail("Dock", "switch to that window"));
+                invoke("focus_window_cmd", { hwnd: primaryWin.hwnd }).catch(dockFail("switch to that window"));
               }}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -1369,7 +1387,7 @@ export const DockSurface: React.FC = () => {
               }}
               onAuxClick={(e) => {
                 if (e.button === 1 && config.func.middleClickNewInstance && primaryWin.exePath) {
-                  invoke("launch_app_cmd", { path: primaryWin.exePath });
+                  void dockDo("launch_app_cmd", { path: primaryWin.exePath }, `open ${cleanLabel}`);
                 }
               }}
             />
@@ -1391,11 +1409,11 @@ export const DockSurface: React.FC = () => {
               triggerLaunchAnim("monitor");
               if (settingsOpen && activeSettingsTab === "monitor") {
                 setSettingsOpen(false);
-                invoke("toggle_settings_docked").catch(logFail("Dock", "open Settings"));
+                invoke("toggle_settings_docked").catch(dockFail("open Settings"));
               } else {
                 setSettingsOpen(true);
                 setActiveSettingsTab("monitor");
-                invoke("open_dock_popout_tab_cmd", { tab: "monitor" });
+                void dockDo("open_dock_popout_tab_cmd", { tab: "monitor" }, "open System and tasks");
               }
             }}
           >
@@ -1415,12 +1433,12 @@ export const DockSurface: React.FC = () => {
               triggerLaunchAnim("settings");
               if (settingsOpen && activeSettingsTab !== "monitor") {
                 setSettingsOpen(false);
-                invoke("toggle_settings_docked").catch(logFail("Dock", "open Settings"));
+                invoke("toggle_settings_docked").catch(dockFail("open Settings"));
               } else {
                 setSettingsOpen(true);
                 // The gear always opens on Quick settings, never on the page used last.
                 setActiveSettingsTab("quick");
-                invoke("open_dock_popout_tab_cmd", { tab: "quick" });
+                void dockDo("open_dock_popout_tab_cmd", { tab: "quick" }, "open Quick settings");
               }
             }}
           >
@@ -1443,7 +1461,7 @@ export const DockSurface: React.FC = () => {
         )}
         </div>
         {musicMini === "dock" && (
-          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(logFail("Dock", "open Now Playing"))} />
+          <MiniPlayer variant="dock" onOpen={() => invoke("open_surface", { label: "nowplaying" }).catch(dockFail("open Now Playing"))} />
         )}
         {voiceDock.enabled && (
           <>
@@ -1461,6 +1479,7 @@ export const DockSurface: React.FC = () => {
             <DockMicButton size={36} live={voiceDock.live} />
           </>
         )}
+        <DockNotice />
         {isBar && systemInDock && (
           <DockSystemArea
             trayHost={config.func.trayHost ?? false}

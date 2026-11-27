@@ -83,7 +83,7 @@ describe("no silent failures left in the Dock, Magic and the Dashboard", () => {
   const silent = /\.catch\(\(\) => (\{\}|undefined)\)/g;
 
   test("the Dock, its attention badges and its system area", () => {
-    for (const f of ["surfaces/DockSurface.tsx", "dock/attention.ts", "dock/DockSystemArea.tsx", "magic/LensPan.tsx", "magic/contract.ts", "magic/MagicSurface.tsx", "dashboard/DashboardWindow.tsx", "dashboard/TopBarDashboardButton.tsx"]) {
+    for (const f of ["surfaces/DockSurface.tsx", "dock/attention.ts", "dock/DockSystemArea.tsx", "dock/usePeek.ts", "dock/DockContextMenu.tsx", "dock/DockHoverCard.tsx", "dock/DockSearchDrawer.tsx", "dock/DockAppItem.tsx", "dock/act.ts", "dock/keys.ts", "topbar/clickThrough.ts", "magic/LensPan.tsx", "magic/contract.ts", "magic/MagicSurface.tsx", "dashboard/DashboardWindow.tsx", "dashboard/TopBarDashboardButton.tsx"]) {
       expect({ f, left: src(f).match(silent) ?? [] }).toEqual({ f, left: [] });
     }
   });
