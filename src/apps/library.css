@@ -293,6 +293,12 @@
 .la-lib-version.has-update {
   color: var(--lens-fg);
 }
+.la-lib-avail {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--lens-fg);
+  white-space: nowrap;
+}
 /* An update that just finished: a tick settles in next to the pill, once */
 .la-lib-done {
   width: 20px;

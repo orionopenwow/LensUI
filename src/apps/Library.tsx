@@ -1,6 +1,7 @@
 // Library: everything from the catalogue that's on this PC, what has an update, and one
 // "Update all" that asks once. Every row names who made the app and its licence, because a store
-// for other people's work owes them that. Nothing here updates by itself.
+// for other people's work owes them that. An update shows as "Update available" with a one-click
+// Update; nothing updates by itself unless "Update apps automatically" is on (off by default, B-122).
 import { Check, RefreshCw } from "lucide-react";
 import { useRef, type KeyboardEvent } from "react";
 import { Floating } from "./ActionPill";
@@ -49,6 +50,7 @@ function Row({ row, ctl, live, onOpen }: { row: LibraryRow; ctl: Ctl; live: bool
         </span>
         <span className="la-lib-meta">
           <span className={`la-mono la-lib-version${row.available ? " has-update" : ""}`}>{versionLine(row)}</span>
+          {row.available && <span className="la-lib-avail">Update available</span>}
           <LicenceChip app={app} />
         </span>
       </div>
@@ -147,7 +149,7 @@ export function Library({ ctl, live, total, onOpen, onDiscover }: { ctl: Ctl; li
         </div>
       )}
       {m.updates.length > 0 && (
-        <Section title="Updates" subtitle="Nothing updates until you say so" count={m.updates.length}>
+        <Section title="Updates" subtitle={ctl.autoUpdate ? "Apps Lens installed update on their own (Settings › Apps)" : "Nothing updates until you press Update"} count={m.updates.length}>
           <div className="la-lib-list" role="list" aria-label="Apps with an update">
             {m.updates.map((r) => (
               <Row key={r.app.id} row={r} ctl={ctl} live={live} onOpen={onOpen} />

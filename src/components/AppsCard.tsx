@@ -1,5 +1,6 @@
-// Settings › Apps: the catalogue, how updates work, thumbnails, the audit log and "Remove
-// everything Lens installed". (The two update switches that did nothing are gone: B-122.) Mount snippet: docs/LENS_APPS.md §1.
+// Settings › Apps: the catalogue, how updates work (manual by default, with an opt-in "Update apps
+// automatically" that is off by default: B-122), thumbnails, the audit log and "Remove everything
+// Lens installed". Mount snippet: docs/LENS_APPS.md §1.
 import { useEffect, useState } from "react";
 import { toast } from "../ui/toastBus";
 import { auditLog, checkForNewApps, lensInstalled, loadCatalog, loadSettings, runAndWait, saveSettings } from "../apps/api";
@@ -55,14 +56,16 @@ export function AppsCard({ demo }: { demo?: { settings?: AppsSettings; installed
       </div>
       {refresh && <div className="la-fine">{refresh}</div>}
 
-      <div className="la-setting">
+      <label className="la-setting">
         <span className="la-setting-text">
-          <span>Updates</span>
+          <span>Update apps automatically</span>
           <span className="la-fine">
-            Lens checks when you open Lens Apps or press Check again in the Library above. Nothing updates by itself: Update, or Update all, asks once and shows each source.
+            Off by default. Lens checks when you open Lens Apps or press Check again, and shows Update available with a one-click Update; nothing updates by itself. On: each check also
+            updates the apps Lens installed through winget, from the same source, and lists them in Activity below. Apps you installed yourself always wait for you.
           </span>
         </span>
-      </div>
+        <input type="checkbox" checked={settings.autoUpdate === true} onChange={(e) => update({ autoUpdate: e.target.checked })} />
+      </label>
       <label className="la-setting">
         <span className="la-setting-text">
           <span>Live thumbnails</span>

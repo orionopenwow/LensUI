@@ -38,16 +38,29 @@ const shows = createShowcases(desk, {
   },
 });
 playBtn.addEventListener("click", () => (shows.paused ? shows.play() : shows.pause()));
-// Each tour's tab carries the icon of the thing it shows (the shared icon set; two drawn glyphs).
-const SC_SVG = {
-  docks: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="15" width="18" height="5" rx="2.5"/><path d="M7 17.5h.01M10.5 17.5h.01M14 17.5h.01M17.5 17.5h.01"/><rect x="5" y="4" width="14" height="8" rx="2"/></svg>`,
-  themes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><path d="M7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01"/></svg>`,
-  magic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`,
-  agent: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5"/></svg>`,
+// Each tour's tab carries an icon drawn like Lens's own app icons (DESIGN.md §3.7, src/icons/lensApps.ts):
+// a bold white glyph (stroke 2.5 on a 24 px grid, round caps) on the plain #18181B tile with one 10 %
+// hairline, no gradient, glow or tint. One idea each, distinct at 22 px. Lens Browser keeps the Lens
+// logo (media/icons/lens-browser.svg, the same flat tile the app draws).
+const SC_GLYPH = {
+  // A window above the dock.
+  docks: "<path d='M7 4h10a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM5.5 15h13a2.5 2.5 0 0 1 0 5h-13a2.5 2.5 0 0 1 0-5z'/>",
+  // A mouse with its right button marked.
+  magic: "<path d='M12 3a6 6 0 0 1 6 6v6a6 6 0 0 1-12 0V9a6 6 0 0 1 6-6zM12 3v6h6'/>",
+  // One look, light and dark: a circle, half filled.
+  themes: "<path d='M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'/><path d='M12 3a9 9 0 0 1 0 18z' fill='#FAFAFA'/>",
+  // The agent's pointer with a spark.
+  agent: "<path d='M5 5l5.5 14 2.2-6.3L19 10.5zM18.5 2.5v4M16.5 4.5h4'/>",
 };
-const SC_IMG = { browser: "lens-browser" };
-const scIcon = (id) => SC_SVG[id] ? `<span class="sc-ic g" aria-hidden="true">${SC_SVG[id]}</span>` : `<span class="sc-ic" aria-hidden="true"><img src="${iconUrl(SC_IMG[id] ?? "lens-command")}" alt="" width="28" height="28"></span>`;
-scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}">${scIcon(s.id)}<span class="sc-tx"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></span></button>`).join("");
+const scTile = (glyph) =>
+  "<svg viewBox='0 0 64 64' width='22' height='22' aria-hidden='true' focusable='false'>" +
+  "<rect x='2' y='2' width='60' height='60' rx='15' fill='#18181B'/><rect x='2.5' y='2.5' width='59' height='59' rx='14.5' fill='none' stroke='white' stroke-opacity='.1'/>" +
+  `<g transform='translate(12.5 12.5) scale(1.625)' fill='none' stroke='#FAFAFA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'>${glyph}</g></svg>`;
+const scIcon = (id) =>
+  SC_GLYPH[id]
+    ? `<span class="sc-ic" aria-hidden="true">${scTile(SC_GLYPH[id])}</span>`
+    : `<span class="sc-ic" aria-hidden="true"><img src="${iconUrl(id === "browser" ? "lens-browser" : "lens-command")}" alt="" width="22" height="22"></span>`;
+scTabs.innerHTML = shows.list.map((s, k) => `<button type="button" role="tab" aria-selected="false" tabindex="${k ? -1 : 0}" data-sc="${s.id}" aria-label="${esc(s.title)}: ${esc(s.line)}">${scIcon(s.id)}<span class="sc-tx"><b>${esc(s.title)}</b><span>${esc(s.line)}</span></span></button>`).join("");
 scTabs.addEventListener("click", (e) => {
   const t = e.target.closest("[data-sc]");
   if (!t) return;
