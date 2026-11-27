@@ -39,6 +39,12 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             &quit_item,
         ],
     )?;
+    // Dev builds with Mission Control (docs/MISSION_CONTROL.md) get its entry above Quit.
+    #[cfg(feature = "admin")]
+    {
+        let mission = MenuItem::with_id(app, crate::mission::TRAY_ID, crate::mission::TRAY_LABEL, true, None::<&str>)?;
+        menu.insert(&mission, 7)?;
+    }
 
     // No bundled icon (or a tray failure) must never take the whole shell down.
     let mut tray_builder = TrayIconBuilder::new();
@@ -73,6 +79,8 @@ pub(crate) fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             // "Report a problem" sheet.
             "check_updates" => open_settings_at(app, "about#updates", Some("lens://update-check-now")),
             "report_problem" => open_settings_at(app, "about#report", None),
+            #[cfg(feature = "admin")]
+            crate::mission::TRAY_ID => crate::mission::open(app),
             "quit" => {
                 crate::commands::power::restore_before_exit(app);
                 app.exit(0);

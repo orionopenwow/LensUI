@@ -39,8 +39,11 @@ if exist "%BUILT%" (
     if errorlevel 2 goto :built
 )
 
+rem Dev builds include Mission Control (docs/MISSION_CONTROL.md): the maintainer's admin window,
+rem in the tray as "Mission Control (dev)". Release builds never have it.
+set "LENS_ADMIN=1"
 echo [Lens] Starting the dev build...
-call bun run tauri dev
+call bun run tauri dev --features admin
 goto :end
 
 :built

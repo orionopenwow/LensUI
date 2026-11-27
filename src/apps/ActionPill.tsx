@@ -96,12 +96,15 @@ export function ConfirmPopover({ app, mode, show, showError, prepared, via, onCo
     rows.push(["Licence", target.license]);
     if (repo) rows.push(["Size", "shown once it's downloaded and checked"]);
   }
-  const verb = mode === "run" ? "Run installer" : mode === "uninstall" ? "Uninstall" : mode === "update" ? `Update${show?.version ? ` to ${show.version}` : ""}` : via ? `Get ${via.name}` : "Get";
+  const portable = !!(target.install as { portable?: boolean }).portable;
+  const verb = mode === "run" ? "Run installer" : mode === "uninstall" ? (portable ? "Remove" : "Uninstall") : mode === "update" ? `Update${show?.version ? ` to ${show.version}` : ""}` : via ? `Get ${via.name}` : "Get";
   const method =
     mode === "run"
       ? "GitHub release, verified"
       : mode === "uninstall"
-        ? "Runs the app's own uninstaller"
+        ? portable
+          ? "Deletes the copy Lens keeps in its apps folder"
+          : "Runs the app's own uninstaller"
         : isWinget
           ? "via winget · hash-checked before it runs"
           : "GitHub release · checked before it runs";
@@ -136,10 +139,10 @@ export function ConfirmPopover({ app, mode, show, showError, prepared, via, onCo
       )}
       {showError && <div className="la-fine la-warn-inline">{showError}</div>}
       <div className="la-pop-actions">
-        <button className="la-btn" onClick={onClose}>
+        <button className="la-btn" data-weight="medium" onClick={onClose}>
           Cancel <kbd>Esc</kbd>
         </button>
-        <button className={`la-btn la-btn-primary${mode === "uninstall" ? " la-btn-danger" : ""}`} onClick={onConfirm} disabled={isWinget && mode === "get" && !show && !showError}>
+        <button className={`la-btn la-btn-primary${mode === "uninstall" ? " la-btn-danger" : ""}`} data-weight="heavy" onClick={onConfirm} disabled={isWinget && mode === "get" && !show && !showError}>
           {verb} <kbd>⏎</kbd>
         </button>
       </div>
@@ -149,7 +152,7 @@ export function ConfirmPopover({ app, mode, show, showError, prepared, via, onCo
 
 /** Renders `children` in a layer on <body>, fixed below-right of the anchor (so rails that scroll
  *  horizontally never clip it). Closes on scroll or resize. */
-function Floating({ anchor, children, width, onClose }: { anchor: RefObject<HTMLElement | null>; children: ReactNode; width: number; onClose: () => void }) {
+export function Floating({ anchor, children, width, onClose }: { anchor: RefObject<HTMLElement | null>; children: ReactNode; width: number; onClose: () => void }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const layer = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -218,13 +221,41 @@ export interface PillProps {
 export function ActionPill({ app, kind, job, item, popover, menu = true, installed, onPrimary, onCancel, onDetails, onUninstall, onReveal, compact }: PillProps) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const more = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // The menu takes focus when it opens and gives it back to "⋯" when it closes from the keyboard.
+  useEffect(() => {
+    if (open) menuRef.current?.querySelector<HTMLButtonElement>("[role=menuitem]")?.focus();
+  }, [open]);
+  const closeMenu = (refocus: boolean) => {
+    setOpen(false);
+    if (refocus) more.current?.focus();
+  };
+  const menuKeys = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      return closeMenu(true);
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+    const rows = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]") ?? [])];
+    const i = rows.indexOf(document.activeElement as HTMLButtonElement);
+    const to = e.key === "Home" ? 0 : e.key === "End" ? rows.length - 1 : (i + (e.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
+    rows[to]?.focus();
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  // Apps Lens keeps itself are removed by deleting its copy; winget apps by their own uninstaller.
+  const removable = app.install.method === "winget" || !!(app.install as { portable?: boolean }).portable;
+  // No "⋯" when it would open an empty menu.
+  const hasMenu = menu && (!!onDetails || (!!installed && (!!onReveal || (!!onUninstall && removable))));
   const busy = kind === "running" || kind === "queued";
   const label = kind === "running" ? (job ? STAGE_LABEL[job.stage] : "Starting") : PILL_LABEL[kind];
   const pct = kind === "running" ? (job && !job.finished ? (job.stage === "installing" && job.overall >= 99 ? null : job.overall) : null) : kind === "queued" ? 0 : null;
   return (
-    <div ref={wrap} className={`la-pill-wrap${compact ? " compact" : ""}`} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+    <div ref={wrap} className={`la-pill-wrap${compact ? " compact" : ""}`} onClick={(e) => e.stopPropagation()}>
       <button
         className={`la-pill la-pill-${kind}`}
+        data-weight={kind === "open" || busy ? "medium" : "heavy"}
         onClick={busy ? onCancel : onPrimary}
         aria-label={busy ? `Cancel ${app.name} (${label})` : `${label} ${app.name}`}
       >
@@ -241,27 +272,27 @@ export function ActionPill({ app, kind, job, item, popover, menu = true, install
           </>
         )}
       </button>
-      {menu && (
-        <button className="la-pill-more" aria-label={`More for ${app.name}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      {hasMenu && (
+        <button ref={more} className="la-pill-more" data-weight="medium" aria-label={`More for ${app.name}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <Ellipsis size={14} />
         </button>
       )}
       {open && (
         <Floating anchor={wrap} width={180} onClose={() => setOpen(false)}>
-        <div className="la-menu" role="menu" onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
+        <div ref={menuRef} className="la-menu" role="menu" aria-label={`More for ${app.name}`} onKeyDown={menuKeys}>
           {onDetails && (
-            <button role="menuitem" onClick={() => (setOpen(false), onDetails())}>
+            <button role="menuitem" data-weight="light" onClick={() => (setOpen(false), onDetails())}>
               Details
             </button>
           )}
           {installed && onReveal && (
-            <button role="menuitem" onClick={() => (setOpen(false), onReveal())}>
+            <button role="menuitem" data-weight="light" onClick={() => (setOpen(false), onReveal())}>
               <FolderOpen size={13} /> Show in folder
             </button>
           )}
-          {installed && onUninstall && app.install.method === "winget" && (
-            <button role="menuitem" className="la-menu-danger" onClick={() => (setOpen(false), onUninstall())}>
-              <Trash2 size={13} /> Uninstall
+          {installed && onUninstall && removable && (
+            <button role="menuitem" data-weight="light" className="la-menu-danger" onClick={() => (setOpen(false), onUninstall())}>
+              <Trash2 size={13} /> {app.install.method === "winget" ? "Uninstall" : "Remove"}
             </button>
           )}
         </div>

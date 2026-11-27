@@ -2,6 +2,7 @@
 // Layout: a single calm column (input + context strip + body + hints) with an optional Shelf drawer.
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { isMissionControlPhrase } from "./missionPhrase";
 import { listen } from "@tauri-apps/api/event";
 import {
   AppWindow, Archive, ArrowUp, ClipboardList, Command as CommandIcon, CornerDownLeft, File as FileIcon, Globe, Lock,
@@ -446,6 +447,14 @@ export function CommandSurface({ initial }: { initial?: CommandInitial } = {}) {
       setText("");
       await hide();
       void openDashboard().then((err) => err && flash(err, false));
+      return;
+    }
+
+    // "mission control" opens Lens Mission Control in dev builds (docs/MISSION_CONTROL.md).
+    if (typeof __LENS_ADMIN__ !== "undefined" && __LENS_ADMIN__ && !template && isMissionControlPhrase(rest)) {
+      setText("");
+      await hide();
+      void invoke("mc_open").catch(() => {});
       return;
     }
 
