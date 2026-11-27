@@ -2,16 +2,127 @@
 // Do not edit by hand.
 export const BUILD_INFO: unknown = {
   "version": "0.3.0",
-  "sha": "0db55154d2c397bde6428107c7ecc971af52080b",
-  "builtAt": "2026-11-26T23:23:32.206Z",
-  "branch": "feature/browser-ardia-lessons",
+  "sha": "abc33147801174ab7614274f20e1b37fb8b313e9",
+  "builtAt": "2026-11-27T00:31:28.874Z",
+  "branch": "fable/apps-20261126",
   "commits": [
+    {
+      "sha": "abc33147801174ab7614274f20e1b37fb8b313e9",
+      "subject": "Lens Apps: Library (installed, updates, Update all), credits and licences in plain words, screenshot gallery",
+      "date": "2026-11-26T17:21:00-07:00",
+      "files": [
+        "src/__tests__/appsLibrary.test.ts",
+        "src/apps/ActionPill.tsx",
+        "src/apps/AppsSurface.tsx",
+        "src/apps/Detail.tsx",
+        "src/apps/Gallery.tsx",
+        "src/apps/LensApps.tsx",
+        "src/apps/Library.tsx",
+        "src/apps/api.ts",
+        "src/apps/approval.ts",
+        "src/apps/apps-settings.css",
+        "src/apps/apps.css",
+        "src/apps/library.css"
+      ]
+    },
+    {
+      "sha": "d5904ad88e0a06941048fda9757dba1674d74050",
+      "subject": "Merge pull request #117 from orionopenwow/feature/dock-unified",
+      "date": "2026-11-26T17:05:22-07:00",
+      "files": [],
+      "pr": 117
+    },
+    {
+      "sha": "46babca10e3e7bbd155d0f25c955fa4836e57e0d",
+      "subject": "Merge pull request #121 from orionopenwow/site/accent-and-app-thumbs",
+      "date": "2026-11-26T16:38:20-07:00",
+      "files": [],
+      "pr": 121
+    },
+    {
+      "sha": "0fec783f958b9bf8decf802b99b5c0be28660108",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T16:28:09-07:00",
+      "files": [
+        "docs/brain/generated/loc.md",
+        "docs/brain/generated/patterns.md",
+        "docs/brain/generated/prs.md"
+      ]
+    },
+    {
+      "sha": "bc2b908af1abf75155e92c4a1bbfa5cb2adce811",
+      "subject": "Merge remote-tracking branch 'origin/main' into feature/dock-unified",
+      "date": "2026-11-26T16:27:59-07:00",
+      "files": []
+    },
+    {
+      "sha": "3dd13f7581197a42fc629b4c58da4d2f469a4325",
+      "subject": "Goldens: Dock & Bar settings (Catppuccin Mocha) with the Unified style card, from the CI log",
+      "date": "2026-11-26T16:27:58-07:00",
+      "files": [
+        "tools/parity/golden/settings-dock-catppuccin-mocha-1024x700.png"
+      ]
+    },
+    {
+      "sha": "123a5f3061635b2f07ecf35cc2a122475a44932b",
+      "subject": "Merge pull request #125 from orionopenwow/fix/magic-start-esc",
+      "date": "2026-11-26T16:26:14-07:00",
+      "files": [],
+      "pr": 125
+    },
+    {
+      "sha": "0dea2da4eba1071ca708c50392c9bbf8ea5620c6",
+      "subject": "Site: open on the Dock widget, Magic Mouse, an agentic desk the Lens cursor drives, readable captions",
+      "date": "2026-11-26T16:16:03-07:00",
+      "files": [
+        "docs/site/css/site.css",
+        "docs/site/js/desk.js",
+        "docs/site/js/exhibits.js",
+        "docs/site/js/guide.js",
+        "docs/site/js/hero.js",
+        "docs/site/js/home.js",
+        "tools/site/check.mjs",
+        "tools/site/live/build-live.mjs",
+        "tools/site/live/surfaces/snip.ts",
+        "tools/site/live/surfaces/voice.tsx",
+        "tools/site/pages.mjs"
+      ]
+    },
+    {
+      "sha": "578e69f7e63dd0eb799b68eaeef54f25bbf03d91",
+      "subject": "Magic Start: Esc works even before keyboard focus reaches the panel",
+      "date": "2026-11-26T15:56:42-07:00",
+      "files": [
+        "src/__tests__/magicStart.test.ts",
+        "src/magic/start/MagicStartWindow.tsx"
+      ]
+    },
+    {
+      "sha": "5392d41ed567adc8130d396d188230c1b4083d33",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T15:48:57-07:00",
+      "files": []
+    },
+    {
+      "sha": "a0e8a091ee091509f3f9202c7173767c8739c2ce",
+      "subject": "Dock: drop the old music card's mediaInfo from the hover card's measure deps (the new DockMusicCard measures itself)",
+      "date": "2026-11-26T15:48:41-07:00",
+      "files": [
+        "src/surfaces/DockSurface.tsx"
+      ]
+    },
     {
       "sha": "0db55154d2c397bde6428107c7ecc971af52080b",
       "subject": "Merge pull request #118 from orionopenwow/wave/settings-polish",
       "date": "2026-11-26T15:47:04-07:00",
       "files": [],
       "pr": 118
+    },
+    {
+      "sha": "8cfaca790433578cfbfdd99234e18162a606fd55",
+      "subject": "Merge main; regenerate generated files",
+      "date": "2026-11-26T15:10:00-07:00",
+      "files": []
     },
     {
       "sha": "0dc0ccdabc52816f4ed137f0c335e33db9220cb0",
@@ -27,9 +138,54 @@ export const BUILD_INFO: unknown = {
       "pr": 120
     },
     {
+      "sha": "158622c88f29ca512df92a36d3074509a4f20985",
+      "subject": "Dock carousel and clock report failures through failsafe/calls (#119 rules)",
+      "date": "2026-11-26T14:30:47-07:00",
+      "files": [
+        "src/dock/DockSystemArea.tsx",
+        "src/dock/DockWindowCarousel.tsx",
+        "src/surfaces/DockSurface.tsx"
+      ],
+      "pr": 119
+    },
+    {
+      "sha": "878095f7bdd3a57dc94a900e506b50d9cfcc3349",
+      "subject": "Site: accents that visibly repaint the lab desk; Lens Apps cards with real screenshots and credits",
+      "date": "2026-11-26T14:30:24-07:00",
+      "files": [
+        "catalog/apps/catalog.json",
+        "catalog/apps/schema.json",
+        "docs/media/apps/affine.webp",
+        "docs/media/apps/artcraft.webp",
+        "docs/media/apps/concat.webp",
+        "docs/media/apps/deckcraft.webp",
+        "docs/media/apps/degenview.webp",
+        "docs/media/apps/gridcraft.webp",
+        "docs/media/apps/ollama.webp",
+        "docs/media/apps/thumbdesk.webp",
+        "docs/media/apps/wordcraft.webp",
+        "docs/site/css/lab-accent.css"
+      ]
+    },
+    {
+      "sha": "3eb4488b267d65c40cb4e465bb764b69e3a78800",
+      "subject": "Include Unified in the side-edge Dock E2E loop and the soak style list",
+      "date": "2026-11-26T14:29:56-07:00",
+      "files": [
+        "tests/e2e/autohide.mjs",
+        "tools/soak/run.mjs"
+      ]
+    },
+    {
       "sha": "5f5ed99f10d9c512738445a188cd94b64d9e2238",
       "subject": "Merge main; regenerate generated files",
       "date": "2026-11-26T14:29:52-07:00",
+      "files": []
+    },
+    {
+      "sha": "2773dd7e4ff8665baa4a038f6951fbedcf63602c",
+      "subject": "Merge origin/main into feature/dock-unified; rebuild guide index",
+      "date": "2026-11-26T14:29:25-07:00",
       "files": []
     },
     {
@@ -57,6 +213,19 @@ export const BUILD_INFO: unknown = {
       "date": "2026-11-26T14:14:31-07:00",
       "files": [],
       "pr": 119
+    },
+    {
+      "sha": "75e663bd19eedacdcffbe63d0967600d11bda64b",
+      "subject": "Dock search: tray and clock in the row step aside while searching; update Dock & Bar goldens",
+      "date": "2026-11-26T14:13:31-07:00",
+      "files": [
+        "docs/features/dock.md",
+        "src/surfaces/DockSurface.css",
+        "src/surfaces/DockSurface.tsx",
+        "tools/parity/golden/settings-dock-alabaster-daylight-1024x700.png",
+        "tools/parity/golden/settings-dock-catppuccin-mocha-1024x700.png",
+        "tools/parity/golden/settings-dock-obsidian-1024x700.png"
+      ]
     },
     {
       "sha": "fee473443589f384cd43bd27293b9f0b6730bbc0",
@@ -129,10 +298,43 @@ export const BUILD_INFO: unknown = {
       ]
     },
     {
+      "sha": "53379908cc3b4c87c258fc15278b788005c2a8b6",
+      "subject": "Refresh brain line counts after merging main",
+      "date": "2026-11-26T13:46:55-07:00",
+      "files": [
+        "docs/brain/generated/loc.md"
+      ]
+    },
+    {
+      "sha": "0255ca3ecae1bab14c30494f857607cf76cc0b09",
+      "subject": "Merge remote-tracking branch 'origin/main' into feature/dock-unified",
+      "date": "2026-11-26T13:46:28-07:00",
+      "files": []
+    },
+    {
       "sha": "9c4704cec7cb600bdd3d847f9d2e56fccb90cf08",
       "subject": "Merge main into wave/settings-polish",
       "date": "2026-11-26T13:46:27-07:00",
       "files": []
+    },
+    {
+      "sha": "ca19bb8c13caad698d8a11e0b242615c89eb2306",
+      "subject": "Dock: Unified style, window-count marks, window carousel, smooth reflow, Launcher pins",
+      "date": "2026-11-26T13:46:27-07:00",
+      "files": [
+        "CHANGELOG.md",
+        "DESIGN.md",
+        "docs/DOCK_STYLES.md",
+        "docs/brain/generated/loc.md",
+        "docs/brain/generated/patterns.md",
+        "docs/brain/generated/prs.md",
+        "docs/features/dock.md",
+        "src-tauri/src/ai/intent.rs",
+        "src-tauri/src/ai/tools.rs",
+        "src-tauri/src/app/flyout_geom.rs",
+        "src-tauri/src/app/watcher.rs",
+        "src-tauri/src/config.rs"
+      ]
     },
     {
       "sha": "25de59dbe7d098eb86319b33ddf25c92e50340cb",
@@ -288,311 +490,6 @@ export const BUILD_INFO: unknown = {
         "src/command/CommandSurface.tsx",
         "src/command/cards/Cards.tsx",
         "src/command/examples.ts"
-      ]
-    },
-    {
-      "sha": "634542210b8699b3d3d1723f0a2b848f4a83c36b",
-      "subject": "control: Engine::new is test-only now (the app always uses the journal)",
-      "date": "2026-11-26T12:14:19-07:00",
-      "files": [
-        "src-tauri/src/control/engine.rs"
-      ]
-    },
-    {
-      "sha": "0aa3242a6f210bda2da4f54258c5b27714e19df9",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-26T12:11:32-07:00",
-      "files": []
-    },
-    {
-      "sha": "4116c6e683e58f307e4819cff2236c9cc1163b9b",
-      "subject": "Guard the new cards against empty backend answers",
-      "date": "2026-11-26T12:10:27-07:00",
-      "files": [
-        "src/components/BackupRestoreCard.tsx",
-        "src/components/SafetyCard.tsx",
-        "src/components/ShortcutsCard.tsx",
-        "src/components/WindowAppsCard.tsx",
-        "src/safety/model.ts"
-      ]
-    },
-    {
-      "sha": "fbf312ffb64670f22bfa2ac7c96d00f0193108d2",
-      "subject": "Remove-all preview, Command preview announced, window-buttons wording; dossiers and BUGS",
-      "date": "2026-11-26T12:09:29-07:00",
-      "files": [
-        "docs/brain/BUGS.md",
-        "docs/features/README.md",
-        "docs/features/command.md",
-        "docs/features/setup-updates-safety.md",
-        "docs/features/windows-styling.md",
-        "src/__tests__/safetyCard.test.ts",
-        "src/command/Command.css",
-        "src/command/CommandSurface.tsx",
-        "src/components/AgentsPane.tsx",
-        "src/components/BackupRestoreCard.tsx",
-        "src/i18n/locales/en.ts",
-        "src/safety/model.ts"
-      ]
-    },
-    {
-      "sha": "2c2bac69dea5bcf03733ae110611d7e251133a59",
-      "subject": "magic-start E2E: wait for the key hook, report its status, log each Win tap",
-      "date": "2026-11-26T12:07:46-07:00",
-      "files": [
-        "src-tauri/src/commands/magic_start.rs",
-        "tests/e2e/run.mjs"
-      ]
-    },
-    {
-      "sha": "0903e3ff9587bf649f95c4361be01ad649dedaa6",
-      "subject": "Quick wins: mirror says why it is empty, Monitor copies a process line, clicked actions report failures; dossiers and BUGS.md updated",
-      "date": "2026-11-26T12:07:04-07:00",
-      "files": [
-        "docs/brain/BUGS.md",
-        "docs/features/README.md",
-        "docs/features/cleaner.md",
-        "docs/features/core-apps.md",
-        "docs/features/music.md",
-        "src-tauri/src/commands/messages.rs",
-        "src-tauri/src/lib.rs",
-        "src-tauri/src/messages/mod.rs",
-        "src-tauri/src/messages/tests.rs",
-        "src/__tests__/coreapps.test.ts",
-        "src/cleaner/CleanerApp.tsx",
-        "src/components/MessagesCard.tsx"
-      ]
-    },
-    {
-      "sha": "9da13bf9f769f4be6eb7ef4259f166f9042d66f7",
-      "subject": "Snip off Save As, honest Updates card, Safety card, per-app buttons, Teach me",
-      "date": "2026-11-26T12:06:53-07:00",
-      "files": [
-        "CHANGELOG.md",
-        "README.md",
-        "docs/RELEASING.md",
-        "docs/WINDOW_STYLING.md",
-        "src-tauri/src/commands/failsafe.rs",
-        "src-tauri/src/commands/release.rs",
-        "src-tauri/src/commands/rules.rs",
-        "src-tauri/src/commands/snip.rs",
-        "src-tauri/src/input.rs",
-        "src-tauri/src/lib.rs",
-        "src-tauri/src/presence/esc.rs",
-        "src-tauri/src/snip/config.rs"
-      ]
-    },
-    {
-      "sha": "95c0f2b2bdc8ce78badf8854943682025de98783",
-      "subject": "Docs and test isolation: dossier status, BUGS B-43/B-44, per-runtime token store",
-      "date": "2026-11-26T12:05:42-07:00",
-      "files": [
-        "docs/AI.md",
-        "docs/BROWSER_AAA.md",
-        "docs/LENS_BROWSER.md",
-        "docs/brain/BUGS.md",
-        "docs/features/ai-agents.md",
-        "docs/features/browser.md",
-        "src-tauri/src/ai/mod.rs",
-        "src-tauri/src/ai/tests.rs",
-        "src/__tests__/stepTokens.test.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts"
-      ]
-    },
-    {
-      "sha": "2c5bfa6a2cc1a9273663f54bd4c8922b1600c1d5",
-      "subject": "Dock: Advanced section for the hidden settings; per-monitor bars follow the main bar",
-      "date": "2026-11-26T12:05:08-07:00",
-      "files": [
-        "src-tauri/src/app/integration.rs",
-        "src-tauri/src/app/watcher.rs",
-        "src-tauri/src/win_monitors.rs",
-        "src/__tests__/dockAdvanced.test.ts",
-        "src/__tests__/perMonitorBars.test.ts",
-        "src/components/MonitorPickerCard.tsx",
-        "src/dock/advanced.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/settings/registry.ts",
-        "src/surfaces/ControlCenterSurface.tsx",
-        "src/themeux/DockTab.tsx"
-      ]
-    },
-    {
-      "sha": "8a3defe1e13903a35c000ad4a6d63d722161348c",
-      "subject": "Music: opt-in lyrics on the desktop (one click-through line under the Top Bar)",
-      "date": "2026-11-26T12:04:29-07:00",
-      "files": [
-        "docs/MUSIC.md",
-        "src-tauri/src/commands/music.rs",
-        "src-tauri/src/music/desktop_lyrics.rs",
-        "src-tauri/src/music/mod.rs",
-        "src/__tests__/music.test.ts",
-        "src/components/MusicCard.tsx",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/main.tsx",
-        "src/music/LyricsLineSurface.tsx",
-        "src/music/model.ts",
-        "src/music/music.css"
-      ]
-    },
-    {
-      "sha": "553817868dd55f404f3adbf4fcace732313d0568",
-      "subject": "Quick wins: browser failures are shown, permission timeout says so, plain consent wording",
-      "date": "2026-11-26T12:00:51-07:00",
-      "files": [
-        "src-tauri/src/ai/mod.rs",
-        "src-tauri/src/ai/privacy.rs",
-        "src-tauri/src/browser/permissions.rs",
-        "src/__tests__/browserOops.test.ts",
-        "src/ai/surfaceApi.ts",
-        "src/browser/AgentPanel.tsx",
-        "src/browser/AiPanel.tsx",
-        "src/browser/BookmarksPanel.tsx",
-        "src/browser/BrowserSurface.tsx",
-        "src/browser/CustomisePanel.tsx",
-        "src/browser/ImportPanel.tsx",
-        "src/browser/ResultCards.tsx"
-      ]
-    },
-    {
-      "sha": "4f672763fde01892575b53b36523f8cbac5a16e8",
-      "subject": "Themes: merge packs that only differed by Dock; Dock out of the distance; audit",
-      "date": "2026-11-26T11:59:22-07:00",
-      "files": [
-        "docs/THEMES_AUDIT.md",
-        "docs/THEMES_CLAUDE.md",
-        "src/__tests__/communityThemes.test.ts",
-        "src/__tests__/themes.test.ts",
-        "src/control/catalogue.json",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/themes/distance.ts",
-        "src/themes/featured.ts",
-        "src/themes/packs.ts",
-        "tools/themes/audit.ts"
-      ]
-    },
-    {
-      "sha": "05238c2fd6f02d2e61e4e162c2d3ce958249953f",
-      "subject": "Cleaner: 'Where did my space go?' timeline on Home from the daily snapshots",
-      "date": "2026-11-26T11:59:00-07:00",
-      "files": [
-        "docs/CLEANER.md",
-        "src-tauri/src/cleaner/history.rs",
-        "src-tauri/src/cleaner/tests.rs",
-        "src-tauri/src/commands/cleaner.rs",
-        "src-tauri/src/lib.rs",
-        "src/__tests__/cleaner.test.ts",
-        "src/cleaner/CleanerApp.tsx",
-        "src/cleaner/Home.tsx",
-        "src/cleaner/api.ts",
-        "src/cleaner/cleaner.css",
-        "src/cleaner/model.ts",
-        "src/cleaner/types.ts"
-      ]
-    },
-    {
-      "sha": "9c0e1a04d444fbae933105c2c05a70c8303f7685",
-      "subject": "Plan view: several steps at once, with Allow / Deny per step",
-      "date": "2026-11-26T11:58:10-07:00",
-      "files": [
-        "src-tauri/src/ai/mod.rs",
-        "src-tauri/src/ai/tests.rs",
-        "src/__tests__/approvalPlan.test.ts",
-        "src/__tests__/stepTokens.test.ts",
-        "src/ai/AskPanel.tsx",
-        "src/ai/contract.ts",
-        "src/approval/ApprovalCard.css",
-        "src/approval/ApprovalSurface.tsx",
-        "src/approval/PlanCard.tsx",
-        "src/approval/index.ts",
-        "src/approval/plan.ts",
-        "tools/parity/approval/entry.tsx"
-      ]
-    },
-    {
-      "sha": "851e498e19079766e842ff85ec77a7ad6d40e0e9",
-      "subject": "Merge remote-tracking branch 'origin/main' into fable/dock-topbar-settings-themes",
-      "date": "2026-11-26T11:55:19-07:00",
-      "files": []
-    },
-    {
-      "sha": "2b67b5a5176ddd3940dbd7541fbca346c2953e03",
-      "subject": "Settings: theme choices restore exactly (B-39), one Notifications page, \"Lens Apps\"",
-      "date": "2026-11-26T11:55:07-07:00",
-      "files": [
-        "src/__tests__/settingsHub.test.ts",
-        "src/__tests__/themeChoiceUndo.test.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts",
-        "src/settings/pages/FocusPage.tsx",
-        "src/settings/pages/LensAppsPage.tsx",
-        "src/settings/pages/QuickPage.tsx",
-        "src/settings/pages/common.ts",
-        "src/settings/registry.ts",
-        "src/settings/simple/SimpleView.tsx",
-        "src/surfaces/ControlCenterSurface.tsx",
-        "src/surfaces/QuickSettingsSurface.tsx"
-      ]
-    },
-    {
-      "sha": "dc0b8d010553a7e629dabb0e1e2845455fec6158",
-      "subject": "Merge main; regenerate generated files",
-      "date": "2026-11-26T11:54:45-07:00",
-      "files": []
-    },
-    {
-      "sha": "fb13b90648ba2faf8d6b38fdecec20aab9f80adf",
-      "subject": "One uninstall path: Cleaner hands apps over to Startup & Uninstall",
-      "date": "2026-11-26T11:54:06-07:00",
-      "files": [
-        "docs/CLEANER.md",
-        "docs/CORE_APPS.md",
-        "src-tauri/src/cleaner/apps.rs",
-        "src-tauri/src/cleaner/tests.rs",
-        "src-tauri/src/commands/cleaner.rs",
-        "src-tauri/src/commands/coreapps.rs",
-        "src-tauri/src/lib.rs",
-        "src/cleaner/CleanerApp.tsx",
-        "src/cleaner/Extras.tsx",
-        "src/cleaner/api.ts",
-        "src/coreapps/CoreAppSurface.tsx",
-        "src/coreapps/apps/StartupUninstall.tsx"
-      ]
-    },
-    {
-      "sha": "c8bf4c8072d654dd0e5ad5451c1552d9db00c781",
-      "subject": "Reader view: sizes and widths as classes (no inline style); guide index rebuilt",
-      "date": "2026-11-26T11:53:51-07:00",
-      "files": [
-        "src/__tests__/browserReader.test.ts",
-        "src/browser/Browser.css",
-        "src/browser/Pages.tsx",
-        "src/browser/reader.ts",
-        "src/guide/index.json",
-        "src/guide/indexData.ts"
-      ]
-    },
-    {
-      "sha": "82e2e9887cc3dd767944532e190deb20548ed2d2",
-      "subject": "Window buttons: one shared anti-cheat list, exclusions, fullscreen, style and side",
-      "date": "2026-11-26T11:52:56-07:00",
-      "files": [
-        "docs/KEYHOOK.md",
-        "src-tauri/src/app/setup.rs",
-        "src-tauri/src/caption_paint.rs",
-        "src-tauri/src/caption_rules.rs",
-        "src-tauri/src/commands/theme.rs",
-        "src-tauri/src/control/catalogue.rs",
-        "src-tauri/src/lib.rs",
-        "src-tauri/src/tests/win_rules.rs",
-        "src-tauri/src/win_altdrag.rs",
-        "src-tauri/src/win_caption_engine.rs",
-        "src-tauri/src/win_cursor_fx.rs",
-        "src-tauri/src/win_keyhook.rs"
       ]
     }
   ],

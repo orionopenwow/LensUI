@@ -20,6 +20,7 @@ import type {
   UndoResult,
   Verdict,
 } from "./types";
+import { quiet } from "../ui/oops";
 
 export const EVENTS = {
   progress: "lens://cleaner/progress",
@@ -64,7 +65,8 @@ export function on<T>(event: string, fn: (payload: T) => void): () => void {
       if (dead) u();
       else un = u;
     })
-    .catch(() => {});
+    // No event bridge (tests, a closing window): the screen keeps what it has.
+    .catch(quiet);
   return () => {
     dead = true;
     un?.();

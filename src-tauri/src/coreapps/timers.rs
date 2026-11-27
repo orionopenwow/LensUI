@@ -92,6 +92,18 @@ pub const MAX_ITEMS: usize = 50;
 
 const DAY_MS: i64 = 86_400_000;
 
+/// A ring this long after its time is said to be late (the PC slept, or Lens wasn't running).
+pub const LATE_MS: i64 = 90_000;
+
+/// " · rang late: …" for a ring that came well after its time, else nothing.
+fn late_note(due: i64, now: i64) -> &'static str {
+    if now - due > LATE_MS {
+        " · late: the PC was asleep or Lens wasn't running"
+    } else {
+        ""
+    }
+}
+
 /// Next time an alarm at `hour:minute` (local, `tz_offset_min` east of UTC) rings after `now_ms`.
 /// `weekdays` bit 0 = Monday … bit 6 = Sunday; 0 means "any day" (once).
 pub fn next_alarm(now_ms: i64, tz_offset_min: i32, hour: u8, minute: u8, weekdays: u8) -> i64 {
@@ -285,10 +297,10 @@ impl TimerStore {
                     t.ends_at_ms = None;
                     t.remaining_ms = 0;
                     t.done = true;
-                    out.push(Fired { id: t.id, title: t.label.clone(), body: format!("Time's up · {}", fmt_len(t.duration_ms)), dnd: None });
+                    out.push(Fired { id: t.id, title: t.label.clone(), body: format!("Time's up · {}{}", fmt_len(t.duration_ms), late_note(end, now)), dnd: None });
                 }
                 TimerKind::Alarm => {
-                    out.push(Fired { id: t.id, title: t.label.clone(), body: format!("Alarm · {:02}:{:02}", t.hour, t.minute), dnd: None });
+                    out.push(Fired { id: t.id, title: t.label.clone(), body: format!("Alarm · {:02}:{:02}{}", t.hour, t.minute, late_note(end, now)), dnd: None });
                     if t.weekdays == 0 {
                         t.ends_at_ms = None;
                         t.paused = true;
@@ -343,9 +355,47 @@ impl TimerStore {
             .map(|end| clock(end - now))
     }
 
-    /// Something is counting down (the background thread ticks every second only then).
-    pub fn active(&self) -> bool {
-        self.items.iter().any(|t| t.ends_at_ms.is_some())
+    /// A timer or pomodoro is counting down, so the Dock badge and the window change every
+    /// second. An alarm alone is not: nothing on screen moves until it rings (B-125).
+    pub fn counting(&self) -> bool {
+        self.items.iter().any(|t| t.kind != TimerKind::Alarm && t.ends_at_ms.is_some())
+    }
+
+    /// How long the background thread may sleep: one second while something counts down,
+    /// otherwise until the next alarm is due, and never more than `idle_ms` (so a changed clock or
+    /// time zone is noticed).
+    pub fn sleep_ms(&self, now: i64, idle_ms: i64) -> i64 {
+        if self.counting() {
+            return 1000;
+        }
+        let next = self.items.iter().filter_map(|t| t.ends_at_ms).min();
+        match next {
+            Some(end) => (end - now).clamp(50, idle_ms),
+            None => idle_ms,
+        }
+    }
+
+    /// Keeps alarms on local time when the PC's offset from UTC changes: daylight saving starting
+    /// or ending, or a move to another time zone (B-124). An alarm stores the offset it was set
+    /// with, so without this a 07:00 alarm rang at 06:00 or 08:00 after the clocks changed.
+    /// Alarms that are already due are left for `tick` to ring first. Returns true when anything
+    /// changed.
+    pub fn retime_alarms(&mut self, tz_offset_min: i32, now: i64) -> bool {
+        let tz = tz_offset_min.clamp(-14 * 60, 14 * 60);
+        let mut changed = false;
+        for t in &mut self.items {
+            if t.kind != TimerKind::Alarm || t.tz_offset_min == tz {
+                continue;
+            }
+            match t.ends_at_ms {
+                Some(end) if end <= now => continue,
+                Some(_) => t.ends_at_ms = Some(next_alarm(now, tz, t.hour, t.minute, t.weekdays)),
+                None => {}
+            }
+            t.tz_offset_min = tz;
+            changed = true;
+        }
+        changed
     }
 }
 
@@ -391,7 +441,7 @@ mod tests {
         assert_eq!(s.badge(MON_9 + 1000), Some("2:59".into()));
         assert!(s.tick(MON_9 + 60_000).is_empty());
         s.pause(id, MON_9 + 60_000).unwrap();
-        assert!(!s.active());
+        assert!(!s.counting());
         assert!(s.tick(MON_9 + 10 * 60_000).is_empty(), "paused timers never ring");
         s.resume(id, MON_9 + 10 * 60_000).unwrap();
         assert_eq!(s.items[0].ends_at_ms, Some(MON_9 + 12 * 60_000));
@@ -454,6 +504,82 @@ mod tests {
         assert_eq!(s.items.iter().filter(|t| t.kind == TimerKind::Pomodoro).count(), 1);
         // Removing during focus says "restore DND".
         assert!(s.remove(id2));
+    }
+
+    #[test]
+    fn alarms_follow_the_clock_change() {
+        // 07:00 every day, set in summer at UTC+2 (so 05:00 UTC). MON_9 is 11:00 local.
+        let mut s = TimerStore::default();
+        let id = s.add_alarm("Up", 7, 0, 0x7F, 120, MON_9).unwrap();
+        let summer = MON_9 - 4 * 3_600_000 + DAY_MS;
+        assert_eq!(s.items[0].ends_at_ms, Some(summer));
+        // Nothing to do while the offset is the same.
+        assert!(!s.retime_alarms(120, MON_9));
+        // The clocks go back to UTC+1: 07:00 local is now 06:00 UTC, an hour later than stored.
+        assert!(s.retime_alarms(60, MON_9 + 60_000));
+        assert_eq!(s.items[0].ends_at_ms, Some(summer + 3_600_000));
+        assert_eq!(s.items[0].tz_offset_min, 60);
+        // It rings at 07:00 on the new clock, not at 06:00.
+        assert!(s.tick(summer + 1000).is_empty(), "06:00 local: too early");
+        let f = s.tick(summer + 3_600_000);
+        assert_eq!(f.len(), 1);
+        assert_eq!(f[0].body, "Alarm · 07:00");
+        // A switched-off alarm keeps its place but learns the new offset for when it is resumed.
+        s.pause(id, summer + 3_600_000).unwrap();
+        assert!(s.retime_alarms(120, summer + 3_600_000));
+        assert_eq!(s.items[0].ends_at_ms, None);
+        s.resume(id, summer + 3_600_000 + 1000).unwrap();
+        assert_eq!(s.items[0].ends_at_ms, Some(summer + DAY_MS));
+        // An alarm that is already due is rung first, never moved past its time.
+        let mut d = TimerStore::default();
+        d.add_alarm("Due", 9, 30, 0, 0, MON_9).unwrap();
+        assert!(!d.retime_alarms(60, MON_9 + 31 * 60_000));
+        assert_eq!(d.tick(MON_9 + 31 * 60_000).len(), 1);
+        // Timers and pomodoros count real time and never move.
+        let mut t = TimerStore::default();
+        t.add_timer("Tea", 180, MON_9).unwrap();
+        assert!(!t.retime_alarms(60, MON_9));
+        assert_eq!(t.items[0].ends_at_ms, Some(MON_9 + 180_000));
+    }
+
+    #[test]
+    fn a_ring_after_sleep_says_it_is_late_and_rings_once() {
+        let mut s = TimerStore::default();
+        s.add_timer("Tea", 180, MON_9).unwrap();
+        let daily = s.add_alarm("Stand up", 9, 30, 0x7F, 0, MON_9).unwrap();
+        // The PC wakes three hours later: both are overdue.
+        let woke = MON_9 + 3 * 3_600_000;
+        let f = s.tick(woke);
+        assert_eq!(f.len(), 2);
+        assert_eq!(f[0].body, "Time's up · 3 min · late: the PC was asleep or Lens wasn't running");
+        assert_eq!(f[1].body, "Alarm · 09:30 · late: the PC was asleep or Lens wasn't running");
+        // The repeating alarm moves to tomorrow (one ring for the missed one, not a burst).
+        let d = s.items.iter().find(|t| t.id == daily).unwrap();
+        assert_eq!(d.ends_at_ms, Some(MON_9 + 30 * 60_000 + DAY_MS));
+        assert!(s.tick(woke + 1000).is_empty());
+        // On time (within the tick's own slack) says nothing extra.
+        let mut p = TimerStore::default();
+        p.add_timer("Tea", 180, MON_9).unwrap();
+        assert_eq!(p.tick(MON_9 + 180_000 + LATE_MS)[0].body, "Time's up · 3 min");
+    }
+
+    #[test]
+    fn an_alarm_alone_does_not_keep_the_thread_awake() {
+        let mut s = TimerStore::default();
+        assert_eq!(s.sleep_ms(MON_9, 5000), 5000);
+        let alarm = s.add_alarm("Later", 10, 0, 0, 0, MON_9).unwrap();
+        assert!(!s.counting(), "an alarm changes nothing on screen until it rings");
+        assert_eq!(s.sleep_ms(MON_9, 5000), 5000);
+        // Close to its time the sleep shortens, so it rings on the minute.
+        assert_eq!(s.sleep_ms(MON_9 + 3_600_000 - 1200, 5000), 1200);
+        assert_eq!(s.sleep_ms(MON_9 + 3_600_000 + 10, 5000), 50);
+        let t = s.add_timer("Tea", 180, MON_9).unwrap();
+        assert!(s.counting());
+        assert_eq!(s.sleep_ms(MON_9, 5000), 1000);
+        s.pause(t, MON_9).unwrap();
+        assert!(!s.counting());
+        s.remove(alarm);
+        assert_eq!(s.sleep_ms(MON_9, 5000), 5000);
     }
 
     #[test]

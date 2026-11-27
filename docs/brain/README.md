@@ -71,6 +71,7 @@ Three things to hold in your head:
 | [FLOWS.md](FLOWS.md) | You are changing UX: 12 end-to-end flows with their friction points and fixes. |
 | [../WINDHAWK_REPLACEMENT.md](../WINDHAWK_REPLACEMENT.md) | You touch window styling: how Lens can drop the Windhawk dependency (recommendation: out-of-process first, opt-in allowlisted hook only if needed). |
 | [LANDSCAPE.md](LANDSCAPE.md) | You need to know what Seelen, Raycast, PowerToys, Windhawk, Dia, Comet, Beeper, Wallpaper Engine and Windows itself did lately, and what Lens should do about it. |
+| [../MISSION_CONTROL.md](../MISSION_CONTROL.md) | You run the project day to day: the dev-only admin window (CI, PRs, bugs, suggestions, real-PC checks, releases), its setup and its safety rules. |
 | [FABLE_NEXT.md](FABLE_NEXT.md) | You are the next big pass. Paste-ready prompt, waves, gates and a first-30-minutes checklist. |
 | `generated/*.md` | Machine-made inventories: commands, windows/routes, LOC, bug-pattern counts, open PRs. |
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { loadReducer, type Load } from "../models/load";
+import { quiet } from "../../ui/oops";
 
 /** True while the window is visible. Every poll in the core apps stops while it's false. */
 export function useVisible(): boolean {
@@ -56,7 +57,8 @@ export function useLoad<T>(
   useEffect(() => {
     if (!events) return;
     const un = events.split(",").map((e) => listen(e, () => reload()));
-    return () => un.forEach((p) => p.then((f) => f()).catch(() => {}));
+    // Unsubscribing while the window closes: nothing to tell anyone.
+    return () => un.forEach((p) => p.then((f) => f()).catch(quiet));
   }, [events, reload]);
   const set = useCallback((d: T) => setState((s) => loadReducer(s, { type: "ok", data: d, empty: isEmpty.current ? isEmpty.current(d) : false })), []);
   return { ...state, reload, set };

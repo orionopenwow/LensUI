@@ -66,6 +66,13 @@ const STATES = [
   // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
   { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },
   { id: "deskwidgets-edit", surface: "deskwidgets", params: "magic=desktopWidgets&desk=edit", sizes: [[1600, 900], [1366, 768]] },
+  // Lens Mission Control (dev builds only, docs/MISSION_CONTROL.md), every page on sample data.
+  ...["pulse", "prs", "bugs", "suggestions", "checks", "roadmap", "quality", "releases", "dev", "local", "agents", "brain", "setup"].map((p) => ({
+    id: `mission-${p}`,
+    surface: "missioncontrol",
+    params: `mcmock=1&page=${p}`,
+    sizes: [[1180, 760]],
+  })),
 ];
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta

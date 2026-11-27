@@ -2,7 +2,7 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (27)
+## Declared windows (29)
 
 | Label | Visible at start | Size |
 |---|---|---|
@@ -22,6 +22,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `edgeshelf` | no (on demand) | 6×96 |
 | `bubble` | no (on demand) | 32×32 |
 | `testerhub` | no (on demand) | 760×860 |
+| `missioncontrol` | no (on demand) | 1180×760 |
 | `studio` | no (on demand) | 1280×820 |
 | `voicehud` | no (on demand) | 480×560 |
 | `conversation` | no (on demand) | 960×640 |
@@ -33,8 +34,9 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `dashboard` | no (on demand) | 440×720 |
 | `snip` | no (on demand) | 800×600 |
 | `magic` | no (on demand) | 360×440 |
+| `deskwidgets` | no (on demand) | 1280×720 |
 
-## Frontend routes (33) — `index.html?surface=<id>`
+## Frontend routes (34) — `index.html?surface=<id>`
 
 | Route | Module | Window |
 |---|---|---|
@@ -57,6 +59,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `snip` | `./snip/SnipSurface` | declared |
 | `magic` | `./magic/MagicSurface` | declared |
 | `dashboard` | `./dashboard/DashboardWindow` | declared |
+| `deskwidgets` | `./deskwidgets/DeskWidgetsSurface` | declared |
 | `magicstart` | `./magic/start/MagicStartWindow` | declared |
 | `testerhub` | `./tester/TesterHubSurface` | declared |
 | `focusdim` | `./surfaces/FocusDimSurface` | built at runtime |
