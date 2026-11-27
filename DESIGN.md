@@ -74,6 +74,14 @@
 - **Startup Setup Wizard (`SetupWizard.tsx`):** Greets first-run users (`onboardingCompleted === false`) and is re-launchable anytime from the sidebar. 5 live-preview steps: *Welcome → Pick a look (6 recommended packs) → Pick a Dock (Floating, Slim, Taskbar, Split, Unified) → Work with Windows (hide taskbar, start with Windows) → Done (summary, self-test, where settings live)*. Every step can be skipped (skipping also undoes that step's changes), Back always works, Alt+←/→ change step and Esc leaves.
 - **Theme & Look tab:** top to bottom — *Current theme* hero (live preview, accent swatches + wheel, Dark/Light/Auto, glass opacity, roundness, blur, tint) → *Choose a theme* (6 recommended, "Browse all" with filters and search) → *Customise* collapsible sections that show a one-line summary when closed. Dock and shell options live in Dock & Top Bar.
 
+### 3.7 Lens's Own App Icons
+- **One set, one source:** every Lens app that shows up *as an app* (Dock pins, Lens Apps, Search, Command, the core-app title bar, the website's demo desks) draws its icon from `src/icons/lensApps.ts`; the Rust Dock-pin icons (`src-tauri/src/coreapps/mod.rs`) and the site (`tools/site/lib/icons.mjs`) use the same tile and glyphs, and a test keeps them identical.
+- **The look:** a bold white glyph (`#FAFAFA`, stroke `2.5` on a 24 px grid, round caps and joins, one idea per icon) on a plain matte tile (`#18181B`, 15/64 corner radius) with one faint `10 %` white hairline. **No effects:** no gradient, glow, shadow, inner highlight, filter, colour or per-app tint. Icons must stay distinct at 16–24 px.
+- **Every theme, same tile:** the dark tile is kept on light themes too. On a dark dock the hairline separates it; on a light dock the tile itself is the edge (~15:1), and the glyph is ~17:1 on the tile either way. A light tile would vanish into a light dock (~1.1:1).
+- **Lens Browser is the one exception:** it keeps the Lens logo (a silver lens with the colour inside), drawn flat on the same tile so it stays crisp at icon sizes: solid ring, soft colour, no turbulence, blur, drop shadow, stars or pinstripe rims.
+- **The full rainbow logo is for brand moments only** (site hero and logo, About, installer, tray, the Lens orb): never as an app icon.
+- **Third-party app icons are untouched:** full colour, never filtered (§1).
+
 ---
 
 ## 4. Signature Interactive Controls

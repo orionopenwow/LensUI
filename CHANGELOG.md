@@ -85,6 +85,11 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **The Top Bar no longer stays up after Lens was briefly busy.** If Lens's window watcher was held up
+  for a couple of seconds (most often right after start-up), an auto-hidden Top Bar could stay on
+  screen until the pointer touched the top edge; it now hides as soon as the watcher runs again.
+- **A click outside the Launcher closes it even when Windows didn't give it the focus.** It used to
+  stay open behind your apps until you opened and closed it again.
 - **Alarms keep their time when the clocks change.** A Lens Timer alarm set for 07:00 rang at 06:00
   or 08:00 after daylight saving started or ended, or after a move to another time zone. Alarms now
   follow the PC's local time. A timer or alarm that comes due while the PC is asleep says it is
@@ -170,6 +175,11 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Lens's own app icons are simpler and bolder.** Monitor, Timer, Notes, Calculator, Color, Power,
+  Network, Clipboard, Startup, Feeds and Messages (in the Dock, Search, Command and their title
+  bars), and Lens's apps on the website, now share one set: a thick white glyph on a plain dark
+  tile, with no colours, gradients or glow, so they stay readable at small sizes. Lens Browser keeps
+  the Lens logo, redrawn flat so it is crisp in the Dock. Other apps' icons are unchanged.
 - **Lens Apps, the core apps, Cleaner, Feeds and Messages feel like the rest of Lens.** Every button
   declares a press weight for the new press system, small controls have 32 px targets, Lens Cleaner
   uses the shared motion timings, and Lens Apps draws only with theme colours (the danger button's

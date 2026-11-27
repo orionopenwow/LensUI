@@ -78,6 +78,7 @@ Prices above are starting suggestions from the launch plan, not researched figur
 - Lucide-style line icons, bold strokes (~2–2.6), no bubbles or double borders around standalone utility icons.
 - Icon chips (26 px, 8 px radius, matte fill + hairline) only where an icon names a control (Quick settings tiles); filled with the accent when that control is on.
 - App icons keep their own colours. Dock attention uses Windows-orange by default.
+- Lens's own app icons are one set (`src/icons/lensApps.ts`, DESIGN.md §3.7): a bold white glyph on a plain matte tile, no effects. Lens Browser alone wears the Lens logo; the rainbow logo is otherwise kept for brand moments, not app icons.
 
 ### 3.4 Motion
 

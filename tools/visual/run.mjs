@@ -64,6 +64,8 @@ const STATES = [
   // Full motion (not reduced) so the pressed depth (scale, travel, knob squash) is in the frame;
   // the screenshot's animation freeze lands every transition on its end state.
   { id: "feel", surface: "feel", page: "feel/index.html", forceHover: "[data-force-hover]", motion: true, sizes: [[960, 600]] },
+  // Lens's own app icons (src/icons/lensApps.ts, DESIGN.md §3.7): the whole set at 16/24/32/48 px.
+  { id: "iconsheet", surface: "iconsheet", sizes: [[420, 1080]] },
   // Lens Mission Control (dev builds only, docs/MISSION_CONTROL.md), every page on sample data.
   ...["pulse", "prs", "bugs", "suggestions", "checks", "roadmap", "quality", "releases", "dev", "local", "agents", "brain", "setup"].map((p) => ({
     id: `mission-${p}`,
