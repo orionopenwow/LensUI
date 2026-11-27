@@ -4,7 +4,6 @@
 // from js/exhibits.js. Nothing touches your system.
 import { reducedMotion } from "./site.js";
 import { createDesk, getPacks, APPS, OVERS } from "./desk.js";
-import { ACCENTS } from "./themelab.js";
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const $ = (s, r = document) => r.querySelector(s);
@@ -45,50 +44,116 @@ document.querySelectorAll(".hero [data-dl]").forEach((a) => {
 
 window.lensSite = { ...(window.lensSite ?? {}), detectOS, APPS, OVERS };
 
-// ---- the Dock widget: the real top bar and dock in a short strip of desktop ---------------------------
-// Pick a style, an edge or an accent and the real DockSurface changes in place, with its own transition.
-export const DOCKS = [
-  ["floating", "Floating", "A glass pill that floats above your windows.", {}],
-  ["slim", "Slim", "The same dock, thinner and quieter.", {}],
-  ["taskbar", "Taskbar", "Full width, like Windows, with Lens physics.", {}],
-  ["studio", "Studio", "Labels and room to breathe, for big screens.", {}],
-  ["minimal", "Minimal", "Just the icons. Nothing else.", {}],
-  ["split", "Split", "Apps on one side, status on the other.", {}],
-  ["islands", "Islands", "Grouped pills, Linux-rice style.", {}],
-  ["islands", "Expressive", "Islands with soft, bold shapes and its own pack.", { shape: "expressive", pack: "lens-expressive" }],
-  ["islands", "Dot Matrix", "Islands drawn in dots, with its own pack.", { shape: "dotmatrix", pack: "lens-dot-matrix" }],
-];
-const EDGES = [["bottom", "Bottom"], ["top", "Top"], ["left", "Left"], ["right", "Right"]];
+// ---- the Dock widget: the real top bar and dock on a short strip of desktop ---------------------------
+// Three steps, Style → Edge → Accent. The cards are drawn by tools/site/pages.mjs from the app's own
+// DOCK_STYLES (src/dock/styles.ts) with its own DockStylePreview drawing, so a new style shows up here by
+// itself. Picking one changes the real DockSurface in place, with its own transition, and the caption
+// under the desk says in plain words what changed (crossfading in the direction of travel, DESIGN §5.3).
+const cards = (sel) => [...document.querySelectorAll(`${sel} [role=radio]`)];
+/** [style, name, line, { shape, pack }] for each style card, in the page's order. */
+export const DOCKS = cards("#dw-styles").map((b) => [b.dataset.style, b.dataset.label, b.dataset.line, { ...(b.dataset.shape ? { shape: b.dataset.shape } : {}), ...(b.dataset.pack ? { pack: b.dataset.pack } : {}) }]);
+const EDGES = cards("#dw-edges").map((b) => [b.dataset.edge, b.dataset.label, b.dataset.line]);
 const ink = (h) => { const n = parseInt(h.slice(1, 7), 16); return (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? "#09090b" : "#fafafa"; };
-/** A radio group with arrow keys: items are buttons with role=radio; pick(i) is called on change. */
+/**
+ * A radio group of buttons with role=radio and a roving tabindex: arrow keys (and Home/End) move and
+ * pick, as a radio group does. A `.dw-ind` in the group is the selection ring: it slides to the
+ * picked option (transform only). pick(i, dir) is called on change, dir = +1 forward, -1 back.
+ */
 function radios(el, pick) {
   const all = () => [...el.querySelectorAll("[role=radio]")];
-  const set = (i, { focus = false } = {}) => { all().forEach((b, k) => { b.setAttribute("aria-checked", String(k === i)); b.tabIndex = k === i ? 0 : -1; }); if (focus) all()[i]?.focus(); };
-  el.addEventListener("click", (e) => { const b = e.target.closest("[role=radio]"); if (!b) return; const i = all().indexOf(b); set(i); pick(i); });
+  const ind = el.querySelector(".dw-ind");
+  const cur = () => all().findIndex((b) => b.getAttribute("aria-checked") === "true");
+  const place = (instant = false) => {
+    const b = all()[cur()];
+    if (!ind || !b || !b.offsetWidth) return;
+    if (instant) ind.style.transition = "none";
+    Object.assign(ind.style, { width: `${b.offsetWidth}px`, height: `${b.offsetHeight}px`, transform: `translate3d(${b.offsetLeft}px, ${b.offsetTop}px, 0)` });
+    ind.classList.add("is-on");
+    if (instant) { void ind.offsetWidth; ind.style.transition = ""; }
+  };
+  const set = (i, { focus = false } = {}) => {
+    all().forEach((b, k) => { b.setAttribute("aria-checked", String(k === i)); b.tabIndex = k === i ? 0 : -1; });
+    place();
+    const b = all()[i];
+    if (focus) b?.focus({ preventScroll: true });
+    // In the phone strip, bring the picked card into view without moving the page.
+    if (b && el.scrollWidth > el.clientWidth + 1) { const l = b.offsetLeft - (el.clientWidth - b.offsetWidth) / 2; el.scrollTo({ left: l, behavior: reducedMotion() ? "auto" : "smooth" }); }
+  };
+  const go = (i, opts) => { const was = cur(); if (i === was) return; set(i, opts); pick(i, i > was ? 1 : -1); };
+  el.addEventListener("click", (e) => { const b = e.target.closest("[role=radio]"); if (b) go(all().indexOf(b)); });
   el.addEventListener("keydown", (e) => {
-    const bs = all(), i = bs.findIndex((b) => b.getAttribute("aria-checked") === "true");
-    const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!d) return;
+    const bs = all(), i = cur();
+    const n = e.key === "Home" ? 0 : e.key === "End" ? bs.length - 1 : { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key] != null ? (i + { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key] + bs.length) % bs.length : null;
+    if (n == null) return;
     e.preventDefault();
-    const n = (i + d + bs.length) % bs.length; set(n, { focus: true }); pick(n);
+    go(n, { focus: true });
   });
-  return set;
+  // The pressed state shows for at least 90 ms, even on the quickest click (DESIGN §5.1).
+  el.addEventListener("pointerdown", (e) => {
+    const b = e.target.closest("[role=radio]"); if (!b) return;
+    const t0 = performance.now(); b.classList.add("is-pressed");
+    const up = () => { removeEventListener("pointerup", up); removeEventListener("pointercancel", up); setTimeout(() => b.classList.remove("is-pressed"), Math.max(0, 90 - (performance.now() - t0))); };
+    addEventListener("pointerup", up); addEventListener("pointercancel", up);
+  });
+  new ResizeObserver(() => place(true)).observe(el);
+  place(true);
+  return { set, cur };
+}
+/** A line that crossfades to new text with a 6 px slide in the direction of travel (DESIGN §5.3). */
+function crossfade(box, html, dir = 1) {
+  box.querySelectorAll(".is-out").forEach((n) => n.remove());
+  const old = box.querySelector(".dw-info-t");
+  const nu = document.createElement("span");
+  nu.className = "dw-info-t"; nu.innerHTML = html;
+  if (!old || reducedMotion()) { box.replaceChildren(nu); return; }
+  old.classList.add("is-out");
+  box.append(nu);
+  const gone = () => old.remove();
+  old.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translate3d(${-6 * dir}px, 0, 0)` }], { duration: 120, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }).finished.then(gone, gone);
+  nu.animate([{ opacity: 0, transform: `translate3d(${6 * dir}px, 0, 0)` }, { opacity: 1, transform: "none" }], { duration: 180, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
 }
 {
   const host = $("#dock-desk");
   if (host) {
-    const dock = createDesk(host, { label: "Lens top bar and dock, live", layout: [], ratio: 0.3, mobileRatio: 0.62, accentLayer: true, hint: false, running: ["browser", "music", "notes"] });
-    const info = $("#dock-info");
-    let style = 0, edge = 0, acc = null;
-    const say = () => { const [, name, line] = DOCKS[style]; info.innerHTML = `<b>${esc(name)}</b> on the ${esc(EDGES[edge][1].toLowerCase())} edge${acc ? `, ${esc(ACCENTS.find(([h]) => h === acc)?.[1] ?? acc)} accent` : ""}. <span>${esc(line)}</span>`; };
+    // A desk a little closer than the lab's, so the dock reads: 1360 design px wide, not 1600.
+    const dock = createDesk(host, { label: "Lens top bar and dock, live", layout: [], ratio: 0.36, mobileRatio: 0.7, designW: 1360, accentLayer: true, hint: false, running: ["browser", "music", "notes"] });
+    // A matte Lens backdrop over the theme's ambient scene: soft light in the accent and the Lens cloud's
+    // hues, plus a faint horizon, so the dock has something to sit on (gradients only, no blur).
+    dock.canvas.querySelector(".lx-bg")?.insertAdjacentHTML("beforeend", '<div class="dw-wall" aria-hidden="true"><i class="dw-wall-a"></i><i class="dw-wall-b"></i><i class="dw-wall-h"></i></div>');
+    const w = $("#dockw"), info = $("#dock-info"), hint = $("#dw-style-hint"), accName = $("#dw-acc-name");
+    let style = 0, edge = 0, acc = null, accLabel = "Theme's own", basePack = null, shownPack = null;
+    const now = () => `<span class="dw-now">${esc(DOCKS[style][1])} · ${esc(EDGES[edge][1])}${acc ? ` · ${esc(accLabel)}` : ""}</span>`;
+    const say = (html, dir) => crossfade(info, `${html} ${now()}`, dir);
     const packFor = async (id) => (await getPacks()).find((p) => p.id === id);
-    let basePack = null;
-    const applyPack = async () => { const o = DOCKS[style][3]; const p = (o.pack && (await packFor(o.pack))) || basePack; if (p) dock.setPack(p, { acc }); };
-    radios($("#dw-styles"), (i) => { style = i; const [st, , , o] = DOCKS[i]; dock.dockStyle(st, o.shape ?? "classic"); applyPack(); say(); });
-    radios($("#dw-edges"), (i) => { edge = i; dock.dockEdge(EDGES[i][0]); say(); });
-    radios($("#dw-acc"), (i) => { const b = $("#dw-acc").querySelectorAll("[role=radio]")[i]; acc = b.dataset.acc || null; applyPack(); dock.wash(acc || basePack?.accent || "#fafafa"); say(); });
-    packFor(isLightSite() ? "alabaster-daylight" : "obsidian").then((p) => { basePack = p; dock.setPack(p); const a = $("#dw-acc .auto"); if (a && p) { a.style.setProperty("--c", p.accent); a.style.setProperty("--on", ink(p.accent)); } });
-    say();
+    const tint = () => { const c = acc || shownPack?.accent || basePack?.accent || "#fafafa"; w.style.setProperty("--dw-acc", c); w.style.setProperty("--dw-on", ink(c)); };
+    const applyPack = async () => { const o = DOCKS[style][3]; const p = (o.pack && (await packFor(o.pack))) || basePack; shownPack = p; if (p) dock.setPack(p, { acc }); tint(); };
+    const styleCards = radios($("#dw-styles"), (i, dir) => {
+      style = i; const [st, name, line, o] = DOCKS[i];
+      w.dataset.style = st;
+      dock.dockStyle(st, o.shape ?? "classic"); applyPack();
+      hint.textContent = line;
+      say(`<b>${esc(name)}</b>. ${esc(line)}`, dir);
+    });
+    radios($("#dw-edges"), (i, dir) => {
+      edge = i; dock.dockEdge(EDGES[i][0]);
+      w.dataset.edge = EDGES[i][0];
+      say(`Moved to the <b>${esc(EDGES[i][1].toLowerCase())}</b> edge. ${esc(EDGES[i][2])}`, dir);
+    });
+    radios($("#dw-acc"), (i, dir) => {
+      const b = cards("#dw-acc")[i]; acc = b.dataset.acc || null; accLabel = b.dataset.name || "Theme's own";
+      accName.textContent = accLabel;
+      applyPack(); dock.wash(acc || basePack?.accent || "#fafafa");
+      say(acc ? `<b>${esc(accLabel)}</b> accent. The dock's running marks and focus follow it.` : `The <b>theme's own</b> accent again.`, dir);
+    });
+    // The style hint under "Style" names what a card does while you point at it or focus it.
+    const showHint = (b) => { hint.textContent = b ? b.dataset.line : DOCKS[styleCards.cur()]?.[2] ?? ""; };
+    $("#dw-styles").addEventListener("pointerover", (e) => { const b = e.target.closest("[role=radio]"); if (b) showHint(b); });
+    $("#dw-styles").addEventListener("pointerleave", () => showHint(document.activeElement?.closest?.("#dw-styles [role=radio]")));
+    $("#dw-styles").addEventListener("focusin", (e) => showHint(e.target.closest("[role=radio]")));
+    $("#dw-styles").addEventListener("focusout", () => showHint(null));
+    packFor(isLightSite() ? "alabaster-daylight" : "obsidian").then((p) => { basePack = p; shownPack = p; dock.setPack(p); tint(); const a = $("#dw-acc .auto"); if (a && p) { a.style.setProperty("--c", p.accent); a.style.setProperty("--on", ink(p.accent)); } });
+    w.dataset.style = DOCKS[0]?.[0] ?? "floating"; w.dataset.edge = "bottom";
+    tint();
     window.lensSite = { ...window.lensSite, dock, dockStyles: DOCKS };
   }
 }

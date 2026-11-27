@@ -197,7 +197,8 @@ async function ask(q) {
   const sceneHit = SC.find((s) => ql.includes(s.id) || ql.includes(s.title.toLowerCase())) ?? (/\bclaude|agent|mcp\b/.test(ql) ? SC.find((s) => s.id === "agent") : /right.?click/.test(ql) ? SC.find((s) => s.id === "magic") : null);
   if (/\bdocks?\b/.test(ql) && !/\bdark|tile\b/.test(ql)) {
     if (!onHome()) return goHome("#f-dock");
-    await say("lens", "Lens has nine dock styles. This is the real dock, live. I'll switch it to Islands.", { stream: true });
+    const nStyles = document.querySelectorAll("#dw-styles [role=radio]").length || 10;
+    await say("lens", `Lens has ${["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"][nStyles] ?? nStyles} dock styles. This is the real dock, live. I'll switch it to Islands.`, { stream: true });
     const st = steps(["Scroll to the dock styles", "Pick Islands", "Apply it to the dock"]);
     st.tick(0, "doing");
     const rail = document.getElementById("dock-rail") ?? document.getElementById("dw-styles");
