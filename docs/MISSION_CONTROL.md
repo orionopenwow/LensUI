@@ -16,12 +16,12 @@ It is **developer-only by construction**. It exists only in the dev build that `
 
 | Layer | What keeps it out |
 |---|---|
-| Rust | `src-tauri/src/mission/` is compiled only with `--features admin`. `admin` is not a default feature and nothing depends on it. With `admin` and no debug assertions (any release profile) the crate refuses to compile (`compile_error!` in `mission/mod.rs`). Its commands are a second invoke handler composed in `lib.rs` only under the feature; its tray entry and hotkey exist only under the feature. The window is built at runtime, not declared in `tauri.conf.json`. |
+| Rust | `src-tauri/src/mission/` is compiled only with `--features admin`. `admin` is not a default feature and nothing depends on it. With `admin` and no debug assertions (any release profile) the crate refuses to compile (`compile_error!` in `mission/mod.rs`). Its commands are a second invoke handler composed in `lib.rs` only under the feature; its tray entry and hotkey exist only under the feature. The window is declared in `tauri.conf.json` with `"create": false` (every window shares one WebView2 environment) and is built only by `mission::open`; it is not in `LAZY_LABELS`, so no generic path can create it. |
 | Frontend | `vite.config.ts` defines `__LENS_ADMIN__` as `true` only for the **dev server** (`command === "serve"`) with `LENS_ADMIN=1`. Every `vite build` gets `false`, so the `missioncontrol` entry in `src/main.tsx` and the Command phrase are dead code and the chunk is not emitted. |
 | Launcher | `Launch-Lens-UI.bat` sets `LENS_ADMIN=1` and runs `bun run tauri dev --features admin`. `Build-Lens-UI.bat` and `release.yml` never do. |
-| CI | `tools/mission/guard.mjs dist` runs after the Windows job's frontend build and in `release.yml` before and after the installer build. It fails if any build/release config enables `admin` or `LENS_ADMIN`, if `tauri.conf.json` declares the window, or if the built bundle contains Mission Control's code. Rust `mission::gating_tests` check the same configs. |
+| CI | `tools/mission/guard.mjs dist` runs after the Windows job's frontend build and in `release.yml` before and after the installer build. It fails if any build/release config enables `admin` or `LENS_ADMIN`, if the window isn't `"create": false`, or if the built bundle contains Mission Control's code. Rust `mission::gating_tests` check the same configs. |
 
-The only trace in a release is the window label `missioncontrol` in `capabilities/default.json` (a name, no code), so the dev build's window gets the same event/window permissions as other Lens windows.
+The only traces in a release are names, no code: the `missioncontrol` window declaration (`"create": false`, never built) and its label in `capabilities/default.json`. In a release, `?surface=missioncontrol` would fall back to the Dock page, and nothing opens it.
 
 ## 2. Setup (once per PC)
 

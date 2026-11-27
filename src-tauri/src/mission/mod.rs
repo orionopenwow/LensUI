@@ -32,7 +32,7 @@ mod gating_tests;
 
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager};
 
 pub const LABEL: &str = "missioncontrol";
 
@@ -170,27 +170,17 @@ pub fn open(app: &AppHandle) {
         let _ = w.set_focus();
         return;
     }
+    // Declared in tauri.conf.json with "create": false (one WebView2 environment for every window,
+    // src/__tests__/webviewEnvironment.test.ts) and built only here, in admin builds. Built off
+    // the main thread: window creation from a sync command deadlocks WebView2.
     let app = app.clone();
-    std::thread::spawn(move || {
-        let built = WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("index.html?surface=missioncontrol".into()))
-            .title("Lens Mission Control")
-            .inner_size(1180.0, 760.0)
-            .min_inner_size(860.0, 560.0)
-            .decorations(false)
-            .transparent(true)
-            .resizable(true)
-            .shadow(true)
-            .center()
-            .visible(false)
-            .build();
-        match built {
-            Ok(w) => {
-                let _ = w.show();
-                let _ = w.set_focus();
-            }
-            Err(e) => {
-                crate::tester::log("warn", "mission", &format!("couldn't open Mission Control: {e}"));
-            }
+    std::thread::spawn(move || match crate::app::setup::build_window_from_config(&app, LABEL) {
+        Some(w) => {
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+        None => {
+            crate::tester::log("warn", "mission", "couldn't open Mission Control");
         }
     });
 }

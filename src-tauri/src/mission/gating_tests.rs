@@ -35,7 +35,12 @@ fn release_and_build_configs_never_enable_it() {
     for line in BUILD_YML.lines().filter(|l| l.contains("tauri build")) {
         assert!(!line.contains("admin"), "{line}");
     }
-    assert!(!TAURI_CONF.contains("missioncontrol"), "the window is built at runtime, not declared");
+    // The window is declared (one WebView2 environment for every window) but never created at
+    // start-up, and only this module builds it.
+    let conf: serde_json::Value = serde_json::from_str(TAURI_CONF).expect("tauri.conf.json");
+    let w = conf["app"]["windows"].as_array().unwrap().iter().find(|w| w["label"] == "missioncontrol").expect("declared");
+    assert_eq!(w["create"], serde_json::json!(false));
+    assert!(!crate::app::setup::LAZY_LABELS.contains(&"missioncontrol"), "generic open paths must not build it");
 }
 
 #[test]

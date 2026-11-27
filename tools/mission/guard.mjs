@@ -30,7 +30,14 @@ for (const f of [".github/workflows/release.yml", "Build-Lens-UI.bat", "src-taur
 for (const line of read(".github/workflows/build.yml").split("\n")) {
   if (/tauri build/.test(line) && /admin|LENS_ADMIN/.test(line)) problems.push(`build.yml: the installer build enables admin: ${line.trim()}`);
 }
-if (/missioncontrol/.test(read("src-tauri/tauri.conf.json"))) problems.push("tauri.conf.json declares the missioncontrol window (it must be built at runtime, admin only)");
+// The window is declared on demand ("create": false; one WebView2 environment for every window)
+// and only the admin-only mission module builds it: never at start-up, never by generic paths.
+{
+  const conf = JSON.parse(read("src-tauri/tauri.conf.json"));
+  const w = conf.app.windows.find((x) => x.label === "missioncontrol");
+  if (w && w.create !== false) problems.push('tauri.conf.json: the missioncontrol window must have "create": false');
+  if (/"missioncontrol"/.test(read("src-tauri/src/app/setup.rs"))) problems.push("app/setup.rs names missioncontrol (only src/mission may build it)");
+}
 
 // 3. Vite only defines it true for the dev server with LENS_ADMIN=1.
 if (!read("vite.config.ts").includes('command === "serve" && process.env.LENS_ADMIN === "1"')) problems.push("vite.config.ts: __LENS_ADMIN__ must be true only for `serve` with LENS_ADMIN=1");

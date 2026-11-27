@@ -7,7 +7,9 @@ export const REPO = "orionopenwow/LensUI";
 export const R = `/repos/${REPO}`;
 
 const params = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
-export const MOCK = params.has("mcmock");
+// Outside Tauri (test harnesses, a plain browser) there is no backend: sample data, always.
+const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export const MOCK = params.has("mcmock") || !inTauri;
 
 let mockImpl: ((cmd: string, args?: Record<string, unknown>) => Promise<unknown>) | null = null;
 
