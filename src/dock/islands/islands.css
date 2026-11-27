@@ -24,7 +24,9 @@
 }
 
 /* Each section is its own island. */
-.dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+.dock-stage.dock-style-islands.is-bar .dock-icons-row,
+.dock-stage.dock-style-islands.is-bar .dock-sys,
+.dock-stage.dock-style-islands.is-bar .lds-island {
   border-radius: 999px;
   background: var(--lens-bg-elevated);
   border: 1px solid rgb(var(--lens-ink) / 0.06);
@@ -32,20 +34,28 @@
   display: flex;
   align-items: center;
 }
-.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) :is(.dock-icons-row, .dock-sys, .lds-island) {
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-icons-row,
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-sys,
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-bottom, .dock-edge-top) .lds-island {
   height: calc(var(--dock-full-icon-size, 36px) + 12px);
   padding: 0 10px;
 }
-.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) :is(.dock-icons-row, .dock-sys, .lds-island) {
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) .dock-icons-row,
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) .dock-sys,
+.dock-stage.dock-style-islands.is-bar:is(.dock-edge-left, .dock-edge-right) .lds-island {
   width: calc(var(--dock-full-icon-size, 36px) + 12px);
   padding: 10px 0;
   flex-direction: column;
 }
-:root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+:root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar .dock-icons-row,
+:root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar .dock-sys,
+:root[data-shape="expressive"] .dock-stage.dock-style-islands.is-bar .lds-island {
   border-color: transparent;
   background: var(--lens-x-elev-1, var(--lens-bg-elevated));
 }
-:root[data-shape="dotmatrix"] .dock-stage.dock-style-islands.is-bar :is(.dock-icons-row, .dock-sys, .lds-island) {
+:root[data-shape="dotmatrix"] .dock-stage.dock-style-islands.is-bar .dock-icons-row,
+:root[data-shape="dotmatrix"] .dock-stage.dock-style-islands.is-bar .dock-sys,
+:root[data-shape="dotmatrix"] .dock-stage.dock-style-islands.is-bar .lds-island {
   border-color: transparent;
   border-radius: 16px;
   background: var(--ldm-surface, var(--lens-bg-elevated));

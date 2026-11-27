@@ -1591,7 +1591,8 @@
   border-radius: 4px;
 }
 
-.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) > :is(img, svg) {
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) > img,
+.dock-stage.dock-style-taskbar.is-bar:is(.dock-edge-bottom, .dock-edge-top) .dock-item:not(.has-label) > svg {
   width: 24px;
   height: 24px;
 }
@@ -2214,7 +2215,8 @@
 
 /* While searching, the tray, bell and clock in the row step aside: the field gets Floating's room
    and the panel keeps its own width (Unified, and any centred Dock with the system area in it). */
-.dock-stage:not(.is-bar) .dock-pill.is-expanded-launcher .dock-icons-row > :is(.dock-sys-inline, [data-reflow-key="sys-divider"]) {
+.dock-stage:not(.is-bar) .dock-pill.is-expanded-launcher .dock-icons-row > .dock-sys-inline,
+.dock-stage:not(.is-bar) .dock-pill.is-expanded-launcher .dock-icons-row > [data-reflow-key="sys-divider"] {
   display: none;
 }
 

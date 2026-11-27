@@ -11,12 +11,17 @@
   --ldm-surface-2: color-mix(in srgb, var(--lens-pack-elevated, #111116), rgb(var(--lens-ink)) 9%);
 }
 
-:root[data-shape="dotmatrix"] :is(.qs-card, .sysmod-card, .nc-item) {
+:root[data-shape="dotmatrix"] .qs-card,
+:root[data-shape="dotmatrix"] .sysmod-card,
+:root[data-shape="dotmatrix"] .nc-item {
   border-radius: 22px;
   border-color: transparent;
   background: var(--ldm-surface);
 }
-:root[data-shape="dotmatrix"] :is(.qs-tile, .cc-chip, .tux-chip, .sysmod-chip) {
+:root[data-shape="dotmatrix"] .qs-tile,
+:root[data-shape="dotmatrix"] .cc-chip,
+:root[data-shape="dotmatrix"] .tux-chip,
+:root[data-shape="dotmatrix"] .sysmod-chip {
   border-radius: 999px;
   border-color: transparent;
 }
