@@ -301,7 +301,11 @@ pub fn run() -> i32 {
                 return 3;
             };
             let mut reply = read_reply(&first);
-            if let Reply::Waiting(id) = &reply {
+            let waiting = match &reply {
+                Reply::Waiting(id) => Some(id.clone()),
+                _ => None,
+            };
+            if let Some(id) = waiting {
                 eprintln!("Waiting for your OK in Lens (request {id})…");
                 let start = std::time::Instant::now();
                 let mut n = 2;
