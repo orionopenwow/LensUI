@@ -641,12 +641,13 @@
   border-radius: 9px;
   border: 1px solid rgb(var(--lens-ink) / 0.07);
   background: rgb(var(--lens-ink) / 0.03);
-  opacity: 0.72;
-  transition: opacity var(--lens-dur-fast) var(--lens-ease-out), border-color var(--lens-dur-fast) var(--lens-ease-out);
+  /* Never dimmed: a faded sample would misstate how strong that choice is. The current one is
+     marked by its hairline only. */
+  transition: border-color var(--lens-dur-fast) var(--lens-ease-out), background-color var(--lens-dur-fast) var(--lens-ease-out);
 }
 .tux-accent-sample.is-current {
-  opacity: 1;
-  border-color: rgb(var(--lens-ink) / 0.2);
+  border-color: rgb(var(--lens-ink) / 0.26);
+  background: rgb(var(--lens-ink) / 0.06);
 }
 .tux-accent-sample-row {
   display: flex;

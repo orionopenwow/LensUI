@@ -4,7 +4,12 @@
 //   B-111 (the "update ready" pill and the first Quick settings tile icon could be unreadable on an accent),
 //   B-112 (the Night light switch knob followed the accent's ink),
 //   the Dock on the shared press, pop-out origins and the sliding filter pill.
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
+// Module mocks from other test files leak across files (bun), and the real event / window modules
+// import names a partial core mock doesn't have: mock all three, as the other suites do.
+mock.module("@tauri-apps/api/core", () => ({ invoke: async () => null, convertFileSrc: (p: string) => p, transformCallback: () => 0 }));
+mock.module("@tauri-apps/api/event", () => ({ listen: async () => () => {}, emit: async () => {}, emitTo: async () => {} }));
+mock.module("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "settings", listen: async () => () => {}, onFocusChanged: async () => () => {} }) }));
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
