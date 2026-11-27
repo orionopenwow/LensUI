@@ -11,6 +11,9 @@ function cls(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
 }
 
+// The spinner is absolutely positioned inside the icon slot, so adding it while pending never moves
+// anything; it only exists (and spins) while pending, and shows after --lens-pending-delay.
+
 /** Primary and destructive actions are heavy; everything else is medium (DESIGN.md §5.2). */
 export function defaultWeight(variant: ButtonVariant): PressWeight {
   return variant === "primary" || variant === "danger" ? "heavy" : "medium";
@@ -52,7 +55,7 @@ export const Button = React.forwardRef<
       {icon ? (
         <span className="lens-press-slot">
           <span className="lens-press-content">{icon}</span>
-          <span className="lens-press-spinner" aria-hidden />
+          {pending && <span className="lens-press-spinner" aria-hidden />}
         </span>
       ) : null}
       {icon || !pending ? (
@@ -100,7 +103,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(f
     >
       <span className="lens-press-slot">
         <span className="lens-press-content">{icon}</span>
-        <span className="lens-press-spinner" aria-hidden />
+        {pending && <span className="lens-press-spinner" aria-hidden />}
       </span>
     </button>
   );
