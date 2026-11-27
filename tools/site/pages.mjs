@@ -192,7 +192,7 @@ function homeHtml({ visionHref, apps = {}, catalog = [], packs = [], stars = nul
 
 <section id="f-magic" class="sec xsec" aria-labelledby="f-magic-h">
   <div class="inner">
-    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic Mouse <span class="tag">Coming</span></p><h2 id="f-magic-h">Hold for Magic. Drag to grab.</h2><p>An optional pointer that works like your normal one, plus two moves: hold to open Magic where you point, or hold and drag to grab any area into Snip. It's off by default, and Lens asks before it turns on.</p></div>
+    <div class="head center"><p class="kicker"><span class="k-ic">${IC.magic}</span>Magic Mouse</p><h2 id="f-magic-h">Hold for Magic. Drag to grab.</h2><p>An optional pointer that works like your normal one, plus two moves: hold to open Magic where you point, or hold and drag to grab any area into Snip. It's off by default, and Lens asks before it turns on.</p></div>
     <div class="mx xmain" id="mx" data-exhibit="magic">
       <div class="xstage" data-w="1180" data-h="640">
         <div class="xf mx-target" data-xf="browser.html?scene=frame" data-marker=".lb-root" role="img" aria-label="Lens Browser, the real app, with a page open"></div>

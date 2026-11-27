@@ -544,6 +544,7 @@ async function waitDesk(page, sel = "#lab-desk") {
     const magicH = await D(() => document.querySelector("#f-magic h2")?.textContent + " | " + document.querySelector("#f-magic .kicker")?.textContent);
     expect(/Magic Mouse/.test(magicH) && !/Right-click anything/.test(magicH), "“Right-click anything” is now Magic Mouse", magicH);
     expect(await D(() => /off by default/i.test(document.querySelector("#f-magic .head").textContent) && /asks before it turns on/i.test(document.querySelector("#f-magic .head").textContent)), "Magic Mouse says it's off by default and asks before it turns on");
+    expect(await D(() => !document.querySelector("#f-magic .kicker .tag") && !/\bComing\b/.test(document.querySelector("#f-magic .kicker").textContent)), "Magic Mouse is shipped (#109): its section isn't tagged Coming");
     // Magic Mouse: hold opens the real Magic window at the pointer; drag grabs; let go opens the real Snip.
     await page.evaluate(() => document.getElementById("f-magic").scrollIntoView({ block: "center" }));
     await page.waitForFunction(() => document.querySelector("#mx")._xloop, null, { timeout: 10000 }).catch(() => {});
