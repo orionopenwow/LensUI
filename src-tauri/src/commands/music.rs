@@ -184,7 +184,7 @@ fn front_window_state() -> (bool, bool) {
 /// when a fullscreen app or game that isn't Lens is in front.
 #[tauri::command]
 pub(crate) fn music_immersive_open(app: AppHandle, from: Option<String>) -> Result<(), String> {
-    use tauri::{Emitter, Manager};
+    use tauri::Emitter;
     let (fullscreen, lens) = front_window_state();
     music::immersive::may_open(fullscreen, lens).map_err(str::to_string)?;
     let from = match from.as_deref() {
