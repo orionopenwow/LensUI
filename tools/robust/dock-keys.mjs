@@ -165,6 +165,75 @@ for (const edge of ["bottom", "top", "left", "right"]) {
   await done(p, `keys ${edge}`);
 }
 
+// ── Quick wins: many windows, scroll for volume, focus the Dock (B-150..B-152) ─────────────
+{
+  // More than four windows with live previews on: the titles list, not the carousel.
+  const p = await fresh({ query: "multi=many" });
+  await setConfig(p, (c) => { c.dock.livePreviews = true; });
+  await p.waitForTimeout(350);
+  const chrome = p.locator('.dock-item-wrap[data-dock-drag-key]:has(.dock-item[aria-label*="Chrome"])').first();
+  await chrome.hover();
+  await p.waitForTimeout(700);
+  const card = await p.evaluate(() => ({ list: document.querySelectorAll(".dock-hover-card .dock-win-list .dock-win-row").length, carousel: document.querySelectorAll(".dock-hover-card.has-carousel").length }));
+  check(card.list === 6 && card.carousel === 0, `many windows: expected a titles list of 6, got ${JSON.stringify(card)}`);
+  await shot(p, "many-windows-obsidian");
+  await setConfig(p, (c) => { c.dock.manyWindows = "previews"; });
+  await p.mouse.move(5, 5);
+  await p.waitForTimeout(500);
+  await chrome.hover();
+  await p.waitForTimeout(700);
+  check((await p.locator(".dock-hover-card.has-carousel").count()) === 1, "many windows: \"Previews\" keeps the carousel");
+  await done(p, "many windows");
+}
+{
+  // Scroll on an icon: off by default, then the readout and the mixer call.
+  const p = await fresh();
+  await p.waitForTimeout(300);
+  const chrome = p.locator('.dock-item-wrap[data-dock-drag-key]:has(.dock-item[aria-label*="Chrome"])').first();
+  await chrome.hover();
+  await p.mouse.wheel(0, -100);
+  await p.waitForTimeout(250);
+  const before = await p.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "set_app_volume_cmd").length);
+  check(before === 0 && (await p.locator(".dock-volume-chip").count()) === 0, "volume: the wheel must not change volume while the setting is off");
+  await setConfig(p, (c) => { c.dock.scrollVolume = true; });
+  await p.waitForTimeout(200);
+  await chrome.hover();
+  await p.mouse.wheel(0, -100);
+  await p.waitForTimeout(250);
+  const sent = await p.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "set_app_volume_cmd").map((c) => c.args));
+  const chip = await p.locator(".dock-volume-chip .dock-volume-num").first().textContent().catch(() => null);
+  // The mock's Chrome session is at 40 %: one notch up is 45 %.
+  check(sent.length === 1 && sent[0].pid === 2 && sent[0].level === 45, `volume: expected one call for pid 2 at 45, got ${JSON.stringify(sent)}`);
+  check(chip === "45%", `volume: the readout should say 45%, got ${JSON.stringify(chip)}`);
+  await shot(p, "volume-obsidian");
+  await p.waitForTimeout(1400);
+  check((await p.locator(".dock-volume-chip").count()) === 0, "volume: the readout should go by itself");
+  await done(p, "volume");
+}
+{
+  // The hotkey lands on an icon with a ring and a hint; Esc gives the keyboard back.
+  const p = await fresh();
+  await p.waitForTimeout(300);
+  await p.evaluate(() => window.__lensEmit("lens://dock-keys-focus", null));
+  await p.waitForTimeout(200);
+  const a = await active(p);
+  const ring = await p.evaluate(() => {
+    const el = document.activeElement;
+    return { keys: document.querySelector(".dock-pill")?.hasAttribute("data-keys") ?? false, outline: el ? getComputedStyle(el).outlineStyle : "", hint: document.querySelector(".dock-find-chip.is-hint")?.textContent ?? null };
+  });
+  check(a.cls.includes("dock-item") && !!a.wrap, `focus the Dock: the hotkey should focus an icon, focused ${JSON.stringify(a)}`);
+  check(ring.keys && ring.outline !== "none", `focus the Dock: the icon needs a visible ring ${JSON.stringify(ring)}`);
+  check(!!ring.hint && ring.hint.includes("Esc to leave"), `focus the Dock: the key hint should show ${JSON.stringify(ring.hint)}`);
+  await shot(p, "focus-dock-obsidian");
+  await p.keyboard.press("ArrowRight");
+  check((await active(p)).cls.includes("dock-item"), "focus the Dock: arrows still move between icons");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(150);
+  const left = await p.evaluate(() => window.__lensCallLog.filter((c) => c.cmd === "dock_keys_leave_cmd").map((c) => c.args));
+  check(left.length === 1 && left[0].restore === true, `focus the Dock: Esc should give the keyboard back, calls ${JSON.stringify(left)}`);
+  await done(p, "focus the Dock");
+}
+
 // ── The menu is a menu ──────────────────────────────────────────────────────────────────────
 {
   const p = await fresh();

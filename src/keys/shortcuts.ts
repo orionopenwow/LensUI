@@ -3,7 +3,7 @@
 // own keys, the other Lens shortcuts and the shortcuts most apps rely on. Pure (tested).
 import type { LensConfig } from "../types/lens";
 
-export type ShortcutId = "palette" | "command" | "widgets" | "magic" | "snip" | "pause" | "dock-n" | "tiling" | "magic-search" | `bar:${string}`;
+export type ShortcutId = "palette" | "command" | "widgets" | "dock" | "magic" | "snip" | "pause" | "dock-n" | "tiling" | "magic-search" | `bar:${string}`;
 
 export interface Shortcut {
   id: ShortcutId;
@@ -19,6 +19,8 @@ export interface Shortcut {
   where?: string;
   /** Only active when this feature is on. */
   when?: string;
+  /** Can be turned off from the cheat sheet (keys "" = off). */
+  offable?: boolean;
 }
 
 const cmdHotkey = (c: LensConfig): string => {
@@ -35,7 +37,15 @@ export const SIMPLE = {
   magic: "Ctrl+Alt+Q",
   /** Was Ctrl+Shift+S until 0.3, which is Save As in most apps (src-tauri/src/snip/config.rs). */
   snip: "Ctrl+Alt+X",
+  /** Focus the Dock: D for Dock. Not a tiling or snapping key (src-tauri/src/win_summon.rs). */
+  dock: "Ctrl+Alt+D",
 } as const;
+
+/** The Dock focus hotkey as configured: missing = the default, "" = off. */
+export const dockFocusKeys = (c: LensConfig): string => {
+  const v = (c.func as { dockFocusHotkey?: unknown }).dockFocusHotkey;
+  return typeof v === "string" ? v.trim() : SIMPLE.dock;
+};
 
 /** Shortcuts kept outside the main config (Snip has its own settings file). */
 export interface OtherShortcuts {
@@ -48,6 +58,7 @@ export function shortcutsFor(c: LensConfig, other: OtherShortcuts = {}): Shortcu
     { id: "palette", name: "Open the launcher", keys: c.func.paletteHotkey || SIMPLE.palette, simple: SIMPLE.palette, editable: true },
     { id: "command", name: "Ask Lens (Command)", keys: cmdHotkey(c), simple: SIMPLE.command, editable: true, when: "Lens Command is on" },
     { id: "widgets", name: "Open the widgets", keys: c.func.widgetsHotkey || SIMPLE.widgets, simple: SIMPLE.widgets, editable: true },
+    { id: "dock", name: "Move the keyboard to the Dock", keys: dockFocusKeys(c), simple: SIMPLE.dock, editable: true, offable: true },
     { id: "magic", name: "Magic menu for what's under the pointer", keys: SIMPLE.magic, simple: SIMPLE.magic, editable: false, where: "Settings › Magic" },
     { id: "snip", name: "Snip part of the screen", keys: other.snip?.trim() || SIMPLE.snip, simple: SIMPLE.snip, editable: false, where: "Snip settings", when: "Snip is on" },
     { id: "pause", name: "Pause Lens's AI", keys: "Ctrl+Alt+Pause", simple: "Ctrl+Alt+Pause", editable: false, where: "Settings › AI › Presence" },
@@ -138,7 +149,7 @@ export function comboProblem(combo: string, id: ShortcutId, all: Shortcut[]): Co
   if (!key || !mods.length) return { level: "block", message: "Use Ctrl, Alt or Win together with one key." };
   if (mods.length === 1 && mods[0] === "Shift") return { level: "block", message: "Shift alone would type a capital letter. Add Ctrl, Alt or Win." };
   if (WINDOWS_KEYS.includes(c)) return { level: "block", message: `${c} belongs to Windows.` };
-  const other = all.find((s) => s.id !== id && normalizeCombo(s.keys) === c);
+  const other = all.find((s) => s.id !== id && s.keys && normalizeCombo(s.keys) === c);
   if (other) return { level: "block", message: `Already used for "${other.name}".` };
   if (APP_KEYS.includes(c)) {
     const does = APP_KEY_NAMES[c];
@@ -159,7 +170,7 @@ export function snipComboNote(combo: string, c?: LensConfig): ComboProblem | nul
 /** The config with every changeable shortcut back on the simple defaults (nothing else touched). */
 export function withSimpleShortcuts(c: LensConfig): LensConfig {
   const command = { ...((c.command as Record<string, unknown> | null) ?? {}), hotkey: SIMPLE.command };
-  return { ...c, func: { ...c.func, paletteHotkey: SIMPLE.palette, widgetsHotkey: SIMPLE.widgets }, command };
+  return { ...c, func: { ...c.func, paletteHotkey: SIMPLE.palette, widgetsHotkey: SIMPLE.widgets, dockFocusHotkey: SIMPLE.dock }, command };
 }
 
 /** The config with one shortcut changed. */
@@ -167,6 +178,7 @@ export function withShortcut(c: LensConfig, id: ShortcutId, combo: string): Lens
   const keys = normalizeCombo(combo);
   if (id === "palette") return { ...c, func: { ...c.func, paletteHotkey: keys } };
   if (id === "widgets") return { ...c, func: { ...c.func, widgetsHotkey: keys } };
+  if (id === "dock") return { ...c, func: { ...c.func, dockFocusHotkey: keys } };
   if (id === "command") return { ...c, command: { ...((c.command as Record<string, unknown> | null) ?? {}), hotkey: keys } };
   return c;
 }

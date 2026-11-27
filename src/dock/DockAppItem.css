@@ -9,3 +9,74 @@
 .dock-badge-roll {
   animation: dock-badge-roll var(--lens-dur-fast) var(--lens-ease-out);
 }
+
+/* Scroll on an icon to change its app's volume (dock.scrollVolume): a small readout where the
+ * name tooltip goes. It rises out of the icon (transform and opacity only), the fill settles on
+ * each wheel step (DESIGN §5.2 fill bars), numbers are tabular so the chip never changes width. */
+@keyframes dock-volume-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+.dock-volume-chip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: var(--lens-pack-base, #08080b);
+  border: 1px solid var(--lens-border-strong);
+  box-shadow: 0 8px 22px rgb(0 0 0 / calc(0.5 * var(--lens-shade-k, 1)));
+  color: var(--lens-fg);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 55;
+  animation: dock-volume-in var(--lens-dur-fast) var(--lens-ease-out);
+}
+.dock-volume-chip > svg { color: var(--lens-fg-secondary); flex-shrink: 0; }
+.dock-volume-chip.is-silent { font-weight: 500; color: var(--lens-fg-secondary); }
+.dock-volume-meter {
+  position: relative;
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(var(--lens-ink) / 0.16);
+}
+.dock-volume-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lens-accent-ui);
+  transform-origin: left center;
+  transition: transform var(--lens-dur-fast) var(--lens-ease-out);
+}
+.dock-volume-num { min-width: 4ch; text-align: right; }
+.dock-item-wrap.has-volume .dock-tooltip { opacity: 0 !important; }
+
+.dock-edge-top .dock-volume-chip { bottom: auto; top: calc(100% + 14px); }
+@keyframes dock-volume-in-top { from { opacity: 0; translate: 0 -6px; } }
+.dock-edge-top .dock-volume-chip { animation-name: dock-volume-in-top; }
+.dock-edge-left .dock-volume-chip,
+.dock-edge-right .dock-volume-chip { bottom: auto; top: 50%; transform: translateY(-50%); }
+.dock-edge-left .dock-volume-chip { left: calc(100% + 14px); }
+.dock-edge-right .dock-volume-chip { left: auto; right: calc(100% + 14px); }
+@keyframes dock-volume-in-left { from { opacity: 0; translate: -6px 0; } }
+@keyframes dock-volume-in-right { from { opacity: 0; translate: 6px 0; } }
+.dock-edge-left .dock-volume-chip { animation-name: dock-volume-in-left; }
+.dock-edge-right .dock-volume-chip { animation-name: dock-volume-in-right; }
+
+/* Focus the Dock (func.dockFocusHotkey): the page was focused by a hotkey in another app, so
+ * Chromium may not treat the focus as keyboard focus. Draw the ring anyway while in keys mode. */
+.dock-pill[data-keys] .dock-icons-row .dock-item:focus {
+  outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring);
+  outline-offset: 2px;
+}

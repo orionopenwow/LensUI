@@ -804,6 +804,42 @@ const SCENARIOS = [
     },
   },
   {
+    id: "dock-focus-keys",
+    title: "Focus the Dock: Ctrl+Alt+D puts the keyboard on a Dock icon; Esc gives it back (B-152)",
+    async run(s) {
+      const dock = surfaces(s).dock;
+      const take = watchErrors(dock);
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" });
+      // Real key presses (keybd_event), no pointer: nothing here goes near the desktop tab (B-30).
+      const KEYS = "Add-Type -Namespace W -Name K -MemberDefinition '[DllImport(\"user32.dll\")] public static extern void keybd_event(byte vk, byte scan, uint flags, System.UIntPtr extra); [DllImport(\"user32.dll\")] public static extern System.IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);';";
+      const ctrlAltD = () => ps(`${KEYS} [W.K]::keybd_event(0x11,0,0,[UIntPtr]::Zero); [W.K]::keybd_event(0x12,0,0,[UIntPtr]::Zero); [W.K]::keybd_event(0x44,0,0,[UIntPtr]::Zero); Start-Sleep -Milliseconds 40; [W.K]::keybd_event(0x44,0,2,[UIntPtr]::Zero); [W.K]::keybd_event(0x12,0,2,[UIntPtr]::Zero); [W.K]::keybd_event(0x11,0,2,[UIntPtr]::Zero);`);
+      const foreground = () => ps(`${KEYS} $id = 0; [W.K]::GetWindowThreadProcessId([W.K]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      const state = () => dock.evaluate(() => ({ keys: document.querySelector(".dock-pill")?.hasAttribute("data-keys") ?? false, onIcon: !!document.activeElement?.matches?.(".dock-icons-row .dock-item") }));
+      const waitFor = async (want, what, ms = 4000) => {
+        const t0 = Date.now();
+        let st = await state();
+        while (Date.now() - t0 < ms) {
+          st = await state();
+          if (want(st)) return st;
+          await sleep(100);
+        }
+        throw new Error(`${what}: ${JSON.stringify(st)} (foreground: ${foreground()})`);
+      };
+
+      if ((await invoke(dock, "get_config")).func?.dockFocusHotkey !== "Ctrl+Alt+D") throw new Error("the default Focus the Dock hotkey is not Ctrl+Alt+D");
+      const before = foreground();
+      ctrlAltD();
+      await waitFor((st) => st.keys && st.onIcon, "after Ctrl+Alt+D the Dock should have the keyboard on an icon");
+      await shot(dock, "dock-focus-keys");
+      await dock.keyboard.press("Escape");
+      await waitFor((st) => !st.keys, "after Esc keys mode should end");
+      await sleep(400);
+      console.log(`note  dock-focus-keys: foreground before ${before}, after Esc ${foreground()}`);
+      const errs = take();
+      if (errs.length) throw new Error(errs.join("\n"));
+    },
+  },
+  {
     id: "magic-start",
     title: "Magic button: off by default; a Win tap opens Magic Start when on; Ctrl+Esc still opens Windows Start; off restores Windows",
     async run(s) {

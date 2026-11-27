@@ -92,7 +92,7 @@ export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                 Press the new keys…
               </button>
             ) : (
-              <kbd className="ks-keys">{s.keys}</kbd>
+              <kbd className={`ks-keys ${s.keys ? "" : "is-off"}`}>{s.keys || "Off"}</kbd>
             )}
             {s.editable && recording !== s.id && (
               <button data-weight="medium"
@@ -105,6 +105,19 @@ export const ShortcutsCard: React.FC<Props> = ({ config, onUpdateConfig }) => {
                 }}
               >
                 Change
+              </button>
+            )}
+            {s.offable && recording !== s.id && (
+              <button data-weight="medium"
+                type="button"
+                className="cc-btn-ghost ks-change"
+                aria-label={s.keys ? `Turn off the shortcut for ${s.name}` : `Turn on the shortcut for ${s.name}`}
+                onClick={() => {
+                  setMessage(null);
+                  void onUpdateConfig(withShortcut(config, s.id, s.keys ? "" : s.simple));
+                }}
+              >
+                {s.keys ? "Turn off" : "Turn on"}
               </button>
             )}
           </li>

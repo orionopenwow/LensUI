@@ -556,6 +556,7 @@ pub fn run() {
             commands::dock::dock_preview_hide_cmd,
             commands::dock::set_dock_search_expanded_cmd,
             commands::dock::set_dock_menu_open,
+            app::dock_keys::dock_keys_leave_cmd,
             commands::theme::get_windows_theme,
             commands::theme::legacy_hook_status,
             commands::dock::get_running_windows,

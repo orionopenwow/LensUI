@@ -70,6 +70,8 @@ export interface DockExtras {
   showLabels?: boolean;
   fileDropOpen?: boolean;
   scrollCyclesWindows?: boolean;
+  scrollVolume?: boolean;
+  manyWindows?: string;
 }
 
 /** What the hover card is showing: an app's windows, anchored at its icon. */

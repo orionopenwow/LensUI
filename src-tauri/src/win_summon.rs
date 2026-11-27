@@ -151,6 +151,8 @@ pub fn reserved_hotkey(spec: &HotkeySpec) -> bool {
         "ctrl+alt+Space",
         "ctrl+alt+shift+Space",
         "ctrl+alt+Enter",
+        // The Dock's "focus the Dock" hotkey (func.dockFocusHotkey's default).
+        "ctrl+alt+KeyD",
     ];
     if fixed.contains(&c.as_str()) {
         return true;

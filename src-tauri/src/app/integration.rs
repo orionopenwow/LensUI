@@ -31,6 +31,7 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     }
     sync_command_hotkeys(&handle, cfg);
     sync_tester_hotkey(&handle, cfg);
+    sync_dock_focus_hotkey(&handle, cfg);
     // Magic right-click window: its own settings file; off unless the user turned it on.
     crate::commands::magic::startup(&handle);
     // Magic Mouse (preview flag): undoes a pointer a crash left behind; on only if the flag is.
@@ -159,6 +160,9 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
     }
     if prev.tester != next.tester {
         sync_tester_hotkey(app, next);
+    }
+    if prev.func.dock_focus_hotkey != next.func.dock_focus_hotkey {
+        sync_dock_focus_hotkey(app, next);
     }
     // The Magic selection bar: its switch, options and direct hotkeys (and Magic Mouse, whose
     // hold-then-drag grab takes precedence over it).
@@ -838,6 +842,39 @@ mod side_flyout_tests {
         let r = side_flyout_rect(&m, "left", (0, 0, 60, 400), 760.0, 0, 0, 0, 404, 2000, FlyoutAlign::End);
         assert_eq!(r.y, -1080);
         assert_eq!(r.h, 1080);
+    }
+}
+
+// ========================================================================= Focus the Dock
+
+fn dock_focus_hotkey_registry() -> &'static Mutex<Option<Shortcut>> {
+    static REG: OnceLock<Mutex<Option<Shortcut>>> = OnceLock::new();
+    REG.get_or_init(|| Mutex::new(None))
+}
+
+/// `func.dockFocusHotkey` (Ctrl+Alt+D by default) puts the keyboard on the Dock's icons
+/// (`app::dock_keys`). Empty turns it off and gives the keys back to other apps.
+pub(crate) fn sync_dock_focus_hotkey(app: &AppHandle, cfg: &LensConfig) {
+    let mut reg = dock_focus_hotkey_registry().lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(s) = reg.take() {
+        let _ = app.global_shortcut().unregister(s);
+    }
+    let Some(text) = crate::app::dock_keys::hotkey_from_config(&cfg.func.dock_focus_hotkey) else {
+        return;
+    };
+    let Ok(shortcut) = text.parse::<Shortcut>() else {
+        return;
+    };
+    let h = app.clone();
+    let res = app.global_shortcut().on_shortcut(shortcut, move |_app, _s, ev| {
+        if ev.state == ShortcutState::Pressed {
+            crate::app::dock_keys::on_hotkey(&h);
+        }
+    });
+    if res.is_ok() {
+        *reg = Some(shortcut);
+    } else {
+        eprintln!("[Lens UI] Another app already owns the Focus the Dock hotkey ({}).", text);
     }
 }
 

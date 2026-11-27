@@ -76,6 +76,8 @@ const running = [
 ];
 // ?multi=1: Chrome has three windows (the Dock's window-count dots and window carousel).
 if (params.get("multi")) running.push(win(105, "Lens docs — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(106, "Pull request #120 — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"));
+// ?multi=many: Chrome has six windows (more than four: the hover card lists titles by default).
+if (params.get("multi") === "many") running.push(win(107, "Inbox — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(108, "Calendar — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(109, "Maps — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"));
 const apps = ["Blender 5.1", "Audacity", "Android Studio", "7-Zip File Manager", "Adobe Photoshop 2023", "Google Chrome", "Notepad", "Spotify", "Steam", "Visual Studio Code", "Discord", "OBS Studio"].map((n) => ({ name: n, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${n}.lnk`, category: "App" }));
 // ?ws=groups: Lens workspaces in groups mode, so the Overview shows its workspace strip.
 const wsGroups = params.get("ws") === "groups";

@@ -30,12 +30,16 @@ import {
   setMiddleClickNewInstance,
   setMinimizeFeedback,
   setScrollCyclesWindows,
+  setScrollVolume,
+  setManyWindows,
+  scrollVolumeDesc,
   setShowLabels,
   setStyleIconSize,
   sharedStyleIconSize,
   toggleSeparatorAfter,
 } from "../dock/advanced";
 import { dockStyleLabel } from "../dock/styles";
+import { MANY_WINDOWS, MANY_WINDOWS_CHOICES, normalizeManyWindows } from "../dock/cardMode";
 
 interface Props {
   config: LensConfig;
@@ -185,6 +189,15 @@ export const DockTab: React.FC<Props> = ({ config, accent, updateConfig, section
           onChange={(v) => updateConfig({ ...config, func: { ...config.func, hideNativeTaskbar: v } })}
         />
         <Toggle label="Live window previews" desc="Hovering a running app shows live pictures of its windows." on={!!dock.livePreviews} onChange={(v) => setDock({ livePreviews: v })} />
+        {!!dock.livePreviews && (
+          <Seg
+            label={`More than ${MANY_WINDOWS} windows`}
+            desc="A list of titles is quicker to read than pictures one at a time."
+            value={normalizeManyWindows(dock.manyWindows)}
+            options={MANY_WINDOWS_CHOICES}
+            onChange={(id) => updateConfig(setManyWindows(config, id))}
+          />
+        )}
         <Toggle label="Lock the Dock" desc="Stops apps being dragged, unpinned or removed by accident." on={!!dock.locked} onChange={(v) => setDock({ locked: v })} />
         <Toggle
           label="Suggest apps you usually open now"
@@ -257,6 +270,12 @@ const DockAdvanced: React.FC<{ config: LensConfig; updateConfig: (next: LensConf
           desc="Turn the mouse wheel over an app to step through its open windows."
           on={view.scrollCyclesWindows}
           onChange={(v) => updateConfig(setScrollCyclesWindows(config, v))}
+        />
+        <Toggle
+          label="Scroll to change volume"
+          desc={scrollVolumeDesc(view)}
+          on={view.scrollVolume}
+          onChange={(v) => updateConfig(setScrollVolume(config, v))}
         />
         <Toggle
           label="Drop files on apps"

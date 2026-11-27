@@ -142,6 +142,15 @@ pub struct DockConfig {
     /// Mouse wheel over an app icon cycles through that app's windows.
     #[serde(default)]
     pub scroll_cycles_windows: bool,
+    /// Mouse wheel over a running app icon changes that app's volume (Windows' volume mixer).
+    /// OFF by default: it changes a Windows setting. With "scroll to switch windows" also on,
+    /// the plain wheel switches windows and Shift+wheel changes the volume.
+    #[serde(default)]
+    pub scroll_volume: bool,
+    /// What the hover card shows for an app with more than four windows when live previews are
+    /// on: "list" (titles, the default) or "previews" (the window carousel).
+    #[serde(default = "default_dock_many_windows")]
+    pub many_windows: String,
     /// Suggest 1-3 apps you usually open at this time (local predictor, no AI model). OFF by default.
     #[serde(default)]
     pub suggested_apps: bool,
@@ -149,6 +158,10 @@ pub struct DockConfig {
     /// Windows taskbar follow Windows' own pin order (B-22).
     #[serde(default)]
     pub pins_user_ordered: bool,
+}
+
+fn default_dock_many_windows() -> String {
+    "list".into()
 }
 
 fn default_dock_magnification() -> String {
@@ -239,6 +252,16 @@ pub struct FuncConfig {
     /// Advanced). "normal" is the original 1.5 s / 1.8 s; see `app::watcher::popout_delays`.
     #[serde(default = "default_popout_close_delay")]
     pub popout_close_delay: String,
+    /// Moves keyboard focus onto the Dock's icons (`app::dock_keys`). Empty = off.
+    #[serde(default = "default_dock_focus_hotkey")]
+    pub dock_focus_hotkey: String,
+}
+
+/// Ctrl+Alt+D: free in Lens (not a tiling or snapping key, not reserved by app summon).
+pub const DEFAULT_DOCK_FOCUS_HOTKEY: &str = "Ctrl+Alt+D";
+
+fn default_dock_focus_hotkey() -> String {
+    DEFAULT_DOCK_FOCUS_HOTKEY.into()
 }
 
 fn default_popout_close_delay() -> String {
@@ -519,6 +542,8 @@ impl Default for LensConfig {
                 show_labels: false,
                 file_drop_open: false,
                 scroll_cycles_windows: false,
+                scroll_volume: false,
+                many_windows: default_dock_many_windows(),
                 suggested_apps: false,
                 pins_user_ordered: false,
             },
@@ -543,6 +568,7 @@ impl Default for LensConfig {
                 per_monitor_bars: false,
                 auto_close_popouts: true,
                 popout_close_delay: default_popout_close_delay(),
+                dock_focus_hotkey: default_dock_focus_hotkey(),
             },
             window_controls: WindowControlsConfig {
                 enabled: true,
