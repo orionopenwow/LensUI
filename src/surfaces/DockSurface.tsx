@@ -17,7 +17,8 @@ import type { AiContext } from "../ai/surfaceApi";
 import { toDockResults } from "../search/dockAdapter";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
-import { captureFlip, glideOut, useLingering, type FlipCapture } from "../ui/motion";
+import { captureFlip, useLingering, type FlipCapture } from "../ui/motion";
+import { createSearchCloseGlide } from "../dock/searchClose";
 import { attentionFor, useAttention } from "../dock/attention";
 import { FlyoutClose } from "../ui/FlyoutClose";
 import { Search, Activity, AppWindow, Settings, LayoutGrid } from "lucide-react";
@@ -172,8 +173,12 @@ export const DockSurface: React.FC = () => {
   /** Bumped by every open and close: a close whose glide finishes after a newer open does nothing
    *  (fast double-clicks, open during the hide glide). */
   const searchGenRef = useRef(0);
+  const searchCloseGlide = useRef(createSearchCloseGlide()).current;
   const openInDockLauncher = () => {
     searchGenRef.current++;
+    // Reopened during the close glide (B-130): stop the exit before it holds the panel at
+    // opacity 0, and leave the closing state (pointer-events: none), or the panel stays invisible.
+    if (searchCloseGlide.interrupt(pillRef.current?.querySelector(".dock-launcher-drawer"))) setDockSearchClosing(false);
     searchOpenedAtRef.current = performance.now();
     // One pop-out at a time: docked Settings goes when search opens.
     if (settingsOpenRef.current) {
@@ -249,7 +254,7 @@ export const DockSurface: React.FC = () => {
     // The results panel glides out first; then the row collapses in one frame and the icons glide back.
     const drawer = pillRef.current?.querySelector(".dock-launcher-drawer");
     // A glide that never finishes (window hidden mid-animation) must not leave search half-open.
-    finishedOrGiveUp(glideOut(drawer, { y: 14, opacity: 0 }, { duration: "base" }).finished, 400).then(() => {
+    finishedOrGiveUp(searchCloseGlide.start(drawer), 400).then(() => {
       if (gen !== searchGenRef.current) return; // reopened meanwhile
       captureSearchFlip();
       setDockSearchOpen(false);
@@ -1161,7 +1166,7 @@ export const DockSurface: React.FC = () => {
                 className={`dock-search-mag-btn ${dockSearchOpen ? "" : "dock-item"}`}
                 data-weight="medium"
                 aria-label="Search"
-                aria-expanded={dockSearchOpen}
+                aria-expanded={dockSearchOpen && !dockSearchClosing}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (dockSearchOpenRef.current) {
