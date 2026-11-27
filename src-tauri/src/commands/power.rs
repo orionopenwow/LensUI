@@ -68,6 +68,6 @@ pub(crate) fn restore_before_exit(app: &AppHandle) {
     win_wallpaper::detach_wallpaper_window();
     win_tray::stop_tray_host();
     win_dwm_engine::revert_dwm_theme();
-    restore_taskbar_if_hidden();
+    crate::win_taskbar::restore_taskbar_for_exit(); // and nothing may hide it again (B-132)
     win_shell::on_quit_restore_desktop(); // if Lens is the shell: bring Explorer back first
 }

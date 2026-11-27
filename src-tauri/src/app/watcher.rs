@@ -686,7 +686,12 @@ pub(crate) fn spawn_watcher(
                     } else if launcher_shown_since.is_none() {
                         launcher_shown_since = Some(Instant::now());
                     }
-                    let launcher_settled = launcher_shown_since.map(|t| t.elapsed() >= Duration::from_millis(400)).unwrap_or(false);
+                    // Timed from the real show (B-131), not from the pass that first noticed it.
+                    let launcher_settled = launcher_up
+                        && launcher_click_may_close(
+                            crate::commands::surfaces::shown_for_ms("launcher"),
+                            launcher_shown_since.map(|t| t.elapsed().as_millis()),
+                        );
                     if clicked && launcher_settled {
                         if let Some(lau) = watcher_handle.get_webview_window("launcher") {
                             if !is_foreground(&lau) {
@@ -1451,7 +1456,35 @@ fn popout_may_auto_close(app: &AppHandle, _label: &str) -> bool {
         .try_state::<AppState>()
         .map(|s| s.config.lock().unwrap_or_else(|e| e.into_inner()).func.auto_close_popouts)
         .unwrap_or(true);
-    on && !mouse_button_down()
+    // The button state this watcher pass sampled. Calling GetAsyncKeyState again here cleared
+    // every button's "pressed since the last check" bit in the middle of a pass, so a click that
+    // landed between the pass's own sample and this call was lost to the next pass's
+    // click-outside rules (Search, Launcher) (B-131).
+    on && !mouse_button_held_this_pass()
+}
+
+/// How long after it is shown the Launcher must have been up before a click outside it closes it,
+/// so the click that opened it can't close it again.
+pub(crate) const LAUNCHER_SETTLE_MS: u128 = 400;
+
+/// Whether a click outside an unfocused Launcher may close it. `shown_ms`: time since Lens showed
+/// it (`glide_show_surface`); `seen_ms`: time since the watcher first saw it up (the fallback for
+/// a Launcher shown some other way). The show time wins: a slow watcher pass noticed the window
+/// late and ignored a real click outside it (B-131).
+pub(crate) fn launcher_click_may_close(shown_ms: Option<u128>, seen_ms: Option<u128>) -> bool {
+    match (shown_ms, seen_ms) {
+        (Some(shown), _) => shown >= LAUNCHER_SETTLE_MS,
+        (None, Some(seen)) => seen >= LAUNCHER_SETTLE_MS,
+        (None, None) => false,
+    }
+}
+
+static BUTTON_HELD_THIS_PASS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whether a mouse button was held at this watcher pass's sample (`mouse_button_down`). Never
+/// reads the hardware again, so it can't consume a click before the next pass sees it.
+pub(crate) fn mouse_button_held_this_pass() -> bool {
+    BUTTON_HELD_THIS_PASS.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// How long a Dock "menu open" report may stand with the pointer away and the Dock unfocused.
@@ -1762,12 +1795,17 @@ pub(crate) fn mouse_button_down() -> bool {
     // 65 ms, and a quick click can go down and up between two looks: reading only the "held" bit
     // missed it, so a click outside Search never closed it (B-42). Read every button each time so
     // each one's "since last check" bit is consumed.
+    // Only the watcher's once-per-pass sample may call this: every call clears the "since last
+    // check" bits. Others read `mouse_button_held_this_pass` (B-131).
     unsafe {
         let mut any = false;
+        let mut held = false;
         for vk in [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON] {
             let state = GetAsyncKeyState(vk.0 as i32) as u16;
             any |= state & 0x8001 != 0;
+            held |= state & 0x8000 != 0;
         }
+        BUTTON_HELD_THIS_PASS.store(held, std::sync::atomic::Ordering::Relaxed);
         any
     }
 }
@@ -1836,6 +1874,34 @@ mod search_guard_tests {
         assert!(search_should_close(idle, &mut s, t0 + Duration::from_millis(1300)));
         let mut s2 = None;
         assert!(search_should_close(SearchGuardInput { bar_focused: true, click_outside: true, ..Default::default() }, &mut s2, t0));
+    }
+}
+
+#[cfg(test)]
+mod launcher_click_tests {
+    use super::*;
+
+    #[test]
+    fn the_show_time_decides_not_the_pass_that_noticed_it() {
+        // Shown 450 ms ago, but a slow pass only noticed it 120 ms ago: a click outside closes it.
+        assert!(launcher_click_may_close(Some(450), Some(120)));
+        // The click that opened it (just shown) never closes it, however the watcher timed it.
+        assert!(!launcher_click_may_close(Some(50), Some(900)));
+        // Shown some other way: the watcher's own sighting is the fallback.
+        assert!(launcher_click_may_close(None, Some(LAUNCHER_SETTLE_MS)));
+        assert!(!launcher_click_may_close(None, Some(LAUNCHER_SETTLE_MS - 1)));
+        assert!(!launcher_click_may_close(None, None));
+    }
+
+    #[test]
+    fn popout_auto_close_does_not_read_the_buttons_again() {
+        // Every GetAsyncKeyState call clears "pressed since the last check": only the pass's own
+        // sample may make it, or a click is lost to the next pass's click-outside rules.
+        let src = include_str!("watcher.rs");
+        let f = &src[src.find("fn popout_may_auto_close").unwrap()..];
+        let f = &f[..f.find("\n}\n").unwrap()];
+        assert!(!f.contains("mouse_button_down()"), "popout_may_auto_close must not sample the buttons");
+        assert_eq!(src.matches(&["let clicked = mouse_button_down", "();"].concat()).count(), 1);
     }
 }
 

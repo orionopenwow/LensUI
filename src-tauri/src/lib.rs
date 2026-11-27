@@ -216,7 +216,7 @@ pub fn run() {
         win_workspaces::restore_all_windows();
         win_wallpaper::detach_wallpaper_window();
         win_focus_dim::shutdown();
-        restore_taskbar_if_hidden();
+        win_taskbar::restore_taskbar_for_exit();
         win_shell::emergency_restore_explorer("Lens crashed while it was the Windows shell.");
         default_panic(info);
         // Release builds unwind (so guards can catch), but a panic outside a guard is still the
@@ -1091,7 +1091,7 @@ pub fn run() {
                 crate::app::integration::shutdown(Some(_app_handle));
                 voice::shutdown();
                 win_dwm_engine::revert_dwm_theme();
-                restore_taskbar_if_hidden();
+                win_taskbar::restore_taskbar_for_exit();
             }
         });
 }
