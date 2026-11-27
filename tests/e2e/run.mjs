@@ -1062,6 +1062,10 @@ const SCENARIOS = [
       } finally {
         await invoke(dock, "music_config_set", { config: before }).catch(() => {});
         await invoke(dock, "hide_surface", { label: "nowplaying" }).catch(() => {});
+      }
+    },
+  },
+  {
     id: "selection-bar",
     title: "selection bar: select in Notepad → bar without stealing focus → Copy → Esc; excluded app and password field get no bar; Magic Search opens",
     async run(s) {
