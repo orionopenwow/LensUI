@@ -133,7 +133,7 @@ In `src/types/lens.ts` add `command?: Partial<import("../command/settings").Comm
 - **OCR of image clips** via `Windows.Media.Ocr`, which is local. Text would then be searchable, as in Raycast.
 - **Clip groups.** Ditto/CopyQ-style tabs are covered by Shelves for now.
 
-## Lens Mini, Edge Shelf and selection bubble
+## Lens Mini, Edge Shelf and selection bar
 
 Everything here is **off by default**, local and reversible. It never runs in fullscreen apps or games, and follows AGENTS.md.
 
@@ -221,22 +221,15 @@ Create the window at startup only when `config.command.edge.enabled` is true.
 
 Paths must exist and sit outside `%APPDATA%\LensUI\clip`. Only paths the user dropped in earlier are allowed.
 
-**(d) Selection bubble.**
+**(d) Selection bar (was the selection bubble).** The bubble grew into the Magic selection bar; the full spec and status are in [plans/SELECTION_BAR.md](plans/SELECTION_BAR.md).
 
-- **Window:** `{"label":"bubble","url":"index.html?surface=bubble","width":32,"height":32,"decorations":false,"transparent":true,"alwaysOnTop":true,"skipTaskbar":true,"resizable":false,"shadow":false,"visible":false,"focus":false}`.
-- **Route:** `bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface })))`.
-- **Hook:** `commands::clip::init` starts the low-level mouse hook when `selection.json` has `bubble: true`; `selection_policy_set` starts and stops it live.
-- **What the hook sees:** button down and up only. A selection is a drag of at least 6 px held at least 80 ms, or a double or triple click.
-- **Reading:** UI Automation `TextPattern.GetSelection` on a worker thread, with a 150 ms timeout. It never uses Ctrl+C or the clipboard.
-- **What it refuses:**
-  - `IsPassword` fields;
-  - Lens's own windows;
-  - processes Lens cannot open (elevated or protected);
-  - fullscreen apps;
-  - the clipboard exclusion list;
-  - anything outside the allowlist, or on the denylist.
-- **Default allowlist:** Word, Excel, PowerPoint, Outlook, OneNote, Notepad, VS Code and Explorer. Browsers are left out; the extension covers them.
-- **Display:** the dot sits 14 px right and 10 px below the end of the selection. The text stays in the backend until Mini calls `selection_take` (one-shot, expires after 60 s).
+- **Window:** `{"label":"bubble","url":"index.html?surface=bubble","width":360,"height":48,"decorations":false,"transparent":true,"alwaysOnTop":true,"skipTaskbar":true,"resizable":false,"shadow":false,"visible":false,"focus":false,"create":false}`. It is shown with `WS_EX_NOACTIVATE` + `SWP_NOACTIVATE` (`commands/selection_bar.rs`), so the app keeps the caret, the selection and the keyboard.
+- **Route:** `bubble: lazy(() => import("./magic/selection/SelectionBar")…)`; Magic Search is `magicsearch` (`src/magic/search/MagicSearch.tsx`).
+- **Switch:** `config.selectionBar.enabled` (one settings writer, control catalogue). `selection.json` keeps *where* it may read (policy version 2: everywhere except terminals, consoles, remote desktop and VMs; `selection_rules::migrate` upgrades old files without surprises).
+- **What the hook sees:** button down/up and moves (to tell a drag from Magic Mouse's hold-then-drag, and how far the pointer wanders while the bar shows), wheel, and — only while the bar shows — keys. A selection is a drag of at least 6 px held at least 80 ms, or a double or triple click, with no modifier held.
+- **Reading:** UI Automation `TextPattern.GetSelection` on a worker thread, with a 150 ms timeout, after the configured delay (0–600 ms, default 120). It never uses Ctrl+C or the clipboard to read. The same read reports whether the text is editable and where its lines are.
+- **What it refuses:** `IsPassword` fields; Lens's own windows; processes Lens cannot open (elevated or protected); fullscreen apps, games and anti-cheat processes; the clipboard exclusion list; the policy's list.
+- **Display:** 8 px below the end of the selection (flipped above near the bottom, clamped to the work area, at the monitor's DPI). The text stays in the backend (one-shot, 60 s) until an action takes it.
 
 **(e) "Add selection to Shelf" hotkey** (suggested Ctrl+Alt+S). It calls `selection_to_shelf()`, which applies the same rules and returns a plain-words error when it refuses.
 

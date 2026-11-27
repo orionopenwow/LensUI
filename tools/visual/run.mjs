@@ -57,6 +57,9 @@ const STATES = [
   // Lens Music (?music=1 in the mock): Now Playing tinted by the artwork, and Immersive.
   { id: "nowplaying", surface: "nowplaying", params: "music=1", sizes: [[1280, 800], [1024, 700]] },
   { id: "nowplaying-immersive", surface: "nowplaying", params: "music=1&immersive=1", sizes: [[1440, 860], [1024, 700]] },
+  // The Magic selection bar and the Magic Search pop-out (docs/plans/SELECTION_BAR.md).
+  { id: "selection-bar", surface: "bubble", sizes: [[520, 88], [640, 88]] },
+  { id: "magic-search", surface: "magicsearch", sizes: [[420, 520], [440, 640]] },
   // Desktop widgets (docs/features/desktop-widgets.md): the host with one widget of each local
   // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
   { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },

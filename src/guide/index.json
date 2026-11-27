@@ -2665,21 +2665,21 @@
    "source": "src/components/CommandCard.tsx"
   },
   {
-   "id": "setting.ai.commandcard.selection-bubble",
+   "id": "setting.ai.commandcard.selection-bar",
    "kind": "setting",
-   "title": "Selection bubble",
-   "text": "After you select text, a small Lens dot appears for 3 seconds. Click it to open Mini with the selection. Lens reads the selection with Windows accessibility, never the clipboard, and never password fields.",
+   "title": "Selection bar",
+   "text": "The selection bubble is now the Magic selection bar: Cut, Copy, Paste, Magic Search and your actions after you select text. Turn it on in AI & Command › Selection bar.",
    "path": [
     "Settings",
     "AI & Command",
     "Lens Command",
-    "Selection bubble"
+    "Selection bar"
    ],
    "target": {
     "surface": "settings",
     "tab": "ai",
     "card": "CommandCard",
-    "label": "Selection bubble",
+    "label": "Selection bar",
     "section": "command"
    },
    "source": "src/components/CommandCard.tsx"
@@ -3844,6 +3844,505 @@
     "section": "magic"
    },
    "source": "src/components/MagicCard.tsx"
+  },
+  {
+   "id": "card.ai.selectionbarcard",
+   "kind": "card",
+   "title": "Selection bar",
+   "text": "After you select text anywhere, a small bar offers Cut, Copy and Paste (when they'd work), Magic Search and your actions. It never takes the keyboard from the app. Selection bar · Button labels · Cut button · Copy button · Paste button · Magic Search button · Your actions · Actions before More. Selection bar",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Selection bar",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.button-labels",
+   "kind": "setting",
+   "title": "Button labels",
+   "text": "Icons only, a label when you point at a button, or always.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Button labels"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Button labels",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.cut-button",
+   "kind": "setting",
+   "title": "Cut button",
+   "text": "Only where the text can be edited.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Cut button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Cut button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.copy-button",
+   "kind": "setting",
+   "title": "Copy button",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Copy button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Copy button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.paste-button",
+   "kind": "setting",
+   "title": "Paste button",
+   "text": "Only in editable text, when there's text to paste. Pointing at it shows the first line, unless a password manager marked it private.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Paste button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Paste button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.magic-search-button",
+   "kind": "setting",
+   "title": "Magic Search button",
+   "text": "A quick, cited answer with web results and matches from your own Lens, in a pop-out by the selection.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Magic Search button"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Magic Search button",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.your-actions",
+   "kind": "setting",
+   "title": "Your actions",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Your actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Your actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.actions-before-more",
+   "kind": "setting",
+   "title": "Actions before More",
+   "text": "The rest are one click away under ⋯.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Actions before More"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Actions before More",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.apps",
+   "kind": "setting",
+   "title": "Apps",
+   "text": "Everywhere except the apps below (the default), or only in the apps below.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Apps"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Apps",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.per-app-actions",
+   "kind": "setting",
+   "title": "Per-app actions",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Per-app actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Per-app actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-drag",
+   "kind": "setting",
+   "title": "Open after a drag",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a drag"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a drag",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-double-click",
+   "kind": "setting",
+   "title": "Open after a double click",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a double click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a double click",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.open-after-a-triple-click",
+   "kind": "setting",
+   "title": "Open after a triple click",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Open after a triple click"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Open after a triple click",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.selection-bar-delay",
+   "kind": "setting",
+   "title": "Selection bar delay",
+   "text": "How long after you let go of the mouse the bar appears.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Selection bar delay"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Selection bar delay",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.minimum-characters",
+   "kind": "setting",
+   "title": "Minimum characters",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Minimum characters"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Minimum characters",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.bar-placement",
+   "kind": "setting",
+   "title": "Bar placement",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Bar placement"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Bar placement",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.hide-on-its-own",
+   "kind": "setting",
+   "title": "Hide on its own",
+   "text": "Pointing at the bar keeps it open.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Hide on its own"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Hide on its own",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.auto-hide",
+   "kind": "setting",
+   "title": "Auto-hide",
+   "text": "",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Auto-hide"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Auto-hide",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.hide-distance",
+   "kind": "setting",
+   "title": "Hide distance",
+   "text": "The bar goes away when the pointer moves this far from it.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Hide distance"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Hide distance",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.smart-actions",
+   "kind": "setting",
+   "title": "Smart actions",
+   "text": "Recognises links, e-mail addresses, sums, units, colours, file paths and code, and shows a one-line preview. Worked out on this PC.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Smart actions"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Smart actions",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.learn-from-use",
+   "kind": "setting",
+   "title": "Learn from use",
+   "text": "Floats the actions you use most up the bar, from counts kept on this PC.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Learn from use"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Learn from use",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.web-results",
+   "kind": "setting",
+   "title": "Web results",
+   "text": "From your Lens Browser search engine (DuckDuckGo by default) and Wikipedia, only when you press Magic Search. The panel lists every source.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Web results"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Web results",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.results-from-my-files",
+   "kind": "setting",
+   "title": "Results from my files",
+   "text": "Your Shelf, clipboard history, notes and recent files, searched on this PC and never sent anywhere.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Results from my files"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Results from my files",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.ai-for-magic-search",
+   "kind": "setting",
+   "title": "AI for Magic Search",
+   "text": "The local model when it can answer; Claude only if your AI privacy setting allows it.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "AI for Magic Search"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "AI for Magic Search",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
+  },
+  {
+   "id": "setting.ai.selectionbarcard.magic-search-hotkey",
+   "kind": "setting",
+   "title": "Magic Search hotkey",
+   "text": "Runs Magic Search on the selection anywhere, with or without the bar. None by default.",
+   "path": [
+    "Settings",
+    "AI & Command",
+    "Selection bar",
+    "Magic Search hotkey"
+   ],
+   "target": {
+    "surface": "settings",
+    "tab": "ai",
+    "card": "SelectionBarCard",
+    "label": "Magic Search hotkey",
+    "section": "selectionbar"
+   },
+   "source": "src/magic/selection/SelectionBarCard.tsx"
   },
   {
    "id": "card.ai.contextmenucard",
@@ -7628,7 +8127,7 @@
    "id": "hotkey.ctrl-c",
    "kind": "hotkey",
    "title": "Ctrl+C",
-   "text": "It never uses Ctrl+C or the clipboard.",
+   "text": "It never uses Ctrl+C or the clipboard to read.",
    "path": [
     "Keyboard",
     "Ctrl+C"
@@ -9849,17 +10348,17 @@
   {
    "id": "doc.command.6",
    "kind": "doc",
-   "title": "Lens Command: Lens Mini, Edge Shelf and selection bubble",
+   "title": "Lens Command: Lens Mini, Edge Shelf and selection bar",
    "text": "Everything here is off by default , local and reversible. It never runs in fullscreen apps or games, and follows AGENTS.md.",
    "path": [
     "Docs",
     "Lens Command",
-    "Lens Mini, Edge Shelf and selection bubble"
+    "Lens Mini, Edge Shelf and selection bar"
    ],
    "target": {
     "surface": "doc",
     "doc": "docs/COMMAND.md",
-    "heading": "Lens Mini, Edge Shelf and selection bubble"
+    "heading": "Lens Mini, Edge Shelf and selection bar"
    },
    "source": "docs/COMMAND.md"
   },

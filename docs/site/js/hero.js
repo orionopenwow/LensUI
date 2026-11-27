@@ -129,6 +129,7 @@ const DOCKS = [
   ["minimal", "Minimal", "Just the icons. Nothing else.", {}],
   ["split", "Split", "Apps on one side, status on the other.", {}],
   ["islands", "Islands", "Grouped pills, Linux-rice style.", {}],
+  ["unified", "Unified", "One floating pill: apps, tray, bell and the clock.", {}],
   ["islands", "Expressive", "Islands with soft, bold shapes and its own pack.", { shape: "expressive", pack: "lens-expressive" }],
   ["islands", "Dot Matrix", "Islands drawn in dots, with its own pack.", { shape: "dotmatrix", pack: "lens-dot-matrix" }],
 ];

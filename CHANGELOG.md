@@ -29,6 +29,21 @@ up and migrates `%APPDATA%\LensUI` where it can.
   listening hides it.
 - **Music setup and Tweaks.** A short three-step setup at the top of Settings › Music (skip it any
   time) and a Tweaks section that groups the advanced options.
+- **Magic selection bar and Magic Search (off by default).** Turn it on in Settings › AI &
+  Command › Selection bar. Select text anywhere and a small matte bar appears just below it:
+  Cut, Copy and Paste (only when they'd work, sent to the app you're in, which keeps the focus),
+  Magic Search, and up to nine of your own actions from the right-click catalogue, each with an
+  optional hotkey (none by default, checked against Windows, Lens and app keys). It recognises
+  links, e-mail addresses, sums, units, colours, paths and code and shows a one-line preview,
+  worked out on this PC. **Magic Search** opens a pop-out by the selection with a short cited
+  answer (your local model first; a cloud AI only as your AI settings allow, and it says which
+  answered), web results from your Lens Browser search engine and Wikipedia, and matches from your
+  Shelf, clipboard history, notes and recent files (found on this PC, never sent). Follow-ups,
+  copy with or without sources, save to the Shelf or as a note, and replace the selection (asks
+  first). Also from Command ("magic search …") and the Magic window. It works everywhere except
+  terminals, consoles, remote-desktop and VM windows, password managers, password fields,
+  elevated apps and games, and you can change the list. It replaces the selection bubble; if the
+  bubble was on, the bar is on. Not yet confirmed on a real PC.
 - **Lens Apps has a Library.** A second view next to Discover lists everything from the catalogue
   that's on this PC, with the installed version, what an update would bring ("4.5.1 → 4.5.3"), who
   made each app and its licence. **Update all** asks once, on the same approval card as everything

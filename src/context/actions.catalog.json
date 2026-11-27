@@ -111,7 +111,30 @@
         "dock",
         "mini",
         "clipboard",
+        "notification",
+        "selectionBar"
+      ]
+    },
+    {
+      "id": "magic_search",
+      "label": "Magic Search",
+      "icon": "search",
+      "group": "ai",
+      "contexts": [
+        "selection",
+        "link",
+        "page",
+        "clipboard",
+        "shelf",
         "notification"
+      ],
+      "provider": "default",
+      "risk": "low",
+      "surfaces": [
+        "mini",
+        "lensBrowser",
+        "shelf",
+        "clipboard"
       ]
     },
     {
@@ -144,7 +167,8 @@
         "shelf",
         "mini",
         "clipboard",
-        "notification"
+        "notification",
+        "selectionBar"
       ]
     },
     {
@@ -166,7 +190,8 @@
         "lensBrowser",
         "shelf",
         "mini",
-        "clipboard"
+        "clipboard",
+        "selectionBar"
       ]
     },
     {
@@ -186,7 +211,8 @@
       "surfaces": [
         "browser",
         "lensBrowser",
-        "mini"
+        "mini",
+        "selectionBar"
       ]
     },
     {
@@ -207,7 +233,8 @@
         "lensBrowser",
         "shelf",
         "mini",
-        "clipboard"
+        "clipboard",
+        "selectionBar"
       ]
     },
     {
@@ -230,7 +257,8 @@
         "browser",
         "lensBrowser",
         "mini",
-        "clipboard"
+        "clipboard",
+        "selectionBar"
       ]
     },
     {
@@ -248,7 +276,8 @@
         "browser",
         "lensBrowser",
         "mini",
-        "clipboard"
+        "clipboard",
+        "selectionBar"
       ]
     },
     {
@@ -274,12 +303,13 @@
         "browser",
         "lensBrowser",
         "shelf",
-        "clipboard"
+        "clipboard",
+        "selectionBar"
       ]
     },
     {
       "id": "compare",
-      "label": "Compare with Shelf item\u2026",
+      "label": "Compare with Shelf item…",
       "icon": "columns",
       "group": "ai",
       "contexts": [
@@ -320,7 +350,8 @@
         "dock",
         "mini",
         "clipboard",
-        "notification"
+        "notification",
+        "selectionBar"
       ]
     },
     {
@@ -347,7 +378,8 @@
         "lensBrowser",
         "explorer",
         "clipboard",
-        "notification"
+        "notification",
+        "selectionBar"
       ]
     },
     {
@@ -383,12 +415,13 @@
         "browser",
         "lensBrowser",
         "shelf",
-        "mini"
+        "mini",
+        "selectionBar"
       ]
     },
     {
       "id": "pack_add",
-      "label": "Add to pack\u2026",
+      "label": "Add to pack…",
       "icon": "package-plus",
       "group": "save",
       "contexts": [
@@ -462,7 +495,8 @@
         "explorer",
         "shelf",
         "clipboard",
-        "mini"
+        "mini",
+        "selectionBar"
       ]
     },
     {
@@ -482,7 +516,8 @@
       "surfaces": [
         "browser",
         "lensBrowser",
-        "shelf"
+        "shelf",
+        "selectionBar"
       ]
     },
     {
@@ -565,7 +600,8 @@
         "shelf",
         "dock",
         "clipboard",
-        "notification"
+        "notification",
+        "selectionBar"
       ]
     },
     {
