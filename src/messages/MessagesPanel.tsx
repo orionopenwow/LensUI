@@ -6,6 +6,7 @@ import { messagesApi, EVT_UNREAD } from "./api";
 import type { Conversation, UnreadDto } from "./model";
 import { browserOpen } from "../browser/api";
 import { useAiRequest } from "../ai/client";
+import { oops, quiet } from "../ui/oops";
 
 /** The live Messages surface: inbox ⇄ conversation, Focus, catch-up, Matrix quick reply. */
 export function MessagesPanel() {
@@ -23,20 +24,23 @@ export function MessagesPanel() {
   }, []);
 
   useEffect(() => {
-    void load().catch(() => {});
+    // First load: an empty inbox with the reason is better than a silent one.
+    void load().catch(oops("load your inbox"));
     let un: (() => void) | null = null;
     void listen<UnreadDto>(EVT_UNREAD, (e) => {
       setUnread(e.payload);
-      void messagesApi.inbox().then(setRows).catch(() => {});
+      // An unread event re-reads the inbox; the next event tries again.
+      void messagesApi.inbox().then(setRows).catch(quiet);
     }).then((u) => (un = u));
     return () => un?.();
   }, [load]);
 
-  const focus = async (mode: "all" | "vip" | "snooze", minutes?: number) => setUnread(await messagesApi.focus(mode, minutes ?? null));
+  const focus = (mode: "all" | "vip" | "snooze", minutes?: number) =>
+    messagesApi.focus(mode, minutes ?? null).then(setUnread, oops(mode === "snooze" ? "snooze notifications" : "change the focus mode"));
 
   const openApp = (c: Conversation) => {
     // Web-app spaces open in the Lens Browser; desktop deep links go to the OS.
-    void browserOpen(c.url).catch(() => {});
+    void browserOpen(c.url).catch(oops(`open ${c.title}`));
   };
 
   const catchUp = async (c: Conversation) => {
@@ -62,11 +66,18 @@ export function MessagesPanel() {
     } catch (e) {
       setPending({ ...pending, result: [{ ok: false, message: String(e) }] });
     }
-    window.setTimeout(() => setPending(null), 1800);
   };
+  // A sent reply clears itself; a failed one stays until you close it, so it can be read.
+  const sentOk = !!pending?.result?.every((r) => r.ok);
+  useEffect(() => {
+    if (!sentOk) return;
+    const t = window.setTimeout(() => setPending(null), 1800);
+    return () => window.clearTimeout(t);
+  }, [sentOk]);
 
   const deny = () => {
-    if (pending) void messagesApi.deny(pending.id).catch(() => {});
+    // Nothing is sent either way: an approval nobody redeems expires by itself.
+    if (pending) void messagesApi.deny(pending.id).catch(quiet);
     setPending(null);
   };
 
@@ -77,8 +88,8 @@ export function MessagesPanel() {
         catchUp={catchUpFor === open.id ? ai.text : null}
         onBack={() => setOpen(null)}
         onOpenApp={openApp}
-        onCatchUp={catchUp}
-        onReview={(t) => void review(t).catch(() => {})}
+        onCatchUp={(c) => void catchUp(c).catch(oops("catch you up"))}
+        onReview={(t) => void review(t).catch(oops("prepare that reply"))}
         pending={pending}
         onApprove={approve}
         onDeny={deny}

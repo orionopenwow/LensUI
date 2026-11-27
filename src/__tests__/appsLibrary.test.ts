@@ -249,7 +249,7 @@ describe("feel: Lens Apps controls declare a press weight", () => {
 
   test("new styles use motion tokens only and never animate layout", () => {
     const css = src("library.css");
-    expect(css.match(/\b\d+m?s\b/g)?.filter((d) => !/^0m?s$/.test(d)) ?? []).toEqual(["700ms"]); // the token's own fallback
+    expect(css.match(/\b\d+m?s\b/g)?.filter((d) => !/^0m?s$/.test(d)) ?? []).toEqual(["700ms"]); // one token's own fallback
     expect(css).not.toMatch(/transition:[^;]*\b(width|height|top|left|margin|padding)\b/);
     expect(css).not.toContain("backdrop-filter");
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);

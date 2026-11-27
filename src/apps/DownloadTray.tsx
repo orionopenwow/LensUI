@@ -67,10 +67,10 @@ function Setup({ app, steps, onApply, onSkip }: { app: CatalogApp; steps: Recipe
         </label>
       ))}
       <div className="la-pop-actions">
-        <button className="la-btn la-btn-sm" onClick={onSkip}>
+        <button data-weight="medium" className="la-btn la-btn-sm" onClick={onSkip}>
           Skip
         </button>
-        <button className="la-btn la-btn-sm la-btn-primary" disabled={!chosen.size} onClick={() => onApply([...chosen].sort((a, b) => a - b))}>
+        <button data-weight="heavy" className="la-btn la-btn-sm la-btn-primary" disabled={!chosen.size} onClick={() => onApply([...chosen].sort((a, b) => a - b))}>
           Apply {chosen.size}
         </button>
       </div>
@@ -84,7 +84,7 @@ export function DownloadTray({ queue, jobs, apps, recipes, onCancel, onRun, onDi
   // Rendered on <body> so it stays in the window's corner while the catalogue scrolls.
   return createPortal(
     <section className="la-tray la-floating" aria-label="Downloads">
-      <button className="la-tray-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <button data-weight="medium" className="la-tray-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className="la-tray-title">Downloads</span>
         <span className="la-mono la-muted">{traySummary(queue)}</span>
         {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -110,18 +110,18 @@ export function DownloadTray({ queue, jobs, apps, recipes, onCancel, onRun, onDi
                     )}
                   </div>
                   {item.status === "verified" && (
-                    <button className="la-pill la-pill-run" onClick={() => onRun(item.appId)}>
+                    <button data-weight="medium" className="la-pill la-pill-run" onClick={() => onRun(item.appId)}>
                       Run
                     </button>
                   )}
                   {item.status === "done" && !item.setupPending && <Check size={14} className="la-ok" />}
                   {live || item.status === "verified" ? (
-                    <button className="la-icon-btn" aria-label={`Cancel ${app.name}`} onClick={() => onCancel(item.appId)}>
+                    <button data-weight="medium" className="la-icon-btn" aria-label={`Cancel ${app.name}`} onClick={() => onCancel(item.appId)}>
                       <X size={13} />
                     </button>
                   ) : (
                     !item.setupPending && (
-                      <button className="la-icon-btn" aria-label={`Dismiss ${app.name}`} onClick={() => onDismiss(item.appId)}>
+                      <button data-weight="medium" className="la-icon-btn" aria-label={`Dismiss ${app.name}`} onClick={() => onDismiss(item.appId)}>
                         <X size={13} />
                       </button>
                     )

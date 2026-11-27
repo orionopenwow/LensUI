@@ -12,7 +12,7 @@ export function FeedsWidget({ items, now, onOpen }: { items: ItemDto[]; now?: nu
   const t = now ?? Date.now();
   return (
     <section className="lw-widget" aria-label="Feeds widget">
-      <button className="lw-head" onClick={onOpen}>
+      <button data-weight="medium" className="lw-head" onClick={onOpen}>
         <Rss size={13} /> <span>Feeds</span>
         <span className="lf-spacer" />
         <span className="lf-sub">{items.length ? `${items.length} new` : "Up to date"}</span>
@@ -34,7 +34,7 @@ export function MessagesWidget({ rows, focus, onOpen }: { rows: Conversation[]; 
   const waiting = rows.filter((r) => r.unread || r.mentions).slice(0, 5);
   return (
     <section className="lw-widget" aria-label="Messages widget">
-      <button className="lw-head" onClick={onOpen}>
+      <button data-weight="medium" className="lw-head" onClick={onOpen}>
         <MessageSquare size={13} /> <span>Messages</span>
         <span className="lf-spacer" />
         <span className="lf-sub">{focus === "snoozed" ? "Snoozed" : tot.unread ? `${tot.unread} unread` : "All caught up"}</span>
@@ -58,7 +58,7 @@ export function UnreadPill({ unread, onClick }: { unread: UnreadDto | null; onCl
   const label = pillLabel(unread);
   if (!label) return null;
   return (
-    <button className={`lm-pill ${unread?.focus === "snoozed" ? "snoozed" : ""}`} onClick={onClick} aria-label={`Messages: ${label}${unread?.mentions ? `, ${unread.mentions} mentions` : ""}`}>
+    <button data-weight="medium" className={`lm-pill ${unread?.focus === "snoozed" ? "snoozed" : ""}`} onClick={onClick} aria-label={`Messages: ${label}${unread?.mentions ? `, ${unread.mentions} mentions` : ""}`}>
       <MessageSquare size={12} />
       <span>{label}</span>
       {unread?.mentions && unread.focus !== "snoozed" ? <span className="lm-pill-dot" aria-hidden /> : null}

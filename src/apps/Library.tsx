@@ -10,7 +10,7 @@ import { LicenceChip, Pill, Section } from "./pieces";
 import type { Ctl } from "./useAppsController";
 import { AppIcon } from "./visuals";
 
-function Row({ row, ctl, live, index, onOpen }: { row: LibraryRow; ctl: Ctl; live: boolean; index: number; onOpen: (id: string) => void }) {
+function Row({ row, ctl, live, onOpen }: { row: LibraryRow; ctl: Ctl; live: boolean; onOpen: (id: string) => void }) {
   const { app } = row;
   const item = ctl.item(app);
   const justDone = item?.status === "done" && item.op === "upgrade";
@@ -37,8 +37,6 @@ function Row({ row, ctl, live, index, onOpen }: { row: LibraryRow; ctl: Ctl; liv
       data-lib-row
       data-app-id={app.id}
       data-weight="light"
-      // The first six rows arrive one after another; the rest arrive together (DESIGN §5.3).
-      style={{ ["--la-i" as any]: Math.min(index, 6) }}
       aria-label={`${app.name}, ${row.available ? `update from ${row.version} to ${row.available}` : `version ${row.version}, up to date`}. By ${creditFor(app).by}.`}
       onClick={() => onOpen(app.id)}
       onKeyDown={onKey}
@@ -151,8 +149,8 @@ export function Library({ ctl, live, total, onOpen, onDiscover }: { ctl: Ctl; li
       {m.updates.length > 0 && (
         <Section title="Updates" subtitle="Nothing updates until you say so" count={m.updates.length}>
           <div className="la-lib-list" role="list" aria-label="Apps with an update">
-            {m.updates.map((r, i) => (
-              <Row key={r.app.id} row={r} ctl={ctl} live={live} index={i} onOpen={onOpen} />
+            {m.updates.map((r) => (
+              <Row key={r.app.id} row={r} ctl={ctl} live={live} onOpen={onOpen} />
             ))}
           </div>
         </Section>
@@ -160,8 +158,8 @@ export function Library({ ctl, live, total, onOpen, onDiscover }: { ctl: Ctl; li
       {m.current.length > 0 && (
         <Section title="Up to date" count={m.current.length}>
           <div className="la-lib-list" role="list" aria-label="Apps that are up to date">
-            {m.current.map((r, i) => (
-              <Row key={r.app.id} row={r} ctl={ctl} live={live} index={m.updates.length + i} onOpen={onOpen} />
+            {m.current.map((r) => (
+              <Row key={r.app.id} row={r} ctl={ctl} live={live} onOpen={onOpen} />
             ))}
           </div>
         </Section>

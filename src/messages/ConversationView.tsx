@@ -29,15 +29,15 @@ export function ConversationView({ c, lines = [], catchUp, onBack, onOpenApp, on
   return (
     <section className="lm-conv" aria-label={c.title}>
       <header className="lf-head">
-        {onBack ? <button className="lf-ico" aria-label="Back" onClick={onBack}><ArrowLeft size={15} /></button> : null}
+        {onBack ? <button data-weight="medium" className="lf-ico" aria-label="Back" onClick={onBack}><ArrowLeft size={15} /></button> : null}
         <AppGlyph app={c.app} title={c.title} size={24} />
         <span className="lm-conv-title">
           <span className="lf-h2">{c.title}</span>
           <span className="lf-sub">{capability(c)}</span>
         </span>
         <span className="lf-spacer" />
-        <button className="lf-ico" aria-label="AI catch-up" onClick={() => onCatchUp?.(c)}><Sparkles size={15} /></button>
-        <button className="lf-ico" aria-label={`Open ${c.title}`} onClick={() => onOpenApp?.(c)}><ExternalLink size={15} /></button>
+        <button data-weight="medium" className="lf-ico" aria-label="AI catch-up" onClick={() => onCatchUp?.(c)}><Sparkles size={15} /></button>
+        <button data-weight="medium" className="lf-ico" aria-label={`Open ${c.title}`} onClick={() => onOpenApp?.(c)}><ExternalLink size={15} /></button>
       </header>
       {catchUp ? (
         <div className="lf-digest">
@@ -56,7 +56,7 @@ export function ConversationView({ c, lines = [], catchUp, onBack, onOpenApp, on
         ) : (
           <div className="lf-empty">
             {c.canReply ? "No recent messages." : `${c.unread ? `${c.unread} unread. ` : ""}Read and reply in ${c.title} — Lens keeps it in its own space and only shows the badge.`}
-            {!c.canReply ? <div style={{ marginTop: 10 }}><button className="lf-btn primary" onClick={() => onOpenApp?.(c)}>Open {c.title}</button></div> : null}
+            {!c.canReply ? <div style={{ marginTop: 10 }}><button data-weight="heavy" className="lf-btn primary" onClick={() => onOpenApp?.(c)}>Open {c.title}</button></div> : null}
           </div>
         )}
       </div>
@@ -74,7 +74,7 @@ export function ConversationView({ c, lines = [], catchUp, onBack, onOpenApp, on
           }}
         >
           <input aria-label="Reply" placeholder={`Reply in ${c.title}`} value={text} onChange={(e) => setText(e.target.value)} />
-          <button className="lf-btn primary" disabled={!text.trim()}>Review</button>
+          <button data-weight="heavy" className="lf-btn primary" disabled={!text.trim()}>Review</button>
         </form>
       ) : null}
     </section>

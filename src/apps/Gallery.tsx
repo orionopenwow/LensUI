@@ -2,7 +2,7 @@
 // previous / next, dots and the arrow keys. It moves on by itself until you take over, never while
 // the window is hidden, and not at all with reduced motion. Each image says where it came from.
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { isVideo, useMedia } from "./media";
 import { hueFor } from "./placeholder";
 import type { CatalogApp } from "./types";
@@ -70,6 +70,8 @@ export function Gallery({ app, live = true, start = 0 }: { app: CatalogApp; live
   const ready = media.status === "ready" && !failed[index];
   const loading = live && media.status === "loading";
   const what = url && isVideo(url) ? "Demo" : "Screenshot";
+  // The backdrop behind a missing or loading image is tinted from the app's id.
+  const tint = { ["--la-hue"]: hueFor(app.id) } as CSSProperties;
   return (
     <div
       ref={box}
@@ -79,7 +81,7 @@ export function Gallery({ app, live = true, start = 0 }: { app: CatalogApp; live
       aria-label={`${app.name} screenshots`}
       tabIndex={0}
       onKeyDown={onKey}
-      style={{ ["--la-hue" as any]: hueFor(app.id) }}
+      style={tint}
     >
       <div className={`la-shots-stage${loading ? " la-shimmer" : ""}`}>
         {!ready && !loading && <AppIcon app={app} size={88} live={live} />}

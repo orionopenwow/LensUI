@@ -195,17 +195,17 @@ export const Calculator: React.FC<{ config: LensConfig | null; updateConfig: (c:
           <div className="calc-split">
             <div className="calc-keys" role="group" aria-label="Keypad">
               {KEYS.map((k) => (
-                <button key={k} type="button" className={cx("calc-key", /[÷×−+^%]/.test(k) && "op")} onClick={() => press(k)} aria-label={k === "√" ? "Square root" : k === "−" ? "Minus" : k}>
+                <button data-weight="light" key={k} type="button" className={cx("calc-key", /[÷×−+^%]/.test(k) && "op")} onClick={() => press(k)} aria-label={k === "√" ? "Square root" : k === "−" ? "Minus" : k}>
                   {k}
                 </button>
               ))}
-              <button type="button" className="calc-key wide" onClick={() => setExpr((x) => x.slice(0, -1))} aria-label="Backspace">
+              <button data-weight="light" type="button" className="calc-key wide" onClick={() => setExpr((x) => x.slice(0, -1))} aria-label="Backspace">
                 ⌫
               </button>
-              <button type="button" className="calc-key wide" onClick={() => setExpr("")}>
+              <button data-weight="light" type="button" className="calc-key wide" onClick={() => setExpr("")}>
                 C
               </button>
-              <button type="button" className="calc-key wide eq" onClick={commit} aria-label="Equals">
+              <button data-weight="light" type="button" className="calc-key wide eq" onClick={commit} aria-label="Equals">
                 =
               </button>
             </div>
@@ -218,7 +218,7 @@ export const Calculator: React.FC<{ config: LensConfig | null; updateConfig: (c:
                 <ul className="ca-list">
                   {history.slice(0, 40).map((h) => (
                     <li key={h.at + h.expr} className="ca-item">
-                      <button type="button" className="calc-hist" onClick={() => setExpr(h.expr)} aria-label={`Use ${h.expr} again`}>
+                      <button data-weight="medium" type="button" className="calc-hist" onClick={() => setExpr(h.expr)} aria-label={`Use ${h.expr} again`}>
                         <span className="ca-item-sub">{h.expr}</span>
                         <span className="ca-item-title">= {h.result}</span>
                       </button>
@@ -261,7 +261,7 @@ export const Calculator: React.FC<{ config: LensConfig | null; updateConfig: (c:
           <Card title={`${uval || 0} ${from} is`}>
             <div className="ca-grid">
               {(UNITS[dim] ?? []).filter((u) => u !== from).map((u) => (
-                <button key={u} type="button" className="calc-unit" onClick={() => uout[u] != null && copy(fmt(uout[u]!))} aria-label={`${fmt(uout[u] ?? NaN)} ${u}, copy`}>
+                <button data-weight="medium" key={u} type="button" className="calc-unit" onClick={() => uout[u] != null && copy(fmt(uout[u]!))} aria-label={`${fmt(uout[u] ?? NaN)} ${u}, copy`}>
                   <strong>{uout[u] != null ? fmt(uout[u]!) : "—"}</strong>
                   <span className="ca-muted">{u}</span>
                 </button>
@@ -293,7 +293,7 @@ export const Calculator: React.FC<{ config: LensConfig | null; updateConfig: (c:
                   <React.Fragment key={b.base}>
                     <dt>{b.label}</dt>
                     <dd>
-                      <button type="button" className="calc-base-val" onClick={() => copy(format(pval, b.base, bits).replace(/ /g, ""))} aria-label={`${b.label} ${format(pval, b.base, bits)}, copy`}>
+                      <button data-weight="medium" type="button" className="calc-base-val" onClick={() => copy(format(pval, b.base, bits).replace(/ /g, ""))} aria-label={`${b.label} ${format(pval, b.base, bits)}, copy`}>
                         {b.base === 10 ? pval.toString() : format(pval, b.base, bits)}
                       </button>
                     </dd>
