@@ -22,6 +22,7 @@ const APPS = [
   ["calculator", "programmer", 760, null],
   ["color", "home", 920, "lens-expressive"],
   ["notes", "home", 820, "lens-dot-matrix"],
+  ["notes", "remind", 820, null],
   ["notes", "sticky", 280, null],
   ["power", "home", 1080, "lens-dot-matrix"],
   ["network", "home", 1000, "lens-expressive"],

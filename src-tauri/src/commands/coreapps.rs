@@ -807,31 +807,36 @@ pub(crate) fn init_timers(app: &AppHandle) {
     }
     let app = app.clone();
     std::thread::spawn(move || {
-        let mut was_active = false;
+        let mut was_counting = false;
         loop {
-            let (fired, active) = {
+            let (fired, wait) = {
                 let mut st = timer_state().lock().unwrap_or_else(|e| e.into_inner());
-                let fired = st.store.tick(now_ms());
+                let now = now_ms();
+                let fired = st.store.tick(now);
                 for f in &fired {
                     if let Some(on) = f.dnd {
                         set_dnd(&app, &mut st, on);
                     }
                 }
-                if !fired.is_empty() {
+                // Daylight saving or a new time zone: alarms stay on local time (B-124).
+                let retimed = coreapps::local_offset_min().is_some_and(|tz| st.store.retime_alarms(tz, now));
+                if !fired.is_empty() || retimed {
                     save_timers(&st.store);
                 }
-                let active = st.store.active();
-                if active || was_active || !fired.is_empty() {
+                // Tell the windows and the Dock badge only when something they show changed: every
+                // second while a timer counts down, and once for a ring or a moved alarm. An alarm
+                // that is only waiting sends nothing (B-125).
+                let counting = st.store.counting();
+                if counting || was_counting || !fired.is_empty() || retimed {
                     publish(&app, &st.store);
                 }
-                (fired, active)
+                was_counting = counting;
+                (fired, st.store.sleep_ms(now, 5000))
             };
             for f in fired {
                 crate::commands::notifications::push_notification_cmd(app.clone(), f.title, f.body, Some("Lens Timer".into()), Some("system".into()));
             }
-            was_active = active;
-            // Tick every second while something counts down; otherwise check for alarms lazily.
-            std::thread::sleep(Duration::from_millis(if active { 1000 } else { 5000 }));
+            std::thread::sleep(Duration::from_millis(wait.max(50) as u64));
         }
     });
 }

@@ -3,6 +3,7 @@
 // them in step.
 import { invoke } from "@tauri-apps/api/core";
 import { lensAppIconSvg, lensAppIconUrl } from "../icons/lensApps";
+import { oops } from "../ui/oops";
 
 export type CoreAppId = "monitor" | "startup" | "timer" | "calculator" | "color" | "notes" | "power" | "network" | "clipboard" | "feeds" | "messages";
 
@@ -185,12 +186,12 @@ export function runCoreAppSlash(word: string): boolean {
   const companion = COMPANION_SLASH[word];
   if (companion) {
     // Opens ThumbDesk if it's installed; otherwise Settings › Gaming › Use a controller offers it.
-    invoke(companion.command).catch(() => invoke("open_dock_popout_tab_cmd", { tab: "gaming#controller" }).catch(() => {}));
+    invoke(companion.command).catch(() => invoke("open_dock_popout_tab_cmd", { tab: "gaming#controller" }).catch(oops("open the controller settings")));
     return true;
   }
   const id = SLASH[word];
   if (!id) return false;
-  openCoreApp(id, SLASH_VIEW[word]).catch(() => {});
+  openCoreApp(id, SLASH_VIEW[word]).catch(oops(`open ${coreApp(id)?.title ?? "that app"}`));
   return true;
 }
 
@@ -205,7 +206,7 @@ export function coreAppSearchItems() {
     iconUrl: iconUrl(a),
     badge: "Lens",
     run: () => {
-      openCoreApp(a.id).catch(() => {});
+      openCoreApp(a.id).catch(oops(`open ${a.title}`));
     },
   }));
 }

@@ -19,6 +19,7 @@ import {
 } from "./contract";
 import { INITIAL_HUD, reduceHud, type HudButton } from "./hudState";
 import { earconFor, playEarcon } from "./sounds";
+import { logFail, quiet } from "../failsafe/calls";
 
 export function useVoiceHud() {
   const [state, dispatch] = useReducer(reduceHud, INITIAL_HUD);
@@ -44,9 +45,9 @@ export function useVoiceHud() {
     ];
     voiceCommands()
       .then((c) => setCommands(Array.isArray(c) ? c : []))
-      .catch(() => {});
+      .catch(logFail("Voice", "load the command list"));
     return () => {
-      uns.forEach((u) => u.then((f) => f()).catch(() => {}));
+      uns.forEach((u) => u.then((f) => f()).catch(quiet));
     };
   }, []);
 
@@ -59,11 +60,11 @@ export function useVoiceHud() {
   }, [state.result, state.phase]);
 
   const onButton = (b: HudButton) => {
-    if (b === "yes" || b === "no") voiceAnswer(b === "yes").catch(() => {});
-    else if (b === "cancel") voiceCancel().catch(() => {});
-    else if (b === "undo") voiceUndo().catch(() => {}).finally(() => dispatch({ kind: "dismiss" }));
+    if (b === "yes" || b === "no") voiceAnswer(b === "yes").catch(logFail("Voice", "send your answer"));
+    else if (b === "cancel") voiceCancel().catch(logFail("Voice", "cancel"));
+    else if (b === "undo") voiceUndo().catch(logFail("Voice", "undo that")).finally(() => dispatch({ kind: "dismiss" }));
     else if (b === "help") dispatch({ kind: "help", open: true });
-    else if (b === "unmute") voiceMute(false).catch(() => {});
+    else if (b === "unmute") voiceMute(false).catch(logFail("Voice", "unmute the microphone"));
   };
 
   return { state, commands, onButton, closeHelp: () => dispatch({ kind: "help", open: false }), speak: voiceSpeak };

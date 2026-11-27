@@ -11,7 +11,7 @@ const Switch: React.FC<{ on: boolean; label: string; desc: string; onChange: (v:
       <span className="cl-setting-label">{label}</span>
       <span className="cl-meta-line">{desc}</span>
     </span>
-    <button type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} className={`cl-switch${on ? " is-on" : ""}`} onClick={() => onChange(!on)}>
+    <button data-weight="medium" type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} className={`cl-switch${on ? " is-on" : ""}`} onClick={() => onChange(!on)}>
       <span className="cl-switch-knob" />
     </button>
   </div>
@@ -48,7 +48,7 @@ export const SettingsPanel: React.FC<{ initial?: CleanerSettings | null; storage
         <p className="cl-meta-line">
           Windows Storage Sense is {storageSense ? "on" : "off"}.{" "}
           {onOpen && (
-            <button type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
+            <button data-weight="light" type="button" className="cl-link" onClick={() => onOpen("ms-settings:storagesense")}>
               Open Storage Sense
             </button>
           )}

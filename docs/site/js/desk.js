@@ -306,29 +306,51 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
   function startDrag(w, mode, p, id) {
     dragging = { w, mode, start: p, orig: { x: w.x, y: w.y, w: w.w, h: w.h }, last: p, t: performance.now(), vx: 0, slot: null, id };
     root.classList.add("is-dragging");
-    calm(true);
+    calm(true, w);
     root.classList.toggle("is-pagedrag", id !== "frame"); // frames stay live while their own title bar drags
-    play?.setStill(true); // the window gets the frames while it moves
+    // The window gets the frames while it moves: the backdrop pauses on the frame it shows (setStill
+    // would draw that frame again, 18 ms at 4× in the drag's first task, for the same pixels).
+    play?.runner?.setPaused(true);
     emit("user", "drag");
   }
-  /** While a window moves, the embedded surfaces hold still and drop their glass blur: every blur
-   *  over a moving window would otherwise be recomputed each frame. Restored on drop. */
-  function calm(on) {
-    document.documentElement.classList.toggle("is-calm", on); // the page's own ambient loops pause too
-    for (const f of document.querySelectorAll("iframe")) {
-      try {
-        const doc = f.contentDocument;
-        if (!doc?.documentElement) continue;
-        if (on && !doc.getElementById("site-calm")) {
-          const st = doc.createElement("style");
-          st.id = "site-calm";
-          st.textContent = ".site-calm *, .site-calm *::before, .site-calm *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation-play-state: paused !important; }";
-          doc.head.appendChild(st);
-        }
-        doc.documentElement.classList.toggle("site-calm", on);
-      } catch { /* not ready yet */ }
+  /** While a window moves, the page and its embedded surfaces hold their CSS loops, and the moving
+   *  window's own surface drops its glass blur (a blur inside a moving frame is recomputed each
+   *  frame; a frame's blur only ever samples its own document, so the still windows keep theirs).
+   *  Restored on drop.
+   *  Done element by element: a class goes on each element that has a running CSS animation or a
+   *  blur, and only those restyle. A `.calm *` rule toggled on each document's root (as this used to
+   *  be) restyles every element of the page and of every frame at once, a 120 ms task at the drag's
+   *  first frame and another at the drop on a slow laptop (tools/site/check.mjs, 4× throttle). */
+  const CALM_CSS = ".lens-calm, .lens-calm::before, .lens-calm::after { animation-play-state: paused !important; }"
+    + " .lens-calm-glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }";
+  let calmed = null;
+  function calm(on, w) {
+    document.documentElement.classList.toggle("is-calm", on); // exhibits.js holds its own loop on this; no CSS hangs off it
+    if (!on) { calmed?.forEach(([el, c]) => el.classList.remove(c)); calmed = null; return; }
+    if (calmed) return;
+    calmed = [];
+    const hold = (el, c) => { if (el && !el.classList.contains(c)) { el.classList.add(c); calmed.push([el, c]); } };
+    const docs = [document];
+    for (const f of document.querySelectorAll("iframe")) { try { if (f.contentDocument?.head) docs.push(f.contentDocument); } catch { /* not ready yet */ } }
+    for (const doc of docs) {
+      // The rule's selectors are classes no element has yet, so adding the sheet restyles nothing.
+      if (doc !== document && !doc.getElementById("lens-calm")) doc.head.append(Object.assign(doc.createElement("style"), { id: "lens-calm", textContent: CALM_CSS }));
+      try { for (const a of doc.getAnimations()) if (a.animationName !== undefined && a.playState === "running") hold(a.effect?.target, "lens-calm"); } catch { /* no getAnimations */ }
     }
+    // The moving window's own surface: the elements that blur what is behind them. Their styles are
+    // clean here, so reading them is cheap (about 3 ms at 4×); pseudo-elements aren't read (asking for
+    // a ::before's style computes it, ten times the cost) and no surface blurs from one (src/**/*.css).
+    try {
+      const doc = w?.frame?.contentDocument, view = doc?.defaultView;
+      if (doc?.body) for (const el of doc.body.querySelectorAll("*")) {
+        const s = view.getComputedStyle(el);
+        if ((s.backdropFilter || "none") !== "none" || (s.webkitBackdropFilter || "none") !== "none") hold(el, "lens-calm-glass");
+      }
+    } catch { /* not ready yet */ }
   }
+  // No text selection on the page while a window is dragged (a user-select rule on the body would
+  // restyle the whole page, see css/site.css).
+  document.addEventListener("selectstart", (e) => { if (dragging) e.preventDefault(); }, true);
   let raf = 0, pending = null;
   function move(p) {
     pending = p;
@@ -378,6 +400,7 @@ export function createDesk(host, { label = "Lens desktop", layout = [["browser",
     root.classList.remove("is-dragging", "is-pagedrag");
     calm(false);
     play?.setStill(still());
+    play?.runner?.setPaused(false);
     showSnap(null);
     const w = d.w;
     if (d.slot) snap(w.id, d.slot);

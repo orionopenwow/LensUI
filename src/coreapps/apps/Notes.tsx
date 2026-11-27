@@ -12,7 +12,11 @@ import { Button, Card, Confirm, Empty, ErrorNote, Search, Skeleton, Tabs, Toast,
 import { ago, plural } from "../shell/format";
 import { NEW_NOTE, NEW_TODO, NOTES_SHELF_NAME, NOTE_TAG, parse, searchNotes, titleOf, todoProgress, toggleTodo, type Block, type Inline, type NoteLite } from "../models/notes";
 import { friendlyError } from "../models/load";
+import { reminderChoices, reminderLabel, reminderSet, type ReminderChoice } from "../models/reminders";
+import { tzOffsetMin } from "../models/timer";
 import { coreApp } from "../registry";
+import { oops, quiet } from "../../ui/oops";
+import { ToastHost } from "../../ui/Toast";
 
 const Inl: React.FC<{ parts: Inline[] }> = ({ parts }) => (
   <>
@@ -24,7 +28,7 @@ const Inl: React.FC<{ parts: Inline[] }> = ({ parts }) => (
       ) : p.t === "code" ? (
         <code key={i}>{p.v}</code>
       ) : p.t === "link" ? (
-        <a key={i} href={p.href} onClick={(e) => (e.preventDefault(), invoke("launch_app_cmd", { path: p.href }).catch(() => {}))}>
+        <a key={i} href={p.href} onClick={(e) => (e.preventDefault(), invoke("launch_app_cmd", { path: p.href }).catch(oops("open that link")))}>
           {p.v}
         </a>
       ) : (
@@ -35,7 +39,13 @@ const Inl: React.FC<{ parts: Inline[] }> = ({ parts }) => (
 );
 
 /** Markdown-lite, rendered without HTML injection; to-dos are real checkboxes. */
-export const NoteView: React.FC<{ text: string; onToggle?: (line: number) => void }> = ({ text, onToggle }) => (
+export const NoteView: React.FC<{ text: string; onToggle?: (line: number) => void; onRemind?: (line: number) => void; remindOpen?: number | null; remindMenu?: React.ReactNode }> = ({
+  text,
+  onToggle,
+  onRemind,
+  remindOpen,
+  remindMenu,
+}) => (
   <div className="nt-view">
     {parse(text).map((b: Block) =>
       b.t === "gap" ? (
@@ -43,12 +53,22 @@ export const NoteView: React.FC<{ text: string; onToggle?: (line: number) => voi
       ) : b.t === "h" ? (
         React.createElement(`h${b.level + 1}`, { key: b.line, className: "nt-h" }, <Inl parts={b.inl} />)
       ) : b.t === "todo" ? (
-        <label key={b.line} className={cx("nt-todo", b.done && "done")}>
-          <input type="checkbox" checked={b.done} disabled={!onToggle} onChange={() => onToggle?.(b.line)} />
-          <span>
-            <Inl parts={b.inl} />
-          </span>
-        </label>
+        <div key={b.line} className={cx("nt-todo-row", remindOpen === b.line && "open")}>
+          <label className={cx("nt-todo", b.done && "done")}>
+            <input type="checkbox" checked={b.done} disabled={!onToggle} onChange={() => onToggle?.(b.line)} />
+            <span>
+              <Inl parts={b.inl} />
+            </span>
+          </label>
+          {onRemind && !b.done && (
+            <button type="button" className="nt-remind" data-weight="medium" aria-label="Remind me about this to-do" aria-haspopup="menu" aria-expanded={remindOpen === b.line} onClick={() => onRemind(b.line)}>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
+                <path d="M6 17V11a6 6 0 1 1 12 0v6l1.5 2h-15zM10 21h4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+          {remindOpen === b.line && remindMenu}
+        </div>
       ) : b.t === "li" ? (
         <div key={b.line} className="nt-li">
           <Inl parts={b.inl} />
@@ -75,6 +95,8 @@ export interface NotesDemo {
   packs?: ShelfInfo[];
   selected?: string;
   edit?: boolean;
+  /** The to-do line whose "Remind me" menu is open (screenshots). */
+  remindLine?: number;
 }
 
 export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: LensConfig) => Promise<void>; demo?: NotesDemo }> = ({ config, updateConfig, demo }) => {
@@ -114,7 +136,7 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
     if (demo) return;
     const un = listen(EVT_SHELF_CHANGED, () => load());
     return () => {
-      un.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
     };
   }, [load, demo]);
 
@@ -151,6 +173,48 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
     setDraft(t);
     save(current.id, t);
   };
+  // "Remind me" on a to-do: a Lens Timer countdown or a one-off alarm, named after the to-do.
+  const [remindLine, setRemindLine] = useState<number | null>(demo?.remindLine ?? null);
+  const remind = (choice: ReminderChoice) => {
+    if (!current || remindLine == null) return;
+    const label = reminderLabel(draft.split(/\r?\n/)[remindLine] ?? "");
+    setRemindLine(null);
+    const made =
+      choice.kind === "timer"
+        ? invoke("coreapp_timer_add", { label, seconds: choice.seconds, duration: null })
+        : invoke("coreapp_alarm_add", { label, hour: choice.hour, minute: choice.minute, weekdays: 0, tzOffsetMin: tzOffsetMin() });
+    made.then(
+      () => setToast({ text: reminderSet(choice, label), tone: "ok" }),
+      (e) => setToast({ text: friendlyError(String(e)), tone: "bad" }),
+    );
+  };
+  const remindMenu = (
+    <div
+      className="nt-remind-menu"
+      role="menu"
+      aria-label="Remind me"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          setRemindLine(null);
+        }
+      }}
+    >
+      {reminderChoices(new Date()).map((c, i) => (
+        <button key={c.id} type="button" role="menuitem" className="ca-btn small" data-weight="light" autoFocus={i === 0} onClick={() => remind(c)}>
+          {c.label} <span className="ca-mono">{c.at}</span>
+        </button>
+      ))}
+      <button type="button" role="menuitem" className="ca-btn small ca-btn-quiet" data-weight="light" onClick={() => (setRemindLine(null), invoke("coreapp_open", { id: "timer", view: "alarms" }).catch(oops("open Lens Timer")))}>
+        Another time…
+      </button>
+    </div>
+  );
+  const releaseStickies = () =>
+    invoke<number>("coreapp_stickies_release").then(
+      (n) => setToast({ text: n ? `${plural(n, "sticky", "stickies")} clickable again.` : "No stickies are open.", tone: "ok" }),
+      (e) => setToast({ text: friendlyError(String(e)), tone: "bad" }),
+    );
   const pinSticky = () =>
     current &&
     invoke<string>("coreapp_sticky_open", { noteId: current.id })
@@ -177,7 +241,7 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
       keys: "Ctrl+Shift+U",
       label: "Make every sticky clickable again",
       match: (e: KeyboardEvent) => isKey(e, "u", { ctrl: true, shift: true }),
-      run: () => invoke<number>("coreapp_stickies_release").then((n) => setToast({ text: `${plural(n, "sticky", "stickies")} clickable again.`, tone: "ok" })),
+      run: () => void releaseStickies(),
     },
   ];
 
@@ -194,6 +258,10 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
           </Button>
           <Button small onClick={() => create(NEW_TODO)} disabled={!shelf}>
             New checklist
+          </Button>
+          {/* A click-through sticky can't be clicked, so the way back is a button here, not only a shortcut. */}
+          <Button small variant="quiet" onClick={() => void releaseStickies()} aria-label="Make every sticky clickable again (Ctrl+Shift+U)">
+            Make stickies clickable
           </Button>
           <div className="ca-spacer" />
           <Search value={query} onChange={setQuery} placeholder="Search notes" inputRef={searchRef} />
@@ -271,7 +339,7 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
               {sendTo && (
                 <div className="nt-send" role="menu" aria-label="Context packs">
                   {packs.map((p) => (
-                    <button key={p.id} type="button" role="menuitem" className="ca-btn small" onClick={() => send(p)}>
+                    <button data-weight="light" key={p.id} type="button" role="menuitem" className="ca-btn small" onClick={() => send(p)}>
                       {p.name} <span className="ca-muted">{p.item_count}</span>
                     </button>
                   ))}
@@ -287,7 +355,7 @@ export const Notes: React.FC<{ config: LensConfig | null; updateConfig: (c: Lens
                   onChange={(e) => (setDraft(e.target.value), save(current.id, e.target.value))}
                 />
               ) : (
-                <NoteView text={draft} onToggle={toggle} />
+                <NoteView text={draft} onToggle={toggle} onRemind={(line) => setRemindLine((l) => (l === line ? null : line))} remindOpen={remindLine} remindMenu={remindMenu} />
               )}
               <p className="ca-mono" style={{ margin: "12px 0 0" }}>
                 # heading · - list · - [ ] to-do · **bold** · *italic* · `code`
@@ -331,22 +399,24 @@ export const Sticky: React.FC<{ noteId: string; demo?: NoteLite }> = ({ noteId, 
   }, [noteId, demo]);
   useEffect(() => {
     load();
-    getCurrentWindow()
-      .show()
-      .catch(() => {});
+    getCurrentWindow().show().catch(quiet);
     if (demo) return;
     const un = listen(EVT_SHELF_CHANGED, load);
     const un2 = listen<boolean>("lens://sticky-click-through", (e) => setThrough(e.payload));
     return () => {
-      un.then((f) => f()).catch(() => {});
-      un2.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
+      un2.then((f) => f()).catch(quiet);
     };
   }, [load, demo]);
   const toggle = (line: number) => {
     if (!note) return;
     const text = toggleTodo(note.text, line);
     setNote({ ...note, text });
-    shelfUpdate(note.id, { text }).catch(() => {});
+    // A tick that didn't save goes back to what the Shelf has, and says so.
+    shelfUpdate(note.id, { text }).catch((e) => {
+      setNote(note);
+      oops("save that tick")(e);
+    });
   };
   return (
     <div className={cx("nt-sticky", through && "through")}>
@@ -359,18 +429,20 @@ export const Sticky: React.FC<{ noteId: string; demo?: NoteLite }> = ({ noteId, 
           className="ca-icon-btn"
           aria-pressed={through}
           aria-label="Click-through: let clicks pass to what's behind. Undo from Lens Notes with Ctrl+Shift+U."
-          onClick={() => invoke("coreapp_sticky_click_through", { label, on: true }).catch(() => {})}
+          data-weight="medium"
+          onClick={() => invoke("coreapp_sticky_click_through", { label, on: true }).catch(oops("make this sticky click-through"))}
         >
           ◌
         </button>
-        <button type="button" className="ca-icon-btn" aria-label="Open in Lens Notes" onClick={() => invoke("coreapp_open", { id: "notes", view: null }).catch(() => {})}>
+        <button type="button" className="ca-icon-btn" aria-label="Open in Lens Notes" data-weight="medium" onClick={() => invoke("coreapp_open", { id: "notes", view: null }).catch(oops("open Lens Notes"))}>
           ↗
         </button>
-        <button type="button" className="ca-icon-btn ca-close" aria-label="Close sticky" onClick={() => invoke("coreapp_sticky_close", { label }).catch(() => getCurrentWindow().close())}>
+        <button type="button" className="ca-icon-btn ca-close" aria-label="Close sticky" data-weight="medium" onClick={() => invoke("coreapp_sticky_close", { label }).catch(() => getCurrentWindow().close().catch(oops("close this sticky")))}>
           ✕
         </button>
       </header>
       <div className="nt-sticky-body">{gone ? <p className="ca-muted">This note was deleted.</p> : note ? <NoteView text={note.text} onToggle={toggle} /> : null}</div>
+      <ToastHost />
     </div>
   );
 };

@@ -11047,7 +11047,7 @@
    "id": "doc.lens-apps.3",
    "kind": "doc",
    "title": "Lens Apps: Commands and events",
-   "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, then runs the installer. apps release discard(token) Deletes a prepared download. apps ope",
+   "text": "Command What it does --- --- apps catalog The bundled catalogue. apps catalog refresh Disabled until signed catalogues land; returns a plain message. apps settings get / apps settings set {autoUpdate: false, checkUpdates: \"weekly\", showNonOpenSource: true, liveThumbnails: true} . autoUpdate and checkUpdates are stored but read by nothing and have no switch (B-122). apps installed One winget list , giving installed and available versions of catalogue apps. apps lens installed Ids Lens installed. apps audit The audit log. apps show winget show : version, publisher, licence and agreements, shown before Install. apps run(appId, op) install \\ upgrade \\ uninstall through winget. Returns a job id. apps cancel(jobId) Cancels a running job. apps release prepare(appId) Downloads, checks the checksum and signature, and returns what the second confirmation shows. apps release run(token) Re-hashes, t",
    "path": [
     "Docs",
     "Lens Apps",
@@ -13884,6 +13884,23 @@
   {
    "id": "doc.shelf.3",
    "kind": "doc",
+   "title": "Shelf and clipboard history — contract: Removing and Undo",
+   "text": "Removing an item from the Shelf drawer shows \"Removed “title”. Undo\" for six seconds. Undo adds the same content back ( src/shelf/restore.ts ); the item gets a new id and goes to the end of its shelf, and a pinned item is pinned again. The Menu key or Shift+F10 on a Shelf item opens its menu with \"Lens ›\" focused.",
+   "path": [
+    "Docs",
+    "Shelf and clipboard history — contract",
+    "Removing and Undo"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SHELF.md",
+    "heading": "Removing and Undo"
+   },
+   "source": "docs/SHELF.md"
+  },
+  {
+   "id": "doc.shelf.4",
+   "kind": "doc",
    "title": "Shelf and clipboard history — contract: Shelf → Notes (Magic waves M4, off by default)",
    "text": "With Shelf to Notes on, the Shelf drawer has Make a note . It builds one note from the ticked items (or the whole shelf when none are ticked) and shows it before anything happens: - Save to Notes — a text item tagged lens-note in the \"Notes\" shelf, like any note made in Lens Notes. - Export .md / .txt / PDF — written by save note export into Downloads (or %APPDATA%\\LensUI\\exports when there is no Downloads folder). Names are cleaned, nothing is overwritten, PDFs must be real PDFs ( src/shelf/pdf.ts , A4, Helvetica, Windows-1252 text). - Send to a contact — Matrix rooms you can reply in only. The exact text is shown on an approval card; nothing is sent until you hold Send , and \"Don't send\" withdraws the request ( messages send request → feeds approve → send, once). The optional AI summary is not built yet. Tests: src/ tests /shelfNotes.test.ts .",
    "path": [
@@ -13899,7 +13916,7 @@
    "source": "docs/SHELF.md"
   },
   {
-   "id": "doc.shelf.4",
+   "id": "doc.shelf.5",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract: Clipboard history v2",
    "text": "Command What it does --- --- clip status() Enabled, paused-until, skip-next, counts and settings. It also wires change events on first use. clip set settings(settings) Saves %APPDATA%\\LensUI\\clip\\settings.json . Turning history on starts the listener; turning it off stops recording immediately. clip list(query?, kind?) ClipView[] : pinned first. The preview is capped at 240 characters, and the full text never goes to the list. clip get text(id) The full text, for previews and context chips. clip pin , clip rename , clip delete Single-clip edits. clip clear(minutes?, includePinned?) Clears recent clips. Pinned clips stay unless includePinned . clip wipe() Deletes everything, in memory and the sealed file. clip pause(minutes) , clip ignore next() Pause recording ( 0 resumes) or skip one copy. clip copy(id, mode?) Puts the clip back on the clipboard. clip paste(id, mode?) Hides Command, the",
@@ -13916,7 +13933,7 @@
    "source": "docs/SHELF.md"
   },
   {
-   "id": "doc.shelf.5",
+   "id": "doc.shelf.6",
    "kind": "doc",
    "title": "Shelf and clipboard history — contract: Retiring the old in-memory history",
    "text": "win clipboard.rs (the text-only, in-memory history behind the Clipboard pane) still runs on its own func.clipboardHistory switch. Both listeners can run side by side. Once Command ships: 1. Point ClipboardPane.tsx at clip list / clip copy . 2. Map func.clipboardHistory onto ClipSettings.enabled once (a migration in config.rs ). 3. Remove start clipboard history from setup.",
@@ -14204,6 +14221,23 @@
   {
    "id": "doc.snip.2",
    "kind": "doc",
+   "title": "Lens Snip: Live text: where it comes from",
+   "text": "Rewrite-light of an idea several tools share, built from their public behaviour and docs only (no code copied): Live Text in macOS, Text actions in the Windows Snipping Tool, and PowerToys Text Extractor (MIT, microsoft/PowerToys). Lens goes further in two places: a selection can be highlighted or hidden exactly, and it follows the studio's rules (hidden words stay hidden, cropped words are gone). Model: src/snip/liveText.ts ; UI: src/snip/LiveTextLayer.tsx . Windows OCR runs on this PC; nothing is sent.",
+   "path": [
+    "Docs",
+    "Lens Snip",
+    "Live text: where it comes from"
+   ],
+   "target": {
+    "surface": "doc",
+    "doc": "docs/SNIP.md",
+    "heading": "Live text: where it comes from"
+   },
+   "source": "docs/SNIP.md"
+  },
+  {
+   "id": "doc.snip.3",
+   "kind": "doc",
    "title": "Lens Snip: What Lens Snip won't do",
    "text": "- Upload anything, make links, or send messages on its own. - Capture in the background or on a timer you didn't start. - Work around windows that protect themselves from capture ( SetWindowDisplayAffinity ) — they come out black or missing, as Windows intends. - Keep an unredacted copy of a snip you redacted (history stores what you exported).",
    "path": [
@@ -14219,7 +14253,7 @@
    "source": "docs/SNIP.md"
   },
   {
-   "id": "doc.snip.4",
+   "id": "doc.snip.5",
    "kind": "doc",
    "title": "Lens Snip: Shared-file edits made in this PR (kept minimal)",
    "text": "File Change Why --- --- --- src-tauri/Cargo.toml windows features: ApplicationModel DataTransfer , Globalization , Graphics Imaging , Media Ocr , Storage , Win32 Storage Xps , Win32 System DataExchange , Win32 System SystemInformation Share sheet, OCR, PrintWindow, clipboard, local time. No new crates. src-tauri/src/lib.rs mod snip; + 32 commands::snip:: entries Registration. src-tauri/src/commands/mod.rs pub(crate) mod snip; Registration. src-tauri/src/app/integration.rs commands::snip::init(&handle) in setup ; commands::snip::shutdown() in shutdown Hotkey at startup; Print Screen handed back and recording stopped on exit. src-tauri/capabilities/default.json windows \"snip\" , \"snip- \" The overlay, pins and recording frame call commands. src/main.tsx snip surface Route for the Snip windows. src/types/generated.ts regenerated IPC types. .github/workflows/build.yml \"Render Lens Snip scenes\"",
@@ -14236,10 +14270,10 @@
    "source": "docs/SNIP.md"
   },
   {
-   "id": "doc.snip.6",
+   "id": "doc.snip.7",
    "kind": "doc",
    "title": "Lens Snip: Needs real hardware",
-   "text": "- Capture on mixed-DPI multi-monitor setups (overlay spans monitors with different scale; Lens re-applies the window rect after Windows' DPI change), negative coordinates, HDR displays (BitBlt returns SDR). - PrintWindow(PW RENDERFULLCONTENT) on Chromium, UWP and DirectX apps; fallback to on-screen pixels. - UI Automation element snapping latency (150 ms budget) on heavy apps. - Windows OCR language packs and accuracy on small text; auto-redact false positives in real screenshots. - Clipboard image paste into Office, Discord, Slack, Claude Desktop (CF DIB + PNG). - Share sheet from the overlay window (desktop-app IDataTransferManagerInterop ), targets that only accept files. - Print Screen takeover with and without the \"Make Print Screen key yieldable\" policy. - ffmpeg gdigrab recording at 60 fps, mic devices, WDA EXCLUDEFROMCAPTURE keeping the border out of the video (Windows 10 2004+).",
+   "text": "- Capture on mixed-DPI multi-monitor setups (overlay spans monitors with different scale; Lens re-applies the window rect after Windows' DPI change), negative coordinates, HDR displays (BitBlt returns SDR). - PrintWindow(PW RENDERFULLCONTENT) on Chromium, UWP and DirectX apps; fallback to on-screen pixels. - UI Automation element snapping latency (150 ms budget) on heavy apps. - Live text: OCR word boxes line up with the words at 100 %, 150 % and 200 % scale; drag-select across two columns; highlight and hide land on the words. - Windows OCR language packs and accuracy on small text; auto-redact false positives in real screenshots. - Clipboard image paste into Office, Discord, Slack, Claude Desktop (CF DIB + PNG). - Share sheet from the overlay window (desktop-app IDataTransferManagerInterop ), targets that only accept files. - Print Screen takeover with and without the \"Make Print Scree",
    "path": [
     "Docs",
     "Lens Snip",

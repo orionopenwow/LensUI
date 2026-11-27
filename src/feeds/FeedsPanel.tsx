@@ -10,12 +10,13 @@ import { shelfAdd } from "../shelf/contract";
 import { useAiRequest } from "../ai/client";
 import { browserOpen } from "../browser/api";
 import "./Feeds.css";
+import { failText, quiet } from "../ui/oops";
 
 const SEEN_KEY = "lens.feeds.seenTs";
 
-function openUrl(url: string) {
+function openUrl(url: string, failed: (text: string) => void) {
   // Opens in the Lens Browser (its own sign-ins; nothing shared with Lens Feeds).
-  void browserOpen(url).catch(() => {});
+  void browserOpen(url).catch((e) => failed(failText("open that link", e)));
 }
 
 /** The live Feeds surface: column ⇄ deck, digest, compose → approval → post. */
@@ -55,7 +56,8 @@ export function FeedsPanel({ initialFilter = "all" as FilterId }: { initialFilte
 
   useEffect(() => {
     let un: (() => void) | null = null;
-    void listen("lens://feeds/updated", () => void load(filter).catch(() => {})).then((u) => (un = u));
+    // A background refresh: the column keeps what it shows and the next update tries again.
+    void listen("lens://feeds/updated", () => void load(filter).catch(quiet)).then((u) => (un = u));
     return () => {
       un?.();
       safeSet(SEEN_KEY, String(Date.now()));
@@ -108,19 +110,20 @@ export function FeedsPanel({ initialFilter = "all" as FilterId }: { initialFilte
   };
 
   const deny = () => {
-    if (pending) void feedsApi.deny(pending.id).catch(() => {});
+    // Nothing is posted either way: an approval nobody redeems expires after two minutes.
+    if (pending) void feedsApi.deny(pending.id).catch(quiet);
     setPending(null);
   };
 
   const actions = {
-    onOpen: (it: ItemDto) => openUrl(it.url),
+    onOpen: (it: ItemDto) => openUrl(it.url, setToast),
     onReadLater: (it: ItemDto) => {
       const p = shelfPayload(it);
-      void shelfAdd({ kind: "page", title: p.title, url: p.url, text: p.note, source_app: "Lens Feeds", tags: ["read-later"] }).then(() => setToast("Added to Shelf"));
+      void shelfAdd({ kind: "page", title: p.title, url: p.url, text: p.note, source_app: "Lens Feeds", tags: ["read-later"] }).then(() => setToast("Added to Shelf"), (e) => setToast(failText("add that to the Shelf", e)));
     },
     onSave: (it: ItemDto) => {
       const p = shelfPayload(it);
-      void shelfAdd({ kind: "page", title: p.title, url: p.url, text: `${p.note}\n\n${it.text}`, source_app: "Lens Feeds", tags: ["context"] }).then(() => setToast("Saved to context pack"));
+      void shelfAdd({ kind: "page", title: p.title, url: p.url, text: `${p.note}\n\n${it.text}`, source_app: "Lens Feeds", tags: ["context"] }).then(() => setToast("Saved to context pack"), (e) => setToast(failText("save that to the context pack", e)));
     },
   };
 
@@ -141,7 +144,7 @@ export function FeedsPanel({ initialFilter = "all" as FilterId }: { initialFilte
       actions={actions}
     >
       {toast ? <div className="lf-toast" role="status" onClick={() => setToast(null)}>{toast}</div> : null}
-      {digest ? <DigestCard d={digest} onClose={() => setDigest(null)} onOpenRef={openUrl} /> : null}
+      {digest ? <DigestCard d={digest} onClose={() => setDigest(null)} onOpenRef={(u: string) => openUrl(u, setToast)} /> : null}
       {composing ? <Compose sources={sources} onReview={review} onClose={() => setComposing(false)} /> : null}
       {pending ? <PostApproval text={pending.text} targets={pending.targets} sources={sources} onApprove={approve} onDeny={deny} result={pending.result} /> : null}
     </FeedColumn>

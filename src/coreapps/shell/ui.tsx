@@ -101,7 +101,9 @@ export const Meter: React.FC<{ value: number; max?: number; label: string; tone?
 export const Button: React.FC<
   React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "danger" | "quiet"; small?: boolean; icon?: React.ReactNode }
 > = ({ variant = "ghost", small, icon, className, children, type = "button", ...rest }) => (
-  <button type={type} className={cx("ca-btn", `ca-btn-${variant}`, small && "small", className)} {...rest}>
+  // Primary and destructive actions press heavy; everything else medium (DESIGN §5.2). A caller's
+  // own data-weight wins.
+  <button type={type} data-weight={variant === "primary" || variant === "danger" ? "heavy" : "medium"} className={cx("ca-btn", `ca-btn-${variant}`, small && "small", className)} {...rest}>
     {icon}
     {children}
   </button>
@@ -127,7 +129,7 @@ export function Tabs<T extends string>({ value, options, onChange, label }: { va
   return (
     <div className="ca-tabs" role="tablist" aria-label={label}>
       {options.map((o, i) => (
-        <button
+        <button data-weight="light"
           key={o.id}
           ref={(el) => {
             refs.current[i] = el;
@@ -250,7 +252,7 @@ export const Confirm: React.FC<{
           {body}
         </div>
         <div className="ca-dialog-actions">
-          <button type="button" ref={cancelRef} className="ca-btn ca-btn-ghost" onClick={onCancel} disabled={busy}>
+          <button data-weight="medium" type="button" ref={cancelRef} className="ca-btn ca-btn-ghost" onClick={onCancel} disabled={busy}>
             Cancel
           </button>
           <Button variant={danger ? "danger" : "primary"} onClick={onConfirm} disabled={busy}>
@@ -278,7 +280,7 @@ export const Toast: React.FC<{ text: string | null; tone?: "ok" | "bad"; onDone:
 
 /** An on/off switch (role="switch"). */
 export const Switch: React.FC<{ checked: boolean; label: string; disabled?: boolean; onChange: (v: boolean) => void }> = ({ checked, label, disabled, onChange }) => (
-  <button type="button" role="switch" aria-label={label} aria-checked={checked} disabled={disabled} className={cx("ca-switch", checked && "on")} onClick={() => onChange(!checked)}>
+  <button data-weight="medium" type="button" role="switch" aria-label={label} aria-checked={checked} disabled={disabled} className={cx("ca-switch", checked && "on")} onClick={() => onChange(!checked)}>
     <span />
   </button>
 );
@@ -299,7 +301,7 @@ export class AppErrorBoundary extends React.Component<{ label: string; children:
         <div className="ca-empty-body">
           <h3>{this.props.label} hit a problem</h3>
           <p>{this.state.error.message || "Something went wrong."}</p>
-          <button type="button" className="ca-btn ca-btn-primary" onClick={() => this.setState({ error: null })}>
+          <button data-weight="heavy" type="button" className="ca-btn ca-btn-primary" onClick={() => this.setState({ error: null })}>
             Try again
           </button>
         </div>

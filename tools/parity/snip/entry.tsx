@@ -1,5 +1,5 @@
 // Renders Lens Snip scenes for screenshots:
-// ?scene=select|select-window|studio|studio-claude|studio-translate|studio-openin|studio-frame|pin|record|history|card&preset=…
+// ?scene=select|select-window|studio|studio-livetext|studio-crop|studio-claude|studio-translate|studio-openin|studio-frame|pin|record|history|history-undo|history-empty|card&preset=…
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "../../../src/styles/tokens.css";
@@ -218,6 +218,20 @@ const Gallery: React.FC = () => {
       return <Select session={session} initialMode="window" delay={3} onDelay={() => {}} cursor onCursor={() => {}} onDone={() => {}} onCancel={() => {}} demo={{ pointer: { x: 900, y: 420 } }} />;
     case "studio":
       return desktop(<div className="snip-root"><Studio {...base} settings={DEFAULT_SNIP_SETTINGS} demo={{ history: hist, focus: 0 }} /></div>);
+    case "studio-livetext": {
+      // Live text: two lines selected (the bar follows them), chips for what was found, and the
+      // "Copied" notice. One redaction stays on, so its word reads as dots in the text panel.
+      let h: History = empty();
+      h = reduce(h, { type: "redact", rects: [{ rect: suggestions[2].rect, label: "Key or token" }] });
+      return desktop(<div className="snip-root"><Studio {...base} settings={DEFAULT_SNIP_SETTINGS} demo={{ history: h, focus: 1, tool: "livetext", textSel: { anchor: { line: 3, word: 0 }, focus: { line: 4, word: 4 } }, toast: "Copied 8 words" }} /></div>);
+    }
+    case "studio-crop": {
+      // A crop while editing: the whole frame stays, the part cut away is dimmed, and the text
+      // panel lists only what is kept.
+      let h: History = reduce(hist, { type: "crop", rect: { x: 20, y: 110, w: 520, h: 150 } });
+      h = reduce(h, { type: "add", shape: { id: "c1", kind: "highlight", rect: { x: 36, y: 162, w: 150, h: 26 }, color: "#facc15" } });
+      return desktop(<div className="snip-root"><Studio {...base} settings={DEFAULT_SNIP_SETTINGS} demo={{ history: h, focus: 0 }} /></div>);
+    }
     case "studio-claude":
       return desktop(<div className="snip-root"><Studio {...base} settings={DEFAULT_SNIP_SETTINGS} demo={{ history: hist, popover: "claude", focus: 5 }} /></div>);
     case "studio-translate":
@@ -248,7 +262,9 @@ const Gallery: React.FC = () => {
         </>
       );
     }
-    case "history": {
+    case "history":
+    case "history-undo":
+    case "history-empty": {
       const entries: SnipEntry[] = [
         ["Account settings — Microsoft Edge", "Msedge", "Owner Phone API key", ["work"], true],
         ["main.rs — LensUI", "Code", "fn main let key env var", ["code", "bug"], false],
@@ -261,9 +277,9 @@ const Gallery: React.FC = () => {
         ocrText: o as string, tags: tags as string[], pinned: pinned as boolean, file: "", bytes: 0, thumb: i % 2 ? d.frame : snip.png,
       }));
       return desktop(
-        <div style={{ position: "absolute", left: 120, top: 80, width: 760, padding: 16, borderRadius: 14, background: "var(--lens-bg-surface)", border: "1px solid var(--lens-border)", backdropFilter: "blur(20px)" }}>
+        <div style={{ position: "absolute", left: 120, top: 80, width: 760, padding: 16, borderRadius: 14, background: "var(--lens-bg-surface)", border: "1px solid var(--lens-border)" }}>
           <div className="cc-label" style={{ marginBottom: 8 }}>Snip history</div>
-          <HistoryView demo={entries} />
+          <HistoryView demo={scene === "history-empty" ? [] : entries} demoPending={scene === "history-undo" ? ["h1", "h4"] : undefined} />
         </div>
       );
     }
