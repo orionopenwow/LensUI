@@ -1,6 +1,6 @@
 # Lens Cleaner — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** permanent delete needs a random one-time code minted in Rust and typed by the person (S1 fixed), the measured scan time shows on Done and in Tester Hub (quick win 1), "Uninstall…" hands over to Startup & Uninstall, and Home has the "Where did my space go?" timeline (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC. Sources: `docs/CLEANER.md`, `docs/CLEANER_RESEARCH.md`,
+Status date: 2026-11-26 (main at `6e7abb0`). **Fable pass (PR #112, 26 November 2026):** permanent delete needs a random one-time code minted in Rust and typed by the person (S1 fixed), the measured scan time shows on Done and in Tester Hub (quick win 1), "Uninstall…" hands over to Startup & Uninstall, and Home has the "Where did my space go?" timeline (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC. **Deep Fable pass (apps, 26 November 2026):** the app moves on the global motion tokens (brief item 1), every swallowed error is reported (quick win 3; a Stop that doesn't reach the scan says the scan is still going), every button declares a press weight. Sources: `docs/CLEANER.md`, `docs/CLEANER_RESEARCH.md`,
 `docs/brain/BUGS.md`, Redline review, code below.
 
 ## 1. Rundown
@@ -70,14 +70,18 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
 1. **Done (Fable pass).** **Show the measured scan time** in the Done screen and Tester Hub ("Scanned C: in 3.4 s") so
    the < 10 s target is visible on real PCs.
 2. **Weekly tidy-up summary in the Dashboard Today lane** ("Lens freed 2.1 GB on Sunday").
-3. **Toasts for 13 swallowed errors** in `src/cleaner/*`.
-4. **OneDrive-backed Downloads**: show a one-line note when Downloads is a cloud folder (items
-   stay cloud-only, never downloaded) — prevents "why is nothing found".
-5. **Space map breadcrumbs** at the top of treemap/sunburst for orientation.
+3. **Done (deep Fable pass).** **Toasts for swallowed errors** in `src/cleaner/*` and `CleanerCard.tsx`.
+4. **Skipped, with a finding.** **OneDrive-backed Downloads** note. `detectors::Ctx` takes Downloads
+   to be `%USERPROFILE%\Downloads`; a Downloads folder that was moved (OneDrive, another drive) is
+   not looked at at all, so a note would be wrong more often than right. The real fix is a
+   known-folder lookup (`SHGetKnownFolderPath(FOLDERID_Downloads)`) in `detectors.rs`, then the note;
+   that changes which folder the Downloads review reads, so it needs a real PC, not a blind edit.
+5. **Already there.** **Space map breadcrumbs** (`cl-crumbs` above the list, treemap and sunburst).
 
 ## 4. Polish assessment
-- **Motion:** own tokens (`--cl-t-*`) — the only app with its own set; align with the global motion
-  tokens (`src/ui/motion`) so durations/easing match the rest of Lens.
+- **Motion:** done (deep Fable pass): `--cl-t-*` and `--cl-ease-*` are now the global tokens under
+  their old names, so timings match Lens and collapse with reduced motion. Left: the long ambient
+  loops (drift, breathe, shimmer) and stagger steps still use literal times.
 - **Copy:** warm and plain ("Nothing gets deleted until you say so.") — the best copy in Lens.
 - **Visual parity:** 18 scenes × 2 packs; add high contrast and the Expressive/Dot Matrix packs to
   the golden job (currently gallery only).
@@ -94,7 +98,8 @@ Recycle Bin, and opt-in automation (weekly tidy-up, low-space alert, daily snaps
 | Suspected S2 | Low | `bin.rs` undo | bins on several drives (`D:\$Recycle.Bin`) — undo path unverified |
 | Suspected S3 | Low | `apps.rs` | MSIX apps have no `DisplayIcon` → blank icons |
 | Suspected S4 | Low | `steam.rs` | `LastPlayed` format differences across Steam client versions could mark played games as unplayed (review-only, never auto) |
-| B-18 share | Low | `src/cleaner/*` (13) | swallowed errors |
+| B-18 share | — fixed (deep Fable pass) | `src/cleaner/*`, `CleanerCard.tsx` | swallowed errors: zero left (`appsFamily.test.ts`) |
+| Suspected S5 | Medium | `cleaner/detectors.rs` (`Ctx::from_env`) | Downloads, Documents, Desktop, Pictures are assumed to sit under `%USERPROFILE%`. A moved Downloads folder is never reviewed ("why is nothing found"), and protected-tree rules name the old place. Found by reading in the deep Fable pass; not changed blind |
 
 ## 6. One idea to push to main
 **"Where did my space go?" timeline** on the Home screen using the existing daily snapshots: a

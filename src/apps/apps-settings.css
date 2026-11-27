@@ -1,0 +1,44 @@
+/* Lens Apps: the Settings card (src/components/AppsCard.tsx) and the voice strip. Split from apps.css. */
+.la-card-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.la-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.la-setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.la-audit {
+  max-height: 180px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.la-audit-line {
+  display: grid;
+  grid-template-columns: 120px 128px 1fr 60px;
+  gap: 8px;
+}
+
+/* Voice confirmation strip (shown by the voice HUD when a phrase targets Lens Apps) */
+.la-voice-heard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lens-border);
+  background: rgb(var(--lens-ink) / 0.05);
+  font-size: 13px;
+}
+

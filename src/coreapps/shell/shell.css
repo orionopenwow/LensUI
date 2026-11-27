@@ -568,7 +568,7 @@ select.ca-input option {
   width: 100%;
   transform-origin: left center;
   transform: scaleX(var(--fill, 0));
-  transition: transform 0.4s ease;
+  transition: transform var(--lens-dur-slower) var(--lens-ease-out);
 }
 .ca-meter.tone-ok span {
   background: var(--lens-positive);
@@ -761,7 +761,7 @@ select.ca-input option {
   font-size: 12px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity var(--lens-dur-base) var(--lens-ease-out), transform var(--lens-dur-base) var(--lens-ease-out);
   z-index: 30;
   max-width: 80%;
   text-align: center;
@@ -841,7 +841,8 @@ select.ca-input option {
   height: 16px;
   border-radius: 50%;
   background: var(--lens-fg-secondary);
-  transition: transform 0.18s ease, background 0.18s;
+  /* The knob travels with the spring (DESIGN §5.2). */
+  transition: transform var(--lens-dur-slow) var(--lens-ease-spring), background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .ca-switch.on {
   background: var(--lens-fg);

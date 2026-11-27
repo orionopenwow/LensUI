@@ -19,3 +19,4 @@ src/dock/voice/VoiceDock.css
 src/command/mini/mini.css
 src/surfaces/OverviewSurface.css
 src/styles/global.css
+src/missioncontrol/mission.css

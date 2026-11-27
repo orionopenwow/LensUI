@@ -200,9 +200,82 @@ pub fn now_ms() -> i64 {
         .unwrap_or(0)
 }
 
+/// Minutes east of UTC on this PC right now, daylight saving included. `None` when Windows can't
+/// say (and on other systems, where the tests run): callers then leave times as they are.
+#[cfg(windows)]
+pub fn local_offset_min() -> Option<i32> {
+    #[repr(C)]
+    #[allow(dead_code)]
+    struct SystemTime {
+        fields: [u16; 8],
+    }
+    /// `TIME_ZONE_INFORMATION` (timezoneapi.h).
+    #[repr(C)]
+    #[allow(dead_code)]
+    struct TimeZoneInformation {
+        bias: i32,
+        standard_name: [u16; 32],
+        standard_date: SystemTime,
+        standard_bias: i32,
+        daylight_name: [u16; 32],
+        daylight_date: SystemTime,
+        daylight_bias: i32,
+    }
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetTimeZoneInformation(info: *mut TimeZoneInformation) -> u32;
+    }
+    const TIME_ZONE_ID_STANDARD: u32 = 1;
+    const TIME_ZONE_ID_DAYLIGHT: u32 = 2;
+    const TIME_ZONE_ID_INVALID: u32 = u32::MAX;
+
+    let mut info = std::mem::MaybeUninit::<TimeZoneInformation>::zeroed();
+    // SAFETY: `info` is a writable TIME_ZONE_INFORMATION of the right size and layout; the call
+    // only fills it in.
+    let id = unsafe { GetTimeZoneInformation(info.as_mut_ptr()) };
+    if id == TIME_ZONE_ID_INVALID {
+        return None;
+    }
+    // SAFETY: zero-initialised above and every field is a plain integer, so any bit pattern is valid.
+    let info = unsafe { info.assume_init() };
+    Some(offset_from_bias(info.bias, info.standard_bias, info.daylight_bias, id == TIME_ZONE_ID_STANDARD, id == TIME_ZONE_ID_DAYLIGHT))
+}
+
+#[cfg(not(windows))]
+pub fn local_offset_min() -> Option<i32> {
+    None
+}
+
+/// Windows gives "minutes to add to local time to get UTC" (west is positive) plus a correction
+/// for the season in force; Lens keeps minutes east of UTC.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn offset_from_bias(bias: i32, standard_bias: i32, daylight_bias: i32, standard: bool, daylight: bool) -> i32 {
+    let season = if daylight {
+        daylight_bias
+    } else if standard {
+        standard_bias
+    } else {
+        0
+    };
+    (-(bias + season)).clamp(-14 * 60, 14 * 60)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_bias_becomes_minutes_east() {
+        // Phoenix: UTC-7 all year (bias 420, no daylight time).
+        assert_eq!(offset_from_bias(420, 0, 0, false, false), -420);
+        // Berlin: bias -60; summer adds the daylight bias of -60.
+        assert_eq!(offset_from_bias(-60, 0, -60, true, false), 60);
+        assert_eq!(offset_from_bias(-60, 0, -60, false, true), 120);
+        // New York in summer.
+        assert_eq!(offset_from_bias(300, 0, -60, false, true), -240);
+        // Nonsense from the OS stays inside the range the timer store accepts.
+        assert_eq!(offset_from_bias(-5000, 0, 0, false, false), 14 * 60);
+    }
 
     #[test]
     fn ids_are_unique_and_labels_fit_the_capability_pattern() {

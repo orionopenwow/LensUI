@@ -2,7 +2,7 @@
 
 Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 
-## Declared windows (28)
+## Declared windows (29)
 
 | Label | Visible at start | Size |
 |---|---|---|
@@ -22,6 +22,7 @@ Generated from `src-tauri/tauri.conf.json` and `src/main.tsx`.
 | `edgeshelf` | no (on demand) | 6×96 |
 | `bubble` | no (on demand) | 32×32 |
 | `testerhub` | no (on demand) | 760×860 |
+| `missioncontrol` | no (on demand) | 1180×760 |
 | `studio` | no (on demand) | 1280×820 |
 | `voicehud` | no (on demand) | 480×560 |
 | `conversation` | no (on demand) | 960×640 |

@@ -37,7 +37,7 @@ export function HoldButton({ label, onDone, disabled, className = "" }: { label:
   };
   const stop = () => setDownAt(null);
   return (
-    <button
+    <button data-weight="heavy"
       type="button"
       className={`lf-hold ${className}`}
       disabled={disabled}
