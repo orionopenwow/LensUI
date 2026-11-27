@@ -1,11 +1,13 @@
 // The magic right-click window: one compact window at the cursor with what's under the pointer,
 // the matching actions, window actions, an Ask box, and inline answers and approvals.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { editDesktopWidgets } from "../deskwidgets/api";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Bookmark, BookmarkPlus, Globe, Layers, Lightbulb, Maximize2, Minus, Monitor, PanelLeft, PanelRight, Palette, Pin,
   Scissors, X, ArrowUpRight, Copy, CornerDownLeft, type LucideIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { useLensState } from "../hooks/useLensState";
 import { useAiRequest } from "../ai/client";
@@ -28,7 +30,7 @@ import { logFail, quiet, retryOnce } from "../failsafe/calls";
 
 const EXTRA_ICONS: Record<string, LucideIcon> = {
   minus: Minus, maximize: Maximize2, "panel-left": PanelLeft, "panel-right": PanelRight, monitor: Monitor, layers: Layers,
-  pin: Pin, palette: Palette, scissors: Scissors, "bookmark-plus": BookmarkPlus, globe: Globe, lightbulb: Lightbulb, x: X,
+  pin: Pin, palette: Palette, scissors: Scissors, "bookmark-plus": BookmarkPlus, globe: Globe, lightbulb: Lightbulb, x: X, "layout-grid": LayoutGrid,
 };
 
 function RowIcon({ name }: { name: string }) {
@@ -150,7 +152,8 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const [provider, setProvider] = useState(initial?.provider ?? { label: "Local", local: true });
   const ai = useAiRequest();
   const run: AiRunState = initial?.run ?? (result?.type === "ai" ? ai : INITIAL_RUN);
-  const caps = initial?.caps ?? NO_CAPS;
+  const [deskOn, setDeskOn] = useState(false);
+  const caps = useMemo(() => ({ ...(initial?.caps ?? NO_CAPS), desktopWidgets: initial?.caps?.desktopWidgets ?? deskOn }), [initial?.caps, deskOn]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const targets = open?.targets ?? [];
@@ -166,6 +169,7 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
   const refresh = useCallback(() => {
     if (preview) return;
     magicGetConfig().then((c) => setCfg(c)).catch(quiet);
+    invoke<boolean>("desktop_widgets_available").then((v) => setDeskOn(!!v)).catch(quiet);
     contextMenuGet()
       .then((s) => {
         if (s?.prefs) setPrefs({ ...DEFAULT_PREFS, ...s.prefs });
@@ -236,6 +240,11 @@ export const MagicSurface: React.FC<{ initial?: MagicInitial }> = ({ initial }) 
           return setResult({ type: "confirm", row, title: `Close ${appName(t)}?`, detail: "The app may ask to save first.", verb: "Close" });
         }
         if (verb === "workspace") return setResult({ type: "workspace" });
+        if (verb === "desktop-widgets") {
+          hide();
+          const err = await editDesktopWidgets();
+          return err ? note(err, false) : undefined;
+        }
         if (verb === "rule") {
           await invoke("open_surface", { label: "settings" }).catch(logFail("Magic", "open Settings"));
           return note("Opened Settings › Windows & Quick to style this app.");
