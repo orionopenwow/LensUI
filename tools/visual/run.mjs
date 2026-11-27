@@ -54,6 +54,9 @@ const STATES = [
   { id: "overview", surface: "overview", sizes: [[1120, 700], [1366, 768]] },
   { id: "command-mini", surface: "command", open: { layout: "mini" }, sizes: [[376, 456], [440, 520]] },
   { id: "command-full", surface: "command", open: { layout: "full" }, sizes: [[1000, 640], [760, 560]] },
+  // The Magic selection bar and the Magic Search pop-out (docs/plans/SELECTION_BAR.md).
+  { id: "selection-bar", surface: "bubble", sizes: [[520, 88], [640, 88]] },
+  { id: "magic-search", surface: "magicsearch", sizes: [[420, 520], [440, 640]] },
   // Desktop widgets (docs/features/desktop-widgets.md): the host with one widget of each local
   // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
   { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },

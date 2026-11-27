@@ -53,7 +53,9 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   edgeshelf: lazy(() =>
     import("./command/mini/EdgeShelfSurface").then((m) => ({ default: m.EdgeShelfSurface }))
   ),
-  bubble: lazy(() => import("./command/mini/BubbleSurface").then((m) => ({ default: m.BubbleSurface }))),
+  // The Magic selection bar (formerly the selection bubble) and Magic Search (docs/plans/SELECTION_BAR.md).
+  bubble: lazy(() => import("./magic/selection/SelectionBar").then((m) => ({ default: m.SelectionBar }))),
+  magicsearch: lazy(() => import("./magic/search/MagicSearch").then((m) => ({ default: m.MagicSearch }))),
   // Lens Browser frame UI (docs/LENS_BROWSER.md).
   browser: lazy(() => import("./browser/BrowserSurface").then((m) => ({ default: m.BrowserSurface }))),
   // Lens Snip: selection overlay + studio, pins, recording frame (docs/SNIP.md).

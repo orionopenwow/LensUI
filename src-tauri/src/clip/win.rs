@@ -399,3 +399,85 @@ pub fn write(rendered: Rendered, paste: bool) -> Result<(), String> {
     }
     Ok(())
 }
+
+// ── the selection bar's clipboard buttons ────────────────────────────────────────────────────────
+
+/// What the selection bar may know about the clipboard without reading it: is there text, and did
+/// its source mark it private (password managers)? No clipboard data is read here.
+pub fn clipboard_probe() -> (bool, bool) {
+    let f = formats();
+    unsafe {
+        let has_text = IsClipboardFormatAvailable(CF_UNICODETEXT) != 0;
+        let private = (f.exclude != 0 && IsClipboardFormatAvailable(f.exclude) != 0)
+            || (f.viewer_ignore != 0 && IsClipboardFormatAvailable(f.viewer_ignore) != 0)
+            || (f.can_include != 0 && IsClipboardFormatAvailable(f.can_include) != 0);
+        (has_text, private)
+    }
+}
+
+/// The first line of the clipboard text, for Paste's hover preview. Read only while the bar is
+/// showing and only on hover; `None` when the source marked it private or there is no text.
+pub fn clipboard_preview(max_chars: usize) -> Option<String> {
+    unsafe {
+        if !open_retry(0) {
+            return None;
+        }
+        let signals = read_signals();
+        let text = if privacy::verdict(&signals) == privacy::Verdict::Skip { None } else { read_text(4096) };
+        CloseClipboard();
+        text.map(|t| super::bar::paste_preview(&t, max_chars)).filter(|t| !t.is_empty())
+    }
+}
+
+/// Windows' clipboard change counter (Copy's check that the app really copied; nothing is read).
+pub fn sequence() -> u32 {
+    use windows::Win32::System::DataExchange::GetClipboardSequenceNumber;
+    unsafe { GetClipboardSequenceNumber() }
+}
+
+/// Sends Ctrl+`vk` to `target` (the app that owns the selection). Brings it back to the front
+/// first if a click on the bar moved the focus; refuses Lens's own windows. The keys carry Lens's
+/// marker, so Lens's own hooks ignore them.
+pub fn send_ctrl_to(target: isize, vk: u16) -> Result<(), String> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow;
+    if target == 0 || pid_of(target) == std::process::id() || pid_of(target) == 0 {
+        return Err("The app that had the selection isn't there any more.".into());
+    }
+    if foreground() != target {
+        unsafe {
+            let _ = SetForegroundWindow(HWND(target as *mut c_void));
+        }
+        std::thread::sleep(Duration::from_millis(40));
+        if foreground() != target {
+            return Err("Couldn't get back to the app that had the selection.".into());
+        }
+    }
+    let key = |vk: VIRTUAL_KEY, up: bool| INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: vk,
+                dwFlags: if up { KEYEVENTF_KEYUP } else { Default::default() },
+                dwExtraInfo: super::uia::LENS_EXTRA_INFO,
+                ..Default::default()
+            },
+        },
+    };
+    let v = VIRTUAL_KEY(vk);
+    let inputs = [key(VK_CONTROL, false), key(v, false), key(v, true), key(VK_CONTROL, true)];
+    let sent = unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+    if sent as usize != inputs.len() {
+        // UIPI: an elevated app doesn't take keys from Lens.
+        return Err("Windows didn't let Lens send the keys to that app.".into());
+    }
+    Ok(())
+}
+
+/// Puts plain text on the clipboard (Copy's fallback when the app ignored Ctrl+C).
+pub fn put_text(text: &str) -> Result<(), String> {
+    write(Rendered { text: text.to_string(), html: None }, false)
+}
