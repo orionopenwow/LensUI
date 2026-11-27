@@ -245,6 +245,19 @@ export function MagicSearch({ initial }: { initial?: MagicSearchInitial } = {}) 
     onDeny: () => setReplacing(false),
   });
 
+  // Esc closes from anywhere in the window (the approval card handles its own Esc first).
+  useEffect(() => {
+    if (preview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !replacing && !e.defaultPrevented) {
+        e.preventDefault();
+        close();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview, replacing, close]);
+
   if (!open) return null;
   const secs = sections({ answerable: gate.gate !== "no-provider" || !!answer, cards: cards.length, web, webOn: bar.webResults && !action, local: local.length, onlyMine });
   const title = action ? ACTION_TITLES[action] ?? "Answer" : "Magic Search";
@@ -257,12 +270,6 @@ export function MagicSearch({ initial }: { initial?: MagicSearchInitial } = {}) 
       className={`msearch${side ? " is-side" : ""}`}
       role="dialog"
       aria-label={title}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && !replacing) {
-          e.preventDefault();
-          close();
-        }
-      }}
     >
       <header className="ms-head">
         <span className="ms-mark" aria-hidden>

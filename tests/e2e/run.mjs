@@ -1112,7 +1112,7 @@ const SCENARIOS = [
         if (!/alpha|beta|gamma|line/.test(q)) throw new Error(`Magic Search opened without the selection (query: ${JSON.stringify(q.slice(0, 80))})`);
         await pop.waitForSelector(".ms-result", { timeout: 8000 }).catch(() => {});
         await shot(pop, "magic-search");
-        await pop.locator(".msearch").press("Escape").catch(() => {});
+        await pop.keyboard.press("Escape").catch(() => {});
         await sleep(600);
         if (await invoke(dock, "is_surface_visible_cmd", { label: "magicsearch" }).catch(() => false)) throw new Error("Magic Search didn't close on Esc");
         const errs = [...barErrs(), ...take()];
