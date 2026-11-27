@@ -100,7 +100,7 @@ pub struct DockConfig {
     /// Live window thumbnails in the Dock hover card, like the Windows taskbar. On by default.
     #[serde(default = "default_true")]
     pub live_previews: bool,
-    /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split".
+    /// Dock shape: "floating" | "slim" | "taskbar" | "studio" | "minimal" | "split" | "islands" | "unified".
     #[serde(default = "default_dock_style")]
     pub style: String,
     /// Icon alignment for the Taskbar style: "center" | "left".
@@ -152,6 +152,17 @@ fn default_dock_magnification_range() -> u32 {
 
 fn default_dock_launch_animation() -> String {
     "lift".into()
+}
+
+/// Every Dock style the frontend draws (`src/dock/styles.ts` DOCK_STYLES, same order).
+pub const DOCK_STYLES: [&str; 8] = ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified"];
+
+/// A configured Dock style as one the frontend knows; anything else (typo, older or newer build)
+/// is "floating", the same rule as `normalizeDockStyle` in styles.ts.
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn normalize_dock_style(raw: &str) -> &'static str {
+    let t = raw.trim();
+    DOCK_STYLES.iter().copied().find(|s| s.eq_ignore_ascii_case(t)).unwrap_or("floating")
 }
 
 fn default_dock_style() -> String {

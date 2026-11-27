@@ -33,6 +33,8 @@ pub(crate) fn setup(app: &tauri::App, cfg: &LensConfig) {
     sync_tester_hotkey(&handle, cfg);
     // Magic right-click window: its own settings file; off unless the user turned it on.
     crate::commands::magic::startup(&handle);
+    // Magic Mouse (preview flag): undoes a pointer a crash left behind; on only if the flag is.
+    crate::commands::magic_mouse::startup(&handle, cfg);
     // "Lens at work" presence: pause hotkey only; the overlay is created on first use.
     crate::commands::presence::startup(&handle);
     crate::tester::log(
@@ -129,6 +131,7 @@ fn build_extra_topbars(handle: &AppHandle, cfg: &LensConfig) {
 /// Called from `save_config_cmd` after the new config is saved.
 pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensConfig) {
     win_crash::set_feature_flags(next);
+    crate::commands::magic_mouse::on_config(prev, next);
 
     // The Win-tap hook runs when the Magic button or the Launcher option wants taps (or Alt+Tab
     // Overview is on); Magic Start decides where taps go.
@@ -186,6 +189,8 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
 /// `quit_lens`, the tray's Quit and `RunEvent::Exit`.
 pub(crate) fn shutdown(app: Option<&AppHandle>) {
     crate::commands::snip::shutdown();
+    // Magic Mouse: pointer back to the person's own on exit (a crash is undone at next start).
+    crate::commands::magic_mouse::shutdown();
     panic_shutdown();
     if let Some(app) = app {
         crate::commands::presence::shutdown(app);

@@ -109,8 +109,8 @@ describe("Magic Mouse gesture (hold, then drag)", () => {
     ]);
     expect(r).toEqual([{ kind: "armed" }, { kind: "grab", rect: { x: 40, y: 100, w: 60, h: 80 } }]);
   });
-  test("holding without dragging stays a click; a tiny grab is ignored", () => {
-    expect(run([{ type: "down", x: 0, y: 0, t: 0 }, { type: "tick", t: 500 }, { type: "up", x: 0, y: 0, t: 600 }])).toEqual([{ kind: "armed" }, { kind: "click" }]);
+  test("holding without dragging opens Magic at the press point; a tiny grab is ignored", () => {
+    expect(run([{ type: "down", x: 3, y: 4, t: 0 }, { type: "tick", t: 500 }, { type: "up", x: 3, y: 4, t: 600 }])).toEqual([{ kind: "armed" }, { kind: "hold", x: 3, y: 4 }]);
     expect(run([{ type: "down", x: 0, y: 0, t: 0 }, { type: "tick", t: 500 }, { type: "move", x: 20, y: 3, t: 520 }, { type: "up", x: 20, y: 3, t: 540 }])).toEqual([{ kind: "armed" }]);
   });
   test("right and middle buttons are never grabbed; cancel resets", () => {

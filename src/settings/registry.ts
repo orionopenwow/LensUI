@@ -105,9 +105,9 @@ export const PAGES: PageDef[] = [
     icon: "dock",
     color: "#60A5FA",
     controls: ["Dock style", "Screen edge", "Auto-hide"],
-    keywords: ["dock", "taskbar", "top bar", "menu bar", "magnification", "auto hide", "pin", "launcher", "clock", "tray", "labels", "slim", "floating", "islands"],
+    keywords: ["dock", "taskbar", "top bar", "menu bar", "magnification", "auto hide", "pin", "launcher", "clock", "tray", "labels", "slim", "floating", "islands", "unified"],
     sections: [
-      { id: "style", label: "Dock style", keywords: ["floating", "slim", "taskbar", "studio", "minimal", "split"] },
+      { id: "style", label: "Dock style", keywords: ["floating", "slim", "taskbar", "studio", "minimal", "split", "islands", "unified", "one pill"] },
       { id: "behaviour", label: "Behaviour", keywords: ["auto hide", "previews", "lock"] },
       {
         id: "advanced",

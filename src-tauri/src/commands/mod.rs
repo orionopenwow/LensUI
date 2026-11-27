@@ -30,6 +30,7 @@ pub(crate) mod clip;
 pub(crate) mod selection_bar;
 pub(crate) mod magic_search;
 pub(crate) mod magic;
+pub(crate) mod magic_mouse;
 pub(crate) mod shelf;
 pub(crate) mod rightclick;
 pub(crate) mod keys;

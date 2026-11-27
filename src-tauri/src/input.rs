@@ -52,9 +52,12 @@ pub enum Feature {
     /// Esc stops a running agent (`presence::esc`). Claimed only while a run is active; it
     /// observes and never swallows.
     AgentStop = 7,
+    /// Magic Mouse: hold the left button, then drag to grab a region (`magic_waves::mouse_win`).
+    /// Only the button-up after an armed hold is ever swallowed; short clicks always pass.
+    MagicMouse = 8,
 }
 
-pub const FEATURES: usize = 8;
+pub const FEATURES: usize = 9;
 
 impl Feature {
     pub const ALL: [Feature; FEATURES] = [
@@ -66,6 +69,7 @@ impl Feature {
         Feature::DesktopInput,
         Feature::CursorFx,
         Feature::AgentStop,
+        Feature::MagicMouse,
     ];
 
     pub fn name(self) -> &'static str {
@@ -78,6 +82,7 @@ impl Feature {
             Feature::DesktopInput => "Desktop input",
             Feature::CursorFx => "Pointer effects",
             Feature::AgentStop => "Esc stops an agent",
+            Feature::MagicMouse => "Magic Mouse",
         }
     }
 }
@@ -280,18 +285,20 @@ mod rt {
     ];
 
     /// Mouse dispatch order: the two features that can swallow a click first, observers after.
-    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 5] = [
+    const MOUSE_TABLE: [(Feature, MouseHandler, WhenPaused); 6] = [
         (Feature::AltDrag, crate::win_altdrag::input_mouse, WhenPaused::Skip),
         (Feature::Magic, crate::magic::win::input_mouse, WhenPaused::Skip),
+        (Feature::MagicMouse, crate::magic_waves::mouse_win::input_mouse, WhenPaused::Skip),
         (Feature::ClipBubble, crate::clip::uia::input_mouse, WhenPaused::Skip),
         (Feature::DesktopInput, crate::win_desktop_input::input_mouse, WhenPaused::Skip),
         (Feature::CursorFx, crate::win_cursor_fx::input_mouse, WhenPaused::Skip),
     ];
 
     /// Told when the pause signal turns on, so a half-finished gesture is dropped.
-    const ON_PAUSE: [(Feature, fn()); 2] = [
+    const ON_PAUSE: [(Feature, fn()); 3] = [
         (Feature::AltDrag, crate::win_altdrag::input_paused),
         (Feature::Magic, crate::magic::win::input_paused),
+        (Feature::MagicMouse, crate::magic_waves::mouse_win::input_paused),
     ];
 
     const WM_INPUT_SYNC: u32 = WM_APP + 0x51;
@@ -372,7 +379,7 @@ mod rt {
         })
     }
 
-    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 5] {
+    fn mouse_slots(now: u64) -> [Slot<MouseEvent>; 6] {
         MOUSE_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (MOUSE_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
@@ -601,11 +608,17 @@ mod rt {
     fn foreground_blocks_input() -> bool {
         unsafe {
             if let Ok(state) = SHQueryUserNotificationState() {
-                if state == QUNS_RUNNING_D3D_FULL_SCREEN
-                    || state == QUNS_PRESENTATION_MODE
-                    || state == QUNS_BUSY
-                {
+                if state == QUNS_RUNNING_D3D_FULL_SCREEN || state == QUNS_PRESENTATION_MODE {
                     return true;
+                }
+                // QUNS_BUSY is "a window covers the whole screen". With the Windows taskbar hidden
+                // (which Lens can do) every maximised window does, so a maximised window is not a
+                // fullscreen app here; a borderless fullscreen one still is.
+                if state == QUNS_BUSY {
+                    let fg = GetForegroundWindow();
+                    if fg.0.is_null() || !windows::Win32::UI::WindowsAndMessaging::IsZoomed(fg).as_bool() {
+                        return true;
+                    }
                 }
             }
             let fg = GetForegroundWindow();

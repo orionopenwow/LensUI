@@ -71,6 +71,8 @@ const running = [
   win(103, "Spotify Premium", "Spotify.exe", "C:\\x\\Spotify.exe"),
   win(104, "Downloads - File Explorer", "explorer.exe", "C:\\Windows\\explorer.exe"),
 ];
+// ?multi=1: Chrome has three windows (the Dock's window-count dots and window carousel).
+if (params.get("multi")) running.push(win(105, "Lens docs — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"), win(106, "Pull request #120 — Google Chrome", "chrome.exe", "C:\\x\\chrome.exe"));
 const apps = ["Blender 5.1", "Audacity", "Android Studio", "7-Zip File Manager", "Adobe Photoshop 2023", "Google Chrome", "Notepad", "Spotify", "Steam", "Visual Studio Code", "Discord", "OBS Studio"].map((n) => ({ name: n, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${n}.lnk`, category: "App" }));
 // ?ws=groups: Lens workspaces in groups mode, so the Overview shows its workspace strip.
 const wsGroups = params.get("ws") === "groups";
@@ -313,6 +315,22 @@ handlers.dashboard_available = () => !!(config as any).magicWaves?.dashboard;
 handlers.open_dashboard = () => null;
 handlers.toggle_dashboard = () => true;
 handlers.dashboard_hide = () => null;
+// Magic Mouse (wave M3): the pointer frames are drawn by Rust; the mock returns simple SVG
+// stand-ins (a ring with a tip) so the card renders and animates in the harness.
+handlers.magic_mouse_preview = (a: any) => {
+  const hc = !!a?.highContrast;
+  const frame = (i: number, tip: boolean) => {
+    const r = 9 + Math.sin((i / 8) * Math.PI * 2);
+    const rim = hc ? "#ffffff" : "#d4d4d8";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32"><circle cx="18" cy="18" r="${r.toFixed(2)}" fill="#18181b" stroke="${rim}" stroke-width="${hc ? 2 : 1}"/><circle cx="16" cy="16" r="3" fill="#f43f5e"/><circle cx="20" cy="17" r="3" fill="#22c55e"/><circle cx="18" cy="21" r="3" fill="#3b82f6"/>${tip ? `<path d="M2 2 L10 6 L6 10 Z" fill="#18181b" stroke="${rim}"/>` : ""}</svg>`;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  };
+  return [
+    { role: "Arrow", label: "Magic pointer", size: 64, hotX: 4, hotY: 4, frames: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => frame(i, true)) },
+    { role: "Wait", label: "Busy", size: 64, hotX: 36, hotY: 36, frames: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => frame(i, false)) },
+  ];
+};
+handlers.magic_mouse_status = () => ({ wanted: !!(config as any).magicWaves?.mouse, pointerApplied: !!(config as any).magicWaves?.mouse, gesturesOn: !!(config as any).magicWaves?.mouse, hookLive: false, steppedAside: false, holds: 0, grabs: 0, last: "" });
 // Magic Start and Shelf → Notes (wave M4).
 handlers.magic_start_available = () => !!(config as any).magicWaves?.startButton;
 handlers.toggle_magic_start = () => {

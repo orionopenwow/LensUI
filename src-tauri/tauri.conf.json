@@ -409,6 +409,38 @@
         "visible": false,
         "focus": false,
         "create": false
+      },
+      {
+        "label": "snip",
+        "title": "Lens Snip",
+        "url": "index.html?surface=snip",
+        "width": 800,
+        "height": 600,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
+      },
+      {
+        "label": "magic",
+        "title": "Lens",
+        "url": "index.html?surface=magic",
+        "width": 360,
+        "height": 440,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false,
+        "create": false
       }
     ],
     "security": {
