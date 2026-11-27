@@ -106,6 +106,44 @@ export function navOrder(query: string, results: StartEntry[], pinned: StartEntr
   return query.trim() ? results : [...pinned, ...actions, ...recent];
 }
 
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * Up/Down across the panel as it is laid out: tiles sit in grids and rows in lists, so "down"
+ * means the nearest entry on the next row, not the next entry in reading order. `boxes[i]` is
+ * where entry i is on screen. Stays put at the top and bottom edge.
+ */
+export function moveVertical(boxes: readonly Box[], sel: number, dir: 1 | -1): number {
+  const cur = boxes[sel];
+  if (!cur) return moveSelection(sel, dir, boxes.length);
+  const mid = (b: Box) => b.y + b.h / 2;
+  const cx = cur.x + cur.w / 2;
+  // The closest row beyond the current one in that direction…
+  let rowY: number | null = null;
+  for (const b of boxes) {
+    const d = (mid(b) - mid(cur)) * dir;
+    if (d > cur.h / 2 && (rowY === null || d < (rowY - mid(cur)) * dir)) rowY = mid(b);
+  }
+  if (rowY === null) return sel;
+  // …and on it, the entry whose span is nearest to where we are.
+  let best = sel;
+  let bestD = Infinity;
+  boxes.forEach((b, i) => {
+    if (Math.abs(mid(b) - rowY!) > 1) return;
+    const d = cx < b.x ? b.x - cx : cx > b.x + b.w ? cx - (b.x + b.w) : 0;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  });
+  return best;
+}
+
 /** Arrow-key movement that clamps instead of wrapping. */
 export function moveSelection(sel: number, delta: number, count: number): number {
   if (count <= 0) return 0;

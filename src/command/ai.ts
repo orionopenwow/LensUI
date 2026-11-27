@@ -5,6 +5,7 @@ import { rememberStepToken } from "../ai/stepTokens";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { aiAsk, aiCancel } from "../ai/client";
+import { quiet } from "../failsafe/calls";
 import type {
   AiDoneEvent,
   AiDeltaEvent,
@@ -49,7 +50,7 @@ export function useAiEvents(handlers: AiStreamHandlers) {
       listen<ToolResult>(EVT_AI_TOOL_RESULT, (e) => ref.current.onToolResult?.(e.payload)),
     ];
     return () => {
-      subs.forEach((p) => p.then((u) => u()).catch(() => {}));
+      subs.forEach((p) => p.then((u) => u()).catch(quiet));
     };
   }, []);
 }

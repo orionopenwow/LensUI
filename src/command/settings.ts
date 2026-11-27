@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { Mode } from "./parse";
 import type { TileOverrides } from "./contextProviders";
 import { DEFAULT_EDGE, type EdgeSettings } from "./mini/edgeGeometry";
+import { quiet } from "../failsafe/calls";
 
 export type CommandProvider = "default" | "script" | "local" | "claude";
 export type AutoSource = "selection" | "clipboard" | "window" | "page";
@@ -97,12 +98,12 @@ export function useCommandSettings(): CommandSettings {
     const load = () =>
       invoke<Record<string, unknown> | null>("get_config")
         .then((c) => alive && setS(normaliseCommandSettings(c?.command)))
-        .catch(() => {});
+        .catch(quiet);
     load();
     const un = listen("lens://config-updated", load);
     return () => {
       alive = false;
-      un.then((u) => u()).catch(() => {});
+      un.then((u) => u()).catch(quiet);
     };
   }, []);
   return s;

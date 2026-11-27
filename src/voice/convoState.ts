@@ -158,3 +158,6 @@ export function auroraBars(n: number, status: ConvStatus, levels: number[], t: n
   }
   return out;
 }
+
+/** The conversation clock ticks only while a conversation is open (B-120). */
+export const shouldTick = (open: boolean) => open;

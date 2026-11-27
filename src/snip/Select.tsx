@@ -287,7 +287,7 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
       <div className="snip-modebar" role="toolbar" aria-label="Capture mode" onPointerDown={(e) => e.stopPropagation()}>
         {MODES.map((m) => (
           <Tip key={m.id} text={m.hint} below>
-            <button type="button" className={`snip-btn ${mode === m.id ? "on" : ""}`} aria-pressed={mode === m.id} onClick={() => pick(m.id)}>
+            <button type="button" data-weight="medium" className={`snip-btn ${mode === m.id ? "on" : ""}`} aria-pressed={mode === m.id} onClick={() => pick(m.id)}>
               {m.icon}
               {m.label}
             </button>
@@ -295,24 +295,24 @@ export const Select: React.FC<Props> = ({ session, initialMode, delay, onDelay, 
         ))}
         <span className="sep" />
         <Tip text={delay ? `Captures ${delay} s after you start` : "Capture right away"} below>
-          <button type="button" className="snip-btn" onClick={() => onDelay(DELAYS[(DELAYS.indexOf(delay) + 1) % DELAYS.length])} aria-label={`Delay ${delay} seconds`}>
+          <button type="button" data-weight="medium" className="snip-btn" onClick={() => onDelay(DELAYS[(DELAYS.indexOf(delay) + 1) % DELAYS.length])} aria-label={`Delay ${delay} seconds`}>
             <Clock size={15} />
             {delay ? `${delay}s` : "Now"}
           </button>
         </Tip>
         <Tip text={cursor ? "The pointer is included" : "The pointer is left out"} below>
-          <button type="button" className={`snip-btn icon ${cursor ? "on" : ""}`} aria-pressed={cursor} aria-label="Include pointer" onClick={() => onCursor(!cursor)}>
+          <button type="button" data-weight="medium" className={`snip-btn icon ${cursor ? "on" : ""}`} aria-pressed={cursor} aria-label="Include pointer" onClick={() => onCursor(!cursor)}>
             <MousePointer2 size={15} />
           </button>
         </Tip>
         {mode === "record" && fixed ? (
-          <button type="button" className="snip-btn primary" onClick={() => finish({ kind: "region", rect: fixed })}>
+          <button type="button" data-weight="heavy" className="snip-btn primary" onClick={() => finish({ kind: "region", rect: fixed })}>
             <Video size={15} /> Start recording
           </button>
         ) : null}
         <span className="sep" />
         <Tip text="Cancel (Esc)" below>
-          <button type="button" className="snip-btn icon" aria-label="Cancel" onClick={onCancel}>
+          <button type="button" data-weight="medium" className="snip-btn icon" aria-label="Cancel" onClick={onCancel}>
             <X size={15} />
           </button>
         </Tip>
