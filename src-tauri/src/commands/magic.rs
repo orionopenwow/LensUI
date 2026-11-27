@@ -6,12 +6,12 @@
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::magic::{
-    self, conflicts, placement, trigger::TriggerMode, ConflictDto, LensTargetInput, MagicConfig, MagicOpen,
-    MagicStatus, MagicTarget,
+    self, conflicts, placement, trigger::TriggerMode, ConflictDto, LensTargetInput, MagicConfig,
+    MagicOpen, MagicStatus, MagicTarget,
 };
 
 pub(crate) const LABEL: &str = "magic";
@@ -34,19 +34,11 @@ fn ensure_window(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     if let Some(w) = app.get_webview_window(LABEL) {
         return Ok(w);
     }
-    WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("index.html?surface=magic".into()))
-        .title("Lens")
-        .inner_size(magic::WINDOW_W, magic::WINDOW_H)
-        .decorations(false)
-        .transparent(true)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(false)
-        .shadow(false)
-        .visible(false)
-        .focused(false)
-        .build()
-        .map_err(|e| e.to_string())
+    // From its tauri.conf.json entry (create: false), like Magic Start and the Dashboard, so it
+    // shares the WebView2 settings of every other Lens window (a webview built in code with other
+    // browser arguments, e.g. the E2E build's DevTools port, fails with 0x8007139F).
+    crate::app::setup::build_window_from_config(app, LABEL)
+        .ok_or_else(|| "the Magic window could not be created".to_string())
 }
 
 fn now_ms() -> u64 {
@@ -58,7 +50,16 @@ fn now_ms() -> u64 {
 
 /// Places, fills and shows the window for these targets at the cursor.
 #[allow(clippy::too_many_arguments)]
-fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, resolve_ms: u32, at_ms: u64, run: Option<String>) -> Result<(), String> {
+fn show(
+    app: &AppHandle,
+    x: i32,
+    y: i32,
+    targets: Vec<MagicTarget>,
+    via: &str,
+    resolve_ms: u32,
+    at_ms: u64,
+    run: Option<String>,
+) -> Result<(), String> {
     let win = ensure_window(app)?;
     let ms = magic::monitors();
     let p = placement::place(&ms, (x, y), magic::WINDOW_W, magic::WINDOW_H);
@@ -82,7 +83,8 @@ fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, r
         let _ = win.set_size(PhysicalSize::new(p.rect.w as u32, p.rect.h as u32));
         let _ = win.set_position(PhysicalPosition::new(p.rect.x, p.rect.y));
     }
-    app.emit_to(LABEL, EVT_OPEN, payload).map_err(|e| e.to_string())?;
+    app.emit_to(LABEL, EVT_OPEN, payload)
+        .map_err(|e| e.to_string())?;
     let _ = win.show();
     let _ = win.set_focus();
     LAST_RESOLVE_MS.store(resolve_ms, Ordering::Relaxed);
@@ -90,19 +92,37 @@ fn show(app: &AppHandle, x: i32, y: i32, targets: Vec<MagicTarget>, via: &str, r
 }
 
 /// Gathers what's under (x, y) and opens the window there.
-fn open_at(app: &AppHandle, x: i32, y: i32, lens: Option<LensTargetInput>, via: &str) -> Result<(), String> {
+pub(crate) fn open_at(
+    app: &AppHandle,
+    x: i32,
+    y: i32,
+    lens: Option<LensTargetInput>,
+    via: &str,
+) -> Result<(), String> {
     let at_ms = now_ms();
     let started = std::time::Instant::now();
     #[cfg(windows)]
     let targets = magic::win::gather(x, y, lens.as_ref().and_then(|l| l.to_fact()));
     #[cfg(not(windows))]
     let targets = {
-        let facts = magic::target::Facts { lens: lens.as_ref().and_then(|l| l.to_fact()), ..Default::default() };
+        let facts = magic::target::Facts {
+            lens: lens.as_ref().and_then(|l| l.to_fact()),
+            ..Default::default()
+        };
         magic::target::resolve(&facts)
     };
     let resolve_ms = started.elapsed().as_millis().min(u32::MAX as u128) as u32;
     let run = lens.as_ref().and_then(|l| l.run_id());
-    show(app, x, y, targets.into_iter().map(Into::into).collect(), via, resolve_ms, at_ms, run)
+    show(
+        app,
+        x,
+        y,
+        targets.into_iter().map(Into::into).collect(),
+        via,
+        resolve_ms,
+        at_ms,
+        run,
+    )
 }
 
 fn cursor() -> (i32, i32) {
@@ -127,24 +147,32 @@ fn sync_hotkey(app: &AppHandle, cfg: &MagicConfig) {
     if !cfg.enabled || cfg.hotkey.trim().is_empty() {
         return;
     }
-    let Some(spec) = crate::win_summon::parse_hotkey(&cfg.hotkey) else { return };
+    let Some(spec) = crate::win_summon::parse_hotkey(&cfg.hotkey) else {
+        return;
+    };
     let canon = conflicts::canonical_hotkey(&cfg.hotkey).unwrap_or_default();
-    if crate::win_summon::reserved_hotkey(&spec) || conflicts::LENS_HOTKEYS.contains(&canon.as_str()) {
+    if crate::win_summon::reserved_hotkey(&spec)
+        || conflicts::LENS_HOTKEYS.contains(&canon.as_str())
+    {
         return;
     }
-    let Ok(shortcut) = spec.canonical().parse::<Shortcut>() else { return };
+    let Ok(shortcut) = spec.canonical().parse::<Shortcut>() else {
+        return;
+    };
     let handle = app.clone();
-    let res = app.global_shortcut().on_shortcut(shortcut, move |_a, _s, ev| {
-        if ev.state == ShortcutState::Pressed {
-            let h = handle.clone();
-            std::thread::spawn(move || {
-                let (x, y) = cursor();
-                if let Err(e) = open_at(&h, x, y, None, "hotkey") {
-                    crate::tester::log("warn", "magic", &format!("open failed: {}", e));
-                }
-            });
-        }
-    });
+    let res = app
+        .global_shortcut()
+        .on_shortcut(shortcut, move |_a, _s, ev| {
+            if ev.state == ShortcutState::Pressed {
+                let h = handle.clone();
+                std::thread::spawn(move || {
+                    let (x, y) = cursor();
+                    if let Err(e) = open_at(&h, x, y, None, "hotkey") {
+                        crate::tester::log("warn", "magic", &format!("open failed: {}", e));
+                    }
+                });
+            }
+        });
     if res.is_ok() {
         *cur = Some(shortcut);
         HOTKEY_OK.store(true, Ordering::Relaxed);
@@ -195,7 +223,8 @@ fn status_for(cfg: &MagicConfig) -> MagicStatus {
     #[cfg(windows)]
     let (hook_active, reinstalls, last_problem) = magic::win::hook_status();
     #[cfg(not(windows))]
-    let (hook_active, reinstalls, last_problem) = (false, 0u32, String::from("The magic window needs Windows."));
+    let (hook_active, reinstalls, last_problem) =
+        (false, 0u32, String::from("The magic window needs Windows."));
     MagicStatus {
         enabled: cfg.enabled,
         trigger: cfg.trigger.clone(),
@@ -241,7 +270,10 @@ pub(crate) fn magic_check(
         alt_drag_resize,
         summon_hotkeys: &summon_hotkeys,
     };
-    conflicts::check(TriggerMode::parse(&cfg.trigger), &cfg.hotkey, &o).into_iter().map(Into::into).collect()
+    conflicts::check(TriggerMode::parse(&cfg.trigger), &cfg.hotkey, &o)
+        .into_iter()
+        .map(Into::into)
+        .collect()
 }
 
 /// Opens the window at the cursor. Lens surfaces pass their own item (dock icon, Shelf item,
@@ -290,5 +322,9 @@ pub(crate) fn magic_window_action(hwnd: i64, action: String) -> Result<String, S
 #[tauri::command]
 pub(crate) fn magic_report_open(ms: u32, resolve_ms: u32) {
     LAST_OPEN_MS.store(ms, Ordering::Relaxed);
-    crate::tester::log("info", "magic", &format!("opened in {} ms (resolve {} ms)", ms, resolve_ms));
+    crate::tester::log(
+        "info",
+        "magic",
+        &format!("opened in {} ms (resolve {} ms)", ms, resolve_ms),
+    );
 }
