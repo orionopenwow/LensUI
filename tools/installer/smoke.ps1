@@ -134,7 +134,11 @@ if ($Msi) {
   $Msi = (Resolve-Path $Msi).Path
   $p = Start-Process msiexec.exe -ArgumentList "/i", "`"$Msi`"", "/qn", "/norestart", "/l*v", "`"$(Join-Path $Out 'msi-install.log')`"" -Wait -PassThru
   Check "msiexec /i exits 0" ($p.ExitCode -eq 0) "exit $($p.ExitCode)"
-  $msiExe = @("$env:ProgramFiles\$Product\$Exe", "$env:LOCALAPPDATA\Programs\$Product\$Exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+  # Tauri's MSI reuses a folder an earlier install recorded (here the NSIS one), else Program Files.
+  $recorded = @("HKCU:\Software\Lens contributors\$Product", "HKLM:\Software\Lens contributors\$Product") |
+    ForEach-Object { (Get-ItemProperty $_ -ErrorAction SilentlyContinue).InstallDir } | Where-Object { $_ }
+  $msiExe = @($recorded | ForEach-Object { Join-Path $_ $Exe }) + @("$env:ProgramFiles\$Product\$Exe", $(Join-Path $InstallDir $Exe)) |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
   Check "MSI installed lens-ui.exe" ([bool]$msiExe) "$msiExe"
   if ($msiExe) {
     Start-Process -FilePath $msiExe | Out-Null
