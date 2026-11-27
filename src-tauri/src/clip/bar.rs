@@ -288,6 +288,22 @@ pub fn clamp_delay(ms: u32) -> u32 {
     ms.min(600)
 }
 
+/// How long the one retry after a timed-out selection read waits (see [`retry_after_timeout`]).
+pub const READ_RETRY_TIMEOUT_MS: u64 = 250;
+
+/// Whether a selection read that ran out of time gets another chance, and for how long.
+///
+/// A cold UI Automation read (first read after start-up, or the first into an app whose
+/// provider isn't loaded yet) is slow, not lost: the read is still running and usually answers
+/// shortly after the budget. So the selection bar (`bubble`) waits once more, for a short bounded
+/// time, for that same read; it never starts a second one (that would queue behind the first or
+/// pay the cold cost again on a fresh thread). Exactly one retry: `attempt` counts the waits that
+/// already timed out. Reads someone asked for (`bubble == false`) don't wait: the person is
+/// waiting for them. A read whose worker went away (`disconnected`) has nothing to wait for.
+pub fn retry_after_timeout(bubble: bool, attempt: u32, disconnected: bool) -> Option<u64> {
+    (bubble && attempt == 1 && !disconnected).then_some(READ_RETRY_TIMEOUT_MS)
+}
+
 /// Too short a selection opens nothing (Settings › minimum characters).
 pub fn long_enough(chars: usize, min_chars: u32) -> bool {
     chars >= (min_chars.clamp(1, 50) as usize)
@@ -615,5 +631,16 @@ mod tests {
         assert_eq!(Placement::parse("above"), Placement::Above);
         assert_eq!(Placement::parse("x"), Placement::Below);
         assert_eq!(Hide::Timeout.id(), "timeout");
+    }
+
+    #[test]
+    fn a_timed_out_bar_read_gets_exactly_one_short_retry() {
+        assert_eq!(retry_after_timeout(true, 1, false), Some(READ_RETRY_TIMEOUT_MS));
+        // Only one: the retry timing out too gives up.
+        assert_eq!(retry_after_timeout(true, 2, false), None);
+        assert_eq!(retry_after_timeout(true, 0, false), None);
+        // A read someone asked for doesn't wait longer; a worker that went away isn't waited for.
+        assert_eq!(retry_after_timeout(false, 1, false), None);
+        assert_eq!(retry_after_timeout(true, 1, true), None);
     }
 }

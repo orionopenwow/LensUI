@@ -4,8 +4,10 @@
 //! keys, clicks and pointer moves that close it; no keys, no text and no positions are stored).
 //!
 //! Never uses the clipboard trick (no simulated Ctrl+C). Every read goes through
-//! `selection_rules::may_read` first, and runs on a worker thread with a 150 ms timeout. Classic
-//! Win32 Edit controls, which have no TextPattern, are read with their own EM_GETSEL / WM_GETTEXT.
+//! `selection_rules::may_read` first, and runs on a worker thread with a 150 ms timeout (the
+//! selection bar waits once more, up to 250 ms, for a read that ran out of time:
+//! `bar::retry_after_timeout`). Classic Win32 Edit controls, which have no TextPattern, are read
+//! with their own EM_GETSEL / WM_GETTEXT.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -166,15 +168,37 @@ pub fn read_facts(policy: &SelectionPolicy, excluded: &[String], trigger: Trigge
             let _ = j.reply.send(r);
         });
     }
-    match rx.recv_timeout(READ_TIMEOUT) {
+    let bubble = trigger == Trigger::Bubble;
+    let mut answer = rx.recv_timeout(READ_TIMEOUT);
+    // A cold UI Automation read is slow, not lost: the bar waits once more, briefly, for the same
+    // read (`bar::retry_after_timeout`). No second read, no new thread; success costs nothing.
+    if let Err(e) = &answer {
+        let disconnected = matches!(e, mpsc::RecvTimeoutError::Disconnected);
+        if let Some(ms) = bar::retry_after_timeout(bubble, 1, disconnected) {
+            eprintln!(
+                "[Lens UI] selection bar: the selection read took longer than {} ms (cold UI Automation?); retrying once for up to {ms} ms",
+                READ_TIMEOUT.as_millis()
+            );
+            let started = Instant::now();
+            answer = rx.recv_timeout(Duration::from_millis(ms));
+            if answer.is_ok() {
+                eprintln!("[Lens UI] selection bar: the retry got an answer after {} ms more", started.elapsed().as_millis());
+            }
+        }
+    }
+    match answer {
         Ok(Ok(mut f)) => {
             f.fg = fg;
             Ok(f)
         }
         Ok(Err(e)) => Err(e),
-        Err(_) => {
-            if trigger == Trigger::Bubble {
-                eprintln!("[Lens UI] selection bar: the selection read took longer than {} ms", READ_TIMEOUT.as_millis());
+        Err(e) => {
+            if bubble {
+                let why = match e {
+                    mpsc::RecvTimeoutError::Timeout => "ran out of time after its one retry",
+                    mpsc::RecvTimeoutError::Disconnected => "ended without an answer",
+                };
+                eprintln!("[Lens UI] selection bar: the selection read {why}; giving up");
             }
             Err(Refusal::NoTextPattern)
         }
