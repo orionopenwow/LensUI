@@ -2,6 +2,7 @@
 // window shell. Mirrors src-tauri/src/coreapps/mod.rs (ids, titles, glyphs); a bun test keeps
 // them in step.
 import { invoke } from "@tauri-apps/api/core";
+import { lensAppIconSvg, lensAppIconUrl } from "../icons/lensApps";
 
 export type CoreAppId = "monitor" | "startup" | "timer" | "calculator" | "color" | "notes" | "power" | "network" | "clipboard" | "feeds" | "messages";
 
@@ -14,9 +15,6 @@ export interface CoreAppInfo {
   blurb: string;
   /** Search words for the Launcher. */
   keywords: string;
-  /** Stroked SVG path on a 24×24 grid (same as the Rust registry). */
-  glyph: string;
-  tint: [string, string];
   /** Settings page with the Windows side of the same thing, when there is one. */
   settingsTab?: string;
 }
@@ -28,8 +26,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Monitor",
     blurb: "What's using your PC right now, and what's slowing it down.",
     keywords: "monitor task manager processes cpu ram memory gpu disk network slow performance end task",
-    glyph: "M3 12h4l3-8 4 16 3-8h4",
-    tint: ["#3B82F6", "#1E3A8A"],
     settingsTab: "monitor",
   },
   {
@@ -38,8 +34,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Startup & Uninstall",
     blurb: "Choose what starts with Windows and remove apps with their own uninstaller.",
     keywords: "startup apps boot login uninstall remove programs installed apps leftovers",
-    glyph: "M12 3v9M7.5 6.5a7 7 0 1 0 9 0",
-    tint: ["#F97316", "#9A3412"],
     settingsTab: "apps",
   },
   {
@@ -48,8 +42,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Timer",
     blurb: "Timers, pomodoro focus, a stopwatch and alarms.",
     keywords: "timer countdown pomodoro focus stopwatch alarm clock",
-    glyph: "M12 8v5l3 2M9 2h6M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
-    tint: ["#EF4444", "#7F1D1D"],
   },
   {
     id: "calculator",
@@ -57,8 +49,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Calculator",
     blurb: "Maths with history, unit conversion and a programmer mode.",
     keywords: "calculator calc maths math convert units programmer hex binary currency",
-    glyph: "M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM8 7h8M8 12h1M12 12h1M16 12h0M8 16h1M12 16h1M16 16h0",
-    tint: ["#64748B", "#1E293B"],
   },
   {
     id: "color",
@@ -66,8 +56,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Color",
     blurb: "Pick colours from the screen, keep a palette and check contrast.",
     keywords: "color colour picker eyedropper palette contrast wcag accessibility hex",
-    glyph: "M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1-.8-1.4-.8-2.3 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.6 17 3 12 3zM7.5 11.5h0M10 7.5h0M14.5 7.5h0",
-    tint: ["#A855F7", "#581C87"],
     settingsTab: "theme",
   },
   {
@@ -76,8 +64,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Notes",
     blurb: "Notes and to-dos, pinned to your desktop if you like.",
     keywords: "notes note todo to-do checklist sticky stickies memo",
-    glyph: "M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h5",
-    tint: ["#EAB308", "#713F12"],
   },
   {
     id: "power",
@@ -85,8 +71,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Power",
     blurb: "Battery health, charge history and power mode.",
     keywords: "power battery health capacity cycles charge power mode energy",
-    glyph: "M4 8h14v8H4zM18 11h2v2h-2M9 9.5 7.5 12h3L9 14.5",
-    tint: ["#22C55E", "#14532D"],
     settingsTab: "power",
   },
   {
@@ -95,8 +79,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Network",
     blurb: "Your connection, addresses and which apps are online right now.",
     keywords: "network internet wifi wi-fi ip address connections who is using my internet speed test",
-    glyph: "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h0",
-    tint: ["#06B6D4", "#164E63"],
     settingsTab: "network",
   },
   {
@@ -105,8 +87,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Clipboard",
     blurb: "Everything you copied, with pins, search and paste-as.",
     keywords: "clipboard history copy paste pins",
-    glyph: "M9 3h6v3H9zM7 5H5v16h14V5h-2M8 11h8M8 15h6",
-    tint: ["#14B8A6", "#134E4A"],
   },
   {
     id: "feeds",
@@ -114,8 +94,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Feeds",
     blurb: "News and the people you follow in one slim column, with a digest.",
     keywords: "feeds rss news bluesky mastodon github youtube reddit social timeline digest",
-    glyph: "M5 11a8 8 0 0 1 8 8M5 5a14 14 0 0 1 14 14M6 18h0",
-    tint: ["#F59E0B", "#78350F"],
     settingsTab: "notifications#feeds",
   },
   {
@@ -124,8 +102,6 @@ export const CORE_APPS: CoreAppInfo[] = [
     short: "Messages",
     blurb: "One inbox over the messengers you already use. Lens reads unread counts only.",
     keywords: "messages inbox chat unread discord slack telegram whatsapp matrix signal teams",
-    glyph: "M4 5h16v11H9l-5 4z",
-    tint: ["#6366F1", "#312E81"],
     settingsTab: "notifications#messages",
   },
 ];
@@ -134,11 +110,10 @@ export const PIN_PREFIX = "lens-app:";
 
 export const coreApp = (id: string): CoreAppInfo | undefined => CORE_APPS.find((a) => a.id === id);
 
-export function iconSvg(a: CoreAppInfo): string {
-  return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='${a.tint[0]}'/><stop offset='1' stop-color='${a.tint[1]}'/></linearGradient></defs><rect x='2' y='2' width='60' height='60' rx='16' fill='url(#g)'/><rect x='2.5' y='2.5' width='59' height='59' rx='15.5' fill='none' stroke='white' stroke-opacity='.18'/><g transform='translate(14 14) scale(1.5)' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='${a.glyph}'/></g></svg>`;
-}
+/** The app's icon: Lens's own set (src/icons/lensApps.ts, DESIGN.md §3.7). */
+export const iconSvg = (a: CoreAppInfo): string => lensAppIconSvg(a.id);
 
-export const iconUrl = (a: CoreAppInfo) => `data:image/svg+xml,${encodeURIComponent(iconSvg(a))}`;
+export const iconUrl = (a: CoreAppInfo) => lensAppIconUrl(a.id);
 
 export function openCoreApp(id: CoreAppId, view?: string, find?: string): Promise<void> {
   return invoke<void>("coreapp_open", { id, view: view ?? null, find: find ?? null });

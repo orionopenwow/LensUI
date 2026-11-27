@@ -88,6 +88,8 @@ const surfaces: Record<string, React.LazyExoticComponent<React.ComponentType>> =
   conversation: lazy(() =>
     import("./surfaces/ConversationSurface").then((m) => ({ default: m.ConversationSurface }))
   ),
+  // Test-only: Lens's app-icon sheet for the visual suite (src/icons/lensApps.ts).
+  iconsheet: lazy(() => import("./icons/IconSheetSurface").then((m) => ({ default: m.IconSheetSurface }))),
 };
 
 const params = new URLSearchParams(window.location.search);

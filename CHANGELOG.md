@@ -94,6 +94,11 @@ up and migrates `%APPDATA%\LensUI` where it can.
   now drawn over other apps too.
 
 ### Changed
+- **Lens's own app icons are simpler and bolder.** Monitor, Timer, Notes, Calculator, Color, Power,
+  Network, Clipboard, Startup, Feeds and Messages (in the Dock, Search, Command and their title
+  bars), and Lens's apps on the website, now share one set: a thick white glyph on a plain dark
+  tile, with no colours, gradients or glow, so they stay readable at small sizes. Lens Browser keeps
+  the Lens logo, redrawn flat so it is crisp in the Dock. Other apps' icons are unchanged.
 - **Sentence case** for the Top Bar's button names ("Previous desktop", "Wi-Fi and network") and
   the remaining Title Case labels in Settings; Settings controls also got consistent hover,
   pressed and disabled states.

@@ -58,6 +58,8 @@ const STATES = [
   // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
   { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },
   { id: "deskwidgets-edit", surface: "deskwidgets", params: "magic=desktopWidgets&desk=edit", sizes: [[1600, 900], [1366, 768]] },
+  // Lens's own app icons (src/icons/lensApps.ts, DESIGN.md §3.7): the whole set at 16/24/32/48 px.
+  { id: "iconsheet", surface: "iconsheet", sizes: [[420, 1080]] },
 ];
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta
