@@ -157,13 +157,23 @@ layouts. Those stay on the manual smoke-test list (docs/INTEGRATION_NOTES.md).
 frames, long tasks over 50 ms, cumulative layout shift and first contentful paint for:
 * the Dock: hover sweep, classic magnification, search glide open and close;
 * Lens Mini expanding to Command;
-* six theme switches;
+* six theme switches, measured one at a time after a warm-up switch (below);
 * every Settings tab;
 * each of the 8 Playground scenes for 5 s.
 
 `budgets.json` holds the baseline. A run fails when a metric exceeds baseline × 1.2 plus a small
 absolute allowance (one 60 Hz frame — 17 ms — on p50 and p95, 3 long tasks, 0.02 CLS, 150 ms first paint; frame times are quantised to display frames, so a tighter margin would fail on a single dropped frame). The allowance
 keeps timer noise from failing runs.
+
+The theme switch is gated per switch: one warm-up switch is not measured, then each of the six
+switches records the time from the change to the first frame painted in the new theme
+(`switchMs`) and its long tasks. The gate is on the median switch (`switchMs` within baseline ×
+1.2 + 17 ms; at most one long task, the switch frame itself), with a separate cap on the slowest
+switch (3× `switchMs`, three long tasks). A switch costs ~40–60 ms at 4×, right on the 50 ms
+long-task line, so the run's total long-task count swung between 0 and 10 for the same commit; it is
+still reported but not gated. A selector that is matched against every element (one that ends in
+`*`, or in `:is()` / `:where()` with several arguments) makes every switch slower and shows in the
+median: write `:root[data-x] .a, :root[data-x] .b` or `:where(.a), :where(.b)` instead.
 
 **Updating the budgets** after an intended change:
 1. Run the workflow manually with "update baselines".

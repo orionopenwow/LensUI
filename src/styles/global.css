@@ -393,19 +393,17 @@ button {
 }
 
 /* Lens high-contrast setting: stronger edges on every panel, no blur, no glow text. */
-:root[data-contrast="high"] :where(
-    .lens-glass,
-    .dock-pill,
-    .dock-launcher-drawer,
-    .dock-launcher-card,
-    .topbar,
-    .cc-card,
-    .qs-card,
-    .qs-tile,
-    .cc-chip,
-    .qs-seg-btn,
-    .pal-shell
-  ) {
+:root[data-contrast="high"] :where(.lens-glass),
+:root[data-contrast="high"] :where(.dock-pill),
+:root[data-contrast="high"] :where(.dock-launcher-drawer),
+:root[data-contrast="high"] :where(.dock-launcher-card),
+:root[data-contrast="high"] :where(.topbar),
+:root[data-contrast="high"] :where(.cc-card),
+:root[data-contrast="high"] :where(.qs-card),
+:root[data-contrast="high"] :where(.qs-tile),
+:root[data-contrast="high"] :where(.cc-chip),
+:root[data-contrast="high"] :where(.qs-seg-btn),
+:root[data-contrast="high"] :where(.pal-shell) {
   border-color: var(--lens-border-strong) !important;
 }
 
@@ -413,7 +411,11 @@ button {
   text-shadow: none !important;
 }
 
-:root[data-contrast="high"] :where(.lens-glass, .dock-pill, .topbar, .pal-shell, .dock-launcher-drawer) {
+:root[data-contrast="high"] :where(.lens-glass),
+:root[data-contrast="high"] :where(.dock-pill),
+:root[data-contrast="high"] :where(.topbar),
+:root[data-contrast="high"] :where(.pal-shell),
+:root[data-contrast="high"] :where(.dock-launcher-drawer) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
