@@ -4,6 +4,8 @@
 >
 > **Fable pass, 2026-11-26 (PR #115): status works.** Done: Snip's default is Ctrl+Alt+X with a one-time move for files still on Ctrl+Shift+S; Save As and other common app keys are on the conflict list by name; the shortcuts sheet shows Snip's real shortcut; "Teach me" (an applied intent says where its setting lives, with a link); the Do-mode preview is announced to screen readers. Example chips under an empty Do field are in too. Left: B-12c by hand on a real PC, the 10 s Undo toast, "Did you mean…", plain-language previews, splitting the two large files.
 
+> **Fable pass, 26 November 2026 (Magic family).** Shelf drawer: Undo for a removed item, the Menu key / Shift+F10 opens an item's menu on "Lens ›", failures are said (`ShelfDrawer.tsx`, `src/shelf/restore.ts`). Swallowed errors are gone from `ShelfDrawer.tsx`, `ClipList.tsx`, `settings.ts`, `ai.ts` and `mini/EdgeShelfSurface.tsx`. Not touched because open PRs are changing it: `CommandSurface.tsx` (Undo toast, "Did you mean…", its 11 swallowed errors) and `mini/BubbleSurface.tsx`.
+
 ## Rundown
 
 Command is Lens's "say what you want" surface: type or speak, Lens turns it into an intent, shows a preview, asks for approval when it changes something, does it, and offers Undo. Around it: the command palette (search apps, settings, files, actions), the mini bar, the Shelf drawer (clipboard and dropped items), and global hotkeys.
