@@ -2265,3 +2265,9 @@
 :root[data-motion="reduce"] .dock-indicator {
   transition: none;
 }
+
+/* System and tasks: the one status glyph on the Dock, from the pack's own "fine" colour so it
+ * keeps 3:1 on light packs too (it was a fixed green). */
+.dock-monitor-glyph {
+  color: var(--lens-positive);
+}
