@@ -1899,7 +1899,7 @@ mod launcher_click_tests {
         // sample may make it, or a click is lost to the next pass's click-outside rules.
         let src = include_str!("watcher.rs");
         let f = &src[src.find("fn popout_may_auto_close").unwrap()..];
-        let f = &f[..f.find("\n}\n").unwrap()];
+        let f = &f[..f.find("\n}").unwrap()];
         assert!(!f.contains("mouse_button_down()"), "popout_may_auto_close must not sample the buttons");
         assert_eq!(src.matches(&["let clicked = mouse_button_down", "();"].concat()).count(), 1);
     }
