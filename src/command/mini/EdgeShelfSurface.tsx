@@ -12,6 +12,7 @@ import { DEFAULT_SHELF, formatTokens, shelfAdd, shelfRemove } from "../../shelf/
 import { panelRect, tabRect, tabVisible, type Rect } from "./edgeGeometry";
 import { clearPose, glideOut, type GlideHandle } from "../../ui/motion";
 import "./edge.css";
+import { logFail, quiet } from "../../failsafe/calls";
 
 /** How long the pointer may be away before the panel closes (a grace period, not an animation). */
 const LEAVE_GRACE_MS = 420;
@@ -52,7 +53,7 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
     // One native step (docs/SMOOTHNESS.md, G-12): size and place together, never one after the
     // other. The window only changes while nothing is moving: the panel's entry starts after it
     // has grown, and its exit has finished before it shrinks (see `close`).
-    invoke("place_surface_cmd", { label: "edgeshelf", x: r.x, y: r.y, w: r.w, h: r.h }).catch(() => {});
+    invoke("place_surface_cmd", { label: "edgeshelf", x: r.x, y: r.y, w: r.w, h: r.h }).catch(logFail("Edge shelf", "place itself"));
   }, [phase, s.edge, s.offset, s.thickness, s.length, s.panel.w, s.panel.h]);
 
   // Stay out of the way of games, video and slideshows.
@@ -60,7 +61,7 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
     if (initial) return;
     const t = window.setInterval(() => {
       if (phase !== "collapsed") return;
-      invoke<{ fullscreen: boolean }>("context_foreground").then((c) => setFullscreen(!!c?.fullscreen)).catch(() => {});
+      invoke<{ fullscreen: boolean }>("context_foreground").then((c) => setFullscreen(!!c?.fullscreen)).catch(quiet); // a poll; the next one repeats it
     }, 2000);
     return () => window.clearInterval(t);
   }, [phase]);
@@ -68,7 +69,7 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
     if (initial) return;
     const visible = tabVisible(s, fullscreen, settings.edgeOnlyWhileDragging, dragging) || phase !== "collapsed";
     const w = getCurrentWindow();
-    (visible ? w.show() : w.hide()).catch(() => {});
+    (visible ? w.show() : w.hide()).catch(logFail("Edge shelf", visible ? "show itself" : "hide itself"));
   }, [s.enabled, fullscreen, dragging, phase, settings.edgeOnlyWhileDragging]);
 
   const open = useCallback((now = false) => {
@@ -170,8 +171,8 @@ export function EdgeShelfSurface({ initial }: { initial?: { phase?: Phase; dropp
         <span className="edge-count">{items.length}</span>
         <button type="button" className="edge-icon" aria-label="Open in Lens Command"
           onClick={() => {
-            invoke("open_surface", { label: "command" }).catch(() => {});
-            invoke("command_layout", { layout: "full", anchor: "center" }).catch(() => {});
+            invoke("open_surface", { label: "command" }).catch(logFail("Edge shelf", "open Command"));
+            invoke("command_layout", { layout: "full", anchor: "center" }).catch(logFail("Edge shelf", "open Command full size"));
           }}>
           <ArrowUpRight size={14} />
         </button>

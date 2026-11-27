@@ -6,6 +6,15 @@ import { Scissors, Square } from "lucide-react";
 import * as tauriWindow from "@tauri-apps/api/window";
 import type { RecordState } from "./api";
 import { EVT, on, snipRecordState, snipRecordStop, snipRecordTrim } from "./api";
+import { failLine, logFail, quiet } from "../failsafe/calls";
+
+/** Trim bounds in seconds from what was typed: inside the recording, start before end. */
+export function trimRange(start: string, end: string, lengthMs: number): { start: number; end: number } | null {
+  const len = Math.max(0, lengthMs / 1000);
+  const s = Math.max(0, Number(start) || 0);
+  const e = Math.min(len || Infinity, Number(end) || len);
+  return Number.isFinite(e) && e - s >= 0.1 ? { start: s, end: e } : null;
+}
 
 export const RecBorder: React.FC = () => <div className="snip-root snip-rec-border" aria-hidden />;
 
@@ -23,27 +32,35 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
 
   useEffect(() => {
     if (demo) return;
-    snipRecordState().then((s) => {
-      setSt(s);
-      setStartedAt(Date.now() - s.elapsedMs);
-    });
+    snipRecordState()
+      .then((s) => {
+        setSt(s);
+        setStartedAt(Date.now() - s.elapsedMs);
+      })
+      .catch((e) => setMsg(failLine("Snip", "read the recording state", e)));
     const un = on<RecordState>(EVT.record, (s) => {
       setSt(s);
       if (s.recording) setStartedAt(Date.now() - s.elapsedMs);
     });
-    const t = window.setInterval(() => setNow(Date.now()), 250);
     return () => {
-      window.clearInterval(t);
-      un.then((f) => f()).catch(() => {});
+      un.then((f) => f()).catch(quiet);
     };
   }, [demo]);
+
+  // The clock only runs while something is being recorded (the bar stays around afterwards).
+  const recording = !!st?.recording && !demo;
+  useEffect(() => {
+    if (!recording) return;
+    const t = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(t);
+  }, [recording]);
 
   const stop = async () => {
     try {
       const s = await snipRecordStop();
       setSt(s);
-      void tauriWindow.getCurrentWindow().setSize(new tauriWindow.LogicalSize(360, 40)).catch(() => {});
-      void tauriWindow.getCurrentWindow().show().catch(() => {});
+      void tauriWindow.getCurrentWindow().setSize(new tauriWindow.LogicalSize(360, 40)).catch(logFail("Snip", "resize the recording bar"));
+      void tauriWindow.getCurrentWindow().show().catch(logFail("Snip", "show the recording bar"));
     } catch (e) {
       setMsg(String(e));
     }
@@ -54,9 +71,9 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
     return (
       <div className="snip-root snip-recbar" role="toolbar" aria-label="Recording">
         <span className="snip-recdot" aria-hidden />
-        <span aria-live="off">{fmt(demo ? st.elapsedMs : now - startedAt)}</span>
+        <span aria-live="off" className="snip-rectime">{fmt(demo ? st.elapsedMs : now - startedAt)}</span>
         <span className="grow" />
-        <button type="button" className="snip-btn danger" onClick={stop} aria-label="Stop recording">
+        <button type="button" className="snip-btn danger" data-weight="heavy" onClick={stop} aria-label="Stop recording">
           <Square size={13} fill="currentColor" /> Stop
         </button>
       </div>
@@ -74,9 +91,16 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
           <button
             type="button"
             className="snip-btn primary"
+            data-weight="heavy"
             onClick={async () => {
+              const range = trimRange(trim.start, trim.end, st.elapsedMs);
+              if (!range) {
+                setMsg("The end has to come after the start.");
+                setTrim(null);
+                return;
+              }
               try {
-                const out = await snipRecordTrim(st.path!, Number(trim.start) || 0, Number(trim.end) || st.elapsedMs / 1000);
+                const out = await snipRecordTrim(st.path!, range.start, range.end);
                 setMsg(`Saved ${out.split(/[\\/]/).pop()}`);
                 setTrim(null);
               } catch (e) {
@@ -92,11 +116,11 @@ export const RecBar: React.FC<{ demo?: RecordState }> = ({ demo }) => {
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{msg || `Saved · ${name}`}</span>
           <span className="grow" />
           {isMp4 ? (
-            <button type="button" className="snip-btn" onClick={() => setTrim({ start: "0", end: (st.elapsedMs / 1000).toFixed(1) })}>
+            <button type="button" className="snip-btn" data-weight="medium" onClick={() => setTrim({ start: "0", end: (st.elapsedMs / 1000).toFixed(1) })}>
               <Scissors size={13} /> Trim
             </button>
           ) : null}
-          <button type="button" className="snip-btn" onClick={() => void tauriWindow.getCurrentWindow().hide()}>
+          <button type="button" className="snip-btn" data-weight="medium" onClick={() => void tauriWindow.getCurrentWindow().hide().catch(logFail("Snip", "close the recording bar"))}>
             Done
           </button>
         </>

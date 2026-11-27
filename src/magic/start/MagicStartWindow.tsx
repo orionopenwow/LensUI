@@ -14,6 +14,7 @@ import { snipStart } from "../../snip/api";
 import { shelfList } from "../../shelf/contract";
 import type { InstalledApp, RecentFileItem } from "../../types/generated";
 import { MagicStartPanel } from "./MagicStart";
+import { failLine, logFail, quiet, retryOnce } from "../../failsafe/calls";
 import {
   magicActions, moveSelection, navOrder, pinnedEntries, recentEntries, searchApps,
   type ShelfLike, type StartEntry,
@@ -21,7 +22,8 @@ import {
 
 export const OPEN_EVENT = "lens://magicstart-open";
 
-const hide = (reason: string) => invoke("magic_start_hide", { reason }).catch(() => {});
+// A refused hide would leave Magic Start over the desktop: tried once more, then logged.
+const hide = (reason: string) => retryOnce(() => invoke("magic_start_hide", { reason }), "Magic Start", "close");
 
 /** Runs an entry. Everything here stays on this PC; apps open through Lens's own launcher command. */
 export async function runEntry(e: StartEntry): Promise<string | null> {
@@ -76,13 +78,15 @@ export const MagicStartWindow: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => {
-    invoke<InstalledApp[]>("scan_installed_apps_cmd").then((l) => setApps(l ?? [])).catch(() => {});
+    invoke<InstalledApp[]>("scan_installed_apps_cmd")
+      .then((l) => setApps(l ?? []))
+      .catch((e) => setStatus(failLine("Magic Start", "list your apps", e)));
     invoke<{ recentFiles: RecentFileItem[] }>("get_launcher_home_cmd")
       .then((h) => setFiles(h?.recentFiles ?? []))
-      .catch(() => {});
+      .catch(logFail("Magic Start", "read recent files"));
     shelfList()
       .then((l) => setShelf(l ?? []))
-      .catch(() => setShelf([]));
+      .catch((e) => (setShelf([]), logFail("Magic Start", "read the Shelf")(e)));
   }, []);
 
   useEffect(() => {
@@ -99,7 +103,7 @@ export const MagicStartWindow: React.FC = () => {
     });
     refresh();
     return () => {
-      un.then((fn) => fn()).catch(() => {});
+      un.then((fn) => fn()).catch(quiet);
     };
   }, [refresh]);
 
@@ -115,6 +119,11 @@ export const MagicStartWindow: React.FC = () => {
   useEffect(() => {
     setSelected((s) => moveSelection(s, 0, order.length));
   }, [order.length]);
+
+  // The keyboard's row stays in view when the list is longer than the panel.
+  useEffect(() => {
+    document.querySelector(`#mstart-list [data-idx="${selected}"]`)?.scrollIntoView?.({ block: "nearest" });
+  }, [selected, query]);
 
   const run = useCallback(async (e: StartEntry) => {
     const err = await runEntry(e);
@@ -168,7 +177,7 @@ export const MagicStartWindow: React.FC = () => {
           void hide("lock");
           invoke("power_action_cmd", { action: "lock" }).catch((err) => setStatus(`Couldn't lock: ${String(err)}`));
         }}
-        onWindowsStart={() => void invoke("open_windows_start").catch(() => {})}
+        onWindowsStart={() => void invoke("open_windows_start").catch((err) => setStatus(failLine("Magic Start", "open Windows Start", err)))}
         onKeyDown={onKeyDown}
         inputRef={inputRef}
         status={status}

@@ -19,6 +19,7 @@ import {
 } from "./contract";
 import { INITIAL_CONV, captionFrom, estimateWordMs, reduceConv, words } from "./convoState";
 import { LEVEL_BARS } from "./hudState";
+import { logFail, quiet } from "../failsafe/calls";
 
 export function prefersReducedMotion(): boolean {
   const root = typeof document !== "undefined" ? document.documentElement.dataset.motion : "";
@@ -26,6 +27,12 @@ export function prefersReducedMotion(): boolean {
   if (root === "full") return false;
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
+
+/** How long to wait for Windows speech to report a word before revealing by estimate. */
+export const SPEECH_WAIT_MS = 1500;
+
+/** The conversation clock ticks only while a conversation is open. */
+export const shouldTick = (open: boolean) => open;
 
 export function useConversation(onHide?: () => void) {
   const [state, dispatch] = useReducer(reduceConv, INITIAL_CONV);
@@ -38,22 +45,23 @@ export function useConversation(onHide?: () => void) {
   // The answer and request id as they stream (state lags a render behind the events).
   const answerBuf = useRef("");
   const reqId = useRef<string | null>(null);
+  // Set by the one speech listener below when Windows reports a spoken word. `speak` used to add
+  // a listener of its own each time and only removed it 1.5 s later, so every interruption inside
+  // that window left one behind for good (B-120).
+  const gotProgress = useRef(false);
 
   const speak = useCallback(async (text: string) => {
     window.clearTimeout(estimateTimer.current);
     if (!text.trim()) return;
     dispatch({ kind: "speaking" });
-    let gotProgress = false;
-    const stopListen = await listen<VoiceSpeechEvent>(VOICE_EVENTS.speech, () => {
-      gotProgress = true;
-    });
-    voiceSay(text).catch(() => {});
+    gotProgress.current = false;
+    voiceSay(text).catch(logFail("Voice", "speak the answer"));
     // If Windows speech doesn't report words within 1.5 s (speech off, another OS), reveal by
     // an estimate so the answer still reads naturally.
     const list = words(text);
     let i = 0;
     const step = () => {
-      if (gotProgress || st.current.status !== "speaking") return;
+      if (gotProgress.current || st.current.status !== "speaking") return;
       dispatch({ kind: "word", word: i, synced: false });
       i += 1;
       if (i >= list.length) {
@@ -63,9 +71,8 @@ export function useConversation(onHide?: () => void) {
       estimateTimer.current = window.setTimeout(step, estimateWordMs(list[i - 1].text));
     };
     estimateTimer.current = window.setTimeout(() => {
-      stopListen();
-      if (!gotProgress) step();
-    }, 1500);
+      if (!gotProgress.current) step();
+    }, SPEECH_WAIT_MS);
   }, []);
 
   const ask = useCallback(async (text: string, source?: string) => {
@@ -84,24 +91,27 @@ export function useConversation(onHide?: () => void) {
 
   const close = useCallback(() => {
     window.clearTimeout(estimateTimer.current);
-    if (st.current.aiRequest) aiCancel(st.current.aiRequest).catch(() => {});
-    voiceStopSpeaking().catch(() => {});
-    voiceConverse(false).catch(() => {});
+    if (st.current.aiRequest) aiCancel(st.current.aiRequest).catch(logFail("Voice", "stop the answer"));
+    voiceStopSpeaking().catch(logFail("Voice", "stop speaking"));
+    voiceConverse(false).catch(logFail("Voice", "end the conversation"));
     dispatch({ kind: "close" });
     onHide?.();
   }, [onHide]);
 
   const stop = useCallback(() => {
     window.clearTimeout(estimateTimer.current);
-    if (st.current.aiRequest && st.current.status === "thinking") aiCancel(st.current.aiRequest).catch(() => {});
-    voiceStopSpeaking().catch(() => {});
+    if (st.current.aiRequest && st.current.status === "thinking") aiCancel(st.current.aiRequest).catch(logFail("Voice", "stop the answer"));
+    voiceStopSpeaking().catch(logFail("Voice", "stop speaking"));
     dispatch({ kind: "spoken", interrupted: true });
   }, []);
 
   const toggleMute = useCallback(() => {
     const m = !st.current.muted;
     dispatch({ kind: "muted", muted: m });
-    voiceMute(m).catch(() => {});
+    voiceMute(m).catch((e) => {
+      dispatch({ kind: "muted", muted: !m });
+      logFail("Voice", m ? "mute the microphone" : "unmute the microphone")(e);
+    });
   }, []);
 
   useEffect(() => {
@@ -139,6 +149,7 @@ export function useConversation(onHide?: () => void) {
         }
       }),
       listen<VoiceSpeechEvent>(VOICE_EVENTS.speech, (e) => {
+        gotProgress.current = true;
         if (!st.current.open) return;
         if (e.payload.done) dispatch({ kind: "spoken", interrupted: e.payload.interrupted });
         else dispatch({ kind: "word", word: e.payload.word, synced: true });
@@ -159,7 +170,7 @@ export function useConversation(onHide?: () => void) {
       }
     })
       .then((u) => (unAi = u))
-      .catch(() => {});
+      .catch(logFail("Voice", "listen for answers"));
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && st.current.open) {
         e.preventDefault();
@@ -167,15 +178,22 @@ export function useConversation(onHide?: () => void) {
       }
     };
     window.addEventListener("keydown", onKey);
-    const tick = window.setInterval(() => setNow(Date.now()), 1000);
     return () => {
-      uns.forEach((u) => u.then((f) => f()).catch(() => {}));
+      uns.forEach((u) => u.then((f) => f()).catch(quiet));
       unAi?.();
       window.removeEventListener("keydown", onKey);
-      window.clearInterval(tick);
       window.clearTimeout(estimateTimer.current);
     };
   }, [ask, close, speak]);
+
+  // The elapsed-time clock runs only while a conversation is open; a closed (hidden) window
+  // does not re-render once a second.
+  useEffect(() => {
+    if (!shouldTick(state.open)) return;
+    setNow(Date.now());
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [state.open]);
 
   return { state, levels, view, elapsedMs: state.open ? now - state.startedAt : 0, reducedMotion: prefersReducedMotion(), toggleMute, stop, close };
 }
