@@ -94,3 +94,9 @@ export function sourceOf(app: CatalogApp): string {
 export function digitsOf(n: number): string[] {
   return String(Math.max(0, Math.floor(n))).split("");
 }
+
+/** The standalone window's `&view=` parameter: "library" (also "updates") opens on the Library;
+ *  anything else is Discover. */
+export function viewParam(v: string | null): "library" | undefined {
+  return v === "library" || v === "updates" ? "library" : undefined;
+}

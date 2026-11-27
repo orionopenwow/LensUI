@@ -27,7 +27,7 @@ import {
 } from "./api";
 import { reduceJobs, type Jobs } from "./jobs";
 import { libraryModel, updatable, updateAllPreview, updateAllReference, updateAllText, type LibraryRow } from "./libraryModel";
-import { emptyQueue, itemFor, nextToStart, reduceQueue, type QueueOp, type QueueState } from "./queue";
+import { emptyQueue, itemFor, nextToStart, reduceQueue, retryMode, type QueueOp, type QueueState } from "./queue";
 import type { AppShow, Catalog, CatalogApp, InstalledInfo, PreparedRelease, RecipeStepView } from "./types";
 
 export interface AppsDemo {
@@ -52,11 +52,6 @@ export interface AppsDemo {
 
 /** True when an app is one Lens keeps itself (a verified program file in its own apps folder). */
 export const isPortable = (app: CatalogApp): boolean => !!(app.install as { portable?: boolean }).portable;
-
-/** What a failed pill should try again: the same thing that failed. */
-export function retryMode(op: QueueOp | undefined): PopoverMode {
-  return op === "upgrade" ? "update" : op === "uninstall" ? "uninstall" : "get";
-}
 
 export function useAppsController(catalog: Catalog | null, demo: AppsDemo | undefined) {
   const [installed, setInstalled] = useState<Record<string, InstalledInfo>>(demo?.installed ?? {});

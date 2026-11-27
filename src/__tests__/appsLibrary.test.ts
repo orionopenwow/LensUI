@@ -5,10 +5,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import catalogJson from "../../catalog/apps/catalog.json";
 import { stepIndex } from "../apps/Gallery";
-import { digitsOf, libraryModel, librarySummary, sourceOf, updatable, updateAllPreview, updateAllReference, updateAllText, versionLine } from "../apps/libraryModel";
+import { viewParam, digitsOf, libraryModel, librarySummary, sourceOf, updatable, updateAllPreview, updateAllReference, updateAllText, versionLine } from "../apps/libraryModel";
 import { creditFor, licenceFamily, licenceInfo, NOT_AFFILIATED } from "../apps/licence";
 import { approvalText, appApprovalPreview } from "../apps/approval";
-import { reduceQueue, emptyQueue } from "../apps/queue";
+import { reduceQueue, emptyQueue, retryMode } from "../apps/queue";
 import type { Catalog, CatalogApp, InstalledInfo } from "../apps/types";
 import { toastBus } from "../ui/toastBus";
 
@@ -192,8 +192,7 @@ describe("B-121: apps Lens keeps itself can be removed from the store, and failu
     expect(ctl).toContain("oops(`undo the Lens setup for ${app.name}`)");
   });
 
-  test("Retry repeats what failed, not always an install", async () => {
-    const { retryMode } = await import("../apps/useAppsController");
+  test("Retry repeats what failed, not always an install", () => {
     expect(retryMode("upgrade")).toBe("update");
     expect(retryMode("uninstall")).toBe("uninstall");
     expect(retryMode("install")).toBe("get");
@@ -230,8 +229,7 @@ describe("B-123: the detail page keeps the keyboard", () => {
     expect(src("ActionPill.tsx")).not.toContain("onKeyDown={(e) => e.stopPropagation()}");
   });
 
-  test("view parameter for the standalone window", async () => {
-    const { viewParam } = await import("../apps/AppsSurface");
+  test("view parameter for the standalone window", () => {
     expect(viewParam("library")).toBe("library");
     expect(viewParam("updates")).toBe("library");
     expect(viewParam(null)).toBeUndefined();

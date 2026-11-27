@@ -4,12 +4,8 @@
 // Route + window config: docs/LENS_APPS.md §2.
 import { useLensState } from "../hooks/useLensState";
 import { ToastHost } from "../ui/Toast";
-import { LensApps, type AppsView } from "./LensApps";
-
-/** `&view=library` (also "updates") opens on the Library; anything else is Discover. */
-export function viewParam(v: string | null): AppsView | undefined {
-  return v === "library" || v === "updates" ? "library" : undefined;
-}
+import { LensApps } from "./LensApps";
+import { viewParam } from "./libraryModel";
 
 export function AppsSurface() {
   useLensState();

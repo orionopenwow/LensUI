@@ -95,14 +95,15 @@ function SuiteRow({ launcher, apps, ctl, live, onOpen }: { launcher: CatalogApp 
       {launcher && (
         <div
           className="la-suite-lead"
-          role="button"
+          // Like the cards: focusable and opens on Enter, but not a button, because it holds one.
+          role="group"
           tabIndex={0}
           data-app-id={launcher.id}
           data-weight="heavy"
-          aria-label={`${launcher.name}: one launcher installs and updates all ${apps.length} apps`}
+          aria-label={`${launcher.name}: one launcher installs and updates all ${apps.length} apps. Enter opens its page.`}
           onClick={() => onOpen(launcher.id)}
           onKeyDown={(e) => {
-            if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+            if (e.target === e.currentTarget && e.key === "Enter") {
               e.preventDefault();
               onOpen(launcher.id);
             }
