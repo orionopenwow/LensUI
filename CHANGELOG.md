@@ -8,6 +8,18 @@ up and migrates `%APPDATA%\LensUI` where it can.
 ## [Unreleased]
 
 ### Added
+- **Dock keys: the Dock works from the keyboard.** With a Dock icon focused (Tab from search, or
+  after a click) the arrow keys along the Dock move between icons, Home and End jump to the ends,
+  and typing finds an app by name: the others step back and a small chip shows what you typed
+  (the same letter again steps through apps that start with it). The arrow that points into the
+  screen opens the app's window list and moves into it: Up and Down between windows, Enter to
+  switch, Delete to close one, Esc back to the icon. The titles list now shows every window (it
+  stopped at seven). No setting and nothing changed in Windows. Not yet confirmed on a real PC.
+- **The Dock says when something didn't work.** Opening an app, switching or closing a window, or
+  opening Settings from the Dock used to fail without a word; a short line now appears beside the
+  Dock ("Couldn't open Spotify.") and goes by itself.
+- **Small touches on the Dock:** a newly pinned app drops into place and settles; badge counts roll
+  when they change; the search panel's rows arrive in order. All still with reduced motion.
 - **The Dock's music pop-out, redone (hover Spotify in the Dock).** Bigger artwork with the title,
   artist and a small live level meter; elapsed time, a seek bar you can click, drag or move with
   the arrow keys, and the length; Up next, previous, play/pause, next and a Search button that
@@ -19,6 +31,24 @@ up and migrates `%APPDATA%\LensUI` where it can.
   "Media controls in the Top Bar" moved from the pop-out to the same page.
 
 ### Fixed
+- **Windows on the wrong Dock icon.** A window Lens couldn't name (an app running as
+  administrator) could sit on any pinned app with "app" in its name, such as WhatsApp, and one
+  window could show on two pins (Notepad on both Notepad and Notepad++). A window now sits on one
+  pin: the one that is exactly its program, and only otherwise the closest name.
+- **The Dock's right-click menu could open partly off the screen** on a Dock at the left or right
+  edge, and under the Top Bar. It is placed from its real size now.
+- **Icon sizes in the Dock's right-click menu did nothing on some styles** (Slim, Taskbar, Studio,
+  Islands, Unified, or any style given its own size) and marked the wrong size. They change the
+  size you see, on every style.
+- **Top Bar buttons could stay click-through after a refused report.** The bar tells Lens where
+  its buttons are; a report Lens refused was remembered as sent and never tried again.
+- **The Launcher closed before it could say an app didn't open.** It now closes once the app has
+  been asked to open, and stays with the reason when that fails.
+- **The Top Bar redrew itself every second** to show a clock that changes once a minute. It and the
+  Dock's clock now wake on the minute, and not while hidden.
+- **Plainer names on the Dock.** Menu rows are in sentence case and say what they do ("Run as
+  administrator", "Open file location", "Add divider after", "Close all 3 windows"), the menu is a
+  real menu for screen readers, and its icons follow the theme.
 - **The hot-corner picker couldn't be clicked while Hot corners was off.** It's dimmed now, not
   dead, so you can set corners up first; only "Try it" needs the feature on.
 - **Some Settings switches vanished or stopped responding after one click** (Animated backdrop,
