@@ -15,6 +15,8 @@ const SCENES = {
   select: [1280, 800],
   "select-window": [1280, 800],
   studio: [1280, 800],
+  "studio-livetext": [1280, 800],
+  "studio-crop": [1280, 800],
   "studio-claude": [1280, 800],
   "studio-translate": [1280, 800],
   "studio-openin": [1280, 800],
@@ -22,6 +24,8 @@ const SCENES = {
   pin: [1280, 800],
   record: [1280, 800],
   history: [1280, 800],
+  "history-undo": [1280, 800],
+  "history-empty": [1280, 800],
   card: [808, 1500],
 };
 const PRESETS = (process.env.PARITY_PRESETS || "obsidian,alabaster-daylight").split(",");

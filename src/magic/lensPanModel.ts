@@ -82,3 +82,21 @@ export function panKey(key: string, inPanel: boolean, rtl = false): PanKey {
   if (!inPanel) return key === forward || key === "Enter" || key === " " ? "pan" : "none";
   return key === backward || key === "Escape" || key === "Backspace" ? "back" : "none";
 }
+
+export interface MenuAt {
+  x: number;
+  y: number;
+}
+
+/**
+ * Where a context menu opens and how it was asked for. A right-click opens at the pointer. The
+ * Menu key and Shift+F10 also arrive as a `contextmenu` event, but with no pointer behind them:
+ * the menu then opens on the item itself and is marked as keyboard-opened, so focus lands on
+ * "Lens ›" with a visible ring (docs/features/magic.md, "Magic everywhere via the keyboard").
+ */
+export function contextOrigin(e: { button: number; clientX: number; clientY: number }, rect: { left: number; top: number; bottom: number; width: number }): { at: MenuAt; byKeyboard: boolean } {
+  const byKeyboard = e.button !== 2;
+  return byKeyboard
+    ? { at: { x: Math.round(rect.left + Math.min(28, rect.width / 2)), y: Math.round(rect.bottom - 4) }, byKeyboard }
+    : { at: { x: e.clientX, y: e.clientY }, byKeyboard };
+}
