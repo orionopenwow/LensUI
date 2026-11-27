@@ -365,7 +365,7 @@ mod rt {
         BENCHED_UNTIL[f as usize].load(Ordering::Relaxed) > now
     }
 
-    fn key_slots(now: u64) -> [Slot<KeyEvent>; 4] {
+    fn key_slots(now: u64) -> [Slot<KeyEvent>; 5] {
         KEY_TABLE.map(|(f, handler, when_paused)| Slot {
             handler: (KEY_CLAIMED[f as usize].load(Ordering::Relaxed) && !benched(f, now)).then_some(handler),
             when_paused,
