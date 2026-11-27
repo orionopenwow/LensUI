@@ -13,7 +13,7 @@ import { serve, launch, openSurface, setConfig, here } from "./lib.mjs";
 
 const outDir = join(here, "out", "dock-flash");
 mkdirSync(outDir, { recursive: true });
-const STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split"];
+const STYLES = ["floating", "slim", "taskbar", "studio", "minimal", "split", "unified"];
 // A row counts as a bright line when this share of its pixels is near-white.
 const ROW_SHARE = 0.3;
 const BRIGHT = 205;

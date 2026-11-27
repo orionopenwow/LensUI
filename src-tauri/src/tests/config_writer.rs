@@ -106,3 +106,15 @@ fn restoring_a_backup_goes_through_the_writer() {
     let backup = sources().into_iter().find(|(f, _)| f == "win_backup.rs").unwrap().1;
     assert!(backup.contains("crate::config::write_config_file(&target, &bytes)"));
 }
+
+#[test]
+fn dock_styles_match_the_frontend_and_unknown_is_floating() {
+    let ts = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../src/dock/styles.ts")).unwrap();
+    let union = ts.split("export type DockStyleId =").nth(1).unwrap().split(';').next().unwrap();
+    let ids: Vec<&str> = union.split('|').map(|p| p.trim().trim_matches('"')).collect();
+    assert_eq!(ids, crate::config::DOCK_STYLES.to_vec(), "styles.ts and config::DOCK_STYLES list the same styles in the same order");
+    assert_eq!(crate::config::normalize_dock_style("Unified"), "unified");
+    assert_eq!(crate::config::normalize_dock_style(" islands "), "islands");
+    assert_eq!(crate::config::normalize_dock_style("bogus"), "floating");
+    assert_eq!(crate::config::normalize_dock_style(""), "floating");
+}
