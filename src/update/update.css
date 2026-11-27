@@ -15,21 +15,23 @@
   transition: background-color 160ms ease, opacity 160ms ease;
 }
 .lu-pill.is-ready {
-  background: var(--lens-accent, #60a5fa);
-  color: var(--lens-on-accent, var(--lens-on-fg, #09090b));
+  /* Contrast-checked pair (src/themes/accentTokens.ts): readable on any accent. */
+  background: var(--lens-accent-ui);
+  color: var(--lens-on-accent-ui);
 }
 .lu-pill:hover:not(:disabled) {
   background: color-mix(in srgb, var(--lens-accent, #60a5fa), transparent 70%);
 }
 .lu-pill.is-ready:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--lens-accent, #60a5fa), white 12%);
+  background: var(--lens-accent-ui);
+  filter: brightness(1.08);
 }
 .lu-pill:disabled {
   cursor: default;
   opacity: 0.7;
 }
 .lu-pill:focus-visible {
-  outline: 2px solid var(--lens-accent, #60a5fa);
+  outline: 2px solid var(--lens-focus-ring);
   outline-offset: 2px;
 }
 

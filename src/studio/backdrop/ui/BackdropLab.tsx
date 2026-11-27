@@ -334,7 +334,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
       <div className="bd-field-label">Time-of-day looks</div>
       <div className="bd-keys">
         {DAY_PARTS.map((p) => (
-          <button key={p.id} type="button" className={`bd-key ${keys[p.id as DayPart] ? "on" : ""}`} onClick={() => setKeys((k) => ({ ...k, [p.id]: s }))} aria-label={`Use this look for ${p.label.toLowerCase()}`}>
+          <button data-weight="medium" key={p.id} type="button" className={`bd-key ${keys[p.id as DayPart] ? "on" : ""}`} onClick={() => setKeys((k) => ({ ...k, [p.id]: s }))} aria-label={`Use this look for ${p.label.toLowerCase()}`}>
             <span className={`bd-key-sw ${keys[p.id as DayPart] ? "bd-v-bg" : ""}`} ref={vars({ "--bd-bg": keys[p.id as DayPart] ? `linear-gradient(135deg, ${keys[p.id as DayPart]!.stops.map((x) => x.color).join(",")})` : undefined })} />
             {p.label}
           </button>
@@ -426,7 +426,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
                 <div className="bd-field-label">Keep (Inspire leaves these alone)</div>
                 <div className="bd-row wrap">
                   {LOCKS.map((l) => (
-                    <button
+                    <button data-weight="light"
                       key={l.id}
                       type="button"
                       aria-pressed={locks.has(l.id)}
@@ -447,10 +447,10 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
               </div>
             )}
           </div>
-          <button type="button" className="bd-icon-btn" aria-label="Undo" disabled={!hist.current.canUndo} onClick={undo}>
+          <button data-weight="medium" type="button" className="bd-icon-btn" aria-label="Undo" disabled={!hist.current.canUndo} onClick={undo}>
             <Undo2 size={14} aria-hidden />
           </button>
-          <button type="button" className="bd-icon-btn" aria-label="Redo" disabled={!hist.current.canRedo} onClick={redo}>
+          <button data-weight="medium" type="button" className="bd-icon-btn" aria-label="Redo" disabled={!hist.current.canRedo} onClick={redo}>
             <Redo2 size={14} aria-hidden />
           </button>
           <Button size="sm" className="bd-b" onClick={save} aria-keyshortcuts="S">
@@ -511,7 +511,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
           )}
         </div>
         <div className="bd-stage-bar">
-          <button type="button" className="bd-icon-btn" aria-label={paused ? "Play" : "Pause"} aria-keyshortcuts="Space" onClick={() => setPaused((p) => !p)}>
+          <button data-weight="medium" type="button" className="bd-icon-btn" aria-label={paused ? "Play" : "Pause"} aria-keyshortcuts="Space" onClick={() => setPaused((p) => !p)}>
             {paused ? <Play size={14} aria-hidden /> : <Pause size={14} aria-hidden />}
           </button>
           <span className="bd-mode-name">{mode?.name}</span>
@@ -552,7 +552,7 @@ export const BackdropLab: React.FC<{ windowControls?: React.ReactNode }> = ({ wi
               const st = decodeState(code);
               if (!st) return null;
               return (
-                <button
+                <button data-weight="medium"
                   key={code.slice(-24) + i}
                   type="button"
                   role="listitem"

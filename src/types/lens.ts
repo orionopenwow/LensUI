@@ -22,6 +22,8 @@ export interface ThemeConfig {
   shapeStyle?: string;
   /** Also write a custom accent into Windows' own accent colour. Off by default. */
   writeWindowsAccent?: boolean;
+  /** "subtle" | "balanced" | "vivid": how much of the accent Lens's own surfaces show (src/themes/accentTokens.ts). */
+  accentStrength?: string;
 }
 
 export interface PinnedApp {

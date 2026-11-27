@@ -500,7 +500,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
               Skip this step
             </button>
           )}
-          <button data-weight="heavy" type="button" className="cc-btn tux-small-btn" data-wiz-next onClick={next}>
+          <button data-weight="heavy" type="button" className="cc-btn cc-btn-primary tux-small-btn" data-wiz-next onClick={next}>
             {nextLabel} {index < last && <ChevronRight size={14} />}
           </button>
         </div>

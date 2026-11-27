@@ -58,7 +58,7 @@ const StopsBar: React.FC<{ stops: Stop[]; onChange: (s: Stop[], commit?: boolean
       aria-label="Gradient stops. Click the bar to add a stop."
     >
       {stops.map((s, i) => (
-        <button
+        <button data-weight="medium"
           key={i}
           type="button"
           className={`bd-stop bd-v-bg bd-v-left ${selected === i ? "on" : ""}`}
@@ -118,7 +118,7 @@ export const ControlsPanel: React.FC<{
     <LabSlider key={k} label={label} unit={unit} hint={hint} value={s[k] as number} {...R(k)} onChange={(v) => set({ [k]: v } as Partial<BackdropState>)} onCommit={() => set({}, true)} />
   );
   const lockBtn = (k: LockKey, label: string) => (
-    <button
+    <button data-weight="medium"
       type="button"
       className={`bd-icon-btn small ${locks.has(k) ? "on" : ""}`}
       aria-pressed={locks.has(k)}
@@ -167,7 +167,7 @@ export const ControlsPanel: React.FC<{
               <ImagePlus size={13} aria-hidden /> {imageName ? "Change picture" : "Choose a picture"}
             </Button>
             {imageName && (
-              <button type="button" className="bd-icon-btn small" aria-label="Remove picture" onClick={onClearImage}>
+              <button data-weight="medium" type="button" className="bd-icon-btn small" aria-label="Remove picture" onClick={onClearImage}>
                 <X size={12} aria-hidden />
               </button>
             )}
@@ -191,7 +191,7 @@ export const ControlsPanel: React.FC<{
             </label>
           ))}
           {s.stops.length < 8 && (
-            <button type="button" className="bd-swatch add" aria-label="Add a colour" onClick={() => set((x) => ({ ...x, stops: evenStops([...x.stops.map((y) => y.color), x.stops[x.stops.length - 1].color]) }), true)}>
+            <button data-weight="light" type="button" className="bd-swatch add" aria-label="Add a colour" onClick={() => set((x) => ({ ...x, stops: evenStops([...x.stops.map((y) => y.color), x.stops[x.stops.length - 1].color]) }), true)}>
               <Plus size={13} aria-hidden />
             </button>
           )}
@@ -228,7 +228,7 @@ export const ControlsPanel: React.FC<{
             </div>
             <div className="bd-row">
               <input className="bd-input" value={paste} placeholder="Paste hex colours: #0b0a1a, #7c3aed…" aria-label="Paste hex colours" onChange={(e) => setPaste(e.target.value)} />
-              <button
+              <button data-weight="medium"
                 type="button"
                 className="bd-icon-btn"
                 aria-label="Use pasted colours"

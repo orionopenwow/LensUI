@@ -70,9 +70,14 @@
 }
 
 .cc-nav-btn.active {
-  background: rgb(var(--lens-ink) / 0.09);
+  /* Selected: the accent washes the row and tints its hairline and icon (0 % of it on the
+     monochrome look, src/themes/accentTokens.ts). */
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash), rgb(var(--lens-ink) / 0.09));
   color: var(--lens-fg);
-  border: 1px solid rgb(var(--lens-ink) / 0.12);
+  border: 1px solid color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.12));
+}
+.cc-nav-btn.active > svg {
+  color: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), currentColor);
 }
 
 .cc-content {
@@ -140,7 +145,7 @@
 }
 
 .cc-toggle.on {
-  background: var(--cc-accent);
+  background: var(--lens-accent-ui);
   border-color: transparent;
 }
 
@@ -160,11 +165,7 @@
   opacity: 0.45;
   cursor: default;
 }
-.cc-btn:active:not(:disabled),
-.cc-btn-ghost:active:not(:disabled),
-.cc-chip:active:not(:disabled) {
-  transform: scale(0.98);
-}
+/* Presses come from src/ui/press (weights.ts gives these classes their weight); no :active here. */
 
 /* A hairline between groups inside one card. */
 .cc-divider {
@@ -187,7 +188,7 @@
 
 .cc-toggle.on::after {
   transform: translateX(17px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 
 .cc-chip-grid {
@@ -216,9 +217,9 @@
 }
 
 .cc-chip.active {
-  background: var(--cc-accent);
-  border-color: var(--cc-accent);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  border-color: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   font-weight: 600;
 }
 
@@ -252,6 +253,13 @@
   opacity: 0.88;
 }
 
+/* The one main action of a card or step: the accent fills it (ink on the monochrome look). */
+.cc-btn.cc-btn-primary,
+.cc-btn-primary {
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
+}
+
 .cc-btn-ghost {
   padding: 8px 12px;
   border-radius: 8px;
@@ -272,7 +280,7 @@
 
 .cc-range {
   width: 170px;
-  accent-color: var(--lens-accent);
+  accent-color: var(--lens-accent-ui);
 }
 
 .cc-dial-grid {
@@ -306,7 +314,7 @@
 }
 
 .cc-theme-card.active {
-  border-color: var(--cc-accent);
+  border-color: var(--lens-accent-fill);
   background: rgb(var(--lens-ink) / 0.06);
 }
 
@@ -377,7 +385,7 @@
 }
 
 .cc-visual-swatch.active {
-  border-color: var(--cc-accent);
+  border-color: var(--lens-accent-fill);
   background: rgb(var(--lens-ink) / 0.09);
   color: var(--lens-fg-strong);
 }
@@ -592,8 +600,108 @@
   filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.8));
 }
 
-.tux-swatch:hover {
-  transform: scale(1.08);
+/* Hover never scales (DESIGN.md §5.2): the ring steps in instead. */
+.tux-swatch:hover:not(.active) {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12), 0 0 0 2px rgb(var(--lens-ink) / 0.22);
+}
+
+/* The tick lands with weight when an accent is picked: a short spring, once. */
+@keyframes tux-check-land {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tux-swatch.active svg {
+  animation: tux-check-land var(--lens-dur-base) var(--lens-ease-spring) both;
+}
+
+/* Accent strength: what each choice would do, drawn with that choice's own tokens
+   (src/themeux/AccentStrengthPreview.tsx). Three columns under the three options. */
+.tux-accent-demo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+/* Two lines kept for the note, so a theme with a grey accent and one with a colour take the same
+   room: switching theme never moves the page (theme-switch rig). */
+.tux-accent-note {
+  min-height: 32px;
+}
+.tux-accent-sample {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 9px;
+  border: 1px solid rgb(var(--lens-ink) / 0.07);
+  background: rgb(var(--lens-ink) / 0.03);
+  /* Never dimmed: a faded sample would misstate how strong that choice is. The current one is
+     marked by its hairline only. */
+  transition: border-color var(--lens-dur-fast) var(--lens-ease-out), background-color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.tux-accent-sample.is-current {
+  border-color: rgb(var(--lens-ink) / 0.26);
+  background: rgb(var(--lens-ink) / 0.06);
+}
+.tux-accent-sample-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tux-accent-sample-switch {
+  position: relative;
+  width: 22px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--lens-accent-ui);
+  flex-shrink: 0;
+}
+.tux-accent-sample-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--lens-on-accent-ui);
+}
+.tux-accent-sample-chip {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
+}
+.tux-accent-sample-item {
+  display: flex;
+  align-items: center;
+  height: 14px;
+  padding: 0 6px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-edge), rgb(var(--lens-ink) / 0.12));
+  background: color-mix(in srgb, var(--lens-accent-ui) var(--lens-accent-wash), rgb(var(--lens-ink) / 0.09));
+}
+.tux-accent-sample-line {
+  width: 60%;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lens-fg-secondary);
+}
+.tux-accent-sample-mark {
+  align-self: center;
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--lens-accent-ui);
 }
 
 .tux-swatch.active {
@@ -660,8 +768,8 @@
 }
 
 .tux-seg button.active {
-  background: var(--cc-accent);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   font-weight: 600;
 }
 
@@ -710,8 +818,8 @@
   border-radius: 999px;
   background: linear-gradient(
     to right,
-    var(--cc-accent) 0,
-    var(--cc-accent) var(--tux-fill, 50%),
+    var(--lens-accent-ui) 0,
+    var(--lens-accent-ui) var(--tux-fill, 50%),
     rgb(var(--lens-ink) / 0.14) var(--tux-fill, 50%)
   );
   outline-offset: 6px;
@@ -868,7 +976,7 @@
 
 .tux-check input {
   margin-top: 2px;
-  accent-color: var(--cc-accent);
+  accent-color: var(--lens-accent-ui);
   width: 14px;
   height: 14px;
 }
@@ -1141,8 +1249,8 @@
 
 .wiz-step.active .wiz-step-num,
 .wiz-step.done .wiz-step-num {
-  background: var(--cc-accent);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 
 .wiz-stage {

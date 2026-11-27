@@ -389,11 +389,11 @@ describe("feel guardrail (migrated surfaces)", () => {
   test("global.css no longer hand-writes :active presses for the migrated classes", () => {
     const g = readFileSync(join(ROOT, "src/styles/global.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
     const actives = [...g.matchAll(/([^{}]+):active\s*[{,]/g)].map((m) => m[1].trim().split(/\s|,/).pop());
-    // Only the Dock's context menu keeps its own press until the Dock's pass.
-    expect(actives).toEqual([".dock-ctx-item"]);
+    // None left: the Dock's context menu adopted the shared press in the Settings and themes pass.
+    expect(actives).toEqual([]);
     // The legacy :active fallback skips anything that declares a weight.
     expect(readFileSync(join(ROOT, "src/styles/motion.css"), "utf8")).toContain(':where(:active):where(:not(:root:not([data-press-mode="own"]) [data-weight]))');
-    // Windows in "own" press mode (Dock, Lens Browser, until their pass) get no weighted press.
+    // Windows in "own" press mode (Lens Browser, until its pass) get no weighted press.
     const main = readFileSync(join(ROOT, "src/main.tsx"), "utf8");
     expect(main).toMatch(/if \(ownPress\) document\.documentElement\.dataset\.pressMode = "own";\s*else installPress\(\);/);
   });

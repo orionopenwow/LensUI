@@ -81,15 +81,15 @@ export const ControllerCard: React.FC<{ config: LensConfig; updateConfig: (c: Le
       >
         {info?.installed ? (
           <span className="sh-controller-actions">
-            <button type="button" className="cc-btn" disabled={!!busy} onClick={() => run("Opening…", () => invoke("thumbdesk_open"))}>
+            <button data-weight="medium" type="button" className="cc-btn" disabled={!!busy} onClick={() => run("Opening…", () => invoke("thumbdesk_open"))}>
               {info.running ? "Show" : "Open"}
             </button>
-            <button type="button" className="cc-btn-ghost" disabled={!!busy} onClick={togglePin} aria-pressed={pinned}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={!!busy} onClick={togglePin} aria-pressed={pinned}>
               {pinned ? "Unpin from Dock" : "Pin to Dock"}
             </button>
           </span>
         ) : prepared ? null : (
-          <button type="button" className="cc-btn" disabled={!!busy} onClick={get}>
+          <button data-weight="medium" type="button" className="cc-btn" disabled={!!busy} onClick={get}>
             {busy ?? "Get ThumbDesk"}
           </button>
         )}
@@ -105,10 +105,10 @@ export const ControllerCard: React.FC<{ config: LensConfig; updateConfig: (c: Le
           </div>
           <p className="sh-controller-note">Lens keeps it in its own apps folder. Nothing runs until you open it, and Remove deletes it again.</p>
           <span className="sh-controller-actions">
-            <button type="button" className="cc-btn" disabled={!!busy} onClick={keep}>
+            <button data-weight="medium" type="button" className="cc-btn" disabled={!!busy} onClick={keep}>
               Keep it
             </button>
-            <button type="button" className="cc-btn-ghost" disabled={!!busy} onClick={cancel}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={!!busy} onClick={cancel}>
               Cancel
             </button>
           </span>
@@ -118,11 +118,11 @@ export const ControllerCard: React.FC<{ config: LensConfig; updateConfig: (c: Le
       {msg && <StateNote kind={msg.kind}>{msg.text}</StateNote>}
 
       <div className="sh-controller-links">
-        <button type="button" className="cc-btn-ghost" onClick={() => openLink("thumbdesk", HOME).catch(oops("open ThumbDesk's page"))}>
+        <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => openLink("thumbdesk", HOME).catch(oops("open ThumbDesk's page"))}>
           About ThumbDesk
         </button>
         {info?.installed && (
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost"
             disabled={!!busy}

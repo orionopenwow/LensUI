@@ -92,3 +92,31 @@
 .dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(4) { --dsd-i: 4; }
 .dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(5) { --dsd-i: 5; }
 .dock-stage .dock-launcher-drawer .dsd-recent-list > .dsd-recent-row:nth-child(6) { --dsd-i: 6; }
+
+/* The selected filter: one pill that slides to the pressed option (useSlidingIndicator; FLIP,
+   transform only). Until it has measured itself the option paints its own fill, so nothing blinks. */
+.dsd-filters {
+  position: relative;
+}
+.dsd-filter-ind {
+  position: absolute;
+  left: var(--lens-ind-x, 0);
+  top: var(--lens-ind-y, 0);
+  width: var(--lens-ind-w, 0);
+  height: var(--lens-ind-h, 0);
+  border-radius: 999px;
+  background: var(--lens-accent-fill);
+  pointer-events: none;
+  opacity: 0;
+}
+.dsd-filter-ind[data-on="true"] {
+  opacity: 1;
+}
+.dsd-filters .pal-filter-pill {
+  position: relative;
+  z-index: 1;
+}
+.dsd-filters:has(.dsd-filter-ind[data-on="true"]) .pal-filter-pill.active {
+  background: transparent;
+  border-color: transparent;
+}

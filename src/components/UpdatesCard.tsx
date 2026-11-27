@@ -79,7 +79,7 @@ export const UpdatesCard: React.FC = () => {
           <div className="lu-notice-title">Updates aren't available in this build</div>
           <div className="cc-desc">{notice.text}</div>
           <div className="lu-actions">
-            <button type="button" className="cc-btn-ghost" onClick={() => openExternal(notice.releasesUrl)}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => openExternal(notice.releasesUrl)}>
               Open the Releases page
             </button>
           </div>
@@ -88,7 +88,7 @@ export const UpdatesCard: React.FC = () => {
 
       <div className="cc-chip-grid" role="radiogroup" aria-label="Update mode">
         {MODES.map((m) => (
-          <button
+          <button data-weight="light"
             key={m.id}
             type="button"
             role="radio"
@@ -108,17 +108,17 @@ export const UpdatesCard: React.FC = () => {
         </div>
         <div className="lu-actions">
           {!notice && state !== "ready" && state !== "installing" && (
-            <button type="button" className="cc-btn-ghost" disabled={busy || state === "downloading"} onClick={() => void run(check)}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" disabled={busy || state === "downloading"} onClick={() => void run(check)}>
               {busy && state !== "downloading" ? "Checking…" : "Check now"}
             </button>
           )}
           {state === "available" && (
-            <button type="button" className="cc-btn" disabled={busy} onClick={() => void run(download)}>
+            <button data-weight="medium" type="button" className="cc-btn" disabled={busy} onClick={() => void run(download)}>
               Download {status.newVersion}
             </button>
           )}
           {(state === "ready" || state === "installing") && (
-            <button type="button" className="cc-btn" disabled={busy || state === "installing"} onClick={() => void run(restart)}>
+            <button data-weight="medium" type="button" className="cc-btn" disabled={busy || state === "installing"} onClick={() => void run(restart)}>
               {state === "installing" ? "Updating…" : `Restart to update to ${status.newVersion ?? "the new version"}`}
             </button>
           )}

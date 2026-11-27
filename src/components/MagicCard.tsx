@@ -29,7 +29,7 @@ const Toggle: React.FC<{ label: string; desc: string; on: boolean; onChange: () 
       <div className="cc-label">{label}</div>
       <div className="cc-desc">{desc}</div>
     </div>
-    <button
+    <button data-weight="light"
       type="button"
       role="switch"
       aria-checked={on}
@@ -111,7 +111,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
             Games, fullscreen apps and administrator windows are left alone.
           </div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           role="switch"
           aria-checked={m.enabled}
@@ -126,12 +126,14 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
       </div>
       {error ? <div className="cc-desc" role="alert">{error}</div> : null}
 
-      <div className={m.enabled ? "" : "pi-off"} aria-disabled={!m.enabled} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* B-58: off means dimmed, never click-dead. These options are set-up for later, so they stay
+          usable (mouse and keyboard alike) while the feature is off. */}
+      <div className={m.enabled ? "" : "pi-dim"} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
           <div className="cc-label">Open with</div>
           <div className="magic-card-triggers" role="radiogroup" aria-label="Open with" style={{ marginTop: 8 }}>
             {TRIGGERS.map((t) => (
-              <button
+              <button data-weight="light"
                 key={t.id}
                 type="button"
                 role="radio"
@@ -184,7 +186,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
           <div className="cc-label">Starts in</div>
           <div className="cc-chip-grid" style={{ marginTop: 8 }}>
             {(["do", "ask"] as const).map((x) => (
-              <button
+              <button data-weight="light"
                 key={x}
                 type="button"
                 className={`cc-chip ${m.defaultMode === x ? "active" : ""}`}
@@ -222,7 +224,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
           {m.exclude.map((app) => (
             <span key={app} className="cc-chip pi-app-chip">
               {app.replace(/\.exe$/, "")}
-              <button type="button" className="pi-app-chip-x" aria-label={`Allow ${app} again`} onClick={() => save({ exclude: m.exclude.filter((a) => a !== app) })}>
+              <button data-weight="light" type="button" className="pi-app-chip-x" aria-label={`Allow ${app} again`} onClick={() => save({ exclude: m.exclude.filter((a) => a !== app) })}>
                 <X size={11} strokeWidth={2.6} />
               </button>
             </span>
@@ -238,7 +240,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
                 if (e.key === "Enter") addApp();
               }}
             />
-            <button type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
+            <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={addApp} aria-label="Add app">
               <Plus size={13} strokeWidth={2.6} />
             </button>
           </span>
@@ -248,7 +250,7 @@ export const MagicCard: React.FC<Props> = ({ config, initial }) => {
           <div className="cc-label">Preview</div>
           <div className="magic-preview-tabs" role="tablist" aria-label="Preview for" style={{ margin: "8px 0" }}>
             {PREVIEW_TARGETS.map((p) => (
-              <button key={p.id} type="button" role="tab" aria-selected={preview === p.id} className={`cc-chip ${preview === p.id ? "active" : ""}`} onClick={() => setPreview(p.id)}>
+              <button data-weight="light" key={p.id} type="button" role="tab" aria-selected={preview === p.id} className={`cc-chip ${preview === p.id ? "active" : ""}`} onClick={() => setPreview(p.id)}>
                 {p.label}
               </button>
             ))}

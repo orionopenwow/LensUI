@@ -45,6 +45,15 @@ pub struct ThemeConfig {
     /// Lens changes" puts Windows' accent back.
     #[serde(default)]
     pub write_windows_accent: bool,
+    /// "subtle" | "balanced" | "vivid": how much of the accent Lens's own surfaces show (switches,
+    /// running marks and focus rings; then selected items and main buttons; then tints and hover).
+    /// Colours inside Lens only; nothing in Windows changes.
+    #[serde(default = "default_accent_strength")]
+    pub accent_strength: String,
+}
+
+fn default_accent_strength() -> String {
+    "balanced".into()
 }
 
 fn default_shape_style() -> String {
@@ -451,6 +460,7 @@ impl Default for LensConfig {
                 locale: "auto".into(),
                 shape_style: default_shape_style(),
                 write_windows_accent: false,
+                accent_strength: default_accent_strength(),
             },
             dock: DockConfig {
                 grounded_margin_bottom: 0,

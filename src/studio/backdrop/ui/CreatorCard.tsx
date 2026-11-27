@@ -24,7 +24,7 @@ const Tile: React.FC<{ svc: ThumbnailService | null; state: BackdropState; name:
     return () => svc.remove(c);
   }, [svc, state]);
   return (
-    <button type="button" className={`bd-tile ${on ? "on" : ""}`} aria-pressed={on} onClick={onClick}>
+    <button data-weight="medium" type="button" className={`bd-tile ${on ? "on" : ""}`} aria-pressed={on} onClick={onClick}>
       <canvas ref={ref} className="bd-thumb" aria-hidden="true" onPointerEnter={() => ref.current && svc?.setHot(ref.current, true)} onPointerLeave={() => ref.current && svc?.setHot(ref.current, false)} />
       <span>{name}</span>
     </button>

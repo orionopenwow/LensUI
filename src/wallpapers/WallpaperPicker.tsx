@@ -61,7 +61,7 @@ const FanCard: React.FC<{
   useEffect(() => setReady(false), [full]);
   const focused = offset === 0;
   return (
-    <button
+    <button data-weight="light"
       type="button"
       role="option"
       id={`wsw-card-${card.id}`}
@@ -423,7 +423,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
         </label>
         <div className="wsw-sources" role="tablist" aria-label="Show">
           {sources.map((s) => (
-            <button
+            <button data-weight="light"
               key={s.id}
               type="button"
               role="tab"
@@ -440,14 +440,14 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
           ))}
         </div>
         <div className="wsw-top-end">
-          <button type="button" className={`wsw-btn ${panel === "folders" ? "on" : ""}`} aria-pressed={panel === "folders"} onClick={() => setPanel((p) => (p === "folders" ? null : "folders"))}>
+          <button data-weight="medium" type="button" className={`wsw-btn ${panel === "folders" ? "on" : ""}`} aria-pressed={panel === "folders"} onClick={() => setPanel((p) => (p === "folders" ? null : "folders"))}>
             <FolderOpen size={13} aria-hidden /> Folders
           </button>
-          <button type="button" className={`wsw-btn ${panel === "schedule" ? "on" : ""}`} aria-pressed={panel === "schedule"} aria-keyshortcuts="S" onClick={() => setPanel((p) => (p === "schedule" ? null : "schedule"))}>
+          <button data-weight="medium" type="button" className={`wsw-btn ${panel === "schedule" ? "on" : ""}`} aria-pressed={panel === "schedule"} aria-keyshortcuts="S" onClick={() => setPanel((p) => (p === "schedule" ? null : "schedule"))}>
             <Clock size={13} aria-hidden /> {view?.settings.auto.enabled ? "Changing automatically" : "Change automatically"}
           </button>
           {onOpenLab && (
-            <button type="button" className="wsw-btn" onClick={onOpenLab}>
+            <button data-weight="medium" type="button" className="wsw-btn" onClick={onOpenLab}>
               <Layers size={13} aria-hidden /> Backdrop Lab
             </button>
           )}
@@ -473,7 +473,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
             </p>
             <div className="wsw-empty-row">
               {query || source ? (
-                <button
+                <button data-weight="medium"
                   type="button"
                   className="wsw-btn primary"
                   onClick={() => {
@@ -484,7 +484,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                   Show everything
                 </button>
               ) : (
-                <button type="button" className="wsw-btn primary" onClick={() => setPanel("folders")}>
+                <button data-weight="medium" type="button" className="wsw-btn primary" onClick={() => setPanel("folders")}>
                   Add a folder
                 </button>
               )}
@@ -537,34 +537,34 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
               )}
             </div>
             <div className="wsw-actions">
-              <button type="button" className="wsw-btn primary" data-act="set" onClick={() => void apply(focus)}>
+              <button data-weight="medium" type="button" className="wsw-btn primary" data-act="set" onClick={() => void apply(focus)}>
                 Set as wallpaper
               </button>
-              <button type="button" className={`wsw-btn ${focus.meta.favorite ? "on" : ""}`} aria-pressed={focus.meta.favorite} disabled={!isFile} onClick={() => setMeta(focus, { favorite: !focus.meta.favorite })}>
+              <button data-weight="medium" type="button" className={`wsw-btn ${focus.meta.favorite ? "on" : ""}`} aria-pressed={focus.meta.favorite} disabled={!isFile} onClick={() => setMeta(focus, { favorite: !focus.meta.favorite })}>
                 <Heart size={13} aria-hidden /> Favourite
               </button>
-              <button type="button" className={`wsw-btn ${focus.meta.hidden ? "on" : ""}`} aria-pressed={focus.meta.hidden} disabled={!isFile} onClick={() => setMeta(focus, { hidden: !focus.meta.hidden })}>
+              <button data-weight="medium" type="button" className={`wsw-btn ${focus.meta.hidden ? "on" : ""}`} aria-pressed={focus.meta.hidden} disabled={!isFile} onClick={() => setMeta(focus, { hidden: !focus.meta.hidden })}>
                 <EyeOff size={13} aria-hidden /> {focus.meta.hidden ? "Hidden" : "Hide"}
               </button>
-              <button type="button" className={`wsw-btn ${panel === "tags" ? "on" : ""}`} disabled={!isFile} onClick={() => setPanel((p) => (p === "tags" ? null : "tags"))}>
+              <button data-weight="medium" type="button" className={`wsw-btn ${panel === "tags" ? "on" : ""}`} disabled={!isFile} onClick={() => setPanel((p) => (p === "tags" ? null : "tags"))}>
                 <Tag size={13} aria-hidden /> Tags
               </button>
-              <button type="button" className={`wsw-btn ${panel === "collections" ? "on" : ""}`} disabled={!isFile} onClick={() => setPanel((p) => (p === "collections" ? null : "collections"))}>
+              <button data-weight="medium" type="button" className={`wsw-btn ${panel === "collections" ? "on" : ""}`} disabled={!isFile} onClick={() => setPanel((p) => (p === "collections" ? null : "collections"))}>
                 <Layers size={13} aria-hidden /> Collection
               </button>
-              <button type="button" className="wsw-btn" onClick={random} disabled={fileCount === 0}>
+              <button data-weight="medium" type="button" className="wsw-btn" onClick={random} disabled={fileCount === 0}>
                 <Shuffle size={13} aria-hidden /> Random
               </button>
-              <button type="button" className="wsw-btn" onClick={cycleFit}>
+              <button data-weight="medium" type="button" className="wsw-btn" onClick={cycleFit}>
                 Fit: {FIT_LABEL[host?.fit ?? "cover"] ?? "Fill the screen"}
               </button>
-              <button type="button" className="wsw-btn" data-act="theme" onClick={() => void themeFrom(focus)} disabled={focus.kind === "living" || focus.kind === "video"}>
+              <button data-weight="medium" type="button" className="wsw-btn" data-act="theme" onClick={() => void themeFrom(focus)} disabled={focus.kind === "living" || focus.kind === "video"}>
                 <Palette size={13} aria-hidden /> Make a theme from this
               </button>
-              <button type="button" className="wsw-btn" disabled={!isFile} onClick={() => void wallpapersApi.reveal(focus.id).catch(() => {})}>
+              <button data-weight="medium" type="button" className="wsw-btn" disabled={!isFile} onClick={() => void wallpapersApi.reveal(focus.id).catch(() => {})}>
                 <FolderOpen size={13} aria-hidden /> Open folder
               </button>
-              <button type="button" className="wsw-btn danger" disabled={!isFile} onClick={() => setPanel("delete")}>
+              <button data-weight="heavy" type="button" className="wsw-btn danger" disabled={!isFile} onClick={() => setPanel("delete")}>
                 <Trash2 size={13} aria-hidden /> Delete
               </button>
             </div>
@@ -607,7 +607,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
             <>
               <div className="wsw-panel-head">
                 <h3>Folders</h3>
-                <button type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
+                <button data-weight="medium" type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
                   <X size={13} aria-hidden />
                 </button>
               </div>
@@ -616,7 +616,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 {view.settings.folders.map((f) => (
                   <li key={f} className={view.missing.includes(f) ? "is-missing" : ""}>
                     <span>{f}</span>
-                    <button type="button" className="wsw-btn" onClick={() => saveSettings({ ...view.settings, folders: view.settings.folders.filter((x) => x !== f) })}>
+                    <button data-weight="medium" type="button" className="wsw-btn" onClick={() => saveSettings({ ...view.settings, folders: view.settings.folders.filter((x) => x !== f) })}>
                       Remove
                     </button>
                   </li>
@@ -631,7 +631,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 }}
               >
                 <input className="wsw-input" value={folderText} placeholder="Paste a folder path" aria-label="Folder path" onChange={(e) => setFolderText(e.target.value)} />
-                <button type="submit" className="wsw-btn primary" disabled={!folderText.trim()}>
+                <button data-weight="medium" type="submit" className="wsw-btn primary" disabled={!folderText.trim()}>
                   Add
                 </button>
               </form>
@@ -642,7 +642,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                     {view.suggested.map((f) => (
                       <li key={f}>
                         <span>{f}</span>
-                        <button type="button" className="wsw-btn" onClick={() => addFolder(f)}>
+                        <button data-weight="medium" type="button" className="wsw-btn" onClick={() => addFolder(f)}>
                           Add
                         </button>
                       </li>
@@ -657,7 +657,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
             <>
               <div className="wsw-panel-head">
                 <h3>Change automatically</h3>
-                <button type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
+                <button data-weight="medium" type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
                   <X size={13} aria-hidden />
                 </button>
               </div>
@@ -669,7 +669,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
             <>
               <div className="wsw-panel-head">
                 <h3>{labelKind === "tags" ? "Tags" : "Collections"}</h3>
-                <button type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
+                <button data-weight="medium" type="button" className="wsw-btn" aria-label="Close" onClick={() => setPanel(null)}>
                   <X size={13} aria-hidden />
                 </button>
               </div>
@@ -680,7 +680,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 {[...new Set([...known, ...focus.meta[labelKind]])].map((l) => {
                   const on = focus.meta[labelKind].some((x) => x.toLowerCase() === l.toLowerCase());
                   return (
-                    <button key={l} type="button" className={`wsw-btn ${on ? "on" : ""}`} aria-pressed={on} onClick={() => setLabels(focus, toggleLabel(focus.meta[labelKind], l))}>
+                    <button data-weight="medium" key={l} type="button" className={`wsw-btn ${on ? "on" : ""}`} aria-pressed={on} onClick={() => setLabels(focus, toggleLabel(focus.meta[labelKind], l))}>
                       {l}
                     </button>
                   );
@@ -695,7 +695,7 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 }}
               >
                 <input className="wsw-input" value={labelText} placeholder={labelKind === "tags" ? "New tag" : "New collection"} aria-label={labelKind === "tags" ? "New tag" : "New collection"} onChange={(e) => setLabelText(e.target.value)} />
-                <button type="submit" className="wsw-btn primary" disabled={!labelText.trim()}>
+                <button data-weight="medium" type="submit" className="wsw-btn primary" disabled={!labelText.trim()}>
                   Add
                 </button>
               </form>
@@ -710,10 +710,10 @@ export const WallpaperPicker: React.FC<{ windowControls?: React.ReactNode; onOpe
                 <b>{focus.item?.name ?? focus.name}</b> will leave its folder and go to the Windows Recycle Bin, where you can restore it. Nothing is deleted for good.
               </p>
               <div className="wsw-row">
-                <button type="button" className="wsw-btn danger" data-act="recycle" onClick={() => recycle(focus)}>
+                <button data-weight="heavy" type="button" className="wsw-btn danger" data-act="recycle" onClick={() => recycle(focus)}>
                   Move to Recycle Bin
                 </button>
-                <button type="button" className="wsw-btn primary" autoFocus onClick={() => setPanel(null)}>
+                <button data-weight="medium" type="button" className="wsw-btn primary" autoFocus onClick={() => setPanel(null)}>
                   Keep it
                 </button>
               </div>

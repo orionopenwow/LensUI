@@ -21,10 +21,9 @@
 
 .qsl-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .qsl-tile { display: flex; align-items: stretch; border-radius: 12px; background: rgb(var(--lens-ink) / 0.05); border: 1px solid rgb(var(--lens-ink) / 0.08); overflow: hidden; transition: background var(--lens-dur-fast, 140ms) linear, border-color var(--lens-dur-fast, 140ms) linear; }
-.qsl-tile.is-on { background: color-mix(in srgb, var(--lens-accent, #818cf8) 16%, transparent); border-color: color-mix(in srgb, var(--lens-accent, #818cf8) 34%, transparent); }
+.qsl-tile.is-on { background: color-mix(in srgb, var(--lens-accent-ui) 16%, transparent); border-color: color-mix(in srgb, var(--lens-accent-ui) 34%, transparent); }
 .qsl-tile.is-disabled { opacity: 0.55; }
 .qsl-tile-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 9px 4px 9px 10px; background: none; border: 0; color: var(--lens-fg); font: inherit; cursor: pointer; text-align: left; }
-.qsl-tile-main:active { transform: scale(0.98); }
 .qsl-tile-text { display: grid; min-width: 0; }
 .qsl-tile-label { font-size: 12px; font-weight: 700; line-height: 1.15; }
 .qsl-tile-sub { font-size: 11px; color: rgb(var(--lens-ink) / 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -150,6 +150,7 @@ pub const FIELDS: &[(&str, &str, &str, &str)] = &[
     ("theme.surfaceHex", "Surface colour", "Solid base colour of the theme, used for native title bars (empty = default).", r#"{"format":"hex-color-or-empty"}"#),
     ("theme.motion", "Motion", "Follow Windows, reduce, or allow full animation.", r#"{"enum":["system","reduce","full"]}"#),
     ("theme.contrast", "Contrast", "Follow Windows or force high contrast.", r#"{"enum":["system","high"]}"#),
+    ("theme.accentStrength", "Accent strength", "How much of your accent colour Lens's own surfaces show: switches, marks and focus rings (subtle), also selected items and main buttons (balanced), or stronger tints (vivid).", r#"{"enum":["subtle","balanced","vivid"]}"#),
     ("theme.locale", "Language", "Lens interface language.", r#"{"enum":["auto","en","es","de"]}"#),
     ("dock.style", "Dock style", "The Dock's shape: floating, slim, taskbar, studio, minimal, split, islands or unified.", r#"{"enum":["floating","slim","taskbar","studio","minimal","split","islands","unified"]}"#),
     ("dock.position", "Dock edge", "Which screen edge the Dock sits on.", r#"{"enum":["bottom","top","left","right"]}"#),

@@ -75,11 +75,11 @@ const PickButton: React.FC<{ label: string; onPicked: (w: Gen.PickedWindow) => v
     return () => window.removeEventListener("keydown", onKey);
   });
   return state === "picking" ? (
-    <button type="button" className="cc-btn-ghost" onClick={cancel} aria-live="polite">
+    <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={cancel} aria-live="polite">
       Cancel picking
     </button>
   ) : (
-    <button type="button" className="cc-btn-ghost" onClick={start}>
+    <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={start}>
       {label}
     </button>
   );
@@ -205,7 +205,7 @@ export const WindowStylingCard: React.FC = () => {
           {BORDER_MODES.map((m) => {
             const disabled = m.id === "native" && nativeDisabled;
             return (
-              <button
+              <button data-weight="light"
                 key={m.id}
                 type="button"
                 className={`cc-chip ${border.mode === m.id ? "active" : ""}`}
@@ -230,7 +230,7 @@ export const WindowStylingCard: React.FC = () => {
               { id: "solid", label: "Solid" },
               { id: "gradient", label: "Gradient" },
             ].map((o) => (
-              <button
+              <button data-weight="light"
                 key={o.id}
                 type="button"
                 className={`cc-chip ${border.style === o.id ? "active" : ""}`}
@@ -256,7 +256,7 @@ export const WindowStylingCard: React.FC = () => {
                   onCommit={(hex) => setBorder({ colors: border.colors.map((x, j) => (j === i ? hex : x)) })}
                 />
                 {border.style === "gradient" && border.mode === "overlay" && border.colors.length > 2 && (
-                  <button
+                  <button data-weight="medium"
                     type="button"
                     className="cc-btn-ghost"
                     style={{ padding: "4px 8px" }}
@@ -269,7 +269,7 @@ export const WindowStylingCard: React.FC = () => {
               </span>
             ))}
             {border.mode === "overlay" && border.style === "gradient" && border.colors.length < 4 && (
-              <button type="button" className="cc-chip" onClick={() => setBorder({ colors: [...border.colors, "#F472B6"] })}>
+              <button data-weight="light" type="button" className="cc-chip" onClick={() => setBorder({ colors: [...border.colors, "#F472B6"] })}>
                 + Colour
               </button>
             )}
@@ -283,7 +283,7 @@ export const WindowStylingCard: React.FC = () => {
             <span className="cc-desc" style={ROW_LABEL}>Width</span>
             <div className="cc-chip-grid">
               {[1, 2, 3, 4, 6, 8].map((w) => (
-                <button
+                <button data-weight="light"
                   key={w}
                   type="button"
                   className={`cc-chip ${border.widthPx === w ? "active" : ""}`}
@@ -304,7 +304,7 @@ export const WindowStylingCard: React.FC = () => {
                 { v: 12, label: "Medium" },
                 { v: 20, label: "Strong" },
               ].map((g) => (
-                <button
+                <button data-weight="light"
                   key={g.v}
                   type="button"
                   className={`cc-chip ${border.glowPx === g.v ? "active" : ""}`}
@@ -324,7 +324,7 @@ export const WindowStylingCard: React.FC = () => {
           <div className="cc-label">Leave fullscreen apps alone</div>
           <div className="cc-desc">No dimming, border or peek over games, videos and presentations.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           aria-label="Leave fullscreen apps alone"
           aria-pressed={styling.skipFullscreen}
@@ -343,7 +343,7 @@ export const WindowStylingCard: React.FC = () => {
       {styling.exclusions.length > 0 && (
         <div className="cc-chip-grid">
           {styling.exclusions.map((e) => (
-            <button
+            <button data-weight="light"
               key={e}
               type="button"
               className="cc-chip"
@@ -368,7 +368,7 @@ export const WindowStylingCard: React.FC = () => {
             if (e.key === "Enter") addExclusion(manual);
           }}
         />
-        <button type="button" className="cc-btn" onClick={() => addExclusion(manual)}>
+        <button data-weight="medium" type="button" className="cc-btn" onClick={() => addExclusion(manual)}>
           Add
         </button>
       </div>
@@ -387,7 +387,7 @@ export const WindowStylingCard: React.FC = () => {
               <span className="cc-desc" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
                 <span className="cc-label">{p.process || "Window"}</span> · {p.title || "Untitled"}
               </span>
-              <button type="button" className="cc-btn-ghost" onClick={() => unpin(p.hwnd)}>
+              <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => unpin(p.hwnd)}>
                 Unpin
               </button>
             </div>
@@ -475,14 +475,14 @@ const PerAppRulesCard: React.FC = () => {
               <span className="cc-label">{rule.match}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span className="cc-desc">Leave alone</span>
-                <button
+                <button data-weight="light"
                   type="button"
                   aria-label={`Leave ${rule.match} windows alone`}
                   aria-pressed={rule.exclude}
                   className={`cc-toggle ${rule.exclude ? "on" : ""}`}
                   onClick={() => patch(rule.match, { exclude: !rule.exclude })}
                 />
-                <button
+                <button data-weight="medium"
                   type="button"
                   className="cc-btn-ghost"
                   onClick={() => save(rules.filter((r) => r.match !== rule.match))}
@@ -498,7 +498,7 @@ const PerAppRulesCard: React.FC = () => {
                   <span className="cc-desc" style={{ width: 58, flexShrink: 0 }}>Opacity</span>
                   <div className="cc-chip-grid">
                     {OPACITY_CHOICES.map((o) => (
-                      <button
+                      <button data-weight="light"
                         key={String(o)}
                         type="button"
                         className={`cc-chip ${rule.opacity === o ? "active" : ""}`}
@@ -514,7 +514,7 @@ const PerAppRulesCard: React.FC = () => {
                   <span className="cc-desc" style={{ width: 58, flexShrink: 0 }}>Inactive</span>
                   <div className="cc-chip-grid">
                     {INACTIVE_CHOICES.map((o) => (
-                      <button
+                      <button data-weight="light"
                         key={String(o)}
                         type="button"
                         className={`cc-chip ${(rule.inactiveOpacity ?? null) === o ? "active" : ""}`}
@@ -530,21 +530,21 @@ const PerAppRulesCard: React.FC = () => {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span className="cc-desc" style={{ width: 58, flexShrink: 0 }}>Frame</span>
                   <div className="cc-chip-grid" style={{ alignItems: "center" }}>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       className={`cc-chip ${rule.frame === "default" ? "active" : ""}`}
                       onClick={() => patch(rule.match, { frame: "default" })}
                     >
                       Theme
                     </button>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       className={`cc-chip ${rule.frame === "none" ? "active" : ""}`}
                       onClick={() => patch(rule.match, { frame: "none" })}
                     >
                       Borderless
                     </button>
-                    <button
+                    <button data-weight="light"
                       type="button"
                       className={`cc-chip ${customFrame ? "active" : ""}`}
                       onClick={() => {
@@ -563,7 +563,7 @@ const PerAppRulesCard: React.FC = () => {
                   <span className="cc-desc" style={{ width: 58, flexShrink: 0 }}>Corners</span>
                   <div className="cc-chip-grid">
                     {CORNER_CHOICES.map((c) => (
-                      <button
+                      <button data-weight="light"
                         key={c.id}
                         type="button"
                         className={`cc-chip ${rule.corners === c.id ? "active" : ""}`}
@@ -587,7 +587,7 @@ const PerAppRulesCard: React.FC = () => {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <PickButton label="Pick a window" onStatus={setStatus} onPicked={(w) => add(w.process)} />
-          <button type="button" className="cc-btn-ghost" onClick={loadRunning}>
+          <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={loadRunning}>
             Refresh
           </button>
         </div>
@@ -595,7 +595,7 @@ const PerAppRulesCard: React.FC = () => {
       {candidates.length > 0 && (
         <div className="cc-chip-grid">
           {candidates.map((n) => (
-            <button key={n} type="button" className="cc-chip" onClick={() => add(n)}>
+            <button data-weight="light" key={n} type="button" className="cc-chip" onClick={() => add(n)}>
               + {n}
             </button>
           ))}
@@ -613,7 +613,7 @@ const PerAppRulesCard: React.FC = () => {
             if (e.key === "Enter") add(manual);
           }}
         />
-        <button type="button" className="cc-btn" onClick={() => add(manual)}>
+        <button data-weight="medium" type="button" className="cc-btn" onClick={() => add(manual)}>
           Add
         </button>
       </div>

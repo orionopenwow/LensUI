@@ -35,12 +35,14 @@
   cursor: not-allowed;
 }
 .lens-btn.is-primary {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
+/* A step brighter, text and fill together, so the pair keeps its contrast on any accent. */
 .lens-btn.is-primary:hover:not(:disabled) {
-  background: var(--lens-fg-strong);
+  background: var(--lens-accent-fill);
+  filter: brightness(1.08);
 }
 .lens-btn.is-ghost {
   background: transparent;
@@ -113,8 +115,8 @@ button.lens-chip:hover {
   color: var(--lens-fg);
 }
 .lens-chip.is-selected {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
   border-color: transparent;
 }
 .lens-keychip {
@@ -166,12 +168,12 @@ button.lens-chip:hover {
     background var(--lens-dur-fast) var(--lens-ease-out);
 }
 .lens-toggle.on {
-  background: var(--cc-accent, var(--lens-accent));
+  background: var(--lens-accent-ui);
   border-color: transparent;
 }
 .lens-toggle.on::after {
   transform: translateX(17px);
-  background: var(--lens-on-fg);
+  background: var(--lens-on-accent-ui);
 }
 .lens-toggle.is-pending::after {
   opacity: 0.7;
@@ -209,8 +211,8 @@ button.lens-chip:hover {
   background: rgb(var(--lens-ink) / 0.06);
 }
 .lens-seg-btn.active {
-  background: var(--lens-fg);
-  color: var(--lens-on-fg);
+  background: var(--lens-accent-fill);
+  color: var(--lens-on-accent-fill);
 }
 /* The selected pill is one element that slides between options (useSlidingIndicator). Until it
    has measured itself the option paints its own background, so nothing ever blinks. */
@@ -221,7 +223,7 @@ button.lens-chip:hover {
   width: var(--lens-ind-w, 0);
   height: var(--lens-ind-h, 0);
   border-radius: 7px;
-  background: var(--lens-fg);
+  background: var(--lens-accent-fill);
   pointer-events: none;
   opacity: 0;
 }

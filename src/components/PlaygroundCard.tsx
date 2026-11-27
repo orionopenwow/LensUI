@@ -45,7 +45,7 @@ const SceneTile: React.FC<{ scene: SceneModule; active: boolean; selected: boole
     return () => io.disconnect();
   }, []);
   return (
-    <button
+    <button data-weight="medium"
       ref={ref}
       type="button"
       className="pg-tile"
@@ -122,7 +122,7 @@ function SettingControls({ scene, values, onChange }: { scene: SceneModule; valu
               <div className="cc-label">{f.label}</div>
               <div className="cc-chip-grid" role="radiogroup" aria-label={f.label}>
                 {f.options.map((o) => (
-                  <button
+                  <button data-weight="light"
                     key={o.id}
                     type="button"
                     role="radio"
@@ -143,7 +143,7 @@ function SettingControls({ scene, values, onChange }: { scene: SceneModule; valu
               <div className="cc-label">{f.label}</div>
               {f.hint && <div className="cc-desc">{f.hint}</div>}
             </div>
-            <button
+            <button data-weight="light"
               type="button"
               className={`cc-toggle ${values[f.key] ? "on" : ""}`}
               aria-label={f.label}
@@ -301,7 +301,7 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
             <div className="cc-desc">Freeze the scene into a still picture and stop all animation and cursor tracking.</div>
           </div>
         </div>
-        <button type="button" className={`cc-toggle ${s.calm ? "on" : ""}`} aria-label="Calm" aria-pressed={s.calm} onClick={() => save({ calm: !s.calm })} />
+        <button data-weight="light" type="button" className={`cc-toggle ${s.calm ? "on" : ""}`} aria-label="Calm" aria-pressed={s.calm} onClick={() => save({ calm: !s.calm })} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(128px, 1fr))", gap: 8 }}>
@@ -364,11 +364,11 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
           {onDesktop ? (
-            <button type="button" className="cc-btn-ghost" onClick={() => save({ scene: "" })}>
+            <button data-weight="medium" type="button" className="cc-btn-ghost" onClick={() => save({ scene: "" })}>
               Stop Scene
             </button>
           ) : (
-            <button type="button" className="cc-btn" onClick={() => save({ enabled: true, scene: scene.id, calm: false })}>
+            <button data-weight="medium" type="button" className="cc-btn" onClick={() => save({ enabled: true, scene: scene.id, calm: false })}>
               <Wand2 size={12} style={{ marginRight: 5, verticalAlign: -1 }} aria-hidden="true" />
               Use as Wallpaper
             </button>
@@ -387,7 +387,7 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
               the left button also draws Windows' selection box, so pick Alt + left or Middle button if that bothers you.
             </div>
           </div>
-          <button
+          <button data-weight="medium"
             type="button"
             className="cc-btn-ghost"
             style={{ flexShrink: 0 }}
@@ -406,7 +406,7 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
         <div className="cc-label">Frame rate</div>
         <div className="cc-chip-grid" role="radiogroup" aria-label="Frame rate">
           {[30, 60].map((f) => (
-            <button key={f} type="button" role="radio" aria-checked={s.fps === f} className={`cc-chip ${s.fps === f ? "active" : ""}`} onClick={() => save({ fps: f })}>
+            <button data-weight="light" key={f} type="button" role="radio" aria-checked={s.fps === f} className={`cc-chip ${s.fps === f ? "active" : ""}`} onClick={() => save({ fps: f })}>
               {f} fps
             </button>
           ))}
@@ -417,7 +417,7 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
           <div className="cc-label">Click ripples</div>
           <div className="cc-desc">A soft ripple where you click empty desktop. Drawn in the wallpaper only.</div>
         </div>
-        <button type="button" className={`cc-toggle ${s.ripples ? "on" : ""}`} aria-label="Click ripples" aria-pressed={s.ripples} onClick={() => save({ ripples: !s.ripples })} />
+        <button data-weight="light" type="button" className={`cc-toggle ${s.ripples ? "on" : ""}`} aria-label="Click ripples" aria-pressed={s.ripples} onClick={() => save({ ripples: !s.ripples })} />
       </div>
 
       <BudgetMeter stats={liveStats ?? previewStats} label={liveStats ? "On your desktop" : "Preview"} />
@@ -465,7 +465,7 @@ export const PlaygroundCard: React.FC<Props> = ({ config }) => {
             </div>
           </div>
         </div>
-        <button type="button" className={`cc-toggle ${s.idleEnabled ? "on" : ""}`} aria-label="Idle mode" aria-pressed={s.idleEnabled} onClick={() => save({ idleEnabled: !s.idleEnabled })} />
+        <button data-weight="light" type="button" className={`cc-toggle ${s.idleEnabled ? "on" : ""}`} aria-label="Idle mode" aria-pressed={s.idleEnabled} onClick={() => save({ idleEnabled: !s.idleEnabled })} />
       </div>
       {s.idleEnabled && (
         <>

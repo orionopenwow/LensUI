@@ -62,7 +62,7 @@ export const ThemeScheduleCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           <div className="cc-label">Day &amp; night themes</div>
           <div className="cc-desc">Switch packs automatically. A pack you pick by hand stays until the next switch.</div>
         </div>
-        <button
+        <button data-weight="light"
           type="button"
           aria-label="Switch themes automatically"
           aria-pressed={schedule.enabled}
@@ -89,14 +89,14 @@ export const ThemeScheduleCard: React.FC<Props> = ({ config, onUpdateConfig }) =
           <div className="cc-row">
             <div className="cc-label">Switch at</div>
             <div className="cc-chip-grid">
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`cc-chip ${schedule.mode === "fixed" ? "active" : ""}`}
                 onClick={() => patch({ mode: "fixed" })}
               >
                 Set Times
               </button>
-              <button
+              <button data-weight="light"
                 type="button"
                 className={`cc-chip ${schedule.mode === "sun" ? "active" : ""}`}
                 onClick={() => patch({ mode: "sun" })}
