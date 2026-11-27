@@ -9,6 +9,7 @@ import { DashboardSurface } from "../dashboard/DashboardSurface";
 import { StudioShell } from "../studio/v2/StudioShell";
 import { MagicStart } from "../magic/start/MagicStart";
 import { NotePreview } from "../shelf/NotePreview";
+import { editDesktopWidgets } from "../deskwidgets/api";
 import { MagicPointerPreview } from "./MagicPointerPreview";
 import "./magic-preview.css";
 
@@ -20,6 +21,7 @@ export function shouldShowMagicPreview(config: PageProps["config"]): boolean {
 
 export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateConfig" | "section">> = ({ config, updateConfig, section }) => {
   const [confirm, setConfirm] = useState<MagicFlag | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   if (!shouldShowMagicPreview(config)) return null;
   const flags = magicFlags(config);
 
@@ -70,6 +72,18 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
           <span className="mpv-value">{flags.mouseHoldMs} ms</span>
         </Row>
       )}
+      {flags.desktopWidgets && (
+        <Row label="Arrange desktop widgets" desc="Opens the widget gallery on your desktop: add, resize, move or remove widgets. Esc or Done to finish.">
+          <button
+            type="button"
+            className="mpv-confirm"
+            onClick={() => void editDesktopWidgets().then((err) => setNote(err))}
+          >
+            Edit widgets…
+          </button>
+        </Row>
+      )}
+      {note && <StateNote kind="info">{note}</StateNote>}
       {flags.dashboard && (
         <div className="mpv-frame" aria-label="Dashboard preview">
           <DashboardSurface flags={{ widgets: flags.widgets, learn: flags.learn }} />

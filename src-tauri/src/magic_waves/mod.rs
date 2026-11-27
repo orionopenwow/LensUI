@@ -6,6 +6,7 @@
 
 pub mod cursor_art;
 pub mod dashboard;
+pub mod desktop_widgets;
 pub mod gesture;
 pub mod mouse;
 #[cfg(windows)]
