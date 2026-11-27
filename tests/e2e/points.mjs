@@ -1,7 +1,8 @@
 // Screen points for the real-Windows E2E (no Windows calls here, so bun tests can check them).
 
 /** A point on the screen outside `rect` (a window's {x, y, w, h} in screen px), halfway into the
- *  widest free strip to its left or right, at mid-height (away from the Top Bar and the Dock).
+ *  free strip to its right (else its left), 30 % down the screen: away from the Top Bar, the Dock
+ *  and the desktop folder tab (left edge, mid-height), so the click lands on the bare desktop.
  *  Null when neither side leaves `min` px.
  *
  *  Why (B-131): topbar-quicksettings-dismiss › other-flyout clicked a fixed point (25 % across,
@@ -11,9 +12,9 @@
 export function pointOutside(rect, screen, min = 40) {
   const left = rect.x - (screen.x ?? 0);
   const right = (screen.x ?? 0) + screen.w - (rect.x + rect.w);
-  const y = Math.round((screen.y ?? 0) + screen.h / 2);
-  if (left >= right && left >= min) return { x: Math.round((screen.x ?? 0) + left / 2), y };
+  const y = Math.round((screen.y ?? 0) + screen.h * 0.3);
   if (right >= min) return { x: Math.round(rect.x + rect.w + right / 2), y };
+  if (left >= min) return { x: Math.round((screen.x ?? 0) + left / 2), y };
   return null;
 }
 

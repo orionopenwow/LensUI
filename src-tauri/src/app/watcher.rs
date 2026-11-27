@@ -548,6 +548,9 @@ pub(crate) fn spawn_watcher(
         let mut topbar_reason_logged: &'static str = "";
         // When the Launcher was last seen appear (for closing an unfocused one on a click outside).
         let mut launcher_shown_since: Option<Instant> = None;
+        // The foreground window when the Launcher appeared (then the Launcher once it has it):
+        // the foreground moving anywhere else is the Launcher losing the focus (B-131).
+        let mut launcher_fg_baseline: Option<isize> = None;
         let mut qs_idle_since: Option<Instant> = None;
         let mut palette_idle_since: Option<Instant> = None;
         let mut dock_pointer_seen: Option<Instant> = None;
@@ -685,8 +688,10 @@ pub(crate) fn spawn_watcher(
                         .unwrap_or(false);
                     if !launcher_up {
                         launcher_shown_since = None;
+                        launcher_fg_baseline = None;
                     } else if launcher_shown_since.is_none() {
                         launcher_shown_since = Some(Instant::now());
+                        launcher_fg_baseline = foreground_hwnd();
                     }
                     // Timed from the real show (B-131), not from the pass that first noticed it.
                     let launcher_settled = launcher_up
@@ -694,7 +699,26 @@ pub(crate) fn spawn_watcher(
                             crate::commands::surfaces::shown_for_ms("launcher"),
                             launcher_shown_since.map(|t| t.elapsed().as_millis()),
                         );
-                    if clicked && launcher_settled {
+                    // The foreground moving away from the Launcher is its blur, seen from Windows:
+                    // the page's own blur never comes when the page never had the focus, and a
+                    // click is only seen through GetAsyncKeyState's "pressed since the last
+                    // check" bit, which another process may read first (Windows documents this).
+                    #[cfg(windows)]
+                    let launcher_hwnd = if launcher_up {
+                        watcher_handle.get_webview_window("launcher").and_then(|w| w.hwnd().ok()).map(|h| h.0 as isize)
+                    } else {
+                        None
+                    };
+                    #[cfg(not(windows))]
+                    let launcher_hwnd: Option<isize> = None;
+                    let fg_now = if launcher_up { foreground_hwnd() } else { None };
+                    if let (Some(lh), Some(fg)) = (launcher_hwnd, fg_now) {
+                        if fg == lh {
+                            launcher_fg_baseline = Some(lh);
+                        }
+                    }
+                    let lost_focus = launcher_settled && launcher_lost_foreground(fg_now, launcher_hwnd, launcher_fg_baseline);
+                    if (clicked || lost_focus) && launcher_settled {
                         if let Some(lau) = watcher_handle.get_webview_window("launcher") {
                             let inside = match (lau.outer_position(), lau.outer_size(), cursor) {
                                 (Ok(p), Ok(sz), Some((cx, cy))) => {
@@ -702,15 +726,30 @@ pub(crate) fn spawn_watcher(
                                 }
                                 _ => true,
                             };
-                            if !inside {
+                            if lost_focus || !inside {
                                 crate::tester::log(
                                     "info",
                                     "surface",
-                                    &format!("Launcher closed: a click outside it (its window in front: {})", is_foreground(&lau)),
+                                    &format!(
+                                        "Launcher closed: {} (its window in front: {})",
+                                        if lost_focus { "the foreground moved to another window" } else { "a click outside it" },
+                                        is_foreground(&lau)
+                                    ),
                                 );
+                                launcher_fg_baseline = None;
                                 crate::commands::surfaces::glide_hide_surface(&watcher_handle, "launcher");
                             }
                         }
+                    } else if clicked && launcher_up {
+                        crate::tester::log(
+                            "info",
+                            "surface",
+                            &format!(
+                                "Launcher kept: a click {} ms after it was shown (settles at {} ms)",
+                                crate::commands::surfaces::shown_for_ms("launcher").map(|m| m.to_string()).unwrap_or_else(|| "?".into()),
+                                LAUNCHER_SETTLE_MS
+                            ),
+                        );
                     }
 
                     // --- TOP BAR AUTO-HIDE ON OVERLAP ---
@@ -1483,6 +1522,29 @@ pub(crate) fn launcher_click_may_close(shown_ms: Option<u128>, seen_ms: Option<u
     }
 }
 
+/// True when the foreground window is neither the Launcher nor the window that was in front when
+/// it appeared (`baseline`; the Launcher itself once it got the focus): the Launcher lost the
+/// focus, or someone clicked elsewhere while it never had it. Unknown windows never close it.
+pub(crate) fn launcher_lost_foreground(fg: Option<isize>, launcher: Option<isize>, baseline: Option<isize>) -> bool {
+    match (fg, launcher, baseline) {
+        (Some(fg), Some(l), Some(b)) => fg != 0 && fg != l && fg != b,
+        _ => false,
+    }
+}
+
+/// Windows' foreground window, as a raw handle (None when there is none).
+#[cfg(windows)]
+pub(crate) fn foreground_hwnd() -> Option<isize> {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    let h = unsafe { GetForegroundWindow() }.0 as isize;
+    (h != 0).then_some(h)
+}
+
+#[cfg(not(windows))]
+pub(crate) fn foreground_hwnd() -> Option<isize> {
+    None
+}
+
 static BUTTON_HELD_THIS_PASS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Whether a mouse button was held at this watcher pass's sample (`mouse_button_down`). Never
@@ -1895,6 +1957,22 @@ mod launcher_click_tests {
         assert!(launcher_click_may_close(None, Some(LAUNCHER_SETTLE_MS)));
         assert!(!launcher_click_may_close(None, Some(LAUNCHER_SETTLE_MS - 1)));
         assert!(!launcher_click_may_close(None, None));
+    }
+
+    #[test]
+    fn the_foreground_moving_away_is_the_launchers_blur() {
+        let (l, before, other) = (Some(10), Some(20), Some(30));
+        // Still on the window that was in front when it opened (focus refused): stays.
+        assert!(!launcher_lost_foreground(before, l, before));
+        // The Launcher has the focus: stays.
+        assert!(!launcher_lost_foreground(l, l, l));
+        // Something else came forward (a click on the desktop, another app): closes.
+        assert!(launcher_lost_foreground(other, l, before));
+        assert!(launcher_lost_foreground(before, l, l));
+        // Nothing known: never closes on a guess.
+        assert!(!launcher_lost_foreground(None, l, before));
+        assert!(!launcher_lost_foreground(other, None, before));
+        assert!(!launcher_lost_foreground(other, l, None));
     }
 
     #[test]

@@ -356,7 +356,14 @@ const SCENARIOS = [
         }
         await expectWithin(`${how}: bar hides`, () => barState(s), false, 4500);
         await sleep(300);
-        await noFlyoutOpen(s, how);
+        try {
+          await noFlyoutOpen(s, how);
+        } catch (e) {
+          // Say what the Launcher's page knew: whether it ever had the focus (no focus, no blur).
+          const lp = surfaces(s).launcher;
+          const focus = lp ? await lp.evaluate(() => document.hasFocus()).catch(() => "?") : "no page";
+          throw new Error(`${e.message} (Launcher page focused: ${focus}; clicked at ${JSON.stringify(await d("pos").catch(() => null))})`);
+        }
         await d("notepad close");
       }
     },

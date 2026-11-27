@@ -51,9 +51,14 @@ describe("B-131: the Launcher left open after a click outside", () => {
     expect(w.match(/let clicked = mouse_button_down\(\);/g)?.length).toBe(1);
     // A click outside closes it whether or not its window is in front: a page that never got the
     // focus gets no blur, so the foreground window alone is no promise the Launcher will close.
-    const rule = w.slice(w.indexOf("if clicked && launcher_settled"), w.indexOf("// --- TOP BAR AUTO-HIDE ON OVERLAP ---"));
+    // The foreground moving off the Launcher (its blur, seen from Windows) closes it too: a click is
+    // only seen through GetAsyncKeyState's "pressed since" bit, which another process may take.
+    const start = w.indexOf("if (clicked || lost_focus) && launcher_settled");
+    expect(start).toBeGreaterThan(0);
+    const rule = w.slice(start, w.indexOf("// --- TOP BAR AUTO-HIDE ON OVERLAP ---"));
     expect(rule).toContain('glide_hide_surface(&watcher_handle, "launcher")');
     expect(rule).not.toMatch(/if !is_foreground\(&lau\)/);
+    expect(w).toContain("launcher_lost_foreground(fg_now, launcher_hwnd, launcher_fg_baseline)");
     const s = read("src-tauri/src/commands/surfaces.rs");
     expect(s).toMatch(/surface_state::mark_shown\(label, generation\);\s*note_shown\(label\);/);
   });
