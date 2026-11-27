@@ -39,8 +39,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startLens(timeoutMs = 60000) {
   const logs = [];
   // Debug builds only: LENS_E2E_INJECTED_INPUT lets Magic Mouse accept the test's SendInput presses;
-  // LENS_E2E_ACCEPT_INJECTED lets the key hook see SendInput keys (magic-start's Win tap).
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_INJECTED_INPUT: "1", LENS_E2E_ACCEPT_INJECTED: "1" } });
+  // LENS_E2E_ACCEPT_INJECTED lets the key hook see SendInput keys (magic-start's Win tap);
+  // LENS_MAGIC_SEARCH_STUB answers Magic Search from canned results (no network).
+  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_INJECTED_INPUT: "1", LENS_E2E_ACCEPT_INJECTED: "1", LENS_MAGIC_SEARCH_STUB: "1" } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   const t0 = Date.now();
@@ -1039,6 +1040,137 @@ const SCENARIOS = [
     },
   },
   {
+    id: "selection-bar",
+    title: "selection bar: select in Notepad → bar without stealing focus → Copy → Esc; excluded app and password field get no bar; Magic Search opens",
+    async run(s) {
+      // Like the other scenarios that build windows: start-up window building must be over first.
+      await waitStartupBuilt(s);
+      const dock = surfaces(s).dock;
+      const visible = () => invoke(dock, "is_surface_visible_cmd", { label: "bubble" }).catch(() => false);
+      const waitBar = async (want, what, ms = 5000) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < ms) {
+          if ((await visible()) === want) return Date.now() - t0;
+          await sleep(60);
+        }
+        throw new Error(`${what}: expected the selection bar to be ${want ? "showing" : "hidden"}`);
+      };
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-STA", "-Command", c], { encoding: "utf8", timeout: 60000 });
+      // Real input through user32 (no Lens marker, so the hooks treat it as the person's).
+      const U32 = "Add-Type -Namespace W -Name U -MemberDefinition '[DllImport(\"user32.dll\")] public static extern bool SetCursorPos(int x, int y); [DllImport(\"user32.dll\")] public static extern void mouse_event(uint f, uint x, uint y, uint d, System.UIntPtr e); [DllImport(\"user32.dll\")] public static extern void keybd_event(byte vk, byte scan, uint flags, System.UIntPtr extra); [DllImport(\"user32.dll\")] public static extern System.IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(System.IntPtr h); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p); [DllImport(\"user32.dll\")] public static extern bool GetWindowRect(System.IntPtr h, out RECT r); public struct RECT { public int L, T, R, B; }';";
+      const drag = (x1, y, x2) => ps(`${U32} [W.U]::SetCursorPos(${x1},${y}); Start-Sleep -Milliseconds 80; [W.U]::mouse_event(2,0,0,0,[UIntPtr]::Zero); Start-Sleep -Milliseconds 60; for ($x=${x1}; $x -le ${x2}; $x+=20) { [W.U]::SetCursorPos($x,${y}); Start-Sleep -Milliseconds 12 }; Start-Sleep -Milliseconds 120; [W.U]::mouse_event(4,0,0,0,[UIntPtr]::Zero)`);
+      const dblClick = (x, y) => ps(`${U32} [W.U]::SetCursorPos(${x},${y}); Start-Sleep -Milliseconds 60; [W.U]::mouse_event(2,0,0,0,[UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[UIntPtr]::Zero); Start-Sleep -Milliseconds 70; [W.U]::mouse_event(2,0,0,0,[UIntPtr]::Zero); [W.U]::mouse_event(4,0,0,0,[UIntPtr]::Zero)`);
+      const esc = () => ps(`${U32} [W.U]::keybd_event(0x1B,0,0,[UIntPtr]::Zero); [W.U]::keybd_event(0x1B,0,2,[UIntPtr]::Zero)`);
+      const foreground = () => ps(`${U32} $id = 0; [W.U]::GetWindowThreadProcessId([W.U]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
+      const clipboard = () => ps("Get-Clipboard -Raw").replace(/\r?\n$/, "");
+      // A Notepad full of text, so a drag across its first lines always lands on words.
+      const file = join(outDir, "selection-bar.txt");
+      writeFileSync(file, Array.from({ length: 30 }, (_, i) => `alpha beta gamma delta epsilon zeta eta theta iota kappa lambda line ${i + 1}`).join("\r\n"));
+      const notepad = spawn("notepad.exe", [file], { detached: true, stdio: "ignore" });
+      await sleep(2500);
+      const rect = ps(`${U32} $p = Get-Process | Where-Object { $_.MainWindowTitle -like 'selection-bar*' } | Select-Object -First 1; [W.U]::SetForegroundWindow($p.MainWindowHandle) | Out-Null; $r = New-Object W.U+RECT; [W.U]::GetWindowRect($p.MainWindowHandle, [ref]$r) | Out-Null; "$($r.L),$($r.T),$($r.R),$($r.B)"`).trim();
+      const [L, T, R] = rect.split(",").map(Number);
+      if (!(R > L)) throw new Error(`Notepad's window wasn't found (${rect})`);
+      const y = T + 150;
+      const x1 = L + 40;
+      const x2 = Math.min(R - 60, L + 420);
+      const take = watchErrors(dock);
+      try {
+        // Off by default: a selection shows nothing.
+        drag(x1, y, x2);
+        await sleep(900);
+        if (await visible()) throw new Error("the bar showed with the feature off");
+
+        await updateConfig(dock, (c) => {
+          c.selectionBar = { ...(c.selectionBar || {}), enabled: true, autoHideMs: 0 };
+        });
+        await sleep(900);
+        // 1. Select by dragging: the bar appears and Notepad keeps the focus.
+        ps("Set-Clipboard -Value 'lens-e2e-sentinel'");
+        drag(x1, y, x2);
+        // The first selection builds the bar's window, so it may take a moment longer than later ones.
+        const ms = await waitBar(true, "after a drag-select in Notepad", 15000).catch(async (e) => {
+          const st = await invoke(dock, "input_status_cmd").catch((x) => String(x));
+          throw new Error(`${e.message} (foreground: ${foreground()}; Notepad at ${rect}; input: ${JSON.stringify(st)})`);
+        });
+        console.log(`note  selection-bar: shown ${ms} ms after the mouse was released`);
+        const fg = foreground();
+        if (!/notepad/i.test(fg)) throw new Error(`the bar took the focus: the foreground is "${fg}", not Notepad`);
+        const bar = await waitForSurface(s, "bubble");
+        const barErrs = watchErrors(bar);
+        await shot(bar, "selection-bar");
+        // 2. Copy puts the selected text on the clipboard.
+        await domClick(bar.locator('.sbar-btn[aria-label^="Copy"]').first());
+        let copied = "";
+        for (let i = 0; i < 20 && !/alpha|beta|gamma|line/.test(copied); i++) {
+          await sleep(150);
+          copied = clipboard();
+        }
+        if (!/alpha|beta|gamma|delta|line/.test(copied)) throw new Error(`Copy didn't copy the selection (clipboard: ${JSON.stringify(copied.slice(0, 80))})`);
+        await waitBar(false, "after Copy");
+        // 3. Esc hides it (and only then is consumed).
+        drag(x1, y + 22, x2);
+        await waitBar(true, "after a second drag");
+        esc();
+        await waitBar(false, "after Esc");
+        if (!/notepad/i.test(foreground())) throw new Error("Notepad lost the focus after Esc");
+        // 4. An excluded app gets no bar.
+        const before = await invoke(dock, "selection_policy_get");
+        await invoke(dock, "selection_policy_set", { policy: { ...before, mode: "deny", apps: [...before.apps, "notepad.exe"] } });
+        drag(x1, y + 44, x2);
+        await sleep(1200);
+        const excludedShown = await visible();
+        await invoke(dock, "selection_policy_set", { policy: before });
+        if (excludedShown) throw new Error("the bar showed in an app on the exclusion list");
+        // 5. Magic Search opens the pop-out with the selection (network stubbed in this build).
+        await sleep(300);
+        drag(x1, y + 66, x2);
+        await waitBar(true, "before Magic Search");
+        await domClick(bar.locator(".sbar-btn.is-search").first());
+        const pop = await waitForSurface(s, "magicsearch");
+        await pop.waitForSelector(".msearch .ms-query-input", { timeout: 8000 });
+        const q = await pop.locator(".ms-query-input").inputValue();
+        if (!/alpha|beta|gamma|line/.test(q)) throw new Error(`Magic Search opened without the selection (query: ${JSON.stringify(q.slice(0, 80))})`);
+        await pop.waitForSelector(".ms-result", { timeout: 8000 }).catch(() => {});
+        await shot(pop, "magic-search");
+        await pop.keyboard.press("Escape").catch(() => {});
+        await sleep(600);
+        if (await invoke(dock, "is_surface_visible_cmd", { label: "magicsearch" }).catch(() => false)) throw new Error("Magic Search didn't close on Esc");
+        const errs = [...barErrs(), ...take()];
+        if (errs.length) throw new Error(errs.join("\n"));
+      } finally {
+        try { process.kill(notepad.pid); } catch {}
+        try { execFileSync("taskkill", ["/PID", String(notepad.pid), "/T", "/F"], { stdio: "ignore" }); } catch {}
+        // Windows 11's Notepad is a packaged app: the process we started hands over to another one.
+        try { execFileSync("powershell", ["-NoProfile", "-Command", "Get-Process | Where-Object { $_.MainWindowTitle -like 'selection-bar*' } | Stop-Process -Force"], { stdio: "ignore" }); } catch {}
+        await updateConfig(dock, (c) => {
+          c.selectionBar = { ...(c.selectionBar || {}), enabled: false };
+        }).catch(() => {});
+      }
+
+      // 6. A password field gets no bar (a WinForms box with UseSystemPasswordChar).
+      await updateConfig(dock, (c) => {
+        c.selectionBar = { ...(c.selectionBar || {}), enabled: true, autoHideMs: 0 };
+      });
+      await sleep(700);
+      const form = spawn("powershell", ["-NoProfile", "-STA", "-Command", "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object Windows.Forms.Form; $f.Text = 'lens-e2e-password'; $f.StartPosition = 'Manual'; $f.Location = New-Object Drawing.Point(300,300); $f.Size = New-Object Drawing.Size(420,160); $t = New-Object Windows.Forms.TextBox; $t.UseSystemPasswordChar = $true; $t.Text = 'secretsecretsecret'; $t.Location = New-Object Drawing.Point(20,20); $t.Width = 360; $f.Controls.Add($t); $f.Add_Shown({ $f.Activate(); $t.Focus() }); [void]$f.ShowDialog()"], { stdio: "ignore" });
+      try {
+        await sleep(3000);
+        dblClick(300 + 8 + 20 + 60, 300 + 31 + 20 + 8);
+        await sleep(1200);
+        if (await visible()) throw new Error("the bar showed for a password field");
+        drag(300 + 8 + 24, 300 + 31 + 28, 300 + 8 + 300);
+        await sleep(1200);
+        if (await visible()) throw new Error("the bar showed after selecting in a password field");
+      } finally {
+        try { execFileSync("taskkill", ["/PID", String(form.pid), "/T", "/F"], { stdio: "ignore" }); } catch {}
+        await updateConfig(dock, (c) => {
+          c.selectionBar = { ...(c.selectionBar || {}), enabled: false };
+        }).catch(() => {});
+      }
+    },
+  },
+  {
     id: "magic-mouse",
     title: "Magic Mouse: flag on → Magic pointer applied → hold-drag grabs (studio opens) → hold opens Magic → flag off → pointers restored",
     async run(s) {
@@ -1149,7 +1281,7 @@ async function runScenario(sc, s) {
   } catch (e) {
     results.push({ id: sc.id, title: sc.title, status: "fail", ms: Date.now() - t0, error: String(e.stack || e).slice(0, 2000) });
     console.log(`FAIL  ${sc.id}: ${String(e.message || e).slice(0, 1500)}`);
-    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart|desktop widgets/i.test(l)).slice(-12);
+    const tail = s.logs.join("").split("\n").filter((l) => /\[watcher\]|dock-dismiss|search|dashboard|keyhook|magic start|magicstart|desktop widgets|selection bar|input/i.test(l)).slice(-16);
     if (tail.length) console.log("      Lens said:\n        " + tail.join("\n        "));
     for (const p of pages(s)) await shot(p, `fail-${sc.id}-${new URL(p.url()).searchParams.get("surface") || "page"}`);
   }

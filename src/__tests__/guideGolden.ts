@@ -24,7 +24,7 @@ export const GOLDEN: [string, string | string[]][] = [
   ["open lens command", "card.ai.commandcard"],
   ["what is lens mini", "setting.ai.commandcard.lens-mini"],
   ["edge shelf", "setting.ai.commandcard.edge-shelf"],
-  ["selection bubble", "setting.ai.commandcard.selection-bubble"],
+  ["selection bubble", ["card.ai.selectionbarcard", "setting.ai.commandcard.selection-bar"]],
   ["connect the browser extension", ["setting.ai.connectionscard.browser-extension", "card.ai.connectionscard"]],
   ["file explorer right click menu", ["setting.ai.connectionscard.file-explorer-right-click", "lesson.right-click-everything", "card.ai.contextmenucard"]],
   ["connect claude desktop", ["setting.ai.mcpcard.connect-claude-desktop", "setting.ai.connectionscard.connect-to-claude"]],
