@@ -2173,3 +2173,95 @@
 :root[data-scheme="light"] .dock-launcher-drawer .pal-recent-age {
   color: #065f46;
 }
+
+/* ======================================================================
+   Unified style (dock.style = "unified"): one floating pill holding the
+   Launcher, apps, a hairline, then tray, notifications and a two-line
+   clock (DockSystemArea clock="stacked"). The pill floats 8 px off its
+   edge; app/flyout_geom.rs (UNIFIED_FLOAT_GAP) knows the same gap.
+   ====================================================================== */
+.dock-stage.dock-style-unified .dock-pill:not(.is-expanded-launcher) {
+  border-radius: calc(var(--dock-full-icon-size, 40px) * 0.5 + 10px);
+  border-bottom-color: rgb(var(--lens-ink) / 0.11);
+  padding: 9px 12px 9px 10px;
+}
+
+.dock-stage.dock-style-unified.dock-edge-bottom .dock-pill {
+  margin-bottom: 8px;
+}
+
+.dock-stage.dock-style-unified.dock-edge-top .dock-pill {
+  margin-top: 8px;
+}
+
+.dock-stage.dock-style-unified.dock-edge-left .dock-pill {
+  margin-left: 8px;
+}
+
+.dock-stage.dock-style-unified.dock-edge-right .dock-pill {
+  margin-right: 8px;
+}
+
+.dock-stage.dock-style-unified.dock-edge-left .dock-pill:not(.is-expanded-launcher),
+.dock-stage.dock-style-unified.dock-edge-right .dock-pill:not(.is-expanded-launcher) {
+  padding: 10px 9px 12px;
+}
+
+/* Side edges: the search field sits one slot lower (under the Launcher), so the panel does too. */
+.dock-stage.dock-style-unified:is(.dock-edge-left, .dock-edge-right) .dock-launcher-drawer {
+  top: calc(3px + var(--dock-full-icon-size, 40px) + 6px);
+}
+
+/* While searching, the tray, bell and clock in the row step aside: the field gets Floating's room
+   and the panel keeps its own width (Unified, and any centred Dock with the system area in it). */
+.dock-stage:not(.is-bar) .dock-pill.is-expanded-launcher .dock-icons-row > :is(.dock-sys-inline, [data-reflow-key="sys-divider"]) {
+  display: none;
+}
+
+/* The Launcher button leads the pill, like the other Launcher-first styles. */
+.dock-stage.dock-style-unified .dock-launcher-btn {
+  color: var(--lens-accent, var(--lens-fg));
+}
+
+.dock-stage.dock-style-unified .dock-sys-inline {
+  gap: 2px;
+}
+
+/* ======================================================================
+   Window-count marks (every style, src/dock/marks.ts): one short dash
+   for one window, three small dots for two or more. The dots are the
+   same element masked into three, so focused (accent) and attention
+   colours and every style's position rules still apply. Never scaled:
+   the dots keep their round shape.
+   ====================================================================== */
+.dock-stage.dock-stage .dock-icons-row .dock-item-wrap .dock-indicator.is-multi {
+  --dock-ind-k: 1;
+  width: 15px;
+  height: 3px;
+  border-radius: 0;
+  -webkit-mask: radial-gradient(circle at center, #000 1.5px, transparent 1.6px) center / 5px 3px repeat-x;
+  mask: radial-gradient(circle at center, #000 1.5px, transparent 1.6px) center / 5px 3px repeat-x;
+}
+
+.dock-stage.dock-stage.dock-edge-left .dock-icons-row .dock-item-wrap .dock-indicator.is-multi,
+.dock-stage.dock-stage.dock-edge-right .dock-icons-row .dock-item-wrap .dock-indicator.is-multi {
+  width: 3px;
+  height: 15px;
+  -webkit-mask: radial-gradient(circle at center, #000 1.5px, transparent 1.6px) center / 3px 5px repeat-y;
+  mask: radial-gradient(circle at center, #000 1.5px, transparent 1.6px) center / 3px 5px repeat-y;
+}
+
+/* Dots read lighter than a dash: a touch more ink when not focused. */
+.dock-stage.dock-stage .dock-icons-row .dock-item-wrap .dock-indicator.is-multi:not(.focused):not(.attention) {
+  background: rgb(var(--lens-ink) / 0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-indicator {
+    transition: none;
+  }
+}
+
+:root[data-motion="reduce"] .dock-indicator {
+  transition: none;
+}

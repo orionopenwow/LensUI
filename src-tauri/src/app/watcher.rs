@@ -311,6 +311,7 @@ pub(crate) fn position_settings_docked_with_height(
         // Exact bottom dock pill height (padding-top 8 + padding-bottom 10 + icon_size + 1px bottom border)
         let dock_pill_h = ((win_previews::clamp_icon_size(cfg.dock.icon_size) + 19.0) * scale).round() as i32;
         let margin_bottom = (cfg.dock.grounded_margin_bottom as f64 * scale).round() as i32;
+        // (The Unified style's floating gap is added by flyout_geom::pill_top.)
         // Settings has its own size (app/flyout_geom.rs): a Dock style never makes it narrow or
         // full-screen wide, and the Taskbar style opens it like the Windows 11 Start menu.
         let geom_mon = crate::app::flyout_geom::Monitor {
