@@ -55,8 +55,12 @@ const STATES = [
   { id: "command-mini", surface: "command", open: { layout: "mini" }, sizes: [[376, 456], [440, 520]] },
   { id: "command-full", surface: "command", open: { layout: "full" }, sizes: [[1000, 640], [760, 560]] },
   // Lens Music (?music=1 in the mock): Now Playing tinted by the artwork, and Immersive.
-  { id: "nowplaying", surface: "nowplaying", url: "music=1", sizes: [[1280, 800], [1024, 700]] },
-  { id: "nowplaying-immersive", surface: "nowplaying", url: "music=1&immersive=1", sizes: [[1440, 860], [1024, 700]] },
+  { id: "nowplaying", surface: "nowplaying", params: "music=1", sizes: [[1280, 800], [1024, 700]] },
+  { id: "nowplaying-immersive", surface: "nowplaying", params: "music=1&immersive=1", sizes: [[1440, 860], [1024, 700]] },
+  // Desktop widgets (docs/features/desktop-widgets.md): the host with one widget of each local
+  // kind, and edit mode with the gallery (URL params pick the mock's sample layout).
+  { id: "deskwidgets", surface: "deskwidgets", params: "magic=desktopWidgets&desk=sample", sizes: [[1600, 900], [1366, 768]] },
+  { id: "deskwidgets-edit", surface: "deskwidgets", params: "magic=desktopWidgets&desk=edit", sizes: [[1600, 900], [1366, 768]] },
 ];
 
 /** In-browser image diff (no native dependencies): counts pixels whose largest channel delta
@@ -105,7 +109,7 @@ for (const preset of PRESET_LIST) {
     if (ONLY.length && !ONLY.includes(st.surface) && !ONLY.includes(st.id)) continue;
     for (const [width, height] of st.sizes) {
       const name = `${st.id}-${preset}-${width}x${height}`;
-      const page = await openSurface(browser, server.base, { surface: st.surface, query: st.url || "", preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark" });
+      const page = await openSurface(browser, server.base, { surface: st.surface, query: st.params ?? "", preset, width, height, reducedMotion: true, fixedTime: FIXED_TIME, settle: 900, colorScheme: preset.includes("daylight") ? "light" : "dark" });
       if (st.config) {
         await page.evaluate((src) => { const c = JSON.parse(JSON.stringify(window.__lensConfig())); new Function("c", src)(c); window.__lensSetConfig(c); window.__lensEmit("lens://config-updated", c); }, st.config);
       }
