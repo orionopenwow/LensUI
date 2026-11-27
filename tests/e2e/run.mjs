@@ -1071,7 +1071,9 @@ const SCENARIOS = [
     title: "Dock search closes on a click outside and when another app takes focus",
     async run(s) {
       const dock = surfaces(s).dock;
-      const isOpen = () => dock.locator(".dock-search-glide-input").count().then((n) => n > 0);
+      // Open means open and not already gliding shut: the field stays in the page for the close
+      // glide (B-130), and a search the watcher is closing is not one this scenario can use.
+      const isOpen = () => dock.locator(".dock-search-slot.is-open:not(.is-closing) .dock-search-glide-input").count().then((n) => n > 0);
       const openSearch = async () => {
         if (!(await isOpen())) await domClick(dock.locator(".dock-search-mag-btn").first());
         for (let i = 0; i < 20 && !(await isOpen()); i++) await sleep(100);
@@ -1094,8 +1096,11 @@ const SCENARIOS = [
       const fg = ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1200; (New-Object -ComObject WScript.Shell).AppActivate($p.Id) | Out-Null; Start-Sleep -Milliseconds 300; Add-Type -Namespace W -Name F -MemberDefinition '[DllImport("user32.dll")] public static extern System.IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p);'; $id = 0; [W.F]::GetWindowThreadProcessId([W.F]::GetForegroundWindow(), [ref]$id) | Out-Null; (Get-Process -Id $id).ProcessName`).trim();
       if (/notepad/i.test(fg)) await waitClosed("focus moved to Notepad");
       else console.log(`note  dock-search-dismiss: Windows kept "${fg}" in front (foreground lock), so focus never left the Dock; step skipped`);
-      await domClick(dock.locator(".dock-search-mag-btn").first()).catch(() => {});
-      for (let i = 0; i < 10 && (await isOpen()); i++) await sleep(100);
+      // Close it only if it is still open (the glass toggles): a click after Notepad already closed
+      // it reopened search with nobody on the Dock, and the watcher's stale-menu rule closed that
+      // one again ~1.2 s later, right as step 2 looked at it (B-130).
+      if (await isOpen()) await domClick(dock.locator(".dock-search-mag-btn").first()).catch(() => {});
+      for (let i = 0; i < 10 && (await dock.locator(".dock-search-glide-input").count()) > 0; i++) await sleep(100);
       ps("Get-Process notepad -ErrorAction SilentlyContinue | Stop-Process -Force");
       // 2. A real click on the desktop, far from the Dock.
       await openSearch();
