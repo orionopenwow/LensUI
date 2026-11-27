@@ -75,4 +75,21 @@ describe("Lens app icons", () => {
     expect(site).toContain("src/icons/lensApps.ts");
     expect(site).not.toMatch(/const obsidian =|lens-logo-small\.svg/);
   });
+
+  test("the website's tour tabs use the same tile and stroke, a distinct glyph each, labelled tabs", () => {
+    const hero = readFileSync(join(root, "docs/site/js/hero.js"), "utf8");
+    const block = hero.slice(hero.indexOf("const SC_GLYPH"), hero.indexOf("const scIcon"));
+    expect(block).toContain(`fill='${LENS_APP_TILE}'`);
+    expect(block).toContain(`stroke='${LENS_APP_INK}' stroke-width='${LENS_APP_STROKE}'`);
+    expect(block).toContain("transform='translate(12.5 12.5) scale(1.625)'");
+    expect(block).not.toMatch(EFFECTS);
+    const glyphs = [...block.matchAll(/^\s+(\w+): "(.+)",$/gm)].map((m) => m[2]);
+    expect(glyphs.length).toBe(4);
+    expect(new Set(glyphs).size).toBe(glyphs.length);
+    // Lens Browser keeps the Lens logo; the old rainbow chip is gone.
+    expect(hero).toContain('"lens-browser"');
+    const css = readFileSync(join(root, "docs/site/css/site.css"), "utf8");
+    expect(css).not.toContain(".sc-ic.g { background: var(--spectrum)");
+    expect(hero).toMatch(/role="tab"[^>]*aria-label="\$\{esc\(s\.title\)\}/);
+  });
 });
