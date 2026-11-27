@@ -4,9 +4,13 @@
 //! `commands::widgets::widgets_fetch` after `widgets::check` approves the address.
 #![allow(dead_code)]
 
+pub mod cursor_art;
 pub mod dashboard;
 pub mod desktop_widgets;
+pub mod gesture;
 pub mod mouse;
+#[cfg(windows)]
+pub mod mouse_win;
 pub mod widgets;
 
 #[cfg(test)]

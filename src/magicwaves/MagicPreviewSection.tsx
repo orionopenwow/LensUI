@@ -10,6 +10,7 @@ import { StudioShell } from "../studio/v2/StudioShell";
 import { MagicStart } from "../magic/start/MagicStart";
 import { NotePreview } from "../shelf/NotePreview";
 import { editDesktopWidgets } from "../deskwidgets/api";
+import { MagicPointerPreview } from "./MagicPointerPreview";
 import "./magic-preview.css";
 
 const RISKY: ReadonlySet<MagicFlag> = new Set(["mouse", "startButton"]);
@@ -35,7 +36,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
 
   return (
     <Section id="magic" title="Magic (preview)" summary="Early previews of the Magic features. Off unless you turn them on." defaultOpen={section === "magic"} forceOpen={section === "magic"}>
-      <StateNote kind="info">These are previews. Nothing here connects, fetches or changes Windows yet.</StateNote>
+      <StateNote kind="info">These are previews. Only Magic Mouse changes Windows (your pointer, put back when it is off), and it asks first.</StateNote>
       {MAGIC_FLAGS.map((f) => (
         <Row key={f} label={MAGIC_LABELS[f].label} desc={MAGIC_LABELS[f].desc}>
           <Toggle label={MAGIC_LABELS[f].label} checked={flags[f]} onChange={(v) => set(f, v)} />
@@ -55,6 +56,7 @@ export const MagicPreviewSection: React.FC<Pick<PageProps, "config" | "updateCon
             : "The Magic button changes what a Windows-key tap does. Ctrl+Esc always opens Windows Start, and Windows Start opens if Lens doesn't answer."}
         </StateNote>
       )}
+      {(flags.mouse || confirm === "mouse") && <MagicPointerPreview />}
       {flags.mouse && (
         <Row label="Hold time" desc="How long to hold the left button before a drag becomes a grab.">
           <input
