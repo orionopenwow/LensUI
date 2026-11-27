@@ -265,6 +265,17 @@ pub(crate) fn show_no_activate(win: &tauri::WebviewWindow, x: i32, y: i32, w: i3
     }
 }
 
+#[cfg(windows)]
+fn hide_native(win: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
+    if let Ok(raw) = win.hwnd() {
+        unsafe {
+            let _ = ShowWindow(HWND(raw.0 as *mut _), SW_HIDE);
+        }
+    }
+}
+
 /// Hides the bar (any reason). The selection's text stays until an action takes it or it expires.
 pub(crate) fn hide(app: &AppHandle, reason: &str) {
     #[cfg(windows)]
@@ -272,6 +283,10 @@ pub(crate) fn hide(app: &AppHandle, reason: &str) {
     if let Some(w) = app.get_webview_window(LABEL) {
         if w.is_visible().unwrap_or(false) {
             eprintln!("[Lens UI] selection bar: hidden ({reason})");
+            // Shown natively (without activation), so it is hidden natively too: the window
+            // library never saw it become visible and would treat its own hide as a no-op.
+            #[cfg(windows)]
+            hide_native(&w);
             let _ = crate::app::place::hide_window(&w);
         }
     }
