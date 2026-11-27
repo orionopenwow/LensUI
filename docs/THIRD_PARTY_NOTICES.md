@@ -37,3 +37,16 @@ WordNet 3.0 (Princeton) is a redistributable option for a future offline fallbac
 - Windows built-ins (File Explorer, Notepad, Terminal) are shown with original generic stand-ins, not
   Microsoft's artwork. Open-source apps (Krita, Blender, OBS Studio, Ollama, ArtCraft…) use the icon from
   each project's own repository, under that project's licence.
+
+## Cider — learned from, nothing used
+
+Lens Music's Immersive mode, artwork-tinted pages, lyric translation, Discord presence and its
+setup/Tweaks pages were inspired by Cider (cider.sh), a community Apple Music client. Its licence
+for reuse is unclear, so nothing of it is in Lens: no code, assets or copy. The Lens versions were
+built from Cider's public site and observed behaviour (docs/features/music.md › 10). Credit only.
+
+## Discord RPC — protocol only
+
+`src-tauri/src/music/discord.rs` speaks Discord's documented local RPC framing to the Discord app
+on the same PC. It is Lens's own code (standard library only); no Discord SDK or library is
+bundled or linked.

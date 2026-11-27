@@ -7,7 +7,9 @@ export { convertFileSrc, isTauri } from "../mock/core";
 const p = new URLSearchParams(location.search);
 const scene = p.get("scene") || "";
 const spotify = scene.includes("spotify");
-const empty = scene === "np-empty";
+const empty = scene === "np-empty" || scene === "imm-empty";
+const noArt = scene.includes("noart");
+const long = scene.includes("long");
 
 const T0 = Date.now();
 export const SAMPLE = {
@@ -17,10 +19,10 @@ export const SAMPLE = {
   title: "Harbour Lights [From Lens: Original Score]",
   artist: "The Placeholders, Mira Vale & North Arcade",
   album: "Lens Sessions, Vol. 1",
-  artwork: placeholderArt("harbour-lights"),
+  artwork: noArt ? null : placeholderArt("harbour-lights"),
   trackKey: "k-harbour",
   status: "playing",
-  positionMs: 64_000,
+  positionMs: long ? 200_500 : 64_000,
   updatedMs: T0,
   durationMs: 224_000,
   rate: 1,
@@ -46,6 +48,12 @@ const LYRICS = [
   "Harbour lights, harbour lights",
 ].map((text, i) => ({ startMs: 48_000 + i * 6_500, text }));
 
+// A long song with long lines (original placeholder text), for the long-lyrics scene.
+const LONG = Array.from({ length: 140 }, (_, i) => ({
+  startMs: 2_000 + i * 3_000,
+  text: i % 7 === 3 ? "" : `${["Somewhere past the lighthouse and the last of the ferries", "We counted every window that was still awake", "And the radio kept singing what we couldn't say", "Harbour lights"][i % 4]} (${i + 1})`,
+}));
+
 const track = (n: number, title: string, artists: string, album: string, ms: number, explicit = false) => ({
   uri: `spotify:track:t${n}`, title, artists, album, durationMs: ms, explicit, image: placeholderArt(`q-${n}`, 96),
 });
@@ -54,12 +62,19 @@ const handlers: Record<string, (a: any) => any> = {
   music_config_get: () => ({
     enabled: true, priority: ["spotify", "applemusic"], deny: ["teams"], allowOnly: [], miniPlayer: "dock", themeFollows: true, themeIntensity: 0.6,
     restoreDelayS: 20, lyrics: true, lyricsLrclib: true, lyricsFolder: null, lyricsOffsetMs: 0, windowStyle: "expanded", dither: true,
-    sceneReactive: false, history: true, lastfm: false,
+    sceneReactive: false, history: true, lastfm: false, artTint: scene !== "np-theme-accent", immersiveIdleS: 3, immersiveGlow: scene.includes("glow"), immersiveLyrics: true,
+    lyricsTranslate: scene.includes("both"), lyricsTranslateTo: "French", lyricsView: scene.includes("both") ? "both" : "original", discord: false, discordAppId: "", discordPrivate: false,
+    discordShowProgress: true, setupDone: !scene.includes("setup"), soundGlow: true, levelMeter: true, desktopLyrics: false,
   }),
+  music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
+  music_lyrics_nudge: (a) => ({ songMs: (a?.steps ?? 0) * 500, key: "0123456789abcdef0123456789abcdef" }),
+  music_translation_get: () => null,
+  music_discord_status: () => ({ status: "Off", pipes: ["\\\\.\\pipe\\discord-ipc-0"] }),
+  music_glow_level: () => 0.5,
   music_config_set: (a) => a.config,
   music_now: () => SAMPLE,
   music_control: () => true,
-  music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines: LYRICS, source: "lrclib", sourceUrl: "https://lrclib.net/api/get/1", note: null }),
+  music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines: long ? LONG : LYRICS, source: "lrclib", sourceUrl: "https://lrclib.net/api/get/1", note: null }),
   music_history: () => [
     { title: "Harbour Lights [From Lens: Original Score]", artist: "The Placeholders", album: "Lens Sessions, Vol. 1", sourceLabel: "Spotify", durationMs: 224_000, atMs: T0 },
     { title: "Glass Canyon", artist: "Mira Vale", album: "Echo Field", sourceLabel: "Spotify", durationMs: 201_000, atMs: T0 - 4e5 },

@@ -10,17 +10,21 @@
 
 pub mod color;
 pub mod desktop_lyrics;
+pub mod discord;
 pub mod hash;
 pub mod history;
 pub mod lastfm;
 pub mod levels;
 pub mod lrc;
+pub mod immersive;
 pub mod lyrics;
+pub mod offsets;
 pub mod scrobble;
 pub mod session;
 pub mod spicetify;
 pub mod spotify;
 pub mod timeline;
+pub mod translate;
 #[cfg(windows)]
 mod service;
 
@@ -65,6 +69,30 @@ pub struct MusicConfig {
     pub sound_glow: bool,
     /// Dock music pop-out: the small five-bar level meter beside the title (on by default).
     pub level_meter: bool,
+    /// Now Playing takes its accents from the artwork (checked for contrast; theme accent otherwise).
+    pub art_tint: bool,
+    /// Immersive: seconds without the mouse moving before the cursor and controls hide.
+    pub immersive_idle_s: u32,
+    /// Immersive: the sound glow along the bottom edge (reads the speaker level only while shown).
+    pub immersive_glow: bool,
+    /// Immersive: synced lyrics beside the artwork.
+    pub immersive_lyrics: bool,
+    /// Offer "Translate" on lyrics (opt-in; uses Lens's AI under its privacy mode).
+    pub lyrics_translate: bool,
+    /// Language to translate lyrics into ("" = the Windows display language, read by the UI).
+    pub lyrics_translate_to: String,
+    /// "original" | "translated" | "both"
+    pub lyrics_view: String,
+    /// Discord Rich Presence through the Discord app on this PC (opt-in).
+    pub discord: bool,
+    /// The user's own Discord application ID (Discord needs one to show an activity).
+    pub discord_app_id: String,
+    /// Private listening: while on, Discord shows nothing (the "pause when private" switch).
+    pub discord_private: bool,
+    /// Show the elapsed / remaining time bar in Discord.
+    pub discord_show_progress: bool,
+    /// The Music first-run setup in Settings was finished or skipped.
+    pub setup_done: bool,
 }
 
 impl Default for MusicConfig {
@@ -90,6 +118,18 @@ impl Default for MusicConfig {
             lastfm: false,
             sound_glow: true,
             level_meter: true,
+            art_tint: true,
+            immersive_idle_s: 3,
+            immersive_glow: false,
+            immersive_lyrics: true,
+            lyrics_translate: false,
+            lyrics_translate_to: String::new(),
+            lyrics_view: "original".into(),
+            discord: false,
+            discord_app_id: String::new(),
+            discord_private: false,
+            discord_show_progress: true,
+            setup_done: false,
         }
     }
 }
@@ -111,6 +151,15 @@ impl MusicConfig {
         self.deny = clean(self.deny);
         self.allow_only = clean(self.allow_only);
         self.lyrics_folder = self.lyrics_folder.filter(|f| !f.trim().is_empty());
+        self.immersive_idle_s = self.immersive_idle_s.clamp(1, 30);
+        if !["original", "translated", "both"].contains(&self.lyrics_view.as_str()) {
+            self.lyrics_view = "original".into();
+        }
+        self.lyrics_translate_to = self.lyrics_translate_to.trim().chars().filter(|c| c.is_alphabetic() || *c == ' ' || *c == '-').take(40).collect::<String>().trim().to_string();
+        self.discord_app_id = self.discord_app_id.trim().to_string();
+        if !discord::valid_app_id(&self.discord_app_id) {
+            self.discord_app_id = String::new();
+        }
         self
     }
 
@@ -357,6 +406,32 @@ mod tests {
         assert!(d.sound_glow && d.level_meter && parsed.sound_glow && parsed.level_meter);
         let off: MusicConfig = serde_json::from_str(r#"{"soundGlow":false,"levelMeter":false}"#).unwrap();
         assert!(!off.sound_glow && !off.level_meter);
+    }
+
+    #[test]
+    fn new_music_options_default_off_and_normalise() {
+        let d = MusicConfig::default();
+        // Anything that talks to another program or service starts off.
+        assert!(!d.discord && !d.lyrics_translate && !d.discord_private && !d.setup_done && !d.immersive_glow);
+        assert!(d.art_tint && d.immersive_lyrics && d.discord_show_progress);
+        let bad = MusicConfig {
+            immersive_idle_s: 0,
+            lyrics_view: "sideways".into(),
+            lyrics_translate_to: "  Brazilian Portuguese; DROP TABLE  ".into(),
+            discord_app_id: "not-a-number".into(),
+            ..Default::default()
+        }
+        .normalised();
+        assert_eq!(bad.immersive_idle_s, 1);
+        assert_eq!(bad.lyrics_view, "original");
+        assert_eq!(bad.lyrics_translate_to, "Brazilian Portuguese DROP TABLE");
+        assert_eq!(bad.discord_app_id, "");
+        let ok = MusicConfig { discord_app_id: " 1234567890123456789 ".into(), immersive_idle_s: 99, ..Default::default() }.normalised();
+        assert_eq!(ok.discord_app_id, "1234567890123456789");
+        assert_eq!(ok.immersive_idle_s, 30);
+        // Files from before these options load with the defaults.
+        let old: MusicConfig = serde_json::from_str(r#"{"enabled":true}"#).unwrap();
+        assert!(old.art_tint && !old.discord && old.lyrics_view == "original");
     }
 
     #[test]

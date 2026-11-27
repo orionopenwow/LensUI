@@ -1,6 +1,6 @@
 # Lens Music — feature dossier
 
-Status date: 2026-11-26 (main at `6e7abb0`). **Dock music pop-out (branch `feature/music-sound-glow`):** the Spotify hover card in the Dock (`src/music/DockMusicCard.tsx`, maths in `soundGlow.ts`) now has a 56 px art header with a five-bar level meter, a seekable progress row, Up next / prev / play / next / Search, and a "sound glow" from the Dock edge in the art's colours (theme accent without art) that breathes with `levels.rs` — polled only while the card is open and playing, rAF + transform/opacity, no blur. Settings › Music › Sound glow / Level meter (on by default). `MediaNowPlaying` gained position/duration/seek and `media_control_cmd` a `seek`. Rendered headless (parity + visual `dock-music`); not yet seen on a real PC. **Fable pass (PR #112, 26 November 2026):** Spotify sign-in binds its port first and falls back to 43118/43119 with a clear message (S1 fixed), the queue panel explains itself with an inline Connect Spotify (quick win 1), failed Liked Songs saves are shown, and opt-in lyrics on the desktop exist (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC or against a real Spotify account. Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
+Status date: 2026-11-26 (main at `0db5515`). **Learned from Cider (branch `feature/music-cider-lessons`):** Immersive mode (Now Playing full screen on one monitor: big art, a drifting field of the art's colours as gradients, big synced lyrics, controls that hide with the cursor, optional sound glow; from Now Playing / F11, the Dock music card or Command "immersive"; refuses over a fullscreen app; still when hidden or reduced), Now Playing tinted by the artwork with every accent checked at 4.5:1 (theme accent otherwise) and made matte (blurred art and glass panels removed), a per-song lyric nudge (±0.5 s, saved), opt-in lyric translation through Lens AI under its privacy mode (local model first, cached on this PC, Original / Translated / Both), opt-in Discord Rich Presence over the local pipe with your own application ID and Private listening, a grouped Tweaks section and a three-step Music setup in Settings. Rendered headless (parity `imm*`, `np-*`; visual `nowplaying`, `nowplaying-immersive`); Rust and bun tests; one E2E scenario (`music-immersive`). Not yet confirmed on a real PC. Lens Remote, the Equalizer APO bridge and the site's music tabs are not in this PR (section 10). **Dock music pop-out (branch `feature/music-sound-glow`):** the Spotify hover card in the Dock (`src/music/DockMusicCard.tsx`, maths in `soundGlow.ts`) now has a 56 px art header with a five-bar level meter, a seekable progress row, Up next / prev / play / next / Search, and a "sound glow" from the Dock edge in the art's colours (theme accent without art) that breathes with `levels.rs` — polled only while the card is open and playing, rAF + transform/opacity, no blur. Settings › Music › Sound glow / Level meter (on by default). `MediaNowPlaying` gained position/duration/seek and `media_control_cmd` a `seek`. Rendered headless (parity + visual `dock-music`); not yet seen on a real PC. **Fable pass (PR #112, 26 November 2026):** Spotify sign-in binds its port first and falls back to 43118/43119 with a clear message (S1 fixed), the queue panel explains itself with an inline Connect Spotify (quick win 1), failed Liked Songs saves are shown, and opt-in lyrics on the desktop exist (the idea in section 6). Compiled and tested by CI only; not confirmed on a real PC or against a real Spotify account. Sources: `docs/MUSIC.md`, `docs/MUSIC_RESEARCH.md`,
 `docs/brain/BUGS.md`, code below.
 
 ## 1. Rundown
@@ -25,7 +25,7 @@ already look, without a new player.
 | Last.fm | `music/lastfm.rs`, `scrobble.rs` |
 | Level | `music/levels.rs` (one peak number, no audio) |
 | Spicetify export | `music/spicetify.rs`, `color.rs` |
-| Commands (26) | `src-tauri/src/commands/music.rs` |
+| Commands (37) | `src-tauri/src/commands/music.rs` |
 | UI | `src/music/NowPlaying.tsx`, `NowPlayingSurface.tsx`, `MiniPlayer.tsx`, `themeFollow.ts`, `scene.ts`, `art.ts`, `useMiniPlacement.ts`, `src/components/MusicCard.tsx` |
 | Tests | Rust tests per module; `src/__tests__/music.test.ts`; parity `tools/parity/music/` |
 | Data | `%APPDATA%\LensUI\music.json`, `music\history.json` (100), `music\lyrics\*.json`, `music\spotify.bin`, `music\lastfm.bin` (DPAPI), `music\spicetify\Lens\` |
@@ -57,11 +57,17 @@ already look, without a new player.
 - **Spicetify theme export** — works: writes `color.ini` + `user.css`; copies to Spicetify's
   Themes folder only if ticked; Lens never patches or runs Spicetify; removed by Remove all (B-02).
 - **Apple Music** — now-playing via Windows only (no public API); Cider suggested for theming.
+- **Immersive** (learned from Cider) — built: full screen on the monitor under the pointer, art grows from where it was opened, ambient gradients in the art's colours (transform/opacity, paused when hidden, still with reduced motion), big synced lyrics with FLIP line moves, controls + seek on hover, cursor hides after 3 s (1–10 s in Tweaks), optional sound glow, Esc/F11/× leave and the art returns. Never over a fullscreen app (`music::immersive::may_open`). Unverified on hardware: multi-monitor placement, DPI, F11 inside WebView2, fullscreen detection against games.
+- **Artwork tint** — built: `tint.ts` picks a vivid, common palette colour lifted to ≥ 4.5:1 on the hero's top, middle and base (and on Immersive's own field), text on accent fills checked too; the theme accent otherwise. Switch: Settings › Music › Immersive › Artwork colours.
+- **Lyric timing per song** — built: −0.5 s / +0.5 s / Reset in the lyrics header and Immersive, `[` / `]` keys; saved in `music\offsets.tsv` (500 songs, keyed by title + artist so it follows the song across apps), added to the global Timing.
+- **Lyric translation** (opt-in) — built: Translate in the lyrics header; Lens AI's local model when one runs, otherwise the AI picked in Settings › AI under its privacy mode (Local only refuses cloud; Ask each time shows the shared Send / Don't send card); only the lyric lines are sent; the provider is named under the lyrics; cached in `music\translations\` (cleared with the lyrics cache); Original / Translated / Both.
+- **Discord Rich Presence** (opt-in) — built: hand-written client for Discord's local IPC (`\\.\pipe\discord-ipc-0..9`, opcode + length + JSON), your own application ID, "Listening to" with title, artist and time left, Private listening clears it; album art only when Spotify is connected (Discord loads Spotify's https image). Lens makes no network call for it. Unverified against a real Discord client.
+- **Music setup and Tweaks** — built: a three-step setup at the top of Settings › Music until Done or Skip (sources, lyrics + Last.fm, Discord + "remote later"), and a collapsible Tweaks section grouping Look, Sources, Lyrics, Immersive and Playground options.
 
 ## 3. Quick wins (≤ 1 day, ranked)
 1. **Done (Fable pass).** **Queue panel empty state** that explains "Windows doesn't share queues — connect Spotify to see
    yours" with the Connect button inline (today the panel silently shows recent tracks).
-2. **Lyrics offset nudge** (±0.5 s keys) saved per track — LRCLIB timings drift for live versions.
+2. **Done (Cider lessons).** **Lyrics offset nudge** (±0.5 s keys) saved per track — LRCLIB timings drift for live versions.
 3. **Art fallback**: when an app sends no or tiny art, use a Lens cloud gradient seeded by the
    album name instead of a blank square.
 4. **Toasts instead of swallowed errors** in `src/music/*` (Spotify/Last.fm failures look like
@@ -90,6 +96,9 @@ already look, without a new player.
 | Suspected S3 | Low | `themeFollow.ts` | theme-follow + a user theme switch can race (last write wins); respect an explicit theme pick for the session |
 | Suspected S4 | Low | `session.rs` | two sessions with identical metadata (browser tab + Spotify) may flip the chosen session |
 | B-18 share | Low | `src/music/*` | swallowed errors |
+| B-92 (fixed) | — | `src/music/api.ts` | `useNowPlaying` re-rendered Now Playing 8×/s while its window was hidden or minimised; ticks now skip while `document.hidden` (Immersive pauses with it) |
+| B-93 (fixed) | — | `src/music/music.css`, `NowPlaying.tsx` | Now Playing used a 64 px blurred copy of the artwork and three `backdrop-filter` glass panels (paint cost on a see-through-capable WebView2 window, and against the matte rule); now matte gradients from the art and solid panels |
+| B-94 (fixed) | — | `src/music/music.css` | the lyric auto-scroll measured `offsetTop` against the page instead of the lyrics box once anything sat above it; `.lm-lyrics` is now the offset parent |
 
 ## 6. One idea to push to main
 **Lyrics on the desktop**: an optional, click-through "now singing" line under the Top Bar (or
@@ -117,6 +126,31 @@ YouTube tab; Bluetooth headphones connect/disconnect while the meter runs; Last.
 - **Phase 3:** Dashboard "Now playing" lane parity with the mini player; per-app volume in the
   Now Playing window (Windows audio session API).
 - **Risks:** Spotify API policy changes (Development Mode limits), GSMTC differences per app.
+
+## 10. Learned from Cider (clean-room)
+
+Cider (cider.sh) is a community Apple Music client people love for its focus. Its licence for this
+purpose is unclear, so per COMBINATOR §5 this was **learn only**: built from its public site,
+descriptions and observed behaviour; no Cider code, assets or copy were read into or copied into
+Lens, and no feature is named after it.
+
+| What makes Cider loved | Lens now | Status |
+|---|---|---|
+| Immersive mode: full-screen art + synced lyrics as the emotional centrepiece | Immersive (section 2) | Built, headless-tested |
+| Pages tinted by the artwork | Artwork tint with 4.5:1 checks | Built |
+| Lyric translations | Opt-in, local-first through Lens AI, cached | Built |
+| Discord presence and Last.fm out of the box | Discord over the local pipe (opt-in); Last.fm already existed | Built |
+| A redesigned first run and a Tweaks page | Music setup + grouped Tweaks in Settings | Built |
+| Cider Remote (control from your phone) | **Lens Remote**, LAN only, pairing token | Deferred to a follow-up PR (threat model below) |
+| Audio craft: 10-band EQ, spatialisation, credited engineer | **Equalizer APO bridge** (credit Equalizer APO), Windows Sonic toggle where the API allows | Deferred to the follow-up PR; Lens will not ship a fake EQ |
+| Plugin marketplace | Lens Plugins already exist | No music-specific work |
+| A site showing real app states | The site has no music section; the small-apps tile stays as is while the home page is reworked | Not changed |
+
+Lens Remote threat model (for the follow-up): no HTTPS on a LAN without a certificate, so a
+one-time pairing token shown as a QR code, a same-subnet check, a rate limit, play/pause/next/
+previous/seek/volume only, off by default, a visible indicator while on, and an automatic stop
+after inactivity. Anyone on the same network who sees the QR code can control playback until it
+stops; that is the honest limit.
 
 ## 9. Fable pass brief
 ```
