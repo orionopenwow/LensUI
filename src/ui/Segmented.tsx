@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useSlidingIndicator } from "./motion/indicator";
+import "./press";
 import "./ui.css";
 
 export type SegmentedOption<T extends string> = { id: T; label: React.ReactNode; ariaLabel?: string };
@@ -22,6 +24,10 @@ export function Segmented<T extends string>({
   buttonClassName?: string;
   onChange: (v: T) => void;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  const ind = useRef<HTMLSpanElement>(null);
+  // The selected pill slides between options (FLIP, transform only).
+  useSlidingIndicator(box, ind, value);
   const move = (dir: 1 | -1) => {
     const i = options.findIndex((o) => o.id === value);
     const next = options[(i + dir + options.length) % options.length];
@@ -29,7 +35,8 @@ export function Segmented<T extends string>({
   };
   return (
     <div
-      className={`lens-seg ${className ?? ""}`}
+      ref={box}
+      className={`lens-seg has-ind ${className ?? ""}`}
       role="radiogroup"
       aria-label={label}
       onKeyDown={(e) => {
@@ -43,6 +50,7 @@ export function Segmented<T extends string>({
         }
       }}
     >
+      <span ref={ind} className="lens-seg-ind" aria-hidden />
       {options.map((o) => {
         const on = value === o.id;
         return (
@@ -54,6 +62,7 @@ export function Segmented<T extends string>({
             aria-label={o.ariaLabel}
             tabIndex={on ? 0 : -1}
             disabled={disabled}
+            data-weight="medium"
             className={`lens-seg-btn ${buttonClassName ?? ""} ${on ? "active" : ""}`}
             onClick={() => onChange(o.id)}
           >

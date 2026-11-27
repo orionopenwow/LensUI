@@ -1,0 +1,139 @@
+/* The Magic selection bar (docs/plans/SELECTION_BAR.md §1). One matte Obsidian pill: solid
+   surface, hairline border, no blur, no glass. Lens tokens only, so every theme pack (light ones
+   included) works. Presses have weight (DESIGN.md §5.2): data-weight + data-pressed from press.ts. */
+html:has(.sbar-root), body:has(.sbar-root) { background: transparent; margin: 0; overflow: hidden; }
+
+.sbar-root {
+  display: inline-block;
+  padding: 4px; /* room for the shadow inside the window */
+  font: 500 12px/16px var(--lens-font, "Arial Rounded MT Bold", "Segoe UI Variable", system-ui, sans-serif);
+  color: var(--lens-fg);
+}
+
+.sbar {
+  --sbar-fill: var(--lens-pack-elevated, #111116);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--sbar-fill);
+  border: 1px solid var(--lens-border-strong);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgb(var(--lens-ink) / 0.07), 0 8px 24px rgb(0 0 0 / 0.34), 0 2px 6px rgb(0 0 0 / 0.24);
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.sbar-row { display: flex; align-items: center; padding: 3px; gap: 0; }
+.sbar-group { display: flex; align-items: center; gap: 1px; }
+.sbar-group + .sbar-group { margin-left: 3px; padding-left: 3px; border-left: 1px solid var(--lens-border); }
+
+.sbar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lens-fg);
+  font: inherit;
+  cursor: pointer;
+  /* Hover steps the fill only (never scales); the release springs back. */
+  transition:
+    background-color var(--lens-dur-fast) var(--lens-ease-out),
+    transform var(--lens-press-release, 220ms) var(--lens-ease-spring),
+    box-shadow var(--lens-dur-fast) var(--lens-ease-out);
+}
+.sbar-btn:hover, .sbar-btn:focus-visible { background: var(--lens-bg-hover); outline: none; }
+.sbar-btn:focus-visible { box-shadow: 0 0 0 1px var(--lens-border-strong) inset; }
+.sbar-btn.is-on { background: var(--lens-bg-hover); }
+
+/* Press weights. Press-in is fast (ease-out); release uses the spring above. */
+.sbar-btn[data-pressed] {
+  transition: transform var(--lens-press-in, var(--lens-dur-instant)) var(--lens-ease-out), background-color var(--lens-dur-instant) var(--lens-ease-out);
+}
+.sbar-btn[data-weight="medium"][data-pressed] {
+  transform: translateY(1px) scale(0.97);
+  background: rgb(var(--lens-ink) / 0.1);
+}
+.sbar-btn[data-weight="heavy"][data-pressed] {
+  transform: translateY(1.5px) scale(0.955);
+  background: rgb(var(--lens-ink) / 0.14);
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.25);
+}
+.sbar-btn[data-weight="heavy"] { transition-duration: var(--lens-dur-fast), var(--lens-press-release-heavy, 260ms), var(--lens-dur-fast); }
+
+/* Magic Search is the one labelled, primary button: a faint Lens-cloud edge, nothing more. */
+.sbar-btn.is-search { padding: 0 10px; font-weight: 600; }
+.sbar-btn.is-search::before {
+  content: "";
+  position: absolute;
+  inset: 6px auto 6px 4px;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, #ff5f6d, #ffc371, #4ade80, #38bdf8, #a78bfa, #f472b6);
+  opacity: 0.85;
+}
+.sbar-label { white-space: nowrap; }
+.sbar-key {
+  font: 500 10px/14px var(--font-mono, "Cascadia Code", Consolas, monospace);
+  color: var(--lens-fg-muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The inline preview line (local result, no click needed). */
+.sbar-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px 6px;
+  color: var(--lens-fg-secondary);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sbar-preview { min-height: 16px; }
+.sbar-preview-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.sbar-preview-text.is-tip { color: var(--lens-fg); animation: sbar-tip-in var(--lens-dur-fast) var(--lens-ease-out); }
+@keyframes sbar-tip-in { from { opacity: 0.4; } to { opacity: 1; } }
+.sbar-swatch { width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--lens-border-strong); background: var(--swatch, transparent); }
+
+/* More: the full Magic action list for a selection, under the pill. */
+.sbar-more { display: flex; flex-direction: column; padding: 3px; border-top: 1px solid var(--lens-border); max-height: 280px; overflow-y: auto; }
+.sbar-more-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lens-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--lens-dur-fast) var(--lens-ease-out);
+}
+.sbar-more-row:hover, .sbar-more-row:focus-visible { background: var(--lens-bg-hover); outline: none; }
+.sbar-more-row[data-pressed] { background: rgb(var(--lens-ink) / 0.1); transition-duration: var(--lens-dur-instant); }
+.sbar-more-label { flex: 1; }
+.sbar-more > .sbar-more-row { animation: sbar-row-in var(--lens-dur-fast) var(--lens-ease-out) both; }
+.sbar-more > .sbar-more-row:nth-child(2) { animation-delay: calc(var(--lens-stagger) * 1); }
+.sbar-more > .sbar-more-row:nth-child(3) { animation-delay: calc(var(--lens-stagger) * 2); }
+.sbar-more > .sbar-more-row:nth-child(4) { animation-delay: calc(var(--lens-stagger) * 3); }
+.sbar-more > .sbar-more-row:nth-child(5) { animation-delay: calc(var(--lens-stagger) * 4); }
+.sbar-more > .sbar-more-row:nth-child(6) { animation-delay: calc(var(--lens-stagger) * 5); }
+.sbar-more > .sbar-more-row:nth-child(n + 7) { animation-delay: calc(var(--lens-stagger) * 6); }
+@keyframes sbar-row-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+:root[data-motion="reduce"] .sbar-btn[data-pressed] { transform: none; }
+:root[data-motion="reduce"] .sbar-more > .sbar-more-row, :root[data-motion="reduce"] .sbar-preview-text { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .sbar-btn[data-pressed] { transform: none; }
+  :root:not([data-motion="full"]) .sbar-more > .sbar-more-row { animation: none; }
+}

@@ -32,6 +32,7 @@ const DOCK_TOUR = [
   ["islands", "Islands", "grouped pills", null, "catppuccin-mocha"],
   ["slim", "Slim", "the same dock, thinner and quieter", null, "obsidian"],
   ["split", "Split", "apps on one side, status on the other", null, "obsidian"],
+  ["unified", "Unified", "one floating pill with the tray and a two-line clock", null, "obsidian"],
 ];
 const setPack = async (d, id) => { const p = (await getPacks()).find((x) => x.id === id); if (p && d.pack?.id !== p.id) d.setPack(p); };
 let dockTurn = 0;
@@ -44,10 +45,10 @@ const dockNow = () => DOCK_TOUR[dockTurn % DOCK_TOUR.length];
  */
 export const SHOWCASES = [
   {
-    id: "docks", title: "The Dock", line: "Nine styles, any edge.",
+    id: "docks", title: "The Dock", line: "Ten styles, any edge.",
     look: { pack: "obsidian", dock: "floating" },
     steps: [
-      { cap: () => `The Dock, ${dockNow()[1]}: ${dockNow()[2]}. Nine styles, on any edge of the screen.`, target: (d) => { try { return d.frame.contentDocument?.querySelector(".dock-pill"); } catch { return null; } },
+      { cap: () => `The Dock, ${dockNow()[1]}: ${dockNow()[2]}. Ten styles, on any edge of the screen.`, target: (d) => { try { return d.frame.contentDocument?.querySelector(".dock-pill"); } catch { return null; } },
         go: async (d) => { const [style, , , shape, pack] = dockNow(); await setPack(d, pack); d.dockStyle(style, shape ?? "classic"); } },
       { cap: () => (dockNow()[0] === "taskbar" ? "Settings opens from the gear like Windows' Start menu: its own size, just above the bar. A second click, its ×, or Esc closes it." : "Settings opens from the gear, joined to the dock as one shape, at its own size. A second click, its ×, or Esc closes it."),
         go: (d) => d.openSettings() },

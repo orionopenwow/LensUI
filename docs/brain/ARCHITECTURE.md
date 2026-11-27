@@ -50,7 +50,8 @@ flowchart TB
 | `settings` | `surfaces/ControlCenterSurface` | The Settings hub (`settings/pages/*`, `themeux/ThemeTab`). |
 | `palette` | `surfaces/CommandPaletteSurface` | The original command palette. |
 | `command` | `command/CommandSurface` | Lens Command: ask/do, context chips, plans, approvals. |
-| `bubble` | `command/mini/BubbleSurface` | Mini Command / selection bubble. |
+| `bubble` | `magic/selection/SelectionBar` | The Magic selection bar (was the selection bubble). |
+| `magicsearch` | `magic/search/MagicSearch` | Lens Magic Search pop-out. |
 | `edgeshelf` | Shelf edge handle | Opens the Shelf from the screen edge. |
 | `launcher`, `overview` | `surfaces/*` | Win-key launcher and Alt+Tab overview (keyhook, opt-in). |
 | `quicksettings`, `notifications`, `widgets` | `surfaces/*` | Flyouts from the top bar. |

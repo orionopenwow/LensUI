@@ -17,6 +17,8 @@ const p = new URLSearchParams(location.search);
 const scene = p.get("scene") || "np-expanded";
 const tint = p.get("tint") === "1";
 const now = SAMPLE as unknown as NowPlaying;
+// Original placeholder lines, "translated" for the both-views scene (no real lyrics anywhere).
+const FRENCH = ["Pluie néon sur le port", "Chaque fenêtre garde une lumière", "Je laisse la radio tout bas", "Pour entendre la ville respirer", "Au coin de la rue, trouver le matin", "Des bateaux de papier sur la marée", "Chaque écho me ramène", "Lumières du port, lumières du port"];
 
 /** Simulates "Theme follows music": recolours --lens-accent like MusicAccentBridge does. */
 function useTint(on: boolean) {
@@ -159,17 +161,27 @@ function App() {
   if (scene === "accent") return <div style={{ padding: 24 }}><Chrome /></div>;
   if (scene === "scene") return <SceneCanvas />;
   if (scene === "spicetify") return <SpicetifyMock />;
-  if (scene === "card") {
+  if (scene === "card" || scene === "card-setup" || scene === "card-tester") {
     return (
       <div className="lens-glass cc-content" style={{ minHeight: "100%", boxSizing: "border-box", borderRadius: 0 }}>
-        <MusicCard />
+        <MusicCard {...(scene === "card-tester" ? { config: { tester: { enabled: true } } as never, updateConfig: () => {} } : {})} />
+      </div>
+    );
+  }
+  if (scene.startsWith("imm")) {
+    const n = { ...now, hasSession: scene !== "imm-empty" };
+    const both = scene.includes("both");
+    return (
+      <div style={{ position: "absolute", inset: 0 }}>
+        <NowPlayingView fixed={{ now: n, position: n.positionMs }} immersive={{ from: "command" }}
+          demoTranslation={both ? FRENCH : undefined} />
       </div>
     );
   }
   const mode = scene.includes("compact") ? "compact" : scene.includes("fullscreen") ? "fullscreen" : "expanded";
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <NowPlayingView mode={mode} fixed={{ now: scene === "np-empty" ? { ...now, hasSession: false } : now, position: 64_000 }} />
+      <NowPlayingView mode={mode} fixed={{ now: scene === "np-empty" ? { ...now, hasSession: false } : now, position: now.positionMs }} />
     </div>
   );
 }

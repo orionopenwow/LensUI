@@ -125,7 +125,26 @@ const handlers: Record<string, (a: any) => any> = {
   ai_run_intent: () => "ai-mock-1",
   clip_status: () => ({ enabled: false, pausedUntilMs: 0, ignoreNext: false, count: 0, pinned: 0, settings: { enabled: false, maxItems: 500, maxDays: 30, maxTotalBytes: 67108864, maxItemBytes: 2097152, excludedApps: ["1password.exe", "bitwarden.exe", "keepassxc.exe"], captureImages: true, captureFiles: true, preferPlainPaste: false } }),
   clip_list: () => [],
-  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "allow", apps: ["winword.exe", "excel.exe", "notepad.exe", "code.exe"], maxChars: 20000 }),
+  selection_policy_get: () => ({ bubble: false, readOnRequest: true, mode: "deny", apps: ["windowsterminal.exe", "cmd.exe", "powershell.exe", "mstsc.exe", "vmconnect.exe"], maxChars: 20000, version: 2 }),
+  // The Magic selection bar and Magic Search (docs/plans/SELECTION_BAR.md).
+  selection_bar_state: () => ({ seq: 1, chars: 86, app: "C:\\Program Files\\Microsoft Office\\WINWORD.EXE", category: "office", cut: true, copy: true, paste: true, pastePreview: true, editable: true, smart: { kind: "quantity", preview: "≈ 7.77 mi", value: "12.5 km in mi", action: "smart:convert" } }),
+  selection_bar_fit: () => ({ shown: true, above: false }),
+  selection_bar_paste_preview: () => "Ship it behind a setting",
+  magic_search_last: () => ({ seq: 1, query: "calm technology", action: null, app: "C:\\x\\WINWORD.EXE", editable: true, origin: null, above: false, atMs: 0 }),
+  magic_search_web: () => ({
+    results: [
+      { title: "Calm technology", url: "https://calmtech.com/", snippet: "Technology should require the smallest possible amount of attention.", site: "calmtech.com", favicon: "", sources: ["duckduckgo", "wikipedia"] },
+      { title: "Calm technology — Wikipedia", url: "https://en.wikipedia.org/wiki/Calm_technology", snippet: "Interaction designed to occur in the user's periphery.", site: "en.wikipedia.org", favicon: "", sources: ["wikipedia"] },
+      { title: "Designing Calm Technology", url: "https://people.csail.mit.edu/rudolph/Teaching/weiser.pdf", snippet: "Weiser and Brown, Xerox PARC, 1995.", site: "people.csail.mit.edu", favicon: "", sources: ["duckduckgo"] },
+    ],
+    sources: [
+      { id: "duckduckgo", label: "DuckDuckGo", host: "html.duckduckgo.com", ok: true, count: 2, error: null },
+      { id: "wikipedia", label: "Wikipedia", host: "en.wikipedia.org", ok: true, count: 2, error: null },
+    ],
+    engineUrl: "https://duckduckgo.com/?q=calm+technology",
+    engineName: "DuckDuckGo",
+    stub: true,
+  }),
   command_templates: () => ({ templates: [], error: null, path: "C:\\Users\\u\\AppData\\Roaming\\LensUI\\commands.json" }),
   shelves_list: () => [{ id: "default", name: "Shelf", created_ms: Date.now(), item_count: 0, approx_tokens: 0 }],
   shelf_list: () => [],
@@ -367,6 +386,37 @@ export async function invoke<T = any>(cmd: string, args?: any): Promise<T> {
 }
 export function convertFileSrc(p: string) { return p; }
 export function isTauri() { return false; }
+
+// Lens Music for the Now Playing window and Immersive (tools/visual/run.mjs, ?music=1): Music on, a
+// playing sample track with generated artwork and original placeholder lyrics. Without the flag the
+// music commands answer null as before, so other surfaces' goldens are unchanged.
+if (params.get("music") === "1") {
+  const T0 = Date.now();
+  const now = {
+    hasSession: true, sessionId: "Spotify.exe", sourceLabel: "Spotify", title: "Harbour Lights", artist: "The Placeholders", album: "Lens Sessions, Vol. 1",
+    artwork: placeholderArt("harbour-lights"), trackKey: "k-harbour", status: "playing", positionMs: 64_000, updatedMs: T0, durationMs: 224_000, rate: 1,
+    controls: { play: true, pause: true, next: true, prev: true, seek: true, shuffle: true, repeat: true }, shuffle: false, repeat: "list",
+    sessions: [{ id: "Spotify.exe", label: "Spotify", title: "Harbour Lights", playing: true, active: true }], sleepAtMs: null, sleepEndOfTrack: false,
+  };
+  const lines = ["Neon rain across the harbour", "Every window holds a light", "I keep the radio on low", "So I can hear the city breathe", "Turn the corner, find the morning", "Paper boats along the tide", "Every echo calls me home", "Harbour lights, harbour lights"]
+    .map((text, i) => ({ startMs: 48_000 + i * 6_500, text }));
+  Object.assign(handlers, {
+    music_config_get: () => ({
+      enabled: true, priority: ["spotify"], deny: [], allowOnly: [], miniPlayer: "dock", themeFollows: false, themeIntensity: 0.6, restoreDelayS: 20, lyrics: true, lyricsLrclib: true,
+      lyricsFolder: null, lyricsOffsetMs: 0, desktopLyrics: false, windowStyle: "expanded", dither: true, sceneReactive: false, history: true, lastfm: false, soundGlow: true, levelMeter: true,
+      artTint: true, immersiveIdleS: 3, immersiveGlow: false, immersiveLyrics: true, lyricsTranslate: false, lyricsTranslateTo: "", lyricsView: "original", discord: false, discordAppId: "",
+      discordPrivate: false, discordShowProgress: true, setupDone: true,
+    }),
+    music_now: () => now,
+    music_lyrics: () => ({ found: true, synced: true, instrumental: false, lines, source: "lrclib", sourceUrl: null, note: null }),
+    music_history: () => [],
+    music_lyrics_offset: () => ({ songMs: 0, key: "0123456789abcdef0123456789abcdef" }),
+    music_translation_get: () => null,
+    music_spotify_status: () => ({ connected: false, clientId: null, redirectUri: "http://127.0.0.1:43117/callback", redirectUris: [], scopes: [] }),
+    music_immersive_open: () => null,
+    music_immersive_close: () => null,
+  });
+}
 
 // Dashboard widgets (docs/plans/MAGIC_WAVES.md, wave M2). An in-memory widget store and a mocked
 // fetch: nothing here touches the network. ?widgets=sample starts with one widget of each kind

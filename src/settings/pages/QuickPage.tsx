@@ -264,7 +264,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
         title="Quick settings"
         summary="The settings you change most"
         actions={
-          <button type="button" className="cc-chip" aria-pressed={editing} onClick={() => setEditing((e) => !e)}>
+          <button data-weight="light" type="button" className="cc-chip" aria-pressed={editing} onClick={() => setEditing((e) => !e)}>
             <SlidersHorizontal size={13} aria-hidden /> {editing ? "Done" : "Edit"}
           </button>
         }
@@ -275,10 +275,10 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
               {tiles[id]}
               {editing && (
                 <div className="sh-quick-edit" role="group" aria-label={`Arrange ${id}`}>
-                  <button type="button" className="cc-chip" aria-label="Move earlier" onClick={() => saveLayout({ ...layout, order: moveTile(layout.order, id, -1) })}>
+                  <button data-weight="light" type="button" className="cc-chip" aria-label="Move earlier" onClick={() => saveLayout({ ...layout, order: moveTile(layout.order, id, -1) })}>
                     <ArrowLeft size={12} aria-hidden />
                   </button>
-                  <button
+                  <button data-weight="light"
                     type="button"
                     className="cc-chip"
                     aria-label={layout.hidden.includes(id) ? "Show" : "Hide"}
@@ -291,7 +291,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
                   >
                     {layout.hidden.includes(id) ? <Eye size={12} aria-hidden /> : <EyeOff size={12} aria-hidden />}
                   </button>
-                  <button type="button" className="cc-chip" aria-label="Move later" onClick={() => saveLayout({ ...layout, order: moveTile(layout.order, id, 1) })}>
+                  <button data-weight="light" type="button" className="cc-chip" aria-label="Move later" onClick={() => saveLayout({ ...layout, order: moveTile(layout.order, id, 1) })}>
                     <ArrowRight size={12} aria-hidden />
                   </button>
                 </div>
@@ -321,7 +321,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
       <Section id="look" title="Theme" summary={packById(config.theme.preset)?.label ?? config.theme.preset}>
         <div className="sh-quick-packs" role="radiogroup" aria-label="Theme pack">
           {packs.map((p) => (
-            <button
+            <button data-weight="medium"
               key={p.id}
               type="button"
               role="radio"
@@ -336,7 +336,7 @@ export const QuickPage: React.FC<PageProps> = ({ config, updateConfig }) => {
         </div>
         <div className="sh-quick-accents" role="radiogroup" aria-label="Accent colour">
           {ACCENTS.map((hex) => (
-            <button
+            <button data-weight="medium"
               key={hex}
               type="button"
               role="radio"

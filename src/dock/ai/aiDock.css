@@ -400,10 +400,13 @@
     transform: none;
   }
 }
-:root[data-motion="reduce"] :is(.ai-dock-mode-icon, .ai-dock-pop) {
+:root[data-motion="reduce"] .ai-dock-mode-icon,
+:root[data-motion="reduce"] .ai-dock-pop {
   animation: none;
 }
-:root[data-motion="reduce"] :is(.ai-sparkle, .ai-suggested-app, .ai-progress > span) {
+:root[data-motion="reduce"] .ai-sparkle,
+:root[data-motion="reduce"] .ai-suggested-app,
+:root[data-motion="reduce"] .ai-progress > span {
   transition: none;
   transform: none;
 }

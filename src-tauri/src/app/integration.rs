@@ -160,6 +160,14 @@ pub(crate) fn on_config_saved(app: &AppHandle, prev: &LensConfig, next: &LensCon
     if prev.tester != next.tester {
         sync_tester_hotkey(app, next);
     }
+    // The Magic selection bar: its switch, options and direct hotkeys (and Magic Mouse, whose
+    // hold-then-drag grab takes precedence over it).
+    if prev.selection_bar != next.selection_bar
+        || prev.magic_waves.mouse != next.magic_waves.mouse
+        || prev.magic_waves.mouse_hold_ms != next.magic_waves.mouse_hold_ms
+    {
+        crate::commands::selection_bar::apply(app, next);
+    }
 
     // Edge Shelf: create on enable; the surface hides itself when turned off.
     if next.edge_shelf_enabled() && !prev.edge_shelf_enabled() && app.get_webview_window("edgeshelf").is_none() {

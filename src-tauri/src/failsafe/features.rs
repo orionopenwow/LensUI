@@ -45,6 +45,7 @@ pub const SWITCHES: &[Switch] = &[
     Switch { id: "appSummon", label: "App hotkeys", paths: &["appSummon.enabled"] },
     Switch { id: "ai", label: "Lens AI", paths: &["ai.enabled"] },
     Switch { id: "command", label: "Lens Command", paths: &["command.enabled"] },
+    Switch { id: "selectionBar", label: "Magic selection bar", paths: &["selectionBar.enabled"] },
 ];
 
 static SAFE_MODE: AtomicBool = AtomicBool::new(false);
@@ -209,7 +210,7 @@ mod tests {
             "windowControls": { "enabled": true, "frameBorderEnabled": true, "order": "yellow-green-red" },
             "tiling": { "enabled": true }, "workspaces": { "enabled": true }, "mcp": { "enabled": true },
             "hotCorners": { "enabled": true }, "altDrag": { "enabled": true }, "appSummon": { "enabled": true },
-            "ai": { "enabled": true }, "command": { "enabled": true },
+            "ai": { "enabled": true }, "command": { "enabled": true }, "selectionBar": { "enabled": true },
             "theme": { "preset": "obsidian" }
         })
     }
