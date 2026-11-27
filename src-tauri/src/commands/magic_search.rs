@@ -140,9 +140,13 @@ fn work_at(app: &AppHandle, p: (i32, i32)) -> (bar::Rect, f64) {
     }
 }
 
+/// Async on purpose: the first open builds the window, which must not happen on the main thread
+/// (a synchronous command runs there, and building a webview waits for it).
 #[tauri::command]
-pub(crate) fn magic_search_open(app: AppHandle, query: Option<String>, action: Option<String>) -> Result<(), String> {
-    open(&app, query.filter(|q| !q.trim().is_empty()), action)
+pub(crate) async fn magic_search_open(app: AppHandle, query: Option<String>, action: Option<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || open(&app, query.filter(|q| !q.trim().is_empty()), action))
+        .await
+        .map_err(|_| "Magic Search stopped unexpectedly.".to_string())?
 }
 
 /// The pop-out's current open (it asks when it mounts after the first event).

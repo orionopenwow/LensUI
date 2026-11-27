@@ -1034,7 +1034,7 @@ const SCENARIOS = [
         }
         throw new Error(`${what}: expected the selection bar to be ${want ? "showing" : "hidden"}`);
       };
-      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-STA", "-Command", c], { encoding: "utf8" });
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-STA", "-Command", c], { encoding: "utf8", timeout: 60000 });
       // Real input through user32 (no Lens marker, so the hooks treat it as the person's).
       const U32 = "Add-Type -Namespace W -Name U -MemberDefinition '[DllImport(\"user32.dll\")] public static extern bool SetCursorPos(int x, int y); [DllImport(\"user32.dll\")] public static extern void mouse_event(uint f, uint x, uint y, uint d, System.UIntPtr e); [DllImport(\"user32.dll\")] public static extern void keybd_event(byte vk, byte scan, uint flags, System.UIntPtr extra); [DllImport(\"user32.dll\")] public static extern System.IntPtr GetForegroundWindow(); [DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(System.IntPtr h); [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(System.IntPtr h, out uint p); [DllImport(\"user32.dll\")] public static extern bool GetWindowRect(System.IntPtr h, out RECT r); public struct RECT { public int L, T, R, B; }';";
       const drag = (x1, y, x2) => ps(`${U32} [W.U]::SetCursorPos(${x1},${y}); Start-Sleep -Milliseconds 80; [W.U]::mouse_event(2,0,0,0,[UIntPtr]::Zero); Start-Sleep -Milliseconds 60; for ($x=${x1}; $x -le ${x2}; $x+=20) { [W.U]::SetCursorPos($x,${y}); Start-Sleep -Milliseconds 12 }; Start-Sleep -Milliseconds 120; [W.U]::mouse_event(4,0,0,0,[UIntPtr]::Zero)`);
