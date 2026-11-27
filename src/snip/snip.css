@@ -571,11 +571,16 @@
 
 /* Lists arrive in order: the first six, one stagger apart; the rest together (DESIGN.md §5.3). */
 .snip-thumb, .snip-entity { animation: snip-rise var(--lens-dur-base) var(--lens-ease-out) backwards; }
-:is(.snip-thumb, .snip-entity):nth-child(2) { animation-delay: calc(1 * var(--lens-stagger)); }
-:is(.snip-thumb, .snip-entity):nth-child(3) { animation-delay: calc(2 * var(--lens-stagger)); }
-:is(.snip-thumb, .snip-entity):nth-child(4) { animation-delay: calc(3 * var(--lens-stagger)); }
-:is(.snip-thumb, .snip-entity):nth-child(5) { animation-delay: calc(4 * var(--lens-stagger)); }
-:is(.snip-thumb, .snip-entity):nth-child(n + 6) { animation-delay: calc(5 * var(--lens-stagger)); }
+.snip-thumb:nth-child(2),
+.snip-entity:nth-child(2) { animation-delay: calc(1 * var(--lens-stagger)); }
+.snip-thumb:nth-child(3),
+.snip-entity:nth-child(3) { animation-delay: calc(2 * var(--lens-stagger)); }
+.snip-thumb:nth-child(4),
+.snip-entity:nth-child(4) { animation-delay: calc(3 * var(--lens-stagger)); }
+.snip-thumb:nth-child(5),
+.snip-entity:nth-child(5) { animation-delay: calc(4 * var(--lens-stagger)); }
+.snip-thumb:nth-child(n + 6),
+.snip-entity:nth-child(n + 6) { animation-delay: calc(5 * var(--lens-stagger)); }
 .snip-thumb-open { all: unset; cursor: pointer; display: block; width: 100%; }
 .snip-thumb-open:focus-visible { outline: var(--lens-focus-width, 2px) solid var(--lens-focus-ring, var(--lens-accent)); outline-offset: -2px; }
 .snip-rectime { font-variant-numeric: tabular-nums; }

@@ -19,7 +19,12 @@
 }
 
 /* ---------- Cards ---------- */
-:root[data-shape="expressive"] :is(.qs-card, .sysmod-card, .cc-card:not(.tux-section-body > .cc-card)) {
+/* One selector per class, not :is(a, b, c): a selector that ends in a multi-argument :is() is tried
+   on every element at every restyle (theme switch); one ending in a class only on that class. The
+   :not() on each keeps the specificity the :is() list had. */
+:root[data-shape="expressive"] .qs-card:not(.tux-section-body > .cc-card),
+:root[data-shape="expressive"] .sysmod-card:not(.tux-section-body > .cc-card),
+:root[data-shape="expressive"] .cc-card:not(.tux-section-body > .cc-card) {
   border-radius: var(--lens-x-card-radius);
   border-color: transparent;
   background: var(--lens-x-elev-1);
@@ -60,7 +65,10 @@
   padding: 4px;
   background: var(--lens-x-elev-2);
 }
-:root[data-shape="expressive"] :is(.qs-flick-thumb, .qs-seg-btn, .sysmod-seg-btn, .sysmod-pill-btn) {
+:root[data-shape="expressive"] .qs-flick-thumb,
+:root[data-shape="expressive"] .qs-seg-btn,
+:root[data-shape="expressive"] .sysmod-seg-btn,
+:root[data-shape="expressive"] .sysmod-pill-btn {
   border-radius: var(--lens-x-pill);
 }
 :root[data-shape="expressive"] :is(.qs-seg-btn, .sysmod-seg-btn).active {
@@ -77,7 +85,8 @@
 }
 
 /* Switches become wide pills; the knob takes the on-accent colour when on */
-:root[data-shape="expressive"] :is(.qs-switch, .sysmod-switch) {
+:root[data-shape="expressive"] .qs-switch,
+:root[data-shape="expressive"] .sysmod-switch {
   border-radius: var(--lens-x-pill);
 }
 
@@ -120,18 +129,23 @@
 }
 
 /* ---------- Settings: pill chips with icons ---------- */
-:root[data-shape="expressive"] :is(.cc-chip, .tux-chip, .sysmod-chip) {
+:root[data-shape="expressive"] .cc-chip,
+:root[data-shape="expressive"] .tux-chip,
+:root[data-shape="expressive"] .sysmod-chip {
   border-radius: var(--lens-x-chip-radius);
   border-color: transparent;
   background: var(--lens-x-elev-2);
   padding-top: 7px;
   padding-bottom: 7px;
 }
-:root[data-shape="expressive"] :is(.cc-chip, .tux-chip, .sysmod-chip):is(.active, [aria-pressed="true"], [aria-checked="true"]) {
+:root[data-shape="expressive"] .cc-chip:is(.active, [aria-pressed="true"], [aria-checked="true"]),
+:root[data-shape="expressive"] .tux-chip:is(.active, [aria-pressed="true"], [aria-checked="true"]),
+:root[data-shape="expressive"] .sysmod-chip:is(.active, [aria-pressed="true"], [aria-checked="true"]) {
   background: var(--lens-x-active);
   color: var(--lens-x-on-active);
 }
-:root[data-shape="expressive"] :is(.cc-btn, .tux-small-btn) {
+:root[data-shape="expressive"] .cc-btn,
+:root[data-shape="expressive"] .tux-small-btn {
   border-radius: var(--lens-x-pill);
 }
 

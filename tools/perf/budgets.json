@@ -35,7 +35,9 @@
       "p95": 50,
       "longTasks": 2,
       "cls": 0.055,
-      "fcp": 644
+      "fcp": 644,
+      "switchMs": 51,
+      "longPerStep": 0
     },
     "settings-tab-switch": {
       "p50": 16.7,
@@ -118,6 +120,7 @@
   "_findings": {
     "settings-tab-switch.longTasks": "Raised 10 \u2192 11 when the Quick page was added: the scenario clicks every page in the sidebar, so it now visits one more page (and the Quick page polls live state).",
     "theme-switch.cls": "F8 (docs/TESTING.md): the Theme & Look hero jumps ~29 px when a pack's description wraps to a second line. Baseline CLS raised to today's 0.055 so a worse shift still fails; lower it with the fix.",
-    "playground-backdrop": "Backdrop Lab wallpaper (WebGL). CI renders WebGL in software (SwiftShader), so draws block the main thread: p95 and long tasks reflect that, not a GPU. p50 33.4 is the intended 30 fps cap. The scene steps resolution down to 0.25 and then to half rate when frames are slow. Baseline is the larger of the runner (p50 16.7, p95 66.7, 36 long tasks, FCP 932) and a slower dev container."
+    "playground-backdrop": "Backdrop Lab wallpaper (WebGL). CI renders WebGL in software (SwiftShader), so draws block the main thread: p95 and long tasks reflect that, not a GPU. p50 33.4 is the intended 30 fps cap. The scene steps resolution down to 0.25 and then to half rate when frames are slow. Baseline is the larger of the runner (p50 16.7, p95 66.7, 36 long tasks, FCP 932) and a slower dev container.",
+    "theme-switch.method": "Gated on the median of six switches after one warm-up switch (run.mjs, theme-switch): switchMs is the time from the change to the first painted frame in the new theme, longPerStep the long tasks per switch (median may be at most one: the switch frame itself). The run's total long tasks (longTasks) is reported but no longer gated here: a switch costs ~40-60 ms at 4x, right at the 50 ms long-task line, so the total flipped between 0 and 10 for the same commit on CI. Slowest switch capped at 3x switchMs and three long tasks."
   }
 }
