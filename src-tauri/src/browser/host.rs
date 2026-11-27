@@ -162,7 +162,13 @@ pub fn open_frame(app: &AppHandle) -> Result<Window, String> {
         .map_err(|e| e.to_string())?;
     let scale = window.scale_factor().unwrap_or(1.0);
     let size = window.inner_size().map_err(|e| e.to_string())?.to_logical::<f64>(scale);
-    let ui = WebviewBuilder::new(UI_LABEL, WebviewUrl::App("index.html?surface=browser".into())).auto_resize();
+    let mut ui = WebviewBuilder::new(UI_LABEL, WebviewUrl::App("index.html?surface=browser".into())).auto_resize();
+    // The frame UI shares Lens's WebView2 environment (default data folder), so it must use the
+    // same browser arguments as Lens's own windows: WebView2 refuses a second environment on one
+    // folder with different arguments (0x8007139F). Test builds add a DevTools port there.
+    if let Some(args) = app.config().app.windows.iter().find_map(|w| w.additional_browser_args.clone()) {
+        ui = ui.additional_browser_args(&args);
+    }
     window
         .add_child(ui, LogicalPosition::new(0.0, 0.0), LogicalSize::new(size.width, size.height))
         .map_err(|e| e.to_string())?;
