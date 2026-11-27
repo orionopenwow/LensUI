@@ -2295,6 +2295,15 @@ pub fn apply_cursor_theme(style: &CursorStyle, size: u32) -> Result<CursorState,
     apply_with(&root, &mut reg, style, size, &appdata)
 }
 
+/// Runs `f` with Lens's cursor folder, the real cursor registry and `%APPDATA%`. Magic Mouse
+/// applies and removes its pointer set through this, so it shares the suite's backup and undo.
+pub fn with_real_registry<R>(f: impl FnOnce(&Path, &mut dyn Registry, &str) -> R) -> R {
+    let root = cursors_dir();
+    let appdata = std::env::var("APPDATA").unwrap_or_default();
+    let mut reg = platform::RealRegistry;
+    f(&root, &mut reg, &appdata)
+}
+
 /// "Restore my Windows cursors".
 pub fn restore_windows_cursors() -> Result<bool, String> {
     let mut reg = platform::RealRegistry;
@@ -2309,12 +2318,25 @@ pub fn set_follow_theme(follow: bool) -> Result<CursorState, String> {
     Ok(st)
 }
 
+/// Whether Magic Mouse's own pointer set is applied (its mark sits next to the backup). Read
+/// here so the suite never swaps it out from under the Magic mode.
+pub fn magic_pointer_on(root: &Path) -> bool {
+    std::fs::read_to_string(root.join("magic-mouse.json"))
+        .map(|t| t.replace(' ', "").contains("\"applied\":true"))
+        .unwrap_or(false)
+}
+
 /// Call when the theme pack changes. Re-applies with the new accent and light/dark if Lens
 /// cursors are applied and "Follow theme pack" is on. Returns whether anything was re-applied.
 pub fn on_theme_changed(accent_hex: &str, pack_is_dark: bool) -> Result<bool, String> {
     let root = cursors_dir();
     let st = load_state(&root);
     if !st.applied || !st.follow_theme {
+        return Ok(false);
+    }
+    // While the Magic pointer (Magic Mouse) is on, the theme must not swap it out; the person's
+    // style is re-applied with the current theme when Magic Mouse is turned off.
+    if magic_pointer_on(&root) {
         return Ok(false);
     }
     let mut style = st.style.clone();

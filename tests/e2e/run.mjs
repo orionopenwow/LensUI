@@ -38,8 +38,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A running Lens with Playwright attached: { proc, browser, logs }. */
 async function startLens(timeoutMs = 60000) {
   const logs = [];
-  // LENS_E2E_ACCEPT_INJECTED: debug builds let the key hook see SendInput keys (magic-start's Win tap).
-  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_ACCEPT_INJECTED: "1" } });
+  // Debug builds only: LENS_E2E_INJECTED_INPUT lets Magic Mouse accept the test's SendInput presses;
+  // LENS_E2E_ACCEPT_INJECTED lets the key hook see SendInput keys (magic-start's Win tap).
+  const proc = spawn(EXE, [], { stdio: ["ignore", "pipe", "pipe"], windowsHide: false, env: { ...process.env, LENS_E2E_INJECTED_INPUT: "1", LENS_E2E_ACCEPT_INJECTED: "1" } });
   proc.stdout.on("data", (b) => logs.push(String(b)));
   proc.stderr.on("data", (b) => logs.push(String(b)));
   const t0 = Date.now();
@@ -944,6 +945,95 @@ const SCENARIOS = [
       } finally {
         await invoke(dock, "music_config_set", { config: before }).catch(() => {});
         await invoke(dock, "hide_surface", { label: "nowplaying" }).catch(() => {});
+      }
+    },
+  },
+  {
+    id: "magic-mouse",
+    title: "Magic Mouse: flag on → Magic pointer applied → hold-drag grabs (studio opens) → hold opens Magic → flag off → pointers restored",
+    async run(s) {
+      const dock = await waitForSurface(s, "dock", 40000);
+      const ps = (c) => execFileSync("powershell", ["-NoProfile", "-Command", c], { encoding: "utf8" });
+      const arrow = () => ps(`(Get-ItemProperty 'HKCU:\\Control Panel\\Cursors' -Name Arrow -ErrorAction SilentlyContinue).Arrow`).trim();
+      const status = () => invoke(dock, "magic_mouse_status");
+      const until = async (what, ok, ms = 8000) => {
+        const t0 = Date.now();
+        let last;
+        while (Date.now() - t0 < ms) {
+          last = await status();
+          if (ok(last)) return last;
+          await sleep(250);
+        }
+        throw new Error(`Magic Mouse: timed out waiting for ${what}; status ${JSON.stringify(last)}`);
+      };
+      const before = arrow();
+      // Start clean whatever an earlier scenario left open: Magic Mouse ignores presses on Lens's
+      // own windows, so a leftover Magic Start or pop-out over the target hides the gesture.
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), startButton: false };
+      });
+      for (const cmd of ["magic_start_hide", "magic_hide"]) await invoke(dock, cmd).catch(() => {});
+      await sleep(500);
+      await updateConfig(dock, (c) => {
+        c.magicWaves = { ...(c.magicWaves || {}), mouse: true, mouseHoldMs: 400 };
+      });
+      // A target that is not Lens: Notepad, maximised, with the drag in the middle of it.
+      const W = `Add-Type -Namespace W -Name M -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint f,int x,int y,uint d,System.UIntPtr e); [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);'; $cx=[int]([W.M]::GetSystemMetrics(0)/2); $cy=[int]([W.M]::GetSystemMetrics(1)/2); $z=[System.UIntPtr]::Zero;`;
+      try {
+        // The first apply renders and checks the pointer files (a debug build is slow at this).
+        const on = await until("the pointer and the hook", (st) => st.pointerApplied && st.hookLive, 45000);
+        if (on.steppedAside) console.log("note  magic-mouse: stepped aside on this runner (fullscreen/busy)");
+        const applied = arrow();
+        if (!/[\\/]magic[\\/]magic(-hc)?[\\/]arrow(-\d+\.ani|\.ani|-still\.cur)$/i.test(applied)) throw new Error(`Arrow pointer is "${applied}", expected the Magic pointer`);
+        if (on.warning) console.log(`note  magic-mouse: ${on.warning}`);
+        console.log(`note  magic-mouse: pointer form Windows accepted: ${on.variant || "?"}`);
+        // Windows itself must accept the generated files (RIFF/ACON .ani, multi-size .cur).
+        const loads = ps(`Add-Type -Namespace W -Name C -MemberDefinition '[DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern System.IntPtr LoadCursorFromFileW(string p);'; $k = Get-ItemProperty 'HKCU:\\Control Panel\\Cursors'; foreach ($n in 'Arrow','AppStarting','Wait','IBeam','SizeAll') { $p = $k.$n; '{0}={1}' -f $n, ([W.C]::LoadCursorFromFileW($p) -ne [System.IntPtr]::Zero) }`).trim();
+        if (/=False/.test(loads)) throw new Error(`Windows could not load a Magic pointer file: ${loads.replace(/\s+/g, " ")}`);
+        // Not maximised: on a runner without a taskbar a maximised window fills the screen,
+        // which Lens rightly treats as fullscreen (Magic Mouse steps aside there).
+        ps(`$p = Start-Process notepad -PassThru; Start-Sleep -Milliseconds 1500; Add-Type -Namespace W -Name P -MemberDefinition '[DllImport("user32.dll")] public static extern bool MoveWindow(System.IntPtr h,int x,int y,int w,int ht,bool r); [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);'; $cx=[int]([W.P]::GetSystemMetrics(0)/2); $cy=[int]([W.P]::GetSystemMetrics(1)/2); [W.P]::MoveWindow($p.MainWindowHandle, $cx-400, $cy-300, 800, 600, $true) | Out-Null`);
+        let ready = null;
+        try {
+          ready = await until("the gestures to be live", (st) => st.hookLive && !st.steppedAside, 8000);
+        } catch {}
+        if (!ready) {
+          console.log(`note  magic-mouse: this runner counts the screen as busy (fullscreen/presentation); Magic Mouse stepped aside, gesture steps skipped: ${JSON.stringify(await status())}`);
+          return;
+        }
+        // Hold-then-drag: press, hold past the hold time, drag 200×120, release.
+        ps(`${W} [W.M]::SetCursorPos($cx-100,$cy-60) | Out-Null; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 700; for($i=0;$i -lt 10;$i++){ [W.M]::mouse_event(1,20,12,0,$z); Start-Sleep -Milliseconds 25 }; Start-Sleep -Milliseconds 150; [W.M]::mouse_event(4,0,0,0,$z)`);
+        const grabbed = await until("the grab", (st) => st.grabs >= 1);
+        if (!/^grab /.test(grabbed.last)) throw new Error(`last action was "${grabbed.last}", expected a grab`);
+        const studio = await waitForSurface(s, "snip", 15000).catch(async (e) => {
+          throw new Error(`${e.message}; Magic Mouse status ${JSON.stringify(await status())}`);
+        });
+        await shot(studio, "magic-mouse-grab-studio");
+        await studio.keyboard.press("Escape").catch(() => {});
+        await sleep(600);
+        // A short click is a click: no hold, no grab.
+        const n = await status();
+        ps(`${W} [W.M]::SetCursorPos($cx,$cy) | Out-Null; Start-Sleep -Milliseconds 120; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 80; [W.M]::mouse_event(4,0,0,0,$z)`);
+        await sleep(900);
+        const m = await status();
+        if (m.holds !== n.holds || m.grabs !== n.grabs) throw new Error(`a short click was taken as a gesture: ${JSON.stringify(m)}`);
+        // Hold without moving: the Magic menu at the pointer.
+        ps(`${W} [W.M]::SetCursorPos($cx,$cy) | Out-Null; Start-Sleep -Milliseconds 120; [W.M]::mouse_event(2,0,0,0,$z); Start-Sleep -Milliseconds 700; [W.M]::mouse_event(4,0,0,0,$z)`);
+        await until("the hold", (st) => st.holds > m.holds);
+        const magic = await waitForSurface(s, "magic", 15000).catch(async (e) => {
+          throw new Error(`${e.message}; Magic Mouse status ${JSON.stringify(await status())}`);
+        });
+        await shot(magic, "magic-mouse-hold-menu");
+        await invoke(dock, "magic_hide").catch(() => {});
+      } finally {
+        try { execFileSync("taskkill", ["/IM", "notepad.exe", "/F"], { stdio: "ignore" }); } catch {}
+        await updateConfig(dock, (c) => {
+          c.magicWaves = { ...(c.magicWaves || {}), mouse: false };
+        });
+        // Checked here so it also runs when the gesture steps are skipped on a busy runner.
+        await until("the pointer to come back", (st) => !st.pointerApplied && !st.hookLive, 20000);
+        const after = arrow();
+        if (after !== before) throw new Error(`Arrow pointer not restored: "${after}" (was "${before}")`);
       }
     },
   },
